@@ -259,36 +259,25 @@ function buildFlowPortSvg(
 function buildFlowPropPanel(): SafeHtml {
     return html`
     <div class="ds-prop-panel">
-        <h4 class="${''
-            }font-semibold text-sm mb-3">${''
-            }Node Properties</h4>
+        <h4 class="font-semibold text-sm mb-3">Node Properties</h4>
         <div class="${
             'flex flex-col gap-3'
         }">
             <div class="ds-prop-field">
-                <label class="${''
-                    }text-xs text-muted"
-                    for="ds-prop-name">${''
-                    }Name</label>
+                <label class="text-xs text-muted"
+                    for="ds-prop-name">Name</label>
                 <input class="input"
                     id="ds-prop-name"
                     value="Data Capture"
                     readonly/>
             </div>
             <div class="ds-prop-field">
-                <div class="${''
-                    }text-xs text-muted">${''
-                    }Type</div>
-                <span class="${''
-                    }badge badge-default">${''
-                    }Standard</span>
+                <div class="text-xs text-muted">Type</div>
+                <span class="badge badge-default">Standard</span>
             </div>
             <div class="ds-prop-field">
-                <div class="${''
-                    }text-xs text-muted">${''
-                    }Fields</div>
-                <span class="${''
-                    }text-sm">8 fields</span>
+                <div class="text-xs text-muted">Fields</div>
+                <span class="text-sm">8 fields</span>
             </div>
         </div>
     </div>`;
@@ -556,8 +545,7 @@ export function buildDesignSystemPage(): SafeHtml {
                     <button class="btn btn-hero">Hero</button>
                 </div>
                 <h3 class="font-semibold mb-4">Soft Variants</h3>
-                <div class="${''
-                    }flex flex-wrap gap-3 mb-4">
+                <div class="flex flex-wrap gap-3 mb-4">
                     <button class="${
                         'btn ds-soft-btn'
                     }" data-tone="primary">${
@@ -1197,108 +1185,71 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Usage Guidelines</h2>
-                <p class="text-muted mt-1">${''
-                    }Do's and don'ts for ${''
-                    }the ${''
-                    }design system</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Usage Guidelines</h2>
+                <p class="text-muted mt-1">Do's and don'ts ${
+                    'for the design system'
+                    }</p>
             </div>
             <div class="ds-grid-2 convert-grid">
                 <div class="card ds-do-card">
-                    <h3 class="${''
-                        }font-semibold${''
-                        } text-success${''
-                        } flex items-center ${''
-                        }gap-2 mb-4">${''
-                        }${iconCheck(20, '')
-                        } Do</h3>
+                    <h3 class="${
+                        'font-semibold text-success '
+                        + 'flex items-center gap-2 mb-4'
+                        }">${iconCheck(20, '')} Do</h3>
                     <div class="text-sm flex flex-col gap-2">
                         <p>${iconCheck(
                             14,
                             'text-success',
-                        )} Use semantic ${''
-                            }color ${''
-                            }tokens, not ${''
-                            }raw ${''
-                            }hex values</p>
+                        )} Use semantic color tokens, not raw hex values</p>
                         <p>${iconCheck(
                             14,
                             'text-success',
-                        )} Maintain ${''
-                            }consistent ${''
-                            }spacing with ${''
-                            }the ${''
-                            }8pt grid</p>
+                        )} Maintain consistent spacing with the 8pt grid</p>
                         <p>${iconCheck(
                             14,
                             'text-success',
-                        )} Ensure all ${''
-                            }interactive ${''
-                            }elements have ${''
-                            }focus states</p>
+                        )} ${
+                            'Ensure all interactive elements '
+                            + 'have focus states'
+                            }</p>
                         <p>${iconCheck(
                             14,
                             'text-success',
-                        )} Use the proper${''
-                            } ${''
-                            }typography ${''
-                            }scale ${''
-                            }for hierarchy</p>
+                        )} Use the proper typography scale for hierarchy</p>
                         <p>${iconCheck(
                             14,
                             'text-success',
-                        )} Test contrast ${''
-                            }ratios ${''
-                            }for ${''
-                            }accessibility</p>
+                        )} Test contrast ratios for accessibility</p>
                     </div>
                 </div>
                 <div class="card ds-dont-card">
-                    <h3 class="${''
-                        }font-semibold${''
-                        } text-error ${''
-                        }flex items-center ${''
-                        }gap-2 mb-4">${''
-                        }${iconX(20, '')
-                        } Don't</h3>
+                    <h3 class="${
+                        'font-semibold text-error '
+                        + 'flex items-center gap-2 mb-4'
+                        }">${iconX(20, '')} Don't</h3>
                     <div class="text-sm flex flex-col gap-2">
                         <p>${iconX(
                             14,
                             'text-error',
-                        )} Use pure black${''
-                            } ${''
-                            }(#000) for ${''
-                            }text</p>
+                        )} Use pure black (#000) for text</p>
                         <p>${iconX(
                             14,
                             'text-error',
-                        )} Create custom ${''
-                            }colors ${''
-                            }outside the ${''
-                            }system</p>
+                        )} Create custom colors outside the system</p>
                         <p>${iconX(
                             14,
                             'text-error',
-                        )} Use decorative${''
-                            } ${''
-                            }animations</p>
+                        )} Use decorative animations</p>
                         <p>${iconX(
                             14,
                             'text-error',
-                        )} Skip focus ${''
-                            }states on ${''
-                            }interactive ${''
-                            }elements</p>
+                        )} Skip focus states on interactive elements</p>
                         <p>${iconX(
                             14,
                             'text-error',
-                        )} Mix typography ${''
-                            }scales ${''
-                            }inconsistently${''
-                            }</p>
+                        )} Mix typography scales inconsistently</p>
                     </div>
                 </div>
             </div>
@@ -1308,22 +1259,18 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Flow Components</h2>
-                <p class="text-muted mt-1">${''
-                    }Visual vocabulary for ${''
-                    }the flow designer</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Flow Components</h2>
+                <p class="text-muted mt-1">${
+                    'Visual vocabulary for the flow designer'
+                    }</p>
             </div>
 
-            <h3 class="font-semibold">${''
-                }Node Variants</h3>
+            <h3 class="font-semibold">Node Variants</h3>
             <div class="ds-grid-3 stats-grid">
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Start Node</code>
+                    <code class="text-xs text-muted">Start Node</code>
                     ${buildFlowNodeSvg(
                         'Start',
                         '',
@@ -1332,9 +1279,7 @@ export function buildDesignSystemPage(): SafeHtml {
                     )}
                 </div>
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Standard Node</code>
+                    <code class="text-xs text-muted">Standard Node</code>
                     ${buildFlowNodeSvg(
                         'Data Capture',
                         '8 fields',
@@ -1343,9 +1288,7 @@ export function buildDesignSystemPage(): SafeHtml {
                     )}
                 </div>
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Complete Node</code>
+                    <code class="text-xs text-muted">Complete Node</code>
                     ${buildFlowNodeSvg(
                         'End',
                         '',
@@ -1355,13 +1298,10 @@ export function buildDesignSystemPage(): SafeHtml {
                 </div>
             </div>
 
-            <h3 class="font-semibold">${''
-                }Edge Variants</h3>
+            <h3 class="font-semibold">Edge Variants</h3>
             <div class="ds-grid-3 stats-grid">
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Forward Edge</code>
+                    <code class="text-xs text-muted">Forward Edge</code>
                     ${buildFlowEdgeSvg(
                         'submit',
                         FLOW_BLUE,
@@ -1370,9 +1310,7 @@ export function buildDesignSystemPage(): SafeHtml {
                     )}
                 </div>
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Cycle Edge</code>
+                    <code class="text-xs text-muted">Cycle Edge</code>
                     ${buildFlowEdgeSvg(
                         'needs revision',
                         FLOW_WARN,
@@ -1381,9 +1319,7 @@ export function buildDesignSystemPage(): SafeHtml {
                     )}
                 </div>
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Completion Edge</code>
+                    <code class="text-xs text-muted">Completion Edge</code>
                     ${buildFlowEdgeSvg(
                         'approve',
                         FLOW_GREEN,
@@ -1393,38 +1329,29 @@ export function buildDesignSystemPage(): SafeHtml {
                 </div>
             </div>
 
-            <h3 class="font-semibold">${''
-                }Port Styles</h3>
-            <div class="${''
-                }flex flex-wrap gap-6">
+            <h3 class="font-semibold">Port Styles</h3>
+            <div class="flex flex-wrap gap-6">
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Standard</code>
+                    <code class="text-xs text-muted">Standard</code>
                     ${buildFlowPortSvg(
                         FLOW_BLUE, 'port',
                     )}
                 </div>
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Start / End</code>
+                    <code class="text-xs text-muted">Start / End</code>
                     ${buildFlowPortSvg(
                         FLOW_GREEN, 'port',
                     )}
                 </div>
                 <div class="ds-stack">
-                    <code class="${''
-                        }text-xs text-muted">${''
-                        }Cycle</code>
+                    <code class="text-xs text-muted">Cycle</code>
                     ${buildFlowPortSvg(
                         FLOW_WARN, 'port',
                     )}
                 </div>
             </div>
 
-            <h3 class="font-semibold">${''
-                }Properties Panel</h3>
+            <h3 class="font-semibold">Properties Panel</h3>
             ${buildFlowPropPanel()}
         </section>
     </div>`;
