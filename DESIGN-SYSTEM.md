@@ -212,16 +212,6 @@ pending invitations; the badge shows that count. There is no
 empty bell — the affordance is honest, present exactly when
 there is something to act on.
 
-### Metric Widgets
-
-```html
-<div class="metric-widget">
-  <span class="metric-widget-label">Revenue</span>
-  <span class="metric-widget-value">$45,000</span>
-  <span class="metric-widget-trend-up">+12%</span>
-</div>
-```
-
 ### Command Palette
 
 Cmd+K (or Ctrl+K) overlay for quick navigation and search.
