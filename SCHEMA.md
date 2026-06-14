@@ -175,10 +175,12 @@ moment of the event.
 
 Revocation is a NEW `'revoked'` event — never a
 splice. This is the OPPOSITE discipline from
-`identity_pii` (which erases by splice). `secret`
-is opaque material stored UNHASHED at this seam;
-hashing, verification, and OAuth infrastructure are
-SP-5. The read routes project `secret` out (api.ts
+`identity_pii` (which erases by splice). For a
+`password` credential, `secret` is the PBKDF2 hash
+(a `$pbkdf2-sha256$` PHC string, `api/password-hash.ts`),
+verified at login by `verifyPassword`
+(`api/authentication.ts`) — plaintext is never stored.
+The read routes project `secret` out (`routes.ts`
 `withoutSecret`), so it never crosses the API boundary.
 
 | Column | Type |
