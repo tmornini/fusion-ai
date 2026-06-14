@@ -401,6 +401,15 @@ apply to it (RED is the audit's first finding).
 
 Commit completed, tested work. Do not ask.
 
+Going-forward discipline (the Office of the Commit is the full
+doctrine):
+
+- One concern per commit — tiny, semantically contiguous.
+- Subject: a single line ≈50 chars, present-tense imperative,
+  no prose body beyond the mandated `Co-Authored-By` trailer.
+- Never move/rename and change content in the same commit.
+- Linear history — rebase and fast-forward, never merge.
+
 ## Worktrees
 
 Do not use git worktrees. Work directly in the main checkout.
