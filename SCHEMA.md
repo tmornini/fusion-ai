@@ -656,8 +656,8 @@ read an invitation to an org they are not yet a member of, so
 the org fence cannot apply. The invitation routes fence
 instead by the caller's identity (invitee) or admin role
 (inviter). Validator: `validateInvitationEntity`
-(`api/validators.ts`). Secondary indexes on `organization_id`
-and `identity_id` (`api/db.ts` `TABLE_INDEXES`).
+(`api/validators.ts`). No secondary index — read by full
+scan or primary key (`api/db.ts` `TABLE_INDEXES`).
 
 The lifecycle: grant (admin) appends `pending`; accept
 (invitee) appends `accepted` AND writes a `memberships` row in
