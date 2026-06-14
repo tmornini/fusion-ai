@@ -232,19 +232,6 @@ Implemented in `web-app/app/command-palette.ts`.
 - Renders categorized results with icons
 - Focus trap while open
 
-### Charts
-
-`build*` functions in `web-app/app/charts.ts` return
-`SafeHtml` for inline SVG charts. All charts use design
-system colors and respond to dark mode.
-
-| Type | Function | Usage |
-|------|----------|-------|
-| Bar | `buildBarChart()` | Comparisons, category breakdowns |
-| Line | `buildLineChart()` | Trends over time |
-| Donut | `buildDonutChart()` | Proportions, status distribution |
-| Area | `buildAreaChart()` | Volume trends |
-
 ### Heat ramp (flow-stats)
 
 A fixed-scale 4-stop ramp used by `flows/stats.html` to visualize a
