@@ -1032,246 +1032,162 @@ export function buildDesignSystemPage(): SafeHtml {
 
         <section class="ds-section">
             <div>
-                <h2 class="${''
-                    }text-2xl font-semibold ${''
-                    }font-display">${''
-                    }Error &amp; System ${''
-                    }States</h2>
-                <p class="text-muted mt-1">${''
-                    }Patterns for ${''
-                    }validation ${''
-                    }errors, failures, ${''
-                    }and ${''
-                    }system messages</p>
+                <h2 class="${
+                    'text-2xl font-semibold font-display'
+                    }">Error &amp; System States</h2>
+                <p class="text-muted mt-1">${
+                    'Patterns for validation errors, '
+                    + 'failures, and system messages'
+                    }</p>
             </div>
             <div class="ds-grid-2 convert-grid">
                 <div class="card p-6">
-                    <h3 class="${''
-                        }font-semibold mb-3">${''
-                        }Inline Validation</h3>
+                    <h3 class="font-semibold mb-3">Inline Validation</h3>
                     <div class="${
                         'flex flex-col gap-3'
                     }">
                         <div>
-                            <label class="${''
-                                }label mb-1${''
-                                } text-sm"
-                                for="${''
-                                }ds-validation-email">${''
-                                }Email ${''
-                                }Address</label>
-                            <input class="${''
-                                }input${''
-                                } input-error"
-                                id="${''
-                                }ds-validation-email"
+                            <label class="label mb-1 text-sm"
+                                for="ds-validation-email">${
+                                    'Email Address'
+                                    }</label>
+                            <input class="input input-error"
+                                id="ds-validation-email"
                                 value="${
                                     'invalid'
                                     + '-email'
                                 }"/>
-                            <p class="${''
-                                }text-xs mt-1${''
-                                } flex ${''
-                                }items-center${''
-                                } gap-1 text-error">${''
-                                }${
-                                iconAlertCircle(12, '')
-                                } ${''
-                                }Please enter ${''
-                                }a valid ${''
-                                }email ${''
-                                }address</p>
+                            <p class="${
+                                    'text-xs mt-1 flex '
+                                    + 'items-center gap-1 text-error'
+                                    }">${iconAlertCircle(12, '')} ${
+                                    'Please enter a valid '
+                                    + 'email address'
+                                    }</p>
                         </div>
                         <div>
-                            <label class="${''
-                                }label mb-1${''
-                                } text-sm"
-                                for="${''
-                                }ds-validation-name">${''
-                                }Project ${''
-                                }Name</label>
+                            <label class="label mb-1 text-sm"
+                                for="ds-validation-name">Project Name</label>
                             <input class="${
                                 'input'
                                 + ' ds-success-border'
                             }"
-                                id="${''
-                                }ds-validation-name"
-                                value="${''
-                                }AI Segmentation"/>
-                            <p class="${''
-                                }text-xs mt-1${''
-                                } flex ${''
-                                }items-center${''
-                                } gap-1${''
-                                } text-success">${''
-                                }${iconCheck(12, '')
-                                } ${''
-                                }Looks good!</p>
+                                id="ds-validation-name"
+                                value="AI Segmentation"/>
+                            <p class="${
+                                    'text-xs mt-1 flex items-center '
+                                    + 'gap-1 text-success'
+                                    }">${iconCheck(12, '')} Looks good!</p>
                         </div>
                     </div>
                 </div>
                 <div class="card p-6">
-                    <h3 class="${''
-                        }font-semibold mb-3">${''
-                        }Upload Failed</h3>
+                    <h3 class="font-semibold mb-3">Upload Failed</h3>
                     <div class="ds-upload-fail">
                         ${iconUpload(
                             32, 'text-error',
                         )}
-                        <p class="${''
-                            }font-medium${''
-                            } text-sm mt-2 text-error">${''
-                            }Upload Failed</p>
-                        <p class="${''
-                            }text-xs${''
-                            } text-muted${''
-                            } mt-1">${''
-                            }File exceeds ${''
-                            }maximum ${''
-                            }size of 10MB</p>
-                        <button class="${''
-                            }btn btn-outline ${''
-                            }btn-sm mt-3">${''
-                            }Try Again</button>
+                        <p class="${
+                            'font-medium text-sm mt-2 '
+                            + 'text-error'
+                            }">Upload Failed</p>
+                        <p class="text-xs text-muted mt-1">${
+                            'File exceeds maximum size of 10MB'
+                            }</p>
+                        <button class="${
+                            'btn btn-outline btn-sm mt-3'
+                            }">Try Again</button>
                     </div>
                 </div>
                 <div class="card p-6">
-                    <h3 class="${''
-                        }font-semibold mb-3">${''
-                        }Save Failed</h3>
+                    <h3 class="font-semibold mb-3">Save Failed</h3>
                     <div class="ds-soft-row" data-tone="error">
                         ${iconAlertCircle(
                             20,
                             'text-error',
                         )}
                         <div class="flex-1">
-                            <p class="${''
-                                }text-sm${''
-                                } font-medium text-error">${''
-                                }Changes could${''
-                                } not ${''
-                                }be saved</p>
-                            <p class="${''
-                                }text-xs${''
-                                } text-muted ${''
-                                }mt-0.5">${''
-                                }Please check${''
-                                } your ${''
-                                }connection ${''
-                                }and ${''
-                                }try again.</p>
+                            <p class="${
+                                'text-sm font-medium '
+                                + 'text-error'
+                                }">Changes could not be saved</p>
+                            <p class="text-xs text-muted mt-0.5">${
+                                'Please check your connection '
+                                + 'and try again.'
+                                }</p>
                         </div>
-                        <button class="${''
-                            }btn btn-outline ${''
-                            }btn-xs">${''
-                            }Retry</button>
+                        <button class="btn btn-outline btn-xs">Retry</button>
                     </div>
                 </div>
                 <div class="card p-6">
-                    <h3 class="${''
-                        }font-semibold mb-3">${''
-                        }Connection Issue</h3>
+                    <h3 class="font-semibold mb-3">Connection Issue</h3>
                     <div class="ds-soft-row" data-tone="warning">
                         ${iconAlertTriangle(
                             20,
                             'text-warning',
                         )}
                         <div class="flex-1">
-                            <p class="${''
-                                }text-sm${''
-                                } font-medium text-warning">${''
-                                }Connection ${''
-                                }interrupted</p>
-                            <p class="${''
-                                }text-xs${''
-                                } text-muted ${''
-                                }mt-0.5">${''
-                                }Reconnecting${''
-                                } ${''
-                                }automatically${''
-                                }...</p>
+                            <p class="${
+                                'text-sm font-medium '
+                                + 'text-warning'
+                                }">Connection interrupted</p>
+                            <p class="text-xs text-muted mt-0.5">${
+                                'Reconnecting automatically...'
+                                }</p>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="card p-6">
-                <h3 class="${''
-                    }font-semibold mb-3">${''
-                    }Inline System Error</h3>
+                <h3 class="font-semibold mb-3">Inline System Error</h3>
                 <div class="ds-soft-row" data-tone="error">
                     ${iconAlertCircle(
                         20,
                         'text-error',
                     )}
                     <div class="flex-1">
-                        <p class="${''
-                            }text-sm${''
-                            } font-medium text-error">${''
-                            }Something went${''
-                            } wrong</p>
-                        <p class="${''
-                            }text-xs${''
-                            } text-muted ${''
-                            }mt-0.5">${''
-                            }An unexpected${''
-                            } error ${''
-                            }occurred while${''
-                            } loading ${''
-                            }this section.${''
-                            } Our team ${''
-                            }has been ${''
-                            }notified.</p>
+                        <p class="${
+                            'text-sm font-medium '
+                            + 'text-error'
+                            }">Something went wrong</p>
+                        <p class="text-xs text-muted mt-0.5">${
+                            'An unexpected error occurred '
+                            + 'while loading this section. '
+                            + 'Our team has been notified.'
+                            }</p>
                     </div>
-                    <button class="${''
-                        }btn btn-outline ${''
-                        }btn-sm">${''
-                        }Reload Section</button>
+                    <button class="${
+                        'btn btn-outline btn-sm'
+                        }">Reload Section</button>
                 </div>
             </div>
             <div class="${
                 'card text-center p-12'
             }">
-                <h3 class="${''
-                    }font-semibold mb-3">${''
-                    }Full Page Error</h3>
+                <h3 class="font-semibold mb-3">Full Page Error</h3>
                 <div class="p-8">
                     ${iconAlertTriangle(
                         48,
                         'text-error',
                     )}
-                    <h3 class="${''
-                        }text-xl font-display${''
-                        } ${''
-                        }font-semibold mt-4">${''
-                        }Something went${''
-                        } wrong</h3>
-                    <p class="${''
-                        }text-sm text-muted${''
-                        } mt-2${''
-                        } ds-fullpage-err-desc">${''
-                        }We encountered an ${''
-                        }unexpected error. ${''
-                        }Please try ${''
-                        }refreshing ${''
-                        }the page or ${''
-                        }contact ${''
-                        }support if the ${''
-                        }problem ${''
-                        }persists.</p>
-                    <div class="${''
-                        }flex justify-center${''
-                        } ${''
-                        }gap-3 mt-6">
-                        <button class="${''
-                            }btn${''
-                            } btn-primary">${''
-                            }Refresh ${''
-                            }Page</button>
-                        <button class="${''
-                            }btn${''
-                            } btn-outline">${''
-                            }Contact ${''
-                            }Support</button>
+                    <h3 class="${
+                        'text-xl font-display '
+                        + 'font-semibold mt-4'
+                        }">Something went wrong</h3>
+                    <p class="${
+                        'text-sm text-muted mt-2 '
+                        + 'ds-fullpage-err-desc'
+                        }">${
+                        'We encountered an unexpected '
+                        + 'error. Please try refreshing '
+                        + 'the page or contact support '
+                        + 'if the problem persists.'
+                        }</p>
+                    <div class="flex justify-center gap-3 mt-6">
+                        <button class="btn btn-primary">Refresh Page</button>
+                        <button class="${
+                            'btn btn-outline'
+                            }">Contact Support</button>
                     </div>
                 </div>
             </div>
