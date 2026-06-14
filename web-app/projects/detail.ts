@@ -25,7 +25,6 @@ import {
     trimStrings,
     openDialog,
     closeDialog,
-    clickedOutside,
     handleDialogClick,
 } from '../app/core.ts';
 import {
@@ -316,15 +315,12 @@ export async function init(
     $('#approve-dialog', document)!.addEventListener(
         'click',
         async (e) => {
-            const action =
-                (e.target as HTMLElement)
-                    .closest('[data-action]')
-                    ?.getAttribute('data-action');
-            if (action === 'cancel-approve') {
-                closeDialog('approve');
-            } else if (
-                action === 'confirm-approve'
-            ) {
+            const target = e.target as Element;
+            if (handleDialogClick(target, e)) return;
+            const action = target
+                .closest('[data-action]')
+                ?.getAttribute('data-action');
+            if (action === 'confirm-approve') {
                 const ctx = sessionContext();
                 try {
                     await postProjectApproval(
@@ -346,15 +342,12 @@ export async function init(
         .addEventListener(
         'click',
         async (e) => {
-            const action =
-                (e.target as HTMLElement)
-                    .closest('[data-action]')
-                    ?.getAttribute('data-action');
-            if (action === 'cancel-archive') {
-                closeDialog('archive');
-            } else if (
-                action === 'confirm-archive'
-            ) {
+            const target = e.target as Element;
+            if (handleDialogClick(target, e)) return;
+            const action = target
+                .closest('[data-action]')
+                ?.getAttribute('data-action');
+            if (action === 'confirm-archive') {
                 const ctx = sessionContext();
                 try {
                     await postProjectArchival(
@@ -372,14 +365,12 @@ export async function init(
         { signal },
     );
 
-    const historyDialog = $(
-        '#history-dialog', document,
-    )!;
-    historyDialog.addEventListener(
+    $('#history-dialog', document)!.addEventListener(
         'click',
         (e) => {
-            if (clickedOutside(historyDialog, e)) {
-                closeDialog('history');
+            const target = e.target;
+            if (target instanceof Element) {
+                handleDialogClick(target, e);
             }
         },
         { signal },
