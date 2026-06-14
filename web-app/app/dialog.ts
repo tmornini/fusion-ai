@@ -193,6 +193,34 @@ export function parseDialogClick(
     return null;
 }
 
+// Drive a click to its dialog outcome: a backdrop click closes
+// the dialog it targets; a data-dialog-open / data-dialog-cancel
+// control opens or closes by id. Returns true when the click was
+// a dialog control, so a page handler stops before its own
+// action dispatch. The single delegated path every page routes
+// dialog clicks through — one voice for open, cancel, and light
+// dismiss.
+export function handleDialogClick(
+    target: Element,
+    e: MouseEvent,
+): boolean {
+    if (
+        target instanceof HTMLDialogElement
+        && clickedOutside(target, e)
+    ) {
+        target.close();
+        return true;
+    }
+    const intent = parseDialogClick(target);
+    if (!intent) return false;
+    if (intent.kind === 'open') {
+        openDialog(intent.id);
+    } else {
+        closeDialog(intent.id);
+    }
+    return true;
+}
+
 export {
     openDialog,
     closeDialog,

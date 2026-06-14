@@ -90,6 +90,7 @@ export {
     initDialog,
     initTabs,
     parseDialogClick,
+    handleDialogClick,
 } from './dialog.ts';
 export { initDropdown } from './theme-toggle.ts';
 
