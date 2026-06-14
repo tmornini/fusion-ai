@@ -193,9 +193,10 @@ closes, and light-dismisses by those attributes — one voice
 across every dialog. Submit/confirm stay page-specific (a
 `#{id}-submit` listener or a `data-*-action`).
 
-**Tab pattern.** Use `initTabs('[data-tab]', '.tab-panel')`
-from `core.ts`. Tab buttons use `data-tab="{name}"`
-attribute, panels use `id="tab-{name}"`.
+**Tab pattern.** Use `initTabs('[data-tab]', '.tab-panel',
+'active')` from `core.ts` — the third arg is the active-state
+class. Tab buttons use `data-tab="{name}"` attribute, panels
+use `id="tab-{name}"`.
 
 ### Design System
 
