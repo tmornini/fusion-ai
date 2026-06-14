@@ -98,11 +98,12 @@ helpers and the CSS selectors share a single source of truth.
 
 **`[data-tone]` values**: `primary`, `success`, `warning`,
 `error`, `info`, `muted`.
-Applied to: `.pill`, `.icon-box`, `.status-dot`,
-`.legend-dot`, `.btn-outline`, `.action-card`, `.stat-cell`.
+Applied to: `.pill`, `.icon-box`, `.icon-box-lg`,
+`.legend-dot`, `.btn-outline`, `.gauge-card`, `.ds-soft-btn`,
+`.ds-soft-row`, `.spark-tip-change`.
 
 **`[data-level]` values**: `normal`, `warning`, `danger`.
-Applied to: `.progress-bar`, `.gauge` fill regions.
+Applied to: `.progress-bar` fill regions.
 
 **Exception — the credential-reveal panel.** The snapshots-
 page demo-credentials panel (`.credential-reveal`,
