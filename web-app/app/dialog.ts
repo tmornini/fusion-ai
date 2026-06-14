@@ -3,8 +3,6 @@ import {
 } from './dom.ts';
 
 const DIALOG_SUFFIX = '-dialog';
-const CANCEL_SUFFIX = '-cancel';
-const SUBMIT_SUFFIX = '-submit';
 const TAB_PANEL_PREFIX = 'tab-';
 const TAB_BUTTON_PREFIX = 'tab-btn-';
 
@@ -128,44 +126,6 @@ function clickedOutside(
         || e.clientY > r.bottom;
 }
 
-function initDialog(
-    dialogId: string,
-    openBtnId: string,
-    onSubmit?: () => void,
-): void {
-    const dialog = dialogElement(dialogId);
-    $required(
-        '#' + openBtnId, document,
-    ).addEventListener(
-        'click',
-        () => openDialog(dialogId),
-    );
-    $required(
-        '#' + dialogId + CANCEL_SUFFIX,
-        document,
-    ).addEventListener(
-        'click',
-        () => closeDialog(dialogId),
-    );
-    dialog.addEventListener(
-        'click',
-        (e) => {
-            if (clickedOutside(dialog, e)) {
-                closeDialog(dialogId);
-            }
-        },
-    );
-    if (onSubmit) {
-        $required(
-            '#' + dialogId + SUBMIT_SUFFIX,
-            document,
-        ).addEventListener(
-            'click',
-            onSubmit,
-        );
-    }
-}
-
 // A click's dialog intent, or null when the target is not a
 // dialog control. Pure: reads the target's data attributes and
 // returns what to do; the caller drives openDialog/closeDialog.
@@ -225,6 +185,5 @@ export {
     openDialog,
     closeDialog,
     clickedOutside,
-    initDialog,
     initTabs,
 };
