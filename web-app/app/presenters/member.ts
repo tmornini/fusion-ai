@@ -3,6 +3,7 @@ import {
 } from '../safe-html.ts';
 import { initials } from '../core.ts';
 import {
+    ICON_SIZE,
     iconCheckCircle2,
     iconClock,
     iconPersonX,
@@ -188,7 +189,7 @@ export class AIMemberRowPresenter {
                 'avatar avatar-tinted'
             }">
                 ${iconBrain(
-                    16,
+                    ICON_SIZE.base,
                     'text-primary',
                 )}
             </div>

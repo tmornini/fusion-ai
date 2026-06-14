@@ -3,6 +3,7 @@ import {
 } from '../safe-html.ts';
 import { mutateSlot } from '../dom.ts';
 import {
+    ICON_SIZE,
     iconClock,
     iconDollarSign,
     iconCalendar, iconTarget,
@@ -125,7 +126,7 @@ function buildShell(
                     id="project-back-btn"
                     data-project-action="back"
                     aria-label="Back">
-                    ${iconArrowLeft(20, '')}
+                    ${iconArrowLeft(ICON_SIZE.xl, '')}
                 </button>
                 <div class="project-title-slot">
                 </div>
@@ -195,7 +196,7 @@ function buildReadonlyTitleSection(
                 + cfg.className
                 + ' text-xs'
             }">
-                ${iconCheckCircle2(14, '')}
+                ${iconCheckCircle2(ICON_SIZE.sm, '')}
                 ${cfg.label}
             </span>
         </div>
@@ -249,7 +250,7 @@ function buildReadonlyActionButtons(
             }"
             id="project-edit-btn"
             data-project-action="edit">
-            ${iconEdit(16, '')} Edit
+            ${iconEdit(ICON_SIZE.base, '')} Edit
         </button>`;
 }
 
@@ -262,7 +263,7 @@ function buildEditableActionButtons(
             }"
             id="project-cancel-btn"
             data-project-action="cancel">
-            ${iconX(16, '')} Cancel
+            ${iconX(ICON_SIZE.base, '')} Cancel
         </button>
         <button
             class="${
@@ -270,7 +271,7 @@ function buildEditableActionButtons(
             }"
             id="project-save-btn"
             data-project-action="save">
-            ${iconSave(16, '')} Save
+            ${iconSave(ICON_SIZE.base, '')} Save
         </button>`;
 }
 
@@ -286,7 +287,7 @@ function buildReadonlyDateCell(
             'flex items-center gap-3'
             + ' summary-stat-cell'
         }">
-            ${icon(20, 'text-primary')}
+            ${icon(ICON_SIZE.xl, 'text-primary')}
             <div>
                 <p class="${
                     'text-xs text-muted'
@@ -312,7 +313,7 @@ function buildEditableDateCell(
             'flex items-center gap-3'
             + ' summary-stat-cell'
         }">
-            ${icon(20, 'text-primary')}
+            ${icon(ICON_SIZE.xl, 'text-primary')}
             <div>
                 <p class="${
                     'text-xs text-muted'
@@ -462,13 +463,13 @@ function buildVariance(
     const diff = actual - baseline;
     if (diff === 0)
         return html`<span class="text-muted"
-            >${iconMinus(16, '')} 0</span>`;
+            >${iconMinus(ICON_SIZE.base, '')} 0</span>`;
     const good = isLowerBetter
         ? diff < 0
         : diff > 0;
     const icon = diff < 0
-        ? iconArrowDownRight(16, '')
-        : iconArrowUpRight(16, '');
+        ? iconArrowDownRight(ICON_SIZE.base, '')
+        : iconArrowUpRight(ICON_SIZE.base, '');
     const tone = good
         ? 'variance-good'
         : 'variance-bad';
@@ -491,7 +492,7 @@ function buildMetricCell(
                 'flex items-center'
                 + ' gap-2 mb-3'
             }">
-                ${m.icon(20, 'text-primary')}
+                ${m.icon(ICON_SIZE.xl, 'text-primary')}
                 <span class="font-medium">
                     ${m.label}
                 </span>
@@ -734,7 +735,7 @@ function buildFlowCard(
             }">
                 <div class="flow-icon-pill">
                     ${iconGitBranch(
-                        20, 'text-primary',
+                        ICON_SIZE.xl, 'text-primary',
                     )}
                 </div>
                 <div class="flex-fill">
@@ -783,14 +784,14 @@ function buildFlowsSection(
                         'btn btn-primary'
                         + ' btn-sm gap-2'
                     }">
-                    ${iconPlus(14, '')}
+                    ${iconPlus(ICON_SIZE.sm, '')}
                     New Flow
                 </button>`
                 : html`<span class="${
                     'status-badge'
                     + ' status-badge-info'
                 }">
-                    ${iconInfo(14, '')}
+                    ${iconInfo(ICON_SIZE.sm, '')}
                     Approve to add flows
                 </span>`}
         </div>`;

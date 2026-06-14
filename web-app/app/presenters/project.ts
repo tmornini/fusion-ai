@@ -2,6 +2,7 @@ import {
     html, setHtml, SafeHtml,
 } from '../safe-html.ts';
 import {
+    ICON_SIZE,
     iconClock,
     iconDollarSign,
     iconGripVertical,
@@ -121,7 +122,7 @@ export class ProjectPresenter {
                     'Reorder ' + this
                         .#project.titleText()
                 }">${
-                iconGripVertical(20, '')
+                iconGripVertical(ICON_SIZE.xl, '')
             }</button>` : html``}
             <div class="flex-fill">
                 <h3 class="${
@@ -261,7 +262,7 @@ export class ProjectPresenter {
         }">
             <div class="metric-icon-box">${
                 iconClock(
-                    16, 'text-primary',
+                    ICON_SIZE.base, 'text-primary',
                 )
             }</div>
             <div>
@@ -283,7 +284,7 @@ export class ProjectPresenter {
         }">
             <div class="metric-icon-box">${
                 iconDollarSign(
-                    16, 'text-primary',
+                    ICON_SIZE.base, 'text-primary',
                 )
             }</div>
             <div>
@@ -307,7 +308,7 @@ export class ProjectPresenter {
         }">
             <div class="metric-icon-box">${
                 iconTrendingUp(
-                    16, 'text-primary',
+                    ICON_SIZE.base, 'text-primary',
                 )
             }</div>
             <div>

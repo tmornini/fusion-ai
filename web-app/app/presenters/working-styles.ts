@@ -1,5 +1,6 @@
 import { html, SafeHtml } from '../safe-html.ts';
 import {
+    ICON_SIZE,
     iconZap,
     iconTarget,
     iconMessageSquare,
@@ -108,7 +109,7 @@ export class WorkingStylesPresenter {
                         'flex items-center gap-2'
                     }">
                         ${icon(
-                            16,
+                            ICON_SIZE.base,
                             'text-primary',
                         )}
                         <span class="${

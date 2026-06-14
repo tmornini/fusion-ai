@@ -1,4 +1,5 @@
 import { html, type SafeHtml } from '../safe-html.ts';
+import { ICON_SIZE } from '../icons.ts';
 
 // The state filter chip every list presenter renders: a fixed-
 // width toggle button carrying the state value, its icon, and
@@ -23,5 +24,5 @@ export function stateBadge(
         dimmed
     }" aria-pressed="${
         pressed
-    }">${icon(14, '')} ${config.label}</button>`;
+    }">${icon(ICON_SIZE.sm, '')} ${config.label}</button>`;
 }
