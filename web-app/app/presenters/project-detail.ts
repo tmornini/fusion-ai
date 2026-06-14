@@ -3,6 +3,7 @@ import {
 } from '../safe-html.ts';
 import { mutateSlot } from '../dom.ts';
 import {
+    type IconSize,
     ICON_SIZE,
     iconClock,
     iconDollarSign,
@@ -277,7 +278,7 @@ function buildEditableActionButtons(
 
 function buildReadonlyDateCell(
     icon: (
-        size: number, cls: string,
+        size: IconSize, cls: string,
     ) => SafeHtml,
     label: string,
     savedDate: string,
@@ -301,7 +302,7 @@ function buildReadonlyDateCell(
 
 function buildEditableDateCell(
     icon: (
-        size: number, cls: string,
+        size: IconSize, cls: string,
     ) => SafeHtml,
     label: string,
     id: string,
@@ -440,7 +441,7 @@ interface MetricArgs {
     inputId: string;
     field: ProjectFieldKey | null;
     icon: (
-        s: number, c: string,
+        s: IconSize, c: string,
     ) => SafeHtml;
     baseline: number | null;
     actual: number | null;

@@ -3,6 +3,7 @@ import {
 } from '../safe-html.ts';
 import { initials } from '../core.ts';
 import {
+    type IconSize,
     ICON_SIZE,
     iconCheckCircle2,
     iconClock,
@@ -30,7 +31,7 @@ import {
 const STATE_ICONS: Record<
     MemberState,
     (
-        size: number,
+        size: IconSize,
         cssClass: string,
     ) => SafeHtml
 > = {

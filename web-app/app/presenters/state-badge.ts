@@ -1,5 +1,5 @@
 import { html, type SafeHtml } from '../safe-html.ts';
-import { ICON_SIZE } from '../icons.ts';
+import { type IconSize, ICON_SIZE } from '../icons.ts';
 
 // The state filter chip every list presenter renders: a fixed-
 // width toggle button carrying the state value, its icon, and
@@ -10,7 +10,7 @@ import { ICON_SIZE } from '../icons.ts';
 export function stateBadge(
     state: string,
     config: { className: string; label: string },
-    icon: (size: number, className: string) => SafeHtml,
+    icon: (size: IconSize, className: string) => SafeHtml,
     isActive: boolean | null,
 ): SafeHtml {
     const dimmed = isActive === false ? 'true' : 'false';

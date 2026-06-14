@@ -8,6 +8,7 @@ import {
     filteredSortedList,
 } from './list-choreography.ts';
 import {
+    type IconSize,
     ICON_SIZE,
     iconGripVertical,
     iconCheckCircle2,
@@ -26,7 +27,7 @@ import {
 const STATE_ICONS: Record<
     RecordState,
     (
-        size: number,
+        size: IconSize,
         cssClass: string,
     ) => SafeHtml
 > = {

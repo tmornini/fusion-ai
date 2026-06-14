@@ -2,6 +2,7 @@ import {
     html, setHtml, SafeHtml,
 } from '../safe-html.ts';
 import {
+    type IconSize,
     ICON_SIZE,
     iconClock,
     iconDollarSign,
@@ -47,7 +48,7 @@ type ScoreRow = {
 const STATE_ICONS: Record<
     ProjectState,
     (
-        size: number,
+        size: IconSize,
         cssClass: string,
     ) => SafeHtml
 > = {

@@ -15,6 +15,7 @@ import {
 } from '../core.ts';
 import { buildPageUrl } from '../navigation.ts';
 import {
+    type IconSize,
     ICON_SIZE,
     iconGripVertical,
     iconClock,
@@ -43,7 +44,7 @@ import {
 const STATE_ICONS: Record<
     IdeaState,
     (
-        size: number,
+        size: IconSize,
         cssClass: string,
     ) => SafeHtml
 > = {

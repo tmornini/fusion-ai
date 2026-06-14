@@ -1,5 +1,6 @@
 import { html, SafeHtml } from '../safe-html.ts';
 import {
+    type IconSize,
     ICON_SIZE,
     iconZap,
     iconTarget,
@@ -21,7 +22,7 @@ const LABELS: Record<DimensionKey, string> = {
 const ICONS: Record<
     DimensionKey,
     (
-        size: number,
+        size: IconSize,
         cssClass: string,
     ) => SafeHtml
 > = {

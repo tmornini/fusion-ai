@@ -3,6 +3,7 @@ import {
     SafeHtml,
 } from '../safe-html.ts';
 import {
+    type IconSize,
     ICON_SIZE,
     iconDollarSign,
     iconClock,
@@ -31,7 +32,7 @@ const THEME_TONE: Record<
 const ICON_FNS: Record<
     GaugeIcon,
     (
-        size: number,
+        size: IconSize,
         cssClass: string,
     ) => SafeHtml
 > = {
