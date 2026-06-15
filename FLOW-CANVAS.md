@@ -87,7 +87,8 @@ with a mode picker + Required checkbox + remove button,
 plus a picker `<select>` listing every record_attribute on
 the bound Record not yet referenced. The flow header
 carries a Record-binding `<select>` driven by
-`getRecordForFlow` / `putFlowRecord` / `deleteFlowRecord`.
+`getRecordForFlow` / `postFlowRecordBinding` /
+`deleteFlowRecordForFlow`.
 
 Hazards are two-tier and shared across the designer +
 stats canvases via the pure predicate
