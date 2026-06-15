@@ -1834,7 +1834,7 @@ the claude-in-chrome MCP.
   section stays HIDDEN — the page logs at warn and surfaces no
   raw error, and no Revoke affordance is offered to a non-
   admin. (Pairs with V7's grant/revoke 403s.) Source:
-  `sentInvitations` admin guard in `api/api.ts`,
+  `sentInvitations` admin guard in `api/invitations-domain.ts`,
   `renderSentInvitations` catch.
 
 ### Members list (`members/index.html`)
@@ -1898,8 +1898,9 @@ the claude-in-chrome MCP.
 > Organization page. DEFERRED (not built): new-identity auto-
 > membership on creation, and email delivery. Sources:
 > `web-app/members/index.ts` (`handleInviteSubmit`),
-> `web-app/app/adapters/invitations.ts`, `api/api.ts`
-> (`grantInvitation` / `acceptInvitation` / `declineInvitation`
+> `web-app/app/adapters/invitations.ts`,
+> `api/invitations-domain.ts` (`grantInvitation` /
+> `acceptInvitation` / `declineInvitation`
 > / `revokeInvitation`), `web-app/invitations/`,
 > `web-app/app/invitations-indicator.ts`.
 
