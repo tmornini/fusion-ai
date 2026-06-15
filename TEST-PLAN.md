@@ -887,8 +887,8 @@ on. Run these in order.
   sidebar footer — see G36; the pending-invitations
   bell may appear at the top bar — see V3.)
 - [ ] **C4** Dashboard renders 4 surfaces in order: three
-  visually-equivalent arc-gauge cards (Time, Cost, Portfolio
-  Impact — each a bipolar arc; not "2 gauges + a distinct
+  visually-equivalent arc-gauge cards (Time, Cost, Impact
+  — each a bipolar arc; not "2 gauges + a distinct
   card") and a full-width Aggregate Objectives box below.
   PASS: all 4 render with baseline and current values; each
   top card shows its bipolar arc; the Objectives box shows
@@ -2432,14 +2432,14 @@ re-order accordingly (most-positive first).
 Impact descending; PASS if the result is the "review queue
 ranked by impact" workflow we designed.
 
-### K27–K29 — Dashboard Portfolio Impact + Aggregates (Agent-CH)
+### K27–K29 — Dashboard Impact + Aggregates (Agent-CH)
 
 **K27.** Open dashboard; PASS if four surfaces render: three
 visually-equivalent bipolar arc-gauge cards (Time, Cost,
-Portfolio Impact) and an Aggregate Objectives box
+Impact) and an Aggregate Objectives box
 (full-width row below).
 
-**K28.** Inspect the Portfolio Impact gauge. PASS if:
+**K28.** Inspect the Impact gauge. PASS if:
 - The arc has muted background visible at all values
 - For a net-positive portfolio, value arcs sweep right and
   use green tones
