@@ -1465,7 +1465,7 @@ states, and that the canvas re-renders after each step.)
 
 ### Attribute Editor (Node Panel)
 
-- [ ] **F68** Single-select a regular node (not Create/Archive)
+- [ ] **F68** Double-click a regular node (not Create/Archive)
   to open the properties panel. In the "Attributes"
   fieldset, click the "+ Add Attribute…" dropdown. PASS:
   the picker lists available record attributes
@@ -1485,12 +1485,12 @@ states, and that the canvas re-renders after each step.)
   control on the "Email" attribute row. PASS: the row
   disappears from the attributes list.
 - [ ] **F71** Lock the flow via the toolbar checkbox.
-  Single-select a regular node. Click the disabled
+  Double-click a regular node. Click the disabled
   "+ Add Attribute…" dropdown in the Attributes
   fieldset. PASS: nothing happens — no panel change,
   no toast, no attribute row appended (a disabled
   `<select>` does not fire `change`).
-- [ ] **F72** Single-select a regular node. Tick one
+- [ ] **F72** Double-click a regular node. Tick one
   member checkbox in the Members fieldset. Click the
   "+ Add Attribute…" dropdown in the same panel. PASS:
   the dropdown remains functional and lists available
