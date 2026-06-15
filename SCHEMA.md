@@ -53,7 +53,9 @@ tie falls to the larger row id — one total order on every
 backend) is the entity's current state. `'deleted'` is a
 state event value, not a separate table.
 `EntityStore.getAll`/`getById` consult
-`StateStore.getDeletedIds()` / `isDeleted(id)` to filter
+`StateStore.getDeletedIdsIn(tx)` / `isDeletedIn(tx, id)` — the
+in-transaction variants that ride the SAME tx as the
+entity-row read (two reads, one truth) — to filter
 currently-deleted rows; `EntityStore.delete(id)` is
 retained for hard splice of relationship rows
 (`state_field_values`, etc.) where lifecycle event log
