@@ -1763,7 +1763,7 @@ the claude-in-chrome MCP.
 - [ ] **FS7** Path stepper: `Path 1 of M · X% of N work
   orders` with prev/next controls. Clicking next advances;
   the selected path's nodes + edges get an accent stroke and
-  off-path elements dim to ~28% opacity. The highlight does
+  off-path elements dim to ~30% opacity. The highlight does
   NOT pulse or animate (deliberately distinct from the
   editor's selection glow). At the last visible path, next is
   disabled (or, if there's a rest bucket, advances to
