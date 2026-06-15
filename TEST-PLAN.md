@@ -136,7 +136,7 @@ time budgets while keeping per-entity mutation domains disjoint:
      Identities (list + detail + providers + tokens),
      Organization, Snapshots, Billing). The retired Teams /
      Roles / Crews / Activity Feed pages have no cases.
-4. **Phase 3 — Cross-cutting** (one agent, alone): I1–I28.
+4. **Phase 3 — Cross-cutting** (one agent, alone): I1–I30.
    Mutates global UI state (theme, sidebar, command palette) —
    no concurrent agents.
 5. **Phase 4 — Snapshot lifecycle + persistence tier** (one
