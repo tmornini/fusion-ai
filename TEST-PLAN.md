@@ -2292,8 +2292,9 @@ Owner agents: Agent-G (K1–K6 in Phase 2, K8 in Phase 4),
 Agent-E (K7, K9–K23, K30), Agent-CH (K27–K29). Mutation
 domain delta:
 
-- Agent-G adds: `objectives`, `objective_revisions`,
-  `archived`
+- Agent-G adds: `objectives`, `objective_revisions`
+  (archive/reactivate append a `state` event to the shared
+  `states` log — no separate `archived` table)
 - Agent-E adds: `project_objective_baseline_scores`,
   `project_objective_actual_scores`
 - Agent-CH stays read-only
