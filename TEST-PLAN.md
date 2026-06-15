@@ -71,8 +71,7 @@ end-node, no-duplicate-edge, start-node-single-outgoing, and the
 lock/noop/commit-error branches); the flow version and query
 adapters (`tests/adapters-flow-versions.test.ts`,
 `tests/adapters-flow-queries.test.ts`); the workbox inbox
-aggregation plus the visibility filter (`tests/workbox-inbox.test.ts`,
-`tests/workbox-filter.test.ts`); the mermaid round-trip
+aggregation (`tests/workbox-inbox.test.ts`); the mermaid round-trip
 (`tests/mermaid.test.ts`); the in-browser ZIP (`tests/zip-guards.test.ts`);
 snapshot import-validation, quota pre-flight, and wipe-on-fail
 (`tests/snapshot-import-validation.test.ts`,
