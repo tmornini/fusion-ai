@@ -234,8 +234,8 @@ mixed-org view survives the switch).
 Pages `identities` (list, `inSidebarNav`), `identity-detail`,
 `identity-providers`, `identity-tokens` share `sidebarKey:
 'identities'`. Adapters (`adapters/identities.ts` etc.):
-`getIdentities`, `getIdentityRoster` (single-pass join of
-identities + identity_pii), `postIdentityCreation` (person →
+`getIdentity`, `getIdentityRoster` (single-pass join of
+identities + identity_pii + ai_members), `postIdentityCreation` (person →
 identity + PII; service → identity + hashed `client_secret`).
 The identity stores are the GLOBAL spine — creation is a
 client-minted id + idempotent PUT, OFF the org facade.
