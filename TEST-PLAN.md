@@ -1626,7 +1626,8 @@ states, and that the canvas re-renders after each step.)
 ### Workbox — Completion
 
 - [ ] **WB14** Transition a work order to the
-  completion node (is_complete=true). PASS:
+  completion (Archive) node (its `isArchive` is
+  true). PASS:
   work order moves to the Archive tab. It no
   longer appears in Active.
 - [ ] **WB15** Click a completed work order in
