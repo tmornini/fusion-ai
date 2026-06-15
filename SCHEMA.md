@@ -536,14 +536,16 @@ order).
 
 ### flow_records
 
-Join table binding one flow to one Record. UNIQUE on
-`flow_id` — a flow has at most one Record; a Record may
-back many flows.
+Join table binding one flow to one Record. A flow has at
+most one Record; a Record may back many flows. The
+single-binding rule is app-enforced (the flow-detail page
+unbinds before re-binding); the schema declares no UNIQUE
+index on `flow_id`.
 
 | Column | Type | Notes |
 |--------|------|-------|
 | id | TEXT | PRIMARY KEY |
-| flow_id | TEXT | FK → flows (UNIQUE) |
+| flow_id | TEXT | FK → flows |
 | record_id | TEXT | FK → records |
 | at | TEXT | RFC-3339 Zulu — moment of the binding |
 
