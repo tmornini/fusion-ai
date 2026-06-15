@@ -73,7 +73,8 @@ type checking (they run in Node).
 
 **Vanilla TypeScript** with zero runtime dependencies.
 Enterprise innovation management platform with modules for
-ideas, projects, members, flows, workbox, and analytics.
+ideas, projects, members, flows, and workbox, plus a
+dashboard and flow statistics.
 Every page is a standalone HTML file served via HTTP. The
 code also supports `file:///` protocol locally, but testing
 is HTTP-only.
