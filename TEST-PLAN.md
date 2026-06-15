@@ -822,7 +822,7 @@ on. Run these in order.
 - [ ] **B6** Submit with empty fields. PASS: "Email is required" error appears below email input; input gets error styling.
 - [ ] **B7** Enter `notanemail` in email, leave password empty. PASS: "Please enter a valid email address" error on email.
 - [ ] **B8** Enter `test@example.com`, password `123`. PASS: "Password must be at least 6 characters" error on password.
-- [ ] **B9** Enter `test@example.com`, password `password123`, click "Sign in". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`.
+- [ ] **B9** Enter the seeded admin credentials (`demo@example.com` + the password revealed at seed time), click "Sign in". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`. Auto-login is retired, so an unseeded credential is rejected with "Invalid email or password.".
 - [ ] **B10** Click the "Sign up" button (positioned next to the static "Don't have an account?" label — the label is not itself the toggle; the adjacent button is). PASS: switches to Sign Up mode — title changes to "Get started", "Company name (optional)" field appears, submit reads "Create account" with an SVG arrow icon (not a literal "→" character).
 - [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Sign-up is coming soon — sign in with a seeded account." appears, the form flips to **Sign In** mode (title "Welcome back"), and NO navigation occurs — the demo no longer mock-establishes a session (real sign-up is SP-6; minting a bare mock with no refresh token would bounce on reload and could admit anyone to the seeded admin's data).
 
@@ -1550,7 +1550,9 @@ states, and that the canvas re-renders after each step.)
   a "+ Create Work Order" button.
 - [ ] **WB2** With no work orders, the Active
   tab shows an empty state with mail icon and
-  "No Active Work Orders Yet" message.
+  "No Active Work Orders Yet" message. The mock
+  seed has active work orders, so verify against
+  an org with none, or by component source.
 - [ ] **WB3** Click the Archive tab. PASS: tab
   switches to show archive list (empty state
   initially).
@@ -1897,8 +1899,9 @@ the claude-in-chrome MCP.
   pulldown on its placeholder and click Create. PASS: a
   toast "Model is required" fires and no POST happens.
   Pick a Model, fill the other AI fields, click Create.
-  PASS: toast confirms; the new AI appears in the AIs
-  group.
+  PASS: toast confirms and the AI is written to `ai_members`;
+  it does NOT appear in the roster, as auto-membership is
+  deferred (same as G14).
 
 ### Membership invitations (V) — Members "Invite member"
 
@@ -2409,8 +2412,8 @@ become editable inline.
 
 **K17.** Negative-score path: on an under_review project,
 drag a baseline slider to the far left (-100). Save. PASS if
-the saved value renders in red and View history (once
-approved) shows the negative score.
+the saved value persists as a signed value (e.g. −100) and
+View history (once approved) shows the negative score.
 
 **K18.** "No-payload" save: with no slider moved off its
 `data-initial-value`, the `Save` button stays disabled and
@@ -2524,8 +2527,9 @@ its mutation domain — disjoint from every other agent, so no
 write-domain collision.
 
 - [ ] **R1** Sidebar shows a Records entry; click navigates
-  to `records/`. PASS: list page renders ≥2 seeded Records
-  (Customer Profile, Project Brief).
+  to `records/`. PASS: under the active org (Stark, org 1)
+  the list renders the Customer Profile Record; Project
+  Brief is seeded under org 2 and is correctly hidden here.
 - [ ] **R2** Click "+ Add Record" → navigates to a create
   page (`records/create.html`) with Name and Description
   fields (not a dialog). Type values, click Create.
@@ -2539,8 +2543,9 @@ write-domain collision.
   description textarea, and one editable row per attribute
   with name input, type picker, options textarea (for
   select-typed), and constraint editor.
-- [ ] **R5** Add a new attribute via "+ Add Attribute".
-  PASS: blank row appended with default type `text`.
+- [ ] **R5** Type a name into the pending-attribute input,
+  then click "+ Add Attribute". PASS: a row is appended with
+  default type `text`; an empty-name click is a no-op.
 - [ ] **R6** Change a text attribute to `select`. PASS: the
   options textarea appears; the constraint picker offers
   only kinds applicable to `select` (i.e. nothing in the
