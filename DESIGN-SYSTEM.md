@@ -431,7 +431,8 @@ mode. Toggle is persisted to `localStorage` and respects
 
 ### Easing
 - **Default**: `cubic-bezier(0.4, 0, 0.2, 1)` - Most transitions
-- **Bounce**: `cubic-bezier(0.34, 1.56, 0.64, 1)` - Success feedback
+- **Ease-in**: `cubic-bezier(0.4, 0, 1, 1)` - Accelerate
+- **Ease-out**: `cubic-bezier(0, 0, 0.2, 1)` - Decelerate
 
 ### Motion Principles
 1. Motion should be subtle and purposeful
