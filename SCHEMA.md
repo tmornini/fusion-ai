@@ -463,7 +463,8 @@ JSON document:
       "attribute_id": "...",
       "mode": "editable",
       "isRequired": true
-    }]
+    }],
+    "taskInstructions": "..."
   }],
   "edges": [{
     "id": "...",
