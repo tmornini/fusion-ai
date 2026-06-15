@@ -2357,7 +2357,7 @@ editable inline (baseline editing is open across the
 pre-approval states submitted/under_review/sent_back).
 
 **K10.** Transition status to `under_review` via the edit
-form. PASS if the baseline sliders become editable inline —
+form. PASS if the baseline sliders remain editable inline —
 there is NO Score button and NO modal.
 
 **K11.** With baselines unscored, the `Approve` button is
