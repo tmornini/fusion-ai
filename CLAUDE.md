@@ -211,10 +211,12 @@ Icons are ~70 inline SVG functions in
 
 ### Mobile Responsiveness
 
-CSS media queries in `web-app/app/styles/responsive.css`
-show/hide desktop vs mobile header and sidebar. Mobile
-sidebar uses Sheet (slide-in drawer) toggled by JS.
-Breakpoints: sm 640px, md 768px, lg 1024px, xl 1280px.
+CSS media queries in `web-app/app/styles/layout.css` show/hide
+desktop vs mobile header and sidebar; `responsive.css` carries
+the grid-column and visibility utility overrides plus the
+reduced-motion block. Mobile sidebar uses Sheet (slide-in
+drawer) toggled by JS. Breakpoints: sm 640px, md 768px,
+lg 1024px, xl 1280px.
 
 ## Project Structure
 
