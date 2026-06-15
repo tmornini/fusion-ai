@@ -511,7 +511,7 @@ on. Run these in order.
 
 - [ ] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: any pre-existing data is wiped and the minimal bootstrap is seeded (verify via AA2/AA3), then the page surfaces a one-time "Save your demo sign-ins" panel (the seeded admin credential, shown once and never stored) gated by an "I have saved it — continue" button. The demo auto-login is retired, so creation no longer redirects straight to the dashboard — sign in with the surfaced credential to reach it.
 - [ ] **AA2** Open DevTools → Application → IndexedDB → `fusion-ai`, verify an object store for every table listed in `TABLE_NAMES` (`api/db.ts`) plus the `__schema__` marker — empty stores plus bootstrap data, including the `states` event log (with the seeded `'system'`-member and `'current'`-user 'active' bootstrap events).
-- [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), organization "Stark Industries" (domain `acmecorp.com`) on the "Business" plan.
+- [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), organization "Stark Industries" (domain `acmecorp.com`). `OrganizationEntity` has no plan field — its quota fields are `seats`, `projects_limit`, `ideas_limit`.
 
 ### AA2. Create Members
 
