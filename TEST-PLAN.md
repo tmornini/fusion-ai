@@ -2634,9 +2634,9 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Agent-CH      | C1–C7 + H1–H2     |    9 |       0 |    0 |
 | Agent-D       | D1–D37            |    X |       Y |    Z |
 | Agent-E       | E1–E11            |   11 |       0 |    0 |
-| Agent-F       | F1–F74 + FS1–FS9  |    X |       Y |    Z |
+| Agent-F       | F1–F75 + FS1–FS9  |    X |       Y |    Z |
 | Agent-F2      | WB1–WB22 + subs, R1–R15 | X |    0 |    0 |
-| Agent-G       | G9–14,19–24,36–46 |    X |       0 |    0 |
+| Agent-G       | G9–14,19–26,36–46 |    X |       0 |    0 |
 | Phase-3       | I1–I30            |    X |       Y |    Z |
 | Phase-4       | G30–G35 + L1–L9   |    X |       0 |    0 |
 | Teardown      | J1–J3             |    3 |       0 |    0 |
