@@ -2476,8 +2476,9 @@ box (full-width row below).
   area (thinner / different opacity)
 
 **K29.** From another tab, log a measurement on an approved
-project. PASS if the dashboard cards update within ~1
-second (BroadcastChannel + scoreChanges propagation).
+project. PASS if the Aggregate Objectives box updates within
+~1 second (BroadcastChannel + scoreChanges propagation); the
+three arc-gauge cards refresh only on full page load.
 
 ### K30 + K7 — Project history modal & temporal name resolution (Agent-E)
 
