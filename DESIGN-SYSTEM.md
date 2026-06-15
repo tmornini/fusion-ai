@@ -107,7 +107,7 @@ Applied to: `.progress-bar` fill regions.
 
 **Exception — the credential-reveal panel.** The snapshots-
 page demo-credentials panel (`.credential-reveal`,
-`credential-reveal.ts` + `pages-snapshots.css`) carries a
+`presenters/credential-reveal.ts` + `pages-snapshots.css`) carries a
 `data-tone="warning"` attribute for semantics, but its
 warning border color is applied by the `.credential-reveal`
 class itself (`border: 1px solid hsl(var(--warning))`), NOT
