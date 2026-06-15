@@ -1758,7 +1758,7 @@ the claude-in-chrome MCP.
   Create and Archive never display a badge. The
   card subtitle shows the assigned members' names joined
   by ", " (or "Unassigned" if `memberIds` is empty).
-- [ ] **FS7** Path stepper: `Path 1 of M, X% of N work
+- [ ] **FS7** Path stepper: `Path 1 of M · X% of N work
   orders` with prev/next controls. Clicking next advances;
   the selected path's nodes + edges get an accent stroke and
   off-path elements dim to ~28% opacity. The highlight does
