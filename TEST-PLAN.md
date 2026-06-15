@@ -1351,8 +1351,8 @@ states, and that the canvas re-renders after each step.)
   and the clipboard write.)
 - [ ] **F42** Click "Export" in the toolbar. PASS: a `.zip` file
   downloads. Unzip the archive — it contains `flow.mmd` (Mermaid
-  source), `flow.json` (graph with node positions), and a
-  human-readable `flow.txt`. (ZIP read/write correctness is covered
+  source), `flow.json` (graph with node positions), `sidecar.json`,
+  and a human-readable `flow.txt`. (ZIP read/write correctness is covered
   by `tests/zip-guards.test.ts`.)
 - [ ] **F43** On `flows/index.html` click "Import Flow", select a
   `.mmd` file previously exported from a known flow, choose a
