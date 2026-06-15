@@ -888,13 +888,15 @@ on. Run these in order.
   sidebar footer — see G36; the pending-invitations
   bell may appear at the top bar — see V3.)
 - [ ] **C4** Dashboard renders 4 surfaces in order: three
-  visually-equivalent arc-gauge cards (Time, Cost, Impact
-  — each a bipolar arc; not "2 gauges + a distinct
-  card") and a full-width Aggregate Objectives box below.
-  PASS: all 4 render with baseline and current values; each
-  top card shows its bipolar arc; the Objectives box shows
-  one row per objective, each with a small bipolar arc gauge
-  and a sparkline trendline.
+  visually-equivalent arc-gauge cards (Time and Cost are
+  ratio arc-gauges — a single ratio-filled semicircle; Impact
+  is a bipolar arc — left/right split from a center apex; all
+  three share the same card chrome) and a full-width Aggregate
+  Objectives box below. PASS: all 4 render with baseline and
+  current values; the Time and Cost cards each show a ratio
+  arc and the Impact card shows a bipolar arc; the Objectives
+  box shows one row per objective, each with a small bipolar
+  arc gauge and a sparkline trendline.
 - [ ] **C5** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
 - [ ] **C6** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
 - [ ] **C7** Check that seed data populates all 4 dashboard
