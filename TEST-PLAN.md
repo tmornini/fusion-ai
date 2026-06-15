@@ -1509,11 +1509,11 @@ states, and that the canvas re-renders after each step.)
   (non-start, non-complete) node, vary the member count
   and outgoing-edge count and confirm the bottom-left
   badge:
-    - **0 members** → red octagon (`iconNoEntry`,
+    - **0 members** → red no-entry sign (`iconNoEntry`,
       `.flow-node-danger`). Hover → tooltip
       "Members required".
     - **0 outgoing edges** (regardless of member count) →
-      red octagon, tooltip "Dead end (no outgoing edges)"
+      red no-entry sign, tooltip "Dead end (no outgoing edges)"
       when `memberIds.length > 0`.
     - **1 member AND ≥1 outgoing edge** → yellow triangle
       (`iconAlertTriangle`, `.flow-node-warning`). Hover →
@@ -1752,10 +1752,10 @@ the claude-in-chrome MCP.
 - [ ] **FS6 — Hazard severity rendering on the stats
   canvas.** The stats renderer reads `n.memberHazard`
   emitted by `flow-stats-aggregate.ts`. Confirm:
-    - **Zero members** → red octagon (`iconNoEntry`,
+    - **Zero members** → red no-entry sign (`iconNoEntry`,
       `.flow-stats-node-danger`); tooltip "Members
       required".
-    - **Zero outgoing edges** (non-Archive node) → red octagon;
+    - **Zero outgoing edges** (non-Archive node) → red no-entry sign;
       tooltip "Dead end (no outgoing edges)".
     - **One member AND ≥1 outgoing edge** → yellow triangle
       (`iconAlertTriangle`, `.flow-stats-node-warning`);
