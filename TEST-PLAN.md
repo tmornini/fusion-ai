@@ -2084,7 +2084,7 @@ verify the four operation cards, the file-picker affordance, the
 post-operation redirect, and that pages render against the
 restored data.)
 
-- [ ] **G30** Navigate to `snapshots/`. PASS: shows 4 operation cards (Create Pristine Environment, Wipe and Load Mock Data, Download Snapshot, Upload Snapshot). The Upload Snapshot card hosts a hidden `<input type="file" id="upload-input">` wrapped by a `<label>` styled as a button — the platform-primitive affordance for triggering a hidden file input (no JS click-forwarder).
+- [ ] **G30** Navigate to `snapshots/`. PASS: shows 4 operation cards (Create Pristine Environment, Wipe and Load Mock Data, Download Snapshot, Upload Snapshot). The Upload Snapshot card renders a `<button id="upload-btn">` and a separate hidden `<input type="file" id="upload-input" class="hidden">`; the button forwards its click to the input in JS (`importInput.click()`).
 - [ ] **G31** Click "Download Snapshot". PASS: browser downloads `fusion-ai-snapshot-YYYY-MM-DD.json`. File contains valid JSON with entity data.
 - [ ] **G32** Click "Create Pristine Environment", confirm
   the dialog. PASS: the page does NOT navigate immediately — it
