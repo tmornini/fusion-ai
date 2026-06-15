@@ -273,7 +273,7 @@ radius. Three types, all rendered with the unified
 
 | Type    | Port       | Draggable |
 |---------|------------|-----------|
-| Create  | None       | No        |
+| Create  | None       | Yes       |
 | Archive | None       | Yes       |
 | Regular | Right side | Yes       |
 
