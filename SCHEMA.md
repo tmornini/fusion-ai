@@ -556,7 +556,7 @@ on write and filtered on read by the gate.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | TEXT | PRIMARY KEY (UUID) |
+| id | TEXT | PRIMARY KEY (base62 token) |
 | organization_id | TEXT | FK → organizations |
 | display_id | TEXT | 8-char hex SHA-256 |
 | flow_graph | TEXT | JSON (WorkOrderFlowGraph) |
@@ -714,7 +714,7 @@ persistent undo on the flows/detail page.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | TEXT | PRIMARY KEY (UUID) |
+| id | TEXT | PRIMARY KEY (base62 token) |
 | flow_id | TEXT | References flows |
 | name | TEXT | Snapshot of flows.name |
 | is_locked | BOOLEAN | Snapshot of flows.is_locked |
