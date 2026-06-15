@@ -2529,7 +2529,7 @@ write-domain collision.
 - [ ] **R2** Click "+ Add Record" → navigates to a create
   page (`records/create.html`) with Name and Description
   fields (not a dialog). Type values, click Create.
-  PASS: new Record appears at the top of the list and the
+  PASS: new Record appears at the bottom of the list and the
   app navigates to its detail page.
 - [ ] **R3** Open Customer Profile detail. PASS: read mode
   shows name + description + attribute table sorted by
