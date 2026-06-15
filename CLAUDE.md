@@ -259,7 +259,9 @@ Two layers, both zero-dependency.
 ### Automated tests
 
 Node's built-in `node:test` runner with `--strip-types`,
-no devDependencies. Tests cover
+no test-framework dependency (the only devDependencies are
+`esbuild` and `typescript`, for ./build and ./validate).
+Tests cover
 pure modules, flow-edit business logic and the connection-
 validation rules (`tests/flow-operations.test.ts`), the flow
 version/query adapters, every data adapter (including
