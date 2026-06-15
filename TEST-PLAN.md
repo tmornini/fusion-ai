@@ -915,9 +915,10 @@ on. Run these in order.
   gauges show that org's slice — not global totals. Counts
   are tolerant lower bounds, not equalities (the seed
   grows): for active-org Stark expect ~6 ideas, ~16
-  projects, ~4 flows, 4 objectives, plus the roster (11
-  humans — 10 seeded + Tony Stark; the System member authors
-  seed events but is excluded from the roster — and 4 AIs).
+  projects, ~4 flows, 4 objectives, plus the roster (6
+  humans — 5 single-org seeded members + Tony Stark, the
+  both-org admin; the System member authors seed events but
+  is excluded from the roster — and 4 AIs).
   Global raw mock totals are larger (~11 ideas, ~17
   projects, ~5 flows across both orgs).
 
