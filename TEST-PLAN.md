@@ -1353,7 +1353,7 @@ states, and that the canvas re-renders after each step.)
   preserving nodes, edges, and attribute references — is covered by
   `tests/mermaid.test.ts`; this case verifies the toolbar action
   and the clipboard write.)
-- [ ] **F42** Click "Export" in the toolbar. PASS: a `.zip` file
+- [ ] **F42** Click "Export ZIP" in the toolbar. PASS: a `.zip` file
   downloads. Unzip the archive — it contains `flow.mmd` (Mermaid
   source), `flow.json` (graph with node positions), `sidecar.json`,
   and a human-readable `flow.txt`. (ZIP read/write correctness is covered
