@@ -2617,7 +2617,7 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 |---------------|-------------------|-----:|--------:|-----:|
 | Preflight     | A1–A5             |    5 |       0 |    0 |
 | Phase-1       | AA1–AA43+subs     |    X |       Y |    Z |
-| Agent-B       | B1–B14            |   14 |       0 |    0 |
+| Agent-B       | B1–B29 (less B23–B24) | 27 |       0 |    0 |
 | Agent-CH      | C1–C7 + H1–H2     |    9 |       0 |    0 |
 | Agent-D       | D1–D37            |    X |       Y |    Z |
 | Agent-E       | E1–E11            |   11 |       0 |    0 |
