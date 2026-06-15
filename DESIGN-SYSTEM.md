@@ -483,8 +483,6 @@ passing an off-scale pixel value fails the type-check.
 - **Singular/plural**: Use ternary grammar —
   `${count} ${count === 1 ? 'item' : 'items'}` — never
   parenthetical `item(s)` form
-- **Breadcrumb links**: Always use `class="hover-link"` for
-  breadcrumb navigation links (not `text-primary`)
 - **Section headers (h3)**: Always include `font-display`
   class on section header h3 tags to use the display
   typeface (IBM Plex Sans)
@@ -540,7 +538,7 @@ applies:
    toast)
 7. `layout.css` — sidebar, header, main-content shell
 8. `utilities.css` — single-property primitives plus
-   container widths and hover-link
+   container widths
 9. `responsive.css` — mobile breakpoint overrides
    (uses `!important` to win against earlier files)
 10. `command-palette.css` — search overlay
