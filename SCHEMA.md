@@ -533,7 +533,7 @@ Constraints discriminator (`Constraint['kind']`):
 `'regex'` (pattern, applies to text), `'range_min'` and
 `'range_max'` (min/max strings, apply to number or date).
 The runner parses per `attribute_type`; date bounds are
-RFC-3339 Zulu strings (lexicographic order = chronologic
+YYYY-MM-DD calendar dates (lexicographic order = chronologic
 order).
 
 ### flow_records
