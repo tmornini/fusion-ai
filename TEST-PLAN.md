@@ -746,7 +746,7 @@ on. Run these in order.
   picker, each with a distinct mode (Editable /
   Read-only) and required toggle. PASS: all
   attributes appear in the list with correct
-  mode badges and toggle state.
+  mode (Editable / Read-only) and toggle state.
 - [ ] **AA35** Wait for auto-save (800ms debounce).
   Navigate away and back. PASS: all nodes, edges,
   and attributes persist.
