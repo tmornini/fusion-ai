@@ -60,7 +60,7 @@ design system: [ARCHITECTURE.md](ARCHITECTURE.md) (with
 - TypeScript on ES2024, strict mode, zero runtime dependencies
 - Build-time HTML composition (shared layout + per-page content)
 - CSS custom properties with light/dark theme support
-- SVG charts and ~100 inline SVG icons
+- SVG charts and ~70 inline SVG icons
 - Command palette (Cmd+K) with keyboard navigation
 - Self-hosted IBM Plex Sans, Inter, and IBM Plex Mono fonts
 
