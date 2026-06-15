@@ -650,7 +650,7 @@ on. Run these in order.
   green border) and "Archive" (end, bottom-right
   with red 3-px border) connected by no edges.
   Toolbar shows Undo, Redo, Zoom −/+, Copy Mermaid,
-  Export, and Delete (trash icon); the header above
+  Export ZIP, and Delete (trash icon); the header above
   the canvas hosts the Locked, Auto Layout, and Auto
   Fit switches. Changes auto-save
   (no explicit Save button).
@@ -1100,7 +1100,7 @@ opens and renders.)
   Toolbar runs vertically along the left edge of
   the canvas (inside the content area, not the
   global sidebar) with Undo/Redo, Zoom −/+,
-  Copy Mermaid, Export, and Delete (trash icon)
+  Copy Mermaid, Export ZIP, and Delete (trash icon)
   arranged top-to-bottom. The header above the
   canvas hosts the Back button and three header
   switches (Locked, Auto Layout, Auto Fit). SVG
