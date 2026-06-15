@@ -76,9 +76,11 @@ workbox page module catches the typed error and surfaces
 the violations banner.
 
 The pure constraint runner is `record-constraints.ts`
-(`validateAttributeValue`, `formatViolation`) — three
-callers earn the abstraction: the gate, the editor live
-preview, and a future fuzz runner.
+(`validateAttributeValue`, `formatViolation`) — the gate
+(`record-transitions.ts`) runs the validation; the workbox
+presenter renders violations via `formatViolation`.
+Extracted as a pure module so a future editor live preview
+and a fuzz runner can share it too.
 
 A work order's frozen `flow_graph` references
 `record_attributes.id` directly. If a Record's attribute
