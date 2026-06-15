@@ -389,8 +389,8 @@ mode. Toggle is persisted to `localStorage` and respects
 `prefers-color-scheme` for initial detection.
 
 ```css
-:root { --bg-primary: hsl(0 0% 100%); }
-[data-theme="dark"] { --bg-primary: hsl(217 45% 10%); }
+:root { --background: var(--gray-50); }
+[data-theme="dark"] { --background: var(--gray-900); }
 ```
 
 ## 6. Interaction States
