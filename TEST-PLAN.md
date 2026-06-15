@@ -1534,7 +1534,7 @@ states, and that the canvas re-renders after each step.)
 
 ### AA13. Workbox Source Flow
 
-- [ ] **AA-WB-SETUP** Create one Workbox-only flow named `WB Test Flow` with three nodes: Create → Capture (text + select attributes) → Archive (`is_complete: true`). This flow is mutated only by Agent-F2. Agent-F2's WO creation reads from this flow, not from any Agent-F flow.
+- [ ] **AA-WB-SETUP** Create one Workbox-only flow named `WB Test Flow` with three nodes: Create → Capture (text + select attributes) → Archive (`isArchive: true`). This flow is mutated only by Agent-F2. Agent-F2's WO creation reads from this flow, not from any Agent-F flow.
 
 ### Workbox Inbox (`workbox/`)
 
