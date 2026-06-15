@@ -673,8 +673,8 @@ on. Run these in order.
   the right, then a `<fieldset>` labeled "Members"
   containing two groups — HUMANS and AIs — each
   with a labeled checkbox per member (no checkbox
-  ticked yet), then State Name input, Description
-  input, empty Attributes list, and outgoing
+  ticked yet), then a Name input, a Task Instructions
+  textarea, an empty Attributes list, and outgoing
   transitions. The node gets a gold glow selection
   effect on the canvas.
   (Properties panel double-click is BLOCKED per the
