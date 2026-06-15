@@ -644,9 +644,10 @@ on. Run these in order.
   shows two nodes: "Create" (start, top-left with
   green border) and "Archive" (end, bottom-right
   with red 3-px border) connected by no edges.
-  Toolbar shows Undo, Redo, Delete (trash icon),
-  Auto Layout, Zoom −/+,
-  Copy Mermaid, Export. Changes auto-save
+  Toolbar shows Undo, Redo, Zoom −/+, Copy Mermaid,
+  Export, and Delete (trash icon); the header above
+  the canvas hosts the Locked, Auto Layout, and Auto
+  Fit switches. Changes auto-save
   (no explicit Save button).
 - [ ] **AA27** Drag the port circle on the start
   node into empty canvas past 20 pixels. PASS:
