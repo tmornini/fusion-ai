@@ -2172,7 +2172,7 @@ feature is implemented.
 ### Organization General Information — Edit Cycle
 
 - [ ] **G38** On `organization/index.html`, click
-  Edit on the General Information card. Modify the
+  Edit in the page header. Modify the
   Domain to a new value. Click Cancel. PASS: card
   returns to read mode, Domain shows the original
   (unmodified) value, no toast fires.
