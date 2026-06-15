@@ -60,7 +60,9 @@ recorded as that node's id (a base62 token), distinct in
 shape from the closed claim alphabet
 (`'claimed'`, `'claim_released'`, `'claim_expired'`) on
 the same `entity_id`. The states log carries both families;
-`adapters/state-events.ts` partitions them by string shape. The
+`adapters/state-events.ts` partitions them with
+`isClaimState` (a closed-set test over the claim alphabet,
+defined in `api/work-order-claims.ts`). The
 mermaid parser does not translate either: a legacy `.mmd`
 file that names its special nodes `[Start]` / `[End]`
 imports with those literal names, surfacing the staleness
