@@ -567,7 +567,7 @@ Multiple pages can share one bundle — `idea-detail`,
 `['pages-ideas']`.
 
 At compose time, `compose.ts` reads `cssBundles` and replaces
-the `<!-- PAGE_CSS_LINKS -->` placeholder in the page's HTML
+the `{{PAGE_CSS_LINKS}}` placeholder in the page's HTML
 with one `<link rel="stylesheet" href="../assets/pages-X.css"
 />` tag per bundle. Pages without `cssBundles` get the
 placeholder removed entirely (no stray whitespace).
