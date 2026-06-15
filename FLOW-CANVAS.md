@@ -112,8 +112,9 @@ predicate. `validateFlowForCreation(flow)` in
 `web-app/app/adapters/flow-publish.ts` returns
 `{ ready: boolean, problems: FlowProblem[] }` —
 `zero_members(nodeId)` and `dead_end(nodeId)` variants —
-and `getFlowsForCreation(ctx)` partitions all flows into
-`{ ready, notReady }` for the workbox "Create Work Order"
+and `getFlowsForCreation(ctx)` partitions the unlocked
+flows into `{ ready, notReady }` (locked flows are
+excluded) for the workbox "Create Work Order"
 dropdown. The picker renders two sections: READY
 (clickable, carries `data-flow-id`) and NOT READY
 (disabled, no-entry icon, "N nodes need attention"
