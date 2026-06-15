@@ -585,7 +585,7 @@ each page downloads less total CSS, all parallel-loaded.
 
 Caveat: very small files (under ~5KB) cost more per-request
 overhead than they save. Our per-page bundles range from
-~0.9 KB to ~9.6 KB — well above that threshold for the larger
+~0.1 KB to ~9.6 KB — well above that threshold for the larger
 bundles, and the smaller ones still amortize via HTTP/2
 multiplexing.
 
