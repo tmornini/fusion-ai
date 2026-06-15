@@ -531,9 +531,8 @@ layer directly.
 - **Platform-shim vs data-access adapters share `adapters/`.**
   Data-access adapters (`ideas.ts`, `flow-queries.ts`, etc.)
   fetch entity data through `ctx`. Platform shims
-  (`clipboard.ts`, `viewport.ts`, `location.ts`,
-  `crypto-safe-base62.ts`, etc.) wrap browser primitives
-  behind adapters the app owns.
+  (`clipboard.ts`, `viewport.ts`, `location.ts`, etc.)
+  wrap browser primitives behind adapters the app owns.
 - **`getFlowStats(ctx, flowId)`.** Resolves the work-order
   set via the `flow-work-orders` join table, not via each
   work order's frozen `flow_graph.flowId`. Returns
