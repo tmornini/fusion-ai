@@ -1837,11 +1837,11 @@ the claude-in-chrome MCP.
   as a NON-admin member and open `organization/index.html`.
   PASS: the admin Sent-invitations read fails (403 "forbidden:
   listing sent invitations requires an admin role") and the
-  section stays HIDDEN — the page logs at warn and surfaces no
-  raw error, and no Revoke affordance is offered to a non-
-  admin. (Pairs with V7's grant/revoke 403s.) Source:
-  `sentInvitations` admin guard in `api/invitations-domain.ts`,
-  `renderSentInvitations` catch.
+  section stays HIDDEN — the read rejects before the reveal
+  line, so the box never un-hides, and no Revoke affordance is
+  offered to a non-admin. (Pairs with V7's grant/revoke 403s.)
+  Source: `sentInvitations` admin guard in
+  `api/invitations-domain.ts`.
 
 ### Members list (`members/index.html`)
 
