@@ -1330,7 +1330,7 @@ states, and that the canvas re-renders after each step.)
 
 ### Flow Designer — Additional Coverage
 
-- [ ] **F40** Toggle the Locked checkbox in the designer header.
+- [ ] **F40** Toggle the Locked switch in the designer header.
   PASS: connection ports disappear from all middle nodes, the
   Delete toolbar button becomes disabled, and opening a properties
   panel shows panel controls as read-only (inputs `disabled`, every
