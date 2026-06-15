@@ -1792,13 +1792,15 @@ the claude-in-chrome MCP.
 
 - [ ] **G9** Navigate to `organization/index.html`. PASS:
   page wears the standard sidebar + top-bar layout. Shows
-  the page header "Organization", a General Information
-  card at the top with read-only Organization Name and
-  Domain plus an Edit button, then the Overview card (org
-  identity plus a four-cell stat grid: Active People,
-  Projects, Ideas, Next Billing — no health badge), and
-  the Usage Overview card with progress bars. There is no
-  longer a Security & Administration card — Members and
+  the page header "Organization" with an Edit button, then
+  an Overview card holding the org identity (read-only
+  Organization Name and Domain) above a four-cell stat grid
+  (Active People, Projects, Ideas, Next Billing — no health
+  badge), then the Objectives box, then the Usage Overview
+  card with progress bars. There is no separate General
+  Information card — the read-only Name/Domain live in the
+  Overview card and Edit lives in the page header — and no
+  longer a Security & Administration card; Members and
   Billing are reached from the sidebar. (Overview/usage
   values are placeholders — verify the page renders
   without error; numeric accuracy arrives when wired to
