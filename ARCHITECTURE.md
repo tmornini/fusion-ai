@@ -556,6 +556,7 @@ layer directly.
   (`getRecordForFlow`, `getFlowSummariesForRecord`,
   `getWorkOrdersForRecord`).
   `adapters/record-transitions.ts` orchestrates the
-  property-test gate via `validateAttributeValue`;
-  `postWorkOrderTransition` runs it and throws
-  `RecordTransitionViolations` on non-empty result.
+  property-test gate via `validateRecordTransition`;
+  `postWorkOrderTransition`
+  (`adapters/work-orders-mutations.ts`) runs that gate and
+  throws `RecordTransitionViolations` on a non-empty result.
