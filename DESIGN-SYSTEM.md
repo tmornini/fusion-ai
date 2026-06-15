@@ -100,7 +100,8 @@ helpers and the CSS selectors share a single source of truth.
 `error`, `info`, `muted`.
 Applied to: `.pill`, `.icon-box`, `.icon-box-lg`,
 `.legend-dot`, `.btn-outline`, `.gauge-card`, `.ds-soft-btn`,
-`.ds-soft-row`, `.spark-tip-change`.
+`.ds-soft-row`, `.spark-tip-change`, and
+`.score-history-table td` (score cells, via `toneForScore`).
 
 **`[data-level]` values**: `normal`, `warning`, `danger`.
 Applied to: `.progress-bar` fill regions.
