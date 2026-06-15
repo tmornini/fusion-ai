@@ -544,11 +544,11 @@ layer directly.
   `ideaChanges.notify()`), never through return values —
   callers tell the channel rather than branch on a result.
 - **Records adapters.** `adapters/records.ts` owns Record
-  lifecycle (CRUD + `archiveRecord`).
+  lifecycle (CRUD + `postRecordStateChange`).
   `adapters/record-attributes.ts` exposes
   `getRecordAttributesByRecord`, sort-ordered.
   `adapters/flow-records.ts` is the binding seam
-  (`getRecordForFlow`, `getFlowsForRecord`,
+  (`getRecordForFlow`, `getFlowSummariesForRecord`,
   `getWorkOrdersForRecord`).
   `adapters/record-transitions.ts` orchestrates the
   property-test gate via `validateAttributeValue`;
