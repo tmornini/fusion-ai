@@ -1712,7 +1712,7 @@ per-user visibility filter.
 **Mock-data blast radius:** the flow-statistics work added ~38
 work orders to "Customer Onboarding" and ~6 to a second flow,
 plus their flow-work-order join rows and transition chains.
-Workbox cases (WB1–WB19) and dashboard counts re-baseline
+Workbox cases (WB1–WB22) and dashboard counts re-baseline
 against the parallel-protocol's "greater-than-or-equal-N"
 tolerance; expected counts in those sections are now lower
 bounds, not equalities.
