@@ -770,9 +770,9 @@ on. Run these in order.
   member's detail page, click Edit, change phone number,
   Save. Navigate away, return. PASS: changed phone
   persists.
-- [ ] **AA42** Edit organization: in the General
-  Information card, change Domain. Save, navigate
-  away, return. PASS: changed Domain persists.
+- [ ] **AA42** Edit organization: click the page-level
+  Edit button, change Domain in the overview card. Save,
+  navigate away, return. PASS: changed Domain persists.
 
 ### AA12. Snapshot Round-Trip
 
