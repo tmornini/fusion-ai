@@ -521,7 +521,7 @@ Org-owned (org-fenced): NOT-NULL `organization_id`.
 | id | TEXT | PRIMARY KEY |
 | organization_id | TEXT | FK → organizations |
 | record_id | TEXT | FK → records |
-| name | TEXT | non-empty; unique within record_id |
+| name | TEXT | non-empty |
 | attribute_type | TEXT | one of text, number, select, radio, date, checkbox |
 | sort_order | REAL | author-controlled ordering |
 | options | TEXT | JSON string[]; required non-empty for select/radio |
