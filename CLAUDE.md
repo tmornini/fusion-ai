@@ -290,7 +290,9 @@ for the SafeHtml) — see `tests/` for the current set.
 adapter and api-layer tests run without `localStorage`.
 
 Run via `./validate` (which also type-checks and lints) or
-directly: `node --test --strip-types tests/*.test.ts`.
+`./test`, which pins `TZ=UTC` for the main suite and
+`TZ=Pacific/Honolulu` for the timezone suite in `tests/tz/`
+(excluded from the non-recursive main glob).
 
 ### Manual browser regression
 
