@@ -274,11 +274,14 @@ radius. Three types, all rendered with the unified
 `hsl(var(--primary))`, Create `hsl(var(--success))`, and
 Archive `hsl(var(--error))`:
 
-| Type    | Port       | Draggable |
-|---------|------------|-----------|
-| Create  | None       | Yes       |
-| Archive | None       | Yes       |
-| Regular | Right side | Yes       |
+| Type    | Port             | Draggable |
+|---------|------------------|-----------|
+| Create  | When unconnected | Yes       |
+| Archive | When unconnected | Yes       |
+| Regular | Right side       | Yes       |
+
+A Create or Archive node shows a port only while it has no
+connections (`canShowPort`); a connected special node hides it.
 
 **Edges**: Cubic bezier curves between node
 perimeters, rendered with the unified `flow-edge` class.
