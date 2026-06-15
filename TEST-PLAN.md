@@ -317,10 +317,11 @@ lockups — seven sections fanned out at once, none wedged.
   marquee select): synthetic PointerEvents do not reliably
   drive the `flow-interactions.ts` state machines because they
   use pointer-capture semantics. Affected tests include
-  AA27–AA34, F15, F19–F23, E11 (the idea-list drag-reorder,
-  D36/D37, uses native HTML5 drag-and-drop on the
-  `.drag-handle` — NOT pointer-capture — so it is driveable
-  and exempt from this limitation). Work around by
+  AA27–AA34, F15, F19–F23. The list-row drag-reorders
+  (E11 projects, D36/D37 ideas) are EXEMPT — they share
+  `drag-reorder.ts`, which uses native HTML5 drag-and-drop
+  on the `.drag-handle`, NOT pointer-capture, so they are
+  driveable. Work around the gesture cases by
   validating end-state via direct injection into the
   `flows` object store (IndexedDB), then reloading and
   verifying render. When
