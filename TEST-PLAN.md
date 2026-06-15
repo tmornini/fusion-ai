@@ -563,7 +563,7 @@ on. Run these in order.
 
 - [ ] **AA8** On Members, click the current user's row.
   PASS: navigates to `member-detail` for that human. Read
-  mode shows avatar, name, status badge, title ·
+  mode shows avatar, name, status badge, title •
   department subtitle, Personal Information card (Name,
   Email, Phone, Title, Department, Bio),
   Working Styles card, and Strengths card.
