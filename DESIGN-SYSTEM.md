@@ -265,7 +265,7 @@ with interactions in `flow-interactions.ts` and
 presenter in `presenters/flow-designer.ts`.
 
 **Canvas**: Dot grid pattern, 24px cell size, on
-`--color-surface` background.
+`hsl(var(--background))`.
 
 **Nodes**: 160×64 px rounded rectangles, 10 px corner
 radius. Three types, all rendered with the unified
