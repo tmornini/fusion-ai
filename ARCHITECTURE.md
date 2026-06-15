@@ -57,8 +57,8 @@ and carries a `mode` (`'editable'` or `'readonly'`) and an
 `isRequired` flag. Hidden is structural: absence from the
 node's `attributes` array.
 
-Five attribute types: `text`, `number`, `select`, `date`,
-`checkbox`. Three constraint kinds: `regex` (text only),
+Six attribute types: `text`, `number`, `select`, `radio`,
+`date`, `checkbox`. Three constraint kinds: `regex` (text only),
 `range_min` and `range_max` (number or date only). The
 applicability rule has two enforcement sites:
 `assertConstraintAppliesTo` at the row writer and the
