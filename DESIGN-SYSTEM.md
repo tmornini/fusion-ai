@@ -221,7 +221,7 @@ Implemented in `web-app/app/command-palette.ts`.
 - Full keyboard navigation (arrow keys, Enter to select, Escape to close)
 - Searches across pages, ideas, projects, and members
 - Renders categorized results with icons
-- Focus trap while open
+- Focuses the search input on open; restores focus on close
 
 ### Heat ramp (flow-stats)
 
