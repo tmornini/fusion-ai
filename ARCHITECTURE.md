@@ -499,9 +499,10 @@ layer directly.
   type-narrowing call sites.
 - Adapter reads are two-tier, named by what they return:
   the **domain noun** read returns the domain object
-  (`getIdea` → `Idea`); where a raw stored-shape read also
-  exists it carries the **Entity** suffix (`getIdeaEntity`
-  → `IdeaEntity`). Never table vocabulary (`Row`/`Rows`).
+  (`getProject` → `Project`); where a raw stored-shape read
+  also exists it carries the **Entity** suffix
+  (`getProjectEntity` → `ProjectEntity`). Never table
+  vocabulary (`Row`/`Rows`).
 
 ## Adapter Conventions
 
