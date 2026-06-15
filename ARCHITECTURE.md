@@ -50,7 +50,8 @@ and the read-only stats variant — lives in
 
 A Record is a named data shape: name + description +
 ordered attributes + per-attribute constraints. A flow
-binds to one Record via `flow_records` (UNIQUE flow_id);
+binds to one Record via `flow_records` (one binding per
+flow, app-enforced — no UNIQUE index on `flow_id`);
 a Record can back many flows. Each per-node attribute
 ref (`NodeAttribute`) points at one `record_attributes.id`
 and carries a `mode` (`'editable'` or `'readonly'`) and an
