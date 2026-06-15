@@ -19,7 +19,7 @@ and execution.
   (wipe, reload, upload/download snapshots)
 
 The demo is multi-organization: loading mock data seeds two
-orgs (Stark Industries and Wayne Enterprises) with a header
+orgs (Stark Industries and Wayne Enterprises) with a sidebar
 org-switcher for the multi-org user, and surfaces one-time
 demo sign-in credentials on the Snapshots page after a
 wipe-and-load.
