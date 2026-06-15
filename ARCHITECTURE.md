@@ -134,8 +134,9 @@ another tenant owns, the write-side twin of the read fence.
 org-owned stores (ideas, projects, flows, work_orders,
 records, record_attributes, objectives, role_grants,
 memberships) by their stamped org, and the parent-derived
-leaves (`flow_versions`, junctions, scores, the states log,
-…) by `ParentScopedEntityStore` — a READ-time server-side
+leaves (`flow_versions`, junctions, scores, …) by
+`ParentScopedEntityStore` (the append-only states log by its
+sibling `ParentScopedStateStore`) — a READ-time server-side
 join that resolves each leaf's owning org THROUGH its
 already-fenced parent (`api/store-parent-scoped.ts`). Only
 the global identity/auth spine and the organizations
