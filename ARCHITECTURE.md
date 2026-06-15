@@ -7,9 +7,11 @@ in [SCHEMA.md](SCHEMA.md).
 
 ## Domain objects
 
-Domain classes wrap entity + state: `Idea(entity, state)`,
-`Project(entity, state)`, `HumanMember(entity, state)`,
-`AIMember(entity, state)` all expose `stateValue()` — the
+Domain classes wrap entity + state: `Idea(entity, state)`
+and `Project(entity, state)`; the member classes compose
+parent + detail rows: `HumanMember(parent, detail, pii,
+state)` and `AIMember(parent, detail, state)`. All expose
+`stateValue()` — the
 lifecycle stage is part of the domain object, not a
 separate fetch the presenter has to reconcile. How a state
 is displayed (badge label and class) is presentation
