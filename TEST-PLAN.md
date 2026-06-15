@@ -1166,7 +1166,7 @@ opens and renders.)
   node. PASS: panel opens and the canvas re-fits to
   the panel-aware visible region (no toast, no
   blocking — Auto Fit handles the re-fit via
-  `withFitReconciled`'s `panelOffsetPx`). Turn Auto
+  `fitBoxToCanvas`'s `panelOffsetPx`). Turn Auto
   Fit off and double-click again. PASS: panel opens
   and the canvas pans to keep the node visible, and
   the previous viewBox is saved for restoration when
