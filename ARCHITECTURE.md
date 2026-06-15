@@ -443,7 +443,7 @@ AIs (the AI edit presenter renders a provider-grouped model
 pulldown and a skill-focus textarea; no token field).
 
 `presenters/index.ts` is the barrel; page modules import from
-`'../app/presenters'`. `WorkboxDetailPresenter` uses a public
+`'../app/presenters/index.ts'`. `WorkboxDetailPresenter` uses a public
 `buildPage()` orchestrating private `#build*` helpers; the rest
 expose `build*` directly.
 
