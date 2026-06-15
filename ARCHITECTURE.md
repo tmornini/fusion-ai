@@ -501,7 +501,7 @@ layer directly.
 ## Adapter Conventions
 
 - **Member domain split.** Members are one parent table
-  (`members`: id, type, name) plus per-kind detail tables
+  (`members`: id, type) plus per-kind detail tables
   sharing the id (`human_members`, `ai_members`).
   `adapters/members.ts` composes humans (parent +
   `human_members` detail); `adapters/ai-members.ts`
