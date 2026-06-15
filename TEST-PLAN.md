@@ -1922,14 +1922,17 @@ the claude-in-chrome MCP.
 - [ ] **V2 — Invite rejects empty / unknown / already-member**
   Open the Invite dialog. Submit with the Email blank → an
   "Email is required" toast and no POST. Submit an email that
-  matches NO identity → a "Failed to invite: …" toast carrying
-  the server's "no identity with that email" (404 — the server
-  resolves email→identity; unknown is rejected). Submit the
-  email of someone ALREADY a member of the active org → a
-  "Failed to invite: …" toast carrying "that identity is
-  already a member of this organization" (409). In all three
-  the dialog stays usable and no pending invitation is created.
-  Source: `grantInvitation` guards in `api/api.ts`.
+  matches NO identity → an inline email-field error "No
+  identity found for that email." (the adapter maps the 404 to
+  a 'no-identity' outcome — no toast). Submit the email of
+  someone ALREADY a member of the active org → an inline
+  email-field error "Already a member of this organization."
+  (the 409 maps to an 'already-member' outcome). The "Failed
+  to invite: …" toast fires only on an unexpected server fault.
+  In all three the dialog stays usable and no pending
+  invitation is created. Source: `setInviteEmailError` in
+  `web-app/members/index.ts`; `grantInvitation` guards in
+  `api/invitations-domain.ts`.
 - [ ] **V3 — Top-bar pending-invitations bell → invitations
   page** As an identity with ≥1 pending invitation (the V1
   invitee, signed in), confirm the top bar shows a bell
