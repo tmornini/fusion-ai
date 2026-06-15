@@ -65,8 +65,9 @@ For what each test layer covers, see `## Testing`.
 
 Target: **ES2024** · Strict mode with
 `noUncheckedIndexedAccess`. Config at
-`web-app/app/tsconfig.json`. The `compose.ts` build script
-is excluded from type checking (it runs in Node).
+`web-app/app/tsconfig.json`. The `compose.ts` and
+`generate-schema-svg.ts` build scripts are excluded from
+type checking (they run in Node).
 
 ## Architecture
 
