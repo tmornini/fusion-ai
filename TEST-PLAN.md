@@ -528,8 +528,8 @@ on. Run these in order.
   default selection), Description, and a Skill Focus
   textarea — no Auth Token field or security warning.
 - [ ] **AA5** With Human selected, fill all fields for
-  "Sarah Chen" (Title: Engineering Manager, Department:
-  Engineering). Click Create. PASS: toast confirms
+  "Sarah Chen" (Title: Project Lead, Department:
+  Operations). Click Create. PASS: toast confirms
   creation, the new member appears in the Humans group
   on the list. NOTE (deferred auto-membership): Add
   Member creates an IDENTITY + member detail row but no
