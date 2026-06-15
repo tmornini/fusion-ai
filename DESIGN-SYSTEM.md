@@ -380,10 +380,10 @@ whole `.sidebar-org-switcher` is hidden.
 
 ```html
 <div class="sidebar-org-switcher">
-  <div class="org-switcher-group">
+  <span class="org-switcher-group">
     <select class="org-switcher"><!-- orgs --></select>
     <button class="org-set-default">Set as default</button>
-  </div>
+  </span>
 </div>
 ```
 
