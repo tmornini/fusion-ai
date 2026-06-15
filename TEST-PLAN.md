@@ -2290,7 +2290,7 @@ because it wipes the database, which is shared across the
 seven Phase 2 agents.
 
 **K1.** Open Organization page; confirm Objectives box
-renders below the existing Overview/Usage/Admin cards with
+renders between the Overview and Usage cards with
 4 seeded active objectives in position order. PASS if all
 4 names display.
 
