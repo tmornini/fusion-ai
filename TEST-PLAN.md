@@ -335,7 +335,8 @@ lockups — seven sections fanned out at once, none wedged.
   end state.
 - **`resize_window`** does not change the CSS viewport;
   responsive tests at specific widths (I10) cannot be driven.
-  Inspect `responsive.css` manually to verify media queries.
+  Inspect `layout.css` manually to verify the mobile-breakpoint
+  media queries (the show/hide of the desktop sidebar/header).
 - **`prefers-reduced-motion`** cannot be emulated via the MCP;
   the behavioral tier of the reduced-motion view-transition
   test (I30) cannot be driven. Verify by source instead:
