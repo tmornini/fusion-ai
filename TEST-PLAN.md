@@ -2108,9 +2108,15 @@ restored data.)
   object store maps to a table in `TABLE_NAMES` and is empty
   EXCEPT `members` (parent rows for the System member,
   `type` 'system', and Tony Stark, `type` 'human'),
-  `human_members` (Tony Stark's detail row), `organizations`
-  (Stark Industries), and `states` (bootstrap state events
-  for those rows). NOTE: pristine seeds NO Records —
+  `identities` (the System service + the 'current' person),
+  `identity_pii` (Tony Stark's PII), `human_members` (Tony
+  Stark's detail row), `identity_credentials` (current's
+  password + the System client secret), `memberships` and
+  `identity_default_organizations` (current bound to Stark),
+  `role_grants` (current's admin grant on Stark),
+  `organizations` (Stark Industries), and `states`
+  (bootstrap state events for those rows). NOTE: pristine
+  seeds NO Records —
   `records` and `record_attributes` are empty like every
   other non-essential table. Source of truth:
   `postBootstrap` in `api/mock-data.ts`. IndexedDB
