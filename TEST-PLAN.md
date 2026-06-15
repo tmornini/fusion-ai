@@ -2460,9 +2460,9 @@ ranked by impact" workflow we designed.
 ### K27–K29 — Dashboard Impact + Aggregates (Agent-CH)
 
 **K27.** Open dashboard; PASS if four surfaces render: three
-visually-equivalent bipolar arc-gauge cards (Time, Cost,
-Impact) and an Aggregate Objectives box
-(full-width row below).
+arc-gauge cards sharing one card shell (Time and Cost are ratio
+arc-gauges; Impact is a bipolar arc) and an Aggregate Objectives
+box (full-width row below).
 
 **K28.** Inspect the Impact gauge. PASS if:
 - The arc has muted background visible at all values
