@@ -269,7 +269,9 @@ presenter in `presenters/flow-designer.ts`.
 
 **Nodes**: 160×64 px rounded rectangles, 10 px corner
 radius. Three types, all rendered with the unified
-`flow-node` class (stroke = `hsl(var(--primary))`):
+`flow-node` class but stroked per type: Regular uses
+`hsl(var(--primary))`, Create `hsl(var(--success))`, and
+Archive `hsl(var(--error))`:
 
 | Type    | Port       | Draggable |
 |---------|------------|-----------|
