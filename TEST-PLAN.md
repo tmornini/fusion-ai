@@ -963,12 +963,12 @@ on. Run these in order.
 ### Idea Detail — Submit for Review
 
 - [ ] **D18** Navigate to an idea with status "active". PASS: "Submit for Review" button is visible in the header area.
-- [ ] **D19** Click "Submit for Review". PASS: status changes to "In Review", button disappears, status badge updates.
+- [ ] **D19** Click "Submit for Review". PASS: toast "Submitted for review", navigates to the ideas list, and the idea's status badge there now reads "In Review".
 
 ### Idea Detail — Sent Back Re-Submit
 
 - [ ] **D20** Navigate to an idea with status "sent_back" (after a reviewer sends it back). PASS: "Submit for Review" button is visible, allowing re-submission.
-- [ ] **D21** Click "Edit", modify a field, click "Save". PASS: idea updates. Click "Submit for Review". PASS: status changes to "In Review".
+- [ ] **D21** Click "Edit", modify a field, click "Save". PASS: idea updates. Click "Submit for Review". PASS: navigates to the ideas list with the idea now "In Review".
 
 ### Idea Convert (`ideas/convert.html`)
 
