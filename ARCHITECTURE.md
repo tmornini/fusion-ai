@@ -126,7 +126,7 @@ handlers transport-free.
 `EntityStore` decorator bound to one org: it filters reads,
 stamps the org onto writes, and 404s a foreign id — NEVER
 403, which would confirm a foreign row exists. The write
-fence (`#assertWritable`) rejects a write that targets an id
+fence (`#assertMine`) rejects a write that targets an id
 another tenant owns, the write-side twin of the read fence.
 `orgScopedAdapter` (`api/db-org-scoped.ts`) fences the
 org-owned stores (ideas, projects, flows, work_orders,
