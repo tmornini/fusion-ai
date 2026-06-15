@@ -2215,7 +2215,7 @@ feature is implemented.
 
 ### Mobile Responsive
 
-- [ ] **I10 — Mobile breakpoint** (NOT MCP-driven — `resize_window` does not change the CSS viewport). Verify by source: read `web-app/app/styles/layout.css` lines 312–323 and confirm `@media (max-width: 767px)` rules toggle the desktop sidebar (`.sidebar` → `display: none`) and reveal the mobile drawer. PASS = rules present and well-formed.
+- [ ] **I10 — Mobile breakpoint** (NOT MCP-driven — `resize_window` does not change the CSS viewport). Verify by source: read `web-app/app/styles/layout.css` lines 296–306 and confirm `@media (max-width: 767px)` rules toggle the desktop sidebar (`.sidebar` → `display: none`) and reveal the mobile drawer. PASS = rules present and well-formed.
 - [ ] **I11** Tap/click the hamburger menu. PASS: mobile sidebar sheet slides in from the left with navigation links.
 - [ ] **I12** Tap/click the backdrop or a nav link. PASS: mobile sidebar closes.
 - [ ] **I13** Tap a navigation link in the mobile sidebar. PASS: navigates to the target page and mobile sidebar closes. (Note: the drawer closes implicitly via page navigation — the next page loads in default-hidden state. No explicit close-on-link-click handler is required; navigation is the close trigger.)
