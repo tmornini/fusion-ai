@@ -148,8 +148,8 @@ the already-exported edge-path helpers (`perimeterPoint`,
 pure `flow-cycle-edges.ts` (the designer's back-edge DFS,
 extracted so both renderers mark loop-backs identically),
 `iconAlertTriangle` and `iconNoEntry` (the two hazard
-icons), and the START/END display-name constants. Node
-positions, though, do *not* come from the renderer:
+icons). Node positions, though, do *not* come from the
+renderer:
 `getFlowGraph` runs `flow-graph-layout.ts`'s
 `withRenderableLayout`, which lays a flow out
 (`computeLayout`) whenever it is `is_auto_layout` or its
