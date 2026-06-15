@@ -172,7 +172,8 @@ the arrowhead, the loop-back dash all live in
 `transform`, `x/y`, `class`, `data-*`) only. The one
 presentational inline attribute is the per-node
 `style="--heat-t:${t}"`; CSS computes the fill via a 4-stop
-chained `color-mix(in oklch, ...)` driven by `--heat-t`.
+ramp built from three chained `color-mix(in oklch, ...)`
+segments driven by `--heat-t`.
 Loop-back edges carry `data-cycle="true"` → CSS dashes +
 warning-colours them, mirroring the designer; the single
 `#stats-arrow` marker's head tracks each line's own stroke
