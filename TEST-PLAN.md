@@ -1561,7 +1561,7 @@ states, and that the canvas re-renders after each step.)
   publishable flow including `WB Test Flow`) and
   `NOT READY` (disabled rows for any flow with
   zero-member or dead-end nodes; each carries a
-  red octagon icon and a subtitle "1 node needs
+  red no-entry icon and a subtitle "1 node needs
   attention" or "N nodes need attention"). Hover
   a `NOT READY` row. PASS: cursor stays default
   (no `pointer`), `aria-disabled="true"` is
