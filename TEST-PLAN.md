@@ -298,12 +298,15 @@ lockups — seven sections fanned out at once, none wedged.
    redirects to snapshots by design (an empty active IndexedDB,
    regardless of any leftover `fusion-ai:*` localStorage from an
    old LocalStorage-backend run).
-5. **Sign in as the ADMIN, not the first credential.** The
-   first revealed sign-in (emily.rodriguez@company.com) is the
-   seeded ROLELESS/pending member — she correctly 403s on every
-   org-scoped API (deny-by-default authz). For any section that
-   reads org-scoped data, sign in as `demo@example.com` (Tony
-   Stark, admin in both orgs). The reveal lists its password.
+5. **Sign in as the ADMIN for admin-only surfaces.** The
+   reveal lists a password for EVERY login-capable person,
+   including emily.rodriguez@company.com — a seeded
+   `member`-role human who reads org-scoped content fine but
+   403s on admin-only writes (members, identities,
+   organization, snapshots; deny-by-default authz). For any
+   section touching those admin surfaces, sign in as
+   `demo@example.com` (Tony Stark, admin in both orgs). The
+   reveal lists its password.
 6. **No orphan tab on a port you intend to wipe.** A lingering
    tab holding an IndexedDB connection blocks the next wipe's
    `deleteSchema` (the connection-concurrency hazard). Give each
