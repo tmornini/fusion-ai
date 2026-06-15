@@ -66,7 +66,7 @@ editor filtering the kind picker.
 
 The property-test gate at work-order transitions:
 `validateRecordTransition(ctx, workOrderId, targetNodeId,
-pendingValues?)` walks work order → flow → Record →
+pendingValues)` walks work order → flow → Record →
 attributes; gathers stored values from `state_field_values`;
 overlays pending values from the form; runs requiredness
 + `validateAttributeValue`. Returns aggregated
