@@ -304,8 +304,9 @@ Labels render at the bezier midpoint in a pill with
 `--color-card-bg` background. Bidirectional pairs
 are separated with a perpendicular offset.
 
-**Selection**: `--accent` gold glow filter on
-selected node, thicker stroke (3 px) on selected edge.
+**Selection**: `--accent` gold glow filter on the
+selected node, and the same glow filter on the selected
+edge (edge stroke stays at the base 2 px).
 
 **Locked**: When a flow is locked, all node rectangles,
 edge paths, and edge-label backgrounds re-stroke in
