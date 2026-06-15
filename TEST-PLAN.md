@@ -1962,7 +1962,7 @@ the claude-in-chrome MCP.
   org and Stark. Accept is idempotent — a re-accept is a 204
   no-op, no duplicate membership. Source:
   `postInvitationAcceptance`, `acceptInvitation` (atomic
-  `memberships.put` + `states.record('accepted')`).
+  `memberships.put` + `states.postEvent` 'accepted' event).
 - [ ] **V5 — Decline appends declined, writes no membership**
   As an invitee with a fresh pending invitation, on
   `invitations/` click Decline. PASS: an "Invitation declined"
