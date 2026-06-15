@@ -2189,7 +2189,7 @@ feature is implemented.
   card returns to read mode showing the new
   values. Reload the page. PASS: new values
   persist (round-tripped through `PUT
-  /api/organization`). Inspect the `organizations`
+  /api/organizations/<id>`). Inspect the `organizations`
   store (IndexedDB): the org row has the updated
   `name` and `domain` fields alongside the unchanged
   `seats`, `projects_limit`, `ideas_limit`, and
