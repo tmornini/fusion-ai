@@ -404,7 +404,7 @@ lockups — seven sections fanned out at once, none wedged.
 
 The same TEST-PLAN.md runs serially by one human in one browser
 following document order (A → AA → B → C → D → E → F → F2 → FS
-→ G → H → I → J). The agent-scoped mutation domains and
+→ G → H → I → K → R → L → J). The agent-scoped mutation domains and
 tolerance patterns apply only to the parallel run.
 
 ### Execution Order
