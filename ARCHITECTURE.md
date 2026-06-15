@@ -458,7 +458,8 @@ pure `build*` helpers (`buildShell`, `buildStepperBar`,
 plus DOM-touching `renderShell` / `renderUpdate` / `renderCard`.
 It is flow-name-agnostic by design — the page module writes the
 flow name into the header after `renderShell`,
-keeping `buildFlowStats` independent of presentation strings.
+keeping the presenter's `buildShell` / `renderShell` output
+independent of presentation strings.
 
 ## Import Conventions
 
