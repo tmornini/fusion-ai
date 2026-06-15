@@ -1805,10 +1805,11 @@ the claude-in-chrome MCP.
   values are placeholders — verify the page renders
   without error; numeric accuracy arrives when wired to
   live tables.)
-- [ ] **G10** In the General Information card, click Edit.
-  PASS: page header swaps Edit for Save/Cancel; the card
-  body switches the read-only fields to two inputs
-  prefilled with the current Organization Name and Domain.
+- [ ] **G10** In the page header, click Edit.
+  PASS: page header swaps Edit for Save/Cancel; the
+  Overview card's identity region switches the read-only
+  Name/Domain to two inputs prefilled with the current
+  Organization Name and Domain.
   (There is no health score — the retired 92/"excellent"
   badge has been removed.)
 - [ ] **V8 — Organization "Sent invitations" section + Revoke
