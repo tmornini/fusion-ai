@@ -84,7 +84,9 @@ is HTTP-only.
 - **HTML Composition.** `web-app/app/compose.ts` assembles
   `components-layout.html` + `component-*.html` + each page's
   `index.html` into composed standalones in a temp build dir.
-  Standalone pages are copied directly.
+  Standalone pages skip the layout wrap but still have their
+  `{{PAGE_CSS_LINKS}}` placeholder filled from `cssBundles`
+  before they are written.
 - **Navigation.** `<a href>` between pages. `navigateTo(page,
   params?)` builds relative URLs.
 - **Page Detection.** `<html data-page="dashboard">` →
