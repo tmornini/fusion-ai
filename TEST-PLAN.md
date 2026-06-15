@@ -1787,7 +1787,7 @@ the claude-in-chrome MCP.
 > Company, and Activity Feed pages have all been removed.
 > Member administration (humans + AI members) now lives on
 > the unified Members page — see G11 onward. Cases G1–G8,
-> G15–G18, G25–G29 and the former K/L sections (Roles,
+> G15–G18, G27–G29 and the former K/L sections (Roles,
 > Crews) are no longer part of the plan.
 
 ### Organization (`organization/index.html`)
