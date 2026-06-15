@@ -219,7 +219,7 @@ Cmd+K (or Ctrl+K) overlay for quick navigation and search.
 Implemented in `web-app/app/command-palette.ts`.
 
 - Full keyboard navigation (arrow keys, Enter to select, Escape to close)
-- Searches across pages, ideas, and projects
+- Searches across pages, ideas, projects, and members
 - Renders categorized results with icons
 - Focus trap while open
 
