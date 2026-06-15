@@ -2361,10 +2361,11 @@ form. PASS if the baseline sliders remain editable inline —
 there is NO Score button and NO modal.
 
 **K11.** With baselines unscored, the `Approve` button is
-disabled with a tooltip listing specific unscored objective
-names ("ObjName1, ObjName2 unscored"); count-only form
-("N objectives unscored") is acceptable when names exceed
-readable length. The convert-time gating STILL HOLDS even
+disabled with a tooltip prefixed "Set a baseline score
+before approving:" followed by the comma-joined names of the
+unscored objectives (e.g. "Increase incomes, Raise customer
+NPS"); each name falls back to its objective id when no name
+is known. The convert-time gating STILL HOLDS even
 though the modal is gone.
 
 **K12.** Inspect the objective rows; PASS if each shows a
