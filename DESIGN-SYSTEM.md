@@ -286,9 +286,10 @@ perimeters, rendered with the unified `flow-edge` class.
 | Cycle   | Dashed  |
 
 Forward edges stroke `hsl(var(--primary))`; cycle edges
-add a warning-color stroke and CSS dashes. The
-arrowhead's `fill: context-stroke` tracks each line's
-own stroke so default and cycle arrows match for free.
+add a warning-color stroke and CSS dashes. Each edge
+references a pre-colored arrowhead marker chosen by type:
+`#flow-arrow` (primary fill) or `#flow-arrow-warn` (warning
+fill), so each head matches its own line.
 
 Edge classification at render time uses DFS
 back-edge detection in `removeCycles`: during a
