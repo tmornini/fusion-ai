@@ -32,18 +32,18 @@ panel is positioned on the LEFT
 (`pages-flow-detail.css` `.flow-props-panel` uses
 `left: 0`); the visible canvas occupies pixels
 `[PANEL_WIDTH_PX, canvasW]`. When the panel is open, both Auto
-Layout (`applyAutoLayout`) and Auto Fit (`zoomToFit`) account
+Layout (`applyAutoLayout`) and Auto Fit (`fitBoxToCanvas`) account
 for the panel-occupied left portion via `PANEL_WIDTH_PX`. The
-presenter's `withFitReconciled` runs Auto Fit only when
+detail page's `reconcileFitFromDom` runs Auto Fit only when
 `isAutoFit` is true (no-op otherwise), so panel toggles and
 selection updates re-fit the visible canvas symmetrically
 without re-laying out nodes. Viewport scale/translate
 operations (zoom, pan, Auto Fit, panel toggle, selection
 centering) MUST NOT invoke Auto Layout. Explicit auto-layout
 fires only via `withAutoLayoutToggled`, `withLayoutReconciled`,
-and the `withNodesMoved` chain — never via `withFitReconciled`
+and the `withNodesMoved` chain — never via `withFitToBox`
 or `withSelectionCentered`. The detail-page `request-update`
-callback runs `withFitReconciled` after `withInteractionState`
+callback runs `reconcileFitFromDom` after `withInteractionState`
 so the auto-fit viewBox is the final state, not stomped by the
 FSM's frozen viewBox; on selection change while the panel is
 open, it then runs `withSelectionCentered` to pan the newly
