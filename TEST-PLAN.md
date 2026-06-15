@@ -2186,8 +2186,9 @@ feature is implemented.
   persist (round-tripped through `PUT
   /api/organization`). Inspect the `organizations`
   store (IndexedDB): the org row has the updated
-  `name` and `domain` fields alongside the
-  unchanged plan/seats/billing fields.
+  `name` and `domain` fields alongside the unchanged
+  `seats`, `projects_limit`, `ideas_limit`, and
+  `next_billing` fields.
 
 ---
 
