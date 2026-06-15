@@ -532,8 +532,9 @@ on. Run these in order.
 - [ ] **AA5** With Human selected, fill all fields for
   "Sarah Chen" (Title: Project Lead, Department:
   Operations). Click Create. PASS: toast confirms
-  creation, the new member appears in the Humans group
-  on the list. NOTE (deferred auto-membership): Add
+  creation; the member is written but does NOT appear in
+  the membership-derived roster. NOTE (deferred
+  auto-membership): Add
   Member creates an IDENTITY + member detail row but no
   membership/org binding — that binding now arrives only
   via the invitation flow (V1/V4). So a freshly Added
@@ -545,23 +546,26 @@ on. Run these in order.
 - [ ] **AA6** Repeat for all 10 humans: Sarah Chen, Mike
   Thompson, Jessica Park, David Martinez, Emily Rodriguez
   (pending), Alex Kim, Marcus Johnson, David Kim, Lisa
-  Wang, James Miller (archived). PASS: all 10 appear
-  in the Humans group with correct name, email, title,
-  and status badge (Active / Pending / Archived). NOTE
+  Wang, James Miller (archived). PASS: all 10 are written
+  but, per the deferred note, do NOT appear in the
+  membership-derived roster. NOTE
   (deferred auto-membership): as in AA5, Add Member binds
   no org membership — the org-binding now comes via
   invitation (V1/V4). Each freshly Added human is NOT yet
   in the `memberships`-derived roster until invited and
   accepted; that DEFERRED path is expected.
-- [ ] **AA7** Reload the Members page. PASS: every human
-  re-renders in the Humans group with the correct status
-  badge.
+- [ ] **AA7** Reload the Members page. PASS: the roster
+  is membership-derived, so the freshly Added humans (no
+  membership) do NOT re-render — only seeded and invited+
+  accepted members do. Same deferred path as AA5.
 - [ ] **AA7a** Click "+ Add Member", switch the Kind
   toggle to AI. PASS: the Human form hides and the AI
   form appears. Fill Name, pick a Model, fill
   Description and Skill Focus. PASS: Create is blocked
   until a Model is chosen; once chosen, click Create →
-  toast confirms, the new AI appears in the AIs group.
+  toast confirms and the AI is written to `ai_members`;
+  like a freshly Added human it binds no membership, so it
+  does NOT appear in the roster.
   Repeat for 4 AIs matching mock data (Claude Opus 4.8,
   Claude Sonnet 4.6, GPT-5.5, Grok 4.3).
 
