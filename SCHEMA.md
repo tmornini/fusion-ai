@@ -432,8 +432,8 @@ on write and filtered on read by the gate.
 | organization_id | TEXT | FK → organizations |
 | name | TEXT | |
 | is_locked | BOOLEAN | Default false |
-| is_auto_layout | BOOLEAN | Default true |
-| is_auto_fit | BOOLEAN | Default true |
+| is_auto_layout | BOOLEAN | Default false |
+| is_auto_fit | BOOLEAN | Default false |
 | lock_timeout | INTEGER | Seconds (default 28800 = 8h) |
 | graph | TEXT | JSON document (see below) |
 
