@@ -359,8 +359,8 @@ session token. Tests pass `createRequestContext` a
 five HTTP operations — `GET/PUT states/:id`, `GET states`,
 `GET entity-states/:id` (current), and
 `GET entity-states/:id/history` (ordered) — each dispatching
-to a `StateStore` method (`postEvent`, `getCurrentFor`,
-`getAllFor`).
+to a store method (`getAll`/`getById`/`put`,
+`getCurrentFor`, `getAllFor`).
 When no schema exists, non-entry pages redirect to snapshots.
 
 ## Storage tiers
