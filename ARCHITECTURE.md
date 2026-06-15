@@ -145,11 +145,12 @@ directory and the credential/PII reads. The HMAC signing
 key is client-shipped, so this is demo-grade isolation
 until the server tier.
 
-Derive-from-parent is WRITE stamping, not READ isolation:
-`OrgScopedEntityStore` stamps the parent's org on write, but
-that stamp alone does not isolate reads of the leaves that
-derive their org from it — `ParentScopedEntityStore` runs
-that derivation on READ. The two are distinct mechanisms.
+Leaf isolation is READ derivation, not a WRITE stamp:
+`OrgScopedEntityStore` stamps the BOUND org onto each
+org-owned parent row on write, but the parent-derived
+leaves carry no org column — so `ParentScopedEntityStore`
+isolates them on READ, resolving each leaf's org through
+its already-fenced parent.
 
 ### Multitenancy model
 
