@@ -426,22 +426,22 @@ last (they wipe the database). See `CLAUDE.md` section
 |---|--:|
 | AT. Automated Test Suite | 3 |
 | A. Build & Setup | 5 |
-| AA. Data Entry Workflow | 48 |
-| B. Entry Pages | 19 |
+| AA. Data Entry Workflow | 49 |
+| B. Entry Pages | 29 |
 | C. Core: Dashboard | 7 |
-| D. Core: Ideas Workflow | 37 |
-| E. Core: Projects | 11 |
-| F. Tools | 74 |
+| D. Core: Ideas Workflow | 38 |
+| E. Core: Projects | 12 |
+| F. Tools | 75 |
 | F2. Workbox | 26 |
 | FS. Flow Statistics | 9 |
-| G. Admin Pages | 40 |
+| G. Admin Pages | 44 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 30 |
 | J. Teardown | 3 |
 | K. Objectives & Scoring | 30 |
 | R. Records | 19 |
 | L. IndexedDB Persistence Tier | 9 |
-| **Total** | **372** |
+| **Total** | **390** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -451,8 +451,8 @@ only. Combined with the CLI automated suite:
 | Layer                  | Cases    |
 |------------------------|---------:|
 | CLI automated tests    |     1657 |
-| Browser regression     |      372 |
-| **Combined TOTAL**     | **2029** |
+| Browser regression     |      390 |
+| **Combined TOTAL**     | **2047** |
 
 CLI count = most recent `./validate` (AT2) report; the number
 grows as tests land in `tests/*.test.ts`. Browser count = the
@@ -472,8 +472,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 2029, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (2029).
+`PASS = 2047, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (2047).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
