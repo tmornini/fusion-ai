@@ -179,7 +179,7 @@ splice. This is the OPPOSITE discipline from
 `password` credential, `secret` is the PBKDF2 hash
 (a `$pbkdf2-sha256$` PHC string, `api/password-hash.ts`),
 verified at login by `verifyPassword`
-(`api/authentication.ts`) — plaintext is never stored.
+(`api/password-hash.ts`) — plaintext is never stored.
 The read routes project `secret` out (`routes.ts`
 `withoutSecret`), so it never crosses the API boundary.
 
