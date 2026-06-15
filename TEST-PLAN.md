@@ -1447,7 +1447,7 @@ states, and that the canvas re-renders after each step.)
   Reload the page. PASS: every checkbox in the panel is
   unticked. The node now displays the danger badge per
   F73.
-- [ ] **F62** Lock the flow via the toolbar Locked switch.
+- [ ] **F62** Lock the flow via the designer-header Locked switch.
   Open a regular-node panel. PASS: every checkbox in the
   Members fieldset is rendered with the `disabled`
   attribute; clicking does nothing.
@@ -1490,7 +1490,7 @@ states, and that the canvas re-renders after each step.)
 - [ ] **F70** Continuing from F69, click the remove ("×")
   control on the "Email" attribute row. PASS: the row
   disappears from the attributes list.
-- [ ] **F71** Lock the flow via the toolbar checkbox.
+- [ ] **F71** Lock the flow via the designer-header Locked switch.
   Double-click a regular node. Click the disabled
   "+ Add Attribute…" dropdown in the Attributes
   fieldset. PASS: nothing happens — no panel change,
