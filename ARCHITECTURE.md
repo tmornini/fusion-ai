@@ -466,12 +466,12 @@ independent of presentation strings.
 Page modules import directly from source modules, not through a barrel:
 
 ```typescript
-import { $ } from '../app/dom';
-import { html, setHtml } from '../app/safe-html';
-import { showToast } from '../app/toast';
-import { buildSkeleton, buildErrorState } from '../app/loading-states';
-import { iconPlus, iconTrash } from '../app/icons';
-import { navigateTo, openDialog, closeDialog } from '../app/core';
+import { $ } from '../app/dom.ts';
+import { html, setHtml } from '../app/safe-html.ts';
+import { showToast } from '../app/toast.ts';
+import { buildSkeleton, buildErrorState } from '../app/loading-states.ts';
+import { iconPlus, iconTrash } from '../app/icons.ts';
+import { navigateTo, openDialog, closeDialog } from '../app/core.ts';
 ```
 
 `core.ts` re-exports from `format.ts`, `navigation.ts`, and
