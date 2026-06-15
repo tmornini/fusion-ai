@@ -113,7 +113,7 @@ and `getFlowsForCreation(ctx)` partitions all flows into
 `{ ready, notReady }` for the workbox "Create Work Order"
 dropdown. The picker renders two sections: READY
 (clickable, carries `data-flow-id`) and NOT READY
-(disabled, octagon icon, "N nodes need attention"
+(disabled, no-entry icon, "N nodes need attention"
 subtitle, no `data-flow-id` so the click handler ignores
 it). `postWorkOrderCreation` re-runs
 `validateFlowForCreation` server-side and throws if the
