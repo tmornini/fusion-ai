@@ -224,7 +224,7 @@ before first render: enumerate reachable orgs →
 the identity's default org if reachable, else the first
 reachable) → `postOrgSessionExchange` → install the scoped
 token. The
-header org-switcher (`web-app/app/org-switcher.ts`) renders
+sidebar org-switcher (`web-app/app/org-switcher.ts`) renders
 its `<select>` only at ≥2 reachable orgs and re-scopes via a
 FULL reload (boot re-exchanges from the persisted id, so no
 mixed-org view survives the switch).
