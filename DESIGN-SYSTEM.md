@@ -85,9 +85,9 @@ relative luminance); every pair clears the 4.5:1 AA floor.
 
 Components apply semantic variants through `data-*` attributes
 on a base class rather than distinct class names. Presenters
-emit the attribute value; the attribute selectors in
-`components.css` bind it to the matching token set. The
-TypeScript enum returned by `toneFor*()` / `levelFor*()`
+emit the attribute value; the attribute selectors in the
+`components-*.css` files bind it to the matching token set.
+The TypeScript enum returned by `toneFor*()` / `levelFor*()`
 helpers and the CSS selectors share a single source of truth.
 
 ```html
