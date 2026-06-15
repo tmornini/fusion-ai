@@ -2350,8 +2350,11 @@ WITHOUT baselines (converted when no objectives existed, or
 seeded directly).
 
 **K9.** Open a `submitted` project; confirm the action bar
-shows Edit / View history and the objective rows' baseline
-sliders are disabled (not editable until under_review).
+shows Edit plus the review actions (Approve / Decline / Send
+back) and no View history (it appears only once approved or
+archived), and the objective rows' baseline sliders are
+editable inline (baseline editing is open across the
+pre-approval states submitted/under_review/sent_back).
 
 **K10.** Transition status to `under_review` via the edit
 form. PASS if the baseline sliders become editable inline —
