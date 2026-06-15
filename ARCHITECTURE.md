@@ -317,7 +317,7 @@ re-verified by the automated suite:
 `GraphNode.memberIds: MemberId[]`,
 `GraphNode.attributes: NodeAttribute[]`, `RecordEntity` /
 `RecordAttributeEntity` / `FlowRecordEntity`, `Constraint`
-discriminated union, `StateEntity`, the five state
+discriminated union, `StateEntity`, the seven state
 alphabets, and `SYSTEM_MEMBER_ID`), `api/db.ts`
 (`DbAdapter` interface + `TABLE_NAMES` array listing every
 storage table — the entity tables plus the identity/auth
