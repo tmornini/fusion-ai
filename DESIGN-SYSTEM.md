@@ -446,7 +446,7 @@ mode. Toggle is persisted to `localStorage` and respects
 - **Library**: Inline SVG functions in `web-app/app/icons.ts`
   (line-based, each returns a `SafeHtml` value)
 - **Stroke width**: 2px
-- **Color**: Inherit from parent or use `text-muted-foreground`
+- **Color**: Inherit from parent or use `text-muted`
 
 ### Icon Sizing
 Sizes are a named tier scale — `ICON_SIZE` in `icons.ts` —
