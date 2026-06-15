@@ -1595,10 +1595,9 @@ states, and that the canvas re-renders after each step.)
   matching the current node's attribute references
   from the flow graph.
 - [ ] **WB7** Attribute types render correctly: text
-  inputs, textareas, selects, number inputs,
-  date inputs, file inputs, checkboxes, radio
-  buttons as appropriate for each attribute type
-  in the flow definition.
+  inputs, selects, number inputs, date inputs,
+  checkboxes, and radio buttons as appropriate for each
+  attribute type in the flow definition.
 - [ ] **WB8** Transition buttons appear below
   the attributes, one per outgoing edge from the
   current node, labeled with the edge name.
