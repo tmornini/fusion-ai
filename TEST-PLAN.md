@@ -1471,10 +1471,10 @@ states, and that the canvas re-renders after each step.)
   the picker lists available record attributes
   pre-defined in the bound Record (the picker is
   populated from `record_attributes`).
-  (Regression for the captured-presenter bug at
-  `detail.ts:1006`: this exact click used to do nothing
-  because the handler closed over a presenter captured at
-  init time, which had no selection.)
+  (Regression for the captured-presenter bug in the
+  attribute-picker handler: this exact click used to do
+  nothing because the handler closed over a presenter
+  captured at init time, which had no selection.)
 - [ ] **F69** Continuing from F68, select an attribute
   from the picker (e.g. "Email"). PASS: the row "Email"
   appears in the attributes list with mode (Editable /
