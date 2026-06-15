@@ -1104,8 +1104,8 @@ opens and renders.)
   global sidebar) with Undo/Redo, Zoom −/+,
   Copy Mermaid, Export ZIP, and Delete (trash icon)
   arranged top-to-bottom. The header above the
-  canvas hosts the Back button and three header
-  switches (Locked, Auto Layout, Auto Fit). SVG
+  canvas hosts the Back button, a Stats button, and
+  three header switches (Locked, Auto Layout, Auto Fit). SVG
   canvas to the right of the toolbar with dot
   grid background showing the flow graph. When
   Auto Fit is on, conflicting interactions (drag,
