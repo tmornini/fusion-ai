@@ -229,8 +229,8 @@ kinds share the folder), `presenters/` (presenter classes
 producing `SafeHtml`), and `styles/` (cascade-ordered CSS
 modules); `org-switcher.ts` is the sidebar-footer org
 `<select>` (multi-org only) and `core.ts` scopes boot to the
-active org. `invitations.ts` is the invitation adapter; the
-top-bar pending-invitations bell lives in
+active org. `adapters/invitations.ts` is the invitation
+adapter; the top-bar pending-invitations bell lives in
 `invitations-indicator.ts`.
 `web-app/{dashboard,organization,ideas,projects,flows,members,`
 `invitations,identities,...}/` — page directories registered
