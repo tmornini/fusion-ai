@@ -78,7 +78,7 @@ pure helper `parseMemberIdsFromPanel(panelEl)` in
 `flows/detail.ts`.
 
 Regular nodes also carry `attributes: NodeAttribute[]`
-(`{ attribute_id, mode, isRequired }`). Hidden is encoded
+(`{ attributeId, mode, isRequired }`). Hidden is encoded
 by absence from the array. `mode` is `'editable'` or
 `'readonly'`. The per-node panel renders one row per ref
 with a mode picker + Required checkbox + remove button,
