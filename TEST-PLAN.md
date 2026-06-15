@@ -140,7 +140,7 @@ time budgets while keeping per-entity mutation domains disjoint:
    Mutates global UI state (theme, sidebar, command palette) —
    no concurrent agents.
 5. **Phase 4 — Snapshot lifecycle + persistence tier** (one
-   agent, alone): G30–G35 and L1–L8 (IndexedDB persistence).
+   agent, alone): G30–G35 and L1–L9 (IndexedDB persistence).
    Wipes and reloads the database — strictly last before
    teardown.
 6. **Phase 5 — Teardown** (main): stop HTTP server, remove
@@ -2573,7 +2573,7 @@ write-domain collision.
 
 Backend: `api/backend-indexeddb.ts`. No Node test (no fake-IDB, zero devDeps) — verified in-browser via the Chrome MCP. Serve: `TMPDIR=/tmp/claude ./serve 8080`.
 
-Owner: Phase 4 (alone, after Phase 2). L1–L8 reopen, wipe, and reseed the `fusion-ai` database, so they need exclusive DB access alongside G30–G35 — never concurrently with the seven Phase 2 agents.
+Owner: Phase 4 (alone, after Phase 2). L1–L9 reopen, wipe, and reseed the `fusion-ai` database, so they need exclusive DB access alongside G30–G35 — never concurrently with the seven Phase 2 agents.
 
 - [ ] **L1** Boot creates the database. Inspect `indexedDB.databases()` on the dashboard. PASS: `fusion-ai@v1` with 34 object stores (33 tables + `__schema__`).
 - [ ] **L2** Missing-schema route. Open the dashboard against an empty database. PASS: it redirects to the Snapshots page.
@@ -2625,7 +2625,7 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Agent-F2      | WB1–WB22 + subs, R1–R15 | X |    0 |    0 |
 | Agent-G       | G9–14,19–24,36–46 |    X |       0 |    0 |
 | Phase-3       | I1–I30            |    X |       Y |    Z |
-| Phase-4       | G30–G35 + L1–L8   |    X |       0 |    0 |
+| Phase-4       | G30–G35 + L1–L9   |    X |       0 |    0 |
 | Teardown      | J1–J3             |    3 |       0 |    0 |
 
 ## BLOCKED detail (known MCP limitations — NOT failures)
