@@ -1483,13 +1483,13 @@ states, and that the canvas re-renders after each step.)
   nothing because the handler closed over a presenter
   captured at init time, which had no selection.)
 - [ ] **F69** Continuing from F68, select an attribute
-  from the picker (e.g. "Email"). PASS: the row "Email"
-  appears in the attributes list with mode (Editable /
+  from the picker (e.g. "Contact Email"). PASS: the row
+  "Contact Email" appears in the list with mode (Editable /
   Read-only) and required toggles. The dropdown
   remains available so additional attributes can be
   added.
 - [ ] **F70** Continuing from F69, click the remove ("×")
-  control on the "Email" attribute row. PASS: the row
+  control on the "Contact Email" attribute row. PASS: the row
   disappears from the attributes list.
 - [ ] **F71** Lock the flow via the designer-header Locked switch.
   Double-click a regular node. Click the disabled
