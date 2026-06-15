@@ -2337,8 +2337,9 @@ afterward.
 The Score and Log-measurement MODALS are retired. Baseline
 and actual scores are edited INLINE in
 `#project-objectives-section`: each `.project-objective-row`
-carries a `.baseline-slider` and an `.actual-slider`,
-enabled/disabled by project state, with one shared `Save`
+carries EITHER a `.baseline-slider` (before approval) OR an
+`.actual-slider` (once approved) — mutually exclusive, selected
+by project state — with one shared `Save`
 (`data-action="save-objectives"`) button that enables only
 when a slider moves off its `data-initial-value`. Precondition
 note (TALLY.7): a project converted through the UI arrives at
