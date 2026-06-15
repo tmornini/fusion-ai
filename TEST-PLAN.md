@@ -1145,8 +1145,9 @@ opens and renders.)
   the right (regular nodes only — Create/Archive
   nodes still show their kind title), then a
   Members fieldset (HUMANS / AIs checkbox
-  groups), then state name, form attributes
-  list, and outgoing transitions.
+  groups), then state name, a Task Instructions
+  textarea, the attributes list, and outgoing
+  transitions.
   (Properties panel double-click is BLOCKED per the
   MCP pointer-capture limitation; validate end-state
   via direct injection into the `flows` object store
