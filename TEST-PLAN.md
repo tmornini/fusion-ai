@@ -2015,7 +2015,7 @@ the claude-in-chrome MCP.
 - [ ] **G19** From `members/index.html`, click any human
   member's row. PASS: navigates to `member-detail`. Read
   mode shows avatar (initials), name + status badge,
-  title · department subtitle, Personal Information card
+  title • department subtitle, Personal Information card
   (Name, Email, Phone, Title, Department,
   Bio), Working Styles card (4-axis dimensions surfaced
   under presentation labels Mover / Shaker / Prover /
