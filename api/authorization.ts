@@ -99,7 +99,7 @@ function matchesOnSegmentBoundary(
 const MEMBER_VERBS: Readonly<
     Record<string, readonly string[]>
 > = {
-    '/ideas': ['GET', 'PUT'],
+    '/ideas': ['GET', 'PUT', 'POST'],
     '/idea-submissions': ['GET', 'PUT'],
     '/projects': ['GET', 'PUT'],
     '/project-flows': ['GET', 'PUT', 'DELETE'],

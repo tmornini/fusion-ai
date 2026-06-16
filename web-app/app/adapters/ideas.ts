@@ -188,28 +188,24 @@ export async function putIdea(
     ideaChanges.notify();
 }
 
-// Idea creation: row + initial state event in one
-// ctx.commit batch. Use only at the create call site;
-// transitions of an existing idea go through
-// postIdeaStateChange. putIdea remains for entity
-// edits (title, position) that do not change state.
+// Idea creation: row + initial state event, written
+// atomically by the named POST /ideas endpoint. Use only at
+// the create call site; transitions of an existing idea go
+// through postIdeaStateChange. putIdea remains for entity
+// edits (title, position) that do not change state. The
+// idea body OMITS organization_id — the org fence stamps it
+// from the verified token before the store validates.
 export async function postIdeaCreation(
     ctx: RequestContext,
     id: string,
     entity: Omit<IdeaEntity, 'id' | 'organization_id'>,
     initialState: IdeaState,
 ): Promise<void> {
-    const ideaBody =
-        entity as unknown as Record<string, unknown>;
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource: `ideas/${id}`,
-                body: ideaBody,
-            },
-            buildStateEventOp(id, initialState),
-        ],
+    await ctx.POST('ideas', {
+        id,
+        idea: entity,
+        initialState,
+        initialStateEventId: generateCryptoSafeBase62(),
     });
     ideaChanges.notify();
 }

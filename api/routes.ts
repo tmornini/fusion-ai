@@ -39,6 +39,7 @@ import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 import {
+    validateIdeaCreateBody,
     validateRecordMultiPutBody,
     validateStateBody,
     validateWorkOrderFlowGraphJson,
@@ -446,6 +447,32 @@ export const routes: Route[] = [
     }),
     route('ideas', {
         get: (db) => db.ideas.getAll(),
+        // Idea creation: the idea row and its initial state
+        // event commit as ONE transaction — a mid-write failure
+        // rolls the whole thing back rather than orphaning the
+        // row. The org-scoped store stamps organization_id from
+        // the verified token before validating the idea, so the
+        // body OMITS it. The initial event is authored by the
+        // verified caller (actor), never the body.
+        post: (db, _p, body, actor) => {
+            const b = validateIdeaCreateBody(body);
+            return db.transaction(
+                ['ideas', 'states'],
+                async (view) => {
+                    await view.ideas.put(
+                        b.id,
+                        b.idea as unknown as
+                            Omit<IdeaEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        b.initialStateEventId,
+                        b.id,
+                        b.initialState,
+                        actor,
+                    );
+                },
+            );
+        },
     }),
     route('projects', {
         get: (db) => db.projects.getAll(),

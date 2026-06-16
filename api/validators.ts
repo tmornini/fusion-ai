@@ -23,6 +23,7 @@ import type {
     HumanMemberEntity,
     AIMemberEntity,
     IdeaEntity,
+    IdeaState,
     ProjectEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -48,6 +49,7 @@ import type {
 import {
     assertAttributeType,
     assertConstraintAppliesTo,
+    assertIdeaState,
     assertRecordState,
 } from './types.ts';
 import {
@@ -1881,4 +1883,54 @@ export function validateRecordMultiPutBody(
         "expected RecordMultiPutBody kind"
         + " 'create' or 'edit', got " + kind,
     );
+}
+
+export interface IdeaCreateBody {
+    readonly id: string;
+    readonly idea: Record<string, unknown>;
+    readonly initialState: IdeaState;
+    readonly initialStateEventId: string;
+}
+
+const IDEA_CREATE_KEYS: readonly string[] = [
+    'id', 'idea', 'initialState', 'initialStateEventId',
+];
+
+// The HTTP-body gate for POST /ideas: the idea row plus its
+// initial state event, written atomically. The idea fields are
+// NOT fully validated here — the org-scoped store stamps
+// organization_id from the verified token and re-validates the
+// idea through validateIdeaEntity AFTER the stamp, so the body
+// must OMIT organization_id (the fence supplies it). Authorship
+// of the initial event is stamped from the verified caller in
+// the route, never the body.
+export function validateIdeaCreateBody(
+    body: Record<string, unknown>,
+): IdeaCreateBody {
+    assertOnlyKeys(
+        body, IDEA_CREATE_KEYS, 'IdeaCreateBody',
+    );
+    const id = pickString(body, 'id');
+    if (id === '') {
+        throw new ValidationError(
+            'IdeaCreateBody.id must be non-empty',
+        );
+    }
+    const idea = asObject(
+        body['idea'], 'IdeaCreateBody.idea',
+    );
+    const initialState = assertIdeaState(
+        pickString(body, 'initialState'),
+        'IdeaCreateBody.initialState',
+    );
+    const initialStateEventId = pickString(
+        body, 'initialStateEventId',
+    );
+    if (initialStateEventId === '') {
+        throw new ValidationError(
+            'IdeaCreateBody.initialStateEventId'
+            + ' must be non-empty',
+        );
+    }
+    return { id, idea, initialState, initialStateEventId };
 }

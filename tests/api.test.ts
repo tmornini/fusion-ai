@@ -153,7 +153,7 @@ test(
     async () => {
         const db = await freshDb();
         await assert.rejects(
-            () => POST(db, 'ideas', {}, DEV_TOKEN),
+            () => POST(db, 'projects', {}, DEV_TOKEN),
             /not allowed/i,
         );
     },
