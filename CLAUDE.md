@@ -434,10 +434,23 @@ small focused commits don't already provide.
 
 Subagents inherit no scripture and read no CLAUDE.md by
 default. Every subagent prompt MUST begin with the literal
-phrase `Go to Church!` — this invokes the `church-of-code`
-skill in the subagent's session, loading the full scripture
-before the work begins. A subagent unproselytized is a
-heathen given a hammer.
+phrase `Go to Medium Church!` — this invokes the
+`church-of-code` skill in the subagent's session and directs
+it to read the Medium scroll
+(`CHURCH-OF-CODE-medium-context.md`), not the Full one. The
+Medium scroll keeps every doctrine and trims only
+elaboration; at fan-out the token economy compounds. A
+subagent unproselytized is a heathen given a hammer.
+
+**The scroll policy is codebase-wide.** The master session
+reads the Full scroll (`Go to Church!`); every dispatched
+subagent reads the Medium scroll (`Go to Medium Church!`).
+This governs all work in this repo — the master conducts and
+keeps the complete voice, the subagents fan out and pay the
+Medium price. Even the doctrine audit ([AUDIT.md](AUDIT.md))
+follows this: its orchestrator conducts as master and goes
+Full, while its hunters and refuters fan out as subagents and
+go Medium.
 
 The scripture is universal; the codebase is local. After
 the proselytization, the dispatching agent MUST also push
