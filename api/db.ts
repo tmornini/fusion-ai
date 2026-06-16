@@ -391,7 +391,8 @@ export interface DbAdapter extends DbLifecycle, DbStores {
     // Run `fn` inside one transaction. The view it receives
     // exposes the same stores bound to the open tx, so every
     // op joins it — GET-modify-PUT and multi-PUT commit
-    // atomically. A nested view.transaction throws.
+    // atomically. A nested view.transaction re-enters this
+    // same tx; its tables must be a subset of the outer set.
     transaction<R>(
         tables: readonly string[],
         fn: (view: DbAdapter) => Promise<R>,
