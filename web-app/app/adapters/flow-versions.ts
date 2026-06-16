@@ -74,15 +74,19 @@ function compareRows(
     return 0;
 }
 
-// The version-snapshot write set — the current flow row
-// captured as a new version, plus any over-cap trims — as
-// batch ops, so a caller can land them atomically beside
-// sibling ops in ONE ctx.commit.
-export async function postFlowVersionOps(
+// The publish derivation: the current flow captured as a new
+// version-snapshot row, plus the ids of the over-cap versions to
+// trim. The web-app owns this cap-retention computation — the
+// server just writes the resulting put + deletes atomically.
+interface FlowVersionPublish {
+    version: Record<string, unknown>;
+    trimIds: string[];
+}
+
+async function computeFlowVersionPublish(
     ctx: RequestContext,
-    versionId: string,
     flowId: string,
-): Promise<WriteOp[]> {
+): Promise<FlowVersionPublish> {
     const [flow, allVersions] = await Promise.all([
         ctx.GET<FlowEntity>('flows/' + flowId),
         ctx.GET<FlowVersionEntity[]>(
@@ -95,41 +99,62 @@ export async function postFlowVersionOps(
     // trim the oldest if that pushes us past cap.
     const excess =
         (mine.length + 1) - FLOW_VERSION_CAP;
-    const trims: WriteOp[] = [];
+    const trimIds: string[] = [];
     for (let i = 0; i < excess; i++) {
-        trims.push(deleteFlowVersionOp(mine[i]!.id));
+        trimIds.push(mine[i]!.id);
     }
+    return {
+        version: {
+            flow_id: flowId,
+            name: flow.name,
+            is_locked: flow.is_locked,
+            is_auto_layout: flow.is_auto_layout,
+            is_auto_fit: flow.is_auto_fit,
+            lock_timeout: flow.lock_timeout,
+            graph: flow.graph,
+            at: nowUtc(),
+        },
+        trimIds,
+    };
+}
+
+// The version-snapshot write set — the current flow row
+// captured as a new version, plus any over-cap trims — as
+// batch ops, so a caller can land them atomically beside
+// sibling ops in ONE ctx.commit.
+export async function postFlowVersionOps(
+    ctx: RequestContext,
+    versionId: string,
+    flowId: string,
+): Promise<WriteOp[]> {
+    const { version, trimIds } =
+        await computeFlowVersionPublish(ctx, flowId);
     return [
         {
             method: 'put',
-            resource:
-                `flow-versions/${versionId}`,
-            body: {
-                flow_id: flowId,
-                name: flow.name,
-                is_locked: flow.is_locked,
-                is_auto_layout:
-                    flow.is_auto_layout,
-                is_auto_fit: flow.is_auto_fit,
-                lock_timeout:
-                    flow.lock_timeout,
-                graph: flow.graph,
-                at: nowUtc(),
-            },
+            resource: `flow-versions/${versionId}`,
+            body: version,
         },
-        ...trims,
+        ...trimIds.map(deleteFlowVersionOp),
     ];
 }
 
+// Publish a flow version standalone: the new snapshot row plus
+// the over-cap trims, written atomically through the named
+// POST /flow-versions operation (the put + the N deletes in one
+// re-entrant transaction). The trim computation stays
+// client-side, consistent with the other flow writes.
 export async function postFlowVersion(
     ctx: RequestContext,
     versionId: string,
     flowId: string,
 ): Promise<void> {
-    await ctx.commit({
-        ops: await postFlowVersionOps(
-            ctx, versionId, flowId,
-        ),
+    const { version, trimIds } =
+        await computeFlowVersionPublish(ctx, flowId);
+    await ctx.POST('flow-versions', {
+        id: versionId,
+        version,
+        trimIds,
     });
     notifyFlowChange();
 }

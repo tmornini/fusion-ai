@@ -44,6 +44,7 @@ import {
     validateHumanMemberCreateBody,
     validateHumanMemberEditBody,
     validateFlowCreateBody,
+    validateFlowVersionPublishBody,
     validateIdeaCreateBody,
     validateObjectiveCreateBody,
     validateRecordMultiPutBody,
@@ -681,6 +682,35 @@ export const routes: Route[] = [
     route('flow-versions', {
         get: (db) =>
             db.flowVersions.getAll(),
+        // Publish a flow version: the new snapshot row is put and
+        // the named over-cap versions are deleted as ONE
+        // transaction — a mid-write failure rolls the whole thing
+        // back rather than landing the snapshot with the trim
+        // half-applied (or vice versa). The web-app computes WHICH
+        // versions to trim (its own cap-retention derivation), so
+        // the route writes the put + the named deletes exactly.
+        // flow_versions is parent-scoped — its org derives from the
+        // flow at read time and writes delegate — and re-validates
+        // the snapshot through validateFlowVersionEntity as the put
+        // lands. NO state event is written, so the handler needs no
+        // actor. Member-tier POST — /flow-versions carries POST in
+        // MEMBER_VERBS.
+        post: (db, _p, body) => {
+            const b = validateFlowVersionPublishBody(body);
+            return db.transaction(
+                ['flow_versions'],
+                async (view) => {
+                    await view.flowVersions.put(
+                        b.id,
+                        b.version as unknown as
+                            Omit<FlowVersionEntity, 'id'>,
+                    );
+                    for (const t of b.trimIds) {
+                        await view.flowVersions.delete(t);
+                    }
+                },
+            );
+        },
     }),
     makeIdRoute<FlowVersionEntity>({
         noun: 'flow-versions',

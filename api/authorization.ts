@@ -108,7 +108,7 @@ const MEMBER_VERBS: Readonly<
     '/objectives': ['GET', 'PUT', 'POST'],
     '/objective-revisions': ['GET', 'PUT'],
     '/flows': ['GET', 'PUT', 'POST'],
-    '/flow-versions': ['GET', 'PUT', 'DELETE'],
+    '/flow-versions': ['GET', 'PUT', 'POST', 'DELETE'],
     '/flow-work-orders': ['GET', 'PUT'],
     '/flow-records': ['GET', 'PUT', 'DELETE'],
     '/records': ['GET', 'PUT', 'DELETE'],

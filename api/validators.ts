@@ -2057,6 +2057,59 @@ export function validateFlowCreateBody(
     };
 }
 
+export interface FlowVersionPublishBody {
+    readonly id: string;
+    readonly version: Record<string, unknown>;
+    readonly trimIds: readonly string[];
+}
+
+const FLOW_VERSION_PUBLISH_KEYS: readonly string[] = [
+    'id', 'version', 'trimIds',
+];
+
+// The HTTP-body gate for POST /flow-versions: the new version
+// snapshot row plus the ids of the over-cap versions to trim,
+// written atomically. The version fields are NOT fully validated
+// here — the flow_versions store re-validates the snapshot
+// through validateFlowVersionEntity when the composing POST puts
+// it. The web-app computes WHICH versions to trim (its own
+// cap-retention derivation), so trimIds is carried as a list of
+// non-empty version ids. No state event is written, so no actor
+// is involved.
+export function validateFlowVersionPublishBody(
+    body: Record<string, unknown>,
+): FlowVersionPublishBody {
+    assertOnlyKeys(
+        body, FLOW_VERSION_PUBLISH_KEYS,
+        'FlowVersionPublishBody',
+    );
+    const id = pickString(body, 'id');
+    if (id === '') {
+        throw new ValidationError(
+            'FlowVersionPublishBody.id must be non-empty',
+        );
+    }
+    const version = asObject(
+        body['version'], 'FlowVersionPublishBody.version',
+    );
+    const trimRaw = asArray(
+        body['trimIds'], 'FlowVersionPublishBody.trimIds',
+    );
+    const trimIds = trimRaw.map((t, i) => {
+        const value = asString(
+            t, 'FlowVersionPublishBody.trimIds[' + i + ']',
+        );
+        if (value === '') {
+            throw new ValidationError(
+                'FlowVersionPublishBody.trimIds[' + i + ']'
+                + ' must be non-empty',
+            );
+        }
+        return value;
+    });
+    return { id, version, trimIds };
+}
+
 export interface HumanMemberCreateBody {
     readonly id: string;
     readonly pii: Record<string, unknown>;
