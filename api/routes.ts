@@ -47,6 +47,7 @@ import {
     validateObjectiveCreateBody,
     validateRecordMultiPutBody,
     validateStateBody,
+    validateWorkOrderCreateBody,
     validateWorkOrderFlowGraphJson,
 } from './validators.ts';
 import {
@@ -663,6 +664,47 @@ export const routes: Route[] = [
     route('work-orders', {
         get: (db) =>
             db.workOrders.getAll(),
+        // Work-order creation: the work_orders row, its
+        // flow_work_orders join row, and THREE initial state
+        // events (the start transition, the post-start
+        // transition, and the creation-time 'claimed') commit as
+        // ONE transaction — a mid-write failure rolls the whole
+        // thing back rather than orphaning a half-built work
+        // order. The org-scoped work_orders store stamps
+        // organization_id from the verified token and re-validates
+        // through validateWorkOrderEntity, so the work-order body
+        // OMITS it; the join row derives org from its flow and is
+        // re-validated by the flow_work_orders store. The three
+        // events are applied IN ORDER and authored by the verified
+        // caller (actor), never the body. Member-tier POST —
+        // /work-orders carries POST in MEMBER_VERBS (the claim
+        // sub-route is also a member POST).
+        post: (db, _p, body, actor) => {
+            const b = validateWorkOrderCreateBody(body);
+            return db.transaction(
+                ['work_orders', 'flow_work_orders', 'states'],
+                async (view) => {
+                    await view.workOrders.put(
+                        b.id,
+                        b.workOrder as unknown as
+                            Omit<WorkOrderEntity, 'id'>,
+                    );
+                    await view.flowWorkOrders.put(
+                        b.flowWorkOrderId,
+                        b.flowWorkOrder as unknown as
+                            Omit<FlowWorkOrderEntity, 'id'>,
+                    );
+                    for (let i = 0; i < 3; i++) {
+                        await view.states.postEvent(
+                            b.stateEventIds[i]!,
+                            b.id,
+                            b.states[i]!,
+                            actor,
+                        );
+                    }
+                },
+            );
+        },
     }),
     makeIdRoute<WorkOrderEntity>({
         noun: 'work-orders',

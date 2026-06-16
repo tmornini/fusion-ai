@@ -2045,6 +2045,105 @@ export function validateHumanMemberCreateBody(
     return { id, pii, detail, initialState, initialStateEventId };
 }
 
+export interface WorkOrderCreateBody {
+    readonly id: string;
+    readonly workOrder: Record<string, unknown>;
+    readonly flowWorkOrderId: string;
+    readonly flowWorkOrder: Record<string, unknown>;
+    readonly stateEventIds: readonly string[];
+    readonly states: readonly string[];
+}
+
+const WORK_ORDER_CREATE_KEYS: readonly string[] = [
+    'id', 'workOrder', 'flowWorkOrderId', 'flowWorkOrder',
+    'stateEventIds', 'states',
+];
+
+// The HTTP-body gate for POST /work-orders: the work_orders
+// row, its flow_work_orders join row, and THREE initial state
+// events (start, post-start, claimed), written atomically. The
+// facet fields are NOT fully validated here — the work_orders
+// store stamps organization_id from the verified token and
+// re-validates through validateWorkOrderEntity AFTER the stamp
+// (so the body OMITS organization_id), and the flow_work_orders
+// store re-validates the join through validateFlowWorkOrderEntity
+// when the composing POST puts it. The three event ids and
+// states ride parallel arrays, applied IN ORDER; authorship of
+// every event is stamped from the verified caller in the route,
+// never the body. The arrays must be equal length and exactly
+// three — the create's fixed event count.
+export function validateWorkOrderCreateBody(
+    body: Record<string, unknown>,
+): WorkOrderCreateBody {
+    assertOnlyKeys(
+        body, WORK_ORDER_CREATE_KEYS, 'WorkOrderCreateBody',
+    );
+    const id = pickString(body, 'id');
+    if (id === '') {
+        throw new ValidationError(
+            'WorkOrderCreateBody.id must be non-empty',
+        );
+    }
+    const workOrder = asObject(
+        body['workOrder'], 'WorkOrderCreateBody.workOrder',
+    );
+    const flowWorkOrderId = pickString(body, 'flowWorkOrderId');
+    if (flowWorkOrderId === '') {
+        throw new ValidationError(
+            'WorkOrderCreateBody.flowWorkOrderId'
+            + ' must be non-empty',
+        );
+    }
+    const flowWorkOrder = asObject(
+        body['flowWorkOrder'],
+        'WorkOrderCreateBody.flowWorkOrder',
+    );
+    const stateEventIds = asArray(
+        body['stateEventIds'],
+        'WorkOrderCreateBody.stateEventIds',
+    ).map((v, i) => {
+        const eventId = asString(
+            v, 'WorkOrderCreateBody.stateEventIds[' + i + ']',
+        );
+        if (eventId === '') {
+            throw new ValidationError(
+                'WorkOrderCreateBody.stateEventIds['
+                + i + '] must be non-empty',
+            );
+        }
+        return eventId;
+    });
+    const states = asArray(
+        body['states'], 'WorkOrderCreateBody.states',
+    ).map((v, i) => {
+        const state = asString(
+            v, 'WorkOrderCreateBody.states[' + i + ']',
+        );
+        if (state === '') {
+            throw new ValidationError(
+                'WorkOrderCreateBody.states['
+                + i + '] must be non-empty',
+            );
+        }
+        return state;
+    });
+    if (
+        stateEventIds.length !== 3
+        || states.length !== 3
+    ) {
+        throw new ValidationError(
+            'WorkOrderCreateBody expects exactly three'
+            + ' state events (stateEventIds + states),'
+            + ' got ' + stateEventIds.length + ' ids and '
+            + states.length + ' states',
+        );
+    }
+    return {
+        id, workOrder, flowWorkOrderId, flowWorkOrder,
+        stateEventIds, states,
+    };
+}
+
 export interface AIMemberCreateBody {
     readonly id: string;
     readonly detail: Record<string, unknown>;

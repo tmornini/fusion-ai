@@ -33,6 +33,9 @@ import {
 import {
     buildStateEventOp,
 } from './state-events.ts';
+import {
+    generateCryptoSafeBase62,
+} from '../../../api/crypto-safe-base62.ts';
 import { sha256Bytes } from './digest.ts';
 import {
     nextPosition,
@@ -151,43 +154,36 @@ export async function postWorkOrderCreation(
 
     const flowGraphField =
         storedWorkOrderFlowGraphField(flowGraph);
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource:
-                    `work-orders/`
-                    + `${input.workOrderId}`,
-                body: {
-                    display_id: displayId,
-                    flow_graph: flowGraphField,
-                    position,
-                },
-            },
-            {
-                method: 'put',
-                resource:
-                    `flow-work-orders/`
-                    + `${input.flowLinkId}`,
-                body: {
-                    flow_id: input.flowId,
-                    work_order_id:
-                        input.workOrderId,
-                    at: now,
-                },
-            },
-            buildStateEventOp(
-                input.workOrderId,
-                startNode.id,
-            ),
-            buildStateEventOp(
-                input.workOrderId,
-                postStartNodeId,
-            ),
-            buildStateEventOp(
-                input.workOrderId,
-                'claimed',
-            ),
+    // The work-order row, its flow-link join row, and the three
+    // initial state events (start, post-start, claimed) write as
+    // ONE named operation. The work-order body OMITS
+    // organization_id — the org fence stamps it from the verified
+    // token; the join row derives org from its flow. The three
+    // event ids are minted client-side so a retry hits the same
+    // rows; their authorship is stamped server-side from the
+    // token, never the body.
+    await ctx.POST('work-orders', {
+        id: input.workOrderId,
+        workOrder: {
+            display_id: displayId,
+            flow_graph: flowGraphField,
+            position,
+        },
+        flowWorkOrderId: input.flowLinkId,
+        flowWorkOrder: {
+            flow_id: input.flowId,
+            work_order_id: input.workOrderId,
+            at: now,
+        },
+        stateEventIds: [
+            generateCryptoSafeBase62(),
+            generateCryptoSafeBase62(),
+            generateCryptoSafeBase62(),
+        ],
+        states: [
+            startNode.id,
+            postStartNodeId,
+            'claimed',
         ],
     });
 
