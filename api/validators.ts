@@ -1934,3 +1934,52 @@ export function validateIdeaCreateBody(
     }
     return { id, idea, initialState, initialStateEventId };
 }
+
+export interface ObjectiveCreateBody {
+    readonly id: string;
+    readonly objective: Record<string, unknown>;
+    readonly revisionId: string;
+    readonly revision: Record<string, unknown>;
+}
+
+const OBJECTIVE_CREATE_KEYS: readonly string[] = [
+    'id', 'objective', 'revisionId', 'revision',
+];
+
+// The HTTP-body gate for POST /objectives: the objective row
+// plus its FIRST revision, written atomically. Objective
+// creation writes NO state event — an objective with no event
+// reads as active, archival is a later event — so the handler
+// needs no actor. The objective fields are NOT fully validated
+// here: the org-scoped store stamps organization_id from the
+// verified token and re-validates through validateObjectiveEntity
+// AFTER the stamp, so the body OMITS it. The revision sub-object
+// is re-validated by the objective_revisions store's own
+// validator; its member_id is a row column (who authored the
+// definition), not state authorship.
+export function validateObjectiveCreateBody(
+    body: Record<string, unknown>,
+): ObjectiveCreateBody {
+    assertOnlyKeys(
+        body, OBJECTIVE_CREATE_KEYS, 'ObjectiveCreateBody',
+    );
+    const id = pickString(body, 'id');
+    if (id === '') {
+        throw new ValidationError(
+            'ObjectiveCreateBody.id must be non-empty',
+        );
+    }
+    const objective = asObject(
+        body['objective'], 'ObjectiveCreateBody.objective',
+    );
+    const revisionId = pickString(body, 'revisionId');
+    if (revisionId === '') {
+        throw new ValidationError(
+            'ObjectiveCreateBody.revisionId must be non-empty',
+        );
+    }
+    const revision = asObject(
+        body['revision'], 'ObjectiveCreateBody.revision',
+    );
+    return { id, objective, revisionId, revision };
+}

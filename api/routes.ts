@@ -40,6 +40,7 @@ import {
 } from './crypto-safe-base62.ts';
 import {
     validateIdeaCreateBody,
+    validateObjectiveCreateBody,
     validateRecordMultiPutBody,
     validateStateBody,
     validateWorkOrderFlowGraphJson,
@@ -697,6 +698,33 @@ export const routes: Route[] = [
     }),
     route('objectives', {
         get: (db) => db.objectives.getAll(),
+        // Objective creation: the objective row and its FIRST
+        // revision commit as ONE transaction — a mid-write
+        // failure rolls the whole thing back rather than
+        // orphaning a definitionless objective. The org-scoped
+        // store stamps organization_id from the verified token
+        // before validating the objective, so the body OMITS
+        // it. No state event is written (a fresh objective reads
+        // as active until a later archival event), so the
+        // handler needs no actor.
+        post: (db, _p, body) => {
+            const b = validateObjectiveCreateBody(body);
+            return db.transaction(
+                ['objectives', 'objective_revisions'],
+                async (view) => {
+                    await view.objectives.put(
+                        b.id,
+                        b.objective as unknown as
+                            Omit<Objective, 'id'>,
+                    );
+                    await view.objectiveRevisions.put(
+                        b.revisionId,
+                        b.revision as unknown as
+                            Omit<ObjectiveRevisionEntity, 'id'>,
+                    );
+                },
+            );
+        },
     }),
     makeIdRoute<Objective>({
         noun: 'objectives',

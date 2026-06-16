@@ -170,6 +170,41 @@ test('getArchivedObjectiveIds returns a Set', async () => {
 });
 
 test(
+    'postObjectiveCreation writes the objective row and'
+    + ' its first revision through POST /objectives',
+    async () => {
+        const db = new MemoryDbAdapter();
+        await seedAdminSchema(db);
+        await seedCurrentMember(db);
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctx, 'o1', 'Revenue', 'Top line', 1,
+        );
+
+        const objectives = await db.objectives.getAll();
+        assert.equal(objectives.length, 1);
+        assert.equal(objectives[0]!.id, 'o1');
+        assert.equal(objectives[0]!.position, 1);
+        // The org fence stamped the bound org from the token.
+        assert.equal(objectives[0]!.organization_id, '1');
+
+        const revisions = await db.objectiveRevisions.getAll();
+        assert.equal(revisions.length, 1);
+        assert.equal(revisions[0]!.objective_id, 'o1');
+        assert.equal(revisions[0]!.name, 'Revenue');
+        assert.equal(revisions[0]!.description, 'Top line');
+        // member_id is the current member — a row column, not
+        // an authored state event (creation writes no event).
+        assert.equal(revisions[0]!.member_id, 'current');
+
+        // Creation writes NO state event: the objective reads as
+        // active with an empty archived set.
+        const archived = await getArchivedObjectiveIds(ctx);
+        assert.equal(archived.size, 0);
+    },
+);
+
+test(
     'computeNewPosition + putObjectivePosition'
     + ' wedge an item into the middle without'
     + ' renumbering anyone',

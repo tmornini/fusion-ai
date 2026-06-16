@@ -105,7 +105,7 @@ const MEMBER_VERBS: Readonly<
     '/project-flows': ['GET', 'PUT', 'DELETE'],
     '/project-objective-baseline-scores': ['GET', 'PUT'],
     '/project-objective-actual-scores': ['GET', 'PUT'],
-    '/objectives': ['GET', 'PUT'],
+    '/objectives': ['GET', 'PUT', 'POST'],
     '/objective-revisions': ['GET', 'PUT'],
     '/flows': ['GET', 'PUT'],
     '/flow-versions': ['GET', 'PUT', 'DELETE'],

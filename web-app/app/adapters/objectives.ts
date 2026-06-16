@@ -219,28 +219,24 @@ export async function postObjectiveCreation(
     const at = nowUtc();
     const member = await getCurrentHumanMember(ctx);
     const revisionId = generateCryptoSafeBase62();
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource: `objectives/${id}`,
-                body: {
-                    position,
-                },
-            },
-            {
-                method: 'put',
-                resource:
-                    `objective-revisions/${revisionId}`,
-                body: {
-                    objective_id: id,
-                    name,
-                    description,
-                    member_id: member.id,
-                    at,
-                },
-            },
-        ],
+    // The objective row and its first revision commit as ONE
+    // transaction server-side. The body OMITS organization_id —
+    // the org fence stamps it from the verified token. The
+    // revision's member_id is a row column (who authored the
+    // definition), supplied here; no state event is written.
+    await ctx.POST('objectives', {
+        id,
+        objective: {
+            position,
+        },
+        revisionId,
+        revision: {
+            objective_id: id,
+            name,
+            description,
+            member_id: member.id,
+            at,
+        },
     });
     notifyObjectiveChange();
 }
