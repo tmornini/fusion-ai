@@ -129,16 +129,30 @@ function toObjectiveRevision(
     };
 }
 
-// Every objective's revisions in ONE table read, grouped.
-// Callers walking an objective LIST batch here.
+// The revisions for ONE objective — the server filters the
+// nested collection to the parent objective, so no client filter
+// is needed.
+async function getRevisionsForObjective(
+    ctx: RequestContext,
+    objectiveId: ObjectiveId,
+): Promise<ObjectiveRevisionEntity[]> {
+    return ctx.GET<ObjectiveRevisionEntity[]>(
+        'objectives/' + objectiveId + '/revisions',
+    );
+}
+
+// The revisions for each supplied objective, grouped — reassembled
+// from the nested per-objective collections, fetched in parallel.
+// Callers walking an objective LIST pass the ids they hold.
 export async function getObjectiveRevisionsByObjective(
     ctx: RequestContext,
+    objectiveIds: readonly ObjectiveId[],
 ): Promise<Map<ObjectiveId, ObjectiveRevision[]>> {
-    const all = await ctx.GET<ObjectiveRevisionEntity[]>(
-        'objective-revisions',
+    const perObjective = await Promise.all(
+        objectiveIds.map(id => getRevisionsForObjective(ctx, id)),
     );
     return Map.groupBy(
-        all.map(toObjectiveRevision),
+        perObjective.flat().map(toObjectiveRevision),
         r => r.objectiveId,
     );
 }
@@ -155,7 +169,7 @@ export async function getCurrentObjectiveDefinitions(
     description: string;
 }>> {
     const grouped =
-        await getObjectiveRevisionsByObjective(ctx);
+        await getObjectiveRevisionsByObjective(ctx, ids);
     const defs = new Map<ObjectiveId, {
         name: string;
         description: string;
@@ -251,7 +265,7 @@ export async function postObjectiveRevision(
     const member = await getCurrentHumanMember(ctx);
     const revisionId = generateCryptoSafeBase62();
     await ctx.PUT(
-        `objective-revisions/${revisionId}`,
+        `objectives/${id}/revisions/${revisionId}`,
         {
             objective_id: id,
             name,

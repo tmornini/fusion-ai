@@ -532,16 +532,35 @@ export const routes: Route[] = [
     route('identity-pii', {
         get: (db) => db.identityPii.getAll(),
     }),
-    route('identity-credentials', {
-        get: async (db) =>
-            (await db.identityCredentials.getAll())
-                .map(withoutSecret),
+    // Credentials nest under their parent identity: the identity
+    // id is param 0, so the SERVER filters the collection to that
+    // identity by its identity_id FK (the org fence still rides
+    // the facade re-entry — viaMembership derives visibility from
+    // the co-membership ledger). Both the collection and the leaf
+    // GET project the opaque `secret` out (withoutSecret) so the
+    // hash never crosses the boundary. The leaf id is param 1; GET
+    // and PUT are exposed exactly as the flat makeIdRoute carried
+    // them. ADMIN-ONLY: /identities is not member-tier, so these
+    // fall to the root admin entries — NO MEMBER_VERBS entry.
+    route('identities/:id/credentials', {
+        get: async (db, p) =>
+            (await db.identityCredentials.getAllWhere(
+                'identity_id', param(p, 0),
+            )).map(withoutSecret),
     }),
-    makeIdRoute<IdentityCredentialEntity>({
-        noun: 'identity-credentials',
-        store: db => db.identityCredentials,
-        verbs: ['get', 'put'],
-        getTransform: withoutSecret,
+    route('identities/:id/credentials/:cid', {
+        get: async (db, p) =>
+            withoutSecret(
+                await db.identityCredentials.getById(
+                    param(p, 1),
+                ),
+            ),
+        put: (db, p, body) =>
+            db.identityCredentials.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<IdentityCredentialEntity, 'id'>,
+            ),
     }),
     makeIdRoute<IdentityTokenRevocationEntity>({
         noun: 'identity-token-revocations',
@@ -723,9 +742,22 @@ export const routes: Route[] = [
     route('projects', {
         get: (db) => db.projects.getAll(),
     }),
-    route('idea-submissions', {
-        get: (db) =>
-            db.ideaSubmissions.getAll(),
+    // Idea submissions nest under their parent idea: the idea id
+    // is param 0, so the SERVER filters the collection to that
+    // idea (the org fence still rides the facade re-entry). The
+    // leaf id is param 1; only PUT is exposed, exactly as the flat
+    // makeIdRoute carried it.
+    route('ideas/:id/submissions', {
+        get: (db, p) =>
+            db.ideaSubmissions.getAllWhere('idea_id', param(p, 0)),
+    }),
+    route('ideas/:id/submissions/:sid', {
+        put: (db, p, body) =>
+            db.ideaSubmissions.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<IdeaSubmissionEntity, 'id'>,
+            ),
     }),
     route('flows', {
         get: (db) =>
@@ -1124,15 +1156,28 @@ export const routes: Route[] = [
                     Omit<FlowWorkOrderEntity, 'id'>,
             ),
     }),
-    route('state-field-values', {
-        get: (db) =>
-            db.stateFieldValues
-                .getAll(),
+    // Field values nest under their parent STATE EVENT: the
+    // state event id is param 0, so the SERVER filters the
+    // collection to that event by its state_event_id FK (the org
+    // fence still rides the facade re-entry — the multi-hop
+    // resolver derives the owning org from the event's entity).
+    // The leaf id is param 1; PUT and DELETE are exposed exactly
+    // as the flat makeIdRoute carried them.
+    route('states/:id/field-values', {
+        get: (db, p) =>
+            db.stateFieldValues.getAllWhere(
+                'state_event_id', param(p, 0),
+            ),
     }),
-    makeIdRoute<StateFieldValueEntity>({
-        noun: 'state-field-values',
-        store: db => db.stateFieldValues,
-        verbs: ['put', 'delete'],
+    route('states/:id/field-values/:fvid', {
+        put: (db, p, body) =>
+            db.stateFieldValues.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<StateFieldValueEntity, 'id'>,
+            ),
+        delete: (db, p) =>
+            db.stateFieldValues.delete(param(p, 1)),
     }),
     route('records', {
         get: (db) => db.records.getAll(),
@@ -1233,11 +1278,6 @@ export const routes: Route[] = [
         store: db => db.projects,
         verbs: ['get', 'put'],
     }),
-    makeIdRoute<IdeaSubmissionEntity>({
-        noun: 'idea-submissions',
-        store: db => db.ideaSubmissions,
-        verbs: ['put'],
-    }),
     route('objectives', {
         get: (db) => db.objectives.getAll(),
         // Objective creation: the objective row and its FIRST
@@ -1273,14 +1313,24 @@ export const routes: Route[] = [
         store: db => db.objectives,
         verbs: ['get', 'put'],
     }),
-    route('objective-revisions', {
-        get: (db) =>
-            db.objectiveRevisions.getAll(),
+    // Objective revisions nest under their parent objective: the
+    // objective id is param 0, so the SERVER filters the
+    // collection to that objective (the org fence still rides the
+    // facade re-entry). The leaf id is param 1; only PUT is
+    // exposed, exactly as the flat makeIdRoute carried it.
+    route('objectives/:id/revisions', {
+        get: (db, p) =>
+            db.objectiveRevisions.getAllWhere(
+                'objective_id', param(p, 0),
+            ),
     }),
-    makeIdRoute<ObjectiveRevisionEntity>({
-        noun: 'objective-revisions',
-        store: db => db.objectiveRevisions,
-        verbs: ['put'],
+    route('objectives/:id/revisions/:rid', {
+        put: (db, p, body) =>
+            db.objectiveRevisions.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<ObjectiveRevisionEntity, 'id'>,
+            ),
     }),
     // Objective baseline scores nest under their parent project:
     // the project id is param 0, so the SERVER filters the

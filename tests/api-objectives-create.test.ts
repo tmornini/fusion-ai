@@ -53,13 +53,14 @@ test(
         assert.equal(objective.position, 1);
         // The fence stamped the bound org — never the body.
         assert.equal(objective.organization_id, '1');
-        // The id-scoped revision route is PUT-only; read the
-        // collection and find the row the create wrote.
+        // The leaf revision route is PUT-only; read the nested
+        // per-objective collection and find the row the create
+        // wrote (the server filters it to obj-1).
         const revisions = await GET<Array<{
             id: string;
             objective_id: string;
             name: string;
-        }>>(db, 'objective-revisions', DEV_TOKEN);
+        }>>(db, 'objectives/obj-1/revisions', DEV_TOKEN);
         const revision = revisions.find(r => r.id === 'rev-1');
         assert.ok(revision);
         assert.equal(revision.objective_id, 'obj-1');

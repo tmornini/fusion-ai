@@ -86,7 +86,7 @@ test(
         );
         const grouped =
             await getObjectiveRevisionsByObjective(
-                ctxFor(db),
+                ctxFor(db), ['o1', 'o2'],
             );
         assert.equal(grouped.size, 2);
         assert.equal(grouped.get('o1')!.length, 2);

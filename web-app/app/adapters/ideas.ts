@@ -72,22 +72,37 @@ export async function getIdeaEntity(
     );
 }
 
+// The submissions for ONE idea — the server filters the nested
+// collection to the parent idea, so no client filter is needed.
+async function getIdeaSubmissionsForIdea(
+    ctx: RequestContext,
+    ideaId: string,
+): Promise<IdeaSubmissionEntity[]> {
+    return ctx.GET<IdeaSubmissionEntity[]>(
+        'ideas/' + ideaId + '/submissions',
+    );
+}
+
+// The submissions across EVERY supplied idea — reassembled from
+// the nested per-idea collections, fetched in parallel and
+// concatenated. The idea ids come from the org-scoped ideas
+// list the caller already holds.
 async function getIdeaSubmissionEntities(
     ctx: RequestContext,
+    ideaIds: readonly string[],
 ): Promise<IdeaSubmissionEntity[]> {
-    return ctx.GET<
-        IdeaSubmissionEntity[]
-    >('idea-submissions');
+    const perIdea = await Promise.all(
+        ideaIds.map(id => getIdeaSubmissionsForIdea(ctx, id)),
+    );
+    return perIdea.flat();
 }
 
 async function getIdeaSubmissionEntity(
     ctx: RequestContext,
     ideaId: string,
 ): Promise<IdeaSubmissionEntity> {
-    const all = await getIdeaSubmissionEntities(ctx);
-    const found = all.find(
-        s => s.idea_id === ideaId,
-    );
+    const [found] =
+        await getIdeaSubmissionsForIdea(ctx, ideaId);
     if (!found) {
         throw new Error(
             'Idea submission not found'
@@ -111,12 +126,14 @@ export interface IdeaWithSubmitter {
 export async function getIdeas(
     ctx: RequestContext,
 ): Promise<IdeaWithSubmitter[]> {
+    const rows = await getIdeaEntities(ctx);
     const [
-        rows, memberMap, submissions, stateMap,
+        memberMap, submissions, stateMap,
     ] = await Promise.all([
-        getIdeaEntities(ctx),
         getMemberMap(ctx),
-        getIdeaSubmissionEntities(ctx),
+        getIdeaSubmissionEntities(
+            ctx, rows.map(r => r.id),
+        ),
         getIdeaStates(ctx),
     ]);
     const submissionMap = new Map(
@@ -225,7 +242,7 @@ export async function putIdeaSubmission(
 ): Promise<void> {
     const member = await getCurrentHumanMember(ctx);
     await ctx.PUT(
-        'idea-submissions/'
+        'ideas/' + ideaId + '/submissions/'
             + submissionId,
         {
             idea_id: ideaId,
