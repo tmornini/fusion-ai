@@ -1937,6 +1937,124 @@ export function validateIdeaCreateBody(
     return { id, idea, initialState, initialStateEventId };
 }
 
+export interface IdeaConversionBaseline {
+    readonly id: string;
+    readonly fields: Record<string, unknown>;
+}
+
+export interface IdeaConversionBody {
+    readonly projectId: string;
+    readonly project: Record<string, unknown>;
+    readonly idea: Record<string, unknown>;
+    readonly ideaStateEventId: string;
+    readonly ideaState: string;
+    readonly projectStateEventId: string;
+    readonly projectState: string;
+    readonly baselines: readonly IdeaConversionBaseline[];
+}
+
+const IDEA_CONVERSION_KEYS: readonly string[] = [
+    'projectId', 'project', 'idea',
+    'ideaStateEventId', 'ideaState',
+    'projectStateEventId', 'projectState', 'baselines',
+];
+
+const IDEA_CONVERSION_BASELINE_KEYS: readonly string[] = [
+    'id', 'fields',
+];
+
+// The HTTP-body gate for POST /ideas/:id/conversion: the lone
+// cross-aggregate write — a new project row, the promoted idea
+// row, TWO state events (the idea's 'promoted' and the
+// project's initial), and N baseline-score rows, written
+// atomically. The idea is the route param. The facet fields are
+// NOT fully validated here — the org-scoped projects store
+// stamps organization_id from the verified token and
+// re-validates through validateProjectEntity AFTER the stamp
+// (so the project body OMITS organization_id); the ideas store
+// re-validates the promoted idea through validateIdeaEntity, and
+// each baseline row through validateBaselineScoreEntity, as the
+// composing puts land. Authorship of both events is stamped
+// from the verified caller in the route, never the body — the
+// body carries only the event ids and the (server-fixed) state
+// values. The baseline ids are minted client-side and non-empty.
+export function validateIdeaConversionBody(
+    body: Record<string, unknown>,
+): IdeaConversionBody {
+    assertOnlyKeys(
+        body, IDEA_CONVERSION_KEYS, 'IdeaConversionBody',
+    );
+    const projectId = pickString(body, 'projectId');
+    if (projectId === '') {
+        throw new ValidationError(
+            'IdeaConversionBody.projectId must be non-empty',
+        );
+    }
+    const project = asObject(
+        body['project'], 'IdeaConversionBody.project',
+    );
+    const idea = asObject(
+        body['idea'], 'IdeaConversionBody.idea',
+    );
+    const ideaStateEventId = pickString(
+        body, 'ideaStateEventId',
+    );
+    if (ideaStateEventId === '') {
+        throw new ValidationError(
+            'IdeaConversionBody.ideaStateEventId'
+            + ' must be non-empty',
+        );
+    }
+    const ideaState = pickString(body, 'ideaState');
+    if (ideaState === '') {
+        throw new ValidationError(
+            'IdeaConversionBody.ideaState must be non-empty',
+        );
+    }
+    const projectStateEventId = pickString(
+        body, 'projectStateEventId',
+    );
+    if (projectStateEventId === '') {
+        throw new ValidationError(
+            'IdeaConversionBody.projectStateEventId'
+            + ' must be non-empty',
+        );
+    }
+    const projectState = pickString(body, 'projectState');
+    if (projectState === '') {
+        throw new ValidationError(
+            'IdeaConversionBody.projectState must be non-empty',
+        );
+    }
+    const baselines = asArray(
+        body['baselines'], 'IdeaConversionBody.baselines',
+    ).map((v, i) => {
+        const label =
+            'IdeaConversionBody.baselines[' + i + ']';
+        const row = asObject(v, label);
+        assertOnlyKeys(
+            row, IDEA_CONVERSION_BASELINE_KEYS, label,
+        );
+        const id = asString(row['id'], label + '.id');
+        if (id === '') {
+            throw new ValidationError(
+                label + '.id must be non-empty',
+            );
+        }
+        return {
+            id,
+            fields: asObject(
+                row['fields'], label + '.fields',
+            ),
+        };
+    });
+    return {
+        projectId, project, idea,
+        ideaStateEventId, ideaState,
+        projectStateEventId, projectState, baselines,
+    };
+}
+
 export interface ObjectiveCreateBody {
     readonly id: string;
     readonly objective: Record<string, unknown>;

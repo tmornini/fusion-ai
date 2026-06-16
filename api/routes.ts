@@ -49,6 +49,7 @@ import {
     validateFlowUndoBody,
     validateFlowRedoBody,
     validateIdeaCreateBody,
+    validateIdeaConversionBody,
     validateObjectiveCreateBody,
     validateRecordMultiPutBody,
     validateStateBody,
@@ -628,6 +629,71 @@ export const routes: Route[] = [
                         b.initialState,
                         actor,
                     );
+                },
+            );
+        },
+    }),
+    // Convert an idea to a project (promotion): the LONE
+    // cross-aggregate write. A new projects row, the promoted
+    // ideas row, TWO state events (the idea's 'promoted' and the
+    // new project's initial), and N project_objective_baseline_
+    // scores rows commit as ONE transaction — a mid-write failure
+    // rolls the whole thing back rather than landing a project
+    // without its baselines (or an idea promoted without its
+    // project). The idea is the route param. The org-scoped
+    // projects store stamps organization_id from the verified
+    // token and re-validates through validateProjectEntity, so
+    // the project body OMITS it; the ideas store re-validates the
+    // promoted idea, and the baseline store each row, as the
+    // composing puts land. Both events are authored by the
+    // verified caller (actor), never the body. Composed IN THE
+    // SAME ORDER the old commit batch used (project, idea, idea
+    // event, project event, baselines). Member-tier POST —
+    // isPermitted matches /ideas on the segment prefix, so
+    // /ideas/:id/conversion is member-permitted.
+    route('ideas/:id/conversion', {
+        post: (db, p, body, actor) => {
+            const ideaId = param(p, 0);
+            const b = validateIdeaConversionBody(body);
+            return db.transaction(
+                [
+                    'projects', 'ideas', 'states',
+                    'project_objective_baseline_scores',
+                ],
+                async (view) => {
+                    await view.projects.put(
+                        b.projectId,
+                        b.project as unknown as
+                            Omit<ProjectEntity, 'id'>,
+                    );
+                    await view.ideas.put(
+                        ideaId,
+                        b.idea as unknown as
+                            Omit<IdeaEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        b.ideaStateEventId,
+                        ideaId,
+                        b.ideaState,
+                        actor,
+                    );
+                    await view.states.postEvent(
+                        b.projectStateEventId,
+                        b.projectId,
+                        b.projectState,
+                        actor,
+                    );
+                    for (const baseline of b.baselines) {
+                        await view.projectObjectiveBaselineScores
+                            .put(
+                                baseline.id,
+                                baseline.fields as unknown as
+                                    Omit<
+                                        ProjectObjectiveBaselineScore,
+                                        'id'
+                                    >,
+                            );
+                    }
                 },
             );
         },

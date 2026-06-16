@@ -28,7 +28,6 @@ import {
     generateCryptoSafeBase62,
 } from '../../../api/crypto-safe-base62.ts';
 import {
-    buildStateEventOp,
     postStateEvent,
     getIdeaState,
     getIdeaStates,
@@ -253,19 +252,19 @@ function assertConversionFullyScored(
     }
 }
 
-// Idempotent: retry recovers from partial failure.
-// Inlined writes (rather than delegating to the
-// putProject / putIdea helpers) so the project, idea,
-// state events, and per-objective baseline scores
-// commit together as one logical operation. Two
-// state events land in the same batch: the idea
-// moves to 'promoted' and the new project enters at
-// its initial state — both atomic with the row
-// updates. The N baseline-score rows commit in the
-// same batch so a new project never exists without
-// its initial baselines (and vice versa). The
-// helpers stay — they have other callers whose
-// writes are genuinely independent.
+// Idea conversion (idea→project promotion): the LONE
+// cross-aggregate write, composed by the named POST
+// /ideas/:id/conversion into ONE re-entrant transaction. A
+// new project row, the promoted idea row, two state events
+// (the idea moves to 'promoted', the new project enters at
+// its initial state), and the N per-objective baseline
+// scores all commit together — a new project never exists
+// without its initial baselines, nor an idea promoted
+// without its project. The web-app derives the bodies and
+// mints every id (project, the two events, each baseline);
+// authorship of both events is stamped server-side from the
+// verified token. The project body OMITS organization_id —
+// the org fence stamps it before the store re-validates.
 export async function postIdeaConversion(
     ctx: RequestContext,
     ideaId: string,
@@ -284,42 +283,26 @@ export async function postIdeaConversion(
         baselines.map(b => b.objectiveId),
     );
     type AnyBody = Record<string, unknown>;
-    const projectBody =
-        project as unknown as AnyBody;
-    const ideaBody =
-        promotedIdea as unknown as AnyBody;
     const at = nowUtc();
     const member = await getCurrentHumanMember(ctx);
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource:
-                    `projects/${projectId}`,
-                body: projectBody,
+    await ctx.POST(`ideas/${ideaId}/conversion`, {
+        projectId,
+        project: project as unknown as AnyBody,
+        idea: promotedIdea as unknown as AnyBody,
+        ideaStateEventId: generateCryptoSafeBase62(),
+        ideaState: 'promoted',
+        projectStateEventId: generateCryptoSafeBase62(),
+        projectState,
+        baselines: baselines.map(b => ({
+            id: generateCryptoSafeBase62(),
+            fields: {
+                project_id: projectId,
+                objective_id: b.objectiveId,
+                score: b.score,
+                member_id: member.id,
+                at,
             },
-            {
-                method: 'put',
-                resource: `ideas/${ideaId}`,
-                body: ideaBody,
-            },
-            buildStateEventOp(ideaId, 'promoted'),
-            buildStateEventOp(projectId, projectState),
-            ...baselines.map(b => ({
-                method: 'put' as const,
-                resource:
-                    'project-objective'
-                    + '-baseline-scores/'
-                    + generateCryptoSafeBase62(),
-                body: {
-                    project_id: projectId,
-                    objective_id: b.objectiveId,
-                    score: b.score,
-                    member_id: member.id,
-                    at,
-                },
-            })),
-        ],
+        })),
     });
     notifyProjectChange();
     notifyProjectScoreChange();
