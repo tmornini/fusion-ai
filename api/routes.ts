@@ -27,9 +27,7 @@ import type {
     RoleGrantEntity,
     MembershipEntity,
     IdentityTokenEntity,
-    ClientEntity,
     IdentityProviderEntity,
-    AuthorizationCodeEntity,
     StateFieldValueEntity,
     WorkOrderEntity,
     MemberEntity,
@@ -427,12 +425,6 @@ export const routes: Route[] = [
     }),
     route('human-members/:id', {
         get: (db, p) => db.humanMembers.getById(param(p, 0)),
-        put: (db, p, body) =>
-            db.humanMembers.put(
-                param(p, 0),
-                withoutId(body) as unknown as
-                    Omit<HumanMemberEntity, 'id'>,
-            ),
         // Human-member edit: the four member facets re-put as ONE
         // transaction — NO state event (an edit does not move the
         // member's lifecycle), so the handler needs no actor. The
@@ -551,10 +543,6 @@ export const routes: Route[] = [
         verbs: ['get', 'put'],
         getTransform: withoutSecret,
     }),
-    route('identity-token-revocations', {
-        get: (db) =>
-            db.identityTokenRevocations.getAll(),
-    }),
     makeIdRoute<IdentityTokenRevocationEntity>({
         noun: 'identity-token-revocations',
         store: db => db.identityTokenRevocations,
@@ -608,28 +596,12 @@ export const routes: Route[] = [
             await revokeTokenChain(db, param(p, 0));
         },
     }),
-    route('clients', {
-        get: (db) => db.clients.getAll(),
-    }),
-    makeIdRoute<ClientEntity>({
-        noun: 'clients',
-        store: db => db.clients,
-        verbs: ['get', 'put', 'delete'],
-    }),
     route('identity-providers', {
         get: (db) => db.identityProviders.getAll(),
     }),
     makeIdRoute<IdentityProviderEntity>({
         noun: 'identity-providers',
         store: db => db.identityProviders,
-        verbs: ['get', 'put'],
-    }),
-    route('authorization-codes', {
-        get: (db) => db.authorizationCodes.getAll(),
-    }),
-    makeIdRoute<AuthorizationCodeEntity>({
-        noun: 'authorization-codes',
-        store: db => db.authorizationCodes,
         verbs: ['get', 'put'],
     }),
     route('authentication/token', {

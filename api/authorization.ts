@@ -88,7 +88,7 @@ function matchesOnSegmentBoundary(
 }
 
 // The verbs the `member` role may use, per content prefix.
-// Admin surfaces — identities, credentials, clients,
+// Admin surfaces — identities, credentials,
 // providers, role-grants, memberships, organization and
 // member WRITES, snapshots — are absent: deny-by-default
 // keeps them at the root admin entries. members/ai-members/
