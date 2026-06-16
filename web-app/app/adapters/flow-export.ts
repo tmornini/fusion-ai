@@ -8,7 +8,6 @@ import {
     projectStateIsNotDeleted,
 } from '../../../api/types.ts';
 import {
-    buildStateEventOp,
     getProjectStates,
 } from './state-events.ts';
 import type {
@@ -549,38 +548,26 @@ export async function postFlowFromBackup(
         });
 
     const linkId = generateCryptoSafeBase62();
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource: `flows/${flowId}`,
-                body: {
-                    name: backup.flow.name,
-                    is_locked:
-                        backup.flow.isLocked,
-                    is_auto_layout:
-                        backup.flow.isAutoLayout,
-                    is_auto_fit:
-                        backup.flow.isAutoFit,
-                    lock_timeout:
-                        backup.flow.lockTimeout,
-                    graph: storedGraphField({
-                        nodes, edges,
-                    }),
-                },
-            },
-            {
-                method: 'put',
-                resource:
-                    `project-flows/${linkId}`,
-                body: {
-                    project_id: projectId,
-                    flow_id: flowId,
-                    at: now,
-                },
-            },
-            buildStateEventOp(flowId, 'active'),
-        ],
+    await ctx.POST('flows', {
+        id: flowId,
+        flow: {
+            name: backup.flow.name,
+            is_locked: backup.flow.isLocked,
+            is_auto_layout: backup.flow.isAutoLayout,
+            is_auto_fit: backup.flow.isAutoFit,
+            lock_timeout: backup.flow.lockTimeout,
+            graph: storedGraphField({
+                nodes, edges,
+            }),
+        },
+        projectFlowId: linkId,
+        projectFlow: {
+            project_id: projectId,
+            flow_id: flowId,
+            at: now,
+        },
+        initialState: 'active',
+        initialStateEventId: generateCryptoSafeBase62(),
     });
 
     notifyFlowChange();
@@ -861,34 +848,24 @@ export async function postFlowFromMermaid(
         );
     }
     const linkId = generateCryptoSafeBase62();
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource: `flows/${flowId}`,
-                body: {
-                    name: firstNode.name
-                        + ' (import)',
-                    is_locked: false,
-                    is_auto_layout: true,
-                    is_auto_fit: true,
-                    lock_timeout:
-                        DEFAULT_LOCK_TIMEOUT,
-                    graph: storedGraphField(graph),
-                },
-            },
-            {
-                method: 'put',
-                resource:
-                    `project-flows/${linkId}`,
-                body: {
-                    project_id: projectId,
-                    flow_id: flowId,
-                    at: now,
-                },
-            },
-            buildStateEventOp(flowId, 'active'),
-        ],
+    await ctx.POST('flows', {
+        id: flowId,
+        flow: {
+            name: firstNode.name + ' (import)',
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout: DEFAULT_LOCK_TIMEOUT,
+            graph: storedGraphField(graph),
+        },
+        projectFlowId: linkId,
+        projectFlow: {
+            project_id: projectId,
+            flow_id: flowId,
+            at: now,
+        },
+        initialState: 'active',
+        initialStateEventId: generateCryptoSafeBase62(),
     });
 
     notifyFlowChange();
@@ -1207,33 +1184,24 @@ export async function postFlowFromZip(
         : firstNode!.name + ' (import)';
 
     const linkId = generateCryptoSafeBase62();
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource: `flows/${flowId}`,
-                body: {
-                    name: flowName,
-                    is_locked: false,
-                    is_auto_layout: true,
-                    is_auto_fit: true,
-                    lock_timeout:
-                        DEFAULT_LOCK_TIMEOUT,
-                    graph: storedGraphField(graph),
-                },
-            },
-            {
-                method: 'put',
-                resource:
-                    `project-flows/${linkId}`,
-                body: {
-                    project_id: projectId,
-                    flow_id: flowId,
-                    at: now,
-                },
-            },
-            buildStateEventOp(flowId, 'active'),
-        ],
+    await ctx.POST('flows', {
+        id: flowId,
+        flow: {
+            name: flowName,
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout: DEFAULT_LOCK_TIMEOUT,
+            graph: storedGraphField(graph),
+        },
+        projectFlowId: linkId,
+        projectFlow: {
+            project_id: projectId,
+            flow_id: flowId,
+            at: now,
+        },
+        initialState: 'active',
+        initialStateEventId: generateCryptoSafeBase62(),
     });
 
     notifyFlowChange();

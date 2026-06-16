@@ -1986,6 +1986,77 @@ export function validateObjectiveCreateBody(
     return { id, objective, revisionId, revision };
 }
 
+export interface FlowCreateBody {
+    readonly id: string;
+    readonly flow: Record<string, unknown>;
+    readonly projectFlowId: string;
+    readonly projectFlow: Record<string, unknown>;
+    readonly initialState: string;
+    readonly initialStateEventId: string;
+}
+
+const FLOW_CREATE_KEYS: readonly string[] = [
+    'id', 'flow', 'projectFlowId', 'projectFlow',
+    'initialState', 'initialStateEventId',
+];
+
+// The HTTP-body gate for POST /flows: the flow row, its
+// project_flows join row, and the initial state event, written
+// atomically. The facet fields are NOT fully validated here —
+// the org-scoped flows store stamps organization_id from the
+// verified token and re-validates through validateFlowEntity
+// AFTER the stamp (so the body OMITS organization_id), and the
+// project_flows store re-validates the join through
+// validateProjectFlowEntity when the composing POST puts it.
+// Authorship of the initial event is stamped from the verified
+// caller in the route, never the body; initialState is carried
+// for symmetry with the other create endpoints (the flow
+// creation paths pin it to 'active') and validated non-empty.
+export function validateFlowCreateBody(
+    body: Record<string, unknown>,
+): FlowCreateBody {
+    assertOnlyKeys(
+        body, FLOW_CREATE_KEYS, 'FlowCreateBody',
+    );
+    const id = pickString(body, 'id');
+    if (id === '') {
+        throw new ValidationError(
+            'FlowCreateBody.id must be non-empty',
+        );
+    }
+    const flow = asObject(
+        body['flow'], 'FlowCreateBody.flow',
+    );
+    const projectFlowId = pickString(body, 'projectFlowId');
+    if (projectFlowId === '') {
+        throw new ValidationError(
+            'FlowCreateBody.projectFlowId must be non-empty',
+        );
+    }
+    const projectFlow = asObject(
+        body['projectFlow'], 'FlowCreateBody.projectFlow',
+    );
+    const initialState = pickString(body, 'initialState');
+    if (initialState === '') {
+        throw new ValidationError(
+            'FlowCreateBody.initialState must be non-empty',
+        );
+    }
+    const initialStateEventId = pickString(
+        body, 'initialStateEventId',
+    );
+    if (initialStateEventId === '') {
+        throw new ValidationError(
+            'FlowCreateBody.initialStateEventId'
+            + ' must be non-empty',
+        );
+    }
+    return {
+        id, flow, projectFlowId, projectFlow,
+        initialState, initialStateEventId,
+    };
+}
+
 export interface HumanMemberCreateBody {
     readonly id: string;
     readonly pii: Record<string, unknown>;

@@ -16,6 +16,9 @@ import {
     buildStateEventOp,
 } from './state-events.ts';
 import {
+    generateCryptoSafeBase62,
+} from '../../../api/crypto-safe-base62.ts';
+import {
     createSubscriptionChannel,
 } from '../channels.ts';
 import type {
@@ -60,35 +63,24 @@ export async function postFlowCreation(
         edges: [],
     };
 
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource:
-                    `flows/${input.flowId}`,
-                body: {
-                    name: input.name,
-                    is_locked: false,
-                    is_auto_layout: false,
-                    is_auto_fit: false,
-                    lock_timeout:
-                        DEFAULT_LOCK_TIMEOUT,
-                    graph: storedGraphField(graph),
-                },
-            },
-            {
-                method: 'put',
-                resource:
-                    `project-flows/`
-                    + `${input.linkId}`,
-                body: {
-                    project_id: input.projectId,
-                    flow_id: input.flowId,
-                    at: now,
-                },
-            },
-            buildStateEventOp(input.flowId, 'active'),
-        ],
+    await ctx.POST('flows', {
+        id: input.flowId,
+        flow: {
+            name: input.name,
+            is_locked: false,
+            is_auto_layout: false,
+            is_auto_fit: false,
+            lock_timeout: DEFAULT_LOCK_TIMEOUT,
+            graph: storedGraphField(graph),
+        },
+        projectFlowId: input.linkId,
+        projectFlow: {
+            project_id: input.projectId,
+            flow_id: input.flowId,
+            at: now,
+        },
+        initialState: 'active',
+        initialStateEventId: generateCryptoSafeBase62(),
     });
 
     flowChanges.notify();

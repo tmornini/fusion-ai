@@ -43,6 +43,7 @@ import {
     validateAIMemberEditBody,
     validateHumanMemberCreateBody,
     validateHumanMemberEditBody,
+    validateFlowCreateBody,
     validateIdeaCreateBody,
     validateObjectiveCreateBody,
     validateRecordMultiPutBody,
@@ -637,6 +638,40 @@ export const routes: Route[] = [
     route('flows', {
         get: (db) =>
             db.flows.getAll(),
+        // Flow creation: the flows row, its project_flows join
+        // row, and the initial 'active' state event commit as ONE
+        // transaction — a mid-write failure rolls the whole thing
+        // back rather than orphaning a half-built flow. The
+        // org-scoped flows store stamps organization_id from the
+        // verified token and re-validates through validateFlowEntity,
+        // so the flow body OMITS it; the join row is re-validated by
+        // the project_flows store. The initial event is authored by
+        // the verified caller (actor), never the body. Member-tier
+        // POST — /flows carries POST in MEMBER_VERBS.
+        post: (db, _p, body, actor) => {
+            const b = validateFlowCreateBody(body);
+            return db.transaction(
+                ['flows', 'project_flows', 'states'],
+                async (view) => {
+                    await view.flows.put(
+                        b.id,
+                        b.flow as unknown as
+                            Omit<FlowEntity, 'id'>,
+                    );
+                    await view.projectFlows.put(
+                        b.projectFlowId,
+                        b.projectFlow as unknown as
+                            Omit<ProjectFlowEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        b.initialStateEventId,
+                        b.id,
+                        b.initialState,
+                        actor,
+                    );
+                },
+            );
+        },
     }),
     makeIdRoute<FlowEntity>({
         noun: 'flows',
