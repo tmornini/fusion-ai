@@ -2045,6 +2045,86 @@ export function validateHumanMemberCreateBody(
     return { id, pii, detail, initialState, initialStateEventId };
 }
 
+export interface AIMemberCreateBody {
+    readonly id: string;
+    readonly detail: Record<string, unknown>;
+    readonly initialState: MemberState;
+    readonly initialStateEventId: string;
+}
+
+const AI_MEMBER_CREATE_KEYS: readonly string[] = [
+    'id', 'detail',
+    'initialState', 'initialStateEventId',
+];
+
+// The HTTP-body gate for POST /ai-members: the parent member
+// row plus the ai_members detail row, plus the initial state
+// event, written atomically. The detail fields are NOT fully
+// validated here — the ai_members store re-validates its own
+// body (validateAIMemberEntity) when the composing POST puts
+// it. The member parent (type 'ai') is a server-supplied fact
+// the handler pins, so the body carries only the detail sub-
+// object (name + the AI fields). Authorship of the initial
+// event is stamped from the verified caller in the route,
+// never the body.
+export function validateAIMemberCreateBody(
+    body: Record<string, unknown>,
+): AIMemberCreateBody {
+    assertOnlyKeys(
+        body, AI_MEMBER_CREATE_KEYS, 'AIMemberCreateBody',
+    );
+    const id = pickString(body, 'id');
+    if (id === '') {
+        throw new ValidationError(
+            'AIMemberCreateBody.id must be non-empty',
+        );
+    }
+    const detail = asObject(
+        body['detail'], 'AIMemberCreateBody.detail',
+    );
+    const initialState = assertMemberState(
+        pickString(body, 'initialState'),
+        'AIMemberCreateBody.initialState',
+    );
+    const initialStateEventId = pickString(
+        body, 'initialStateEventId',
+    );
+    if (initialStateEventId === '') {
+        throw new ValidationError(
+            'AIMemberCreateBody.initialStateEventId'
+            + ' must be non-empty',
+        );
+    }
+    return { id, detail, initialState, initialStateEventId };
+}
+
+export interface AIMemberEditBody {
+    readonly detail: Record<string, unknown>;
+}
+
+const AI_MEMBER_EDIT_KEYS: readonly string[] = [
+    'detail',
+];
+
+// The HTTP-body gate for POST /ai-members/:id: the parent
+// member row plus the ai_members detail row re-put, NO state
+// event (an edit does not move the member's lifecycle), so the
+// handler needs no actor. As with create, the ai_members store
+// re-validates its own body when the composing POST puts it;
+// the id is the route param, the member type is a server-
+// supplied fact.
+export function validateAIMemberEditBody(
+    body: Record<string, unknown>,
+): AIMemberEditBody {
+    assertOnlyKeys(
+        body, AI_MEMBER_EDIT_KEYS, 'AIMemberEditBody',
+    );
+    const detail = asObject(
+        body['detail'], 'AIMemberEditBody.detail',
+    );
+    return { detail };
+}
+
 export interface HumanMemberEditBody {
     readonly pii: Record<string, unknown>;
     readonly detail: Record<string, unknown>;

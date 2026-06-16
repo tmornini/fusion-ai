@@ -39,6 +39,8 @@ import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 import {
+    validateAIMemberCreateBody,
+    validateAIMemberEditBody,
     validateHumanMemberCreateBody,
     validateHumanMemberEditBody,
     validateIdeaCreateBody,
@@ -296,11 +298,73 @@ export const routes: Route[] = [
     }),
     route('ai-members', {
         get: (db) => db.aiMembers.getAll(),
+        // AI-member creation: the parent member row, the
+        // ai_members detail row, and the initial state event
+        // commit as ONE transaction — a mid-write failure rolls
+        // the whole thing back rather than orphaning a half-built
+        // member. Each facet store re-validates its own body as
+        // the composing puts land. The parent member type is a
+        // server-supplied fact the handler pins; members and
+        // ai_members are GLOBAL passthrough stores, so the facet
+        // puts go straight to their stores. The initial event is
+        // authored by the verified caller (actor), never the
+        // body. Admin-only — POST /ai-members has no member-tier
+        // entry, so it falls to the root admin tier in
+        // ROUTE_POLICY.
+        post: (db, _p, body, actor) => {
+            const b = validateAIMemberCreateBody(body);
+            return db.transaction(
+                ['members', 'ai_members', 'states'],
+                async (view) => {
+                    await view.members.put(
+                        b.id, { type: 'ai' },
+                    );
+                    await view.aiMembers.put(
+                        b.id,
+                        b.detail as unknown as
+                            Omit<AIMemberEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        b.initialStateEventId,
+                        b.id,
+                        b.initialState,
+                        actor,
+                    );
+                },
+            );
+        },
     }),
-    makeIdRoute<AIMemberEntity>({
-        noun: 'ai-members',
-        store: db => db.aiMembers,
-        verbs: ['get', 'put'],
+    route('ai-members/:id', {
+        get: (db, p) => db.aiMembers.getById(param(p, 0)),
+        put: (db, p, body) =>
+            db.aiMembers.put(
+                param(p, 0),
+                withoutId(body) as unknown as
+                    Omit<AIMemberEntity, 'id'>,
+            ),
+        // AI-member edit: the parent member row and the
+        // ai_members detail row re-put as ONE transaction — NO
+        // state event (an edit does not move the member's
+        // lifecycle), so the handler needs no actor. The facet
+        // stores re-validate their own bodies. Admin-only,
+        // exactly as create — no member-tier POST entry exists.
+        post: (db, p, body) => {
+            const id = param(p, 0);
+            const b = validateAIMemberEditBody(body);
+            return db.transaction(
+                ['members', 'ai_members'],
+                async (view) => {
+                    await view.members.put(
+                        id, { type: 'ai' },
+                    );
+                    await view.aiMembers.put(
+                        id,
+                        b.detail as unknown as
+                            Omit<AIMemberEntity, 'id'>,
+                    );
+                },
+            );
+        },
     }),
     route('human-members', {
         get: (db) => db.humanMembers.getAll(),
