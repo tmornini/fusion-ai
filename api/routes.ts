@@ -52,6 +52,7 @@ import {
     collectAttributeReferrers,
     hasReferrers,
     describeReferrers,
+    deleteRecordAttributeSafe,
 } from './record-attribute-refs.ts';
 import {
     postToken,
@@ -606,21 +607,8 @@ export const routes: Route[] = [
                     'record_attributes',
                     ...ATTRIBUTE_RESTRICT_TABLES,
                 ])],
-                async (view) => {
-                    const referrers =
-                        await collectAttributeReferrers(
-                            view, [id],
-                        );
-                    const refs = referrers.get(id)!;
-                    if (hasReferrers(refs)) {
-                        throw new ApiError(
-                            describeReferrers(id, refs),
-                            HTTP_CONFLICT,
-                        );
-                    }
-                    await view.recordAttributes
-                        .delete(id);
-                },
+                (view) =>
+                    deleteRecordAttributeSafe(view, id),
             );
         },
     }),

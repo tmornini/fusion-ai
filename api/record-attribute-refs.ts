@@ -3,6 +3,10 @@ import {
     validateStoredGraphJson,
     validateWorkOrderFlowGraphJson,
 } from './validators.ts';
+import {
+    ApiError,
+    HTTP_CONFLICT,
+} from './http-errors.ts';
 
 // Destroying a record attribute must not orphan its
 // covenants: state_field_values rows name the attribute in
@@ -93,6 +97,28 @@ export async function collectAttributeReferrers(
         });
     }
     return referrers;
+}
+
+// Delete one record attribute on an ALREADY-OPEN view,
+// RESTRICT-guarded: a referenced attribute 409s (naming its
+// referrers) and nothing is spliced. The standalone DELETE
+// route wraps this in its own transaction; a composing POST
+// calls it on the view it already holds, so the referrer
+// check and the splice share that one transaction.
+export async function deleteRecordAttributeSafe(
+    view: DbAdapter,
+    id: string,
+): Promise<void> {
+    const referrers =
+        await collectAttributeReferrers(view, [id]);
+    const refs = referrers.get(id)!;
+    if (hasReferrers(refs)) {
+        throw new ApiError(
+            describeReferrers(id, refs),
+            HTTP_CONFLICT,
+        );
+    }
+    await view.recordAttributes.delete(id);
 }
 
 export function hasReferrers(
