@@ -39,6 +39,8 @@ import {
     generateCryptoSafeBase62,
 } from './crypto-safe-base62.ts';
 import {
+    validateHumanMemberCreateBody,
+    validateHumanMemberEditBody,
     validateIdeaCreateBody,
     validateObjectiveCreateBody,
     validateRecordMultiPutBody,
@@ -302,11 +304,95 @@ export const routes: Route[] = [
     }),
     route('human-members', {
         get: (db) => db.humanMembers.getAll(),
+        // Human-member creation: the parent member row, the
+        // identity, the PII row, the detail row, and the initial
+        // state event commit as ONE transaction — a mid-write
+        // failure rolls the whole thing back rather than
+        // orphaning a half-built member. Each facet store
+        // re-validates its own body as the composing puts land.
+        // The parent member type and the identity kind are
+        // server-supplied facts the handler pins; PII/identity
+        // are GLOBAL passthrough stores, identity_pii is parent-
+        // scoped, so the facet puts go straight to their stores.
+        // The initial event is authored by the verified caller
+        // (actor), never the body. Admin-only — POST /human-
+        // members has no member-tier entry, so it falls to the
+        // root admin tier in ROUTE_POLICY.
+        post: (db, _p, body, actor) => {
+            const b = validateHumanMemberCreateBody(body);
+            return db.transaction(
+                [
+                    'members', 'identities', 'identity_pii',
+                    'human_members', 'states',
+                ],
+                async (view) => {
+                    await view.members.put(
+                        b.id, { type: 'human' },
+                    );
+                    await view.identities.put(
+                        b.id, { kind: 'person' },
+                    );
+                    await view.identityPii.put(
+                        b.id,
+                        b.pii as unknown as
+                            Omit<IdentityPiiEntity, 'id'>,
+                    );
+                    await view.humanMembers.put(
+                        b.id,
+                        b.detail as unknown as
+                            Omit<HumanMemberEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        b.initialStateEventId,
+                        b.id,
+                        b.initialState,
+                        actor,
+                    );
+                },
+            );
+        },
     }),
-    makeIdRoute<HumanMemberEntity>({
-        noun: 'human-members',
-        store: db => db.humanMembers,
-        verbs: ['get', 'put'],
+    route('human-members/:id', {
+        get: (db, p) => db.humanMembers.getById(param(p, 0)),
+        put: (db, p, body) =>
+            db.humanMembers.put(
+                param(p, 0),
+                withoutId(body) as unknown as
+                    Omit<HumanMemberEntity, 'id'>,
+            ),
+        // Human-member edit: the four member facets re-put as ONE
+        // transaction — NO state event (an edit does not move the
+        // member's lifecycle), so the handler needs no actor. The
+        // facet stores re-validate their own bodies. Admin-only,
+        // exactly as create — no member-tier POST entry exists.
+        post: (db, p, body) => {
+            const id = param(p, 0);
+            const b = validateHumanMemberEditBody(body);
+            return db.transaction(
+                [
+                    'members', 'identities', 'identity_pii',
+                    'human_members',
+                ],
+                async (view) => {
+                    await view.members.put(
+                        id, { type: 'human' },
+                    );
+                    await view.identities.put(
+                        id, { kind: 'person' },
+                    );
+                    await view.identityPii.put(
+                        id,
+                        b.pii as unknown as
+                            Omit<IdentityPiiEntity, 'id'>,
+                    );
+                    await view.humanMembers.put(
+                        id,
+                        b.detail as unknown as
+                            Omit<HumanMemberEntity, 'id'>,
+                    );
+                },
+            );
+        },
     }),
     route('identities', {
         get: (db) => db.identities.getAll(),

@@ -22,6 +22,7 @@ import type {
     MemberEntity,
     HumanMemberEntity,
     AIMemberEntity,
+    MemberState,
     IdeaEntity,
     IdeaState,
     ProjectEntity,
@@ -50,6 +51,7 @@ import {
     assertAttributeType,
     assertConstraintAppliesTo,
     assertIdeaState,
+    assertMemberState,
     assertRecordState,
 } from './types.ts';
 import {
@@ -1982,4 +1984,93 @@ export function validateObjectiveCreateBody(
         body['revision'], 'ObjectiveCreateBody.revision',
     );
     return { id, objective, revisionId, revision };
+}
+
+export interface HumanMemberCreateBody {
+    readonly id: string;
+    readonly pii: Record<string, unknown>;
+    readonly detail: Record<string, unknown>;
+    readonly initialState: MemberState;
+    readonly initialStateEventId: string;
+}
+
+const HUMAN_MEMBER_CREATE_KEYS: readonly string[] = [
+    'id', 'pii', 'detail',
+    'initialState', 'initialStateEventId',
+];
+
+// The HTTP-body gate for POST /human-members: the four member
+// facets (the parent member row, the identity, the PII row, the
+// detail row) plus the initial state event, written atomically.
+// The facet fields are NOT fully validated here — each facet
+// store re-validates its own body (validateMemberEntity,
+// validateIdentityEntity, validateIdentityPiiEntity,
+// validateHumanMemberEntity) when the composing POST puts it.
+// The member parent (type) and the identity (kind) are
+// server-supplied facts the handler pins, so the body carries
+// only the PII and detail sub-objects. Authorship of the initial
+// event is stamped from the verified caller in the route, never
+// the body.
+export function validateHumanMemberCreateBody(
+    body: Record<string, unknown>,
+): HumanMemberCreateBody {
+    assertOnlyKeys(
+        body, HUMAN_MEMBER_CREATE_KEYS, 'HumanMemberCreateBody',
+    );
+    const id = pickString(body, 'id');
+    if (id === '') {
+        throw new ValidationError(
+            'HumanMemberCreateBody.id must be non-empty',
+        );
+    }
+    const pii = asObject(
+        body['pii'], 'HumanMemberCreateBody.pii',
+    );
+    const detail = asObject(
+        body['detail'], 'HumanMemberCreateBody.detail',
+    );
+    const initialState = assertMemberState(
+        pickString(body, 'initialState'),
+        'HumanMemberCreateBody.initialState',
+    );
+    const initialStateEventId = pickString(
+        body, 'initialStateEventId',
+    );
+    if (initialStateEventId === '') {
+        throw new ValidationError(
+            'HumanMemberCreateBody.initialStateEventId'
+            + ' must be non-empty',
+        );
+    }
+    return { id, pii, detail, initialState, initialStateEventId };
+}
+
+export interface HumanMemberEditBody {
+    readonly pii: Record<string, unknown>;
+    readonly detail: Record<string, unknown>;
+}
+
+const HUMAN_MEMBER_EDIT_KEYS: readonly string[] = [
+    'pii', 'detail',
+];
+
+// The HTTP-body gate for POST /human-members/:id: the four
+// member facets re-put, NO state event (an edit does not move
+// the member's lifecycle), so the handler needs no actor. As
+// with create, each facet store re-validates its own body when
+// the composing POST puts it; the id is the route param, the
+// member type and identity kind are server-supplied facts.
+export function validateHumanMemberEditBody(
+    body: Record<string, unknown>,
+): HumanMemberEditBody {
+    assertOnlyKeys(
+        body, HUMAN_MEMBER_EDIT_KEYS, 'HumanMemberEditBody',
+    );
+    const pii = asObject(
+        body['pii'], 'HumanMemberEditBody.pii',
+    );
+    const detail = asObject(
+        body['detail'], 'HumanMemberEditBody.detail',
+    );
+    return { pii, detail };
 }

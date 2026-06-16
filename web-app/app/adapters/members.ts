@@ -10,11 +10,13 @@ import { HumanMember } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import { getMemberPii } from './identities.ts';
 import {
-    buildStateEventOp,
     postStateEvent,
     getMemberState,
     getMemberStates,
 } from './state-events.ts';
+import {
+    generateCryptoSafeBase62,
+} from '../../../api/crypto-safe-base62.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -193,7 +195,10 @@ export async function getHumanMemberEntity(
 
 // Split a human-member write across the parent (type), the
 // identity, the PII row, and the detail row. Used by edits;
-// creation goes through postHumanMemberCreation.
+// creation goes through postHumanMemberCreation. The named
+// composing POST /human-members/:id lands all four facet puts
+// in ONE transaction; no state event (an edit does not move the
+// member's lifecycle).
 export async function putHumanMember(
     ctx: RequestContext,
     id: string,
@@ -201,39 +206,21 @@ export async function putHumanMember(
 ): Promise<void> {
     const { name, email, phone, bio, ...detail } =
         input;
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource: `members/${id}`,
-                body: { type: 'human' },
-            },
-            {
-                method: 'put',
-                resource: `identities/${id}`,
-                body: { kind: 'person' },
-            },
-            {
-                method: 'put',
-                resource: `identities/${id}/pii`,
-                body: { name, email, phone, bio },
-            },
-            {
-                method: 'put',
-                resource: `human-members/${id}`,
-                body: detail as unknown as
-                    Record<string, unknown>,
-            },
-        ],
+    await ctx.POST(`human-members/${id}`, {
+        pii: { name, email, phone, bio },
+        detail: detail as unknown as
+            Record<string, unknown>,
     });
     humanMemberChanges.notify();
 }
 
 // Human-member creation: parent row + identity + PII row +
-// detail row + initial state event in one ctx.commit
-// batch. Use only at the Add Member call site; transitions
-// of an existing member go through
-// postHumanMemberStateChange.
+// detail row + initial state event, composed by the named
+// POST /human-members into ONE transaction. Use only at the
+// Add Member call site; transitions of an existing member go
+// through postHumanMemberStateChange. The initial event's
+// author is stamped server-side from the verified token; the
+// client mints the event id, so a retry hits one row.
 export async function postHumanMemberCreation(
     ctx: RequestContext,
     id: string,
@@ -242,31 +229,13 @@ export async function postHumanMemberCreation(
 ): Promise<void> {
     const { name, email, phone, bio, ...detail } =
         input;
-    await ctx.commit({
-        ops: [
-            {
-                method: 'put',
-                resource: `members/${id}`,
-                body: { type: 'human' },
-            },
-            {
-                method: 'put',
-                resource: `identities/${id}`,
-                body: { kind: 'person' },
-            },
-            {
-                method: 'put',
-                resource: `identities/${id}/pii`,
-                body: { name, email, phone, bio },
-            },
-            {
-                method: 'put',
-                resource: `human-members/${id}`,
-                body: detail as unknown as
-                    Record<string, unknown>,
-            },
-            buildStateEventOp(id, initialState),
-        ],
+    await ctx.POST('human-members', {
+        id,
+        pii: { name, email, phone, bio },
+        detail: detail as unknown as
+            Record<string, unknown>,
+        initialState,
+        initialStateEventId: generateCryptoSafeBase62(),
     });
     humanMemberChanges.notify();
 }
