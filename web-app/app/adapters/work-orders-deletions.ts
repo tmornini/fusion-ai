@@ -1,6 +1,6 @@
 import type { RequestContext } from './shared.ts';
 import {
-    buildStateEventOp,
+    postStateEvent,
 } from './state-events.ts';
 import {
     notifyWorkOrderChanges,
@@ -17,13 +17,8 @@ export async function deleteWorkOrderClaim(
     ctx: RequestContext,
     workOrderId: string,
 ): Promise<void> {
-    await ctx.commit({
-        ops: [
-            buildStateEventOp(
-                workOrderId,
-                'claim_released',
-            ),
-        ],
-    });
+    await postStateEvent(
+        ctx, workOrderId, 'claim_released',
+    );
     notifyWorkOrderChanges();
 }

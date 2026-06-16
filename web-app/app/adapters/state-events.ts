@@ -33,7 +33,7 @@ import {
 export function buildStateEventOp(
     entityId: Id,
     state: string,
-): WriteOp {
+): Extract<WriteOp, { method: 'put' }> {
     const eventId = generateCryptoSafeBase62();
     return {
         method: 'put',
@@ -44,6 +44,19 @@ export function buildStateEventOp(
             at: nowUtc(),
         },
     };
+}
+
+// A single state transition is one idempotent row — write it
+// straight to PUT /states/:id rather than wrapping it in a
+// commit batch. The author is stamped server-side from the
+// token; the client mints the event id (retries hit one row).
+export async function postStateEvent(
+    ctx: RequestContext,
+    entityId: Id,
+    state: string,
+): Promise<void> {
+    const op = buildStateEventOp(entityId, state);
+    await ctx.PUT(op.resource, op.body);
 }
 
 // The states log is shared across entity types and the

@@ -11,6 +11,7 @@ import type { RequestContext } from './shared.ts';
 import { getMemberPii } from './identities.ts';
 import {
     buildStateEventOp,
+    postStateEvent,
     getMemberState,
     getMemberStates,
 } from './state-events.ts';
@@ -275,10 +276,6 @@ export async function postHumanMemberStateChange(
     id: string,
     state: MemberState,
 ): Promise<void> {
-    await ctx.commit({
-        ops: [
-            buildStateEventOp(id, state),
-        ],
-    });
+    await postStateEvent(ctx, id, state);
     humanMemberChanges.notify();
 }

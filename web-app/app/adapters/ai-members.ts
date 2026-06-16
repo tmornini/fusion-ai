@@ -11,6 +11,7 @@ import {
 } from '../channels.ts';
 import {
     buildStateEventOp,
+    postStateEvent,
     getMemberState,
     getMemberStates,
 } from './state-events.ts';
@@ -170,10 +171,6 @@ export async function postAIMemberStateChange(
     id: MemberId,
     state: MemberState,
 ): Promise<void> {
-    await ctx.commit({
-        ops: [
-            buildStateEventOp(id, state),
-        ],
-    });
+    await postStateEvent(ctx, id, state);
     aiMemberChanges.notify();
 }

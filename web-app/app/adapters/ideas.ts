@@ -29,6 +29,7 @@ import {
 } from '../../../api/crypto-safe-base62.ts';
 import {
     buildStateEventOp,
+    postStateEvent,
     getIdeaState,
     getIdeaStates,
 } from './state-events.ts';
@@ -218,11 +219,7 @@ export async function postIdeaStateChange(
     id: string,
     state: IdeaState,
 ): Promise<void> {
-    await ctx.commit({
-        ops: [
-            buildStateEventOp(id, state),
-        ],
-    });
+    await postStateEvent(ctx, id, state);
     ideaChanges.notify();
 }
 

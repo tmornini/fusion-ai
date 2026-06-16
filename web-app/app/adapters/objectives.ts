@@ -19,7 +19,7 @@ import {
     generateCryptoSafeBase62,
 } from '../../../api/crypto-safe-base62.ts';
 import {
-    buildStateEventOp,
+    postStateEvent,
     latestStatesForIds,
 } from './state-events.ts';
 import {
@@ -275,11 +275,7 @@ export async function postObjectiveArchival(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<void> {
-    await ctx.commit({
-        ops: [
-            buildStateEventOp(id, 'archived'),
-        ],
-    });
+    await postStateEvent(ctx, id, 'archived');
     notifyObjectiveChange();
 }
 
@@ -287,11 +283,7 @@ export async function postObjectiveReactivation(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<void> {
-    await ctx.commit({
-        ops: [
-            buildStateEventOp(id, 'active'),
-        ],
-    });
+    await postStateEvent(ctx, id, 'active');
     notifyObjectiveChange();
 }
 

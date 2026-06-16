@@ -18,7 +18,7 @@ import {
     latestByKey,
 } from '../../../api/ledger-reduction.ts';
 import {
-    buildStateEventOp,
+    postStateEvent,
     getRecordStates,
 } from './state-events.ts';
 import {
@@ -243,10 +243,6 @@ export async function postRecordStateChange(
     id: RecordId,
     state: RecordState,
 ): Promise<void> {
-    await ctx.commit({
-        ops: [
-            buildStateEventOp(id, state),
-        ],
-    });
+    await postStateEvent(ctx, id, state);
     recordChanges.notify();
 }
