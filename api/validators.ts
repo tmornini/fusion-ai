@@ -2451,6 +2451,88 @@ export function validateHumanMemberCreateBody(
     return { id, pii, detail, initialState, initialStateEventId };
 }
 
+// Identity creation, discriminated by kind. A person carries
+// its PII sub-object; a service carries its credential sub-
+// object (a deterministic-id'd client_secret row whose secret
+// is hashed client-side before it crosses the gate). The route
+// pins the identity kind and composes the two writes.
+export interface IdentityCreatePersonBody {
+    readonly id: string;
+    readonly kind: 'person';
+    readonly pii: Record<string, unknown>;
+}
+
+export interface IdentityCreateServiceBody {
+    readonly id: string;
+    readonly kind: 'service';
+    readonly credential: Record<string, unknown>;
+}
+
+export type IdentityCreateBody =
+    | IdentityCreatePersonBody
+    | IdentityCreateServiceBody;
+
+const IDENTITY_CREATE_PERSON_KEYS: readonly string[] = [
+    'id', 'kind', 'pii',
+];
+
+const IDENTITY_CREATE_SERVICE_KEYS: readonly string[] = [
+    'id', 'kind', 'credential',
+];
+
+// The HTTP-body gate for POST /identities: a person identity +
+// its PII row, OR a service identity + its client_secret
+// credential row, written atomically. The sub-object fields are
+// NOT fully validated here — the parent-scoped identity_pii and
+// identity_credentials stores re-validate their own bodies
+// (validateIdentityPiiEntity, validateIdentityCredentialEntity)
+// when the composing put lands, and the identities store pins
+// the kind through validateIdentityEntity. The credential's
+// secret is hashed client-side; the route never touches crypto.
+// Identity creation writes NO state event — identities carry no
+// lifecycle event at creation — so the handler needs no actor.
+export function validateIdentityCreateBody(
+    body: Record<string, unknown>,
+): IdentityCreateBody {
+    const kind = validateEnumField(
+        body, 'kind', ['person', 'service'],
+        'identity kind', 'IdentityCreateBody',
+    );
+    const id = pickString(body, 'id');
+    if (id === '') {
+        throw new ValidationError(
+            'IdentityCreateBody.id must be non-empty',
+        );
+    }
+    if (kind === 'person') {
+        assertOnlyKeys(
+            body,
+            IDENTITY_CREATE_PERSON_KEYS,
+            'IdentityCreatePersonBody',
+        );
+        return {
+            id,
+            kind,
+            pii: asObject(
+                body['pii'], 'IdentityCreatePersonBody.pii',
+            ),
+        };
+    }
+    assertOnlyKeys(
+        body,
+        IDENTITY_CREATE_SERVICE_KEYS,
+        'IdentityCreateServiceBody',
+    );
+    return {
+        id,
+        kind,
+        credential: asObject(
+            body['credential'],
+            'IdentityCreateServiceBody.credential',
+        ),
+    };
+}
+
 export interface WorkOrderCreateBody {
     readonly id: string;
     readonly workOrder: Record<string, unknown>;

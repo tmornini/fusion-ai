@@ -50,6 +50,7 @@ import {
     validateFlowRedoBody,
     validateIdeaCreateBody,
     validateIdeaConversionBody,
+    validateIdentityCreateBody,
     validateObjectiveCreateBody,
     validateRecordMultiPutBody,
     validateStateBody,
@@ -468,6 +469,55 @@ export const routes: Route[] = [
     }),
     route('identities', {
         get: (db) => db.identities.getAll(),
+        // Identity creation: the identity row and EITHER its PII
+        // row (person) OR its client_secret credential row
+        // (service) commit as ONE transaction — a mid-write
+        // failure rolls the whole thing back rather than orphaning
+        // a kindless identity. The identity kind is the server-
+        // supplied fact the handler pins; identities/identity_pii/
+        // identity_credentials are GLOBAL/parent-scoped stores (no
+        // org stamp), so the facet puts go straight to their
+        // stores, each re-validating its own body as the composing
+        // put lands. The credential's secret is hashed client-side
+        // — the route touches no crypto. NO state event (an
+        // identity carries no lifecycle event at creation), so the
+        // handler needs no actor. The tx table set branches per
+        // mode so each names exactly the tables it writes. Admin-
+        // only — POST /identities has no member-tier entry, so it
+        // falls to the root admin tier in ROUTE_POLICY.
+        post: (db, _p, body) => {
+            const b = validateIdentityCreateBody(body);
+            const tables = b.kind === 'person'
+                ? ['identities', 'identity_pii']
+                : ['identities', 'identity_credentials'];
+            return db.transaction(
+                tables,
+                async (view) => {
+                    await view.identities.put(
+                        b.id, { kind: b.kind },
+                    );
+                    if (b.kind === 'person') {
+                        await view.identityPii.put(
+                            b.id,
+                            b.pii as unknown as
+                                Omit<IdentityPiiEntity, 'id'>,
+                        );
+                    } else {
+                        const { id: credId, ...fields } =
+                            b.credential as {
+                                id: string;
+                            } & Record<string, unknown>;
+                        await view.identityCredentials.put(
+                            credId,
+                            fields as unknown as
+                                Omit<
+                                    IdentityCredentialEntity, 'id'
+                                >,
+                        );
+                    }
+                },
+            );
+        },
     }),
     makeIdRoute<IdentityEntity>({
         noun: 'identities',
