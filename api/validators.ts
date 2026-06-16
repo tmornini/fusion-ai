@@ -1743,7 +1743,7 @@ export function validateFlowRecordEntity(
     };
 }
 
-export interface RecordMultiPutCreateBody {
+export interface RecordWriteCreateBody {
     readonly kind: 'create';
     readonly id: RecordId;
     readonly record: Omit<RecordEntity, 'id'>;
@@ -1752,7 +1752,7 @@ export interface RecordMultiPutCreateBody {
     readonly initialStateEventId: string;
 }
 
-export interface RecordMultiPutEditBody {
+export interface RecordWriteEditBody {
     readonly kind: 'edit';
     readonly id: RecordId;
     readonly record: Omit<RecordEntity, 'id'>;
@@ -1760,24 +1760,24 @@ export interface RecordMultiPutEditBody {
     readonly removedAttributeIds: readonly string[];
 }
 
-export type RecordMultiPutBody =
-    | RecordMultiPutCreateBody
-    | RecordMultiPutEditBody;
+export type RecordWriteBody =
+    | RecordWriteCreateBody
+    | RecordWriteEditBody;
 
-const RECORD_MULTI_PUT_CREATE_KEYS:
+const RECORD_WRITE_CREATE_KEYS:
     readonly string[] = [
     'kind', 'id', 'record',
     'attributes', 'initialState',
     'initialStateEventId',
 ];
 
-const RECORD_MULTI_PUT_EDIT_KEYS:
+const RECORD_WRITE_EDIT_KEYS:
     readonly string[] = [
     'kind', 'id', 'record',
     'attributes', 'removedAttributeIds',
 ];
 
-function validateMultiPutAttribute(
+function validateRecordWriteAttribute(
     value: unknown,
     recordId: string,
     label: string,
@@ -1798,37 +1798,37 @@ function validateMultiPutAttribute(
     return { id, ...validated };
 }
 
-export function validateRecordMultiPutBody(
+export function validateRecordWriteBody(
     body: Record<string, unknown>,
-): RecordMultiPutBody {
+): RecordWriteBody {
     const kind = pickString(body, 'kind');
     if (kind === 'create') {
         assertOnlyKeys(
             body,
-            RECORD_MULTI_PUT_CREATE_KEYS,
-            'RecordMultiPutCreateBody',
+            RECORD_WRITE_CREATE_KEYS,
+            'RecordWriteCreateBody',
         );
         const id = pickString(body, 'id');
         const record = validateRecordEntity(
             asObject(
                 body['record'],
-                'RecordMultiPutCreateBody.record',
+                'RecordWriteCreateBody.record',
             ),
         );
         const attrsRaw = asArray(
             body['attributes'],
-            'RecordMultiPutCreateBody.attributes',
+            'RecordWriteCreateBody.attributes',
         );
         const attributes = attrsRaw.map((a, i) =>
-            validateMultiPutAttribute(
+            validateRecordWriteAttribute(
                 a, id,
-                'RecordMultiPutCreateBody'
+                'RecordWriteCreateBody'
                 + '.attributes[' + i + ']',
             ),
         );
         const initialState = assertRecordState(
             pickString(body, 'initialState'),
-            'RecordMultiPutCreateBody.initialState',
+            'RecordWriteCreateBody.initialState',
         );
         const initialStateEventId = pickString(
             body, 'initialStateEventId',
@@ -1842,36 +1842,36 @@ export function validateRecordMultiPutBody(
     if (kind === 'edit') {
         assertOnlyKeys(
             body,
-            RECORD_MULTI_PUT_EDIT_KEYS,
-            'RecordMultiPutEditBody',
+            RECORD_WRITE_EDIT_KEYS,
+            'RecordWriteEditBody',
         );
         const id = pickString(body, 'id');
         const record = validateRecordEntity(
             asObject(
                 body['record'],
-                'RecordMultiPutEditBody.record',
+                'RecordWriteEditBody.record',
             ),
         );
         const attrsRaw = asArray(
             body['attributes'],
-            'RecordMultiPutEditBody.attributes',
+            'RecordWriteEditBody.attributes',
         );
         const attributes = attrsRaw.map((a, i) =>
-            validateMultiPutAttribute(
+            validateRecordWriteAttribute(
                 a, id,
-                'RecordMultiPutEditBody'
+                'RecordWriteEditBody'
                 + '.attributes[' + i + ']',
             ),
         );
         const removedRaw = asArray(
             body['removedAttributeIds'],
-            'RecordMultiPutEditBody'
+            'RecordWriteEditBody'
             + '.removedAttributeIds',
         );
         const removedAttributeIds = removedRaw
             .map((r, i) => asString(
                 r,
-                'RecordMultiPutEditBody'
+                'RecordWriteEditBody'
                 + '.removedAttributeIds['
                 + i + ']',
             ));
@@ -1882,7 +1882,7 @@ export function validateRecordMultiPutBody(
         };
     }
     throw new ValidationError(
-        "expected RecordMultiPutBody kind"
+        "expected RecordWriteBody kind"
         + " 'create' or 'edit', got " + kind,
     );
 }

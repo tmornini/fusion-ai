@@ -50,7 +50,7 @@ import {
     validateIdeaConversionBody,
     validateIdentityCreateBody,
     validateObjectiveCreateBody,
-    validateRecordMultiPutBody,
+    validateRecordWriteBody,
     validateStateBody,
     validateWorkOrderCreateBody,
     validateWorkOrderTransitionBody,
@@ -217,12 +217,12 @@ function makeIdRoute<T extends { id: string }>(
     return route(`${config.noun}/:id`, handlers);
 }
 
-async function applyRecordMultiPut(
+async function applyRecordWrite(
     db: DbAdapter,
     payload: Record<string, unknown>,
     actor: Id,
 ): Promise<void> {
-    const body = validateRecordMultiPutBody(payload);
+    const body = validateRecordWriteBody(payload);
     const entries = body.attributes.map(attr => {
         const { id, ...fields } = attr;
         return { id, fields };
@@ -1181,6 +1181,8 @@ export const routes: Route[] = [
     }),
     route('records', {
         get: (db) => db.records.getAll(),
+        post: (db, _p, body, actor) =>
+            applyRecordWrite(db, body, actor),
     }),
     makeIdRoute<RecordEntity>({
         noun: 'records',
@@ -1235,11 +1237,6 @@ export const routes: Route[] = [
                     Omit<FlowRecordEntity, 'id'>,
             ),
         delete: (db, p) => db.flowRecords.delete(param(p, 1)),
-    }),
-    route('records-multi-put', {
-        post: async (db, _p, body, actor) => {
-            await applyRecordMultiPut(db, body, actor);
-        },
     }),
 
     route('organizations', {

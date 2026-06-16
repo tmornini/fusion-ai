@@ -222,7 +222,7 @@ export async function postRecordChange(
 ): Promise<void> {
     // The server stamps organization_id from the verified
     // token; this present-and-valid value only satisfies the
-    // multi-put body validator, which requires the column.
+    // record-write body validator, which requires the column.
     const org = activeOrg(ctx);
     const record = {
         ...change.record, organization_id: org,
@@ -233,7 +233,7 @@ export async function postRecordChange(
     if (change.kind === 'create') {
         const initialStateEventId =
             generateCryptoSafeBase62();
-        await ctx.POST('records-multi-put', {
+        await ctx.POST('records', {
             kind: 'create',
             id,
             record,
@@ -242,7 +242,7 @@ export async function postRecordChange(
             initialStateEventId,
         });
     } else {
-        await ctx.POST('records-multi-put', {
+        await ctx.POST('records', {
             kind: 'edit',
             id,
             record,
