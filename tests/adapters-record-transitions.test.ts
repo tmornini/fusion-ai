@@ -15,6 +15,7 @@ import {
 import {
     storedWorkOrderFlowGraphField,
     jsonArrayField,
+    jsonObjectField,
     SYSTEM_MEMBER_ID,
     DEFAULT_LOCK_TIMEOUT,
     type GraphNode,
@@ -120,6 +121,18 @@ async function seedFlowLink(
     flowId: string,
     workOrderId: string,
 ): Promise<void> {
+    // The flow↔work-order join nests under its parent flow now,
+    // so the parent flow must exist to be enumerated — the
+    // record lookup walks flows → work-orders → records.
+    await db.flows.put(flowId, {
+        organization_id: '1',
+        name: flowId,
+        is_locked: false,
+        is_auto_layout: false,
+        is_auto_fit: false,
+        lock_timeout: DEFAULT_LOCK_TIMEOUT,
+        graph: jsonObjectField({ nodes: [], edges: [] }),
+    });
     await db.flowWorkOrders.put(
         'fwo-' + workOrderId, {
             flow_id: flowId,

@@ -17,7 +17,6 @@ import {
 import type {
     RequestContext,
 } from './shared.ts';
-import { filterByField } from './shared.ts';
 
 export interface FlowVersion {
     id: string;
@@ -87,14 +86,13 @@ async function computeFlowVersionPublish(
     ctx: RequestContext,
     flowId: string,
 ): Promise<FlowVersionPublish> {
-    const [flow, allVersions] = await Promise.all([
+    const [flow, mine] = await Promise.all([
         ctx.GET<FlowEntity>('flows/' + flowId),
         ctx.GET<FlowVersionEntity[]>(
-            'flow-versions',
+            'flows/' + flowId + '/versions',
         ),
     ]);
-    const mine = filterByField(allVersions, 'flow_id', flowId)
-        .sort(compareRows);
+    mine.sort(compareRows);
     // Anticipate the version about to be written;
     // trim the oldest if that pushes us past cap.
     const excess =
@@ -152,7 +150,7 @@ export async function postFlowVersion(
 ): Promise<void> {
     const { version, trimIds } =
         await computeFlowVersionPublish(ctx, flowId);
-    await ctx.POST('flow-versions', {
+    await ctx.POST('flows/' + flowId + '/versions', {
         id: versionId,
         version,
         trimIds,
@@ -164,10 +162,10 @@ export async function getFlowVersions(
     ctx: RequestContext,
     flowId: string,
 ): Promise<FlowVersion[]> {
-    const all = await ctx.GET<
+    const mine = await ctx.GET<
         FlowVersionEntity[]
-    >('flow-versions');
-    return filterByField(all, 'flow_id', flowId)
+    >('flows/' + flowId + '/versions');
+    return mine
         .sort((a, b) => -compareRows(a, b))
         .map(computeFlowVersion);
 }

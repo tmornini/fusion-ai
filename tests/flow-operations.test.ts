@@ -239,7 +239,7 @@ async function flowVersionCount(
     db: MemoryDbAdapter,
 ): Promise<number> {
     const rows = await createRequestContext(db, DEV_TOKEN)
-        .GET<unknown[]>('flow-versions');
+        .GET<unknown[]>('flows/' + FLOW_ID + '/versions');
     return rows.length;
 }
 
@@ -1182,7 +1182,7 @@ test(
     async () => {
         const { db, ctx } = await setupFlow();
         // Snapshot the 2-node baseline as v1.
-        await ctx.PUT('flow-versions/v1', {
+        await ctx.PUT('flows/' + FLOW_ID + '/versions/v1', {
             flow_id: FLOW_ID,
             name: 'Test Flow',
             is_locked: false,
@@ -1373,7 +1373,7 @@ test(
     + ' applies nothing',
     async () => {
         const { db, ctx } = await setupFlow();
-        await ctx.PUT('flow-versions/v1', {
+        await ctx.PUT('flows/' + FLOW_ID + '/versions/v1', {
             flow_id: FLOW_ID,
             name: 'Test Flow',
             is_locked: false,

@@ -300,14 +300,8 @@ interface LeafCase {
 }
 
 const LEAF_CASES: LeafCase[] = [
-    { route: 'flow-versions', hasGetById: true,
-        store: d => d.flowVersions, a: 'fvA', b: 'fvB' },
-    { route: 'flow-records', hasGetById: true,
-        store: d => d.flowRecords, a: 'frA', b: 'frB' },
     { route: 'project-flows',
         store: d => d.projectFlows, a: 'pfA', b: 'pfB' },
-    { route: 'flow-work-orders',
-        store: d => d.flowWorkOrders, a: 'fwoA', b: 'fwoB' },
     { route: 'idea-submissions',
         store: d => d.ideaSubmissions, a: 'isA', b: 'isB' },
     { route: 'objective-revisions',
@@ -343,6 +337,59 @@ for (const c of LEAF_CASES) {
                 (await c.store(db).getById(c.b)).id, c.b);
             const res = await facadeGet(
                 db, '/' + c.route + '/' + c.b);
+            assert.equal(res.status, 404);
+        });
+    }
+}
+
+// The three flow-subordinate resources nest under flows/:id.
+// The collection is fetched at flows/fA/<seg> — the SERVER
+// filters to the parent flow — and the leaf at
+// flows/fA/<seg>/<id>. The org fence still rides the facade
+// re-entry, so a foreign leaf 404s through its parent flow's org.
+interface NestedFlowCase {
+    seg: string;
+    store: (d: MemoryDbAdapter) => {
+        getById(id: string): Promise<{ id: string }>;
+    };
+    a: string;
+    b: string;
+    hasGetById?: boolean;
+}
+
+const NESTED_FLOW_CASES: NestedFlowCase[] = [
+    { seg: 'versions', hasGetById: true,
+        store: d => d.flowVersions, a: 'fvA', b: 'fvB' },
+    { seg: 'records', hasGetById: true,
+        store: d => d.flowRecords, a: 'frA', b: 'frB' },
+    { seg: 'work-orders',
+        store: d => d.flowWorkOrders, a: 'fwoA', b: 'fwoB' },
+];
+
+for (const c of NESTED_FLOW_CASES) {
+    test('nested flows/:id/' + c.seg
+        + ' lists only the bound flow',
+    async () => {
+        const db = await deepDb();
+        // Prove the foreign row EXISTS in storage, so exclusion
+        // is the fence — the test fails on a regression.
+        assert.equal(
+            (await c.store(db).getById(c.b)).id, c.b);
+        const res = await facadeGet(
+            db, '/flows/fA/' + c.seg);
+        assert.equal(res.status, 200);
+        const rows = await res.json() as { id: string }[];
+        assert.deepEqual(rows.map(r => r.id), [c.a]);
+    });
+
+    if (c.hasGetById) {
+        test('nested flows/:id/' + c.seg + ' 404s a foreign id',
+        async () => {
+            const db = await deepDb();
+            assert.equal(
+                (await c.store(db).getById(c.b)).id, c.b);
+            const res = await facadeGet(
+                db, '/flows/fA/' + c.seg + '/' + c.b);
             assert.equal(res.status, 404);
         });
     }

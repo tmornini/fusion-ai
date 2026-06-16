@@ -27,6 +27,24 @@ import {
 import {
     generateCryptoSafeBase62,
 } from '../../../api/crypto-safe-base62.ts';
+import { getFlowEntities } from './flows.ts';
+
+// The flow↔record bindings across EVERY flow the caller's org
+// can see — reassembled from the per-flow nested collections,
+// since a record may be bound by flows beyond any single one.
+// The flows list is org-scoped; each flow's records are fetched
+// in parallel and concatenated.
+async function getAllFlowRecords(
+    ctx: RequestContext,
+): Promise<FlowRecordEntity[]> {
+    const flows = await getFlowEntities(ctx);
+    const perFlow = await Promise.all(
+        flows.map(f => ctx.GET<FlowRecordEntity[]>(
+            'flows/' + f.id + '/records',
+        )),
+    );
+    return perFlow.flat();
+}
 
 export {
     RecordModel,
@@ -119,9 +137,7 @@ export async function getRecords(
         ctx.GET<RecordAttributeEntity[]>(
             'record-attributes',
         ),
-        ctx.GET<FlowRecordEntity[]>(
-            'flow-records',
-        ),
+        getAllFlowRecords(ctx),
         getRecordStates(ctx),
     ]);
     const attrCountByRecord = new Map<

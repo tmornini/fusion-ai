@@ -154,10 +154,11 @@ export async function getWorkOrders(
 
 export async function getFlowWorkOrderEntities(
     ctx: RequestContext,
+    flowId: string,
 ): Promise<FlowWorkOrderEntity[]> {
     return ctx.GET<
         FlowWorkOrderEntity[]
-    >('flow-work-orders');
+    >('flows/' + flowId + '/work-orders');
 }
 
 export async function getWorkOrder(

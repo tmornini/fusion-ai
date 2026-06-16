@@ -305,7 +305,7 @@ test(
 );
 
 test(
-    'DELETE /flow-versions/:id hard-deletes the row',
+    'DELETE /flows/:id/versions/:vid hard-deletes the row',
     async () => {
         const { db } = await setupMemDb();
         await createBaseFlow(
@@ -321,7 +321,7 @@ test(
         );
         await createRequestContext(
             db, await devToken(),
-        ).DELETE('flow-versions/ver-1');
+        ).DELETE('flows/flow-1/versions/ver-1');
         const versions = await getFlowVersions(
             createRequestContext(db, await devToken()), 'flow-1',
         );
@@ -447,7 +447,7 @@ test(
         );
         const raw = await createRequestContext(db, await devToken())
             .GET<FlowVersionEntity[]>(
-                'flow-versions',
+                'flows/flow-1/versions',
             );
         assert.equal(raw.length, 1);
         assert.equal(raw[0]!.id, 'ver-1');

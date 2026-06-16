@@ -2185,7 +2185,7 @@ const FLOW_VERSION_PUBLISH_KEYS: readonly string[] = [
     'id', 'version', 'trimIds',
 ];
 
-// The HTTP-body gate for POST /flow-versions: the new version
+// The HTTP-body gate for POST /flows/:id/versions: the version
 // snapshot row plus the ids of the over-cap versions to trim,
 // written atomically. The version fields are NOT fully validated
 // here — the flow_versions store re-validates the snapshot

@@ -85,7 +85,8 @@ async function seedVersion(
     });
 }
 
-// A well-formed version snapshot body for POST /flow-versions.
+// A well-formed version snapshot body for POST
+// /flows/:id/versions.
 function versionBody(flowId: string) {
     return {
         flow_id: flowId,
@@ -100,8 +101,8 @@ function versionBody(flowId: string) {
 }
 
 test(
-    'POST flow-versions writes the new snapshot and trims'
-    + ' the named over-cap versions in one operation',
+    'POST flows/:id/versions writes the new snapshot and'
+    + ' trims the named over-cap versions in one operation',
     async () => {
         const db = await freshDb();
         await seedFlow(db, 'flow-1');
@@ -119,7 +120,7 @@ test(
         );
 
         await POST(
-            db, 'flow-versions',
+            db, 'flows/flow-1/versions',
             {
                 id: 'new-1',
                 version: versionBody('flow-1'),
@@ -130,7 +131,7 @@ test(
 
         // The new snapshot row exists.
         const fresh = await GET<FlowVersionEntity>(
-            db, 'flow-versions/new-1', DEV_TOKEN,
+            db, 'flows/flow-1/versions/new-1', DEV_TOKEN,
         );
         assert.equal(fresh.id, 'new-1');
         assert.equal(fresh.flow_id, 'flow-1');
@@ -145,7 +146,7 @@ test(
 );
 
 test(
-    'POST flow-versions rolls back BOTH the put and the'
+    'POST flows/:id/versions rolls back BOTH the put and the'
     + ' deletes when the snapshot put fails mid-transaction',
     async () => {
         const db = await freshDb();
@@ -170,7 +171,7 @@ test(
         (bad as Record<string, unknown>).graph = 'not json';
         await assert.rejects(
             () => POST(
-                db, 'flow-versions',
+                db, 'flows/flow-1/versions',
                 {
                     id: 'new-1',
                     version: bad,
@@ -182,7 +183,9 @@ test(
 
         // The snapshot never landed.
         await assert.rejects(
-            () => GET(db, 'flow-versions/new-1', DEV_TOKEN),
+            () => GET(
+                db, 'flows/flow-1/versions/new-1', DEV_TOKEN,
+            ),
         );
         // The named trim targets both survive — the deletes
         // rolled back with the put.

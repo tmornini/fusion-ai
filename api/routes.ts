@@ -880,9 +880,13 @@ export const routes: Route[] = [
             );
         },
     }),
-    route('flow-versions', {
-        get: (db) =>
-            db.flowVersions.getAll(),
+    // Flow versions nest under their parent flow: the flow id is
+    // param 0, so the SERVER filters the collection to that flow
+    // (the org fence still rides the facade re-entry). The leaf
+    // id is param 1.
+    route('flows/:id/versions', {
+        get: (db, p) =>
+            db.flowVersions.getAllWhere('flow_id', param(p, 0)),
         // Publish a flow version: the new snapshot row is put and
         // the named over-cap versions are deleted as ONE
         // transaction — a mid-write failure rolls the whole thing
@@ -894,8 +898,9 @@ export const routes: Route[] = [
         // flow at read time and writes delegate — and re-validates
         // the snapshot through validateFlowVersionEntity as the put
         // lands. NO state event is written, so the handler needs no
-        // actor. Member-tier POST — /flow-versions carries POST in
-        // MEMBER_VERBS.
+        // actor. The body already carries flow_id; the flow id is
+        // param 0. Member-tier POST — /flows/:id/versions carries
+        // POST in MEMBER_VERBS.
         post: (db, _p, body) => {
             const b = validateFlowVersionPublishBody(body);
             return db.transaction(
@@ -913,10 +918,15 @@ export const routes: Route[] = [
             );
         },
     }),
-    makeIdRoute<FlowVersionEntity>({
-        noun: 'flow-versions',
-        store: db => db.flowVersions,
-        verbs: ['get', 'put', 'delete'],
+    route('flows/:id/versions/:vid', {
+        get: (db, p) => db.flowVersions.getById(param(p, 1)),
+        put: (db, p, body) =>
+            db.flowVersions.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<FlowVersionEntity, 'id'>,
+            ),
+        delete: (db, p) => db.flowVersions.delete(param(p, 1)),
     }),
     route('project-flows', {
         get: (db) =>
@@ -1088,14 +1098,21 @@ export const routes: Route[] = [
             );
         },
     }),
-    route('flow-work-orders', {
-        get: (db) =>
-            db.flowWorkOrders.getAll(),
+    // Flow work-order joins nest under their parent flow: the
+    // flow id is param 0, so the SERVER filters the collection to
+    // that flow. The leaf id is param 1; only PUT is exposed (the
+    // flat route never carried GET/DELETE on the leaf).
+    route('flows/:id/work-orders', {
+        get: (db, p) =>
+            db.flowWorkOrders.getAllWhere('flow_id', param(p, 0)),
     }),
-    makeIdRoute<FlowWorkOrderEntity>({
-        noun: 'flow-work-orders',
-        store: db => db.flowWorkOrders,
-        verbs: ['put'],
+    route('flows/:id/work-orders/:woid', {
+        put: (db, p, body) =>
+            db.flowWorkOrders.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<FlowWorkOrderEntity, 'id'>,
+            ),
     }),
     route('state-field-values', {
         get: (db) =>
@@ -1147,14 +1164,22 @@ export const routes: Route[] = [
             );
         },
     }),
-    route('flow-records', {
-        get: (db) =>
-            db.flowRecords.getAll(),
+    // Flow↔record bindings nest under their parent flow: the flow
+    // id is param 0, so the SERVER filters the collection to that
+    // flow. The leaf id is param 1.
+    route('flows/:id/records', {
+        get: (db, p) =>
+            db.flowRecords.getAllWhere('flow_id', param(p, 0)),
     }),
-    makeIdRoute<FlowRecordEntity>({
-        noun: 'flow-records',
-        store: db => db.flowRecords,
-        verbs: ['get', 'put', 'delete'],
+    route('flows/:id/records/:frid', {
+        get: (db, p) => db.flowRecords.getById(param(p, 1)),
+        put: (db, p, body) =>
+            db.flowRecords.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<FlowRecordEntity, 'id'>,
+            ),
+        delete: (db, p) => db.flowRecords.delete(param(p, 1)),
     }),
     route('records-multi-put', {
         post: async (db, _p, body, actor) => {
