@@ -45,6 +45,9 @@ import {
     validateHumanMemberEditBody,
     validateFlowCreateBody,
     validateFlowVersionPublishBody,
+    validateFlowSaveBody,
+    validateFlowUndoBody,
+    validateFlowRedoBody,
     validateIdeaCreateBody,
     validateObjectiveCreateBody,
     validateRecordMultiPutBody,
@@ -678,6 +681,116 @@ export const routes: Route[] = [
         noun: 'flows',
         store: db => db.flows,
         verbs: ['get', 'put'],
+    }),
+    // Save a flow: an OPTIONAL version snapshot (the new
+    // flow_versions row PUT plus the named over-cap trim
+    // DELETEs), THEN the flow row PUT, THEN the 'updated' state
+    // event — all as ONE transaction. A mid-write failure rolls
+    // the whole thing back rather than landing the version with
+    // the flow half-written (or vice versa). Covers both the
+    // plain save (version null — no flow_versions touch) and the
+    // versioned save. The org-scoped flows store stamps
+    // organization_id from the verified token and re-validates
+    // through validateFlowEntity, so the flow body OMITS it;
+    // flow_versions is parent-scoped and re-validates the
+    // snapshot through validateFlowVersionEntity. The event is
+    // authored by the verified caller (actor), never the body.
+    // Member-tier POST — isPermitted matches /flows on the
+    // segment prefix, so /flows/:id/save is member-permitted.
+    route('flows/:id/save', {
+        post: (db, p, body, actor) => {
+            const id = param(p, 0);
+            const b = validateFlowSaveBody(body);
+            return db.transaction(
+                ['flows', 'flow_versions', 'states'],
+                async (view) => {
+                    if (b.version !== null) {
+                        await view.flowVersions.put(
+                            b.version.id,
+                            b.version.version as unknown as
+                                Omit<FlowVersionEntity, 'id'>,
+                        );
+                        for (const t of b.version.trimIds) {
+                            await view.flowVersions.delete(t);
+                        }
+                    }
+                    await view.flows.put(
+                        id,
+                        b.flow as unknown as
+                            Omit<FlowEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        b.eventId, id, 'updated', actor,
+                    );
+                },
+            );
+        },
+    }),
+    // Undo a flow edit: the flow row PUT, the 'updated' state
+    // event, and the DELETE of the consumed version — all as ONE
+    // transaction. The flow can never land reverted while the
+    // version row survives unconsumed. The org-scoped flows store
+    // stamps organization_id and re-validates the flow body (so
+    // it OMITS it); the event is authored by the verified caller
+    // (actor). Member-tier POST via the /flows segment prefix.
+    route('flows/:id/undo', {
+        post: (db, p, body, actor) => {
+            const id = param(p, 0);
+            const b = validateFlowUndoBody(body);
+            return db.transaction(
+                ['flows', 'flow_versions', 'states'],
+                async (view) => {
+                    await view.flows.put(
+                        id,
+                        b.flow as unknown as
+                            Omit<FlowEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        b.eventId, id, 'updated', actor,
+                    );
+                    await view.flowVersions.delete(
+                        b.consumedVersionId,
+                    );
+                },
+            );
+        },
+    }),
+    // Redo a flow edit: a REQUIRED version snapshot (the new
+    // flow_versions row PUT plus the named over-cap trim
+    // DELETEs), THEN the flow row PUT, THEN the 'updated' state
+    // event — all as ONE transaction. The current state can
+    // never land archived as a version while the redo graph is
+    // lost. The org-scoped flows store stamps organization_id and
+    // re-validates the flow body (so it OMITS it); flow_versions
+    // re-validates the snapshot; the event is authored by the
+    // verified caller (actor). Member-tier POST via the /flows
+    // segment prefix.
+    route('flows/:id/redo', {
+        post: (db, p, body, actor) => {
+            const id = param(p, 0);
+            const b = validateFlowRedoBody(body);
+            return db.transaction(
+                ['flows', 'flow_versions', 'states'],
+                async (view) => {
+                    await view.flowVersions.put(
+                        b.version.id,
+                        b.version.version as unknown as
+                            Omit<FlowVersionEntity, 'id'>,
+                    );
+                    for (const t of b.version.trimIds) {
+                        await view.flowVersions.delete(t);
+                    }
+                    await view.flows.put(
+                        id,
+                        b.flow as unknown as
+                            Omit<FlowEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        b.eventId, id, 'updated', actor,
+                    );
+                },
+            );
+        },
     }),
     route('flow-versions', {
         get: (db) =>

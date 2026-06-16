@@ -13,16 +13,13 @@ import {
     buildStartAndCompleteNodes,
 } from './flow-defaults.ts';
 import {
-    buildStateEventOp,
-} from './state-events.ts';
-import {
     generateCryptoSafeBase62,
 } from '../../../api/crypto-safe-base62.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
 import type {
-    RequestContext, WriteOp,
+    RequestContext,
 } from './shared.ts';
 
 const flowChanges =
@@ -96,17 +93,14 @@ export interface FlowSaveShape {
     edges: GraphEdge[];
 }
 
-// The PUT-flow write pair — the row PUT plus its 'updated'
-// state event — as batch ops, so a caller can land them
-// atomically beside sibling ops in ONE ctx.commit. The ctx
-// is kept in the signature for call-site symmetry; the
-// state-event author is now stamped server-side, so this
-// builder no longer reads from it.
-export async function putFlowOps(
-    _ctx: RequestContext,
-    id: string,
+// The flow row body the named save/undo/redo POSTs carry —
+// the FlowSaveShape projected onto the storage columns, minus
+// the org column (the org-scoped flows store stamps it from the
+// verified token and re-validates the rest). camelCase enters,
+// snake_case exits — this builder is the divorce point.
+export function buildFlowBody(
     save: FlowSaveShape,
-): Promise<WriteOp[]> {
+): Record<string, unknown> {
     const entity: Omit<
         FlowEntity, 'id' | 'organization_id'
     > = {
@@ -120,27 +114,23 @@ export async function putFlowOps(
             edges: save.edges,
         }),
     };
-    const body =
-        entity as unknown as Record<
-            string, unknown
-        >;
-    return [
-        {
-            method: 'put',
-            resource: `flows/${id}`,
-            body,
-        },
-        buildStateEventOp(id, 'updated'),
-    ];
+    return entity as unknown as Record<string, unknown>;
 }
 
+// Save a flow with NO version snapshot: the flow row PUT plus
+// its 'updated' state event, written atomically through the
+// named POST /flows/:id/save operation (the put + the event in
+// one re-entrant transaction). The author is stamped server-
+// side from the token; the client mints the event id.
 export async function putFlow(
     ctx: RequestContext,
     id: string,
     save: FlowSaveShape,
 ): Promise<void> {
-    await ctx.commit({
-        ops: await putFlowOps(ctx, id, save),
+    await ctx.POST(`flows/${id}/save`, {
+        version: null,
+        flow: buildFlowBody(save),
+        eventId: generateCryptoSafeBase62(),
     });
     flowChanges.notify();
 }

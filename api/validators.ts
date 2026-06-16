@@ -2110,6 +2110,170 @@ export function validateFlowVersionPublishBody(
     return { id, version, trimIds };
 }
 
+// The version-snapshot sub-object shared by POST /flows/:id/save
+// (optional) and POST /flows/:id/redo (required): a new
+// flow_versions snapshot to PUT plus the ids of the over-cap
+// versions to trim. Same shape as FlowVersionPublishBody — the
+// flow_versions store re-validates the snapshot through
+// validateFlowVersionEntity when the composing POST puts it; the
+// web-app owns the cap-retention trim derivation, so trimIds is a
+// list of non-empty version ids. `label` names the offender so
+// the message reads from the enclosing body.
+export interface FlowVersionSnapshot {
+    readonly id: string;
+    readonly version: Record<string, unknown>;
+    readonly trimIds: readonly string[];
+}
+
+const FLOW_VERSION_SNAPSHOT_KEYS: readonly string[] = [
+    'id', 'version', 'trimIds',
+];
+
+function validateFlowVersionSnapshot(
+    value: unknown,
+    label: string,
+): FlowVersionSnapshot {
+    const obj = asObject(value, label);
+    assertOnlyKeys(obj, FLOW_VERSION_SNAPSHOT_KEYS, label);
+    const id = asString(obj['id'], label + '.id');
+    if (id === '') {
+        throw new ValidationError(
+            label + '.id must be non-empty',
+        );
+    }
+    const version = asObject(obj['version'], label + '.version');
+    const trimRaw = asArray(obj['trimIds'], label + '.trimIds');
+    const trimIds = trimRaw.map((t, i) => {
+        const v = asString(t, label + '.trimIds[' + i + ']');
+        if (v === '') {
+            throw new ValidationError(
+                label + '.trimIds[' + i + '] must be non-empty',
+            );
+        }
+        return v;
+    });
+    return { id, version, trimIds };
+}
+
+export interface FlowSaveBody {
+    readonly version: FlowVersionSnapshot | null;
+    readonly flow: Record<string, unknown>;
+    readonly eventId: string;
+}
+
+const FLOW_SAVE_KEYS: readonly string[] = [
+    'version', 'flow', 'eventId',
+];
+
+// The HTTP-body gate for POST /flows/:id/save: an OPTIONAL
+// version snapshot (put + trims), the flow row, and the
+// 'updated' state event, written atomically. Covers both the
+// plain save (version null) and the versioned save. The flow
+// fields are NOT fully validated here — the org-scoped flows
+// store stamps organization_id from the verified token and
+// re-validates through validateFlowEntity AFTER the stamp, so
+// the body OMITS organization_id; the version sub-object's
+// snapshot is re-validated by the flow_versions store. The
+// state is fixed to 'updated' server-side and authored by the
+// verified caller (actor), never the body — the body carries
+// only the event id.
+export function validateFlowSaveBody(
+    body: Record<string, unknown>,
+): FlowSaveBody {
+    assertOnlyKeys(body, FLOW_SAVE_KEYS, 'FlowSaveBody');
+    const rawVersion = body['version'];
+    const version = rawVersion === null
+        ? null
+        : validateFlowVersionSnapshot(
+            rawVersion, 'FlowSaveBody.version',
+        );
+    const flow = asObject(body['flow'], 'FlowSaveBody.flow');
+    const eventId = pickString(body, 'eventId');
+    if (eventId === '') {
+        throw new ValidationError(
+            'FlowSaveBody.eventId must be non-empty',
+        );
+    }
+    return { version, flow, eventId };
+}
+
+export interface FlowUndoBody {
+    readonly flow: Record<string, unknown>;
+    readonly eventId: string;
+    readonly consumedVersionId: string;
+}
+
+const FLOW_UNDO_KEYS: readonly string[] = [
+    'flow', 'eventId', 'consumedVersionId',
+];
+
+// The HTTP-body gate for POST /flows/:id/undo: the flow row, the
+// 'updated' state event, and the DELETE of the consumed version,
+// written atomically — the flow can never land reverted while
+// the version row survives unconsumed. The flow fields are
+// re-validated by the org-scoped flows store after the org
+// stamp (body OMITS organization_id). The state is fixed to
+// 'updated' server-side and authored by the verified caller
+// (actor), never the body.
+export function validateFlowUndoBody(
+    body: Record<string, unknown>,
+): FlowUndoBody {
+    assertOnlyKeys(body, FLOW_UNDO_KEYS, 'FlowUndoBody');
+    const flow = asObject(body['flow'], 'FlowUndoBody.flow');
+    const eventId = pickString(body, 'eventId');
+    if (eventId === '') {
+        throw new ValidationError(
+            'FlowUndoBody.eventId must be non-empty',
+        );
+    }
+    const consumedVersionId = pickString(
+        body, 'consumedVersionId',
+    );
+    if (consumedVersionId === '') {
+        throw new ValidationError(
+            'FlowUndoBody.consumedVersionId must be non-empty',
+        );
+    }
+    return { flow, eventId, consumedVersionId };
+}
+
+export interface FlowRedoBody {
+    readonly version: FlowVersionSnapshot;
+    readonly flow: Record<string, unknown>;
+    readonly eventId: string;
+}
+
+const FLOW_REDO_KEYS: readonly string[] = [
+    'version', 'flow', 'eventId',
+];
+
+// The HTTP-body gate for POST /flows/:id/redo: a REQUIRED
+// version snapshot (put + trims), the flow row, and the
+// 'updated' state event, written atomically — the current
+// state can never land archived as a version while the redo
+// graph is lost. The flow fields are re-validated by the
+// org-scoped flows store after the org stamp (body OMITS
+// organization_id); the version snapshot is re-validated by
+// the flow_versions store. The state is fixed to 'updated'
+// server-side and authored by the verified caller (actor),
+// never the body.
+export function validateFlowRedoBody(
+    body: Record<string, unknown>,
+): FlowRedoBody {
+    assertOnlyKeys(body, FLOW_REDO_KEYS, 'FlowRedoBody');
+    const version = validateFlowVersionSnapshot(
+        body['version'], 'FlowRedoBody.version',
+    );
+    const flow = asObject(body['flow'], 'FlowRedoBody.flow');
+    const eventId = pickString(body, 'eventId');
+    if (eventId === '') {
+        throw new ValidationError(
+            'FlowRedoBody.eventId must be non-empty',
+        );
+    }
+    return { version, flow, eventId };
+}
+
 export interface HumanMemberCreateBody {
     readonly id: string;
     readonly pii: Record<string, unknown>;

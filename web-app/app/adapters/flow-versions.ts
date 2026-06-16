@@ -118,25 +118,26 @@ async function computeFlowVersionPublish(
     };
 }
 
-// The version-snapshot write set — the current flow row
-// captured as a new version, plus any over-cap trims — as
-// batch ops, so a caller can land them atomically beside
-// sibling ops in ONE ctx.commit.
-export async function postFlowVersionOps(
+// The version-snapshot sub-object the named POST /flows/:id/save
+// and /redo operations carry: the current flow captured as a new
+// version row (under `versionId`) plus the ids of the over-cap
+// versions to trim. The web-app owns the cap-retention
+// derivation; the server writes the put + the N deletes inside
+// the same re-entrant transaction as the flow write.
+export interface FlowVersionSnapshot {
+    id: string;
+    version: Record<string, unknown>;
+    trimIds: string[];
+}
+
+export async function buildFlowVersionSnapshot(
     ctx: RequestContext,
     versionId: string,
     flowId: string,
-): Promise<WriteOp[]> {
+): Promise<FlowVersionSnapshot> {
     const { version, trimIds } =
         await computeFlowVersionPublish(ctx, flowId);
-    return [
-        {
-            method: 'put',
-            resource: `flow-versions/${versionId}`,
-            body: version,
-        },
-        ...trimIds.map(deleteFlowVersionOp),
-    ];
+    return { id: versionId, version, trimIds };
 }
 
 // Publish a flow version standalone: the new snapshot row plus
