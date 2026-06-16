@@ -468,12 +468,19 @@ test(
 
 test(
     'POST records-multi-put create rolls back the'
-    + ' record when the current member is missing',
+    + ' record when its initial state event conflicts',
     async () => {
         const db = await freshDb();
-        // No seedCurrentMember: the create reads
-        // members/current, which 404s after the record
-        // write — the whole operation must roll back.
+        // Pre-seed a DIFFERENT event at the create's
+        // initialStateEventId. postEvent re-puts that id with
+        // a conflicting payload mid-tx (LedgerImmutability),
+        // so the record write must roll back with it.
+        await db.states.put('ev-x', {
+            entity_id: 'other',
+            state: 'active',
+            member_id: 'current',
+            at: '2020-01-01T00:00:00.000000Z',
+        });
         await assert.rejects(
             () => POST(db, 'records-multi-put', {
                 kind: 'create',

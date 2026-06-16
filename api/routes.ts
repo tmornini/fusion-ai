@@ -3,6 +3,7 @@ import type {
     EntityStore,
 } from './db.ts';
 import type {
+    Id,
     AIMemberEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -64,26 +65,35 @@ import {
     HTTP_CONFLICT,
 } from './http-errors.ts';
 
+// Every handler receives the verified caller's id (actor) as
+// its final argument — the one place authorship is sourced.
+// The gate resolves it from the token; handlers that author
+// state events or identify the caller stamp it, and the rest
+// (the makeIdRoute closures) simply ignore the extra arg.
 type GetHandler = (
     adapter: DbAdapter,
     params: string[],
+    actor: Id,
 ) => Promise<unknown>;
 
 type PutHandler = (
     adapter: DbAdapter,
     params: string[],
     payload: Record<string, unknown>,
+    actor: Id,
 ) => Promise<unknown>;
 
 type DeleteHandler = (
     adapter: DbAdapter,
     params: string[],
+    actor: Id,
 ) => Promise<void>;
 
 type PostHandler = (
     adapter: DbAdapter,
     params: string[],
     payload: Record<string, unknown>,
+    actor: Id,
 ) => Promise<unknown>;
 
 export interface Route {
@@ -196,6 +206,7 @@ function makeIdRoute<T extends { id: string }>(
 async function applyRecordMultiPut(
     db: DbAdapter,
     payload: Record<string, unknown>,
+    actor: Id,
 ): Promise<void> {
     const body = validateRecordMultiPutBody(payload);
     const entries = body.attributes.map(attr => {
@@ -208,26 +219,26 @@ async function applyRecordMultiPut(
             : [];
     // The record, its initial state event, and its
     // attributes commit as one transaction — a mid-write
-    // failure (e.g. a missing current member) rolls the
-    // whole thing back rather than orphaning the record.
-    // Removed attributes are RESTRICTED inside the same tx:
-    // a referenced attribute 409s and the whole batch rolls
-    // back (api/record-attribute-refs.ts).
+    // failure rolls the whole thing back rather than
+    // orphaning the record. The initial state event is
+    // authored by the verified caller (actor), never a
+    // client-supplied member. Removed attributes are
+    // RESTRICTED inside the same tx: a referenced attribute
+    // 409s and the whole batch rolls back
+    // (api/record-attribute-refs.ts).
     await db.transaction(
         [...new Set([
             'records', 'record_attributes', 'states',
-            'members', ...ATTRIBUTE_RESTRICT_TABLES,
+            ...ATTRIBUTE_RESTRICT_TABLES,
         ])],
         async (view) => {
             await view.records.put(body.id, body.record);
             if (body.kind === 'create') {
-                const member =
-                    await view.members.getById('current');
                 await view.states.postEvent(
                     body.initialStateEventId,
                     body.id,
                     body.initialState,
-                    member.id,
+                    actor,
                 );
             }
             if (removedIds.length > 0) {
@@ -489,9 +500,9 @@ export const routes: Route[] = [
     // (naming the prior claimant) and the new 'claimed'
     // land atomically.
     route('work-orders/:id/claim', {
-        post: (db, p) =>
+        post: (db, p, _body, actor) =>
             db.transaction(
-                ['work_orders', 'states', 'members'],
+                ['work_orders', 'states'],
                 async (view) => {
                     const workOrderId = param(p, 0);
                     const wo = await view.workOrders
@@ -501,8 +512,6 @@ export const routes: Route[] = [
                             wo.flow_graph,
                             'work_orders.flow_graph',
                         );
-                    const member = await view.members
-                        .getById('current');
                     const events = await view.states
                         .getAllFor(workOrderId);
                     const prior = latestClaimEvent(
@@ -514,9 +523,7 @@ export const routes: Route[] = [
                             prior, graph.lockTimeout,
                         );
                     if (priorLive) {
-                        if (
-                            prior.member_id === member.id
-                        ) {
+                        if (prior.member_id === actor) {
                             return;
                         }
                         throw new ApiError(
@@ -540,7 +547,7 @@ export const routes: Route[] = [
                         generateCryptoSafeBase62(),
                         workOrderId,
                         'claimed',
-                        member.id,
+                        actor,
                     );
                 },
             ),
@@ -627,8 +634,8 @@ export const routes: Route[] = [
         verbs: ['get', 'put', 'delete'],
     }),
     route('records-multi-put', {
-        post: async (db, _p, body) => {
-            await applyRecordMultiPut(db, body);
+        post: async (db, _p, body, actor) => {
+            await applyRecordMultiPut(db, body, actor);
         },
     }),
 
@@ -649,8 +656,8 @@ export const routes: Route[] = [
         verbs: ['get', 'put', 'delete'],
     }),
     route('current-member', {
-        get: (db) =>
-            db.members.getById('current'),
+        get: (db, _p, actor) =>
+            db.members.getById(actor),
     }),
 
     makeIdRoute<MemberEntity>({
@@ -714,12 +721,18 @@ export const routes: Route[] = [
     route('states/:id', {
         get: (db, p) =>
             db.states.getById(param(p, 0)),
-        put: (db, p, body) =>
+        // The author is the verified caller (actor), stamped
+        // over any client-supplied member_id — the ledger
+        // records who acted, not who the body claims.
+        put: (db, p, body, actor) =>
             db.states.put(
                 param(p, 0),
-                validateStateEntity(
-                    withoutId(body),
-                ),
+                {
+                    ...validateStateEntity(
+                        withoutId(body),
+                    ),
+                    member_id: actor,
+                },
             ),
     }),
     route('entity-states/:id', {

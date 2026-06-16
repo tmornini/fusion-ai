@@ -1,5 +1,6 @@
 import { TABLE_NAMES } from './db.ts';
 import type { DbAdapter } from './db.ts';
+import type { Id } from './types.ts';
 import { isPermitted } from './authorization.ts';
 import {
     ApiError,
@@ -171,6 +172,7 @@ async function dispatchOpInTx(
     view: DbAdapter,
     op: CommitOp,
     table: readonly Route[],
+    actor: Id,
 ): Promise<void> {
     const segments =
         op.resource.split('/').filter(Boolean);
@@ -191,7 +193,7 @@ async function dispatchOpInTx(
                 HTTP_BAD_REQUEST,
             );
         }
-        await matched.put(view, params, op.body);
+        await matched.put(view, params, op.body, actor);
     } else {
         if (matched.delete === undefined) {
             throw new ApiError(
@@ -200,7 +202,7 @@ async function dispatchOpInTx(
                 HTTP_BAD_REQUEST,
             );
         }
-        await matched.delete(view, params);
+        await matched.delete(view, params, actor);
     }
 }
 
@@ -213,12 +215,13 @@ async function applyCommit(
     effective: DbAdapter,
     payload: Record<string, unknown>,
     table: readonly Route[],
+    actor: Id,
 ): Promise<void> {
     const ops = validateCommitBody(payload);
     const tables = unionTablesFor(ops);
     await effective.transaction(tables, async (view) => {
         for (const op of ops) {
-            await dispatchOpInTx(view, op, table);
+            await dispatchOpInTx(view, op, table, actor);
         }
     });
 }
@@ -232,8 +235,8 @@ export function commitRouteFor(
     table: readonly Route[],
 ): Route {
     return route('commit', {
-        post: async (db, _p, body) => {
-            await applyCommit(db, body, table);
+        post: async (db, _p, body, actor) => {
+            await applyCommit(db, body, table, actor);
         },
     });
 }

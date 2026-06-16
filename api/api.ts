@@ -11,6 +11,8 @@ import type { LatencySimulation } from './latency.ts';
 import {
     ValidationError,
 } from './types.ts';
+import type { Id } from './types.ts';
+import { ANONYMOUS_ID } from './access-token.ts';
 import {
     ownerOrgOfEntity,
     orgOwnedProbes,
@@ -198,6 +200,12 @@ export async function handleRequest(
     // exempt route are honestly none; every fenced route
     // overwrites this with the per-org derivation below.
     let roles: readonly string[] = [];
+    // The acting member, sourced from the verified token and
+    // handed to every handler so authorship is never client-
+    // supplied. A bearer-exempt route has no principal, so it
+    // carries the anonymous id — its handlers never author a
+    // member-state event.
+    let actor: Id = ANONYMOUS_ID;
     const bearerExempt =
         AUTHENTICATION_ROUTES.has(routePattern)
         || (BOOTSTRAP_ROUTES.has(routePattern)
@@ -268,6 +276,7 @@ export async function handleRequest(
         }
         effective = fenced.scoped;
         roles = fenced.roles;
+        actor = fenced.principal.id;
     }
 
     // Parse the request body when the method
@@ -323,6 +332,7 @@ export async function handleRequest(
                     await matched.get(
                         effective,
                         params,
+                        actor,
                     ),
                 );
             }
@@ -343,6 +353,7 @@ export async function handleRequest(
                         effective,
                         params,
                         body!,
+                        actor,
                     );
                 if (result === undefined) {
                     return new Response(null, {
@@ -367,6 +378,7 @@ export async function handleRequest(
                 await matched.delete(
                     effective,
                     params,
+                    actor,
                 );
                 return new Response(null, {
                     status: 204,
@@ -390,6 +402,7 @@ export async function handleRequest(
                         effective,
                         params,
                         body!,
+                        actor,
                     );
                 if (result === undefined) {
                     return new Response(null, {
