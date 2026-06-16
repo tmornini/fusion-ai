@@ -15,7 +15,7 @@ import {
     notifyFlowChange,
 } from './flow-mutations.ts';
 import type {
-    RequestContext, WriteOp,
+    RequestContext,
 } from './shared.ts';
 import { filterByField } from './shared.ts';
 
@@ -170,13 +170,4 @@ export async function getFlowVersions(
     return filterByField(all, 'flow_id', flowId)
         .sort((a, b) => -compareRows(a, b))
         .map(computeFlowVersion);
-}
-
-export function deleteFlowVersionOp(
-    versionId: string,
-): WriteOp {
-    return {
-        method: 'delete',
-        resource: 'flow-versions/' + versionId,
-    };
 }

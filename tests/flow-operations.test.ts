@@ -1182,29 +1182,21 @@ test(
     async () => {
         const { db, ctx } = await setupFlow();
         // Snapshot the 2-node baseline as v1.
-        await ctx.commit({
-            ops: [{
-                method: 'put',
-                resource: 'flow-versions/v1',
-                body: {
-                    flow_id: FLOW_ID,
-                    name: 'Test Flow',
-                    is_locked: false,
-                    is_auto_layout: true,
-                    is_auto_fit: true,
-                    lock_timeout:
-                        DEFAULT_LOCK_TIMEOUT,
-                    graph: JSON.stringify({
-                        nodes: [
-                            buildNode('a'),
-                            buildNode('b'),
-                        ],
-                        edges: [],
-                    }),
-                    at:
-                        '2026-01-01T00:00:00.000000Z',
-                },
-            }],
+        await ctx.PUT('flow-versions/v1', {
+            flow_id: FLOW_ID,
+            name: 'Test Flow',
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout: DEFAULT_LOCK_TIMEOUT,
+            graph: JSON.stringify({
+                nodes: [
+                    buildNode('a'),
+                    buildNode('b'),
+                ],
+                edges: [],
+            }),
+            at: '2026-01-01T00:00:00.000000Z',
         });
         // Current state has a third node.
         const snap = snapFrom(buildGraph([
@@ -1381,29 +1373,21 @@ test(
     + ' applies nothing',
     async () => {
         const { db, ctx } = await setupFlow();
-        await ctx.commit({
-            ops: [{
-                method: 'put',
-                resource: 'flow-versions/v1',
-                body: {
-                    flow_id: FLOW_ID,
-                    name: 'Test Flow',
-                    is_locked: false,
-                    is_auto_layout: true,
-                    is_auto_fit: true,
-                    lock_timeout:
-                        DEFAULT_LOCK_TIMEOUT,
-                    graph: JSON.stringify({
-                        nodes: [
-                            buildNode('a'),
-                            buildNode('b'),
-                        ],
-                        edges: [],
-                    }),
-                    at:
-                        '2026-01-01T00:00:00.000000Z',
-                },
-            }],
+        await ctx.PUT('flow-versions/v1', {
+            flow_id: FLOW_ID,
+            name: 'Test Flow',
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout: DEFAULT_LOCK_TIMEOUT,
+            graph: JSON.stringify({
+                nodes: [
+                    buildNode('a'),
+                    buildNode('b'),
+                ],
+                edges: [],
+            }),
+            at: '2026-01-01T00:00:00.000000Z',
         });
         const snap = snapFrom(buildGraph([
             buildNode('a'),

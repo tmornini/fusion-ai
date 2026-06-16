@@ -16,7 +16,6 @@ import {
 import {
     postFlowVersion,
     getFlowVersions,
-    deleteFlowVersionOp,
     FLOW_VERSION_CAP,
     type FlowVersion,
 } from
@@ -306,8 +305,7 @@ test(
 );
 
 test(
-    'deleteFlowVersionOp hard-deletes the row'
-    + ' when committed',
+    'DELETE /flow-versions/:id hard-deletes the row',
     async () => {
         const { db } = await setupMemDb();
         await createBaseFlow(
@@ -323,9 +321,7 @@ test(
         );
         await createRequestContext(
             db, await devToken(),
-        ).commit({
-            ops: [deleteFlowVersionOp('ver-1')],
-        });
+        ).DELETE('flow-versions/ver-1');
         const versions = await getFlowVersions(
             createRequestContext(db, await devToken()), 'flow-1',
         );

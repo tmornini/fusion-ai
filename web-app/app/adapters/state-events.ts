@@ -11,7 +11,7 @@ import {
     MS_PER_SECOND,
     nowUtc,
 } from '../../../api/types.ts';
-import type { RequestContext, WriteOp } from './shared.ts';
+import type { RequestContext } from './shared.ts';
 import {
     generateCryptoSafeBase62,
 } from '../../../api/crypto-safe-base62.ts';
@@ -22,41 +22,22 @@ import {
     isClaimState,
 } from '../../../api/work-order-claims.ts';
 
-// Constructs a single PUT op against the states table —
-// the atomic seam between an entity-lifecycle adapter and
-// the append-only event log. Composed at the call site
-// with sibling ops inside one ctx.commit batch — every op
-// lands as one transaction. The author is stamped SERVER-
-// SIDE from the verified token, so the op carries no
-// member_id; nowUtc the moment. The helper is pure — no
-// reads — so every site speaks the same vocabulary.
-export function buildStateEventOp(
-    entityId: Id,
-    state: string,
-): Extract<WriteOp, { method: 'put' }> {
-    const eventId = generateCryptoSafeBase62();
-    return {
-        method: 'put',
-        resource: `states/${eventId}`,
-        body: {
-            entity_id: entityId,
-            state,
-            at: nowUtc(),
-        },
-    };
-}
-
 // A single state transition is one idempotent row — write it
-// straight to PUT /states/:id rather than wrapping it in a
-// commit batch. The author is stamped server-side from the
-// token; the client mints the event id (retries hit one row).
+// straight to PUT /states/:id. The author is stamped server-
+// side from the verified token, so the body carries no
+// member_id; nowUtc stamps the moment. The client mints the
+// event id (retries hit one row).
 export async function postStateEvent(
     ctx: RequestContext,
     entityId: Id,
     state: string,
 ): Promise<void> {
-    const op = buildStateEventOp(entityId, state);
-    await ctx.PUT(op.resource, op.body);
+    const eventId = generateCryptoSafeBase62();
+    await ctx.PUT(`states/${eventId}`, {
+        entity_id: entityId,
+        state,
+        at: nowUtc(),
+    });
 }
 
 // The states log is shared across entity types and the

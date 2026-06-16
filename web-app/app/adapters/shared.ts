@@ -59,39 +59,6 @@ export function filterByField<T, K extends keyof T>(
     return rows.filter(row => row[field] === value);
 }
 
-// A unit of write work executed by ctx.commit().
-// `put` upserts a row by full state; `delete` removes
-// a row by its resource path. The whole batch posts as
-// ONE request and commits in one transaction — it
-// applies entirely or not at all. On failure, commit()
-// throws CommitError wrapping the cause; real rollback
-// leaves nothing partially applied.
-export type WriteOp =
-    | {
-        method: 'put';
-        resource: string;
-        body: Record<string, unknown>;
-    }
-    | {
-        method: 'delete';
-        resource: string;
-    };
-
-export interface Transaction {
-    readonly ops: readonly WriteOp[];
-}
-
-export class CommitError extends Error {
-    readonly cause: Error;
-    constructor(cause: Error) {
-        super(
-            'commit failed: ' + cause.message,
-        );
-        this.name = 'CommitError';
-        this.cause = cause;
-    }
-}
-
 export interface RequestContext {
     readonly requestId: string;
     readonly identity: Principal;
@@ -105,7 +72,6 @@ export interface RequestContext {
         resource: string,
         body: Record<string, unknown>,
     ): Promise<T>;
-    commit(tx: Transaction): Promise<void>;
 }
 
 // The recovery-free context: each verb runs directly on its
@@ -161,19 +127,6 @@ function makeRequestContext(
             body: Record<string, unknown>,
         ) => run<T>(
             tok => httpPost<T>(adapter, resource, body, tok)),
-        commit: async (
-            tx: Transaction,
-        ): Promise<void> => {
-            try {
-                await ctx.POST('commit', {
-                    ops: tx.ops,
-                });
-            } catch (e) {
-                // Atomic batch: a failure applied nothing,
-                // so `applied` is always empty.
-                throw new CommitError(e as Error);
-            }
-        },
     };
     return ctx;
 }

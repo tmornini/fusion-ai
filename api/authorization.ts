@@ -118,7 +118,6 @@ const MEMBER_VERBS: Readonly<
     '/work-orders': ['GET', 'PUT', 'POST'],
     '/states': ['GET', 'PUT'],
     '/entity-states': ['GET'],
-    '/commit': ['POST'],
     '/members': ['GET'],
     '/ai-members': ['GET'],
     '/human-members': ['GET'],

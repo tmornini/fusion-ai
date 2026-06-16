@@ -47,10 +47,6 @@ import {
     type Route,
 } from './routes.ts';
 import {
-    commitRouteFor,
-    commitOpsAuthzFailure,
-} from './commit-dispatch.ts';
-import {
     invitationsRequest,
 } from './invitations-domain.ts';
 import {
@@ -69,19 +65,8 @@ export {
     RequestError,
     HTTP_FORBIDDEN,
 } from './http-errors.ts';
-export {
-    unionTablesFor,
-    commitOpsAuthzFailure,
-    type CommitOp,
-} from './commit-dispatch.ts';
 
-// The batch route dispatches its ops against the same table
-// that serves it — commit included — so the composed table
-// closes over itself: built from the route modules, sealed by
-// the final push. Composition happens HERE, once, so neither
-// route module needs an edge back into the other.
-const routeTable: Route[] = [...routes];
-routeTable.push(commitRouteFor(routeTable));
+const routeTable: readonly Route[] = routes;
 
 const BASE_URL = 'http://localhost';
 
@@ -196,10 +181,6 @@ export async function handleRequest(
     // Org-owned stores fence to the org; the global
     // identity/auth spine passes through.
     let effective: DbAdapter = adapter;
-    // The roles of an unauthenticated caller on a bearer-
-    // exempt route are honestly none; every fenced route
-    // overwrites this with the per-org derivation below.
-    let roles: readonly string[] = [];
     // The acting member, sourced from the verified token and
     // handed to every handler so authorship is never client-
     // supplied. A bearer-exempt route has no principal, so it
@@ -275,7 +256,6 @@ export async function handleRequest(
             }
         }
         effective = fenced.scoped;
-        roles = fenced.roles;
         actor = fenced.principal.id;
     }
 
@@ -299,19 +279,6 @@ export async function handleRequest(
             );
         }
         body = parse.body;
-    }
-
-    // The commit batch dispatches to the same route table —
-    // authorize each op as the request it stands for, with
-    // the roles already derived at the gate above.
-    if (routePattern === 'commit' && body !== undefined) {
-        const denied = commitOpsAuthzFailure(body, roles);
-        if (denied !== null) {
-            return Response.json(
-                { error: denied },
-                { status: HTTP_FORBIDDEN },
-            );
-        }
     }
 
     try {
