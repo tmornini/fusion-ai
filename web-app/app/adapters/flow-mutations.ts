@@ -87,9 +87,7 @@ export async function postFlowCreation(
                     at: now,
                 },
             },
-            await buildStateEventOp(
-                ctx, input.flowId, 'active',
-            ),
+            buildStateEventOp(input.flowId, 'active'),
         ],
     });
 
@@ -108,9 +106,12 @@ export interface FlowSaveShape {
 
 // The PUT-flow write pair — the row PUT plus its 'updated'
 // state event — as batch ops, so a caller can land them
-// atomically beside sibling ops in ONE ctx.commit.
+// atomically beside sibling ops in ONE ctx.commit. The ctx
+// is kept in the signature for call-site symmetry; the
+// state-event author is now stamped server-side, so this
+// builder no longer reads from it.
 export async function putFlowOps(
-    ctx: RequestContext,
+    _ctx: RequestContext,
     id: string,
     save: FlowSaveShape,
 ): Promise<WriteOp[]> {
@@ -137,9 +138,7 @@ export async function putFlowOps(
             resource: `flows/${id}`,
             body,
         },
-        await buildStateEventOp(
-            ctx, id, 'updated',
-        ),
+        buildStateEventOp(id, 'updated'),
     ];
 }
 

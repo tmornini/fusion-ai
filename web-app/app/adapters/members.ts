@@ -264,9 +264,7 @@ export async function postHumanMemberCreation(
                 body: detail as unknown as
                     Record<string, unknown>,
             },
-            await buildStateEventOp(
-                ctx, id, initialState,
-            ),
+            buildStateEventOp(id, initialState),
         ],
     });
     humanMemberChanges.notify();
@@ -279,7 +277,7 @@ export async function postHumanMemberStateChange(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(ctx, id, state),
+            buildStateEventOp(id, state),
         ],
     });
     humanMemberChanges.notify();

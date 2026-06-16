@@ -19,9 +19,6 @@ import {
     latestByKey,
 } from '../../../api/ledger-reduction.ts';
 import {
-    getCurrentHumanMember,
-} from './members.ts';
-import {
     isClaimState,
 } from '../../../api/work-order-claims.ts';
 
@@ -29,16 +26,14 @@ import {
 // the atomic seam between an entity-lifecycle adapter and
 // the append-only event log. Composed at the call site
 // with sibling ops inside one ctx.commit batch — every op
-// lands as one transaction. The current human member is
-// the actor; nowUtc the moment. Caller does NOT pre-
-// resolve the member — the helper owns that read so every
-// site speaks the same vocabulary.
-export async function buildStateEventOp(
-    ctx: RequestContext,
+// lands as one transaction. The author is stamped SERVER-
+// SIDE from the verified token, so the op carries no
+// member_id; nowUtc the moment. The helper is pure — no
+// reads — so every site speaks the same vocabulary.
+export function buildStateEventOp(
     entityId: Id,
     state: string,
-): Promise<WriteOp> {
-    const member = await getCurrentHumanMember(ctx);
+): WriteOp {
     const eventId = generateCryptoSafeBase62();
     return {
         method: 'put',
@@ -46,7 +41,6 @@ export async function buildStateEventOp(
         body: {
             entity_id: entityId,
             state,
-            member_id: member.id,
             at: nowUtc(),
         },
     };

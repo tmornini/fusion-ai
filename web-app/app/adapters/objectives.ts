@@ -277,9 +277,7 @@ export async function postObjectiveArchival(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(
-                ctx, id, 'archived',
-            ),
+            buildStateEventOp(id, 'archived'),
         ],
     });
     notifyObjectiveChange();
@@ -291,7 +289,7 @@ export async function postObjectiveReactivation(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(ctx, id, 'active'),
+            buildStateEventOp(id, 'active'),
         ],
     });
     notifyObjectiveChange();

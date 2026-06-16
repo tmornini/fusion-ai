@@ -159,7 +159,7 @@ export async function postAIMemberCreation(
                 body: input as unknown as
                     Record<string, unknown>,
             },
-            await buildStateEventOp(ctx, id, 'active'),
+            buildStateEventOp(id, 'active'),
         ],
     });
     aiMemberChanges.notify();
@@ -172,7 +172,7 @@ export async function postAIMemberStateChange(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(ctx, id, state),
+            buildStateEventOp(id, state),
         ],
     });
     aiMemberChanges.notify();

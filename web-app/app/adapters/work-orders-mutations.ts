@@ -176,18 +176,15 @@ export async function postWorkOrderCreation(
                     at: now,
                 },
             },
-            await buildStateEventOp(
-                ctx,
+            buildStateEventOp(
                 input.workOrderId,
                 startNode.id,
             ),
-            await buildStateEventOp(
-                ctx,
+            buildStateEventOp(
                 input.workOrderId,
                 postStartNodeId,
             ),
-            await buildStateEventOp(
-                ctx,
+            buildStateEventOp(
                 input.workOrderId,
                 'claimed',
             ),
@@ -244,8 +241,8 @@ export async function postWorkOrderTransition(
         );
     }
 
-    const transitionOp = await buildStateEventOp(
-        ctx, workOrderId, edge.toNodeId,
+    const transitionOp = buildStateEventOp(
+        workOrderId, edge.toNodeId,
     );
     const transitionEventId =
         transitionOp.resource.split('/')[1]!;
@@ -290,8 +287,7 @@ export async function postWorkOrderTransition(
         );
     const claimReleasedEvent: WriteOp[] = hasLiveClaim
         ? [
-            await buildStateEventOp(
-                ctx,
+            buildStateEventOp(
                 workOrderId,
                 'claim_released',
             ),

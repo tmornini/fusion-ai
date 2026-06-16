@@ -74,7 +74,6 @@ test(
         const event = {
             entity_id: 'e1',
             state: 'active',
-            member_id: 'w1',
             at: '2026-01-01T00:00:00.000000Z',
         };
         await PUT(db, 'states/s1', event, DEV_TOKEN);

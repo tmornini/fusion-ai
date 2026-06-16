@@ -207,9 +207,7 @@ export async function postIdeaCreation(
                 resource: `ideas/${id}`,
                 body: ideaBody,
             },
-            await buildStateEventOp(
-                ctx, id, initialState,
-            ),
+            buildStateEventOp(id, initialState),
         ],
     });
     ideaChanges.notify();
@@ -222,9 +220,7 @@ export async function postIdeaStateChange(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(
-                ctx, id, state,
-            ),
+            buildStateEventOp(id, state),
         ],
     });
     ideaChanges.notify();
@@ -314,12 +310,8 @@ export async function postIdeaConversion(
                 resource: `ideas/${ideaId}`,
                 body: ideaBody,
             },
-            await buildStateEventOp(
-                ctx, ideaId, 'promoted',
-            ),
-            await buildStateEventOp(
-                ctx, projectId, projectState,
-            ),
+            buildStateEventOp(ideaId, 'promoted'),
+            buildStateEventOp(projectId, projectState),
             ...baselines.map(b => ({
                 method: 'put' as const,
                 resource:

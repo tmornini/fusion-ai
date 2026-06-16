@@ -19,8 +19,7 @@ export async function deleteWorkOrderClaim(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(
-                ctx,
+            buildStateEventOp(
                 workOrderId,
                 'claim_released',
             ),

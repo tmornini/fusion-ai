@@ -579,9 +579,7 @@ export async function postFlowFromBackup(
                     at: now,
                 },
             },
-            await buildStateEventOp(
-                ctx, flowId, 'active',
-            ),
+            buildStateEventOp(flowId, 'active'),
         ],
     });
 
@@ -889,9 +887,7 @@ export async function postFlowFromMermaid(
                     at: now,
                 },
             },
-            await buildStateEventOp(
-                ctx, flowId, 'active',
-            ),
+            buildStateEventOp(flowId, 'active'),
         ],
     });
 
@@ -1236,9 +1232,7 @@ export async function postFlowFromZip(
                     at: now,
                 },
             },
-            await buildStateEventOp(
-                ctx, flowId, 'active',
-            ),
+            buildStateEventOp(flowId, 'active'),
         ],
     });
 

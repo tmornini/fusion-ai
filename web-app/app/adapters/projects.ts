@@ -309,9 +309,7 @@ export async function postProjectStateChange(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(
-                ctx, id, state,
-            ),
+            buildStateEventOp(id, state),
         ],
     });
     projectChanges.notify();

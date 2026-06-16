@@ -1549,7 +1549,10 @@ export function validateActualScoreEntity(
     };
 }
 
-const STATE_BODY_KEYS: readonly string[] = [
+// The storage-edge gate: the FULL event row, member_id
+// included. The store re-validates every write through this,
+// so a direct put cannot smuggle a malformed event past it.
+const STATE_ENTITY_KEYS: readonly string[] = [
     'entity_id', 'state', 'member_id', 'at',
 ];
 
@@ -1557,7 +1560,7 @@ export function validateStateEntity(
     body: Record<string, unknown>,
 ): Omit<StateEntity, 'id'> {
     assertOnlyKeys(
-        body, STATE_BODY_KEYS, 'StateEntity',
+        body, STATE_ENTITY_KEYS, 'StateEntity',
     );
     return {
         entity_id: pickString(
@@ -1569,6 +1572,30 @@ export function validateStateEntity(
         ),
         at: validateTimestampField(
             body, 'at', 'StateEntity',
+        ),
+    };
+}
+
+// The HTTP-body gate for PUT /states/:id: NO member_id —
+// authorship is stamped from the verified token, never the
+// body. A body that names a member is malformed and 400s.
+const STATE_BODY_KEYS: readonly string[] = [
+    'entity_id', 'state', 'at',
+];
+
+export function validateStateBody(
+    body: Record<string, unknown>,
+): Omit<StateEntity, 'id' | 'member_id'> {
+    assertOnlyKeys(
+        body, STATE_BODY_KEYS, 'StateEvent',
+    );
+    return {
+        entity_id: pickString(
+            body, 'entity_id',
+        ),
+        state: pickString(body, 'state'),
+        at: validateTimestampField(
+            body, 'at', 'StateEvent',
         ),
     };
 }

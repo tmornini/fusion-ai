@@ -245,9 +245,7 @@ export async function postRecordStateChange(
 ): Promise<void> {
     await ctx.commit({
         ops: [
-            await buildStateEventOp(
-                ctx, id, state,
-            ),
+            buildStateEventOp(id, state),
         ],
     });
     recordChanges.notify();

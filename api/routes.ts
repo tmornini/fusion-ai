@@ -40,7 +40,7 @@ import {
 } from './crypto-safe-base62.ts';
 import {
     validateRecordMultiPutBody,
-    validateStateEntity,
+    validateStateBody,
     validateWorkOrderFlowGraphJson,
 } from './validators.ts';
 import {
@@ -716,7 +716,7 @@ export const routes: Route[] = [
             db.states.put(
                 param(p, 0),
                 {
-                    ...validateStateEntity(
+                    ...validateStateBody(
                         withoutId(body),
                     ),
                     member_id: actor,
