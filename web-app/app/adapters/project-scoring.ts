@@ -406,20 +406,19 @@ export async function postProjectBaselineScoring(
 ): Promise<void> {
     const at = nowUtc();
     const member = await getCurrentHumanMember(ctx);
-    const ops = scores.map(s => ({
-        method: 'put' as const,
-        resource:
+    for (const s of scores) {
+        await ctx.PUT(
             `project-objective-baseline-scores/`
             + generateCryptoSafeBase62(),
-        body: {
-            project_id: projectId,
-            objective_id: s.objectiveId,
-            score: s.score,
-            member_id: member.id,
-            at,
-        },
-    }));
-    await ctx.commit({ ops });
+            {
+                project_id: projectId,
+                objective_id: s.objectiveId,
+                score: s.score,
+                member_id: member.id,
+                at,
+            },
+        );
+    }
     notifyProjectScoreChange();
 }
 
@@ -433,20 +432,19 @@ export async function postProjectActualMeasurement(
 ): Promise<void> {
     const at = nowUtc();
     const member = await getCurrentHumanMember(ctx);
-    const ops = scores.map(s => ({
-        method: 'put' as const,
-        resource:
+    for (const s of scores) {
+        await ctx.PUT(
             `project-objective-actual-scores/`
             + generateCryptoSafeBase62(),
-        body: {
-            project_id: projectId,
-            objective_id: s.objectiveId,
-            score: s.score,
-            member_id: member.id,
-            at,
-        },
-    }));
-    await ctx.commit({ ops });
+            {
+                project_id: projectId,
+                objective_id: s.objectiveId,
+                score: s.score,
+                member_id: member.id,
+                at,
+            },
+        );
+    }
     notifyProjectScoreChange();
 }
 

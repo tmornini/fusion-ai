@@ -250,20 +250,16 @@ export async function postObjectiveRevision(
     const at = nowUtc();
     const member = await getCurrentHumanMember(ctx);
     const revisionId = generateCryptoSafeBase62();
-    await ctx.commit({
-        ops: [{
-            method: 'put',
-            resource:
-                `objective-revisions/${revisionId}`,
-            body: {
-                objective_id: id,
-                name,
-                description,
-                member_id: member.id,
-                at,
-            },
-        }],
-    });
+    await ctx.PUT(
+        `objective-revisions/${revisionId}`,
+        {
+            objective_id: id,
+            name,
+            description,
+            member_id: member.id,
+            at,
+        },
+    );
     notifyObjectiveChange();
 }
 
@@ -288,14 +284,8 @@ export async function putObjectivePosition(
     id: ObjectiveId,
     position: number,
 ): Promise<void> {
-    await ctx.commit({
-        ops: [{
-            method: 'put' as const,
-            resource: `objectives/${id}`,
-            body: {
-                position,
-            },
-        }],
+    await ctx.PUT(`objectives/${id}`, {
+        position,
     });
     notifyObjectiveChange();
 }
