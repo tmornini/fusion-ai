@@ -129,15 +129,12 @@ test(
         assert.equal(projectEvents[0]!.state, 'submitted');
         assert.equal(projectEvents[0]!.member_id, 'current');
 
-        const baselines = await GET<
+        const mine = await GET<
             ProjectObjectiveBaselineScore[]
         >(
             db,
-            'project-objective-baseline-scores',
+            'projects/p1/objective-baseline-scores',
             DEV_TOKEN,
-        );
-        const mine = baselines.filter(
-            b => b.project_id === 'p1',
         );
         assert.equal(mine.length, 2);
         const byObj = new Map(

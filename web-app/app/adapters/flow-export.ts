@@ -12,7 +12,6 @@ import {
 } from './state-events.ts';
 import type {
     FlowEntity,
-    ProjectFlowEntity,
     ProjectEntity,
     GraphNode,
     GraphEdge,
@@ -36,6 +35,7 @@ import {
 } from '../../../api/validators.ts';
 import {
     getFlowGraph,
+    getProjectFlowEntities,
 } from './flow-queries.ts';
 import type { FlowGraph } from './flow-queries.ts';
 import type { RequestContext } from './shared.ts';
@@ -246,9 +246,7 @@ async function getFlowBackupData(
             ctx.GET<FlowEntity>(
                 'flows/' + flowId,
             ),
-            ctx.GET<ProjectFlowEntity[]>(
-                'project-flows',
-            ),
+            getProjectFlowEntities(ctx),
         ]);
     const pf = projectFlows.find(
         r => r.flow_id === flowId,

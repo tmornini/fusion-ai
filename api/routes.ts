@@ -928,15 +928,25 @@ export const routes: Route[] = [
             ),
         delete: (db, p) => db.flowVersions.delete(param(p, 1)),
     }),
-    route('project-flows', {
-        get: (db) =>
-            db.projectFlows
-                .getAll(),
+    // Project↔flow joins nest under their parent project: the
+    // project id is param 0, so the SERVER filters the collection
+    // to that project (the org fence still rides the facade
+    // re-entry). The leaf id is param 1; PUT and DELETE are
+    // exposed exactly as the flat makeIdRoute carried them.
+    route('projects/:id/flows', {
+        get: (db, p) =>
+            db.projectFlows.getAllWhere(
+                'project_id', param(p, 0),
+            ),
     }),
-    makeIdRoute<ProjectFlowEntity>({
-        noun: 'project-flows',
-        store: db => db.projectFlows,
-        verbs: ['put', 'delete'],
+    route('projects/:id/flows/:pfid', {
+        put: (db, p, body) =>
+            db.projectFlows.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<ProjectFlowEntity, 'id'>,
+            ),
+        delete: (db, p) => db.projectFlows.delete(param(p, 1)),
     }),
     route('work-orders', {
         get: (db) =>
@@ -1272,23 +1282,41 @@ export const routes: Route[] = [
         store: db => db.objectiveRevisions,
         verbs: ['put'],
     }),
-    route('project-objective-baseline-scores', {
-        get: (db) =>
-            db.projectObjectiveBaselineScores.getAll(),
+    // Objective baseline scores nest under their parent project:
+    // the project id is param 0, so the SERVER filters the
+    // collection to that project (the org fence still rides the
+    // facade re-entry). The leaf id is param 1; only PUT is
+    // exposed, exactly as the flat makeIdRoute carried it.
+    route('projects/:id/objective-baseline-scores', {
+        get: (db, p) =>
+            db.projectObjectiveBaselineScores.getAllWhere(
+                'project_id', param(p, 0),
+            ),
     }),
-    makeIdRoute<ProjectObjectiveBaselineScore>({
-        noun: 'project-objective-baseline-scores',
-        store: db => db.projectObjectiveBaselineScores,
-        verbs: ['put'],
+    route('projects/:id/objective-baseline-scores/:sid', {
+        put: (db, p, body) =>
+            db.projectObjectiveBaselineScores.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<ProjectObjectiveBaselineScore, 'id'>,
+            ),
     }),
-    route('project-objective-actual-scores', {
-        get: (db) =>
-            db.projectObjectiveActualScores.getAll(),
+    // Objective actual scores nest under their parent project,
+    // identically: project id is param 0 (server filter), leaf id
+    // is param 1, PUT only.
+    route('projects/:id/objective-actual-scores', {
+        get: (db, p) =>
+            db.projectObjectiveActualScores.getAllWhere(
+                'project_id', param(p, 0),
+            ),
     }),
-    makeIdRoute<ProjectObjectiveActualScore>({
-        noun: 'project-objective-actual-scores',
-        store: db => db.projectObjectiveActualScores,
-        verbs: ['put'],
+    route('projects/:id/objective-actual-scores/:sid', {
+        put: (db, p, body) =>
+            db.projectObjectiveActualScores.put(
+                param(p, 1),
+                withoutId(body) as unknown as
+                    Omit<ProjectObjectiveActualScore, 'id'>,
+            ),
     }),
     route('states', {
         get: (db) => db.states.getAll(),

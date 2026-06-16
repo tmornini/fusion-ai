@@ -300,19 +300,11 @@ interface LeafCase {
 }
 
 const LEAF_CASES: LeafCase[] = [
-    { route: 'project-flows',
-        store: d => d.projectFlows, a: 'pfA', b: 'pfB' },
     { route: 'idea-submissions',
         store: d => d.ideaSubmissions, a: 'isA', b: 'isB' },
     { route: 'objective-revisions',
         store: d => d.objectiveRevisions,
         a: 'orevA', b: 'orevB' },
-    { route: 'project-objective-baseline-scores',
-        store: d => d.projectObjectiveBaselineScores,
-        a: 'bsA', b: 'bsB' },
-    { route: 'project-objective-actual-scores',
-        store: d => d.projectObjectiveActualScores,
-        a: 'asA', b: 'asB' },
 ];
 
 for (const c of LEAF_CASES) {
@@ -393,6 +385,50 @@ for (const c of NESTED_FLOW_CASES) {
             assert.equal(res.status, 404);
         });
     }
+}
+
+// The three project-subordinate resources nest under
+// projects/:id. The collection is fetched at projects/pA/<seg> —
+// the SERVER filters to the parent project — so the foreign
+// row, bound to project pB, is excluded. The org fence still
+// rides the facade re-entry. None exposes a leaf GET /:id (the
+// leaves carry only PUT, or PUT+DELETE for flows), so no
+// foreign-id 404 case applies.
+interface NestedProjectCase {
+    seg: string;
+    store: (d: MemoryDbAdapter) => {
+        getById(id: string): Promise<{ id: string }>;
+    };
+    a: string;
+    b: string;
+}
+
+const NESTED_PROJECT_CASES: NestedProjectCase[] = [
+    { seg: 'flows',
+        store: d => d.projectFlows, a: 'pfA', b: 'pfB' },
+    { seg: 'objective-baseline-scores',
+        store: d => d.projectObjectiveBaselineScores,
+        a: 'bsA', b: 'bsB' },
+    { seg: 'objective-actual-scores',
+        store: d => d.projectObjectiveActualScores,
+        a: 'asA', b: 'asB' },
+];
+
+for (const c of NESTED_PROJECT_CASES) {
+    test('nested projects/:id/' + c.seg
+        + ' lists only the bound project',
+    async () => {
+        const db = await deepDb();
+        // Prove the foreign row EXISTS in storage, so exclusion
+        // is the fence — the test fails on a regression.
+        assert.equal(
+            (await c.store(db).getById(c.b)).id, c.b);
+        const res = await facadeGet(
+            db, '/projects/pA/' + c.seg);
+        assert.equal(res.status, 200);
+        const rows = await res.json() as { id: string }[];
+        assert.deepEqual(rows.map(r => r.id), [c.a]);
+    });
 }
 
 test('states lists only the bound org events', async () => {

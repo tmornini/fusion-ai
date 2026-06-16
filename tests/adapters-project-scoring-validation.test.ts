@@ -105,7 +105,7 @@ test('ctx.PUT rejects out-of-range baseline scores',
         for (const score of INVALID) {
             await assert.rejects(
                 () => ctx.PUT(
-                    `project-objective-baseline-scores`
+                    `projects/p/objective-baseline-scores`
                     + `/p:o:${score}`,
                     {
                         project_id: 'p',
@@ -123,7 +123,7 @@ test('ctx.PUT leaves no baseline row on a bad score',
         for (const score of INVALID) {
             await assert.rejects(
                 () => ctx.PUT(
-                    `project-objective-baseline-scores`
+                    `projects/p/objective-baseline-scores`
                     + `/p:o:${score}`,
                     {
                         project_id: 'p',
@@ -144,7 +144,7 @@ test('ctx.PUT rejects out-of-range actual scores',
         for (const score of INVALID) {
             await assert.rejects(
                 () => ctx.PUT(
-                    `project-objective-actual-scores`
+                    `projects/p/objective-actual-scores`
                     + `/p:o:${score}`,
                     {
                         project_id: 'p',

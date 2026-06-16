@@ -24,7 +24,7 @@ const COLLECTION_ROUTES: readonly string[] = [
     'projects',
     'flows',
     'flows/any-flow/versions',
-    'project-flows',
+    'projects/any-project/flows',
     'work-orders',
     'flows/any-flow/work-orders',
     'state-field-values',
@@ -34,8 +34,8 @@ const COLLECTION_ROUTES: readonly string[] = [
     'idea-submissions',
     'objectives',
     'objective-revisions',
-    'project-objective-baseline-scores',
-    'project-objective-actual-scores',
+    'projects/any-project/objective-baseline-scores',
+    'projects/any-project/objective-actual-scores',
     'states',
 ];
 
