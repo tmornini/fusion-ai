@@ -78,13 +78,25 @@ export interface PolicyEntry {
     readonly roles: readonly string[];
 }
 
-function matchesOnSegmentBoundary(
+export function matchesOnSegmentBoundary(
     pathname: string,
     prefix: string,
 ): boolean {
     if (prefix === '/') return true;
-    return pathname === prefix
-        || pathname.startsWith(prefix + '/');
+    const pathSegs = pathname.split('/').filter(Boolean);
+    const prefixSegs = prefix.split('/').filter(Boolean);
+    // A prefix matches when the pathname is at least as deep
+    // and every prefix segment matches the pathname's segment
+    // at that position — a `:`-prefixed prefix segment is the
+    // route's variable id and matches any one segment. So
+    // '/members' never half-matches '/memberships', and
+    // '/flows/:id/versions' matches '/flows/f1/versions/v1'
+    // but not the shallower '/flows/f1'.
+    if (pathSegs.length < prefixSegs.length) return false;
+    return prefixSegs.every(
+        (seg, i) =>
+            seg.startsWith(':') || seg === pathSegs[i],
+    );
 }
 
 // The verbs the `member` role may use, per content prefix.
