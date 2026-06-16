@@ -2144,6 +2144,121 @@ export function validateWorkOrderCreateBody(
     };
 }
 
+export interface WorkOrderTransitionFieldValue {
+    readonly id: string;
+    readonly fields: Record<string, unknown>;
+}
+
+export interface WorkOrderTransitionRelease {
+    readonly id: string;
+    readonly state: string;
+}
+
+export interface WorkOrderTransitionBody {
+    readonly transitionEventId: string;
+    readonly targetState: string;
+    readonly fieldValues: readonly WorkOrderTransitionFieldValue[];
+    readonly release: WorkOrderTransitionRelease | null;
+}
+
+const WORK_ORDER_TRANSITION_KEYS: readonly string[] = [
+    'transitionEventId', 'targetState', 'fieldValues', 'release',
+];
+
+const TRANSITION_RELEASE_KEYS: readonly string[] = [
+    'id', 'state',
+];
+
+const TRANSITION_FIELD_VALUE_KEYS: readonly string[] = [
+    'id', 'fields',
+];
+
+// The HTTP-body gate for POST /work-orders/:id/transition: the
+// transition state event (target node), zero or more
+// state_field_values rows, and an OPTIONAL claim-release event,
+// written atomically. The web-app computes WHAT to write — the
+// target node, the field rows, and whether a live claim must be
+// released — exactly as POST /work-orders keeps graph derivation
+// client-side. The field-value `fields` are NOT fully validated
+// here: the state_field_values store re-validates each row
+// through validateStateFieldValueEntity AFTER the transition
+// event id is woven in. Authorship of the transition event AND
+// the release event is stamped from the verified caller in the
+// route, never the body — matching the old commit batch, where
+// both events flowed through PUT /states/:id and were stamped
+// with the actor.
+export function validateWorkOrderTransitionBody(
+    body: Record<string, unknown>,
+): WorkOrderTransitionBody {
+    assertOnlyKeys(
+        body,
+        WORK_ORDER_TRANSITION_KEYS,
+        'WorkOrderTransitionBody',
+    );
+    const transitionEventId = pickString(
+        body, 'transitionEventId',
+    );
+    if (transitionEventId === '') {
+        throw new ValidationError(
+            'WorkOrderTransitionBody.transitionEventId'
+            + ' must be non-empty',
+        );
+    }
+    const targetState = pickString(body, 'targetState');
+    if (targetState === '') {
+        throw new ValidationError(
+            'WorkOrderTransitionBody.targetState'
+            + ' must be non-empty',
+        );
+    }
+    const fieldValues = asArray(
+        body['fieldValues'],
+        'WorkOrderTransitionBody.fieldValues',
+    ).map((v, i) => {
+        const label =
+            'WorkOrderTransitionBody.fieldValues[' + i + ']';
+        const row = asObject(v, label);
+        assertOnlyKeys(
+            row, TRANSITION_FIELD_VALUE_KEYS, label,
+        );
+        const id = asString(row['id'], label + '.id');
+        if (id === '') {
+            throw new ValidationError(
+                label + '.id must be non-empty',
+            );
+        }
+        return {
+            id,
+            fields: asObject(
+                row['fields'], label + '.fields',
+            ),
+        };
+    });
+    const rawRelease = body['release'];
+    let release: WorkOrderTransitionRelease | null = null;
+    if (rawRelease !== null) {
+        const label = 'WorkOrderTransitionBody.release';
+        const obj = asObject(rawRelease, label);
+        assertOnlyKeys(obj, TRANSITION_RELEASE_KEYS, label);
+        const id = asString(obj['id'], label + '.id');
+        if (id === '') {
+            throw new ValidationError(
+                label + '.id must be non-empty',
+            );
+        }
+        const state = asString(obj['state'], label + '.state');
+        if (state === '') {
+            throw new ValidationError(
+                label + '.state must be non-empty',
+            );
+        }
+        release = { id, state };
+    }
+    return {
+        transitionEventId, targetState, fieldValues, release,
+    };
+}
+
 export interface AIMemberCreateBody {
     readonly id: string;
     readonly detail: Record<string, unknown>;

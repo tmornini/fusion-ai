@@ -48,6 +48,7 @@ import {
     validateRecordMultiPutBody,
     validateStateBody,
     validateWorkOrderCreateBody,
+    validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
 } from './validators.ts';
 import {
@@ -772,6 +773,54 @@ export const routes: Route[] = [
                     );
                 },
             ),
+    }),
+    // Transition a work order along an edge. The web-app
+    // computes WHAT to write — the target node, the field-value
+    // rows, and whether a live claim must be implicitly released
+    // — exactly as POST /work-orders keeps its graph derivation
+    // client-side. This route writes them ATOMICALLY: the
+    // transition state event (entity_id = the work order, state =
+    // the target node), then each state_field_values row (the
+    // field inputs, re-validated by the store as they land), then
+    // the OPTIONAL 'claim_released' event. A mid-write failure
+    // rolls the whole thing back. Authorship of the transition
+    // event AND the release event is stamped from the verified
+    // caller (actor) — the same author the old commit batch
+    // produced, where both events flowed through PUT /states/:id.
+    // Member-tier POST — /work-orders carries POST in
+    // MEMBER_VERBS, and isPermitted matches on the segment
+    // prefix, so the sub-route is member-permitted like /claim.
+    route('work-orders/:id/transition', {
+        post: (db, p, body, actor) => {
+            const workOrderId = param(p, 0);
+            const b = validateWorkOrderTransitionBody(body);
+            return db.transaction(
+                ['states', 'state_field_values'],
+                async (view) => {
+                    await view.states.postEvent(
+                        b.transitionEventId,
+                        workOrderId,
+                        b.targetState,
+                        actor,
+                    );
+                    for (const row of b.fieldValues) {
+                        await view.stateFieldValues.put(
+                            row.id,
+                            row.fields as unknown as
+                                Omit<StateFieldValueEntity, 'id'>,
+                        );
+                    }
+                    if (b.release !== null) {
+                        await view.states.postEvent(
+                            b.release.id,
+                            workOrderId,
+                            b.release.state,
+                            actor,
+                        );
+                    }
+                },
+            );
+        },
     }),
     route('flow-work-orders', {
         get: (db) =>
