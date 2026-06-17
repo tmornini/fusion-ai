@@ -1,6 +1,14 @@
 import { parseWire, serializeWire } from './wire-codec.ts';
 import { parseJson, serializeJson } from './json-codec.ts';
 import { queryModel } from './query.ts';
+import {
+    appendField,
+    deleteField,
+    putField,
+    putMethod,
+    putStatus,
+    putTarget,
+} from './modify.ts';
 import type { FieldValue } from './field-value.ts';
 import type { MessageModel } from './types.ts';
 
@@ -46,5 +54,37 @@ export class HttpMessage {
 
     query(dottedKey: string): FieldValue {
         return queryModel(this.#model, dottedKey);
+    }
+
+    // Modification returns a NEW message; this one is unchanged.
+    // withFieldPut overwrites (idempotent — PUT semantics);
+    // withFieldAppended is the one ordered, non-idempotent
+    // affordance, named loudly.
+    withFieldPut(name: string, value: string): HttpMessage {
+        return new HttpMessage(putField(this.#model, name, value));
+    }
+
+    withFieldAppended(name: string, value: string): HttpMessage {
+        return new HttpMessage(
+            appendField(this.#model, name, value),
+        );
+    }
+
+    withFieldDeleted(name: string): HttpMessage {
+        return new HttpMessage(deleteField(this.#model, name));
+    }
+
+    withMethod(method: string): HttpMessage {
+        return new HttpMessage(putMethod(this.#model, method));
+    }
+
+    withTarget(target: string): HttpMessage {
+        return new HttpMessage(putTarget(this.#model, target));
+    }
+
+    withStatus(status: number, reason: string): HttpMessage {
+        return new HttpMessage(
+            putStatus(this.#model, status, reason),
+        );
     }
 }
