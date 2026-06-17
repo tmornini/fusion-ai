@@ -136,8 +136,12 @@ function queryHeader(
 ): FieldValue {
     const name = rest[0];
     if (name === undefined) return FieldValue.absent();
+    // Mirror the serializer's framing rule exactly: a trailer
+    // means chunked framing (no Content-Length); otherwise a
+    // body is Content-Length framed.
     if (name === CONTENT_LENGTH) {
         return model.body !== undefined
+            && model.trailer === undefined
             ? FieldValue.present(model.body.byteLength())
             : FieldValue.absent();
     }

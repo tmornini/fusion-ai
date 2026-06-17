@@ -86,6 +86,13 @@ test('derives transfer-encoding when chunked', () => {
     );
 });
 
+test('content-length is absent for a chunked message', () => {
+    assert.equal(
+        chunked.query('header.content-length').exists(),
+        false,
+    );
+});
+
 test('queries a trailer field', () => {
     assert.equal(chunked.query('trailer.x-sum').toText(), 'z');
 });
