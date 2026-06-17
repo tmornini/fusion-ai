@@ -43,7 +43,6 @@ import {
     postOrgSessionExchange,
 } from './org-session.ts';
 import {
-    getPreference,
     putPreference,
 } from './preferences.ts';
 
@@ -105,7 +104,8 @@ function makeRequestContext(
         make: (tok: string) => Promise<T>,
     ): Promise<T> {
         return recover
-            ? withAuthRecovery(adapter, token, make)
+            ? withAuthRecovery(
+                adapter, token, identity.organization, make)
             : make(token);
     }
 
@@ -148,8 +148,9 @@ let recoveryInFlight: Promise<string | null> | null = null;
 
 function sharedRecovery(
     adapter: ClientFacadeAdapter,
+    requestOrg: Id | undefined,
 ): Promise<string | null> {
-    recoveryInFlight ??= recoverSession(adapter)
+    recoveryInFlight ??= recoverSession(adapter, requestOrg)
         .finally(() => {
             recoveryInFlight = null;
         });
@@ -167,6 +168,7 @@ function sharedRecovery(
 async function withAuthRecovery<T>(
     adapter: ClientFacadeAdapter,
     token: string,
+    requestOrg: Id | undefined,
     make: (tok: string) => Promise<T>,
 ): Promise<T> {
     try {
@@ -175,7 +177,8 @@ async function withAuthRecovery<T>(
         if (!(err instanceof UnauthorizedError)) {
             throw err;
         }
-        const recovered = await sharedRecovery(adapter);
+        const recovered =
+            await sharedRecovery(adapter, requestOrg);
         if (recovered === null) {
             throw err;   // unrefreshable — already redirected
         }
@@ -198,6 +201,7 @@ async function withAuthRecovery<T>(
 // refresh round-trip.
 async function recoverSession(
     adapter: ClientFacadeAdapter,
+    requestOrg: Id | undefined,
 ): Promise<string | null> {
     let creds: SessionCredentials | null;
     try {
@@ -218,7 +222,8 @@ async function recoverSession(
     // scrub + bounce — never destroying a live session over a
     // recoverable unscoped read.
     if (decision.kind === 'install') {
-        return installAndScope(adapter, decision.accessToken);
+        return installAndScope(
+            adapter, decision.accessToken, requestOrg);
     }
     if (decision.kind !== 'refresh') {
         deleteSessionCredentials();
@@ -231,7 +236,8 @@ async function recoverSession(
         return null;
     }
     putSessionCredentials(refreshed);
-    return installAndScope(adapter, refreshed.accessToken);
+    return installAndScope(
+        adapter, refreshed.accessToken, requestOrg);
 }
 
 // Install a flat token as the session and re-scope it to the active
@@ -246,10 +252,12 @@ async function recoverSession(
 async function installAndScope(
     adapter: ClientFacadeAdapter,
     flatToken: string,
+    requestOrg: Id | undefined,
 ): Promise<string | null> {
     putSessionToken(flatToken);
     try {
-        await rescopeToActiveOrg(adapter, flatToken);
+        await rescopeToActiveOrg(
+            adapter, flatToken, requestOrg);
     } catch (err) {
         if (err instanceof UnauthorizedError) {
             deleteSessionCredentials();
@@ -282,12 +290,17 @@ async function refreshCredentials(
 }
 
 // Re-scope the freshly refreshed (org-agnostic) token to the
-// active org, exactly as boot does — resolving the target from
-// the REACHABLE set first, so the exchange never targets a
-// non-member org (H13). Mirrors scopeBootToActiveOrg.
+// request's own org, resolving the target from the REACHABLE
+// set first so the exchange never targets a non-member org
+// (H13). Unlike boot, the target is the vessel's verified org
+// claim — never the cross-tab ACTIVE_ORG_KEY preference — so a
+// recovering request stays in the org it was operating in, not
+// one another tab selected (F-109). A flat vessel (no claim)
+// falls back to the identity default, then the first reachable.
 async function rescopeToActiveOrg(
     adapter: ClientFacadeAdapter,
     flatToken: string,
+    requestOrg: Id | undefined,
 ): Promise<void> {
     const ctx = createRequestContext(adapter, flatToken);
     const reachable =
@@ -297,7 +310,7 @@ async function rescopeToActiveOrg(
     }
     const active = resolveActiveOrg(
         reachable,
-        getPreference(ACTIVE_ORG_KEY),
+        requestOrg ?? null,
         await getIdentityDefaultOrg(ctx),
     );
     putSessionToken(
