@@ -87,6 +87,33 @@ test('withMethod changes the request method', () => {
     assert.equal(message.query('method').toText(), 'HEAD');
 });
 
+test('withTarget rejects a target with CRLF', () => {
+    assert.throws(
+        () => HttpMessage
+            .fromWire('GET / HTTP/1.1\r\n\r\n')
+            .withTarget('/ HTTP/1.1\r\nevil: 1'),
+        HttpMessageError,
+    );
+});
+
+test('withTarget rejects a target with a space', () => {
+    assert.throws(
+        () => HttpMessage
+            .fromWire('GET / HTTP/1.1\r\n\r\n')
+            .withTarget('/a b'),
+        HttpMessageError,
+    );
+});
+
+test('withStatus rejects a reason with CRLF', () => {
+    assert.throws(
+        () => HttpMessage
+            .fromWire('HTTP/1.1 200 OK\r\n\r\n')
+            .withStatus(200, 'OK\r\nevil: 1'),
+        HttpMessageError,
+    );
+});
+
 test('a modified message re-serializes canonically', () => {
     const message = HttpMessage
         .fromWire('GET / HTTP/1.1\r\nhost: a\r\n\r\n')

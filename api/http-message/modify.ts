@@ -84,7 +84,7 @@ export function putTarget(
     }
     return {
         ...model,
-        startLine: { ...model.startLine, target },
+        startLine: { ...model.startLine, target: checkTarget(target) },
     };
 }
 
@@ -103,7 +103,11 @@ export function putStatus(
     }
     return {
         ...model,
-        startLine: { ...model.startLine, status, reason },
+        startLine: {
+            ...model.startLine,
+            status,
+            reason: checkValue(reason),
+        },
     };
 }
 
@@ -120,11 +124,24 @@ function settableName(name: string): string {
     return lower;
 }
 
+// A field value or reason-phrase may carry internal SP/HTAB but
+// never CR, LF, or NUL — those would splice a new line into the
+// wire output (header / response splitting).
 function checkValue(value: string): string {
-    if (/[\r\n]/.test(value)) {
+    if (/[\r\n\0]/.test(value)) {
         throw new HttpMessageError(
-            'field value contains CR or LF',
+            'value contains a control character',
         );
     }
     return value;
+}
+
+// A request-target carries no whitespace at all — a SP or HTAB
+// would break the request-line into extra tokens, and CR/LF/NUL
+// would splice a new line (request splitting).
+function checkTarget(target: string): string {
+    if (/[\r\n\0 \t]/.test(target)) {
+        throw new HttpMessageError('invalid request target');
+    }
+    return target;
 }
