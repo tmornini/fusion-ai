@@ -105,7 +105,7 @@ function makeRequestContext(
         make: (tok: string) => Promise<T>,
     ): Promise<T> {
         return recover
-            ? withAuthRecovery(adapter, make)
+            ? withAuthRecovery(adapter, token, make)
             : make(token);
     }
 
@@ -157,17 +157,20 @@ function sharedRecovery(
 }
 
 // Wrap one verb call with single-shot 401 recovery. The first
-// attempt runs on the live session token. A non-401 fault
+// attempt runs on the request's own vessel token — never the
+// live module global, so identity and wire credential cannot
+// diverge mid-request (one vessel truth). A non-401 fault
 // surfaces untouched. A 401 drives one refresh + re-scope; the
 // call is retried exactly once against the recovered token. A
 // second 401 (or no refreshable credential) clears the session
 // and bounces to login — there is no third attempt.
 async function withAuthRecovery<T>(
     adapter: ClientFacadeAdapter,
+    token: string,
     make: (tok: string) => Promise<T>,
 ): Promise<T> {
     try {
-        return await make(getSessionToken());
+        return await make(token);
     } catch (err) {
         if (!(err instanceof UnauthorizedError)) {
             throw err;

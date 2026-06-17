@@ -40,8 +40,10 @@ import {
     getSessionCredentials,
     putSessionCredentials,
 } from '../web-app/app/adapters/session-credentials.ts';
-import { seedAdminSchema } from './test-fixtures.ts';
-import { devToken, expiredToken } from './token-fixtures.ts';
+import { ideaBody, seedAdminSchema } from './test-fixtures.ts';
+import {
+    devToken, expiredToken, orgToken,
+} from './token-fixtures.ts';
 import { ANONYMOUS_ID } from '../api/access-token.ts';
 import {
     getSessionToken,
@@ -75,6 +77,24 @@ async function issuePair(db: MemoryDbAdapter): Promise<{
             }),
         }));
     return res.json();
+}
+
+// Authorize `current` as admin of `org` and stamp the
+// membership the gate fences on — the per-org grant the
+// facade reads (mirrors api-org-isolation's twoOrgs).
+async function seedOrgAdmin(
+    db: MemoryDbAdapter, org: string,
+): Promise<void> {
+    await db.roleGrants.put('role-current-' + org, {
+        organization_id: org, identity_id: 'current',
+        role: 'admin', action: 'granted',
+        by_member_id: 'system',
+        at: '2020-01-01T00:00:00.000000Z',
+    });
+    await db.memberships.put('m-current-' + org, {
+        organization_id: org, identity_id: 'current',
+        at: '2026-06-04T00:00:00.000000Z',
+    });
 }
 
 test('a recover context silently refreshes a dead access token',
@@ -172,4 +192,21 @@ async () => {
     // ...and the tab was redirected to the login page
     assert.match(
         window.location.href, /auth.*return=dashboard/);
+});
+
+test('a recovering context reads through the vessel token,'
++ ' not a concurrently-moved global', async () => {
+    localStorage.clear();
+    const db = await freshDb();
+    await seedOrgAdmin(db, 'A');
+    await seedOrgAdmin(db, 'B');
+    await db.ideas.put('a1', ideaBody('A', 'mine'));
+    await db.ideas.put('b1', ideaBody('B', 'theirs'));
+    const aToken = await orgToken('current', 'A');
+    const ctx = createRecoveringRequestContext(db, aToken);
+    // another tab moves the shared session holder to org B
+    putSessionToken(await orgToken('current', 'B'));
+    const rows = await ctx.GET<{ id: string }[]>('ideas');
+    // the read ran in the vessel's org A, not the global's B
+    assert.deepEqual(rows.map(r => r.id), ['a1']);
 });
