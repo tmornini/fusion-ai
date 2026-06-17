@@ -153,8 +153,10 @@ export async function init(
     }
 
     // After wipe-and-load the seeded demo passwords exist only
-    // in this response — surface them once, then navigate only
-    // when the user acknowledges they have saved them.
+    // in this response — surface them once, then send the user
+    // to login (copying or acknowledging both route to /auth) so
+    // they sign in with a seeded credential rather than lingering
+    // in an anonymous, already-seeded session.
     function revealThenNavigate(
         creds: SeededCredentials,
     ): void {
@@ -190,12 +192,13 @@ export async function init(
                 return;
             }
             showToast('Credentials copied', 'success');
+            navigateTo('auth');
         });
         $required(
             '#credential-continue-btn', document,
         ).addEventListener(
             'click',
-            () => navigateTo('dashboard'),
+            () => navigateTo('auth'),
         );
     }
 
