@@ -1,6 +1,7 @@
 import { FieldValue } from './field-value.ts';
 import { CONTENT_LENGTH, TRANSFER_ENCODING } from './framing.ts';
 import { kindOf } from './field-registry.ts';
+import type { BodyRegistry } from './media-registry.ts';
 import {
     parseDictionary,
     parseItem,
@@ -24,6 +25,7 @@ const START_LINE_ROOTS: ReadonlySet<string> = new Set([
 
 export function queryModel(
     model: MessageModel,
+    registry: BodyRegistry,
     dottedKey: string,
 ): FieldValue {
     const segments = dottedKey.split('.');
@@ -40,6 +42,68 @@ export function queryModel(
     }
     if (root === 'trailer') {
         return queryTrailer(model, segments.slice(1));
+    }
+    if (root === 'body') {
+        return queryBody(model, registry, segments.slice(1));
+    }
+    return FieldValue.absent();
+}
+
+function queryBody(
+    model: MessageModel,
+    registry: BodyRegistry,
+    path: readonly string[],
+): FieldValue {
+    if (model.body === undefined) return FieldValue.absent();
+    const contentType = model.fields.find(
+        (field) => field.name === 'content-type',
+    );
+    if (contentType === undefined) return FieldValue.absent();
+    const codec = registry.codecFor(contentType.value);
+    if (codec === undefined) return FieldValue.absent();
+    let parsed: unknown;
+    try {
+        parsed = codec.decode(model.body);
+    } catch {
+        return FieldValue.absent();
+    }
+    return navigateValue(parsed, path);
+}
+
+function navigateValue(
+    value: unknown,
+    path: readonly string[],
+): FieldValue {
+    let current = value;
+    for (const key of path) {
+        if (Array.isArray(current)) {
+            const index = Number(key);
+            if (
+                !Number.isInteger(index)
+                || index < 0
+                || index >= current.length
+            ) {
+                return FieldValue.absent();
+            }
+            current = current[index];
+        } else if (current !== null && typeof current === 'object') {
+            const record = current as Record<string, unknown>;
+            if (!(key in record)) return FieldValue.absent();
+            current = record[key];
+        } else {
+            return FieldValue.absent();
+        }
+    }
+    return leafValue(current);
+}
+
+function leafValue(value: unknown): FieldValue {
+    if (
+        typeof value === 'string'
+        || typeof value === 'number'
+        || typeof value === 'boolean'
+    ) {
+        return FieldValue.present(value);
     }
     return FieldValue.absent();
 }

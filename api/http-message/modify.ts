@@ -1,5 +1,6 @@
 import { CONTENT_LENGTH, TRANSFER_ENCODING } from './framing.ts';
 import { isStatusCode, isToken } from './grammar.ts';
+import type { Octets } from './octets.ts';
 import {
     HttpMessageError,
     type MessageModel,
@@ -109,6 +110,15 @@ export function putStatus(
             reason: checkValue(reason),
         },
     };
+}
+
+export function putBody(
+    model: MessageModel,
+    mediaType: string,
+    body: Octets,
+): MessageModel {
+    const typed = putField(model, 'content-type', mediaType);
+    return { ...typed, body };
 }
 
 function settableName(name: string): string {
