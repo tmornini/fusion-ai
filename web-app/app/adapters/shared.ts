@@ -38,13 +38,9 @@ import {
     getIdentityDefaultOrg,
 } from './identity-default-org.ts';
 import {
-    ACTIVE_ORG_KEY,
     resolveActiveOrg,
     postOrgSessionExchange,
 } from './org-session.ts';
-import {
-    putPreference,
-} from './preferences.ts';
 
 // Rows whose `field` equals `value` — the single-field
 // equality filter the adapters repeat. Type-safe: `field`
@@ -292,11 +288,13 @@ async function refreshCredentials(
 // Re-scope the freshly refreshed (org-agnostic) token to the
 // request's own org, resolving the target from the REACHABLE
 // set first so the exchange never targets a non-member org
-// (H13). Unlike boot, the target is the vessel's verified org
-// claim — never the cross-tab ACTIVE_ORG_KEY preference — so a
-// recovering request stays in the org it was operating in, not
-// one another tab selected (F-109). A flat vessel (no claim)
-// falls back to the identity default, then the first reachable.
+// (H13). Unlike boot, recovery neither reads nor writes the
+// cross-tab ACTIVE_ORG_KEY preference: the target is the
+// vessel's verified org claim, so a recovering request stays in
+// the org it was operating in — and a background recovery never
+// clobbers the org another tab is viewing (F-109). A flat vessel
+// (no claim) falls back to the identity default, then the first
+// reachable.
 async function rescopeToActiveOrg(
     adapter: ClientFacadeAdapter,
     flatToken: string,
@@ -315,7 +313,6 @@ async function rescopeToActiveOrg(
     );
     putSessionToken(
         await postOrgSessionExchange(ctx, flatToken, active));
-    putPreference(ACTIVE_ORG_KEY, active);
 }
 
 // The active org the session is scoped to. Post-boot the

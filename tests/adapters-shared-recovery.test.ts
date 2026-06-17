@@ -263,3 +263,28 @@ test('recovery re-scopes to the vessel org claim, not the'
     assert.equal(scoped, ctx.identity.organization);
     assert.equal(scoped, 'A');
 });
+
+test('recovery leaves the cross-tab active-org preference'
++ ' untouched', async () => {
+    localStorage.clear();
+    const db = await freshDb();
+    await seedOrgAdmin(db, 'A');
+    await seedOrgAdmin(db, 'B');
+    await db.organizations.put('A', orgRow('Acme'));
+    await db.organizations.put('B', orgRow('Beta'));
+    const pair = await issuePair(db);
+    const deadA = await expiredOrgToken('A');
+    putSessionCredentials({
+        accessToken: deadA, refreshToken: pair.refresh_token,
+    });
+    putSessionToken(deadA);
+    // the foreground tab is viewing org B
+    localStorage.setItem(ACTIVE_ORG_KEY, 'B');
+    const ctx = createRecoveringRequestContext(db, deadA);
+    await ctx.GET('ideas');
+    // the background recovery scopes ITS session to vessel org A...
+    assert.equal(
+        principalFromToken(getSessionToken()).organization, 'A');
+    // ...but never clobbers the foreground tab's chosen org
+    assert.equal(localStorage.getItem(ACTIVE_ORG_KEY), 'B');
+});
