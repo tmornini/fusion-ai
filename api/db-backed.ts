@@ -238,9 +238,9 @@ export class BackedDbAdapter
             },
         );
         // Imported data IS a schema: stamp the marker after
-        // the commit so hasSchema() answers true and the
-        // anonymous bootstrap plane closes behind a restore
-        // onto a fresh origin. A failed import never stamps.
+        // the commit so hasSchema() answers true after a
+        // restore onto a fresh origin. A failed import never
+        // stamps.
         await this.#backend.postSchemaCreation();
     }
 

@@ -49,9 +49,10 @@ async () => {
 test('a member is denied the admin surfaces', async () => {
     const db = await memberDb();
     const token = await devToken(MEMBER);
-    // snapshots/* stay bearer-exempt until the F-006 fix
-    // narrows the bootstrap plane, so they are not probed
-    // here even though the policy already denies them.
+    // snapshots/* are intentionally auth-free — a dev-tier
+    // surface removed at the Postgres server tier — so they
+    // are not probed here even though the policy table would
+    // deny them.
     for (const [method, path] of [
         ['GET', '/memberships'],
         ['PUT', '/memberships/evil'],

@@ -64,7 +64,7 @@ async function setup(): Promise<{
 
 // Import REPLACES every table — a snapshot that omits the
 // importer's own membership and admin grant locks the session
-// out of the now-closed snapshot plane. Tests that keep using
+// out of the authenticated surfaces. Tests that keep using
 // the ctx after an import carry the admin's rows, exactly as
 // a real exported snapshot would.
 function withAdminRows(

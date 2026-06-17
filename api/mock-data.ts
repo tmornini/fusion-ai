@@ -177,9 +177,9 @@ export async function postMockDataLoad(
     // mid-seed failure leaves no half-populated schema. The
     // credentials seed runs after it commits — its PBKDF2
     // hashing is async crypto and cannot run inside the tx.
-    // The schema marker stamps LAST: it closes the anonymous
-    // bootstrap plane (request-auth BOOTSTRAP_ROUTES), so a
-    // failed seed must leave the plane open for retry.
+    // The schema marker stamps LAST, so a failed seed leaves
+    // hasSchema() false: the datastore reads as empty and the
+    // seed can be retried cleanly.
     await adapter.ensureTables(TABLE_NAMES);
     await adapter.transaction(
         TABLE_NAMES,
