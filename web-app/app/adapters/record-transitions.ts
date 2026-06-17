@@ -100,7 +100,7 @@ export async function validateRecordTransition(
     for (const fvs of perEvent) {
         for (const fv of fvs) {
             storedValueByAttr.set(
-                fv.field_id, fv.value,
+                fv.attribute_id, fv.value,
             );
         }
     }

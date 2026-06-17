@@ -1277,7 +1277,7 @@ export function validateFlowWorkOrderEntity(
 
 const STATE_FIELD_VALUE_BODY_KEYS:
     readonly string[] = [
-    'state_event_id', 'field_id', 'value',
+    'state_event_id', 'attribute_id', 'value',
 ];
 
 export function
@@ -1293,8 +1293,8 @@ validateStateFieldValueEntity(
         state_event_id: pickString(
             body, 'state_event_id',
         ),
-        field_id: pickString(
-            body, 'field_id',
+        attribute_id: pickString(
+            body, 'attribute_id',
         ),
         value: pickString(
             body, 'value',

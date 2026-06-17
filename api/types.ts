@@ -1156,7 +1156,7 @@ export interface FlowRecordEntity {
 export interface StateFieldValueEntity {
     id: Id;
     state_event_id: Id;
-    field_id: Id;
+    attribute_id: Id;
     value: string;
 }
 

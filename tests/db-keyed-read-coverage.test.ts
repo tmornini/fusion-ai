@@ -33,7 +33,7 @@ const KEYED_READS: ReadonlyArray<{
     { table: 'identity_tokens', column: 'chain_id' },
     { table: 'identity_pii', column: 'email' },
     { table: 'authorization_codes', column: 'code' },
-    { table: 'state_field_values', column: 'field_id' },
+    { table: 'state_field_values', column: 'attribute_id' },
     { table: 'state_field_values', column: 'state_event_id' },
     { table: 'idea_submissions', column: 'idea_id' },
     { table: 'flow_versions', column: 'flow_id' },

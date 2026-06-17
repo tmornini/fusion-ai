@@ -94,10 +94,10 @@ function toWorkOrder(
 // The camelCase domain shape of one field value
 // written with a transition. The parent event id is
 // the grouping key, so the pair below is all a
-// consumer needs; fieldId references the record
+// consumer needs; attributeId references the record
 // attribute that named the field.
 export interface StateFieldValue {
-    readonly fieldId: Id;
+    readonly attributeId: Id;
     readonly value: string;
 }
 
@@ -132,7 +132,7 @@ export async function getStateFieldValuesByEvent(
     for (const rows of perEvent) {
         for (const row of rows) {
             const value = {
-                fieldId: row.field_id,
+                attributeId: row.attribute_id,
                 value: row.value,
             };
             const list =

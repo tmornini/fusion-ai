@@ -72,7 +72,7 @@ test(
             member_id: 'current', at: AT,
         });
         await db.stateFieldValues.put('sfv1', {
-            state_event_id: 'ev1', field_id: 'attr1',
+            state_event_id: 'ev1', attribute_id: 'attr1',
             value: 'High',
         });
         await assert.rejects(
@@ -157,7 +157,7 @@ test(
             member_id: 'current', at: AT,
         });
         await db.stateFieldValues.put('sfv1', {
-            state_event_id: 'ev1', field_id: 'attr1',
+            state_event_id: 'ev1', attribute_id: 'attr1',
             value: 'High',
         });
         await assert.rejects(

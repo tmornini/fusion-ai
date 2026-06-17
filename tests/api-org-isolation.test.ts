@@ -229,7 +229,7 @@ async function seedChain(
         member_id: 'system', at: T8_AT,
     });
     await db.stateFieldValues.put('sfv' + s, {
-        state_event_id: 'se' + s, field_id: 'x', value: 'v',
+        state_event_id: 'se' + s, attribute_id: 'x', value: 'v',
     });
 }
 

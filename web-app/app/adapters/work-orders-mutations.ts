@@ -251,7 +251,7 @@ export async function postWorkOrderTransition(
                 id,
                 fields: {
                     state_event_id: transitionEventId,
-                    field_id: attributeId,
+                    attribute_id: attributeId,
                     value,
                 },
             };

@@ -277,7 +277,7 @@ test(
         });
         await db.stateFieldValues.put('fv-1', {
             state_event_id: 't-step',
-            field_id: 'a-1',
+            attribute_id: 'a-1',
             value: 'me@example.com',
         });
         await seedBinding(db, 'flow-1', 'rec-1');

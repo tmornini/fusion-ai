@@ -488,7 +488,7 @@ export const TABLE_INDEXES:
     flow_work_orders: ['flow_id'],
     flow_records: ['flow_id'],
     work_orders: ['organization_id'],
-    state_field_values: ['field_id', 'state_event_id'],
+    state_field_values: ['attribute_id', 'state_event_id'],
     records: ['organization_id'],
     record_attributes: ['organization_id'],
     objectives: ['organization_id'],

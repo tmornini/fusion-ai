@@ -408,10 +408,9 @@ apply to it (RED is the audit's first finding).
   commits early. So every `transaction(…)` body awaits ONLY
   row ops — validators, crypto, and compression run OUTSIDE
   the tx. Sync compute between row ops is fine.
-- **`state_field_values.field_id` references
-  `record_attributes.id`.** the column name predates Records
-  and stays until a second non-Record consumer arrives. The
-  semantic note lives in [SCHEMA.md](SCHEMA.md) §
+- **`state_field_values.attribute_id` references
+  `record_attributes.id`** (not a table named `attributes`).
+  The semantic note lives in [SCHEMA.md](SCHEMA.md) §
   state_field_values.
 
 ## Commits

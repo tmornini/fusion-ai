@@ -92,7 +92,7 @@ test(
                         id: 'fv-1',
                         fields: {
                             state_event_id: 'te1',
-                            field_id: 'attr-1',
+                            attribute_id: 'attr-1',
                             value: 'high',
                         },
                     },
@@ -106,7 +106,7 @@ test(
         assert.equal(events[0]!.state, 'n-next');
         const fv = await db.stateFieldValues.getById('fv-1');
         assert.equal(fv.state_event_id, 'te1');
-        assert.equal(fv.field_id, 'attr-1');
+        assert.equal(fv.attribute_id, 'attr-1');
         assert.equal(fv.value, 'high');
     },
 );
@@ -173,7 +173,7 @@ test(
     'a mid-op failure rolls back the whole transition',
     async () => {
         const db = await seededDb();
-        // The second field row is malformed (missing field_id),
+        // The second field row is malformed (missing attribute_id),
         // so validateStateFieldValueEntity throws AFTER the
         // transition event and the first row were put — the
         // whole transaction must roll back, leaving NO events
@@ -188,7 +188,7 @@ test(
                             id: 'fv-1',
                             fields: {
                                 state_event_id: 'te1',
-                                field_id: 'attr-1',
+                                attribute_id: 'attr-1',
                                 value: 'high',
                             },
                         },
