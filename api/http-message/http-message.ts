@@ -1,5 +1,7 @@
 import { parseWire, serializeWire } from './wire-codec.ts';
 import { parseJson, serializeJson } from './json-codec.ts';
+import { queryModel } from './query.ts';
+import type { FieldValue } from './field-value.ts';
 import type { MessageModel } from './types.ts';
 
 // The public façade. An immutable message that derives its wire
@@ -40,5 +42,9 @@ export class HttpMessage {
             this.#json = serializeJson(this.#model);
         }
         return this.#json;
+    }
+
+    query(dottedKey: string): FieldValue {
+        return queryModel(this.#model, dottedKey);
     }
 }
