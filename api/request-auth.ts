@@ -43,11 +43,11 @@ export const AUTHENTICATION_ROUTES: ReadonlySet<string> =
         'authentication/authorize',
     ]);
 
-// The snapshot/bootstrap plane is exempt ONLY while no schema
-// exists — infrastructure BELOW the auth tier (it installs
-// the datastore before any identity can exist). The moment a
-// schema exists, identities can exist, and the plane closes:
-// bearer plus the admin route policy, like any other route.
+// The snapshot/bootstrap plane is auth-free — a dev-tier
+// install/demo surface that runs below the auth tier (it
+// installs the datastore before any identity can exist) and
+// is slated for removal. It carries no bearer and no route
+// policy, regardless of whether a schema exists.
 export const BOOTSTRAP_ROUTES: ReadonlySet<string> =
     new Set([
         'snapshots/schema',

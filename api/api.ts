@@ -189,8 +189,7 @@ export async function handleRequest(
     let actor: Id = ANONYMOUS_ID;
     const bearerExempt =
         AUTHENTICATION_ROUTES.has(routePattern)
-        || (BOOTSTRAP_ROUTES.has(routePattern)
-            && !(await adapter.hasSchema()));
+        || BOOTSTRAP_ROUTES.has(routePattern);
     if (!bearerExempt) {
         const authed =
             await authenticateRequest(ctx, request);
