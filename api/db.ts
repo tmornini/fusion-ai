@@ -187,6 +187,13 @@ export interface StateStore {
         state: string,
         memberId: Id,
     ): Promise<void>;
+    postEventAt(
+        id: Id,
+        entityId: Id,
+        state: string,
+        memberId: Id,
+        at: string,
+    ): Promise<void>;
     getCurrentFor(
         entityId: Id,
     ): Promise<StateEntity | null>;

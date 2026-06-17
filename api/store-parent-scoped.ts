@@ -293,6 +293,18 @@ export class ParentScopedStateStore implements StateStore {
         );
     }
 
+    postEventAt(
+        id: Id,
+        entityId: Id,
+        state: string,
+        memberId: Id,
+        at: string,
+    ): Promise<void> {
+        return this.#inner.postEventAt(
+            id, entityId, state, memberId, at,
+        );
+    }
+
     getCurrentFor(entityId: Id): Promise<StateEntity | null> {
         return this.#inner.getCurrentFor(entityId);
     }

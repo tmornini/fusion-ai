@@ -122,6 +122,21 @@ export class StateStore
         });
     }
 
+    async postEventAt(
+        id: Id,
+        entityId: Id,
+        state: string,
+        memberId: Id,
+        at: string,
+    ): Promise<void> {
+        await this.put(id, {
+            entity_id: entityId,
+            state,
+            member_id: memberId,
+            at,
+        });
+    }
+
     async getCurrentFor(
         entityId: Id,
     ): Promise<StateEntity | null> {
