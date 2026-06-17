@@ -243,6 +243,45 @@ copy and runs the same diff — no special machinery.
   save, reload (round-trip), create a work order (freeze), undo/redo,
   attempt an old-snapshot import (expect rejection).
 
+## Step-3 carry-forward (verified in step 1)
+
+Adversarial verification of step 1 surfaced items the seam
+cutover (step 3) MUST address — recorded here so the multi-
+session arc cannot lose them:
+
+1. **States-log tenancy fence (Security II) — close BEFORE
+   posting any node/edge deletion event.** A `flow_nodes` /
+   `flow_edges` removal is a `'deleted'` states-log event whose
+   `entity_id` is the node/edge id. But `ownerOrgOfEntity`
+   resolves an event's org only via `orgOwnedProbes` (stores
+   carrying `organization_id`) plus the membership ledger.
+   `flow_nodes` / `flow_edges` carry NO `organization_id` and
+   are NOT in `orgOwnedProbes`, so such an event resolves to a
+   null owner — an orphan, VISIBLE to every org via the
+   `/states` read fence (a cross-tenant leak of the deleted id +
+   timestamp). Step 1 writes ZERO such events, so it does not
+   trigger this. Step 3 MUST resolve a flow-node/flow-edge
+   `entity_id` to its flow's org (e.g. a node→flow hop inside
+   `ownerOrgOfEntity`) before the save delta posts the first
+   `'deleted'` node/edge event.
+2. **Confirm or remove the reader-less indexes.** The
+   `flow_node_members.member_id` and
+   `flow_node_attributes.attribute_id` `TABLE_INDEXES` entries
+   have no keyed reader in step 1 (the derive helpers read only
+   by `flow_node_id`). They are the reverse-lookup seams the
+   plan names for step 3 (member/attribute referrer scans). If
+   step 3 adds those keyed reads, keep them; if not, remove them
+   per the "index ONLY what a keyed read names" doctrine.
+3. **Reconsider the graph-id fence on `member_id` /
+   `attribute_id`.** These stay plain strings (matching the
+   legacy `asMemberIds` / `asNodeAttribute` and
+   `state_field_values.attribute_id`); the three node-id
+   references (`from_node_id` / `to_node_id` / `flow_node_id`)
+   are `asGraphId`-pinned. When the save delta + render path
+   land, deliberately confirm a stored `member_id` /
+   `attribute_id` cannot reach a markup-id render site
+   unescaped.
+
 ## Out of scope / non-goals
 
 - Server tier / Postgres; real tenant isolation (HMAC key still
