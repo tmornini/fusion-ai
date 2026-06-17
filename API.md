@@ -366,16 +366,20 @@ nothing. `mintPair` is pure crypto (no DB).
   - `verifyAccessToken`×2 → `tokenRevocationReason`×2 → assert
     subject == actor → optional `subjectOrgs` membership check →
     `nameFor` → `issueTokenPair`.
-  - `issueTokenPair` = `recordIssuedRoot` (a **single** put, **no
-    surrounding tx**) + `subjectOrgs` + `mintPair`.
-  - props: not transactional (one write needs none); a cross-party
-    exchange fails closed (403).
+  - `issueTokenPair` = `recordIssuedRoot` (a **single** put) +
+    `subjectOrgs` + `mintPair`.
+  - props: a lone write needs no explicit `transaction([...])`
+    wrapper — but it is still atomic: `EntityStore.put` runs its
+    own `readwrite` tx (`api/store-entity.ts:106`). The wrapper in
+    the two grants above bundles multiple writes + a check-then-act,
+    which a single write has neither of. Cross-party exchange → 403.
 - **`client_credentials`** → `grantClientCredentials`
   (private_key_jwt):
   - `clients.getById` → status/grant-type checks →
     `verifyClientAssertion` (JWS, crypto) → `nameFor` →
     `issueTokenPair` (as above).
-  - props: not transactional; bad assertion → 401.
+  - props: same single-write shape as token-exchange — atomic
+    without an explicit wrapper. Bad assertion → 401.
 
 ### 3.9 `POST /authentication/authorize` — interactive front door
 
