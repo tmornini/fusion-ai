@@ -1,5 +1,6 @@
 import { Octets } from './octets.ts';
 import { sortFields } from './canonical.ts';
+import { CONTENT_LENGTH, isStoredField } from './framing.ts';
 import {
     isHttpVersion,
     isStatusCodeText,
@@ -14,12 +15,6 @@ import {
 
 const CRLF = '\r\n';
 const SP = ' ';
-
-// Framing fields are DERIVED from the body and trailer, never
-// stored — so they are stripped on the way in and synthesized
-// on the way out (derive from the ledger; no two sources).
-const CONTENT_LENGTH = 'content-length';
-const TRANSFER_ENCODING = 'transfer-encoding';
 
 // parseWire is the gate: profane wire text in, a trusted model
 // out (or HttpMessageError). Wire is a Latin-1 binary string —
@@ -95,11 +90,6 @@ function parseFieldLine(line: string): FieldLine {
     }
     const value = line.slice(colon + 1).trim();
     return { name, value };
-}
-
-function isStoredField(field: FieldLine): boolean {
-    return field.name !== CONTENT_LENGTH
-        && field.name !== TRANSFER_ENCODING;
 }
 
 function frameBody(
