@@ -21,8 +21,12 @@ export function isHttpVersion(text: string): boolean {
 // codes outside that band are rejected.
 const THREE_DIGITS = /^[0-9]{3}$/;
 
+export function isStatusCode(value: number): boolean {
+    return Number.isInteger(value)
+        && value >= 100
+        && value <= 599;
+}
+
 export function isStatusCodeText(text: string): boolean {
-    if (!THREE_DIGITS.test(text)) return false;
-    const value = Number(text);
-    return value >= 100 && value <= 599;
+    return THREE_DIGITS.test(text) && isStatusCode(Number(text));
 }

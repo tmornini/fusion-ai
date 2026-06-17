@@ -22,3 +22,22 @@ export function sortFields(
         (x, y) => compareAscii(x.name, y.name),
     );
 }
+
+// Recursively rebuild every object with its keys in ASCII-
+// ascending order. JSON.stringify emits keys in INSERTION
+// order, so canonical JSON must re-key first. Arrays keep their
+// order (it is significant); primitives pass through.
+export function sortJsonKeys(value: unknown): unknown {
+    if (Array.isArray(value)) {
+        return value.map(sortJsonKeys);
+    }
+    if (value !== null && typeof value === 'object') {
+        const source = value as Record<string, unknown>;
+        const out: Record<string, unknown> = {};
+        for (const key of Object.keys(source).sort(compareAscii)) {
+            out[key] = sortJsonKeys(source[key]);
+        }
+        return out;
+    }
+    return value;
+}
