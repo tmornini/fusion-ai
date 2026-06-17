@@ -974,14 +974,14 @@ git commit -m "$(printf 'Time the work-order transition events from the caller\n
 
 `grantInvitation`, `acceptInvitation`, `declineInvitation`,
 `revokeInvitation` each server-mint the state-event id and
-self-stamp `at`. Move both to the caller. **NOTE (flag for
-review):** for `grant`/`accept` to be retry-idempotent, the
-invitation entity id (`grant`) and membership id (`accept`)
-must ALSO be caller-minted — otherwise a retry mints a NEW
-entity whose `entity_id` no longer matches the replayed event,
-defeating idempotency. This task includes those two entity ids;
-confirm at review (it extends the spec's "event identity"
-wording, but the spec's idempotency goal requires it).
+self-stamp `at`. Move both to the caller. The invitation
+entity id (`grant`) and the membership id (`accept`) are ALSO
+caller-minted here (per the "caller mints all domain ids"
+rule): the stack minting them means a retried grant/accept
+writes a SECOND invitation/membership at a fresh id — a
+duplicate entity no uniqueness check catches. Caller-minted
+ids make the retry a same-row no-op. Author (`member_id`)
+stays server-derived.
 
 **Files:**
 - Modify: `api/invitations-domain.ts` (the 4 domain functions)
@@ -1256,12 +1256,14 @@ member-role user and confirm via the UI:
   `3cfacce4` — T1 (parallel method) → T2–T12 → T13 → T14. ✓
 - Invitations/org-requests caller-supplied — T11/T12. ✓
 
-**Flagged for the user (scope refinement):** T11 makes the
-invitation entity id (grant) and membership id (accept)
-caller-minted, which the spec's "event identity" wording did
-not list explicitly. It is REQUIRED for grant/accept retry
-idempotency (a server-minted entity id breaks the byte-identical
-replay the arc promises). Confirm or carve it out at review.
+**Resolved (per directive — "caller mints all domain ids,
+period"):** T11 caller-mints the invitation entity id (grant)
+and membership id (accept) alongside the event ids; otherwise a
+retried grant/accept writes a second, unintended entity at a
+fresh id. The ONLY server-minted ids that remain are auth
+secrets (`authentication.ts`) by OAuth design, and dev seeding
+(`mock-data.ts`) — neither is a caller-driven domain write.
+Verified: no other `api/` surface server-mints a domain id.
 
 **Placeholder scan:** Code steps carry the actual new
 lines/fields; surfaces whose exact current symbol drifts

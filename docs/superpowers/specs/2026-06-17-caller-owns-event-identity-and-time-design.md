@@ -60,12 +60,25 @@ event `id`, but every one of them lets the stack stamp `at`.
 
 ## Principle
 
-Domain event identity and time are the caller's to mint. The
-stack mints neither and retries nothing — both are the
-caller's concern. The server contributes only the AUTHOR
+The caller mints EVERY domain id — entity AND event — and the
+event time. Period. When the stack mints the id, every retry
+mints a FRESH one and writes a SECOND, unintended entity — a
+duplicate entity with a distinct (non-duplicate) id, which no
+uniqueness check catches. Only a caller-minted id makes the
+retry hit the same row: a byte-identical no-op, no second
+entity. The stack mints neither id nor time and retries
+nothing — all the caller's concern. The server contributes only the AUTHOR
 (`member_id`), derived from the verified token; authorship is
 correctly server-owned and is NOT caller-minted (a client must
 not forge it — Security II).
+
+Most domain entities (flows, ideas, members, work orders,
+records, baselines, field-values, version snapshots) already
+client-mint their ids. The stack's remaining domain-id mints —
+the invitation id, the membership id, the four invitation event
+ids, the two work-order claim event ids, and the default-org
+ledger row id — all move to the caller in this arc. The single
+exception is auth secrets (below).
 
 This arc completes the convention `postStateEvent` already
 follows: the caller mints `id` + `at` per event; `postEvent`
@@ -172,8 +185,8 @@ orientation only.
 | `work-orders` create (`stateEventIds`)| add[] | client ✓    | —     |
 | `work-orders/:id/transition`          | add   | client ✓    | —     |
 | `work-orders/:id/claim` (×2 events)   | add   | → client    | —     |
-| `invitations-domain.ts` (×4 events)   | add   | → client    | —     |
-| `org-requests.ts` (×1 event)          | add   | → client    | —     |
+| `invitations` (4 events + 2 entities) | add   | → client    | —     |
+| `org-requests.ts` (×1 ledger row)     | add   | → client    | —     |
 
 "client ✓" = the event id is already caller-minted today;
 only `at` is added. "→ client" = the id moves from
@@ -181,13 +194,24 @@ server-mint to caller-mint in this arc. Each row's body
 validator and its web-app client adapter change in lockstep
 with its route.
 
+The invitations row's "2 entities" are the invitation id
+(`grant`) and the membership id (`accept`): the stack mints
+them today, so a retried grant/accept writes a SECOND
+invitation/membership at a fresh id. They move to the caller
+alongside the four invitation event ids — without that, the
+arc's idempotency promise does not hold for invitations.
+
 ## Exclusions (the stack keeps minting)
+
+The "caller mints all ids" rule governs DOMAIN ids. Its one
+principled exception is auth, by OAuth design:
 
 - **`api/authentication.ts`** — `jti`, `chain_id`,
   refresh-chain ids, auth codes, and token-ledger `at` stay
-  server-minted. A client choosing its own JWT id or auth
-  code is a Security II breach; these are secrets, not domain
-  events.
+  server-minted. The authorization server mints the token id
+  and the authorization code; a client choosing its own is a
+  Security II breach (token fixation / revocation bypass), not
+  a domain retry concern. These are secrets, not domain ids.
 - **`api/mock-data.ts`** — seeding is not a request path; its
   ids and timestamps stay locally minted.
 - **`api/request-context.ts`** — the request-id is taken from
