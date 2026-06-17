@@ -102,7 +102,11 @@ is HTTP-only.
   a Bearer gate in `handleRequest` enforces them, backed by
   token-lifecycle + revocation ledgers and PBKDF2 password
   hashing. The HMAC key is client-shipped, so isolation is
-  demo-grade until the server tier.
+  demo-grade until the server tier. The snapshot plane
+  (`BOOTSTRAP_ROUTES`) is intentionally auth-free dev-tier —
+  removed or re-gated when the Postgres server tier lands; see
+  [ARCHITECTURE.md](ARCHITECTURE.md) § Server-tier deploy
+  blockers.
 - **Tenancy.** Every authenticated request runs org-scoped:
   `handleRequest` wraps the adapter in `orgScopedAdapter`
   bound to the org from the VERIFIED token claim (never the

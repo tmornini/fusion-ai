@@ -45,9 +45,12 @@ export const AUTHENTICATION_ROUTES: ReadonlySet<string> =
 
 // The snapshot/bootstrap plane is auth-free — a dev-tier
 // install/demo surface that runs below the auth tier (it
-// installs the datastore before any identity can exist) and
-// is slated for removal. It carries no bearer and no route
-// policy, regardless of whether a schema exists.
+// installs the datastore before any identity can exist). It
+// carries no bearer and no route policy, regardless of
+// whether a schema exists. This is a KNOWN, accepted dev-tier
+// decision, not a regression — see ARCHITECTURE.md
+// § Server-tier deploy blockers. The whole exemption MUST be
+// removed or re-gated when the Postgres server tier lands.
 export const BOOTSTRAP_ROUTES: ReadonlySet<string> =
     new Set([
         'snapshots/schema',

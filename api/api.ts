@@ -187,6 +187,9 @@ export async function handleRequest(
     // carries the anonymous id — its handlers never author a
     // member-state event.
     let actor: Id = ANONYMOUS_ID;
+    // BOOTSTRAP_ROUTES: the accepted dev-tier auth-free
+    // snapshot plane (removed at the Postgres server tier) —
+    // see api/request-auth.ts.
     const bearerExempt =
         AUTHENTICATION_ROUTES.has(routePattern)
         || BOOTSTRAP_ROUTES.has(routePattern);
