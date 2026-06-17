@@ -714,8 +714,12 @@ export class HumanMember {
         return this.#state === 'archived';
     }
 
-    hasDepartment(): boolean {
-        return this.#department !== '';
+    department():
+        | { present: true; label: string }
+        | { present: false } {
+        return this.#department !== ''
+            ? { present: true, label: this.#department }
+            : { present: false };
     }
 
     stateValue(): MemberState {

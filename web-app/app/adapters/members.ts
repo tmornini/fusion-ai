@@ -162,7 +162,7 @@ export function featuredHumanMembers(
     members: HumanMember[],
 ): HumanMember[] {
     return members
-        .filter(member => member.hasDepartment())
+        .filter(member => member.department().present)
         .slice(0, TOP_HUMAN_MEMBER_COUNT);
 }
 
