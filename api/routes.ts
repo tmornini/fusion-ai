@@ -2,7 +2,6 @@ import type {
     DbAdapter,
     EntityStore,
 } from './db.ts';
-import { LedgerImmutabilityError } from './db.ts';
 import type {
     Id,
     AIMemberEntity,
@@ -809,10 +808,9 @@ export const routes: Route[] = [
     // so the flow body OMITS it; flow_versions is parent-scoped
     // and re-validates the snapshot through
     // validateFlowVersionEntity. The event is authored by the
-    // verified caller (actor), never the body. The eventId is
-    // client-minted: a LedgerImmutabilityError from postEvent
-    // means the event already landed (prior retry), so the PUT
-    // is treated as idempotently successful.
+    // verified caller (actor), never the body. The eventId and
+    // at are client-minted: a byte-identical replay lands as a
+    // ledger no-op via postEventAt.
     // Member-tier PUT — MEMBER_VERBS['/flows'] includes 'PUT'.
     route('flows/:id', {
         get: (db, p) => db.flows.getById(param(p, 0)),
@@ -838,16 +836,10 @@ export const routes: Route[] = [
                         b.flow as unknown as
                             Omit<FlowEntity, 'id'>,
                     );
-                    try {
-                        await view.states.postEvent(
-                            b.eventId, id, 'updated', actor,
-                        );
-                    } catch (e) {
-                        if (
-                            !(e instanceof
-                                LedgerImmutabilityError)
-                        ) throw e;
-                    }
+                    await view.states.postEventAt(
+                        b.eventId, id, 'updated', actor,
+                        b.at,
+                    );
                 },
             );
         },

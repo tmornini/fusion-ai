@@ -2408,11 +2408,12 @@ export type FlowWriteHistory =
 export interface FlowPutBody {
     readonly flow: Record<string, unknown>;
     readonly eventId: string;
+    readonly at: string;
     readonly history: FlowWriteHistory;
 }
 
 const FLOW_PUT_KEYS: readonly string[] = [
-    'flow', 'eventId', 'history',
+    'flow', 'eventId', 'at', 'history',
 ];
 
 function validateFlowWriteHistory(
@@ -2461,10 +2462,13 @@ export function validateFlowPutBody(
             'FlowPutBody.eventId must be non-empty',
         );
     }
+    const at = validateTimestampField(
+        body, 'at', 'FlowPutBody',
+    );
     const history = validateFlowWriteHistory(
         body['history'], 'FlowPutBody.history',
     );
-    return { flow, eventId, history };
+    return { flow, eventId, at, history };
 }
 
 export interface FlowSaveBody {

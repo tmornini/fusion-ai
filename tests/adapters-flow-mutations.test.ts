@@ -306,6 +306,7 @@ test(
                 edges: [],
             }),
             eventId: 'put-ev-1',
+            at: '2099-01-01T00:00:00.000000Z',
             history: {
                 kind: 'snapshot',
                 version: {
@@ -342,7 +343,7 @@ test(
 );
 
 test(
-    'PUT flows/:id replays idempotently (one updated event)',
+    'PUT flows/:id replays identically as one updated event',
     async () => {
         const { ctx } = await setupMemDb();
         await createBaseFlow(ctx, 'flow-1');
@@ -357,6 +358,7 @@ test(
                 edges: [],
             }),
             eventId: 'fixed-ev',
+            at: '2026-01-01T00:00:00.000000Z',
             history: { kind: 'none' },
         };
         await ctx.PUT('flows/flow-1', body);
