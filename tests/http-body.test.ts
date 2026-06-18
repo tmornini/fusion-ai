@@ -2,7 +2,11 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { HttpMessage } from '../api/http-message/http-message.ts';
 import { HttpMessageError } from '../api/http-message/types.ts';
-import { BodyRegistry } from '../api/http-message/media-registry.ts';
+import {
+    BodyRegistry,
+    formBodyCodec,
+    textBodyCodec,
+} from '../api/http-message/media-registry.ts';
 import { Octets } from '../api/http-message/octets.ts';
 
 const jsonResponse = HttpMessage.fromWire(
@@ -102,4 +106,35 @@ test('a non-JSON codec body is not inlined as JSON', () => {
     );
     const body = JSON.parse(message.toJson()).body;
     assert.equal(typeof body, 'string');
+});
+
+test('form codec decodes urlencoded to an object', () => {
+    assert.deepEqual(
+        formBodyCodec.decode(Octets.fromLatin1('a=1&b=two')),
+        { a: '1', b: 'two' },
+    );
+});
+
+test('form codec keeps the last value on duplicate keys', () => {
+    assert.deepEqual(
+        formBodyCodec.decode(Octets.fromLatin1('a=1&a=2')),
+        { a: '2' },
+    );
+});
+
+test('form codec encodes an object to urlencoded', () => {
+    const octets = formBodyCodec.encode({ a: '1', b: 'two' });
+    assert.equal(octets.toLatin1(), 'a=1&b=two');
+});
+
+test('form codec rejects a non-string field', () => {
+    assert.throws(
+        () => formBodyCodec.encode({ a: 1 }),
+        HttpMessageError,
+    );
+});
+
+test('text codec round-trips UTF-8', () => {
+    const octets = textBodyCodec.encode('café');
+    assert.equal(textBodyCodec.decode(octets), 'café');
 });
