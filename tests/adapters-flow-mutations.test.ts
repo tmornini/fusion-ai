@@ -436,6 +436,8 @@ test(
             eventId: 'undo-ev',
             at: '2099-01-02T00:00:00.000000Z',
             consumedVersionId: 'ver-1',
+            graphDelta: EMPTY_GRAPH_DELTA,
+            revivals: [],
         });
         const events = await ctx.GET<StateEntity[]>(
             'entity-states/flow-1/history',
@@ -481,6 +483,8 @@ test(
             }),
             eventId: 'redo-ev',
             at: '2099-01-03T00:00:00.000000Z',
+            graphDelta: EMPTY_GRAPH_DELTA,
+            revivals: [],
         });
         const events = await ctx.GET<StateEntity[]>(
             'entity-states/flow-1/history',

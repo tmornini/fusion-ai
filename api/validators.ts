@@ -2568,20 +2568,41 @@ export interface FlowUndoBody {
     readonly eventId: string;
     readonly consumedVersionId: string;
     readonly at: string;
+    readonly graphDelta: FlowGraphDelta;
+    readonly revivals: GraphRevival[];
 }
 
 const FLOW_UNDO_KEYS: readonly string[] = [
     'flow', 'eventId', 'consumedVersionId', 'at',
+    'graphDelta', 'revivals',
 ];
 
+// The revivals array gate, shared by the undo and redo
+// bodies: each element is the deletion/revival triple, so the
+// route can post a 'restored' event that supersedes a prior
+// tombstone. `label` names the enclosing body.
+function validateRevivals(
+    value: unknown,
+    label: string,
+): GraphRevival[] {
+    return asArray(value, label).map((item, i) =>
+        validateGraphTriple(item, label + '[' + i + ']'),
+    );
+}
+
 // The HTTP-body gate for POST /flows/:id/undo: the flow row, the
-// 'updated' state event, and the DELETE of the consumed version,
-// written atomically — the flow can never land reverted while
-// the version row survives unconsumed. The flow fields are
+// 'updated' state event, the DELETE of the consumed version, the
+// graphDelta to the four relation tables, and the revivals —
+// written atomically. The flow can never land reverted while the
+// version row survives unconsumed. The flow fields are
 // re-validated by the org-scoped flows store after the org
 // stamp (body OMITS organization_id). The state is fixed to
 // 'updated' server-side and authored by the verified caller
-// (actor), never the body.
+// (actor), never the body. graphDelta lands the target graph in
+// relations (validated via validateFlowGraphDelta); revivals
+// post 'restored' events that supersede the tombstones of the
+// nodes/edges the target re-introduces (so isDeletedIn flips
+// back to false and they reappear in reads).
 export function validateFlowUndoBody(
     body: Record<string, unknown>,
 ): FlowUndoBody {
@@ -2604,7 +2625,16 @@ export function validateFlowUndoBody(
     const at = validateTimestampField(
         body, 'at', 'FlowUndoBody',
     );
-    return { flow, eventId, consumedVersionId, at };
+    const graphDelta = validateFlowGraphDelta(
+        asObject(body['graphDelta'], 'FlowUndoBody.graphDelta'),
+    );
+    const revivals = validateRevivals(
+        body['revivals'], 'FlowUndoBody.revivals',
+    );
+    return {
+        flow, eventId, consumedVersionId, at,
+        graphDelta, revivals,
+    };
 }
 
 export interface FlowRedoBody {
@@ -2612,22 +2642,28 @@ export interface FlowRedoBody {
     readonly flow: Record<string, unknown>;
     readonly eventId: string;
     readonly at: string;
+    readonly graphDelta: FlowGraphDelta;
+    readonly revivals: GraphRevival[];
 }
 
 const FLOW_REDO_KEYS: readonly string[] = [
     'version', 'flow', 'eventId', 'at',
+    'graphDelta', 'revivals',
 ];
 
 // The HTTP-body gate for POST /flows/:id/redo: a REQUIRED
-// version snapshot (put + trims), the flow row, and the
-// 'updated' state event, written atomically — the current
-// state can never land archived as a version while the redo
-// graph is lost. The flow fields are re-validated by the
-// org-scoped flows store after the org stamp (body OMITS
-// organization_id); the version snapshot is re-validated by
-// the flow_versions store. The state is fixed to 'updated'
-// server-side and authored by the verified caller (actor),
-// never the body.
+// version snapshot (put + trims), the flow row, the 'updated'
+// state event, the graphDelta to the four relation tables, and
+// the revivals — written atomically. The current state can
+// never land archived as a version while the redo graph is
+// lost. The flow fields are re-validated by the org-scoped
+// flows store after the org stamp (body OMITS organization_id);
+// the version snapshot is re-validated by the flow_versions
+// store. The state is fixed to 'updated' server-side and
+// authored by the verified caller (actor), never the body.
+// graphDelta lands the redo target graph in relations;
+// revivals post 'restored' events that supersede the tombstones
+// of the nodes/edges the redo target re-introduces.
 export function validateFlowRedoBody(
     body: Record<string, unknown>,
 ): FlowRedoBody {
@@ -2645,7 +2681,15 @@ export function validateFlowRedoBody(
     const at = validateTimestampField(
         body, 'at', 'FlowRedoBody',
     );
-    return { version, flow, eventId, at };
+    const graphDelta = validateFlowGraphDelta(
+        asObject(body['graphDelta'], 'FlowRedoBody.graphDelta'),
+    );
+    const revivals = validateRevivals(
+        body['revivals'], 'FlowRedoBody.revivals',
+    );
+    return {
+        version, flow, eventId, at, graphDelta, revivals,
+    };
 }
 
 export interface HumanMemberCreateBody {
@@ -3233,6 +3277,36 @@ export interface GraphDeletion {
     readonly at: string;
 }
 
+// A revival has the SAME triple shape as a deletion — a
+// client-minted eventId, the entity being re-introduced, and
+// the moment. The undo/redo bodies carry these to post a
+// non-'deleted' 'restored' event that supersedes a prior
+// tombstone, so a node/edge the user deleted reappears in
+// reads when the deletion is reverted.
+export type GraphRevival = GraphDeletion;
+
+// The deletion/revival triple validator — eventId non-empty
+// string, entityId asGraphId, at via validateTimestampField.
+// Shared by FlowGraphDelta.deletions and the undo/redo body
+// revivals (same wire shape, same gate).
+function validateGraphTriple(
+    value: unknown,
+    label: string,
+): GraphDeletion {
+    const obj = asObject(value, label);
+    const eventId = pickString(obj, 'eventId');
+    if (eventId === '') {
+        throw new ValidationError(
+            label + '.eventId must be non-empty',
+        );
+    }
+    const entityId = asGraphId(
+        obj['entityId'], label + '.entityId',
+    );
+    const at = validateTimestampField(obj, 'at', label);
+    return { eventId, entityId, at };
+}
+
 export interface FlowNodeMemberRowBody {
     readonly id: string;
     readonly flow_node_id: string;
@@ -3331,29 +3405,12 @@ export function validateFlowGraphDelta(
         });
 
     const deletions: GraphDeletion[] =
-        deletionsRaw.map((item, i) => {
-            const label =
-                'FlowGraphDelta.deletions['
-                + i + ']';
-            const obj = asObject(item, label);
-            const eventId = pickString(
-                obj, 'eventId',
-            );
-            if (eventId === '') {
-                throw new ValidationError(
-                    label + '.eventId must be'
-                    + ' non-empty',
-                );
-            }
-            const entityId = asGraphId(
-                obj['entityId'],
-                label + '.entityId',
-            );
-            const at = validateTimestampField(
-                obj, 'at', label,
-            );
-            return { eventId, entityId, at };
-        });
+        deletionsRaw.map((item, i) =>
+            validateGraphTriple(
+                item,
+                'FlowGraphDelta.deletions[' + i + ']',
+            ),
+        );
 
     const memberEvents: FlowNodeMemberRowBody[] =
         memberEventsRaw.map((item, i) => {

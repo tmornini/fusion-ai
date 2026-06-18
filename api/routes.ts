@@ -3,6 +3,9 @@ import type {
     EntityStore,
 } from './db.ts';
 import type {
+    FlowGraphDelta,
+} from './validators.ts';
+import type {
     Id,
     AIMemberEntity,
     FlowEntity,
@@ -278,6 +281,62 @@ async function applyRecordWrite(
             }
         },
     );
+}
+
+// Write a FlowGraphDelta to the four relation tables inside an
+// ALREADY-OPEN transaction view: node/edge upserts, append-only
+// member/attribute events, and node/edge deletion events
+// (authored by actor, never the body). The same writes the undo
+// and redo routes need; PUT /flows/:id keeps its own inline
+// copy (the committed Task 4 voice). The view's table set must
+// already include flow_nodes, flow_edges, flow_node_members,
+// flow_node_attributes, and states.
+async function writeFlowGraphDelta(
+    view: DbAdapter,
+    delta: FlowGraphDelta,
+    actor: Id,
+): Promise<void> {
+    for (const n of delta.nodes) {
+        const {
+            id, flow_id, name, position_x, position_y,
+            is_create, is_archive, task_instructions, at,
+        } = n;
+        await view.flowNodes.put(id, {
+            flow_id, name, position_x, position_y,
+            is_create, is_archive, task_instructions, at,
+        });
+    }
+    for (const e of delta.edges) {
+        const {
+            id, flow_id, name, from_node_id, to_node_id, at,
+        } = e;
+        await view.flowEdges.put(id, {
+            flow_id, name, from_node_id, to_node_id, at,
+        });
+    }
+    for (const m of delta.memberEvents) {
+        const {
+            id, flow_node_id, member_id, action, at,
+        } = m;
+        await view.flowNodeMembers.put(id, {
+            flow_node_id, member_id, action, at,
+        });
+    }
+    for (const a of delta.attributeEvents) {
+        const {
+            id, flow_node_id, attribute_id, mode,
+            is_required, action, at,
+        } = a;
+        await view.flowNodeAttributes.put(id, {
+            flow_node_id, attribute_id, mode,
+            is_required, action, at,
+        });
+    }
+    for (const d of delta.deletions) {
+        await view.states.postEvent(
+            d.eventId, d.entityId, 'deleted', actor, d.at,
+        );
+    }
 }
 
 export const routes: Route[] = [
@@ -1039,18 +1098,30 @@ export const routes: Route[] = [
         },
     }),
     // Undo a flow edit: the flow row PUT, the 'updated' state
-    // event, and the DELETE of the consumed version — all as ONE
+    // event, the DELETE of the consumed version, the graph delta
+    // to the four relation tables, and the revivals — all as ONE
     // transaction. The flow can never land reverted while the
     // version row survives unconsumed. The org-scoped flows store
     // stamps organization_id and re-validates the flow body (so
     // it OMITS it); the event is authored by the verified caller
-    // (actor). Member-tier POST via the /flows segment prefix.
+    // (actor). graphDelta lands the target graph in relations
+    // exactly as PUT /flows/:id does; the revivals THEN post
+    // 'restored' events (authored by actor) that supersede the
+    // tombstones of the nodes/edges the target re-introduces, so
+    // a node the user deleted reappears in reads on undo.
+    // Member-tier POST via the /flows segment prefix.
     route('flows/:id/undo', {
         post: (db, p, body, actor) => {
             const id = param(p, 0);
             const b = validateFlowUndoBody(body);
+            const delta = b.graphDelta;
             return db.transaction(
-                ['flows', 'flow_versions', 'states'],
+                [
+                    'flows', 'flow_versions', 'states',
+                    'flow_nodes', 'flow_edges',
+                    'flow_node_members',
+                    'flow_node_attributes',
+                ],
                 async (view) => {
                     await view.flows.put(
                         id,
@@ -1064,6 +1135,15 @@ export const routes: Route[] = [
                     await view.flowVersions.delete(
                         b.consumedVersionId,
                     );
+                    await writeFlowGraphDelta(
+                        view, delta, actor,
+                    );
+                    for (const r of b.revivals) {
+                        await view.states.postEvent(
+                            r.eventId, r.entityId,
+                            'restored', actor, r.at,
+                        );
+                    }
                 },
             );
         },
@@ -1071,19 +1151,29 @@ export const routes: Route[] = [
     // Redo a flow edit: a REQUIRED version snapshot (the new
     // flow_versions row PUT plus the named over-cap trim
     // DELETEs), THEN the flow row PUT, THEN the 'updated' state
-    // event — all as ONE transaction. The current state can
-    // never land archived as a version while the redo graph is
-    // lost. The org-scoped flows store stamps organization_id and
-    // re-validates the flow body (so it OMITS it); flow_versions
-    // re-validates the snapshot; the event is authored by the
-    // verified caller (actor). Member-tier POST via the /flows
-    // segment prefix.
+    // event, THEN the graph delta to the four relation tables,
+    // THEN the revivals — all as ONE transaction. The current
+    // state can never land archived as a version while the redo
+    // graph is lost. The org-scoped flows store stamps
+    // organization_id and re-validates the flow body (so it OMITS
+    // it); flow_versions re-validates the snapshot; the event is
+    // authored by the verified caller (actor). graphDelta lands
+    // the redo target graph in relations; the revivals THEN post
+    // 'restored' events that supersede the tombstones of the
+    // nodes/edges the redo target re-introduces. Member-tier POST
+    // via the /flows segment prefix.
     route('flows/:id/redo', {
         post: (db, p, body, actor) => {
             const id = param(p, 0);
             const b = validateFlowRedoBody(body);
+            const delta = b.graphDelta;
             return db.transaction(
-                ['flows', 'flow_versions', 'states'],
+                [
+                    'flows', 'flow_versions', 'states',
+                    'flow_nodes', 'flow_edges',
+                    'flow_node_members',
+                    'flow_node_attributes',
+                ],
                 async (view) => {
                     await view.flowVersions.put(
                         b.version.id,
@@ -1102,6 +1192,15 @@ export const routes: Route[] = [
                         b.eventId, id, 'updated', actor,
                         b.at,
                     );
+                    await writeFlowGraphDelta(
+                        view, delta, actor,
+                    );
+                    for (const r of b.revivals) {
+                        await view.states.postEvent(
+                            r.eventId, r.entityId,
+                            'restored', actor, r.at,
+                        );
+                    }
                 },
             );
         },
