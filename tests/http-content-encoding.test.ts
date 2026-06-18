@@ -8,6 +8,13 @@ import {
     deflateContentCodec,
     type ContentCodec,
 } from '../api/http-message/content-coding.ts';
+import { Body } from '../api/http-message/body.ts';
+import {
+    defaultBodyRegistry,
+} from '../api/http-message/media-registry.ts';
+import {
+    HttpMessageError,
+} from '../api/http-message/types.ts';
 
 async function deflate(
     coding: 'gzip' | 'deflate', text: string,
@@ -53,5 +60,47 @@ test('an injected br codec is found', () => {
     };
     assert.equal(
         new ContentCodingRegistry([br]).codecFor('br'), br,
+    );
+});
+
+const RESPONSE_LINE = {
+    kind: 'response' as const,
+    version: 'HTTP/1.1', status: 200, reason: 'OK',
+};
+
+test('decodedAsync strips gzip then decodes JSON', async () => {
+    const body = Body.fromModel(
+        {
+            startLine: RESPONSE_LINE,
+            fields: [
+                { name: 'content-encoding', value: 'gzip' },
+                {
+                    name: 'content-type',
+                    value: 'application/json',
+                },
+            ],
+            body: await deflate('gzip', '{"ok":true}'),
+            trailer: undefined,
+        },
+        defaultBodyRegistry(),
+        defaultContentCodingRegistry(),
+    );
+    const decoded = await body.decodedAsync();
+    assert.equal(decoded.query('ok').toBoolean(), true);
+});
+
+test('contentDecodedAsync rejects br by default', async () => {
+    const body = Body.fromModel(
+        {
+            startLine: RESPONSE_LINE,
+            fields: [{ name: 'content-encoding', value: 'br' }],
+            body: Octets.fromLatin1('x'),
+            trailer: undefined,
+        },
+        defaultBodyRegistry(),
+        defaultContentCodingRegistry(),
+    );
+    await assert.rejects(
+        body.contentDecodedAsync(), HttpMessageError,
     );
 });
