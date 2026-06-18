@@ -128,6 +128,7 @@ function readBareItem(cursor: Cursor): BareValue {
     if (ch === '?') return readBoolean(cursor);
     if (ch === ':') return readByteSequence(cursor);
     if (ch === '@') return readDate(cursor);
+    if (ch === '%') return readDisplayString(cursor);
     if (ch === '*' || isAlpha(ch)) return readToken(cursor);
     throw new HttpMessageError('unexpected bare item: ' + ch);
 }
@@ -198,6 +199,36 @@ function readDate(cursor: Cursor): Date {
         throw new HttpMessageError('sf-date exceeds 15 digits');
     }
     return new Date(Number(text) * 1000);
+}
+
+function readDisplayString(cursor: Cursor): string {
+    cursor.expect('%');
+    cursor.expect('"');
+    const bytes: number[] = [];
+    for (;;) {
+        const ch = cursor.next();
+        if (ch === '"') {
+            return new TextDecoder().decode(
+                Uint8Array.from(bytes),
+            );
+        }
+        if (ch === '%') {
+            const hi = cursor.next();
+            const lo = cursor.next();
+            if (!isLowerHex(hi) || !isLowerHex(lo)) {
+                throw new HttpMessageError(
+                    'invalid display-string escape',
+                );
+            }
+            bytes.push(Number.parseInt(hi + lo, 16));
+        } else {
+            bytes.push(ch.charCodeAt(0));
+        }
+    }
+}
+
+function isLowerHex(ch: string): boolean {
+    return isDigit(ch) || (ch >= 'a' && ch <= 'f');
 }
 
 function readToken(cursor: Cursor): string {

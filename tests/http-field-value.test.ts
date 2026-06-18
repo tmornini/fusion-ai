@@ -140,3 +140,25 @@ test('toText on an sf-date leaf throws', () => {
         HttpMessageError,
     );
 });
+
+test('a display string percent-decodes to UTF-8', () => {
+    const message = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'accept-encoding: %"caf%c3%a9"\r\n\r\n',
+    );
+    assert.equal(
+        message.query('header.accept-encoding.0').toText(),
+        'café',
+    );
+});
+
+test('a display string with no escapes decodes verbatim', () => {
+    const message = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'accept-encoding: %"hello"\r\n\r\n',
+    );
+    assert.equal(
+        message.query('header.accept-encoding.0').toText(),
+        'hello',
+    );
+});
