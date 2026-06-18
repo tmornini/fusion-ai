@@ -70,6 +70,7 @@ export class Body {
     // deferred pluggable seam that throws loudly rather than
     // silently passing the still-encoded bytes through.
     contentDecoded(): Body {
+        this.#require();
         const codings = this.#contentEncodings();
         if (codings.every((coding) => coding === IDENTITY)) {
             return this;
@@ -79,9 +80,13 @@ export class Body {
         );
     }
 
+    // Decode per Content-Type, after stripping any Content-
+    // Encoding — so a still-encoded (gzip, …) body fails loudly
+    // rather than feeding compressed octets to the codec.
     decoded(): Decoded {
-        const octets = this.#require();
-        const type = this.#fields.find(
+        const source = this.contentDecoded();
+        const octets = source.#require();
+        const type = source.#fields.find(
             (field) => field.name === CONTENT_TYPE,
         );
         if (type === undefined) {
@@ -89,7 +94,7 @@ export class Body {
                 'body has no content-type to decode',
             );
         }
-        const codec = this.#registry.codecFor(type.value);
+        const codec = source.#registry.codecFor(type.value);
         if (codec === undefined) {
             throw new HttpMessageError(
                 'no body codec for ' + type.value,

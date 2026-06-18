@@ -122,3 +122,30 @@ test('base64Decoded() decodes a base64-armored body', () => {
     );
     assert.equal(armored.body().base64Decoded().toText(), 'hello');
 });
+
+test('base64Decoded() throws HttpMessageError on bad input', () => {
+    const armored = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'content-type: text/plain\r\n\r\n!!!not base64!!!',
+    );
+    assert.throws(
+        () => armored.body().base64Decoded().toText(),
+        HttpMessageError,
+    );
+});
+
+test('contentDecoded() on an absent body throws', () => {
+    assert.throws(
+        () => noBody.body().contentDecoded(),
+        HttpMessageError,
+    );
+});
+
+test('decoded() throws on a content-encoded body', () => {
+    const gz = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'content-encoding: gzip\r\n' +
+        'content-type: application/json\r\n\r\n{"a":1}',
+    );
+    assert.throws(() => gz.body().decoded(), HttpMessageError);
+});

@@ -28,6 +28,13 @@ import type {
 // therefore always base64 and a non-string body always inline —
 // an unambiguous discriminator. Absence is a missing key, never
 // null (a null body is a present JSON null).
+//
+// An inline body round-trips SEMANTICALLY, not byte-for-byte: it
+// passes through JSON.parse/stringify, which normalizes key order
+// and whitespace, collapses duplicate keys (last wins), and
+// rounds numbers beyond IEEE-754 double range (|n| > 2^53). This
+// matches standard JSON tooling; callers needing a byte-exact
+// body use the wire form.
 
 export function parseJson(
     json: string,

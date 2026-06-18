@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { HttpMessage } from '../api/http-message/http-message.ts';
+import { HttpMessageError } from '../api/http-message/types.ts';
 
 function bodyOf(wire: string): unknown {
     return JSON.parse(HttpMessage.fromWire(wire).toJson()).body;
@@ -121,6 +122,17 @@ test('JSON re-serialization of a JSON body is a fixed point', () => {
     ).toJson();
     const twice = HttpMessage.fromJson(once).toJson();
     assert.equal(twice, once);
+});
+
+test('rejects an invalid base64 body at the gate', () => {
+    const json = '{"header":'
+        + '[["content-type","application/octet-stream"]],'
+        + '"status":200,"reason":"OK","version":"HTTP/1.1",'
+        + '"body":"!!!not base64!!!"}';
+    assert.throws(
+        () => HttpMessage.fromJson(json),
+        HttpMessageError,
+    );
 });
 
 test('an empty JSON body round-trips via base64', () => {
