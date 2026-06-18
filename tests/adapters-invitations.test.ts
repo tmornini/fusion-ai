@@ -188,8 +188,10 @@ async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    await db.states.postEvent('ev-org-gone', '2', 'deleted',
-        'system');
+    await db.states.postEventAt(
+        'ev-org-gone', '2', 'deleted', 'system',
+        '2026-01-01T00:00:00.000000Z',
+    );
     const sarah = await ctxOn(db, 'sarah', '1');
     const mine = await getInvitations(sarah);
     assert.equal(mine.length, 1);

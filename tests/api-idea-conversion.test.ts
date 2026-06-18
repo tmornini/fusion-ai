@@ -67,8 +67,9 @@ async function seededDb(): Promise<MemoryDbAdapter> {
         organization_id: '1',
         ...ideaFields('Source Idea'),
     });
-    await db.states.postEvent(
+    await db.states.postEventAt(
         'st-idea-1', 'idea-1', 'approved', 'system',
+        '2026-01-01T00:00:00.000000Z',
     );
     // The objectives the baselines reference.
     await db.objectives.put('obj-1', {

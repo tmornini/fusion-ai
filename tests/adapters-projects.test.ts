@@ -63,8 +63,9 @@ async function seedProject(
     await db.projects.put(
         id, buildProject(id, title, overrides),
     );
-    await db.states.postEvent(
+    await db.states.postEventAt(
         `st-${id}`, id, state, 'system',
+        '2026-01-01T00:00:00.000000Z',
     );
 }
 

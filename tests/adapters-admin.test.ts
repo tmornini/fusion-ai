@@ -58,8 +58,9 @@ async function seedProject(
     id: string, state: string,
 ): Promise<void> {
     await db.projects.put(id, buildProject(id));
-    await db.states.postEvent(
+    await db.states.postEventAt(
         'sp-' + id, id, state, 'system',
+        '2026-01-01T00:00:00.000000Z',
     );
 }
 
@@ -69,8 +70,9 @@ async function seedIdea(
     submitter: string,
 ): Promise<void> {
     await db.ideas.put(id, buildIdea(id));
-    await db.states.postEvent(
+    await db.states.postEventAt(
         'si-' + id, id, state, 'system',
+        '2026-01-01T00:00:00.000000Z',
     );
     await db.ideaSubmissions.put('sub-' + id, {
         idea_id: id,
@@ -162,17 +164,20 @@ test(
 
         // Transitions through later state events
         // (latest by 'at' wins).
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'sp1-next', 'p1', 'declined',
             'system',
+            '2026-01-02T00:00:00.000000Z',
         );
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'si1-next', 'i1', 'archived',
             'system',
+            '2026-01-02T00:00:01.000000Z',
         );
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'sw1-next', 'u1', 'archived',
             'system',
+            '2026-01-02T00:00:02.000000Z',
         );
         stats = await getOrganizationStats(ctx);
         assert.equal(stats.projectsCurrent, 0);
@@ -231,8 +236,9 @@ test(
         const before = await getOrganization(ctx);
         assert.equal(before.lastActivityText(), '—');
 
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'ev1', 'p1', 'approved', 'current',
+            '2026-01-01T00:00:00.000000Z',
         );
         const after = await getOrganization(ctx);
         assert.notEqual(after.lastActivityText(), '—');

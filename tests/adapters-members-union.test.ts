@@ -61,9 +61,10 @@ test(
         await db.members.put('system', {
             type: 'system',
         });
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'st-system', 'system',
             'active', 'system',
+            '2026-01-01T00:00:00.000000Z',
         );
         const ctx = createRequestContext(db, await devToken());
         const roster = await getMembers(ctx);
@@ -204,9 +205,10 @@ test(
             identity_id: 'member_without_pii',
             at: '2020-01-01T00:00:00.000000Z',
         });
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'st-member_without_pii', 'member_without_pii',
             'active', 'system',
+            '2026-01-01T00:00:00.000000Z',
         );
         const ctx = createRequestContext(db, await devToken());
         const map = await getMemberMap(ctx);

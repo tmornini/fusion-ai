@@ -83,8 +83,9 @@ export async function seedHumanMember(
         phone: '',
         bio: '',
     });
-    await db.states.postEvent(
+    await db.states.postEventAt(
         `st-${id}`, id, state, 'system',
+        '2026-01-01T00:00:00.000000Z',
     );
     // A member belongs to an org via the ledger — the member
     // list derives from it, so a seeded member needs one.
@@ -103,8 +104,9 @@ export async function seedAIMember(
 ): Promise<void> {
     await db.members.put(id, { type: 'ai' });
     await db.aiMembers.put(id, { name, ...aiDetail() });
-    await db.states.postEvent(
+    await db.states.postEventAt(
         `st-${id}`, id, state, 'system',
+        '2026-01-01T00:00:00.000000Z',
     );
     await db.memberships.put(`mb-${id}`, {
         organization_id: '1',

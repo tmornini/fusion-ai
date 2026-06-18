@@ -181,12 +181,6 @@ export interface StateStore {
         id: Id,
         fields: Omit<StateEntity, 'id'>,
     ): Promise<StateEntity>;
-    postEvent(
-        id: Id,
-        entityId: Id,
-        state: string,
-        memberId: Id,
-    ): Promise<void>;
     postEventAt(
         id: Id,
         entityId: Id,

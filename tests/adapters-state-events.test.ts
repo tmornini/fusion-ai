@@ -69,12 +69,14 @@ test('getProjectStates excludes a same-valued idea',
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
         await db.projects.put('p1', projectBody('P'));
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'ev-p1', 'p1', 'approved', 'system',
+            '2026-01-01T00:00:00.000000Z',
         );
         await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'ev-i1', 'i1', 'approved', 'system',
+            '2026-01-01T00:00:01.000000Z',
         );
         const ctx = createRequestContext(db, await devToken());
         const states = await getProjectStates(ctx);
@@ -90,12 +92,14 @@ test('getIdeaStates excludes a same-valued project',
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
         await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'ev-i1', 'i1', 'active', 'system',
+            '2026-01-01T00:00:00.000000Z',
         );
         await db.projects.put('p1', projectBody('P'));
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'ev-p1', 'p1', 'approved', 'system',
+            '2026-01-01T00:00:01.000000Z',
         );
         const ctx = createRequestContext(db, await devToken());
         const states = await getIdeaStates(ctx);
@@ -111,12 +115,14 @@ test('getRecordStates excludes a same-valued idea',
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
         await db.records.put('r1', recordBody('R'));
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'ev-r1', 'r1', 'active', 'system',
+            '2026-01-01T00:00:00.000000Z',
         );
         await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'ev-i1', 'i1', 'archived', 'system',
+            '2026-01-01T00:00:01.000000Z',
         );
         const ctx = createRequestContext(db, await devToken());
         const states = await getRecordStates(ctx);
@@ -134,8 +140,9 @@ test('getMemberStates spans kinds and excludes an idea',
         await seedHumanMember(db, 'wh', 'Human');
         await seedAIMember(db, 'wa', 'Ai');
         await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEvent(
+        await db.states.postEventAt(
             'ev-i1', 'i1', 'active', 'system',
+            '2026-01-01T00:00:00.000000Z',
         );
         const ctx = createRequestContext(db, await devToken());
         const states = await getMemberStates(ctx);

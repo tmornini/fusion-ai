@@ -16,6 +16,7 @@ import {
     DEFAULT_LOCK_TIMEOUT,
     MS_PER_DAY,
     SYSTEM_MEMBER_ID,
+    nowUtc,
 } from './types.ts';
 import {
     generateCryptoSafeBase62,
@@ -3835,17 +3836,19 @@ async function postBootstrapIn(
                 amiable: 80,
             }),
         }),
-        adapter.states.postEvent(
+        adapter.states.postEventAt(
             'bootstrap-system-active',
             SYSTEM_MEMBER_ID,
             'active',
             SYSTEM_MEMBER_ID,
+            nowUtc(),
         ),
-        adapter.states.postEvent(
+        adapter.states.postEventAt(
             'bootstrap-current-active',
             'current',
             'active',
             SYSTEM_MEMBER_ID,
+            nowUtc(),
         ),
         adapter.organizations.put(STARK_ORG, {
             name: 'Stark Industries',

@@ -46,11 +46,12 @@ async function seedIdeaState(
     ideaId: string,
     state: string,
 ): Promise<void> {
-    await db.states.postEvent(
+    await db.states.postEventAt(
         `st-${ideaId}`,
         ideaId,
         state,
         'system',
+        '2026-01-01T00:00:00.000000Z',
     );
 }
 

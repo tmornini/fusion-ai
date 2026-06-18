@@ -7,7 +7,6 @@ import {
     type TxRunner,
 } from './db.ts';
 import {
-    nowUtc,
     type Id,
     type StateEntity,
 } from './types.ts';
@@ -106,20 +105,6 @@ export class StateStore
             },
         );
         return written;
-    }
-
-    async postEvent(
-        id: Id,
-        entityId: Id,
-        state: string,
-        memberId: Id,
-    ): Promise<void> {
-        await this.put(id, {
-            entity_id: entityId,
-            state,
-            member_id: memberId,
-            at: nowUtc(),
-        });
     }
 
     async postEventAt(

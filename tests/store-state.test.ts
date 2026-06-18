@@ -110,14 +110,14 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.postSchemaCreation();
-        await db.states.postEvent('s1', 'e1', 'a', 'w1');
-        // RFC-3339 timestamps from Date.now() share
-        // millisecond resolution; pause to guarantee
-        // ordering on fast machines.
-        await new Promise(resolve =>
-            setTimeout(resolve, 2),
+        await db.states.postEventAt(
+            's1', 'e1', 'a', 'w1',
+            '2026-01-01T00:00:00.000000Z',
         );
-        await db.states.postEvent('s2', 'e1', 'b', 'w1');
+        await db.states.postEventAt(
+            's2', 'e1', 'b', 'w1',
+            '2026-01-01T00:00:01.000000Z',
+        );
         const first = await db.states.getById('s1');
         const second = await db.states.getById('s2');
         assert.ok(second.at > first.at);
