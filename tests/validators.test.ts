@@ -1072,12 +1072,21 @@ const validVersionSnapshot = {
 
 const VALID_AT = '2026-01-01T00:00:00.000000Z';
 
+const EMPTY_GRAPH_DELTA = {
+    nodes: [],
+    edges: [],
+    deletions: [],
+    memberEvents: [],
+    attributeEvents: [],
+};
+
 test('validateFlowPutBody accepts a plain (none) write', () => {
     const result = validateFlowPutBody({
         flow: { name: 'F' },
         eventId: 'ev1',
         at: VALID_AT,
         history: { kind: 'none' },
+        graphDelta: EMPTY_GRAPH_DELTA,
     });
     assert.equal(result.history.kind, 'none');
     assert.equal(result.eventId, 'ev1');
@@ -1093,6 +1102,7 @@ test('validateFlowPutBody accepts a snapshot write', () => {
             kind: 'snapshot',
             version: validVersionSnapshot,
         },
+        graphDelta: EMPTY_GRAPH_DELTA,
     });
     assert.equal(result.history.kind, 'snapshot');
     if (result.history.kind === 'snapshot') {
@@ -1115,6 +1125,7 @@ test('validateFlowPutBody rejects an unknown history kind', () => {
             flow: {}, eventId: 'ev1',
             at: VALID_AT,
             history: { kind: 'consume', versionId: 'v1' },
+            graphDelta: EMPTY_GRAPH_DELTA,
         }),
         /history\.kind/,
     );
@@ -1125,6 +1136,7 @@ test('validateFlowPutBody rejects an empty eventId', () => {
         () => validateFlowPutBody({
             flow: {}, eventId: '', at: VALID_AT,
             history: { kind: 'none' },
+            graphDelta: EMPTY_GRAPH_DELTA,
         }),
         /eventId/,
     );

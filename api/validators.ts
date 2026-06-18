@@ -2452,10 +2452,11 @@ export interface FlowPutBody {
     readonly eventId: string;
     readonly at: string;
     readonly history: FlowWriteHistory;
+    readonly graphDelta: FlowGraphDelta;
 }
 
 const FLOW_PUT_KEYS: readonly string[] = [
-    'flow', 'eventId', 'at', 'history',
+    'flow', 'eventId', 'at', 'history', 'graphDelta',
 ];
 
 function validateFlowWriteHistory(
@@ -2492,7 +2493,11 @@ function validateFlowWriteHistory(
 // store stamps organization_id from the verified token and
 // re-validates through validateFlowEntity, so the body OMITS
 // it. The state is fixed to 'updated' server-side and authored
-// by the verified caller (actor), never the body.
+// by the verified caller (actor), never the body. graphDelta is
+// the client-built relation delta (upserts, deletions, and
+// append-only member/attribute events) — validated here at the
+// HTTP gate via validateFlowGraphDelta; the route writes its
+// rows atomically with the flow PUT.
 export function validateFlowPutBody(
     body: Record<string, unknown>,
 ): FlowPutBody {
@@ -2510,7 +2515,10 @@ export function validateFlowPutBody(
     const history = validateFlowWriteHistory(
         body['history'], 'FlowPutBody.history',
     );
-    return { flow, eventId, at, history };
+    const graphDelta = validateFlowGraphDelta(
+        asObject(body['graphDelta'], 'FlowPutBody.graphDelta'),
+    );
+    return { flow, eventId, at, history, graphDelta };
 }
 
 export interface FlowSaveBody {

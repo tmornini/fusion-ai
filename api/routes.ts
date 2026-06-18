@@ -897,9 +897,10 @@ export const routes: Route[] = [
     // Write a flow: an OPTIONAL version snapshot (the new
     // flow_versions row PUT plus the named over-cap trim
     // DELETEs), THEN the flow row PUT, THEN the 'updated' state
-    // event — all as ONE transaction. A mid-write failure rolls
-    // the whole thing back. Covers both the plain write (none —
-    // no flow_versions touch) and the versioned write. The
+    // event, THEN the graph delta to the four relation tables —
+    // all as ONE transaction. A mid-write failure rolls the
+    // whole thing back. Covers both the plain write (none — no
+    // flow_versions touch) and the versioned write. The
     // org-scoped flows store stamps organization_id from the
     // verified token and re-validates through validateFlowEntity,
     // so the flow body OMITS it; flow_versions is parent-scoped
@@ -907,15 +908,25 @@ export const routes: Route[] = [
     // validateFlowVersionEntity. The event is authored by the
     // verified caller (actor), never the body. The eventId and
     // at are client-minted: a byte-identical replay lands as a
-    // ledger no-op via postEvent.
+    // ledger no-op via postEvent. graphDelta is pre-validated at
+    // the HTTP gate (validateFlowPutBody); the route writes its
+    // upsert rows, append-only member/attribute events, and the
+    // node/edge deletion events (authored by actor, never the
+    // body) — the blob (b.flow.graph) is dual-written alongside.
     // Member-tier PUT — MEMBER_VERBS['/flows'] includes 'PUT'.
     route('flows/:id', {
         get: (db, p) => db.flows.getById(param(p, 0)),
         put: (db, p, body, actor) => {
             const id = param(p, 0);
             const b = validateFlowPutBody(body);
+            const delta = b.graphDelta;
             return db.transaction(
-                ['flows', 'flow_versions', 'states'],
+                [
+                    'flows', 'flow_versions', 'states',
+                    'flow_nodes', 'flow_edges',
+                    'flow_node_members',
+                    'flow_node_attributes',
+                ],
                 async (view) => {
                     if (b.history.kind === 'snapshot') {
                         const snap = b.history.version;
@@ -937,6 +948,92 @@ export const routes: Route[] = [
                         b.eventId, id, 'updated', actor,
                         b.at,
                     );
+                    for (const n of delta.nodes) {
+                        const {
+                            id: nodeId,
+                            flow_id,
+                            name,
+                            position_x,
+                            position_y,
+                            is_create,
+                            is_archive,
+                            task_instructions,
+                            at,
+                        } = n;
+                        await view.flowNodes.put(nodeId, {
+                            flow_id,
+                            name,
+                            position_x,
+                            position_y,
+                            is_create,
+                            is_archive,
+                            task_instructions,
+                            at,
+                        });
+                    }
+                    for (const e of delta.edges) {
+                        const {
+                            id: edgeId,
+                            flow_id,
+                            name,
+                            from_node_id,
+                            to_node_id,
+                            at,
+                        } = e;
+                        await view.flowEdges.put(edgeId, {
+                            flow_id,
+                            name,
+                            from_node_id,
+                            to_node_id,
+                            at,
+                        });
+                    }
+                    for (const m of delta.memberEvents) {
+                        const {
+                            id: memberRowId,
+                            flow_node_id,
+                            member_id,
+                            action,
+                            at,
+                        } = m;
+                        await view.flowNodeMembers.put(
+                            memberRowId,
+                            {
+                                flow_node_id,
+                                member_id,
+                                action,
+                                at,
+                            },
+                        );
+                    }
+                    for (const a of delta.attributeEvents) {
+                        const {
+                            id: attrRowId,
+                            flow_node_id,
+                            attribute_id,
+                            mode,
+                            is_required,
+                            action,
+                            at,
+                        } = a;
+                        await view.flowNodeAttributes.put(
+                            attrRowId,
+                            {
+                                flow_node_id,
+                                attribute_id,
+                                mode,
+                                is_required,
+                                action,
+                                at,
+                            },
+                        );
+                    }
+                    for (const d of delta.deletions) {
+                        await view.states.postEvent(
+                            d.eventId, d.entityId, 'deleted',
+                            actor, d.at,
+                        );
+                    }
                 },
             );
         },

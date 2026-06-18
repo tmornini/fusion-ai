@@ -16,7 +16,9 @@ import type {
     GraphDeletion,
     FlowNodeMemberRowBody,
     FlowNodeAttributeRowBody,
+    FlowWriteHistory,
 } from '../../../api/validators.ts';
+import { getFlowGraph } from './flow-queries.ts';
 export type {
     FlowGraphDelta,
     FlowNodeRowBody,
@@ -317,9 +319,41 @@ export function buildSaveEvents(
     };
 }
 
-// Save a flow with NO version snapshot: the flow row PUT plus
-// its 'updated' state event, written atomically through
-// PUT /flows/:id (the put + the event in one re-entrant
+// Assemble the PUT /flows/:id body for a save: the flow row
+// (blob dual-write KEPT), a fresh 'updated' event id, the
+// caller moment, the version-history side-effect, and the
+// graph delta diffed against the CURRENT stored graph. The
+// baseline is fetched HERE, before the body is built — never
+// empty, so deletions fire only for ids the working copy
+// dropped. Both PUT call sites (putFlow and the designer's
+// persist chain) build their body through this single voice.
+export async function buildFlowPutBody(
+    ctx: RequestContext,
+    id: string,
+    save: FlowSaveShape,
+    history: FlowWriteHistory,
+): Promise<Record<string, unknown>> {
+    const now = nowUtc();
+    const baseline = await getFlowGraph(ctx, id);
+    const delta = buildSaveEvents(
+        { nodes: baseline.nodes, edges: baseline.edges },
+        { nodes: save.nodes, edges: save.edges },
+        id,
+        generateCryptoSafeBase62,
+        now,
+    );
+    return {
+        flow: buildFlowBody(save),
+        eventId: generateCryptoSafeBase62(),
+        at: now,
+        history,
+        graphDelta: delta,
+    };
+}
+
+// Save a flow with NO version snapshot: the flow row PUT, its
+// 'updated' state event, and the graph delta — written
+// atomically through PUT /flows/:id (one re-entrant
 // transaction). The author is stamped server-side from the
 // token; the client mints the event id.
 export async function putFlow(
@@ -327,11 +361,11 @@ export async function putFlow(
     id: string,
     save: FlowSaveShape,
 ): Promise<void> {
-    await ctx.PUT(`flows/${id}`, {
-        flow: buildFlowBody(save),
-        eventId: generateCryptoSafeBase62(),
-        at: nowUtc(),
-        history: { kind: 'none' },
-    });
+    await ctx.PUT(
+        `flows/${id}`,
+        await buildFlowPutBody(
+            ctx, id, save, { kind: 'none' },
+        ),
+    );
     flowChanges.notify();
 }

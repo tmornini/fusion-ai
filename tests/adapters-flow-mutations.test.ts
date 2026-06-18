@@ -42,6 +42,17 @@ async function setupMemDb(): Promise<{
     return { db, ctx };
 }
 
+// The four-relation delta a no-graph-change PUT carries: the
+// direct ctx.PUT tests below craft the wire body by hand, so
+// they supply the empty delta that putFlow would have diffed.
+const EMPTY_GRAPH_DELTA = {
+    nodes: [],
+    edges: [],
+    deletions: [],
+    memberEvents: [],
+    attributeEvents: [],
+};
+
 function buildNode(
     id: string,
     overrides?: Partial<GraphNode>,
@@ -326,6 +337,7 @@ test(
                     trimIds: [],
                 },
             },
+            graphDelta: EMPTY_GRAPH_DELTA,
         });
         const versions = await ctx.GET<unknown[]>(
             'flows/flow-1/versions',
@@ -360,6 +372,7 @@ test(
             eventId: 'fixed-ev',
             at: '2026-01-01T00:00:00.000000Z',
             history: { kind: 'none' },
+            graphDelta: EMPTY_GRAPH_DELTA,
         };
         await ctx.PUT('flows/flow-1', body);
         await ctx.PUT('flows/flow-1', body);
@@ -408,6 +421,7 @@ test(
                     trimIds: [],
                 },
             },
+            graphDelta: EMPTY_GRAPH_DELTA,
         });
         await ctx.POST('flows/flow-1/undo', {
             flow: buildFlowBody({
