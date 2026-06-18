@@ -2519,48 +2519,6 @@ export function validateFlowPutBody(
     return { flow, eventId, at, history, graphDelta };
 }
 
-export interface FlowSaveBody {
-    readonly version: FlowVersionSnapshot | null;
-    readonly flow: Record<string, unknown>;
-    readonly eventId: string;
-}
-
-const FLOW_SAVE_KEYS: readonly string[] = [
-    'version', 'flow', 'eventId',
-];
-
-// The HTTP-body gate for POST /flows/:id/save: an OPTIONAL
-// version snapshot (put + trims), the flow row, and the
-// 'updated' state event, written atomically. Covers both the
-// plain save (version null) and the versioned save. The flow
-// fields are NOT fully validated here — the org-scoped flows
-// store stamps organization_id from the verified token and
-// re-validates through validateFlowEntity AFTER the stamp, so
-// the body OMITS organization_id; the version sub-object's
-// snapshot is re-validated by the flow_versions store. The
-// state is fixed to 'updated' server-side and authored by the
-// verified caller (actor), never the body — the body carries
-// only the event id.
-export function validateFlowSaveBody(
-    body: Record<string, unknown>,
-): FlowSaveBody {
-    assertOnlyKeys(body, FLOW_SAVE_KEYS, 'FlowSaveBody');
-    const rawVersion = body['version'];
-    const version = rawVersion === null
-        ? null
-        : validateFlowVersionSnapshot(
-            rawVersion, 'FlowSaveBody.version',
-        );
-    const flow = asObject(body['flow'], 'FlowSaveBody.flow');
-    const eventId = pickString(body, 'eventId');
-    if (eventId === '') {
-        throw new ValidationError(
-            'FlowSaveBody.eventId must be non-empty',
-        );
-    }
-    return { version, flow, eventId };
-}
-
 export interface FlowUndoBody {
     readonly flow: Record<string, unknown>;
     readonly eventId: string;
