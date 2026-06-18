@@ -4,6 +4,7 @@ import {
 } from './db.ts';
 import {
     assertInvitationState,
+    ValidationError,
     type Id,
     type InvitationState,
 } from './types.ts';
@@ -261,23 +262,33 @@ async function grantInvitation(
         return errorJson(
             'an "email" is required', HTTP_BAD_REQUEST);
     }
-    const invitationId = pickString(body, 'invitationId');
+    let invitationId: string;
+    let grantEventId: string;
+    let grantAt: string;
+    try {
+        invitationId = pickString(body, 'invitationId');
+        grantEventId = pickString(body, 'grantEventId');
+        grantAt = validateTimestampField(
+            body, 'grantAt', 'grant',
+        );
+    } catch (e) {
+        if (e instanceof ValidationError) {
+            return errorJson(e.message, HTTP_BAD_REQUEST);
+        }
+        throw e;
+    }
     if (invitationId === '') {
         return errorJson(
             'invitationId must be non-empty',
             HTTP_BAD_REQUEST,
         );
     }
-    const grantEventId = pickString(body, 'grantEventId');
     if (grantEventId === '') {
         return errorJson(
             'grantEventId must be non-empty',
             HTTP_BAD_REQUEST,
         );
     }
-    const grantAt = validateTimestampField(
-        body, 'grantAt', 'grant',
-    );
     // DEMO-TIER POSTURE: a missing email 404s and an already-member
     // 409s, so an org admin can tell whether an email maps to an
     // existing identity (even one in another org). This is a conscious
@@ -397,23 +408,33 @@ async function acceptInvitation(
         return errorJson('Invalid JSON body', HTTP_BAD_REQUEST);
     }
     const body = parse.body;
-    const membershipId = pickString(body, 'membershipId');
+    let membershipId: string;
+    let eventId: string;
+    let at: string;
+    try {
+        membershipId = pickString(body, 'membershipId');
+        eventId = pickString(body, 'acceptEventId');
+        at = validateTimestampField(
+            body, 'acceptAt', 'accept',
+        );
+    } catch (e) {
+        if (e instanceof ValidationError) {
+            return errorJson(e.message, HTTP_BAD_REQUEST);
+        }
+        throw e;
+    }
     if (membershipId === '') {
         return errorJson(
             'membershipId must be non-empty',
             HTTP_BAD_REQUEST,
         );
     }
-    const eventId = pickString(body, 'acceptEventId');
     if (eventId === '') {
         return errorJson(
             'acceptEventId must be non-empty',
             HTTP_BAD_REQUEST,
         );
     }
-    const at = validateTimestampField(
-        body, 'acceptAt', 'accept',
-    );
     // The pending check rides INSIDE the write transaction so a
     // concurrent revoke/decline cannot slip between the check and the
     // membership write — a revoke must actually stop access (Commandment
@@ -470,16 +491,25 @@ async function declineInvitation(
         return errorJson('Invalid JSON body', HTTP_BAD_REQUEST);
     }
     const body = parse.body;
-    const eventId = pickString(body, 'declineEventId');
+    let eventId: string;
+    let at: string;
+    try {
+        eventId = pickString(body, 'declineEventId');
+        at = validateTimestampField(
+            body, 'declineAt', 'decline',
+        );
+    } catch (e) {
+        if (e instanceof ValidationError) {
+            return errorJson(e.message, HTTP_BAD_REQUEST);
+        }
+        throw e;
+    }
     if (eventId === '') {
         return errorJson(
             'declineEventId must be non-empty',
             HTTP_BAD_REQUEST,
         );
     }
-    const at = validateTimestampField(
-        body, 'declineAt', 'decline',
-    );
     let conflict = false;
     await ctx.base.transaction(['states'], async (view) => {
         const state = await currentInvitationState(view, id);
@@ -520,16 +550,25 @@ async function revokeInvitation(
         return errorJson('Invalid JSON body', HTTP_BAD_REQUEST);
     }
     const body = parse.body;
-    const eventId = pickString(body, 'revokeEventId');
+    let eventId: string;
+    let at: string;
+    try {
+        eventId = pickString(body, 'revokeEventId');
+        at = validateTimestampField(
+            body, 'revokeAt', 'revoke',
+        );
+    } catch (e) {
+        if (e instanceof ValidationError) {
+            return errorJson(e.message, HTTP_BAD_REQUEST);
+        }
+        throw e;
+    }
     if (eventId === '') {
         return errorJson(
             'revokeEventId must be non-empty',
             HTTP_BAD_REQUEST,
         );
     }
-    const at = validateTimestampField(
-        body, 'revokeAt', 'revoke',
-    );
     let conflict = false;
     await ctx.base.transaction(['states'], async (view) => {
         const state = await currentInvitationState(view, id);

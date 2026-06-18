@@ -404,3 +404,96 @@ test('revoke: empty revokeEventId is rejected (400)', async () => {
         }));
     assert.equal(res.status, 400);
 });
+
+// Gap-2 gate: missing or non-string fields are rejected (400),
+// not uncaught (500). pickString and validateTimestampField both
+// throw ValidationError on these inputs; the domain functions
+// must catch and translate, not leak.
+
+test('grant: missing invitationId is rejected (400)', async () => {
+    const db = await seed();
+    const res = await handleRequest(db, req(
+        'POST', '/invitations',
+        await orgToken('current', '2'),
+        {
+            email: 'sarah@x.com',
+            // invitationId intentionally absent
+            grantEventId: 'ev-x',
+            grantAt: AT,
+        }));
+    assert.equal(res.status, 400);
+});
+
+test('grant: non-string grantAt is rejected (400)', async () => {
+    const db = await seed();
+    const res = await handleRequest(db, req(
+        'POST', '/invitations',
+        await orgToken('current', '2'),
+        {
+            email: 'sarah@x.com',
+            invitationId: 'inv-x',
+            grantEventId: 'ev-x',
+            grantAt: 42,   // non-string
+        }));
+    assert.equal(res.status, 400);
+});
+
+test('accept: missing acceptEventId is rejected (400)',
+async () => {
+    const db = await seed();
+    await grantSarahToWayne(db);
+    const id = (await db.invitations.getAll())[0]!.id;
+    const res = await handleRequest(db, req(
+        'POST', '/invitations/' + id + '/acceptance',
+        await orgToken('sarah', '1'),
+        {
+            membershipId: 'ms-x',
+            // acceptEventId intentionally absent
+            acceptAt: AT,
+        }));
+    assert.equal(res.status, 400);
+});
+
+test('accept: non-string acceptAt is rejected (400)',
+async () => {
+    const db = await seed();
+    await grantSarahToWayne(db);
+    const id = (await db.invitations.getAll())[0]!.id;
+    const res = await handleRequest(db, req(
+        'POST', '/invitations/' + id + '/acceptance',
+        await orgToken('sarah', '1'),
+        {
+            membershipId: 'ms-x',
+            acceptEventId: 'ev-x',
+            acceptAt: 42,   // non-string
+        }));
+    assert.equal(res.status, 400);
+});
+
+test('decline: missing declineAt is rejected (400)', async () => {
+    const db = await seed();
+    await grantSarahToWayne(db);
+    const id = (await db.invitations.getAll())[0]!.id;
+    const res = await handleRequest(db, req(
+        'POST', '/invitations/' + id + '/decline',
+        await orgToken('sarah', '1'),
+        {
+            declineEventId: 'ev-x',
+            // declineAt intentionally absent
+        }));
+    assert.equal(res.status, 400);
+});
+
+test('revoke: missing revokeAt is rejected (400)', async () => {
+    const db = await seed();
+    await grantSarahToWayne(db);
+    const id = (await db.invitations.getAll())[0]!.id;
+    const res = await handleRequest(db, req(
+        'POST', '/invitations/' + id + '/revocation',
+        await orgToken('current', '2'),
+        {
+            revokeEventId: 'ev-x',
+            // revokeAt intentionally absent
+        }));
+    assert.equal(res.status, 400);
+});
