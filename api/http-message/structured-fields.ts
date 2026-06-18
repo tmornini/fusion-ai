@@ -11,9 +11,16 @@ export type BareValue =
     number | string | boolean | Octets | Date;
 
 export interface SfItem {
-    readonly value: BareValue;
+    readonly value: BareValue | SfInnerList;
     readonly params: ReadonlyMap<string, BareValue>;
 }
+
+export interface SfInnerList {
+    readonly items: readonly SfItem[];
+    readonly params: ReadonlyMap<string, BareValue>;
+}
+
+const NO_PARAMS: ReadonlyMap<string, BareValue> = new Map();
 
 export type SfList = readonly SfItem[];
 export type SfDictionary = ReadonlyMap<string, SfItem>;
@@ -73,8 +80,7 @@ export function parseList(text: string): SfList {
     cursor.skipOws();
     if (cursor.atEnd()) return members;
     for (;;) {
-        rejectInnerList(cursor);
-        members.push(readItem(cursor));
+        members.push(readMember(cursor));
         cursor.skipOws();
         if (cursor.atEnd()) break;
         cursor.expect(',');
@@ -93,14 +99,14 @@ export function parseDictionary(text: string): SfDictionary {
     if (cursor.atEnd()) return dict;
     for (;;) {
         const key = readKey(cursor);
-        let value: BareValue = true;
+        let member: SfItem;
         if (cursor.peek() === '=') {
             cursor.next();
-            rejectInnerList(cursor);
-            value = readBareItem(cursor);
+            member = readMember(cursor);
+        } else {
+            member = { value: true, params: readParameters(cursor) };
         }
-        const params = readParameters(cursor);
-        dict.set(key, { value, params });
+        dict.set(key, member);
         cursor.skipOws();
         if (cursor.atEnd()) break;
         cursor.expect(',');
@@ -116,6 +122,37 @@ function readItem(cursor: Cursor): SfItem {
     const value = readBareItem(cursor);
     const params = readParameters(cursor);
     return { value, params };
+}
+
+function readInnerList(cursor: Cursor): SfInnerList {
+    cursor.expect('(');
+    const items: SfItem[] = [];
+    for (;;) {
+        cursor.skipOws();
+        if (cursor.peek() === ')') {
+            cursor.next();
+            break;
+        }
+        items.push(readItem(cursor));
+        const next = cursor.peek();
+        if (next !== ' ' && next !== '\t' && next !== ')') {
+            throw new HttpMessageError(
+                'expected SP or ) in inner list',
+            );
+        }
+    }
+    const params = readParameters(cursor);
+    return { items, params };
+}
+
+function readMember(cursor: Cursor): SfItem {
+    if (cursor.peek() === '(') {
+        return {
+            value: readInnerList(cursor),
+            params: NO_PARAMS,
+        };
+    }
+    return readItem(cursor);
 }
 
 function readBareItem(cursor: Cursor): BareValue {
@@ -263,12 +300,6 @@ function readKey(cursor: Cursor): string {
     let text = cursor.next();
     while (isKeyChar(cursor.peek())) text += cursor.next();
     return text;
-}
-
-function rejectInnerList(cursor: Cursor): void {
-    if (cursor.peek() === '(') {
-        throw new HttpMessageError('inner lists are not supported');
-    }
 }
 
 const TOKEN_CHARS = "!#$%&'*+-.^_`|~:/";
