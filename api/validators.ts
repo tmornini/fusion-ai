@@ -2900,6 +2900,7 @@ export interface WorkOrderTransitionFieldValue {
 export interface WorkOrderTransitionRelease {
     readonly id: string;
     readonly state: string;
+    readonly at: string;
 }
 
 export interface WorkOrderTransitionBody {
@@ -2907,14 +2908,16 @@ export interface WorkOrderTransitionBody {
     readonly targetState: string;
     readonly fieldValues: readonly WorkOrderTransitionFieldValue[];
     readonly release: WorkOrderTransitionRelease | null;
+    readonly transitionAt: string;
 }
 
 const WORK_ORDER_TRANSITION_KEYS: readonly string[] = [
-    'transitionEventId', 'targetState', 'fieldValues', 'release',
+    'transitionEventId', 'targetState',
+    'fieldValues', 'release', 'transitionAt',
 ];
 
 const TRANSITION_RELEASE_KEYS: readonly string[] = [
-    'id', 'state',
+    'id', 'state', 'at',
 ];
 
 const TRANSITION_FIELD_VALUE_KEYS: readonly string[] = [
@@ -3000,10 +3003,18 @@ export function validateWorkOrderTransitionBody(
                 label + '.state must be non-empty',
             );
         }
-        release = { id, state };
+        const at = validateTimestampField(
+            obj, 'at', label,
+        );
+        release = { id, state, at };
     }
+    const transitionAt = validateTimestampField(
+        body, 'transitionAt',
+        'WorkOrderTransitionBody',
+    );
     return {
-        transitionEventId, targetState, fieldValues, release,
+        transitionEventId, targetState,
+        fieldValues, release, transitionAt,
     };
 }
 

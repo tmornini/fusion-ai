@@ -279,10 +279,16 @@ export async function postWorkOrderTransition(
         && !isClaimEventExpired(
             latestClaim, fg.lockTimeout,
         );
+    // Mint transitionAt first: the route emits the
+    // transition event before the release event, so
+    // transitionAt < release.at must hold in the
+    // at-ordered ledger (latest at = current state).
+    const transitionAt = nowUtc();
     const release = hasLiveClaim
         ? {
             id: generateCryptoSafeBase62(),
             state: 'claim_released',
+            at: nowUtc(),
         }
         : null;
 
@@ -293,6 +299,7 @@ export async function postWorkOrderTransition(
             targetState: edge.toNodeId,
             fieldValues,
             release,
+            transitionAt,
         },
     );
 

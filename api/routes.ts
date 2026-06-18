@@ -1120,11 +1120,12 @@ export const routes: Route[] = [
             return db.transaction(
                 ['states', 'state_field_values'],
                 async (view) => {
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.transitionEventId,
                         workOrderId,
                         b.targetState,
                         actor,
+                        b.transitionAt,
                     );
                     for (const row of b.fieldValues) {
                         await view.stateFieldValues.put(
@@ -1134,11 +1135,12 @@ export const routes: Route[] = [
                         );
                     }
                     if (b.release !== null) {
-                        await view.states.postEvent(
+                        await view.states.postEventAt(
                             b.release.id,
                             workOrderId,
                             b.release.state,
                             actor,
+                            b.release.at,
                         );
                     }
                 },
