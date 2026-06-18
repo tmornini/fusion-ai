@@ -1,10 +1,10 @@
 # Close the http-message named deferrals
 
 *Reliability (I), Security (II), Uniformity (III),
-Simplicity (VIII), Generality (IX); the Articles "we choose
-platform primitives," "we validate at every edge," and
-"insulation through adapters" (the divorce point). The
-faithful tension: closing a deferral is Premature
+Immutability (VI), Simplicity (VIII), Generality (IX); the
+Articles "we choose platform primitives," "we validate at
+every edge," and "insulation through adapters" (the divorce
+point). The faithful tension: closing a deferral is Premature
 Generalization (IX) for application code — but http-message
 is a LIBRARY whose stated contract is a full HTTP message
 transform, so its completeness is measured against the RFCs,
@@ -14,11 +14,23 @@ named as such. Commits carry no plan tag — plain present-
 tense imperative subjects.*
 
 This is the approved, self-contained design of record for
-closing the four named deferrals in `api/http-message/`. The
-library stays UN-WIRED by deliberate choice: its real callers
-arrive with the Postgres server tier. Re-derive every code
-anchor by SYMBOL search at execution — line numbers drift,
-symbols do not.
+closing the four named deferrals in `api/http-message/`,
+plus the deliberate RFC 8941 → 9651 structured-field bump.
+
+This is **Arc 1 of two**. Arc 1 (this spec) completes the
+library as a fully-tested, gate-green BUFFERED primitive.
+Arc 2 — the streaming/async I/O model for heavy server-tier
+request/response handling (streaming wire serialize, async
+incremental parse, content-coding as `TransformStream`s, a
+materialized-vs-streaming proxy body union) — is a SEPARATE
+spec, sequenced after Arc 1 lands green, built on this
+stable base. The streaming reach is recorded in § Sequel so
+Arc 1's surfaces are chosen not to paint Arc 2 into a corner.
+
+The library stays UN-WIRED by deliberate choice: its real
+callers arrive with the Postgres server tier. Re-derive every
+code anchor by SYMBOL search at execution — line numbers
+drift, symbols do not.
 
 ## Context
 
@@ -49,6 +61,16 @@ knowingly. This spec records what "complete" means for each,
 and the one required hardening each completion drags behind
 it.
 
+The caller has additionally elected to bump the structured-
+field contract from RFC 8941 to its successor, RFC 9651
+(which obsoletes 8941), adding the two value types 9651
+introduced — Dates (`@int`) and Display Strings (`%"…"`).
+These are NOT codebase deferrals (no stub, no comment names
+them); they are a deliberate spec-version upgrade folded into
+deferral 4 because they widen the same `readBareItem` switch.
+This expansion is named here so the diff still matches a
+single, coherent story.
+
 ## Principle
 
 A library's completeness contract differs from application
@@ -74,11 +96,17 @@ point, not ceremony.
 1. **Async content-decode seam, sync paths untouched.**
    `DecompressionStream` is a `TransformStream` — inherently
    async — while the library's decode chain is synchronous.
-   We do NOT make the whole chain async (that breaks the
-   hardened sync contract and its tests). Instead we add
-   async siblings and leave the sync paths exactly as the
-   security review left them: still throwing loudly on an
-   encoded body.
+   The governing principle (set with the caller for both
+   arcs): async lives at REAL I/O edges; pure in-memory
+   computation stays synchronous, because wrapping pure CPU
+   work in a `Promise` is ceremony that fights Clarity (V)
+   and Simplicity (VIII). Content-decoding is async because
+   it is genuine stream I/O — not because async is uniform.
+   So we add async siblings and leave the pure sync paths
+   exactly as the security review left them: still throwing
+   loudly on an encoded body. (Arc 2 adds the streaming
+   `TransformStream` content-coding variant; Arc 1 ships the
+   buffered async decode only.)
 
 2. **Brotli (`br`) is an injectable seam, not a built-in.**
    `new DecompressionStream('br')` throws on the platform
@@ -113,6 +141,25 @@ point, not ceremony.
    inline path test JSON-ness specifically; non-JSON bodies
    stay base64 in the JSON form. This is required to close
    deferral 3 correctly — not gold-plating.
+
+6. **Adopt RFC 9651 for structured fields.** The parser is
+   re-cited from RFC 8941 to its successor RFC 9651, gaining
+   the two value types 9651 added: Dates (`@int` → a `Date`
+   leaf, reusing `FieldValue.toDate()`) and Display Strings
+   (`%"…"` → a percent-decoded UTF-8 `string` leaf). These
+   fold into the same `readBareItem` switch the byte-sequence
+   work widens. Not codebase deferrals — a deliberate,
+   caller-approved contract bump (see Context).
+
+7. **Two arcs; this spec is the buffered base.** Arc 1
+   (this spec) keeps the value model immutable and pure-
+   synchronous (Commandment VI: values are free of time; a
+   `ReadableStream` is not a value). Arc 2 puts streaming at
+   the I/O EDGES (serialize/parse), never in the value core,
+   and is specified separately. Arc 1 chooses its surfaces
+   (the `ContentCodec` interface, the body accessors) so Arc
+   2 extends rather than rewrites them — but builds no
+   streaming machinery speculatively (IX).
 
 ## Deferral 1 — RFC 850 + asctime dates
 
@@ -200,27 +247,49 @@ base64. JSON round-trips are unchanged; a form/text body is
 base64 in the JSON form and the type-based parse rule
 reconstructs it.
 
-## Deferral 4 — SF inner-lists + byte-sequences
+## Deferral 4 — SF 8941 completion + 9651 adoption
 
 The highest-ripple change: the structured-field value model
-widens through three files.
+widens through three files. Four new bare/member shapes —
+two completing RFC 8941, two adopting RFC 9651:
 
-- `structured-fields.ts`: `readBareItem` accepts `:base64:`
-  byte-sequences (reusing `Octets.fromBase64`), so a bare
-  value is now `number | string | boolean | Octets`.
-  `rejectInnerList` is replaced by `readInnerList` — `(` …
-  `)` parses a parenthesized sequence of items into an
+`structured-fields.ts` — `readBareItem` grows a switch arm
+per new leading sigil; the bare-value union becomes
+`number | string | boolean | Octets | Date`:
+
+- **Byte-sequences** (8941) — `:aGVsbG8=:` → `Octets.fromBase64`
+  (standard padded base64; bare `:` pair with invalid base64
+  is a parse error).
+- **Inner-lists** (8941) — `rejectInnerList` is replaced by
+  `readInnerList`: `( item item );p=1` parses to
   `SfInnerList { items: readonly SfItem[]; params }`. A
-  List/Dictionary member's value is now `BareValue |
+  List/Dictionary member's value becomes `BareValue |
   SfInnerList`.
-- `query.ts`: `navigateList` recurses one level into an
-  inner-list member (`query('field.0.1')` indexes the inner
-  list); a byte-sequence value reaches `FieldValue` as bytes.
-- `field-value.ts`: `Leaf` widens to admit `Octets`;
-  `FieldValue` gains byte-aware leaf conversions
-  (`toBase64()`, `toBytes()`); `toText()`/`toNumber()`/
-  `toBoolean()`/`toDate()` on a byte value throw honestly
-  (Design by Contract), never coerce.
+- **Dates** (9651) — `@1659578233` → `new Date(seconds*1000)`;
+  optional leading `-`, integer only (no fraction), ≤15
+  digits per the sf-integer bound.
+- **Display Strings** (9651) — `%"caf%c3%a9"` → percent-decode
+  the `%xx` bytes, UTF-8 decode to a `string`. Lowercase hex
+  required; a bare `%` or non-hex digit is a parse error;
+  `\` is NOT special (unlike `sf-string`).
+
+`query.ts` — `navigateList` recurses one level into an
+inner-list member (`query('field.0.1')` indexes the inner
+list); byte-sequence and Date values reach `FieldValue` as
+their typed leaves; a Display String reaches it as a plain
+string (indistinguishable from `sf-string` at the leaf — the
+distinction is syntactic, not semantic).
+
+`field-value.ts` — `Leaf` widens to `string | number |
+boolean | Octets | Date`. `FieldValue` gains `toBytes()` /
+`toBase64()` for `Octets`; `toDate()` returns an `Octets`-
+free `Date` leaf directly (and still HTTP-date-parses a
+string leaf). Mismatched conversions (`toNumber()` on bytes,
+`toText()` on a Date) throw honestly (Design by Contract),
+never coerce.
+
+`field-registry.ts` / `structured-fields.ts` header comments
+are re-cited RFC 8941 → 9651.
 
 No `any`: the unions are explicit; navigation switches on
 shape. Existing SF queries (item / list / dict / parameter)
@@ -243,12 +312,15 @@ Files changed:
   form/text codecs; register them in the default.
 - `api/http-message/json-codec.ts` — JSON-specific inline
   discriminator via the `kind` marker.
-- `api/http-message/structured-fields.ts` — inner-lists +
-  byte-sequences; widened value model.
+- `api/http-message/structured-fields.ts` — byte-sequences,
+  inner-lists, sf-date, Display Strings; widened value model;
+  re-cited 9651.
+- `api/http-message/field-registry.ts` — re-cited 9651
+  (comment only; the allowlist is unchanged).
 - `api/http-message/query.ts` — inner-list recursion;
-  byte-sequence leaf.
-- `api/http-message/field-value.ts` — `Leaf` widening; byte
-  conversions.
+  byte-sequence / Date / Display-String leaves.
+- `api/http-message/field-value.ts` — `Leaf` widened to admit
+  `Octets` and `Date`; byte + date conversions.
 
 Tests added/extended (Office of Verification — behavior at
 the seam):
@@ -264,7 +336,9 @@ the seam):
   regression unchanged.
 - `tests/http-query.test.ts` / `tests/http-field-value.test.ts`
   — inner-list indexing; byte-sequence leaf + base64/bytes
-  conversions; existing SF cases stay green.
+  conversions; sf-date leaf (`@int` → `Date`); Display-String
+  leaf (`%"…"` → UTF-8 string) + malformed-percent rejection;
+  existing SF cases stay green.
 
 ## Critical files (re-derive anchors by symbol)
 
@@ -276,14 +350,17 @@ the seam):
 - `parseJsonBody`, `bodyToJson`, `jsonCodecFor` — the inline
   discriminator — `json-codec.ts`.
 - `readBareItem`, `rejectInnerList`, `readItem`,
-  `BareValue`, `SfItem` — `structured-fields.ts`.
+  `readNumber`, `readString`, `BareValue`, `SfItem` —
+  `structured-fields.ts`.
+- `kindOf`, `KINDS` — `field-registry.ts`.
 - `navigateItem`, `navigateList`, `navigateDictionary`,
   `parameter` — `query.ts`.
-- `FieldValue`, `Leaf`, `present`, `toText` — `field-value.ts`.
+- `FieldValue`, `Leaf`, `present`, `toText`, `toDate` —
+  `field-value.ts`.
 
 ## Sequencing — tiny commits, green each
 
-One deferral per arc, ordered by ascending ripple so the
+One deferral at a time, ordered by ascending ripple so the
 type-model change lands last on a stable base. Each step is
 test-first and leaves `./validate` gate-green; never mix a
 rename with a content change in one commit.
@@ -294,8 +371,11 @@ rename with a content change in one commit.
    the default registry — separate commits).
 3. `ContentCodingRegistry` + gzip/deflate + async `Body`
    siblings + thread through `HttpMessage`.
-4. SF byte-sequences, then SF inner-lists, then the
-   `query.ts` / `field-value.ts` consumers.
+4. SF, ascending ripple, each its own commit on the prior
+   green: byte-sequences (`Octets` leaf), then sf-date
+   (`Date` leaf), then Display Strings (string leaf +
+   percent-decoder), then inner-lists + the `query.ts` /
+   `field-value.ts` consumers, then the 9651 re-citation.
 
 ## Test strategy
 
@@ -306,7 +386,10 @@ so the round-trip is self-contained and dependency-free.
 Date tests pin a fixed `reference` so the 50-year window is
 deterministic; the timezone suite (`tests/tz/`) keeps
 `TZ=Pacific/Honolulu` to prove the instant never depends on
-host time.
+host time. Structured-field tests assert each new leaf as a
+pure parse→query input→output (a known field value in, the
+typed leaf out) plus the rejection cases (bad base64, bare
+`%`, uppercase percent-hex, unterminated inner-list).
 
 ## Verification
 
@@ -315,14 +398,47 @@ host time.
 lint, and the schema-svg gate. Green before every commit;
 green at the end.
 
-## Out of scope / non-goals
+## Out of scope / non-goals (Arc 1)
 
 - Wiring the library into any production code path. It stays
   un-wired by deliberate choice (server-tier work).
-- Making the synchronous decode chain async. The async
-  capability is additive siblings only.
-- Vendoring or hand-rolling Brotli. `br` is a seam.
-- RFC 9651 structured-field Dates (`@`) and Display Strings —
-  beyond the two named SF deferrals; not requested.
+- The streaming/async I/O model — streaming wire serialize,
+  async incremental parse, `TransformStream` content-coding,
+  the proxy body union. That is Arc 2 (see § Sequel). Arc 1's
+  ONLY async surfaces are the buffered content-decode
+  siblings; every pure path stays synchronous.
+- Vendoring or hand-rolling Brotli. `br` is a seam (both arcs).
 - Any change to wire-codec framing, the canonical sort, or
-  the number-preservation path — untouched.
+  the number-preservation path — untouched in Arc 1 (Arc 2
+  extends framing for streaming serialize/parse).
+- RFC 9651 features beyond the value types named in decision
+  6 — e.g. there is no SF *serialization* path; the library
+  parses-for-query only, and modification stays raw-string
+  via `withFieldPut`. Raw (non-allowlisted) fields stay raw.
+
+## Sequel — Arc 2 (separate spec, sequenced next)
+
+Recorded here so Arc 1 chooses forward-compatible surfaces;
+NO Arc 2 machinery is built in Arc 1 (Generality IX).
+
+- **Streaming serialize** — `toWireStream(): ReadableStream
+  <Uint8Array>`: start-line + fields first, then the body
+  (materialized `Octets` as one chunk, or a streaming body
+  piped through), optionally through a `CompressionStream`,
+  with chunked framing when length is unknown. Delivers
+  "bytes to the wire ASAP."
+- **Streaming parse** — incremental head state-machine, body
+  exposed as a stream, chunked de-framing on the fly;
+  `fromWireStream(stream): Promise<HttpMessage>`.
+- **`TransformStream` content-coding** — each `ContentCodec`
+  gains a streaming variant; the buffered Arc 1 `decode`
+  becomes stream-and-collect over the same transform.
+- **Proxy body union** — body becomes materialized `Octets`
+  (queryable, comparable, JSON-able) OR a streaming source
+  (pass-through only; `query`/`toJson` on it throw loudly).
+  The value core stays immutable; streaming lives at the
+  edge (Commandment VI).
+- **Forward-compat anchors Arc 1 must respect:** keep the
+  `ContentCodec` interface narrow enough to add a stream
+  method without breaking callers; keep body access behind
+  `Body` so the union is introduced in one place.
