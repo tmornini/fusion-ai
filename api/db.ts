@@ -513,7 +513,7 @@ export const TABLE_INDEXES:
     flow_versions: ['flow_id'],
     flow_nodes: ['flow_id'],
     flow_edges: ['flow_id'],
-    flow_node_members: ['flow_node_id', 'member_id'],
+    flow_node_members: ['flow_node_id'],
     flow_node_attributes: ['flow_node_id', 'attribute_id'],
     flow_work_orders: ['flow_id'],
     flow_records: ['flow_id'],
