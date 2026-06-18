@@ -248,11 +248,12 @@ async function applyRecordWrite(
         async (view) => {
             await view.records.put(body.id, body.record);
             if (body.kind === 'create') {
-                await view.states.postEvent(
+                await view.states.postEventAt(
                     body.initialStateEventId,
                     body.id,
                     body.initialState,
                     actor,
+                    body.initialStateAt,
                 );
             }
             if (removedIds.length > 0) {

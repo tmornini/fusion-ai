@@ -1875,6 +1875,7 @@ export interface RecordWriteCreateBody {
     readonly attributes: readonly RecordAttributeEntity[];
     readonly initialState: RecordState;
     readonly initialStateEventId: string;
+    readonly initialStateAt: string;
 }
 
 export interface RecordWriteEditBody {
@@ -1893,7 +1894,7 @@ const RECORD_WRITE_CREATE_KEYS:
     readonly string[] = [
     'kind', 'id', 'record',
     'attributes', 'initialState',
-    'initialStateEventId',
+    'initialStateEventId', 'initialStateAt',
 ];
 
 const RECORD_WRITE_EDIT_KEYS:
@@ -1958,10 +1959,15 @@ export function validateRecordWriteBody(
         const initialStateEventId = pickString(
             body, 'initialStateEventId',
         );
+        const initialStateAt = validateTimestampField(
+            body, 'initialStateAt',
+            'RecordWriteCreateBody',
+        );
         return {
             kind: 'create',
             id, record, attributes,
             initialState, initialStateEventId,
+            initialStateAt,
         };
     }
     if (kind === 'edit') {
