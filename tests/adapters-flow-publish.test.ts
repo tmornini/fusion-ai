@@ -27,7 +27,7 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import type {
-    FlowEntity,
+    FlowWithGraph,
     GraphEdge,
     GraphNode,
     StoredGraph,
@@ -62,11 +62,14 @@ function buildEdge(
     };
 }
 
+// Carries the authored graph literal alongside the stored
+// scalar fields. `graph` is NOT a stored column — it is the
+// relation-seed input; the flow row stores only the scalars.
 function buildFlowEntity(
     id: string,
     graph: StoredGraph,
-    overrides: Partial<FlowEntity> = {},
-): FlowEntity {
+    overrides: Partial<FlowWithGraph> = {},
+): FlowWithGraph {
     return {
         id,
         organization_id: '1',
@@ -84,16 +87,16 @@ function buildFlowEntity(
     };
 }
 
-// Seed a flow the way the write path does: the flow row PLUS
-// the four relation rows its graph decomposes into. The LIST
-// GET reassembles the graph from those relations (the read
-// source of record), so a relation-less seed would read as an
-// empty graph.
+// Seed a flow the way the write path does: the flow row (scalar
+// fields only — no graph blob) PLUS the four relation rows its
+// graph decomposes into. The LIST GET reassembles the graph
+// from those relations (the read source of record), so a
+// relation-less seed would read as an empty graph.
 async function seedFlowWithRelations(
     db: MemoryDbAdapter,
-    flow: FlowEntity,
+    flow: FlowWithGraph,
 ): Promise<void> {
-    const { id, ...body } = flow;
+    const { id, graph: _graph, ...body } = flow;
     await db.flows.put(id, body);
     const at = nowUtc();
     const rel = buildFlowGraphRelations(

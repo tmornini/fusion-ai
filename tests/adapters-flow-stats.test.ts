@@ -59,9 +59,10 @@ function buildEdge(
     };
 }
 
+// The flow row stores only scalar fields — the graph lives in
+// the relation tables (seeded separately via seedFlowRelations).
 function buildFlow(
     name: string,
-    graph: StoredGraph,
 ): Omit<FlowEntity, 'id'> {
     return {
         organization_id: '1',
@@ -70,11 +71,6 @@ function buildFlow(
         is_auto_layout: true,
         is_auto_fit: true,
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: jsonObjectField(
-            graph as unknown as Record<
-                string, unknown
-            >,
-        ),
     };
 }
 
@@ -178,7 +174,7 @@ test(
         const f1Graph = buildTestGraph();
         await db.flows.put(
             'f1',
-            buildFlow('Onboarding', f1Graph),
+            buildFlow('Onboarding'),
         );
         await seedFlowRelations(db, 'f1', f1Graph);
 
@@ -295,7 +291,7 @@ test(
         const autoGraph = buildTestGraph();
         await db.flows.put(
             'f1',
-            buildFlow('AutoLayout', autoGraph),
+            buildFlow('AutoLayout'),
         );
         await seedFlowRelations(db, 'f1', autoGraph);
         await db.workOrders.put('wo1', {

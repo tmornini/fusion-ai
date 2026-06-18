@@ -6,7 +6,6 @@ import type {
 } from '../../../api/types.ts';
 import {
     nowUtc,
-    storedGraphField,
     DEFAULT_LOCK_TIMEOUT,
 } from '../../../api/types.ts';
 import type {
@@ -93,7 +92,6 @@ export async function postFlowCreation(
             is_auto_layout: false,
             is_auto_fit: false,
             lock_timeout: DEFAULT_LOCK_TIMEOUT,
-            graph: storedGraphField(graph),
         },
         projectFlowId: input.linkId,
         projectFlow: {
@@ -123,8 +121,10 @@ export interface FlowSaveShape {
 // The flow row body the named save/undo/redo POSTs carry —
 // the FlowSaveShape projected onto the storage columns, minus
 // the org column (the org-scoped flows store stamps it from the
-// verified token and re-validates the rest). camelCase enters,
-// snake_case exits — this builder is the divorce point.
+// verified token and re-validates the rest). The graph is NOT a
+// column — it lands in the relation tables via the graph delta,
+// so the body carries only the flow's scalar fields. camelCase
+// enters, snake_case exits — this builder is the divorce point.
 export function buildFlowBody(
     save: FlowSaveShape,
 ): Record<string, unknown> {
@@ -136,10 +136,6 @@ export function buildFlowBody(
         is_auto_layout: save.isAutoLayout,
         is_auto_fit: save.isAutoFit,
         lock_timeout: save.lockTimeout,
-        graph: storedGraphField({
-            nodes: save.nodes,
-            edges: save.edges,
-        }),
     };
     return entity as unknown as Record<string, unknown>;
 }
@@ -320,9 +316,9 @@ export function buildSaveEvents(
 }
 
 // Assemble the PUT /flows/:id body for a save: the flow row
-// (blob dual-write KEPT), a fresh 'updated' event id, the
-// caller moment, the version-history side-effect, and the
-// graph delta diffed against the CURRENT stored graph. The
+// (scalar fields only — no graph blob), a fresh 'updated' event
+// id, the caller moment, the version-history side-effect, and
+// the graph delta diffed against the CURRENT stored graph. The
 // baseline is fetched HERE, before the body is built — never
 // empty, so deletions fire only for ids the working copy
 // dropped. Both PUT call sites (putFlow and the designer's

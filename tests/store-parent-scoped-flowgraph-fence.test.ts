@@ -4,7 +4,6 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { orgToken } from './token-fixtures.ts';
 import { orgRow } from './test-fixtures.ts';
-import { jsonObjectField } from '../api/types.ts';
 
 // Flow-graph entity deletion events must be fenced by the
 // flow's owning org. A 'deleted' states event whose entity_id
@@ -55,7 +54,6 @@ async function seed(): Promise<MemoryDbAdapter> {
         organization_id: 'A', name: 'Flow A',
         is_locked: false, is_auto_layout: false,
         is_auto_fit: false, lock_timeout: 0,
-        graph: jsonObjectField({ nodes: [], edges: [] }),
     });
     await db.flowNodes.put('node-a', {
         flow_id: 'flow-a', name: 'Node A',

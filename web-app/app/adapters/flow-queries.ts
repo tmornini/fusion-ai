@@ -1,5 +1,4 @@
 import type {
-    FlowEntity,
     FlowWithGraph,
     ProjectEntity,
     ProjectFlowEntity,
@@ -173,7 +172,7 @@ export async function getFlowGraph(
     flowId: string,
 ): Promise<FlowGraph> {
     const flow =
-        await ctx.GET<FlowEntity>(
+        await ctx.GET<FlowWithGraph>(
             `flows/${flowId}`,
         );
     const g = parseGraph(flow.graph);

@@ -1137,10 +1137,15 @@ export function validateProjectEntity(
 }
 
 
+// The graph is NOT a flow column — it lives in the four
+// relation tables. The storage row carries only the flow's own
+// scalar fields; the relation rows are validated by their own
+// entity validators (validateFlowNodeEntity et al.) as the
+// graph delta lands.
 const FLOW_BODY_KEYS: readonly string[] = [
     'organization_id', 'name', 'is_locked',
     'is_auto_layout', 'is_auto_fit',
-    'lock_timeout', 'graph',
+    'lock_timeout',
 ];
 
 export function validateFlowEntity(
@@ -1149,12 +1154,6 @@ export function validateFlowEntity(
     assertOnlyKeys(
         body, FLOW_BODY_KEYS, 'FlowEntity',
     );
-    // Structural gate: the column stores the raw JSON string,
-    // but its shape (and the node/edge id alphabet) is
-    // enforced at instantiation — read adapters re-parse as
-    // their transform, never as a guard.
-    const graph = pickJsonObjectField(body, 'graph');
-    validateStoredGraphJson(graph, 'FlowEntity.graph');
     return {
         organization_id: pickString(body, 'organization_id'),
         name: pickString(
@@ -1172,7 +1171,6 @@ export function validateFlowEntity(
         lock_timeout: pickNumber(
             body, 'lock_timeout',
         ),
-        graph,
     };
 }
 

@@ -1050,7 +1050,8 @@ export const routes: Route[] = [
     // the HTTP gate (validateFlowPutBody); the route writes its
     // upsert rows, append-only member/attribute events, and the
     // node/edge deletion events (authored by actor, never the
-    // body) — the blob (b.flow.graph) is dual-written alongside.
+    // body). The flow row carries no graph blob — the relations
+    // are the sole graph truth, reassembled on read.
     // Member-tier PUT — MEMBER_VERBS['/flows'] includes 'PUT'.
     route('flows/:id', {
         // Reassemble the graph from the four relation tables

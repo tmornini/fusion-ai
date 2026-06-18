@@ -61,7 +61,6 @@ async function seedFlowNodeAttribute(
         organization_id: '1', name: 'Intake',
         is_locked: false, is_auto_layout: false,
         is_auto_fit: false, lock_timeout: 0,
-        graph: JSON.stringify({ nodes: [], edges: [] }),
     });
     await db.flowNodes.put(nodeId, {
         flow_id: flowId, name: 'Step',

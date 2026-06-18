@@ -15,7 +15,7 @@ import {
 } from
 '../web-app/app/adapters/flow-mutations.ts';
 import type {
-    FlowEntity,
+    FlowWithGraph,
     GraphNode,
     GraphEdge,
     StateEntity,
@@ -101,7 +101,7 @@ test(
     async () => {
         const { ctx } = await setupMemDb();
         await createBaseFlow(ctx, 'flow-1');
-        const flow = await ctx.GET<FlowEntity>(
+        const flow = await ctx.GET<FlowWithGraph>(
             'flows/flow-1',
         );
         assert.equal(flow.id, 'flow-1');
@@ -194,7 +194,7 @@ test(
             nodes: [start, middle, complete],
             edges: [edge],
         });
-        const flow = await ctx.GET<FlowEntity>(
+        const flow = await ctx.GET<FlowWithGraph>(
             'flows/flow-1',
         );
         assert.equal(flow.name, 'Renamed');
@@ -239,7 +239,7 @@ test(
             nodes: [a],
             edges: [],
         });
-        const flow = await ctx.GET<FlowEntity>(
+        const flow = await ctx.GET<FlowWithGraph>(
             'flows/flow-1',
         );
         const graph =
@@ -281,7 +281,7 @@ test(
             nodes: callerBNodes,
             edges: [],
         });
-        const flow = await ctx.GET<FlowEntity>(
+        const flow = await ctx.GET<FlowWithGraph>(
             'flows/flow-1',
         );
         assert.equal(flow.name, 'caller-B');
@@ -343,7 +343,7 @@ test(
             'flows/flow-1/versions',
         );
         assert.equal(versions.length, 1);
-        const flow = await ctx.GET<FlowEntity>('flows/flow-1');
+        const flow = await ctx.GET<FlowWithGraph>('flows/flow-1');
         assert.equal(flow.name, 'Snapped');
         const events = await ctx.GET<StateEntity[]>(
             'entity-states/flow-1/history',

@@ -23,14 +23,13 @@ import {
 } from
 '../web-app/app/adapters/work-orders-mutations.ts';
 import type {
-    FlowEntity,
+    FlowWithGraph,
     GraphNode,
     GraphEdge,
     StoredGraph,
 } from '../api/types.ts';
 import {
     DEFAULT_LOCK_TIMEOUT,
-    storedGraphField,
     nowUtc,
 } from '../api/types.ts';
 import {
@@ -174,50 +173,22 @@ async function seedFlowWithGraph(
     });
 }
 
-// A WRONG, non-empty graph written straight to the flow row
-// to prove GET ignores the blob entirely. Its single node id
-// ('blob-wrong') appears in NO relation table, so if GET ever
-// read the blob the assertions below would surface it.
-const WRONG_BLOB: StoredGraph = {
-    nodes: [buildNode('blob-wrong', { isCreate: true })],
-    edges: [],
-};
-
-// Overwrite a flow row's graph blob with the WRONG graph
-// (bypasses the route to prove GET does not read the blob).
-async function corruptBlob(
-    db: MemoryDbAdapter,
-    flowId: string,
-): Promise<void> {
-    const row = await db.flows.getById(flowId);
-    await db.flows.put(flowId, {
-        ...row,
-        // id must be absent for the store's put
-        id: undefined as unknown as string,
-        graph: storedGraphField(WRONG_BLOB),
-    });
-}
-
-// ── 1. ROUND-TRIP: GET derives from relations, not blob ──
+// ── 1. ROUND-TRIP: GET derives the graph from relations ──
 
 test(
-    'GET /flows/:id returns graph from relations'
-    + ' not the stored blob',
+    'GET /flows/:id returns the graph reassembled'
+    + ' from relations',
     async () => {
         const { db, ctx } = await setupMemDb();
         const flowId = 'flow-get-rt';
         const intended = buildNonTrivialGraph();
         await seedFlowWithGraph(ctx, flowId, intended);
 
-        // CORRUPT the stored flow.graph blob directly via the
-        // raw table — overwrite it with a WRONG, non-empty
-        // graph to prove GET does not read the blob at all.
-        await corruptBlob(db, flowId);
-
-        // GET must return the intended graph (from relations),
-        // NOT the wrong (non-empty) blob.
+        // GET must return the intended graph (from relations) —
+        // the flow row carries no graph blob; the four relation
+        // tables are the sole graph truth.
         const fetched =
-            await ctx.GET<FlowEntity>('flows/' + flowId);
+            await ctx.GET<FlowWithGraph>('flows/' + flowId);
         const got = asStoredGraph(
             JSON.parse(fetched.graph), 'flow.graph',
         );
@@ -234,19 +205,7 @@ test(
         assert.deepEqual(
             norm(got),
             norm(intended),
-            'GET graph equals intended (not the wrong blob)',
-        );
-        // The wrong blob is non-empty yet absent from the
-        // result — proof reassembly overrides the blob
-        // unconditionally, not just when the blob is empty.
-        assert.notDeepEqual(
-            norm(got),
-            norm(WRONG_BLOB),
-            'returned graph differs from the wrong blob',
-        );
-        assert.ok(
-            !got.nodes.some(n => n.id === 'blob-wrong'),
-            'the wrong blob node never leaks through GET',
+            'GET graph equals intended',
         );
     },
 );
@@ -263,10 +222,8 @@ test(
         const intended = buildNonTrivialGraph();
         await seedFlowWithGraph(ctx, flowId, intended);
 
-        // Corrupt the blob — freeze must still capture the
-        // relation-derived graph via GET /flows/:id.
-        await corruptBlob(db, flowId);
-
+        // Freeze captures the relation-derived graph via
+        // GET /flows/:id — there is no stored blob to read.
         await postFlowVersion(ctx, 'ver-freeze', flowId);
 
         const versionRows =
@@ -306,10 +263,8 @@ test(
         const graph = buildNonTrivialGraph();
         await seedFlowWithGraph(ctx, flowId, graph);
 
-        // Corrupt the blob — work-order creation must still
-        // read the relation-derived graph via GET /flows/:id.
-        await corruptBlob(db, flowId);
-
+        // Work-order creation reads the relation-derived graph
+        // via GET /flows/:id — there is no stored blob.
         const woId = generateCryptoSafeBase62();
         await postWorkOrderCreation(ctx, {
             workOrderId: woId,
@@ -485,7 +440,7 @@ test(
 
         // Step 5: GET must return the target (undone) graph.
         const fetched =
-            await ctx.GET<FlowEntity>('flows/' + flowId);
+            await ctx.GET<FlowWithGraph>('flows/' + flowId);
         const got = asStoredGraph(
             JSON.parse(fetched.graph), 'flow.graph',
         );

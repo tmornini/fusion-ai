@@ -346,6 +346,12 @@ test(
 
 // --- FlowEntity ---
 
+// The graph is NOT a flow column — flows.graph is retired. The
+// stored flow row carries only its scalar fields; the graph
+// lives in the four relation tables and the relation validators
+// (validateFlowEdgeEntity et al.) own the node-id alphabet
+// fence. So validateFlowEntity neither requires nor accepts a
+// graph key.
 const validFlow = {
     organization_id: '1',
     name: 'Flow A',
@@ -353,7 +359,6 @@ const validFlow = {
     is_auto_layout: true,
     is_auto_fit: true,
     lock_timeout: DEFAULT_LOCK_TIMEOUT,
-    graph: '{"nodes":[],"edges":[]}',
 };
 
 test('validateFlowEntity accepts valid payload', () => {
@@ -399,57 +404,6 @@ test(
     );
 });
 
-test(
-    'validateFlowEntity rejects a shapeless graph',
-    () => {
-    assert.throws(
-        () => validateFlowEntity({
-            ...validFlow,
-            graph: '{}',
-        }),
-        /expected array for FlowEntity.graph.nodes/,
-    );
-});
-
-function graphNode(id: string): Record<string, unknown> {
-    return {
-        id, name: 'n', positionX: 0, positionY: 0,
-        isCreate: false, isArchive: false,
-        memberIds: [], attributes: [],
-        taskInstructions: '',
-    };
-}
-
-test(
-    'validateFlowEntity rejects a node id outside the'
-    + ' id alphabet',
-    () => {
-    // markup-significant characters in a node id are the
-    // stored-XSS vector — the gate kills them at entry
-    assert.throws(
-        () => validateFlowEntity({
-            ...validFlow,
-            graph: JSON.stringify({
-                nodes: [graphNode('"><img src=x>')],
-                edges: [],
-            }),
-        }),
-        /must contain only \[A-Za-z0-9_-\]/,
-    );
-});
-
-test(
-    'validateFlowEntity accepts base62 node ids',
-    () => {
-    const result = validateFlowEntity({
-        ...validFlow,
-        graph: JSON.stringify({
-            nodes: [graphNode('n1')],
-            edges: [],
-        }),
-    });
-    assert.ok(result.graph.includes('n1'));
-});
 
 // --- FlowVersionEntity ---
 

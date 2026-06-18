@@ -27,7 +27,6 @@ import type {
     TransitionEvent,
 } from '../web-app/app/adapters/state-events.ts';
 import {
-    jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 import type {
@@ -90,11 +89,6 @@ function buildFlow(
         is_auto_layout: true,
         is_auto_fit: true,
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: jsonObjectField(
-            graph as unknown as Record<
-                string, unknown
-            >,
-        ),
     };
 }
 

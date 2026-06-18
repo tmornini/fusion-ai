@@ -30,7 +30,6 @@ import {
 } from
 '../web-app/app/adapters/work-orders-deletions.ts';
 import {
-    jsonObjectField,
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
@@ -114,11 +113,6 @@ function buildFlow(
         is_auto_fit: true,
         lock_timeout:
             DEFAULT_LOCK_TIMEOUT,
-        graph: jsonObjectField(
-            graph as unknown as Record<
-                string, unknown
-            >,
-        ),
     };
 }
 

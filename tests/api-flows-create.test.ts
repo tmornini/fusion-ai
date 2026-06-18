@@ -9,13 +9,11 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import {
-    storedGraphField,
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 import type {
     StateEntity,
-    StoredGraph,
 } from '../api/types.ts';
 
 async function freshDb() {
@@ -24,33 +22,10 @@ async function freshDb() {
     return db;
 }
 
-// A minimal two-node flow graph, stored as the raw JSON string
-// the flows.graph column holds.
-function flowGraph(): string {
-    const graph: StoredGraph = {
-        nodes: [
-            {
-                id: 'n-start', name: 'Start',
-                positionX: 0, positionY: 0,
-                isCreate: true, isArchive: false,
-                memberIds: [], attributes: [],
-                taskInstructions: '',
-            },
-            {
-                id: 'n-finish', name: 'Done',
-                positionX: 0, positionY: 0,
-                isCreate: false, isArchive: true,
-                memberIds: [], attributes: [],
-                taskInstructions: '',
-            },
-        ],
-        edges: [],
-    };
-    return storedGraphField(graph);
-}
-
 // The flow body OMITS organization_id — the org fence stamps it
-// from the verified token before the store validates.
+// from the verified token before the store validates. It also
+// carries no graph: the graph lands in the relation tables via
+// graphDelta, never as a stored flow column.
 function flowFields() {
     return {
         name: 'My Flow',
@@ -58,7 +33,6 @@ function flowFields() {
         is_auto_layout: false,
         is_auto_fit: false,
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        graph: flowGraph(),
     };
 }
 
