@@ -295,10 +295,11 @@ async function applyRecordWrite(
 // Write a FlowGraphDelta to the four relation tables inside an
 // ALREADY-OPEN transaction view: node/edge upserts, append-only
 // member/attribute events, and node/edge deletion events
-// (authored by actor, never the body). The same writes the undo
-// and redo routes need; PUT /flows/:id keeps its own inline
-// copy (the committed Task 4 voice). The view's table set must
-// already include flow_nodes, flow_edges, flow_node_members,
+// (authored by actor, never the body). The one delta-write
+// voice — POST /flows (create), PUT /flows/:id (save), and
+// undo/redo all route through it (create passes an empty
+// deletions array). The view's table set must already include
+// flow_nodes, flow_edges, flow_node_members,
 // flow_node_attributes, and states.
 async function writeFlowGraphDelta(
     view: DbAdapter,
@@ -916,9 +917,9 @@ export const routes: Route[] = [
         // The initial event is authored by the verified caller
         // (actor), never the body. graphDelta is pre-validated
         // at the HTTP gate (validateFlowCreateBody); the route
-        // writes its rows generically — these loops set the
-        // Task 4 pattern even though some arrays are empty on
-        // creation. No deletions are written on CREATE.
+        // writes its rows through writeFlowGraphDelta — the same
+        // helper PUT/undo/redo use. The create delta carries no
+        // deletions (a fresh flow tombstones nothing).
         // Member-tier POST — /flows carries POST in MEMBER_VERBS.
         post: (db, _p, body, actor) => {
             const b = validateFlowCreateBody(body);
@@ -948,86 +949,13 @@ export const routes: Route[] = [
                         actor,
                         b.initialStateAt,
                     );
-                    for (const n of delta.nodes) {
-                        const {
-                            id,
-                            flow_id,
-                            name,
-                            position_x,
-                            position_y,
-                            is_create,
-                            is_archive,
-                            task_instructions,
-                            at,
-                        } = n;
-                        await view.flowNodes.put(id, {
-                            flow_id,
-                            name,
-                            position_x,
-                            position_y,
-                            is_create,
-                            is_archive,
-                            task_instructions,
-                            at,
-                        });
-                    }
-                    for (const e of delta.edges) {
-                        const {
-                            id,
-                            flow_id,
-                            name,
-                            from_node_id,
-                            to_node_id,
-                            at,
-                        } = e;
-                        await view.flowEdges.put(id, {
-                            flow_id,
-                            name,
-                            from_node_id,
-                            to_node_id,
-                            at,
-                        });
-                    }
-                    for (const m of delta.memberEvents) {
-                        const {
-                            id,
-                            flow_node_id,
-                            member_id,
-                            action,
-                            at,
-                        } = m;
-                        await view.flowNodeMembers.put(
-                            id,
-                            {
-                                flow_node_id,
-                                member_id,
-                                action,
-                                at,
-                            },
-                        );
-                    }
-                    for (const a of delta.attributeEvents) {
-                        const {
-                            id,
-                            flow_node_id,
-                            attribute_id,
-                            mode,
-                            is_required,
-                            action,
-                            at,
-                        } = a;
-                        await view.flowNodeAttributes.put(
-                            id,
-                            {
-                                flow_node_id,
-                                attribute_id,
-                                mode,
-                                is_required,
-                                action,
-                                at,
-                            },
-                        );
-                    }
+                    // The delta's deletions are empty on create
+                    // (a fresh flow tombstones nothing), so the
+                    // helper writes only the seeding upserts and
+                    // member/attribute events.
+                    await writeFlowGraphDelta(
+                        view, delta, actor,
+                    );
                 },
             );
         },
@@ -1148,92 +1076,9 @@ export const routes: Route[] = [
                         b.eventId, id, 'updated', actor,
                         b.at,
                     );
-                    for (const n of delta.nodes) {
-                        const {
-                            id: nodeId,
-                            flow_id,
-                            name,
-                            position_x,
-                            position_y,
-                            is_create,
-                            is_archive,
-                            task_instructions,
-                            at,
-                        } = n;
-                        await view.flowNodes.put(nodeId, {
-                            flow_id,
-                            name,
-                            position_x,
-                            position_y,
-                            is_create,
-                            is_archive,
-                            task_instructions,
-                            at,
-                        });
-                    }
-                    for (const e of delta.edges) {
-                        const {
-                            id: edgeId,
-                            flow_id,
-                            name,
-                            from_node_id,
-                            to_node_id,
-                            at,
-                        } = e;
-                        await view.flowEdges.put(edgeId, {
-                            flow_id,
-                            name,
-                            from_node_id,
-                            to_node_id,
-                            at,
-                        });
-                    }
-                    for (const m of delta.memberEvents) {
-                        const {
-                            id: memberRowId,
-                            flow_node_id,
-                            member_id,
-                            action,
-                            at,
-                        } = m;
-                        await view.flowNodeMembers.put(
-                            memberRowId,
-                            {
-                                flow_node_id,
-                                member_id,
-                                action,
-                                at,
-                            },
-                        );
-                    }
-                    for (const a of delta.attributeEvents) {
-                        const {
-                            id: attrRowId,
-                            flow_node_id,
-                            attribute_id,
-                            mode,
-                            is_required,
-                            action,
-                            at,
-                        } = a;
-                        await view.flowNodeAttributes.put(
-                            attrRowId,
-                            {
-                                flow_node_id,
-                                attribute_id,
-                                mode,
-                                is_required,
-                                action,
-                                at,
-                            },
-                        );
-                    }
-                    for (const d of delta.deletions) {
-                        await view.states.postEvent(
-                            d.eventId, d.entityId, 'deleted',
-                            actor, d.at,
-                        );
-                    }
+                    await writeFlowGraphDelta(
+                        view, delta, actor,
+                    );
                 },
             );
         },
