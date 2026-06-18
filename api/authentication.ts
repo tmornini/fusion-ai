@@ -11,7 +11,7 @@ import {
 } from './access-token.ts';
 import {
     generateCryptoSafeBase62,
-} from './crypto-safe-base62.ts';
+} from '../shared/crypto-safe-base62.ts';
 import {
     nowUtc,
     nowEpochSeconds,
@@ -32,7 +32,7 @@ import {
 import {
     hashPassword,
     verifyPassword,
-} from './password-hash.ts';
+} from '../shared/password-hash.ts';
 import {
     currentDefaultOrgFor,
 } from './authorization.ts';

@@ -29,7 +29,7 @@ import {
 } from '../../../api/types.ts';
 import {
     generateCryptoSafeBase62,
-} from '../../../api/crypto-safe-base62.ts';
+} from '../../../shared/crypto-safe-base62.ts';
 import { getFlowEntities } from './flows.ts';
 
 // The flow↔record bindings across EVERY flow the caller's org
