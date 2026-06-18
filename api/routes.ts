@@ -34,9 +34,6 @@ import type {
     OrganizationEntity,
 } from './types.ts';
 import {
-    generateCryptoSafeBase62,
-} from './crypto-safe-base62.ts';
-import {
     validateAIMemberCreateBody,
     validateAIMemberEditBody,
     validateHumanMemberCreateBody,
@@ -52,6 +49,7 @@ import {
     validateObjectiveCreateBody,
     validateRecordWriteBody,
     validateStateBody,
+    validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
     validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
@@ -1048,10 +1046,12 @@ export const routes: Route[] = [
     // (naming the prior claimant) and the new 'claimed'
     // land atomically.
     route('work-orders/:id/claim', {
-        post: (db, p, _body, actor) =>
+        post: (db, p, body, actor) =>
             db.transaction(
                 ['work_orders', 'states'],
                 async (view) => {
+                    const b =
+                        validateWorkOrderClaimBody(body);
                     const workOrderId = param(p, 0);
                     const wo = await view.workOrders
                         .getById(workOrderId);
@@ -1084,18 +1084,15 @@ export const routes: Route[] = [
                         prior !== null
                         && prior.state === 'claimed'
                     ) {
-                        await view.states.postEvent(
-                            generateCryptoSafeBase62(),
-                            workOrderId,
+                        await view.states.postEventAt(
+                            b.expireEventId, workOrderId,
                             'claim_expired',
-                            prior.member_id,
+                            prior.member_id, b.expireAt,
                         );
                     }
-                    await view.states.postEvent(
-                        generateCryptoSafeBase62(),
-                        workOrderId,
-                        'claimed',
-                        actor,
+                    await view.states.postEventAt(
+                        b.claimEventId, workOrderId,
+                        'claimed', actor, b.claimAt,
                     );
                 },
             ),

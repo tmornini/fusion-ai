@@ -3068,6 +3068,48 @@ export function validateAIMemberCreateBody(
     };
 }
 
+const WORK_ORDER_CLAIM_KEYS: readonly string[] = [
+    'claimEventId', 'claimAt',
+    'expireEventId', 'expireAt',
+];
+
+export interface WorkOrderClaimBody {
+    readonly claimEventId: string;
+    readonly claimAt: string;
+    readonly expireEventId: string;
+    readonly expireAt: string;
+}
+
+// Gate for POST /work-orders/:id/claim. The caller mints
+// both event ids and timestamps; the route reads them via
+// this validator and never calls generateCryptoSafeBase62
+// for the claim events. Authorship is server-derived
+// (actor for 'claimed', prior.member_id for
+// 'claim_expired') — never supplied by the caller.
+export function validateWorkOrderClaimBody(
+    body: Record<string, unknown>,
+): WorkOrderClaimBody {
+    assertOnlyKeys(
+        body, WORK_ORDER_CLAIM_KEYS, 'WorkOrderClaimBody',
+    );
+    const claimEventId = pickString(body, 'claimEventId');
+    const expireEventId = pickString(
+        body, 'expireEventId',
+    );
+    if (claimEventId === '' || expireEventId === '') {
+        throw new ValidationError(
+            'WorkOrderClaimBody ids must be non-empty',
+        );
+    }
+    const claimAt = validateTimestampField(
+        body, 'claimAt', 'WorkOrderClaimBody',
+    );
+    const expireAt = validateTimestampField(
+        body, 'expireAt', 'WorkOrderClaimBody',
+    );
+    return { claimEventId, claimAt, expireEventId, expireAt };
+}
+
 export interface AIMemberEditBody {
     readonly detail: Record<string, unknown>;
 }

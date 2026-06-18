@@ -320,12 +320,22 @@ export async function putWorkOrder(
 // so two tabs racing the same claim cannot both
 // succeed — the duplicate-claim TOCTOU is closed at
 // the route, not papered over by a disabled button.
+// The caller mints all four values: expireAt is
+// minted BEFORE claimAt so it orders earlier in the
+// event log (nowUtc is strictly monotonic).
 export async function postWorkOrderClaim(
     ctx: RequestContext,
     workOrderId: string,
 ): Promise<void> {
+    const expireAt = nowUtc();
+    const claimAt = nowUtc();
     await ctx.POST(
-        `work-orders/${workOrderId}/claim`, {},
+        `work-orders/${workOrderId}/claim`, {
+            claimEventId: generateCryptoSafeBase62(),
+            claimAt,
+            expireEventId: generateCryptoSafeBase62(),
+            expireAt,
+        },
     );
     workOrderChanges.notify();
 }
