@@ -9,6 +9,7 @@ import type {
     Id,
     AIMemberEntity,
     FlowEntity,
+    FlowWithGraph,
     FlowVersionEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
@@ -831,8 +832,78 @@ export const routes: Route[] = [
             ),
     }),
     route('flows', {
-        get: (db) =>
-            db.flows.getAll(),
+        // Reassemble each flow's graph from the four relation
+        // tables inside one consistent read transaction —
+        // mirroring GET /flows/:id so the list and the single
+        // GET derive identically (one reassembly voice). The
+        // stored blob is never consulted. PERF: this adds
+        // per-flow relation reads to the list path; acceptable
+        // at demo scale and unmeasured — do not optimize before
+        // measuring (Commandment XI). IndexedDB auto-commit:
+        // only row ops are awaited inside the tx body;
+        // reassembleStoredGraph + storedGraphField are sync
+        // compute called AFTER the awaited reads.
+        get: async (db) => {
+            return db.transaction(
+                [
+                    'flows',
+                    'flow_nodes',
+                    'flow_edges',
+                    'flow_node_members',
+                    'flow_node_attributes',
+                    'states',
+                ],
+                async (view) => {
+                    const flows =
+                        await view.flows.getAll();
+                    const result: FlowWithGraph[] = [];
+                    for (const flow of flows) {
+                        const nodes =
+                            await view.flowNodes
+                                .getAllWhere(
+                                    'flow_id', flow.id,
+                                );
+                        const edges =
+                            await view.flowEdges
+                                .getAllWhere(
+                                    'flow_id', flow.id,
+                                );
+                        const members:
+                            FlowNodeMemberEntity[] = [];
+                        const attrs:
+                            FlowNodeAttributeEntity[] = [];
+                        for (const node of nodes) {
+                            const nm =
+                                await view.flowNodeMembers
+                                    .getAllWhere(
+                                        'flow_node_id',
+                                        node.id,
+                                    );
+                            const na =
+                                await view
+                                    .flowNodeAttributes
+                                    .getAllWhere(
+                                        'flow_node_id',
+                                        node.id,
+                                    );
+                            members.push(...nm);
+                            attrs.push(...na);
+                        }
+                        // SYNC compute — no await past here.
+                        const graph =
+                            reassembleStoredGraph(
+                                nodes, edges,
+                                members, attrs,
+                            );
+                        result.push({
+                            ...flow,
+                            graph: storedGraphField(graph),
+                        });
+                    }
+                    return result;
+                },
+            );
+        },
         // Flow creation: the flows row, its project_flows join
         // row, the initial 'active' state event, and the four
         // relation table rows from graphDelta commit as ONE

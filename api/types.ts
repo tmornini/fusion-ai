@@ -1018,6 +1018,15 @@ export interface FlowEntity {
     graph: JsonObjectField;
 }
 
+// The GET-response shape for a flow: the stored row PLUS the
+// `graph` field the GET handlers derive by reassembling the
+// four relation tables (single GET /flows/:id and the list GET
+// /flows). The stored row no longer carries the blob; readers
+// that need the graph annotate their GET as FlowWithGraph.
+export type FlowWithGraph = FlowEntity & {
+    graph: JsonObjectField;
+};
+
 export interface FlowVersionEntity {
     id: Id;
     flow_id: Id;
