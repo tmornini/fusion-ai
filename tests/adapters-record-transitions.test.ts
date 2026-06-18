@@ -33,7 +33,7 @@ async function seedSystemMember(
     await db.members.put(SYSTEM_MEMBER_ID, {
         type: 'system',
     });
-    await db.states.postEventAt(
+    await db.states.postEvent(
         'st-system', SYSTEM_MEMBER_ID, 'active',
         'system',
         '2026-01-01T00:00:00.000000Z',

@@ -160,7 +160,7 @@ test('getArchivedObjectiveIds returns a Set', async () => {
     const db = new MemoryDbAdapter();
     await seedAdminSchema(db);
     await db.objectives.put('o1', objective(0));
-    await db.states.postEventAt(
+    await db.states.postEvent(
         'e1', 'o1', 'archived', 'system',
         '2026-01-01T00:00:00.000000Z',
     );

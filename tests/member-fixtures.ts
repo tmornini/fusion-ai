@@ -83,7 +83,7 @@ export async function seedHumanMember(
         phone: '',
         bio: '',
     });
-    await db.states.postEventAt(
+    await db.states.postEvent(
         `st-${id}`, id, state, 'system',
         '2026-01-01T00:00:00.000000Z',
     );
@@ -104,7 +104,7 @@ export async function seedAIMember(
 ): Promise<void> {
     await db.members.put(id, { type: 'ai' });
     await db.aiMembers.put(id, { name, ...aiDetail() });
-    await db.states.postEventAt(
+    await db.states.postEvent(
         `st-${id}`, id, state, 'system',
         '2026-01-01T00:00:00.000000Z',
     );

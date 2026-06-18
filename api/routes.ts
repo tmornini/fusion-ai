@@ -246,7 +246,7 @@ async function applyRecordWrite(
         async (view) => {
             await view.records.put(body.id, body.record);
             if (body.kind === 'create') {
-                await view.states.postEventAt(
+                await view.states.postEvent(
                     body.initialStateEventId,
                     body.id,
                     body.initialState,
@@ -330,7 +330,7 @@ export const routes: Route[] = [
                         b.detail as unknown as
                             Omit<AIMemberEntity, 'id'>,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.initialStateEventId,
                         b.id,
                         b.initialState,
@@ -413,7 +413,7 @@ export const routes: Route[] = [
                         b.detail as unknown as
                             Omit<HumanMemberEntity, 'id'>,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.initialStateEventId,
                         b.id,
                         b.initialState,
@@ -665,7 +665,7 @@ export const routes: Route[] = [
                         b.idea as unknown as
                             Omit<IdeaEntity, 'id'>,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.initialStateEventId,
                         b.id,
                         b.initialState,
@@ -714,14 +714,14 @@ export const routes: Route[] = [
                         b.idea as unknown as
                             Omit<IdeaEntity, 'id'>,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.ideaStateEventId,
                         ideaId,
                         b.ideaState,
                         actor,
                         b.ideaStateAt,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.projectStateEventId,
                         b.projectId,
                         b.projectState,
@@ -791,7 +791,7 @@ export const routes: Route[] = [
                         b.projectFlow as unknown as
                             Omit<ProjectFlowEntity, 'id'>,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.initialStateEventId,
                         b.id,
                         b.initialState,
@@ -815,7 +815,7 @@ export const routes: Route[] = [
     // validateFlowVersionEntity. The event is authored by the
     // verified caller (actor), never the body. The eventId and
     // at are client-minted: a byte-identical replay lands as a
-    // ledger no-op via postEventAt.
+    // ledger no-op via postEvent.
     // Member-tier PUT — MEMBER_VERBS['/flows'] includes 'PUT'.
     route('flows/:id', {
         get: (db, p) => db.flows.getById(param(p, 0)),
@@ -841,7 +841,7 @@ export const routes: Route[] = [
                         b.flow as unknown as
                             Omit<FlowEntity, 'id'>,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.eventId, id, 'updated', actor,
                         b.at,
                     );
@@ -868,7 +868,7 @@ export const routes: Route[] = [
                         b.flow as unknown as
                             Omit<FlowEntity, 'id'>,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.eventId, id, 'updated', actor,
                         b.at,
                     );
@@ -909,7 +909,7 @@ export const routes: Route[] = [
                         b.flow as unknown as
                             Omit<FlowEntity, 'id'>,
                     );
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.eventId, id, 'updated', actor,
                         b.at,
                     );
@@ -1019,7 +1019,7 @@ export const routes: Route[] = [
                             Omit<FlowWorkOrderEntity, 'id'>,
                     );
                     for (let i = 0; i < 3; i++) {
-                        await view.states.postEventAt(
+                        await view.states.postEvent(
                             b.stateEventIds[i]!,
                             b.id,
                             b.states[i]!,
@@ -1084,13 +1084,13 @@ export const routes: Route[] = [
                         prior !== null
                         && prior.state === 'claimed'
                     ) {
-                        await view.states.postEventAt(
+                        await view.states.postEvent(
                             b.expireEventId, workOrderId,
                             'claim_expired',
                             prior.member_id, b.expireAt,
                         );
                     }
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.claimEventId, workOrderId,
                         'claimed', actor, b.claimAt,
                     );
@@ -1120,7 +1120,7 @@ export const routes: Route[] = [
             return db.transaction(
                 ['states', 'state_field_values'],
                 async (view) => {
-                    await view.states.postEventAt(
+                    await view.states.postEvent(
                         b.transitionEventId,
                         workOrderId,
                         b.targetState,
@@ -1135,7 +1135,7 @@ export const routes: Route[] = [
                         );
                     }
                     if (b.release !== null) {
-                        await view.states.postEventAt(
+                        await view.states.postEvent(
                             b.release.id,
                             workOrderId,
                             b.release.state,

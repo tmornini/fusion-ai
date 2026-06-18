@@ -3836,14 +3836,14 @@ async function postBootstrapIn(
                 amiable: 80,
             }),
         }),
-        adapter.states.postEventAt(
+        adapter.states.postEvent(
             'bootstrap-system-active',
             SYSTEM_MEMBER_ID,
             'active',
             SYSTEM_MEMBER_ID,
             nowUtc(),
         ),
-        adapter.states.postEventAt(
+        adapter.states.postEvent(
             'bootstrap-current-active',
             'current',
             'active',

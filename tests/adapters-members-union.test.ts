@@ -61,7 +61,7 @@ test(
         await db.members.put('system', {
             type: 'system',
         });
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'st-system', 'system',
             'active', 'system',
             '2026-01-01T00:00:00.000000Z',
@@ -205,7 +205,7 @@ test(
             identity_id: 'member_without_pii',
             at: '2020-01-01T00:00:00.000000Z',
         });
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'st-member_without_pii', 'member_without_pii',
             'active', 'system',
             '2026-01-01T00:00:00.000000Z',

@@ -110,11 +110,11 @@ test(
     async () => {
         const db = new MemoryDbAdapter();
         await db.postSchemaCreation();
-        await db.states.postEventAt(
+        await db.states.postEvent(
             's1', 'e1', 'a', 'w1',
             '2026-01-01T00:00:00.000000Z',
         );
-        await db.states.postEventAt(
+        await db.states.postEvent(
             's2', 'e1', 'b', 'w1',
             '2026-01-01T00:00:01.000000Z',
         );
@@ -244,29 +244,29 @@ test(
 const AT1 = '2026-01-01T00:00:00.000000Z';
 const AT2 = '2026-01-01T00:00:00.000001Z';
 
-test('postEventAt stamps the caller-supplied at', async () => {
+test('postEvent stamps the caller-supplied at', async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.states.postEventAt('s1', 'e1', 'active', 'w1', AT1);
+    await db.states.postEvent('s1', 'e1', 'active', 'w1', AT1);
     const row = await db.states.getById('s1');
     assert.equal(row.at, AT1);
 });
 
-test('postEventAt replays identically as a no-op', async () => {
+test('postEvent replays identically as a no-op', async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.states.postEventAt('s1', 'e1', 'active', 'w1', AT1);
-    await db.states.postEventAt('s1', 'e1', 'active', 'w1', AT1);
+    await db.states.postEvent('s1', 'e1', 'active', 'w1', AT1);
+    await db.states.postEvent('s1', 'e1', 'active', 'w1', AT1);
     const all = await db.states.getAllFor('e1');
     assert.equal(all.length, 1);
 });
 
-test('postEventAt rejects a conflicting at on one id', async () => {
+test('postEvent rejects a conflicting at on one id', async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.states.postEventAt('s1', 'e1', 'active', 'w1', AT1);
+    await db.states.postEvent('s1', 'e1', 'active', 'w1', AT1);
     await assert.rejects(
-        () => db.states.postEventAt('s1', 'e1', 'active', 'w1', AT2),
+        () => db.states.postEvent('s1', 'e1', 'active', 'w1', AT2),
         (e) => e instanceof LedgerImmutabilityError,
     );
 });

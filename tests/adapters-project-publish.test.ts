@@ -75,7 +75,7 @@ test('postProjectApproval moves state to approved',
         await seedAdminSchema(db);
         await seedCurrentMember(db);
         await db.projects.put('p1', SAMPLE_PROJECT_BODY);
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'st-init', 'p1', 'under_review', 'current',
             '2026-01-01T00:00:00.000000Z',
         );
@@ -117,7 +117,7 @@ test('postProjectArchival moves state to archived',
         await seedAdminSchema(db);
         await seedCurrentMember(db);
         await db.projects.put('p1', SAMPLE_PROJECT_BODY);
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'st-init', 'p1', 'approved', 'current',
             '2026-01-01T00:00:00.000000Z',
         );

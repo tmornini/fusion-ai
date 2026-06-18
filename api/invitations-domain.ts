@@ -316,7 +316,7 @@ async function grantInvitation(
                 identity_id: identityId,
                 at: grantAt,
             });
-            await view.states.postEventAt(
+            await view.states.postEvent(
                 grantEventId, invitationId,
                 'pending', ctx.principal.id, grantAt);
             return { kind: 'created' };
@@ -437,7 +437,7 @@ async function acceptInvitation(
                     at,
                 });
             }
-            await view.states.postEventAt(
+            await view.states.postEvent(
                 eventId, id, 'accepted', ctx.principal.id, at);
         },
     );
@@ -485,7 +485,7 @@ async function declineInvitation(
         const state = await currentInvitationState(view, id);
         if (state === 'declined') return;   // idempotent no-op
         if (state !== 'pending') { conflict = true; return; }
-        await view.states.postEventAt(
+        await view.states.postEvent(
             eventId, id, 'declined', ctx.principal.id, at);
     });
     if (conflict) {
@@ -535,7 +535,7 @@ async function revokeInvitation(
         const state = await currentInvitationState(view, id);
         if (state === 'revoked') return;   // idempotent no-op
         if (state !== 'pending') { conflict = true; return; }
-        await view.states.postEventAt(
+        await view.states.postEvent(
             eventId, id, 'revoked', ctx.principal.id, at);
     });
     if (conflict) {

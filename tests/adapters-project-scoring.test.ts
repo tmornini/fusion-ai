@@ -114,7 +114,7 @@ async function seedTwoApprovedProjects(
         ...projectBody,
         title: 't1', position: 0,
     });
-    await db.states.postEventAt(
+    await db.states.postEvent(
         'st-p1', 'p1', 'approved', 'system',
         '2026-01-01T00:00:00.000000Z',
     );
@@ -122,7 +122,7 @@ async function seedTwoApprovedProjects(
         ...projectBody,
         title: 't2', position: 1,
     });
-    await db.states.postEventAt(
+    await db.states.postEvent(
         'st-p2', 'p2', 'approved', 'system',
         '2026-01-01T00:00:01.000000Z',
     );

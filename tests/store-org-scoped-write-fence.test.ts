@@ -79,7 +79,7 @@ async () => {
     // Tombstone it: lifecycle reads now say "absent", but
     // the row still exists — the fence must see the row,
     // not the lifecycle view.
-    await db.states.postEventAt(
+    await db.states.postEvent(
         'ev1', 'b1', 'deleted', 'w1',
         '2026-01-01T00:00:00.000000Z',
     );

@@ -107,7 +107,7 @@ export class StateStore
         return written;
     }
 
-    async postEventAt(
+    async postEvent(
         id: Id,
         entityId: Id,
         state: string,

@@ -46,7 +46,7 @@ async function seedIdeaState(
     ideaId: string,
     state: string,
 ): Promise<void> {
-    await db.states.postEventAt(
+    await db.states.postEvent(
         `st-${ideaId}`,
         ideaId,
         state,

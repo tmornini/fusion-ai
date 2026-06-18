@@ -69,12 +69,12 @@ test('getProjectStates excludes a same-valued idea',
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
         await db.projects.put('p1', projectBody('P'));
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'ev-p1', 'p1', 'approved', 'system',
             '2026-01-01T00:00:00.000000Z',
         );
         await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'ev-i1', 'i1', 'approved', 'system',
             '2026-01-01T00:00:01.000000Z',
         );
@@ -92,12 +92,12 @@ test('getIdeaStates excludes a same-valued project',
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
         await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'ev-i1', 'i1', 'active', 'system',
             '2026-01-01T00:00:00.000000Z',
         );
         await db.projects.put('p1', projectBody('P'));
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'ev-p1', 'p1', 'approved', 'system',
             '2026-01-01T00:00:01.000000Z',
         );
@@ -115,12 +115,12 @@ test('getRecordStates excludes a same-valued idea',
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
         await db.records.put('r1', recordBody('R'));
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'ev-r1', 'r1', 'active', 'system',
             '2026-01-01T00:00:00.000000Z',
         );
         await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'ev-i1', 'i1', 'archived', 'system',
             '2026-01-01T00:00:01.000000Z',
         );
@@ -140,7 +140,7 @@ test('getMemberStates spans kinds and excludes an idea',
         await seedHumanMember(db, 'wh', 'Human');
         await seedAIMember(db, 'wa', 'Ai');
         await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEventAt(
+        await db.states.postEvent(
             'ev-i1', 'i1', 'active', 'system',
             '2026-01-01T00:00:00.000000Z',
         );
