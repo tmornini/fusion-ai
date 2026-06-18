@@ -177,6 +177,10 @@ export async function postWorkOrderCreation(
             generateCryptoSafeBase62(),
             generateCryptoSafeBase62(),
         ],
+        // Three separate nowUtc() calls — strictly monotonic,
+        // so [0] < [1] < [2] is guaranteed; latest-wins on
+        // entity state is therefore deterministic.
+        stateEventAts: [nowUtc(), nowUtc(), nowUtc()],
         states: [
             startNode.id,
             postStartNodeId,

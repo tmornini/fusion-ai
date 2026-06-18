@@ -1021,11 +1021,12 @@ export const routes: Route[] = [
                             Omit<FlowWorkOrderEntity, 'id'>,
                     );
                     for (let i = 0; i < 3; i++) {
-                        await view.states.postEvent(
+                        await view.states.postEventAt(
                             b.stateEventIds[i]!,
                             b.id,
                             b.states[i]!,
                             actor,
+                            b.stateEventAts[i]!,
                         );
                     }
                 },

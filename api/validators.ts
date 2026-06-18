@@ -2785,12 +2785,13 @@ export interface WorkOrderCreateBody {
     readonly flowWorkOrderId: string;
     readonly flowWorkOrder: Record<string, unknown>;
     readonly stateEventIds: readonly string[];
+    readonly stateEventAts: readonly string[];
     readonly states: readonly string[];
 }
 
 const WORK_ORDER_CREATE_KEYS: readonly string[] = [
     'id', 'workOrder', 'flowWorkOrderId', 'flowWorkOrder',
-    'stateEventIds', 'states',
+    'stateEventIds', 'stateEventAts', 'states',
 ];
 
 // The HTTP-body gate for POST /work-orders: the work_orders
@@ -2847,6 +2848,16 @@ export function validateWorkOrderCreateBody(
         }
         return eventId;
     });
+    const stateEventAts = asArray(
+        body['stateEventAts'],
+        'WorkOrderCreateBody.stateEventAts',
+    ).map((v, i) => {
+        const label =
+            'WorkOrderCreateBody.stateEventAts[' + i + ']';
+        return validateTimestampField(
+            { at: v }, 'at', label,
+        );
+    });
     const states = asArray(
         body['states'], 'WorkOrderCreateBody.states',
     ).map((v, i) => {
@@ -2863,18 +2874,21 @@ export function validateWorkOrderCreateBody(
     });
     if (
         stateEventIds.length !== 3
+        || stateEventAts.length !== 3
         || states.length !== 3
     ) {
         throw new ValidationError(
             'WorkOrderCreateBody expects exactly three'
-            + ' state events (stateEventIds + states),'
-            + ' got ' + stateEventIds.length + ' ids and '
+            + ' state events'
+            + ' (stateEventIds + stateEventAts + states),'
+            + ' got ' + stateEventIds.length + ' ids, '
+            + stateEventAts.length + ' ats, and '
             + states.length + ' states',
         );
     }
     return {
         id, workOrder, flowWorkOrderId, flowWorkOrder,
-        stateEventIds, states,
+        stateEventIds, stateEventAts, states,
     };
 }
 
