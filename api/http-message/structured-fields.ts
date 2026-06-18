@@ -1,4 +1,5 @@
 import { HttpMessageError } from './types.ts';
+import { Octets } from './octets.ts';
 
 // RFC 8941 Structured Field Values — the general grammar for
 // Item / List / Dictionary plus parameters. One parser drives
@@ -6,7 +7,7 @@ import { HttpMessageError } from './types.ts';
 // which (that is the registry's job). Inner lists and byte
 // sequences are deferred until a caller needs them.
 
-export type BareValue = number | string | boolean;
+export type BareValue = number | string | boolean | Octets;
 
 export interface SfItem {
     readonly value: BareValue;
@@ -124,6 +125,7 @@ function readBareItem(cursor: Cursor): BareValue {
     if (ch === '-' || isDigit(ch)) return readNumber(cursor);
     if (ch === '"') return readString(cursor);
     if (ch === '?') return readBoolean(cursor);
+    if (ch === ':') return readByteSequence(cursor);
     if (ch === '*' || isAlpha(ch)) return readToken(cursor);
     throw new HttpMessageError('unexpected bare item: ' + ch);
 }
@@ -170,6 +172,16 @@ function readBoolean(cursor: Cursor): boolean {
     if (ch === '1') return true;
     if (ch === '0') return false;
     throw new HttpMessageError('invalid boolean: ?' + ch);
+}
+
+function readByteSequence(cursor: Cursor): Octets {
+    cursor.expect(':');
+    let b64 = '';
+    while (cursor.peek() !== ':') {
+        b64 += cursor.next();
+    }
+    cursor.next();
+    return Octets.fromBase64(b64);
 }
 
 function readToken(cursor: Cursor): string {

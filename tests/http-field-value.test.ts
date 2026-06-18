@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { FieldValue } from '../api/http-message/field-value.ts';
 import { HttpMessageError } from '../api/http-message/types.ts';
+import { HttpMessage } from '../api/http-message/http-message.ts';
 
 test('exists is false for an absent value', () => {
     assert.equal(FieldValue.absent().exists(), false);
@@ -91,6 +92,28 @@ test('toDate on an invalid month name throws', () => {
         () => FieldValue.present(
             'Sun, 06 Zzz 1994 08:49:37 GMT',
         ).toDate(),
+        HttpMessageError,
+    );
+});
+
+test('a byte-sequence list member decodes to base64', () => {
+    const message = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'accept-encoding: :aGVsbG8=:\r\n\r\n',
+    );
+    assert.equal(
+        message.query('header.accept-encoding.0').toBase64(),
+        'aGVsbG8=',
+    );
+});
+
+test('toText on a byte-sequence leaf throws', () => {
+    const message = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'accept-encoding: :aGVsbG8=:\r\n\r\n',
+    );
+    assert.throws(
+        () => message.query('header.accept-encoding.0').toText(),
         HttpMessageError,
     );
 });
