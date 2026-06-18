@@ -9,6 +9,7 @@ import { HttpMessageError } from './types.ts';
 // each other's parsing.
 
 export interface BodyCodec {
+    readonly kind: 'json' | 'other';
     handles(mediaType: string): boolean;
     decode(body: Octets): unknown;
     encode(value: unknown): Octets;
@@ -29,6 +30,7 @@ export class BodyRegistry {
 }
 
 export const jsonBodyCodec: BodyCodec = {
+    kind: 'json',
     handles(mediaType: string): boolean {
         const base = mediaType.split(';')[0]!.trim().toLowerCase();
         return base === 'application/json'

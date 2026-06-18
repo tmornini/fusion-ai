@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { HttpMessage } from '../api/http-message/http-message.ts';
 import { HttpMessageError } from '../api/http-message/types.ts';
+import { BodyRegistry } from '../api/http-message/media-registry.ts';
+import { Octets } from '../api/http-message/octets.ts';
 
 const jsonResponse = HttpMessage.fromWire(
     'HTTP/1.1 200 OK\r\n' +
@@ -81,4 +83,23 @@ test('a malformed JSON body is absent on query', () => {
         'not json',
     );
     assert.equal(message.query('body.x').exists(), false);
+});
+
+const thingCodec = {
+    kind: 'other' as const,
+    handles: (t: string) => t === 'application/x-thing',
+    decode: (b: Octets): unknown => b.toLatin1(),
+    encode: (v: unknown): Octets =>
+        Octets.fromLatin1(String(v)),
+};
+
+test('a non-JSON codec body is not inlined as JSON', () => {
+    const registry = new BodyRegistry([thingCodec]);
+    const message = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'content-type: application/x-thing\r\n\r\n{"a":1}',
+        registry,
+    );
+    const body = JSON.parse(message.toJson()).body;
+    assert.equal(typeof body, 'string');
 });
