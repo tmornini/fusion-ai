@@ -78,6 +78,7 @@ export async function postFlowCreation(
         },
         initialState: 'active',
         initialStateEventId: generateCryptoSafeBase62(),
+        initialStateAt: nowUtc(),
     });
 
     flowChanges.notify();

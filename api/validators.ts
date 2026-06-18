@@ -2236,11 +2236,13 @@ export interface FlowCreateBody {
     readonly projectFlow: Record<string, unknown>;
     readonly initialState: string;
     readonly initialStateEventId: string;
+    readonly initialStateAt: string;
 }
 
 const FLOW_CREATE_KEYS: readonly string[] = [
     'id', 'flow', 'projectFlowId', 'projectFlow',
     'initialState', 'initialStateEventId',
+    'initialStateAt',
 ];
 
 // The HTTP-body gate for POST /flows: the flow row, its
@@ -2294,9 +2296,13 @@ export function validateFlowCreateBody(
             + ' must be non-empty',
         );
     }
+    const initialStateAt = validateTimestampField(
+        body, 'initialStateAt', 'FlowCreateBody',
+    );
     return {
         id, flow, projectFlowId, projectFlow,
         initialState, initialStateEventId,
+        initialStateAt,
     };
 }
 

@@ -787,11 +787,12 @@ export const routes: Route[] = [
                         b.projectFlow as unknown as
                             Omit<ProjectFlowEntity, 'id'>,
                     );
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.initialStateEventId,
                         b.id,
                         b.initialState,
                         actor,
+                        b.initialStateAt,
                     );
                 },
             );
