@@ -2517,10 +2517,11 @@ export interface FlowUndoBody {
     readonly flow: Record<string, unknown>;
     readonly eventId: string;
     readonly consumedVersionId: string;
+    readonly at: string;
 }
 
 const FLOW_UNDO_KEYS: readonly string[] = [
-    'flow', 'eventId', 'consumedVersionId',
+    'flow', 'eventId', 'consumedVersionId', 'at',
 ];
 
 // The HTTP-body gate for POST /flows/:id/undo: the flow row, the
@@ -2550,17 +2551,21 @@ export function validateFlowUndoBody(
             'FlowUndoBody.consumedVersionId must be non-empty',
         );
     }
-    return { flow, eventId, consumedVersionId };
+    const at = validateTimestampField(
+        body, 'at', 'FlowUndoBody',
+    );
+    return { flow, eventId, consumedVersionId, at };
 }
 
 export interface FlowRedoBody {
     readonly version: FlowVersionSnapshot;
     readonly flow: Record<string, unknown>;
     readonly eventId: string;
+    readonly at: string;
 }
 
 const FLOW_REDO_KEYS: readonly string[] = [
-    'version', 'flow', 'eventId',
+    'version', 'flow', 'eventId', 'at',
 ];
 
 // The HTTP-body gate for POST /flows/:id/redo: a REQUIRED
@@ -2587,7 +2592,10 @@ export function validateFlowRedoBody(
             'FlowRedoBody.eventId must be non-empty',
         );
     }
-    return { version, flow, eventId };
+    const at = validateTimestampField(
+        body, 'at', 'FlowRedoBody',
+    );
+    return { version, flow, eventId, at };
 }
 
 export interface HumanMemberCreateBody {

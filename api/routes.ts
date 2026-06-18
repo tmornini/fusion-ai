@@ -863,8 +863,9 @@ export const routes: Route[] = [
                         b.flow as unknown as
                             Omit<FlowEntity, 'id'>,
                     );
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.eventId, id, 'updated', actor,
+                        b.at,
                     );
                     await view.flowVersions.delete(
                         b.consumedVersionId,
@@ -903,8 +904,9 @@ export const routes: Route[] = [
                         b.flow as unknown as
                             Omit<FlowEntity, 'id'>,
                     );
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.eventId, id, 'updated', actor,
+                        b.at,
                     );
                 },
             );
