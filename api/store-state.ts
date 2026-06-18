@@ -174,10 +174,18 @@ export class StateStore
         const rows = await tx.getWhere<StateEntity>(
             this.#table, 'entity_id', entityId,
         );
+        // The (at, id) total order — the SAME truth
+        // getCurrentForIn/getDeletedIdsIn use, so the last
+        // event here is always the current one, identical on
+        // every backend and every row permutation. Ties break
+        // by id; without it the order would follow insertion,
+        // which caller-minted (tie-able) at now makes reachable.
         return rows.sort((a, b) =>
             a.at < b.at ? -1
                 : a.at > b.at ? 1
-                    : 0,
+                    : a.id < b.id ? -1
+                        : a.id > b.id ? 1
+                            : 0,
         );
     }
 

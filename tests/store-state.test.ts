@@ -225,6 +225,35 @@ test(
 );
 
 test(
+    'allFor breaks at-ties by id, agreeing with currentFor',
+    async () => {
+        // Same at, inserted out of id order. The (at, id) total
+        // order sorts ties by id ascending and agrees with
+        // getCurrentFor: the last event IS the current one,
+        // independent of insertion order. Caller-minted at can
+        // tie; the old monotonic server stamp never did.
+        const db = new MemoryDbAdapter();
+        await db.postSchemaCreation();
+        const at = '2026-01-01T00:00:00.000000Z';
+        for (const id of ['sc', 'sb', 'sa']) {
+            await db.states.put(id, {
+                entity_id: 'e1',
+                state: id,
+                member_id: 'w1',
+                at,
+            });
+        }
+        const events = await db.states.getAllFor('e1');
+        assert.deepEqual(
+            events.map(e => e.id),
+            ['sa', 'sb', 'sc'],
+        );
+        const current = await db.states.getCurrentFor('e1');
+        assert.equal(events.at(-1)!.id, current!.id);
+    },
+);
+
+test(
     'allFor returns empty array for unknown entity_id',
     async () => {
         const db = new MemoryDbAdapter();
