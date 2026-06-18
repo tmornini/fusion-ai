@@ -342,7 +342,7 @@ export function asMemberIds(
 // mints base62; _ and - are admitted for legacy snapshots.
 const GRAPH_ID_ALPHABET = /^[A-Za-z0-9_-]+$/;
 
-function asGraphId(
+export function asGraphId(
     value: unknown,
     label: string,
 ): string {
@@ -3176,4 +3176,210 @@ export function validateHumanMemberEditBody(
         body['detail'], 'HumanMemberEditBody.detail',
     );
     return { pii, detail };
+}
+
+// ── Flow graph delta ─────────────────
+//
+// FlowGraphDelta is the wire shape the client sends when
+// saving a normalised graph: upsert rows for every working
+// node/edge, deletion tombstones for removed ones, and
+// append-only ledger events for member/attribute changes.
+// The row body interfaces mirror the entity interfaces but
+// carry `id` (the stable canvas id) because the client
+// supplies it (same precedent as postFlowCreation).
+
+export interface FlowNodeRowBody {
+    readonly id: string;
+    readonly flow_id: string;
+    readonly name: string;
+    readonly position_x: number;
+    readonly position_y: number;
+    readonly is_create: boolean;
+    readonly is_archive: boolean;
+    readonly task_instructions: string;
+    readonly at: string;
+}
+
+export interface FlowEdgeRowBody {
+    readonly id: string;
+    readonly flow_id: string;
+    readonly name: string;
+    readonly from_node_id: string;
+    readonly to_node_id: string;
+    readonly at: string;
+}
+
+export interface GraphDeletion {
+    readonly eventId: string;
+    readonly entityId: string;
+    readonly at: string;
+}
+
+export interface FlowNodeMemberRowBody {
+    readonly id: string;
+    readonly flow_node_id: string;
+    readonly member_id: string;
+    readonly action: 'added' | 'removed';
+    readonly at: string;
+}
+
+export interface FlowNodeAttributeRowBody {
+    readonly id: string;
+    readonly flow_node_id: string;
+    readonly attribute_id: string;
+    readonly mode: 'editable' | 'readonly';
+    readonly is_required: boolean;
+    readonly action: 'added' | 'removed';
+    readonly at: string;
+}
+
+export interface FlowGraphDelta {
+    readonly nodes: FlowNodeRowBody[];
+    readonly edges: FlowEdgeRowBody[];
+    readonly deletions: GraphDeletion[];
+    readonly memberEvents: FlowNodeMemberRowBody[];
+    readonly attributeEvents: FlowNodeAttributeRowBody[];
+}
+
+const FLOW_GRAPH_DELTA_KEYS: readonly string[] = [
+    'nodes', 'edges', 'deletions',
+    'memberEvents', 'attributeEvents',
+];
+
+// Validates an inbound FlowGraphDelta HTTP body.
+// For each node element: splits the `id` (asGraphId) from
+// the row fields and delegates to validateFlowNodeEntity.
+// Same pattern for edges. Member and attribute event ids
+// are minted base62 strings — validated as non-empty strings.
+// Delegates the rest to the landed row validators.
+// Deletions: eventId non-empty string, entityId asGraphId,
+// at via validateTimestampField.
+export function validateFlowGraphDelta(
+    body: Record<string, unknown>,
+): FlowGraphDelta {
+    assertOnlyKeys(
+        body, FLOW_GRAPH_DELTA_KEYS, 'FlowGraphDelta',
+    );
+    const nodesRaw = asArray(
+        body['nodes'], 'FlowGraphDelta.nodes',
+    );
+    const edgesRaw = asArray(
+        body['edges'], 'FlowGraphDelta.edges',
+    );
+    const deletionsRaw = asArray(
+        body['deletions'], 'FlowGraphDelta.deletions',
+    );
+    const memberEventsRaw = asArray(
+        body['memberEvents'],
+        'FlowGraphDelta.memberEvents',
+    );
+    const attributeEventsRaw = asArray(
+        body['attributeEvents'],
+        'FlowGraphDelta.attributeEvents',
+    );
+
+    const nodes: FlowNodeRowBody[] =
+        nodesRaw.map((item, i) => {
+            const obj = asObject(
+                item,
+                'FlowGraphDelta.nodes[' + i + ']',
+            );
+            const id = asGraphId(
+                obj['id'],
+                'FlowGraphDelta.nodes['
+                    + i + '].id',
+            );
+            const { id: _id, ...rest } = obj;
+            const validated =
+                validateFlowNodeEntity(rest);
+            return { id, ...validated };
+        });
+
+    const edges: FlowEdgeRowBody[] =
+        edgesRaw.map((item, i) => {
+            const obj = asObject(
+                item,
+                'FlowGraphDelta.edges[' + i + ']',
+            );
+            const id = asGraphId(
+                obj['id'],
+                'FlowGraphDelta.edges['
+                    + i + '].id',
+            );
+            const { id: _id, ...rest } = obj;
+            const validated =
+                validateFlowEdgeEntity(rest);
+            return { id, ...validated };
+        });
+
+    const deletions: GraphDeletion[] =
+        deletionsRaw.map((item, i) => {
+            const label =
+                'FlowGraphDelta.deletions['
+                + i + ']';
+            const obj = asObject(item, label);
+            const eventId = pickString(
+                obj, 'eventId',
+            );
+            if (eventId === '') {
+                throw new ValidationError(
+                    label + '.eventId must be'
+                    + ' non-empty',
+                );
+            }
+            const entityId = asGraphId(
+                obj['entityId'],
+                label + '.entityId',
+            );
+            const at = validateTimestampField(
+                obj, 'at', label,
+            );
+            return { eventId, entityId, at };
+        });
+
+    const memberEvents: FlowNodeMemberRowBody[] =
+        memberEventsRaw.map((item, i) => {
+            const label =
+                'FlowGraphDelta.memberEvents['
+                + i + ']';
+            const obj = asObject(item, label);
+            const id = pickString(obj, 'id');
+            if (id === '') {
+                throw new ValidationError(
+                    label + '.id must be non-empty',
+                );
+            }
+            const {
+                id: _id, ...rest
+            } = obj;
+            const validated =
+                validateFlowNodeMemberEntity(rest);
+            return { id, ...validated };
+        });
+
+    const attributeEvents:
+        FlowNodeAttributeRowBody[] =
+        attributeEventsRaw.map((item, i) => {
+            const label =
+                'FlowGraphDelta.attributeEvents['
+                + i + ']';
+            const obj = asObject(item, label);
+            const id = pickString(obj, 'id');
+            if (id === '') {
+                throw new ValidationError(
+                    label + '.id must be non-empty',
+                );
+            }
+            const {
+                id: _id, ...rest
+            } = obj;
+            const validated =
+                validateFlowNodeAttributeEntity(rest);
+            return { id, ...validated };
+        });
+
+    return {
+        nodes, edges, deletions,
+        memberEvents, attributeEvents,
+    };
 }

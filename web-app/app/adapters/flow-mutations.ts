@@ -9,6 +9,22 @@ import {
     storedGraphField,
     DEFAULT_LOCK_TIMEOUT,
 } from '../../../api/types.ts';
+import type {
+    FlowGraphDelta,
+    FlowNodeRowBody,
+    FlowEdgeRowBody,
+    GraphDeletion,
+    FlowNodeMemberRowBody,
+    FlowNodeAttributeRowBody,
+} from '../../../api/validators.ts';
+export type {
+    FlowGraphDelta,
+    FlowNodeRowBody,
+    FlowEdgeRowBody,
+    GraphDeletion,
+    FlowNodeMemberRowBody,
+    FlowNodeAttributeRowBody,
+};
 import {
     buildStartAndCompleteNodes,
 } from './flow-defaults.ts';
@@ -116,6 +132,181 @@ export function buildFlowBody(
         }),
     };
     return entity as unknown as Record<string, unknown>;
+}
+
+// Pure diff: working vs baseline StoredGraph → FlowGraphDelta.
+// Every working node emits an upsert row (idempotent overwrite).
+// Every working edge emits an upsert row.
+// Every id in baseline but absent in working emits a deletion.
+// Per node: member diff by member_id; attribute diff by
+// attributeId — added/removed per presence; changed mode or
+// is_required → a NEW 'added' row (latest-wins semantics,
+// never an update). Unchanged attributes emit NO event.
+// The caller passes `generateCryptoSafeBase62` as `mint` and
+// a single `nowUtc()` as `at` (one moment for the whole save).
+export function buildSaveEvents(
+    baseline: StoredGraph,
+    working: StoredGraph,
+    flowId: string,
+    mint: () => string,
+    at: string,
+): FlowGraphDelta {
+    // Build lookup sets for working ids (used in deletions)
+    const workingNodeIds = new Set(
+        working.nodes.map(n => n.id),
+    );
+    const workingEdgeIds = new Set(
+        working.edges.map(e => e.id),
+    );
+
+    // Node upserts — always every working node
+    const nodes: FlowNodeRowBody[] =
+        working.nodes.map(node => ({
+            id: node.id,
+            flow_id: flowId,
+            name: node.name,
+            position_x: node.positionX,
+            position_y: node.positionY,
+            is_create: node.isCreate,
+            is_archive: node.isArchive,
+            task_instructions: node.taskInstructions,
+            at,
+        }));
+
+    // Edge upserts — always every working edge
+    const edges: FlowEdgeRowBody[] =
+        working.edges.map(edge => ({
+            id: edge.id,
+            flow_id: flowId,
+            name: edge.name,
+            from_node_id: edge.fromNodeId,
+            to_node_id: edge.toNodeId,
+            at,
+        }));
+
+    // Deletions — baseline ids absent in working
+    const deletions: GraphDeletion[] = [];
+    for (const node of baseline.nodes) {
+        if (!workingNodeIds.has(node.id)) {
+            deletions.push({
+                eventId: mint(),
+                entityId: node.id,
+                at,
+            });
+        }
+    }
+    for (const edge of baseline.edges) {
+        if (!workingEdgeIds.has(edge.id)) {
+            deletions.push({
+                eventId: mint(),
+                entityId: edge.id,
+                at,
+            });
+        }
+    }
+
+    // Member events — per node diff
+    const memberEvents: FlowNodeMemberRowBody[] = [];
+    const baseNodeMap = new Map(
+        baseline.nodes.map(n => [n.id, n]),
+    );
+    for (const node of working.nodes) {
+        const base = baseNodeMap.get(node.id);
+        const baseIds = new Set(
+            base ? base.memberIds : [],
+        );
+        const workIds = new Set(node.memberIds);
+        for (const mid of workIds) {
+            if (!baseIds.has(mid)) {
+                memberEvents.push({
+                    id: mint(),
+                    flow_node_id: node.id,
+                    member_id: mid,
+                    action: 'added',
+                    at,
+                });
+            }
+        }
+        for (const mid of baseIds) {
+            if (!workIds.has(mid)) {
+                memberEvents.push({
+                    id: mint(),
+                    flow_node_id: node.id,
+                    member_id: mid,
+                    action: 'removed',
+                    at,
+                });
+            }
+        }
+    }
+
+    // Attribute events — per node diff by attributeId
+    const attributeEvents:
+        FlowNodeAttributeRowBody[] = [];
+    for (const node of working.nodes) {
+        const base = baseNodeMap.get(node.id);
+        const baseAttrMap = new Map(
+            (base ? base.attributes : []).map(
+                a => [a.attributeId, a],
+            ),
+        );
+        const workAttrMap = new Map(
+            node.attributes.map(
+                a => [a.attributeId, a],
+            ),
+        );
+        // Added or changed
+        for (const [aid, wa] of workAttrMap) {
+            const ba = baseAttrMap.get(aid);
+            if (ba === undefined) {
+                // New attribute
+                attributeEvents.push({
+                    id: mint(),
+                    flow_node_id: node.id,
+                    attribute_id: aid,
+                    mode: wa.mode,
+                    is_required: wa.isRequired,
+                    action: 'added',
+                    at,
+                });
+            } else if (
+                wa.mode !== ba.mode
+                || wa.isRequired !== ba.isRequired
+            ) {
+                // Changed — emit a new 'added' row
+                // (latest-wins semantics)
+                attributeEvents.push({
+                    id: mint(),
+                    flow_node_id: node.id,
+                    attribute_id: aid,
+                    mode: wa.mode,
+                    is_required: wa.isRequired,
+                    action: 'added',
+                    at,
+                });
+            }
+            // Unchanged → no event
+        }
+        // Removed
+        for (const [aid, ba] of baseAttrMap) {
+            if (!workAttrMap.has(aid)) {
+                attributeEvents.push({
+                    id: mint(),
+                    flow_node_id: node.id,
+                    attribute_id: aid,
+                    mode: ba.mode,
+                    is_required: ba.isRequired,
+                    action: 'removed',
+                    at,
+                });
+            }
+        }
+    }
+
+    return {
+        nodes, edges, deletions,
+        memberEvents, attributeEvents,
+    };
 }
 
 // Save a flow with NO version snapshot: the flow row PUT plus
