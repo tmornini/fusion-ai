@@ -664,11 +664,12 @@ export const routes: Route[] = [
                         b.idea as unknown as
                             Omit<IdeaEntity, 'id'>,
                     );
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.initialStateEventId,
                         b.id,
                         b.initialState,
                         actor,
+                        b.initialStateAt,
                     );
                 },
             );
@@ -712,17 +713,19 @@ export const routes: Route[] = [
                         b.idea as unknown as
                             Omit<IdeaEntity, 'id'>,
                     );
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.ideaStateEventId,
                         ideaId,
                         b.ideaState,
                         actor,
+                        b.ideaStateAt,
                     );
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.projectStateEventId,
                         b.projectId,
                         b.projectState,
                         actor,
+                        b.projectStateAt,
                     );
                     for (const baseline of b.baselines) {
                         await view.projectObjectiveBaselineScores

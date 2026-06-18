@@ -2017,10 +2017,12 @@ export interface IdeaCreateBody {
     readonly idea: Record<string, unknown>;
     readonly initialState: IdeaState;
     readonly initialStateEventId: string;
+    readonly initialStateAt: string;
 }
 
 const IDEA_CREATE_KEYS: readonly string[] = [
-    'id', 'idea', 'initialState', 'initialStateEventId',
+    'id', 'idea', 'initialState',
+    'initialStateEventId', 'initialStateAt',
 ];
 
 // The HTTP-body gate for POST /ideas: the idea row plus its
@@ -2059,7 +2061,13 @@ export function validateIdeaCreateBody(
             + ' must be non-empty',
         );
     }
-    return { id, idea, initialState, initialStateEventId };
+    const initialStateAt = validateTimestampField(
+        body, 'initialStateAt', 'IdeaCreateBody.initialStateAt',
+    );
+    return {
+        id, idea, initialState,
+        initialStateEventId, initialStateAt,
+    };
 }
 
 export interface IdeaConversionBaseline {
@@ -2073,15 +2081,18 @@ export interface IdeaConversionBody {
     readonly idea: Record<string, unknown>;
     readonly ideaStateEventId: string;
     readonly ideaState: string;
+    readonly ideaStateAt: string;
     readonly projectStateEventId: string;
     readonly projectState: string;
+    readonly projectStateAt: string;
     readonly baselines: readonly IdeaConversionBaseline[];
 }
 
 const IDEA_CONVERSION_KEYS: readonly string[] = [
     'projectId', 'project', 'idea',
-    'ideaStateEventId', 'ideaState',
-    'projectStateEventId', 'projectState', 'baselines',
+    'ideaStateEventId', 'ideaState', 'ideaStateAt',
+    'projectStateEventId', 'projectState', 'projectStateAt',
+    'baselines',
 ];
 
 const IDEA_CONVERSION_BASELINE_KEYS: readonly string[] = [
@@ -2151,6 +2162,14 @@ export function validateIdeaConversionBody(
             'IdeaConversionBody.projectState must be non-empty',
         );
     }
+    const ideaStateAt = validateTimestampField(
+        body, 'ideaStateAt',
+        'IdeaConversionBody.ideaStateAt',
+    );
+    const projectStateAt = validateTimestampField(
+        body, 'projectStateAt',
+        'IdeaConversionBody.projectStateAt',
+    );
     const baselines = asArray(
         body['baselines'], 'IdeaConversionBody.baselines',
     ).map((v, i) => {
@@ -2175,8 +2194,9 @@ export function validateIdeaConversionBody(
     });
     return {
         projectId, project, idea,
-        ideaStateEventId, ideaState,
-        projectStateEventId, projectState, baselines,
+        ideaStateEventId, ideaState, ideaStateAt,
+        projectStateEventId, projectState, projectStateAt,
+        baselines,
     };
 }
 
