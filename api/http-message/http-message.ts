@@ -58,7 +58,9 @@ export class HttpMessage {
         json: string,
         bodyRegistry: BodyRegistry = defaultBodyRegistry(),
     ): HttpMessage {
-        return new HttpMessage(parseJson(json), bodyRegistry);
+        return new HttpMessage(
+            parseJson(json, bodyRegistry), bodyRegistry,
+        );
     }
 
     toWire(): string {
@@ -70,7 +72,9 @@ export class HttpMessage {
 
     toJson(): string {
         if (this.#json === undefined) {
-            this.#json = serializeJson(this.#model);
+            this.#json = serializeJson(
+                this.#model, this.#bodyRegistry,
+            );
         }
         return this.#json;
     }
