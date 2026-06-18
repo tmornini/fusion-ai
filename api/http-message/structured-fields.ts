@@ -1,11 +1,12 @@
 import { HttpMessageError } from './types.ts';
 import { Octets } from './octets.ts';
 
-// RFC 8941 Structured Field Values — the general grammar for
-// Item / List / Dictionary plus parameters. One parser drives
-// every registered field; it knows nothing about WHICH field is
-// which (that is the registry's job). Inner lists and byte
-// sequences are deferred until a caller needs them.
+// RFC 9651 Structured Field Values (obsoletes RFC 8941) — the
+// general grammar for Item / List / Dictionary plus parameters,
+// including inner lists, byte sequences, Dates, and Display
+// Strings. One parser drives every registered field; it knows
+// nothing about WHICH field is which (that is the registry's
+// job).
 
 export type BareValue =
     number | string | boolean | Octets | Date;
