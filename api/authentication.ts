@@ -39,7 +39,7 @@ import {
 import {
     latestByKey,
     findFirstByKey,
-} from './ledger-reduction.ts';
+} from '../shared/ledger-reduction.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an

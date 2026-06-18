@@ -16,7 +16,7 @@ import {
 } from './shared.ts';
 import {
     latestByKey,
-} from '../../../api/ledger-reduction.ts';
+} from '../../../shared/ledger-reduction.ts';
 import {
     postStateEvent,
     getRecordStates,

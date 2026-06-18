@@ -10,7 +10,7 @@ import {
 } from '../../../api/types.ts';
 import {
     latestByKey,
-} from '../../../api/ledger-reduction.ts';
+} from '../../../shared/ledger-reduction.ts';
 import type { RequestContext } from './shared.ts';
 
 // Surface the credential-kind union so the identity detail

@@ -17,7 +17,7 @@ import {
 } from '../../../shared/crypto-safe-base62.ts';
 import {
     latestByKey,
-} from '../../../api/ledger-reduction.ts';
+} from '../../../shared/ledger-reduction.ts';
 import {
     isClaimState,
 } from '../../../api/work-order-claims.ts';
