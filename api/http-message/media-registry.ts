@@ -109,7 +109,11 @@ function toFormParams(value: unknown): URLSearchParams {
 }
 
 export function defaultBodyRegistry(): BodyRegistry {
-    return new BodyRegistry([jsonBodyCodec]);
+    return new BodyRegistry([
+        jsonBodyCodec,
+        formBodyCodec,
+        textBodyCodec,
+    ]);
 }
 
 function decodeUtf8(body: Octets): string {

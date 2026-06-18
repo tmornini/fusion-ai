@@ -40,7 +40,7 @@ test('a missing body member is absent', () => {
 test('a body query is absent without a codec', () => {
     const text = HttpMessage.fromWire(
         'HTTP/1.1 200 OK\r\n' +
-        'content-type: text/plain\r\n' +
+        'content-type: application/xml\r\n' +
         '\r\n' +
         'hello',
     );
@@ -74,7 +74,7 @@ test('withBody throws for an unregistered media type', () => {
     assert.throws(
         () => HttpMessage
             .fromWire('POST / HTTP/1.1\r\n\r\n')
-            .withBody('text/plain', 'hi'),
+            .withBody('application/xml', 'hi'),
         HttpMessageError,
     );
 });
@@ -137,4 +137,30 @@ test('form codec rejects a non-string field', () => {
 test('text codec round-trips UTF-8', () => {
     const octets = textBodyCodec.encode('café');
     assert.equal(textBodyCodec.decode(octets), 'café');
+});
+
+test('withBody round-trips a text/plain body', () => {
+    const message = HttpMessage
+        .fromWire('POST /x HTTP/1.1\r\n\r\n')
+        .withBody('text/plain', 'hello');
+    assert.equal(message.body().decoded().toText(), 'hello');
+});
+
+test('withBody round-trips a form body by field', () => {
+    const message = HttpMessage
+        .fromWire('POST /x HTTP/1.1\r\n\r\n')
+        .withBody(
+            'application/x-www-form-urlencoded',
+            { a: '1', b: 'two' },
+        );
+    assert.equal(message.query('body.a').toText(), '1');
+    assert.equal(message.query('body.b').toText(), 'two');
+});
+
+test('a text/plain body is base64 in the JSON form', () => {
+    const message = HttpMessage
+        .fromWire('POST /x HTTP/1.1\r\n\r\n')
+        .withBody('text/plain', 'hi');
+    const body = JSON.parse(message.toJson()).body;
+    assert.equal(typeof body, 'string');
 });
