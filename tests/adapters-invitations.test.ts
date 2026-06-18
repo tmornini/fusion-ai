@@ -334,3 +334,77 @@ async () => {
     assert.equal(sent.length, 1);
     assert.ok(!('inviteeEmail' in sent[0]!));
 });
+
+// Caller-minted ids + at (T11)
+// Adapters mint unconditionally; the adapter-level tests assert:
+// - entity lands and carries a state event with an `at`
+// - author (member_id) is server-derived, not a body field
+// Replay idempotency is tested at the API level (fixed-body
+// POST twice), where the exact id is controllable — see
+// tests/api-invitations-fence.test.ts.
+
+test('grant: entity lands and event author is server-derived',
+async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    const invs = await db.invitations.getAll();
+    assert.equal(invs.length, 1);
+    // Entity landed with a non-empty id.
+    assert.ok(invs[0]!.id !== '');
+    // State event exists and carries an at.
+    const ev = await db.states.getCurrentFor(invs[0]!.id);
+    assert.ok(ev !== null);
+    assert.ok(ev?.at !== '');
+    // Author is server-derived (the actor's identity id).
+    assert.equal(ev?.member_id, 'current');
+});
+
+test('accept: event author is server-derived, membership lands',
+async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    const inv = (await db.invitations.getAll())[0]!;
+    const sarah = await ctxOn(db, 'sarah', '1');
+    await postInvitationAcceptance(sarah, inv.id);
+    // State event landed with a non-empty id + at.
+    const ev = await db.states.getCurrentFor(inv.id);
+    assert.ok(ev?.id !== '');
+    assert.ok(ev?.at !== '');
+    // Author is server-derived (the invitee's identity id).
+    assert.equal(ev?.member_id, 'sarah');
+    // Membership landed at a non-empty id.
+    const wayne = (await db.memberships.getAll())
+        .filter(m => m.identity_id === 'sarah'
+            && m.organization_id === '2');
+    assert.equal(wayne.length, 1);
+    assert.ok(wayne[0]!.id !== '');
+});
+
+test('decline: event author is server-derived', async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'dave@x.com');
+    const inv = (await db.invitations.getAll())[0]!;
+    const dave = await ctxOn(db, 'dave', '1');
+    await postInvitationDecline(dave, inv.id);
+    const ev = await db.states.getCurrentFor(inv.id);
+    assert.ok(ev?.id !== '');
+    assert.ok(ev?.at !== '');
+    // Author is server-derived (the invitee's identity id).
+    assert.equal(ev?.member_id, 'dave');
+});
+
+test('revoke: event author is server-derived', async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    const inv = (await db.invitations.getAll())[0]!;
+    await postInvitationRevocation(tony, inv.id);
+    const ev = await db.states.getCurrentFor(inv.id);
+    assert.ok(ev?.id !== '');
+    assert.ok(ev?.at !== '');
+    // Author is server-derived (the admin's identity id).
+    assert.equal(ev?.member_id, 'current');
+});
