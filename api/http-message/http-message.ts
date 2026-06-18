@@ -10,6 +10,7 @@ import {
     putStatus,
     putTarget,
 } from './modify.ts';
+import { Body } from './body.ts';
 import {
     BodyRegistry,
     defaultBodyRegistry,
@@ -76,6 +77,10 @@ export class HttpMessage {
 
     query(dottedKey: string): FieldValue {
         return queryModel(this.#model, this.#bodyRegistry, dottedKey);
+    }
+
+    body(): Body {
+        return Body.fromModel(this.#model, this.#bodyRegistry);
     }
 
     // Modification returns a NEW message; this one is unchanged.
