@@ -91,7 +91,7 @@ verb-agnostic behavior tests plus new validator/route tests.
   - Route `PUT flows/:id` (composite, member-permitted via the
     existing `/flows` PUT policy entry).
 
-- [ ] **Step 1: Write the failing validator tests**
+- [x] **Step 1: Write the failing validator tests**
 
 In `tests/validators.test.ts`, add `validateFlowPutBody` to the
 import block from `../api/validators.ts`, then append:
@@ -168,13 +168,13 @@ test('validateFlowPutBody rejects an empty eventId', () => {
 });
 ```
 
-- [ ] **Step 2: Run the validator tests to verify they fail**
+- [x] **Step 2: Run the validator tests to verify they fail**
 
 Run: `node --test --strip-types tests/validators.test.ts`
 Expected: FAIL — `validateFlowPutBody` is not exported
 (import error / not a function).
 
-- [ ] **Step 3: Implement `validateFlowPutBody`**
+- [x] **Step 3: Implement `validateFlowPutBody`**
 
 In `api/validators.ts`, immediately after
 `validateFlowVersionSnapshot` (it ends with its `return { id,
@@ -251,12 +251,12 @@ export function validateFlowPutBody(
 }
 ```
 
-- [ ] **Step 4: Run the validator tests to verify they pass**
+- [x] **Step 4: Run the validator tests to verify they pass**
 
 Run: `node --test --strip-types tests/validators.test.ts`
 Expected: PASS (all five new cases plus the existing file).
 
-- [ ] **Step 5: Write the failing route tests**
+- [x] **Step 5: Write the failing route tests**
 
 In `tests/adapters-flow-mutations.test.ts`, append two tests
 that drive the new route directly via `ctx.PUT` (the harness
@@ -356,7 +356,7 @@ import {
 '../web-app/app/adapters/flow-mutations.ts';
 ```
 
-- [ ] **Step 6: Run the route tests to verify they fail**
+- [x] **Step 6: Run the route tests to verify they fail**
 
 Run: `node --test --strip-types
 tests/adapters-flow-mutations.test.ts`
@@ -366,7 +366,7 @@ generic `makeIdRoute` PUT, which validates the body as a
 on unexpected keys); no version row or `'updated'` event is
 written.
 
-- [ ] **Step 7: Implement the composite route and delete `/save`**
+- [x] **Step 7: Implement the composite route and delete `/save`**
 
 In `api/routes.ts`, replace the flows registration
 
@@ -419,7 +419,7 @@ block. In the validators import at the top of `routes.ts`,
 replace `validateFlowSaveBody` with `validateFlowPutBody`
 (leave `FlowVersionEntity` / `FlowEntity` imports as-is).
 
-- [ ] **Step 8: Flip the two client call sites to PUT**
+- [x] **Step 8: Flip the two client call sites to PUT**
 
 In `web-app/app/adapters/flow-mutations.ts`, replace the body of
 `putFlow` so it issues a PUT with the null-free `none` history.
@@ -473,7 +473,7 @@ In `web-app/app/presenters/flow-designer.ts`, replace
     }
 ```
 
-- [ ] **Step 9: Run the full suite to verify GREEN**
+- [x] **Step 9: Run the full suite to verify GREEN**
 
 Run: `node --test --strip-types
 tests/adapters-flow-mutations.test.ts
@@ -484,7 +484,7 @@ existing verb-agnostic `putFlow` behavior tests
 field`, `replaces graph fully`, `last-write-wins`) still pass
 because they assert outcomes, not the HTTP verb.
 
-- [ ] **Step 10: Run the full gate**
+- [x] **Step 10: Run the full gate**
 
 Run: `./validate`
 Expected: GREEN (tsc + `./test` + 78-char lint + schema check).
@@ -492,7 +492,7 @@ If tsc flags an unused `validateFlowSaveBody` import in
 `routes.ts`, confirm Step 7 replaced it with
 `validateFlowPutBody`.
 
-- [ ] **Step 11: Commit**
+- [x] **Step 11: Commit**
 
 ```bash
 git add api/validators.ts api/routes.ts \
@@ -518,7 +518,7 @@ are dead exports.
 - Consumes: nothing new.
 - Produces: nothing — pure deletion of dead code.
 
-- [ ] **Step 1: Confirm there is no remaining caller**
+- [x] **Step 1: Confirm there is no remaining caller**
 
 Run: `grep -rn "validateFlowSaveBody\|FlowSaveBody\|FLOW_SAVE_KEYS"
 api/ web-app/ tests/`
@@ -526,7 +526,7 @@ Expected: hits ONLY inside `api/validators.ts` (the definitions
 themselves). If any other file references them, stop — Task 1 is
 incomplete.
 
-- [ ] **Step 2: Delete the dead declarations**
+- [x] **Step 2: Delete the dead declarations**
 
 In `api/validators.ts`, delete the three contiguous
 declarations: `interface FlowSaveBody`, the `FLOW_SAVE_KEYS`
@@ -537,13 +537,13 @@ Leave `FlowUndoBody`, `FlowRedoBody`, and
 `validateFlowVersionSnapshot` intact — `undo`/`redo` still use
 them.
 
-- [ ] **Step 3: Run the gate**
+- [x] **Step 3: Run the gate**
 
 Run: `./validate`
 Expected: GREEN. tsc confirms nothing referenced the deleted
 symbols.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add api/validators.ts
@@ -586,3 +586,12 @@ client. `snap.version` is the `FlowVersionSnapshot.version`
 (`Record<string,unknown>`), cast to `Omit<FlowVersionEntity,
 'id'>` for the store put — same cast the old `/save` handler
 used. ✓
+
+---
+
+## Status: complete
+
+All tasks landed; every checkbox above is ticked. Verified
+2026-06-18 by symbol search against the codebase (not the
+checkboxes) and a GREEN `./validate` — an independent verifier
+plus an adversarial refuter concurring. No outstanding items.

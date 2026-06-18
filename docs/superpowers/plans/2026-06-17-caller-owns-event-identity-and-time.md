@@ -113,7 +113,7 @@ intermediate commit type-checks and passes.
   same id with a different payload throws
   `LedgerImmutabilityError`. (T2–T12 consume this.)
 
-- [ ] **Step 1: Write the failing store tests**
+- [x] **Step 1: Write the failing store tests**
 
 In `tests/store-state.test.ts`, mirror the existing
 `postEvent` tests. Add (re-derive the file's db/harness symbol;
@@ -152,12 +152,12 @@ Ensure `MemoryDbAdapter` and `LedgerImmutabilityError` are
 imported in the test file (add `LedgerImmutabilityError` from
 `'../api/db.ts'` if absent).
 
-- [ ] **Step 2: Run the store tests to verify they fail**
+- [x] **Step 2: Run the store tests to verify they fail**
 
 Run: `node --test --strip-types tests/store-state.test.ts`
 Expected: FAIL — `postEventAt` is not a function.
 
-- [ ] **Step 3: Add `postEventAt` to the `StateStore` interface**
+- [x] **Step 3: Add `postEventAt` to the `StateStore` interface**
 
 In `api/db.ts`, in `interface StateStore`, immediately after
 the `postEvent(...)` declaration, add:
@@ -172,7 +172,7 @@ the `postEvent(...)` declaration, add:
     ): Promise<void>;
 ```
 
-- [ ] **Step 4: Implement `postEventAt` in the store**
+- [x] **Step 4: Implement `postEventAt` in the store**
 
 In `api/store-state.ts`, immediately after `postEvent`, add:
 
@@ -193,7 +193,7 @@ In `api/store-state.ts`, immediately after `postEvent`, add:
     }
 ```
 
-- [ ] **Step 5: Delegate `postEventAt` in the parent-scoped store**
+- [x] **Step 5: Delegate `postEventAt` in the parent-scoped store**
 
 In `api/store-parent-scoped.ts`, in `ParentScopedStateStore`,
 immediately after the `postEvent` delegation, add:
@@ -215,17 +215,17 @@ immediately after the `postEvent` delegation, add:
 If a `grep -rn "implements StateStore" api/` finds any other
 implementor, add the same delegation there.
 
-- [ ] **Step 6: Run the store tests to verify they pass**
+- [x] **Step 6: Run the store tests to verify they pass**
 
 Run: `node --test --strip-types tests/store-state.test.ts`
 Expected: PASS.
 
-- [ ] **Step 7: Run the gate**
+- [x] **Step 7: Run the gate**
 
 Run: `./validate`
 Expected: GREEN.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add api/db.ts api/store-state.ts api/store-parent-scoped.ts \
@@ -255,7 +255,7 @@ DELETE the `try/catch` (replay is now a real ledger no-op).
 - Produces: `FlowPutBody` gains `at: string`; `PUT flows/:id`
   reads `b.at`.
 
-- [ ] **Step 1: Write the failing replay test**
+- [x] **Step 1: Write the failing replay test**
 
 In `tests/adapters-flow-mutations.test.ts`, update the
 existing "replays idempotently" test so the body carries a
@@ -302,14 +302,14 @@ test('validateFlowPutBody rejects a missing at', () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test --strip-types
 tests/adapters-flow-mutations.test.ts tests/validators.test.ts`
 Expected: FAIL — `at` is an unexpected key (assertOnlyKeys),
 then later a missing-`at` validation gap.
 
-- [ ] **Step 3: Add `at` to the flows-PUT body validator**
+- [x] **Step 3: Add `at` to the flows-PUT body validator**
 
 In `api/validators.ts`, in `FLOW_PUT_KEYS` add `'at'`; on
 `interface FlowPutBody` add `readonly at: string;`; in
@@ -323,7 +323,7 @@ In `api/validators.ts`, in `FLOW_PUT_KEYS` add `'at'`; on
 
 and include `at` in the returned object.
 
-- [ ] **Step 4: Thread `at` and delete the try/catch in the route**
+- [x] **Step 4: Thread `at` and delete the try/catch in the route**
 
 In `api/routes.ts`, in `route('flows/:id')` PUT, replace the
 `postEvent` + `try/catch` block with:
@@ -338,25 +338,25 @@ Delete the surrounding `try { … } catch (e) { … }`. If
 `LedgerImmutabilityError` is now unused in `routes.ts`, remove
 its import.
 
-- [ ] **Step 5: Mint `at` at the two flow client call sites**
+- [x] **Step 5: Mint `at` at the two flow client call sites**
 
 In `web-app/app/adapters/flow-mutations.ts` `putFlow`, add
 `at: nowUtc(),` to the PUT body (import `nowUtc` if absent). In
 `web-app/app/presenters/flow-designer.ts` `#persistFlow`, add
 `at: nowUtc(),` to the PUT body.
 
-- [ ] **Step 6: Run the tests to verify they pass**
+- [x] **Step 6: Run the tests to verify they pass**
 
 Run: `node --test --strip-types
 tests/adapters-flow-mutations.test.ts tests/validators.test.ts`
 Expected: PASS.
 
-- [ ] **Step 7: Run the gate**
+- [x] **Step 7: Run the gate**
 
 Run: `./validate`
 Expected: GREEN.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add api/validators.ts api/routes.ts \
@@ -386,7 +386,7 @@ git commit -m "$(printf 'Time the flows PUT event from the caller\n\nCo-Authored
 - Consumes: `postEventAt` (T1).
 - Produces: `FlowUndoBody`/`FlowRedoBody` gain `at: string`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In the undo/redo route test, send `at` in the body and assert
 the `'updated'` event carries it:
@@ -411,12 +411,12 @@ test('undo posts the updated event at the caller time', async () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test --strip-types <the undo/redo test file>`
 Expected: FAIL — `at` is an unexpected key.
 
-- [ ] **Step 3: Add `at` to both validators**
+- [x] **Step 3: Add `at` to both validators**
 
 In `api/validators.ts`, add `'at'` to `FLOW_UNDO_KEYS` and
 `FLOW_REDO_KEYS`; add `readonly at: string;` to `FlowUndoBody`
@@ -424,25 +424,25 @@ and `FlowRedoBody`; in each validator add
 `const at = validateTimestampField(body, 'at', '<Label>');`
 and return it.
 
-- [ ] **Step 4: Thread `at` in both routes**
+- [x] **Step 4: Thread `at` in both routes**
 
 In `api/routes.ts`, in `route('flows/:id/undo')` and
 `route('flows/:id/redo')`, change the `postEvent(b.eventId, id,
 'updated', actor)` call to
 `postEventAt(b.eventId, id, 'updated', actor, b.at)`.
 
-- [ ] **Step 5: Mint `at` in the undo/redo client**
+- [x] **Step 5: Mint `at` in the undo/redo client**
 
 In the undo/redo client adapter(s), add `at: nowUtc(),` to each
 POST body.
 
-- [ ] **Step 6: Run the test, then the gate**
+- [x] **Step 6: Run the test, then the gate**
 
 Run: `node --test --strip-types <the undo/redo test file>`
 then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -469,7 +469,7 @@ git commit -m "$(printf 'Time flow undo and redo from the caller\n\nCo-Authored-
 - Consumes: `postEventAt` (T1).
 - Produces: the flows-create body gains `initialStateAt: string`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `tests/api-flows-create.test.ts`, send `initialStateAt` and
 assert the initial event carries it:
@@ -482,38 +482,38 @@ test('flow create stamps the caller initialStateAt', async () => {
 });
 ```
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test --strip-types tests/api-flows-create.test.ts`
 Expected: FAIL — `initialStateAt` is an unexpected key.
 
-- [ ] **Step 3: Add `initialStateAt` to the validator**
+- [x] **Step 3: Add `initialStateAt` to the validator**
 
 Add `'initialStateAt'` to the flows-create KEYS; add it to the
 body interface; validate with
 `validateTimestampField(body, 'initialStateAt', '<Label>')`.
 
-- [ ] **Step 4: Thread `at` in the route**
+- [x] **Step 4: Thread `at` in the route**
 
 In `route('flows')` POST, change `postEvent(b.initialStateEventId,
 b.id, b.initialState, actor)` to
 `postEventAt(b.initialStateEventId, b.id, b.initialState,
 actor, b.initialStateAt)`.
 
-- [ ] **Step 5: Mint `at` in the clients**
+- [x] **Step 5: Mint `at` in the clients**
 
 In `flow-mutations.ts` `postFlowCreation`, add
 `initialStateAt: nowUtc(),` to the POST body. In
 `flow-export.ts`, add `initialStateAt: nowUtc(),` everywhere it
 builds a flow-create body.
 
-- [ ] **Step 6: Run the test, then the gate**
+- [x] **Step 6: Run the test, then the gate**
 
 Run: `node --test --strip-types tests/api-flows-create.test.ts`
 then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -540,7 +540,7 @@ git commit -m "$(printf 'Time the flow-create event from the caller\n\nCo-Author
 - Produces: `IdeaCreateBody` gains `initialStateAt`;
   `IdeaConversionBody` gains `ideaStateAt`, `projectStateAt`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `tests/api-ideas-create.test.ts` assert the create event
 carries a caller `initialStateAt`; in
@@ -548,13 +548,13 @@ carries a caller `initialStateAt`; in
 (`ideaStateAt`) and project (`projectStateAt`) events carry
 their caller times.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test --strip-types tests/api-ideas-create.test.ts
 tests/api-idea-conversion.test.ts`
 Expected: FAIL — unexpected keys.
 
-- [ ] **Step 3: Add the `at` fields to both validators**
+- [x] **Step 3: Add the `at` fields to both validators**
 
 `validateIdeaCreateBody`: add `'initialStateAt'` to
 `IDEA_CREATE_KEYS`, validate + return it.
@@ -562,14 +562,14 @@ Expected: FAIL — unexpected keys.
 `'projectStateAt'` to `IDEA_CONVERSION_KEYS`, validate + return
 both.
 
-- [ ] **Step 4: Thread `at` in both routes**
+- [x] **Step 4: Thread `at` in both routes**
 
 `route('ideas')`: `postEventAt(b.initialStateEventId, b.id,
 b.initialState, actor, b.initialStateAt)`.
 `route('ideas/:id/conversion')`: the idea event uses
 `b.ideaStateAt`, the project event uses `b.projectStateAt`.
 
-- [ ] **Step 5: Mint `at` in the client**
+- [x] **Step 5: Mint `at` in the client**
 
 `postIdeaCreation`: add `initialStateAt: nowUtc(),`.
 `postIdeaConversion`: reuse the existing `const at = nowUtc();`
@@ -578,13 +578,13 @@ b.initialState, actor, b.initialStateAt)`.
 otherwise mint two distinct `nowUtc()` values (the idea event
 precedes the project event — mint idea first).
 
-- [ ] **Step 6: Run the tests, then the gate**
+- [x] **Step 6: Run the tests, then the gate**
 
 Run: `node --test --strip-types tests/api-ideas-create.test.ts
 tests/api-idea-conversion.test.ts` then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -608,17 +608,17 @@ git commit -m "$(printf 'Time the idea create and conversion events\n\nCo-Author
 - Consumes: `postEventAt` (T1).
 - Produces: `RecordWriteCreateBody` gains `initialStateAt`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 In `tests/api-records-write.test.ts`, send `initialStateAt` on
 a create and assert the record's initial event carries it.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test --strip-types tests/api-records-write.test.ts`
 Expected: FAIL — `initialStateAt` unexpected.
 
-- [ ] **Step 3: Add `initialStateAt` to the create validator**
+- [x] **Step 3: Add `initialStateAt` to the create validator**
 
 In `RECORD_WRITE_CREATE_KEYS`, add `'initialStateAt'`. In the
 `kind === 'create'` branch of `validateRecordWriteBody`, add
@@ -627,25 +627,25 @@ In `RECORD_WRITE_CREATE_KEYS`, add `'initialStateAt'`. In the
 the returned object; add `readonly initialStateAt: string;` to
 the create body type.
 
-- [ ] **Step 4: Thread `at` in the helper**
+- [x] **Step 4: Thread `at` in the helper**
 
 In the record-write helper, change `postEvent(body.
 initialStateEventId, body.id, body.initialState, actor)` to
 `postEventAt(body.initialStateEventId, body.id,
 body.initialState, actor, body.initialStateAt)`.
 
-- [ ] **Step 5: Mint `at` in the client**
+- [x] **Step 5: Mint `at` in the client**
 
 In `web-app/app/adapters/records.ts`, in the `kind:'create'`
 body, add `initialStateAt: nowUtc(),`.
 
-- [ ] **Step 6: Run the test, then the gate**
+- [x] **Step 6: Run the test, then the gate**
 
 Run: `node --test --strip-types tests/api-records-write.test.ts`
 then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -672,39 +672,39 @@ git commit -m "$(printf 'Time the record-create event from the caller\n\nCo-Auth
 - Consumes: `postEventAt` (T1).
 - Produces: both member-create bodies gain `initialStateAt`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In each test, send `initialStateAt` and assert the member's
 initial event carries it.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test --strip-types tests/api-ai-members.test.ts
 tests/api-human-members.test.ts`
 Expected: FAIL — unexpected key.
 
-- [ ] **Step 3: Add `initialStateAt` to both validators**
+- [x] **Step 3: Add `initialStateAt` to both validators**
 
 Add `'initialStateAt'` to `AI_MEMBER_CREATE_KEYS` and
 `HUMAN_MEMBER_CREATE_KEYS`; validate + return on both bodies.
 
-- [ ] **Step 4: Thread `at` in both routes**
+- [x] **Step 4: Thread `at` in both routes**
 
 Each: `postEventAt(b.initialStateEventId, b.id, b.initialState,
 actor, b.initialStateAt)`.
 
-- [ ] **Step 5: Mint `at` in both clients**
+- [x] **Step 5: Mint `at` in both clients**
 
 `postAIMemberCreation` and `postHumanMemberCreation`: add
 `initialStateAt: nowUtc(),` (import `nowUtc`).
 
-- [ ] **Step 6: Run the tests, then the gate**
+- [x] **Step 6: Run the tests, then the gate**
 
 Run: `node --test --strip-types tests/api-ai-members.test.ts
 tests/api-human-members.test.ts` then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -728,18 +728,18 @@ git commit -m "$(printf 'Time the member-create events from the caller\n\nCo-Aut
 - Produces: the create body gains `stateEventAts: string[]`
   (length 3, parallel to `stateEventIds`).
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Send `stateEventAts: [AT0, AT1, AT2]` and assert each of the 3
 work-order events carries its matching `at`.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test --strip-types
 tests/api-work-orders-create.test.ts`
 Expected: FAIL — `stateEventAts` unexpected.
 
-- [ ] **Step 3: Add `stateEventAts` to the validator**
+- [x] **Step 3: Add `stateEventAts` to the validator**
 
 Add `'stateEventAts'` to `WORK_ORDER_CREATE_KEYS`. Validate it
 as an array of exactly 3 timestamps (mirror the existing
@@ -748,27 +748,27 @@ as an array of exactly 3 timestamps (mirror the existing
 e.g. `'WorkOrderCreateBody.stateEventAts[' + i + ']'`). Return
 `stateEventAts: string[]` on the body.
 
-- [ ] **Step 4: Thread `at` in the route loop**
+- [x] **Step 4: Thread `at` in the route loop**
 
 In the create loop, change
 `postEvent(b.stateEventIds[i]!, b.id, b.states[i]!, actor)` to
 `postEventAt(b.stateEventIds[i]!, b.id, b.states[i]!, actor,
 b.stateEventAts[i]!)`.
 
-- [ ] **Step 5: Mint `at` in the client**
+- [x] **Step 5: Mint `at` in the client**
 
 In `postWorkOrderCreation`, add
 `stateEventAts: [nowUtc(), nowUtc(), nowUtc()],` to the POST
 body (alongside `stateEventIds`). If `flow-export.ts` builds a
 work-order-create body, add the same there.
 
-- [ ] **Step 6: Run the test, then the gate**
+- [x] **Step 6: Run the test, then the gate**
 
 Run: `node --test --strip-types
 tests/api-work-orders-create.test.ts` then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -797,7 +797,7 @@ the `claim_expired` AUTHOR stays `prior.member_id`.
 - Produces: `WorkOrderClaimBody { claimEventId: string;
   claimAt: string; expireEventId: string; expireAt: string }`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 ```ts
 test('claim stamps the caller-minted claimed id + at', async () => {
@@ -814,13 +814,13 @@ test('claim over a stale prior consumes the expire pair', async () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test --strip-types
 tests/api-work-order-claim.test.ts`
 Expected: FAIL — the route ignores the body / no claim ids land.
 
-- [ ] **Step 3: Add the claim body validator**
+- [x] **Step 3: Add the claim body validator**
 
 In `api/validators.ts` add:
 
@@ -856,7 +856,7 @@ export function validateWorkOrderClaimBody(
 }
 ```
 
-- [ ] **Step 4: Consume the body in the claim route**
+- [x] **Step 4: Consume the body in the claim route**
 
 In `route('work-orders/:id/claim')`, validate the body
 (`const b = validateWorkOrderClaimBody(body);`) and switch both
@@ -879,7 +879,7 @@ events to `postEventAt`:
 
 (The `_body` parameter becomes `body`.)
 
-- [ ] **Step 5: Mint ids + at in the client**
+- [x] **Step 5: Mint ids + at in the client**
 
 In `postWorkOrderClaim`, send:
 
@@ -896,13 +896,13 @@ In `postWorkOrderClaim`, send:
 claim; mint `expireAt` first so it orders earlier, then
 `claimAt`.)
 
-- [ ] **Step 6: Run the tests, then the gate**
+- [x] **Step 6: Run the tests, then the gate**
 
 Run: `node --test --strip-types
 tests/api-work-order-claim.test.ts` then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -926,42 +926,42 @@ git commit -m "$(printf 'Mint work-order claim event ids on the caller\n\nCo-Aut
 - Produces: the transition body gains `transitionAt`; its
   `release` object gains `at`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Send `transitionAt` (and, for the release case, `release.at`)
 and assert each event carries its caller time.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test --strip-types
 tests/api-work-order-transition.test.ts`
 Expected: FAIL — `transitionAt` unexpected.
 
-- [ ] **Step 3: Add `at` to the validator**
+- [x] **Step 3: Add `at` to the validator**
 
 Add `'transitionAt'` to the transition KEYS; validate +
 return. In the release sub-object validation, add `'at'` to its
 key set and validate it with `validateTimestampField`.
 
-- [ ] **Step 4: Thread `at` in the route**
+- [x] **Step 4: Thread `at` in the route**
 
 `postEventAt(b.transitionEventId, workOrderId, b.targetState,
 actor, b.transitionAt)`; and for the optional release,
 `postEventAt(b.release.id, workOrderId, b.release.state, actor,
 b.release.at)`.
 
-- [ ] **Step 5: Mint `at` in the client**
+- [x] **Step 5: Mint `at` in the client**
 
 In `postWorkOrderTransition`, add `transitionAt: nowUtc(),` and,
 in the release object, `at: nowUtc(),`.
 
-- [ ] **Step 6: Run the test, then the gate**
+- [x] **Step 6: Run the test, then the gate**
 
 Run: `node --test --strip-types
 tests/api-work-order-transition.test.ts` then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -1001,7 +1001,7 @@ stays server-derived.
   acceptAt }`; decline body `{ declineEventId, declineAt }`;
   revoke body `{ revokeEventId, revokeAt }`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 In `tests/adapters-invitations.test.ts`, for each of grant /
 accept / decline / revoke, send the caller ids + `at` and
@@ -1009,13 +1009,13 @@ assert: the lifecycle event carries the caller event id + `at`;
 a replay of the SAME body is a no-op (one event); grant/accept
 create the entity at the caller-minted entity id.
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `node --test --strip-types
 tests/adapters-invitations.test.ts`
 Expected: FAIL — server still mints ids; bodies lack the fields.
 
-- [ ] **Step 3: Add the caller ids + at to the validators**
+- [x] **Step 3: Add the caller ids + at to the validators**
 
 For each invitation request body, add the matching keys
 (`grantEventId`/`grantAt`, etc., plus `invitationId` on grant
@@ -1023,7 +1023,7 @@ and `membershipId` on accept) to its KEYS, validate the ids
 non-empty and the `at` via `validateTimestampField`, return
 them.
 
-- [ ] **Step 4: Thread ids + at in the 4 domain functions**
+- [x] **Step 4: Thread ids + at in the 4 domain functions**
 
 In `api/invitations-domain.ts`, replace each
 `generateCryptoSafeBase62()` event-id mint + `nowUtc()` stamp
@@ -1033,20 +1033,20 @@ invitationId, state, author, at)`. Use the caller-supplied
 `invitationId` (grant) and `membershipId` (accept) for the
 entity writes.
 
-- [ ] **Step 5: Mint ids + at in the client**
+- [x] **Step 5: Mint ids + at in the client**
 
 In `web-app/app/adapters/invitations.ts`, each function mints
 its event id + `at` (and grant/accept the entity id) with
 `generateCryptoSafeBase62()` / `nowUtc()` and sends them.
 
-- [ ] **Step 6: Run the tests, then the gate**
+- [x] **Step 6: Run the tests, then the gate**
 
 Run: `node --test --strip-types
 tests/adapters-invitations.test.ts
 tests/api-invitations-fence.test.ts` then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add -A
@@ -1077,20 +1077,20 @@ a server-minted row id + `nowUtc()`. Move both to the caller.
 - Consumes: `validateTimestampField`.
 - Produces: the body gains `eventId` (row id) + `at`.
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 Send `{ eventId, organization_id, at }` and assert the persisted
 `identity_default_organizations` row has `id === eventId` and
 `at === <sent at>`; a replay with the same `eventId`+`at` is a
 no-op.
 
-- [ ] **Step 2: Run the test to verify it fails**
+- [x] **Step 2: Run the test to verify it fails**
 
 Run: `node --test --strip-types
 tests/api-identity-default-org.test.ts`
 Expected: FAIL — the route ignores `eventId`/`at` and mints them.
 
-- [ ] **Step 3: Accept `eventId` + `at` from the body**
+- [x] **Step 3: Accept `eventId` + `at` from the body**
 
 In `api/org-requests.ts` PUT branch, read `eventId` and `at`
 from the parsed body (validate `eventId` non-empty and `at`
@@ -1109,20 +1109,20 @@ Add `'eventId'` to `IDENTITY_DEFAULT_ORG_BODY_KEYS` if the body
 flows through `validateIdentityDefaultOrganizationEntity`;
 otherwise validate inline as above.
 
-- [ ] **Step 4: Mint id + at in the client**
+- [x] **Step 4: Mint id + at in the client**
 
 In `putIdentityDefaultOrg`, send
 `{ eventId: generateCryptoSafeBase62(), organization_id: org,
 at: nowUtc() }` (import both helpers).
 
-- [ ] **Step 5: Run the test, then the gate**
+- [x] **Step 5: Run the test, then the gate**
 
 Run: `node --test --strip-types
 tests/api-identity-default-org.test.ts
 tests/adapters-identity-default-org.test.ts` then `./validate`
 Expected: PASS, then GREEN.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add -A
@@ -1147,14 +1147,14 @@ Remove it so the stack can never self-stamp a state event again.
 - Produces: nothing — `postEvent` is gone; `postEventAt` is the
   sole event-append method.
 
-- [ ] **Step 1: Confirm there is no production caller**
+- [x] **Step 1: Confirm there is no production caller**
 
 Run: `grep -rn "\.postEvent(" api/`
 Expected: hits ONLY the interface/impl/delegation declarations.
 If any route/helper still calls it, that surface's task is
 incomplete — STOP and finish it first.
 
-- [ ] **Step 2: Migrate the remaining TEST callers**
+- [x] **Step 2: Migrate the remaining TEST callers**
 
 Run: `grep -rln "\.postEvent(" tests/` and, in each, change
 `postEvent(id, entityId, state, member)` to
@@ -1163,19 +1163,19 @@ fixed RFC-3339 zulu literal (e.g. `'2026-01-01T00:00:00.000000Z'`),
 distinct per event where order matters. These are fixtures, not
 behavior covenants — do not weaken any assertion.
 
-- [ ] **Step 3: Delete `postEvent`**
+- [x] **Step 3: Delete `postEvent`**
 
 Remove the `postEvent` declaration from `api/db.ts`, the method
 from `api/store-state.ts` (and the now-unused `nowUtc` import),
 and the delegation from `api/store-parent-scoped.ts` (and any
 other `implements StateStore`).
 
-- [ ] **Step 4: Run the gate**
+- [x] **Step 4: Run the gate**
 
 Run: `./validate`
 Expected: GREEN — tsc confirms nothing references `postEvent`.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add -A
@@ -1200,18 +1200,18 @@ content change in the same commit.
 - Produces: `postEvent(id, entityId, state, memberId, at)` — the
   final, caller-timed signature.
 
-- [ ] **Step 1: Rename every occurrence**
+- [x] **Step 1: Rename every occurrence**
 
 Run a project-wide rename of the symbol `postEventAt` →
 `postEvent` across `api/` and `tests/` (re-derive the call set
 with `grep -rn "postEventAt" api/ tests/`). Change nothing else.
 
-- [ ] **Step 2: Run the gate**
+- [x] **Step 2: Run the gate**
 
 Run: `./validate`
 Expected: GREEN.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add -A
@@ -1306,3 +1306,12 @@ a real keyboard-Tab traversal + screen-reader pass over the
 designer, since the Office of the Interface makes screen-reader
 affordance a gate of entry — but the automated affordances
 (roles + labels) are already in place.
+
+---
+
+## Status: complete
+
+All tasks landed; every checkbox above is ticked. Verified
+2026-06-18 by symbol search against the codebase (not the
+checkboxes) and a GREEN `./validate` — an independent verifier
+plus an adversarial refuter concurring. No outstanding items.

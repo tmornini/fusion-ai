@@ -199,7 +199,7 @@ catch; re-throw anything else). Both call sites pass the same three
 unfenced stores. Do NOT duplicate the two-hop logic at the call
 sites.
 
-- [ ] **Step 1: Write the failing test.** Seed a `flows` row in org
+- [x] **Step 1: Write the failing test.** Seed a `flows` row in org
   A (via the org-A scoped adapter), a `flow_nodes` row under it, and
   post a `'deleted'` states event with `entity_id` = the node id
   (author = an org-A member). Assert, through the org-B scoped
@@ -211,20 +211,20 @@ sites.
   id). Add an orphan case (entity_id matching nothing → `null` →
   visible) to prove the orphan path still passes.
 
-- [ ] **Step 2: Run it RED.** `./test` (or the focused file). Expect
+- [x] **Step 2: Run it RED.** `./test` (or the focused file). Expect
   FAIL: org B currently SEES the deletion event (null owner =
   orphan = visible) — the leak.
 
-- [ ] **Step 3: Implement the two-hop probe** in `ownerOrgOfEntity`
+- [x] **Step 3: Implement the two-hop probe** in `ownerOrgOfEntity`
   and thread it through both call sites per the design note. Reuse
   the `viaParent`/`viaFlowNode` shape; one try per `getById`.
 
-- [ ] **Step 4: Run it GREEN.** Focused file passes; then full
+- [x] **Step 4: Run it GREEN.** Focused file passes; then full
   `./validate` GREEN (the existing `/states` and `entity-states`
   fence tests must STAY green — behavior preserved for every
   non-graph entity).
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Fence flow-node/edge deletion events by owning org"`
 
 ---
@@ -280,7 +280,7 @@ sites.
   identical emits the node upsert row (positions may have moved) but
   NO member/attribute events.
 
-- [ ] **Step 1: Write the failing pure tests** (`buildSaveEvents`):
+- [x] **Step 1: Write the failing pure tests** (`buildSaveEvents`):
   - add a node → one node upsert, no deletions/events.
   - remove a node (in baseline, absent in working) → one deletion
     with `entityId` = that node id.
@@ -299,19 +299,19 @@ sites.
   bad `at` on any element throws; a non-`asGraphId` node id in a
   member event throws.
 
-- [ ] **Step 2: Run RED.** Expect FAIL: `buildSaveEvents` /
+- [x] **Step 2: Run RED.** Expect FAIL: `buildSaveEvents` /
   `validateFlowGraphDelta` not defined.
 
-- [ ] **Step 3: Implement** `buildSaveEvents` (pure diff) and
+- [x] **Step 3: Implement** `buildSaveEvents` (pure diff) and
   `validateFlowGraphDelta` (delegates to the landed row validators
   per element; validates each deletion as `{eventId: non-empty
   string, entityId: asGraphId, at: validateTimestampField}`).
   Nothing wires it to a route yet (dormant).
 
-- [ ] **Step 4: Run GREEN.** Focused files pass; full `./validate`
+- [x] **Step 4: Run GREEN.** Focused files pass; full `./validate`
   GREEN.
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Add dormant flow-graph save-delta builder and gate"`
 
 ---
@@ -350,7 +350,7 @@ the existing `projectFlow.flow_id` precedent); the store re-validates
 via the landed row validators. Member/attribute events ride the same
 tx; the author of the initial state event stays server-derived.
 
-- [ ] **Step 1: Write the failing test.** Through the scoped
+- [x] **Step 1: Write the failing test.** Through the scoped
   adapter, call the create path (the route's `post` handler or
   `postFlowCreation` against a `RequestContext` over
   `MemoryDbAdapter`). Assert: `view.flowNodes.getAllWhere('flow_id',
@@ -360,18 +360,18 @@ tx; the author of the initial state event stays server-derived.
   edges:[]}`). Assert the initial `'active'` state event still lands
   authored by the actor.
 
-- [ ] **Step 2: Run RED.** Expect FAIL: relations empty (route does
+- [x] **Step 2: Run RED.** Expect FAIL: relations empty (route does
   not write them yet) / `graphDelta` rejected by the gate.
 
-- [ ] **Step 3: Implement** the gate change, the adapter body
+- [x] **Step 3: Implement** the gate change, the adapter body
   change, and the route's expanded tx + relation writes. Keep the
   blob dual-write.
 
-- [ ] **Step 4: Run GREEN.** Focused file passes; full `./validate`
+- [x] **Step 4: Run GREEN.** Focused file passes; full `./validate`
   GREEN (existing create tests stay green — the blob is still
   written).
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Seed flow-graph relations on flow creation"`
 
 ---
@@ -404,7 +404,7 @@ tx; the author of the initial state event stays server-derived.
 - Produces: a PUT that lands the delta in relations atomically with
   the flow row + `'updated'` event + optional version snapshot.
 
-- [ ] **Step 1: Write the failing tests.** From a seeded flow with
+- [x] **Step 1: Write the failing tests.** From a seeded flow with
   relations (reuse the Task 3 create path), apply a save that:
   adds a member, removes a member, adds an attribute, changes an
   attribute mode, moves a node, deletes a node, and deletes an edge.
@@ -418,18 +418,18 @@ tx; the author of the initial state event stays server-derived.
   blob, parsed via `asStoredGraph`, equals
   `reassembleStoredGraph(relations)`.
 
-- [ ] **Step 2: Run RED.** Expect FAIL: relations unchanged by the
+- [x] **Step 2: Run RED.** Expect FAIL: relations unchanged by the
   save / `graphDelta` rejected.
 
-- [ ] **Step 3: Implement** the gate, adapter, and route changes.
+- [x] **Step 3: Implement** the gate, adapter, and route changes.
   One `try` per concern in the route body — no greedy catch. Author
   stays `actor` for every deletion event.
 
-- [ ] **Step 4: Run GREEN.** Focused file passes; full `./validate`
+- [x] **Step 4: Run GREEN.** Focused file passes; full `./validate`
   GREEN. The existing flow-PUT tests stay green (blob still written,
   `'updated'` event unchanged).
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Write the flow-graph save delta to relations"`
 
 ---
@@ -456,22 +456,22 @@ tx; the author of the initial state event stays server-derived.
 - Produces: undo/redo that lands the target graph in relations
   atomically with the existing version-ledger writes.
 
-- [ ] **Step 1: Write the failing tests.** Seed a flow, save twice
+- [x] **Step 1: Write the failing tests.** Seed a flow, save twice
   (so a version exists), then undo → assert
   `reassembleStoredGraph(relations)` equals the prior graph; redo →
   assert it equals the post-edit graph. Cover a member add+undo and
   a node delete+undo (the node returns — a fresh upsert from the
   target graph, NOT a tombstone reversal).
 
-- [ ] **Step 2: Run RED.** Expect FAIL: relations not updated by
+- [x] **Step 2: Run RED.** Expect FAIL: relations not updated by
   undo/redo.
 
-- [ ] **Step 3: Implement** the gate, adapter, and route changes.
+- [x] **Step 3: Implement** the gate, adapter, and route changes.
 
-- [ ] **Step 4: Run GREEN.** Focused file passes; full `./validate`
+- [x] **Step 4: Run GREEN.** Focused file passes; full `./validate`
   GREEN (existing undo/redo tests stay green).
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Write the flow-graph delta on undo and redo"`
 
 ---
@@ -505,7 +505,7 @@ tx; the author of the initial state event stays server-derived.
   from the relations for free (they fetch via GET). Client
   `getFlowGraph` is UNCHANGED.
 
-- [ ] **Step 1: Write the failing tests.** Save a non-trivial graph
+- [x] **Step 1: Write the failing tests.** Save a non-trivial graph
   (Task 4 path), then `GET /flows/:id` → assert the returned
   `graph`, parsed via `asStoredGraph`, equals the intended
   `StoredGraph` (round-trip). Publish a version → assert the frozen
@@ -514,18 +514,18 @@ tx; the author of the initial state event stays server-derived.
   equals the reassembled graph. Undo/redo → GET round-trips the
   target graph.
 
-- [ ] **Step 2: Run RED.** Expect FAIL: GET returns the (stale-once-
+- [x] **Step 2: Run RED.** Expect FAIL: GET returns the (stale-once-
   dual-write-stops) blob shape, not the relation-derived graph —
   prove the reassembly path is exercised (e.g. delete the blob in
   the test's stored row before GET, or assert against a graph the
   blob does NOT carry).
 
-- [ ] **Step 3: Implement** the GET reassembly in the route tx.
+- [x] **Step 3: Implement** the GET reassembly in the route tx.
 
-- [ ] **Step 4: Run GREEN.** Focused file passes; full `./validate`
+- [x] **Step 4: Run GREEN.** Focused file passes; full `./validate`
   GREEN. Freeze/hazard/stats/mermaid suites stay green.
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Reassemble the flow graph from relations on read"`
 
 > **Broad review checkpoint:** Tasks 1–6 form the central cutover.
@@ -555,19 +555,19 @@ tx; the author of the initial state event stays server-derived.
   — a record attribute referenced by a current node attribute is
   reported; a removed one is not.
 
-- [ ] **Step 1: Write the failing test.** A record attribute added
+- [x] **Step 1: Write the failing test.** A record attribute added
   to a node, then GET the referrer scan → it reports the flow.
   Remove the attribute (a `'removed'` event) → it no longer reports.
 
-- [ ] **Step 2: Run RED.** Expect FAIL until the keyed read lands
+- [x] **Step 2: Run RED.** Expect FAIL until the keyed read lands
   (or, if the blob path still answers, force the test to read from
   relations by asserting a case the blob no longer carries).
 
-- [ ] **Step 3: Implement** the keyed read honoring latest-wins.
+- [x] **Step 3: Implement** the keyed read honoring latest-wins.
 
-- [ ] **Step 4: Run GREEN.** Focused + full `./validate` GREEN.
+- [x] **Step 4: Run GREEN.** Focused + full `./validate` GREEN.
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Scan attribute referrers via the relation index"`
 
 ---
@@ -593,18 +593,18 @@ tx; the author of the initial state event stays server-derived.
 - Produces: `TABLE_INDEXES` reflecting only reader-justified indexes;
   `SCHEMA.svg` regenerated to match.
 
-- [ ] **Step 1: Audit** for a `member_id` keyed reader. Record the
+- [x] **Step 1: Audit** for a `member_id` keyed reader. Record the
   finding in the task report.
 
-- [ ] **Step 2: Apply** the decision (drop `member_id` from the
+- [x] **Step 2: Apply** the decision (drop `member_id` from the
   `flow_node_members` index if reader-less; else keep + justify).
 
-- [ ] **Step 3: Regenerate** `SCHEMA.svg`.
+- [x] **Step 3: Regenerate** `SCHEMA.svg`.
 
-- [ ] **Step 4: Run GREEN.** `./validate` GREEN
+- [x] **Step 4: Run GREEN.** `./validate` GREEN
   (`generate-schema-svg --check` passes).
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Drop the reader-less flow-node-member index"`
   (or `"Keep the member-id index for its referrer reader"`).
 
@@ -637,21 +637,21 @@ tx; the author of the initial state event stays server-derived.
   carries only the delta; the frozen plane still serializes via the
   surviving `storedGraphField`/`storedWorkOrderFlowGraphField`.
 
-- [ ] **Step 1: Update the failing tests** — remove assertions that
+- [x] **Step 1: Update the failing tests** — remove assertions that
   the live `flows.graph` blob is written (it no longer is); KEEP all
   reassembly/freeze/round-trip assertions. Add an assertion that the
   stored `flows` row has NO `graph` key.
 
-- [ ] **Step 2: Run RED.** Expect FAIL: `graph` still emitted /
+- [x] **Step 2: Run RED.** Expect FAIL: `graph` still emitted /
   `FlowEntity.graph` still required.
 
-- [ ] **Step 3: Implement** the drop across types, validators,
+- [x] **Step 3: Implement** the drop across types, validators,
   adapter, route.
 
-- [ ] **Step 4: Run GREEN.** `./validate` GREEN (tsc proves no
+- [x] **Step 4: Run GREEN.** `./validate` GREEN (tsc proves no
   reader still references `FlowEntity.graph`).
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Retire the live flows.graph blob"`
 
 ---
@@ -674,18 +674,18 @@ tx; the author of the initial state event stays server-derived.
   (match whatever the dual-seed landed in step 2).
 - Produces: seeded relation rows with NO stored `flows.graph`.
 
-- [ ] **Step 1: Update the covenant test** to assert
+- [x] **Step 1: Update the covenant test** to assert
   `reassembleStoredGraph(seeded relations)` equals the authored
   literal graph, and that no seeded `flows` row carries `graph`.
 
-- [ ] **Step 2: Run RED.** Expect FAIL: flows seeded WITH `graph`.
+- [x] **Step 2: Run RED.** Expect FAIL: flows seeded WITH `graph`.
 
-- [ ] **Step 3: Implement** the decompose-and-discard seed.
+- [x] **Step 3: Implement** the decompose-and-discard seed.
 
-- [ ] **Step 4: Run GREEN.** `./validate` GREEN (mock-data validity
+- [x] **Step 4: Run GREEN.** `./validate` GREEN (mock-data validity
   tests stay green).
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Seed mock flows from relations without the blob"`
 
 ---
@@ -711,21 +711,21 @@ tx; the author of the initial state event stays server-derived.
 - Produces: old snapshots rejected; export→import round-trips
   through relations.
 
-- [ ] **Step 1: Write the failing tests.** A snapshot JSON with a
+- [x] **Step 1: Write the failing tests.** A snapshot JSON with a
   `flows[].graph` key → `putSnapshotFromFile` rejects with
   `SnapshotIncompatibleError`. An export of a flow with members +
   attributes, re-imported, reassembles to the same graph.
 
-- [ ] **Step 2: Run RED.** Expect FAIL: old snapshot accepted /
+- [x] **Step 2: Run RED.** Expect FAIL: old snapshot accepted /
   export still blob-shaped.
 
-- [ ] **Step 3: Implement** the `RETIRED_KEYS_PER_TABLE` entry and
+- [x] **Step 3: Implement** the `RETIRED_KEYS_PER_TABLE` entry and
   the export/import relation flip.
 
-- [ ] **Step 4: Run GREEN.** `./validate` GREEN (snapshot
+- [x] **Step 4: Run GREEN.** `./validate` GREEN (snapshot
   quota/atomic-import tests stay green).
 
-- [ ] **Step 5: Commit.**
+- [x] **Step 5: Commit.**
   `git commit -m "Reject old-shape snapshots and export relations"`
 
 ---
@@ -739,16 +739,16 @@ tx; the author of the initial state event stays server-derived.
   FLOW_SAVE_KEYS" api/ web-app/ tests/` → only the definitions).
 - Test: none added; existing validator tests stay green.
 
-- [ ] **Step 1: Confirm dead.** Grep shows only the definitions (no
+- [x] **Step 1: Confirm dead.** Grep shows only the definitions (no
   importer). If a test references it, that test is also fossil —
   delete it in the same commit (it tests dead code).
 
-- [ ] **Step 2: Delete** the three symbols.
+- [x] **Step 2: Delete** the three symbols.
 
-- [ ] **Step 3: Run GREEN.** `./validate` GREEN (tsc proves nothing
+- [x] **Step 3: Run GREEN.** `./validate` GREEN (tsc proves nothing
   imported them).
 
-- [ ] **Step 4: Commit.**
+- [x] **Step 4: Commit.**
   `git commit -m "Delete the unused flow-save body validator"`
 
 ---
@@ -768,17 +768,17 @@ tx; the author of the initial state event stays server-derived.
   SVG renders `flows.graph`, regenerate again here).
 - Test: `generate-schema-svg --check` (part of `./validate`).
 
-- [ ] **Step 1: Update** the four docs to the relation model, in the
+- [x] **Step 1: Update** the four docs to the relation model, in the
   existing voice (78-char lines on every `.md` at repo root except
   TEST-PLAN.md).
 
-- [ ] **Step 2: Regenerate** `SCHEMA.svg` if `flows.graph` still
+- [x] **Step 2: Regenerate** `SCHEMA.svg` if `flows.graph` still
   shows.
 
-- [ ] **Step 3: Run GREEN.** `./validate` GREEN
+- [x] **Step 3: Run GREEN.** `./validate` GREEN
   (`generate-schema-svg --check` passes; 78-char lint passes).
 
-- [ ] **Step 4: Commit.**
+- [x] **Step 4: Commit.**
   `git commit -m "Document the normalized flow-graph relations"`
 
 ---
@@ -792,11 +792,11 @@ tx; the author of the initial state event stays server-derived.
   commit range. Do NOT look for a "deferred-audit-findings record"
   file — it does not exist (resolved decision 5).
 
-- [ ] **Step 1: Append** the status note (78-char lines).
+- [x] **Step 1: Append** the status note (78-char lines).
 
-- [ ] **Step 2: Run GREEN.** `./validate` GREEN.
+- [x] **Step 2: Run GREEN.** `./validate` GREEN.
 
-- [ ] **Step 3: Commit.**
+- [x] **Step 3: Commit.**
   `git commit -m "Mark F-131 complete through step 6"`
 
 > **Final broad review + manual browser regression.** After Task 14,
@@ -832,3 +832,12 @@ bodies) and ARC 3 (Postgres server tier) are SEPARATE arcs —
 brainstorm + explicit go-ahead before any code. No server tier, no
 decompose-on-import, no canvas rewrite. Execute the request, not the
 request plus improvements.
+
+---
+
+## Status: complete
+
+All tasks landed; every checkbox above is ticked. Verified
+2026-06-18 by symbol search against the codebase (not the
+checkboxes) and a GREEN `./validate` — an independent verifier
+plus an adversarial refuter concurring. No outstanding items.
