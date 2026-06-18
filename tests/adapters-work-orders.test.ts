@@ -156,6 +156,65 @@ function buildLinearGraph(): StoredGraph {
     };
 }
 
+// Seed the flow row AND the four relation tables from a
+// StoredGraph. GET /flows/:id reassembles the read graph from
+// the relations (the read source of record), so a blob-only
+// put would reassemble to an empty graph. Direct puts with no
+// 'deleted' state event leave every node/edge live.
+async function seedFlow(
+    db: MemoryDbAdapter,
+    flowId: string,
+    graph: StoredGraph,
+): Promise<void> {
+    await db.flows.put(flowId, buildFlow(graph));
+    const at = '2026-01-01T00:00:00.000000Z';
+    for (const n of graph.nodes) {
+        await db.flowNodes.put(n.id, {
+            flow_id: flowId,
+            name: n.name,
+            position_x: n.positionX,
+            position_y: n.positionY,
+            is_create: n.isCreate,
+            is_archive: n.isArchive,
+            task_instructions: n.taskInstructions,
+            at,
+        });
+        for (const mid of n.memberIds) {
+            await db.flowNodeMembers.put(
+                `${n.id}-${mid}`,
+                {
+                    flow_node_id: n.id,
+                    member_id: mid,
+                    action: 'added',
+                    at,
+                },
+            );
+        }
+        for (const a of n.attributes) {
+            await db.flowNodeAttributes.put(
+                `${n.id}-${a.attributeId}`,
+                {
+                    flow_node_id: n.id,
+                    attribute_id: a.attributeId,
+                    mode: a.mode,
+                    is_required: a.isRequired,
+                    action: 'added',
+                    at,
+                },
+            );
+        }
+    }
+    for (const e of graph.edges) {
+        await db.flowEdges.put(e.id, {
+            flow_id: flowId,
+            name: e.name,
+            from_node_id: e.fromNodeId,
+            to_node_id: e.toNodeId,
+            at,
+        });
+    }
+}
+
 async function setupDb(): Promise<{
     db: MemoryDbAdapter;
     ctx: RequestContext;
@@ -185,9 +244,7 @@ test(
     async () => {
         const { db, ctx } = await setupDb();
         const graph = buildLinearGraph();
-        await db.flows.put(
-            'f1', buildFlow(graph),
-        );
+        await seedFlow(db, 'f1', graph);
 
         const woId =
             await createWorkOrder(
@@ -245,9 +302,7 @@ test(
     async () => {
         const { db, ctx } = await setupDb();
         const graph = buildLinearGraph();
-        await db.flows.put(
-            'f1', buildFlow(graph),
-        );
+        await seedFlow(db, 'f1', graph);
 
         const firstId =
             await createWorkOrder(ctx, 'f1');
@@ -287,9 +342,7 @@ test(
                 buildEdge('e', 'a', 'b'),
             ],
         };
-        await db.flows.put(
-            'f1', buildFlow(graph),
-        );
+        await seedFlow(db, 'f1', graph);
         await assert.rejects(
             () =>
                 createWorkOrder(
@@ -326,9 +379,7 @@ test(
                 buildEdge('e2', 's', 'b'),
             ],
         };
-        await db.flows.put(
-            'f1', buildFlow(graph),
-        );
+        await seedFlow(db, 'f1', graph);
         await assert.rejects(
             () =>
                 createWorkOrder(
@@ -344,10 +395,7 @@ test(
     + 'position across calls',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.flows.put(
-            'f1',
-            buildFlow(buildLinearGraph()),
-        );
+        await seedFlow(db, 'f1', buildLinearGraph());
         await createWorkOrder(ctx, 'f1');
         await createWorkOrder(ctx, 'f1');
         const wos = await db.workOrders
@@ -367,20 +415,17 @@ test(
     + 'flow edits',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.flows.put(
-            'f1',
-            buildFlow(buildLinearGraph()),
-        );
+        await seedFlow(db, 'f1', buildLinearGraph());
         await createWorkOrder(ctx, 'f1');
 
         // Mutate source flow AFTER the
         // work order captured its
-        // snapshot.
+        // snapshot — overwrite the relation
+        // rows too, so the edit is real in
+        // the read source, not just the blob.
         const mutated = buildLinearGraph();
         mutated.nodes[1]!.name = 'EDITED';
-        await db.flows.put(
-            'f1', buildFlow(mutated),
-        );
+        await seedFlow(db, 'f1', mutated);
 
         const wo = (
             await db.workOrders.getAll()
@@ -406,10 +451,7 @@ test(
     + 'claim',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.flows.put(
-            'f1',
-            buildFlow(buildLinearGraph()),
-        );
+        await seedFlow(db, 'f1', buildLinearGraph());
         const woId =
             await createWorkOrder(
                 ctx, 'f1',
@@ -452,10 +494,7 @@ test(
     + 'when no live claim exists',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.flows.put(
-            'f1',
-            buildFlow(buildLinearGraph()),
-        );
+        await seedFlow(db, 'f1', buildLinearGraph());
         const woId =
             await createWorkOrder(
                 ctx, 'f1',
@@ -498,10 +537,7 @@ test(
     + 'when edge id does not exist',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.flows.put(
-            'f1',
-            buildFlow(buildLinearGraph()),
-        );
+        await seedFlow(db, 'f1', buildLinearGraph());
         const woId =
             await createWorkOrder(
                 ctx, 'f1',
@@ -526,9 +562,7 @@ test(
     + 'claimed state event',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.flows.put(
-            'f1', buildFlow(buildLinearGraph()),
-        );
+        await seedFlow(db, 'f1', buildLinearGraph());
         const woId =
             await createWorkOrder(ctx, 'f1');
         // Release the creation-time claim so this
@@ -560,9 +594,7 @@ test(
     + 'claim by the holder appends no duplicate',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.flows.put(
-            'f1', buildFlow(buildLinearGraph()),
-        );
+        await seedFlow(db, 'f1', buildLinearGraph());
         const woId =
             await createWorkOrder(ctx, 'f1');
         // Release the creation-time claim so the
@@ -796,10 +828,7 @@ test(
     + 'release.at — latest by at is claim_released',
     async () => {
         const { db, ctx } = await setupDb();
-        await db.flows.put(
-            'f1',
-            buildFlow(buildLinearGraph()),
-        );
+        await seedFlow(db, 'f1', buildLinearGraph());
         const woId =
             await createWorkOrder(ctx, 'f1');
         await pause(2);

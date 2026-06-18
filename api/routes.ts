@@ -12,6 +12,8 @@ import type {
     FlowVersionEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
+    FlowNodeMemberEntity,
+    FlowNodeAttributeEntity,
     HumanMemberEntity,
     IdentityEntity,
     IdentityPiiEntity,
@@ -79,6 +81,12 @@ import {
     HTTP_BAD_REQUEST,
     HTTP_CONFLICT,
 } from './http-errors.ts';
+import {
+    reassembleStoredGraph,
+} from './flow-graph-relations.ts';
+import {
+    storedGraphField,
+} from './types.ts';
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -974,7 +982,68 @@ export const routes: Route[] = [
     // body) — the blob (b.flow.graph) is dual-written alongside.
     // Member-tier PUT — MEMBER_VERBS['/flows'] includes 'PUT'.
     route('flows/:id', {
-        get: (db, p) => db.flows.getById(param(p, 0)),
+        // Reassemble the graph from the four relation tables
+        // inside a consistent read transaction — the stored
+        // blob is overridden by the live relation-derived graph
+        // so freeze, work-order creation, stats, hazard, export,
+        // and mermaid all derive from relations for free.
+        // IndexedDB auto-commit: only row ops are awaited inside
+        // the tx body; reassembleStoredGraph + storedGraphField
+        // are sync compute called AFTER the awaited reads.
+        get: async (db, p) => {
+            const id = param(p, 0);
+            return db.transaction(
+                [
+                    'flows',
+                    'flow_nodes',
+                    'flow_edges',
+                    'flow_node_members',
+                    'flow_node_attributes',
+                    'states',
+                ],
+                async (view) => {
+                    const flow =
+                        await view.flows.getById(id);
+                    const nodes =
+                        await view.flowNodes
+                            .getAllWhere('flow_id', id);
+                    const edges =
+                        await view.flowEdges
+                            .getAllWhere('flow_id', id);
+                    const members:
+                        FlowNodeMemberEntity[] = [];
+                    const attrs:
+                        FlowNodeAttributeEntity[] = [];
+                    for (const node of nodes) {
+                        const nm =
+                            await view.flowNodeMembers
+                                .getAllWhere(
+                                    'flow_node_id',
+                                    node.id,
+                                );
+                        const na =
+                            await view.flowNodeAttributes
+                                .getAllWhere(
+                                    'flow_node_id',
+                                    node.id,
+                                );
+                        members.push(...nm);
+                        attrs.push(...na);
+                    }
+                    // SYNC compute — no await past this point.
+                    // Reassemble unconditionally: the relation
+                    // tables are the read source of record. The
+                    // stored blob is never consulted here.
+                    const graph = reassembleStoredGraph(
+                        nodes, edges, members, attrs,
+                    );
+                    return {
+                        ...flow,
+                        graph: storedGraphField(graph),
+                    };
+                },
+            );
+        },
         put: (db, p, body, actor) => {
             const id = param(p, 0);
             const b = validateFlowPutBody(body);
