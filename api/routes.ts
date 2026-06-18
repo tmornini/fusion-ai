@@ -332,11 +332,12 @@ export const routes: Route[] = [
                         b.detail as unknown as
                             Omit<AIMemberEntity, 'id'>,
                     );
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.initialStateEventId,
                         b.id,
                         b.initialState,
                         actor,
+                        b.initialStateAt,
                     );
                 },
             );
@@ -414,11 +415,12 @@ export const routes: Route[] = [
                         b.detail as unknown as
                             Omit<HumanMemberEntity, 'id'>,
                     );
-                    await view.states.postEvent(
+                    await view.states.postEventAt(
                         b.initialStateEventId,
                         b.id,
                         b.initialState,
                         actor,
+                        b.initialStateAt,
                     );
                 },
             );

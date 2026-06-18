@@ -2636,11 +2636,13 @@ export interface HumanMemberCreateBody {
     readonly detail: Record<string, unknown>;
     readonly initialState: MemberState;
     readonly initialStateEventId: string;
+    readonly initialStateAt: string;
 }
 
 const HUMAN_MEMBER_CREATE_KEYS: readonly string[] = [
     'id', 'pii', 'detail',
     'initialState', 'initialStateEventId',
+    'initialStateAt',
 ];
 
 // The HTTP-body gate for POST /human-members: the four member
@@ -2686,7 +2688,13 @@ export function validateHumanMemberCreateBody(
             + ' must be non-empty',
         );
     }
-    return { id, pii, detail, initialState, initialStateEventId };
+    const initialStateAt = validateTimestampField(
+        body, 'initialStateAt', 'HumanMemberCreateBody',
+    );
+    return {
+        id, pii, detail, initialState,
+        initialStateEventId, initialStateAt,
+    };
 }
 
 // Identity creation, discriminated by kind. A person carries
@@ -2990,11 +2998,13 @@ export interface AIMemberCreateBody {
     readonly detail: Record<string, unknown>;
     readonly initialState: MemberState;
     readonly initialStateEventId: string;
+    readonly initialStateAt: string;
 }
 
 const AI_MEMBER_CREATE_KEYS: readonly string[] = [
     'id', 'detail',
     'initialState', 'initialStateEventId',
+    'initialStateAt',
 ];
 
 // The HTTP-body gate for POST /ai-members: the parent member
@@ -3035,7 +3045,13 @@ export function validateAIMemberCreateBody(
             + ' must be non-empty',
         );
     }
-    return { id, detail, initialState, initialStateEventId };
+    const initialStateAt = validateTimestampField(
+        body, 'initialStateAt', 'AIMemberCreateBody',
+    );
+    return {
+        id, detail, initialState,
+        initialStateEventId, initialStateAt,
+    };
 }
 
 export interface AIMemberEditBody {
