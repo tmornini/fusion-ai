@@ -518,7 +518,7 @@ export async function postFlowFromBackup(
             isCreate: n.isCreate,
             isArchive: n.isArchive,
             memberIds: n.memberIds,
-            attributes: [],
+            attributes: n.attributes,
             taskInstructions: n.taskInstructions,
         });
     }
