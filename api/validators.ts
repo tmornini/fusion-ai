@@ -2263,26 +2263,33 @@ export interface FlowCreateBody {
     readonly initialState: string;
     readonly initialStateEventId: string;
     readonly initialStateAt: string;
+    readonly graphDelta: FlowGraphDelta;
 }
 
 const FLOW_CREATE_KEYS: readonly string[] = [
     'id', 'flow', 'projectFlowId', 'projectFlow',
     'initialState', 'initialStateEventId',
-    'initialStateAt',
+    'initialStateAt', 'graphDelta',
 ];
 
 // The HTTP-body gate for POST /flows: the flow row, its
-// project_flows join row, and the initial state event, written
-// atomically. The facet fields are NOT fully validated here —
-// the org-scoped flows store stamps organization_id from the
-// verified token and re-validates through validateFlowEntity
-// AFTER the stamp (so the body OMITS organization_id), and the
-// project_flows store re-validates the join through
-// validateProjectFlowEntity when the composing POST puts it.
-// Authorship of the initial event is stamped from the verified
-// caller in the route, never the body; initialState is carried
-// for symmetry with the other create endpoints (the flow
-// creation paths pin it to 'active') and validated non-empty.
+// project_flows join row, the initial state event, and the
+// initial graph delta (seeding the four relation tables),
+// written atomically. The facet fields are NOT fully
+// validated here — the org-scoped flows store stamps
+// organization_id from the verified token and re-validates
+// through validateFlowEntity AFTER the stamp (so the body
+// OMITS organization_id), and the project_flows store
+// re-validates the join through validateProjectFlowEntity
+// when the composing POST puts it. Authorship of the
+// initial event is stamped from the verified caller in the
+// route, never the body; initialState is carried for
+// symmetry with the other create endpoints (the flow
+// creation paths pin it to 'active') and validated
+// non-empty. graphDelta is the pre-built relation delta for
+// the default graph (2 nodes, 0 edges, 0 member/attribute
+// events) — validated here at the HTTP gate via
+// validateFlowGraphDelta; the route writes the rows.
 export function validateFlowCreateBody(
     body: Record<string, unknown>,
 ): FlowCreateBody {
@@ -2325,10 +2332,13 @@ export function validateFlowCreateBody(
     const initialStateAt = validateTimestampField(
         body, 'initialStateAt', 'FlowCreateBody',
     );
+    const graphDelta = validateFlowGraphDelta(
+        asObject(body['graphDelta'], 'graphDelta'),
+    );
     return {
         id, flow, projectFlowId, projectFlow,
         initialState, initialStateEventId,
-        initialStateAt,
+        initialStateAt, graphDelta,
     };
 }
 

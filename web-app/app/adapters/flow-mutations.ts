@@ -75,6 +75,13 @@ export async function postFlowCreation(
         nodes: [start, complete],
         edges: [],
     };
+    const graphDelta = buildSaveEvents(
+        { nodes: [], edges: [] },
+        graph,
+        input.flowId,
+        generateCryptoSafeBase62,
+        now,
+    );
 
     await ctx.POST('flows', {
         id: input.flowId,
@@ -95,6 +102,7 @@ export async function postFlowCreation(
         initialState: 'active',
         initialStateEventId: generateCryptoSafeBase62(),
         initialStateAt: nowUtc(),
+        graphDelta,
     });
 
     flowChanges.notify();

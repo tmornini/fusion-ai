@@ -62,6 +62,8 @@ function flowFields() {
     };
 }
 
+const CREATE_AT = '2025-01-01T00:00:00.000000Z';
+
 function createBody() {
     return {
         id: 'flow-1',
@@ -70,11 +72,41 @@ function createBody() {
         projectFlow: {
             project_id: 'p1',
             flow_id: 'flow-1',
-            at: nowUtc(),
+            at: CREATE_AT,
         },
         initialState: 'active',
         initialStateEventId: 'ev-1',
-        initialStateAt: '2025-01-01T00:00:00.000000Z',
+        initialStateAt: CREATE_AT,
+        graphDelta: {
+            nodes: [
+                {
+                    id: 'n-start',
+                    flow_id: 'flow-1',
+                    name: 'Start',
+                    position_x: 0,
+                    position_y: 0,
+                    is_create: true,
+                    is_archive: false,
+                    task_instructions: '',
+                    at: CREATE_AT,
+                },
+                {
+                    id: 'n-finish',
+                    flow_id: 'flow-1',
+                    name: 'Done',
+                    position_x: 0,
+                    position_y: 0,
+                    is_create: false,
+                    is_archive: true,
+                    task_instructions: '',
+                    at: CREATE_AT,
+                },
+            ],
+            edges: [],
+            deletions: [],
+            memberEvents: [],
+            attributeEvents: [],
+        },
     };
 }
 

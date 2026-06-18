@@ -767,19 +767,31 @@ export const routes: Route[] = [
         get: (db) =>
             db.flows.getAll(),
         // Flow creation: the flows row, its project_flows join
-        // row, and the initial 'active' state event commit as ONE
-        // transaction — a mid-write failure rolls the whole thing
-        // back rather than orphaning a half-built flow. The
-        // org-scoped flows store stamps organization_id from the
-        // verified token and re-validates through validateFlowEntity,
-        // so the flow body OMITS it; the join row is re-validated by
-        // the project_flows store. The initial event is authored by
-        // the verified caller (actor), never the body. Member-tier
-        // POST — /flows carries POST in MEMBER_VERBS.
+        // row, the initial 'active' state event, and the four
+        // relation table rows from graphDelta commit as ONE
+        // transaction — a mid-write failure rolls the whole
+        // thing back rather than orphaning a half-built flow.
+        // The org-scoped flows store stamps organization_id from
+        // the verified token and re-validates through
+        // validateFlowEntity, so the flow body OMITS it; the
+        // join row is re-validated by the project_flows store.
+        // The initial event is authored by the verified caller
+        // (actor), never the body. graphDelta is pre-validated
+        // at the HTTP gate (validateFlowCreateBody); the route
+        // writes its rows generically — these loops set the
+        // Task 4 pattern even though some arrays are empty on
+        // creation. No deletions are written on CREATE.
+        // Member-tier POST — /flows carries POST in MEMBER_VERBS.
         post: (db, _p, body, actor) => {
             const b = validateFlowCreateBody(body);
+            const delta = b.graphDelta;
             return db.transaction(
-                ['flows', 'project_flows', 'states'],
+                [
+                    'flows', 'project_flows', 'states',
+                    'flow_nodes', 'flow_edges',
+                    'flow_node_members',
+                    'flow_node_attributes',
+                ],
                 async (view) => {
                     await view.flows.put(
                         b.id,
@@ -798,6 +810,86 @@ export const routes: Route[] = [
                         actor,
                         b.initialStateAt,
                     );
+                    for (const n of delta.nodes) {
+                        const {
+                            id,
+                            flow_id,
+                            name,
+                            position_x,
+                            position_y,
+                            is_create,
+                            is_archive,
+                            task_instructions,
+                            at,
+                        } = n;
+                        await view.flowNodes.put(id, {
+                            flow_id,
+                            name,
+                            position_x,
+                            position_y,
+                            is_create,
+                            is_archive,
+                            task_instructions,
+                            at,
+                        });
+                    }
+                    for (const e of delta.edges) {
+                        const {
+                            id,
+                            flow_id,
+                            name,
+                            from_node_id,
+                            to_node_id,
+                            at,
+                        } = e;
+                        await view.flowEdges.put(id, {
+                            flow_id,
+                            name,
+                            from_node_id,
+                            to_node_id,
+                            at,
+                        });
+                    }
+                    for (const m of delta.memberEvents) {
+                        const {
+                            id,
+                            flow_node_id,
+                            member_id,
+                            action,
+                            at,
+                        } = m;
+                        await view.flowNodeMembers.put(
+                            id,
+                            {
+                                flow_node_id,
+                                member_id,
+                                action,
+                                at,
+                            },
+                        );
+                    }
+                    for (const a of delta.attributeEvents) {
+                        const {
+                            id,
+                            flow_node_id,
+                            attribute_id,
+                            mode,
+                            is_required,
+                            action,
+                            at,
+                        } = a;
+                        await view.flowNodeAttributes.put(
+                            id,
+                            {
+                                flow_node_id,
+                                attribute_id,
+                                mode,
+                                is_required,
+                                action,
+                                at,
+                            },
+                        );
+                    }
                 },
             );
         },
