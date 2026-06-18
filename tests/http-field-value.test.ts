@@ -117,3 +117,26 @@ test('toText on a byte-sequence leaf throws', () => {
         HttpMessageError,
     );
 });
+
+test('an sf-date member resolves to a Date', () => {
+    const message = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'accept-encoding: @1659578233\r\n\r\n',
+    );
+    assert.equal(
+        message.query('header.accept-encoding.0')
+            .toDate().getTime(),
+        1659578233 * 1000,
+    );
+});
+
+test('toText on an sf-date leaf throws', () => {
+    const message = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'accept-encoding: @1659578233\r\n\r\n',
+    );
+    assert.throws(
+        () => message.query('header.accept-encoding.0').toText(),
+        HttpMessageError,
+    );
+});

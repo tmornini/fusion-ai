@@ -7,7 +7,8 @@ import { Octets } from './octets.ts';
 // which (that is the registry's job). Inner lists and byte
 // sequences are deferred until a caller needs them.
 
-export type BareValue = number | string | boolean | Octets;
+export type BareValue =
+    number | string | boolean | Octets | Date;
 
 export interface SfItem {
     readonly value: BareValue;
@@ -126,6 +127,7 @@ function readBareItem(cursor: Cursor): BareValue {
     if (ch === '"') return readString(cursor);
     if (ch === '?') return readBoolean(cursor);
     if (ch === ':') return readByteSequence(cursor);
+    if (ch === '@') return readDate(cursor);
     if (ch === '*' || isAlpha(ch)) return readToken(cursor);
     throw new HttpMessageError('unexpected bare item: ' + ch);
 }
@@ -182,6 +184,20 @@ function readByteSequence(cursor: Cursor): Octets {
     }
     cursor.next();
     return Octets.fromBase64(b64);
+}
+
+function readDate(cursor: Cursor): Date {
+    cursor.expect('@');
+    let text = '';
+    if (cursor.peek() === '-') text += cursor.next();
+    if (!isDigit(cursor.peek())) {
+        throw new HttpMessageError('expected a date integer');
+    }
+    while (isDigit(cursor.peek())) text += cursor.next();
+    if (text.replace('-', '').length > 15) {
+        throw new HttpMessageError('sf-date exceeds 15 digits');
+    }
+    return new Date(Number(text) * 1000);
 }
 
 function readToken(cursor: Cursor): string {

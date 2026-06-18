@@ -9,7 +9,7 @@ import { Octets } from './octets.ts';
 // — Design by Contract). Traversal of structured fields and
 // bodies happens in the dotted key, not here, so this surface
 // stays a small set of leaf conversions.
-type Leaf = string | number | boolean | Octets;
+type Leaf = string | number | boolean | Octets | Date;
 
 export class FieldValue {
     readonly #value: Leaf | undefined;
@@ -32,8 +32,10 @@ export class FieldValue {
 
     toText(): string {
         const value = this.#require();
-        if (value instanceof Octets) {
-            throw new HttpMessageError('value is bytes, not text');
+        if (value instanceof Octets || value instanceof Date) {
+            throw new HttpMessageError(
+                'value is not text',
+            );
         }
         return String(value);
     }
@@ -76,9 +78,8 @@ export class FieldValue {
 
     toDate(): Date {
         const value = this.#require();
-        if (typeof value === 'string') {
-            return parseHttpDate(value);
-        }
+        if (value instanceof Date) return value;
+        if (typeof value === 'string') return parseHttpDate(value);
         throw new HttpMessageError(
             'value is not a date: ' + String(value),
         );
