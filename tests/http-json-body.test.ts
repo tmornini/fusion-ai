@@ -124,6 +124,32 @@ test('JSON re-serialization of a JSON body is a fixed point', () => {
     assert.equal(twice, once);
 });
 
+test('a large-integer number body survives round-trip', () => {
+    const viaWire = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'content-type: application/json\r\n\r\n' +
+        '{"id":12345678901234567890}',
+    );
+    assert.match(viaWire.toJson(), /"id":12345678901234567890/);
+    assert.match(
+        HttpMessage.fromJson(viaWire.toJson()).toWire(),
+        /\{"id":12345678901234567890\}$/,
+    );
+});
+
+test('a bare large-integer body round-trips exactly', () => {
+    const json = HttpMessage.fromWire(
+        'HTTP/1.1 200 OK\r\n' +
+        'content-type: application/json\r\n\r\n' +
+        '98765432109876543210',
+    ).toJson();
+    assert.match(json, /"body":98765432109876543210/);
+    assert.match(
+        HttpMessage.fromJson(json).toWire(),
+        /\r\n\r\n98765432109876543210$/,
+    );
+});
+
 test('rejects an invalid base64 body at the gate', () => {
     const json = '{"header":'
         + '[["content-type","application/octet-stream"]],'

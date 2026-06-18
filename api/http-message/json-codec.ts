@@ -1,5 +1,9 @@
 import { Octets } from './octets.ts';
 import { sortFields, sortJsonKeys } from './canonical.ts';
+import {
+    isRawJson,
+    parsePreservingNumbers,
+} from './json-numbers.ts';
 import { isStoredField } from './framing.ts';
 import {
     isHttpVersion,
@@ -29,12 +33,13 @@ import type {
 // an unambiguous discriminator. Absence is a missing key, never
 // null (a null body is a present JSON null).
 //
-// An inline body round-trips SEMANTICALLY, not byte-for-byte: it
-// passes through JSON.parse/stringify, which normalizes key order
-// and whitespace, collapses duplicate keys (last wins), and
-// rounds numbers beyond IEEE-754 double range (|n| > 2^53). This
-// matches standard JSON tooling; callers needing a byte-exact
-// body use the wire form.
+// An inline body round-trips its VALUES, not its exact bytes:
+// key order and whitespace are normalized and duplicate keys
+// collapse last-wins (standard JSON). Number tokens, however,
+// are preserved VERBATIM via the ES2025 JSON source-text
+// primitives (see json-numbers.ts), so integers and decimals
+// beyond IEEE-754 range are not rounded. Callers needing a
+// byte-exact body use the wire form.
 
 export function parseJson(
     json: string,
@@ -83,7 +88,7 @@ function jsonCodecFor(
 
 function parseJsonText(json: string): unknown {
     try {
-        return JSON.parse(json);
+        return parsePreservingNumbers(json);
     } catch {
         throw new HttpMessageError('malformed JSON text');
     }
@@ -191,10 +196,11 @@ function bodyToJson(
     fields: readonly FieldLine[],
     registry: BodyRegistry,
 ): unknown {
-    const codec = jsonCodecFor(fields, registry);
-    if (codec !== undefined) {
+    if (jsonCodecFor(fields, registry) !== undefined) {
         try {
-            const value = codec.decode(octets);
+            const value = parsePreservingNumbers(
+                new TextDecoder().decode(octets.asBytes()),
+            );
             if (typeof value !== 'string') return value;
         } catch {
             // not valid JSON under a JSON content-type
@@ -239,6 +245,13 @@ function asString(value: unknown, label: string): string {
 }
 
 function asNumber(value: unknown, label: string): number {
+    // A number parsed by parsePreservingNumbers arrives as a raw
+    // JSON holder; unwrap it (status is small, so exact).
+    if (isRawJson(value)) {
+        const parsed = Number(JSON.stringify(value));
+        if (Number.isFinite(parsed)) return parsed;
+        throw new HttpMessageError('expected number for ' + label);
+    }
     if (typeof value !== 'number') {
         throw new HttpMessageError('expected number for ' + label);
     }
