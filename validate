@@ -16,6 +16,7 @@ LONG_LINES=$( {
         -exec awk "$AWK_LINT" {} +
     find . -maxdepth 1 -type f -name '*.md' \
         ! -name 'TEST-PLAN.md' \
+        ! -name 'API-TREE.md' \
         -exec awk "$AWK_LINT" {} +
     awk "$AWK_LINT" build serve test validate generate-schema-svg
 } )
