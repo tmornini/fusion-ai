@@ -43,7 +43,7 @@ That mechanism will replace the existing ledger's and common states system by mo
   |    |  └── /ideas/
   |    |      └── :id
   |    |  └── /memberships/                   • /memberships/ with forced and/or filtered organization
-  |    |  └── /objectives                     • all objectives and all scores in a single document
+  |    |  └── /objectives                     • all objectives in a single document
   |    |  └── /projects/
   |    |      └── :id
   |    |          └── /scores                 • all objectives scores in a single document
