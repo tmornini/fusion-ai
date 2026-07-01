@@ -20,6 +20,7 @@ That mechanism will replace the existing ledger's and common states system by mo
   |      └── transition
 └─|─ /identities/
   |  └── :id                                   • default-organization is an attribute of the identity itself
+  |      └─|─ /notifications                   • postgres LISTEN/NOTIFY for all changes to identity
   |      └─|─ /credentials                     • all of them, single document
   |      └─|─ /pii                             • full physical removal from the DB required, i.e. physical delete, all others: Delete-At: header
   |      └─|─ /role-grants                     • all of them, single document
@@ -43,6 +44,7 @@ That mechanism will replace the existing ledger's and common states system by mo
   |    |  └── /ideas/
   |    |      └── :id
   |    |  └── /memberships/                   • /memberships/ with forced and/or filtered organization
+  |    |  └── /notifications                  • postgres LISTEN/NOTIFY for all changes to organization
   |    |  └── /objectives                     • all objectives in a single document
   |    |  └── /projects/
   |    |      └── :id
