@@ -11,32 +11,35 @@ That mechanism will replace the existing ledger's and common states system by mo
 └─|─ /memberships/
   |  └── :id
 └─|─ /records/
-  |   └── :id
-  |       └── /attribute-definitions.          • all of them, single document
-  |       └── /attribute-values                • all of them, single document
+  |  └── :id
+  |      └── /attribute-definitions.          • all of them, single document
+  |      └── /attribute-values                • all of them, single document
 └─|─ work-orders/
   |  └── :id/
   |      └── claim
   |      └── transition
 └─|─ /identities/
   |  └── :id                                   • default-organization is an attribute of the identity itself
-  |      └─|─ /notifications                   • postgres LISTEN/NOTIFY for all changes to identity
   |      └─|─ /credentials                     • all of them, single document
+  |      └─|─ /notifications                   • postgres LISTEN/NOTIFY for all changes to identity
   |      └─|─ /pii                             • full physical removal from the DB required, i.e. physical delete, all others: Delete-At: header
   |      └─|─ /role-grants                     • all of them, single document
+  |      └─|─ /third-party-identity-providers  • all of them, single document
+  |      └─|─ /token-revocations               • if the answer to the question directly above is "PUT/GET"
+  |      └─|─ /memberships/                    • /memberships/ with forced and/or filtered identity
+  |      └─|─ /organizations/                  • /memberships/ with forced and/or filtered identity
+  |      └─|─ /work-orders/                    • /work-orders/ with forced and/or filtered identity
   |      └─|─ /tokens/
   |        |  └── :id
   |        |      ├── /rotation                • is this a POST?
   |        |      └── /revocation              • is this a POST?
   |        |      └── /revocation              • is this a POST, if not, a PUT/GET pair?
-  |      └─|─ /third-party-identity-providers  • all of them, single document
-  |      └─|─ /token-revocations               • if the answer to the question directly above is "PUT/GET"
-  |      └─|─ /organizations/                  • /memberships/ with forced and/or filtered identity
-  |      └─|─ /work-orders/                    • /work-orders/ with forced and/or filtered identity
   |        \
   |         \- identity authz realm 
 └─|─ /organizations/
   |  └─|─ :id
+  |    |  └── /notifications                  • postgres LISTEN/NOTIFY for all changes to organization
+  |    |  └── /objectives                     • all objectives in a single document
   |    |  └── /flows/
   |    |      └── :id
   |    |          ├── /undo
@@ -44,8 +47,6 @@ That mechanism will replace the existing ledger's and common states system by mo
   |    |  └── /ideas/
   |    |      └── :id
   |    |  └── /memberships/                   • /memberships/ with forced and/or filtered organization
-  |    |  └── /notifications                  • postgres LISTEN/NOTIFY for all changes to organization
-  |    |  └── /objectives                     • all objectives in a single document
   |    |  └── /projects/
   |    |      └── :id
   |    |          └── /scores                 • all objectives scores in a single document
