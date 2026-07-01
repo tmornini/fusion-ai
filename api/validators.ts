@@ -817,7 +817,7 @@ validateIdentityTokenRevocationEntity(
     };
 }
 
-const IDENTITY_DEFAULT_ORG_BODY_KEYS:
+const IDENTITY_DEFAULT_ORGANIZATION_BODY_KEYS:
     readonly string[] = [
     'identity_id', 'organization_id', 'at',
 ];
@@ -827,7 +827,7 @@ export function validateIdentityDefaultOrganizationEntity(
 ): Omit<IdentityDefaultOrganizationEntity, 'id'> {
     assertOnlyKeys(
         body,
-        IDENTITY_DEFAULT_ORG_BODY_KEYS,
+        IDENTITY_DEFAULT_ORGANIZATION_BODY_KEYS,
         'IdentityDefaultOrganizationEntity',
     );
     const at = validateTimestampField(
