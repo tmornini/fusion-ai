@@ -12,20 +12,16 @@ That mechanism will replace the existing ledger's and common states system by mo
   |  └── :id
 └─|─ /records/
   |   └── :id
-  |       └── /attribute-definitions
-  |       └── /attribute-values
+  |       └── /attribute-definitions.          • all of them, single document
+  |       └── /attribute-values                • all of them, single document
 └─|─ work-orders/
   |  └── :id/
   |      └── claim
   |      └── transition
 └─|─ /identities/
-  |  └── :id                                  • default-organization is an attribute of the identity itself
+  |  └── :id                                   • default-organization is an attribute of the identity itself
   |      └─|─ /credentials                     • all of them, single document
   |      └─|─ /pii                             • full physical removal from the DB required, i.e. physical delete, all others: Delete-At: header
-  |      └─|─ /records/
-  |        |  └── :id
-  |        |      └── /attributes              • all of them, single document
-  |        |      └── /values                  • all of them, single document
   |      └─|─ /role-grants                     • all of them, single document
   |      └─|─ /tokens/
   |        |  └── :id
@@ -47,10 +43,10 @@ That mechanism will replace the existing ledger's and common states system by mo
   |    |  └── /ideas/
   |    |      └── :id
   |    |  └── /memberships/                   • /memberships/ with forced and/or filtered organization
-  |    |  └── /objectives/
-  |    |      └── :id                         • all objectives and all scores in a single document
+  |    |  └── /objectives                     • all objectives and all scores in a single document
   |    |  └── /projects/
   |    |      └── :id
+  |    |          └── /scores                 • all objectives scores in a single document
   |    |  └── /records/                       • /records/ with forced and/or filtered organization
   |    |  └── /work-orders/                   • /work-orders/ with forced and/or filtered organization
   \    \
