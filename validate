@@ -26,5 +26,26 @@ if [ -n "$LONG_LINES" ]; then
     exit 1
 fi
 
+# Reject the `org` abbreviation in identifiers; use `organization`.
+# Prose, URLs (w3.org), and CSS class names may keep the short form.
+ORG_ABBREV=$(
+    find api web-app tests shared -type f \
+        \( -name '*.ts' -o -name '*.html' -o -name '*.css' \) \
+        ! -path 'web-app/app/compose.ts' -print0 \
+    | xargs -0 perl -ne '
+        close ARGV if eof;
+        print "$ARGV:$.: $_"
+            if /org[A-Z]|[a-z]Org([A-Z]|\b)|\bOrg[A-Z]/
+            || /[a-z]Orgs([A-Z]|\b)|\bOrgs[A-Z]/
+            || /_ORG(_|[0-9]|\b)|\bORG(_|[0-9])/;
+    '
+)
+
+if [ -n "$ORG_ABBREV" ]; then
+    echo "Error: 'org' abbreviation in identifiers:" >&2
+    echo "$ORG_ABBREV" >&2
+    exit 1
+fi
+
 # SCHEMA.svg is derived from the schema; fail if it has drifted.
 ./generate-schema-svg --check
