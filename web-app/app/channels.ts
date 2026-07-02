@@ -1,7 +1,14 @@
 import {
-    subscribeTablesChanged,
+    subscribeNotificationEvents,
 } from './adapters/broadcast-channel.ts';
-import { TABLE_NAMES } from '../../api/db.ts';
+import {
+    getSessionToken,
+    sessionIsAuthenticated,
+    sessionIsOrganizationScoped,
+} from './adapters/init.ts';
+import {
+    principalFromToken,
+} from '../../api/access-token.ts';
 
 type Listener<T> = (value: T) => void;
 
@@ -39,33 +46,30 @@ export interface SubscriptionChannel {
     ): () => void;
 }
 
-// The bell posts canonical snake_case store names, so a watch
-// entry outside TABLE_NAMES can NEVER match — a silently dead
-// subscription. Channels are created at module load, so a
-// wrong name crashes the page immediately instead of never
-// firing.
-const KNOWN_TABLES: ReadonlySet<string> =
-    new Set(TABLE_NAMES);
-
 export function createSubscriptionChannel(
-    tableNames: readonly string[],
 ): SubscriptionChannel {
-    for (const name of tableNames) {
-        if (!KNOWN_TABLES.has(name)) {
-            throw new Error(
-                'unknown table in cross-tab watch: '
-                + name,
-            );
-        }
-    }
     const channel = createChannel<void>();
-    const watched = new Set(tableNames);
-    // Another tab's readwrite commit broadcasts the tables it
-    // touched; refresh when any overlaps ours. The poster's
-    // own tab never hears the message, so it does not
-    // double-refresh.
-    subscribeTablesChanged((tables) => {
-        if (tables.some(t => watched.has(t))) {
+    // A full-refresh event always fires; otherwise a scoped
+    // event fires when it names this tab's active organization
+    // (org-scoped sessions) or this tab's own identity
+    // (authenticated sessions) — the poster's own tab never
+    // hears the message, so it does not double-refresh.
+    subscribeNotificationEvents((event) => {
+        if (event.kind === 'full') {
+            channel.send();
+            return;
+        }
+        const principal =
+            principalFromToken(getSessionToken());
+        const organizationHit =
+            sessionIsOrganizationScoped()
+            && principal.organization !== undefined
+            && event.organizationIds
+                .includes(principal.organization);
+        const identityHit =
+            sessionIsAuthenticated()
+            && event.identityIds.includes(principal.id);
+        if (organizationHit || identityHit) {
             channel.send();
         }
     });
