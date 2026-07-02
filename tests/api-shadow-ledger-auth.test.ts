@@ -305,3 +305,37 @@ test('a client_credentials grant stores its own redacted pair'
         }
     }
 });
+
+// The redactor applies ONE static high-entropy field list per
+// ROUTE (message-redaction.ts), not per grant_type — so a valid
+// authorization_code exchange carrying a stray, grant-irrelevant
+// `refresh_token` (never read by grantAuthorizationCode) must
+// still succeed exactly as it would without the stray field, and
+// the stray value must still redact cleanly rather than throw.
+test('a code exchange with a stray, grant-irrelevant non-string'
++ ' refresh_token still succeeds and redacts the stray value',
+async () => {
+    const db = await dbWithPasswordUser();
+    await seedRootAdmin(db);
+    const authorizeRes = await handleRequest(db, jsonPost(
+        'authentication/authorize', {
+            method: 'password', username: 'demo@example.com',
+            password: PASSWORD, client_id: 'web',
+        }));
+    const { code } = await authorizeRes.json() as {
+        code: string;
+    };
+    const res = await handleRequest(db, jsonPost(
+        'authentication/token', {
+            grant_type: 'authorization_code', code,
+            refresh_token: 999999,
+        }));
+    assert.equal(res.status, 200);
+    const requests = await db.requests.getAll();
+    const row = requests.find(
+        r => r.uri_prefix === '/authentication/token/');
+    assert.ok(row);
+    assert.ok(!row!.message.includes(':999999'));
+    assert.ok(row!.message.includes(
+        'sha256:' + await sha256Hex('999999')));
+});
