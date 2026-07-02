@@ -268,6 +268,26 @@ export function responseFromStored(stored: ResponseEntity): Response {
         : new Response(null, init);
 }
 
+// The wire response for a wired write, rebuilt from the stored
+// row the transaction just appended — crashes loud if the pair
+// somehow never landed (a wiring bug, never a normal path). The
+// shared post-write voice for both side channels
+// (invitations-domain.ts, organization-requests.ts) — the
+// generic gate inlines the same shape at its own call sites
+// (api.ts) since it also folds in postWriteNotification between
+// the lookup and the response there.
+export async function storedPairResponse(
+    adapter: DbAdapter, requestHash: string, opName: string,
+): Promise<Response> {
+    const stored = await storedResponseFor(adapter, requestHash);
+    if (stored === undefined) {
+        throw new Error(
+            opName + ' stored no pair for a wired write',
+        );
+    }
+    return responseFromStored(stored);
+}
+
 // In-tx append (row ops only, no crypto): skips silently if a
 // request with the same hash is already stored (the concurrent
 // -retry guard); otherwise puts both rows. The view parameter

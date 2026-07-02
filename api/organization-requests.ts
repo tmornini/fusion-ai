@@ -29,6 +29,7 @@ import {
     appendMessagePair,
     responseFromStored,
     hoistedHeaderFields,
+    storedPairResponse,
 } from './message-pair.ts';
 
 // GET /organizations — the caller's reachable orgs, derived
@@ -212,15 +213,10 @@ export async function identityDefaultOrganizationRequest(
                 },
             );
         }
-        const stored = await storedResponseFor(
-            ctx.base, pair.requestHash);
-        if (stored === undefined) {
-            throw new Error(
-                'identityDefaultOrganizationRequest stored no'
-                + ' pair for a wired write',
-            );
-        }
-        return responseFromStored(stored);
+        return storedPairResponse(
+            ctx.base, pair.requestHash,
+            'identityDefaultOrganizationRequest',
+        );
     }
     return Response.json(
         {

@@ -43,6 +43,7 @@ import {
     canonicalUriPrefix,
     responseFromStored,
     hoistedHeaderFields,
+    storedPairResponse,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
 
@@ -423,14 +424,8 @@ async function grantInvitation(
             identityIds: [identityId],
         });
     }
-    const stored = await storedResponseFor(
-        ctx.base, pair.requestHash);
-    if (stored === undefined) {
-        throw new Error(
-            'grantInvitation stored no pair for a wired write',
-        );
-    }
-    return responseFromStored(stored);
+    return storedPairResponse(
+        ctx.base, pair.requestHash, 'grantInvitation');
 }
 
 type GrantOutcome =
@@ -513,21 +508,6 @@ async function formInvitationOpPair(
         responseStatus: 204, responseBody: undefined,
         headPairId: undefined,
     });
-}
-
-// The wire response for a wired write, rebuilt from the stored
-// row the transaction just appended — crashes loud if the pair
-// somehow never landed (a wiring bug, never a normal path).
-async function storedPairResponse(
-    adapter: DbAdapter, requestHash: string, opName: string,
-): Promise<Response> {
-    const stored = await storedResponseFor(adapter, requestHash);
-    if (stored === undefined) {
-        throw new Error(
-            opName + ' stored no pair for a wired write',
-        );
-    }
-    return responseFromStored(stored);
 }
 
 // Accept: the invitee turns a pending invitation into a real
