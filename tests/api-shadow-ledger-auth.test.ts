@@ -120,7 +120,15 @@ test('a full login flow keeps requests/responses balanced,'
     assert.equal(requests.length, 2);
     for (const row of requests) {
         assert.equal(row.uri_id, '');
+    }
+    // supersedes/follows are RESPONSE-row columns (ResponseEntity,
+    // api/types.ts) — a genesis pair (no predecessor) leaves BOTH
+    // absent; header absence on the wire mirrors column absence
+    // here (message-pair.ts's wireHeadersFor).
+    for (const row of responses) {
+        assert.equal(row.uri_id, '');
         assert.equal(row.supersedes, undefined);
+        assert.equal(row.follows, undefined);
     }
 });
 
