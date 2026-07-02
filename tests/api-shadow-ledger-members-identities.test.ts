@@ -275,6 +275,8 @@ test('PUT identities/:id/pii appends its pair at uriId'
     );
     assert.ok(row);
     assert.equal(row!.uri_id, '');
+    const domainRow = await db.identityPii.getById('sarah');
+    assert.deepEqual(await first.json(), domainRow);
     const second = await handleRequest(db, req(
         'PUT', '/identities/sarah/pii', DEV_TOKEN,
         humanPii('Sarah Lee'),

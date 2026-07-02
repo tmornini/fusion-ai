@@ -133,6 +133,9 @@ test('a PUT to a fresh objective revision appends its pair,'
     );
     assert.ok(row);
     assert.equal(row!.uri_id, 'rev-2b');
+    const domainRow =
+        await db.objectiveRevisions.getById('rev-2b');
+    assert.deepEqual(await first.json(), domainRow);
     const second = await handleRequest(db, req(
         'PUT', '/objectives/obj-2/revisions/rev-2b', token,
         revisionFields('obj-2', 'Third'),
