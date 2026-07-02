@@ -3,6 +3,7 @@ import { TABLE_NAMES } from './db.ts';
 import {
     postIdeaCreationOp,
     postFlowCreationOp,
+    postRecordWriteOp,
 } from './routes.ts';
 import type {
     ProjectFlowEntity,
@@ -558,6 +559,8 @@ async function postMockDataLoadIn(
     // log. Records start at 'active'; subordinate
     // record_attributes hard-splice when the
     // parent is deleted via EntityStore.delete.
+    // Driven through postRecordWriteOp below,
+    // alongside each record's row and attributes.
     const recordStateEvents: StateEntity[] = [
         {
             id: 'rSe01CustPr0fact1ve01A',
@@ -574,6 +577,10 @@ async function postMockDataLoadIn(
             at: wfTimestamp,
         },
     ];
+
+    const recordStateEventByRecordId = new Map(
+        recordStateEvents.map(e => [e.entity_id, e]),
+    );
 
     const woId =
         'wg25b0R2gwy5kYPIhQB6cS';
@@ -3485,12 +3492,6 @@ async function postMockDataLoadIn(
         });
     }
 
-    // Each record attribute is stamped with ITS parent
-    // record's org, so the recordAttributes-match-parent
-    // invariant holds however records are partitioned.
-    const recordOrganizationById = new Map(
-        mockRecords.map((r, i) => [r.id, assignOrganization(i)]));
-
     await Promise.all([
         ...ideaSubmissions.map(r =>
             adapter.ideaSubmissions.put(
@@ -3575,39 +3576,40 @@ async function postMockDataLoadIn(
                 at: r.at,
             }),
         ),
-        ...mockRecords.map((r, i) =>
-            adapter.records.put(r.id, {
-                organization_id: assignOrganization(i),
-                name: r.name,
-                description: r.description,
-                position: r.position,
-            }),
-        ),
-        ...mockRecordAttributes.map(r =>
-            adapter.recordAttributes.put(r.id, {
-                organization_id:
-                    recordOrganizationById.get(r.record_id)!,
-                record_id: r.record_id,
-                name: r.name,
-                attribute_type:
-                    r.attribute_type,
-                sort_order: r.sort_order,
-                options: r.options,
-                constraints: r.constraints,
-            }),
-        ),
+        ...mockRecords.map((r, i) => {
+            const organization = assignOrganization(i);
+            const event = recordStateEventByRecordId.get(r.id)!;
+            const attributes = mockRecordAttributes.filter(
+                a => a.record_id === r.id,
+            );
+            return postRecordWriteOp(adapter, {
+                kind: 'create',
+                id: r.id,
+                record: {
+                    organization_id: organization,
+                    name: r.name,
+                    description: r.description,
+                    position: r.position,
+                },
+                attributes: attributes.map(a => ({
+                    id: a.id,
+                    record_id: a.record_id,
+                    organization_id: organization,
+                    name: a.name,
+                    attribute_type: a.attribute_type,
+                    sort_order: a.sort_order,
+                    options: a.options,
+                    constraints: a.constraints,
+                })),
+                initialState: event.state,
+                initialStateEventId: event.id,
+                initialStateAt: event.at,
+            }, event.member_id);
+        }),
         ...mockFlowRecords.map(r =>
             adapter.flowRecords.put(r.id, {
                 flow_id: r.flow_id,
                 record_id: r.record_id,
-                at: r.at,
-            }),
-        ),
-        ...recordStateEvents.map(r =>
-            adapter.states.put(r.id, {
-                entity_id: r.entity_id,
-                state: r.state,
-                member_id: r.member_id,
                 at: r.at,
             }),
         ),
