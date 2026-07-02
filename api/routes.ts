@@ -74,6 +74,7 @@ import {
     validateRecordAttributeEntity,
     validateRecordEntity,
     validateRecordWriteBody,
+    validateRoleGrantEntity,
     validateStateBody,
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
@@ -1196,6 +1197,22 @@ export const WRITE_RESPONSE_SPECS:
             ...validateOrganizationEntity(withoutId(body ?? {})),
         }),
     },
+    // role_grants rides the ORG-SCOPED store (unlike its GLOBAL-
+    // plane siblings above), which auto-stamps organization_id
+    // from the verified token — the wire body omits it (see
+    // web-app/app/adapters/role-grants.ts). The gate has no
+    // access to that scoped store, so it re-derives the same
+    // stamp here, mirroring 'projects/:id' et al.
+    'role-grants/:id': {
+        status: 200,
+        successBody: (params, body, _actor, organization) => ({
+            id: param(params, 0),
+            ...validateRoleGrantEntity({
+                ...withoutId(body ?? {}),
+                organization_id: organization,
+            }),
+        }),
+    },
 };
 
 export const routes: Route[] = [
@@ -1507,10 +1524,34 @@ export const routes: Route[] = [
     route('role-grants', {
         get: (db) => db.roleGrants.getAll(),
     }),
-    makeIdRoute<RoleGrantEntity>({
-        noun: 'role-grants',
-        store: db => db.roleGrants,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<RoleGrantEntity> so
+    // PUT can append its message pair in the same transaction
+    // as the write — the factory's fixed closures have no
+    // per-family pair selector (see message-pair.ts). GET
+    // reproduces the factory closure byte-equivalently; verbs
+    // stay {get, put}. role_grants is a HistoryEntityStore
+    // ledger row (latest-wins per (organization_id,
+    // identity_id, role)), so this is EVENT-APPEND: no
+    // head-read, no Supersedes.
+    route('role-grants/:id', {
+        get: (db, p) => db.roleGrants.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['role_grants', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.roleGrants.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<RoleGrantEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     route('identity-tokens', {
         get: (db) => db.identityTokens.getAll(),
