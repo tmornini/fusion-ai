@@ -631,6 +631,174 @@ export async function postIdentityCreationOp(
     );
 }
 
+// Work-order creation: the work_orders row, its
+// flow_work_orders join row, and THREE initial state
+// events (the start transition, the post-start
+// transition, and the creation-time 'claimed') commit as
+// ONE transaction — a mid-write failure rolls the whole
+// thing back rather than orphaning a half-built work
+// order. The org-scoped work_orders store stamps
+// organization_id from the verified token and re-validates
+// through validateWorkOrderEntity, so the work-order body
+// OMITS it; the join row derives org from its flow and is
+// re-validated by the flow_work_orders store. The three
+// events are applied IN ORDER and authored by the verified
+// caller (actor), never the body. Exported so the seed can
+// drive work-order creation through the same gate the
+// route uses (Decision 6's below-facade carve-out) — this
+// is also Phase 1's dual-write insertion seam.
+export async function postWorkOrderCreationOp(
+    db: DbAdapter,
+    body: Record<string, unknown>,
+    actor: Id,
+): Promise<void> {
+    const b = validateWorkOrderCreateBody(body);
+    return db.transaction(
+        ['work_orders', 'flow_work_orders', 'states'],
+        async (view) => {
+            await view.workOrders.put(
+                b.id,
+                b.workOrder as unknown as
+                    Omit<WorkOrderEntity, 'id'>,
+            );
+            await view.flowWorkOrders.put(
+                b.flowWorkOrderId,
+                b.flowWorkOrder as unknown as
+                    Omit<FlowWorkOrderEntity, 'id'>,
+            );
+            for (let i = 0; i < 3; i++) {
+                await view.states.postEvent(
+                    b.stateEventIds[i]!,
+                    b.id,
+                    b.states[i]!,
+                    actor,
+                    b.stateEventAts[i]!,
+                );
+            }
+        },
+    );
+}
+
+// Claim a work order. The read of the prior claim and
+// the append of the new claim events ride ONE
+// transaction, so two concurrent claims cannot both
+// observe "no live claim" (the duplicate-claim TOCTOU).
+// A live claim by another member is a 409; by the
+// caller, an idempotent no-op. A claim aged past the
+// flow's lockTimeout is superseded: 'claim_expired'
+// (naming the prior claimant) and the new 'claimed'
+// land atomically. Exported so the seed can drive a
+// work-order claim through the same gate the route uses
+// — this is also Phase 1's dual-write insertion seam.
+export async function postWorkOrderClaimOp(
+    db: DbAdapter,
+    workOrderId: Id,
+    body: Record<string, unknown>,
+    actor: Id,
+): Promise<void> {
+    return db.transaction(
+        ['work_orders', 'states'],
+        async (view) => {
+            const b =
+                validateWorkOrderClaimBody(body);
+            const wo = await view.workOrders
+                .getById(workOrderId);
+            const graph =
+                validateWorkOrderFlowGraphJson(
+                    wo.flow_graph,
+                    'work_orders.flow_graph',
+                );
+            const events = await view.states
+                .getAllFor(workOrderId);
+            const prior = latestClaimEvent(
+                events, workOrderId,
+            );
+            const priorLive = prior !== null
+                && prior.state === 'claimed'
+                && !isClaimEventExpired(
+                    prior, graph.lockTimeout,
+                );
+            if (priorLive) {
+                if (prior.member_id === actor) {
+                    return;
+                }
+                throw new ApiError(
+                    'work order is already'
+                        + ' claimed',
+                    HTTP_CONFLICT,
+                );
+            }
+            if (
+                prior !== null
+                && prior.state === 'claimed'
+            ) {
+                await view.states.postEvent(
+                    b.expireEventId, workOrderId,
+                    'claim_expired',
+                    prior.member_id, b.expireAt,
+                );
+            }
+            await view.states.postEvent(
+                b.claimEventId, workOrderId,
+                'claimed', actor, b.claimAt,
+            );
+        },
+    );
+}
+
+// Transition a work order along an edge. The web-app
+// computes WHAT to write — the target node, the field-value
+// rows, and whether a live claim must be implicitly released
+// — exactly as POST /work-orders keeps its graph derivation
+// client-side. This op writes them ATOMICALLY: the
+// transition state event (entity_id = the work order, state =
+// the target node), then each state_field_values row (the
+// field inputs, re-validated by the store as they land), then
+// the OPTIONAL 'claim_released' event. A mid-write failure
+// rolls the whole thing back. Authorship of the transition
+// event AND the release event is stamped from the verified
+// caller (actor) — the same author the old commit batch
+// produced, where both events flowed through PUT /states/:id.
+// Exported so the seed can drive a work-order transition
+// through the same gate the route uses — this is also
+// Phase 1's dual-write insertion seam.
+export async function postWorkOrderTransitionOp(
+    db: DbAdapter,
+    workOrderId: Id,
+    body: Record<string, unknown>,
+    actor: Id,
+): Promise<void> {
+    const b = validateWorkOrderTransitionBody(body);
+    return db.transaction(
+        ['states', 'state_field_values'],
+        async (view) => {
+            await view.states.postEvent(
+                b.transitionEventId,
+                workOrderId,
+                b.targetState,
+                actor,
+                b.transitionAt,
+            );
+            for (const row of b.fieldValues) {
+                await view.stateFieldValues.put(
+                    row.id,
+                    row.fields as unknown as
+                        Omit<StateFieldValueEntity, 'id'>,
+                );
+            }
+            if (b.release !== null) {
+                await view.states.postEvent(
+                    b.release.id,
+                    workOrderId,
+                    b.release.state,
+                    actor,
+                    b.release.at,
+                );
+            }
+        },
+    );
+}
+
 export const routes: Route[] = [
     route('members', {
         // Members are derived from the membership ledger off
@@ -1360,164 +1528,35 @@ export const routes: Route[] = [
     route('work-orders', {
         get: (db) =>
             db.workOrders.getAll(),
-        // Work-order creation: the work_orders row, its
-        // flow_work_orders join row, and THREE initial state
-        // events (the start transition, the post-start
-        // transition, and the creation-time 'claimed') commit as
-        // ONE transaction — a mid-write failure rolls the whole
-        // thing back rather than orphaning a half-built work
-        // order. The org-scoped work_orders store stamps
-        // organization_id from the verified token and re-validates
-        // through validateWorkOrderEntity, so the work-order body
-        // OMITS it; the join row derives org from its flow and is
-        // re-validated by the flow_work_orders store. The three
-        // events are applied IN ORDER and authored by the verified
-        // caller (actor), never the body. Member-tier POST —
-        // /work-orders carries POST in MEMBER_VERBS (the claim
-        // sub-route is also a member POST).
-        post: (db, _p, body, actor) => {
-            const b = validateWorkOrderCreateBody(body);
-            return db.transaction(
-                ['work_orders', 'flow_work_orders', 'states'],
-                async (view) => {
-                    await view.workOrders.put(
-                        b.id,
-                        b.workOrder as unknown as
-                            Omit<WorkOrderEntity, 'id'>,
-                    );
-                    await view.flowWorkOrders.put(
-                        b.flowWorkOrderId,
-                        b.flowWorkOrder as unknown as
-                            Omit<FlowWorkOrderEntity, 'id'>,
-                    );
-                    for (let i = 0; i < 3; i++) {
-                        await view.states.postEvent(
-                            b.stateEventIds[i]!,
-                            b.id,
-                            b.states[i]!,
-                            actor,
-                            b.stateEventAts[i]!,
-                        );
-                    }
-                },
-            );
-        },
+        // Member-tier POST — /work-orders carries POST in
+        // MEMBER_VERBS (the claim sub-route is also a member
+        // POST). See postWorkOrderCreationOp for the
+        // transaction shape.
+        post: (db, _p, body, actor) =>
+            postWorkOrderCreationOp(db, body, actor),
     }),
     makeIdRoute<WorkOrderEntity>({
         noun: 'work-orders',
         store: db => db.workOrders,
         verbs: ['get', 'put'],
     }),
-    // Claim a work order. The read of the prior claim and
-    // the append of the new claim events ride ONE
-    // transaction, so two concurrent claims cannot both
-    // observe "no live claim" (the duplicate-claim TOCTOU).
-    // A live claim by another member is a 409; by the
-    // caller, an idempotent no-op. A claim aged past the
-    // flow's lockTimeout is superseded: 'claim_expired'
-    // (naming the prior claimant) and the new 'claimed'
-    // land atomically.
+    // See postWorkOrderClaimOp for the transaction shape.
     route('work-orders/:id/claim', {
         post: (db, p, body, actor) =>
-            db.transaction(
-                ['work_orders', 'states'],
-                async (view) => {
-                    const b =
-                        validateWorkOrderClaimBody(body);
-                    const workOrderId = param(p, 0);
-                    const wo = await view.workOrders
-                        .getById(workOrderId);
-                    const graph =
-                        validateWorkOrderFlowGraphJson(
-                            wo.flow_graph,
-                            'work_orders.flow_graph',
-                        );
-                    const events = await view.states
-                        .getAllFor(workOrderId);
-                    const prior = latestClaimEvent(
-                        events, workOrderId,
-                    );
-                    const priorLive = prior !== null
-                        && prior.state === 'claimed'
-                        && !isClaimEventExpired(
-                            prior, graph.lockTimeout,
-                        );
-                    if (priorLive) {
-                        if (prior.member_id === actor) {
-                            return;
-                        }
-                        throw new ApiError(
-                            'work order is already'
-                                + ' claimed',
-                            HTTP_CONFLICT,
-                        );
-                    }
-                    if (
-                        prior !== null
-                        && prior.state === 'claimed'
-                    ) {
-                        await view.states.postEvent(
-                            b.expireEventId, workOrderId,
-                            'claim_expired',
-                            prior.member_id, b.expireAt,
-                        );
-                    }
-                    await view.states.postEvent(
-                        b.claimEventId, workOrderId,
-                        'claimed', actor, b.claimAt,
-                    );
-                },
+            postWorkOrderClaimOp(
+                db, param(p, 0), body, actor,
             ),
     }),
-    // Transition a work order along an edge. The web-app
-    // computes WHAT to write — the target node, the field-value
-    // rows, and whether a live claim must be implicitly released
-    // — exactly as POST /work-orders keeps its graph derivation
-    // client-side. This route writes them ATOMICALLY: the
-    // transition state event (entity_id = the work order, state =
-    // the target node), then each state_field_values row (the
-    // field inputs, re-validated by the store as they land), then
-    // the OPTIONAL 'claim_released' event. A mid-write failure
-    // rolls the whole thing back. Authorship of the transition
-    // event AND the release event is stamped from the verified
-    // caller (actor) — the same author the old commit batch
-    // produced, where both events flowed through PUT /states/:id.
     // Member-tier POST — /work-orders carries POST in
     // MEMBER_VERBS, and isPermitted matches on the segment
-    // prefix, so the sub-route is member-permitted like /claim.
+    // prefix, so the sub-route is member-permitted like
+    // /claim. See postWorkOrderTransitionOp for the
+    // transaction shape.
     route('work-orders/:id/transition', {
-        post: (db, p, body, actor) => {
-            const workOrderId = param(p, 0);
-            const b = validateWorkOrderTransitionBody(body);
-            return db.transaction(
-                ['states', 'state_field_values'],
-                async (view) => {
-                    await view.states.postEvent(
-                        b.transitionEventId,
-                        workOrderId,
-                        b.targetState,
-                        actor,
-                        b.transitionAt,
-                    );
-                    for (const row of b.fieldValues) {
-                        await view.stateFieldValues.put(
-                            row.id,
-                            row.fields as unknown as
-                                Omit<StateFieldValueEntity, 'id'>,
-                        );
-                    }
-                    if (b.release !== null) {
-                        await view.states.postEvent(
-                            b.release.id,
-                            workOrderId,
-                            b.release.state,
-                            actor,
-                            b.release.at,
-                        );
-                    }
-                },
-            );
-        },
+        post: (db, p, body, actor) =>
+            postWorkOrderTransitionOp(
+                db, param(p, 0), body, actor,
+            ),
     }),
     // Flow work-order joins nest under their parent flow: the
     // flow id is param 0, so the SERVER filters the collection to
