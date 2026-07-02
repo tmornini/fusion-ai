@@ -57,6 +57,9 @@ import {
     validateIdeaSubmissionEntity,
     validateIdentityCreateBody,
     validateObjectiveCreateBody,
+    validateObjectiveRevisionEntity,
+    validateBaselineScoreEntity,
+    validateActualScoreEntity,
     validateProjectEntity,
     validateProjectFlowEntity,
     validateFlowRecordEntity,
@@ -505,14 +508,22 @@ export async function postFlowCreationOp(
 // handler needs no actor. Exported so the seed can drive
 // objective creation through the same gate the route
 // uses (Decision 6's below-facade carve-out) — this is
-// also Phase 1's dual-write insertion seam.
+// also Phase 1's dual-write insertion seam. `pair` is
+// optional so the seed's below-facade calls (api/mock-
+// data.ts, no gate, no pair) keep compiling unchanged;
+// the route always supplies one, since 'objectives' is
+// pair-wired and never bearer-exempt.
 export async function postObjectiveCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
+    pair?: MessagePair,
 ): Promise<void> {
     const b = validateObjectiveCreateBody(body);
     return db.transaction(
-        ['objectives', 'objective_revisions'],
+        [
+            'objectives', 'objective_revisions',
+            'requests', 'responses',
+        ],
         async (view) => {
             await view.objectives.put(
                 b.id,
@@ -524,6 +535,9 @@ export async function postObjectiveCreationOp(
                 b.revision as unknown as
                     Omit<ObjectiveRevisionEntity, 'id'>,
             );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
         },
     );
 }
@@ -1020,6 +1034,34 @@ export const WRITE_RESPONSE_SPECS:
         successBody: (params, body) => ({
             id: param(params, 1),
             ...validateFlowRecordEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
+    'objectives': { status: 204 },
+    'objectives/:id/revisions/:rid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateObjectiveRevisionEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
+    'projects/:id/objective-baseline-scores/:sid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateBaselineScoreEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
+    'projects/:id/objective-actual-scores/:sid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateActualScoreEntity(
                 withoutId(body ?? {}),
             ),
         }),
@@ -2140,8 +2182,8 @@ export const routes: Route[] = [
         get: (db) => db.objectives.getAll(),
         // See postObjectiveCreationOp for the transaction
         // shape.
-        post: (db, _p, body) =>
-            postObjectiveCreationOp(db, body),
+        post: (db, _p, body, _actor, pair) =>
+            postObjectiveCreationOp(db, body, pair),
     }),
     makeIdRoute<ObjectiveEntity>({
         noun: 'objectives',
@@ -2159,13 +2201,33 @@ export const routes: Route[] = [
                 'objective_id', param(p, 0),
             ),
     }),
+    // Hand-written in place of a bare store put so PUT can
+    // append its message pair in the same transaction as the
+    // write (see message-pair.ts).
     route('objectives/:id/revisions/:rid', {
-        put: (db, p, body) =>
-            db.objectiveRevisions.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<ObjectiveRevisionEntity, 'id'>,
-            ),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 1);
+            return db.transaction(
+                [
+                    'objective_revisions',
+                    'requests', 'responses',
+                ],
+                async (view) => {
+                    const written = await view
+                        .objectiveRevisions.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<
+                                    ObjectiveRevisionEntity, 'id'
+                                >,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     // Objective baseline scores nest under their parent project:
     // the project id is param 0, so the SERVER filters the
@@ -2178,13 +2240,34 @@ export const routes: Route[] = [
                 'project_id', param(p, 0),
             ),
     }),
+    // Hand-written in place of a bare store put so PUT can
+    // append its message pair in the same transaction as the
+    // write (see message-pair.ts).
     route('projects/:id/objective-baseline-scores/:sid', {
-        put: (db, p, body) =>
-            db.projectObjectiveBaselineScores.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<ProjectObjectiveBaselineScoreEntity, 'id'>,
-            ),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 1);
+            return db.transaction(
+                [
+                    'project_objective_baseline_scores',
+                    'requests', 'responses',
+                ],
+                async (view) => {
+                    const written = await view
+                        .projectObjectiveBaselineScores.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<
+                                    ProjectObjectiveBaselineScoreEntity,
+                                    'id'
+                                >,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     // Objective actual scores nest under their parent project,
     // identically: project id is param 0 (server filter), leaf id
@@ -2195,13 +2278,34 @@ export const routes: Route[] = [
                 'project_id', param(p, 0),
             ),
     }),
+    // Hand-written in place of a bare store put so PUT can
+    // append its message pair in the same transaction as the
+    // write (see message-pair.ts).
     route('projects/:id/objective-actual-scores/:sid', {
-        put: (db, p, body) =>
-            db.projectObjectiveActualScores.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<ProjectObjectiveActualScoreEntity, 'id'>,
-            ),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 1);
+            return db.transaction(
+                [
+                    'project_objective_actual_scores',
+                    'requests', 'responses',
+                ],
+                async (view) => {
+                    const written = await view
+                        .projectObjectiveActualScores.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<
+                                    ProjectObjectiveActualScoreEntity,
+                                    'id'
+                                >,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     route('states', {
         get: (db) => db.states.getAll(),
