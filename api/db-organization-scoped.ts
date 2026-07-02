@@ -186,6 +186,14 @@ export function organizationScopedAdapter(
         // (inviter) instead.
         invitations: base.invitations,
 
+        // The message plane (requests/responses) is the global
+        // substrate the migration rides on: tenancy lives IN
+        // `uri_prefix`, enforced at the route gate, not by an
+        // organization_id column — so both pass through unwrapped,
+        // like the identity/auth spine above.
+        requests: base.requests,
+        responses: base.responses,
+
         // Identity PII / credential facets — visible to the
         // caller's org only for co-members (need-to-know),
         // derived from the membership ledger. Credentials also
