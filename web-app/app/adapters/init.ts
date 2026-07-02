@@ -2,7 +2,6 @@ import {
     indexedDbAdapter,
 } from '../../../api/db-indexeddb.ts';
 import {
-    postTablesChanged,
     postNotificationEvent,
 } from './broadcast-channel.ts';
 import type {
@@ -30,9 +29,7 @@ let adapter: ClientFacadeAdapter | undefined;
 // in-memory tier — IndexedDB has no Node stub, and we add no
 // fake.
 export function defaultAdapter(): ClientFacadeAdapter {
-    return indexedDbAdapter(
-        postTablesChanged, postNotificationEvent,
-    );
+    return indexedDbAdapter(postNotificationEvent);
 }
 
 export async function initAdapter(

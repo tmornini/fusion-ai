@@ -215,13 +215,9 @@ function createSchemaStores(db: IDBDatabase): void {
 
 export class IndexedDbBackend implements StorageBackend {
     #db: IDBDatabase | null;
-    readonly #post: (tables: readonly string[]) => void;
 
-    constructor(
-        post: (tables: readonly string[]) => void,
-    ) {
+    constructor() {
         this.#db = null;
-        this.#post = post;
     }
 
     // Open the connection, creating every object store (one
@@ -319,9 +315,6 @@ export class IndexedDbBackend implements StorageBackend {
             let result: R;
             let settled = false;
             idbTransaction.oncomplete = () => {
-                if (mode === 'readwrite') {
-                    this.#post(tables);
-                }
                 resolve(result);
             };
             idbTransaction.onabort = () => {

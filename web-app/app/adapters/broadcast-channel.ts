@@ -17,10 +17,6 @@ import {
 
 const CHANNEL_NAME = 'fusion-ai:data';
 
-interface TablesMessage {
-    readonly tables: readonly string[];
-}
-
 let channel: BroadcastChannel | undefined;
 
 function getChannel(): BroadcastChannel | undefined {
@@ -39,63 +35,6 @@ function getChannel(): BroadcastChannel | undefined {
     return channel;
 }
 
-// Announce that `tables` changed in this tab. Other tabs'
-// subscribers fire; BroadcastChannel does not echo to the
-// poster, so the originating tab never double-refreshes.
-export function postTablesChanged(
-    tables: readonly string[],
-): void {
-    const message: TablesMessage = { tables };
-    getChannel()?.postMessage(message);
-}
-
-// The wire shape is another tab's dharma — validate it at
-// this adapter before any subscriber trusts it. A malformed
-// message is a bug in the poster; crash loudly rather than
-// hand subscribers a corrupt table list.
-export function tablesFromMessage(
-    data: unknown,
-): readonly string[] {
-    if (typeof data === 'object' && data !== null) {
-        const { tables } = data as { tables?: unknown };
-        if (
-            Array.isArray(tables)
-            && tables.every(t => typeof t === 'string')
-        ) {
-            return tables;
-        }
-    }
-    throw new Error(
-        'malformed cross-tab tables message: '
-        + JSON.stringify(data),
-    );
-}
-
-// Subscribe to cross-tab table-change announcements; returns
-// an unsubscribe function.
-//
-// TRANSITIONAL (deleted in the retirement commit): while both
-// the retiring table-name protocol and the new scoped
-// notification protocol ride the one channel, a message
-// bearing the OTHER protocol's shape ('kind' in data) is
-// silently skipped rather than validated — validation still
-// throws on a message matching NEITHER shape.
-export function subscribeTablesChanged(
-    handler: (tables: readonly string[]) => void,
-): () => void {
-    const ch = getChannel();
-    if (ch === undefined) return () => {};
-    const listener = (event: MessageEvent): void => {
-        const data = event.data as unknown;
-        if (typeof data === 'object' && data !== null
-            && 'kind' in data) {
-            return;
-        }
-        handler(tablesFromMessage(data));
-    };
-    return subscribeEventListener(ch, 'message', listener);
-}
-
 // Announce a scoped (or full) notification event. Other tabs'
 // subscribers fire; BroadcastChannel does not echo to the
 // poster, so the originating tab never double-refreshes.
@@ -107,24 +46,13 @@ export function postNotificationEvent(
 
 // Subscribe to cross-tab notification events; returns an
 // unsubscribe function.
-//
-// TRANSITIONAL (deleted in the retirement commit): a message
-// bearing the retiring table-name protocol's shape ('tables'
-// in data) is silently skipped rather than validated —
-// validation still throws on a message matching NEITHER
-// shape.
 export function subscribeNotificationEvents(
     handler: (event: NotificationEvent) => void,
 ): () => void {
     const ch = getChannel();
     if (ch === undefined) return () => {};
     const listener = (event: MessageEvent): void => {
-        const data = event.data as unknown;
-        if (typeof data === 'object' && data !== null
-            && 'tables' in data) {
-            return;
-        }
-        handler(notificationEventFromWire(data));
+        handler(notificationEventFromWire(event.data));
     };
     return subscribeEventListener(ch, 'message', listener);
 }

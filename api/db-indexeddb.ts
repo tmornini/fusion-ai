@@ -15,18 +15,13 @@ import {
 // the preset without subclassing. Store wiring is
 // synchronous, so getDbAdapter() stays sync; the IDB
 // connection opens in initialize(), which boot awaits before
-// any store op.
-//
-// TRANSITIONAL: `post` is the retiring cross-tab hook — the
-// backend calls it with the touched tables after a readwrite
-// commit — kept alongside `notify` (the Decision 5 scoped
-// notification hook) until Step 7 deletes `post` with the
-// backend's `#post`.
+// any store op. `notify` is the Decision 5 cross-tab hook —
+// the gate calls it after a write commits so other tabs can
+// refresh.
 export function indexedDbAdapter(
-    post: (tables: readonly string[]) => void,
     notify: NotificationPost,
 ): GuardedDbAdapter & LatencySimulation {
-    const backend = new IndexedDbBackend(post);
+    const backend = new IndexedDbBackend();
     return new BackedDbAdapter(
         backend,
         () => simulateNetworkLatency(
