@@ -42,6 +42,7 @@ import type {
 import {
     validateAIMemberCreateBody,
     validateAIMemberEditBody,
+    validateAIMemberEntity,
     validateHumanMemberCreateBody,
     validateHumanMemberEditBody,
     validateFlowCreateBody,
@@ -56,6 +57,9 @@ import {
     validateIdeaEntity,
     validateIdeaSubmissionEntity,
     validateIdentityCreateBody,
+    validateIdentityEntity,
+    validateIdentityPiiEntity,
+    validateIdentityCredentialEntity,
     validateObjectiveCreateBody,
     validateObjectiveRevisionEntity,
     validateBaselineScoreEntity,
@@ -555,15 +559,23 @@ export async function postObjectiveCreationOp(
 // body. Exported so the seed can drive AI-member creation
 // through the same gate the route uses (Decision 6's
 // below-facade carve-out) — this is also Phase 1's
-// dual-write insertion seam.
+// dual-write insertion seam. `pair` is optional so the
+// seed's below-facade calls (api/mock-data.ts, no gate,
+// no pair) keep compiling unchanged; the route always
+// supplies one, since 'ai-members' is pair-wired and
+// never bearer-exempt.
 export async function postAiMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     actor: Id,
+    pair?: MessagePair,
 ): Promise<void> {
     const b = validateAIMemberCreateBody(body);
     return db.transaction(
-        ['members', 'ai_members', 'states'],
+        [
+            'members', 'ai_members', 'states',
+            'requests', 'responses',
+        ],
         async (view) => {
             await view.members.put(
                 b.id, { type: 'ai' },
@@ -580,6 +592,9 @@ export async function postAiMemberCreationOp(
                 actor,
                 b.initialStateAt,
             );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
         },
     );
 }
@@ -598,17 +613,23 @@ export async function postAiMemberCreationOp(
 // (actor), never the body. Exported so the seed can drive
 // human-member creation through the same gate the route
 // uses (Decision 6's below-facade carve-out) — this is
-// also Phase 1's dual-write insertion seam.
+// also Phase 1's dual-write insertion seam. `pair` is
+// optional so the seed's below-facade calls (api/mock-
+// data.ts, no gate, no pair) keep compiling unchanged;
+// the route always supplies one, since 'human-members' is
+// pair-wired and never bearer-exempt.
 export async function postHumanMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     actor: Id,
+    pair?: MessagePair,
 ): Promise<void> {
     const b = validateHumanMemberCreateBody(body);
     return db.transaction(
         [
             'members', 'identities', 'identity_pii',
             'human_members', 'states',
+            'requests', 'responses',
         ],
         async (view) => {
             await view.members.put(
@@ -634,6 +655,9 @@ export async function postHumanMemberCreationOp(
                 actor,
                 b.initialStateAt,
             );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
         },
     );
 }
@@ -655,15 +679,22 @@ export async function postHumanMemberCreationOp(
 // Exported so the seed can drive identity creation through
 // the same gate the route uses (Decision 6's below-facade
 // carve-out) — this is also Phase 1's dual-write insertion
-// seam.
+// seam. `pair` is optional so the seed's below-facade calls
+// (api/mock-data.ts, no gate, no pair) keep compiling
+// unchanged; the route always supplies one, since
+// 'identities' is pair-wired and never bearer-exempt.
 export async function postIdentityCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
+    pair?: MessagePair,
 ): Promise<void> {
     const b = validateIdentityCreateBody(body);
     const tables = b.kind === 'person'
-        ? ['identities', 'identity_pii']
-        : ['identities', 'identity_credentials'];
+        ? ['identities', 'identity_pii', 'requests', 'responses']
+        : [
+            'identities', 'identity_credentials',
+            'requests', 'responses',
+        ];
     return db.transaction(
         tables,
         async (view) => {
@@ -688,6 +719,9 @@ export async function postIdentityCreationOp(
                             IdentityCredentialEntity, 'id'
                         >,
                 );
+            }
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
             }
         },
     );
@@ -917,8 +951,24 @@ export interface WriteResponseSpec {
     ) => unknown;
 }
 
+// Almost every wired pattern exposes exactly one non-DELETE
+// verb, so a single WriteResponseSpec fully describes its
+// success shape. 'ai-members/:id' is the first pattern to wire
+// BOTH a PUT (the bare ai_members facet put, 200 + written row)
+// and a POST (the composed members + ai_members edit, 204, no
+// body) — their response shapes genuinely diverge, so that one
+// entry supplies a spec per verb instead. Distinguished from a
+// plain WriteResponseSpec by the absence of `status` at the top
+// level (see isPerVerbWriteResponseSpec in api.ts).
+export interface PerVerbWriteResponseSpec {
+    readonly put?: WriteResponseSpec;
+    readonly post?: WriteResponseSpec;
+}
+
 export const WRITE_RESPONSE_SPECS:
-    Readonly<Record<string, WriteResponseSpec>> = {
+    Readonly<
+        Record<string, WriteResponseSpec | PerVerbWriteResponseSpec>
+    > = {
     'ideas': { status: 204 },
     'ideas/:id': {
         status: 200,
@@ -1066,6 +1116,51 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
+    'ai-members': { status: 204 },
+    // Per-verb: PUT is the bare facet put (200 + written row);
+    // POST is the composed edit (204, no body).
+    'ai-members/:id': {
+        put: {
+            status: 200,
+            successBody: (params, body) => ({
+                id: param(params, 0),
+                ...validateAIMemberEntity(
+                    withoutId(body ?? {}),
+                ),
+            }),
+        },
+        post: { status: 204 },
+    },
+    'human-members': { status: 204 },
+    'human-members/:id': { status: 204 },
+    'identities': { status: 204 },
+    'identities/:id': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateIdentityEntity(withoutId(body ?? {})),
+        }),
+    },
+    'identities/:id/pii': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateIdentityPiiEntity(withoutId(body ?? {})),
+        }),
+    },
+    // The written row's `secret` rides the wire here — a
+    // deliberate zero-change carry-over (see the route comment
+    // above 'identities/:id/credentials/:cid' in the routes
+    // array).
+    'identities/:id/credentials/:cid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateIdentityCredentialEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
 };
 
 export const routes: Route[] = [
@@ -1096,28 +1191,51 @@ export const routes: Route[] = [
         // entry, so it falls to the root admin tier in
         // ROUTE_POLICY. See postAiMemberCreationOp for the
         // transaction shape.
-        post: (db, _p, body, actor) =>
-            postAiMemberCreationOp(db, body, actor),
+        post: (db, _p, body, actor, pair) =>
+            postAiMemberCreationOp(db, body, actor, pair),
     }),
+    // Hand-written PUT (in place of a bare store put) and POST
+    // so each can append its message pair in the same
+    // transaction as its write — the pattern carries BOTH a
+    // wired PUT (the bare ai_members facet put) and a wired
+    // POST (the composed members + ai_members edit), the first
+    // pattern in this codebase to need a PER-VERB
+    // WriteResponseSpec entry (see message-pair.ts /
+    // WRITE_RESPONSE_SPECS). GET reproduces the prior closure
+    // byte-equivalently.
     route('ai-members/:id', {
         get: (db, p) => db.aiMembers.getById(param(p, 0)),
-        put: (db, p, body) =>
-            db.aiMembers.put(
-                param(p, 0),
-                withoutId(body) as unknown as
-                    Omit<AIMemberEntity, 'id'>,
-            ),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['ai_members', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.aiMembers.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<AIMemberEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
         // AI-member edit: the parent member row and the
         // ai_members detail row re-put as ONE transaction — NO
         // state event (an edit does not move the member's
         // lifecycle), so the handler needs no actor. The facet
         // stores re-validate their own bodies. Admin-only,
         // exactly as create — no member-tier POST entry exists.
-        post: (db, p, body) => {
+        post: (db, p, body, _actor, pair) => {
             const id = param(p, 0);
             const b = validateAIMemberEditBody(body);
             return db.transaction(
-                ['members', 'ai_members'],
+                [
+                    'members', 'ai_members',
+                    'requests', 'responses',
+                ],
                 async (view) => {
                     await view.members.put(
                         id, { type: 'ai' },
@@ -1127,6 +1245,9 @@ export const routes: Route[] = [
                         b.detail as unknown as
                             Omit<AIMemberEntity, 'id'>,
                     );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
                 },
             );
         },
@@ -1137,8 +1258,8 @@ export const routes: Route[] = [
         // entry, so it falls to the root admin tier in
         // ROUTE_POLICY. See postHumanMemberCreationOp for the
         // transaction shape.
-        post: (db, _p, body, actor) =>
-            postHumanMemberCreationOp(db, body, actor),
+        post: (db, _p, body, actor, pair) =>
+            postHumanMemberCreationOp(db, body, actor, pair),
     }),
     route('human-members/:id', {
         get: (db, p) => db.humanMembers.getById(param(p, 0)),
@@ -1147,13 +1268,14 @@ export const routes: Route[] = [
         // member's lifecycle), so the handler needs no actor. The
         // facet stores re-validate their own bodies. Admin-only,
         // exactly as create — no member-tier POST entry exists.
-        post: (db, p, body) => {
+        post: (db, p, body, _actor, pair) => {
             const id = param(p, 0);
             const b = validateHumanMemberEditBody(body);
             return db.transaction(
                 [
                     'members', 'identities', 'identity_pii',
                     'human_members',
+                    'requests', 'responses',
                 ],
                 async (view) => {
                     await view.members.put(
@@ -1172,6 +1294,9 @@ export const routes: Route[] = [
                         b.detail as unknown as
                             Omit<HumanMemberEntity, 'id'>,
                     );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
                 },
             );
         },
@@ -1182,26 +1307,74 @@ export const routes: Route[] = [
         // entry, so it falls to the root admin tier in
         // ROUTE_POLICY. See postIdentityCreationOp for the
         // transaction shape.
-        post: (db, _p, body) =>
-            postIdentityCreationOp(db, body),
+        post: (db, _p, body, _actor, pair) =>
+            postIdentityCreationOp(db, body, pair),
     }),
-    makeIdRoute<IdentityEntity>({
-        noun: 'identities',
-        store: db => db.identities,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<IdentityEntity> so
+    // PUT can append its message pair in the same transaction
+    // as the write — the factory's fixed closures have no
+    // per-family pair selector (see message-pair.ts). GET
+    // reproduces the factory closure byte-equivalently; verbs
+    // stay {get, put}.
+    route('identities/:id', {
+        get: (db, p) => db.identities.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['identities', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.identities.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<IdentityEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     // PII is a facet of the identity's own subtree: GET is
     // self-only, PUT/DELETE self-or-admin (enforced in the
     // request gate, mirroring /identities/:id/default-org). The
     // identity-pii COLLECTION below (admin roster) is separate.
+    // PUT/DELETE each append their message pair in the same
+    // transaction as the write — the pattern's last segment
+    // ('pii') is not a :param, so messageAddress yields uriId
+    // '' (a singleton document at a collection-style address).
     route('identities/:id/pii', {
         get: (db, p) => db.identityPii.getById(param(p, 0)),
-        put: (db, p, body) => db.identityPii.put(
-            param(p, 0),
-            withoutId(body) as unknown as
-                Omit<IdentityPiiEntity, 'id'>,
-        ),
-        delete: (db, p) => db.identityPii.delete(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['identity_pii', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.identityPii.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<IdentityPiiEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
+        delete: (db, p, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['identity_pii', 'requests', 'responses'],
+                async (view) => {
+                    await view.identityPii.delete(id);
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
     }),
     route('identity-pii', {
         get: (db) => db.identityPii.getAll(),
@@ -1215,7 +1388,12 @@ export const routes: Route[] = [
     // hash never crosses the boundary. The leaf id is param 1; GET
     // and PUT are exposed exactly as the flat makeIdRoute carried
     // them. ADMIN-ONLY: /identities is not member-tier, so these
-    // fall to the root admin entries — NO MEMBER_VERBS entry.
+    // fall to the root admin entries — NO MEMBER_VERBS entry. The
+    // PUT wire response carries `secret` — a deliberate zero-
+    // change carry-over from the un-wired behavior (see
+    // WRITE_RESPONSE_SPECS's 'identities/:id/credentials/:cid'
+    // entry, which reconstructs the FULL entity, unlike the GETs'
+    // withoutSecret projection).
     route('identities/:id/credentials', {
         get: async (db, p) =>
             (await db.identityCredentials.getAllWhere(
@@ -1229,12 +1407,29 @@ export const routes: Route[] = [
                     param(p, 1),
                 ),
             ),
-        put: (db, p, body) =>
-            db.identityCredentials.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<IdentityCredentialEntity, 'id'>,
-            ),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 1);
+            return db.transaction(
+                [
+                    'identity_credentials',
+                    'requests', 'responses',
+                ],
+                async (view) => {
+                    const written = await view
+                        .identityCredentials.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<
+                                    IdentityCredentialEntity, 'id'
+                                >,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     makeIdRoute<IdentityTokenRevocationEntity>({
         noun: 'identity-token-revocations',

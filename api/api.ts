@@ -75,6 +75,7 @@ import {
     param,
     WRITE_RESPONSE_SPECS,
     type Route,
+    type WriteResponseSpec,
 } from './routes.ts';
 import {
     invitationsRequest,
@@ -195,6 +196,25 @@ function hoistedHeaderFields(request: Request): FieldLine[] {
         }
     }
     return fields;
+}
+
+// Resolve a route pattern's WRITE_RESPONSE_SPECS entry for the
+// verb actually in flight. Every entry but one is a plain
+// WriteResponseSpec, applying regardless of which non-DELETE
+// verb hit it (no prior pattern wired both a PUT and a POST at
+// once). A PerVerbWriteResponseSpec — recognized by the absence
+// of `status` at its top level — supplies one spec per verb
+// instead; today only 'ai-members/:id' needs this (see
+// routes.ts).
+function writeResponseSpecFor(
+    routePattern: string,
+    method: string,
+): WriteResponseSpec | undefined {
+    const entry = WRITE_RESPONSE_SPECS[routePattern];
+    if (entry === undefined || 'status' in entry) {
+        return entry;
+    }
+    return method === 'PUT' ? entry.put : entry.post;
 }
 
 // The one wire-header voice for both a fresh write and a
@@ -467,9 +487,13 @@ export async function handleRequest(
             // a route pattern can carry BOTH a PUT (200, its
             // written row) and a DELETE (204) — the map's one
             // entry per pattern serves the PUT/POST verb only.
+            // The rare pattern that wires BOTH a PUT and a POST
+            // with genuinely different shapes (ai-members/:id)
+            // supplies a PerVerbWriteResponseSpec instead — see
+            // writeResponseSpecFor.
             const spec = method === 'DELETE'
                 ? { status: 204 }
-                : WRITE_RESPONSE_SPECS[routePattern];
+                : writeResponseSpecFor(routePattern, method);
             if (spec === undefined) {
                 throw new Error(
                     'no write response spec for wired route: '
