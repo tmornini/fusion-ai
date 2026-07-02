@@ -379,6 +379,68 @@ export async function postIdeaCreationOp(
     );
 }
 
+// Flow creation: the flows row, its project_flows join
+// row, the initial 'active' state event, and the four
+// relation table rows from graphDelta commit as ONE
+// transaction — a mid-write failure rolls the whole
+// thing back rather than orphaning a half-built flow.
+// The org-scoped flows store stamps organization_id from
+// the verified token and re-validates through
+// validateFlowEntity, so the flow body OMITS it; the
+// join row is re-validated by the project_flows store.
+// The initial event is authored by the verified caller
+// (actor), never the body. graphDelta is pre-validated
+// at the HTTP gate (validateFlowCreateBody); the route
+// writes its rows through writeFlowGraphDelta — the same
+// helper PUT/undo/redo use. The create delta carries no
+// deletions (a fresh flow tombstones nothing). Exported
+// so the seed can drive flow creation through the same
+// gate the route uses (Decision 6's below-facade
+// carve-out) — this is also Phase 1's dual-write
+// insertion seam.
+export async function postFlowCreationOp(
+    db: DbAdapter,
+    body: Record<string, unknown>,
+    actor: Id,
+): Promise<void> {
+    const b = validateFlowCreateBody(body);
+    const delta = b.graphDelta;
+    return db.transaction(
+        [
+            'flows', 'project_flows', 'states',
+            'flow_nodes', 'flow_edges',
+            'flow_node_members',
+            'flow_node_attributes',
+        ],
+        async (view) => {
+            await view.flows.put(
+                b.id,
+                b.flow as unknown as
+                    Omit<FlowEntity, 'id'>,
+            );
+            await view.projectFlows.put(
+                b.projectFlowId,
+                b.projectFlow as unknown as
+                    Omit<ProjectFlowEntity, 'id'>,
+            );
+            await view.states.postEvent(
+                b.initialStateEventId,
+                b.id,
+                b.initialState,
+                actor,
+                b.initialStateAt,
+            );
+            // The delta's deletions are empty on create
+            // (a fresh flow tombstones nothing), so the
+            // helper writes only the seeding upserts and
+            // member/attribute events.
+            await writeFlowGraphDelta(
+                view, delta, actor,
+            );
+        },
+    );
+}
+
 export const routes: Route[] = [
     route('members', {
         // Members are derived from the membership ledger off
@@ -915,60 +977,11 @@ export const routes: Route[] = [
                 },
             );
         },
-        // Flow creation: the flows row, its project_flows join
-        // row, the initial 'active' state event, and the four
-        // relation table rows from graphDelta commit as ONE
-        // transaction — a mid-write failure rolls the whole
-        // thing back rather than orphaning a half-built flow.
-        // The org-scoped flows store stamps organization_id from
-        // the verified token and re-validates through
-        // validateFlowEntity, so the flow body OMITS it; the
-        // join row is re-validated by the project_flows store.
-        // The initial event is authored by the verified caller
-        // (actor), never the body. graphDelta is pre-validated
-        // at the HTTP gate (validateFlowCreateBody); the route
-        // writes its rows through writeFlowGraphDelta — the same
-        // helper PUT/undo/redo use. The create delta carries no
-        // deletions (a fresh flow tombstones nothing).
-        // Member-tier POST — /flows carries POST in MEMBER_VERBS.
-        post: (db, _p, body, actor) => {
-            const b = validateFlowCreateBody(body);
-            const delta = b.graphDelta;
-            return db.transaction(
-                [
-                    'flows', 'project_flows', 'states',
-                    'flow_nodes', 'flow_edges',
-                    'flow_node_members',
-                    'flow_node_attributes',
-                ],
-                async (view) => {
-                    await view.flows.put(
-                        b.id,
-                        b.flow as unknown as
-                            Omit<FlowEntity, 'id'>,
-                    );
-                    await view.projectFlows.put(
-                        b.projectFlowId,
-                        b.projectFlow as unknown as
-                            Omit<ProjectFlowEntity, 'id'>,
-                    );
-                    await view.states.postEvent(
-                        b.initialStateEventId,
-                        b.id,
-                        b.initialState,
-                        actor,
-                        b.initialStateAt,
-                    );
-                    // The delta's deletions are empty on create
-                    // (a fresh flow tombstones nothing), so the
-                    // helper writes only the seeding upserts and
-                    // member/attribute events.
-                    await writeFlowGraphDelta(
-                        view, delta, actor,
-                    );
-                },
-            );
-        },
+        // Member-tier POST — /flows carries POST in
+        // MEMBER_VERBS. See postFlowCreationOp for the
+        // transaction shape.
+        post: (db, _p, body, actor) =>
+            postFlowCreationOp(db, body, actor),
     }),
     // Write a flow: an OPTIONAL version snapshot (the new
     // flow_versions row PUT plus the named over-cap trim
