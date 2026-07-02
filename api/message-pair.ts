@@ -258,6 +258,11 @@ const CREATE_BODY_ID_FIELDS: Record<string, string> = {
     'ai-members': 'id',
     'human-members': 'id',
     'identities': 'id',
+    // Not gate-dispatched (the invitations side channel forms
+    // its own pair directly in invitations-domain.ts) but reuses
+    // this SAME override table so createdEntityUriId serves both
+    // callers with one voice.
+    'invitations': 'invitationId',
 };
 
 export function createdEntityUriId(
@@ -313,6 +318,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'identities/:id',
     'identities/:id/pii',
     'identities/:id/credentials/:cid',
+    'memberships/:id',
 ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from
@@ -351,4 +357,5 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'identities/:id',
         'identities/:id/pii',
         'identities/:id/credentials/:cid',
+        'memberships/:id',
     ]);

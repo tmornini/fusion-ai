@@ -60,6 +60,7 @@ import {
     validateIdentityEntity,
     validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
+    validateMembershipEntity,
     validateObjectiveCreateBody,
     validateObjectiveRevisionEntity,
     validateBaselineScoreEntity,
@@ -1159,6 +1160,13 @@ export const WRITE_RESPONSE_SPECS:
             ...validateIdentityCredentialEntity(
                 withoutId(body ?? {}),
             ),
+        }),
+    },
+    'memberships/:id': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateMembershipEntity(withoutId(body ?? {})),
         }),
     },
 };
@@ -2303,10 +2311,43 @@ export const routes: Route[] = [
     route('memberships', {
         get: (db) => db.memberships.getAll(),
     }),
-    makeIdRoute<MembershipEntity>({
-        noun: 'memberships',
-        store: db => db.memberships,
-        verbs: ['get', 'put', 'delete'],
+    // Hand-written in place of makeIdRoute<MembershipEntity> so
+    // PUT and DELETE can each append their message pair in the
+    // same transaction as the write — the factory's fixed
+    // closures have no per-family pair selector (see
+    // message-pair.ts). GET reproduces the factory closure
+    // byte-equivalently; verbs stay {get, put, delete}.
+    route('memberships/:id', {
+        get: (db, p) => db.memberships.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['memberships', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.memberships.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<MembershipEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
+        delete: (db, p, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['memberships', 'requests', 'responses'],
+                async (view) => {
+                    await view.memberships.delete(id);
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
     }),
     route('current-member', {
         get: (db, _p, actor) =>

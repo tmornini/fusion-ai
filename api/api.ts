@@ -187,7 +187,7 @@ const HOISTED_HEADER_NAMES: readonly string[] = [
     REQUEST_ID_HEADER,
 ];
 
-function hoistedHeaderFields(request: Request): FieldLine[] {
+export function hoistedHeaderFields(request: Request): FieldLine[] {
     const fields: FieldLine[] = [];
     for (const name of HOISTED_HEADER_NAMES) {
         const value = request.headers.get(name);
@@ -221,7 +221,7 @@ function writeResponseSpecFor(
 // byte-identical replay — both render from the STORED row,
 // never the in-memory pair, so a concurrent-replay's surviving
 // original pair is what the wire advertises either way.
-function wireHeadersFor(stored: ResponseEntity): HeadersInit {
+export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
     const headers: Record<string, string> = {
         'Date': httpDateOf(stored.at),
         'Response-ID': stored.id,
@@ -236,7 +236,7 @@ function wireHeadersFor(stored: ResponseEntity): HeadersInit {
 // canonical message — the one reconstruction path shared by a
 // fresh write's success return and an idempotent replay's early
 // return.
-function responseFromStored(stored: ResponseEntity): Response {
+export function responseFromStored(stored: ResponseEntity): Response {
     const model = parseJson(
         stored.message, defaultBodyRegistry(),
     );
