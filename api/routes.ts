@@ -59,6 +59,9 @@ import {
     validateObjectiveCreateBody,
     validateProjectEntity,
     validateProjectFlowEntity,
+    validateFlowRecordEntity,
+    validateRecordAttributeEntity,
+    validateRecordEntity,
     validateRecordWriteBody,
     validateStateBody,
     validateWorkOrderClaimBody,
@@ -251,11 +254,15 @@ function makeIdRoute<T extends { id: string }>(
 // Exported so the seed can drive record creation through
 // the same gate the route uses (Decision 6's below-facade
 // carve-out) — this is also Phase 1's dual-write insertion
-// seam.
+// seam. `pair` is optional so the seed's below-facade call
+// (api/mock-data.ts, no gate, no pair) keeps compiling
+// unchanged; the route always supplies one, since 'records'
+// is pair-wired and never bearer-exempt.
 export async function postRecordWriteOp(
     db: DbAdapter,
     payload: Record<string, unknown>,
     actor: Id,
+    pair?: MessagePair,
 ): Promise<void> {
     const body = validateRecordWriteBody(payload);
     const entries = body.attributes.map(attr => {
@@ -279,6 +286,7 @@ export async function postRecordWriteOp(
         [...new Set([
             'records', 'record_attributes', 'states',
             ...ATTRIBUTE_RESTRICT_TABLES,
+            'requests', 'responses',
         ])],
         async (view) => {
             await view.records.put(body.id, body.record);
@@ -312,6 +320,9 @@ export async function postRecordWriteOp(
                 await view.recordAttributes.putMany(
                     entries, removedIds,
                 );
+            }
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
             }
         },
     );
@@ -968,6 +979,36 @@ export const WRITE_RESPONSE_SPECS:
         successBody: (params, body) => ({
             id: param(params, 1),
             ...validateFlowWorkOrderEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
+    'records': { status: 204 },
+    'records/:id': {
+        status: 200,
+        successBody: (params, body, _actor, organization) => ({
+            id: param(params, 0),
+            ...validateRecordEntity({
+                ...withoutId(body ?? {}),
+                organization_id: organization,
+            }),
+        }),
+    },
+    'record-attributes/:id': {
+        status: 200,
+        successBody: (params, body, _actor, organization) => ({
+            id: param(params, 0),
+            ...validateRecordAttributeEntity({
+                ...withoutId(body ?? {}),
+                organization_id: organization,
+            }),
+        }),
+    },
+    'flows/:id/records/:frid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateFlowRecordEntity(
                 withoutId(body ?? {}),
             ),
         }),
@@ -1842,13 +1883,46 @@ export const routes: Route[] = [
     }),
     route('records', {
         get: (db) => db.records.getAll(),
-        post: (db, _p, body, actor) =>
-            postRecordWriteOp(db, body, actor),
+        post: (db, _p, body, actor, pair) =>
+            postRecordWriteOp(db, body, actor, pair),
     }),
-    makeIdRoute<RecordEntity>({
-        noun: 'records',
-        store: db => db.records,
-        verbs: ['get', 'put', 'delete'],
+    // Hand-written in place of makeIdRoute<RecordEntity> so
+    // PUT and DELETE can each append their message pair in
+    // the same transaction as the write — the factory's fixed
+    // closures have no per-family pair selector (see
+    // message-pair.ts). GET reproduces the factory closure
+    // byte-equivalently; verbs stay {get, put, delete}.
+    route('records/:id', {
+        get: (db, p) => db.records.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['records', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.records.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<RecordEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
+        delete: (db, p, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['records', 'requests', 'responses'],
+                async (view) => {
+                    await view.records.delete(id);
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
     }),
     route('record-attributes', {
         get: (db) =>
@@ -1857,28 +1931,52 @@ export const routes: Route[] = [
     route('record-attributes/:id', {
         get: (db, p) =>
             db.recordAttributes.getById(param(p, 0)),
-        put: (db, p, body) =>
-            db.recordAttributes.put(
-                param(p, 0),
-                withoutId(body) as unknown as
-                    Omit<RecordAttributeEntity, 'id'>,
-            ),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                [
+                    'record_attributes',
+                    'requests', 'responses',
+                ],
+                async (view) => {
+                    const written = await view
+                        .recordAttributes.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<
+                                    RecordAttributeEntity, 'id'
+                                >,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
         // DELETE is RESTRICT, not cascade: an attribute
         // still named by state_field_values rows or bound
         // in a flow / work-order graph refuses to die (409
         // naming the referrers) — destroying it would
         // orphan immutable event payloads. The referrer
         // check and the splice ride ONE transaction, so no
-        // writer can slip a new reference between them.
-        delete: (db, p) => {
+        // writer can slip a new reference between them; the
+        // pair appends inside that SAME transaction, as the
+        // last act after the safe delete succeeds.
+        delete: (db, p, _actor, pair) => {
             const id = param(p, 0);
             return db.transaction(
                 [...new Set([
                     'record_attributes',
                     ...ATTRIBUTE_RESTRICT_TABLES,
+                    'requests', 'responses',
                 ])],
-                (view) =>
-                    deleteRecordAttributeSafe(view, id),
+                async (view) => {
+                    await deleteRecordAttributeSafe(view, id);
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
             );
         },
     }),
@@ -1891,13 +1989,36 @@ export const routes: Route[] = [
     }),
     route('flows/:id/records/:frid', {
         get: (db, p) => db.flowRecords.getById(param(p, 1)),
-        put: (db, p, body) =>
-            db.flowRecords.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<FlowRecordEntity, 'id'>,
-            ),
-        delete: (db, p) => db.flowRecords.delete(param(p, 1)),
+        put: (db, p, body, _actor, pair) => {
+            const frid = param(p, 1);
+            return db.transaction(
+                ['flow_records', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.flowRecords
+                        .put(
+                            frid,
+                            withoutId(body) as unknown as
+                                Omit<FlowRecordEntity, 'id'>,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
+        delete: (db, p, _actor, pair) => {
+            const frid = param(p, 1);
+            return db.transaction(
+                ['flow_records', 'requests', 'responses'],
+                async (view) => {
+                    await view.flowRecords.delete(frid);
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
     }),
 
     route('organizations', {

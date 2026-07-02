@@ -253,6 +253,7 @@ const CREATE_BODY_ID_FIELDS: Record<string, string> = {
     'ideas': 'id',
     'flows': 'id',
     'work-orders': 'id',
+    'records': 'id',
 };
 
 export function createdEntityUriId(
@@ -291,6 +292,10 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'work-orders/:id/claim',
     'work-orders/:id/transition',
     'flows/:id/work-orders/:woid',
+    'records',
+    'records/:id',
+    'record-attributes/:id',
+    'flows/:id/records/:frid',
 ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from
@@ -312,4 +317,8 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'flows/:id',
         'work-orders',
         'flows/:id/work-orders/:woid',
+        'records',
+        'records/:id',
+        'record-attributes/:id',
+        'flows/:id/records/:frid',
     ]);
