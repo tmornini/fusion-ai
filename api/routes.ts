@@ -65,6 +65,7 @@ import {
     validateIdentityTokenRevocationEntity,
     validateMembershipEntity,
     validateObjectiveCreateBody,
+    validateObjectiveEntity,
     validateObjectiveRevisionEntity,
     validateBaselineScoreEntity,
     validateActualScoreEntity,
@@ -1100,6 +1101,16 @@ export const WRITE_RESPONSE_SPECS:
         }),
     },
     'objectives': { status: 204 },
+    'objectives/:id': {
+        status: 200,
+        successBody: (params, body, _actor, organization) => ({
+            id: param(params, 0),
+            ...validateObjectiveEntity({
+                ...withoutId(body ?? {}),
+                organization_id: organization,
+            }),
+        }),
+    },
     'objectives/:id/revisions/:rid': {
         status: 200,
         successBody: (params, body) => ({
@@ -2677,10 +2688,32 @@ export const routes: Route[] = [
         post: (db, _p, body, _actor, pair) =>
             postObjectiveCreationOp(db, body, pair),
     }),
-    makeIdRoute<ObjectiveEntity>({
-        noun: 'objectives',
-        store: db => db.objectives,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<ObjectiveEntity> so
+    // PUT can append its message pair in the same transaction
+    // as the write — the factory's fixed closures have no
+    // per-family pair selector (see message-pair.ts). GET
+    // reproduces the factory closure byte-equivalently; verbs
+    // stay {get, put} — objectives/:id has no DELETE today,
+    // mirroring the projects/:id precedent.
+    route('objectives/:id', {
+        get: (db, p) => db.objectives.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['objectives', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.objectives.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<ObjectiveEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     // Objective revisions nest under their parent objective: the
     // objective id is param 0, so the SERVER filters the
