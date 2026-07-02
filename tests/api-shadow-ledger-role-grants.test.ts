@@ -31,9 +31,20 @@ async function freshDb(): Promise<MemoryDbAdapter> {
     return db;
 }
 
+// Mirrors the REAL wire contract
+// (web-app/app/adapters/role-grants.ts): the outgoing body
+// omits organization_id entirely. role_grants rides the
+// ORG-SCOPED store, which stamps organization_id from the
+// verified token's fenced org BEFORE validating (`#stamp` in
+// api/store-organization-scoped.ts) — both at the gate's
+// successBody resolver (routes.ts) and inside the route
+// handler's own transaction (the SAME scoped store re-wraps
+// the tx view). If the fixture supplied organization_id
+// itself, a deep-equal against DEV_TOKEN's own org ('1') could
+// not tell server-side stamping apart from client echo.
 function grantFields(identityId: string, role = 'member') {
     return {
-        organization_id: '1', identity_id: identityId,
+        identity_id: identityId,
         role, action: 'granted', by_member_id: 'current', at: AT,
     };
 }
@@ -44,9 +55,10 @@ function grantFields(identityId: string, role = 'member') {
 test('PUT role-grants/:id appends its pair at the entity'
 + ' address', async () => {
     const db = await freshDb();
+    const body = grantFields('walt');
+    assert.ok(!('organization_id' in body));
     const res = await handleRequest(db, req(
-        'PUT', '/role-grants/rg-1', DEV_TOKEN,
-        grantFields('walt'),
+        'PUT', '/role-grants/rg-1', DEV_TOKEN, body,
     ));
     assert.equal(res.status, 200);
     const requests = await db.requests.getAll();
@@ -55,6 +67,11 @@ test('PUT role-grants/:id appends its pair at the entity'
     assert.equal(requests[0]!.uri_id, 'rg-1');
     const domainRow = await db.roleGrants.getById('rg-1');
     assert.deepEqual(await res.json(), domainRow);
+    // The wire body never carried organization_id, yet the
+    // written row (and the wire response mirroring it) carries
+    // DEV_TOKEN's fenced org — proof the gate/store STAMP it
+    // server-side rather than trusting a client-echoed value.
+    assert.equal(domainRow.organization_id, '1');
 });
 
 test('two PUTs to DIFFERENT role-grants/:id ids each form a'
