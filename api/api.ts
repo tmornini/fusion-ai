@@ -24,6 +24,7 @@ import {
     responseFromStored,
     PAIR_WIRED_ROUTE_PATTERNS,
     DOCUMENT_CLASS_ROUTE_PATTERNS,
+    REPLAY_EXEMPT_ROUTE_PATTERNS,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
 import {
@@ -452,11 +453,18 @@ export async function handleRequest(
             // The pre-tx idempotency fast-path: a byte-
             // identical resend never reaches the handler and
             // posts no notification — nothing was written.
-            const replay = await storedResponseFor(
-                effective, pair.requestHash,
-            );
-            if (replay !== undefined) {
-                return responseFromStored(replay);
+            // Skipped for REPLAY_EXEMPT_ROUTE_PATTERNS: those
+            // routes' own domain guard (or, from Task 3, their
+            // redacted stored body) makes serving the cached
+            // response wrong rather than merely redundant — see
+            // message-pair.ts.
+            if (!REPLAY_EXEMPT_ROUTE_PATTERNS.has(routePattern)) {
+                const replay = await storedResponseFor(
+                    effective, pair.requestHash,
+                );
+                if (replay !== undefined) {
+                    return responseFromStored(replay);
+                }
             }
         }
         switch (method) {

@@ -268,6 +268,23 @@ export function responseFromStored(stored: ResponseEntity): Response {
         : new Response(null, init);
 }
 
+// The pre-store body of a just-formed pair's own response
+// message — a handler that must act on a value the gate's
+// successBody resolver already minted (token rotation's
+// pre-minted jti) reads it back HERE rather than deriving a
+// second, possibly divergent, value. The pair IS the response.
+export function pairResponseBody(
+    pair: MessagePair,
+): Record<string, unknown> | undefined {
+    const model = parseJson(
+        pair.responseMessage, defaultBodyRegistry(),
+    );
+    const body = HttpMessage.fromModel(model).body();
+    return body.exists()
+        ? JSON.parse(body.toText()) as Record<string, unknown>
+        : undefined;
+}
+
 // The wire response for a wired write, rebuilt from the stored
 // row the transaction just appended — crashes loud if the pair
 // somehow never landed (a wiring bug, never a normal path). The
@@ -406,12 +423,37 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'memberships/:id',
     'identity-tokens/:id',
     'identity-token-revocations/:id',
+    'identity-tokens/:jti/rotation',
     'identity-tokens/:jti/revocation',
     'organizations/:id',
     'role-grants/:id',
     'identity-providers/:id',
     'states/:id/field-values/:fvid',
 ]);
+
+// Route patterns wired for pair STORAGE (PAIR_WIRED_ROUTE_
+// PATTERNS above) whose gate dispatch must NEVER take the
+// pre-tx idempotency fast path (storedResponseFor in api.ts) —
+// a byte-identical resend still re-enters the handler instead
+// of returning the first call's cached response. Membership
+// here is a promise: the route's OWN domain guard already
+// prevents a double-success on two identical requests, so the
+// fast path would be redundant at best — at worst it would
+// SERVE STALE TRUTH the domain guard exists to prevent.
+// rotation's guard is the 409 reuse check (rotateRefreshJti):
+// a resent rotation of an already-rotated-away jti must fail
+// again, not silently replay the first success. The two
+// /authentication/* grant routes join this set in Task 3 for a
+// DIFFERENT reason — their stored request/response rows are
+// redacted (message-redaction.ts strips the token material),
+// so the redacted stored body must never be handed back as a
+// live wire response. Grown family by family; never remove a
+// pattern without re-deriving why its domain guard (or
+// redaction) still makes the fast path safe to skip.
+export const REPLAY_EXEMPT_ROUTE_PATTERNS: Set<string> =
+    new Set([
+        'identity-tokens/:jti/rotation',
+    ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from
 // a request's own uriId. A document address is revisited

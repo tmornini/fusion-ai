@@ -84,8 +84,14 @@ import {
     validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
 } from './validators.ts';
-import { appendMessagePair } from './message-pair.ts';
+import {
+    appendMessagePair,
+    pairResponseBody,
+} from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
+import {
+    generateCryptoSafeBase62,
+} from '../shared/crypto-safe-base62.ts';
 import {
     latestClaimEvent,
     isClaimEventExpired,
@@ -1191,6 +1197,19 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
+    // The gate PRE-MINTS the successor jti here — the ONE
+    // mint site for a fresh write (this route is REPLAY_
+    // EXEMPT_ROUTE_PATTERNS-wired, so a resend never bypasses
+    // this resolver the way a document/event-append route's
+    // idempotent replay would). The route handler reads this
+    // exact value back off the formed pair (pairResponseBody)
+    // rather than minting a second one.
+    'identity-tokens/:jti/rotation': {
+        status: 200,
+        successBody: () => ({
+            jti: generateCryptoSafeBase62(),
+        }),
+    },
     'identity-tokens/:jti/revocation': { status: 204 },
     'organizations/:id': {
         status: 200,
@@ -1610,13 +1629,30 @@ export const routes: Route[] = [
     // TOCTOU). A live jti returns its successor; a
     // known-but-not-live jti is reuse — the whole chain's
     // revocation has already landed atomically — then 409.
-    // NOT (yet) shadow-ledger-wired — see the comment on
-    // rotateRefreshJti (api/authentication.ts) for why.
+    // Operation-addressed (uriId ''); REPLAY_EXEMPT_ROUTE_
+    // PATTERNS-wired (message-pair.ts) — the gate never serves
+    // a stored response for a byte-identical resend of this
+    // route, so this handler always re-enters and re-checks
+    // the reuse guard for real. The gate's successBody
+    // resolver PRE-MINTS the successor jti so the pair IS the
+    // response; this handler reads that SAME value back off
+    // the pair (pairResponseBody) and threads it into
+    // rotateRefreshJti, which appends the pair as the LAST act
+    // of its own transaction — only on the 'rotate' branch, so
+    // a 409 (reuse or unknown) stores no pair even though the
+    // reuse branch still revokes the chain for real. When pair
+    // is undefined (unreachable for this wired, fenced route)
+    // a fresh jti is minted here instead — crash-free.
     route('identity-tokens/:jti/rotation', {
-        post: async (db, p) => {
+        post: async (db, p, _body, _actor, pair) => {
             const presented = param(p, 0);
+            const newJti = pair === undefined
+                ? generateCryptoSafeBase62()
+                : (pairResponseBody(pair)?.['jti'] as
+                    string | undefined)
+                    ?? generateCryptoSafeBase62();
             const outcome = await rotateRefreshJti(
-                db, presented,
+                db, presented, newJti, pair,
             );
             if (outcome.kind === 'rotate') {
                 return { jti: outcome.newJti };

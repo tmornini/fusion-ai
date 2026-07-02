@@ -276,26 +276,27 @@ export type RotationOutcome =
 // events in ONE transaction — a concurrent reuse of the same
 // jti can not double-rotate. Shared by the refresh grant and
 // the POST identity-tokens/:jti/rotation route: one truth for
-// the atomic rotate.
-//
-// NOT (yet) shadow-ledger-wired: wiring this route into
-// PAIR_WIRED_ROUTE_PATTERNS collides with tests/api-identity-
-// token-rotation.test.ts's "replaying a rotated-away jti"
-// case — two byte-identical POSTs (same jti, same {} body,
-// same bearer) hash to the SAME request, so the gate's pre-tx
-// idempotency fast-path would return the FIRST call's cached
-// 200 instead of re-entering this function, and the second
-// call would never see its expected 409. That existing test
-// is out of scope to touch this chunk, so this route stays on
-// its pre-Phase-1 shape (self-minted jti, no pair) pending a
-// deliberate decision on how replay-vs-retry should be told
-// apart at the gate.
+// the atomic rotate. `newJti` is caller-supplied (synchronous
+// generateCryptoSafeBase62() is safe on either side of the
+// tx boundary) rather than minted internally, so the route can
+// pre-mint it at the gate and thread the SAME value through;
+// `pair` is optional and appends as the LAST act, ONLY on the
+// 'rotate' branch — a 409 (reuse or unknown) stores no pair
+// even though the reuse branch still revokes the chain for
+// real. The route is REPLAY_EXEMPT_ROUTE_PATTERNS-wired
+// (message-pair.ts / api.ts): the gate never serves a stored
+// response for a byte-identical resend of this route, so a
+// resent reuse attempt genuinely re-enters this function and
+// re-fails 409 — this function's own re-check IS the guard the
+// exemption relies on; it must stay live on every call.
 export function rotateRefreshJti(
     adapter: DbAdapter,
     presentedJti: string,
+    newJti: string,
+    pair?: MessagePair,
 ): Promise<RotationOutcome> {
     return adapter.transaction(
-        ['identity_tokens'],
+        ['identity_tokens', 'requests', 'responses'],
         async (view) => {
             // Two-step narrow: find the presented jti's chain,
             // then read the WHOLE chain — planRotation's replay
@@ -312,11 +313,13 @@ export function rotateRefreshJti(
                 : await tokens.getAllWhere(
                     'chain_id', chainId);
             const plan = planRotation(
-                rows, presentedJti,
-                generateCryptoSafeBase62(), nowUtc(),
+                rows, presentedJti, newJti, nowUtc(),
             );
             if (plan.kind === 'rotate') {
                 await appendEvents(view, plan.appends);
+                if (pair !== undefined) {
+                    await appendMessagePair(view, pair);
+                }
                 return {
                     kind: 'rotate' as const,
                     newJti: plan.newJti,
@@ -393,6 +396,7 @@ async function grantRefresh(
     }
     const outcome = await rotateRefreshJti(
         adapter, verified.claims.jti,
+        generateCryptoSafeBase62(),
     );
     if (outcome.kind === 'rotate') {
         const name =

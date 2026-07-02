@@ -6,12 +6,7 @@ import { sha256Hex } from '../shared/digest.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { latestActionForJti } from '../api/identity-tokens.ts';
-
-// identity-tokens/:jti/rotation is DELIBERATELY not covered
-// here — see the comment on rotateRefreshJti
-// (api/authentication.ts) for why it stays unwired this
-// chunk: wiring it collides with the pre-existing
-// tests/api-identity-token-rotation.test.ts replay case.
+import { responseFromStored } from '../api/message-pair.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -139,6 +134,80 @@ test('PUT identity-token-revocations/:id appends its pair at'
     assert.deepEqual(await res.json(), domainRow);
 });
 
+// ── identity-tokens/:jti/rotation — REPLAY-EXEMPT operation
+// address: the gate NEVER serves a stored response for a
+// byte-identical resend of this route (message-pair.ts
+// REPLAY_EXEMPT_ROUTE_PATTERNS), so a resent reuse attempt
+// re-enters rotateRefreshJti's own 409 guard for real instead
+// of silently replaying the first success.
+
+test('a rotation appends its pair at an operation address:'
++ ' uriId stays empty, and the wire {jti} equals the pair\'s'
++ ' own stored response body', async () => {
+    const db = await seededDb();
+    const res = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(res.status, 200);
+    const wireBody = await res.json() as { jti: string };
+    assert.notEqual(wireBody.jti, ROOT_JTI);
+    const requests = await db.requests.getAll();
+    const row = requests.find(
+        r => r.uri_prefix
+            === `/identity-tokens/${ROOT_JTI}/rotation/`,
+    );
+    assert.ok(row);
+    assert.equal(row!.uri_id, '');
+    const responses = await db.responses.getAll();
+    assert.equal(requests.length, responses.length);
+    const stored = responses.find(r => r.id === row!.id);
+    assert.ok(stored);
+    const storedBody = await responseFromStored(stored!).json();
+    assert.deepEqual(storedBody, wireBody);
+    const rows = await db.identityTokens.getAll();
+    assert.equal(
+        latestActionForJti(rows, wireBody.jti), 'issued');
+});
+
+test('a byte-identical second rotation of the SAME jti still'
++ ' 409s — the domain guard, NOT a replay of the first'
++ ' success — and appends nothing further', async () => {
+    const db = await seededDb();
+    const first = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(first.status, 200);
+    const before = (await db.requests.getAll()).length;
+    // Literally byte-identical: same jti, same {} body, same
+    // bearer — exactly what a resend fast path would collapse
+    // for a non-exempt route.
+    const second = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(second.status, 409);
+    const rows = await db.identityTokens.getAll();
+    assert.equal(latestActionForJti(rows, ROOT_JTI), 'revoked');
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    assert.equal(requests.length, before);
+    assert.equal(requests.length, responses.length);
+});
+
+test('rotating an unknown jti is a 409 that appends nothing',
+async () => {
+    const db = await seededDb();
+    const res = await handleRequest(db, req(
+        'POST', '/identity-tokens/ghost/rotation',
+        DEV_TOKEN, {},
+    ));
+    assert.equal(res.status, 409);
+    assert.equal((await db.requests.getAll()).length, 0);
+    assert.equal((await db.responses.getAll()).length, 0);
+});
+
 // ── identity-tokens/:jti/revocation — operation address ──
 
 test('a revocation appends its pair at an operation address:'
@@ -216,6 +285,10 @@ async () => {
         tokenFields('jti-9'),
     ));
     await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    await handleRequest(db, req(
         'POST', `/identity-tokens/${ROOT_JTI}/revocation`,
         DEV_TOKEN, {},
     ));
@@ -232,17 +305,22 @@ async () => {
 });
 
 test('request and response counts stay equal across a mix'
-+ ' including one failed identity-token-revocations PUT',
-async () => {
++ ' including one failed identity-token-revocations PUT and'
++ ' one failed (reuse) rotation', async () => {
     const db = await seededDb();
     await handleRequest(db, req(
         'PUT', '/identity-tokens/tok-10', DEV_TOKEN,
         tokenFields('jti-10'),
     ));
     await handleRequest(db, req(
-        'POST', `/identity-tokens/${ROOT_JTI}/revocation`,
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
         DEV_TOKEN, {},
     ));
+    const reused = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(reused.status, 409);
     const failed = await handleRequest(db, req(
         'PUT', '/identity-token-revocations/rev-fail', DEV_TOKEN,
         { identity_id: 'current' }, // missing required `at`
