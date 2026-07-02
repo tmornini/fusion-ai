@@ -27,11 +27,9 @@ import {
     formWritePair,
     storedResponseFor,
     appendMessagePair,
-} from './message-pair.ts';
-import {
     responseFromStored,
     hoistedHeaderFields,
-} from './api.ts';
+} from './message-pair.ts';
 
 // GET /organizations — the caller's reachable orgs, derived
 // fresh from the membership ledger (never the token claim, so

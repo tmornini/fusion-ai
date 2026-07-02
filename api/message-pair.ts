@@ -19,6 +19,12 @@ import {
     redactAuthenticationResponse,
 } from './message-redaction.ts';
 import type { FieldLine } from '../shared/http-message/types.ts';
+import { HttpMessage } from '../shared/http-message/http-message.ts';
+import { parseJson } from '../shared/http-message/json-codec.ts';
+import {
+    defaultBodyRegistry,
+} from '../shared/http-message/media-registry.ts';
+import { REQUEST_ID_HEADER } from './request-context.ts';
 
 // The shadow-ledger message pair: one row in `requests`, one
 // in `responses`, sharing `id`. Formed pre-tx (all crypto and
@@ -201,6 +207,65 @@ export async function storedResponseFor(
 // transform; the column keeps microseconds.
 export function httpDateOf(at: string): string {
     return new Date(at).toUTCString();
+}
+
+// The header fields worth storing in a pair's request message:
+// enumerated explicitly (never hoisted blindly). `authorization`
+// is redacted downstream (message-redaction.ts); the rest are
+// stored verbatim.
+const HOISTED_HEADER_NAMES: readonly string[] = [
+    'authorization', 'content-type', 'idempotency-key',
+    REQUEST_ID_HEADER,
+];
+
+export function hoistedHeaderFields(request: Request): FieldLine[] {
+    const fields: FieldLine[] = [];
+    for (const name of HOISTED_HEADER_NAMES) {
+        const value = request.headers.get(name);
+        if (value !== null) {
+            fields.push({ name, value });
+        }
+    }
+    return fields;
+}
+
+// The one wire-header voice for both a fresh write and a
+// byte-identical replay — both render from the STORED row,
+// never the in-memory pair, so a concurrent-replay's surviving
+// original pair is what the wire advertises either way.
+export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
+    const headers: Record<string, string> = {
+        'Date': httpDateOf(stored.at),
+        'Response-ID': stored.id,
+    };
+    if (stored.supersedes !== undefined) {
+        headers['Supersedes'] = stored.supersedes;
+    }
+    return headers;
+}
+
+// Rebuild the wire Response from a stored response row's
+// canonical message — the one reconstruction path shared by a
+// fresh write's success return and an idempotent replay's early
+// return.
+export function responseFromStored(stored: ResponseEntity): Response {
+    const model = parseJson(
+        stored.message, defaultBodyRegistry(),
+    );
+    if (model.startLine.kind !== 'response') {
+        throw new Error(
+            'stored response message has no status line: '
+            + stored.id,
+        );
+    }
+    const init = {
+        status: model.startLine.status,
+        headers: wireHeadersFor(stored),
+    };
+    const body = HttpMessage.fromModel(model).body();
+    return body.exists()
+        ? Response.json(JSON.parse(body.toText()), init)
+        : new Response(null, init);
 }
 
 // In-tx append (row ops only, no crypto): skips silently if a

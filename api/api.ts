@@ -12,7 +12,7 @@ import type { LatencySimulation } from './latency.ts';
 import {
     ValidationError,
 } from './types.ts';
-import type { Id, ResponseEntity } from './types.ts';
+import type { Id } from './types.ts';
 import { messageAddress } from './message-address.ts';
 import {
     formWritePair,
@@ -20,19 +20,12 @@ import {
     storedResponseFor,
     createdEntityUriId,
     canonicalUriPrefix,
-    httpDateOf,
+    hoistedHeaderFields,
+    responseFromStored,
     PAIR_WIRED_ROUTE_PATTERNS,
     DOCUMENT_CLASS_ROUTE_PATTERNS,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
-import {
-    HttpMessage,
-} from '../shared/http-message/http-message.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
-import type { FieldLine } from '../shared/http-message/types.ts';
 import {
     ANONYMOUS_ID,
     decodeAccessToken,
@@ -178,26 +171,6 @@ function postWriteNotification(
     });
 }
 
-// The header fields worth storing in a pair's request message:
-// enumerated explicitly (never hoisted blindly). `authorization`
-// is redacted downstream (message-redaction.ts); the rest are
-// stored verbatim.
-const HOISTED_HEADER_NAMES: readonly string[] = [
-    'authorization', 'content-type', 'idempotency-key',
-    REQUEST_ID_HEADER,
-];
-
-export function hoistedHeaderFields(request: Request): FieldLine[] {
-    const fields: FieldLine[] = [];
-    for (const name of HOISTED_HEADER_NAMES) {
-        const value = request.headers.get(name);
-        if (value !== null) {
-            fields.push({ name, value });
-        }
-    }
-    return fields;
-}
-
 // Resolve a route pattern's WRITE_RESPONSE_SPECS entry for the
 // verb actually in flight. Every entry but one is a plain
 // WriteResponseSpec, applying regardless of which non-DELETE
@@ -215,45 +188,6 @@ function writeResponseSpecFor(
         return entry;
     }
     return method === 'PUT' ? entry.put : entry.post;
-}
-
-// The one wire-header voice for both a fresh write and a
-// byte-identical replay — both render from the STORED row,
-// never the in-memory pair, so a concurrent-replay's surviving
-// original pair is what the wire advertises either way.
-export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
-    const headers: Record<string, string> = {
-        'Date': httpDateOf(stored.at),
-        'Response-ID': stored.id,
-    };
-    if (stored.supersedes !== undefined) {
-        headers['Supersedes'] = stored.supersedes;
-    }
-    return headers;
-}
-
-// Rebuild the wire Response from a stored response row's
-// canonical message — the one reconstruction path shared by a
-// fresh write's success return and an idempotent replay's early
-// return.
-export function responseFromStored(stored: ResponseEntity): Response {
-    const model = parseJson(
-        stored.message, defaultBodyRegistry(),
-    );
-    if (model.startLine.kind !== 'response') {
-        throw new Error(
-            'stored response message has no status line: '
-            + stored.id,
-        );
-    }
-    const init = {
-        status: model.startLine.status,
-        headers: wireHeadersFor(stored),
-    };
-    const body = HttpMessage.fromModel(model).body();
-    return body.exists()
-        ? Response.json(JSON.parse(body.toText()), init)
-        : new Response(null, init);
 }
 
 export async function handleRequest(

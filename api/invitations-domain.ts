@@ -41,12 +41,10 @@ import {
     appendMessagePair,
     createdEntityUriId,
     canonicalUriPrefix,
-} from './message-pair.ts';
-import type { MessagePair } from './message-pair.ts';
-import {
     responseFromStored,
     hoistedHeaderFields,
-} from './api.ts';
+} from './message-pair.ts';
+import type { MessagePair } from './message-pair.ts';
 
 // The active org of the caller: the verified token claim, else
 // the identity's resolved default. Null when the identity can
