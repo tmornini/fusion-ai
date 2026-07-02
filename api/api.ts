@@ -457,7 +457,19 @@ export async function handleRequest(
                         effective, canonicalPrefix, uriId,
                     )
                     : undefined;
-            const spec = WRITE_RESPONSE_SPECS[routePattern];
+            // DELETE responses are UNIVERSALLY 204 with no
+            // body — every wired DELETE handler returns void
+            // (message-pair.ts resolution: DELETEs join their
+            // family's document class but never carry a
+            // response body). The gate short-circuits the spec
+            // lookup for DELETE rather than asking
+            // WRITE_RESPONSE_SPECS to key by (pattern, verb):
+            // a route pattern can carry BOTH a PUT (200, its
+            // written row) and a DELETE (204) — the map's one
+            // entry per pattern serves the PUT/POST verb only.
+            const spec = method === 'DELETE'
+                ? { status: 204 }
+                : WRITE_RESPONSE_SPECS[routePattern];
             if (spec === undefined) {
                 throw new Error(
                     'no write response spec for wired route: '
@@ -576,6 +588,22 @@ export async function handleRequest(
                     actor,
                     pair,
                 );
+                if (pair !== undefined) {
+                    const stored = await storedResponseFor(
+                        effective, pair.requestHash,
+                    );
+                    if (stored === undefined) {
+                        throw new Error(
+                            'wired write stored no pair: '
+                            + routePattern,
+                        );
+                    }
+                    postWriteNotification(
+                        adapter, routePattern, params,
+                        body, organization,
+                    );
+                    return responseFromStored(stored);
+                }
                 postWriteNotification(
                     adapter, routePattern, params,
                     body, organization,
