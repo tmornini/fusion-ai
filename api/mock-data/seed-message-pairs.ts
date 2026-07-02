@@ -59,6 +59,8 @@ import { buildAiMembers } from './ai-members.ts';
 import {
     buildRecords,
     buildRecordAttributes,
+    customerProfileRecordId,
+    projectBriefRecordId,
 } from './records.ts';
 import { OBJECTIVE_SEEDS } from './objectives.ts';
 import {
@@ -203,14 +205,14 @@ export const flowStateEvents: StateEntity[] = [
 export const recordStateEvents: StateEntity[] = [
     {
         id: 'rSe01CustPr0fact1ve01A',
-        entity_id: 'rec01CustProfRec0rdAB1',
+        entity_id: customerProfileRecordId,
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
         at: wfTimestamp,
     },
     {
         id: 'rSe02Pr0jBri3fact1ve02',
-        entity_id: 'rec02Pr0jBriefRec0rd02',
+        entity_id: projectBriefRecordId,
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
         at: wfTimestamp,
