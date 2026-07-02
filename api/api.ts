@@ -12,7 +12,27 @@ import type { LatencySimulation } from './latency.ts';
 import {
     ValidationError,
 } from './types.ts';
-import type { Id } from './types.ts';
+import type { Id, ResponseEntity } from './types.ts';
+import { messageAddress } from './message-address.ts';
+import {
+    formWritePair,
+    headPairIdAt,
+    storedResponseFor,
+    createdEntityUriId,
+    canonicalUriPrefix,
+    httpDateOf,
+    PAIR_WIRED_ROUTE_PATTERNS,
+    DOCUMENT_CLASS_ROUTE_PATTERNS,
+} from './message-pair.ts';
+import type { MessagePair } from './message-pair.ts';
+import {
+    HttpMessage,
+} from '../shared/http-message/http-message.ts';
+import { parseJson } from '../shared/http-message/json-codec.ts';
+import {
+    defaultBodyRegistry,
+} from '../shared/http-message/media-registry.ts';
+import type { FieldLine } from '../shared/http-message/types.ts';
 import {
     ANONYMOUS_ID,
     decodeAccessToken,
@@ -53,6 +73,7 @@ import {
     routes,
     matchRoute,
     param,
+    WRITE_RESPONSE_SPECS,
     type Route,
 } from './routes.ts';
 import {
@@ -154,6 +175,65 @@ function postWriteNotification(
             routePattern, params, body,
         ),
     });
+}
+
+// The header fields worth storing in a pair's request message:
+// enumerated explicitly (never hoisted blindly). `authorization`
+// is redacted downstream (message-redaction.ts); the rest are
+// stored verbatim.
+const HOISTED_HEADER_NAMES: readonly string[] = [
+    'authorization', 'content-type', 'idempotency-key',
+    REQUEST_ID_HEADER,
+];
+
+function hoistedHeaderFields(request: Request): FieldLine[] {
+    const fields: FieldLine[] = [];
+    for (const name of HOISTED_HEADER_NAMES) {
+        const value = request.headers.get(name);
+        if (value !== null) {
+            fields.push({ name, value });
+        }
+    }
+    return fields;
+}
+
+// The one wire-header voice for both a fresh write and a
+// byte-identical replay — both render from the STORED row,
+// never the in-memory pair, so a concurrent-replay's surviving
+// original pair is what the wire advertises either way.
+function wireHeadersFor(stored: ResponseEntity): HeadersInit {
+    const headers: Record<string, string> = {
+        'Date': httpDateOf(stored.at),
+        'Response-ID': stored.id,
+    };
+    if (stored.supersedes !== undefined) {
+        headers['Supersedes'] = stored.supersedes;
+    }
+    return headers;
+}
+
+// Rebuild the wire Response from a stored response row's
+// canonical message — the one reconstruction path shared by a
+// fresh write's success return and an idempotent replay's early
+// return.
+function responseFromStored(stored: ResponseEntity): Response {
+    const model = parseJson(
+        stored.message, defaultBodyRegistry(),
+    );
+    if (model.startLine.kind !== 'response') {
+        throw new Error(
+            'stored response message has no status line: '
+            + stored.id,
+        );
+    }
+    const init = {
+        status: model.startLine.status,
+        headers: wireHeadersFor(stored),
+    };
+    const body = HttpMessage.fromModel(model).body();
+    return body.exists()
+        ? Response.json(JSON.parse(body.toText()), init)
+        : new Response(null, init);
 }
 
 export async function handleRequest(
@@ -330,7 +410,85 @@ export async function handleRequest(
         body = parse.body;
     }
 
+    const isWrite = method === 'PUT' || method === 'POST'
+        || method === 'DELETE';
+    // A route pattern can be pair-wired for one verb (PUT,
+    // say) while exposing no handler for another (DELETE) —
+    // ideas/:id is exactly this today. Requiring the matched
+    // verb's handler to exist keeps that combination 405ing
+    // exactly as it did before pairs existed, rather than
+    // running the pair machinery (and its successBody
+    // validation) against a request no handler will ever see.
+    const hasWriteHandler =
+        (method === 'PUT' && matched.put !== undefined)
+        || (method === 'POST' && matched.post !== undefined)
+        || (method === 'DELETE'
+            && matched.delete !== undefined);
+
     try {
+        // The shadow-ledger pair: formed pre-tx (all crypto and
+        // address resolution happen before a transaction opens
+        // — see api/message-pair.ts), gated to routes wired in
+        // PAIR_WIRED_ROUTE_PATTERNS so no unwired route ever
+        // advertises a Response-ID it did not store. Runs
+        // INSIDE the try so a validation error raised while
+        // precomputing the success body (below) is caught and
+        // mapped to its usual HTTP status, exactly as if the
+        // handler itself had raised it.
+        let pair: MessagePair | undefined;
+        if (isWrite && hasWriteHandler && !bearerExempt
+            && PAIR_WIRED_ROUTE_PATTERNS.has(routePattern)) {
+            const address = messageAddress(
+                matched.segments, pathSegments,
+            );
+            const canonicalPrefix = canonicalUriPrefix(
+                organization, address.uriPrefix,
+            );
+            const uriId = createdEntityUriId(
+                routePattern, body,
+            ) ?? address.uriId;
+            // The head-read class is encoded PER ROUTE PATTERN,
+            // never inferred from uriId — an event-append
+            // address (states/:id) has a non-empty uriId yet
+            // must never chain (message-pair.ts).
+            const headPairId =
+                DOCUMENT_CLASS_ROUTE_PATTERNS.has(routePattern)
+                    ? await headPairIdAt(
+                        effective, canonicalPrefix, uriId,
+                    )
+                    : undefined;
+            const spec = WRITE_RESPONSE_SPECS[routePattern];
+            if (spec === undefined) {
+                throw new Error(
+                    'no write response spec for wired route: '
+                    + routePattern,
+                );
+            }
+            pair = await formWritePair({
+                method, pathname, routePattern,
+                routeSegments: matched.segments,
+                pathSegments,
+                headerFields: hoistedHeaderFields(request),
+                body,
+                requesterIdentityId: actor,
+                requestAt: ctx.requestAt,
+                organization,
+                responseStatus: spec.status,
+                responseBody: spec.successBody?.(
+                    params, body, actor, organization,
+                ),
+                headPairId,
+            });
+            // The pre-tx idempotency fast-path: a byte-
+            // identical resend never reaches the handler and
+            // posts no notification — nothing was written.
+            const replay = await storedResponseFor(
+                effective, pair.requestHash,
+            );
+            if (replay !== undefined) {
+                return responseFromStored(replay);
+            }
+        }
         switch (method) {
             case 'GET': {
                 if (!matched.get) {
@@ -370,7 +528,24 @@ export async function handleRequest(
                         params,
                         body!,
                         actor,
+                        pair,
                     );
+                if (pair !== undefined) {
+                    const stored = await storedResponseFor(
+                        effective, pair.requestHash,
+                    );
+                    if (stored === undefined) {
+                        throw new Error(
+                            'wired write stored no pair: '
+                            + routePattern,
+                        );
+                    }
+                    postWriteNotification(
+                        adapter, routePattern, params,
+                        body, organization,
+                    );
+                    return responseFromStored(stored);
+                }
                 postWriteNotification(
                     adapter, routePattern, params,
                     body, organization,
@@ -399,6 +574,7 @@ export async function handleRequest(
                     effective,
                     params,
                     actor,
+                    pair,
                 );
                 postWriteNotification(
                     adapter, routePattern, params,
@@ -427,7 +603,24 @@ export async function handleRequest(
                         params,
                         body!,
                         actor,
+                        pair,
                     );
+                if (pair !== undefined) {
+                    const stored = await storedResponseFor(
+                        effective, pair.requestHash,
+                    );
+                    if (stored === undefined) {
+                        throw new Error(
+                            'wired write stored no pair: '
+                            + routePattern,
+                        );
+                    }
+                    postWriteNotification(
+                        adapter, routePattern, params,
+                        body, organization,
+                    );
+                    return responseFromStored(stored);
+                }
                 // authentication/authorize mints an
                 // authorization code, not a session — no UI
                 // subscribes to it, so it posts nothing.

@@ -51,6 +51,8 @@ import {
     validateFlowRedoBody,
     validateIdeaCreateBody,
     validateIdeaConversionBody,
+    validateIdeaEntity,
+    validateIdeaSubmissionEntity,
     validateIdentityCreateBody,
     validateObjectiveCreateBody,
     validateRecordWriteBody,
@@ -60,6 +62,8 @@ import {
     validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
 } from './validators.ts';
+import { appendMessagePair } from './message-pair.ts';
+import type { MessagePair } from './message-pair.ts';
 import {
     latestClaimEvent,
     isClaimEventExpired,
@@ -100,17 +104,28 @@ type GetHandler = (
     actor: Id,
 ) => Promise<unknown>;
 
+// PutHandler, PostHandler, and DeleteHandler carry a trailing
+// pair: it is undefined for bearer-exempt and not-yet-wired
+// writes (TypeScript cannot prove bearerExempt was false inside
+// the gate's one shared dispatch switch), and defined for a
+// route named in message-pair.ts's PAIR_WIRED_ROUTE_PATTERNS.
+// A wired handler's LAST in-tx act is appending it (absence
+// there is a wiring bug — crash loud); an unwired handler
+// ignores the extra argument (TypeScript permits a closure
+// with fewer declared parameters than its assigned type).
 type PutHandler = (
     adapter: DbAdapter,
     params: string[],
     payload: Record<string, unknown>,
     actor: Id,
+    pair: MessagePair | undefined,
 ) => Promise<unknown>;
 
 type DeleteHandler = (
     adapter: DbAdapter,
     params: string[],
     actor: Id,
+    pair: MessagePair | undefined,
 ) => Promise<void>;
 
 type PostHandler = (
@@ -118,6 +133,7 @@ type PostHandler = (
     params: string[],
     payload: Record<string, unknown>,
     actor: Id,
+    pair: MessagePair | undefined,
 ) => Promise<unknown>;
 
 export interface Route {
@@ -359,15 +375,20 @@ async function writeFlowGraphDelta(
 // whole thing back rather than orphaning the row. Exported so
 // the seed can drive idea creation through the same gate the
 // route uses (Decision 6's below-facade carve-out) — this is
-// also Phase 1's dual-write insertion seam.
+// also Phase 1's dual-write insertion seam. `pair` is optional
+// (not `MessagePair | undefined` positionally required) so the
+// seed's below-facade call (api/mock-data.ts, no gate, no
+// pair) keeps compiling unchanged; the route always supplies
+// one, since 'ideas' is pair-wired and never bearer-exempt.
 export async function postIdeaCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     actor: Id,
+    pair?: MessagePair,
 ): Promise<void> {
     const b = validateIdeaCreateBody(body);
     return db.transaction(
-        ['ideas', 'states'],
+        ['ideas', 'states', 'requests', 'responses'],
         async (view) => {
             await view.ideas.put(
                 b.id,
@@ -380,6 +401,9 @@ export async function postIdeaCreationOp(
                 actor,
                 b.initialStateAt,
             );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
         },
     );
 }
@@ -799,6 +823,59 @@ export async function postWorkOrderTransitionOp(
     );
 }
 
+// The pre-tx response body for each pair-wired write —
+// computed through the SAME validator/stamp its own handler
+// applies, so the gate's precomputed body is byte-identical to
+// what the transaction actually writes (pinned by
+// tests/api-shadow-ledger-ideas.test.ts: each 200 route's wire
+// body deep-equals a direct domain read taken afterward). A
+// pattern absent here, or present with no successBody, returns
+// 204 with no body. Keyed by route pattern, not verb — every
+// pattern in message-pair.ts's PAIR_WIRED_ROUTE_PATTERNS
+// carries exactly one write verb today.
+export interface WriteResponseSpec {
+    readonly status: number;
+    readonly successBody?: (
+        params: string[],
+        body: Record<string, unknown> | undefined,
+        actor: Id,
+        organization: Id | undefined,
+    ) => unknown;
+}
+
+export const WRITE_RESPONSE_SPECS:
+    Readonly<Record<string, WriteResponseSpec>> = {
+    'ideas': { status: 204 },
+    'ideas/:id': {
+        status: 200,
+        successBody: (params, body, _actor, organization) => ({
+            id: param(params, 0),
+            ...validateIdeaEntity({
+                ...withoutId(body ?? {}),
+                organization_id: organization,
+            }),
+        }),
+    },
+    'ideas/:id/conversion': { status: 204 },
+    'ideas/:id/submissions/:sid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateIdeaSubmissionEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
+    'states/:id': {
+        status: 200,
+        successBody: (params, body, actor) => ({
+            id: param(params, 0),
+            ...validateStateBody(withoutId(body ?? {})),
+            member_id: actor,
+        }),
+    },
+};
+
 export const routes: Route[] = [
     route('members', {
         // Members are derived from the membership ledger off
@@ -1057,8 +1134,8 @@ export const routes: Route[] = [
         // body OMITS it. The initial event is authored by the
         // verified caller (actor), never the body. See
         // postIdeaCreationOp for the transaction shape.
-        post: (db, _p, body, actor) =>
-            postIdeaCreationOp(db, body, actor),
+        post: (db, _p, body, actor, pair) =>
+            postIdeaCreationOp(db, body, actor, pair),
     }),
     // Convert an idea to a project (promotion): the LONE
     // cross-aggregate write. A new projects row, the promoted
@@ -1079,13 +1156,14 @@ export const routes: Route[] = [
     // isPermitted matches /ideas on the segment prefix, so
     // /ideas/:id/conversion is member-permitted.
     route('ideas/:id/conversion', {
-        post: (db, p, body, actor) => {
+        post: (db, p, body, actor, pair) => {
             const ideaId = param(p, 0);
             const b = validateIdeaConversionBody(body);
             return db.transaction(
                 [
                     'projects', 'ideas', 'states',
                     'project_objective_baseline_scores',
+                    'requests', 'responses',
                 ],
                 async (view) => {
                     await view.projects.put(
@@ -1123,6 +1201,9 @@ export const routes: Route[] = [
                                     >,
                             );
                     }
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
                 },
             );
         },
@@ -1140,12 +1221,26 @@ export const routes: Route[] = [
             db.ideaSubmissions.getAllWhere('idea_id', param(p, 0)),
     }),
     route('ideas/:id/submissions/:sid', {
-        put: (db, p, body) =>
-            db.ideaSubmissions.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<IdeaSubmissionEntity, 'id'>,
-            ),
+        put: (db, p, body, _actor, pair) => {
+            const sid = param(p, 1);
+            return db.transaction(
+                ['idea_submissions', 'requests', 'responses'],
+                async (view) => {
+                    const written =
+                        await view.ideaSubmissions.put(
+                            sid,
+                            withoutId(body) as unknown as
+                                Omit<
+                                    IdeaSubmissionEntity, 'id'
+                                >,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     route('flows', {
         // Reassemble each flow's graph from the four relation
@@ -1683,10 +1778,33 @@ export const routes: Route[] = [
         store: db => db.members,
         verbs: ['get', 'put'],
     }),
-    makeIdRoute<IdeaEntity>({
-        noun: 'ideas',
-        store: db => db.ideas,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<IdeaEntity> so PUT
+    // can append its message pair in the same transaction as
+    // the write — the factory's fixed closures have no
+    // per-family pair selector (see message-pair.ts). GET
+    // reproduces the factory closure byte-equivalently; verbs
+    // stay {get, put} — ideas/:id has no DELETE today, and
+    // this scaffolding does not add one (Phase 2 Task 3 amends
+    // this same entry; the registry eventually absorbs it).
+    route('ideas/:id', {
+        get: (db, p) => db.ideas.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['ideas', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.ideas.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<IdeaEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     makeIdRoute<ProjectEntity>({
         noun: 'projects',
@@ -1769,16 +1887,27 @@ export const routes: Route[] = [
         // The author is the verified caller (actor), stamped
         // over any client-supplied member_id — the ledger
         // records who acted, not who the body claims.
-        put: (db, p, body, actor) =>
-            db.states.put(
-                param(p, 0),
-                {
-                    ...validateStateBody(
-                        withoutId(body),
-                    ),
-                    member_id: actor,
+        put: (db, p, body, actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['states', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.states.put(
+                        id,
+                        {
+                            ...validateStateBody(
+                                withoutId(body),
+                            ),
+                            member_id: actor,
+                        },
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
                 },
-            ),
+            );
+        },
     }),
     route('entity-states/:id', {
         get: (db, p) =>
