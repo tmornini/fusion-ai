@@ -22,8 +22,9 @@ The source of record is `api/routes.ts` (the route table),
 `api/api.ts` (`handleRequest` + facades), `api/request-auth.ts` (the
 gate), `api/authentication.ts` (the OAuth grants),
 `api/invitations-domain.ts` (the invitation sub-router), and
-`api/org-requests.ts` (the org/default-org sub-routers). This file
-summarizes them; on any disagreement, the code wins.
+`api/organization-requests.ts` (the org/default-org
+sub-routers). This file summarizes them; on any disagreement,
+the code wins.
 
 ---
 
