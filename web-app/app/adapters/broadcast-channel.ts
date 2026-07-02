@@ -8,6 +8,12 @@
 import {
     subscribeEventListener,
 } from './event-listener.ts';
+import type {
+    NotificationEvent,
+} from '../../../api/notifications.ts';
+import {
+    notificationEventFromWire,
+} from '../../../api/notifications.ts';
 
 const CHANNEL_NAME = 'fusion-ai:data';
 
@@ -67,13 +73,58 @@ export function tablesFromMessage(
 
 // Subscribe to cross-tab table-change announcements; returns
 // an unsubscribe function.
+//
+// TRANSITIONAL (deleted in the retirement commit): while both
+// the retiring table-name protocol and the new scoped
+// notification protocol ride the one channel, a message
+// bearing the OTHER protocol's shape ('kind' in data) is
+// silently skipped rather than validated — validation still
+// throws on a message matching NEITHER shape.
 export function subscribeTablesChanged(
     handler: (tables: readonly string[]) => void,
 ): () => void {
     const ch = getChannel();
     if (ch === undefined) return () => {};
     const listener = (event: MessageEvent): void => {
-        handler(tablesFromMessage(event.data));
+        const data = event.data as unknown;
+        if (typeof data === 'object' && data !== null
+            && 'kind' in data) {
+            return;
+        }
+        handler(tablesFromMessage(data));
+    };
+    return subscribeEventListener(ch, 'message', listener);
+}
+
+// Announce a scoped (or full) notification event. Other tabs'
+// subscribers fire; BroadcastChannel does not echo to the
+// poster, so the originating tab never double-refreshes.
+export function postNotificationEvent(
+    event: NotificationEvent,
+): void {
+    getChannel()?.postMessage(event);
+}
+
+// Subscribe to cross-tab notification events; returns an
+// unsubscribe function.
+//
+// TRANSITIONAL (deleted in the retirement commit): a message
+// bearing the retiring table-name protocol's shape ('tables'
+// in data) is silently skipped rather than validated —
+// validation still throws on a message matching NEITHER
+// shape.
+export function subscribeNotificationEvents(
+    handler: (event: NotificationEvent) => void,
+): () => void {
+    const ch = getChannel();
+    if (ch === undefined) return () => {};
+    const listener = (event: MessageEvent): void => {
+        const data = event.data as unknown;
+        if (typeof data === 'object' && data !== null
+            && 'tables' in data) {
+            return;
+        }
+        handler(notificationEventFromWire(data));
     };
     return subscribeEventListener(ch, 'message', listener);
 }

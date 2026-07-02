@@ -3,6 +3,7 @@ import {
 } from '../../../api/db-indexeddb.ts';
 import {
     postTablesChanged,
+    postNotificationEvent,
 } from './broadcast-channel.ts';
 import type {
     ClientFacadeAdapter,
@@ -23,12 +24,15 @@ import {
 let adapter: ClientFacadeAdapter | undefined;
 
 // The persistence tier: a real IndexedDB transaction per op,
-// O(1) appends, and cross-tab refresh via the posted table
-// names. The connection opens in initialize(). Production
-// boot passes this; boot-path tests substitute an in-memory
-// tier — IndexedDB has no Node stub, and we add no fake.
+// O(1) appends, and cross-tab refresh via the posted
+// notification events. The connection opens in initialize().
+// Production boot passes this; boot-path tests substitute an
+// in-memory tier — IndexedDB has no Node stub, and we add no
+// fake.
 export function defaultAdapter(): ClientFacadeAdapter {
-    return indexedDbAdapter(postTablesChanged);
+    return indexedDbAdapter(
+        postTablesChanged, postNotificationEvent,
+    );
 }
 
 export async function initAdapter(

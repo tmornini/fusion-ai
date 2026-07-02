@@ -40,6 +40,7 @@ import type {
     ResponseEntity,
     StateEntity,
 } from './types.ts';
+import type { NotificationPost } from './notifications.ts';
 
 export class EntityNotFoundError {
     readonly message: string;
@@ -423,6 +424,13 @@ export interface DbLifecycle {
     ): Promise<void>;
     getSnapshot(): Promise<string>;
     putSnapshot(json: string): Promise<void>;
+    // The Decision 5 post hook: fired AFTER a write commits,
+    // so cross-tab (and future cross-process) subscribers are
+    // informed of state changes — never polled. Carried on the
+    // COMMON ancestor of DbAdapter and GuardedDbAdapter so
+    // both the fenced view (organizationScopedAdapter) and the
+    // open-tx view (#viewForTx) type-check.
+    postNotification: NotificationPost;
 }
 
 export interface DbAdapter extends DbLifecycle, DbStores {
