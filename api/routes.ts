@@ -446,6 +446,40 @@ export async function postFlowCreationOp(
     );
 }
 
+// Objective creation: the objective row and its FIRST
+// revision commit as ONE transaction — a mid-write
+// failure rolls the whole thing back rather than
+// orphaning a definitionless objective. The org-scoped
+// store stamps organization_id from the verified token
+// before validating the objective, so the body OMITS
+// it. No state event is written (a fresh objective reads
+// as active until a later archival event), so the
+// handler needs no actor. Exported so the seed can drive
+// objective creation through the same gate the route
+// uses (Decision 6's below-facade carve-out) — this is
+// also Phase 1's dual-write insertion seam.
+export async function postObjectiveCreationOp(
+    db: DbAdapter,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const b = validateObjectiveCreateBody(body);
+    return db.transaction(
+        ['objectives', 'objective_revisions'],
+        async (view) => {
+            await view.objectives.put(
+                b.id,
+                b.objective as unknown as
+                    Omit<ObjectiveEntity, 'id'>,
+            );
+            await view.objectiveRevisions.put(
+                b.revisionId,
+                b.revision as unknown as
+                    Omit<ObjectiveRevisionEntity, 'id'>,
+            );
+        },
+    );
+}
+
 export const routes: Route[] = [
     route('members', {
         // Members are derived from the membership ledger off
@@ -1586,33 +1620,10 @@ export const routes: Route[] = [
     }),
     route('objectives', {
         get: (db) => db.objectives.getAll(),
-        // Objective creation: the objective row and its FIRST
-        // revision commit as ONE transaction — a mid-write
-        // failure rolls the whole thing back rather than
-        // orphaning a definitionless objective. The org-scoped
-        // store stamps organization_id from the verified token
-        // before validating the objective, so the body OMITS
-        // it. No state event is written (a fresh objective reads
-        // as active until a later archival event), so the
-        // handler needs no actor.
-        post: (db, _p, body) => {
-            const b = validateObjectiveCreateBody(body);
-            return db.transaction(
-                ['objectives', 'objective_revisions'],
-                async (view) => {
-                    await view.objectives.put(
-                        b.id,
-                        b.objective as unknown as
-                            Omit<ObjectiveEntity, 'id'>,
-                    );
-                    await view.objectiveRevisions.put(
-                        b.revisionId,
-                        b.revision as unknown as
-                            Omit<ObjectiveRevisionEntity, 'id'>,
-                    );
-                },
-            );
-        },
+        // See postObjectiveCreationOp for the transaction
+        // shape.
+        post: (db, _p, body) =>
+            postObjectiveCreationOp(db, body),
     }),
     makeIdRoute<ObjectiveEntity>({
         noun: 'objectives',
