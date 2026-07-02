@@ -10,6 +10,11 @@ import {
     redactAuthenticationRequest,
     redactAuthenticationResponse,
 } from '../api/message-redaction.ts';
+import { Octets } from '../shared/http-message/octets.ts';
+import {
+    HttpMessageError,
+    type MessageModel,
+} from '../shared/http-message/types.ts';
 
 test('authorization header value is fingerprinted',
 async () => {
@@ -96,5 +101,28 @@ async () => {
     );
     assert.equal(
         canonicalJson(redacted), canonicalJson(model),
+    );
+});
+
+test('malformed JSON body on an auth route throws loudly',
+async () => {
+    const model: MessageModel = {
+        startLine: {
+            kind: 'request', method: 'POST',
+            target: '/authentication/token',
+            version: 'HTTP/1.1',
+        },
+        fields: [
+            { name: 'content-type',
+              value: 'application/json' },
+        ],
+        body: Octets.fromLatin1('{not valid json'),
+        trailer: undefined,
+    };
+    await assert.rejects(
+        () => redactAuthenticationRequest(
+            'authentication/token', model,
+        ),
+        HttpMessageError,
     );
 });

@@ -7,8 +7,9 @@ import {
 import {
     defaultBodyRegistry,
 } from '../shared/http-message/media-registry.ts';
-import type {
-    MessageModel,
+import {
+    HttpMessageError,
+    type MessageModel,
 } from '../shared/http-message/types.ts';
 import { putField } from '../shared/http-message/modify.ts';
 import { sha256Hex } from '../shared/digest.ts';
@@ -68,7 +69,10 @@ export async function redactHeaderCredentials(
 // every other field untouched and every absent field absent.
 // A bodyless message, or a body whose decoded value is not a
 // plain JSON object, returns unchanged — redaction never
-// invents keys or reshapes an unrelated body.
+// invents keys or reshapes an unrelated body. A body that
+// fails to parse as JSON throws — never a silent pass-through
+// of a body that may still carry a live secret — matching the
+// library's own idiom (media-registry.ts's jsonBodyCodec).
 async function redactBody(
     model: MessageModel,
     highEntropyFields: readonly string[],
@@ -80,7 +84,7 @@ async function redactBody(
     try {
         decoded = JSON.parse(message.body().toText());
     } catch {
-        return model;
+        throw new HttpMessageError('malformed JSON body');
     }
     if (
         typeof decoded !== 'object'
