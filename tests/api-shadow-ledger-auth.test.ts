@@ -1,6 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
+import { BackedDbAdapter } from '../api/db-backed.ts';
+import { MemoryStorageBackend } from '../api/backend-memory.ts';
+import type { GuardedDbAdapter } from '../api/db.ts';
 import { handleRequest } from '../api/api.ts';
 import { sha256Hex } from '../shared/digest.ts';
 import { hashPassword } from '../shared/password-hash.ts';
@@ -9,6 +12,7 @@ import { devToken } from './token-fixtures.ts';
 import {
     makeAssertionSigner,
 } from './client-assertion-fixtures.ts';
+import type { NotificationEvent } from '../api/notifications.ts';
 
 // C1 discharge: the /authentication/{token,authorize} message
 // pairs carry live secrets in BOTH directions (a request's
@@ -29,9 +33,9 @@ function jsonPost(path: string, body: unknown): Request {
     });
 }
 
-async function dbWithPasswordUser(): Promise<MemoryDbAdapter> {
-    const db = new MemoryDbAdapter();
-    await db.postSchemaCreation();
+async function seedPasswordUser(
+    db: GuardedDbAdapter,
+): Promise<void> {
     await db.identityPii.put('current', {
         name: 'Demo', email: 'demo@example.com',
         phone: '555-0100', bio: 'demo user',
@@ -41,10 +45,34 @@ async function dbWithPasswordUser(): Promise<MemoryDbAdapter> {
         status: 'set', secret: await hashPassword(PASSWORD),
         at: '2026-06-03T00:00:00.000000Z',
     });
+}
+
+async function dbWithPasswordUser(): Promise<MemoryDbAdapter> {
+    const db = new MemoryDbAdapter();
+    await db.postSchemaCreation();
+    await seedPasswordUser(db);
     return db;
 }
 
-async function fullLoginFlow(db: MemoryDbAdapter): Promise<{
+// The same world, over a BackedDbAdapter constructed directly so
+// the notify hook (its 4th ctor arg) can be a counting/collecting
+// spy — MemoryDbAdapter's preset always wires a no-op there (the
+// adapters-invitations.test.ts precedent).
+async function dbWithPasswordUserAndNotify(
+    notify: (event: NotificationEvent) => void,
+): Promise<BackedDbAdapter> {
+    const db = new BackedDbAdapter(
+        new MemoryStorageBackend(),
+        async () => {},
+        async () => {},
+        notify,
+    );
+    await db.postSchemaCreation();
+    await seedPasswordUser(db);
+    return db;
+}
+
+async function fullLoginFlow(db: GuardedDbAdapter): Promise<{
     readonly code: string;
     readonly access_token: string;
     readonly refresh_token: string;
@@ -338,4 +366,76 @@ async () => {
     assert.ok(!row!.message.includes(':999999'));
     assert.ok(row!.message.includes(
         'sha256:' + await sha256Hex('999999')));
+});
+
+// The dedicated arm's SUCCESS path falls through to the
+// pre-existing authentication/token notification block (it does
+// NOT return early — only a failed grant does) — see api.ts's
+// POST arm. Pins that a real grant fires a real notification.
+test('a successful authentication/token POST posts a scoped'
++ ' notification carrying the minted sub', async () => {
+    const posted: NotificationEvent[] = [];
+    const db = await dbWithPasswordUserAndNotify(
+        e => posted.push(e));
+    await seedRootAdmin(db);
+    await fullLoginFlow(db);
+    // authorize posts nothing (no UI subscribes to a bare
+    // code); the token grant posts the one scoped notification.
+    assert.deepEqual(posted, [{
+        kind: 'scoped',
+        identityIds: ['current'],
+        organizationIds: ['1'],
+    }]);
+});
+
+test('an Authorization header sent alongside the token grant is'
++ ' fingerprinted, never stored live', async () => {
+    const db = await dbWithPasswordUser();
+    await seedRootAdmin(db);
+    await db.authorizationCodes.put('ev-hdr', {
+        code: 'code-with-header', identity_id: 'current',
+        client_id: 'web', status: 'issued',
+        at: '2026-06-03T00:00:00.000000Z',
+    });
+    const req = new Request(`${BASE}/authentication/token`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer some-stale-caller-token',
+        },
+        body: JSON.stringify({
+            grant_type: 'authorization_code',
+            code: 'code-with-header',
+        }),
+    });
+    const res = await handleRequest(db, req);
+    assert.equal(res.status, 200);
+    const requests = await db.requests.getAll();
+    const row = requests.find(
+        r => r.uri_prefix === '/authentication/token/');
+    assert.ok(row);
+    assert.ok(
+        !row!.message.includes('some-stale-caller-token'));
+    assert.match(row!.message, /sha256:[0-9a-f]{64}/);
+});
+
+test('a reused (already-rotated-away) refresh token grant is a'
++ ' 401 that stores nothing further', async () => {
+    const db = await dbWithPasswordUser();
+    await seedRootAdmin(db);
+    const first = await fullLoginFlow(db);
+    await handleRequest(db, jsonPost('authentication/token', {
+        grant_type: 'refresh',
+        refresh_token: first.refresh_token,
+    }));
+    const before = (await db.requests.getAll()).length;
+    const reused = await handleRequest(db, jsonPost(
+        'authentication/token', {
+            grant_type: 'refresh',
+            refresh_token: first.refresh_token,
+        }));
+    assert.equal(reused.status, 401);
+    assert.equal((await db.requests.getAll()).length, before);
+    assert.equal(
+        (await db.responses.getAll()).length, before);
 });
