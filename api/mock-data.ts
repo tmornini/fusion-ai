@@ -1,6 +1,9 @@
 import type { DbAdapter } from './db.ts';
 import { TABLE_NAMES } from './db.ts';
-import { postIdeaCreationOp } from './routes.ts';
+import {
+    postIdeaCreationOp,
+    postFlowCreationOp,
+} from './routes.ts';
 import type {
     ProjectFlowEntity,
     WorkOrderEntity,
@@ -458,6 +461,52 @@ async function postMockDataLoadIn(
     // row stores no blob.
     const flowRelations = buildFlowGraphRelations(
         mockFlows, MOCK_SEED_TIMESTAMP,
+    );
+
+    // One state event per seeded flow — the
+    // creation moment of each flow on the states
+    // log. Tier 2.3 retires FlowEntity.created_at
+    // / updated_at; the log IS the truth. Events
+    // are authored by SYSTEM_MEMBER_ID at the
+    // shared wfTimestamp moment. Driven through
+    // postFlowCreationOp below, alongside each
+    // flow's row and graph delta.
+    const flowStateEvents: StateEntity[] = [
+        {
+            id: 'fSe01CustomerOnboard0aA',
+            entity_id:
+                'h5mErVBQhwdMKwi1co30jB',
+            state: 'active',
+            member_id: SYSTEM_MEMBER_ID,
+            at: wfTimestamp,
+        },
+        {
+            id: 'fSe02FusionFl0w0aActiv',
+            entity_id:
+                'E2BnBlZyrriqsQYkmS4usb',
+            state: 'active',
+            member_id: SYSTEM_MEMBER_ID,
+            at: wfTimestamp,
+        },
+        {
+            id: 'fSe03Lay0utTest0aActiv',
+            entity_id:
+                '7COt7Kf4OaOBg6AjaNO04s',
+            state: 'active',
+            member_id: SYSTEM_MEMBER_ID,
+            at: wfTimestamp,
+        },
+        {
+            id: 'fSe04L3adt0Cl0se0aActiv',
+            entity_id: l2cFlowId,
+            state: 'active',
+            member_id: SYSTEM_MEMBER_ID,
+            at: wfTimestamp,
+        },
+    ];
+
+    const flowStateEventByFlowId = new Map(
+        flowStateEvents.map(e => [e.entity_id, e]),
     );
 
     // Records: app-global data shapes that flows
@@ -3218,19 +3267,62 @@ async function postMockDataLoadIn(
             }),
         ),
         // Store only the flow's scalar fields — the authored
-        // graph literal is the relation-seed input (below),
-        // never a stored column.
+        // graph literal is the relation-seed input, decomposed
+        // by postFlowCreationOp's graphDelta below — never a
+        // stored column. Each of the four mockFlows carries a
+        // project_flows join row (mockProjectFlows), so all
+        // four drive through the op; seed-flow-org2 (below) has
+        // no project link and stays a direct write.
         ...mockFlows.map(flow => {
-            const { graph: _graph, ...row } = flow;
-            return adapter.flows.put(flow.id, {
-                ...row, organization_id: STARK_ORGANIZATION,
-            });
+            const { graph: _graph, id, ...row } = flow;
+            const event = flowStateEventByFlowId.get(id)!;
+            const projectFlow = mockProjectFlows.find(
+                pf => pf.flow_id === id,
+            )!;
+            const nodeIds = new Set(
+                flowRelations.nodes
+                    .filter(n => n.flow_id === id)
+                    .map(n => n.id),
+            );
+            return postFlowCreationOp(adapter, {
+                id,
+                flow: {
+                    ...row, organization_id: STARK_ORGANIZATION,
+                },
+                projectFlowId: projectFlow.id,
+                projectFlow: {
+                    project_id: projectFlow.project_id,
+                    flow_id: projectFlow.flow_id,
+                    at: projectFlow.at,
+                },
+                initialState: event.state,
+                initialStateEventId: event.id,
+                initialStateAt: event.at,
+                graphDelta: {
+                    nodes: flowRelations.nodes.filter(
+                        n => n.flow_id === id,
+                    ),
+                    edges: flowRelations.edges.filter(
+                        e => e.flow_id === id,
+                    ),
+                    deletions: [],
+                    memberEvents: flowRelations.members.filter(
+                        m => nodeIds.has(m.flow_node_id),
+                    ),
+                    attributeEvents:
+                        flowRelations.attributes.filter(
+                            a => nodeIds.has(a.flow_node_id),
+                        ),
+                },
+            }, event.member_id);
         }),
         // Organization '2' owns a small, self-contained slice so each
         // org owns at least one project and flow. The whole
         // work-order graph stays in org '1', so org '2' gets a
         // work-order-free flow and a flow-free project — no
-        // cross-org coupling.
+        // cross-org coupling. seed-flow-org2 has no project_flows
+        // join row, so it cannot drive through postFlowCreationOp
+        // (which requires one) — stays a direct write.
         adapter.projects.put('seed-project-org2', {
             ...projects[0]!,
             organization_id: ORGANIZATION_TWO,
@@ -3250,15 +3342,6 @@ async function postMockDataLoadIn(
             member_id: SYSTEM_MEMBER_ID,
             at: MOCK_SEED_TIMESTAMP,
         }),
-        ...flowRelations.nodes.map(node =>
-            adapter.flowNodes.put(node.id, node)),
-        ...flowRelations.edges.map(edge =>
-            adapter.flowEdges.put(edge.id, edge)),
-        ...flowRelations.members.map(member =>
-            adapter.flowNodeMembers.put(member.id, member)),
-        ...flowRelations.attributes.map(attribute =>
-            adapter.flowNodeAttributes.put(
-                attribute.id, attribute)),
     ]);
 
     const ideaSubmissions = buildIdeaSubmissions();
@@ -3388,46 +3471,6 @@ async function postMockDataLoadIn(
         },
     ];
 
-    // One state event per seeded flow — the
-    // creation moment of each flow on the states
-    // log. Tier 2.3 retires FlowEntity.created_at
-    // / updated_at; the log IS the truth. Events
-    // are authored by SYSTEM_MEMBER_ID at the
-    // shared wfTimestamp moment.
-    const flowStateEvents: StateEntity[] = [
-        {
-            id: 'fSe01CustomerOnboard0aA',
-            entity_id:
-                'h5mErVBQhwdMKwi1co30jB',
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-        {
-            id: 'fSe02FusionFl0w0aActiv',
-            entity_id:
-                'E2BnBlZyrriqsQYkmS4usb',
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-        {
-            id: 'fSe03Lay0utTest0aActiv',
-            entity_id:
-                '7COt7Kf4OaOBg6AjaNO04s',
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-        {
-            id: 'fSe04L3adt0Cl0se0aActiv',
-            entity_id: l2cFlowId,
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-    ];
-
     const aiMembers = buildAiMembers();
 
     // AI members start at 'active' on creation.
@@ -3478,14 +3521,6 @@ async function postMockDataLoadIn(
             }),
         ),
         ...projectStateEvents.map(r =>
-            adapter.states.put(r.id, {
-                entity_id: r.entity_id,
-                state: r.state,
-                member_id: r.member_id,
-                at: r.at,
-            }),
-        ),
-        ...flowStateEvents.map(r =>
             adapter.states.put(r.id, {
                 entity_id: r.entity_id,
                 state: r.state,
