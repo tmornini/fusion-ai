@@ -45,6 +45,7 @@ import {
     validateHumanMemberCreateBody,
     validateHumanMemberEditBody,
     validateFlowCreateBody,
+    validateFlowEntity,
     validateFlowVersionPublishBody,
     validateFlowPutBody,
     validateFlowUndoBody,
@@ -428,11 +429,15 @@ export async function postIdeaCreationOp(
 // so the seed can drive flow creation through the same
 // gate the route uses (Decision 6's below-facade
 // carve-out) — this is also Phase 1's dual-write
-// insertion seam.
+// insertion seam. `pair` is optional so the seed's below-
+// facade call (api/mock-data.ts, no gate, no pair) keeps
+// compiling unchanged; the route always supplies one,
+// since 'flows' is pair-wired and never bearer-exempt.
 export async function postFlowCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     actor: Id,
+    pair?: MessagePair,
 ): Promise<void> {
     const b = validateFlowCreateBody(body);
     const delta = b.graphDelta;
@@ -442,6 +447,7 @@ export async function postFlowCreationOp(
             'flow_nodes', 'flow_edges',
             'flow_node_members',
             'flow_node_attributes',
+            'requests', 'responses',
         ],
         async (view) => {
             await view.flows.put(
@@ -468,6 +474,9 @@ export async function postFlowCreationOp(
             await writeFlowGraphDelta(
                 view, delta, actor,
             );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
         },
     );
 }
@@ -898,6 +907,25 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
+    'flows': { status: 204 },
+    // The raw PUT body wraps the flow's own scalar fields
+    // under `.flow` (FlowPutBody) — unlike ideas/:id, whose
+    // body IS the flat entity — so the reconstruction reads
+    // body.flow, not body itself.
+    'flows/:id': {
+        status: 200,
+        successBody: (params, body, _actor, organization) => ({
+            id: param(params, 0),
+            ...validateFlowEntity({
+                ...(body?.['flow'] as
+                    Record<string, unknown> ?? {}),
+                organization_id: organization,
+            }),
+        }),
+    },
+    'flows/:id/undo': { status: 204 },
+    'flows/:id/redo': { status: 204 },
+    'flows/:id/versions': { status: 204 },
 };
 
 export const routes: Route[] = [
@@ -1342,8 +1370,8 @@ export const routes: Route[] = [
         // Member-tier POST — /flows carries POST in
         // MEMBER_VERBS. See postFlowCreationOp for the
         // transaction shape.
-        post: (db, _p, body, actor) =>
-            postFlowCreationOp(db, body, actor),
+        post: (db, _p, body, actor, pair) =>
+            postFlowCreationOp(db, body, actor, pair),
     }),
     // Write a flow: an OPTIONAL version snapshot (the new
     // flow_versions row PUT plus the named over-cap trim
@@ -1429,7 +1457,7 @@ export const routes: Route[] = [
                 },
             );
         },
-        put: (db, p, body, actor) => {
+        put: (db, p, body, actor, pair) => {
             const id = param(p, 0);
             const b = validateFlowPutBody(body);
             const delta = b.graphDelta;
@@ -1439,6 +1467,7 @@ export const routes: Route[] = [
                     'flow_nodes', 'flow_edges',
                     'flow_node_members',
                     'flow_node_attributes',
+                    'requests', 'responses',
                 ],
                 async (view) => {
                     if (b.history.kind === 'snapshot') {
@@ -1464,6 +1493,9 @@ export const routes: Route[] = [
                     await writeFlowGraphDelta(
                         view, delta, actor,
                     );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
                 },
             );
         },
@@ -1482,7 +1514,7 @@ export const routes: Route[] = [
     // a node the user deleted reappears in reads on undo.
     // Member-tier POST via the /flows segment prefix.
     route('flows/:id/undo', {
-        post: (db, p, body, actor) => {
+        post: (db, p, body, actor, pair) => {
             const id = param(p, 0);
             const b = validateFlowUndoBody(body);
             const delta = b.graphDelta;
@@ -1492,6 +1524,7 @@ export const routes: Route[] = [
                     'flow_nodes', 'flow_edges',
                     'flow_node_members',
                     'flow_node_attributes',
+                    'requests', 'responses',
                 ],
                 async (view) => {
                     await view.flows.put(
@@ -1515,6 +1548,9 @@ export const routes: Route[] = [
                             'restored', actor, r.at,
                         );
                     }
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
                 },
             );
         },
@@ -1534,7 +1570,7 @@ export const routes: Route[] = [
     // nodes/edges the redo target re-introduces. Member-tier POST
     // via the /flows segment prefix.
     route('flows/:id/redo', {
-        post: (db, p, body, actor) => {
+        post: (db, p, body, actor, pair) => {
             const id = param(p, 0);
             const b = validateFlowRedoBody(body);
             const delta = b.graphDelta;
@@ -1544,6 +1580,7 @@ export const routes: Route[] = [
                     'flow_nodes', 'flow_edges',
                     'flow_node_members',
                     'flow_node_attributes',
+                    'requests', 'responses',
                 ],
                 async (view) => {
                     await view.flowVersions.put(
@@ -1572,6 +1609,9 @@ export const routes: Route[] = [
                             'restored', actor, r.at,
                         );
                     }
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
                 },
             );
         },
@@ -1597,10 +1637,10 @@ export const routes: Route[] = [
         // actor. The body already carries flow_id; the flow id is
         // param 0. Member-tier POST — /flows/:id/versions carries
         // POST in MEMBER_VERBS.
-        post: (db, _p, body) => {
+        post: (db, _p, body, _actor, pair) => {
             const b = validateFlowVersionPublishBody(body);
             return db.transaction(
-                ['flow_versions'],
+                ['flow_versions', 'requests', 'responses'],
                 async (view) => {
                     await view.flowVersions.put(
                         b.id,
@@ -1609,6 +1649,9 @@ export const routes: Route[] = [
                     );
                     for (const t of b.trimIds) {
                         await view.flowVersions.delete(t);
+                    }
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
                     }
                 },
             );

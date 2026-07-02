@@ -251,6 +251,7 @@ export async function appendMessagePair(
 // family by family in Tasks 2-5.
 const CREATE_BODY_ID_FIELDS: Record<string, string> = {
     'ideas': 'id',
+    'flows': 'id',
 };
 
 export function createdEntityUriId(
@@ -280,6 +281,11 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'states/:id',
     'projects/:id',
     'projects/:id/flows/:pfid',
+    'flows',
+    'flows/:id',
+    'flows/:id/undo',
+    'flows/:id/redo',
+    'flows/:id/versions',
 ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from
@@ -297,4 +303,6 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'ideas/:id/submissions/:sid',
         'projects/:id',
         'projects/:id/flows/:pfid',
+        'flows',
+        'flows/:id',
     ]);
