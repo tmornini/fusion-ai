@@ -9,7 +9,6 @@ import {
     postHumanMemberCreationOp,
 } from './routes.ts';
 import type {
-    ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     StateEntity,
@@ -19,7 +18,6 @@ import type {
     Id,
 } from './types.ts';
 import {
-    jsonArrayField,
     jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
     MS_PER_DAY,
@@ -30,6 +28,7 @@ import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
 import { hashPassword } from '../shared/password-hash.ts';
+import type { MessagePair } from './message-pair.ts';
 import {
     daysFromNow,
     isoFromMs,
@@ -73,7 +72,6 @@ import {
 } from './mock-data/records.ts';
 import {
     l2cFlowId,
-    l2cProjectFlowId,
     l2cTriageNodeId,
     l2cDiscoveryNodeId,
     l2cQualifNodeId,
@@ -88,10 +86,43 @@ import {
     buildLeadToCloseEdges,
     buildLeadToClosePaths,
 } from './mock-data/lead-to-close-flow.ts';
+import {
+    wfTimestamp,
+    ideaStateEvents,
+    flowStateEvents,
+    recordStateEvents,
+    mockProjectFlows,
+    deterministicScore,
+    humanMemberPoolsByOrganization,
+    pickHumanMember,
+    humanMemberSeedBody,
+    ideaSeedBody,
+    flowSeedBody,
+    aiMemberSeedBody,
+    recordSeedBody,
+    objectiveSeedBody,
+    formMockDataMessagePairs,
+    formBootstrapMessagePair,
+    seedPairKey,
+    ORGANIZATION_TWO_OBJECTIVE,
+} from './mock-data/seed-message-pairs.ts';
 
 const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
 const TIER_IDEAS_LIMIT = 1000;
+
+// A missing pair here is a pass-1/pass-2 wiring bug (a dropped
+// or mis-keyed invocation), never an expected condition — crash
+// loud rather than silently write the row with no pair.
+function requirePair(
+    pairs: ReadonlyMap<string, MessagePair>, key: string,
+): MessagePair {
+    const pair = pairs.get(key);
+    if (pair === undefined) {
+        throw new Error('seed formed no message pair for ' + key);
+    }
+    return pair;
+}
 
 // The seeded admin credential set, returned to the caller so a
 // one-time reveal can surface the plaintext password. The
@@ -185,17 +216,24 @@ export { OBJECTIVE_SEEDS };
 export async function postMockDataLoad(
     adapter: DbAdapter,
 ): Promise<SeededCredentials> {
-    // Seed the whole demo dataset in one transaction, so a
-    // mid-seed failure leaves no half-populated schema. The
-    // credentials seed runs after it commits — its PBKDF2
-    // hashing is async crypto and cannot run inside the tx.
-    // The schema marker stamps LAST, so a failed seed leaves
-    // hasSchema() false: the datastore reads as empty and the
-    // seed can be retried cleanly.
+    // Pass 1 (no tx): every pair-wired op-invocation's message
+    // pair, formed up front — formWritePair's hashing is async
+    // crypto, which would auto-commit an IndexedDB transaction
+    // early if awaited inside one (CLAUDE.md § the IndexedDB
+    // auto-commit constraint). requestAt is minted once, the
+    // seed's own arrival moment, and shared by every pair.
+    const pairs = await formMockDataMessagePairs(nowUtc());
+    // Pass 2: seed the whole demo dataset in one transaction —
+    // row ops only — so a mid-seed failure leaves no
+    // half-populated schema. The credentials seed runs after it
+    // commits — its PBKDF2 hashing is ALSO async crypto and
+    // cannot run inside the tx. The schema marker stamps LAST,
+    // so a failed seed leaves hasSchema() false: the datastore
+    // reads as empty and the seed can be retried cleanly.
     await adapter.ensureTables(TABLE_NAMES);
     await adapter.transaction(
         TABLE_NAMES,
-        (view) => postMockDataLoadIn(view),
+        (view) => postMockDataLoadIn(view, pairs),
     );
     const creds = await seedHumanCredentials(adapter);
     await adapter.postSchemaCreation();
@@ -204,17 +242,12 @@ export async function postMockDataLoad(
 
 async function postMockDataLoadIn(
     adapter: DbAdapter,
+    pairs: ReadonlyMap<string, MessagePair>,
 ): Promise<void> {
     const members = buildMembers();
 
     await Promise.all([
         ...members.flatMap((member, index) => {
-            const {
-                id: _id, state, name,
-                email, phone, bio,
-                strengths, team_dimensions,
-                ...detail
-            } = member;
             // 'current' (the admin) joins BOTH orgs; every
             // other human is single-org via assignOrganization.
             const organizations = member.id === 'current'
@@ -235,23 +268,17 @@ async function postMockDataLoadIn(
                         organization_id: organizations[0]!,
                         at: MOCK_SEED_TIMESTAMP,
                     }),
-                postHumanMemberCreationOp(adapter, {
-                    id: member.id,
-                    pii: { name, email, phone, bio },
-                    detail: {
-                        ...detail,
-                        strengths:
-                            jsonArrayField(strengths),
-                        team_dimensions:
-                            jsonObjectField(
-                                team_dimensions,
-                            ),
-                    },
-                    initialState: state,
-                    initialStateEventId:
-                        `seed-member-${member.id}-${state}`,
-                    initialStateAt: MOCK_SEED_TIMESTAMP,
-                }, SYSTEM_MEMBER_ID),
+                postHumanMemberCreationOp(
+                    adapter,
+                    humanMemberSeedBody(member),
+                    SYSTEM_MEMBER_ID,
+                    requirePair(
+                        pairs,
+                        seedPairKey(
+                            'human-members', member.id,
+                        ),
+                    ),
+                ),
             ];
         }),
         adapter.members.put(SYSTEM_MEMBER_ID, {
@@ -322,104 +349,24 @@ async function postMockDataLoadIn(
     // Driving the op below the org fence, the unscoped store
     // stamps nothing, so organization_id rides in the idea
     // sub-body instead of the (route-only) omission.
-    const ideaStateEvents: StateEntity[] = [
-        {
-            id: 'qJoFXyzUUaq0vEpHL5e34l',
-            entity_id: 'eT5xdKjzLDmuRn3r7XMX4R',
-            state: 'in_review',
-            member_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            at: daysFromNow(-75, 9, 30),
-        },
-        {
-            id: 'tIcL6f8KJoyG2YN9NofOMo',
-            entity_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
-            state: 'approved',
-            member_id: 'bLP3X1hb1mSz8gY9neogU3',
-            at: daysFromNow(-70, 9, 0),
-        },
-        {
-            id: 'mGfBLqA7lScpEKxc5w0Yt2',
-            entity_id: 'wuCMQqo4IkEksx7MYmu8g2',
-            state: 'active',
-            member_id: '53J8h9dr76XFqCjYcNVwIR',
-            at: daysFromNow(-65, 9, 0),
-        },
-        {
-            id: 'BvBRvDQ8b5l5Tg7iZSGyHF',
-            entity_id: 'ojOEXtdzdtTZtpM81TxVca',
-            state: 'in_review',
-            member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            at: daysFromNow(-55, 9, 0),
-        },
-        {
-            id: 'BMS9TmTKR0DZ41vTUSpvxX',
-            entity_id: 'T2vAafLDcshDONlYxpzPLc',
-            state: 'active',
-            member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            at: daysFromNow(-50, 9, 0),
-        },
-        {
-            id: 'XX2EXrIUcQVTnzGo0YO2Iw',
-            entity_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
-            state: 'sent_back',
-            member_id: 'zyTbfbjcGEfbpCsNTP0XjX',
-            at: daysFromNow(-45, 9, 0),
-        },
-        {
-            id: 'fxlbcnsAmCWp4j8B2NkDKM',
-            entity_id: 'MCxK0hzT9CPjJx1ZV5unfr',
-            state: 'in_review',
-            member_id: 'LhfaUUf4IumVsCSGB4xjdK',
-            at: daysFromNow(-75, 10, 0),
-        },
-        {
-            id: 'JjkkkkrZw4FvOWBpJYE2J7',
-            entity_id: 'SUb4gKXsZ1OsEauzqszg0t',
-            state: 'in_review',
-            member_id: 'WxQn4LVWb76YkmqK5B0EPp',
-            at: daysFromNow(-35, 9, 0),
-        },
-        {
-            id: '4nzdNB97hgD1GZ7CjA2EwS',
-            entity_id: 'gxa84W9KvEgD0wT1F4TOM9',
-            state: 'in_review',
-            member_id: '53J8h9dr76XFqCjYcNVwIR',
-            at: daysFromNow(-30, 9, 0),
-        },
-        {
-            id: 'wmCY9xZdrk0XlydyABZqXY',
-            entity_id: '1Z68gROMrlTAfPEGiyJJAY',
-            state: 'in_review',
-            member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
-            at: daysFromNow(-25, 9, 0),
-        },
-        {
-            id: 'OWGsZqEi1bnWUetzS2sURr',
-            entity_id: 'Q2On2xwMpFdzOklBQJXrni',
-            state: 'in_review',
-            member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
-            at: daysFromNow(-20, 9, 0),
-        },
-    ];
-
+    // ideaStateEvents is imported from seed-message-pairs.ts —
+    // pass 1 there needs the SAME array to form each idea's
+    // pair before this transaction opens.
     const ideaStateEventById = new Map(
         ideaStateEvents.map(e => [e.entity_id, e]),
     );
 
     await Promise.all([
         ...ideas.map((idea, i) => {
-            const { id, ...ideaFields } = idea;
-            const event = ideaStateEventById.get(id)!;
-            return postIdeaCreationOp(adapter, {
-                id,
-                idea: {
-                    ...ideaFields,
-                    organization_id: assignOrganization(i),
-                },
-                initialState: event.state,
-                initialStateEventId: event.id,
-                initialStateAt: event.at,
-            }, event.member_id);
+            const event = ideaStateEventById.get(idea.id)!;
+            return postIdeaCreationOp(
+                adapter,
+                ideaSeedBody(idea, event, i),
+                event.member_id,
+                requirePair(
+                    pairs, seedPairKey('ideas', idea.id),
+                ),
+            );
         }),
         adapter.organizations.put(STARK_ORGANIZATION, {
             name: 'Stark Industries',
@@ -440,8 +387,6 @@ async function postMockDataLoadIn(
     ]);
 
     const projects = buildProjects();
-
-    const wfTimestamp = daysFromNow(-60, 9, 0);
 
     const leadToCloseNodes = buildLeadToCloseNodes();
 
@@ -464,41 +409,10 @@ async function postMockDataLoadIn(
     // are authored by SYSTEM_MEMBER_ID at the
     // shared wfTimestamp moment. Driven through
     // postFlowCreationOp below, alongside each
-    // flow's row and graph delta.
-    const flowStateEvents: StateEntity[] = [
-        {
-            id: 'fSe01CustomerOnboard0aA',
-            entity_id:
-                'h5mErVBQhwdMKwi1co30jB',
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-        {
-            id: 'fSe02FusionFl0w0aActiv',
-            entity_id:
-                'E2BnBlZyrriqsQYkmS4usb',
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-        {
-            id: 'fSe03Lay0utTest0aActiv',
-            entity_id:
-                '7COt7Kf4OaOBg6AjaNO04s',
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-        {
-            id: 'fSe04L3adt0Cl0se0aActiv',
-            entity_id: l2cFlowId,
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-    ];
-
+    // flow's row and graph delta. flowStateEvents is
+    // imported from seed-message-pairs.ts — pass 1
+    // there needs the SAME array to form each flow's
+    // pair before this transaction opens.
     const flowStateEventByFlowId = new Map(
         flowStateEvents.map(e => [e.entity_id, e]),
     );
@@ -554,23 +468,10 @@ async function postMockDataLoadIn(
     // parent is deleted via EntityStore.delete.
     // Driven through postRecordWriteOp below,
     // alongside each record's row and attributes.
-    const recordStateEvents: StateEntity[] = [
-        {
-            id: 'rSe01CustPr0fact1ve01A',
-            entity_id: customerProfileRecordId,
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-        {
-            id: 'rSe02Pr0jBri3fact1ve02',
-            entity_id: projectBriefRecordId,
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: wfTimestamp,
-        },
-    ];
-
+    // recordStateEvents is imported from
+    // seed-message-pairs.ts — pass 1 there needs the
+    // SAME array to form each record's pair before
+    // this transaction opens.
     const recordStateEventByRecordId = new Map(
         recordStateEvents.map(e => [e.entity_id, e]),
     );
@@ -3152,33 +3053,10 @@ async function postMockDataLoadIn(
         },
     ];
 
-    const mockProjectFlows:
-        ProjectFlowEntity[] = [
-        {
-            id: 'noogjofVfg6jFxYOVbdAnC',
-            project_id: 'u6YkHhlGc91oDMkr3x0isa',
-            flow_id: 'h5mErVBQhwdMKwi1co30jB',
-            at: wfTimestamp,
-        },
-        {
-            id: '5ddqhtwd3qcdodXLcsDdyt',
-            project_id: 'jRE2Tj32NHsFGZIeEADp0p',
-            flow_id: 'E2BnBlZyrriqsQYkmS4usb',
-            at: wfTimestamp,
-        },
-        {
-            id: '9YX7ZU4br6zxrHyVcmRjJP',
-            project_id: 'u6YkHhlGc91oDMkr3x0isa',
-            flow_id: '7COt7Kf4OaOBg6AjaNO04s',
-            at: wfTimestamp,
-        },
-        {
-            id: l2cProjectFlowId,
-            project_id: l2cProjectId,
-            flow_id: l2cFlowId,
-            at: wfTimestamp,
-        },
-    ];
+    // mockProjectFlows is imported from
+    // seed-message-pairs.ts — pass 1 there needs the SAME
+    // array to form each flow's pair before this transaction
+    // opens.
 
     const leadToClosePaths = buildLeadToClosePaths();
 
@@ -3277,47 +3155,20 @@ async function postMockDataLoadIn(
         // four drive through the op; seed-flow-org2 (below) has
         // no project link and stays a direct write.
         ...mockFlows.map(flow => {
-            const { graph: _graph, id, ...row } = flow;
-            const event = flowStateEventByFlowId.get(id)!;
+            const event = flowStateEventByFlowId.get(flow.id)!;
             const projectFlow = mockProjectFlows.find(
-                pf => pf.flow_id === id,
+                pf => pf.flow_id === flow.id,
             )!;
-            const nodeIds = new Set(
-                flowRelations.nodes
-                    .filter(n => n.flow_id === id)
-                    .map(n => n.id),
+            return postFlowCreationOp(
+                adapter,
+                flowSeedBody(
+                    flow, event, projectFlow, flowRelations,
+                ),
+                event.member_id,
+                requirePair(
+                    pairs, seedPairKey('flows', flow.id),
+                ),
             );
-            return postFlowCreationOp(adapter, {
-                id,
-                flow: {
-                    ...row, organization_id: STARK_ORGANIZATION,
-                },
-                projectFlowId: projectFlow.id,
-                projectFlow: {
-                    project_id: projectFlow.project_id,
-                    flow_id: projectFlow.flow_id,
-                    at: projectFlow.at,
-                },
-                initialState: event.state,
-                initialStateEventId: event.id,
-                initialStateAt: event.at,
-                graphDelta: {
-                    nodes: flowRelations.nodes.filter(
-                        n => n.flow_id === id,
-                    ),
-                    edges: flowRelations.edges.filter(
-                        e => e.flow_id === id,
-                    ),
-                    deletions: [],
-                    memberEvents: flowRelations.members.filter(
-                        m => nodeIds.has(m.flow_node_id),
-                    ),
-                    attributeEvents:
-                        flowRelations.attributes.filter(
-                            a => nodeIds.has(a.flow_node_id),
-                        ),
-                },
-            }, event.member_id);
         }),
         // Organization '2' owns a small, self-contained slice so each
         // org owns at least one project and flow. The whole
@@ -3534,7 +3385,6 @@ async function postMockDataLoadIn(
         // PUT /identities/:id primitive (makeIdRoute), the
         // same "leave and note" carve-out as projects.
         ...aiMembers.flatMap(m => {
-            const { id: _id, ...detail } = m;
             return [
                 adapter.memberships.put(
                     'seed-membership-' + m.id, {
@@ -3545,14 +3395,15 @@ async function postMockDataLoadIn(
                 adapter.identities.put(m.id, {
                     kind: 'service',
                 }),
-                postAiMemberCreationOp(adapter, {
-                    id: m.id,
-                    detail,
-                    initialState: 'active',
-                    initialStateEventId:
-                        `seed-member-${m.id}-active`,
-                    initialStateAt: MOCK_SEED_TIMESTAMP,
-                }, SYSTEM_MEMBER_ID),
+                postAiMemberCreationOp(
+                    adapter,
+                    aiMemberSeedBody(m),
+                    SYSTEM_MEMBER_ID,
+                    requirePair(
+                        pairs,
+                        seedPairKey('ai-members', m.id),
+                    ),
+                ),
             ];
         }),
         ...leadToCloseData.workOrders.map(r =>
@@ -3573,34 +3424,18 @@ async function postMockDataLoadIn(
             }),
         ),
         ...mockRecords.map((r, i) => {
-            const organization = assignOrganization(i);
             const event = recordStateEventByRecordId.get(r.id)!;
             const attributes = mockRecordAttributes.filter(
                 a => a.record_id === r.id,
             );
-            return postRecordWriteOp(adapter, {
-                kind: 'create',
-                id: r.id,
-                record: {
-                    organization_id: organization,
-                    name: r.name,
-                    description: r.description,
-                    position: r.position,
-                },
-                attributes: attributes.map(a => ({
-                    id: a.id,
-                    record_id: a.record_id,
-                    organization_id: organization,
-                    name: a.name,
-                    attribute_type: a.attribute_type,
-                    sort_order: a.sort_order,
-                    options: a.options,
-                    constraints: a.constraints,
-                })),
-                initialState: event.state,
-                initialStateEventId: event.id,
-                initialStateAt: event.at,
-            }, event.member_id);
+            return postRecordWriteOp(
+                adapter,
+                recordSeedBody(r, i, event, attributes),
+                event.member_id,
+                requirePair(
+                    pairs, seedPairKey('records', r.id),
+                ),
+            );
         }),
         ...mockFlowRecords.map(r =>
             adapter.flowRecords.put(r.id, {
@@ -3638,43 +3473,44 @@ async function postMockDataLoadIn(
         ] ?? SYSTEM_MEMBER_ID;
     };
 
+    // The STARK-org objective revisions' author cannot use the
+    // in-tx memberFor above: its pair was already formed pre-tx
+    // (pass 1, before any membership row existed to read back),
+    // so pass 2 must pick from the SAME pure pool pass 1 used —
+    // see humanMemberPoolsByOrganization's doc comment for why
+    // the two are proven to agree. memberFor (DB-read-based)
+    // stays exactly as it was for the baseline/actual-score
+    // deferral below.
+    const objectiveMemberPools =
+        humanMemberPoolsByOrganization(members);
     for (const seed of OBJECTIVE_SEEDS) {
-        await postObjectiveCreationOp(adapter, {
-            id: seed.id,
-            objective: {
-                organization_id: STARK_ORGANIZATION,
-                position: seed.position,
-            },
-            revisionId: `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
-            revision: {
-                objective_id: seed.id,
-                name: seed.name,
-                description: seed.description,
-                member_id: memberFor(
-                    STARK_ORGANIZATION,
-                    `${seed.id}:revision`,
-                ),
-                at: MOCK_SEED_TIMESTAMP,
-            },
-        });
+        const memberId = pickHumanMember(
+            objectiveMemberPools, STARK_ORGANIZATION,
+            `${seed.id}:revision`,
+        );
+        await postObjectiveCreationOp(
+            adapter,
+            objectiveSeedBody(
+                seed, STARK_ORGANIZATION, memberId,
+            ),
+            requirePair(
+                pairs, seedPairKey('objectives', seed.id),
+            ),
+        );
     }
 
     // Organization '2' owns one objective so each org owns at least one.
-    await postObjectiveCreationOp(adapter, {
-        id: 'seed-objective-org2',
-        objective: {
-            organization_id: ORGANIZATION_TWO,
-            position: 0,
-        },
-        revisionId: `seed-objective-org2:${MOCK_SEED_TIMESTAMP}`,
-        revision: {
-            objective_id: 'seed-objective-org2',
-            name: 'Wayne demo objective',
-            description: 'Second-org demo objective.',
-            member_id: SYSTEM_MEMBER_ID,
-            at: MOCK_SEED_TIMESTAMP,
-        },
-    });
+    await postObjectiveCreationOp(
+        adapter,
+        objectiveSeedBody(
+            ORGANIZATION_TWO_OBJECTIVE, ORGANIZATION_TWO,
+            SYSTEM_MEMBER_ID,
+        ),
+        requirePair(
+            pairs,
+            seedPairKey('objectives', ORGANIZATION_TWO_OBJECTIVE.id),
+        ),
+    );
 
     const allProjects = await adapter.projects.getAll();
     const projectStateById = new Map(
@@ -3682,20 +3518,6 @@ async function postMockDataLoadIn(
             ev => [ev.entity_id, ev.state],
         ),
     );
-
-    function deterministicScore(
-        seed: string,
-        min: number,
-        max: number,
-    ): number {
-        let hash = 0;
-        for (let i = 0; i < seed.length; i++) {
-            hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-        }
-        const range = max - min + 1;
-        const wrapped = ((hash % range) + range) % range;
-        return min + wrapped;
-    }
 
     for (const p of allProjects) {
         const state = projectStateById.get(p.id);
@@ -3814,15 +3636,27 @@ async function postMockDataLoadIn(
 export async function postBootstrap(
     adapter: DbAdapter,
 ): Promise<SeededCredentials> {
-    // Seed the pristine bootstrap data in one transaction.
-    // Credentials seed after it commits — PBKDF2 hashing is
-    // async crypto and cannot run inside the tx. The schema
-    // marker stamps LAST so a failed bootstrap leaves the
-    // anonymous plane open for retry.
+    // Pass 1 (no tx): the lone 'current' human-member create's
+    // pair, formed up front — see postMockDataLoad's pass 1 for
+    // why (formWritePair's hashing is async crypto, which would
+    // auto-commit an IndexedDB transaction early if awaited
+    // inside one). Bootstrap's body embeds nowUtc() (there is
+    // no fixed seed timestamp here), so it is minted ONCE inside
+    // formBootstrapMessagePair and reused verbatim by pass 2
+    // below — never a second, independently timestamped body.
+    const { body: currentMemberBody, pair: currentMemberPair } =
+        await formBootstrapMessagePair(nowUtc());
+    // Pass 2: seed the pristine bootstrap data in one
+    // transaction. Credentials seed after it commits — PBKDF2
+    // hashing is ALSO async crypto and cannot run inside the tx.
+    // The schema marker stamps LAST so a failed bootstrap leaves
+    // the anonymous plane open for retry.
     await adapter.ensureTables(TABLE_NAMES);
     await adapter.transaction(
         TABLE_NAMES,
-        (view) => postBootstrapIn(view),
+        (view) => postBootstrapIn(
+            view, currentMemberBody, currentMemberPair,
+        ),
     );
     const creds = await seedHumanCredentials(adapter);
     await adapter.postSchemaCreation();
@@ -3831,6 +3665,8 @@ export async function postBootstrap(
 
 async function postBootstrapIn(
     adapter: DbAdapter,
+    currentMemberBody: Record<string, unknown>,
+    currentMemberPair: MessagePair,
 ): Promise<void> {
     // The pristine seed plants only what the app needs
     // to render its shell: the system actor that authors
@@ -3863,35 +3699,13 @@ async function postBootstrapIn(
         // explicit actor SYSTEM_MEMBER_ID (the named
         // bootstrap genesis carve-out only exempts the
         // SYSTEM member itself and the schema marker).
-        postHumanMemberCreationOp(adapter, {
-            id: 'current',
-            pii: {
-                name: 'Tony Stark',
-                email: 'demo@example.com',
-                phone: '+1 (555) 123-4567',
-                bio: 'Passionate about building'
-                    + ' products that solve'
-                    + ' real problems.',
-            },
-            detail: {
-                title: 'Admin',
-                department: 'Product',
-                strengths: jsonArrayField([
-                    'Strategic Planning',
-                    'Data Analysis',
-                    'Stakeholder Management',
-                ]),
-                team_dimensions: jsonObjectField({
-                    driver: 80,
-                    analytical: 80,
-                    expressive: 80,
-                    amiable: 80,
-                }),
-            },
-            initialState: 'active',
-            initialStateEventId: 'bootstrap-current-active',
-            initialStateAt: nowUtc(),
-        }, SYSTEM_MEMBER_ID),
+        // currentMemberBody is pass 1's frozen body (see
+        // postBootstrap) — never rebuilt here, so it can never
+        // drift from what currentMemberPair was hashed from.
+        postHumanMemberCreationOp(
+            adapter, currentMemberBody,
+            SYSTEM_MEMBER_ID, currentMemberPair,
+        ),
         adapter.states.postEvent(
             'bootstrap-system-active',
             SYSTEM_MEMBER_ID,
