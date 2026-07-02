@@ -410,6 +410,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'organizations/:id',
     'role-grants/:id',
     'identity-providers/:id',
+    'states/:id/field-values/:fvid',
 ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from
@@ -450,4 +451,5 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'identities/:id/credentials/:cid',
         'memberships/:id',
         'organizations/:id',
+        'states/:id/field-values/:fvid',
     ]);

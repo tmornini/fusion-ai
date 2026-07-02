@@ -77,6 +77,7 @@ import {
     validateRecordWriteBody,
     validateRoleGrantEntity,
     validateStateBody,
+    validateStateFieldValueEntity,
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
     validateWorkOrderEntity,
@@ -1223,6 +1224,15 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
+    'states/:id/field-values/:fvid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateStateFieldValueEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
 };
 
 export const routes: Route[] = [
@@ -2311,15 +2321,54 @@ export const routes: Route[] = [
                 'state_event_id', param(p, 0),
             ),
     }),
+    // PUT/DELETE each append their message pair in the same
+    // transaction as the write (message-pair.ts). DOCUMENT-
+    // class: state_field_values is a plain, revisitable row
+    // (unlike its parent states log), so a repeat PUT records
+    // Supersedes and a DELETE tombstones it. The leaf nests
+    // under its parent STATE EVENT (param 0), fenced by the
+    // multi-hop resolver (api/store-parent-scoped.ts) exactly
+    // as the bare store call was — this is a transaction wrap
+    // plus pair append, not a behavior change.
     route('states/:id/field-values/:fvid', {
-        put: (db, p, body) =>
-            db.stateFieldValues.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<StateFieldValueEntity, 'id'>,
-            ),
-        delete: (db, p) =>
-            db.stateFieldValues.delete(param(p, 1)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 1);
+            return db.transaction(
+                [
+                    'state_field_values',
+                    'requests', 'responses',
+                ],
+                async (view) => {
+                    const written = await view
+                        .stateFieldValues.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<
+                                    StateFieldValueEntity, 'id'
+                                >,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
+        delete: (db, p, _actor, pair) => {
+            const id = param(p, 1);
+            return db.transaction(
+                [
+                    'state_field_values',
+                    'requests', 'responses',
+                ],
+                async (view) => {
+                    await view.stateFieldValues.delete(id);
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
     }),
     route('records', {
         get: (db) => db.records.getAll(),
