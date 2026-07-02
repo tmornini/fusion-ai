@@ -3261,6 +3261,9 @@ async function postMockDataLoadIn(
         });
 
     await Promise.all([
+        // projects is a bare makeIdRoute PUT (get/put only,
+        // no composed post op), so the validated
+        // EntityStore.put below IS the sanctioned write.
         ...projects.map(project =>
             adapter.projects.put(project.id, {
                 ...project, organization_id: STARK_ORGANIZATION,
