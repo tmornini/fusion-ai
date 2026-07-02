@@ -5,6 +5,8 @@ import {
     postFlowCreationOp,
     postRecordWriteOp,
     postObjectiveCreationOp,
+    postAiMemberCreationOp,
+    postHumanMemberCreationOp,
 } from './routes.ts';
 import type {
     ProjectFlowEntity,
@@ -208,7 +210,7 @@ async function postMockDataLoadIn(
     await Promise.all([
         ...members.flatMap((member, index) => {
             const {
-                id: _id, state: _state, name,
+                id: _id, state, name,
                 email, phone, bio,
                 strengths, team_dimensions,
                 ...detail
@@ -219,9 +221,6 @@ async function postMockDataLoadIn(
                 ? [STARK_ORGANIZATION, ORGANIZATION_TWO]
                 : [assignOrganization(index)];
             return [
-                adapter.members.put(member.id, {
-                    type: 'human',
-                }),
                 ...organizations.map((organization, n) =>
                     adapter.memberships.put(
                         'seed-membership-'
@@ -236,24 +235,23 @@ async function postMockDataLoadIn(
                         organization_id: organizations[0]!,
                         at: MOCK_SEED_TIMESTAMP,
                     }),
-                adapter.humanMembers.put(member.id, {
-                    ...detail,
-                    strengths:
-                        jsonArrayField(strengths),
-                    team_dimensions:
-                        jsonObjectField(
-                            team_dimensions,
-                        ),
-                }),
-                adapter.identities.put(member.id, {
-                    kind: 'person',
-                }),
-                adapter.identityPii.put(member.id, {
-                    name,
-                    email,
-                    phone,
-                    bio,
-                }),
+                postHumanMemberCreationOp(adapter, {
+                    id: member.id,
+                    pii: { name, email, phone, bio },
+                    detail: {
+                        ...detail,
+                        strengths:
+                            jsonArrayField(strengths),
+                        team_dimensions:
+                            jsonObjectField(
+                                team_dimensions,
+                            ),
+                    },
+                    initialState: state,
+                    initialStateEventId:
+                        `seed-member-${member.id}-${state}`,
+                    initialStateAt: MOCK_SEED_TIMESTAMP,
+                }, SYSTEM_MEMBER_ID),
             ];
         }),
         adapter.members.put(SYSTEM_MEMBER_ID, {
@@ -301,18 +299,12 @@ async function postMockDataLoadIn(
                 )]),
     ]);
 
-    // Initial member state events. Every seeded
-    // member — human or AI — gets one event at
-    // creation. The states log is the sole source
-    // of member state; the row carries no column.
+    // The system member's initial state event. Every OTHER
+    // seeded member — human or AI — gets its own initial
+    // event posted by its create op (postHumanMemberCreationOp
+    // / postAiMemberCreationOp) below. The states log is the
+    // sole source of member state; the row carries no column.
     const memberStateEvents: StateEntity[] = [
-        ...members.map(w => ({
-            id: `seed-member-${w.id}-${w.state}`,
-            entity_id: w.id,
-            state: w.state,
-            member_id: SYSTEM_MEMBER_ID,
-            at: MOCK_SEED_TIMESTAMP,
-        })),
         {
             id: `seed-member-${SYSTEM_MEMBER_ID}-active`,
             entity_id: SYSTEM_MEMBER_ID,
@@ -3481,18 +3473,6 @@ async function postMockDataLoadIn(
 
     const aiMembers = buildAiMembers();
 
-    // AI members start at 'active' on creation.
-    // Same single-event seeding as humans.
-    for (const ai of aiMembers) {
-        memberStateEvents.push({
-            id: `seed-member-${ai.id}-active`,
-            entity_id: ai.id,
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: MOCK_SEED_TIMESTAMP,
-        });
-    }
-
     await Promise.all([
         ...ideaSubmissions.map(r =>
             adapter.ideaSubmissions.put(
@@ -3542,22 +3522,34 @@ async function postMockDataLoadIn(
             adapter.stateFieldValues
                 .put(r.id, r),
         ),
+        // AI members start at 'active' on creation — same
+        // single-event seeding as humans, driven through
+        // postAiMemberCreationOp. POST /ai-members (and so
+        // the op) writes no identities row — only members +
+        // ai_members + the initial event — so the identities
+        // row rides a separate direct put through the bare
+        // PUT /identities/:id primitive (makeIdRoute), the
+        // same "leave and note" carve-out as projects.
         ...aiMembers.flatMap(m => {
             const { id: _id, ...detail } = m;
             return [
-                adapter.members.put(m.id, {
-                    type: 'ai',
-                }),
                 adapter.memberships.put(
                     'seed-membership-' + m.id, {
                         organization_id: STARK_ORGANIZATION,
                         identity_id: m.id,
                         at: MOCK_SEED_TIMESTAMP,
                     }),
-                adapter.aiMembers.put(m.id, detail),
                 adapter.identities.put(m.id, {
                     kind: 'service',
                 }),
+                postAiMemberCreationOp(adapter, {
+                    id: m.id,
+                    detail,
+                    initialState: 'active',
+                    initialStateEventId:
+                        `seed-member-${m.id}-active`,
+                    initialStateAt: MOCK_SEED_TIMESTAMP,
+                }, SYSTEM_MEMBER_ID),
             ];
         }),
         ...leadToCloseData.workOrders.map(r =>
