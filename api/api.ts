@@ -6,6 +6,7 @@ import {
     EntityNotFoundError,
     LedgerImmutabilityError,
     MissingTableError,
+    UniqueConstraintError,
 } from './db.ts';
 import type { LatencySimulation } from './latency.ts';
 import {
@@ -31,6 +32,7 @@ import {
     HTTP_UNAUTHORIZED,
     HTTP_FORBIDDEN,
     HTTP_CONFLICT,
+    HTTP_PRECONDITION_FAILED,
 } from './http-errors.ts';
 import {
     AUTHENTICATION_ROUTES,
@@ -422,6 +424,14 @@ export async function handleRequest(
             return Response.json(
                 { error: error.message },
                 { status: HTTP_CONFLICT },
+            );
+        }
+        if (
+            error instanceof UniqueConstraintError
+        ) {
+            return Response.json(
+                { error: error.message },
+                { status: HTTP_PRECONDITION_FAILED },
             );
         }
         if (

@@ -2,6 +2,9 @@ import {
     MissingTableError,
     TABLE_INDEXES,
     TABLE_NAMES,
+    UniqueConstraintError,
+    indexColumn,
+    uniqueColumns,
     type StorageBackend,
     type Tx,
     type TxMode,
@@ -143,7 +146,29 @@ function indexedDbTx(
                 ),
                 id: row.id,
             };
-            await requestPromise(store(table).put(written));
+            try {
+                await requestPromise(
+                    store(table).put(written),
+                );
+            } catch (err) {
+                if (
+                    err instanceof DOMException
+                    && err.name === 'ConstraintError'
+                ) {
+                    // The raw DOMException names no column;
+                    // resolve it from the declared unique
+                    // columns. If a table ever declares two,
+                    // this resolver must disambiguate by
+                    // probing — today responses.follows is
+                    // the only one.
+                    const column =
+                        uniqueColumns(table)[0] ?? 'id';
+                    throw new UniqueConstraintError(
+                        table, column,
+                    );
+                }
+                throw err;
+            }
         },
         async delete(
             table: string,
@@ -172,9 +197,13 @@ function createSchemaStores(db: IDBDatabase): void {
             table, { keyPath: 'id' },
         );
         for (
-            const col of TABLE_INDEXES[table] ?? []
+            const spec of TABLE_INDEXES[table] ?? []
         ) {
-            store.createIndex(col, col);
+            const col = indexColumn(spec);
+            store.createIndex(col, col, {
+                unique:
+                    typeof spec !== 'string' && spec.unique,
+            });
         }
     }
     if (!db.objectStoreNames.contains(SCHEMA_STORE)) {

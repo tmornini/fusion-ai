@@ -87,6 +87,25 @@ export class LedgerImmutabilityError extends Error {
     }
 }
 
+// A unique-column collision. IndexedDB raises its native
+// ConstraintError from the {unique:true} index; the
+// simulated tiers scan the declared unique columns before
+// buffering. One typed error covers all three backends;
+// handleRequest maps it to 412.
+export class UniqueConstraintError extends Error {
+    readonly table: string;
+    readonly column: string;
+    constructor(table: string, column: string) {
+        super(
+            `Unique column ${table}.${column}`
+            + ' already holds this value',
+        );
+        this.table = table;
+        this.column = column;
+        this.name = 'UniqueConstraintError';
+    }
+}
+
 export interface EntityPut<
     T extends { id: string },
 > {
@@ -493,6 +512,32 @@ export const TABLE_NAMES = [
     'states',
 ];
 
+// A secondary index is either a plain column name (the
+// existing shape) or an object form declaring `unique: true`
+// — a UNIQUE index. Absent keys are unindexed in IndexedDB,
+// so a row lacking the column never collides: that IS the
+// partial-unique-index semantics genesis rows rely on.
+export type TableIndexSpec =
+    | string
+    | { readonly column: string; readonly unique: true };
+
+export function indexColumn(
+    spec: TableIndexSpec,
+): string {
+    return typeof spec === 'string' ? spec : spec.column;
+}
+
+// The columns a table declares unique, in TABLE_INDEXES
+// order — consumed by both the IndexedDB ConstraintError
+// translation and the simulated tiers' pre-buffer scan.
+export function uniqueColumns(
+    table: string,
+): readonly string[] {
+    return (TABLE_INDEXES[table] ?? [])
+        .filter((spec) => typeof spec !== 'string')
+        .map((spec) => indexColumn(spec));
+}
+
 // The secondary indexes each store carries: ONLY the columns
 // some keyed read (`Tx.getWhere`) actually names, measured
 // against the call sites — never one-per-FK on speculation.
@@ -503,7 +548,7 @@ export const TABLE_NAMES = [
 // Tables absent here are read in full or by primary key: the
 // collection IS its rows.
 export const TABLE_INDEXES:
-    Record<string, readonly string[]> = {
+    Record<string, readonly TableIndexSpec[]> = {
     identity_pii: ['email'],
     identity_credentials: ['identity_id'],
     identity_token_revocations: ['identity_id'],
@@ -533,6 +578,10 @@ export const TABLE_INDEXES:
     objective_revisions: ['objective_id'],
     memberships: ['organization_id', 'identity_id'],
     requests: ['uri_prefix', 'uri_id', 'message_hash'],
-    responses: ['uri_prefix', 'uri_id'],
+    responses: [
+        'uri_prefix',
+        'uri_id',
+        { column: 'follows', unique: true },
+    ],
     states: ['entity_id'],
 };
