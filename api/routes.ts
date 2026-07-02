@@ -480,6 +480,157 @@ export async function postObjectiveCreationOp(
     );
 }
 
+// AI-member creation: the parent member row, the
+// ai_members detail row, and the initial state event
+// commit as ONE transaction — a mid-write failure rolls
+// the whole thing back rather than orphaning a half-built
+// member. Each facet store re-validates its own body as
+// the composing puts land. The parent member type is a
+// server-supplied fact the handler pins; members and
+// ai_members are GLOBAL passthrough stores, so the facet
+// puts go straight to their stores. The initial event is
+// authored by the verified caller (actor), never the
+// body. Exported so the seed can drive AI-member creation
+// through the same gate the route uses (Decision 6's
+// below-facade carve-out) — this is also Phase 1's
+// dual-write insertion seam.
+export async function postAiMemberCreationOp(
+    db: DbAdapter,
+    body: Record<string, unknown>,
+    actor: Id,
+): Promise<void> {
+    const b = validateAIMemberCreateBody(body);
+    return db.transaction(
+        ['members', 'ai_members', 'states'],
+        async (view) => {
+            await view.members.put(
+                b.id, { type: 'ai' },
+            );
+            await view.aiMembers.put(
+                b.id,
+                b.detail as unknown as
+                    Omit<AIMemberEntity, 'id'>,
+            );
+            await view.states.postEvent(
+                b.initialStateEventId,
+                b.id,
+                b.initialState,
+                actor,
+                b.initialStateAt,
+            );
+        },
+    );
+}
+
+// Human-member creation: the parent member row, the
+// identity, the PII row, the detail row, and the initial
+// state event commit as ONE transaction — a mid-write
+// failure rolls the whole thing back rather than
+// orphaning a half-built member. Each facet store
+// re-validates its own body as the composing puts land.
+// The parent member type and the identity kind are
+// server-supplied facts the handler pins; PII/identity
+// are GLOBAL passthrough stores, identity_pii is parent-
+// scoped, so the facet puts go straight to their stores.
+// The initial event is authored by the verified caller
+// (actor), never the body. Exported so the seed can drive
+// human-member creation through the same gate the route
+// uses (Decision 6's below-facade carve-out) — this is
+// also Phase 1's dual-write insertion seam.
+export async function postHumanMemberCreationOp(
+    db: DbAdapter,
+    body: Record<string, unknown>,
+    actor: Id,
+): Promise<void> {
+    const b = validateHumanMemberCreateBody(body);
+    return db.transaction(
+        [
+            'members', 'identities', 'identity_pii',
+            'human_members', 'states',
+        ],
+        async (view) => {
+            await view.members.put(
+                b.id, { type: 'human' },
+            );
+            await view.identities.put(
+                b.id, { kind: 'person' },
+            );
+            await view.identityPii.put(
+                b.id,
+                b.pii as unknown as
+                    Omit<IdentityPiiEntity, 'id'>,
+            );
+            await view.humanMembers.put(
+                b.id,
+                b.detail as unknown as
+                    Omit<HumanMemberEntity, 'id'>,
+            );
+            await view.states.postEvent(
+                b.initialStateEventId,
+                b.id,
+                b.initialState,
+                actor,
+                b.initialStateAt,
+            );
+        },
+    );
+}
+
+// Identity creation: the identity row and EITHER its PII
+// row (person) OR its client_secret credential row
+// (service) commit as ONE transaction — a mid-write
+// failure rolls the whole thing back rather than orphaning
+// a kindless identity. The identity kind is the server-
+// supplied fact the handler pins; identities/identity_pii/
+// identity_credentials are GLOBAL/parent-scoped stores (no
+// org stamp), so the facet puts go straight to their
+// stores, each re-validating its own body as the composing
+// put lands. The credential's secret is hashed client-side
+// — the route touches no crypto. NO state event (an
+// identity carries no lifecycle event at creation), so the
+// handler needs no actor. The tx table set branches per
+// mode so each names exactly the tables it writes.
+// Exported so the seed can drive identity creation through
+// the same gate the route uses (Decision 6's below-facade
+// carve-out) — this is also Phase 1's dual-write insertion
+// seam.
+export async function postIdentityCreationOp(
+    db: DbAdapter,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const b = validateIdentityCreateBody(body);
+    const tables = b.kind === 'person'
+        ? ['identities', 'identity_pii']
+        : ['identities', 'identity_credentials'];
+    return db.transaction(
+        tables,
+        async (view) => {
+            await view.identities.put(
+                b.id, { kind: b.kind },
+            );
+            if (b.kind === 'person') {
+                await view.identityPii.put(
+                    b.id,
+                    b.pii as unknown as
+                        Omit<IdentityPiiEntity, 'id'>,
+                );
+            } else {
+                const { id: credId, ...fields } =
+                    b.credential as {
+                        id: string;
+                    } & Record<string, unknown>;
+                await view.identityCredentials.put(
+                    credId,
+                    fields as unknown as
+                        Omit<
+                            IdentityCredentialEntity, 'id'
+                        >,
+                );
+            }
+        },
+    );
+}
+
 export const routes: Route[] = [
     route('members', {
         // Members are derived from the membership ledger off
@@ -504,42 +655,12 @@ export const routes: Route[] = [
     }),
     route('ai-members', {
         get: (db) => db.aiMembers.getAll(),
-        // AI-member creation: the parent member row, the
-        // ai_members detail row, and the initial state event
-        // commit as ONE transaction — a mid-write failure rolls
-        // the whole thing back rather than orphaning a half-built
-        // member. Each facet store re-validates its own body as
-        // the composing puts land. The parent member type is a
-        // server-supplied fact the handler pins; members and
-        // ai_members are GLOBAL passthrough stores, so the facet
-        // puts go straight to their stores. The initial event is
-        // authored by the verified caller (actor), never the
-        // body. Admin-only — POST /ai-members has no member-tier
+        // Admin-only — POST /ai-members has no member-tier
         // entry, so it falls to the root admin tier in
-        // ROUTE_POLICY.
-        post: (db, _p, body, actor) => {
-            const b = validateAIMemberCreateBody(body);
-            return db.transaction(
-                ['members', 'ai_members', 'states'],
-                async (view) => {
-                    await view.members.put(
-                        b.id, { type: 'ai' },
-                    );
-                    await view.aiMembers.put(
-                        b.id,
-                        b.detail as unknown as
-                            Omit<AIMemberEntity, 'id'>,
-                    );
-                    await view.states.postEvent(
-                        b.initialStateEventId,
-                        b.id,
-                        b.initialState,
-                        actor,
-                        b.initialStateAt,
-                    );
-                },
-            );
-        },
+        // ROUTE_POLICY. See postAiMemberCreationOp for the
+        // transaction shape.
+        post: (db, _p, body, actor) =>
+            postAiMemberCreationOp(db, body, actor),
     }),
     route('ai-members/:id', {
         get: (db, p) => db.aiMembers.getById(param(p, 0)),
@@ -575,54 +696,12 @@ export const routes: Route[] = [
     }),
     route('human-members', {
         get: (db) => db.humanMembers.getAll(),
-        // Human-member creation: the parent member row, the
-        // identity, the PII row, the detail row, and the initial
-        // state event commit as ONE transaction — a mid-write
-        // failure rolls the whole thing back rather than
-        // orphaning a half-built member. Each facet store
-        // re-validates its own body as the composing puts land.
-        // The parent member type and the identity kind are
-        // server-supplied facts the handler pins; PII/identity
-        // are GLOBAL passthrough stores, identity_pii is parent-
-        // scoped, so the facet puts go straight to their stores.
-        // The initial event is authored by the verified caller
-        // (actor), never the body. Admin-only — POST /human-
-        // members has no member-tier entry, so it falls to the
-        // root admin tier in ROUTE_POLICY.
-        post: (db, _p, body, actor) => {
-            const b = validateHumanMemberCreateBody(body);
-            return db.transaction(
-                [
-                    'members', 'identities', 'identity_pii',
-                    'human_members', 'states',
-                ],
-                async (view) => {
-                    await view.members.put(
-                        b.id, { type: 'human' },
-                    );
-                    await view.identities.put(
-                        b.id, { kind: 'person' },
-                    );
-                    await view.identityPii.put(
-                        b.id,
-                        b.pii as unknown as
-                            Omit<IdentityPiiEntity, 'id'>,
-                    );
-                    await view.humanMembers.put(
-                        b.id,
-                        b.detail as unknown as
-                            Omit<HumanMemberEntity, 'id'>,
-                    );
-                    await view.states.postEvent(
-                        b.initialStateEventId,
-                        b.id,
-                        b.initialState,
-                        actor,
-                        b.initialStateAt,
-                    );
-                },
-            );
-        },
+        // Admin-only — POST /human-members has no member-tier
+        // entry, so it falls to the root admin tier in
+        // ROUTE_POLICY. See postHumanMemberCreationOp for the
+        // transaction shape.
+        post: (db, _p, body, actor) =>
+            postHumanMemberCreationOp(db, body, actor),
     }),
     route('human-members/:id', {
         get: (db, p) => db.humanMembers.getById(param(p, 0)),
@@ -662,55 +741,12 @@ export const routes: Route[] = [
     }),
     route('identities', {
         get: (db) => db.identities.getAll(),
-        // Identity creation: the identity row and EITHER its PII
-        // row (person) OR its client_secret credential row
-        // (service) commit as ONE transaction — a mid-write
-        // failure rolls the whole thing back rather than orphaning
-        // a kindless identity. The identity kind is the server-
-        // supplied fact the handler pins; identities/identity_pii/
-        // identity_credentials are GLOBAL/parent-scoped stores (no
-        // org stamp), so the facet puts go straight to their
-        // stores, each re-validating its own body as the composing
-        // put lands. The credential's secret is hashed client-side
-        // — the route touches no crypto. NO state event (an
-        // identity carries no lifecycle event at creation), so the
-        // handler needs no actor. The tx table set branches per
-        // mode so each names exactly the tables it writes. Admin-
-        // only — POST /identities has no member-tier entry, so it
-        // falls to the root admin tier in ROUTE_POLICY.
-        post: (db, _p, body) => {
-            const b = validateIdentityCreateBody(body);
-            const tables = b.kind === 'person'
-                ? ['identities', 'identity_pii']
-                : ['identities', 'identity_credentials'];
-            return db.transaction(
-                tables,
-                async (view) => {
-                    await view.identities.put(
-                        b.id, { kind: b.kind },
-                    );
-                    if (b.kind === 'person') {
-                        await view.identityPii.put(
-                            b.id,
-                            b.pii as unknown as
-                                Omit<IdentityPiiEntity, 'id'>,
-                        );
-                    } else {
-                        const { id: credId, ...fields } =
-                            b.credential as {
-                                id: string;
-                            } & Record<string, unknown>;
-                        await view.identityCredentials.put(
-                            credId,
-                            fields as unknown as
-                                Omit<
-                                    IdentityCredentialEntity, 'id'
-                                >,
-                        );
-                    }
-                },
-            );
-        },
+        // Admin-only — POST /identities has no member-tier
+        // entry, so it falls to the root admin tier in
+        // ROUTE_POLICY. See postIdentityCreationOp for the
+        // transaction shape.
+        post: (db, _p, body) =>
+            postIdentityCreationOp(db, body),
     }),
     makeIdRoute<IdentityEntity>({
         noun: 'identities',
