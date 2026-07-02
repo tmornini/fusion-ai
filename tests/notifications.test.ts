@@ -34,6 +34,7 @@ test('no identity facet yields no targets', () => {
 test('malformed wire events throw', () => {
     assert.throws(
         () => notificationEventFromWire({ tables: [] }),
+        /malformed notification event/,
     );
 });
 
