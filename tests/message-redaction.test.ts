@@ -126,3 +126,30 @@ async () => {
         HttpMessageError,
     );
 });
+
+test('an untouched large integer survives redaction verbatim',
+async () => {
+    const bigInteger = '9007199254740993';
+    const bodyText = '{"grant_type":"refresh",'
+        + '"refresh_token":"REFRESH-SECRET",'
+        + '"expires_hint":' + bigInteger + '}';
+    const model: MessageModel = {
+        startLine: {
+            kind: 'request', method: 'POST',
+            target: '/authentication/token',
+            version: 'HTTP/1.1',
+        },
+        fields: [
+            { name: 'content-type',
+              value: 'application/json' },
+        ],
+        body: Octets.fromLatin1(bodyText),
+        trailer: undefined,
+    };
+    const redacted = await redactAuthenticationRequest(
+        'authentication/token', model,
+    );
+    const json = canonicalJson(redacted);
+    assert.ok(!json.includes('REFRESH-SECRET'));
+    assert.ok(json.includes(bigInteger));
+});

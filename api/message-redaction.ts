@@ -12,6 +12,9 @@ import {
     type MessageModel,
 } from '../shared/http-message/types.ts';
 import { putField } from '../shared/http-message/modify.ts';
+import {
+    parsePreservingNumbers,
+} from '../shared/http-message/json-numbers.ts';
 import { sha256Hex } from '../shared/digest.ts';
 import { hashPassword } from '../shared/password-hash.ts';
 
@@ -73,6 +76,10 @@ export async function redactHeaderCredentials(
 // fails to parse as JSON throws — never a silent pass-through
 // of a body that may still carry a live secret — matching the
 // library's own idiom (media-registry.ts's jsonBodyCodec).
+// The parse preserves verbatim number text (json-numbers.ts,
+// the same primitive json-codec.ts's canonical form uses), so
+// an untouched numeric field beyond IEEE-754 safe-integer
+// range survives the redact/re-encode round trip unrounded.
 async function redactBody(
     model: MessageModel,
     highEntropyFields: readonly string[],
@@ -82,7 +89,9 @@ async function redactBody(
     if (!message.body().exists()) return model;
     let decoded: unknown;
     try {
-        decoded = JSON.parse(message.body().toText());
+        decoded = parsePreservingNumbers(
+            message.body().toText(),
+        );
     } catch {
         throw new HttpMessageError('malformed JSON body');
     }
