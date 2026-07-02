@@ -104,8 +104,6 @@ import {
     deleteRecordAttributeSafe,
 } from './record-attribute-refs.ts';
 import {
-    postToken,
-    postAuthorize,
     rotateRefreshJti,
     revokeTokenChain,
 } from './authentication.ts';
@@ -1707,28 +1705,15 @@ export const routes: Route[] = [
             );
         },
     }),
-    route('authentication/token', {
-        post: async (db, _p, body) => {
-            const result = await postToken(db, body);
-            if (!result.ok) {
-                throw new ApiError(
-                    result.error, result.status,
-                );
-            }
-            return result.response;
-        },
-    }),
-    route('authentication/authorize', {
-        post: async (db, _p, body) => {
-            const result = await postAuthorize(db, body);
-            if (!result.ok) {
-                throw new ApiError(
-                    result.error, result.status,
-                );
-            }
-            return result.response;
-        },
-    }),
+    // The grant closures retire into api.ts's dedicated
+    // authentication POST arm (Task 3, C1 discharge): both
+    // routes are bearerExempt and now form their own redacted
+    // pair deep inside postToken/postAuthorize, pre-tx, since
+    // only the grant can resolve the requester identity. The
+    // bare registration survives so matchRoute still 404s an
+    // unknown path and 405s a non-POST verb on either pattern.
+    route('authentication/token', {}),
+    route('authentication/authorize', {}),
     route('ideas', {
         get: (db) => db.ideas.getAll(),
         // The org-scoped store stamps organization_id from the

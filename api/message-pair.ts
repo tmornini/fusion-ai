@@ -55,6 +55,25 @@ export interface MessagePair {
     readonly supersedes?: string;      // absent == genesis
 }
 
+// The gate's seed for the two /authentication/* grant routes
+// (Task 3, C1 discharge): everything WritePairInput needs
+// EXCEPT the requester identity and the response side. Both
+// routes are bearerExempt, so the generic pair block never
+// forms a WritePairInput for them (api.ts) — the gate instead
+// assembles this seed once, and the grant itself (the only
+// place that can resolve the requester identity — a code's
+// issuer, a verified token's subject — and the response body)
+// completes it into a MessagePair via formAuthPair, pre-tx.
+export interface AuthPairSeed {
+    readonly requestAt: string;
+    readonly headerFields: readonly FieldLine[];
+    readonly method: string;
+    readonly pathname: string;
+    readonly routePattern: string;
+    readonly routeSegments: readonly string[];
+    readonly pathSegments: readonly string[];
+}
+
 export interface WritePairInput {
     readonly method: string;
     readonly pathname: string;
@@ -168,6 +187,31 @@ export async function formWritePair(
         ...(input.headPairId === undefined
             ? {} : { supersedes: input.headPairId }),
     };
+}
+
+// Complete an AuthPairSeed into a MessagePair for a grant's own
+// response: operation-addressed (uriId '', global plane — see
+// canonicalUriPrefix with organization undefined), never a
+// head-read, so it never chains (no Supersedes). The two
+// /authentication/* routes are the only callers; each grant
+// calls this pre-tx, once its own domain read has resolved the
+// requester identity and its response body is fully known.
+export async function formAuthPair(
+    seed: AuthPairSeed,
+    body: Record<string, unknown>,
+    requesterIdentityId: Id,
+    responseStatus: number,
+    responseBody: unknown,
+): Promise<MessagePair> {
+    return formWritePair({
+        ...seed,
+        body,
+        requesterIdentityId,
+        organization: undefined,
+        responseStatus,
+        responseBody,
+        headPairId: undefined,
+    });
 }
 
 // Pre-tx head-read: latest response pair id at the address, by
@@ -453,6 +497,8 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
 export const REPLAY_EXEMPT_ROUTE_PATTERNS: Set<string> =
     new Set([
         'identity-tokens/:jti/rotation',
+        'authentication/token',
+        'authentication/authorize',
     ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from

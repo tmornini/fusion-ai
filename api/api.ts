@@ -22,11 +22,12 @@ import {
     canonicalUriPrefix,
     hoistedHeaderFields,
     responseFromStored,
+    wireHeadersFor,
     PAIR_WIRED_ROUTE_PATTERNS,
     DOCUMENT_CLASS_ROUTE_PATTERNS,
     REPLAY_EXEMPT_ROUTE_PATTERNS,
 } from './message-pair.ts';
-import type { MessagePair } from './message-pair.ts';
+import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import {
     ANONYMOUS_ID,
     decodeAccessToken,
@@ -41,6 +42,8 @@ import {
 } from './store-parent-scoped.ts';
 import {
     exchangeBearerForOrganization,
+    postToken,
+    postAuthorize,
 } from './authentication.ts';
 import {
     ApiError,
@@ -579,26 +582,98 @@ export async function handleRequest(
                 });
             }
             case 'POST': {
-                if (!matched.post) {
-                    return Response.json(
-                        {
-                            error:
-                                'Method POST'
-                                + ' not allowed'
-                                + ' on '
-                                + pathname,
-                        },
-                        { status: 405 },
+                // The dedicated authentication arm (Task 3, C1
+                // discharge): both grant routes are bearerExempt,
+                // so the generic pair block above never fires
+                // for them, and neither carries a `post` closure
+                // in routes.ts any more (retired into this arm —
+                // matchRoute still matches both patterns, so an
+                // unknown path still 404s and a non-POST verb
+                // still 405s via the ordinary matched.get/put/
+                // delete checks). The seed carries everything
+                // WritePairInput needs except the requester
+                // identity and the response — only the grant
+                // itself, deep inside postToken/postAuthorize,
+                // can resolve those (a code's issuer, a verified
+                // token's subject) — so the grant forms its OWN
+                // pair, pre-tx, and appends it as the last act of
+                // its own domain transaction (authentication.ts).
+                let authWireHeaders: HeadersInit | undefined;
+                let result: unknown;
+                if (
+                    routePattern === 'authentication/token'
+                    || routePattern === 'authentication/authorize'
+                ) {
+                    const seed: AuthPairSeed = {
+                        requestAt: ctx.requestAt,
+                        headerFields: hoistedHeaderFields(request),
+                        method, pathname, routePattern,
+                        routeSegments: matched.segments,
+                        pathSegments,
+                    };
+                    const dispatched =
+                        routePattern === 'authentication/token'
+                            ? await postToken(
+                                effective, body!, seed)
+                            : await postAuthorize(
+                                effective, body!, seed);
+                    if (!dispatched.ok) {
+                        return Response.json(
+                            { error: dispatched.error },
+                            { status: dispatched.status },
+                        );
+                    }
+                    // Non-2xx stores no pair (the branch above
+                    // already returned); a 2xx here always
+                    // carries one, since the dedicated arm is
+                    // the ONLY caller that seeds postToken/
+                    // postAuthorize (exchangeBearerForOrganization,
+                    // the other grantTokenExchange caller, never
+                    // reaches here — it is an internal facade
+                    // hop, not a route dispatch).
+                    if (dispatched.requestHash === undefined) {
+                        throw new Error(
+                            'authentication grant stored no'
+                            + ' pair: ' + routePattern,
+                        );
+                    }
+                    const stored = await storedResponseFor(
+                        effective, dispatched.requestHash,
                     );
-                }
-                const result =
-                    await matched.post(
+                    if (stored === undefined) {
+                        throw new Error(
+                            'wired write stored no pair: '
+                            + routePattern,
+                        );
+                    }
+                    // The ONE named exception where the wire
+                    // body (live tokens) differs from the stored
+                    // (redacted) body — the headers still derive
+                    // from the SAME stored row every other wired
+                    // write reads.
+                    result = dispatched.response;
+                    authWireHeaders = wireHeadersFor(stored);
+                } else {
+                    if (!matched.post) {
+                        return Response.json(
+                            {
+                                error:
+                                    'Method POST'
+                                    + ' not allowed'
+                                    + ' on '
+                                    + pathname,
+                            },
+                            { status: 405 },
+                        );
+                    }
+                    result = await matched.post(
                         effective,
                         params,
                         body!,
                         actor,
                         pair,
                     );
+                }
                 if (pair !== undefined) {
                     const stored = await storedResponseFor(
                         effective, pair.requestHash,
@@ -648,7 +723,11 @@ export async function handleRequest(
                         status: 204,
                     });
                 }
-                return Response.json(result);
+                return authWireHeaders === undefined
+                    ? Response.json(result)
+                    : Response.json(
+                        result, { headers: authWireHeaders },
+                    );
             }
             default:
                 return Response.json(
