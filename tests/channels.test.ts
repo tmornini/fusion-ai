@@ -13,7 +13,10 @@ import {
     createChannel,
     createSubscriptionChannel,
 } from '../web-app/app/channels.ts';
-import { putSessionToken } from '../web-app/app/adapters/init.ts';
+import {
+    putSessionToken,
+    deleteSessionToken,
+} from '../web-app/app/adapters/init.ts';
 import {
     organizationToken,
     reachableToken,
@@ -104,6 +107,43 @@ test('a full event fires regardless of session', async () => {
     poster.close();
     assert.equal(fired, 1);
 });
+
+test(
+    'a full event fires during an unseeded session',
+    async () => {
+        // Mirrors the boot-time race: another tab posts before
+        // this tab's postSessionSeed() has run.
+        deleteSessionToken();
+        const ch = createSubscriptionChannel();
+        let fired = 0;
+        ch.subscribe(() => { fired += 1; });
+        const poster = new BroadcastChannel(CHANNEL_NAME);
+        poster.postMessage({ kind: 'full' });
+        await deliver();
+        poster.close();
+        assert.equal(fired, 1);
+    },
+);
+
+test(
+    'a scoped event during an unseeded session does not throw'
+    + ' and does not fire',
+    async () => {
+        deleteSessionToken();
+        const ch = createSubscriptionChannel();
+        let fired = 0;
+        ch.subscribe(() => { fired += 1; });
+        const poster = new BroadcastChannel(CHANNEL_NAME);
+        poster.postMessage({
+            kind: 'scoped',
+            organizationIds: ['1'],
+            identityIds: ['current'],
+        });
+        await deliver();
+        poster.close();
+        assert.equal(fired, 0);
+    },
+);
 
 test(
     'a scoped event naming the active organization fires',

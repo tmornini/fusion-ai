@@ -95,6 +95,16 @@ export async function postSessionSeed(): Promise<void> {
     }
 }
 
+// True once postSessionSeed() (or putSessionToken()) has set a
+// holder. Non-throwing — the one caller allowed to run before
+// boot completes (a cross-tab subscriber woken by another tab's
+// write while THIS tab is still initializing) checks this
+// before any principalFromToken(getSessionToken()) read, since
+// every predicate below throws on an unseeded holder.
+export function sessionTokenIsSeeded(): boolean {
+    return sessionToken !== undefined;
+}
+
 // Returns the already-minted per-tab token. postSessionSeed
 // (boot) must have seeded it; the boot gate / login / recovery
 // then REPLACE it via putSessionToken. An unseeded holder is a

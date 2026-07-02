@@ -5,6 +5,7 @@ import {
     getSessionToken,
     sessionIsAuthenticated,
     sessionIsOrganizationScoped,
+    sessionTokenIsSeeded,
 } from './adapters/init.ts';
 import {
     principalFromToken,
@@ -53,10 +54,18 @@ export function createSubscriptionChannel(
     // event fires when it names this tab's active organization
     // (org-scoped sessions) or this tab's own identity
     // (authenticated sessions) — the poster's own tab never
-    // hears the message, so it does not double-refresh.
+    // hears the message, so it does not double-refresh. This
+    // subscription is wired at module load, before boot has
+    // seeded the session token — a scoped event from another
+    // tab can arrive first. Unseeded means neither org-scoped
+    // nor authenticated, so it cannot match; return before the
+    // token read that would otherwise throw.
     subscribeNotificationEvents((event) => {
         if (event.kind === 'full') {
             channel.send();
+            return;
+        }
+        if (!sessionTokenIsSeeded()) {
             return;
         }
         const principal =
