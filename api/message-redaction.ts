@@ -75,11 +75,22 @@ export async function redactHeaderCredentials(
 // invents keys or reshapes an unrelated body. A body that
 // fails to parse as JSON throws — never a silent pass-through
 // of a body that may still carry a live secret — matching the
-// library's own idiom (media-registry.ts's jsonBodyCodec).
-// The parse preserves verbatim number text (json-numbers.ts,
-// the same primitive json-codec.ts's canonical form uses), so
-// an untouched numeric field beyond IEEE-754 safe-integer
-// range survives the redact/re-encode round trip unrounded.
+// library's own idiom (media-registry.ts's jsonBodyCodec). A
+// field that IS present but is not a string throws for the
+// same reason: silently passing it through would let a
+// secret-shaped non-string value reach the permanent ledger
+// unredacted. By the time a pair reaches this function the
+// domain has already validated/consumed these fields (every
+// authentication grant narrows them via `typeof x === 'string'
+// ? x : ''` before using them, and only forms a pair on
+// success), so this throw is an IMPOSSIBLE-STATE guard, not a
+// wire-facing 400 replacement — a caller-side non-string value
+// already failed its grant with no pair formed, long before
+// redaction ever sees it. The parse preserves verbatim number
+// text (json-numbers.ts, the same primitive json-codec.ts's
+// canonical form uses), so an untouched numeric field beyond
+// IEEE-754 safe-integer range survives the redact/re-encode
+// round trip unrounded.
 async function redactBody(
     model: MessageModel,
     highEntropyFields: readonly string[],
@@ -105,17 +116,25 @@ async function redactBody(
     const source = decoded as Record<string, unknown>;
     const redacted: Record<string, unknown> = { ...source };
     for (const name of highEntropyFields) {
+        if (!(name in source)) continue;
         const value = source[name];
-        if (typeof value === 'string') {
-            redacted[name] = await fingerprint(value);
+        if (typeof value !== 'string') {
+            throw new HttpMessageError(
+                'redactBody: field "' + name
+                + '" is present but not a string',
+            );
         }
+        redacted[name] = await fingerprint(value);
     }
-    if (redactPassword) {
+    if (redactPassword && PASSWORD_FIELD in source) {
         const value = source[PASSWORD_FIELD];
-        if (typeof value === 'string') {
-            redacted[PASSWORD_FIELD] =
-                await hashPassword(value);
+        if (typeof value !== 'string') {
+            throw new HttpMessageError(
+                'redactBody: "' + PASSWORD_FIELD
+                + '" is present but not a string',
+            );
         }
+        redacted[PASSWORD_FIELD] = await hashPassword(value);
     }
     return modelOf(
         message.withBody(JSON_MEDIA_TYPE, redacted),

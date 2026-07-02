@@ -127,6 +127,60 @@ async () => {
     );
 });
 
+test('a present non-string high-entropy field throws',
+async () => {
+    const model = buildRequestModel({
+        method: 'POST',
+        target: '/authentication/token',
+        fields: [],
+        body: {
+            grant_type: 'refresh',
+            refresh_token: 12345,
+        },
+    });
+    await assert.rejects(
+        () => redactAuthenticationRequest(
+            'authentication/token', model,
+        ),
+        HttpMessageError,
+    );
+});
+
+test('a present non-string password throws', async () => {
+    const model = buildRequestModel({
+        method: 'POST',
+        target: '/authentication/authorize',
+        fields: [],
+        body: {
+            method: 'password',
+            username: 'ada',
+            password: 12345,
+        },
+    });
+    await assert.rejects(
+        () => redactAuthenticationRequest(
+            'authentication/authorize', model,
+        ),
+        HttpMessageError,
+    );
+});
+
+test('an absent high-entropy field stays absent, no throw',
+async () => {
+    const model = buildRequestModel({
+        method: 'POST',
+        target: '/authentication/token',
+        fields: [],
+        body: { grant_type: 'client_credentials' },
+    });
+    const redacted = await redactAuthenticationRequest(
+        'authentication/token', model,
+    );
+    assert.equal(
+        canonicalJson(redacted), canonicalJson(model),
+    );
+});
+
 test('an untouched large integer survives redaction verbatim',
 async () => {
     const bigInteger = '9007199254740993';
