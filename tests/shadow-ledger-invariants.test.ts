@@ -1,0 +1,309 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { MemoryDbAdapter } from '../api/db-memory.ts';
+import { postMockDataLoad } from '../api/mock-data.ts';
+import { handleRequest } from '../api/api.ts';
+import { sha256Hex } from '../shared/digest.ts';
+import { buildIdeas } from '../api/mock-data/ideas.ts';
+import {
+    STARK_ORGANIZATION,
+    ORGANIZATION_TWO,
+} from '../api/mock-data/seed-constants.ts';
+import { organizationToken } from './token-fixtures.ts';
+
+// Standing shadow-ledger invariants (Task 5): properties every
+// requests/responses pair must hold REGARDLESS of which family
+// wrote it — orphan-freedom, hash integrity, header redaction,
+// and envelope ordering. Exercised over a seeded mock-data world
+// (api/mock-data.ts) PLUS a mixed live-write batch driven
+// through handleRequest, so the invariants are proven against
+// both write paths the ledger sees, not one in isolation. Step 2
+// (below) previews the per-family drift check Phase 2 builds in
+// full: a seeded idea's create-pair request must reproduce the
+// entity's actual genesis row.
+
+const BASE = 'http://localhost';
+const AT = '2026-02-01T00:00:00.000000Z';
+
+function req(
+    method: string,
+    path: string,
+    token: string,
+    body?: unknown,
+): Request {
+    return new Request(`${BASE}${path}`, {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token,
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+}
+
+// The idea body OMITS organization_id — the org fence stamps
+// it from the verified token before the store validates.
+function ideaFields(title: string) {
+    return {
+        title,
+        position: 1,
+        problem_statement: 'p',
+        target_users: 't',
+        proposed_solution: 's',
+        expected_outcome: 'o',
+        success_metrics: 'm',
+    };
+}
+
+function recordFields(name: string, organization: string) {
+    return {
+        organization_id: organization,
+        name,
+        description: 'd',
+        position: 1,
+    };
+}
+
+function createRecordBody(
+    id: string, eventId: string, organization: string,
+) {
+    return {
+        kind: 'create',
+        id,
+        record: {
+            organization_id: organization,
+            name: 'Invariant Record',
+            description: 'd',
+            position: 1,
+        },
+        attributes: [],
+        initialState: 'active',
+        initialStateEventId: eventId,
+        initialStateAt: AT,
+    };
+}
+
+// A mock-data seed (37 pre-formed pairs, see
+// mock-data-pairs.test.ts) plus one live-write batch layered on
+// top via handleRequest: one document PUT (Supersedes minted,
+// ideas), one event-append PUT (states/:id), one FAILED write
+// (a state ledger conflict), one create POST (records), one
+// DELETE (records, superseding its own PUT), and one operation
+// POST (identity-tokens revocation) — three families beyond the
+// seed's own, spanning both seeded orgs.
+async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const org1Token = await organizationToken(
+        'current', STARK_ORGANIZATION);
+    const org2Token = await organizationToken(
+        'current', ORGANIZATION_TWO);
+
+    // Document PUT, twice — the second mints Supersedes
+    // (ideas, org 1).
+    const firstIdea = await handleRequest(db, req(
+        'PUT', '/ideas/inv-idea-1', org1Token,
+        ideaFields('Invariant Idea'),
+    ));
+    assert.equal(firstIdea.status, 200);
+    const firstIdeaId = firstIdea.headers.get('Response-ID');
+    const secondIdea = await handleRequest(db, req(
+        'PUT', '/ideas/inv-idea-1', org1Token,
+        ideaFields('Invariant Idea Revised'),
+    ));
+    assert.equal(secondIdea.status, 200);
+    assert.equal(
+        secondIdea.headers.get('Supersedes'), firstIdeaId,
+    );
+
+    // Event-append PUT (states/:id, org 1) on that idea.
+    const stateAppend = await handleRequest(db, req(
+        'PUT', '/states/inv-ev-review', org1Token, {
+            entity_id: 'inv-idea-1',
+            state: 'in_review',
+            at: AT,
+        },
+    ));
+    assert.equal(stateAppend.status, 200);
+
+    // A FAILED write: a state ledger conflict (org 1) — must
+    // add nothing to either table.
+    await db.states.put('inv-ev-conflict', {
+        entity_id: 'other',
+        state: 'active',
+        member_id: 'current',
+        at: '2020-01-01T00:00:00.000000Z',
+    });
+    const failed = await handleRequest(db, req(
+        'PUT', '/states/inv-ev-conflict', org1Token, {
+            entity_id: 'inv-idea-1',
+            state: 'promoted',
+            at: '2026-02-01T00:00:01.000000Z',
+        },
+    ));
+    assert.equal(failed.status, 409);
+
+    // Create POST (records, org 2).
+    const created = await handleRequest(db, req(
+        'POST', '/records', org2Token,
+        createRecordBody(
+            'inv-rec-1', 'inv-rec-1-ev', ORGANIZATION_TWO,
+        ),
+    ));
+    assert.equal(created.status, 204);
+
+    // DELETE — a fresh PUT then its tombstone (records, org 2).
+    const recordPut = await handleRequest(db, req(
+        'PUT', '/records/inv-rec-2', org2Token,
+        recordFields('Invariant Record', ORGANIZATION_TWO),
+    ));
+    assert.equal(recordPut.status, 200);
+    const recordDeleted = await handleRequest(db, req(
+        'DELETE', '/records/inv-rec-2', org2Token,
+    ));
+    assert.equal(recordDeleted.status, 204);
+
+    // Operation POST (identity-tokens — global, not org-
+    // nested): revoke a pre-seeded chain.
+    await db.identityTokens.put('inv-tok-root', {
+        jti: 'inv-jti-root', identity_id: 'current',
+        action: 'issued', chain_id: 'inv-chain-1', at: AT,
+    });
+    const revoked = await handleRequest(db, req(
+        'POST', '/identity-tokens/inv-jti-root/revocation',
+        org1Token, {},
+    ));
+    assert.equal(revoked.status, 204);
+
+    return db;
+}
+
+test('every request has exactly one response and vice'
++ ' versa — no orphan pair', async () => {
+    const db = await seededWithMixedBatch();
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    assert.ok(requests.length > 0);
+    assert.equal(requests.length, responses.length);
+    const requestIds = new Set(requests.map(r => r.id));
+    const responseIds = new Set(responses.map(r => r.id));
+    for (const id of requestIds) {
+        assert.ok(
+            responseIds.has(id),
+            'request ' + id + ' has no response',
+        );
+    }
+    for (const id of responseIds) {
+        assert.ok(
+            requestIds.has(id),
+            'response ' + id + ' has no request',
+        );
+    }
+});
+
+test('every stored message, across every row of both'
++ ' tables, re-hashes to its own message_hash', async () => {
+    const db = await seededWithMixedBatch();
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    assert.ok(requests.length > 0 && responses.length > 0);
+    for (const row of requests) {
+        assert.equal(
+            await sha256Hex(row.message), row.message_hash,
+            'requests row ' + row.id + ' hash mismatch',
+        );
+    }
+    for (const row of responses) {
+        assert.equal(
+            await sha256Hex(row.message), row.message_hash,
+            'responses row ' + row.id + ' hash mismatch',
+        );
+    }
+});
+
+// End-to-end spot check on header redaction: a stored request
+// message must never carry a live bearer JWT. Every write in
+// the mixed batch above rode a real 'Authorization: Bearer'
+// header (organizationToken mints a real HMAC JWT), so this is
+// a genuine assertion over live traffic, not a vacuous pass
+// over headerless seed rows (mock-data seed pairs carry no
+// header fields at all — api/mock-data/seed-message-pairs.ts).
+const BEARER_JWT =
+    /Bearer\s+[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/;
+
+test('no stored request message leaks a live bearer JWT',
+async () => {
+    const db = await seededWithMixedBatch();
+    const requests = await db.requests.getAll();
+    assert.ok(requests.length > 0);
+    for (const row of requests) {
+        assert.doesNotMatch(
+            row.message, BEARER_JWT,
+            'requests row ' + row.id + ' leaked a bearer JWT',
+        );
+    }
+});
+
+const RFC3339_ZULU_MICROS =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+
+test('every pair\'s envelope timestamps are RFC-3339 zulu'
++ ' with 6-digit sub-second precision, and the request'
++ ' strictly precedes its own response', async () => {
+    const db = await seededWithMixedBatch();
+    const requests = await db.requests.getAll();
+    const responsesById = new Map(
+        (await db.responses.getAll()).map(r => [r.id, r]),
+    );
+    assert.ok(requests.length > 0);
+    for (const request of requests) {
+        assert.match(
+            request.at, RFC3339_ZULU_MICROS,
+            'request ' + request.id + ' at is malformed',
+        );
+        const response = responsesById.get(request.id);
+        assert.ok(response, 'no response for ' + request.id);
+        assert.match(
+            response!.at, RFC3339_ZULU_MICROS,
+            'response ' + request.id + ' at is malformed',
+        );
+        assert.ok(
+            request.at < response!.at,
+            'pair ' + request.id + ' response at does not'
+                + ' strictly follow its request at',
+        );
+    }
+});
+
+// The first fiber of Phase 2's per-family drift check: a
+// seeded idea's create-pair request message, parsed back, must
+// reproduce the entity's ACTUAL genesis row on the states
+// ledger — proof the shadow-ledger request is not merely
+// present but semantically faithful to what was really written.
+test('a seeded idea\'s create-pair request reproduces its'
++ ' actual genesis row in states', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const idea = buildIdeas()[0]!;
+    const requests = await db.requests.getAll();
+    const createRow = requests.find(
+        r => r.uri_id === idea.id
+            && r.uri_prefix
+                === `/organizations/${STARK_ORGANIZATION}`
+                    + '/ideas/',
+    );
+    assert.ok(createRow, 'no create pair for the seeded idea');
+    const parsed = JSON.parse(createRow!.message) as {
+        body: {
+            initialState: string;
+            initialStateEventId: string;
+            initialStateAt: string;
+        };
+    };
+    const genesis = await db.states.getById(
+        parsed.body.initialStateEventId,
+    );
+    assert.equal(genesis.entity_id, idea.id);
+    assert.equal(genesis.state, parsed.body.initialState);
+    assert.equal(genesis.at, parsed.body.initialStateAt);
+});
