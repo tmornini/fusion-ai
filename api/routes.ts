@@ -1579,7 +1579,7 @@ export const routes: Route[] = [
                             await view.flowVersions.delete(t);
                         }
                     }
-                    await view.flows.put(
+                    const written = await view.flows.put(
                         id,
                         b.flow as unknown as
                             Omit<FlowEntity, 'id'>,
@@ -1594,6 +1594,7 @@ export const routes: Route[] = [
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
+                    return written;
                 },
             );
         },
