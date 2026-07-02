@@ -67,6 +67,7 @@ import {
     validateObjectiveRevisionEntity,
     validateBaselineScoreEntity,
     validateActualScoreEntity,
+    validateOrganizationEntity,
     validateProjectEntity,
     validateProjectFlowEntity,
     validateFlowRecordEntity,
@@ -1188,6 +1189,13 @@ export const WRITE_RESPONSE_SPECS:
         }),
     },
     'identity-tokens/:jti/revocation': { status: 204 },
+    'organizations/:id': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateOrganizationEntity(withoutId(body ?? {})),
+        }),
+    },
 };
 
 export const routes: Route[] = [
@@ -2379,10 +2387,35 @@ export const routes: Route[] = [
     route('organizations', {
         get: (db) => db.organizations.getAll(),
     }),
-    makeIdRoute<OrganizationEntity>({
-        noun: 'organizations',
-        store: db => db.organizations,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<OrganizationEntity>
+    // so PUT can append its message pair in the same
+    // transaction as the write — the factory's fixed closures
+    // have no per-family pair selector (see message-pair.ts).
+    // GET reproduces the factory closure byte-equivalently;
+    // verbs stay {get, put}. organizations is a plain
+    // EntityStore (mutable), so this is DOCUMENT-class: a
+    // repeat PUT records Supersedes. GLOBAL plane — no
+    // organization_id stamp (this table IS the tenant root).
+    route('organizations/:id', {
+        get: (db, p) => db.organizations.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['organizations', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.organizations
+                        .put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<OrganizationEntity, 'id'>,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     route('memberships', {
         get: (db) => db.memberships.getAll(),
