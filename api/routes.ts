@@ -47,6 +47,7 @@ import {
     validateFlowCreateBody,
     validateFlowEntity,
     validateFlowVersionPublishBody,
+    validateFlowWorkOrderEntity,
     validateFlowPutBody,
     validateFlowUndoBody,
     validateFlowRedoBody,
@@ -681,15 +682,23 @@ export async function postIdentityCreationOp(
 // caller (actor), never the body. Exported so the seed can
 // drive work-order creation through the same gate the
 // route uses (Decision 6's below-facade carve-out) — this
-// is also Phase 1's dual-write insertion seam.
+// is also Phase 1's dual-write insertion seam. `pair` is
+// optional so the seed's below-facade call (api/mock-data.ts,
+// no gate, no pair) keeps compiling unchanged; the route
+// always supplies one, since 'work-orders' is pair-wired and
+// never bearer-exempt.
 export async function postWorkOrderCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     actor: Id,
+    pair?: MessagePair,
 ): Promise<void> {
     const b = validateWorkOrderCreateBody(body);
     return db.transaction(
-        ['work_orders', 'flow_work_orders', 'states'],
+        [
+            'work_orders', 'flow_work_orders', 'states',
+            'requests', 'responses',
+        ],
         async (view) => {
             await view.workOrders.put(
                 b.id,
@@ -710,6 +719,9 @@ export async function postWorkOrderCreationOp(
                     b.stateEventAts[i]!,
                 );
             }
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
         },
     );
 }
@@ -724,15 +736,21 @@ export async function postWorkOrderCreationOp(
 // (naming the prior claimant) and the new 'claimed'
 // land atomically. Exported so the seed can drive a
 // work-order claim through the same gate the route uses
-// — this is also Phase 1's dual-write insertion seam.
+// — this is also Phase 1's dual-write insertion seam. `pair`
+// is optional, mirroring postWorkOrderCreationOp; it is
+// appended on EVERY exit path (the idempotent re-claim
+// no-op included), since a wired route must never resolve a
+// pair the transaction never stored (the gate crashes loud
+// on that mismatch).
 export async function postWorkOrderClaimOp(
     db: DbAdapter,
     workOrderId: Id,
     body: Record<string, unknown>,
     actor: Id,
+    pair?: MessagePair,
 ): Promise<void> {
     return db.transaction(
-        ['work_orders', 'states'],
+        ['work_orders', 'states', 'requests', 'responses'],
         async (view) => {
             const b =
                 validateWorkOrderClaimBody(body);
@@ -755,6 +773,11 @@ export async function postWorkOrderClaimOp(
                 );
             if (priorLive) {
                 if (prior.member_id === actor) {
+                    if (pair !== undefined) {
+                        await appendMessagePair(
+                            view, pair,
+                        );
+                    }
                     return;
                 }
                 throw new ApiError(
@@ -777,6 +800,9 @@ export async function postWorkOrderClaimOp(
                 b.claimEventId, workOrderId,
                 'claimed', actor, b.claimAt,
             );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
         },
     );
 }
@@ -796,16 +822,21 @@ export async function postWorkOrderClaimOp(
 // produced, where both events flowed through PUT /states/:id.
 // Exported so the seed can drive a work-order transition
 // through the same gate the route uses — this is also
-// Phase 1's dual-write insertion seam.
+// Phase 1's dual-write insertion seam. `pair` is optional,
+// mirroring postWorkOrderCreationOp.
 export async function postWorkOrderTransitionOp(
     db: DbAdapter,
     workOrderId: Id,
     body: Record<string, unknown>,
     actor: Id,
+    pair?: MessagePair,
 ): Promise<void> {
     const b = validateWorkOrderTransitionBody(body);
     return db.transaction(
-        ['states', 'state_field_values'],
+        [
+            'states', 'state_field_values',
+            'requests', 'responses',
+        ],
         async (view) => {
             await view.states.postEvent(
                 b.transitionEventId,
@@ -829,6 +860,9 @@ export async function postWorkOrderTransitionOp(
                     actor,
                     b.release.at,
                 );
+            }
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
             }
         },
     );
@@ -926,6 +960,18 @@ export const WRITE_RESPONSE_SPECS:
     'flows/:id/undo': { status: 204 },
     'flows/:id/redo': { status: 204 },
     'flows/:id/versions': { status: 204 },
+    'work-orders': { status: 204 },
+    'work-orders/:id/claim': { status: 204 },
+    'work-orders/:id/transition': { status: 204 },
+    'flows/:id/work-orders/:woid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateFlowWorkOrderEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
 };
 
 export const routes: Route[] = [
@@ -1717,8 +1763,8 @@ export const routes: Route[] = [
         // MEMBER_VERBS (the claim sub-route is also a member
         // POST). See postWorkOrderCreationOp for the
         // transaction shape.
-        post: (db, _p, body, actor) =>
-            postWorkOrderCreationOp(db, body, actor),
+        post: (db, _p, body, actor, pair) =>
+            postWorkOrderCreationOp(db, body, actor, pair),
     }),
     makeIdRoute<WorkOrderEntity>({
         noun: 'work-orders',
@@ -1727,9 +1773,9 @@ export const routes: Route[] = [
     }),
     // See postWorkOrderClaimOp for the transaction shape.
     route('work-orders/:id/claim', {
-        post: (db, p, body, actor) =>
+        post: (db, p, body, actor, pair) =>
             postWorkOrderClaimOp(
-                db, param(p, 0), body, actor,
+                db, param(p, 0), body, actor, pair,
             ),
     }),
     // Member-tier POST — /work-orders carries POST in
@@ -1738,9 +1784,9 @@ export const routes: Route[] = [
     // /claim. See postWorkOrderTransitionOp for the
     // transaction shape.
     route('work-orders/:id/transition', {
-        post: (db, p, body, actor) =>
+        post: (db, p, body, actor, pair) =>
             postWorkOrderTransitionOp(
-                db, param(p, 0), body, actor,
+                db, param(p, 0), body, actor, pair,
             ),
     }),
     // Flow work-order joins nest under their parent flow: the
@@ -1752,12 +1798,24 @@ export const routes: Route[] = [
             db.flowWorkOrders.getAllWhere('flow_id', param(p, 0)),
     }),
     route('flows/:id/work-orders/:woid', {
-        put: (db, p, body) =>
-            db.flowWorkOrders.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<FlowWorkOrderEntity, 'id'>,
-            ),
+        put: (db, p, body, _actor, pair) => {
+            const woid = param(p, 1);
+            return db.transaction(
+                ['flow_work_orders', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.flowWorkOrders
+                        .put(
+                            woid,
+                            withoutId(body) as unknown as
+                                Omit<FlowWorkOrderEntity, 'id'>,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     // Field values nest under their parent STATE EVENT: the
     // state event id is param 0, so the SERVER filters the

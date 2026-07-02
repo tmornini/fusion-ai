@@ -252,6 +252,7 @@ export async function appendMessagePair(
 const CREATE_BODY_ID_FIELDS: Record<string, string> = {
     'ideas': 'id',
     'flows': 'id',
+    'work-orders': 'id',
 };
 
 export function createdEntityUriId(
@@ -286,6 +287,10 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'flows/:id/undo',
     'flows/:id/redo',
     'flows/:id/versions',
+    'work-orders',
+    'work-orders/:id/claim',
+    'work-orders/:id/transition',
+    'flows/:id/work-orders/:woid',
 ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from
@@ -305,4 +310,6 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'projects/:id/flows/:pfid',
         'flows',
         'flows/:id',
+        'work-orders',
+        'flows/:id/work-orders/:woid',
     ]);
