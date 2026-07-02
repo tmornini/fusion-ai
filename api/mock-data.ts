@@ -3842,9 +3842,6 @@ async function postBootstrapIn(
         adapter.identities.put(SYSTEM_MEMBER_ID, {
             kind: 'service',
         }),
-        adapter.members.put('current', {
-            type: 'human',
-        }),
         adapter.memberships.put(
             'bootstrap-membership-current', {
                 organization_id: STARK_ORGANIZATION,
@@ -3857,42 +3854,44 @@ async function postBootstrapIn(
                 organization_id: STARK_ORGANIZATION,
                 at: MOCK_SEED_TIMESTAMP,
             }),
-        adapter.identities.put('current', {
-            kind: 'person',
-        }),
-        adapter.identityPii.put('current', {
-            name: 'Tony Stark',
-            email: 'demo@example.com',
-            phone: '+1 (555) 123-4567',
-            bio: 'Passionate about building'
-                + ' products that solve'
-                + ' real problems.',
-        }),
-        adapter.humanMembers.put('current', {
-            title: 'Admin',
-            department: 'Product',
-            strengths: jsonArrayField([
-                'Strategic Planning',
-                'Data Analysis',
-                'Stakeholder Management',
-            ]),
-            team_dimensions: jsonObjectField({
-                driver: 80,
-                analytical: 80,
-                expressive: 80,
-                amiable: 80,
-            }),
-        }),
+        // The 'current' human member row shares its shape
+        // with postMockDataLoadIn's human-member seed —
+        // driven through postHumanMemberCreationOp with the
+        // explicit actor SYSTEM_MEMBER_ID (the named
+        // bootstrap genesis carve-out only exempts the
+        // SYSTEM member itself and the schema marker).
+        postHumanMemberCreationOp(adapter, {
+            id: 'current',
+            pii: {
+                name: 'Tony Stark',
+                email: 'demo@example.com',
+                phone: '+1 (555) 123-4567',
+                bio: 'Passionate about building'
+                    + ' products that solve'
+                    + ' real problems.',
+            },
+            detail: {
+                title: 'Admin',
+                department: 'Product',
+                strengths: jsonArrayField([
+                    'Strategic Planning',
+                    'Data Analysis',
+                    'Stakeholder Management',
+                ]),
+                team_dimensions: jsonObjectField({
+                    driver: 80,
+                    analytical: 80,
+                    expressive: 80,
+                    amiable: 80,
+                }),
+            },
+            initialState: 'active',
+            initialStateEventId: 'bootstrap-current-active',
+            initialStateAt: nowUtc(),
+        }, SYSTEM_MEMBER_ID),
         adapter.states.postEvent(
             'bootstrap-system-active',
             SYSTEM_MEMBER_ID,
-            'active',
-            SYSTEM_MEMBER_ID,
-            nowUtc(),
-        ),
-        adapter.states.postEvent(
-            'bootstrap-current-active',
-            'current',
             'active',
             SYSTEM_MEMBER_ID,
             nowUtc(),
