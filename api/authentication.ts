@@ -40,6 +40,10 @@ import {
     latestByKey,
     findFirstByKey,
 } from '../shared/ledger-reduction.ts';
+import {
+    appendMessagePair,
+} from './message-pair.ts';
+import type { MessagePair } from './message-pair.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an
@@ -273,6 +277,19 @@ export type RotationOutcome =
 // jti can not double-rotate. Shared by the refresh grant and
 // the POST identity-tokens/:jti/rotation route: one truth for
 // the atomic rotate.
+//
+// NOT (yet) shadow-ledger-wired: wiring this route into
+// PAIR_WIRED_ROUTE_PATTERNS collides with tests/api-identity-
+// token-rotation.test.ts's "replaying a rotated-away jti"
+// case — two byte-identical POSTs (same jti, same {} body,
+// same bearer) hash to the SAME request, so the gate's pre-tx
+// idempotency fast-path would return the FIRST call's cached
+// 200 instead of re-entering this function, and the second
+// call would never see its expected 409. That existing test
+// is out of scope to touch this chunk, so this route stays on
+// its pre-Phase-1 shape (self-minted jti, no pair) pending a
+// deliberate decision on how replay-vs-retry should be told
+// apart at the gate.
 export function rotateRefreshJti(
     adapter: DbAdapter,
     presentedJti: string,
@@ -316,19 +333,25 @@ export function rotateRefreshJti(
 // Revoke every jti in the chain `jti` belongs to (logging out
 // one session). Read and appends ride the same transaction, so
 // a concurrent rotation cannot slip a fresh successor past the
-// revoke. A no-op for an unknown jti.
+// revoke. A no-op for an unknown jti — `pair` still appends on
+// BOTH exit paths (the claim-op precedent: a 2xx no-op is not
+// a failure).
 export function revokeTokenChain(
     adapter: DbAdapter,
     jti: string,
+    pair?: MessagePair,
 ): Promise<void> {
     return adapter.transaction(
-        ['identity_tokens'],
+        ['identity_tokens', 'requests', 'responses'],
         async (view) => {
             const tokens = view.identityTokens;
             const byJti = await tokens.getAllWhere('jti', jti);
             const chainId = chainIdForJti(byJti, jti);
             const identityId = identityForJti(byJti, jti);
             if (chainId === null || identityId === null) {
+                if (pair !== undefined) {
+                    await appendMessagePair(view, pair);
+                }
                 return;
             }
             const rows = await tokens.getAllWhere(
@@ -336,6 +359,9 @@ export function revokeTokenChain(
             await appendEvents(view, revocationAppends(
                 rows, chainId, identityId, nowUtc(),
             ));
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
         },
     );
 }

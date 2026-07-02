@@ -60,6 +60,8 @@ import {
     validateIdentityEntity,
     validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
+    validateIdentityTokenEntity,
+    validateIdentityTokenRevocationEntity,
     validateMembershipEntity,
     validateObjectiveCreateBody,
     validateObjectiveRevisionEntity,
@@ -1169,6 +1171,23 @@ export const WRITE_RESPONSE_SPECS:
             ...validateMembershipEntity(withoutId(body ?? {})),
         }),
     },
+    'identity-tokens/:id': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateIdentityTokenEntity(withoutId(body ?? {})),
+        }),
+    },
+    'identity-token-revocations/:id': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateIdentityTokenRevocationEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
+    'identity-tokens/:jti/revocation': { status: 204 },
 };
 
 export const routes: Route[] = [
@@ -1439,10 +1458,43 @@ export const routes: Route[] = [
             );
         },
     }),
-    makeIdRoute<IdentityTokenRevocationEntity>({
-        noun: 'identity-token-revocations',
-        store: db => db.identityTokenRevocations,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<
+    // IdentityTokenRevocationEntity> so PUT can append its
+    // message pair in the same transaction as the write — the
+    // factory's fixed closures have no per-family pair
+    // selector (see message-pair.ts). GET reproduces the
+    // factory closure byte-equivalently; verbs stay {get,
+    // put}. identity_token_revocations is a HistoryEntityStore
+    // ledger row, so this is EVENT-APPEND: no head-read, no
+    // Supersedes (message-pair.ts DOCUMENT_CLASS_ROUTE_
+    // PATTERNS omits it on purpose).
+    route('identity-token-revocations/:id', {
+        get: (db, p) =>
+            db.identityTokenRevocations.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                [
+                    'identity_token_revocations',
+                    'requests', 'responses',
+                ],
+                async (view) => {
+                    const written = await view
+                        .identityTokenRevocations.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<
+                                    IdentityTokenRevocationEntity,
+                                    'id'
+                                >,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     route('role-grants', {
         get: (db) => db.roleGrants.getAll(),
@@ -1455,10 +1507,31 @@ export const routes: Route[] = [
     route('identity-tokens', {
         get: (db) => db.identityTokens.getAll(),
     }),
-    makeIdRoute<IdentityTokenEntity>({
-        noun: 'identity-tokens',
-        store: db => db.identityTokens,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<IdentityTokenEntity>
+    // so PUT can append its message pair in the same
+    // transaction as the write. identity_tokens is a
+    // HistoryEntityStore ledger row, so this is EVENT-APPEND:
+    // no head-read, no Supersedes.
+    route('identity-tokens/:id', {
+        get: (db, p) => db.identityTokens.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['identity_tokens', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view
+                        .identityTokens.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<IdentityTokenEntity, 'id'>,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     // Rotate a refresh jti. The ledger read, the rotation
     // plan, and its appends ride ONE transaction
@@ -1468,6 +1541,8 @@ export const routes: Route[] = [
     // TOCTOU). A live jti returns its successor; a
     // known-but-not-live jti is reuse — the whole chain's
     // revocation has already landed atomically — then 409.
+    // NOT (yet) shadow-ledger-wired — see the comment on
+    // rotateRefreshJti (api/authentication.ts) for why.
     route('identity-tokens/:jti/rotation', {
         post: async (db, p) => {
             const presented = param(p, 0);
@@ -1486,10 +1561,11 @@ export const routes: Route[] = [
     }),
     // Revoke the whole chain a jti belongs to (log out one
     // session). Read and appends ride one transaction; an
-    // unknown jti is an idempotent no-op.
+    // unknown jti is an idempotent no-op that still appends
+    // its pair (revokeTokenChain guards both exit paths).
     route('identity-tokens/:jti/revocation', {
-        post: async (db, p) => {
-            await revokeTokenChain(db, param(p, 0));
+        post: async (db, p, _body, _actor, pair) => {
+            await revokeTokenChain(db, param(p, 0), pair);
         },
     }),
     route('identity-providers', {

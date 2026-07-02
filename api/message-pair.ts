@@ -404,6 +404,9 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'identities/:id/pii',
     'identities/:id/credentials/:cid',
     'memberships/:id',
+    'identity-tokens/:id',
+    'identity-token-revocations/:id',
+    'identity-tokens/:jti/revocation',
 ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from
