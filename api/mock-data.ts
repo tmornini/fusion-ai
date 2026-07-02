@@ -4,6 +4,7 @@ import {
     postIdeaCreationOp,
     postFlowCreationOp,
     postRecordWriteOp,
+    postObjectiveCreationOp,
 } from './routes.ts';
 import type {
     ProjectFlowEntity,
@@ -3643,13 +3644,14 @@ async function postMockDataLoadIn(
     };
 
     for (const seed of OBJECTIVE_SEEDS) {
-        await adapter.objectives.put(seed.id, {
-            organization_id: STARK_ORGANIZATION,
-            position: seed.position,
-        });
-        await adapter.objectiveRevisions.put(
-            `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
-            {
+        await postObjectiveCreationOp(adapter, {
+            id: seed.id,
+            objective: {
+                organization_id: STARK_ORGANIZATION,
+                position: seed.position,
+            },
+            revisionId: `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
+            revision: {
                 objective_id: seed.id,
                 name: seed.name,
                 description: seed.description,
@@ -3659,23 +3661,25 @@ async function postMockDataLoadIn(
                 ),
                 at: MOCK_SEED_TIMESTAMP,
             },
-        );
+        });
     }
 
     // Organization '2' owns one objective so each org owns at least one.
-    await adapter.objectives.put('seed-objective-org2', {
-        organization_id: ORGANIZATION_TWO,
-        position: 0,
-    });
-    await adapter.objectiveRevisions.put(
-        `seed-objective-org2:${MOCK_SEED_TIMESTAMP}`, {
+    await postObjectiveCreationOp(adapter, {
+        id: 'seed-objective-org2',
+        objective: {
+            organization_id: ORGANIZATION_TWO,
+            position: 0,
+        },
+        revisionId: `seed-objective-org2:${MOCK_SEED_TIMESTAMP}`,
+        revision: {
             objective_id: 'seed-objective-org2',
             name: 'Wayne demo objective',
             description: 'Second-org demo objective.',
             member_id: SYSTEM_MEMBER_ID,
             at: MOCK_SEED_TIMESTAMP,
         },
-    );
+    });
 
     const allProjects = await adapter.projects.getAll();
     const projectStateById = new Map(
