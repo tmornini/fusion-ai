@@ -66,6 +66,7 @@ import {
     validateStateBody,
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
+    validateWorkOrderEntity,
     validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
 } from './validators.ts';
@@ -972,6 +973,16 @@ export const WRITE_RESPONSE_SPECS:
     'flows/:id/redo': { status: 204 },
     'flows/:id/versions': { status: 204 },
     'work-orders': { status: 204 },
+    'work-orders/:id': {
+        status: 200,
+        successBody: (params, body, _actor, organization) => ({
+            id: param(params, 0),
+            ...validateWorkOrderEntity({
+                ...withoutId(body ?? {}),
+                organization_id: organization,
+            }),
+        }),
+    },
     'work-orders/:id/claim': { status: 204 },
     'work-orders/:id/transition': { status: 204 },
     'flows/:id/work-orders/:woid': {
@@ -1807,10 +1818,32 @@ export const routes: Route[] = [
         post: (db, _p, body, actor, pair) =>
             postWorkOrderCreationOp(db, body, actor, pair),
     }),
-    makeIdRoute<WorkOrderEntity>({
-        noun: 'work-orders',
-        store: db => db.workOrders,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<WorkOrderEntity> so
+    // PUT can append its message pair in the same transaction
+    // as the write — the factory's fixed closures have no
+    // per-family pair selector (see message-pair.ts). GET
+    // reproduces the factory closure byte-equivalently; verbs
+    // stay {get, put} — work-orders/:id has no DELETE today,
+    // mirroring the projects/:id precedent.
+    route('work-orders/:id', {
+        get: (db, p) => db.workOrders.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['work_orders', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.workOrders.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<WorkOrderEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     // See postWorkOrderClaimOp for the transaction shape.
     route('work-orders/:id/claim', {
