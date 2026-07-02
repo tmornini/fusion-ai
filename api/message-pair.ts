@@ -409,6 +409,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'identity-tokens/:jti/revocation',
     'organizations/:id',
     'role-grants/:id',
+    'identity-providers/:id',
 ]);
 
 // The head-read class, PER ROUTE PATTERN — never inferred from

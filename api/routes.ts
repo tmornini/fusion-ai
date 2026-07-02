@@ -60,6 +60,7 @@ import {
     validateIdentityEntity,
     validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
+    validateIdentityProviderEntity,
     validateIdentityTokenEntity,
     validateIdentityTokenRevocationEntity,
     validateMembershipEntity,
@@ -1213,6 +1214,15 @@ export const WRITE_RESPONSE_SPECS:
             }),
         }),
     },
+    'identity-providers/:id': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateIdentityProviderEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
 };
 
 export const routes: Route[] = [
@@ -1620,10 +1630,36 @@ export const routes: Route[] = [
     route('identity-providers', {
         get: (db) => db.identityProviders.getAll(),
     }),
-    makeIdRoute<IdentityProviderEntity>({
-        noun: 'identity-providers',
-        store: db => db.identityProviders,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<
+    // IdentityProviderEntity> so PUT can append its message
+    // pair in the same transaction as the write — the
+    // factory's fixed closures have no per-family pair
+    // selector (see message-pair.ts). GET reproduces the
+    // factory closure byte-equivalently; verbs stay {get,
+    // put}. identity_providers is a HistoryEntityStore ledger
+    // row (linked/unlinked events) and a GLOBAL-plane store (no
+    // organization_id field at all), so this is EVENT-APPEND:
+    // no head-read, no Supersedes.
+    route('identity-providers/:id', {
+        get: (db, p) => db.identityProviders.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['identity_providers', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view
+                        .identityProviders.put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<IdentityProviderEntity, 'id'>,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     route('authentication/token', {
         post: async (db, _p, body) => {
