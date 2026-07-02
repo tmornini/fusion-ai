@@ -227,7 +227,12 @@ function makeIdRoute<T extends { id: string }>(
     return route(`${config.noun}/:id`, handlers);
 }
 
-async function applyRecordWrite(
+// Record creation or edit, discriminated by payload.kind.
+// Exported so the seed can drive record creation through
+// the same gate the route uses (Decision 6's below-facade
+// carve-out) — this is also Phase 1's dual-write insertion
+// seam.
+export async function postRecordWriteOp(
     db: DbAdapter,
     payload: Record<string, unknown>,
     actor: Id,
@@ -1486,7 +1491,7 @@ export const routes: Route[] = [
     route('records', {
         get: (db) => db.records.getAll(),
         post: (db, _p, body, actor) =>
-            applyRecordWrite(db, body, actor),
+            postRecordWriteOp(db, body, actor),
     }),
     makeIdRoute<RecordEntity>({
         noun: 'records',
