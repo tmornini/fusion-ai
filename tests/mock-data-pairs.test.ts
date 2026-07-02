@@ -10,6 +10,7 @@ import { customerProfileRecordId } from '../api/mock-data/records.ts';
 import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
+    MOCK_SEED_TIMESTAMP,
 } from '../api/mock-data/seed-constants.ts';
 
 // Task 4: the seed's pair-wired op-invocations (human-members,
@@ -146,32 +147,41 @@ test('a seeded objective create pair sits at its org-nested'
     );
 });
 
-test('a seeded objective pair\'s embedded revision author'
-+ ' matches the actually written revision row', async () => {
+test('every seeded STARK objective pair\'s embedded revision'
++ ' author matches the actually written revision row',
+async () => {
     // Guards the pure pre-tx human-member-pool reconstruction
     // (seed-message-pairs.ts's humanMemberPoolsByOrganization)
     // against silently drifting from the in-tx DB-read
     // `memberFor` the baseline/actual-score deferral still
-    // uses — the two are proven to agree; this fails loudly if
-    // a future change (e.g. a reordered membership Promise.all)
-    // ever breaks that proof.
+    // uses — the two are proven to agree (insertion-order trace
+    // of the buffered-tx backend plus this check over ALL four
+    // STARK objectives, not a single sample); this fails loudly
+    // if a future change (e.g. a reordered membership
+    // Promise.all) ever breaks that proof.
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
-    const starkSeed = OBJECTIVE_SEEDS[0]!;
-    const revision = await db.objectiveRevisions.getById(
-        `${starkSeed.id}:2026-01-01T00:00:00.000000Z`,
-    );
-    assert.ok(revision, 'no revision row for the STARK objective');
     const requests = await db.requests.getAll();
-    const row = requests.find(r => r.uri_id === starkSeed.id);
-    assert.ok(row, 'no request row for the STARK objective');
-    const embedded = JSON.parse(row!.message) as {
-        body: { revision: { member_id: string } };
-    };
-    assert.equal(
-        embedded.body.revision.member_id,
-        revision!.member_id,
-    );
+    for (const starkSeed of OBJECTIVE_SEEDS) {
+        const revision = await db.objectiveRevisions.getById(
+            `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`,
+        );
+        assert.ok(
+            revision,
+            'no revision row for ' + starkSeed.id,
+        );
+        const row = requests.find(
+            r => r.uri_id === starkSeed.id,
+        );
+        assert.ok(row, 'no request row for ' + starkSeed.id);
+        const embedded = JSON.parse(row!.message) as {
+            body: { revision: { member_id: string } };
+        };
+        assert.equal(
+            embedded.body.revision.member_id,
+            revision!.member_id,
+        );
+    }
 });
 
 test('seed pairs verify against their hashes', async () => {
