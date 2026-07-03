@@ -10,6 +10,10 @@ import {
     ORGANIZATION_TWO,
 } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
+import {
+    storedWorkOrderFlowGraphField,
+    DEFAULT_LOCK_TIMEOUT,
+} from '../api/types.ts';
 
 // Standing shadow-ledger invariants (Task 5): properties every
 // requests/responses pair must hold REGARDLESS of which family
@@ -76,6 +80,20 @@ function recordFields(name: string, organization: string) {
     };
 }
 
+function workOrderFields(displayId: string, organization: string) {
+    return {
+        organization_id: organization,
+        display_id: displayId,
+        flow_graph: storedWorkOrderFlowGraphField({
+            name: 'Invariant Flow',
+            lockTimeout: DEFAULT_LOCK_TIMEOUT,
+            nodes: [],
+            edges: [],
+        }),
+        position: 1,
+    };
+}
+
 function createRecordBody(
     id: string, eventId: string, organization: string,
 ) {
@@ -100,8 +118,10 @@ function createRecordBody(
 // top via handleRequest: one document PUT (Supersedes minted,
 // ideas), one event-append PUT (states/:id), one FAILED write
 // (a state ledger conflict), one create POST (records), one
+// entity PUT (work-orders — Phase 1's final-review deferral,
+// folded in now that Phase 2's drift check has landed), one
 // DELETE (records, superseding its own PUT), and one operation
-// POST (identity-tokens revocation) — three families beyond the
+// POST (identity-tokens revocation) — four families beyond the
 // seed's own, spanning both seeded orgs.
 async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
@@ -174,6 +194,15 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         'DELETE', '/records/inv-rec-2', org2Token,
     ));
     assert.equal(recordDeleted.status, 204);
+
+    // Entity PUT (work-orders, org 1) — the entity-PUT hash path,
+    // shared code but never route-exercised in this mixed batch
+    // before now.
+    const workOrderPut = await handleRequest(db, req(
+        'PUT', '/work-orders/inv-wo-1', org1Token,
+        workOrderFields('INV-WO-1', STARK_ORGANIZATION),
+    ));
+    assert.equal(workOrderPut.status, 200);
 
     // Operation POST (identity-tokens — global, not org-
     // nested): revoke a pre-seeded chain.
