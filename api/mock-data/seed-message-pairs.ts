@@ -83,8 +83,8 @@ import { l2cProjectId } from './projects.ts';
 export const wfTimestamp = daysFromNow(-60, 9, 0);
 
 // One state event per seeded idea — the creation moment of
-// each idea on the states log, doubling as postIdeaCreationOp's
-// initial-state input.
+// each idea on the states log, doubling as postIdeaDocumentOp's
+// genesis-state input.
 export const ideaStateEvents: StateEntity[] = [
     {
         id: 'qJoFXyzUUaq0vEpHL5e34l',
