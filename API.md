@@ -172,7 +172,8 @@ Legend for classification:
 
 ### 2.5 Projects
 
-- `GET /projects` · `GET|PUT /projects/:id` — primitive.
+- `GET /projects` · `GET|PUT /projects/:id` — primitive
+  (§3.32). Member-tier.
 - `GET /projects/:id/flows` · `PUT|DELETE /projects/:id/flows/:pfid` —
   nested (project↔flow join).
 - `GET /projects/:id/objective-baseline-scores` ·
@@ -821,6 +822,35 @@ only a client-addressed request through THIS route appends one.
   → `appendMessagePair(pair)`.
 - props: atomic; `validateFlowVersionEntity` reconstructs the PUT's
   200 body; the DELETE is the universal 204/no-body shape (§1.1).
+
+### 3.32 `PUT /projects/:id` — project document write (not a POST)
+
+One shape serves create, edit, and transition (Decision 7): the
+body is the entity's own eight writable fields plus the
+lifecycle trio (`state`, `state_at`, `state_event_id`). Genesis
+is head-presence-defined — the first PUT at an id IS the birth.
+`postProjectStateChange` (the adapter's transition op) now
+mints a fresh trio and fires this SAME document PUT; projects
+no longer ride the generic `PUT /states/:id` (§2.10) — that
+route stays for every other family.
+
+- tx: `[projects, states, requests, responses]`
+- actual: read the current head event
+  (`states.getCurrentFor(id)`) → `projects.put(id, entity)` (the
+  org-scoped store stamps `organization_id`, so the body omits
+  it) → `states.postEvent(state_event_id, id, state, memberId,
+  state_at)` → `appendMessagePair(pair)`.
+- doctrinal: `put_project` + `post_state_event` as
+  `put_project_document`.
+- props: atomic; member-tier; `validateProjectDocumentBody`;
+  idempotent (a byte-identical resend converges: one row, one
+  event, one pair); MEMBER_ID CAVEAT — a state-unchanged edit
+  (the resent trio matches the current head byte-for-byte)
+  replays the STORED head event's `member_id`, never the
+  editing actor, so a different member editing a field after
+  someone else's transition does not 409. GET is untouched — it
+  still reads the old-plane row directly (the read-side flip is
+  a later task).
 
 ---
 
