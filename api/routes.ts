@@ -167,12 +167,22 @@ type DeleteHandler = (
     pair: MessagePair | undefined,
 ) => Promise<void>;
 
+// PostHandler alone also carries a trailing fence
+// organization, mirroring GetHandler's rationale above: the
+// verified token claim the gate resolved, never the path.
+// Undefined for a bearer-exempt or global route. Only the
+// conversion handler consults it today (to form the created
+// project's OWN document-address pair beside the operation
+// pair above); every other POST handler ignores the extra
+// trailing arg, the same fewer-parameter-closure precedent
+// `pair` already established.
 type PostHandler = (
     adapter: DbAdapter,
     params: string[],
     payload: Record<string, unknown>,
     actor: Id,
     pair: MessagePair | undefined,
+    organization: Id | undefined,
 ) => Promise<unknown>;
 
 export interface Route {

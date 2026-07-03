@@ -673,6 +673,7 @@ export async function handleRequest(
                         body!,
                         actor,
                         pair,
+                        organization,
                     );
                 }
                 if (pair !== undefined) {
