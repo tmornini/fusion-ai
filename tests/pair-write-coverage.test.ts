@@ -26,9 +26,12 @@ function sourceText(relativePath: string): string {
 }
 
 // A write registration: a Route entry exposing put, post, or
-// delete. `route()` and `makeIdRoute()` both compile down to
-// the same shape, so this walks the table generically — it
-// does not care which factory built the entry.
+// delete. `route()` builds every entry (the `makeIdRoute()`
+// factory that used to build some of them was retired once its
+// last two live callers — members/:id, objectives/:id — were
+// replaced with pair-appending bespoke routes), so this walks
+// the table generically rather than caring how an entry was
+// built.
 function writtenPattern(entry: Route): string | undefined {
     if (
         entry.put === undefined
@@ -50,27 +53,8 @@ const NAMED_EXEMPT_ROUTE_PATTERNS: ReadonlySet<string> = new Set([
     ...AUTHENTICATION_ROUTES,
 ]);
 
-// Pre-existing GAPS, not exemptions — three write routes the
-// Task 2a chunking round left "unnamed in this chunk's
-// anchors" (task-2a-report.md), banking on this very test to
-// surface them: `objectives/:id` PUT is LIVE
-// (web-app's putObjectivePosition never reaches the ledger
-// today); `members/:id` PUT and `flows/:id/versions/:vid`
-// PUT/DELETE are registered but uncalled by any adapter. This
-// is a closed, named list, not the exempt set above — closing
-// one shrinks THIS list (see the pinning test below), and a
-// silent addition here would itself need a matching edit to
-// that pin. Tracked for a follow-up wiring task; flagged in
-// the Task 6a report.
-const KNOWN_UNWIRED_WRITE_ROUTE_PATTERNS: ReadonlySet<string> =
-    new Set([
-        'flows/:id/versions/:vid',
-        'members/:id',
-        'objectives/:id',
-    ]);
-
-test('every write-verb route is pair-wired, named exempt, or' +
-' a tracked known gap', () => {
+test('every write-verb route is pair-wired or named exempt',
+() => {
     const writeRoutePatterns = routes
         .map(writtenPattern)
         .filter(
@@ -84,27 +68,10 @@ test('every write-verb route is pair-wired, named exempt, or' +
     for (const pattern of writeRoutePatterns) {
         assert.ok(
             PAIR_WIRED_ROUTE_PATTERNS.has(pattern)
-                || NAMED_EXEMPT_ROUTE_PATTERNS.has(pattern)
-                || KNOWN_UNWIRED_WRITE_ROUTE_PATTERNS.has(
-                    pattern,
-                ),
-            'unwired, un-exempt, untracked write route: '
-                + pattern,
+                || NAMED_EXEMPT_ROUTE_PATTERNS.has(pattern),
+            'unwired, un-exempt write route: ' + pattern,
         );
     }
-});
-
-test('the known-gap set names exactly today\'s three routes —'
-+ ' closing one is an edit here, never a silent shrink',
-() => {
-    assert.deepEqual(
-        [...KNOWN_UNWIRED_WRITE_ROUTE_PATTERNS].sort(),
-        [
-            'flows/:id/versions/:vid',
-            'members/:id',
-            'objectives/:id',
-        ],
-    );
 });
 
 test('AUTHENTICATION_ROUTES ride the dedicated pair arm, so'

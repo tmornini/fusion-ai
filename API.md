@@ -754,6 +754,54 @@ A client-side quota pre-flight (`putSnapshotFromFile`,
 the file size before this route is called; that lives in the web-app
 adapter, not the api layer.
 
+### 3.29 `PUT /objectives/:id` — reposition an objective (not a POST)
+
+Included alongside §3.28 for the same reason: a bare-CRUD `PUT`, hand-
+written in place of the (now-retired) `makeIdRoute` factory so its
+pair can append in the same transaction as the write. Today's only
+caller is the web-app's `putObjectivePosition` (drag-reorder), whose
+body is just `{ position }`.
+
+- tx: `[objectives, requests, responses]`
+- actual: `objectives.put(id, body)` (the org-scoped store stamps
+  `organization_id`, so the body omits it) → `appendMessagePair(pair)`.
+- props: atomic; document-class (a repeat PUT records `Supersedes`,
+  §5.1); `validateObjectiveEntity` reconstructs the written row for
+  the 200 body.
+
+### 3.30 `PUT /members/:id` — edit a member directory row (not a POST)
+
+Same shape as §3.29, on the GLOBAL plane (no organization stamping —
+the `members` row carries no `organization_id`). Registered since
+before Phase 1 but, as of this task, uncalled by any web-app adapter:
+member edits go through the composed `POST /human-members/:id` /
+`POST /ai-members/:id` operations (§3.2, §3.4) instead, which already
+touch this same `members` row as one of their own facet puts.
+
+- tx: `[members, requests, responses]`
+- actual: `members.put(id, body)` → `appendMessagePair(pair)`.
+- props: atomic; document-class; `validateMemberEntity` (just
+  `type: 'human' | 'ai' | 'system'`) reconstructs the 200 body.
+
+### 3.31 `flows/:id/versions/:vid` — a named version (not POST)
+
+The leaf primitive under the `flows/:id/versions` collection (§3.16).
+DOCUMENT-class: a version row is a plain, revisitable row, so a
+repeat `PUT` records `Supersedes` and a `DELETE` tombstones it —
+exactly like `flow_work_orders`/`state_field_values` above. This is
+distinct from the cap-trim machinery inside §3.13/§3.14/§3.15/§3.16,
+which calls `flowVersions.delete` directly, inside ITS OWN
+transaction, to physically splice versions past the retention cap —
+that splice is untouched by this task and stores no pair of its own;
+only a client-addressed request through THIS route appends one.
+
+- tx: `[flow_versions, requests, responses]`
+- actual: `flowVersions.put(id, body)` or `flowVersions.delete(id)`
+  (no organization stamping — a version's org rides its parent flow)
+  → `appendMessagePair(pair)`.
+- props: atomic; `validateFlowVersionEntity` reconstructs the PUT's
+  200 body; the DELETE is the universal 204/no-body shape (§1.1).
+
 ---
 
 ## 4. Why composition is store-level, not HTTP-level
