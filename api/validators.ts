@@ -1329,7 +1329,6 @@ export function validateProjectDocumentBody(
     };
 }
 
-
 // The graph is NOT a flow column — it lives in the four
 // relation tables. The storage row carries only the flow's own
 // scalar fields; the relation rows are validated by their own
