@@ -268,31 +268,6 @@ export async function getTransitionEventsByWorkOrder(
     return out;
 }
 
-// Read the current state for one idea from the
-// states log. Returns the validated IdeaState (the
-// composite alphabet). Throws when no event has
-// been recorded — every idea created through the
-// supported paths gets an initial 'active:*' event,
-// so absence is a bug, not a missing default.
-export async function getIdeaState(
-    ctx: RequestContext,
-    ideaId: Id,
-): Promise<IdeaState> {
-    const events = await ctx.GET<StateEntity[]>(
-        `entity-states/${ideaId}/history`,
-    );
-    const latest = latestByKey(events, ev => ev.entity_id)
-        .get(ideaId);
-    if (latest === undefined) {
-        throw new Error(
-            'no state event for idea ' + ideaId,
-        );
-    }
-    return assertIdeaState(
-        latest.state, 'idea ' + ideaId,
-    );
-}
-
 // Bulk variant for getIdeas, which calls this — so it
 // reads the ideas table directly to avoid recursing.
 export async function getIdeaStates(
@@ -306,14 +281,11 @@ export async function getIdeaStates(
     return latestStatesForIds<IdeaState>(events, ids);
 }
 
-// Single-idea sibling of getIdeaState, widened to carry the
-// STORED head event's `at`/`id` alongside the state — the
-// trio Decision 7 folds into the idea document (state_at,
-// state_event_id). getIdeaState itself stays bare: its
-// existing callers (and tests/adapters-state-events.test.ts)
-// take only the state string, so this is a new function, not
-// a widened replacement. Consumed by getIdea (adapters/
-// ideas.ts) to build the Idea domain object.
+// Single-idea state read, widened to carry the STORED head
+// event's `at`/`id` alongside the state — the trio Decision 7
+// folds into the idea document (state_at, state_event_id).
+// Consumed by getIdea (adapters/ideas.ts) to build the Idea
+// domain object.
 export async function getIdeaStateDetail(
     ctx: RequestContext,
     ideaId: Id,
