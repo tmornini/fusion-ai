@@ -15,6 +15,15 @@ test('ideas registers organization-nested, simple concurrency',
     });
 });
 
+test('projects is the second registered family', () => {
+    assert.deepEqual(familyRegistration('projects'), {
+        family: 'projects',
+        organizationNested: true,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
     assert.equal(familyRegistration('flows'), undefined);
 });

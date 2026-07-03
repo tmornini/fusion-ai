@@ -111,7 +111,7 @@ const RESPONSE_ID_FIELD = 'response-id';
 // deleted, never kept as a parallel truth.
 const ORGANIZATION_NESTED_FIRST_SEGMENTS: ReadonlySet<string> =
     new Set([
-        'projects', 'flows', 'work-orders',
+        'flows', 'work-orders',
         'records', 'record-attributes', 'objectives',
         'memberships', 'states',
     ]);
@@ -431,10 +431,14 @@ export function createdEntityUriId(
     // Task 3 (R1) retired — genesis folded into the
     // document-class PUT ideas/:id, whose uriId messageAddress
     // already derives from the path segment, so this lookup
-    // never fires for ideas today. The slot stays registered for
-    // a future family that still creates via a bare collection
-    // POST. Falls back to the literal table for every
-    // not-yet-registered pattern.
+    // never fires for ideas today. Projects (second family)
+    // registers the same inert slot: it has NO bare collection
+    // POST at all, so the registry consult here never fires for
+    // it either — the route-pattern==family-name coincidence
+    // remains unexercised by both registered families. The slot
+    // stays registered for a future family that still creates
+    // via a bare collection POST. Falls back to the literal
+    // table for every not-yet-registered pattern.
     const registered = familyRegistration(routePattern);
     const field = registered !== undefined
         ? registered.createBodyIdField
