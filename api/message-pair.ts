@@ -25,6 +25,7 @@ import {
     defaultBodyRegistry,
 } from '../shared/http-message/media-registry.ts';
 import { REQUEST_ID_HEADER } from './request-context.ts';
+import { familyRegistration } from './family-registry.ts';
 
 // The shadow-ledger message pair: one row in `requests`, one
 // in `responses`, sharing `id`. Formed pre-tx (all crypto and
@@ -105,23 +106,30 @@ const RESPONSE_ID_FIELD = 'response-id';
 // 'records' yet is genuinely organization-owned (organization-
 // scoped store, organization_id index). Audit any new write
 // route's first segment against the org-scoped adapter before
-// trusting this set.
+// trusting this set. A registered family (family-registry.ts)
+// answers ONLY from its registration — its entry here is
+// deleted, never kept as a parallel truth.
 const ORGANIZATION_NESTED_FIRST_SEGMENTS: ReadonlySet<string> =
     new Set([
-        'ideas', 'projects', 'flows', 'work-orders',
+        'projects', 'flows', 'work-orders',
         'records', 'record-attributes', 'objectives',
         'memberships', 'states',
     ]);
 
 // The tier rule, exported so gate, seed, and derivations share
-// ONE prefix voice.
+// ONE prefix voice. A registered family's organizationNested
+// slot decides first; the literal set above is the fallback
+// for every not-yet-registered first segment.
 export function canonicalUriPrefix(
     organization: Id | undefined,
     flatPrefix: string,
 ): string {
     const first = flatPrefix.split('/')[1] ?? '';
-    if (organization !== undefined
-        && ORGANIZATION_NESTED_FIRST_SEGMENTS.has(first)) {
+    const registered = familyRegistration(first);
+    const nested = registered !== undefined
+        ? registered.organizationNested
+        : ORGANIZATION_NESTED_FIRST_SEGMENTS.has(first);
+    if (organization !== undefined && nested) {
         return '/organizations/' + organization
             + flatPrefix;
     }
@@ -394,9 +402,10 @@ export async function appendMessagePair(
 
 // The create-address override table: which body field names
 // the created entity for create-shaped collection POSTs. Grown
-// family by family in Tasks 2-5.
+// family by family in Tasks 2-5. A registered family (family-
+// registry.ts) answers ONLY from its own createBodyIdField —
+// its entry here is deleted, never kept as a parallel truth.
 const CREATE_BODY_ID_FIELDS: Record<string, string> = {
-    'ideas': 'id',
     'flows': 'id',
     'work-orders': 'id',
     'records': 'id',
@@ -415,7 +424,14 @@ export function createdEntityUriId(
     routePattern: string,
     body: Record<string, unknown> | undefined,
 ): string | undefined {
-    const field = CREATE_BODY_ID_FIELDS[routePattern];
+    // The registry is keyed by family (first path segment);
+    // for ideas the bare create route pattern IS the family
+    // name, so the same string resolves both. Falls back to
+    // the literal table for every not-yet-registered pattern.
+    const registered = familyRegistration(routePattern);
+    const field = registered !== undefined
+        ? registered.createBodyIdField
+        : CREATE_BODY_ID_FIELDS[routePattern];
     if (field === undefined || body === undefined) {
         return undefined;
     }
