@@ -183,10 +183,17 @@ test(
     },
 );
 
+const TRIO = {
+    state: 'approved' as ProjectState,
+    stateAt: '2026-01-01T00:00:00.000000Z',
+    stateEventId: 'ev-p1',
+};
+
 test('putProject persists a new project', async () => {
     const { db, ctx } = await adminContext();
     await putProject(
-        ctx, 'p1', buildProject('p1', 'Created'),
+        ctx, 'p1',
+        { ...buildProject('p1', 'Created'), ...TRIO },
     );
     const stored = await db.projects.getById('p1');
     assert.equal(stored.title, 'Created');
@@ -197,11 +204,14 @@ test('putProject updates an existing project', async () => {
     await db.projects.put(
         'p1', buildProject('p1', 'Before'),
     );
-    await putProject(ctx, 'p1', buildProject(
-        'p1', 'After', {
-            progress: 100,
-        },
-    ));
+    await putProject(ctx, 'p1', {
+        ...buildProject(
+            'p1', 'After', {
+                progress: 100,
+            },
+        ),
+        ...TRIO,
+    });
     const stored = await db.projects.getById('p1');
     assert.equal(stored.title, 'After');
     assert.equal(stored.progress, 100);
@@ -211,9 +221,10 @@ test(
     'putProject changes are visible to a fresh ctx',
     async () => {
         const { db, ctx } = await adminContext();
-        await putProject(ctx, 'p1', buildProject(
-            'p1', 'Persisted',
-        ));
+        await putProject(ctx, 'p1', {
+            ...buildProject('p1', 'Persisted'),
+            ...TRIO,
+        });
         const fresh = createRequestContext(db, await devToken());
         const row = await getProjectEntity(fresh, 'p1');
         assert.equal(row.title, 'Persisted');
@@ -237,7 +248,7 @@ test(
             startDate: '2026-02-01',
             targetEndDate: '2026-11-30',
             estimatedCost: 75000,
-        });
+        }, TRIO);
         const stored =
             await db.projects.getById('p1');
         assert.equal(stored.title, 'After');
@@ -267,7 +278,7 @@ test(
                 position: 1,
             }),
         );
-        await putProjectPosition(ctx, 'p1', 9.5);
+        await putProjectPosition(ctx, 'p1', 9.5, TRIO);
         const stored =
             await db.projects.getById('p1');
         assert.equal(stored.position, 9.5);
@@ -286,7 +297,7 @@ test(
                 actual_cost: 2000,
             }),
             id: 'p1',
-        }, 'approved');
+        }, TRIO);
         const view = new ProjectView(project, [], [], []);
         assert.equal(view.idForLink(), 'p1');
         assert.equal(view.titleText(), 'Viewable');
@@ -319,9 +330,14 @@ test(
         );
         const before =
             await db.projects.getById('p1');
+        const {
+            id: _id,
+            organization_id: _org,
+            ...fields
+        } = before;
 
         await postProjectStateChange(
-            ctx, 'p1', 'archived',
+            ctx, 'p1', fields, 'archived',
         );
 
         const after =
@@ -344,7 +360,7 @@ test(
                 target_end_date: '2026-01-11',
             }),
             id: 'p1',
-        }, 'approved');
+        }, TRIO);
         const view = new ProjectView(project, [], [], []);
         assert.equal(view.timeBaselineDays(), 10);
     },

@@ -26,6 +26,7 @@ import type {
     IdeaEntity,
     IdeaState,
     ProjectEntity,
+    ProjectState,
     FlowEntity,
     FlowVersionEntity,
     FlowNodeEntity,
@@ -58,6 +59,7 @@ import {
     assertConstraintAppliesTo,
     assertIdeaState,
     assertMemberState,
+    assertProjectState,
     assertRecordState,
 } from './types.ts';
 import {
@@ -1246,6 +1248,84 @@ export function validateProjectEntity(
         position: pickNumber(
             body, 'position',
         ),
+    };
+}
+
+const PROJECT_DOCUMENT_ENTITY_KEYS: readonly string[] = [
+    'title', 'description', 'progress', 'start_date',
+    'target_end_date', 'estimated_cost', 'actual_cost',
+    'position',
+];
+
+const PROJECT_DOCUMENT_BODY_KEYS: readonly string[] = [
+    ...PROJECT_DOCUMENT_ENTITY_KEYS,
+    'state', 'state_at', 'state_event_id',
+];
+
+export interface ProjectDocumentBody {
+    readonly entity:
+        Omit<ProjectEntity, 'id' | 'organization_id'>;
+    readonly state: ProjectState;
+    readonly state_at: string;
+    readonly state_event_id: string;
+}
+
+// The HTTP-body gate for PUT /projects/:id (Decision 7): the
+// full wire document — the entity's own fields plus the
+// lifecycle trio folded in. organization_id is deliberately
+// absent from the expected set (like every other org-owned
+// write, the client never supplies it; the org fence stamps it
+// downstream when view.projects.put re-validates through
+// validateProjectEntity) yet rides the `optional` allowance
+// rather than `expected` — a caller-forged organization_id is
+// tolerated-but-ignored, not rejected, because the fence's
+// stamp always overrides whatever key it finds. The trio holds
+// to the SAME rules the bare states/:id route applies to an
+// event (assertProjectState, an RFC-3339 `at`, a non-empty
+// event id), so a folded document and a bare event share one
+// shape. Entity fields are picked directly rather than
+// delegated to validateProjectEntity — that function REQUIRES
+// organization_id, which this body never carries pre-stamp.
+export function validateProjectDocumentBody(
+    body: Record<string, unknown>,
+): ProjectDocumentBody {
+    assertOnlyKeys(
+        body, PROJECT_DOCUMENT_BODY_KEYS,
+        'ProjectDocumentBody', ['organization_id'],
+    );
+    const state = assertProjectState(
+        pickString(body, 'state'),
+        'ProjectDocumentBody.state',
+    );
+    const stateEventId = pickString(body, 'state_event_id');
+    if (stateEventId === '') {
+        throw new ValidationError(
+            'ProjectDocumentBody.state_event_id must be'
+            + ' non-empty',
+        );
+    }
+    return {
+        entity: {
+            title: pickString(body, 'title'),
+            description: pickString(body, 'description'),
+            progress: pickNumber(body, 'progress'),
+            start_date: validateCalendarDateField(
+                body, 'start_date', 'ProjectDocumentBody',
+            ),
+            target_end_date: validateCalendarDateField(
+                body, 'target_end_date',
+                'ProjectDocumentBody',
+            ),
+            estimated_cost:
+                pickNumber(body, 'estimated_cost'),
+            actual_cost: pickNumber(body, 'actual_cost'),
+            position: pickNumber(body, 'position'),
+        },
+        state,
+        state_at: validateTimestampField(
+            body, 'state_at', 'ProjectDocumentBody.state_at',
+        ),
+        state_event_id: stateEventId,
     };
 }
 

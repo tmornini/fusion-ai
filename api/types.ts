@@ -1462,11 +1462,25 @@ export class Idea {
     }
 }
 
+// The lifecycle trio Decision 7 folds into the project
+// document: the current state plus its creator-minted `at` and
+// the (transitional — retires with the states log) event id. A
+// bare ProjectState alone no longer carries enough to
+// round-trip a document PUT, so every reader that feeds a
+// Project gains this shape.
+export interface ProjectStateDetail {
+    readonly state: ProjectState;
+    readonly stateAt: string;
+    readonly stateEventId: string;
+}
+
 export class Project {
     readonly #id: string;
     readonly #title: string;
     readonly #description: string;
     readonly #state: ProjectState;
+    readonly #stateAt: string;
+    readonly #stateEventId: string;
     readonly #progress: number;
     readonly #startDate: string;
     readonly #targetEndDate: string;
@@ -1476,13 +1490,15 @@ export class Project {
 
     constructor(
         entity: ProjectEntity,
-        state: ProjectState,
+        detail: ProjectStateDetail,
     ) {
         this.#id = entity.id;
         this.#title = entity.title;
         this.#description =
             entity.description;
-        this.#state = state;
+        this.#state = detail.state;
+        this.#stateAt = detail.stateAt;
+        this.#stateEventId = detail.stateEventId;
         this.#progress = entity.progress;
         this.#startDate =
             entity.start_date;
@@ -1553,6 +1569,14 @@ export class Project {
 
     stateValue(): ProjectState {
         return this.#state;
+    }
+
+    stateAtValue(): string {
+        return this.#stateAt;
+    }
+
+    stateEventIdValue(): string {
+        return this.#stateEventId;
     }
 
     progressPercent(): number {

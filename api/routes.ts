@@ -70,7 +70,7 @@ import {
     validateBaselineScoreEntity,
     validateActualScoreEntity,
     validateOrganizationEntity,
-    validateProjectEntity,
+    validateProjectDocumentBody,
     validateProjectFlowEntity,
     validateFlowRecordEntity,
     validateRecordAttributeEntity,
@@ -437,6 +437,68 @@ export async function postIdeaDocumentOp(
                         ? { organization_id: organizationId }
                         : {}),
                 } as unknown as Omit<IdeaEntity, 'id'>,
+            );
+            await view.states.postEvent(
+                doc.state_event_id, id, doc.state,
+                memberId, doc.state_at,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
+// Project document write (Decision 7): ONE shape serves
+// create, edit, and transition — genesis is head-presence-
+// defined (a fresh id's PUT simply finds no head, so the
+// ternary below falls to `actor`, authoring the birth like any
+// other transition). The project row and its trio's state
+// event commit as ONE transaction — a mid-write failure rolls
+// the whole thing back rather than leaving a half-written
+// document. validateProjectDocumentBody's typed `entity` never
+// carries organization_id (the org-scoped store stamps it from
+// the verified token for the LIVE, fenced route, overwriting
+// whatever it finds regardless); the seed's below-facade call
+// (api/mock-data.ts, no gate, no scoping wrapper) drives a RAW
+// store that has no such stamp, so it embeds organization_id in
+// the raw body and this op reads it straight back to merge it
+// in — inert for the fenced route (overwritten either way),
+// load-bearing for the seed. Exported so the seed can drive
+// project creation through the same op the route uses (Decision
+// 6's below-facade carve-out) — this is also Phase 1's
+// dual-write insertion seam. `pair` is optional so the seed's
+// below-facade call keeps compiling unchanged; the route always
+// supplies one, since 'projects/:id' is pair-wired and never
+// bearer-exempt.
+export async function postProjectDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    actor: Id,
+    pair?: MessagePair,
+): Promise<ProjectEntity> {
+    const doc = validateProjectDocumentBody(withoutId(body));
+    const organizationId = body['organization_id'];
+    return db.transaction(
+        ['projects', 'states', 'requests', 'responses'],
+        async (view) => {
+            const head = await view.states.getCurrentFor(id);
+            const memberId = (
+                head !== null
+                && head.id === doc.state_event_id
+                && head.state === doc.state
+                && head.at === doc.state_at
+            ) ? head.member_id : actor;
+            const written = await view.projects.put(
+                id,
+                {
+                    ...doc.entity,
+                    ...(typeof organizationId === 'string'
+                        ? { organization_id: organizationId }
+                        : {}),
+                } as unknown as Omit<ProjectEntity, 'id'>,
             );
             await view.states.postEvent(
                 doc.state_event_id, id, doc.state,
@@ -1056,15 +1118,22 @@ export const WRITE_RESPONSE_SPECS:
             member_id: actor,
         }),
     },
+    // The wire response mirrors the OLD-PLANE row only (no
+    // trio) — the same GET/PUT symmetry Decision 7's wire-
+    // parity rule holds for reads. validateProjectDocumentBody
+    // both shapes the entity and discards the trio for us.
     'projects/:id': {
         status: 200,
-        successBody: (params, body, _actor, organization) => ({
-            id: param(params, 0),
-            ...validateProjectEntity({
-                ...withoutId(body ?? {}),
+        successBody: (params, body, _actor, organization) => {
+            const doc = validateProjectDocumentBody(
+                withoutId(body ?? {}),
+            );
+            return {
+                id: param(params, 0),
                 organization_id: organization,
-            }),
-        }),
+                ...doc.entity,
+            };
+        },
     },
     'projects/:id/flows/:pfid': {
         status: 200,
@@ -2789,26 +2858,34 @@ export const routes: Route[] = [
     // per-family pair selector (see message-pair.ts). GET
     // reproduces the factory closure byte-equivalently; verbs
     // stay {get, put} — projects/:id has no DELETE today,
-    // mirroring the ideas/:id precedent.
+    // mirroring the ideas/:id precedent. GET stays OLD-PLANE
+    // here — reads flip in a later task, NOT this one.
+    //
+    // Decision 7 state-in-entity (Phase 3 Task 2): the PUT body
+    // is the FULL document — today's entity fields plus the
+    // state trio — validated once at the gate. The op
+    // DECOMPOSES it: the old-plane projects row and the states
+    // event write land separately, in the SAME transaction, so
+    // the projects row stays byte-identical to today. Genesis is
+    // head-presence-defined — a fresh id's PUT simply finds no
+    // head, so it authors like any other transition. See
+    // postProjectDocumentOp for the transaction shape.
+    //
+    // MEMBER_ID CAVEAT: sameEvent (store-state.ts) compares
+    // member_id too, so a state-UNCHANGED edit (the resent
+    // trio matches the current head byte-for-byte) must replay
+    // the STORED head event's member_id — never the editing
+    // actor — or a different member plainly editing a field
+    // after someone else's transition would 409
+    // (LedgerImmutabilityError). A genuinely fabricated trio
+    // still fails sameEvent on state/at and 409s, exactly as a
+    // bare states/:id resend would.
     route('projects/:id', {
         get: (db, p) => db.projects.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['projects', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.projects.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<ProjectEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postProjectDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
     }),
     route('objectives', {
         get: (db) => db.objectives.getAll(),

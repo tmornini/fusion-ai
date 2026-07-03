@@ -1,6 +1,7 @@
 import type {
     Id, IdeaEntity, IdeaState, IdeaStateDetail,
-    ProjectEntity, ProjectState, RecordEntity, RecordState,
+    ProjectEntity, ProjectState, ProjectStateDetail,
+    RecordEntity, RecordState,
     StateEntity, MemberEntity, MemberState,
 } from '../../../api/types.ts';
 import {
@@ -374,6 +375,63 @@ export async function getProjectStates(
     ]);
     const ids = new Set<Id>(rows.map(r => r.id));
     return latestStatesForIds<ProjectState>(events, ids);
+}
+
+// Single-project state read, widened to carry the STORED head
+// event's `at`/`id` alongside the state — the trio Decision 7
+// folds into the project document (state_at, state_event_id).
+// Consumed by getProject (adapters/projects.ts) to build the
+// Project domain object.
+export async function getProjectStateDetail(
+    ctx: RequestContext,
+    projectId: Id,
+): Promise<ProjectStateDetail> {
+    const events = await ctx.GET<StateEntity[]>(
+        `entity-states/${projectId}/history`,
+    );
+    const latest = latestByKey(events, ev => ev.entity_id)
+        .get(projectId);
+    if (latest === undefined) {
+        throw new Error(
+            'no state event for project ' + projectId,
+        );
+    }
+    return {
+        state: assertProjectState(
+            latest.state, 'project ' + projectId,
+        ),
+        stateAt: latest.at,
+        stateEventId: latest.id,
+    };
+}
+
+// Bulk sibling of getProjectStates, widened the same way.
+// Consumed by getProjects (adapters/projects.ts) so the
+// projects LIST page can echo each row's trio on a plain field
+// edit (drag-reorder) without minting a fresh event.
+// dashboard.ts, flow-export.ts, and project-scoring.ts keep
+// reading the bare getProjectStates above — unwidened, per
+// their own bare-state need and per tests/adapters-state-
+// events.test.ts, which pins getProjectStates' return shape.
+export async function getProjectStateDetails(
+    ctx: RequestContext,
+): Promise<Map<Id, ProjectStateDetail>> {
+    const [events, rows] = await Promise.all([
+        ctx.GET<StateEntity[]>('states'),
+        ctx.GET<ProjectEntity[]>('projects'),
+    ]);
+    const ids = new Set<Id>(rows.map(r => r.id));
+    const inScope = events.filter(ev => ids.has(ev.entity_id));
+    const latest = latestByKey(inScope, ev => ev.entity_id);
+    const out = new Map<Id, ProjectStateDetail>();
+    for (const [id, ev] of latest) {
+        out.set(id, {
+            state: assertProjectState(ev.state, 'project ' + id),
+            stateAt: ev.at,
+            stateEventId: ev.id,
+        });
+    }
+    return out;
 }
 
 // Bulk variant for getRecords, which calls this — so it
