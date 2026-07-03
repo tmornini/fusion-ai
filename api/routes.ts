@@ -1,6 +1,5 @@
 import type {
     DbAdapter,
-    EntityStore,
 } from './db.ts';
 import type {
     FlowGraphDelta,
@@ -45,6 +44,7 @@ import {
     validateAIMemberEntity,
     validateHumanMemberCreateBody,
     validateHumanMemberEditBody,
+    validateMemberEntity,
     validateFlowCreateBody,
     validateFlowEntity,
     validateFlowVersionPublishBody,
@@ -220,54 +220,6 @@ function withoutSecret(
 ): Omit<IdentityCredentialEntity, 'secret'> {
     const { secret: _secret, ...rest } = cred;
     return rest;
-}
-
-// The `/noun/:id` resource over a standard EntityStore. The
-// verbs a resource exposes are data; each maps to its one fixed
-// store op (get→getById, put→put∘withoutId, delete→delete). The
-// optional getTransform is wired ONCE here at instantiation —
-// Dependency Inversion, not a per-request branch — so the
-// returned Route's handlers are fixed closures reused for the
-// life of the process. Validation runs in the store, which is
-// constructed with its entity validator — the route trusts it.
-// The states log keeps its own explicit routes (StateStore,
-// append-only, custom readers).
-interface IdRouteConfig<T extends { id: string }> {
-    noun: string;
-    store: (db: DbAdapter) => EntityStore<T>;
-    verbs: ReadonlyArray<'get' | 'put' | 'delete'>;
-    getTransform?: (row: T) => unknown;
-}
-
-function makeIdRoute<T extends { id: string }>(
-    config: IdRouteConfig<T>,
-): Route {
-    const { store, getTransform } = config;
-    const handlers: {
-        get?: GetHandler;
-        put?: PutHandler;
-        delete?: DeleteHandler;
-    } = {};
-    if (config.verbs.includes('get')) {
-        handlers.get = getTransform === undefined
-            ? (db, p) => store(db).getById(param(p, 0))
-            : async (db, p) =>
-                getTransform(
-                    await store(db).getById(param(p, 0)),
-                );
-    }
-    if (config.verbs.includes('put')) {
-        handlers.put = (db, p, body) =>
-            store(db).put(
-                param(p, 0),
-                withoutId(body) as unknown as Omit<T, 'id'>,
-            );
-    }
-    if (config.verbs.includes('delete')) {
-        handlers.delete = (db, p) =>
-            store(db).delete(param(p, 0));
-    }
-    return route(`${config.noun}/:id`, handlers);
 }
 
 // Record creation or edit, discriminated by payload.kind.
@@ -1136,6 +1088,13 @@ export const WRITE_RESPONSE_SPECS:
             ...validateActualScoreEntity(
                 withoutId(body ?? {}),
             ),
+        }),
+    },
+    'members/:id': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateMemberEntity(withoutId(body ?? {})),
         }),
     },
     'ai-members': { status: 204 },
@@ -2621,10 +2580,34 @@ export const routes: Route[] = [
             db.members.getById(actor),
     }),
 
-    makeIdRoute<MemberEntity>({
-        noun: 'members',
-        store: db => db.members,
-        verbs: ['get', 'put'],
+    // Hand-written in place of makeIdRoute<MemberEntity> so PUT
+    // can append its message pair in the same transaction as
+    // the write — the factory's fixed closures have no
+    // per-family pair selector (see message-pair.ts). GET
+    // reproduces the factory closure byte-equivalently; verbs
+    // stay {get, put} — members/:id has no DELETE today,
+    // mirroring the identities/:id precedent. Global plane: no
+    // organization stamping (the members directory row carries
+    // no organization_id).
+    route('members/:id', {
+        get: (db, p) => db.members.getById(param(p, 0)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            return db.transaction(
+                ['members', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.members.put(
+                        id,
+                        withoutId(body) as unknown as
+                            Omit<MemberEntity, 'id'>,
+                    );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
     }),
     // Hand-written in place of makeIdRoute<IdeaEntity> so PUT
     // can append its message pair in the same transaction as

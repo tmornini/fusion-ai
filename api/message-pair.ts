@@ -431,6 +431,7 @@ export function createdEntityUriId(
 // write route — so no intermediate commit ever advertises a
 // Response-ID it did not store.
 export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
+    'members/:id',
     'ideas',
     'ideas/:id',
     'ideas/:id/conversion',
@@ -512,6 +513,7 @@ export const REPLAY_EXEMPT_ROUTE_PATTERNS: Set<string> =
 // family alongside PAIR_WIRED_ROUTE_PATTERNS.
 export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
     new Set([
+        'members/:id',
         'ideas',
         'ideas/:id',
         'ideas/:id/submissions/:sid',
