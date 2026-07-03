@@ -13,6 +13,10 @@ import {
 import { postIdeaCreation } from
     '../web-app/app/adapters/ideas.ts';
 import {
+    putProject,
+    postProjectStateChange,
+} from '../web-app/app/adapters/projects.ts';
+import {
     type IdeaEntity,
     type IdeaState,
     type ProjectEntity,
@@ -71,19 +75,25 @@ function buildProject(
     return rest;
 }
 
+// Seeds a project through the SAME document PUT the live route
+// uses (putProject), so a message pair exists at this project's
+// address — required for the flipped GET projects route
+// (Phase 3 Task 6), which getDashboardStats /
+// getDashboardGauges read, to derive it.
 async function seedProject(
-    db: MemoryDbAdapter,
+    ctx: RequestContext,
     id: string,
     state: ProjectState,
     overrides?: Partial<ProjectEntity>,
 ): Promise<void> {
-    await db.projects.put(
-        id, buildProject(id, overrides),
-    );
-    await db.states.postEvent(
-        `st-${id}`, id, state, 'system',
-        '2026-01-01T00:00:00.000000Z',
-    );
+    const { organization_id: _organizationId, ...entity } =
+        buildProject(id, overrides);
+    await putProject(ctx, id, {
+        ...entity,
+        state,
+        stateAt: '2026-01-01T00:00:00.000000Z',
+        stateEventId: `st-${id}`,
+    });
 }
 
 function buildFlow(
@@ -129,7 +139,7 @@ test(
         const { db, ctx } = await adminContext();
         await seedIdea(ctx, 'i1', 'active');
         await seedIdea(ctx, 'i2', 'in_review');
-        await seedProject(db, 'p1', 'approved');
+        await seedProject(ctx, 'p1', 'approved');
         await db.flows.put('f1', buildFlow('f1'));
         await db.flows.put('f2', buildFlow('f2'));
         const stats = await getDashboardStats(ctx);
@@ -157,9 +167,9 @@ test(
 test(
     'getDashboardStats excludes deleted projects',
     async () => {
-        const { db, ctx } = await adminContext();
-        await seedProject(db, 'p1', 'approved');
-        await seedProject(db, 'p2', 'deleted');
+        const { ctx } = await adminContext();
+        await seedProject(ctx, 'p1', 'approved');
+        await seedProject(ctx, 'p2', 'deleted');
         const stats = await getDashboardStats(ctx);
         const projects = stats
             .find(s => s.label === 'Projects');
@@ -171,9 +181,22 @@ test(
     'getDashboardStats counts tombstoned out',
     async () => {
         const { db, ctx } = await adminContext();
-        await seedProject(db, 'p1', 'approved');
-        await seedProject(db, 'p2', 'approved');
-        await db.projects.delete('p2');
+        await seedProject(ctx, 'p1', 'approved');
+        await seedProject(ctx, 'p2', 'approved');
+        // NAMED re-pin (Phase 3 Task 6, Step 2b): physical row
+        // removal has no ledger analogue — the flipped GET
+        // derives visibility from the lifecycle trio, not a raw
+        // db.projects.delete row removal — so the tombstone must
+        // land as a state-'deleted' document PUT like any other
+        // transition (mirrors drift-projects.test.ts's lifecycle
+        // case). The flows half stays raw — flows is not
+        // flipped this phase.
+        const {
+            id: _id, organization_id: _org, ...fields
+        } = await db.projects.getById('p2');
+        await postProjectStateChange(
+            ctx, 'p2', fields, 'deleted',
+        );
         await db.flows.put('f1', buildFlow('f1'));
         await db.flows.delete('f1');
         const stats = await getDashboardStats(ctx);
@@ -217,17 +240,17 @@ test(
 test(
     'getDashboardGauges sums approved projects only',
     async () => {
-        const { db, ctx } = await adminContext();
-        await seedProject(db, 'p1', 'approved', {
+        const { ctx } = await adminContext();
+        await seedProject(ctx, 'p1', 'approved', {
             estimated_cost: 1000,
             actual_cost: 400,
         });
-        await seedProject(db, 'p2', 'approved', {
+        await seedProject(ctx, 'p2', 'approved', {
             estimated_cost: 2000,
             actual_cost: 600,
         });
         // Not approved: must be ignored.
-        await seedProject(db, 'p3', 'submitted', {
+        await seedProject(ctx, 'p3', 'submitted', {
             estimated_cost: 9000,
             actual_cost: 9000,
         });
@@ -243,8 +266,8 @@ test(
 test(
     'getDashboardGauges Time sums the 10-day span',
     async () => {
-        const { db, ctx } = await adminContext();
-        await seedProject(db, 'p1', 'approved', {
+        const { ctx } = await adminContext();
+        await seedProject(ctx, 'p1', 'approved', {
             start_date: '2026-01-01',
             target_end_date: '2026-01-11',
         });

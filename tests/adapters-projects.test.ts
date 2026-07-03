@@ -5,6 +5,7 @@ import {
 } from '../api/db-memory.ts';
 import {
     createRequestContext,
+    type RequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { devToken } from './token-fixtures.ts';
 import { adminContext } from './context-fixtures.ts';
@@ -53,32 +54,40 @@ function buildProject(
     return rest;
 }
 
+// Seeds a project through the SAME document PUT the live route
+// uses (putProject), so a message pair exists at this project's
+// address — required for the flipped GET projects / GET
+// projects/:id routes (Phase 3 Task 6) to derive it. A fixed
+// historical stateAt (matching the old raw-postEvent idiom this
+// replaces) rather than a real clock, mirroring
+// tests/adapters-ideas.test.ts's seedIdea precedent.
 async function seedProject(
-    db: MemoryDbAdapter,
+    ctx: RequestContext,
     id: string,
     title: string,
     state: ProjectState = 'approved',
     overrides?: Partial<ProjectEntity>,
 ): Promise<void> {
-    await db.projects.put(
-        id, buildProject(id, title, overrides),
-    );
-    await db.states.postEvent(
-        `st-${id}`, id, state, 'system',
-        '2026-01-01T00:00:00.000000Z',
-    );
+    const { organization_id: _organizationId, ...entity } =
+        buildProject(id, title, overrides);
+    await putProject(ctx, id, {
+        ...entity,
+        state,
+        stateAt: '2026-01-01T00:00:00.000000Z',
+        stateEventId: `st-${id}`,
+    });
 }
 
 test(
     'getProjectEntity round-trips all fields',
     async () => {
-        const { db, ctx } = await adminContext();
-        await db.projects.put('p1', buildProject(
-            'p1', 'Alpha', {
+        const { ctx } = await adminContext();
+        await seedProject(
+            ctx, 'p1', 'Alpha', undefined, {
                 progress: 73,
                 estimated_cost: 99000,
             },
-        ));
+        );
         const row = await getProjectEntity(ctx, 'p1');
         assert.equal(row.id, 'p1');
         assert.equal(row.title, 'Alpha');
@@ -108,13 +117,9 @@ test(
 test(
     'getProjectEntities returns persisted rows',
     async () => {
-        const { db, ctx } = await adminContext();
-        await db.projects.put(
-            'p1', buildProject('p1', 'Alpha'),
-        );
-        await db.projects.put(
-            'p2', buildProject('p2', 'Beta'),
-        );
+        const { ctx } = await adminContext();
+        await seedProject(ctx, 'p1', 'Alpha');
+        await seedProject(ctx, 'p2', 'Beta');
         const rows = await getProjectEntities(ctx);
         assert.equal(rows.length, 2);
         const titles = rows
@@ -136,8 +141,8 @@ test(
 test(
     'getProjects wraps rows in Project objects',
     async () => {
-        const { db, ctx } = await adminContext();
-        await seedProject(db, 'p1', 'Alpha');
+        const { ctx } = await adminContext();
+        await seedProject(ctx, 'p1', 'Alpha');
         const projects = await getProjects(ctx);
         assert.equal(projects.length, 1);
         assert.ok(projects[0] instanceof Project);
@@ -153,10 +158,10 @@ test(
 test(
     'getProjects excludes deleted-state rows',
     async () => {
-        const { db, ctx } = await adminContext();
-        await seedProject(db, 'keep', 'Keep');
+        const { ctx } = await adminContext();
+        await seedProject(ctx, 'keep', 'Keep');
         await seedProject(
-            db, 'gone', 'Gone', 'deleted',
+            ctx, 'gone', 'Gone', 'deleted',
         );
         const projects = await getProjects(ctx);
         assert.equal(projects.length, 1);
@@ -170,9 +175,23 @@ test(
     'getProjects excludes tombstoned rows',
     async () => {
         const { db, ctx } = await adminContext();
-        await seedProject(db, 'keep', 'Keep');
-        await seedProject(db, 'gone', 'Gone');
-        await db.projects.delete('gone');
+        await seedProject(ctx, 'keep', 'Keep');
+        await seedProject(ctx, 'gone', 'Gone');
+        // NAMED re-pin (Phase 3 Task 6, Step 2b): physical row
+        // removal has no ledger analogue — the flipped GET
+        // derives visibility from the lifecycle trio, not a raw
+        // db.projects.delete row removal — so the tombstone must
+        // land as a state-'deleted' document PUT like any other
+        // transition (mirrors drift-projects.test.ts's lifecycle
+        // case). The wire-level covenant (deleted projects
+        // excluded from lists) is preserved on both planes: the
+        // old-plane store tombstone-filters state-'deleted' too.
+        const {
+            id: _id, organization_id: _org, ...fields
+        } = await db.projects.getById('gone');
+        await postProjectStateChange(
+            ctx, 'gone', fields, 'deleted',
+        );
         const projects = await getProjects(ctx);
         assert.equal(projects.length, 1);
         assert.equal(
@@ -236,11 +255,11 @@ test(
     + ' the stored row, keeping untouched columns',
     async () => {
         const { db, ctx } = await adminContext();
-        await db.projects.put(
-            'p1', buildProject('p1', 'Before', {
+        await seedProject(
+            ctx, 'p1', 'Before', undefined, {
                 position: 7,
                 progress: 40,
-            }),
+            },
         );
         await putProjectFields(ctx, 'p1', {
             title: 'After',
@@ -273,10 +292,10 @@ test(
     'putProjectPosition writes only the position',
     async () => {
         const { db, ctx } = await adminContext();
-        await db.projects.put(
-            'p1', buildProject('p1', 'Stay', {
+        await seedProject(
+            ctx, 'p1', 'Stay', undefined, {
                 position: 1,
-            }),
+            },
         );
         await putProjectPosition(ctx, 'p1', 9.5, TRIO);
         const stored =
@@ -326,7 +345,7 @@ test(
         const { db, ctx } = await adminContext();
         await seedCurrentMember(db);
         await seedProject(
-            db, 'p1', 'Original', 'approved',
+            ctx, 'p1', 'Original', 'approved',
         );
         const before =
             await db.projects.getById('p1');

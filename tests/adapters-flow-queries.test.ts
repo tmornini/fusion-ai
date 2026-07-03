@@ -14,6 +14,9 @@ import {
 } from
 '../web-app/app/adapters/flow-mutations.ts';
 import {
+    putProject as putProjectDocument,
+} from '../web-app/app/adapters/projects.ts';
+import {
     getFlowsByProject,
     getFlowGraph,
     getFlowsWithProjectNames,
@@ -24,7 +27,6 @@ import {
 import type {
     GraphNode,
     GraphEdge,
-    ProjectEntity,
     ProjectFlowEntity,
 } from '../api/types.ts';
 import {
@@ -111,13 +113,19 @@ async function saveGraph(
     });
 }
 
-function putProject(
-    db: MemoryDbAdapter,
+// Seeds a project through the SAME document PUT the live route
+// uses (putProject), so a message pair exists at this project's
+// address — required for the flipped GET projects route
+// (Phase 3 Task 6), which getFlowsWithProjectNames /
+// getProjectFlowEntities read, to derive it. A SYNTHESIZED
+// trio (this helper never carried one) — the state itself is
+// irrelevant to every caller here.
+async function putProject(
+    ctx: RequestContext,
     id: string,
     title: string,
-): Promise<ProjectEntity> {
-    return db.projects.put(id, {
-        organization_id: '1',
+): Promise<void> {
+    await putProjectDocument(ctx, id, {
         title,
         description: '',
         progress: 0,
@@ -126,6 +134,9 @@ function putProject(
         estimated_cost: 0,
         actual_cost: 0,
         position: 0,
+        state: 'approved',
+        stateAt: '2026-01-01T00:00:00.000000Z',
+        stateEventId: 'st-' + id,
     });
 }
 
@@ -215,8 +226,8 @@ test(
     async () => {
         const { db } = await setupMemDb();
         const c1 = createRequestContext(db, await devToken());
-        await putProject(db, 'p1', 'Project One');
-        await putProject(db, 'p2', 'Project Two');
+        await putProject(c1, 'p1', 'Project One');
+        await putProject(c1, 'p2', 'Project Two');
         await createBaseFlow(c1, 'flow-1', 'p1');
         await createBaseFlow(c1, 'flow-2', 'p1');
         await createBaseFlow(c1, 'flow-3', 'p2');
@@ -240,8 +251,8 @@ test(
     'getFlowsByProject returns an empty list'
     + ' for a project with no flows',
     async () => {
-        const { db } = await setupMemDb();
-        await putProject(db, 'p1', 'Project One');
+        const { db, ctx } = await setupMemDb();
+        await putProject(ctx, 'p1', 'Project One');
         await createBaseFlow(
             createRequestContext(db, await devToken()),
             'flow-1', 'p1',
@@ -257,8 +268,8 @@ test(
     'getFlowsByProject carries node and'
     + ' edge counts for each flow',
     async () => {
-        const { db } = await setupMemDb();
-        await putProject(db, 'p1', 'Project One');
+        const { db, ctx } = await setupMemDb();
+        await putProject(ctx, 'p1', 'Project One');
         await createBaseFlow(
             createRequestContext(db, await devToken()),
             'flow-1', 'p1',
@@ -285,8 +296,8 @@ test(
     async () => {
         const { db } = await setupMemDb();
         const c1 = createRequestContext(db, await devToken());
-        await putProject(db, 'p1', 'Project One');
-        await putProject(db, 'p2', 'Project Two');
+        await putProject(c1, 'p1', 'Project One');
+        await putProject(c1, 'p2', 'Project Two');
         await createBaseFlow(c1, 'flow-1', 'p1');
         await createBaseFlow(c1, 'flow-2', 'p2');
         const pairs = await getFlowsWithProjectNames(
@@ -331,8 +342,8 @@ test(
     'getFlowsWithProjectNames includes node'
     + ' and edge counts in the summary',
     async () => {
-        const { db } = await setupMemDb();
-        await putProject(db, 'p1', 'Project One');
+        const { db, ctx } = await setupMemDb();
+        await putProject(ctx, 'p1', 'Project One');
         await createBaseFlow(
             createRequestContext(db, await devToken()),
             'flow-1', 'p1',
@@ -369,8 +380,8 @@ test(
         // The nested per-project reassembly enumerates the org's
         // projects, so the parent rows must exist for their flow
         // joins to surface.
-        await putProject(db, 'p1', 'Project p1');
-        await putProject(db, 'p2', 'Project p2');
+        await putProject(c1, 'p1', 'Project p1');
+        await putProject(c1, 'p2', 'Project p2');
         await createBaseFlow(c1, 'flow-1', 'p1');
         await createBaseFlow(c1, 'flow-2', 'p2');
         const rows: ProjectFlowEntity[] =
@@ -405,8 +416,8 @@ test(
     'a project-flow link added directly to'
     + ' the table surfaces in getFlowsByProject',
     async () => {
-        const { db } = await setupMemDb();
-        await putProject(db, 'p9', 'Project Nine');
+        const { db, ctx } = await setupMemDb();
+        await putProject(ctx, 'p9', 'Project Nine');
         await createBaseFlow(
             createRequestContext(db, await devToken()),
             'flow-1', 'p1',

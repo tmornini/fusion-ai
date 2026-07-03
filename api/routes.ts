@@ -127,6 +127,10 @@ import {
     deriveIdea,
     deriveIdeaSubmissions,
 } from './derive-ideas.ts';
+import {
+    deriveProjects,
+    deriveProject,
+} from './derive-projects.ts';
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -2030,8 +2034,15 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is FLIPPED (Phase 3 Task 6): the list derives from
+    // the message ledger rather than the old projects table —
+    // deriveProjects already strips the lifecycle trio, so the
+    // wire shape is unchanged.
     route('projects', {
-        get: (db) => db.projects.getAll(),
+        get: (db, _p, _actor, organization) =>
+            deriveProjects(
+                db, requireOrganization(organization),
+            ),
     }),
     // Idea submissions nest under their parent idea: the idea id
     // is param 0, so the SERVER filters the collection to that
@@ -2946,11 +2957,14 @@ export const routes: Route[] = [
     // Hand-written in place of makeIdRoute<ProjectEntity> so
     // PUT can append its message pair in the same transaction
     // as the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET
-    // reproduces the factory closure byte-equivalently; verbs
-    // stay {get, put} — projects/:id has no DELETE today,
-    // mirroring the ideas/:id precedent. GET stays OLD-PLANE
-    // here — reads flip in a later task, NOT this one.
+    // per-family pair selector (see message-pair.ts). GET is
+    // FLIPPED (Phase 3 Task 6): the single project derives
+    // from the message ledger rather than the old projects
+    // table — deriveProject 404s through the same
+    // EntityNotFoundError mapping getById used, so a missing
+    // or foreign-org id behaves identically. Verbs stay
+    // {get, put} — projects/:id has no DELETE today,
+    // mirroring the ideas/:id precedent.
     //
     // Decision 7 state-in-entity (Phase 3 Task 2): the PUT body
     // is the FULL document — today's entity fields plus the
@@ -2972,7 +2986,11 @@ export const routes: Route[] = [
     // still fails sameEvent on state/at and 409s, exactly as a
     // bare states/:id resend would.
     route('projects/:id', {
-        get: (db, p) => db.projects.getById(param(p, 0)),
+        get: (db, p, _actor, organization) =>
+            deriveProject(
+                db, requireOrganization(organization),
+                param(p, 0),
+            ),
         put: (db, p, body, actor, pair) =>
             postProjectDocumentOp(
                 db, param(p, 0), body, actor, pair,
