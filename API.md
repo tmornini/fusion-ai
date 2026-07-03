@@ -848,9 +848,7 @@ route stays for every other family.
   (the resent trio matches the current head byte-for-byte)
   replays the STORED head event's `member_id`, never the
   editing actor, so a different member editing a field after
-  someone else's transition does not 409. GET is untouched — it
-  still reads the old-plane row directly (the read-side flip is
-  a later task).
+  someone else's transition does not 409.
 
 ---
 
