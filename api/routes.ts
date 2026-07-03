@@ -87,6 +87,9 @@ import {
 } from './validators.ts';
 import {
     appendMessagePair,
+    canonicalUriPrefix,
+    formWritePair,
+    headPairIdAt,
     pairResponseBody,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
@@ -1896,10 +1899,83 @@ export const routes: Route[] = [
     // event, project event, baselines). Member-tier POST —
     // isPermitted matches /ideas on the segment prefix, so
     // /ideas/:id/conversion is member-permitted.
+    //
+    // Phase 3 Task 4: the operation pair above lives at the
+    // ideas-family OPERATION address (uri_id '') — a projects-
+    // prefix scan finds no pair for a conversion-born project
+    // without a SECOND pair at the project's OWN document
+    // address. Synthesized below, BYTE-INDISTINGUISHABLE from a
+    // live PUT /projects/:id's pair at that same address (same
+    // response spec, same head-read), so derivation needs no
+    // conversion special case. Formed PRE-TX — crypto and the
+    // head-read stay outside db.transaction, the IndexedDB
+    // auto-commit constraint — then appended as the tx's LAST
+    // act, beside the operation pair. Formed ONLY when the gate
+    // supplied both a pair and a fence organization; a below-
+    // facade caller with neither (none exists for conversion
+    // today) skips both appends, preserving dual-write
+    // discipline. The idea's OWN 'promoted' transition still
+    // appends no ideas/:id document pair — a known, separately
+    // tracked deferral (work-orders/Phase Final) that cannot
+    // confuse this derivation: 'promoted' is not 'deleted'.
     route('ideas/:id/conversion', {
-        post: (db, p, body, actor, pair) => {
+        post: async (
+            db, p, body, actor, pair, organization,
+        ) => {
             const ideaId = param(p, 0);
             const b = validateIdeaConversionBody(body);
+            // The document a live PUT /projects/:id would
+            // carry: the entity's own fields plus the lifecycle
+            // trio this conversion assigns. Validated pre-tx —
+            // a malformed project body now 400s here instead of
+            // at the in-tx store re-validation; same observable,
+            // earlier.
+            const projectDocument = {
+                ...b.project,
+                state: b.projectState,
+                state_at: b.projectStateAt,
+                state_event_id: b.projectStateEventId,
+            };
+            validateProjectDocumentBody(projectDocument);
+            let projectPair: MessagePair | undefined;
+            if (
+                pair !== undefined
+                && organization !== undefined
+            ) {
+                const spec =
+                    WRITE_RESPONSE_SPECS['projects/:id'];
+                if (spec === undefined || !('status' in spec)) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' projects/:id',
+                    );
+                }
+                const projectHeadPairId = await headPairIdAt(
+                    db,
+                    canonicalUriPrefix(
+                        organization, '/projects/',
+                    ),
+                    b.projectId,
+                );
+                projectPair = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/projects/' + b.projectId,
+                    routePattern: 'projects/:id',
+                    routeSegments: ['projects', ':id'],
+                    pathSegments: ['projects', b.projectId],
+                    headerFields: [],
+                    body: projectDocument,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: 200,
+                    responseBody: spec.successBody?.(
+                        [b.projectId], projectDocument, actor,
+                        organization,
+                    ),
+                    headPairId: projectHeadPairId,
+                });
+            }
             return db.transaction(
                 [
                     'projects', 'ideas', 'states',
@@ -1944,6 +2020,11 @@ export const routes: Route[] = [
                     }
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
+                    }
+                    if (projectPair !== undefined) {
+                        await appendMessagePair(
+                            view, projectPair,
+                        );
                     }
                 },
             );
