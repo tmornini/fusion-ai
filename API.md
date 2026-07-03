@@ -160,8 +160,11 @@ Legend for classification:
 
 ### 2.4 Ideas
 
-- `GET /ideas` · `GET|PUT /ideas/:id` — primitive.
-- `POST /ideas` — operation (§3.10). Member-tier.
+- `GET /ideas` · `GET /ideas/:id` — primitive.
+- `PUT /ideas/:id` — operation (§3.10). Member-tier.
+- `POST /ideas` — retired (Phase 2 Task 3, R1): the composed
+  create folded into the PUT above; the route now 405s like
+  any other method-absent verb.
 - `POST /ideas/:id/conversion` — operation, idea→project (§3.11).
   Member-tier.
 - `GET /ideas/:id/submissions` ·
@@ -450,15 +453,31 @@ and §5.2 for the redaction the stored pair carries.
   (only the successful password branch calls `formAuthPair`).
 - default → 400, appending nothing.
 
-### 3.10 `POST /ideas` — create idea
+### 3.10 `PUT /ideas/:id` — idea document write
+
+One shape serves create, edit, and transition (Decision 7): the
+body is the entity's own fields plus the lifecycle trio
+(`state`, `state_at`, `state_event_id`). Genesis is
+head-presence-defined — the first PUT at an id IS the birth.
+Phase 2 Task 3 (R1) retired the separate composed `POST /ideas`
+create that used to carry this; the PUT above was already the
+genesis write.
 
 - tx: `[ideas, states, requests, responses]`
-- actual: `ideas.put(id, idea)` (the org-scoped store stamps
-  `organization_id`, so the body omits it) →
-  `states.postEvent(initialStateEventId, id, initialState, actor)` →
-  `appendMessagePair(pair)`.
-- doctrinal: `put_idea` + `post_state_event` as `post_create_idea`.
-- props: atomic; member-tier; `validateIdeaCreateBody`.
+- actual: read the current head event
+  (`states.getCurrentFor(id)`) → `ideas.put(id, entity)` (the
+  org-scoped store stamps `organization_id`, so the body omits
+  it) → `states.postEvent(state_event_id, id, state, memberId,
+  state_at)` → `appendMessagePair(pair)`.
+- doctrinal: `put_idea` + `post_state_event` as
+  `put_idea_document`.
+- props: atomic; member-tier; `validateIdeaDocumentBody`;
+  idempotent (a byte-identical resend converges: one row, one
+  event, one pair); MEMBER_ID CAVEAT — a state-unchanged edit
+  (the resent trio matches the current head byte-for-byte)
+  replays the STORED head event's `member_id`, never the
+  editing actor, so a different member editing a field after
+  someone else's transition does not 409.
 
 ### 3.11 `POST /ideas/:id/conversion` — promote idea → project
 
