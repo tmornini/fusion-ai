@@ -44,7 +44,7 @@ in this order:
    - `/organizations/:org/:entity[/:id]` (≥3 segments) →
      `facadeRequest` (the org-scoping facade; see §4).
    - `/identities/:id/default-org` (3 segments) →
-     `identityDefaultOrgRequest`.
+     `identityDefaultOrganizationRequest`.
    - `/invitations/...` (first segment `invitations`) →
      `invitationsRequest` (its own sub-router; see §2.12).
    - bare `GET /organizations` →
@@ -125,7 +125,7 @@ Legend for classification:
 
 - `GET /members` — roster derived from the membership ledger (plus the
   system member). primitive (derived).
-- `GET|PUT /members/:id` — member by id. primitive.
+- `GET|PUT /members/:id` — member by id. primitive (§3.30).
 - `GET /current-member` — the verified caller's own member row.
 - `GET /ai-members` · `GET|PUT /ai-members/:id` — primitive.
 - `POST /ai-members` · `POST /ai-members/:id` — operation (§3.1, §3.2).
@@ -185,7 +185,7 @@ Legend for classification:
 - `POST /flows/:id/undo` — operation (§3.14).
 - `POST /flows/:id/redo` — operation (§3.15).
 - `GET /flows/:id/versions` · `POST /flows/:id/versions` (§3.16) ·
-  `GET|PUT|DELETE /flows/:id/versions/:vid` — nested.
+  `GET|PUT|DELETE /flows/:id/versions/:vid` — nested (§3.31).
 - `GET /flows/:id/work-orders` ·
   `PUT /flows/:id/work-orders/:woid` — nested.
 - `GET /flows/:id/records` ·
@@ -210,7 +210,8 @@ Legend for classification:
 
 ### 2.9 Objectives
 
-- `GET /objectives` · `GET|PUT /objectives/:id` — primitive.
+- `GET /objectives` · `GET|PUT /objectives/:id` — primitive
+  (§3.29).
 - `POST /objectives` — operation (§3.21).
 - `GET /objectives/:id/revisions` ·
   `PUT /objectives/:id/revisions/:rid` — nested.
