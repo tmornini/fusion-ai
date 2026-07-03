@@ -60,11 +60,16 @@ export interface DocumentPair {
 // Every 2xx pair at `uriPrefix`, request matched to its response
 // by their shared id, decoded once — ascending by the envelope
 // (at, id), the SAME arrival order headPairIdAt (message-pair.ts)
-// picks a single head from. A response with no stored request
-// (should never happen for an appended pair) is skipped rather
-// than thrown — this module trusts validated storage completely
-// but does not assume it can dereference a foreign key that
-// itself would be a storage bug elsewhere.
+// picks a single head from. That shared mechanism is ordering
+// ONLY: headPairIdAt filters by uri_id/uri_prefix alone — every
+// status, errors included, since it serves Supersedes provenance
+// — while this function ALSO excludes non-2xx pairs, since only
+// a successful response can carry a live document. A response
+// with no stored request (should never happen for an appended
+// pair) is skipped rather than thrown — this module trusts
+// validated storage completely but does not assume it can
+// dereference a foreign key that itself would be a storage bug
+// elsewhere.
 export function documentPairsAt(
     requests: readonly RequestEntity[],
     responses: readonly ResponseEntity[],
