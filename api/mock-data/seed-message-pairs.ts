@@ -43,6 +43,7 @@ import {
     formWritePair,
 } from '../message-pair.ts';
 import type { MessagePair } from '../message-pair.ts';
+import { WRITE_RESPONSE_SPECS } from '../routes.ts';
 import {
     MOCK_SEED_TIMESTAMP,
     STARK_ORGANIZATION,
@@ -349,21 +350,25 @@ export function humanMemberSeedBody(
     };
 }
 
+// The genesis case of the document PUT ideas/:id (Decision 7,
+// Phase 2 Task 3): the flat entity fields plus the lifecycle
+// trio, no `id` (a route param, not a body field) and no
+// `idea`/`initialState*` wrapper. organization_id rides along
+// as the validator's tolerated-but-ignored extra — load-bearing
+// here since the seed drives postIdeaDocumentOp below the org
+// fence (no scoping wrapper to stamp it).
 export function ideaSeedBody(
     idea: Omit<IdeaEntity, 'organization_id'>,
     event: StateEntity,
     index: number,
 ): Record<string, unknown> {
-    const { id, ...ideaFields } = idea;
+    const { id: _id, ...ideaFields } = idea;
     return {
-        id,
-        idea: {
-            ...ideaFields,
-            organization_id: assignOrganization(index),
-        },
-        initialState: event.state,
-        initialStateEventId: event.id,
-        initialStateAt: event.at,
+        ...ideaFields,
+        organization_id: assignOrganization(index),
+        state: event.state,
+        state_at: event.at,
+        state_event_id: event.id,
     };
 }
 
@@ -544,6 +549,12 @@ export function seedPairKey(
 interface MockDataInvocation {
     readonly key: string;
     readonly routePattern: string;
+    // Present only for a document-class genesis PUT (ideas
+    // today — Phase 2 Task 3): the id the route's :id segment
+    // carries. Absent for the five bare collection-POST creates,
+    // which keep forming a POST at the bare pattern exactly as
+    // before.
+    readonly idParam?: Id;
     readonly organization: Id | undefined;
     readonly requesterIdentityId: Id;
     readonly body: Record<string, unknown>;
@@ -590,7 +601,8 @@ export function buildMockDataInvocations():
         const event = ideaStateEventById.get(idea.id)!;
         invocations.push({
             key: seedPairKey('ideas', idea.id),
-            routePattern: 'ideas',
+            routePattern: 'ideas/:id',
+            idParam: idea.id,
             organization: assignOrganization(i),
             requesterIdentityId: event.member_id,
             body: ideaSeedBody(idea, event, i),
@@ -663,20 +675,40 @@ export function buildMockDataInvocations():
     return invocations;
 }
 
-// All six families are global/collection-level POSTs (no `:id`
-// segment), so the route/path segments are always the bare
-// pattern — messageAddress derives the empty uriId and
+// Five of the six families are global/collection-level POSTs
+// (no `:id` segment), so their route/path segments are always
+// the bare pattern — messageAddress derives the empty uriId and
 // createdEntityUriId (message-pair.ts's CREATE_BODY_ID_FIELDS)
-// overrides it to the created entity's own id.
+// overrides it to the created entity's own id. Ideas (Phase 2
+// Task 3, R1) is the exception: genesis folded into the
+// document-class PUT ideas/:id, so its invocation carries
+// idParam and the id-tailed address is built directly —
+// messageAddress derives the real uriId from the path segment
+// itself, no createdEntityUriId override needed.
 async function formSeedPair(
     inv: MockDataInvocation, requestAt: string,
 ): Promise<MessagePair> {
+    const idParam = inv.idParam;
+    const routeSegments = inv.routePattern.split('/');
+    const pathSegments = idParam === undefined
+        ? routeSegments
+        : [...routeSegments.slice(0, -1), idParam];
+    const method = idParam === undefined ? 'POST' : 'PUT';
+    // Every bare collection-POST family here is a create route,
+    // all {status: 204} in WRITE_RESPONSE_SPECS (routes.ts) — no
+    // successBody. A document-class genesis PUT reads its OWN
+    // spec from the same table (documentSeedResponse) so a
+    // seeded pair's stored response can never drift from what
+    // the live gate would have stored for the identical request.
+    const response = idParam === undefined
+        ? { status: 204, body: undefined }
+        : documentSeedResponse(inv, routeSegments, pathSegments);
     return formWritePair({
-        method: 'POST',
-        pathname: '/' + inv.routePattern,
+        method,
+        pathname: '/' + pathSegments.join('/'),
         routePattern: inv.routePattern,
-        routeSegments: [inv.routePattern],
-        pathSegments: [inv.routePattern],
+        routeSegments,
+        pathSegments,
         // The seed carries no real HTTP request — no bearer to
         // redact, no content-type to hoist. Honest about the
         // below-gate carve-out rather than synthesizing a fake
@@ -686,15 +718,44 @@ async function formSeedPair(
         requesterIdentityId: inv.requesterIdentityId,
         requestAt,
         organization: inv.organization,
-        // Every wired family here is a create route; all six
-        // are {status: 204} in WRITE_RESPONSE_SPECS (routes.ts)
-        // — no successBody.
-        responseStatus: 204,
-        responseBody: undefined,
+        responseStatus: response.status,
+        responseBody: response.body,
         // Fresh database: every seed pair is genesis, so there
         // is nothing to chain off of — no pre-tx head-read.
         headPairId: undefined,
     });
+}
+
+// The response side of a document-class genesis seed write: the
+// SAME per-pattern spec the live gate reads (WRITE_RESPONSE_
+// SPECS, api/routes.ts) — one voice, so a seed pair's stored
+// response can never drift from what the gate would have stored
+// for the identical request. `params` mirrors matchRoute's own
+// extraction (routes.ts): the path segment at each `:`-prefixed
+// route segment, in order.
+function documentSeedResponse(
+    inv: MockDataInvocation,
+    routeSegments: readonly string[],
+    pathSegments: readonly string[],
+): { readonly status: number; readonly body: unknown } {
+    const spec = WRITE_RESPONSE_SPECS[inv.routePattern];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for seeded document'
+            + ' route: ' + inv.routePattern,
+        );
+    }
+    const params = routeSegments
+        .map((segment, i) =>
+            segment.startsWith(':') ? pathSegments[i] : undefined)
+        .filter((value): value is string => value !== undefined);
+    return {
+        status: spec.status,
+        body: spec.successBody?.(
+            params, inv.body, inv.requesterIdentityId,
+            inv.organization,
+        ),
+    };
 }
 
 // Pass 1 for postMockDataLoad: every op-invocation's pair,

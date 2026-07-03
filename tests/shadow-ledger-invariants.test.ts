@@ -307,15 +307,15 @@ test('a seeded idea\'s create-pair request reproduces its'
     assert.ok(createRow, 'no create pair for the seeded idea');
     const parsed = JSON.parse(createRow!.message) as {
         body: {
-            initialState: string;
-            initialStateEventId: string;
-            initialStateAt: string;
+            state: string;
+            state_event_id: string;
+            state_at: string;
         };
     };
     const genesis = await db.states.getById(
-        parsed.body.initialStateEventId,
+        parsed.body.state_event_id,
     );
     assert.equal(genesis.entity_id, idea.id);
-    assert.equal(genesis.state, parsed.body.initialState);
-    assert.equal(genesis.at, parsed.body.initialStateAt);
+    assert.equal(genesis.state, parsed.body.state);
+    assert.equal(genesis.at, parsed.body.state_at);
 });

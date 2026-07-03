@@ -53,7 +53,6 @@ import {
     validateFlowPutBody,
     validateFlowUndoBody,
     validateFlowRedoBody,
-    validateIdeaCreateBody,
     validateIdeaConversionBody,
     validateIdeaDocumentBody,
     validateIdeaSubmissionEntity,
@@ -358,40 +357,64 @@ async function writeFlowGraphDelta(
     }
 }
 
-// Idea creation: the idea row and its initial state event
-// commit as ONE transaction — a mid-write failure rolls the
-// whole thing back rather than orphaning the row. Exported so
-// the seed can drive idea creation through the same gate the
-// route uses (Decision 6's below-facade carve-out) — this is
-// also Phase 1's dual-write insertion seam. `pair` is optional
-// (not `MessagePair | undefined` positionally required) so the
-// seed's below-facade call (api/mock-data.ts, no gate, no
-// pair) keeps compiling unchanged; the route always supplies
-// one, since 'ideas' is pair-wired and never bearer-exempt.
-export async function postIdeaCreationOp(
+// Idea document write (Decision 7): ONE shape serves create,
+// edit, and transition — genesis is head-presence-defined (a
+// fresh id's PUT simply finds no head, so the ternary below
+// falls to `actor`, authoring the birth like any other
+// transition). The idea row and its trio's state event commit
+// as ONE transaction — a mid-write failure rolls the whole
+// thing back rather than leaving a half-written document.
+// validateIdeaDocumentBody's typed `entity` never carries
+// organization_id (the org-scoped store stamps it from the
+// verified token for the LIVE, fenced route, overwriting
+// whatever it finds regardless); the seed's below-facade call
+// (api/mock-data.ts, no gate, no scoping wrapper) drives a RAW
+// store that has no such stamp, so it embeds organization_id in
+// the raw body and this op reads it straight back to merge it
+// in — inert for the fenced route (overwritten either way),
+// load-bearing for the seed. Exported so the seed can drive
+// idea creation through the same op the route uses (Decision
+// 6's below-facade carve-out) — this is also Phase 1's
+// dual-write insertion seam. `pair` is optional so the seed's
+// below-facade call keeps compiling unchanged; the route always
+// supplies one, since 'ideas/:id' is pair-wired and never
+// bearer-exempt.
+export async function postIdeaDocumentOp(
     db: DbAdapter,
+    id: Id,
     body: Record<string, unknown>,
     actor: Id,
     pair?: MessagePair,
-): Promise<void> {
-    const b = validateIdeaCreateBody(body);
+): Promise<IdeaEntity> {
+    const doc = validateIdeaDocumentBody(withoutId(body));
+    const organizationId = body['organization_id'];
     return db.transaction(
         ['ideas', 'states', 'requests', 'responses'],
         async (view) => {
-            await view.ideas.put(
-                b.id,
-                b.idea as unknown as Omit<IdeaEntity, 'id'>,
+            const head = await view.states.getCurrentFor(id);
+            const memberId = (
+                head !== null
+                && head.id === doc.state_event_id
+                && head.state === doc.state
+                && head.at === doc.state_at
+            ) ? head.member_id : actor;
+            const written = await view.ideas.put(
+                id,
+                {
+                    ...doc.entity,
+                    ...(typeof organizationId === 'string'
+                        ? { organization_id: organizationId }
+                        : {}),
+                } as unknown as Omit<IdeaEntity, 'id'>,
             );
             await view.states.postEvent(
-                b.initialStateEventId,
-                b.id,
-                b.initialState,
-                actor,
-                b.initialStateAt,
+                doc.state_event_id, id, doc.state,
+                memberId, doc.state_at,
             );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
+            return written;
         },
     );
 }
@@ -934,7 +957,6 @@ export const WRITE_RESPONSE_SPECS:
     Readonly<
         Record<string, WriteResponseSpec | PerVerbWriteResponseSpec>
     > = {
-    'ideas': { status: 204 },
     // The wire response mirrors the OLD-PLANE row only (no
     // trio) — the same GET/PUT symmetry Decision 7's wire-
     // parity rule holds for reads. validateIdeaDocumentBody
@@ -1701,15 +1723,13 @@ export const routes: Route[] = [
     // unknown path and 405s a non-POST verb on either pattern.
     route('authentication/token', {}),
     route('authentication/authorize', {}),
+    // Create retired into the SAME document PUT ideas/:id
+    // already serves (Decision 7, Phase 2 Task 3, R1): genesis
+    // is head-presence-defined, so there is no longer a
+    // separate create verb here — POST now 405s exactly like
+    // any other method-absent route. GET stays until Task 5.
     route('ideas', {
         get: (db) => db.ideas.getAll(),
-        // The org-scoped store stamps organization_id from the
-        // verified token before validating the idea, so the
-        // body OMITS it. The initial event is authored by the
-        // verified caller (actor), never the body. See
-        // postIdeaCreationOp for the transaction shape.
-        post: (db, _p, body, actor, pair) =>
-            postIdeaCreationOp(db, body, actor, pair),
     }),
     // Convert an idea to a project (promotion): the LONE
     // cross-aggregate write. A new projects row, the promoted
@@ -2677,7 +2697,12 @@ export const routes: Route[] = [
     // event write land separately, in the SAME transaction, so
     // the ideas row stays byte-identical to today. Genesis is
     // head-presence-defined — a fresh id's PUT simply finds no
-    // head, so it authors like any other transition.
+    // head, so it authors like any other transition. Phase 2
+    // Task 3 (R1) retired the separate composed POST /ideas
+    // create — this PUT was ALREADY the genesis write; only the
+    // second entry point is gone, so POST /ideas now 405s like
+    // any other method-absent route. See postIdeaDocumentOp for
+    // the transaction shape.
     //
     // MEMBER_ID CAVEAT: sameEvent (store-state.ts) compares
     // member_id too, so a state-UNCHANGED edit (the resent
@@ -2690,38 +2715,10 @@ export const routes: Route[] = [
     // bare states/:id resend would.
     route('ideas/:id', {
         get: (db, p) => db.ideas.getById(param(p, 0)),
-        put: (db, p, body, actor, pair) => {
-            const id = param(p, 0);
-            const doc = validateIdeaDocumentBody(
-                withoutId(body),
-            );
-            return db.transaction(
-                ['ideas', 'states', 'requests', 'responses'],
-                async (view) => {
-                    const head =
-                        await view.states.getCurrentFor(id);
-                    const memberId = (
-                        head !== null
-                        && head.id === doc.state_event_id
-                        && head.state === doc.state
-                        && head.at === doc.state_at
-                    ) ? head.member_id : actor;
-                    const written = await view.ideas.put(
-                        id,
-                        doc.entity as unknown as
-                            Omit<IdeaEntity, 'id'>,
-                    );
-                    await view.states.postEvent(
-                        doc.state_event_id, id, doc.state,
-                        memberId, doc.state_at,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postIdeaDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
     }),
     // Hand-written in place of makeIdRoute<ProjectEntity> so
     // PUT can append its message pair in the same transaction

@@ -1,7 +1,7 @@
 import type { DbAdapter } from './db.ts';
 import { TABLE_NAMES } from './db.ts';
 import {
-    postIdeaCreationOp,
+    postIdeaDocumentOp,
     postFlowCreationOp,
     postRecordWriteOp,
     postObjectiveCreationOp,
@@ -344,14 +344,16 @@ async function postMockDataLoadIn(
     const ideas = buildIdeas();
 
     // Each seeded idea's sole state event doubles as its
-    // creation event — driven through postIdeaCreationOp
-    // below so the seed writes exactly as POST /ideas does.
-    // Driving the op below the org fence, the unscoped store
-    // stamps nothing, so organization_id rides in the idea
-    // sub-body instead of the (route-only) omission.
-    // ideaStateEvents is imported from seed-message-pairs.ts —
-    // pass 1 there needs the SAME array to form each idea's
-    // pair before this transaction opens.
+    // genesis event — driven through postIdeaDocumentOp below
+    // so the seed writes exactly as the genesis case of PUT
+    // /ideas/:id does (Decision 7, Phase 2 Task 3: create is
+    // just the head-absent case of the document PUT). Driving
+    // the op below the org fence, the unscoped store stamps
+    // nothing, so organization_id rides in the seed body
+    // instead of the (route-only) omission. ideaStateEvents is
+    // imported from seed-message-pairs.ts — pass 1 there needs
+    // the SAME array to form each idea's pair before this
+    // transaction opens.
     const ideaStateEventById = new Map(
         ideaStateEvents.map(e => [e.entity_id, e]),
     );
@@ -359,8 +361,9 @@ async function postMockDataLoadIn(
     await Promise.all([
         ...ideas.map((idea, i) => {
             const event = ideaStateEventById.get(idea.id)!;
-            return postIdeaCreationOp(
+            return postIdeaDocumentOp(
                 adapter,
+                idea.id,
                 ideaSeedBody(idea, event, i),
                 event.member_id,
                 requirePair(

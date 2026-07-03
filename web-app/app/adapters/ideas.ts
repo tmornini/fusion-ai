@@ -194,12 +194,20 @@ export async function getIdea(
 
 // The wire document PUT /ideas/:id now takes (Decision 7):
 // today's entity fields plus the lifecycle trio, camelCase on
-// this side of the adapter seam. A state-UNCHANGED save
-// (title/position/etc. edited, trio echoed back unchanged)
-// converges to a no-op event write at the op; a genuine
-// transition (postIdeaStateChange below) mints a fresh trio.
+// this side of the adapter seam. organization_id is EXCLUDED
+// too — the client never supplies it (the org fence stamps it
+// downstream); postIdeaCreation's fresh entity naturally lacks
+// it, while an edit/transition's entity (spread from an
+// existing read, below) may still carry it at runtime as a
+// harmless extra the validator tolerates but ignores. A
+// state-UNCHANGED save (title/position/etc. edited, trio echoed
+// back unchanged) converges to a no-op event write at the op; a
+// genuine transition (postIdeaStateChange below) mints a fresh
+// trio. Genesis (postIdeaCreation below) is just the
+// head-absent case of this SAME PUT (Decision 7) — one shape
+// serves create, edit, and transition.
 export type IdeaDocumentFields =
-    Omit<IdeaEntity, 'id'> & {
+    Omit<IdeaEntity, 'id' | 'organization_id'> & {
         readonly state: IdeaState;
         readonly stateAt: string;
         readonly stateEventId: string;
@@ -222,27 +230,29 @@ export async function putIdea(
     ideaChanges.notify();
 }
 
-// Idea creation: row + initial state event, written
-// atomically by the named POST /ideas endpoint. Use only at
-// the create call site; transitions of an existing idea go
-// through postIdeaStateChange. putIdea remains for entity
-// edits (title, position) that do not change state. The
-// idea body OMITS organization_id — the org fence stamps it
-// from the verified token before the store validates.
+// Idea creation (Decision 7, Phase 2 Task 3, R1): genesis is
+// head-presence-defined — the FIRST document version at this
+// address IS the birth, so create folds into the SAME PUT
+// ideas/:id that putIdea already drives for edits and
+// transitions. The id and the trio (state, stateAt,
+// stateEventId) are minted ONCE here, before the single
+// ctx.PUT hop (via putIdea) — a retry resends the identical
+// bytes, hitting the op's idempotency fold. Use only at the
+// create call site; transitions of an existing idea go through
+// postIdeaStateChange; putIdea remains for entity edits (title,
+// position) that do not change state.
 export async function postIdeaCreation(
     ctx: RequestContext,
     id: string,
     entity: Omit<IdeaEntity, 'id' | 'organization_id'>,
     initialState: IdeaState,
 ): Promise<void> {
-    await ctx.POST('ideas', {
-        id,
-        idea: entity,
-        initialState,
-        initialStateEventId: generateCryptoSafeBase62(),
-        initialStateAt: nowUtc(),
+    await putIdea(ctx, id, {
+        ...entity,
+        state: initialState,
+        stateAt: nowUtc(),
+        stateEventId: generateCryptoSafeBase62(),
     });
-    ideaChanges.notify();
 }
 
 // A transition: composes the document PUT with a FRESH trio

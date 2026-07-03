@@ -424,10 +424,17 @@ export function createdEntityUriId(
     routePattern: string,
     body: Record<string, unknown> | undefined,
 ): string | undefined {
-    // The registry is keyed by family (first path segment);
-    // for ideas the bare create route pattern IS the family
-    // name, so the same string resolves both. Falls back to
-    // the literal table for every not-yet-registered pattern.
+    // A registered family's createBodyIdField serves a bare
+    // collection-POST create route whose pattern IS the family
+    // name (e.g. 'flows', 'records' below). Ideas registered
+    // this slot in Task 1 for its own POST /ideas, which Phase 2
+    // Task 3 (R1) retired — genesis folded into the
+    // document-class PUT ideas/:id, whose uriId messageAddress
+    // already derives from the path segment, so this lookup
+    // never fires for ideas today. The slot stays registered for
+    // a future family that still creates via a bare collection
+    // POST. Falls back to the literal table for every
+    // not-yet-registered pattern.
     const registered = familyRegistration(routePattern);
     const field = registered !== undefined
         ? registered.createBodyIdField
@@ -448,7 +455,6 @@ export function createdEntityUriId(
 // Response-ID it did not store.
 export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'members/:id',
-    'ideas',
     'ideas/:id',
     'ideas/:id/conversion',
     'ideas/:id/submissions/:sid',
@@ -531,7 +537,6 @@ export const REPLAY_EXEMPT_ROUTE_PATTERNS: Set<string> =
 export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
     new Set([
         'members/:id',
-        'ideas',
         'ideas/:id',
         'ideas/:id/submissions/:sid',
         'projects/:id',

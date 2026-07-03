@@ -2241,64 +2241,6 @@ export function validateRecordWriteBody(
     );
 }
 
-export interface IdeaCreateBody {
-    readonly id: string;
-    readonly idea: Record<string, unknown>;
-    readonly initialState: IdeaState;
-    readonly initialStateEventId: string;
-    readonly initialStateAt: string;
-}
-
-const IDEA_CREATE_KEYS: readonly string[] = [
-    'id', 'idea', 'initialState',
-    'initialStateEventId', 'initialStateAt',
-];
-
-// The HTTP-body gate for POST /ideas: the idea row plus its
-// initial state event, written atomically. The idea fields are
-// NOT fully validated here — the org-scoped store stamps
-// organization_id from the verified token and re-validates the
-// idea through validateIdeaEntity AFTER the stamp, so the body
-// must OMIT organization_id (the fence supplies it). Authorship
-// of the initial event is stamped from the verified caller in
-// the route, never the body.
-export function validateIdeaCreateBody(
-    body: Record<string, unknown>,
-): IdeaCreateBody {
-    assertOnlyKeys(
-        body, IDEA_CREATE_KEYS, 'IdeaCreateBody',
-    );
-    const id = pickString(body, 'id');
-    if (id === '') {
-        throw new ValidationError(
-            'IdeaCreateBody.id must be non-empty',
-        );
-    }
-    const idea = asObject(
-        body['idea'], 'IdeaCreateBody.idea',
-    );
-    const initialState = assertIdeaState(
-        pickString(body, 'initialState'),
-        'IdeaCreateBody.initialState',
-    );
-    const initialStateEventId = pickString(
-        body, 'initialStateEventId',
-    );
-    if (initialStateEventId === '') {
-        throw new ValidationError(
-            'IdeaCreateBody.initialStateEventId'
-            + ' must be non-empty',
-        );
-    }
-    const initialStateAt = validateTimestampField(
-        body, 'initialStateAt', 'IdeaCreateBody.initialStateAt',
-    );
-    return {
-        id, idea, initialState,
-        initialStateEventId, initialStateAt,
-    };
-}
-
 export interface IdeaConversionBaseline {
     readonly id: string;
     readonly fields: Record<string, unknown>;
