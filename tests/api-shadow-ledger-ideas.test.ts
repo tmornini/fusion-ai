@@ -45,6 +45,19 @@ function ideaFields(title: string) {
     };
 }
 
+// PUT /ideas/:id now takes the FULL document (Decision 7): the
+// entity fields plus the state trio. One fixed trio per idea
+// id keeps every PUT below a same-state edit — none of these
+// exercise a genuine transition.
+function ideaPutBody(ideaId: string, title: string) {
+    return {
+        ...ideaFields(title),
+        state: 'active',
+        state_at: '2026-01-01T00:00:00.000000Z',
+        state_event_id: 'ev-' + ideaId,
+    };
+}
+
 function createIdea(
     db: MemoryDbAdapter,
     token: string,
@@ -109,14 +122,16 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const first = await handleRequest(db, req(
-        'PUT', '/ideas/idea-2', token, ideaFields('First'),
+        'PUT', '/ideas/idea-2', token,
+        ideaPutBody('idea-2', 'First'),
     ));
     assert.equal(first.status, 200);
     const firstId = first.headers.get('Response-ID');
     assert.ok(firstId);
     assert.equal(first.headers.get('Supersedes'), null);
     const second = await handleRequest(db, req(
-        'PUT', '/ideas/idea-2', token, ideaFields('Second'),
+        'PUT', '/ideas/idea-2', token,
+        ideaPutBody('idea-2', 'Second'),
     ));
     assert.equal(second.status, 200);
     assert.equal(second.headers.get('Supersedes'), firstId);
@@ -131,7 +146,8 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/ideas/idea-3', token, ideaFields('Dated'),
+        'PUT', '/ideas/idea-3', token,
+        ideaPutBody('idea-3', 'Dated'),
     ));
     const responseId = res.headers.get('Response-ID');
     const row = (await db.responses.getAll())
@@ -143,7 +159,7 @@ test('a byte-identical resend keeps the ORIGINAL Date',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const body = ideaFields('Resend');
+    const body = ideaPutBody('idea-4', 'Resend');
     const first = await handleRequest(
         db, req('PUT', '/ideas/idea-4', token, body),
     );
@@ -158,7 +174,7 @@ test('a byte-identical resend returns the stored response '
 + 'and appends nothing', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const body = ideaFields('Idempotent');
+    const body = ideaPutBody('idea-5', 'Idempotent');
     const first = await handleRequest(
         db, req('PUT', '/ideas/idea-5', token, body),
     );
@@ -177,7 +193,8 @@ async () => {
     const token = await organizationToken();
     await createIdea(db, token, 'idea-6');
     await handleRequest(db, req(
-        'PUT', '/ideas/idea-6', token, ideaFields('Verify'),
+        'PUT', '/ideas/idea-6', token,
+        ideaPutBody('idea-6', 'Verify'),
     ));
     for (const row of await db.requests.getAll()) {
         assert.equal(
@@ -196,7 +213,8 @@ test('each 200 route\'s wire body matches a direct domain '
     const db = await freshDb();
     const token = await organizationToken();
     const idea = await handleRequest(db, req(
-        'PUT', '/ideas/idea-8', token, ideaFields('Wired'),
+        'PUT', '/ideas/idea-8', token,
+        ideaPutBody('idea-8', 'Wired'),
     ));
     assert.equal(idea.status, 200);
     const ideaRow = await db.ideas.getById('idea-8');
@@ -248,7 +266,8 @@ async () => {
     const token = await organizationToken();
     await createIdea(db, token, 'idea-7');
     await handleRequest(db, req(
-        'PUT', '/ideas/idea-7', token, ideaFields('Mixed'),
+        'PUT', '/ideas/idea-7', token,
+        ideaPutBody('idea-7', 'Mixed'),
     ));
     await handleRequest(db, req(
         'PUT', '/ideas/idea-7/submissions/sub-1', token, {

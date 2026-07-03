@@ -77,7 +77,12 @@ async () => {
     const res = await handleRequest(db, req(
         'PUT', '/organizations/A/ideas/a2',
         await devToken('current'),
-        { id: 'a2', ...ideaBody('B', 'forged') }));
+        {
+            id: 'a2', ...ideaBody('B', 'forged'),
+            state: 'active',
+            state_at: '2026-01-01T00:00:00.000000Z',
+            state_event_id: 'ev-a2',
+        }));
     assert.equal(res.status, 200);
     const stored = await db.ideas.getById('a2');
     assert.equal(stored.organization_id, 'A');

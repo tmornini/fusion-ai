@@ -55,6 +55,18 @@ function ideaFields(title: string) {
     };
 }
 
+// PUT /ideas/:id now takes the FULL document (Decision 7): the
+// entity fields plus the state trio. One fixed trio per idea
+// id keeps both PUTs below a same-state edit.
+function ideaPutBody(ideaId: string, title: string) {
+    return {
+        ...ideaFields(title),
+        state: 'active',
+        state_at: AT,
+        state_event_id: 'ev-' + ideaId,
+    };
+}
+
 function recordFields(name: string, organization: string) {
     return {
         organization_id: organization,
@@ -103,13 +115,13 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     // (ideas, org 1).
     const firstIdea = await handleRequest(db, req(
         'PUT', '/ideas/inv-idea-1', org1Token,
-        ideaFields('Invariant Idea'),
+        ideaPutBody('inv-idea-1', 'Invariant Idea'),
     ));
     assert.equal(firstIdea.status, 200);
     const firstIdeaId = firstIdea.headers.get('Response-ID');
     const secondIdea = await handleRequest(db, req(
         'PUT', '/ideas/inv-idea-1', org1Token,
-        ideaFields('Invariant Idea Revised'),
+        ideaPutBody('inv-idea-1', 'Invariant Idea Revised'),
     ));
     assert.equal(secondIdea.status, 200);
     assert.equal(

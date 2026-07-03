@@ -1335,11 +1335,25 @@ export interface ProjectFlowEntity {
     at: string;
 }
 
+// The lifecycle trio Decision 7 folds into the idea document:
+// the current state plus its creator-minted `at` and the
+// (transitional — retires with the states log) event id. A
+// bare IdeaState alone no longer carries enough to round-trip
+// a document PUT, so every reader that feeds an Idea gains
+// this shape.
+export interface IdeaStateDetail {
+    readonly state: IdeaState;
+    readonly stateAt: string;
+    readonly stateEventId: string;
+}
+
 export class Idea {
     readonly #id: string;
     readonly #title: string;
     readonly #position: number;
     readonly #state: IdeaState;
+    readonly #stateAt: string;
+    readonly #stateEventId: string;
     readonly #problemStatement: string;
     readonly #targetUsers: string;
     readonly #proposedSolution: string;
@@ -1348,12 +1362,14 @@ export class Idea {
 
     constructor(
         entity: IdeaEntity,
-        state: IdeaState,
+        detail: IdeaStateDetail,
     ) {
         this.#id = entity.id;
         this.#title = entity.title;
         this.#position = entity.position;
-        this.#state = state;
+        this.#state = detail.state;
+        this.#stateAt = detail.stateAt;
+        this.#stateEventId = detail.stateEventId;
         this.#problemStatement =
             entity.problem_statement;
         this.#targetUsers =
@@ -1415,6 +1431,14 @@ export class Idea {
 
     stateValue(): IdeaState {
         return this.#state;
+    }
+
+    stateAtValue(): string {
+        return this.#stateAt;
+    }
+
+    stateEventIdValue(): string {
+        return this.#stateEventId;
     }
 
     problemStatementText(): string {

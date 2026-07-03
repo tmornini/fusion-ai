@@ -1131,6 +1131,80 @@ export function validateIdeaEntity(
     };
 }
 
+const IDEA_DOCUMENT_ENTITY_KEYS: readonly string[] = [
+    'title', 'position', 'problem_statement',
+    'target_users', 'proposed_solution',
+    'expected_outcome', 'success_metrics',
+];
+
+const IDEA_DOCUMENT_BODY_KEYS: readonly string[] = [
+    ...IDEA_DOCUMENT_ENTITY_KEYS,
+    'state', 'state_at', 'state_event_id',
+];
+
+export interface IdeaDocumentBody {
+    readonly entity: Omit<IdeaEntity, 'id' | 'organization_id'>;
+    readonly state: IdeaState;
+    readonly state_at: string;
+    readonly state_event_id: string;
+}
+
+// The HTTP-body gate for PUT /ideas/:id (Decision 7): the full
+// wire document — the entity's own fields plus the lifecycle
+// trio folded in. organization_id is deliberately absent from
+// the expected set (like every other org-owned write, the
+// client never supplies it; the org fence stamps it downstream
+// when view.ideas.put re-validates through validateIdeaEntity)
+// yet rides the `optional` allowance rather than `expected` —
+// a caller-forged organization_id is tolerated-but-ignored, not
+// rejected, because the fence's stamp always overrides whatever
+// key it finds (the forged-body isolation test relies on this).
+// The trio holds to the SAME rules the bare states/:id route
+// applies to an event (assertIdeaState, an RFC-3339 `at`, a
+// non-empty event id), so a folded document and a bare event
+// share one shape. Entity fields are picked directly rather
+// than delegated to validateIdeaEntity — that function REQUIRES
+// organization_id, which this body never carries pre-stamp.
+export function validateIdeaDocumentBody(
+    body: Record<string, unknown>,
+): IdeaDocumentBody {
+    assertOnlyKeys(
+        body, IDEA_DOCUMENT_BODY_KEYS, 'IdeaDocumentBody',
+        ['organization_id'],
+    );
+    const state = assertIdeaState(
+        pickString(body, 'state'),
+        'IdeaDocumentBody.state',
+    );
+    const stateEventId = pickString(body, 'state_event_id');
+    if (stateEventId === '') {
+        throw new ValidationError(
+            'IdeaDocumentBody.state_event_id must be'
+            + ' non-empty',
+        );
+    }
+    return {
+        entity: {
+            title: pickString(body, 'title'),
+            position: pickNumber(body, 'position'),
+            problem_statement:
+                pickString(body, 'problem_statement'),
+            target_users: pickString(body, 'target_users'),
+            proposed_solution:
+                pickString(body, 'proposed_solution'),
+            expected_outcome:
+                pickString(body, 'expected_outcome'),
+            success_metrics:
+                pickString(body, 'success_metrics'),
+        },
+        state,
+        state_at: validateTimestampField(
+            body, 'state_at', 'IdeaDocumentBody.state_at',
+        ),
+        state_event_id: stateEventId,
+    };
+}
+
 const PROJECT_BODY_KEYS: readonly string[] = [
     'organization_id', 'title', 'description',
     'progress', 'start_date',

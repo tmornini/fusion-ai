@@ -55,7 +55,7 @@ import {
     validateFlowRedoBody,
     validateIdeaCreateBody,
     validateIdeaConversionBody,
-    validateIdeaEntity,
+    validateIdeaDocumentBody,
     validateIdeaSubmissionEntity,
     validateIdentityCreateBody,
     validateIdentityEntity,
@@ -935,15 +935,22 @@ export const WRITE_RESPONSE_SPECS:
         Record<string, WriteResponseSpec | PerVerbWriteResponseSpec>
     > = {
     'ideas': { status: 204 },
+    // The wire response mirrors the OLD-PLANE row only (no
+    // trio) — the same GET/PUT symmetry Decision 7's wire-
+    // parity rule holds for reads. validateIdeaDocumentBody
+    // both shapes the entity and discards the trio for us.
     'ideas/:id': {
         status: 200,
-        successBody: (params, body, _actor, organization) => ({
-            id: param(params, 0),
-            ...validateIdeaEntity({
-                ...withoutId(body ?? {}),
+        successBody: (params, body, _actor, organization) => {
+            const doc = validateIdeaDocumentBody(
+                withoutId(body ?? {}),
+            );
+            return {
+                id: param(params, 0),
                 organization_id: organization,
-            }),
-        }),
+                ...doc.entity,
+            };
+        },
     },
     'ideas/:id/conversion': { status: 204 },
     'ideas/:id/submissions/:sid': {
@@ -2660,19 +2667,53 @@ export const routes: Route[] = [
     // per-family pair selector (see message-pair.ts). GET
     // reproduces the factory closure byte-equivalently; verbs
     // stay {get, put} — ideas/:id has no DELETE today, and
-    // this scaffolding does not add one (Phase 2 Task 3 amends
-    // this same entry; the registry eventually absorbs it).
+    // this scaffolding does not add one (the registry
+    // eventually absorbs it).
+    //
+    // Decision 7 state-in-entity (Phase 2 Task 2): the PUT body
+    // is the FULL document — today's entity fields plus the
+    // state trio — validated once at the gate. The op
+    // DECOMPOSES it: the old-plane ideas row and the states
+    // event write land separately, in the SAME transaction, so
+    // the ideas row stays byte-identical to today. Genesis is
+    // head-presence-defined — a fresh id's PUT simply finds no
+    // head, so it authors like any other transition.
+    //
+    // MEMBER_ID CAVEAT: sameEvent (store-state.ts) compares
+    // member_id too, so a state-UNCHANGED edit (the resent
+    // trio matches the current head byte-for-byte) must replay
+    // the STORED head event's member_id — never the editing
+    // actor — or a different member plainly editing a field
+    // after someone else's transition would 409
+    // (LedgerImmutabilityError). A genuinely fabricated trio
+    // still fails sameEvent on state/at and 409s, exactly as a
+    // bare states/:id resend would.
     route('ideas/:id', {
         get: (db, p) => db.ideas.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
+        put: (db, p, body, actor, pair) => {
             const id = param(p, 0);
+            const doc = validateIdeaDocumentBody(
+                withoutId(body),
+            );
             return db.transaction(
-                ['ideas', 'requests', 'responses'],
+                ['ideas', 'states', 'requests', 'responses'],
                 async (view) => {
+                    const head =
+                        await view.states.getCurrentFor(id);
+                    const memberId = (
+                        head !== null
+                        && head.id === doc.state_event_id
+                        && head.state === doc.state
+                        && head.at === doc.state_at
+                    ) ? head.member_id : actor;
                     const written = await view.ideas.put(
                         id,
-                        withoutId(body) as unknown as
+                        doc.entity as unknown as
                             Omit<IdeaEntity, 'id'>,
+                    );
+                    await view.states.postEvent(
+                        doc.state_event_id, id, doc.state,
+                        memberId, doc.state_at,
                     );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);

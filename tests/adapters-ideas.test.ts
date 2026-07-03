@@ -136,6 +136,9 @@ test('putIdea persists changes', async () => {
     );
     await putIdea(ctx, 'i1', {
         ...buildIdea('i1', 'Updated'),
+        state: 'active',
+        stateAt: '2026-01-01T00:00:00.000000Z',
+        stateEventId: 'ev-i1',
     });
     const stored =
         await db.ideas.getById('i1');
@@ -215,7 +218,7 @@ test(
             await db.ideas.getById('i1');
 
         await postIdeaStateChange(
-            ctx, 'i1', 'approved',
+            ctx, before, 'approved',
         );
 
         const after =
