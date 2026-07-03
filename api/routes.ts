@@ -124,11 +124,18 @@ import {
 // its final argument — the one place authorship is sourced.
 // The gate resolves it from the token; handlers that author
 // state events or identify the caller stamp it, and the rest
-// (the makeIdRoute closures) simply ignore the extra arg.
+// (the makeIdRoute closures) simply ignore the extra arg. A GET
+// handler also receives the fence organization — the verified
+// token claim the gate resolved, never the path — undefined for
+// a bearer-exempt or global route; a ledger-derived, org-owned
+// read requires it (see requireOrganization) while every other
+// GET handler ignores the extra trailing arg, the same
+// fewer-parameter-closure precedent actor already established.
 type GetHandler = (
     adapter: DbAdapter,
     params: string[],
     actor: Id,
+    organization: Id | undefined,
 ) => Promise<unknown>;
 
 // PutHandler, PostHandler, and DeleteHandler carry a trailing
@@ -198,6 +205,25 @@ export function param(
         );
     }
     return value;
+}
+
+// The fence organization a ledger-derived, org-owned GET
+// handler requires: the verified token claim the gate resolved,
+// never the path. Its absence is a wiring bug — a bearer-exempt
+// or global route reaching a handler that must derive org-
+// scoped state — never a valid contingency, so this crashes
+// loud rather than deriving cross-tenant or falling back to an
+// empty read.
+export function requireOrganization(
+    organization: Id | undefined,
+): Id {
+    if (organization === undefined) {
+        throw new Error(
+            'organization-owned read dispatched with no'
+            + ' fence organization',
+        );
+    }
+    return organization;
 }
 
 // Strip `id` from the request body before
