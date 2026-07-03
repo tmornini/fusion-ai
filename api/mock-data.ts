@@ -2,6 +2,7 @@ import type { DbAdapter } from './db.ts';
 import { TABLE_NAMES } from './db.ts';
 import {
     postIdeaDocumentOp,
+    postIdeaSubmissionOp,
     postFlowCreationOp,
     postRecordWriteOp,
     postObjectiveCreationOp,
@@ -97,6 +98,7 @@ import {
     pickHumanMember,
     humanMemberSeedBody,
     ideaSeedBody,
+    ideaSubmissionSeedBody,
     flowSeedBody,
     aiMemberSeedBody,
     recordSeedBody,
@@ -3332,8 +3334,14 @@ async function postMockDataLoadIn(
 
     await Promise.all([
         ...ideaSubmissions.map(r =>
-            adapter.ideaSubmissions.put(
-                r.id, r,
+            postIdeaSubmissionOp(
+                adapter,
+                r.id,
+                ideaSubmissionSeedBody(r),
+                requirePair(
+                    pairs,
+                    seedPairKey('idea-submissions', r.id),
+                ),
             ),
         ),
         ...mockProjectFlows.map(r =>

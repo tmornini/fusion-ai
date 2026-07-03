@@ -164,28 +164,27 @@ async () => {
     assert.deepEqual(derived, sortById(old));
 });
 
-// KNOWN GAP (not this task's to close — INVISIBILITY bars
-// touching the seed): the 11 seeded ideas' submissions
-// (api/mock-data.ts, buildIdeaSubmissions) are written DIRECTLY
-// at the storage layer, never through the pair-forming op the
-// live route uses. They carry no requests/responses rows, so
-// they are structurally invisible to message-plane derivation —
-// this is a fact about the SEED, not a defect in
-// deriveIdeaSubmissions (proven correct above against a
-// pair-backed submission). Recorded here so the gap is visible
-// rather than silently absent from this suite.
-test('seeded idea submissions predate pair-wiring and are '
-+ 'not derivable (known seed gap)', async () => {
+// GAP CLOSED (Phase 2 Task 4b): the 11 seeded ideas' submissions
+// (api/mock-data.ts, buildIdeaSubmissions) now form their
+// message pair through postIdeaSubmissionOp exactly as a
+// live PUT does (api/mock-data/seed-message-pairs.ts's
+// ideaSubmissionSeedBody), so every seeded submission is fully
+// derivable — no seed-only exception remains for this family.
+test('seeded idea submissions: message-derived equals'
++ ' old-table-derived, for every seeded idea, per org',
+async () => {
     const db = await seededDb();
-    const seeded = SEEDED_IDEAS[0]!;
-    const old = await organizationScopedAdapter(
-        db, seeded.organization,
-    ).ideaSubmissions.getAllWhere('idea_id', seeded.id);
-    assert.ok(old.length > 0);
-    const derived = await deriveIdeaSubmissions(
-        db, seeded.organization, seeded.id,
-    );
-    assert.deepEqual(derived, []);
+    for (const { id, organization } of SEEDED_IDEAS) {
+        const old = sortById(
+            await organizationScopedAdapter(db, organization)
+                .ideaSubmissions.getAllWhere('idea_id', id),
+        );
+        assert.ok(old.length > 0);
+        const derived = await deriveIdeaSubmissions(
+            db, organization, id,
+        );
+        assert.deepEqual(derived, old);
+    }
 });
 
 test('live-write case: create + edit + transition + delete, '

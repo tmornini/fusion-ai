@@ -15,20 +15,21 @@
 // literals that merely happen to agree, so a stored pair can
 // never drift from what was actually written.
 //
-// Only the six seed op-invocations that already accept a `pair?`
-// parameter are covered here (traced against every
+// Only the seven seed op-invocations that already accept a
+// `pair?` parameter are covered here (traced against every
 // postXxxCreationOp / postRecordWriteOp call site in
-// mock-data.ts): human-members, ideas, flows, ai-members,
-// records, objectives. Memberships, project_objective_baseline_
-// scores, and work-order historical traces are direct writes the
-// seed never routes through a pair-capable op — the three named
-// deferrals stay untouched.
+// mock-data.ts): human-members, ideas, idea-submissions, flows,
+// ai-members, records, objectives. Memberships,
+// project_objective_baseline_scores, and work-order historical
+// traces are direct writes the seed never routes through a
+// pair-capable op — the three named deferrals stay untouched.
 
 import type {
     Id,
     StateEntity,
     AIMemberEntity,
     IdeaEntity,
+    IdeaSubmissionEntity,
     RecordEntity,
     RecordAttributeEntity,
     ProjectFlowEntity,
@@ -53,7 +54,7 @@ import {
 import { daysFromNow } from './seed-kit.ts';
 import { buildMembers } from './members.ts';
 import type { SeedHumanMember } from './members.ts';
-import { buildIdeas } from './ideas.ts';
+import { buildIdeas, buildIdeaSubmissions } from './ideas.ts';
 import { buildFlows, buildFlowGraphRelations } from './flows.ts';
 import type { FlowSeed, FlowGraphRelations } from './flows.ts';
 import { buildAiMembers } from './ai-members.ts';
@@ -372,6 +373,18 @@ export function ideaSeedBody(
     };
 }
 
+// The genesis case of the document PUT
+// ideas/:id/submissions/:sid (Phase 2 Task 4b): the flat
+// entity fields, no `id` (a route param, not a body field) —
+// the SAME shape putIdeaSubmission's ctx.PUT body carries
+// (web-app/app/adapters/ideas.ts).
+export function ideaSubmissionSeedBody(
+    submission: IdeaSubmissionEntity,
+): Record<string, unknown> {
+    const { id: _id, ...fields } = submission;
+    return { ...fields };
+}
+
 export function flowSeedBody(
     flow: FlowSeed,
     event: StateEntity,
@@ -549,21 +562,24 @@ export function seedPairKey(
 interface MockDataInvocation {
     readonly key: string;
     readonly routePattern: string;
-    // Present only for a document-class genesis PUT (ideas
-    // today — Phase 2 Task 3): the id the route's :id segment
-    // carries. Absent for the five bare collection-POST creates,
-    // which keep forming a POST at the bare pattern exactly as
-    // before.
-    readonly idParam?: Id;
+    // Present only for a document-class genesis PUT: the path
+    // value for each ':'-prefixed route segment, in pattern
+    // order — one entry for 'ideas/:id' (Phase 2 Task 3), two
+    // for 'ideas/:id/submissions/:sid' (Phase 2 Task 4b: the
+    // idea id, then the submission id). Absent for the five bare
+    // collection-POST creates, which keep forming a POST at the
+    // bare pattern exactly as before.
+    readonly idParams?: readonly Id[];
     readonly organization: Id | undefined;
     readonly requesterIdentityId: Id;
     readonly body: Record<string, unknown>;
 }
 
 // Dependency-ordered (matches postMockDataLoadIn's write order):
-// human-members, ideas, flows, ai-members, records, objectives.
-// A dropped or reordered invocation here is caught by
-// tests/mock-data-pairs.test.ts's pinned invocation count.
+// human-members, ideas, idea-submissions, flows, ai-members,
+// records, objectives. A dropped or reordered invocation here
+// is caught by tests/mock-data-pairs.test.ts's pinned invocation
+// count.
 export function buildMockDataInvocations():
     readonly MockDataInvocation[] {
     const members = buildMembers();
@@ -597,17 +613,31 @@ export function buildMockDataInvocations():
             body: humanMemberSeedBody(member),
         });
     }
+    const ideaIndexById = new Map(
+        ideas.map((idea, i) => [idea.id, i]),
+    );
     ideas.forEach((idea, i) => {
         const event = ideaStateEventById.get(idea.id)!;
         invocations.push({
             key: seedPairKey('ideas', idea.id),
             routePattern: 'ideas/:id',
-            idParam: idea.id,
+            idParams: [idea.id],
             organization: assignOrganization(i),
             requesterIdentityId: event.member_id,
             body: ideaSeedBody(idea, event, i),
         });
     });
+    for (const submission of buildIdeaSubmissions()) {
+        const ideaIndex = ideaIndexById.get(submission.idea_id)!;
+        invocations.push({
+            key: seedPairKey('idea-submissions', submission.id),
+            routePattern: 'ideas/:id/submissions/:sid',
+            idParams: [submission.idea_id, submission.id],
+            organization: assignOrganization(ideaIndex),
+            requesterIdentityId: submission.member_id,
+            body: ideaSubmissionSeedBody(submission),
+        });
+    }
     for (const flow of mockFlows) {
         const event = flowStateEventByFlowId.get(flow.id)!;
         const projectFlow = mockProjectFlows.find(
@@ -675,32 +705,37 @@ export function buildMockDataInvocations():
     return invocations;
 }
 
-// Five of the six families are global/collection-level POSTs
+// Five of the seven families are global/collection-level POSTs
 // (no `:id` segment), so their route/path segments are always
 // the bare pattern — messageAddress derives the empty uriId and
 // createdEntityUriId (message-pair.ts's CREATE_BODY_ID_FIELDS)
 // overrides it to the created entity's own id. Ideas (Phase 2
-// Task 3, R1) is the exception: genesis folded into the
-// document-class PUT ideas/:id, so its invocation carries
-// idParam and the id-tailed address is built directly —
-// messageAddress derives the real uriId from the path segment
-// itself, no createdEntityUriId override needed.
+// Task 3, R1) and idea-submissions (Phase 2 Task 4b) are the
+// exception: each genesis folds into a document-class PUT
+// (ideas/:id, ideas/:id/submissions/:sid), so its invocation
+// carries idParams and the id-tailed address is built directly
+// — messageAddress derives the real uriId from the path
+// segment itself, no createdEntityUriId override needed.
 async function formSeedPair(
     inv: MockDataInvocation, requestAt: string,
 ): Promise<MessagePair> {
-    const idParam = inv.idParam;
+    const idParams = inv.idParams;
     const routeSegments = inv.routePattern.split('/');
-    const pathSegments = idParam === undefined
+    let paramIndex = 0;
+    const pathSegments = idParams === undefined
         ? routeSegments
-        : [...routeSegments.slice(0, -1), idParam];
-    const method = idParam === undefined ? 'POST' : 'PUT';
+        : routeSegments.map((segment) =>
+            segment.startsWith(':')
+                ? idParams[paramIndex++]!
+                : segment);
+    const method = idParams === undefined ? 'POST' : 'PUT';
     // Every bare collection-POST family here is a create route,
     // all {status: 204} in WRITE_RESPONSE_SPECS (routes.ts) — no
     // successBody. A document-class genesis PUT reads its OWN
     // spec from the same table (documentSeedResponse) so a
     // seeded pair's stored response can never drift from what
     // the live gate would have stored for the identical request.
-    const response = idParam === undefined
+    const response = idParams === undefined
         ? { status: 204, body: undefined }
         : documentSeedResponse(inv, routeSegments, pathSegments);
     return formWritePair({

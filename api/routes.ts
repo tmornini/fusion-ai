@@ -419,6 +419,39 @@ export async function postIdeaDocumentOp(
     );
 }
 
+// Idea submission write: a genesis-only document address (an
+// idea is submitted once per sid; no edit/transition case
+// exists for this family) — the idea_submissions row and its
+// message pair commit as ONE transaction. Exported so the seed
+// can drive submission creation through the same op the route
+// uses (Decision 6's below-facade carve-out), exactly as
+// postIdeaDocumentOp does for ideas themselves. `pair` is
+// optional so a future below-facade caller with no pair keeps
+// compiling; the live route always supplies one, since
+// 'ideas/:id/submissions/:sid' is pair-wired and never
+// bearer-exempt.
+export async function postIdeaSubmissionOp(
+    db: DbAdapter,
+    sid: Id,
+    body: Record<string, unknown>,
+    pair?: MessagePair,
+): Promise<IdeaSubmissionEntity> {
+    return db.transaction(
+        ['idea_submissions', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.ideaSubmissions.put(
+                sid,
+                withoutId(body) as unknown as
+                    Omit<IdeaSubmissionEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // Flow creation: the flows row, its project_flows join
 // row, the initial 'active' state event, and the four
 // relation table rows from graphDelta commit as ONE
@@ -1815,26 +1848,8 @@ export const routes: Route[] = [
             db.ideaSubmissions.getAllWhere('idea_id', param(p, 0)),
     }),
     route('ideas/:id/submissions/:sid', {
-        put: (db, p, body, _actor, pair) => {
-            const sid = param(p, 1);
-            return db.transaction(
-                ['idea_submissions', 'requests', 'responses'],
-                async (view) => {
-                    const written =
-                        await view.ideaSubmissions.put(
-                            sid,
-                            withoutId(body) as unknown as
-                                Omit<
-                                    IdeaSubmissionEntity, 'id'
-                                >,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, _actor, pair) =>
+            postIdeaSubmissionOp(db, param(p, 1), body, pair),
     }),
     route('flows', {
         // Reassemble each flow's graph from the four relation

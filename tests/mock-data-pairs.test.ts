@@ -14,19 +14,22 @@ import {
 } from '../api/mock-data/seed-constants.ts';
 
 // Task 4: the seed's pair-wired op-invocations (human-members,
-// ideas, flows, ai-members, records, objectives) each form a
-// message pair in pass 1, before the seed's one transaction
-// opens — see api/mock-data/seed-message-pairs.ts. This is the
+// ideas, idea-submissions, flows, ai-members, records,
+// objectives) each form a message pair in pass 1, before the
+// seed's one transaction opens — see
+// api/mock-data/seed-message-pairs.ts. This is the
 // DETERMINISTIC coverage the fingerprint test excludes for the
 // two message tables (mock-data-fingerprint.test.ts).
 
 // The exact op-invocation count postMockDataLoad drives through
-// a pair-capable op: 11 human-members + 11 ideas + 4 flows (of
-// 5 — seed-flow-org2 is a direct write, no project_flows join)
+// a pair-capable op: 11 human-members + 11 ideas +
+// 11 idea-submissions (Phase 2 Task 4b: one per seeded idea,
+// closing the prior seed-only gap) + 4 flows (of 5 —
+// seed-flow-org2 is a direct write, no project_flows join)
 // + 4 ai-members + 2 records + 5 objectives (4 STARK +
 // seed-objective-org2). A dropped or reordered invocation
 // changes this count.
-const EXPECTED_PAIR_COUNT = 37;
+const EXPECTED_PAIR_COUNT = 48;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
