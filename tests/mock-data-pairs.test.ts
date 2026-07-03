@@ -24,12 +24,13 @@ import {
 // The exact op-invocation count postMockDataLoad drives through
 // a pair-capable op: 11 human-members + 11 ideas +
 // 11 idea-submissions (Phase 2 Task 4b: one per seeded idea,
-// closing the prior seed-only gap) + 4 flows (of 5 —
+// closing the prior seed-only gap) + 17 projects (16 Stark +
+// seed-project-org2, Phase 3 Task 3) + 4 flows (of 5 —
 // seed-flow-org2 is a direct write, no project_flows join)
 // + 4 ai-members + 2 records + 5 objectives (4 STARK +
 // seed-objective-org2). A dropped or reordered invocation
 // changes this count.
-const EXPECTED_PAIR_COUNT = 48;
+const EXPECTED_PAIR_COUNT = 65;
 
 test('a mock-data seed populates balanced pairs',
 async () => {

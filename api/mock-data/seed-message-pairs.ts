@@ -15,14 +15,15 @@
 // literals that merely happen to agree, so a stored pair can
 // never drift from what was actually written.
 //
-// Only the seven seed op-invocations that already accept a
+// Only the eight seed op-invocations that already accept a
 // `pair?` parameter are covered here (traced against every
 // postXxxCreationOp / postRecordWriteOp call site in
-// mock-data.ts): human-members, ideas, idea-submissions, flows,
-// ai-members, records, objectives. Memberships,
-// project_objective_baseline_scores, and work-order historical
-// traces are direct writes the seed never routes through a
-// pair-capable op — the three named deferrals stay untouched.
+// mock-data.ts): human-members, ideas, idea-submissions,
+// projects, flows, ai-members, records, objectives.
+// Memberships, project_objective_baseline_scores, and
+// work-order historical traces are direct writes the seed
+// never routes through a pair-capable op — the three named
+// deferrals stay untouched.
 
 import type {
     Id,
@@ -30,6 +31,7 @@ import type {
     AIMemberEntity,
     IdeaEntity,
     IdeaSubmissionEntity,
+    ProjectEntity,
     RecordEntity,
     RecordAttributeEntity,
     ProjectFlowEntity,
@@ -69,7 +71,7 @@ import {
     l2cFlowId,
     l2cProjectFlowId,
 } from './lead-to-close-flow.ts';
-import { l2cProjectId } from './projects.ts';
+import { l2cProjectId, buildProjects } from './projects.ts';
 
 // ---- hoisted static seed-event data ----
 //
@@ -163,6 +165,135 @@ export const ideaStateEvents: StateEntity[] = [
         state: 'in_review',
         member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
         at: daysFromNow(-20, 9, 0),
+    },
+];
+
+// One state event per seeded project (including the org-2
+// override's own event) — the creation moment of each project
+// on the states log, doubling as postProjectDocumentOp's
+// genesis-state input.
+export const projectStateEvents: StateEntity[] = [
+    {
+        // 'submitted' so the scoring loop skips this org-'2'
+        // project — no cross-org score against org-'1'
+        // objectives.
+        id: 'seed-state-project-org2',
+        entity_id: 'seed-project-org2',
+        state: 'submitted',
+        member_id: SYSTEM_MEMBER_ID,
+        at: MOCK_SEED_TIMESTAMP,
+    },
+    {
+        id: 'pSe01Cu5tSegmAi5pEv01',
+        entity_id: 'u6YkHhlGc91oDMkr3x0isa',
+        state: 'approved',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-60, 9, 0),
+    },
+    {
+        id: 'pSe02Aut0Rep0rtComp02',
+        entity_id: 'jRE2Tj32NHsFGZIeEADp0p',
+        state: 'archived',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-110, 9, 0),
+    },
+    {
+        id: 'pSe03SalesP1p3App03Z',
+        entity_id: l2cProjectId,
+        state: 'approved',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-55, 9, 0),
+    },
+    {
+        id: 'pSe04PredMa1ntRev04AB',
+        entity_id: 'P04PredMa1ntzyXY010203',
+        state: 'under_review',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-18, 9, 0),
+    },
+    {
+        id: 'pSe05RtAna1ytComp05CD',
+        entity_id: 'P05RtAna1ytcsXY010203Z',
+        state: 'archived',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-95, 9, 0),
+    },
+    {
+        id: 'pSe06SmInvOptSnt06EF',
+        entity_id: 'P06SmInvOptZyXY010203A',
+        state: 'sent_back',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-38, 9, 0),
+    },
+    {
+        id: 'pSe07Empl0yTraRev07GH',
+        entity_id: 'P07Empl0yTrainZyXY00B0',
+        state: 'under_review',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-12, 9, 0),
+    },
+    {
+        id: 'pSe08CustSuppApp08IJ',
+        entity_id: 'P08CustSuppKn0wXY01C0D',
+        state: 'approved',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-48, 9, 0),
+    },
+    {
+        id: 'pSe09C0mp1AudApp09KL',
+        entity_id: 'P09C0mp1AudAut0mXY01E0',
+        state: 'approved',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-72, 9, 0),
+    },
+    {
+        id: 'pSe10MlRgD1s4App10MN',
+        entity_id: 'P10MlRgD1s4stRc1XY01FG',
+        state: 'approved',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-82, 9, 0),
+    },
+    {
+        id: 'pSe11V0iceField11OPQ',
+        entity_id: 'P11V0iceField0psXY01HJ',
+        state: 'approved',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-40, 9, 0),
+    },
+    {
+        id: 'pSe12CarbF00tCmp12RS',
+        entity_id: 'P12CarbF00tprXY01K0L0M',
+        state: 'archived',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-120, 9, 0),
+    },
+    {
+        id: 'pSe13W0rk4rcRev13TU',
+        entity_id: 'P13W0rk4rcF0r3castsXY1',
+        state: 'under_review',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-22, 9, 0),
+    },
+    {
+        id: 'pSe14SmartD0cAp14VWX',
+        entity_id: 'P14SmartD0cumtR0utngX1',
+        state: 'approved',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-65, 9, 0),
+    },
+    {
+        id: 'pSe15Inv3st0rAp15YZA',
+        entity_id: 'P15Inv3st0rRep0rtP1Y00',
+        state: 'approved',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-58, 9, 0),
+    },
+    {
+        id: 'pSe16MktSentSubmt16BC',
+        entity_id: 'P16MktSent1mentXY01020',
+        state: 'submitted',
+        member_id: SYSTEM_MEMBER_ID,
+        at: daysFromNow(-5, 9, 0),
     },
 ];
 
@@ -385,6 +516,52 @@ export function ideaSubmissionSeedBody(
     return { ...fields };
 }
 
+// The genesis case of the document PUT projects/:id (mirrors
+// ideaSeedBody exactly): the flat entity fields plus the
+// lifecycle trio, no `id` (a route param, not a body field).
+// organization_id rides along as the validator's tolerated-but-
+// ignored extra — load-bearing here since the seed drives
+// postProjectDocumentOp below the org fence (no scoping wrapper
+// to stamp it). Unlike ideas, every Stark project shares one
+// org, so `organization` is passed straight through rather than
+// derived from an index.
+export function projectSeedBody(
+    project: Omit<ProjectEntity, 'organization_id'>,
+    event: StateEntity,
+    organization: Id,
+): Record<string, unknown> {
+    const { id: _id, ...projectFields } = project;
+    return {
+        ...projectFields,
+        organization_id: organization,
+        state: event.state,
+        state_at: event.at,
+        state_event_id: event.id,
+    };
+}
+
+// The 17th seeded project: organization '2' owns a small,
+// self-contained slice so each org owns at least one (mirrors
+// ORGANIZATION_TWO_OBJECTIVE). A near-copy of the first Stark
+// project under its own id and title — the ONE shared
+// construction both the invocation loop (this file) and the
+// write (mock-data.ts) use, so pass 1's pair can never drift
+// from what pass 2 actually stores. The literal id (matching
+// the sibling 'seed-flow-org2' / 'seed-state-flow-org2' sentinels
+// above) is exported so both files compare against the SAME
+// string rather than each re-typing it.
+export const secondOrganizationProjectId = 'seed-project-org2';
+
+export function projectOrg2(
+    projects: readonly Omit<ProjectEntity, 'organization_id'>[],
+): Omit<ProjectEntity, 'organization_id'> {
+    return {
+        ...projects[0]!,
+        id: secondOrganizationProjectId,
+        title: 'Wayne R&D Portfolio',
+    };
+}
+
 export function flowSeedBody(
     flow: FlowSeed,
     event: StateEntity,
@@ -576,10 +753,10 @@ interface MockDataInvocation {
 }
 
 // Dependency-ordered (matches postMockDataLoadIn's write order):
-// human-members, ideas, idea-submissions, flows, ai-members,
-// records, objectives. A dropped or reordered invocation here
-// is caught by tests/mock-data-pairs.test.ts's pinned invocation
-// count.
+// human-members, ideas, idea-submissions, projects, flows,
+// ai-members, records, objectives. A dropped or reordered
+// invocation here is caught by tests/mock-data-pairs.test.ts's
+// pinned invocation count.
 export function buildMockDataInvocations():
     readonly MockDataInvocation[] {
     const members = buildMembers();
@@ -587,6 +764,10 @@ export function buildMockDataInvocations():
         ideaStateEvents.map(e => [e.entity_id, e]),
     );
     const ideas = buildIdeas();
+    const projects = buildProjects();
+    const projectStateEventById = new Map(
+        projectStateEvents.map(e => [e.entity_id, e]),
+    );
     const mockFlows = buildFlows();
     const flowRelations = buildFlowGraphRelations(
         mockFlows, MOCK_SEED_TIMESTAMP,
@@ -636,6 +817,21 @@ export function buildMockDataInvocations():
             organization: assignOrganization(ideaIndex),
             requesterIdentityId: submission.member_id,
             body: ideaSubmissionSeedBody(submission),
+        });
+    }
+    for (const project of [...projects, projectOrg2(projects)]) {
+        const event = projectStateEventById.get(project.id)!;
+        const organization =
+            project.id === secondOrganizationProjectId
+                ? ORGANIZATION_TWO
+                : STARK_ORGANIZATION;
+        invocations.push({
+            key: seedPairKey('projects', project.id),
+            routePattern: 'projects/:id',
+            idParams: [project.id],
+            organization,
+            requesterIdentityId: event.member_id,
+            body: projectSeedBody(project, event, organization),
         });
     }
     for (const flow of mockFlows) {
