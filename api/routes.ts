@@ -47,6 +47,7 @@ import {
     validateMemberEntity,
     validateFlowCreateBody,
     validateFlowEntity,
+    validateFlowVersionEntity,
     validateFlowVersionPublishBody,
     validateFlowWorkOrderEntity,
     validateFlowPutBody,
@@ -1000,6 +1001,15 @@ export const WRITE_RESPONSE_SPECS:
     'flows/:id/undo': { status: 204 },
     'flows/:id/redo': { status: 204 },
     'flows/:id/versions': { status: 204 },
+    'flows/:id/versions/:vid': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: param(params, 1),
+            ...validateFlowVersionEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
     'work-orders': { status: 204 },
     'work-orders/:id': {
         status: 200,
@@ -2163,15 +2173,50 @@ export const routes: Route[] = [
             );
         },
     }),
+    // PUT/DELETE each append their message pair in the same
+    // transaction as the write (message-pair.ts). DOCUMENT-
+    // class: a version row is a plain, revisitable row — a
+    // repeat PUT records Supersedes and a DELETE tombstones it,
+    // exactly like flow_work_orders/state_field_values above.
+    // The cap-trim machinery (flows.ts's save/undo/redo/publish
+    // ops) calls `flowVersions.delete` directly, inside ITS OWN
+    // transaction, for versions past the retention cap — that
+    // physical splice is untouched and stores no pair; only a
+    // request through THIS route (a client-addressed DELETE of
+    // one named version) appends one. The leaf nests under its
+    // parent flow (param 0); `vid` is param 1.
     route('flows/:id/versions/:vid', {
         get: (db, p) => db.flowVersions.getById(param(p, 1)),
-        put: (db, p, body) =>
-            db.flowVersions.put(
-                param(p, 1),
-                withoutId(body) as unknown as
-                    Omit<FlowVersionEntity, 'id'>,
-            ),
-        delete: (db, p) => db.flowVersions.delete(param(p, 1)),
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 1);
+            return db.transaction(
+                ['flow_versions', 'requests', 'responses'],
+                async (view) => {
+                    const written = await view.flowVersions
+                        .put(
+                            id,
+                            withoutId(body) as unknown as
+                                Omit<FlowVersionEntity, 'id'>,
+                        );
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                    return written;
+                },
+            );
+        },
+        delete: (db, p, _actor, pair) => {
+            const id = param(p, 1);
+            return db.transaction(
+                ['flow_versions', 'requests', 'responses'],
+                async (view) => {
+                    await view.flowVersions.delete(id);
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
     }),
     // Project↔flow joins nest under their parent project: the
     // project id is param 0, so the SERVER filters the collection

@@ -228,6 +228,89 @@ test('undo/redo/versions-publish are operation-addressed:'
     assert.equal(redoRow!.uri_id, '');
 });
 
+test('PUT flows/:id/versions/:vid appends its pair at the'
++ ' version address, and a second PUT supersedes it',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-8');
+    const first = await handleRequest(db, req(
+        'PUT', '/flows/flow-8/versions/v-8', token,
+        versionBody('flow-8'),
+    ));
+    assert.equal(first.status, 200);
+    const firstId = first.headers.get('Response-ID');
+    assert.ok(firstId);
+    const requests = await db.requests.getAll();
+    const row = requests.find(
+        r => r.uri_prefix
+            === '/organizations/1/flows/flow-8/versions/',
+    );
+    assert.ok(row);
+    assert.equal(row!.uri_id, 'v-8');
+    const domainRow = await db.flowVersions.getById('v-8');
+    assert.deepEqual(await first.json(), domainRow);
+    // A distinct body forces a genuinely different request
+    // message — a byte-identical resend would hit the
+    // idempotency fast path instead of writing again.
+    const second = await handleRequest(db, req(
+        'PUT', '/flows/flow-8/versions/v-8', token,
+        { ...versionBody('flow-8'), name: 'Renamed Version' },
+    ));
+    assert.equal(second.status, 200);
+    assert.equal(second.headers.get('Supersedes'), firstId);
+});
+
+test('DELETE flows/:id/versions/:vid appends its tombstone'
++ ' pair, superseding the PUT, and the row is physically'
++ ' spliced', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-9');
+    const put = await handleRequest(db, req(
+        'PUT', '/flows/flow-9/versions/v-9', token,
+        versionBody('flow-9'),
+    ));
+    const putId = put.headers.get('Response-ID');
+    assert.ok(putId);
+    const del = await handleRequest(db, req(
+        'DELETE', '/flows/flow-9/versions/v-9', token,
+    ));
+    assert.equal(del.status, 204);
+    assert.equal(del.headers.get('Supersedes'), putId);
+    await assert.rejects(
+        () => db.flowVersions.getById('v-9'),
+    );
+});
+
+test('a PUT/DELETE on a flow version verifies against its'
++ ' hash and keeps request/response counts balanced',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-10');
+    await handleRequest(db, req(
+        'PUT', '/flows/flow-10/versions/v-10', token,
+        versionBody('flow-10'),
+    ));
+    await handleRequest(db, req(
+        'DELETE', '/flows/flow-10/versions/v-10', token,
+    ));
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    for (const row of requests) {
+        assert.equal(
+            await sha256Hex(row.message), row.message_hash,
+        );
+    }
+    for (const row of responses) {
+        assert.equal(
+            await sha256Hex(row.message), row.message_hash,
+        );
+    }
+    assert.equal(requests.length, responses.length);
+});
+
 test('a byte-identical PUT resend returns the stored'
 + ' response and appends nothing', async () => {
     const db = await freshDb();
