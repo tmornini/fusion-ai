@@ -160,8 +160,8 @@ Legend for classification:
 
 ### 2.4 Ideas
 
-- `GET /ideas` · `GET /ideas/:id` — primitive.
-- `PUT /ideas/:id` — operation (§3.10). Member-tier.
+- `GET /ideas` · `GET|PUT /ideas/:id` — primitive (§3.10).
+  Member-tier.
 - `POST /ideas` — retired (Phase 2 Task 3, R1): the composed
   create folded into the PUT above; the route now 405s like
   any other method-absent verb.
@@ -453,7 +453,7 @@ and §5.2 for the redaction the stored pair carries.
   (only the successful password branch calls `formAuthPair`).
 - default → 400, appending nothing.
 
-### 3.10 `PUT /ideas/:id` — idea document write
+### 3.10 `PUT /ideas/:id` — idea document write (not a POST)
 
 One shape serves create, edit, and transition (Decision 7): the
 body is the entity's own fields plus the lifecycle trio
