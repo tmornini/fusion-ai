@@ -11,6 +11,7 @@ import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
     '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
+import { seedOrganizationMember } from './root-admin-fixture.ts';
 import {
     deriveIdea,
     deriveIdeas,
@@ -126,6 +127,65 @@ async () => {
         const old = await db.states.getAllFor(id);
         assert.deepEqual(derived, old);
     }
+});
+
+// The OP-level MEMBER_ID CAVEAT (api-idea-document.test.ts) has
+// no DERIVATION-layer counterpart: deriveIdeaStateHistory's own
+// dedup (ideaLifecycleEvents, api/derive-ideas.ts) walks pairs in
+// ARRIVAL order and keeps the FIRST occurrence of each distinct
+// state_event_id. A regression that flipped it to keep-LAST
+// would reattribute the derived event to the SECOND editor —
+// silently, since every other case here uses one actor
+// throughout. Mirrors the op-level scenario at the derivation
+// layer: member A creates the idea; member B resends the
+// IDENTICAL trio under a different title; the derived history
+// must still name member A, and must still equal the old-plane
+// states row field-for-field.
+test('derived history keeps the FIRST arrival\'s authorship'
++ ' on a same-trio resend by a different member', async () => {
+    const db = await seededDb();
+    await seedOrganizationMember(db, 'member-b');
+    const tokenA = await organizationToken('current');
+    const tokenB = await organizationToken('member-b');
+    const ideaId = 'idea-drift-authorship-caveat';
+
+    await handleRequest(db, req(
+        'PUT', '/ideas/' + ideaId, tokenA, {
+            title: 'First',
+            position: 1,
+            problem_statement: 'p',
+            target_users: 't',
+            proposed_solution: 's',
+            expected_outcome: 'o',
+            success_metrics: 'm',
+            state: 'active',
+            state_at: '2026-04-01T00:00:00.000000Z',
+            state_event_id: 'ev-drift-authorship-caveat',
+        },
+    ));
+    await handleRequest(db, req(
+        'PUT', '/ideas/' + ideaId, tokenB, {
+            title: 'Second',
+            position: 1,
+            problem_statement: 'p',
+            target_users: 't',
+            proposed_solution: 's',
+            expected_outcome: 'o',
+            success_metrics: 'm',
+            state: 'active',
+            state_at: '2026-04-01T00:00:00.000000Z',
+            state_event_id: 'ev-drift-authorship-caveat',
+        },
+    ));
+
+    const derived = await deriveIdeaStateHistory(
+        db, '1', ideaId,
+    );
+    assert.equal(derived.length, 1);
+    assert.equal(derived[0]!.member_id, 'current');
+
+    const old = await db.states.getAllFor(ideaId);
+    assert.deepEqual(derived, old);
 });
 
 test('submissions parity for a live-written submission',
