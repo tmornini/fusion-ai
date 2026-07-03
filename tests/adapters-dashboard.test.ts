@@ -4,12 +4,17 @@ import {
     MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import { adminContext } from './context-fixtures.ts';
+import type { RequestContext } from
+    '../web-app/app/adapters/shared.ts';
 import {
     getDashboardStats,
     getDashboardGauges,
 } from '../web-app/app/adapters/dashboard.ts';
+import { postIdeaCreation } from
+    '../web-app/app/adapters/ideas.ts';
 import {
     type IdeaEntity,
+    type IdeaState,
     type ProjectEntity,
     type ProjectState,
     type FlowEntity,
@@ -31,16 +36,18 @@ function buildIdea(
     };
 }
 
+// Seeds an idea through the SAME document PUT the live route
+// uses (postIdeaCreation), so a message pair exists at this
+// idea's address — required for the flipped GET ideas route
+// (Phase 2 Task 5), which getDashboardStats reads, to derive it.
 async function seedIdea(
-    db: MemoryDbAdapter,
+    ctx: RequestContext,
     id: string,
-    state: string,
+    state: IdeaState,
 ): Promise<void> {
-    await db.ideas.put(id, buildIdea(id));
-    await db.states.postEvent(
-        `st-${id}`, id, state, 'system',
-        '2026-01-01T00:00:00.000000Z',
-    );
+    const { organization_id: _organizationId, ...entity } =
+        buildIdea(id);
+    await postIdeaCreation(ctx, id, entity, state);
 }
 
 function buildProject(
@@ -120,8 +127,8 @@ test(
     'getDashboardStats counts seeded entities',
     async () => {
         const { db, ctx } = await adminContext();
-        await seedIdea(db, 'i1', 'active');
-        await seedIdea(db, 'i2', 'in_review');
+        await seedIdea(ctx, 'i1', 'active');
+        await seedIdea(ctx, 'i2', 'in_review');
         await seedProject(db, 'p1', 'approved');
         await db.flows.put('f1', buildFlow('f1'));
         await db.flows.put('f2', buildFlow('f2'));
@@ -136,10 +143,10 @@ test(
 test(
     'getDashboardStats excludes archived ideas',
     async () => {
-        const { db, ctx } = await adminContext();
-        await seedIdea(db, 'i1', 'active');
-        await seedIdea(db, 'i2', 'archived');
-        await seedIdea(db, 'i3', 'deleted');
+        const { ctx } = await adminContext();
+        await seedIdea(ctx, 'i1', 'active');
+        await seedIdea(ctx, 'i2', 'archived');
+        await seedIdea(ctx, 'i3', 'deleted');
         const stats = await getDashboardStats(ctx);
         const ideas = stats
             .find(s => s.label === 'Ideas');

@@ -47,7 +47,24 @@ async function twoOrganizations(): Promise<MemoryDbAdapter> {
         organization_id: 'A', identity_id: 'current',
         at: '2026-06-04T00:00:00.000000Z',
     });
-    await db.ideas.put('a1', ideaBody('A', 'mine'));
+    // Seeded through the live document PUT (not a raw
+    // db.ideas.put) so a1's message pair exists — the flipped
+    // GET ideas / GET ideas/:id routes (Phase 2 Task 5) derive
+    // from the ledger, not the old ideas table. b1 stays a raw
+    // row: every case below reads it only through org B, which
+    // `current` never fences into, so it is never derived.
+    const { organization_id: _organizationId, ...a1Fields } =
+        ideaBody('A', 'mine');
+    await handleRequest(db, req(
+        'PUT', '/organizations/A/ideas/a1',
+        await devToken('current'),
+        {
+            ...a1Fields,
+            state: 'active',
+            state_at: '2020-01-01T00:00:00.000000Z',
+            state_event_id: 'ev-a1',
+        },
+    ));
     await db.ideas.put('b1', ideaBody('B', 'theirs'));
     return db;
 }
@@ -279,6 +296,18 @@ async function deepDb(): Promise<MemoryDbAdapter> {
     }
     await seedChain(db, 'A', 'A');
     await seedChain(db, 'B', 'B');
+    // isA's message pair, on top of the raw row seedChain already
+    // wrote above: the flipped GET ideas/:id/submissions route
+    // (Phase 2 Task 5) derives from the ledger at this idea's
+    // submissions address, so the ideas LEAF_CASES case below
+    // needs a pair to find it. isB stays a raw row — it is read
+    // only through org A's facade, which the fence hides either
+    // way.
+    await handleRequest(db, req(
+        'PUT', '/organizations/A/ideas/iA/submissions/isA',
+        await devToken('current'),
+        { idea_id: 'iA', member_id: 'system', at: T8_AT },
+    ));
     return db;
 }
 

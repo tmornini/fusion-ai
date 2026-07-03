@@ -254,7 +254,10 @@ test(
     'the 500 fallback body never carries fault detail',
     async () => {
         const db = await freshDb();
-        (db.ideas as unknown as {
+        // GET ideas is flipped (Phase 2 Task 5): it derives from
+        // the message ledger, never db.ideas, so the fault must
+        // be forced from the store the derivation actually reads.
+        (db.requests as unknown as {
             getAllWhere: () => Promise<never>;
         }).getAllWhere = async () => {
             throw new Error('secret fault detail');

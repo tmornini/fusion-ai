@@ -119,6 +119,11 @@ import {
 import {
     storedGraphField,
 } from './types.ts';
+import {
+    deriveIdeas,
+    deriveIdea,
+    deriveIdeaSubmissions,
+} from './derive-ideas.ts';
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -1786,9 +1791,13 @@ export const routes: Route[] = [
     // already serves (Decision 7, Phase 2 Task 3, R1): genesis
     // is head-presence-defined, so there is no longer a
     // separate create verb here — POST now 405s exactly like
-    // any other method-absent route. GET stays until Task 5.
+    // any other method-absent route. GET is FLIPPED (Phase 2
+    // Task 5): the list derives from the message ledger rather
+    // than the old ideas table — deriveIdeas already strips the
+    // lifecycle trio, so the wire shape is unchanged.
     route('ideas', {
-        get: (db) => db.ideas.getAll(),
+        get: (db, _p, _actor, organization) =>
+            deriveIdeas(db, requireOrganization(organization)),
     }),
     // Convert an idea to a project (promotion): the LONE
     // cross-aggregate write. A new projects row, the promoted
@@ -1866,12 +1875,18 @@ export const routes: Route[] = [
     }),
     // Idea submissions nest under their parent idea: the idea id
     // is param 0, so the SERVER filters the collection to that
-    // idea (the org fence still rides the facade re-entry). The
-    // leaf id is param 1; only PUT is exposed, exactly as the flat
-    // makeIdRoute carried it.
+    // idea (the org fence still rides the facade re-entry). GET
+    // is FLIPPED (Phase 2 Task 5): the collection derives from
+    // the message ledger at this idea's submissions address
+    // rather than the old idea_submissions table. The leaf id is
+    // param 1; only PUT is exposed on ideas/:id/submissions/:sid,
+    // exactly as the flat makeIdRoute carried it.
     route('ideas/:id/submissions', {
-        get: (db, p) =>
-            db.ideaSubmissions.getAllWhere('idea_id', param(p, 0)),
+        get: (db, p, _actor, organization) =>
+            deriveIdeaSubmissions(
+                db, requireOrganization(organization),
+                param(p, 0),
+            ),
     }),
     route('ideas/:id/submissions/:sid', {
         put: (db, p, body, _actor, pair) =>
@@ -2725,11 +2740,14 @@ export const routes: Route[] = [
     // Hand-written in place of makeIdRoute<IdeaEntity> so PUT
     // can append its message pair in the same transaction as
     // the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET
-    // reproduces the factory closure byte-equivalently; verbs
-    // stay {get, put} — ideas/:id has no DELETE today, and
-    // this scaffolding does not add one (the registry
-    // eventually absorbs it).
+    // per-family pair selector (see message-pair.ts). GET is
+    // FLIPPED (Phase 2 Task 5): the single idea derives from the
+    // message ledger rather than the old ideas table —
+    // deriveIdea 404s through the same EntityNotFoundError
+    // mapping getById used, so a missing or foreign-org id
+    // behaves identically. Verbs stay {get, put} — ideas/:id has
+    // no DELETE today, and this scaffolding does not add one
+    // (the registry eventually absorbs it).
     //
     // Decision 7 state-in-entity (Phase 2 Task 2): the PUT body
     // is the FULL document — today's entity fields plus the
@@ -2755,7 +2773,11 @@ export const routes: Route[] = [
     // still fails sameEvent on state/at and 409s, exactly as a
     // bare states/:id resend would.
     route('ideas/:id', {
-        get: (db, p) => db.ideas.getById(param(p, 0)),
+        get: (db, p, _actor, organization) =>
+            deriveIdea(
+                db, requireOrganization(organization),
+                param(p, 0),
+            ),
         put: (db, p, body, actor, pair) =>
             postIdeaDocumentOp(
                 db, param(p, 0), body, actor, pair,

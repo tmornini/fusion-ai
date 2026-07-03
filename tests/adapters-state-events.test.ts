@@ -91,17 +91,25 @@ test('getIdeaStates excludes a same-valued project',
     async () => {
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
-        await db.ideas.put('i1', ideaBody('I'));
-        await db.states.postEvent(
-            'ev-i1', 'i1', 'active', 'system',
-            '2026-01-01T00:00:00.000000Z',
-        );
+        const ctx = createRequestContext(db, await devToken());
+        // Seeded through the live document PUT (not a raw
+        // db.ideas.put) so i1's message pair exists — the
+        // flipped GET ideas route (Phase 2 Task 5), which
+        // getIdeaStates reads for its id set, derives from the
+        // ledger, not the old ideas table.
+        const { organization_id: _organizationId, ...i1Fields } =
+            ideaBody('I');
+        await ctx.PUT('ideas/i1', {
+            ...i1Fields,
+            state: 'active',
+            state_at: '2026-01-01T00:00:00.000000Z',
+            state_event_id: 'ev-i1',
+        });
         await db.projects.put('p1', projectBody('P'));
         await db.states.postEvent(
             'ev-p1', 'p1', 'approved', 'system',
             '2026-01-01T00:00:01.000000Z',
         );
-        const ctx = createRequestContext(db, await devToken());
         const states = await getIdeaStates(ctx);
         assert.equal(states.get('i1'), 'active');
         assert.ok(
