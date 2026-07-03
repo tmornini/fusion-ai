@@ -95,6 +95,23 @@ test('AUTHENTICATION_ROUTES ride the dedicated pair arm, so'
 // tests/api-shadow-ledger-memberships-invitations.test.ts —
 // this test only pins that the wiring is present, not
 // duplicating that behavioral coverage.
+//
+// STRUCTURAL LIMIT — for the next author who adds a third side
+// channel: this test can only assert what it already knows to
+// list. A future write path dispatched the same way (matched by
+// literal path segments in api.ts BEFORE matchRoute/routes[]
+// ever runs — the identities/:id/default-org and /invitations/
+// shape) is invisible to test 1's enumeration BY CONSTRUCTION,
+// and invisible here too unless someone hand-adds its module to
+// the array below. Even for the two files already listed, this
+// only checks that the SUBSTRING 'appendMessagePair' /
+// 'formWritePair' appears somewhere in the file's text — not
+// that EVERY write path inside that file reaches one; a second,
+// unwired write function added later to an already-listed file
+// would still pass. Closing this for good needs a per-write-path
+// registry (the plan's named Phase 2 "5-slot registry"), not a
+// per-file grep — until then, a new side channel is a REVIEW
+// obligation, not a mechanical one.
 test('the invitations and default-organization side channels'
 + ' import the pair-formation primitives', () => {
     for (const path of [
