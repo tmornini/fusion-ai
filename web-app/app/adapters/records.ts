@@ -18,7 +18,6 @@ import {
     latestByKey,
 } from '../../../shared/ledger-reduction.ts';
 import {
-    postStateEvent,
     getRecordStateDetail,
     getRecordStateDetails,
 } from './state-events.ts';
@@ -187,13 +186,34 @@ export async function getRecords(
     });
 }
 
+// The wire document PUT /records/:id now takes (Decision 7):
+// today's entity fields plus the lifecycle trio, camelCase on
+// this side of the adapter seam. organization_id is EXCLUDED
+// too — the client never supplies it (the org fence stamps it
+// downstream). A state-UNCHANGED save (name/description/
+// position edited, trio echoed back unchanged) converges to a
+// no-op event write at the op; a genuine transition
+// (postRecordStateChange below) mints a fresh trio.
+export type RecordDocumentFields =
+    Omit<RecordEntity, 'id' | 'organization_id'> & {
+        readonly state: RecordState;
+        readonly stateAt: string;
+        readonly stateEventId: string;
+    };
+
 export async function putRecord(
     ctx: RequestContext,
     id: RecordId,
-    entity: Omit<RecordEntity, 'id' | 'organization_id'>,
+    document: RecordDocumentFields,
 ): Promise<void> {
+    const {
+        state, stateAt, stateEventId, ...entity
+    } = document;
     await ctx.PUT(`records/${id}`, {
         ...entity,
+        state,
+        state_at: stateAt,
+        state_event_id: stateEventId,
     });
     recordChanges.notify();
 }
@@ -262,11 +282,21 @@ export async function postRecordChange(
     recordChanges.notify();
 }
 
+// A transition: composes the document PUT with a FRESH trio
+// (mint-once-reuse — a retry of the SAME transition resends
+// this same pinned pair, converging at the op) over the
+// record's CURRENT entity fields — hop count 1 -> 1 (one
+// ctx.PUT, via putRecord).
 export async function postRecordStateChange(
     ctx: RequestContext,
-    id: RecordId,
+    record: RecordEntity,
     state: RecordState,
 ): Promise<void> {
-    await postStateEvent(ctx, id, state);
-    recordChanges.notify();
+    const { id, ...entity } = record;
+    await putRecord(ctx, id, {
+        ...entity,
+        state,
+        stateAt: nowUtc(),
+        stateEventId: generateCryptoSafeBase62(),
+    });
 }

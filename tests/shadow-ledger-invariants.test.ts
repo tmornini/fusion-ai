@@ -80,6 +80,20 @@ function recordFields(name: string, organization: string) {
     };
 }
 
+// PUT /records/:id now takes the FULL document (Decision 7):
+// the entity fields plus the state trio. A fixed trio keeps
+// this PUT below a same-state edit.
+function recordPutBody(
+    recordId: string, name: string, organization: string,
+) {
+    return {
+        ...recordFields(name, organization),
+        state: 'active',
+        state_at: AT,
+        state_event_id: 'ev-' + recordId,
+    };
+}
+
 // Task 7's additive pin: a GENESIS-shaped flows document PUT.
 // A fresh id needs no If-Response-ID (the locked class's
 // genesis-with-neither-header-passes rule), so this addition is
@@ -249,7 +263,9 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     // DELETE — a fresh PUT then its tombstone (records, org 2).
     const recordPut = await handleRequest(db, req(
         'PUT', '/records/inv-rec-2', org2Token,
-        recordFields('Invariant Record', ORGANIZATION_TWO),
+        recordPutBody(
+            'inv-rec-2', 'Invariant Record', ORGANIZATION_TWO,
+        ),
     ));
     assert.equal(recordPut.status, 200);
     const recordDeleted = await handleRequest(db, req(

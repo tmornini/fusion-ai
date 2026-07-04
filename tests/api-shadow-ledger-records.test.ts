@@ -73,6 +73,19 @@ function recordFields(name: string) {
     };
 }
 
+// PUT /records/:id now takes the FULL document (Decision 7):
+// the entity fields plus the state trio. One fixed trio per
+// record id keeps every PUT below a same-state edit — none of
+// these exercise a genuine transition.
+function recordPutBody(recordId: string, name: string) {
+    return {
+        ...recordFields(name),
+        state: 'active',
+        state_at: '2026-01-01T00:00:00.000000Z',
+        state_event_id: 'ev-' + recordId,
+    };
+}
+
 function recordAttributeFields(recordId: string, name: string) {
     return {
         organization_id: '1',
@@ -144,14 +157,14 @@ test('a PUT to a fresh record appends its pair, and a'
     const token = await organizationToken();
     const first = await handleRequest(db, req(
         'PUT', '/records/rec-3', token,
-        recordFields('First'),
+        recordPutBody('rec-3', 'First'),
     ));
     assert.equal(first.status, 200);
     const firstId = first.headers.get('Response-ID');
     assert.ok(firstId);
     const second = await handleRequest(db, req(
         'PUT', '/records/rec-3', token,
-        recordFields('Second'),
+        recordPutBody('rec-3', 'Second'),
     ));
     assert.equal(second.status, 200);
     assert.equal(second.headers.get('Supersedes'), firstId);
@@ -163,7 +176,7 @@ test('DELETE records/:id appends its tombstone pair,'
     const token = await organizationToken();
     const put = await handleRequest(db, req(
         'PUT', '/records/rec-4', token,
-        recordFields('Doomed'),
+        recordPutBody('rec-4', 'Doomed'),
     ));
     const putId = put.headers.get('Response-ID');
     const del = await handleRequest(db, req(
@@ -180,7 +193,7 @@ test('each 200 route\'s wire body matches a direct domain '
     const token = await organizationToken();
     const record = await handleRequest(db, req(
         'PUT', '/records/rec-5', token,
-        recordFields('Wired'),
+        recordPutBody('rec-5', 'Wired'),
     ));
     assert.equal(record.status, 200);
     const recordRow = await db.records.getById('rec-5');

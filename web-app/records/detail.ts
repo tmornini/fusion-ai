@@ -600,8 +600,21 @@ async function handleSave(
                 },
             );
         } else {
+            // No attribute change and no state change (a
+            // plain name/description/position edit) — echo
+            // the trio from the already-loaded model, zero
+            // extra fetch.
             await putRecord(
-                ctx, recordId, recordFields,
+                ctx, recordId,
+                {
+                    ...recordFields,
+                    state: originalRecord.stateValue(),
+                    stateAt:
+                        originalRecord.stateAtValue(),
+                    stateEventId:
+                        originalRecord
+                            .stateEventIdValue(),
+                },
             );
         }
     } catch (err) {

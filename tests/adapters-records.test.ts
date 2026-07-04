@@ -109,6 +109,9 @@ test(
             name: 'B',
             description: 'second',
             position: 1,
+            state: 'active',
+            stateAt: '2026-01-02T00:00:00.000000Z',
+            stateEventId: 'ev-rec-1-b',
         });
         const stored = await getRecord(ctx, 'rec-1');
         assert.equal(stored.name, 'B');
@@ -198,8 +201,9 @@ test(
             attributes: [],
             initialState: 'active',
         });
+        const rec2 = await getRecord(ctx, 'rec-2');
         await postRecordStateChange(
-            ctx, 'rec-2', 'deleted',
+            ctx, rec2, 'deleted',
         );
         const records = await getRecords(ctx);
         const ids = records
@@ -227,8 +231,9 @@ test(
             attributes: [],
             initialState: 'active',
         });
+        const rec1 = await getRecord(ctx, 'rec-1');
         await postRecordStateChange(
-            ctx, 'rec-1', 'archived',
+            ctx, rec1, 'archived',
         );
         const stored = await getRecord(ctx, 'rec-1');
         assert.equal(stored.description, 'orig');
@@ -271,8 +276,9 @@ test(
             attributes: [],
             initialState: 'active',
         });
+        const rec1 = await getRecord(ctx, 'rec-1');
         await postRecordStateChange(
-            ctx, 'rec-1', 'archived',
+            ctx, rec1, 'archived',
         );
         const events = await db.states.getAllFor(
             'rec-1',

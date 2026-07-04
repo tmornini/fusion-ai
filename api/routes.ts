@@ -72,7 +72,6 @@ import {
     validateFlowRecordEntity,
     validateRecordAttributeEntity,
     validateRecordDocumentBody,
-    validateRecordEntity,
     validateRecordWriteBody,
     validateRoleGrantEntity,
     validateStateBody,
@@ -140,6 +139,7 @@ import {
     documentCollectionGetHandler,
     documentCollectionRoute,
     documentEntityRoute,
+    documentPutHandler,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
@@ -260,10 +260,47 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
     documentOp: postWorkOrderDocumentOp,
     entityOf: workOrderDocumentEntityOf,
 };
+// The generic GET machinery (documentGetHandler/
+// documentCollectionGetHandler) this entityOf serves flips onto
+// records only at Task 7 — GET records/:id and GET records stay
+// hand-written, old-plane, through this task, so entityOf is
+// unreached for now. It still picks fields explicitly (never a
+// body spread) rather than standing in as a placeholder, the
+// SAME shape ideaEntityOf/projectEntityOf already use, so the
+// Task 7 flip finds it already correct instead of inheriting a
+// trio-leaking stand-in.
+function recordDocumentEntityOf(
+    document: DerivedDocument,
+    organization: Id,
+): RecordEntity {
+    const body = document.body;
+    return {
+        id: document.uriId,
+        organization_id: organization,
+        name: pickString(body, 'name'),
+        description: pickString(body, 'description'),
+        position: pickNumber(body, 'position'),
+    };
+}
+// The records wiring row — the fifth family, and the first
+// 'trio' family whose :id address also carries a live DELETE
+// route (Author gate 9: documentLifecycleEvents now skips a
+// DELETE-method pair — see its own comment in derive-
+// documents.ts). notFoundTable is 'records' (its storage table
+// name matches its family name, like ideas/projects/flows).
+const RECORDS_WIRING: DocumentFamilyWiring = {
+    family: 'records',
+    lifecycle: 'trio',
+    notFoundTable: 'records',
+    validateDocument: validateRecordDocumentBody,
+    documentOp: postRecordDocumentOp,
+    entityOf: recordDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
 registerDocumentFamilyWiring(WORK_ORDERS_WIRING);
+registerDocumentFamilyWiring(RECORDS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -1621,16 +1658,14 @@ export const WRITE_RESPONSE_SPECS:
         }),
     },
     'records': { status: 204 },
-    'records/:id': {
-        status: 200,
-        successBody: (params, body, _actor, organization) => ({
-            id: param(params, 0),
-            ...validateRecordEntity({
-                ...withoutId(body ?? {}),
-                organization_id: organization,
-            }),
-        }),
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody — see the ideas/:id
+    // entry above for the shared rationale. records/:id emits the
+    // SAME bytes as before ({id, organization_id, name,
+    // description, position}): validateRecordDocumentBody's
+    // entity/trio separation guarantees doc.entity never carries
+    // the trio, byte-identical to today's hand-built body.
+    'records/:id': documentWriteResponseSpec(RECORDS_WIRING),
     'record-attributes/:id': {
         status: 200,
         successBody: (params, body, _actor, organization) => ({
@@ -3194,31 +3229,19 @@ export const routes: Route[] = [
         post: (db, _p, body, actor, pair) =>
             postRecordWriteOp(db, body, actor, pair),
     }),
-    // Hand-written in place of makeIdRoute<RecordEntity> so
-    // PUT and DELETE can each append their message pair in
-    // the same transaction as the write — the factory's fixed
-    // closures have no per-family pair selector (see
-    // message-pair.ts). GET reproduces the factory closure
-    // byte-equivalently; verbs stay {get, put, delete}.
+    // A hybrid route (unlike ideas/projects/flows' full
+    // documentEntityRoute swap): GET stays hand-written,
+    // old-plane (Task 7 flips it, reproducing the factory
+    // closure byte-equivalently in the meantime); PUT now
+    // dispatches through documentPutHandler(RECORDS_WIRING) —
+    // the Decision 7 trio fold (see RECORDS_WIRING's own
+    // comment above); DELETE stays hand-written, unchanged — a
+    // splice + pair append in the same transaction, exactly as
+    // before (the factory's fixed closures have no per-family
+    // pair selector; see message-pair.ts).
     route('records/:id', {
         get: (db, p) => db.records.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['records', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.records.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<RecordEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: documentPutHandler(RECORDS_WIRING),
         delete: (db, p, _actor, pair) => {
             const id = param(p, 0);
             return db.transaction(

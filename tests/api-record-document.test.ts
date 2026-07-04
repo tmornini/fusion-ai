@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
+import { handleRequest } from '../api/api.ts';
 import { postRecordDocumentOp } from '../api/routes.ts';
 import { validateRecordDocumentBody } from '../api/validators.ts';
 import { ValidationError } from '../api/types.ts';
@@ -10,20 +11,39 @@ import {
     documentLifecycleEvents,
 } from '../api/derive-documents.ts';
 import { formWritePair } from '../api/message-pair.ts';
+import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 
 // Task 2 (Decision 7's trio fold, the fifth family): PUT
 // records/:id becomes a document PUT — the entity's own fields
 // plus the lifecycle trio (state, state_at, state_event_id),
 // decomposed at postRecordDocumentOp exactly as
-// postIdeaDocumentOp already decomposes ideas'. RECORDS_WIRING
-// (the route swap, the response-spec swap) lands at the fold
-// commit — until then no route calls postRecordDocumentOp, so
-// only its below-gate behavior (and the validator's own gate)
-// are pinned here, mirroring tests/api-flow-document.test.ts's
-// own below-gate convention for its Task-2-era commit.
+// postIdeaDocumentOp already decomposes ideas'. Cases 1, 2, and
+// 4 exercise postRecordDocumentOp/the validator/the shared
+// derive-documents.ts walk directly, below-gate, ahead of the
+// fold commit that wires records/:id onto this op (mirroring
+// tests/api-flow-document.test.ts's own below-gate convention
+// for its Task-2-era commit); case 3 rides the live gate now
+// that the fold commit has landed.
 
+const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
+
+function req(
+    method: string,
+    path: string,
+    token: string,
+    body?: unknown,
+): Request {
+    return new Request(`${BASE}${path}`, {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token,
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+}
 
 function recordFields(name: string) {
     return {
@@ -187,6 +207,33 @@ test('postRecordDocumentOp with a fresh trio posts a'
         ['active', 'archived'],
     );
     assert.ok(events.every(e => e.member_id === 'current'));
+});
+
+// -- 3. the fast-path sibling pin (added at the fold commit,
+// now that RECORDS_WIRING wires records/:id onto this op) ---
+//
+// The gate's pre-tx idempotency fast path (api.ts) replays a
+// byte-identical resend's STORED response without re-dispatching
+// to the op — sibling of api-idea-document.test.ts's own "a
+// byte-identical resend converges: one event, one pair".
+
+test('a byte-identical resend replays the stored response:'
++ ' one event, one pair', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const body = recordDocument(
+        'Idempotent', 'active', AT, 'ev-resend',
+    );
+    await handleRequest(
+        db, req('PUT', '/records/rec-resend', token, body),
+    );
+    await handleRequest(
+        db, req('PUT', '/records/rec-resend', token, body),
+    );
+    const events = await db.states.getAllFor('rec-resend');
+    assert.equal(events.length, 1);
+    assert.equal((await db.requests.getAll()).length, 1);
+    assert.equal((await db.responses.getAll()).length, 1);
 });
 
 // -- 4. the DELETE-pair walk filter (Author gate 9) ----------
