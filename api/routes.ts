@@ -71,6 +71,7 @@ import {
     validateProjectFlowEntity,
     validateFlowRecordEntity,
     validateRecordAttributeEntity,
+    validateRecordDocumentBody,
     validateRecordEntity,
     validateRecordWriteBody,
     validateRoleGrantEntity,
@@ -506,10 +507,10 @@ async function writeFlowGraphDelta(
 // instead, and this helper reads it straight back so the seed's
 // write still carries it — inert for the fenced route
 // (overwritten either way regardless of what this returns),
-// load-bearing for the seed. Four sites now share this exact
-// shape (ideas, projects, flows, work-orders) — past the
-// rule-of-three, so it is extracted once rather than duplicated
-// a fourth time.
+// load-bearing for the seed. Five sites now share this exact
+// shape (ideas, projects, flows, work-orders, records) — past
+// the rule-of-three, so it is extracted once rather than
+// duplicated a fifth time.
 function documentOperationOrganization(
     body: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -624,6 +625,56 @@ export async function postProjectDocumentOp(
                     ...doc.entity,
                     ...documentOperationOrganization(body),
                 } as unknown as Omit<ProjectEntity, 'id'>,
+            );
+            await view.states.postEvent(
+                doc.state_event_id, id, doc.state,
+                memberId, doc.state_at,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
+// Record document write (Decision 7, the fifth family): ONE
+// shape serves create, edit, and transition — genesis is
+// head-presence-defined, byte-identical to postIdeaDocumentOp/
+// postProjectDocumentOp above (the SAME member_id ternary, the
+// SAME sameEvent MEMBER_ID CAVEAT). UNLIKE those two, a record's
+// genesis normally arrives through the composed create
+// (postRecordWriteOp, POST /records) rather than this PUT — this
+// op's genesis arm exists for a live PUT-first flow, and mirrors
+// ideas/projects exactly rather than special-casing records as
+// PUT-only-for-edits. Not yet wired to any route (the fold
+// commit adds RECORDS_WIRING + the route swap); exported so its
+// below-gate decompose behavior can be pinned ahead of that wire,
+// mirroring postFlowDocumentOp's own Task-2-era convention.
+export async function postRecordDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    actor: Id,
+    pair?: MessagePair,
+): Promise<RecordEntity> {
+    const doc = validateRecordDocumentBody(withoutId(body));
+    return db.transaction(
+        ['records', 'states', 'requests', 'responses'],
+        async (view) => {
+            const head = await view.states.getCurrentFor(id);
+            const memberId = (
+                head !== null
+                && head.id === doc.state_event_id
+                && head.state === doc.state
+                && head.at === doc.state_at
+            ) ? head.member_id : actor;
+            const written = await view.records.put(
+                id,
+                {
+                    ...doc.entity,
+                    ...documentOperationOrganization(body),
+                } as unknown as Omit<RecordEntity, 'id'>,
             );
             await view.states.postEvent(
                 doc.state_event_id, id, doc.state,

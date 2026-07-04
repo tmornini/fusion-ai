@@ -2210,6 +2210,74 @@ export function validateRecordEntity(
     };
 }
 
+const RECORD_DOCUMENT_ENTITY_KEYS: readonly string[] = [
+    'name', 'description', 'position',
+];
+
+const RECORD_DOCUMENT_BODY_KEYS: readonly string[] = [
+    ...RECORD_DOCUMENT_ENTITY_KEYS,
+    'state', 'state_at', 'state_event_id',
+];
+
+export interface RecordDocumentBody {
+    readonly entity:
+        Omit<RecordEntity, 'id' | 'organization_id'>;
+    readonly state: RecordState;
+    readonly state_at: string;
+    readonly state_event_id: string;
+}
+
+// The HTTP-body gate for PUT /records/:id (Decision 7): the
+// full wire document — the entity's own fields plus the
+// lifecycle trio folded in. organization_id is deliberately
+// absent from the expected set (like every other org-owned
+// write, the client never supplies it; the org fence stamps it
+// downstream when view.records.put re-validates through
+// validateRecordEntity) yet rides the `optional` allowance
+// rather than `expected` — a caller-forged organization_id is
+// tolerated-but-ignored, not rejected, because the fence's
+// stamp always overrides whatever key it finds. The trio holds
+// to the SAME rules the bare states/:id route applies to an
+// event (assertRecordState, an RFC-3339 `at`, a non-empty
+// event id), so a folded document and a bare event share one
+// shape. Entity fields are picked directly rather than
+// delegated to validateRecordEntity — that function REQUIRES
+// organization_id, which this body never carries pre-stamp
+// (name's own non-empty invariant still lands downstream, at
+// view.records.put's own re-validation — this gate gates the
+// WIRE SHAPE, not the entity's own rules).
+export function validateRecordDocumentBody(
+    body: Record<string, unknown>,
+): RecordDocumentBody {
+    assertOnlyKeys(
+        body, RECORD_DOCUMENT_BODY_KEYS,
+        'RecordDocumentBody', ['organization_id'],
+    );
+    const state = assertRecordState(
+        pickString(body, 'state'),
+        'RecordDocumentBody.state',
+    );
+    const stateEventId = pickString(body, 'state_event_id');
+    if (stateEventId === '') {
+        throw new ValidationError(
+            'RecordDocumentBody.state_event_id must be'
+            + ' non-empty',
+        );
+    }
+    return {
+        entity: {
+            name: pickString(body, 'name'),
+            description: pickString(body, 'description'),
+            position: pickNumber(body, 'position'),
+        },
+        state,
+        state_at: validateTimestampField(
+            body, 'state_at', 'RecordDocumentBody.state_at',
+        ),
+        state_event_id: stateEventId,
+    };
+}
+
 const RECORD_ATTRIBUTE_BODY_KEYS:
     readonly string[] = [
     'organization_id', 'record_id', 'name',
