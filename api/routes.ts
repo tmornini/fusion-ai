@@ -78,7 +78,6 @@ import {
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
     validateWorkOrderDocumentBody,
-    validateWorkOrderEntity,
     validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
     pickString,
@@ -136,10 +135,12 @@ import {
     documentCollectionGetHandler,
     documentCollectionRoute,
     documentEntityRoute,
+    documentPutHandler,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
 } from './document-family.ts';
+import type { DerivedDocument } from './derive-documents.ts';
 // Re-exported: param/requireOrganization/withoutId moved to
 // document-family.ts (see the import above and its own
 // comment), but api.ts and existing tests still import them
@@ -223,9 +224,43 @@ const FLOWS_WIRING: DocumentFamilyWiring = {
     documentOp: postFlowDocumentOp,
     entityOf: flowEntityOf,
 };
+// The work-orders wiring row — the fourth family, and the
+// FIRST 'stateless' one (Decision 7's lifecycle trio does not
+// apply to a work-order document; see postWorkOrderDocumentOp's
+// own comment for why). GET stays hand-written old-plane
+// through this task (route('work-orders/:id', ...) below) —
+// only PUT flips to the generic machinery here, so entityOf
+// serves interface uniformity and a future GET flip (Task 7),
+// not any live reader today: the head pair's body, stamped with
+// id and organization_id, already carries exactly the
+// {display_id, flow_graph, position} keys
+// validateWorkOrderDocumentBody's gate admits, so no per-field
+// picking is needed the way ideaEntityOf/projectEntityOf/
+// flowEntityOf each do for their OWN live GET path. notFoundTable
+// is 'work_orders' — the first family whose storage table name
+// (db-backed.ts's EntityStore key) differs from its family name.
+function workOrderDocumentEntityOf(
+    document: DerivedDocument,
+    organization: Id,
+): unknown {
+    return {
+        id: document.uriId,
+        organization_id: organization,
+        ...document.body,
+    };
+}
+const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
+    family: 'work-orders',
+    lifecycle: 'stateless',
+    notFoundTable: 'work_orders',
+    validateDocument: validateWorkOrderDocumentBody,
+    documentOp: postWorkOrderDocumentOp,
+    entityOf: workOrderDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
+registerDocumentFamilyWiring(WORK_ORDERS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -1431,16 +1466,8 @@ export const WRITE_RESPONSE_SPECS:
         }),
     },
     'work-orders': { status: 204 },
-    'work-orders/:id': {
-        status: 200,
-        successBody: (params, body, _actor, organization) => ({
-            id: param(params, 0),
-            ...validateWorkOrderEntity({
-                ...withoutId(body ?? {}),
-                organization_id: organization,
-            }),
-        }),
-    },
+    'work-orders/:id':
+        documentWriteResponseSpec(WORK_ORDERS_WIRING),
     'work-orders/:id/claim': { status: 204 },
     'work-orders/:id/transition': { status: 204 },
     'flows/:id/work-orders/:woid': {
@@ -2711,32 +2738,19 @@ export const routes: Route[] = [
         post: (db, _p, body, actor, pair) =>
             postWorkOrderCreationOp(db, body, actor, pair),
     }),
-    // Hand-written in place of makeIdRoute<WorkOrderEntity> so
-    // PUT can append its message pair in the same transaction
-    // as the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET
-    // reproduces the factory closure byte-equivalently; verbs
-    // stay {get, put} — work-orders/:id has no DELETE today,
-    // mirroring the projects/:id precedent.
+    // The Phase 4 composable-builder split (the fourth-family
+    // absorption): GET stays hand-written old-plane — unchanged
+    // until Task 7 flips it onto documentGetHandler
+    // (WORK_ORDERS_WIRING) — while PUT now dispatches through
+    // the SAME generic machinery ideas/projects/flows already
+    // use. This is a ZERO-CHANGE refactor: postWorkOrderDocumentOp
+    // reproduces the prior hand-written PUT's write set
+    // (work_orders.put + the pair, in that order) byte-for-byte;
+    // verbs stay {get, put} — work-orders/:id has no DELETE
+    // today, mirroring the projects/:id precedent.
     route('work-orders/:id', {
         get: (db, p) => db.workOrders.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['work_orders', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.workOrders.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<WorkOrderEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: documentPutHandler(WORK_ORDERS_WIRING),
     }),
     // See postWorkOrderClaimOp for the transaction shape.
     route('work-orders/:id/claim', {
