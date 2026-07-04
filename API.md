@@ -189,7 +189,11 @@ Legend for classification:
   head via `If-Response-ID` or 412s.
 - `POST /flows` — operation (§3.12). Member-tier.
 - `POST /flows/:id/undo` — operation (§3.14).
-- `POST /flows/:id/redo` — operation (§3.15).
+- `POST /flows/:id/redo` — retired (Phase 4 Task 4, R1/E5):
+  folds into a `POST /flows/:id/versions` (§3.16) plus the
+  locked `PUT` above (§3.13); the route leaves the URI tree
+  entirely, so a request against it now 404s (no pattern
+  match) — never a 405 method-absent gap.
 - `GET /flows/:id/versions` · `POST /flows/:id/versions` (§3.16) ·
   `GET|PUT|DELETE /flows/:id/versions/:vid` — nested (§3.31).
 - `GET /flows/:id/work-orders` ·
@@ -551,7 +555,8 @@ a lost save — the structural path's already-shipped behavior.
   `states.postEvent(state_event_id, id, state, actor, state_at)`
   → the graph delta's node/edge upserts, member/attribute
   events, and deletion events (`writeFlowGraphDelta`, the SAME
-  helper `POST /flows` and undo/redo use) → for each revival:
+  helper `POST /flows` and undo use — redo's document half
+  IS this very PUT, Phase 4 Task 4) → for each revival:
   `states.postEvent(eventId, entityId, 'restored', actor, at)`
   (the undo route's own loop, reused) → `appendMessagePair(pair)`
   LAST.
@@ -569,11 +574,13 @@ a lost save — the structural path's already-shipped behavior.
   (never a `flows` literal), still served by the SAME
   hand-written old-plane reassembly handler.
 - **INTERIM acceptance.** Between this task and a future
-  derivation task, an undo/redo leaves the shadow head stale (its
-  pair is operation-addressed, never touching `flows/:id`'s own
-  head — §2.6), so a pre-undo echo is still accepted on the next
-  save — today's lost-update baseline exactly, named here so the
-  window is a decision, not a surprise.
+  derivation task, undo leaves the shadow head stale (its pair is
+  operation-addressed, never touching `flows/:id`'s own head —
+  §2.6), so a pre-undo echo is still accepted on the next save —
+  today's lost-update baseline exactly, named here so the window
+  is a decision, not a surprise. Redo (Phase 4 Task 4, R1/E5) no
+  longer shares this gap: its document half rides THIS route, so
+  it moves the head like any other save.
 
 ### 3.14 `POST /flows/:id/undo` — undo a flow edit
 
@@ -586,17 +593,22 @@ a lost save — the structural path's already-shipped behavior.
   as `post_undo_flow`.
 - props: atomic; member-tier; `validateFlowUndoBody`.
 
-### 3.15 `POST /flows/:id/redo` — redo a flow edit
+### 3.15 `POST /flows/:id/redo` — retired (Phase 4 Task 4, R1/E5)
 
-- tx: `[flows, flow_versions, states, requests, responses]`
-- actual: `flowVersions.put(version.id, version)`; for each `trimId`:
-  `flowVersions.delete(trimId)`; `flows.put(id, flow)`;
-  `states.postEvent(eventId, id, 'updated', actor)`;
-  `appendMessagePair(pair)`.
-- doctrinal: `put_flow_version` + `delete_flow_version`* + `put_flow`
-  + `post_state_event` as `post_redo_flow`.
-- props: atomic; always writes a version (the reverse of undo);
-  member-tier; `validateFlowRedoBody`.
+Redo folds into two writes already documented elsewhere: the
+CURRENT state archives through `POST /flows/:id/versions` (§3.16
+— the SAME op version-publish already rode; the client's
+`postFlowVersion` computes the publish internally, so this is
+never a second, bespoke snapshot), then the redo target's graph
+lands through `PUT /flows/:id` (§3.13, the locked document save,
+which also carries the revivals). The two writes are no longer
+one transaction — the same non-atomic shape every other
+client-composed flow edit already carries (§3.13's own retry
+loop absorbs a 412; any other fault propagates to the caller).
+The route LEAVES THE URI TREE entirely: a request against it now
+404s (no pattern match), unlike the retired `POST /ideas`
+(§2.4/§3.10), which 405s because `ideas` GET stays wired —
+`flows/:id/redo` had no other verb left to survive it.
 
 ### 3.16 `POST /flows/:id/versions` — publish a version
 
@@ -607,6 +619,11 @@ a lost save — the structural path's already-shipped behavior.
   `post_publish_flow_version`.
 - props: atomic; **no state event**; the web-app computes which
   versions to trim; member-tier; `validateFlowVersionPublishBody`.
+- **Two callers (Phase 4 Task 4).** A versioned edit's own
+  save calls this BEFORE its `PUT /flows/:id` (§3.13); redo
+  (retired §3.15) now calls it too, ALONE, to archive the
+  CURRENT state before its own `PUT /flows/:id` lands the redo
+  target — the same two-call shape, never a third variant.
 
 ### 3.17 `POST /work-orders` — create work order
 
