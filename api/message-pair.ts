@@ -117,19 +117,19 @@ const SUPERSEDES_FIELD = 'supersedes';
 const FOLLOWS_FIELD = 'follows';
 const RESPONSE_ID_FIELD = 'response-id';
 
-// One entry per FIRST PATH SEGMENT — note the multi-word nouns
-// whose segment diverges from the table-name root:
-// 'record-attributes' is a separate first segment from
-// 'records' yet is genuinely organization-owned (organization-
-// scoped store, organization_id index). Audit any new write
-// route's first segment against the org-scoped adapter before
-// trusting this set. A registered family (family-registry.ts)
-// answers ONLY from its registration — its entry here is
-// deleted, never kept as a parallel truth.
+// One entry per FIRST PATH SEGMENT — note the multi-word
+// nouns whose segment diverges from the table-name root:
+// 'record-attributes' rode this fallback until it
+// registered (family-registry.ts) — genuinely organization-
+// owned (organization-scoped store, organization_id index)
+// despite sharing no segment with 'records'. Audit any new
+// write route's first segment against the organization-
+// scoped adapter before trusting this set. A registered
+// family answers ONLY from its registration — its entry
+// here is deleted, never kept as a parallel truth.
 const ORGANIZATION_NESTED_FIRST_SEGMENTS: ReadonlySet<string> =
     new Set([
-        'record-attributes', 'objectives',
-        'memberships', 'states',
+        'objectives', 'memberships', 'states',
     ]);
 
 // The tier rule, exported so gate, seed, and derivations share

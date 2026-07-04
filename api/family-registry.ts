@@ -57,6 +57,12 @@ export const FAMILY_REGISTRY: readonly FamilyRegistration[] = [
         concurrency: 'simple',
         createBodyIdField: 'id',
     },
+    {
+        family: 'record-attributes',
+        organizationNested: true,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    },
 ];
 
 export function familyRegistration(

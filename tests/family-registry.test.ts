@@ -54,6 +54,16 @@ test('records is the fifth registered family, simple'
     });
 });
 
+test('record-attributes is the sixth registered family,'
++ ' simple like records', () => {
+    assert.deepEqual(familyRegistration('record-attributes'), {
+        family: 'record-attributes',
+        organizationNested: true,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
     assert.equal(familyRegistration('objectives'), undefined);
 });
