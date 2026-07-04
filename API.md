@@ -206,8 +206,10 @@ Legend for classification:
 - `GET /work-orders` · `GET|PUT /work-orders/:id` — primitive.
   `PUT` is a document write (§5.6) — the fourth family, and the
   FIRST `'stateless'` one (§5.6): unlike ideas/projects/flows,
-  its body carries no lifecycle trio. `GET` stays hand-written
-  old-plane (unchanged until a future task).
+  its body carries no lifecycle trio. `GET` now rides the SAME generic
+  document machinery `PUT` does — both the list (`GET /work-orders`) and the
+  entity read (`GET /work-orders/:id`) derive from the message ledger (Task
+  7, Phase 5), not a hand-written dispatch.
 - `POST /work-orders` — operation (§3.17). Member-tier.
 - `POST /work-orders/:id/claim` — operation (§3.18).
 - `POST /work-orders/:id/transition` — operation (§3.19).
@@ -802,7 +804,7 @@ like every other atomic write in this catalog.
 
 ### 3.20 `POST /records` — record write (create or edit)
 
-`applyRecordWrite` (`api/routes.ts:220`).
+`postRecordWriteOp` (`api/routes.ts`).
 
 - tx (dynamic): `[records, record_attributes, states,
   ...ATTRIBUTE_RESTRICT_TABLES, requests, responses]`
@@ -1176,22 +1178,24 @@ one case) never a throw:
 
 `POST /snapshots/mock-data` and `POST /snapshots/bootstrap` are
 `BOOTSTRAP_ROUTES` — bearer-exempt and below the ledger for their OWN
-request (§3.26–§3.28). What they seed, though, is itself the output
-of six pair-capable write families (`human-members`, `ideas`,
-`flows`, `ai-members`, `records`, `objectives`), so the seed forms
-each family's pair the SAME way a live request would, then writes it
-alongside the seeded row:
+request (§3.26–§3.28). What they seed, though, is itself the output of TEN
+pair-capable write families, in dependency order: `human-members`, `ideas`,
+`idea-submissions`, `projects`, `flows`, `work-orders`, `flow-work-orders`,
+`ai-members`, `records`, and `objectives` (`buildMockDataInvocations`,
+`api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
+the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **37** message pairs — one per seeded
-  human-member, idea, flow, AI member, record, and objective
-  (`buildMockDataInvocations`,
-  `api/mock-data/seed-message-pairs.ts`) — in a first pass, BEFORE
-  the seed's own big transaction opens (`formWritePair`'s hashing is
-  async crypto, which would auto-commit an IndexedDB transaction
-  early if awaited inside one); a second pass then writes the seeded
-  rows and appends each pre-formed pair in the SAME transaction the
-  row lands in. The bootstrap seed forms exactly one such pair, for
-  its lone `current` human-member create.
+- The mock-data seed pre-forms **364** message pairs — one pair per seeded
+  row for most families, but each seeded flow folds in an
+  operation/document/join triple (4 creates × 3 pair triples + 1 genesis
+  document = 13, §3.12) and each seeded work order forms both a document
+  pair and a join pair (145 + 145, §3.17) — in a first pass, BEFORE the
+  seed's own big transaction opens (`formWritePair`'s hashing is async
+  crypto, which would auto-commit an IndexedDB transaction early if awaited
+  inside one); a second pass then writes the seeded rows and appends each
+  pre-formed pair in the SAME transaction the row lands in. The bootstrap
+  seed forms exactly one such pair, for its lone `current` human-member
+  create.
 - Every seed pair carries **no `Authorization` header** — a seed
   invocation is not a real HTTP request, so `headerFields` is empty
   rather than a synthesized fake bearer.
@@ -1324,12 +1328,10 @@ now declares:
 `documentPutHandler(WORK_ORDERS_WIRING)` — the SAME `'simple'`
 concurrency class ideas/projects ride (§5.4) — and
 `WRITE_RESPONSE_SPECS['work-orders/:id']` is
-`documentWriteResponseSpec(WORK_ORDERS_WIRING)`. **GET
-/work-orders/:id stays hand-written old-plane** (unchanged
-until a future task flips it onto the generic
-`documentGetHandler`) — only PUT rides the generic machinery
-this task; `entityOf` exists for interface uniformity and that
-future flip, not any live reader today.
+`documentWriteResponseSpec(WORK_ORDERS_WIRING)`. **GET /work-orders/:id**
+rides the SAME wiring row through `documentGetHandler` (Task 7, Phase 5) —
+the flip that retired the last hand-written document-family route object;
+`entityOf` is now a live reader for both verbs, not merely future-proofing.
 
 **The wire is unchanged.** The response's `{id, organization_id,
 display_id, flow_graph, position}` keys and the 404 body
