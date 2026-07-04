@@ -1159,17 +1159,18 @@ export interface WorkOrderCreationPairs {
 // OMITS it; the join row derives org from its flow and is
 // re-validated by the flow_work_orders store. The three
 // events are applied IN ORDER and authored by the verified
-// caller (actor), never the body. Exported so the seed can
-// drive work-order creation through the same gate the
-// route uses (Decision 6's below-facade carve-out) — this
-// is also Phase 1's dual-write insertion seam. `pairs` is
-// optional so the seed's below-facade call (api/mock-data.ts,
-// no gate, no pairs) keeps compiling unchanged; the route
-// always supplies the triple, since 'work-orders' is
-// pair-wired and never bearer-exempt. The route (not this op)
-// forms all three pairs pre-tx — see route('work-orders', ...)
-// below — since forming the document/join pairs needs the
-// fence organization and the work-orders/:id +
+// caller (actor), never the body. `pairs` stays optional on
+// the signature; today only the live route ever calls this
+// op — since Phase 5 Task 4 the seed (api/mock-data.ts) drives
+// work-order creation through postWorkOrderDocumentOp /
+// postFlowWorkOrderDocumentOp instead, with its
+// states/state_field_values traces staying direct writes,
+// never through this op. The route always supplies the
+// triple, since 'work-orders' is pair-wired and never
+// bearer-exempt. The route (not this op) forms all three
+// pairs pre-tx — see route('work-orders', ...) below — since
+// forming the document/join pairs needs the fence
+// organization and the work-orders/:id +
 // flows/:id/work-orders/:woid response specs, both
 // route-table concerns.
 export async function postWorkOrderCreationOp(
