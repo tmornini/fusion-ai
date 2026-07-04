@@ -73,24 +73,46 @@ export interface DocumentFamilyWiring {
 // rides the locked arm through this task, since only ideas and
 // projects are registered here, and both are 'simple'.
 export const DOCUMENT_FAMILY_WIRINGS:
-    Record<string, DocumentFamilyWiring> = {
-    ideas: {
+    Record<string, DocumentFamilyWiring> = {};
+
+// ideas/projects are registered LAZILY, on documentFamilyWiring's
+// FIRST call, rather than in a top-level object literal: this
+// module and routes.ts import each other (this module's generic
+// dispatch needs routes.ts's param/requireOrganization/withoutId;
+// routes.ts's route table needs this module's builders), and a
+// top-level literal referencing routes.ts's postIdeaDocumentOp/
+// postProjectDocumentOp would race the OTHER side of that cycle
+// during module evaluation — whichever module's top-level code
+// runs first could observe the other's not-yet-initialized
+// const. Deferring the literal's construction into a function
+// body — invoked only at first REQUEST or test-call time, long
+// after every module has finished evaluating — sidesteps the
+// race entirely (function declarations, unlike const bindings,
+// are hoisted whole across the cycle, so postIdeaDocumentOp/
+// postProjectDocumentOp are always safe to reference HERE).
+let builtinFamiliesRegistered = false;
+
+function ensureBuiltinFamiliesRegistered(): void {
+    if (builtinFamiliesRegistered) return;
+    builtinFamiliesRegistered = true;
+    DOCUMENT_FAMILY_WIRINGS['ideas'] = {
         family: 'ideas',
         validateDocument: validateIdeaDocumentBody,
         documentOp: postIdeaDocumentOp,
         entityOf: ideaEntityOf,
-    },
-    projects: {
+    };
+    DOCUMENT_FAMILY_WIRINGS['projects'] = {
         family: 'projects',
         validateDocument: validateProjectDocumentBody,
         documentOp: postProjectDocumentOp,
         entityOf: projectEntityOf,
-    },
-};
+    };
+}
 
 export function documentFamilyWiring(
     family: string,
 ): DocumentFamilyWiring | undefined {
+    ensureBuiltinFamiliesRegistered();
     return DOCUMENT_FAMILY_WIRINGS[family];
 }
 

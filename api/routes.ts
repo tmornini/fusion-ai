@@ -123,14 +123,60 @@ import {
     storedGraphField,
 } from './types.ts';
 import {
-    deriveIdeas,
-    deriveIdea,
     deriveIdeaSubmissions,
+    ideaEntityOf,
 } from './derive-ideas.ts';
+import { projectEntityOf } from './derive-projects.ts';
 import {
-    deriveProjects,
-    deriveProject,
-} from './derive-projects.ts';
+    documentCollectionRoute,
+    documentEntityRoute,
+    documentWriteResponseSpec,
+    type DocumentFamilyWiring,
+} from './document-family.ts';
+
+// The ideas/projects wiring rows that drive documentEntityRoute/
+// documentCollectionRoute/documentWriteResponseSpec below — built
+// HERE from routes.ts's OWN local bindings, deliberately NOT read
+// back from document-family.ts's documentFamilyWiring table:
+// routes.ts and document-family.ts import each other (this
+// module's route table needs the generic builders; the generic
+// dispatch needs param/requireOrganization/withoutId), and
+// touching a cyclically-imported CONST at EITHER side's top level
+// races the other side's still-evaluating module. document-
+// family.ts's own documentFamilyWiring registers its OWN equal
+// copy of these two rows lazily, on first CALL (never at module-
+// evaluation time), for api.ts's gate and for tests — see its
+// comment.
+//
+// Decision 7 state-in-entity (Phase 2/3): the PUT body is the
+// FULL document — the entity's own fields plus the state trio —
+// validated once at the gate (documentWriteResponseSpec, via
+// validateDocument). The op DECOMPOSES it: the old-plane row and
+// the states event write land separately, in the SAME
+// transaction, so the row stays byte-identical to today. Genesis
+// is head-presence-defined — a fresh id's PUT simply finds no
+// head, so it authors like any other transition.
+//
+// MEMBER_ID CAVEAT: sameEvent (store-state.ts) compares member_id
+// too, so a state-UNCHANGED edit (the resent trio matches the
+// current head byte-for-byte) must replay the STORED head
+// event's member_id — never the editing actor — or a different
+// member plainly editing a field after someone else's transition
+// would 409 (LedgerImmutabilityError). A genuinely fabricated
+// trio still fails sameEvent on state/at and 409s, exactly as a
+// bare states/:id resend would.
+const IDEAS_WIRING: DocumentFamilyWiring = {
+    family: 'ideas',
+    validateDocument: validateIdeaDocumentBody,
+    documentOp: postIdeaDocumentOp,
+    entityOf: ideaEntityOf,
+};
+const PROJECTS_WIRING: DocumentFamilyWiring = {
+    family: 'projects',
+    validateDocument: validateProjectDocumentBody,
+    documentOp: postProjectDocumentOp,
+    entityOf: projectEntityOf,
+};
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -1107,23 +1153,12 @@ export const WRITE_RESPONSE_SPECS:
     Readonly<
         Record<string, WriteResponseSpec | PerVerbWriteResponseSpec>
     > = {
-    // The wire response mirrors the OLD-PLANE row only (no
-    // trio) — the same GET/PUT symmetry Decision 7's wire-
-    // parity rule holds for reads. validateIdeaDocumentBody
-    // both shapes the entity and discards the trio for us.
-    'ideas/:id': {
-        status: 200,
-        successBody: (params, body, _actor, organization) => {
-            const doc = validateIdeaDocumentBody(
-                withoutId(body ?? {}),
-            );
-            return {
-                id: param(params, 0),
-                organization_id: organization,
-                ...doc.entity,
-            };
-        },
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody: it validates the
+    // full wire document (entity + trio) through the wiring's
+    // OWN validator and discards the trio — the same GET/PUT
+    // symmetry Decision 7's wire-parity rule holds for reads.
+    'ideas/:id': documentWriteResponseSpec(IDEAS_WIRING),
     'ideas/:id/conversion': { status: 204 },
     'ideas/:id/submissions/:sid': {
         status: 200,
@@ -1142,23 +1177,10 @@ export const WRITE_RESPONSE_SPECS:
             member_id: actor,
         }),
     },
-    // The wire response mirrors the OLD-PLANE row only (no
-    // trio) — the same GET/PUT symmetry Decision 7's wire-
-    // parity rule holds for reads. validateProjectDocumentBody
-    // both shapes the entity and discards the trio for us.
-    'projects/:id': {
-        status: 200,
-        successBody: (params, body, _actor, organization) => {
-            const doc = validateProjectDocumentBody(
-                withoutId(body ?? {}),
-            );
-            return {
-                id: param(params, 0),
-                organization_id: organization,
-                ...doc.entity,
-            };
-        },
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody — see the ideas/:id
+    // entry above for the shared rationale.
+    'projects/:id': documentWriteResponseSpec(PROJECTS_WIRING),
     'projects/:id/flows/:pfid': {
         status: 200,
         successBody: (params, body) => ({
@@ -1886,12 +1908,10 @@ export const routes: Route[] = [
     // separate create verb here — POST now 405s exactly like
     // any other method-absent route. GET is FLIPPED (Phase 2
     // Task 5): the list derives from the message ledger rather
-    // than the old ideas table — deriveIdeas already strips the
-    // lifecycle trio, so the wire shape is unchanged.
-    route('ideas', {
-        get: (db, _p, _actor, organization) =>
-            deriveIdeas(db, requireOrganization(organization)),
-    }),
+    // than the old ideas table. Absorbed (Phase 4 Task 2) into
+    // the generic documentCollectionRoute — wire-identical to
+    // the hand-written deriveIdeas dispatch it replaces.
+    documentCollectionRoute(IDEAS_WIRING),
     // Convert an idea to a project (promotion): the LONE
     // cross-aggregate write. A new projects row, the promoted
     // ideas row, TWO state events (the idea's 'promoted' and the
@@ -2042,15 +2062,11 @@ export const routes: Route[] = [
         },
     }),
     // GET is FLIPPED (Phase 3 Task 6): the list derives from
-    // the message ledger rather than the old projects table —
-    // deriveProjects already strips the lifecycle trio, so the
-    // wire shape is unchanged.
-    route('projects', {
-        get: (db, _p, _actor, organization) =>
-            deriveProjects(
-                db, requireOrganization(organization),
-            ),
-    }),
+    // the message ledger rather than the old projects table.
+    // Absorbed (Phase 4 Task 2) into the generic
+    // documentCollectionRoute — wire-identical to the
+    // hand-written deriveProjects dispatch it replaces.
+    documentCollectionRoute(PROJECTS_WIRING),
     // Idea submissions nest under their parent idea: the idea id
     // is param 0, so the SERVER filters the collection to that
     // idea (the org fence still rides the facade re-entry). GET
@@ -2915,94 +2931,18 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Hand-written in place of makeIdRoute<IdeaEntity> so PUT
-    // can append its message pair in the same transaction as
-    // the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET is
-    // FLIPPED (Phase 2 Task 5): the single idea derives from the
-    // message ledger rather than the old ideas table —
-    // deriveIdea 404s through the same EntityNotFoundError
-    // mapping getById used, so a missing or foreign-org id
-    // behaves identically. Verbs stay {get, put} — ideas/:id has
-    // no DELETE today, and this scaffolding does not add one
-    // (the registry eventually absorbs it).
-    //
-    // Decision 7 state-in-entity (Phase 2 Task 2): the PUT body
-    // is the FULL document — today's entity fields plus the
-    // state trio — validated once at the gate. The op
-    // DECOMPOSES it: the old-plane ideas row and the states
-    // event write land separately, in the SAME transaction, so
-    // the ideas row stays byte-identical to today. Genesis is
-    // head-presence-defined — a fresh id's PUT simply finds no
-    // head, so it authors like any other transition. Phase 2
-    // Task 3 (R1) retired the separate composed POST /ideas
-    // create — this PUT was ALREADY the genesis write; only the
-    // second entry point is gone, so POST /ideas now 405s like
-    // any other method-absent route. See postIdeaDocumentOp for
-    // the transaction shape.
-    //
-    // MEMBER_ID CAVEAT: sameEvent (store-state.ts) compares
-    // member_id too, so a state-UNCHANGED edit (the resent
-    // trio matches the current head byte-for-byte) must replay
-    // the STORED head event's member_id — never the editing
-    // actor — or a different member plainly editing a field
-    // after someone else's transition would 409
-    // (LedgerImmutabilityError). A genuinely fabricated trio
-    // still fails sameEvent on state/at and 409s, exactly as a
-    // bare states/:id resend would.
-    route('ideas/:id', {
-        get: (db, p, _actor, organization) =>
-            deriveIdea(
-                db, requireOrganization(organization),
-                param(p, 0),
-            ),
-        put: (db, p, body, actor, pair) =>
-            postIdeaDocumentOp(
-                db, param(p, 0), body, actor, pair,
-            ),
-    }),
-    // Hand-written in place of makeIdRoute<ProjectEntity> so
-    // PUT can append its message pair in the same transaction
-    // as the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET is
-    // FLIPPED (Phase 3 Task 6): the single project derives
-    // from the message ledger rather than the old projects
-    // table — deriveProject 404s through the same
-    // EntityNotFoundError mapping getById used, so a missing
-    // or foreign-org id behaves identically. Verbs stay
-    // {get, put} — projects/:id has no DELETE today,
-    // mirroring the ideas/:id precedent.
-    //
-    // Decision 7 state-in-entity (Phase 3 Task 2): the PUT body
-    // is the FULL document — today's entity fields plus the
-    // state trio — validated once at the gate. The op
-    // DECOMPOSES it: the old-plane projects row and the states
-    // event write land separately, in the SAME transaction, so
-    // the projects row stays byte-identical to today. Genesis is
-    // head-presence-defined — a fresh id's PUT simply finds no
-    // head, so it authors like any other transition. See
-    // postProjectDocumentOp for the transaction shape.
-    //
-    // MEMBER_ID CAVEAT: sameEvent (store-state.ts) compares
-    // member_id too, so a state-UNCHANGED edit (the resent
-    // trio matches the current head byte-for-byte) must replay
-    // the STORED head event's member_id — never the editing
-    // actor — or a different member plainly editing a field
-    // after someone else's transition would 409
-    // (LedgerImmutabilityError). A genuinely fabricated trio
-    // still fails sameEvent on state/at and 409s, exactly as a
-    // bare states/:id resend would.
-    route('projects/:id', {
-        get: (db, p, _actor, organization) =>
-            deriveProject(
-                db, requireOrganization(organization),
-                param(p, 0),
-            ),
-        put: (db, p, body, actor, pair) =>
-            postProjectDocumentOp(
-                db, param(p, 0), body, actor, pair,
-            ),
-    }),
+    // Absorbed (Phase 4 Task 2) into the generic
+    // documentEntityRoute — GET dispatches to the derived
+    // entity, PUT to postIdeaDocumentOp, wire-identical to the
+    // hand-written {get, put} pair it replaces. The Decision-7/
+    // MEMBER_ID-CAVEAT prose that lived here moved to the
+    // IDEAS_WIRING block above.
+    documentEntityRoute(IDEAS_WIRING),
+    // Absorbed (Phase 4 Task 2) into the generic
+    // documentEntityRoute — see the ideas/:id entry above for
+    // the shared rationale; the Decision-7/MEMBER_ID-CAVEAT
+    // prose moved to the PROJECTS_WIRING block above.
+    documentEntityRoute(PROJECTS_WIRING),
     route('objectives', {
         get: (db) => db.objectives.getAll(),
         // See postObjectiveCreationOp for the transaction
