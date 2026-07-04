@@ -80,6 +80,31 @@ function recordFields(name: string, organization: string) {
     };
 }
 
+// Task 7's additive pin: a GENESIS-shaped flows document PUT.
+// A fresh id needs no If-Response-ID (the locked class's
+// genesis-with-neither-header-passes rule), so this addition is
+// purely additive — deliberately NOT mirroring the ideas case's
+// second-PUT chain above, which would need header threading for
+// the locked class.
+function flowDocumentBody(name: string, stateEventId: string) {
+    return {
+        name,
+        is_locked: false,
+        is_auto_layout: false,
+        is_auto_fit: false,
+        lock_timeout: DEFAULT_LOCK_TIMEOUT,
+        state: 'active',
+        state_at: AT,
+        state_event_id: stateEventId,
+        graph: JSON.stringify({ nodes: [], edges: [] }),
+        graphDelta: {
+            nodes: [], edges: [], deletions: [],
+            memberEvents: [], attributeEvents: [],
+        },
+        revivals: [],
+    };
+}
+
 function workOrderFields(displayId: string, organization: string) {
     return {
         organization_id: organization,
@@ -120,8 +145,9 @@ function createRecordBody(
 // (a state ledger conflict), one create POST (records), one
 // entity PUT (work-orders — Phase 1's final-review deferral,
 // folded in now that Phase 2's drift check has landed), one
-// DELETE (records, superseding its own PUT), and one operation
-// POST (identity-tokens revocation) — four families beyond the
+// DELETE (records, superseding its own PUT), one operation POST
+// (identity-tokens revocation), and one GENESIS document PUT
+// (flows — Task 7's additive pin) — five families beyond the
 // seed's own, spanning both seeded orgs.
 async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
@@ -215,6 +241,14 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         org1Token, {},
     ));
     assert.equal(revoked.status, 204);
+
+    // Genesis document PUT (flows, org 1) — a fresh id needs no
+    // If-Response-ID under the locked class.
+    const flowGenesis = await handleRequest(db, req(
+        'PUT', '/flows/inv-flow-1', org1Token,
+        flowDocumentBody('Invariant Flow', 'inv-flow-1-ev'),
+    ));
+    assert.equal(flowGenesis.status, 200);
 
     return db;
 }

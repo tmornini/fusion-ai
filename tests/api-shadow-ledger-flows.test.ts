@@ -432,6 +432,55 @@ async () => {
     }
 });
 
+// Task 7's additive pin closing unpinned gap (b): a version
+// publish over the retention cap physically trims flow_versions
+// (routes.ts's own comment: the cap-trim delete "is untouched
+// and stores no pair") while requests/responses grow by EXACTLY
+// the one operation pair — the trim is a same-transaction
+// physical splice, never a tombstone pair of its own.
+test('a version publish over the cap trims flow_versions while'
++ ' requests/responses grow by exactly one pair', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-11');
+
+    const first = await handleRequest(db, req(
+        'POST', '/flows/flow-11/versions', token, {
+            id: 'v-11-a',
+            version: versionBody('flow-11'),
+            trimIds: [],
+        },
+    ));
+    assert.equal(first.status, 204);
+
+    const requestsBefore = await db.requests.getAll();
+    const responsesBefore = await db.responses.getAll();
+
+    const second = await handleRequest(db, req(
+        'POST', '/flows/flow-11/versions', token, {
+            id: 'v-11-b',
+            version: versionBody('flow-11'),
+            trimIds: ['v-11-a'],
+        },
+    ));
+    assert.equal(second.status, 204);
+
+    const requestsAfter = await db.requests.getAll();
+    const responsesAfter = await db.responses.getAll();
+    assert.equal(
+        requestsAfter.length, requestsBefore.length + 1,
+    );
+    assert.equal(
+        responsesAfter.length, responsesBefore.length + 1,
+    );
+
+    await assert.rejects(
+        () => db.flowVersions.getById('v-11-a'),
+    );
+    const trimmed = await db.flowVersions.getById('v-11-b');
+    assert.ok(trimmed);
+});
+
 test('request and response counts stay equal across a mix'
 + ' including one failure', async () => {
     const db = await freshDb();
