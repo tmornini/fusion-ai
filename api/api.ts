@@ -910,25 +910,57 @@ async function unwrapResponse<T>(
     );
 }
 
+// The ONE await site for a GET-shaped facade call — GET and
+// GETWithResponseId are both thin wrappers over this, so the
+// simulateLatency literal-count pin (pair-write-coverage.test.ts)
+// stays at exactly 4 no matter how many GET-shaped verbs read
+// from it (delegation, not a copy-pasted fifth await site).
+async function getResponse(
+    adapter: ClientFacadeAdapter,
+    resource: string,
+    token: string,
+): Promise<Response> {
+    await adapter.simulateLatency();
+    return handleRequest(
+        adapter,
+        new Request(
+            `${BASE_URL}/${resource}`,
+            {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                },
+            },
+        ),
+    );
+}
+
 export async function GET<T>(
     adapter: ClientFacadeAdapter,
     resource: string,
     token: string,
 ): Promise<T> {
-    await adapter.simulateLatency();
     return unwrapResponse<T>(
-        await handleRequest(
-            adapter,
-            new Request(
-                `${BASE_URL}/${resource}`,
-                {
-                    headers: {
-                        'Authorization': 'Bearer ' + token,
-                    },
-                },
-            ),
-        ),
+        await getResponse(adapter, resource, token),
     );
+}
+
+// The locked-class sibling of GET: the same wire round-trip,
+// plus the response's Response-ID header (attached by
+// handleRequest's GET case for a locked-family document read;
+// undefined for every other route today) — the baseline a C6
+// save both diffs against and echoes back as If-Response-ID.
+export async function GETWithResponseId<T>(
+    adapter: ClientFacadeAdapter,
+    resource: string,
+    token: string,
+): Promise<{ body: T; responseId: string | undefined }> {
+    const response = await getResponse(adapter, resource, token);
+    const body = await unwrapResponse<T>(response);
+    return {
+        body,
+        responseId:
+            response.headers.get('Response-ID') ?? undefined,
+    };
 }
 
 export async function PUT<T>(
@@ -936,8 +968,16 @@ export async function PUT<T>(
     resource: string,
     payload: Record<string, unknown>,
     token: string,
+    headerFields?: readonly (readonly [string, string])[],
 ): Promise<T> {
     await adapter.simulateLatency();
+    const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token,
+    };
+    for (const [name, value] of headerFields ?? []) {
+        headers[name] = value;
+    }
     return unwrapResponse<T>(
         await handleRequest(
             adapter,
@@ -945,11 +985,7 @@ export async function PUT<T>(
                 `${BASE_URL}/${resource}`,
                 {
                     method: 'PUT',
-                    headers: {
-                        'Content-Type':
-                            'application/json',
-                        'Authorization': 'Bearer ' + token,
-                    },
+                    headers,
                     body: JSON.stringify(payload),
                 },
             ),
