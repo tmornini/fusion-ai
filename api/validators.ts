@@ -2741,15 +2741,19 @@ export function validateFlowVersionPublishBody(
     return { id, version, trimIds };
 }
 
-// The version-snapshot sub-object shared by POST /flows/:id/save
-// (optional) and POST /flows/:id/redo (required): a new
-// flow_versions snapshot to PUT plus the ids of the over-cap
-// versions to trim. Same shape as FlowVersionPublishBody — the
-// flow_versions store re-validates the snapshot through
-// validateFlowVersionEntity when the composing POST puts it; the
-// web-app owns the cap-retention trim derivation, so trimIds is a
-// list of non-empty version ids. `label` names the offender so
-// the message reads from the enclosing body.
+// The version-snapshot sub-object POST /flows/:id/redo carries
+// (required — a redo can never land archived as a version while
+// the redo graph is lost): a new flow_versions snapshot to PUT
+// plus the ids of the over-cap versions to trim. Same shape as
+// FlowVersionPublishBody — the flow_versions store re-validates
+// the snapshot through validateFlowVersionEntity when the
+// composing POST puts it; the web-app owns the cap-retention
+// trim derivation, so trimIds is a list of non-empty version
+// ids. `label` names the offender so the message reads from the
+// enclosing body. PUT /flows/:id no longer carries a snapshot
+// option (Decision 3, Task 3) — version-publish rides its own
+// POST /flows/:id/versions, which validates through
+// FlowVersionPublishBody above, not this type.
 export interface FlowVersionSnapshot {
     readonly id: string;
     readonly version: Record<string, unknown>;
@@ -2784,87 +2788,6 @@ function validateFlowVersionSnapshot(
         return v;
     });
     return { id, version, trimIds };
-}
-
-export type FlowWriteHistory =
-    | { readonly kind: 'none' }
-    | {
-        readonly kind: 'snapshot';
-        readonly version: FlowVersionSnapshot;
-    };
-
-export interface FlowPutBody {
-    readonly flow: Record<string, unknown>;
-    readonly eventId: string;
-    readonly at: string;
-    readonly history: FlowWriteHistory;
-    readonly graphDelta: FlowGraphDelta;
-}
-
-const FLOW_PUT_KEYS: readonly string[] = [
-    'flow', 'eventId', 'at', 'history', 'graphDelta',
-];
-
-function validateFlowWriteHistory(
-    value: unknown,
-    label: string,
-): FlowWriteHistory {
-    const obj = asObject(value, label);
-    const kind = asString(obj['kind'], label + '.kind');
-    if (kind === 'none') {
-        assertOnlyKeys(obj, ['kind'], label);
-        return { kind: 'none' };
-    }
-    if (kind === 'snapshot') {
-        assertOnlyKeys(obj, ['kind', 'version'], label);
-        return {
-            kind: 'snapshot',
-            version: validateFlowVersionSnapshot(
-                obj['version'], label + '.version',
-            ),
-        };
-    }
-    throw new ValidationError(
-        "expected history.kind 'none' or 'snapshot' for "
-        + label + '.kind, got ' + kind,
-    );
-}
-
-// The HTTP-body gate for PUT /flows/:id: the flow row, the
-// 'updated' state event, and an OPTIONAL version snapshot
-// (put + trims) — written atomically. The history side-effect
-// is a shape-literal union, never a nullable field, so the
-// neither/both illegal states are unrepresentable. The flow
-// fields are NOT fully validated here — the org-scoped flows
-// store stamps organization_id from the verified token and
-// re-validates through validateFlowEntity, so the body OMITS
-// it. The state is fixed to 'updated' server-side and authored
-// by the verified caller (actor), never the body. graphDelta is
-// the client-built relation delta (upserts, deletions, and
-// append-only member/attribute events) — validated here at the
-// HTTP gate via validateFlowGraphDelta; the route writes its
-// rows atomically with the flow PUT.
-export function validateFlowPutBody(
-    body: Record<string, unknown>,
-): FlowPutBody {
-    assertOnlyKeys(body, FLOW_PUT_KEYS, 'FlowPutBody');
-    const flow = asObject(body['flow'], 'FlowPutBody.flow');
-    const eventId = pickString(body, 'eventId');
-    if (eventId === '') {
-        throw new ValidationError(
-            'FlowPutBody.eventId must be non-empty',
-        );
-    }
-    const at = validateTimestampField(
-        body, 'at', 'FlowPutBody',
-    );
-    const history = validateFlowWriteHistory(
-        body['history'], 'FlowPutBody.history',
-    );
-    const graphDelta = validateFlowGraphDelta(
-        asObject(body['graphDelta'], 'FlowPutBody.graphDelta'),
-    );
-    return { flow, eventId, at, history, graphDelta };
 }
 
 export interface FlowUndoBody {

@@ -15,12 +15,14 @@ function req(
     path: string,
     token: string,
     body?: unknown,
+    headers?: Record<string, string>,
 ): Request {
     return new Request(`${BASE}${path}`, {
         method,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token,
+            ...(headers ?? {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
     });
@@ -73,13 +75,19 @@ function createBody(
     };
 }
 
+// PUT /flows/:id now takes the FULL document (Decision 7,
+// LOCKED class — Task 3): the entity fields plus the state
+// trio, the client-authored graph snapshot, and the two
+// transitional decomposition sidecars.
 function putBody(name: string, eventId: string) {
     return {
-        flow: flowFields(name),
-        eventId,
-        at: AT,
-        history: { kind: 'none' },
+        ...flowFields(name),
+        state: 'updated',
+        state_at: AT,
+        state_event_id: eventId,
+        graph: '{"nodes":[],"edges":[]}',
         graphDelta: emptyDelta(),
+        revivals: [],
     };
 }
 
@@ -140,7 +148,11 @@ test('a failed flow create appends nothing', async () => {
     assert.equal((await db.responses.getAll()).length, 0);
 });
 
-test('a PUT save supersedes the flow create at the SAME'
+// flows/:id is the locked class (Task 3): a save on an
+// existing flow carries the create's Response-ID as its
+// If-Response-ID echo and the stored response carries Follows
+// — the locked sibling of Supersedes, never both.
+test('a PUT save follows the flow create at the SAME'
 + ' address', async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -150,19 +162,23 @@ test('a PUT save supersedes the flow create at the SAME'
     const saved = await handleRequest(db, req(
         'PUT', '/flows/flow-2', token,
         putBody('Renamed Flow', 'flow-2-save-ev'),
+        { 'if-response-id': createdId! },
     ));
     assert.equal(saved.status, 200);
-    assert.equal(saved.headers.get('Supersedes'), createdId);
+    assert.equal(saved.headers.get('Follows'), createdId);
 });
 
 test('each 200 route\'s wire body matches a direct domain '
 + 'read', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    await createFlow(db, token, 'flow-3');
+    const created = await createFlow(db, token, 'flow-3');
+    const createdId = created.headers.get('Response-ID');
+    assert.ok(createdId);
     const saved = await handleRequest(db, req(
         'PUT', '/flows/flow-3', token,
         putBody('Wired Flow', 'flow-3-save-ev'),
+        { 'if-response-id': createdId! },
     ));
     assert.equal(saved.status, 200);
     const flowRow = await db.flows.getById('flow-3');
@@ -315,16 +331,24 @@ test('a byte-identical PUT resend returns the stored'
 + ' response and appends nothing', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    await createFlow(db, token, 'flow-5');
+    const created = await createFlow(db, token, 'flow-5');
+    const createdId = created.headers.get('Response-ID');
+    assert.ok(createdId);
     const body = putBody('Idempotent Flow', 'flow-5-save-ev');
+    const headers = { 'if-response-id': createdId! };
     const first = await handleRequest(
-        db, req('PUT', '/flows/flow-5', token, body),
+        db, req('PUT', '/flows/flow-5', token, body, headers),
     );
     const firstId = first.headers.get('Response-ID');
     const countAfterFirst = (await db.requests.getAll())
         .length;
+    // ORDERING IS LOAD-BEARING: the resend's echo is now stale
+    // against the NEW head (firstId), yet the pre-tx fast path
+    // matches this SAME message's hash before the locked
+    // four-outcome table ever runs, so it replays instead of
+    // 412ing.
     const second = await handleRequest(
-        db, req('PUT', '/flows/flow-5', token, body),
+        db, req('PUT', '/flows/flow-5', token, body, headers),
     );
     assert.equal(second.headers.get('Response-ID'), firstId);
     assert.equal(
@@ -337,10 +361,13 @@ test('stored messages verify against their hashes',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    await createFlow(db, token, 'flow-6');
+    const created = await createFlow(db, token, 'flow-6');
+    const createdId = created.headers.get('Response-ID');
+    assert.ok(createdId);
     await handleRequest(db, req(
         'PUT', '/flows/flow-6', token,
         putBody('Verify Flow', 'flow-6-save-ev'),
+        { 'if-response-id': createdId! },
     ));
     for (const row of await db.requests.getAll()) {
         assert.equal(
@@ -358,10 +385,13 @@ test('request and response counts stay equal across a mix'
 + ' including one failure', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    await createFlow(db, token, 'flow-7');
+    const created = await createFlow(db, token, 'flow-7');
+    const createdId = created.headers.get('Response-ID');
+    assert.ok(createdId);
     await handleRequest(db, req(
         'PUT', '/flows/flow-7', token,
         putBody('Mixed Flow', 'flow-7-save-ev'),
+        { 'if-response-id': createdId! },
     ));
     await handleRequest(db, req(
         'POST', '/flows/flow-7/versions', token, {

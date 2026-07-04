@@ -47,11 +47,9 @@ import {
     validateMemberEntity,
     validateFlowCreateBody,
     validateFlowDocumentBody,
-    validateFlowEntity,
     validateFlowVersionEntity,
     validateFlowVersionPublishBody,
     validateFlowWorkOrderEntity,
-    validateFlowPutBody,
     validateFlowUndoBody,
     validateFlowRedoBody,
     validateIdeaConversionBody,
@@ -85,6 +83,9 @@ import {
     validateWorkOrderEntity,
     validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
+    pickString,
+    pickBoolean,
+    pickNumber,
 } from './validators.ts';
 import {
     appendMessagePair,
@@ -134,10 +135,12 @@ import {
     withoutId,
     documentCollectionRoute,
     documentEntityRoute,
+    documentPutHandler,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
 } from './document-family.ts';
+import type { DerivedDocument } from './derive-documents.ts';
 // Re-exported: param/requireOrganization/withoutId moved to
 // document-family.ts (see the import above and its own
 // comment), but api.ts and existing tests still import them
@@ -198,8 +201,26 @@ const PROJECTS_WIRING: DocumentFamilyWiring = {
     documentOp: postProjectDocumentOp,
     entityOf: projectEntityOf,
 };
+// The flows wiring row — Task 3's flip commit. flowEntityOf is
+// defined further below, beside postFlowDocumentOp (a forward
+// reference — `function` declarations hoist, so evaluation
+// order here is safe). UNLIKE ideas/projects (whose GET already
+// rides documentGetHandler through entityOf), flows/:id's own
+// GET stays the hand-written old-plane reassembly below in the
+// route table until Task 8 — entityOf is required by the
+// DocumentFamilyWiring shape regardless, and registering it now
+// (rather than leaving it for Task 8) means the derivation
+// mirrors ideaEntityOf/projectEntityOf's shape from day one of
+// the locked class, not bolted on later.
+const FLOWS_WIRING: DocumentFamilyWiring = {
+    family: 'flows',
+    validateDocument: validateFlowDocumentBody,
+    documentOp: postFlowDocumentOp,
+    entityOf: flowEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
+registerDocumentFamilyWiring(FLOWS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -743,6 +764,33 @@ export async function postFlowDocumentOp(
     );
 }
 
+// The derived entity for a flow's document address — mirrors
+// ideaEntityOf/projectEntityOf's shape (organization_id stamped
+// from the derivation's OWN organization parameter, never the
+// body's own value), reading the SAME flat wire keys
+// validateFlowDocumentBody expects. Lives here rather than a
+// dedicated derive-flows.ts module: flows/:id's GET stays the
+// hand-written old-plane reassembly through this task (Task 8
+// migrates it onto documentGetHandler, whose derivedDocumentEntity
+// is the first real caller of this function through
+// FLOWS_WIRING.entityOf) — required now only because
+// DocumentFamilyWiring.entityOf is non-optional.
+function flowEntityOf(
+    document: DerivedDocument,
+    organization: Id,
+): FlowEntity {
+    const body = document.body;
+    return {
+        id: document.uriId,
+        organization_id: organization,
+        name: pickString(body, 'name'),
+        is_locked: pickBoolean(body, 'is_locked'),
+        is_auto_layout: pickBoolean(body, 'is_auto_layout'),
+        is_auto_fit: pickBoolean(body, 'is_auto_fit'),
+        lock_timeout: pickNumber(body, 'lock_timeout'),
+    };
+}
+
 // Objective creation: the objective row and its FIRST
 // revision commit as ONE transaction — a mid-write
 // failure rolls the whole thing back rather than
@@ -1249,21 +1297,15 @@ export const WRITE_RESPONSE_SPECS:
         }),
     },
     'flows': { status: 204 },
-    // The raw PUT body wraps the flow's own scalar fields
-    // under `.flow` (FlowPutBody) — unlike ideas/:id, whose
-    // body IS the flat entity — so the reconstruction reads
-    // body.flow, not body itself.
-    'flows/:id': {
-        status: 200,
-        successBody: (params, body, _actor, organization) => ({
-            id: param(params, 0),
-            ...validateFlowEntity({
-                ...(body?.['flow'] as
-                    Record<string, unknown> ?? {}),
-                organization_id: organization,
-            }),
-        }),
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody — see the ideas/:id
+    // entry above for the shared rationale. flows/:id is the
+    // FIRST locked-class entry (Task 3): the response shape is
+    // unchanged either way (RESPONSE-BYTE PARITY, verified at
+    // plan time) — only the gate's pre-dispatch four-outcome
+    // table (api.ts) differs for a locked family, never this
+    // successBody.
+    'flows/:id': documentWriteResponseSpec(FLOWS_WIRING),
     'flows/:id/undo': { status: 204 },
     'flows/:id/redo': { status: 204 },
     'flows/:id/versions': { status: 204 },
@@ -2223,27 +2265,22 @@ export const routes: Route[] = [
         post: (db, _p, body, actor, pair) =>
             postFlowCreationOp(db, body, actor, pair),
     }),
-    // Write a flow: an OPTIONAL version snapshot (the new
-    // flow_versions row PUT plus the named over-cap trim
-    // DELETEs), THEN the flow row PUT, THEN the 'updated' state
-    // event, THEN the graph delta to the four relation tables —
-    // all as ONE transaction. A mid-write failure rolls the
-    // whole thing back. Covers both the plain write (none — no
-    // flow_versions touch) and the versioned write. The
-    // org-scoped flows store stamps organization_id from the
-    // verified token and re-validates through validateFlowEntity,
-    // so the flow body OMITS it; flow_versions is parent-scoped
-    // and re-validates the snapshot through
-    // validateFlowVersionEntity. The event is authored by the
-    // verified caller (actor), never the body. The eventId and
-    // at are client-minted: a byte-identical replay lands as a
-    // ledger no-op via postEvent. graphDelta is pre-validated at
-    // the HTTP gate (validateFlowPutBody); the route writes its
-    // upsert rows, append-only member/attribute events, and the
-    // node/edge deletion events (authored by actor, never the
-    // body). The flow row carries no graph blob — the relations
-    // are the sole graph truth, reassembled on read.
-    // Member-tier PUT — MEMBER_VERBS['/flows'] includes 'PUT'.
+    // flows/:id is the FIRST locked-class route (Task 3):
+    // GET stays this hand-written old-plane reassembly — Task 8
+    // migrates it onto documentGetHandler — but PUT now rides
+    // the generic documentPutHandler over FLOWS_WIRING (below).
+    // The gate's four-outcome table (api.ts, keyed off
+    // familyRegistration('flows').concurrency === 'locked')
+    // resolves genesis/412/follows entirely BEFORE dispatch;
+    // documentPutHandler carries no concurrency branch of its
+    // own — it dispatches straight to postFlowDocumentOp, which
+    // DECOMPOSES the document (flow row PUT, state event, graph
+    // delta, revivals) in one transaction. version-publish (a
+    // flow_versions row) no longer rides this PUT at all
+    // (Decision 3) — it is POST /flows/:id/versions's own
+    // transaction now (postFlowVersion, called separately by the
+    // client before the save). Member-tier PUT —
+    // MEMBER_VERBS['/flows'] includes 'PUT'.
     route('flows/:id', {
         // Reassemble the graph from the four relation tables
         // inside a consistent read transaction — the stored
@@ -2307,49 +2344,7 @@ export const routes: Route[] = [
                 },
             );
         },
-        put: (db, p, body, actor, pair) => {
-            const id = param(p, 0);
-            const b = validateFlowPutBody(body);
-            const delta = b.graphDelta;
-            return db.transaction(
-                [
-                    'flows', 'flow_versions', 'states',
-                    'flow_nodes', 'flow_edges',
-                    'flow_node_members',
-                    'flow_node_attributes',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    if (b.history.kind === 'snapshot') {
-                        const snap = b.history.version;
-                        await view.flowVersions.put(
-                            snap.id,
-                            snap.version as unknown as
-                                Omit<FlowVersionEntity, 'id'>,
-                        );
-                        for (const t of snap.trimIds) {
-                            await view.flowVersions.delete(t);
-                        }
-                    }
-                    const written = await view.flows.put(
-                        id,
-                        b.flow as unknown as
-                            Omit<FlowEntity, 'id'>,
-                    );
-                    await view.states.postEvent(
-                        b.eventId, id, 'updated', actor,
-                        b.at,
-                    );
-                    await writeFlowGraphDelta(
-                        view, delta, actor,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: documentPutHandler(FLOWS_WIRING),
     }),
     // Undo a flow edit: the flow row PUT, the 'updated' state
     // event, the DELETE of the consumed version, the graph delta

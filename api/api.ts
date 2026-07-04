@@ -564,14 +564,51 @@ export async function handleRequest(
                         { status: 405 },
                     );
                 }
-                return Response.json(
-                    await matched.get(
-                        effective,
-                        params,
-                        actor,
-                        organization,
-                    ),
+                const result = await matched.get(
+                    effective,
+                    params,
+                    actor,
+                    organization,
                 );
+                // Response-ID attach (spec §The two PUT
+                // classes): a locked-family document GET
+                // carries the current head pair id as
+                // provenance — the C6 client save's baseline
+                // AND its echo source. Keyed through the SAME
+                // wiring consult + exact-pattern match the
+                // write side's four-outcome table uses above
+                // (never a blanket family-registry or
+                // DOCUMENT_CLASS_ROUTE_PATTERNS read, never a
+                // flows literal). Below the three-instance
+                // threshold with the write side's own inline
+                // check (Commandment IX Generality) — kept
+                // duplicated rather than prematurely shared.
+                const readWiring = documentFamilyWiring(
+                    matched.segments[0] ?? '',
+                );
+                if (
+                    readWiring !== undefined
+                    && routePattern
+                        === readWiring.family + '/:id'
+                    && familyRegistration(readWiring.family)
+                        ?.concurrency === 'locked'
+                ) {
+                    const prefix = canonicalUriPrefix(
+                        organization,
+                        '/' + readWiring.family + '/',
+                    );
+                    const headPairId = await headPairIdAt(
+                        effective, prefix, param(params, 0),
+                    );
+                    if (headPairId !== undefined) {
+                        return Response.json(result, {
+                            headers: {
+                                'Response-ID': headPairId,
+                            },
+                        });
+                    }
+                }
+                return Response.json(result);
             }
             case 'PUT': {
                 if (!matched.put) {

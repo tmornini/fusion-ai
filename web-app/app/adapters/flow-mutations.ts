@@ -1,5 +1,6 @@
 import type {
     FlowEntity,
+    FlowWithGraph,
     GraphNode,
     GraphEdge,
     StoredGraph,
@@ -7,6 +8,7 @@ import type {
 import {
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
+    storedGraphField,
 } from '../../../api/types.ts';
 import type {
     FlowGraphDelta,
@@ -15,9 +17,10 @@ import type {
     GraphDeletion,
     FlowNodeMemberRowBody,
     FlowNodeAttributeRowBody,
-    FlowWriteHistory,
 } from '../../../api/validators.ts';
-import { getFlowGraph } from './flow-queries.ts';
+import {
+    validateStoredGraphJson,
+} from '../../../api/validators.ts';
 export type {
     FlowGraphDelta,
     FlowNodeRowBody,
@@ -35,9 +38,11 @@ import {
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
+import { RequestError } from '../../../api/api.ts';
 import type {
     RequestContext,
 } from './shared.ts';
+import { jitteredBackoff } from './shared.ts';
 
 const flowChanges =
     createSubscriptionChannel();
@@ -309,53 +314,114 @@ export function buildSaveEvents(
     };
 }
 
-// Assemble the PUT /flows/:id body for a save: the flow row
-// (scalar fields only — no graph blob), a fresh 'updated' event
-// id, the caller moment, the version-history side-effect, and
-// the graph delta diffed against the CURRENT stored graph. The
-// baseline is fetched HERE, before the body is built — never
-// empty, so deletions fire only for ids the working copy
-// dropped. Both PUT call sites (putFlow and the designer's
-// persist chain) build their body through this single voice.
-export async function buildFlowPutBody(
+// Assemble the PUT /flows/:id document body for a save: the
+// flow row's own fields, a fresh 'updated' trio, the client-
+// authored post-save graph snapshot (the exact wire form GET
+// /flows/:id emits — byte-identical types, no transform), and
+// the graph delta diffed against the CURRENT stored graph.
+// ONE GET (ctx.GETWithResponseId, never getFlowGraph — that
+// helper also applies withRenderableLayout, a presentation
+// concern, and hides the Response-ID header this builder also
+// needs) serves BOTH the baseline diff source AND the echo to
+// carry as If-Response-ID — calling getFlowGraph plus a
+// separate header read would silently add a hop to every save
+// path. Not exported: putFlow (below) is the ONLY caller since
+// the C6 retry loop owns rebuilding a fresh body per attempt.
+async function buildFlowPutBody(
     ctx: RequestContext,
     id: string,
     save: FlowSaveShape,
-    history: FlowWriteHistory,
-): Promise<Record<string, unknown>> {
+): Promise<{
+    body: Record<string, unknown>;
+    ifResponseId: string | undefined;
+}> {
     const now = nowUtc();
-    const baseline = await getFlowGraph(ctx, id);
+    const { body: current, responseId } =
+        await ctx.GETWithResponseId<FlowWithGraph>(
+            'flows/' + id,
+        );
+    const baseline = validateStoredGraphJson(
+        current.graph, 'flow.graph',
+    );
     const delta = buildSaveEvents(
-        { nodes: baseline.nodes, edges: baseline.edges },
+        baseline,
         { nodes: save.nodes, edges: save.edges },
         id,
         generateCryptoSafeBase62,
         now,
     );
     return {
-        flow: buildFlowBody(save),
-        eventId: generateCryptoSafeBase62(),
-        at: now,
-        history,
-        graphDelta: delta,
+        body: {
+            ...buildFlowBody(save),
+            state: 'updated',
+            state_at: now,
+            state_event_id: generateCryptoSafeBase62(),
+            graph: storedGraphField({
+                nodes: save.nodes,
+                edges: save.edges,
+            }),
+            graphDelta: delta,
+            revivals: [],
+        },
+        ifResponseId: responseId,
     };
 }
 
-// Save a flow with NO version snapshot: the flow row PUT, its
-// 'updated' state event, and the graph delta — written
-// atomically through PUT /flows/:id (one re-entrant
-// transaction). The author is stamped server-side from the
-// token; the client mints the event id.
+// The C6 retry loop's attempt cap — three attempts, never
+// infinite (Commandment: retries only where the error is
+// transient, capped).
+const MAX_PUT_ATTEMPTS = 3;
+
+// Save a flow: the flow row PUT, its 'updated' state event, and
+// the graph delta — written atomically through the locked-class
+// PUT /flows/:id. The client echoes the baseline it just read
+// (buildFlowPutBody's ifResponseId) as If-Response-ID; a save
+// racing another writer's save finds the head has moved and
+// 412s. This loop ABSORBS that 412: on attempt < 3 it backs off
+// (jitteredBackoff) and REBUILDS the body — buildFlowPutBody
+// re-fetches the baseline and re-diffs, so the rebuild IS the
+// re-apply — then resubmits with the FRESH echo. E6 split: each
+// 412 attempt is a NEW write (fresh baseline, fresh delta, fresh
+// trio) — a network-level resend of ONE attempt is still
+// byte-identical and replays via the gate's own fast path. Any
+// other error, or the third 412, propagates — the caller (the
+// designer's #persistFlow, routed through reportFault) is the
+// only place a save failure surfaces. The flow-change
+// notification fires EXACTLY ONCE, on this loop's OWN success
+// return — never per attempt, never in a finally — so a
+// mid-retry 412 never triggers a wasted cross-tab re-render.
 export async function putFlow(
     ctx: RequestContext,
     id: string,
     save: FlowSaveShape,
 ): Promise<void> {
-    await ctx.PUT(
-        `flows/${id}`,
-        await buildFlowPutBody(
-            ctx, id, save, { kind: 'none' },
-        ),
-    );
-    flowChanges.notify();
+    for (
+        let attempt = 1;
+        attempt <= MAX_PUT_ATTEMPTS;
+        attempt++
+    ) {
+        const { body, ifResponseId } =
+            await buildFlowPutBody(ctx, id, save);
+        try {
+            await ctx.PUT(
+                `flows/${id}`,
+                body,
+                ifResponseId === undefined
+                    ? undefined
+                    : [['if-response-id', ifResponseId]],
+            );
+            flowChanges.notify();
+            return;
+        } catch (err) {
+            if (
+                err instanceof RequestError
+                && err.status === 412
+                && attempt < MAX_PUT_ATTEMPTS
+            ) {
+                await jitteredBackoff(attempt);
+                continue;
+            }
+            throw err;
+        }
+    }
 }
