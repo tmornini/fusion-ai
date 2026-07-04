@@ -11,8 +11,14 @@ import type {
     StoredGraph,
     MemberId,
     NodeAttribute,
+    JsonObjectField,
 } from './types.ts';
-import type { FlowGraphDelta } from './validators.ts';
+import { storedGraphField } from './types.ts';
+import {
+    type FlowGraphDelta,
+    validateStoredGraphJson,
+} from './validators.ts';
+import { byIdAscending } from './derive-documents.ts';
 
 // On an equal-`at` tie a 'removed' outranks an 'added'
 // regardless of row order — the union's dissolution wins on
@@ -139,4 +145,35 @@ export function reduceCreateGraphDelta(
         delta.nodes, delta.edges,
         delta.memberEvents, delta.attributeEvents,
     );
+}
+
+// The message-plane flows derivation's ONE flows-novel
+// reduction (Task 7, design decision 1): a document PUT's
+// `graph` field is the client-authored working snapshot,
+// carried verbatim by postFlowDocumentOp — its nodes[]/edges[]
+// arrive in whatever order the client happened to serialize.
+// The OLD plane's own GET reassembles nodes[]/edges[] from
+// flow_nodes/flow_edges via getAllWhere, which returns rows in
+// PRIMARY-KEY (id) order on IndexedDB — so the two orders
+// already coincide there (H7: invisible on IndexedDB) — but in
+// ARRIVAL order on the memory/localStorage tiers, where they
+// can diverge (load-bearing there). Re-sorting nodes[]/edges[]
+// ascending-id here makes the derived side match the OLD
+// plane's IndexedDB behavior byte-exactly regardless of which
+// backend actually ran the comparison. Within-node
+// memberIds[]/attributes[] pass through UNSORTED — a cosmetic
+// order change design decision 1 accepts: currentNodeMemberIds/
+// currentNodeAttributes above already return them in THEIR OWN
+// reduction order (a Map's insertion order), which neither
+// plane could re-derive from the other's array order alone.
+export function normalizedStoredGraphField(
+    graph: JsonObjectField,
+): JsonObjectField {
+    const parsed = validateStoredGraphJson(
+        graph, 'normalizedStoredGraphField.graph',
+    );
+    return storedGraphField({
+        nodes: [...parsed.nodes].sort(byIdAscending),
+        edges: [...parsed.edges].sort(byIdAscending),
+    });
 }
