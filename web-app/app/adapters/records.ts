@@ -19,7 +19,8 @@ import {
 } from '../../../shared/ledger-reduction.ts';
 import {
     postStateEvent,
-    getRecordStates,
+    getRecordStateDetail,
+    getRecordStateDetails,
 } from './state-events.ts';
 import {
     createSubscriptionChannel,
@@ -116,16 +117,21 @@ export async function getRecordState(
 // The record detail page's read: one domain facet
 // carrying identity, content, and lifecycle state —
 // the raw row and its separate state never cross the
-// seam.
+// seam. Widened to the state DETAIL (Decision 7's trio)
+// so a plain field edit (the detail page's no-attribute-
+// change save) can echo it without minting a fresh event;
+// getRecordState (singular, above) remains for its own
+// test-pinned throws-on-absence covenant even though this
+// caller no longer reaches it.
 export async function getRecordModel(
     ctx: RequestContext,
     id: RecordId,
 ): Promise<RecordModel> {
-    const [row, state] = await Promise.all([
+    const [row, detail] = await Promise.all([
         getRecord(ctx, id),
-        getRecordState(ctx, id),
+        getRecordStateDetail(ctx, id),
     ]);
-    return new RecordModel(row, state);
+    return new RecordModel(row, detail);
 }
 
 export async function getRecords(
@@ -139,7 +145,7 @@ export async function getRecords(
             'record-attributes',
         ),
         getAllFlowRecords(ctx),
-        getRecordStates(ctx),
+        getRecordStateDetails(ctx),
     ]);
     const attrCountByRecord = new Map<
         string, number
@@ -162,15 +168,15 @@ export async function getRecords(
         );
     }
     return rows.map(row => {
-        const state = stateMap.get(row.id);
-        if (state === undefined) {
+        const detail = stateMap.get(row.id);
+        if (detail === undefined) {
             throw new Error(
                 'Record has no state event: '
                 + row.id,
             );
         }
         return {
-            record: new RecordModel(row, state),
+            record: new RecordModel(row, detail),
             attributeCount:
                 attrCountByRecord.get(row.id)
                 ?? 0,

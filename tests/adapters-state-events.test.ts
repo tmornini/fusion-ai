@@ -8,7 +8,7 @@ import { devToken } from './token-fixtures.ts';
 import {
     getIdeaStates,
     getProjectStates,
-    getRecordStates,
+    getRecordStateDetails,
     getMemberStates,
 } from '../web-app/app/adapters/state-events.ts';
 import {
@@ -126,7 +126,7 @@ test('getIdeaStates excludes a same-valued project',
         );
     });
 
-test('getRecordStates excludes a same-valued idea',
+test('getRecordStateDetails excludes a same-valued idea',
     async () => {
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
@@ -141,8 +141,8 @@ test('getRecordStates excludes a same-valued idea',
             '2026-01-01T00:00:01.000000Z',
         );
         const ctx = createRequestContext(db, await devToken());
-        const states = await getRecordStates(ctx);
-        assert.equal(states.get('r1'), 'active');
+        const states = await getRecordStateDetails(ctx);
+        assert.equal(states.get('r1')?.state, 'active');
         assert.ok(
             !states.has('i1'),
             'idea must not leak into record states',
