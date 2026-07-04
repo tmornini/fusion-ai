@@ -183,9 +183,11 @@ Legend for classification:
 
 ### 2.6 Flows
 
-- `GET /flows` · `GET|PUT /flows/:id` — primitive.
+- `GET /flows` · `GET|PUT /flows/:id` — primitive. `PUT` is a
+  document write (§3.13) and the FIRST locked-class route
+  (§5.4) — a save on an existing flow must echo the current
+  head via `If-Response-ID` or 412s.
 - `POST /flows` — operation (§3.12). Member-tier.
-- `POST /flows/:id/save` — operation (§3.13).
 - `POST /flows/:id/undo` — operation (§3.14).
 - `POST /flows/:id/redo` — operation (§3.15).
 - `GET /flows/:id/versions` · `POST /flows/:id/versions` (§3.16) ·
@@ -511,19 +513,67 @@ The lone cross-aggregate write.
   `post_create_flow`.
 - props: atomic; member-tier; `validateFlowCreateBody`.
 
-### 3.13 `POST /flows/:id/save` — save (optional version)
+### 3.13 `PUT /flows/:id` — flow document write (not a POST)
 
-- tx: `[flows, flow_versions, states, requests, responses]`
-- actual:
-  1. if `version !== null`: `flowVersions.put(version.id, version)`;
-     for each `trimId`: `flowVersions.delete(trimId)`.
-  2. `flows.put(id, flow)` (org-scoped stamps org)
-  3. `states.postEvent(eventId, id, 'updated', actor)`
-  4. `appendMessagePair(pair)`
-- doctrinal: optional (`put_flow_version` + `delete_flow_version`*) +
-  `put_flow` + `post_state_event` as `post_save_flow`.
-- props: atomic; plain save (version null) touches no versions;
-  member-tier; `validateFlowSaveBody`.
+One shape serves genesis (below-facade only — see §5.4) and
+every save (Decision 7): the body is the entity's own fields
+plus the lifecycle trio (`state`, `state_at`, `state_event_id`),
+the client-authored post-save `graph` (byte-identical to the GET
+wire form, no transform), and two TRANSITIONAL decomposition
+sidecars (`graphDelta`, `revivals` — consumed only by the
+old-plane relation writer below; no derivation reads either,
+and both retire at Phase Final). UNLIKE `PUT /ideas/:id` /
+`PUT /projects/:id`, this op mints NO `member_id` ternary —
+every attempt (including a client retry) mints a fresh trio, so
+nothing here ever resends a STORED trio verbatim.
+
+**flows is the FIRST locked-class route** (§5.4, Task 3): a
+save on an existing flow must carry `If-Response-ID`, echoing
+the head the client just read, or the write 412s. The client
+adapter (`putFlow`, `web-app/app/adapters/flow-mutations.ts`)
+absorbs a 412 with up to 3 attempts total — each retry backs off
+(jittered) and rebuilds the body against the NEW head (a fresh
+baseline, fresh delta, fresh trio) before resubmitting; any other
+error, or a third 412, propagates to the caller. version-publish
+is no longer an option embedded in this PUT (Decision 3) — it
+rides its own `POST /flows/:id/versions` (§3.16) transaction,
+called by the client BEFORE the save on a versioned edit. That
+splits a versioned rename/drag-move into two independent
+round-trips (1→2 hops) instead of one: a failure between them
+leaves an extra version snapshot (one extra undo point) but never
+a lost save — the structural path's already-shipped behavior.
+
+- tx: `[flows, states, flow_nodes, flow_edges,
+  flow_node_members, flow_node_attributes, requests, responses]`
+  — NO `flow_versions`.
+- actual: `flows.put(id, entity)` (the org-scoped store stamps
+  `organization_id`, so the body omits it) →
+  `states.postEvent(state_event_id, id, state, actor, state_at)`
+  → the graph delta's node/edge upserts, member/attribute
+  events, and deletion events (`writeFlowGraphDelta`, the SAME
+  helper `POST /flows` and undo/redo use) → for each revival:
+  `states.postEvent(eventId, entityId, 'restored', actor, at)`
+  (the undo route's own loop, reused) → `appendMessagePair(pair)`
+  LAST.
+- doctrinal: `put_flow` + `post_state_event` + graph-relation
+  writes + N `post_restored_event` as `put_flow_document`.
+- props: atomic; member-tier; `validateFlowDocumentBody`;
+  idempotent (a byte-identical resend — SAME body, SAME echo —
+  converges at the gate's pre-tx fast path: one row, one event,
+  one pair) — a same-id, genuinely different-content collision
+  still 409s via `LedgerImmutabilityError`, today's covenant.
+- **Response-ID on GET.** `GET /flows/:id` now carries a
+  `Response-ID` header — the current head pair id, the exact
+  value a save's `If-Response-ID` echoes back — attached
+  generically by the gate for any locked-family document GET
+  (never a `flows` literal), still served by the SAME
+  hand-written old-plane reassembly handler.
+- **INTERIM acceptance.** Between this task and a future
+  derivation task, an undo/redo leaves the shadow head stale (its
+  pair is operation-addressed, never touching `flows/:id`'s own
+  head — §2.6), so a pre-undo echo is still accepted on the next
+  save — today's lost-update baseline exactly, named here so the
+  window is a decision, not a surprise.
 
 ### 3.14 `POST /flows/:id/undo` — undo a flow edit
 
@@ -931,6 +981,18 @@ order (`unwrapResponse` in `api/api.ts`'s client facade ignores
 headers entirely, and every adapter destructures the body by field
 name) — so the change is real on the wire and inert in the UI.
 
+**The locked class is the one named exception (Task 3).** A
+locked-family document GET (`flows/:id` today — §5.4, §3.13)
+carries `Response-ID`, and its save path genuinely reads it:
+`GETWithResponseId` (the client facade + `RequestContext`) pulls
+it off the response to echo as `If-Response-ID` on the next PUT,
+and the C6 retry loop branches on the PUT's own failure status
+(`RequestError.status === 412`). This is still wire-visible only
+in the narrow sense that no OTHER header or the body's key order
+is read — the mechanism is a deliberate, documented precondition
+header, not an accidental leak of transport detail into the
+domain layer.
+
 ### 5.2 The redaction contract
 
 Only the two `/authentication` routes carry live secrets, and only
@@ -1008,12 +1070,12 @@ The gate (`handleRequest`) keys the class off the route's
 family can register `'locked'` (family-registry.ts) with no live
 route riding the arm until its OWN wiring row lands.
 
-- **`simple`** (every document-class route through this task):
-  the existing head-read → `Supersedes` chain (§5.1) — a repeat
-  PUT ALWAYS succeeds and ALWAYS supersedes the current head.
-- **`locked`** (registered for `flows`; no live route dispatches
-  through it yet — see below): a repeat PUT must ECHO the
-  current head via the request header `If-Response-ID`, or 412s.
+- **`simple`** (`ideas`, `projects`): the existing head-read →
+  `Supersedes` chain (§5.1) — a repeat PUT ALWAYS succeeds and
+  ALWAYS supersedes the current head.
+- **`locked`** (`flows`, live since Task 3 — §3.13): a repeat PUT
+  must ECHO the current head via the request header
+  `If-Response-ID`, or 412s.
 
 **The request header.** `If-Response-ID` joins the hoisted,
 hash-covered header set (`HOISTED_HEADER_NAMES`) — a different
@@ -1052,11 +1114,14 @@ race: the first commits, the second's `appendMessagePair` raises
 `handleRequest` catch that maps every other unique violation. No
 pair is stored for a 412 — the tx aborted or never opened.
 
-**Status today:** the locked arm is fully built and tested
-against a synthetic registration (`tests/document-family.
-test.ts`), but NO live route dispatches through it — `flows`
-registers `'locked'` yet stays hand-written old-plane, so this
-task changes no wire behavior for any live route.
+**Status today:** the locked arm was built and tested against a
+synthetic registration in Task 2 (`tests/document-family.
+test.ts`); Task 3 registers `flows`' own `DocumentFamilyWiring`
+row and moves `PUT /flows/:id` onto it (`documentPutHandler`) —
+the first LIVE route riding the arm (§3.13). `flows/:id`'s `GET`
+stays the hand-written old-plane reassembly (only its response
+gains the `Response-ID` header); a future derivation task moves
+it onto the generic `documentGetHandler`.
 
 ### 5.5 ideas/projects: generic components, wire-identical
 
