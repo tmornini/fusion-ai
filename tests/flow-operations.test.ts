@@ -1341,10 +1341,24 @@ test(
     },
 );
 
+// Fix wave 1 (Task 4 review): redo's write sequence now rides
+// ONE covenant catch (postFlowVersion, then putFlow — see the
+// tests below), matching every OTHER perform* mutation's
+// commitFlowMutation precedent, where a missing flow ALREADY
+// degrades to a graceful failOp ('a commit failure yields a
+// fail result', throughout this file). Base's original split —
+// buildFlowVersionSnapshot's read OUTSIDE any catch, only the
+// POST /flows/:id/redo write guarded — no longer exists once the
+// read and the archive-write share ONE opaque call
+// (postFlowVersion); keeping redo the lone sibling that crashes
+// on a missing flow would leave it inconsistent with the family
+// the fold set out to match. So the read now shares the same
+// covenant as every other mutation's read-then-write.
 test(
-    'performRedo: a missing flow rejects — the'
-    + ' read runs outside the atomic batch and'
-    + ' an impossible state must crash',
+    'performRedo: a missing flow fails gracefully —'
+    + ' postFlowVersion\'s own read shares the redo'
+    + ' sequence\'s one covenant catch, matching every'
+    + ' sibling perform* mutation',
     async () => {
         const db = await setupNoFlow();
         const snap = snapFrom(buildGraph([
@@ -1354,12 +1368,15 @@ test(
             buildFlowHistorySnapshot(false),
             buildFlowVersion(),
         );
-        await assert.rejects(
-            performRedo(
+        const op = await silenceConsoleError(
+            () => performRedo(
                 createRequestContext(db, DEV_TOKEN),
                 snap, history,
             ),
         );
+        assert.equal(op.kind, 'fail');
+        if (op.kind !== 'fail') return;
+        assert.match(op.toast, /redo failed/i);
     },
 );
 
@@ -1495,18 +1512,20 @@ test(
 // postFlowVersion (a POST) then putFlow (a PUT), two
 // INDEPENDENT writes — the same non-atomic shape every OTHER
 // perform* mutation (commitFlowMutation) already carries. The
-// two tests below fault each write in turn. Neither wraps a
-// try/catch around the assertion: performRedo no longer
-// absorbs a write failure into a toast (Swallowed Failures
-// guard) — putFlow's OWN internal loop absorbs a 412 (up to 3
-// attempts); everything else propagates, so a faulted write
-// REJECTS performRedo directly, exactly like the missing-flow
-// case above.
+// two tests below fault each write in turn. performRedo wraps
+// BOTH writes in one catch (mirroring performUndo's single
+// covenant for its own one-call write) — a faulted write
+// degrades to the SAME visible failOp('Redo failed', ...),
+// exactly like the missing-flow case above, never an unhandled
+// rejection (Swallowed Failures guard honored: the failure
+// surfaces via the toast channel every other perform* mutation
+// already uses). putFlow's OWN internal loop separately absorbs
+// a 412 (up to 3 attempts) before ever reaching this catch.
 
 test(
-    'performRedo: a faulted version-POST rejects;'
-    + ' nothing lands (postFlowVersion runs FIRST,'
-    + ' before putFlow)',
+    'performRedo: a faulted version-POST fails'
+    + ' gracefully; nothing lands (postFlowVersion'
+    + ' runs FIRST, before putFlow)',
     async () => {
         const { db, ctx } = await setupFlow();
         const snap = snapFrom(buildGraph([
@@ -1524,9 +1543,14 @@ test(
         const faulting = faultingPostCtx(
             ctx, 'flows/' + FLOW_ID + '/versions',
         );
-        await assert.rejects(
-            performRedo(faulting.ctx, snap, history),
+        const op = await silenceConsoleError(
+            () => performRedo(
+                faulting.ctx, snap, history,
+            ),
         );
+        assert.equal(op.kind, 'fail');
+        if (op.kind !== 'fail') return;
+        assert.match(op.toast, /redo failed/i);
         assert.equal(faulting.posts(), 1);
         // nothing applied: no new version row, and
         // the persisted graph stays the seeded
@@ -1540,10 +1564,11 @@ test(
 );
 
 test(
-    'performRedo: a faulted document-PUT rejects AFTER'
-    + ' the version already landed — the fold\'s two'
-    + ' writes are no longer one transaction (named'
-    + ' R1/E5 trade-off)',
+    'performRedo: a faulted document-PUT fails'
+    + ' gracefully AFTER the version already'
+    + ' landed — the fold\'s two writes are no'
+    + ' longer one transaction (named R1/E5'
+    + ' trade-off)',
     async () => {
         const { db, ctx } = await setupFlow();
         const snap = snapFrom(buildGraph([
@@ -1561,9 +1586,14 @@ test(
         const faulting = faultingPutCtx(
             ctx, 'flows/' + FLOW_ID,
         );
-        await assert.rejects(
-            performRedo(faulting.ctx, snap, history),
+        const op = await silenceConsoleError(
+            () => performRedo(
+                faulting.ctx, snap, history,
+            ),
         );
+        assert.equal(op.kind, 'fail');
+        if (op.kind !== 'fail') return;
+        assert.match(op.toast, /redo failed/i);
         assert.equal(faulting.puts(), 1);
         // the version-POST already landed — it runs
         // FIRST and is not itself faulted, so the two

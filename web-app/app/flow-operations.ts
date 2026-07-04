@@ -789,31 +789,39 @@ export async function performRedo(
     // precomputes: a concurrent save landing between attempts can
     // tombstone a node the target carries, and only a recompute
     // against the FRESH baseline catches that (see putFlow /
-    // buildRevivals in adapters/flow-mutations.ts). NO try/catch
-    // here yet: putFlow's own retry absorbs a 412 (up to 3
-    // attempts) — that is the ONLY error this composition
-    // absorbs. Everything else (a missing flow, an exhausted
-    // retry, any other network fault) PROPAGATES — an impossible
-    // state must crash, never a swallowed 'Redo failed' toast.
-    await postFlowVersion(
-        ctx,
-        generateCryptoSafeBase62(),
-        snap.flowId,
-    );
-    await putFlow(
-        ctx,
-        snap.flowId,
-        {
-            name: v.name,
-            isLocked: v.isLocked,
-            isAutoLayout: v.isAutoLayout,
-            isAutoFit: v.isAutoFit,
-            lockTimeout: v.lockTimeout,
-            nodes: v.nodes,
-            edges: v.edges,
-        },
-        { nodes: v.nodes, edges: v.edges },
-    );
+    // buildRevivals in adapters/flow-mutations.ts). One catch
+    // spans both writes below: any failure in the redo
+    // sequence — postFlowVersion, or putFlow's own exhausted
+    // retry / non-412 error — degrades to the same visible
+    // failOp, mirroring performUndo's single covenant for its
+    // own (one-call) write.
+    try {
+        await postFlowVersion(
+            ctx,
+            generateCryptoSafeBase62(),
+            snap.flowId,
+        );
+        await putFlow(
+            ctx,
+            snap.flowId,
+            {
+                name: v.name,
+                isLocked: v.isLocked,
+                isAutoLayout: v.isAutoLayout,
+                isAutoFit: v.isAutoFit,
+                lockTimeout: v.lockTimeout,
+                nodes: v.nodes,
+                edges: v.edges,
+            },
+            { nodes: v.nodes, edges: v.edges },
+        );
+    } catch (err) {
+        log.error(
+            'performRedo failed',
+            'flow-operations', err,
+        );
+        return failOp('Redo failed', 'error');
+    }
     notifyFlowChange();
     const graph = await getFlowGraph(
         ctx, snap.flowId,
