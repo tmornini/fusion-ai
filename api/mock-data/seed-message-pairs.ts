@@ -15,17 +15,23 @@
 // literals that merely happen to agree, so a stored pair can
 // never drift from what was actually written.
 //
-// Only the eight seed op-invocations that already accept a
-// `pair?` parameter are covered here (traced against every
+// The seed op-invocation families that accept a `pair?`
+// parameter are covered here (traced against every
 // postXxxCreationOp / postRecordWriteOp call site in
 // mock-data.ts): human-members, ideas, idea-submissions,
-// projects, flows, ai-members, records, objectives.
-// Memberships, project_objective_baseline_scores, and
-// work-order historical traces are direct writes the seed
-// never routes through a pair-capable op — the three named
-// deferrals stay untouched. A fourth, previously-unlisted
-// direct write — seed-flow-org2 — is now ALSO covered here,
-// closed through postFlowDocumentOp (Task 6).
+// projects, flows, work-orders, flow-work-orders, ai-members,
+// records, objectives. Memberships and
+// project_objective_baseline_scores stay whole-slice
+// deferrals — direct writes the seed never routes through a
+// pair-capable op. The work-order deferral NARROWS this phase
+// to its historical traces alone (states events +
+// state_field_values, still direct — a NAMED carve-out now
+// bound to the states-consumers flip, not "the work-orders
+// phase"); the entity and join rows leave the deferral list
+// this phase, closed through postWorkOrderDocumentOp /
+// postFlowWorkOrderDocumentOp. A further, previously-unlisted
+// direct write — seed-flow-org2 — is ALSO covered here, closed
+// through postFlowDocumentOp (Task 6).
 
 import type {
     Id,
@@ -37,6 +43,8 @@ import type {
     RecordEntity,
     RecordAttributeEntity,
     ProjectFlowEntity,
+    WorkOrderEntity,
+    FlowWorkOrderEntity,
 } from '../types.ts';
 import {
     jsonArrayField,
@@ -77,8 +85,14 @@ import { OBJECTIVE_SEEDS } from './objectives.ts';
 import {
     l2cFlowId,
     l2cProjectFlowId,
+    buildLeadToCloseWorkload,
 } from './lead-to-close-flow.ts';
 import { l2cProjectId, buildProjects } from './projects.ts';
+import {
+    buildWorkOrders,
+    buildFlowWorkOrderJoins,
+    buildWorkOrderStateEvents,
+} from './work-orders.ts';
 
 // ---- hoisted static seed-event data ----
 //
@@ -667,6 +681,36 @@ export function flowOrg2SeedBody(): Record<string, unknown> {
     };
 }
 
+// The genesis case of the document PUT work-orders/:id
+// (Phase 5 Task 4): the flat entity fields, no `id` (a route
+// param, not a body field). organization_id rides along as
+// the validator's tolerated-but-ignored extra — load-bearing
+// here since the seed drives postWorkOrderDocumentOp below the
+// org fence (no scoping wrapper to stamp it). Every seeded work
+// order is Stark (finding 7) — hand-authored rows omit
+// organization_id entirely (the composition root's own job);
+// generated rows already carry it (STARK_ORGANIZATION, set by
+// generateFlowWorkload) — either way the merge below re-asserts
+// the same value, so ONE construction serves both sources.
+export function workOrderDocumentSeedBody(
+    row: Omit<WorkOrderEntity, 'organization_id'>,
+): Record<string, unknown> {
+    const { id: _id, ...fields } = row;
+    return { ...fields, organization_id: STARK_ORGANIZATION };
+}
+
+// The genesis case of the document PUT
+// flows/:id/work-orders/:woid (Phase 5 Task 4): the flat join
+// fields, no `id` (a route param, not a body field) — the SAME
+// three keys (flow_id, work_order_id, at) the live :woid PUT's
+// validateFlowWorkOrderEntity accepts.
+export function flowWorkOrderJoinSeedBody(
+    row: FlowWorkOrderEntity,
+): Record<string, unknown> {
+    const { id: _id, ...fields } = row;
+    return { ...fields };
+}
+
 export function aiMemberSeedBody(
     m: AIMemberEntity,
 ): Record<string, unknown> {
@@ -814,9 +858,9 @@ interface MockDataInvocation {
 
 // Dependency-ordered (matches postMockDataLoadIn's write order):
 // human-members, ideas, idea-submissions, projects, flows,
-// ai-members, records, objectives. A dropped or reordered
-// invocation here is caught by tests/mock-data-pairs.test.ts's
-// pinned invocation count.
+// work-orders, flow-work-orders, ai-members, records,
+// objectives. A dropped or reordered invocation here is caught
+// by tests/mock-data-pairs.test.ts's pinned invocation count.
 export function buildMockDataInvocations():
     readonly MockDataInvocation[] {
     const members = buildMembers();
@@ -842,6 +886,28 @@ export function buildMockDataInvocations():
         recordStateEvents.map(e => [e.entity_id, e]),
     );
     const pools = humanMemberPoolsByOrganization(members);
+    const workOrders = buildWorkOrders();
+    const flowWorkOrderJoins = buildFlowWorkOrderJoins();
+    const workOrderStateEvents = buildWorkOrderStateEvents();
+    const leadToCloseWorkload = buildLeadToCloseWorkload();
+    // First-occurrence-wins: the WO's first seeded states event's
+    // member_id (the flows genesis-member precedent), read off
+    // the SAME two state-event arrays mock-data.ts's historical-
+    // trace carve-out still writes directly. Empirically verified
+    // (lens 4): all 145 work orders carry at least one event, and
+    // first-in-array-order equals earliest-by-`at` for every one —
+    // the lookup is unambiguous.
+    const workOrderFirstEventMemberId = new Map<Id, Id>();
+    for (const event of [
+        ...workOrderStateEvents,
+        ...leadToCloseWorkload.stateEvents,
+    ]) {
+        if (!workOrderFirstEventMemberId.has(event.entity_id)) {
+            workOrderFirstEventMemberId.set(
+                event.entity_id, event.member_id,
+            );
+        }
+    }
 
     const invocations: MockDataInvocation[] = [];
 
@@ -947,6 +1013,52 @@ export function buildMockDataInvocations():
         requesterIdentityId: SYSTEM_MEMBER_ID,
         body: flowOrg2SeedBody(),
     });
+    // Phase 5 Task 4: the entity/join gap closed — one document
+    // pair per seeded work order (hand-authored + generated) and
+    // one join pair per seeded flow-work-order join, mirroring
+    // the flows family's document-genesis shape. The work-order
+    // HISTORICAL TRACES (states events + state_field_values) stay
+    // a direct write — a NAMED carve-out (op-replay would
+    // rearrange the pinned states fingerprint; no Phase 5 read
+    // consumes trace pairs).
+    for (
+        const wo of [
+            ...workOrders, ...leadToCloseWorkload.workOrders,
+        ]
+    ) {
+        invocations.push({
+            key: seedPairKey('work-orders/:id', wo.id),
+            routePattern: 'work-orders/:id',
+            idParams: [wo.id],
+            organization: STARK_ORGANIZATION,
+            requesterIdentityId:
+                workOrderFirstEventMemberId.get(wo.id)!,
+            body: workOrderDocumentSeedBody(wo),
+        });
+    }
+    for (
+        const join of [
+            ...flowWorkOrderJoins,
+            ...leadToCloseWorkload.flowWorkOrders,
+        ]
+    ) {
+        invocations.push({
+            key: seedPairKey(
+                'flows/:id/work-orders/:woid', join.id,
+            ),
+            routePattern: 'flows/:id/work-orders/:woid',
+            idParams: [join.flow_id, join.id],
+            organization: STARK_ORGANIZATION,
+            // The SAME member as the join's own work order's
+            // document pair — the requesting identity is who
+            // brought the work order into being, not a second,
+            // independently-picked author.
+            requesterIdentityId: workOrderFirstEventMemberId.get(
+                join.work_order_id,
+            )!,
+            body: flowWorkOrderJoinSeedBody(join),
+        });
+    }
     for (const m of aiMembers) {
         invocations.push({
             key: seedPairKey('ai-members', m.id),

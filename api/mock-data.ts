@@ -6,6 +6,8 @@ import {
     postProjectDocumentOp,
     postFlowCreationOp,
     postFlowDocumentOp,
+    postWorkOrderDocumentOp,
+    postFlowWorkOrderDocumentOp,
     postRecordWriteOp,
     postObjectiveCreationOp,
     postAiMemberCreationOp,
@@ -86,6 +88,8 @@ import {
     projectOrganizationFor,
     flowSeedBody,
     flowOrg2SeedBody,
+    workOrderDocumentSeedBody,
+    flowWorkOrderJoinSeedBody,
     aiMemberSeedBody,
     recordSeedBody,
     objectiveSeedBody,
@@ -651,13 +655,28 @@ async function postMockDataLoadIn(
             ),
         ),
         ...mockWorkOrders.map(r =>
-            adapter.workOrders.put(r.id, {
-                ...r, organization_id: STARK_ORGANIZATION,
-            }),
+            postWorkOrderDocumentOp(
+                adapter,
+                r.id,
+                workOrderDocumentSeedBody(r),
+                SYSTEM_MEMBER_ID,
+                requirePair(
+                    pairs, seedPairKey('work-orders/:id', r.id),
+                ),
+            ),
         ),
         ...mockFlowWorkOrders.map(r =>
-            adapter.flowWorkOrders.put(
-                r.id, r,
+            postFlowWorkOrderDocumentOp(
+                adapter,
+                r.id,
+                flowWorkOrderJoinSeedBody(r),
+                SYSTEM_MEMBER_ID,
+                requirePair(
+                    pairs,
+                    seedPairKey(
+                        'flows/:id/work-orders/:woid', r.id,
+                    ),
+                ),
             ),
         ),
         ...mockStateEvents.map(r =>
@@ -711,14 +730,30 @@ async function postMockDataLoadIn(
             ];
         }),
         ...leadToCloseData.workOrders.map(r =>
-            adapter.workOrders.put(r.id, r),
-        ),
-        ...leadToCloseData.flowWorkOrders
-            .map(r =>
-                adapter.flowWorkOrders.put(
-                    r.id, r,
+            postWorkOrderDocumentOp(
+                adapter,
+                r.id,
+                workOrderDocumentSeedBody(r),
+                SYSTEM_MEMBER_ID,
+                requirePair(
+                    pairs, seedPairKey('work-orders/:id', r.id),
                 ),
             ),
+        ),
+        ...leadToCloseData.flowWorkOrders.map(r =>
+            postFlowWorkOrderDocumentOp(
+                adapter,
+                r.id,
+                flowWorkOrderJoinSeedBody(r),
+                SYSTEM_MEMBER_ID,
+                requirePair(
+                    pairs,
+                    seedPairKey(
+                        'flows/:id/work-orders/:woid', r.id,
+                    ),
+                ),
+            ),
+        ),
         ...leadToCloseData.stateEvents.map(r =>
             adapter.states.put(r.id, {
                 entity_id: r.entity_id,
