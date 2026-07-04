@@ -547,10 +547,49 @@ other atomic write in this catalog.
 - actual: `flows.put(id, flow)` (org-scoped stamps org) →
   `projectFlows.put(projectFlowId, projectFlow)` →
   `states.postEvent(initialStateEventId, id, initialState, actor)` →
-  `appendMessagePair(pair)`.
+  three `appendMessagePair` calls (below).
 - doctrinal: `put_flow` + `put_project_flow` + `post_state_event` as
   `post_create_flow`.
 - props: atomic; member-tier; `validateFlowCreateBody`.
+
+**Three pairs, one tx (Phase 4 Task 5), mirrored by work-orders'
+own create (§3.17).** The route pre-forms two extra pairs beside
+the gate's own operation pair, ONLY when the gate supplied both a
+pair and a fence organization — a below-facade caller
+(`api/mock-data.ts`) skips all three:
+
+- **The operation pair** — the gate's own, at the SAME address a
+  live genesis `PUT /flows/:id` would use: `createdEntityUriId`'s
+  override collapses `POST /flows` onto `flows/:id`'s own
+  (uriPrefix, uriId), so the two verbs chain against one address.
+- **The document pair** — PUT-shaped, at `flows/:id`'s own
+  address, body `flowCreateDocumentBody(b)` (the flow's own five
+  fields, the initial-state trio, the reduced graph via
+  `reduceCreateGraphDelta`, and the two transitional sidecars
+  `graphDelta`/`revivals`), validated through
+  `validateFlowDocumentBody` — byte-indistinguishable from a live
+  genesis `PUT /flows/:id`.
+- **The join pair** — PUT-shaped, at `projects/:id/flows/:pfid`'s
+  address, body the create's own `projectFlow` verbatim
+  (`validateProjectFlowEntity` accepts exactly `project_id`/
+  `flow_id`/`at`, so it doubles as the join pair's body without a
+  second construction) — byte-indistinguishable from a live
+  `PUT /projects/:id/flows/:pfid`. Genesis-undefined: a flow's
+  create-time join is always fresh.
+
+All three pairs share ONE `requestAt` (the create's own
+origination) yet strictly-later response `at` stamps, so the
+document pair — appended AFTER the operation pair — becomes the
+entity address's head. A duplicate create (same flow id) therefore
+records `Supersedes` on its own new document pair against the
+prior document pair; the duplicate's own operation pair, reading
+that SAME shared address fresh at gate entry, supersedes that same
+prior document pair too (`POST` never rides the locked
+four-outcome table — that arm is `PUT`-only on `flows/:id` itself,
+§5.4 — so a duplicate create always chains via `Supersedes`, never
+412s). Three pairs commit or none: a mid-transaction failure (a
+state-ledger collision, say) leaves zero of the three, exactly
+like every other atomic write in this catalog.
 
 ### 3.13 `PUT /flows/:id` — flow document write (not a POST)
 
