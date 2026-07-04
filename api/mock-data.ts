@@ -104,7 +104,7 @@ import {
     ideaSubmissionSeedBody,
     projectSeedBody,
     projectOrg2,
-    secondOrganizationProjectId,
+    projectOrganizationFor,
     flowSeedBody,
     flowOrg2SeedBody,
     aiMemberSeedBody,
@@ -421,10 +421,7 @@ async function postMockDataLoadIn(
         [...projects, projectOrg2(projects)].map(project => {
             const event =
                 projectStateEventById.get(project.id)!;
-            const organization =
-                project.id === secondOrganizationProjectId
-                    ? ORGANIZATION_TWO
-                    : STARK_ORGANIZATION;
+            const organization = projectOrganizationFor(project);
             return postProjectDocumentOp(
                 adapter,
                 project.id,

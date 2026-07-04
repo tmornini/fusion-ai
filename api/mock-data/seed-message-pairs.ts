@@ -569,6 +569,21 @@ export function projectOrg2(
     };
 }
 
+// Every Stark project lands in STARK_ORGANIZATION; the lone
+// org-2 override (secondOrganizationProjectId) lands in
+// ORGANIZATION_TWO. The ONE construction both pass 1 (this
+// file's buildMockDataInvocations) and pass 2
+// (mock-data.ts's postProjectDocumentOp loop) consume, so
+// neither can drift from the other by hand-editing a second
+// ternary.
+export function projectOrganizationFor(
+    project: Omit<ProjectEntity, 'organization_id'>,
+): Id {
+    return project.id === secondOrganizationProjectId
+        ? ORGANIZATION_TWO
+        : STARK_ORGANIZATION;
+}
+
 export function flowSeedBody(
     flow: FlowSeed,
     event: StateEntity,
@@ -866,10 +881,7 @@ export function buildMockDataInvocations():
     }
     for (const project of [...projects, projectOrg2(projects)]) {
         const event = projectStateEventById.get(project.id)!;
-        const organization =
-            project.id === secondOrganizationProjectId
-                ? ORGANIZATION_TWO
-                : STARK_ORGANIZATION;
+        const organization = projectOrganizationFor(project);
         invocations.push({
             key: seedPairKey('projects', project.id),
             routePattern: 'projects/:id',
