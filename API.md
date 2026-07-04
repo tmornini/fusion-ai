@@ -995,3 +995,78 @@ alongside the seeded row:
   human-members and AI members).
 - `requestAt` is minted ONCE per seed run and shared by every pair
   that run forms, so seeded pairs read as arriving together.
+
+### 5.4 The two PUT classes
+
+Every document-class PUT belongs to one of two concurrency
+classes, declared per family in `api/family-registry.ts`
+(`ConcurrencyClass`: `'simple' | 'locked'`) and dispatched
+through `api/document-family.ts`'s generic `documentPutHandler`.
+The gate (`handleRequest`) keys the class off the route's
+`documentFamilyWiring` entry ANDed with its family registration
+— NEVER a blanket `DOCUMENT_CLASS_ROUTE_PATTERNS` read — so a
+family can register `'locked'` (family-registry.ts) with no live
+route riding the arm until its OWN wiring row lands.
+
+- **`simple`** (every document-class route through this task):
+  the existing head-read → `Supersedes` chain (§5.1) — a repeat
+  PUT ALWAYS succeeds and ALWAYS supersedes the current head.
+- **`locked`** (registered for `flows`; no live route dispatches
+  through it yet — see below): a repeat PUT must ECHO the
+  current head via the request header `If-Response-ID`, or 412s.
+
+**The request header.** `If-Response-ID` joins the hoisted,
+hash-covered header set (`HOISTED_HEADER_NAMES`) — a different
+echo is a different request, so a byte-identical resend (the
+SAME echo) still hits the idempotency fast-path FIRST; a stale
+echo on an otherwise-identical body is a NEW request, evaluated
+against the four outcomes below.
+
+**The four outcomes**, checked ONLY after the replay fast-path
+MISSES (ordering is load-bearing: a byte-identical resend of an
+already-succeeded locked write carries its original, now-stale
+echo and MUST replay, never 412):
+
+- head present, echo absent → 412.
+- echo present, echo ≠ head → 412 (head absent counts as "≠",
+  since no head can ever match a claimed one).
+- echo present, echo == head → 200, response carries
+  `Follows: <head>`.
+- head absent, echo absent → 200, genesis — NEITHER header.
+
+**`Follows`** is the locked class's response header
+(`wireHeadersFor`), rendered from the stored row exactly like
+`Supersedes`. Like `Supersedes`, it is PROVENANCE ONLY —
+derivation never walks either chain to decide which pair is
+current (`derive-documents.ts`'s (at, id) reduction alone
+decides that). The two headers are mutually exclusive per
+response: a locked write's carries `Follows` and never
+`Supersedes`; a simple write's carries `Supersedes` and never
+`Follows`.
+
+**The atomic backstop.** Two writers racing the SAME echo both
+pass the pre-check (both observe the same, not-yet-superseded
+head) — the UNIQUE index on `responses.follows` closes the
+race: the first commits, the second's `appendMessagePair` raises
+`UniqueConstraintError`, mapped to 412 by the SAME
+`handleRequest` catch that maps every other unique violation. No
+pair is stored for a 412 — the tx aborted or never opened.
+
+**Status today:** the locked arm is fully built and tested
+against a synthetic registration (`tests/document-family.
+test.ts`), but NO live route dispatches through it — `flows`
+registers `'locked'` yet stays hand-written old-plane, so this
+task changes no wire behavior for any live route.
+
+### 5.5 ideas/projects: generic components, wire-identical
+
+`ideas/:id`, `ideas` (collection), `projects/:id`, and
+`projects` (collection) — plus their `WRITE_RESPONSE_SPECS`
+entries — now dispatch through `api/document-family.ts`'s
+generic `documentEntityRoute`/`documentCollectionRoute`/
+`documentWriteResponseSpec`, driven by a per-family
+`DocumentFamilyWiring` (a validator, a decompose op, and an
+entity mapper) rather than four hand-written route objects. The
+wire is byte-identical to the routes it replaces — the untouched
+existing suite plus `tests/document-family.test.ts`'s successBody
+and dispatch pins are the absorption's proof.
