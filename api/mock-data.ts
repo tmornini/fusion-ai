@@ -3266,11 +3266,6 @@ async function postMockDataLoadIn(
                 ),
             ),
         ),
-        ...mockProjectFlows.map(r =>
-            adapter.projectFlows.put(
-                r.id, r,
-            ),
-        ),
         ...mockWorkOrders.map(r =>
             adapter.workOrders.put(r.id, {
                 ...r, organization_id: STARK_ORGANIZATION,
