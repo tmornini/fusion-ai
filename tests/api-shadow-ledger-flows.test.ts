@@ -185,7 +185,7 @@ test('each 200 route\'s wire body matches a direct domain '
     assert.deepEqual(await saved.json(), flowRow);
 });
 
-test('undo/redo/versions-publish are operation-addressed:'
+test('undo/versions-publish are operation-addressed:'
 + ' uriId stays empty, never chains', async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -221,27 +221,55 @@ test('undo/redo/versions-publish are operation-addressed:'
             === '/organizations/1/flows/flow-4/undo/');
     assert.ok(undoRow);
     assert.equal(undoRow!.uri_id, '');
+});
 
-    const redone = await handleRequest(db, req(
-        'POST', '/flows/flow-4/redo', token, {
-            version: {
-                id: 'v-2',
-                version: versionBody('flow-4'),
-                trimIds: [],
-            },
-            flow: flowFields('Fresh Flow'),
-            eventId: 'flow-4-redo-ev',
-            at: AT,
-            graphDelta: emptyDelta(),
-            revivals: [],
+// Task 4 (R1/E5): POST /flows/:id/redo left the URI tree — the
+// covenant this test pinned for redo (an operation-addressed
+// pair, uriId empty, never chaining) no longer describes what
+// redo does. Redo now composes the SAME two writes performRedo
+// (the client) drives: a versions POST (operation-addressed,
+// uriId empty, exactly like publish above) followed by a
+// document PUT AT THE FLOW'S OWN ADDRESS (entity-addressed,
+// uriId is the flow id, chaining via Follows) — never a single
+// combined pair at a /redo segment, because that segment no
+// longer exists.
+test('redo produces a versions operation pair plus a'
++ ' document pair at the flow\'s address', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const created = await createFlow(db, token, 'flow-9');
+    const createdId = created.headers.get('Response-ID');
+    assert.ok(createdId);
+
+    const published = await handleRequest(db, req(
+        'POST', '/flows/flow-9/versions', token, {
+            id: 'v-9',
+            version: versionBody('flow-9'),
+            trimIds: [],
         },
     ));
-    assert.equal(redone.status, 204);
-    const redoRow = (await db.requests.getAll())
-        .find(r => r.uri_prefix
-            === '/organizations/1/flows/flow-4/redo/');
-    assert.ok(redoRow);
-    assert.equal(redoRow!.uri_id, '');
+    assert.equal(published.status, 204);
+    const versionRows = (await db.requests.getAll())
+        .filter(r => r.uri_prefix
+            === '/organizations/1/flows/flow-9/versions/');
+    assert.equal(versionRows.length, 1);
+    assert.equal(versionRows[0]!.uri_id, '');
+
+    const redone = await handleRequest(db, req(
+        'PUT', '/flows/flow-9', token,
+        putBody('Redone Flow', 'flow-9-redo-ev'),
+        { 'if-response-id': createdId! },
+    ));
+    assert.equal(redone.status, 200);
+    // Entity-addressed at the flow's OWN address (never a
+    // /redo segment) and chains from the create via Follows,
+    // exactly like any other save to an existing flow.
+    assert.equal(redone.headers.get('Follows'), createdId);
+    const documentRows = (await db.requests.getAll())
+        .filter(r => r.uri_prefix === '/organizations/1/flows/'
+            && r.uri_id === 'flow-9');
+    // the create's own pair plus this redo save's pair.
+    assert.equal(documentRows.length, 2);
 });
 
 test('PUT flows/:id/versions/:vid appends its pair at the'

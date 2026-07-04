@@ -2741,55 +2741,6 @@ export function validateFlowVersionPublishBody(
     return { id, version, trimIds };
 }
 
-// The version-snapshot sub-object POST /flows/:id/redo carries
-// (required — a redo can never land archived as a version while
-// the redo graph is lost): a new flow_versions snapshot to PUT
-// plus the ids of the over-cap versions to trim. Same shape as
-// FlowVersionPublishBody — the flow_versions store re-validates
-// the snapshot through validateFlowVersionEntity when the
-// composing POST puts it; the web-app owns the cap-retention
-// trim derivation, so trimIds is a list of non-empty version
-// ids. `label` names the offender so the message reads from the
-// enclosing body. PUT /flows/:id no longer carries a snapshot
-// option (Decision 3, Task 3) — version-publish rides its own
-// POST /flows/:id/versions, which validates through
-// FlowVersionPublishBody above, not this type.
-export interface FlowVersionSnapshot {
-    readonly id: string;
-    readonly version: Record<string, unknown>;
-    readonly trimIds: readonly string[];
-}
-
-const FLOW_VERSION_SNAPSHOT_KEYS: readonly string[] = [
-    'id', 'version', 'trimIds',
-];
-
-function validateFlowVersionSnapshot(
-    value: unknown,
-    label: string,
-): FlowVersionSnapshot {
-    const obj = asObject(value, label);
-    assertOnlyKeys(obj, FLOW_VERSION_SNAPSHOT_KEYS, label);
-    const id = asString(obj['id'], label + '.id');
-    if (id === '') {
-        throw new ValidationError(
-            label + '.id must be non-empty',
-        );
-    }
-    const version = asObject(obj['version'], label + '.version');
-    const trimRaw = asArray(obj['trimIds'], label + '.trimIds');
-    const trimIds = trimRaw.map((t, i) => {
-        const v = asString(t, label + '.trimIds[' + i + ']');
-        if (v === '') {
-            throw new ValidationError(
-                label + '.trimIds[' + i + '] must be non-empty',
-            );
-        }
-        return v;
-    });
-    return { id, version, trimIds };
-}
-
 export interface FlowUndoBody {
     readonly flow: Record<string, unknown>;
     readonly eventId: string;
@@ -2861,61 +2812,6 @@ export function validateFlowUndoBody(
     return {
         flow, eventId, consumedVersionId, at,
         graphDelta, revivals,
-    };
-}
-
-export interface FlowRedoBody {
-    readonly version: FlowVersionSnapshot;
-    readonly flow: Record<string, unknown>;
-    readonly eventId: string;
-    readonly at: string;
-    readonly graphDelta: FlowGraphDelta;
-    readonly revivals: GraphRevival[];
-}
-
-const FLOW_REDO_KEYS: readonly string[] = [
-    'version', 'flow', 'eventId', 'at',
-    'graphDelta', 'revivals',
-];
-
-// The HTTP-body gate for POST /flows/:id/redo: a REQUIRED
-// version snapshot (put + trims), the flow row, the 'updated'
-// state event, the graphDelta to the four relation tables, and
-// the revivals — written atomically. The current state can
-// never land archived as a version while the redo graph is
-// lost. The flow fields are re-validated by the org-scoped
-// flows store after the org stamp (body OMITS organization_id);
-// the version snapshot is re-validated by the flow_versions
-// store. The state is fixed to 'updated' server-side and
-// authored by the verified caller (actor), never the body.
-// graphDelta lands the redo target graph in relations;
-// revivals post 'restored' events that supersede the tombstones
-// of the nodes/edges the redo target re-introduces.
-export function validateFlowRedoBody(
-    body: Record<string, unknown>,
-): FlowRedoBody {
-    assertOnlyKeys(body, FLOW_REDO_KEYS, 'FlowRedoBody');
-    const version = validateFlowVersionSnapshot(
-        body['version'], 'FlowRedoBody.version',
-    );
-    const flow = asObject(body['flow'], 'FlowRedoBody.flow');
-    const eventId = pickString(body, 'eventId');
-    if (eventId === '') {
-        throw new ValidationError(
-            'FlowRedoBody.eventId must be non-empty',
-        );
-    }
-    const at = validateTimestampField(
-        body, 'at', 'FlowRedoBody',
-    );
-    const graphDelta = validateFlowGraphDelta(
-        asObject(body['graphDelta'], 'FlowRedoBody.graphDelta'),
-    );
-    const revivals = validateRevivals(
-        body['revivals'], 'FlowRedoBody.revivals',
-    );
-    return {
-        version, flow, eventId, at, graphDelta, revivals,
     };
 }
 

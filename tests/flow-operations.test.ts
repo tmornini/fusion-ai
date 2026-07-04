@@ -1363,15 +1363,18 @@ test(
     },
 );
 
-// A ctx whose POST to a named operation faults — the
-// composing flow-write + version-op now ride POST
-// /flows/:id/{undo,redo} (not ctx.commit), so this
-// proves the same one-transaction covenant: when the
-// named POST rejects, the underlying transaction
-// applied NOTHING. GET/PUT/DELETE pass through to the
-// real db so redo's pre-transaction snapshot read still
-// runs. POST to any OTHER resource passes through, so
-// only the operation under test is faulted.
+// A ctx whose POST to a named operation faults. For
+// performUndo, the composing flow-write + version-op still
+// ride ONE named POST /flows/:id/undo, so this proves the
+// one-transaction covenant: when that POST rejects, the
+// underlying transaction applied NOTHING. Task 4 folded redo
+// into the locked save, so redo no longer has a single named
+// POST to fault this way for its WHOLE composition — see
+// faultingPutCtx below for its PUT-side sibling, used to
+// fault redo's second (now-independent) write. GET/PUT/DELETE
+// pass through to the real db. POST to any OTHER resource
+// passes through, so only the operation under test is
+// faulted.
 function faultingPostCtx(
     ctx: RequestContext,
     faultResource: string,
@@ -1396,6 +1399,42 @@ function faultingPostCtx(
         },
     };
     return { ctx: wrapped, posts: () => count };
+}
+
+// The PUT-side sibling of faultingPostCtx. Task 4's redo
+// composes postFlowVersion (a POST) then putFlow (a PUT) as
+// two INDEPENDENT writes — this lets a test fault the SECOND
+// write specifically, after the first has already landed,
+// proving the fold is no longer atomic across both writes
+// (the named R1/E5 trade-off). GET/POST/DELETE pass through
+// to the real db; PUT to any OTHER resource passes through
+// too, so only the operation under test is faulted.
+function faultingPutCtx(
+    ctx: RequestContext,
+    faultResource: string,
+): {
+    ctx: RequestContext;
+    puts: () => number;
+} {
+    let count = 0;
+    const wrapped: RequestContext = {
+        ...ctx,
+        PUT: <T>(
+            resource: string,
+            body: Record<string, unknown>,
+            headerFields?:
+                readonly (readonly [string, string])[],
+        ): Promise<T> => {
+            if (resource === faultResource) {
+                count += 1;
+                return Promise.reject(
+                    new Error('injected PUT fault'),
+                );
+            }
+            return ctx.PUT<T>(resource, body, headerFields);
+        },
+    };
+    return { ctx: wrapped, puts: () => count };
 }
 
 test(
@@ -1451,10 +1490,23 @@ test(
     },
 );
 
+// Task 4 (R1/E5): redo's retired POST /flows/:id/redo carried
+// its own one-transaction covenant; the fold splits it into
+// postFlowVersion (a POST) then putFlow (a PUT), two
+// INDEPENDENT writes — the same non-atomic shape every OTHER
+// perform* mutation (commitFlowMutation) already carries. The
+// two tests below fault each write in turn. Neither wraps a
+// try/catch around the assertion: performRedo no longer
+// absorbs a write failure into a toast (Swallowed Failures
+// guard) — putFlow's OWN internal loop absorbs a 412 (up to 3
+// attempts); everything else propagates, so a faulted write
+// REJECTS performRedo directly, exactly like the missing-flow
+// case above.
+
 test(
-    'performRedo: snapshot + re-apply ride ONE'
-    + ' transaction; a faulted POST /flows/:id/redo'
-    + ' applies nothing',
+    'performRedo: a faulted version-POST rejects;'
+    + ' nothing lands (postFlowVersion runs FIRST,'
+    + ' before putFlow)',
     async () => {
         const { db, ctx } = await setupFlow();
         const snap = snapFrom(buildGraph([
@@ -1470,23 +1522,58 @@ test(
             }),
         );
         const faulting = faultingPostCtx(
-            ctx, 'flows/' + FLOW_ID + '/redo',
+            ctx, 'flows/' + FLOW_ID + '/versions',
         );
-        const op = await silenceConsoleError(
-            () => performRedo(
-                faulting.ctx, snap, history,
-            ),
+        await assert.rejects(
+            performRedo(faulting.ctx, snap, history),
         );
-        assert.equal(op.kind, 'fail');
-        if (op.kind !== 'fail') return;
-        assert.match(op.toast, /redo failed/i);
         assert.equal(faulting.posts(), 1);
         // nothing applied: no new version row, and
         // the persisted graph stays the seeded
-        // start + complete pair
+        // start + complete pair (putFlow never ran)
         assert.equal(
             await flowVersionCount(db), 0,
         );
+        const g = await persistedGraph(db);
+        assert.equal(g.nodes.length, 2);
+    },
+);
+
+test(
+    'performRedo: a faulted document-PUT rejects AFTER'
+    + ' the version already landed — the fold\'s two'
+    + ' writes are no longer one transaction (named'
+    + ' R1/E5 trade-off)',
+    async () => {
+        const { db, ctx } = await setupFlow();
+        const snap = snapFrom(buildGraph([
+            buildNode('a'),
+        ]));
+        const history = appendToRedoStack(
+            buildFlowHistorySnapshot(false),
+            buildFlowVersion({
+                nodes: [
+                    buildNode('a'),
+                    buildNode('b'),
+                ],
+            }),
+        );
+        const faulting = faultingPutCtx(
+            ctx, 'flows/' + FLOW_ID,
+        );
+        await assert.rejects(
+            performRedo(faulting.ctx, snap, history),
+        );
+        assert.equal(faulting.puts(), 1);
+        // the version-POST already landed — it runs
+        // FIRST and is not itself faulted, so the two
+        // now-independent writes leave the version
+        // archived even though the document save fails.
+        assert.equal(
+            await flowVersionCount(db), 1,
+        );
+        // the document PUT never applied: the graph
+        // stays the seeded start + complete pair.
         const g = await persistedGraph(db);
         assert.equal(g.nodes.length, 2);
     },

@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
+import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 
@@ -87,4 +88,54 @@ async () => {
         'PUT', '/flows/f1/undo', token, {},
     ));
     assert.equal(res.status, 405);
+});
+
+// Task 4 (R1/E5): redo folds into the locked save — the
+// POST /flows/:id/redo route leaves the URI tree entirely,
+// so a request against it now finds no matching pattern at
+// all (404), not a method-absent 405 against a still-live
+// segment. Additive pin: today (pre-fold) this same request
+// still 204s.
+test('POST flows/:id/redo 404s (route retired; redo now'
++ ' rides versions-POST + document-PUT)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(db, req(
+        'POST', '/flows/f1/redo', token, {
+            version: {
+                id: 'ver-redo',
+                version: {
+                    flow_id: 'f1',
+                    name: 'redo-snap',
+                    is_locked: false,
+                    is_auto_layout: false,
+                    is_auto_fit: false,
+                    lock_timeout: DEFAULT_LOCK_TIMEOUT,
+                    graph: JSON.stringify({
+                        nodes: [], edges: [],
+                    }),
+                    at: '2026-01-01T00:00:00.000000Z',
+                },
+                trimIds: [],
+            },
+            flow: {
+                name: 'redone',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: DEFAULT_LOCK_TIMEOUT,
+            },
+            eventId: 'redo-ev',
+            at: '2026-01-01T00:00:00.000000Z',
+            graphDelta: {
+                nodes: [],
+                edges: [],
+                deletions: [],
+                memberEvents: [],
+                attributeEvents: [],
+            },
+            revivals: [],
+        },
+    ));
+    assert.equal(res.status, 404);
 });

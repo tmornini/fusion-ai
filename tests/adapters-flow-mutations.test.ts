@@ -461,42 +461,58 @@ test(
 );
 
 test(
-    'POST flows/:id/redo posts the updated event'
-    + ' at the caller time',
+    'redo (versions-POST + document-PUT) posts the'
+    + ' updated event at the caller time',
     async () => {
         const { ctx } = await setupMemDb();
         await createBaseFlow(ctx, 'flow-1');
-        await ctx.POST('flows/flow-1/redo', {
+        // Task 4 (R1/E5): POST /flows/:id/redo retired — redo
+        // now drives the SAME two writes performRedo composes:
+        // a versions POST (the archive), exactly like
+        // version-publish above, THEN a document PUT (the
+        // save), exactly like 'publishing a version then saving
+        // the document' above — never a single combined POST.
+        await ctx.POST('flows/flow-1/versions', {
+            id: 'ver-redo',
             version: {
-                id: 'ver-redo',
-                version: {
-                    flow_id: 'flow-1',
-                    name: 'redo-snap',
-                    is_locked: false,
-                    is_auto_layout: false,
-                    is_auto_fit: false,
-                    lock_timeout: DEFAULT_LOCK_TIMEOUT,
-                    graph: JSON.stringify({
-                        nodes: [], edges: [],
-                    }),
-                    at: '2026-01-01T00:00:00.000000Z',
-                },
-                trimIds: [],
+                flow_id: 'flow-1',
+                name: 'redo-snap',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: DEFAULT_LOCK_TIMEOUT,
+                graph: JSON.stringify({
+                    nodes: [], edges: [],
+                }),
+                at: '2026-01-01T00:00:00.000000Z',
             },
-            flow: buildFlowBody({
-                name: 'redone',
-                isLocked: false,
-                isAutoLayout: false,
-                isAutoFit: false,
-                lockTimeout: DEFAULT_LOCK_TIMEOUT,
-                nodes: [],
-                edges: [],
-            }),
-            eventId: 'redo-ev',
-            at: '2099-01-03T00:00:00.000000Z',
-            graphDelta: EMPTY_GRAPH_DELTA,
-            revivals: [],
+            trimIds: [],
         });
+        const { responseId } =
+            await ctx.GETWithResponseId<FlowWithGraph>(
+                'flows/flow-1',
+            );
+        await ctx.PUT(
+            'flows/flow-1',
+            {
+                ...buildFlowBody({
+                    name: 'redone',
+                    isLocked: false,
+                    isAutoLayout: false,
+                    isAutoFit: false,
+                    lockTimeout: DEFAULT_LOCK_TIMEOUT,
+                    nodes: [],
+                    edges: [],
+                }),
+                state: 'updated',
+                state_at: '2099-01-03T00:00:00.000000Z',
+                state_event_id: 'redo-ev',
+                graph: JSON.stringify({ nodes: [], edges: [] }),
+                graphDelta: EMPTY_GRAPH_DELTA,
+                revivals: [],
+            },
+            ifResponseIdHeaders(responseId),
+        );
         const events = await ctx.GET<StateEntity[]>(
             'entity-states/flow-1/history',
         );

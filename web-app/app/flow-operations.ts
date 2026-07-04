@@ -17,7 +17,6 @@ import {
     putFlow,
     buildFlowBody,
     buildSaveEvents,
-    buildFlowVersionSnapshot,
     notifyFlowChange,
     getFlowGraph,
     getFlowVersions,
@@ -813,57 +812,50 @@ export async function performRedo(
         };
     }
     const v = popped.version;
-    const now = nowUtc();
-    // Snapshot + re-apply as ONE atomic transaction
-    // through the named POST /flows/:id/redo: the
-    // current state can never land archived as a
-    // version while the redo graph is lost. The
-    // snapshot read runs OUTSIDE the transaction.
-    const version = await buildFlowVersionSnapshot(
+    // The revivals diff the CURRENT graph (snap) against the
+    // TARGET (the popped redo version): they re-introduce ids
+    // the redo target carries that the current graph dropped
+    // (their tombstones).
+    const revivals = buildRevivals(
+        { nodes: snap.nodes, edges: snap.edges },
+        { nodes: v.nodes, edges: v.edges },
+        nowUtc(),
+    );
+    // Redo folds into the locked save (R1/E5): the retired
+    // POST /flows/:id/redo's ONE atomic transaction splits into
+    // two independent writes — the SAME non-atomic shape every
+    // OTHER perform* mutation (commitFlowMutation) already
+    // carries. First, archive the CURRENT state as a version
+    // snapshot through postFlowVersion ALONE — that POST
+    // computes the publish internally (the exact `version`
+    // field the retired route carried), so this never also
+    // calls buildFlowVersionSnapshot (double-compute). Then
+    // save the redo target's graph through putFlow, which rides
+    // its own C6 retry loop and carries the revivals above. NO
+    // try/catch here: putFlow's own retry absorbs a 412 (up to 3
+    // attempts) — that is the ONLY error this composition
+    // absorbs. Everything else (a missing flow, an exhausted
+    // retry, any other network fault) PROPAGATES — an impossible
+    // state must crash, never a swallowed 'Redo failed' toast.
+    await postFlowVersion(
         ctx,
         generateCryptoSafeBase62(),
         snap.flowId,
     );
-    // The delta diffs the CURRENT graph (snap) against the
-    // TARGET (the popped redo version). The revivals
-    // re-introduce ids the redo target carries that the
-    // current graph dropped (their tombstones).
-    const graphDelta = buildSaveEvents(
-        { nodes: snap.nodes, edges: snap.edges },
-        { nodes: v.nodes, edges: v.edges },
+    await putFlow(
+        ctx,
         snap.flowId,
-        generateCryptoSafeBase62,
-        now,
+        {
+            name: v.name,
+            isLocked: v.isLocked,
+            isAutoLayout: v.isAutoLayout,
+            isAutoFit: v.isAutoFit,
+            lockTimeout: v.lockTimeout,
+            nodes: v.nodes,
+            edges: v.edges,
+        },
+        revivals,
     );
-    const revivals = buildRevivals(
-        { nodes: snap.nodes, edges: snap.edges },
-        { nodes: v.nodes, edges: v.edges },
-        now,
-    );
-    try {
-        await ctx.POST(`flows/${snap.flowId}/redo`, {
-            version,
-            flow: buildFlowBody({
-                name: v.name,
-                isLocked: v.isLocked,
-                isAutoLayout: v.isAutoLayout,
-                isAutoFit: v.isAutoFit,
-                lockTimeout: v.lockTimeout,
-                nodes: v.nodes,
-                edges: v.edges,
-            }),
-            eventId: generateCryptoSafeBase62(),
-            at: now,
-            graphDelta,
-            revivals,
-        });
-    } catch (err) {
-        log.error(
-            'performRedo failed',
-            'flow-operations', err,
-        );
-        return failOp('Redo failed', 'error');
-    }
     notifyFlowChange();
     const graph = await getFlowGraph(
         ctx, snap.flowId,

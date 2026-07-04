@@ -51,7 +51,6 @@ import {
     validateFlowVersionPublishBody,
     validateFlowWorkOrderEntity,
     validateFlowUndoBody,
-    validateFlowRedoBody,
     validateIdeaConversionBody,
     validateIdeaDocumentBody,
     validateIdeaSubmissionEntity,
@@ -1307,7 +1306,6 @@ export const WRITE_RESPONSE_SPECS:
     // successBody.
     'flows/:id': documentWriteResponseSpec(FLOWS_WIRING),
     'flows/:id/undo': { status: 204 },
-    'flows/:id/redo': { status: 204 },
     'flows/:id/versions': { status: 204 },
     'flows/:id/versions/:vid': {
         status: 200,
@@ -2384,67 +2382,6 @@ export const routes: Route[] = [
                     );
                     await view.flowVersions.delete(
                         b.consumedVersionId,
-                    );
-                    await writeFlowGraphDelta(
-                        view, delta, actor,
-                    );
-                    for (const r of b.revivals) {
-                        await view.states.postEvent(
-                            r.eventId, r.entityId,
-                            'restored', actor, r.at,
-                        );
-                    }
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                },
-            );
-        },
-    }),
-    // Redo a flow edit: a REQUIRED version snapshot (the new
-    // flow_versions row PUT plus the named over-cap trim
-    // DELETEs), THEN the flow row PUT, THEN the 'updated' state
-    // event, THEN the graph delta to the four relation tables,
-    // THEN the revivals — all as ONE transaction. The current
-    // state can never land archived as a version while the redo
-    // graph is lost. The org-scoped flows store stamps
-    // organization_id and re-validates the flow body (so it OMITS
-    // it); flow_versions re-validates the snapshot; the event is
-    // authored by the verified caller (actor). graphDelta lands
-    // the redo target graph in relations; the revivals THEN post
-    // 'restored' events that supersede the tombstones of the
-    // nodes/edges the redo target re-introduces. Member-tier POST
-    // via the /flows segment prefix.
-    route('flows/:id/redo', {
-        post: (db, p, body, actor, pair) => {
-            const id = param(p, 0);
-            const b = validateFlowRedoBody(body);
-            const delta = b.graphDelta;
-            return db.transaction(
-                [
-                    'flows', 'flow_versions', 'states',
-                    'flow_nodes', 'flow_edges',
-                    'flow_node_members',
-                    'flow_node_attributes',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    await view.flowVersions.put(
-                        b.version.id,
-                        b.version.version as unknown as
-                            Omit<FlowVersionEntity, 'id'>,
-                    );
-                    for (const t of b.version.trimIds) {
-                        await view.flowVersions.delete(t);
-                    }
-                    await view.flows.put(
-                        id,
-                        b.flow as unknown as
-                            Omit<FlowEntity, 'id'>,
-                    );
-                    await view.states.postEvent(
-                        b.eventId, id, 'updated', actor,
-                        b.at,
                     );
                     await writeFlowGraphDelta(
                         view, delta, actor,

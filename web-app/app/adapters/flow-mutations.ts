@@ -17,6 +17,7 @@ import type {
     GraphDeletion,
     FlowNodeMemberRowBody,
     FlowNodeAttributeRowBody,
+    GraphRevival,
 } from '../../../api/validators.ts';
 import {
     validateStoredGraphJson,
@@ -317,20 +318,24 @@ export function buildSaveEvents(
 // Assemble the PUT /flows/:id document body for a save: the
 // flow row's own fields, a fresh 'updated' trio, the client-
 // authored post-save graph snapshot (the exact wire form GET
-// /flows/:id emits — byte-identical types, no transform), and
-// the graph delta diffed against the CURRENT stored graph.
-// ONE GET (ctx.GETWithResponseId, never getFlowGraph — that
-// helper also applies withRenderableLayout, a presentation
-// concern, and hides the Response-ID header this builder also
-// needs) serves BOTH the baseline diff source AND the echo to
-// carry as If-Response-ID — calling getFlowGraph plus a
-// separate header read would silently add a hop to every save
-// path. Not exported: putFlow (below) is the ONLY caller since
-// the C6 retry loop owns rebuilding a fresh body per attempt.
+// /flows/:id emits — byte-identical types, no transform), the
+// graph delta diffed against the CURRENT stored graph, and the
+// caller's revivals (empty for every ordinary edit; performRedo
+// is the one caller that computes a non-empty list — see
+// putFlow below). ONE GET (ctx.GETWithResponseId, never
+// getFlowGraph — that helper also applies
+// withRenderableLayout, a presentation concern, and hides the
+// Response-ID header this builder also needs) serves BOTH the
+// baseline diff source AND the echo to carry as
+// If-Response-ID — calling getFlowGraph plus a separate header
+// read would silently add a hop to every save path. Not
+// exported: putFlow (below) is the ONLY caller since the C6
+// retry loop owns rebuilding a fresh body per attempt.
 async function buildFlowPutBody(
     ctx: RequestContext,
     id: string,
     save: FlowSaveShape,
+    revivals: GraphRevival[],
 ): Promise<{
     body: Record<string, unknown>;
     ifResponseId: string | undefined;
@@ -361,7 +366,7 @@ async function buildFlowPutBody(
                 edges: save.edges,
             }),
             graphDelta: delta,
-            revivals: [],
+            revivals,
         },
         ifResponseId: responseId,
     };
@@ -390,10 +395,18 @@ const MAX_PUT_ATTEMPTS = 3;
 // notification fires EXACTLY ONCE, on this loop's OWN success
 // return — never per attempt, never in a finally — so a
 // mid-retry 412 never triggers a wasted cross-tab re-render.
+// `revivals` defaults to empty (every ordinary edit): performRedo
+// (flow-operations.ts) is the one caller that passes a non-empty
+// list — computed ONCE against the live baseline before the
+// retry loop starts, then carried unchanged through every
+// attempt, exactly like the graph delta's own diff is recomputed
+// fresh per attempt but the CALLER's intent (the target graph)
+// never changes across retries.
 export async function putFlow(
     ctx: RequestContext,
     id: string,
     save: FlowSaveShape,
+    revivals: GraphRevival[] = [],
 ): Promise<void> {
     for (
         let attempt = 1;
@@ -401,7 +414,7 @@ export async function putFlow(
         attempt++
     ) {
         const { body, ifResponseId } =
-            await buildFlowPutBody(ctx, id, save);
+            await buildFlowPutBody(ctx, id, save, revivals);
         try {
             await ctx.PUT(
                 `flows/${id}`,
