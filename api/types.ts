@@ -301,6 +301,24 @@ export function assertMemberState(
     return v;
 }
 
+// No isFlowState — nothing narrows a bare string against
+// FLOW_STATES at runtime today (unlike ideas/projects/records,
+// which each drive a page-level string-to-enum guard); the
+// document validator (validateFlowDocumentBody) is the ONE
+// caller, and it always needs the throwing form.
+export function assertFlowState(
+    v: string,
+    label: string,
+): FlowState {
+    if (!includes(FLOW_STATES, v)) {
+        throw new ValidationError(
+            'expected FlowState for '
+                + label + ', got ' + v,
+        );
+    }
+    return v;
+}
+
 export function isRecordState(
     v: string,
 ): v is RecordState {

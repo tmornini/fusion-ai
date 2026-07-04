@@ -28,6 +28,7 @@ import type {
     ProjectEntity,
     ProjectState,
     FlowEntity,
+    FlowState,
     FlowVersionEntity,
     FlowNodeEntity,
     FlowEdgeEntity,
@@ -57,6 +58,7 @@ import type {
 import {
     assertAttributeType,
     assertConstraintAppliesTo,
+    assertFlowState,
     assertIdeaState,
     assertMemberState,
     assertProjectState,
@@ -1363,6 +1365,106 @@ export function validateFlowEntity(
         lock_timeout: pickNumber(
             body, 'lock_timeout',
         ),
+    };
+}
+
+const FLOW_DOCUMENT_ENTITY_KEYS: readonly string[] = [
+    'name', 'is_locked', 'is_auto_layout',
+    'is_auto_fit', 'lock_timeout',
+];
+
+const FLOW_DOCUMENT_BODY_KEYS: readonly string[] = [
+    ...FLOW_DOCUMENT_ENTITY_KEYS,
+    'state', 'state_at', 'state_event_id',
+    'graph', 'graphDelta', 'revivals',
+];
+
+export interface FlowDocumentBody {
+    readonly entity:
+        Omit<FlowEntity, 'id' | 'organization_id'>;
+    readonly state: FlowState;
+    readonly state_at: string;
+    readonly state_event_id: string;
+    // The FULL reduced graph in EXACTLY the wire form GET
+    // /flows/:id emits today (JsonObjectField is a branded
+    // JSON-ENCODED STRING — the same covenant
+    // flow_versions.graph already carries); validated via
+    // validateStoredGraphJson but stored as the SAME encoded
+    // string — the op never re-serializes it.
+    readonly graph: JsonObjectField;
+    // TRANSITIONAL decomposition sidecars — the ONLY consumer
+    // is the old-plane relation writer (writeFlowGraphDelta);
+    // no derivation reads either one. Retiring at Phase Final,
+    // once the relation tables alone are the graph's source of
+    // truth for every reader, not only the reassembly GET.
+    readonly graphDelta: FlowGraphDelta;
+    readonly revivals: readonly GraphRevival[];
+}
+
+// The HTTP-body gate for PUT /flows/:id (Decision 7, the
+// LOCKED class — Task 3): the full wire document — the
+// entity's own fields, the lifecycle trio, the client-
+// authored post-save graph snapshot, and the two transitional
+// decomposition sidecars. organization_id is deliberately
+// absent from the expected set (like every other org-owned
+// write) yet rides the `optional` allowance rather than
+// `expected` — a caller-forged organization_id is tolerated-
+// but-ignored (the fence's stamp always overrides whatever key
+// it finds), and the below-facade seed path (no scoping
+// wrapper) embeds it in the raw body so this op can read it
+// straight back. The trio holds to the SAME rules the bare
+// states/:id route applies to an event (assertFlowState, an
+// RFC-3339 `at`, a non-empty event id). Entity fields are
+// picked directly rather than delegated to validateFlowEntity
+// — that function REQUIRES organization_id, which this body
+// never carries pre-stamp. `graphDelta`/`revivals` reuse the
+// undo/redo bodies' own validators (validateFlowGraphDelta,
+// validateRevivals below) — same wire shape, same gate.
+export function validateFlowDocumentBody(
+    body: Record<string, unknown>,
+): FlowDocumentBody {
+    assertOnlyKeys(
+        body, FLOW_DOCUMENT_BODY_KEYS, 'FlowDocumentBody',
+        ['organization_id'],
+    );
+    const state = assertFlowState(
+        pickString(body, 'state'),
+        'FlowDocumentBody.state',
+    );
+    const stateEventId = pickString(body, 'state_event_id');
+    if (stateEventId === '') {
+        throw new ValidationError(
+            'FlowDocumentBody.state_event_id must be'
+            + ' non-empty',
+        );
+    }
+    const graph = pickJsonObjectField(body, 'graph');
+    validateStoredGraphJson(graph, 'FlowDocumentBody.graph');
+    const graphDelta = validateFlowGraphDelta(
+        asObject(
+            body['graphDelta'], 'FlowDocumentBody.graphDelta',
+        ),
+    );
+    const revivals = validateRevivals(
+        body['revivals'], 'FlowDocumentBody.revivals',
+    );
+    return {
+        entity: {
+            name: pickString(body, 'name'),
+            is_locked: pickBoolean(body, 'is_locked'),
+            is_auto_layout:
+                pickBoolean(body, 'is_auto_layout'),
+            is_auto_fit: pickBoolean(body, 'is_auto_fit'),
+            lock_timeout: pickNumber(body, 'lock_timeout'),
+        },
+        state,
+        state_at: validateTimestampField(
+            body, 'state_at', 'FlowDocumentBody.state_at',
+        ),
+        state_event_id: stateEventId,
+        graph,
+        graphDelta,
+        revivals,
     };
 }
 

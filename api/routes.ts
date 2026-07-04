@@ -46,6 +46,7 @@ import {
     validateHumanMemberEditBody,
     validateMemberEntity,
     validateFlowCreateBody,
+    validateFlowDocumentBody,
     validateFlowEntity,
     validateFlowVersionEntity,
     validateFlowVersionPublishBody,
@@ -656,6 +657,88 @@ export async function postFlowCreationOp(
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
+        },
+    );
+}
+
+// Flow document write (Decision 7, the LOCKED class — Task 3):
+// the flow row, its trio's state event, the graph delta to the
+// four relation tables, and any revivals commit as ONE
+// transaction — a mid-write failure rolls the whole thing back
+// rather than leaving a half-written document. UNLIKE
+// postIdeaDocumentOp/postProjectDocumentOp, this op carries NO
+// member_id ternary: flows mint a FRESH trio on every PUT
+// (design decision 2) — nothing here ever resends a STORED
+// trio verbatim, since the C6 client retry loop mints a new
+// state_event_id/state_at on every attempt (the E6 split).
+// A byte-identical resend is caught by the gate's pre-tx
+// idempotency fast path (never reaching this op at all); a
+// same-id, genuinely different-content collision still 409s
+// via LedgerImmutabilityError — today's covenant, unchanged.
+// version-publish (a flow_versions row) is NOT part of this op
+// (Decision 3) — it rides its own POST /flows/:id/versions
+// transaction. `graphDelta`/`revivals` are TRANSITIONAL
+// decomposition-only sidecars — the old-plane relation writer
+// alone consumes them; no derivation reads either one, and
+// both retire at Phase Final. `graph` is the client-authored
+// post-save working snapshot, carried verbatim (no transform)
+// — this op never touches it beyond passing validation; a
+// future derivation (Task 7) re-normalizes nodes[]/edges[] from
+// the relation tables, not from this field. The org-scoped
+// flows store stamps organization_id from the verified token
+// and re-validates through validateFlowEntity, so the entity
+// body OMITS it; the below-facade seed path (Task 6, no
+// scoping wrapper) embeds it in the raw body and this op reads
+// it straight back to merge it in — inert for the fenced route
+// (overwritten either way), load-bearing for the seed. Exported
+// so the seed can drive flow genesis through the same op the
+// route uses (Decision 6's below-facade carve-out). `pair` is
+// optional so a below-facade caller with no pair keeps
+// compiling; the live route always supplies one, since
+// 'flows/:id' is pair-wired and never bearer-exempt.
+export async function postFlowDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    actor: Id,
+    pair?: MessagePair,
+): Promise<FlowEntity> {
+    const doc = validateFlowDocumentBody(withoutId(body));
+    const organizationId = body['organization_id'];
+    const delta = doc.graphDelta;
+    return db.transaction(
+        [
+            'flows', 'states',
+            'flow_nodes', 'flow_edges',
+            'flow_node_members',
+            'flow_node_attributes',
+            'requests', 'responses',
+        ],
+        async (view) => {
+            const written = await view.flows.put(
+                id,
+                {
+                    ...doc.entity,
+                    ...(typeof organizationId === 'string'
+                        ? { organization_id: organizationId }
+                        : {}),
+                } as unknown as Omit<FlowEntity, 'id'>,
+            );
+            await view.states.postEvent(
+                doc.state_event_id, id, doc.state,
+                actor, doc.state_at,
+            );
+            await writeFlowGraphDelta(view, delta, actor);
+            for (const r of doc.revivals) {
+                await view.states.postEvent(
+                    r.eventId, r.entityId,
+                    'restored', actor, r.at,
+                );
+            }
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
         },
     );
 }
