@@ -171,7 +171,7 @@ function createRecordBody(
     };
 }
 
-// A mock-data seed (65 pre-formed pairs, see
+// A mock-data seed (EXPECTED_PAIR_COUNT pre-formed pairs, see
 // mock-data-pairs.test.ts) plus one live-write batch layered on
 // top via handleRequest: one document PUT (Supersedes minted,
 // ideas), one event-append PUT (states/:id), one FAILED write
