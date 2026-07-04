@@ -44,8 +44,18 @@ test('work-orders is the fourth registered family,'
     });
 });
 
+test('records is the fifth registered family, simple'
++ ' like ideas, projects, and work-orders', () => {
+    assert.deepEqual(familyRegistration('records'), {
+        family: 'records',
+        organizationNested: true,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
-    assert.equal(familyRegistration('records'), undefined);
+    assert.equal(familyRegistration('objectives'), undefined);
 });
 
 test('every registered family names a concurrency class',

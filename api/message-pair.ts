@@ -128,7 +128,7 @@ const RESPONSE_ID_FIELD = 'response-id';
 // deleted, never kept as a parallel truth.
 const ORGANIZATION_NESTED_FIRST_SEGMENTS: ReadonlySet<string> =
     new Set([
-        'records', 'record-attributes', 'objectives',
+        'record-attributes', 'objectives',
         'memberships', 'states',
     ]);
 
@@ -440,7 +440,6 @@ export async function appendMessagePair(
 // registry.ts) answers ONLY from its own createBodyIdField —
 // its entry here is deleted, never kept as a parallel truth.
 const CREATE_BODY_ID_FIELDS: Record<string, string> = {
-    'records': 'id',
     'objectives': 'id',
     'ai-members': 'id',
     'human-members': 'id',
@@ -458,7 +457,7 @@ export function createdEntityUriId(
 ): string | undefined {
     // A registered family's createBodyIdField serves a bare
     // collection-POST create route whose pattern IS the family
-    // name (e.g. 'records' below, still an unregistered
+    // name (e.g. 'objectives' below, still an unregistered
     // literal). Ideas registered this slot in Task 1 for its own
     // POST /ideas, which Phase 2 Task 3 (R1) retired — genesis
     // folded into the document-class PUT ideas/:id, whose uriId
@@ -476,8 +475,12 @@ export function createdEntityUriId(
     // family, Phase 5 Task 1) is the second: POST work-orders is
     // also a live bare collection-POST create route whose
     // pattern is literally 'work-orders', so the coincidence now
-    // fires for TWO live routes. Falls back to the literal table
-    // for every not-yet-registered pattern.
+    // fires for TWO live routes. Records (fifth family, Phase 6
+    // Task 1) is the third: POST records is also a live bare
+    // collection-POST create route whose pattern is literally
+    // 'records', so the coincidence now fires for THREE live
+    // routes. Falls back to the literal table for every
+    // not-yet-registered pattern.
     const registered = familyRegistration(routePattern);
     const field = registered !== undefined
         ? registered.createBodyIdField
