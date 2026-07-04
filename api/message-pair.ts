@@ -128,7 +128,6 @@ const RESPONSE_ID_FIELD = 'response-id';
 // deleted, never kept as a parallel truth.
 const ORGANIZATION_NESTED_FIRST_SEGMENTS: ReadonlySet<string> =
     new Set([
-        'work-orders',
         'records', 'record-attributes', 'objectives',
         'memberships', 'states',
     ]);
@@ -441,7 +440,6 @@ export async function appendMessagePair(
 // registry.ts) answers ONLY from its own createBodyIdField —
 // its entry here is deleted, never kept as a parallel truth.
 const CREATE_BODY_ID_FIELDS: Record<string, string> = {
-    'work-orders': 'id',
     'records': 'id',
     'objectives': 'id',
     'ai-members': 'id',
@@ -474,8 +472,12 @@ export function createdEntityUriId(
     // first to exercise it: POST flows is a live bare
     // collection-POST create route whose pattern is literally
     // 'flows', so the registry consult now FIRES for real — the
-    // coincidence is no longer theoretical. Falls back to the
-    // literal table for every not-yet-registered pattern.
+    // coincidence is no longer theoretical. Work-orders (fourth
+    // family, Phase 5 Task 1) is the second: POST work-orders is
+    // also a live bare collection-POST create route whose
+    // pattern is literally 'work-orders', so the coincidence now
+    // fires for TWO live routes. Falls back to the literal table
+    // for every not-yet-registered pattern.
     const registered = familyRegistration(routePattern);
     const field = registered !== undefined
         ? registered.createBodyIdField
