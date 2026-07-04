@@ -426,13 +426,20 @@ export async function handleRequest(
             // 'locked' but has no row in document-family.ts's
             // wiring table (flows, through this task) never rides
             // this arm; only a route actually served via
-            // documentPutHandler can. PUT-only: the two PUT
-            // classes govern PUT, never POST/DELETE.
+            // documentPutHandler can. The routePattern check
+            // (not merely the first segment) matters once a
+            // family's OTHER routes share its prefix (e.g. a
+            // future locked family's own :id/sub-resource PUT
+            // must never inherit the entity route's four-outcome
+            // table) — documentEntityRoute's own pattern is
+            // always exactly `${family}/:id`. PUT-only: the two
+            // PUT classes govern PUT, never POST/DELETE.
             const wiring = documentFamilyWiring(
                 matched.segments[0] ?? '',
             );
             const isLockedWrite = method === 'PUT'
                 && wiring !== undefined
+                && routePattern === wiring.family + '/:id'
                 && familyRegistration(wiring.family)
                     ?.concurrency === 'locked';
             // The hoisted echo: read directly (not merely via

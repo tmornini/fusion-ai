@@ -13,7 +13,9 @@ import {
 import type { MessagePair } from '../api/message-pair.ts';
 import {
     routes,
+    param,
     WRITE_RESPONSE_SPECS,
+    type Route,
     type WriteResponseSpec,
 } from '../api/routes.ts';
 import {
@@ -151,6 +153,14 @@ test('documentEntityRoute (simple arm) PUTs through the'
 
 const TEST_FAMILY = 'locked-test-docs';
 const TEST_PATTERN = TEST_FAMILY + '/:id';
+// A SIBLING document-class route under the SAME family prefix —
+// never served via documentPutHandler, mirroring a real family's
+// own hand-written sub-resource (e.g. flows/:id/versions/:vid
+// beside the locked flows/:id). Proves the gate keys the locked
+// arm off the EXACT entity-route pattern, never the family's
+// first path segment alone — a sibling route must stay 'simple'
+// even though its family registration says 'locked'.
+const CHILD_PATTERN = TEST_FAMILY + '/:id/child';
 
 // The synthetic family's decompose op stores NOTHING but the
 // pair itself — the locked-arm gate machinery under test lives
@@ -212,21 +222,40 @@ async function withSyntheticLockedFamily<T>(
     };
     DOCUMENT_FAMILY_WIRINGS[TEST_FAMILY] = wiring;
     const routeEntry = documentEntityRoute(wiring);
-    routes.push(routeEntry);
+    // The sibling child route: hand-written (never
+    // documentPutHandler), document-class + pair-wired so it
+    // gets a real head-read, always dispatching straight to its
+    // own op regardless of headers — exactly the 'simple' shape
+    // a hand-written sub-resource has today.
+    const childRouteEntry: Route = {
+        segments: [TEST_FAMILY, ':id', 'child'],
+        put: (db, p, body, _actor, pair) => testDocumentOp(
+            db, param(p, 0), body, _actor, pair,
+        ),
+    };
+    routes.push(routeEntry, childRouteEntry);
     PAIR_WIRED_ROUTE_PATTERNS.add(TEST_PATTERN);
+    PAIR_WIRED_ROUTE_PATTERNS.add(CHILD_PATTERN);
     DOCUMENT_CLASS_ROUTE_PATTERNS.add(TEST_PATTERN);
+    DOCUMENT_CLASS_ROUTE_PATTERNS.add(CHILD_PATTERN);
     const mutableSpecs = WRITE_RESPONSE_SPECS as
         Record<string, WriteResponseSpec>;
     mutableSpecs[TEST_PATTERN] =
         documentWriteResponseSpec(wiring);
+    mutableSpecs[CHILD_PATTERN] = { status: 204 };
     try {
         return await fn();
     } finally {
-        const index = routes.indexOf(routeEntry);
-        if (index >= 0) routes.splice(index, 1);
+        for (const entry of [routeEntry, childRouteEntry]) {
+            const index = routes.indexOf(entry);
+            if (index >= 0) routes.splice(index, 1);
+        }
         PAIR_WIRED_ROUTE_PATTERNS.delete(TEST_PATTERN);
+        PAIR_WIRED_ROUTE_PATTERNS.delete(CHILD_PATTERN);
         DOCUMENT_CLASS_ROUTE_PATTERNS.delete(TEST_PATTERN);
+        DOCUMENT_CLASS_ROUTE_PATTERNS.delete(CHILD_PATTERN);
         delete mutableSpecs[TEST_PATTERN];
+        delete mutableSpecs[CHILD_PATTERN];
         delete DOCUMENT_FAMILY_WIRINGS[TEST_FAMILY];
         const registryIndex =
             mutableRegistry.indexOf(registration);
@@ -248,6 +277,28 @@ async () => {
         assert.equal(res.status, 200);
         assert.equal(res.headers.get('Follows'), null);
         assert.equal(res.headers.get('Supersedes'), null);
+    });
+});
+
+test('locked arm: a sibling route under the SAME family'
++ ' prefix stays simple (keyed by routePattern, never the'
++ ' bare first segment)', async () => {
+    await withSyntheticLockedFamily(async () => {
+        const db = await freshDb();
+        const token = await organizationToken();
+        const path = '/' + CHILD_PATTERN
+            .replace(':id', 'doc-child');
+        const first = await handleRequest(db, req(
+            'PUT', path, token, { v: 'first' },
+        ));
+        assert.equal(first.status, 204);
+        // A second PUT, still with NO If-Response-ID — if the
+        // gate mistakenly keyed the locked arm off TEST_FAMILY
+        // alone, this would 412 (head present, echo absent).
+        const second = await handleRequest(db, req(
+            'PUT', path, token, { v: 'second' },
+        ));
+        assert.equal(second.status, 204);
     });
 });
 
