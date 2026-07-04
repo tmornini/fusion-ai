@@ -488,10 +488,10 @@ async function postMockDataLoadIn(
 
     // One state event per seeded Record — the
     // creation moment of each Record on the states
-    // log. Records start at 'active'; subordinate
-    // record_attributes hard-splice when the
-    // parent is deleted via EntityStore.delete.
-    // Driven through postRecordWriteOp below,
+    // log. Records start at 'active'. DELETE records/:id splices ONLY
+    // the record row; no cascade exists (record_attributes /
+    // state_field_values / flow_records rows orphan silently — a
+    // pre-existing, named gap). Driven through postRecordWriteOp below,
     // alongside each record's row and attributes.
     // recordStateEvents is imported from
     // seed-message-pairs.ts — pass 1 there needs the
