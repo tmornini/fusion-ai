@@ -189,12 +189,16 @@ export { param, requireOrganization, withoutId };
 // bare states/:id resend would.
 const IDEAS_WIRING: DocumentFamilyWiring = {
     family: 'ideas',
+    lifecycle: 'trio',
+    notFoundTable: 'ideas',
     validateDocument: validateIdeaDocumentBody,
     documentOp: postIdeaDocumentOp,
     entityOf: ideaEntityOf,
 };
 const PROJECTS_WIRING: DocumentFamilyWiring = {
     family: 'projects',
+    lifecycle: 'trio',
+    notFoundTable: 'projects',
     validateDocument: validateProjectDocumentBody,
     documentOp: postProjectDocumentOp,
     entityOf: projectEntityOf,
@@ -212,6 +216,8 @@ const PROJECTS_WIRING: DocumentFamilyWiring = {
 // tolerates by design, not a widened interface.
 const FLOWS_WIRING: DocumentFamilyWiring = {
     family: 'flows',
+    lifecycle: 'trio',
+    notFoundTable: 'flows',
     validateDocument: validateFlowDocumentBody,
     documentOp: postFlowDocumentOp,
     entityOf: flowEntityOf,
