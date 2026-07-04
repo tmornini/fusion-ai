@@ -3,6 +3,7 @@ import type {
 } from './db.ts';
 import type {
     FlowGraphDelta,
+    FlowCreateBody,
 } from './validators.ts';
 import type {
     Id,
@@ -119,6 +120,7 @@ import {
 } from './http-errors.ts';
 import {
     reassembleStoredGraph,
+    reduceCreateGraphDelta,
 } from './flow-graph-relations.ts';
 import {
     storedGraphField,
@@ -611,6 +613,59 @@ export async function postIdeaSubmissionOp(
     );
 }
 
+// The create's synthesized document body (Task 5): the SAME
+// shape a live genesis PUT /flows/:id would carry — the flow's
+// own five fields, the initial-state trio, the reduced graph
+// (via reduceCreateGraphDelta, the ONE shared reduction the
+// live route and the seed both call — never two hand-rolled
+// constructions), and the two transitional decomposition
+// sidecars (graphDelta verbatim; revivals empty — a fresh flow
+// revives nothing). Exported so the seed's pass-1 pair
+// body-builder (api/mock-data/seed-message-pairs.ts) calls this
+// SAME function rather than reconstructing the document by
+// hand. Entity fields are picked directly (mirroring
+// flowEntityOf below) rather than spread from `b.flow` verbatim
+// — the seed's own `b.flow` also carries a tolerated
+// organization_id (validateFlowDocumentBody's optional extra)
+// that must never leak into the byte-compared document, so both
+// callers converge on the identical five-key shape regardless.
+export function flowCreateDocumentBody(
+    b: FlowCreateBody,
+): Record<string, unknown> {
+    return {
+        name: pickString(b.flow, 'name'),
+        is_locked: pickBoolean(b.flow, 'is_locked'),
+        is_auto_layout: pickBoolean(b.flow, 'is_auto_layout'),
+        is_auto_fit: pickBoolean(b.flow, 'is_auto_fit'),
+        lock_timeout: pickNumber(b.flow, 'lock_timeout'),
+        state: b.initialState,
+        state_at: b.initialStateAt,
+        state_event_id: b.initialStateEventId,
+        graph: storedGraphField(
+            reduceCreateGraphDelta(b.graphDelta),
+        ),
+        graphDelta: b.graphDelta,
+        revivals: [],
+    };
+}
+
+// The three pairs a live POST /flows forms (Task 5): the gate's
+// own operation pair (204, at the flows/:id address per Task 1's
+// createdEntityUriId override — POST 'flows' and PUT 'flows/:id'
+// collapse onto the SAME (uriPrefix, uriId), see derive-
+// documents.ts's DOCUMENT_METHODS filter for why the two never
+// collide as documents), plus the document and join pairs the
+// route pre-forms below. All three share ONE requestAt (the
+// create's own origination) yet strictly-later RESPONSE `at`
+// stamps (appendMessagePair's nowUtc() is monotonic), so the
+// document pair — appended after the operation pair — becomes
+// the address's head.
+export interface FlowCreationPairs {
+    readonly operation: MessagePair;
+    readonly document: MessagePair;
+    readonly join: MessagePair;
+}
+
 // Flow creation: the flows row, its project_flows join
 // row, the initial 'active' state event, and the four
 // relation table rows from graphDelta commit as ONE
@@ -629,15 +684,20 @@ export async function postIdeaSubmissionOp(
 // so the seed can drive flow creation through the same
 // gate the route uses (Decision 6's below-facade
 // carve-out) — this is also Phase 1's dual-write
-// insertion seam. `pair` is optional so the seed's below-
-// facade call (api/mock-data.ts, no gate, no pair) keeps
-// compiling unchanged; the route always supplies one,
-// since 'flows' is pair-wired and never bearer-exempt.
+// insertion seam. `pairs` is optional so the seed's below-
+// facade call (api/mock-data.ts, no gate, no pairs) keeps
+// compiling unchanged; the route always supplies the
+// triple, since 'flows' is pair-wired and never
+// bearer-exempt. The route (not this op) forms all three
+// pairs pre-tx — see route('flows', ...) below — since
+// forming the document/join pairs needs the fence
+// organization and the flows/:id + projects/:id/flows/:pfid
+// response specs, both route-table concerns.
 export async function postFlowCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     actor: Id,
-    pair?: MessagePair,
+    pairs?: FlowCreationPairs,
 ): Promise<void> {
     const b = validateFlowCreateBody(body);
     const delta = b.graphDelta;
@@ -674,8 +734,15 @@ export async function postFlowCreationOp(
             await writeFlowGraphDelta(
                 view, delta, actor,
             );
-            if (pair !== undefined) {
-                await appendMessagePair(view, pair);
+            // Three pairs or none (Atomicity): the operation
+            // pair (the gate's own), the synthesized document
+            // pair, and the synthesized join pair — appended in
+            // that order, LAST, so the document pair's response
+            // `at` strictly follows the operation pair's.
+            if (pairs !== undefined) {
+                await appendMessagePair(view, pairs.operation);
+                await appendMessagePair(view, pairs.document);
+                await appendMessagePair(view, pairs.join);
             }
         },
     );
@@ -2258,10 +2325,110 @@ export const routes: Route[] = [
             );
         },
         // Member-tier POST — /flows carries POST in
-        // MEMBER_VERBS. See postFlowCreationOp for the
-        // transaction shape.
-        post: (db, _p, body, actor, pair) =>
-            postFlowCreationOp(db, body, actor, pair),
+        // MEMBER_VERBS. Forms the document + join pairs pre-tx
+        // (Task 5) beside the gate's own operation pair — the
+        // SAME shape a live genesis PUT /flows/:id and a live
+        // PUT /projects/:id/flows/:pfid would each carry — ONLY
+        // when the gate supplied both a pair and a fence
+        // organization (the Phase 3 condition verbatim); a
+        // below-facade caller (api/mock-data.ts, no gate) skips
+        // all three, preserving dual-write discipline. See
+        // postFlowCreationOp for the transaction shape.
+        post: async (
+            db, _p, body, actor, pair, organization,
+        ) => {
+            let pairs: FlowCreationPairs | undefined;
+            if (pair !== undefined && organization !== undefined) {
+                const b = validateFlowCreateBody(body);
+                const documentBody = flowCreateDocumentBody(b);
+                validateFlowDocumentBody(documentBody);
+                const documentSpec =
+                    WRITE_RESPONSE_SPECS['flows/:id'];
+                if (
+                    documentSpec === undefined
+                    || !('status' in documentSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' flows/:id',
+                    );
+                }
+                const documentHeadPairId = await headPairIdAt(
+                    db,
+                    canonicalUriPrefix(organization, '/flows/'),
+                    b.id,
+                );
+                const document = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/flows/' + b.id,
+                    routePattern: 'flows/:id',
+                    routeSegments: ['flows', ':id'],
+                    pathSegments: ['flows', b.id],
+                    headerFields: [],
+                    body: documentBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: documentSpec.status,
+                    responseBody: documentSpec.successBody?.(
+                        [b.id], documentBody, actor, organization,
+                    ),
+                    headPairId: documentHeadPairId,
+                });
+                // The live :pfid PUT's request shape, verified by
+                // content: validateProjectFlowEntity accepts
+                // EXACTLY project_id/flow_id/at
+                // (api/validators.ts) — the same three keys
+                // b.projectFlow already carries, so it doubles as
+                // the join pair's body verbatim.
+                validateProjectFlowEntity(b.projectFlow);
+                const projectId = pickString(
+                    b.projectFlow, 'project_id',
+                );
+                const joinSpec = WRITE_RESPONSE_SPECS[
+                    'projects/:id/flows/:pfid'
+                ];
+                if (
+                    joinSpec === undefined
+                    || !('status' in joinSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' projects/:id/flows/:pfid',
+                    );
+                }
+                const join = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/projects/' + projectId
+                        + '/flows/' + b.projectFlowId,
+                    routePattern: 'projects/:id/flows/:pfid',
+                    routeSegments: [
+                        'projects', ':id', 'flows', ':pfid',
+                    ],
+                    pathSegments: [
+                        'projects', projectId,
+                        'flows', b.projectFlowId,
+                    ],
+                    headerFields: [],
+                    body: b.projectFlow,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: joinSpec.status,
+                    responseBody: joinSpec.successBody?.(
+                        [projectId, b.projectFlowId],
+                        b.projectFlow, actor, organization,
+                    ),
+                    // Genesis-undefined: a flow's create-time
+                    // join is always fresh (design decision — no
+                    // duplicate-create carve-out at this address
+                    // through this task).
+                    headPairId: undefined,
+                });
+                pairs = { operation: pair, document, join };
+            }
+            return postFlowCreationOp(db, body, actor, pairs);
+        },
     }),
     // flows/:id is the FIRST locked-class route (Task 3):
     // GET stays this hand-written old-plane reassembly — Task 8

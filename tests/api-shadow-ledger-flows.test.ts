@@ -115,6 +115,24 @@ async function createFlow(
     ));
 }
 
+// Task 5: create's own operation pair (204, no body) is no
+// longer the address's head — its synthesized document pair
+// (appended after, so strictly later) is. A save must echo THIS
+// id, read fresh via GET, exactly as the real client
+// (buildFlowPutBody's ctx.GETWithResponseId) does.
+async function headResponseId(
+    db: MemoryDbAdapter,
+    token: string,
+    flowId: string,
+): Promise<string> {
+    const got = await handleRequest(db, req(
+        'GET', '/flows/' + flowId, token,
+    ));
+    const id = got.headers.get('Response-ID');
+    assert.ok(id, 'no Response-ID on GET /flows/' + flowId);
+    return id!;
+}
+
 test('a flow create appends its pair at the entity address',
 async () => {
     const db = await freshDb();
@@ -122,7 +140,10 @@ async () => {
     const res = await createFlow(db, token, 'flow-1');
     assert.equal(res.status, 204);
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 1);
+    // Task 5: three pairs — the operation pair (this address),
+    // its synthesized document pair (same address), and its
+    // synthesized join pair (the project_flows address).
+    assert.equal(requests.length, 3);
     assert.equal(
         requests[0]!.uri_prefix,
         '/organizations/1/flows/',
@@ -149,36 +170,38 @@ test('a failed flow create appends nothing', async () => {
 });
 
 // flows/:id is the locked class (Task 3): a save on an
-// existing flow carries the create's Response-ID as its
+// existing flow carries the CURRENT head's Response-ID as its
 // If-Response-ID echo and the stored response carries Follows
-// — the locked sibling of Supersedes, never both.
+// — the locked sibling of Supersedes, never both. Task 5: the
+// head is create's OWN synthesized document pair, never the
+// create response's own (204, operation-pair) Response-ID — so
+// the echo is read fresh via GET, exactly as the real client
+// does.
 test('a PUT save follows the flow create at the SAME'
 + ' address', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-2');
-    const createdId = created.headers.get('Response-ID');
-    assert.ok(createdId);
+    await createFlow(db, token, 'flow-2');
+    const headId = await headResponseId(db, token, 'flow-2');
     const saved = await handleRequest(db, req(
         'PUT', '/flows/flow-2', token,
         putBody('Renamed Flow', 'flow-2-save-ev'),
-        { 'if-response-id': createdId! },
+        { 'if-response-id': headId },
     ));
     assert.equal(saved.status, 200);
-    assert.equal(saved.headers.get('Follows'), createdId);
+    assert.equal(saved.headers.get('Follows'), headId);
 });
 
 test('each 200 route\'s wire body matches a direct domain '
 + 'read', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-3');
-    const createdId = created.headers.get('Response-ID');
-    assert.ok(createdId);
+    await createFlow(db, token, 'flow-3');
+    const headId = await headResponseId(db, token, 'flow-3');
     const saved = await handleRequest(db, req(
         'PUT', '/flows/flow-3', token,
         putBody('Wired Flow', 'flow-3-save-ev'),
-        { 'if-response-id': createdId! },
+        { 'if-response-id': headId },
     ));
     assert.equal(saved.status, 200);
     const flowRow = await db.flows.getById('flow-3');
@@ -237,9 +260,8 @@ test('redo produces a versions operation pair plus a'
 + ' document pair at the flow\'s address', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-9');
-    const createdId = created.headers.get('Response-ID');
-    assert.ok(createdId);
+    await createFlow(db, token, 'flow-9');
+    const headId = await headResponseId(db, token, 'flow-9');
 
     const published = await handleRequest(db, req(
         'POST', '/flows/flow-9/versions', token, {
@@ -258,18 +280,20 @@ test('redo produces a versions operation pair plus a'
     const redone = await handleRequest(db, req(
         'PUT', '/flows/flow-9', token,
         putBody('Redone Flow', 'flow-9-redo-ev'),
-        { 'if-response-id': createdId! },
+        { 'if-response-id': headId },
     ));
     assert.equal(redone.status, 200);
     // Entity-addressed at the flow's OWN address (never a
-    // /redo segment) and chains from the create via Follows,
-    // exactly like any other save to an existing flow.
-    assert.equal(redone.headers.get('Follows'), createdId);
+    // /redo segment) and chains from the create's document pair
+    // via Follows, exactly like any other save to an existing
+    // flow.
+    assert.equal(redone.headers.get('Follows'), headId);
     const documentRows = (await db.requests.getAll())
         .filter(r => r.uri_prefix === '/organizations/1/flows/'
             && r.uri_id === 'flow-9');
-    // the create's own pair plus this redo save's pair.
-    assert.equal(documentRows.length, 2);
+    // Task 5: the create's OWN operation pair, its synthesized
+    // document pair, plus this redo save's pair.
+    assert.equal(documentRows.length, 3);
 });
 
 test('PUT flows/:id/versions/:vid appends its pair at the'
@@ -359,11 +383,10 @@ test('a byte-identical PUT resend returns the stored'
 + ' response and appends nothing', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-5');
-    const createdId = created.headers.get('Response-ID');
-    assert.ok(createdId);
+    await createFlow(db, token, 'flow-5');
+    const headId = await headResponseId(db, token, 'flow-5');
     const body = putBody('Idempotent Flow', 'flow-5-save-ev');
-    const headers = { 'if-response-id': createdId! };
+    const headers = { 'if-response-id': headId };
     const first = await handleRequest(
         db, req('PUT', '/flows/flow-5', token, body, headers),
     );
@@ -389,13 +412,12 @@ test('stored messages verify against their hashes',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-6');
-    const createdId = created.headers.get('Response-ID');
-    assert.ok(createdId);
+    await createFlow(db, token, 'flow-6');
+    const headId = await headResponseId(db, token, 'flow-6');
     await handleRequest(db, req(
         'PUT', '/flows/flow-6', token,
         putBody('Verify Flow', 'flow-6-save-ev'),
-        { 'if-response-id': createdId! },
+        { 'if-response-id': headId },
     ));
     for (const row of await db.requests.getAll()) {
         assert.equal(
@@ -413,13 +435,12 @@ test('request and response counts stay equal across a mix'
 + ' including one failure', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-7');
-    const createdId = created.headers.get('Response-ID');
-    assert.ok(createdId);
+    await createFlow(db, token, 'flow-7');
+    const headId = await headResponseId(db, token, 'flow-7');
     await handleRequest(db, req(
         'PUT', '/flows/flow-7', token,
         putBody('Mixed Flow', 'flow-7-save-ev'),
-        { 'if-response-id': createdId! },
+        { 'if-response-id': headId },
     ));
     await handleRequest(db, req(
         'POST', '/flows/flow-7/versions', token, {

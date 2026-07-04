@@ -28,9 +28,12 @@ import {
 // seed-project-org2, Phase 3 Task 3) + 4 flows (of 5 —
 // seed-flow-org2 is a direct write, no project_flows join)
 // + 4 ai-members + 2 records + 5 objectives (4 STARK +
-// seed-objective-org2). A dropped or reordered invocation
-// changes this count.
-const EXPECTED_PAIR_COUNT = 65;
+// seed-objective-org2) = 65, PLUS Task 5's two synthesized
+// siblings per flow create: +4 document pairs (flows/:id,
+// genesis) and +4 join pairs (projects/:id/flows/:pfid,
+// genesis) = 73. A dropped or reordered invocation changes
+// this count.
+const EXPECTED_PAIR_COUNT = 73;
 
 test('a mock-data seed populates balanced pairs',
 async () => {

@@ -2,10 +2,20 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
-import { postFlowDocumentOp } from '../api/routes.ts';
+import {
+    postFlowDocumentOp,
+} from '../api/routes.ts';
+import {
+    validateFlowDocumentBody,
+} from '../api/validators.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
+import { parseJson } from '../shared/http-message/json-codec.ts';
+import { HttpMessage } from '../shared/http-message/http-message.ts';
+import {
+    defaultBodyRegistry,
+} from '../shared/http-message/media-registry.ts';
 
 // The flows-specific below-gate op + locked-class e2e coverage
 // for Task 3's document PUT (the generic locked arm itself is
@@ -106,6 +116,48 @@ async function createFlow(
             graphDelta: emptyDelta(),
         },
     ));
+}
+
+// Task 5: create's own operation pair (204, no body) is no
+// longer the address's head — its synthesized document pair
+// (appended after, so strictly later) is. A save must echo THIS
+// id, read fresh via GET, exactly as the real client
+// (buildFlowPutBody's ctx.GETWithResponseId) does.
+async function headResponseId(
+    db: MemoryDbAdapter,
+    token: string,
+    flowId: string,
+): Promise<string> {
+    const got = await handleRequest(db, req(
+        'GET', '/flows/' + flowId, token,
+    ));
+    const id = got.headers.get('Response-ID');
+    assert.ok(id, 'no Response-ID on GET /flows/' + flowId);
+    return id!;
+}
+
+// Decode a stored request row's canonical message back into its
+// method + body — the SAME decode derive-documents.ts's private
+// requestMethodOf/requestBodyOf perform, reconstructed here
+// read-only for wire-level assertions (this file never imports
+// those, since they are not exported production surface).
+function decodeRequestMessage(message: string): {
+    readonly method: string;
+    readonly body: Record<string, unknown>;
+} {
+    const model = parseJson(message, defaultBodyRegistry());
+    if (model.startLine.kind !== 'request') {
+        throw new Error(
+            'stored message carries no request line',
+        );
+    }
+    const body = HttpMessage.fromModel(model).body();
+    return {
+        method: model.startLine.method,
+        body: body.exists()
+            ? JSON.parse(body.toText()) as Record<string, unknown>
+            : {},
+    };
 }
 
 // --- below-gate op tests (postFlowDocumentOp directly — no
@@ -237,11 +289,10 @@ test('e2e: a byte-identical resend converges (one event, one'
 + ' pair, stored response returned)', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-locked-3');
-    const createdId = created.headers.get('Response-ID');
-    assert.ok(createdId);
+    await createFlow(db, token, 'flow-locked-3');
+    const headId = await headResponseId(db, token, 'flow-locked-3');
     const body = documentBody('Resend', 'flow-locked-3-a');
-    const headers = { 'if-response-id': createdId! };
+    const headers = { 'if-response-id': headId };
     const first = await handleRequest(db, req(
         'PUT', '/flows/flow-locked-3', token, body, headers,
     ));
@@ -273,9 +324,8 @@ test('e2e: a save without If-Response-ID on an existing flow'
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-locked-1');
-    const createdId = created.headers.get('Response-ID');
-    assert.ok(createdId);
+    await createFlow(db, token, 'flow-locked-1');
+    const headId = await headResponseId(db, token, 'flow-locked-1');
 
     const noEcho = await handleRequest(db, req(
         'PUT', '/flows/flow-locked-1', token,
@@ -293,14 +343,21 @@ async () => {
     const fresh = await handleRequest(db, req(
         'PUT', '/flows/flow-locked-1', token,
         documentBody('Fresh Echo', 'flow-locked-1-c'),
-        { 'if-response-id': createdId! },
+        { 'if-response-id': headId },
     ));
     assert.equal(fresh.status, 200);
-    assert.equal(fresh.headers.get('Follows'), createdId);
+    assert.equal(fresh.headers.get('Follows'), headId);
 });
 
+// Task 5: create's own 204 operation pair and its synthesized
+// document pair are now TWO rows at flows/:id's address — the
+// GET-attached head is the DOCUMENT pair (appended strictly
+// later; a live PUT chains Follows/Supersedes off it), never
+// the create response's own operation Response-ID.
 test('e2e: GET flows/:id carries Response-ID == the head pair'
-+ ' id (pre-flip old-plane handler)', async () => {
++ ' id — create\'s own synthesized document pair, never its'
++ ' operation response (pre-flip old-plane handler)',
+async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const created = await createFlow(db, token, 'flow-locked-2');
@@ -310,7 +367,16 @@ test('e2e: GET flows/:id carries Response-ID == the head pair'
         db, req('GET', '/flows/flow-locked-2', token),
     );
     assert.equal(got.status, 200);
-    assert.equal(got.headers.get('Response-ID'), createdId);
+    const headId = got.headers.get('Response-ID');
+    assert.ok(headId);
+    assert.notEqual(headId, createdId);
+    const requests = await db.requests.getAll();
+    const atAddress = requests.filter(
+        r => r.uri_prefix === '/organizations/1/flows/'
+            && r.uri_id === 'flow-locked-2',
+    );
+    assert.equal(atAddress.length, 2);
+    assert.ok(atAddress.some(r => r.id === headId));
 });
 
 test('e2e: an old-shape PUT body 400s (validateFlowPutBody'
@@ -329,4 +395,80 @@ test('e2e: an old-shape PUT body 400s (validateFlowPutBody'
         },
     ));
     assert.equal(res.status, 400);
+});
+
+// --- Task 5: create + undo synthesized second pairs ---
+
+test('e2e: POST flows forms a document pair at the flow\'s'
++ ' own address and a join pair at the project_flows'
++ ' address, all sharing the create\'s requestAt',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const created = await createFlow(db, token, 'flow-pairs-1');
+    assert.equal(created.status, 204);
+
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    assert.equal(requests.length, 3);
+    assert.equal(responses.length, 3);
+
+    const flowAddress = requests.filter(
+        r => r.uri_prefix === '/organizations/1/flows/'
+            && r.uri_id === 'flow-pairs-1',
+    );
+    assert.equal(flowAddress.length, 2);
+    const documentRow = flowAddress.find(
+        r => decodeRequestMessage(r.message).method === 'PUT',
+    );
+    assert.ok(documentRow, 'no document pair at the flow address');
+    const decodedDocument =
+        decodeRequestMessage(documentRow!.message);
+    const expectedDocument = {
+        name: 'Fresh Flow',
+        is_locked: false,
+        is_auto_layout: false,
+        is_auto_fit: false,
+        lock_timeout: DEFAULT_LOCK_TIMEOUT,
+        state: 'active',
+        state_at: AT,
+        state_event_id: 'flow-pairs-1-ev',
+        graph: emptyGraph(),
+        graphDelta: emptyDelta(),
+        revivals: [],
+    };
+    // Validates as a genuine FlowDocumentBody — the Phase 3
+    // gate-validate precedent, proven at the wire.
+    assert.deepEqual(
+        validateFlowDocumentBody(decodedDocument.body).entity,
+        {
+            name: 'Fresh Flow',
+            is_locked: false,
+            is_auto_layout: false,
+            is_auto_fit: false,
+            lock_timeout: DEFAULT_LOCK_TIMEOUT,
+        },
+    );
+    assert.deepEqual(decodedDocument.body, expectedDocument);
+
+    const joinPrefix =
+        '/organizations/1/projects/proj-1/flows/';
+    const joinAddress = requests.filter(
+        r => r.uri_prefix === joinPrefix
+            && r.uri_id === 'flow-pairs-1-pf',
+    );
+    assert.equal(joinAddress.length, 1);
+    const decodedJoin =
+        decodeRequestMessage(joinAddress[0]!.message);
+    assert.equal(decodedJoin.method, 'PUT');
+    assert.deepEqual(decodedJoin.body, {
+        project_id: 'proj-1',
+        flow_id: 'flow-pairs-1',
+        at: AT,
+    });
+
+    // All three pairs share ONE origination — the create's own
+    // requestAt.
+    const ats = new Set(requests.map(r => r.at));
+    assert.equal(ats.size, 1);
 });

@@ -46,7 +46,11 @@ import {
     formWritePair,
 } from '../message-pair.ts';
 import type { MessagePair } from '../message-pair.ts';
-import { WRITE_RESPONSE_SPECS } from '../routes.ts';
+import {
+    WRITE_RESPONSE_SPECS,
+    flowCreateDocumentBody,
+} from '../routes.ts';
+import { validateFlowCreateBody } from '../validators.ts';
 import {
     MOCK_SEED_TIMESTAMP,
     STARK_ORGANIZATION,
@@ -839,14 +843,43 @@ export function buildMockDataInvocations():
         const projectFlow = mockProjectFlows.find(
             pf => pf.flow_id === flow.id,
         )!;
+        const createBody = flowSeedBody(
+            flow, event, projectFlow, flowRelations,
+        );
         invocations.push({
             key: seedPairKey('flows', flow.id),
             routePattern: 'flows',
             organization: STARK_ORGANIZATION,
             requesterIdentityId: event.member_id,
-            body: flowSeedBody(
-                flow, event, projectFlow, flowRelations,
+            body: createBody,
+        });
+        // Task 5: create appends THREE pairs — the operation
+        // pair above, plus a document pair (at the flow's own
+        // address) and a join pair (at the project_flows
+        // address), each keyed by its OWN deterministic
+        // invocation entry, mirroring the idea-submissions
+        // two-idParams precedent. The document body is built
+        // through flowCreateDocumentBody — the SAME construction
+        // api/routes.ts's POST /flows handler uses — never a
+        // second, hand-rolled copy.
+        const b = validateFlowCreateBody(createBody);
+        invocations.push({
+            key: seedPairKey('flows/:id', flow.id),
+            routePattern: 'flows/:id',
+            idParams: [flow.id],
+            organization: STARK_ORGANIZATION,
+            requesterIdentityId: event.member_id,
+            body: flowCreateDocumentBody(b),
+        });
+        invocations.push({
+            key: seedPairKey(
+                'projects/:id/flows/:pfid', projectFlow.id,
             ),
+            routePattern: 'projects/:id/flows/:pfid',
+            idParams: [projectFlow.project_id, projectFlow.id],
+            organization: STARK_ORGANIZATION,
+            requesterIdentityId: event.member_id,
+            body: b.projectFlow,
         });
     }
     for (const m of aiMembers) {

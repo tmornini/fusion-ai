@@ -10,6 +10,7 @@ import {
     postAiMemberCreationOp,
     postHumanMemberCreationOp,
 } from './routes.ts';
+import type { FlowCreationPairs } from './routes.ts';
 import type {
     WorkOrderEntity,
     FlowWorkOrderEntity,
@@ -3197,15 +3198,32 @@ async function postMockDataLoadIn(
             const projectFlow = mockProjectFlows.find(
                 pf => pf.flow_id === flow.id,
             )!;
+            // Task 5: create threads the triple — the operation
+            // pair plus its two synthesized siblings, each
+            // pre-formed in pass 1 under its own deterministic
+            // key (seed-message-pairs.ts).
+            const flowPairs: FlowCreationPairs = {
+                operation: requirePair(
+                    pairs, seedPairKey('flows', flow.id),
+                ),
+                document: requirePair(
+                    pairs, seedPairKey('flows/:id', flow.id),
+                ),
+                join: requirePair(
+                    pairs,
+                    seedPairKey(
+                        'projects/:id/flows/:pfid',
+                        projectFlow.id,
+                    ),
+                ),
+            };
             return postFlowCreationOp(
                 adapter,
                 flowSeedBody(
                     flow, event, projectFlow, flowRelations,
                 ),
                 event.member_id,
-                requirePair(
-                    pairs, seedPairKey('flows', flow.id),
-                ),
+                flowPairs,
             );
         }),
         // Organization '2' owns a small, self-contained slice so each

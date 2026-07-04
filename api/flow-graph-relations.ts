@@ -12,6 +12,7 @@ import type {
     MemberId,
     NodeAttribute,
 } from './types.ts';
+import type { FlowGraphDelta } from './validators.ts';
 
 // On an equal-`at` tie a 'removed' outranks an 'added'
 // regardless of row order — the union's dissolution wins on
@@ -118,4 +119,24 @@ export function reassembleStoredGraph(
         toNodeId: edge.to_node_id,
     }));
     return { nodes, edges };
+}
+
+// Reduce a CREATE-shaped FlowGraphDelta into a StoredGraph — the
+// pure counterpart of reassembleStoredGraph for a delta that has
+// never touched storage: a create delta's `deletions` is always
+// empty, so every node/edge row is an upsert and every member/
+// attribute event is current by construction — the SAME row
+// shapes reassembleStoredGraph already reduces (FlowNodeRowBody/
+// FlowEdgeRowBody/FlowNodeMemberRowBody/FlowNodeAttributeRowBody
+// mirror the entity rows field-for-field). Exported so the live
+// POST /flows handler and the seed's pass-1 pair body-builder
+// share ONE reduction for the synthesized document's graph field
+// — never two hand-rolled constructions of the same value.
+export function reduceCreateGraphDelta(
+    delta: FlowGraphDelta,
+): StoredGraph {
+    return reassembleStoredGraph(
+        delta.nodes, delta.edges,
+        delta.memberEvents, delta.attributeEvents,
+    );
 }
