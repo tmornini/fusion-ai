@@ -217,6 +217,11 @@ Legend for classification:
 ### 2.8 Records & attributes
 
 - `GET /records` · `GET|PUT|DELETE /records/:id` — primitive.
+  `PUT` is a document write (§3.33/§5.7) — the fifth family,
+  and the first `'trio'` family whose `:id` address also
+  carries a live `DELETE`. `GET` stays hand-written, old-plane,
+  through this task (Task 7 flips it); `DELETE` stays
+  hand-written too, unchanged.
 - `POST /records` — operation, create-or-edit write (§3.20).
   Member-tier.
 - `GET /record-attributes` · `GET|PUT /record-attributes/:id` —
@@ -1047,6 +1052,40 @@ route stays for every other family.
   editing actor, so a different member editing a field after
   someone else's transition does not 409.
 
+### 3.33 `PUT /records/:id` — record document write (not a POST)
+
+One shape serves create, edit, and transition (Decision 7): the
+body is the entity's own three writable fields (`name`,
+`description`, `position`) plus the lifecycle trio (`state`,
+`state_at`, `state_event_id`). Genesis is head-presence-defined
+— the first PUT at an id IS the birth, though a record's
+genesis normally arrives through the composed `POST /records`
+(§3.20) instead; this PUT's genesis arm exists for a live
+PUT-first flow and mirrors ideas/projects exactly rather than
+special-casing records as PUT-only-for-edits.
+`postRecordStateChange` (the adapter's transition op) now mints
+a fresh trio and fires this SAME document PUT; records no
+longer ride the generic `PUT /states/:id` (§2.10) for a
+transition — that route stays for every family without its own
+document PUT. `GET`/`DELETE /records/:id` stay hand-written,
+old-plane, unchanged (Task 7 flips the `GET`).
+
+- tx: `[records, states, requests, responses]`
+- actual: read the current head event
+  (`states.getCurrentFor(id)`) → `records.put(id, entity)` (the
+  org-scoped store stamps `organization_id`, so the body omits
+  it) → `states.postEvent(state_event_id, id, state, memberId,
+  state_at)` → `appendMessagePair(pair)`.
+- doctrinal: `put_record` + `post_state_event` as
+  `put_record_document`.
+- props: atomic; member-tier; `validateRecordDocumentBody`;
+  idempotent (a byte-identical resend converges: one row, one
+  event, one pair); MEMBER_ID CAVEAT — a state-unchanged edit
+  (the resent trio matches the current head byte-for-byte)
+  replays the STORED head event's `member_id`, never the
+  editing actor, so a different member editing a field after
+  someone else's transition does not 409.
+
 ---
 
 ## 4. Why composition is store-level, not HTTP-level
@@ -1346,3 +1385,59 @@ every deliberate verb gap the family still carries (PUT/DELETE
 `/claim` and `/transition` but their own POST; POST/PUT/DELETE
 `flows/:id/work-orders`; GET/POST `flows/:id/work-orders/:woid`
 — its DELETE already pinned in `api-flows-verb-gaps.test.ts`).
+
+### 5.7 The fifth family: records and the DELETE-pair filter
+
+Task 2 (Phase 6) registers `records` as the fifth
+`DocumentFamilyWiring` row (`RECORDS_WIRING`, beside
+ideas/projects/flows/work-orders in `api/routes.ts`). `records`
+is `'trio'` — Decision 7's election as amended: a family is
+`'trio'` when its lifecycle fits the trio (a single current
+state, authored once per transition, folded into the SAME
+document PUT that edits its entity fields) rather than
+`'stateless'` (a lifecycle written by its own dedicated ops,
+never a document PUT) — records' active/archived/deleted
+lifecycle fits the trio exactly as ideas/projects/flows' does,
+so the amendment stays narrow: it elects records into the
+EXISTING `'trio'` class rather than widening the class itself.
+
+`records` is also the FIRST family whose `:id` address carries
+a live `DELETE` route alongside a `'trio'` PUT.
+`documentLifecycleEvents` (`api/derive-documents.ts`) walked
+every 2xx PUT/DELETE pair at a document address and
+`pickString`-threw on a DELETE pair's body — always EMPTY
+(design decision 6: DELETE tombstones a document, it carries no
+wire fields) — since no `'trio'` family before records ever had
+a live DELETE at its own document address for the throw to
+reach. Author gate 9's fix: the walk now SKIPS a DELETE-method
+pair entirely, so a delete-then-recreate history (`PUT`,
+`DELETE`, `PUT`) yields the two PUT trios rather than crashing —
+behavior-preserving for ideas/projects/flows (none has a DELETE
+at its own document address). `GET /records/:id` and `GET
+/records` stay hand-written, old-plane, through this task
+(`RECORDS_WIRING`'s `entityOf` is unreached until Task 7 flips
+them), so the fix is proven directly against fabricated pairs
+(`tests/api-record-document.test.ts`), not through a live route.
+
+**PUT /records/:id** now dispatches through
+`documentPutHandler(RECORDS_WIRING)` — the SAME `'simple'`
+concurrency class ideas/projects/work-orders ride (§5.4) — and
+`WRITE_RESPONSE_SPECS['records/:id']` is
+`documentWriteResponseSpec(RECORDS_WIRING)`.
+
+**The wire is unchanged except the named trio delta.** The
+response's `{id, organization_id, name, description, position}`
+keys are byte-identical to the prior hand-written route — the
+entity/trio separation in `RecordDocumentBody` guarantees it.
+The three named wire deltas: (1) the PUT request body now
+carries the trio; (2) `putRecord`/`postRecordStateChange`
+(`web-app/app/adapters/records.ts`) speak the trio in
+camelCase, translating to snake_case at the wire seam; (3) the
+records list's drag-reorder and the detail page's no-attribute-
+change save each echo the trio from data already loaded (the
+list model's `RecordModel` accessors; `currentView.record`) —
+zero new hops. `tests/api-record-document.test.ts` (the
+below-gate op/validator/DELETE-filter pins) plus the untouched
+existing suite (byte-identical GET/DELETE, the deleted-
+exclusion test, `postRecordStateChange`'s states-log assertions)
+are the fold's proof.
