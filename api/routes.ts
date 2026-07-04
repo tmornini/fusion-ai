@@ -1417,6 +1417,43 @@ export async function postWorkOrderDocumentOp(
     );
 }
 
+// Flow work-order join document write — extracted byte-for-
+// byte from the hand-written flows/:id/work-orders/:woid PUT
+// handler (Phase 1 fix-3 / Phase 4 0a950480's extract-function
+// idiom: bundle the definition with its one call-site re-
+// point, own commit) so the seed can drive the same write path
+// (Decision 6's below-facade carve-out). A document PUT here is
+// a pure entity edit: the flow_work_orders row and its pair
+// commit as ONE transaction. `pair` is optional so a below-
+// facade caller with no pair keeps compiling; the live route
+// always supplies one, since 'flows/:id/work-orders/:woid' is
+// pair-wired and never bearer-exempt. The actor parameter is
+// spelled `_actor` for the same reason postWorkOrderDocumentOp
+// spells it that way: there is no state event here to author.
+export async function postFlowWorkOrderDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<FlowWorkOrderEntity, 'id'>> {
+    return db.transaction(
+        ['flow_work_orders', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.flowWorkOrders
+                .put(
+                    id,
+                    withoutId(body) as unknown as
+                        Omit<FlowWorkOrderEntity, 'id'>,
+                );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -2941,24 +2978,10 @@ export const routes: Route[] = [
             db.flowWorkOrders.getAllWhere('flow_id', param(p, 0)),
     }),
     route('flows/:id/work-orders/:woid', {
-        put: (db, p, body, _actor, pair) => {
-            const woid = param(p, 1);
-            return db.transaction(
-                ['flow_work_orders', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.flowWorkOrders
-                        .put(
-                            woid,
-                            withoutId(body) as unknown as
-                                Omit<FlowWorkOrderEntity, 'id'>,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postFlowWorkOrderDocumentOp(
+                db, param(p, 1), body, actor, pair,
+            ),
     }),
     // Field values nest under their parent STATE EVENT: the
     // state event id is param 0, so the SERVER filters the
