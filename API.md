@@ -204,6 +204,10 @@ Legend for classification:
 ### 2.7 Work orders
 
 - `GET /work-orders` · `GET|PUT /work-orders/:id` — primitive.
+  `PUT` is a document write (§5.6) — the fourth family, and the
+  FIRST `'stateless'` one (§5.6): unlike ideas/projects/flows,
+  its body carries no lifecycle trio. `GET` stays hand-written
+  old-plane (unchanged until a future task).
 - `POST /work-orders` — operation (§3.17). Member-tier.
 - `POST /work-orders/:id/claim` — operation (§3.18).
 - `POST /work-orders/:id/transition` — operation (§3.19).
@@ -1105,9 +1109,9 @@ The gate (`handleRequest`) keys the class off the route's
 family can register `'locked'` (family-registry.ts) with no live
 route riding the arm until its OWN wiring row lands.
 
-- **`simple`** (`ideas`, `projects`): the existing head-read →
-  `Supersedes` chain (§5.1) — a repeat PUT ALWAYS succeeds and
-  ALWAYS supersedes the current head.
+- **`simple`** (`ideas`, `projects`, `work-orders` — §5.6): the
+  existing head-read → `Supersedes` chain (§5.1) — a repeat PUT
+  ALWAYS succeeds and ALWAYS supersedes the current head.
 - **`locked`** (`flows`, live since Task 3 — §3.13): a repeat PUT
   must ECHO the current head via the request header
   `If-Response-ID`, or 412s.
@@ -1165,15 +1169,72 @@ its response additionally carries the `Response-ID` header
 their `WRITE_RESPONSE_SPECS` entries — dispatch through
 `api/document-family.ts`'s generic `documentEntityRoute`/
 `documentCollectionRoute`/`documentWriteResponseSpec`, driven
-by a per-family `DocumentFamilyWiring` (a validator, a
-decompose op, and an entity mapper) rather than hand-written
-route objects. For `ideas`/`projects` (`simple` concurrency,
-§5.4) the wire is byte-identical to the routes it replaces.
-`flows` rides the SAME generic dispatch as `locked` concurrency
-(§5.4) — its document PUT alone carries the `If-Response-ID`/
+by a per-family `DocumentFamilyWiring` (a lifecycle class, a
+not-found table, a validator, a decompose op, and an entity
+mapper — §5.6) rather than hand-written route objects. For
+`ideas`/`projects` (`simple` concurrency, §5.4) the wire is
+byte-identical to the routes it replaces. `flows` rides the
+SAME generic dispatch as `locked` concurrency (§5.4) — its
+document PUT alone carries the `If-Response-ID`/
 `Follows` four-outcome machinery the other two families never
 need; `flows` also keeps its own hand-written `POST /flows`
 (create, §3.12) and `POST /flows/:id/undo` (§3.14) outside this
 generic dispatch. The untouched existing suite plus
 `tests/document-family.test.ts`'s successBody and dispatch pins
 are the absorption's proof.
+
+### 5.6 The fourth family: work-orders and the stateless class
+
+Task 2 (Phase 5) registers `work-orders` as the fourth
+`DocumentFamilyWiring` row (`WORK_ORDERS_WIRING`, beside
+ideas/projects/flows in `api/routes.ts`) and, on its evidence,
+grows the wiring interface by two REQUIRED facts every family
+now declares:
+
+- **`lifecycle`: `'trio' | 'stateless'`.** ideas/projects/flows
+  are `'trio'` — every document body folds in the Decision 7
+  `state`/`state_at`/`state_event_id` trio, and a GET walks that
+  history (`documentLifecycleEvents`/`stateHistoryFrom`/
+  `currentDocumentState`) to 404 a lifecycle-deleted document
+  too. `work-orders` is the FIRST `'stateless'` family: a work
+  order's lifecycle is written ONLY by `POST /work-orders`
+  (§3.17), `POST /work-orders/:id/claim` (§3.18), `POST
+  /work-orders/:id/transition` (§3.19), and the `states/:id`
+  unclaim path — never by a document PUT — so
+  `validateWorkOrderDocumentBody` 400s a body carrying any trio
+  key (the stateless covenant is validator-enforced, not caller
+  discipline), and the generic GET-side lifecycle walk is
+  skipped entirely for a `'stateless'` wiring (its only
+  tombstone signal is a DELETE-method head, already absent via
+  `deriveDocumentsAt` — the SAME reduction every family shares).
+- **`notFoundTable`: the identifier the wire 404 body speaks**
+  (`EntityNotFoundError`'s table, rendered `Not found:
+  <table>/<id>`). Family name for ideas/projects/flows;
+  `'work_orders'` for work-orders — the FIRST family whose
+  storage table name (the `EntityStore` key in `db-backed.ts`)
+  differs from its family name (`work-orders`, the URI segment).
+
+**PUT /work-orders/:id** now dispatches through
+`documentPutHandler(WORK_ORDERS_WIRING)` — the SAME `'simple'`
+concurrency class ideas/projects ride (§5.4) — and
+`WRITE_RESPONSE_SPECS['work-orders/:id']` is
+`documentWriteResponseSpec(WORK_ORDERS_WIRING)`. **GET
+/work-orders/:id stays hand-written old-plane** (unchanged
+until a future task flips it onto the generic
+`documentGetHandler`) — only PUT rides the generic machinery
+this task; `entityOf` exists for interface uniformity and that
+future flip, not any live reader today.
+
+**The wire is unchanged.** The response's `{id, organization_id,
+display_id, flow_graph, position}` keys and the 404 body
+(`Not found: work_orders/<id>`) are byte-identical to the prior
+hand-written route — the untouched existing suite (including
+`tests/api-work-orders-create.test.ts`) plus
+`tests/api-work-order-document.test.ts`'s below-gate op pin and
+byte-identical-resend case are the absorption's proof;
+`tests/api-work-orders-verb-gaps.test.ts` additionally pins
+every deliberate verb gap the family still carries (PUT/DELETE
+`work-orders`; POST/DELETE `work-orders/:id`; every verb on
+`/claim` and `/transition` but their own POST; POST/PUT/DELETE
+`flows/:id/work-orders`; GET/POST `flows/:id/work-orders/:woid`
+— its DELETE already pinned in `api-flows-verb-gaps.test.ts`).
