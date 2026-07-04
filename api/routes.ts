@@ -2265,17 +2265,21 @@ export const routes: Route[] = [
     // address. Synthesized below, BYTE-INDISTINGUISHABLE from a
     // live PUT /projects/:id's pair at that same address (same
     // response spec, same head-read), so derivation needs no
-    // conversion special case. Formed PRE-TX — crypto and the
-    // head-read stay outside db.transaction, the IndexedDB
-    // auto-commit constraint — then appended as the tx's LAST
-    // act, beside the operation pair. Formed ONLY when the gate
-    // supplied both a pair and a fence organization; a below-
-    // facade caller with neither (none exists for conversion
-    // today) skips both appends, preserving dual-write
-    // discipline. The idea's OWN 'promoted' transition still
-    // appends no ideas/:id document pair — a known, separately
-    // tracked deferral (work-orders/Phase Final) that cannot
-    // confuse this derivation: 'promoted' is not 'deleted'.
+    // conversion special case. Phase 5 Task 5: the idea's OWN
+    // 'promoted' transition gets a THIRD pair the same way, at
+    // the idea's EXISTING document address — unlike the project
+    // pair above (a fresh address, genesis), the idea's head-
+    // read finds its prior pair, so this one records Supersedes
+    // provenance. This closes the standing watch-point: before
+    // this task, a converted idea's derived history MISSED its
+    // 'promoted' event because no pair recorded it. All three
+    // formed PRE-TX — crypto and the head-reads stay outside
+    // db.transaction, the IndexedDB auto-commit constraint —
+    // then appended as the tx's LAST acts, beside the operation
+    // pair. Formed ONLY when the gate supplied both a pair and
+    // a fence organization; a below-facade caller with neither
+    // (none exists for conversion today) skips all three
+    // appends, preserving dual-write discipline.
     route('ideas/:id/conversion', {
         post: async (
             db, p, body, actor, pair, organization,
@@ -2295,7 +2299,20 @@ export const routes: Route[] = [
                 state_event_id: b.projectStateEventId,
             };
             validateProjectDocumentBody(projectDocument);
+            // The document a live PUT /ideas/:id would carry for
+            // this SAME conversion: the promoted idea's own
+            // fields plus the 'promoted' trio this conversion
+            // assigns. Validated pre-tx, mirroring projectDocument
+            // above.
+            const ideaDocument = {
+                ...b.idea,
+                state: b.ideaState,
+                state_at: b.ideaStateAt,
+                state_event_id: b.ideaStateEventId,
+            };
+            validateIdeaDocumentBody(ideaDocument);
             let projectPair: MessagePair | undefined;
+            let ideaPair: MessagePair | undefined;
             if (
                 pair !== undefined
                 && organization !== undefined
@@ -2332,6 +2349,45 @@ export const routes: Route[] = [
                         organization,
                     ),
                     headPairId: projectHeadPairId,
+                });
+                // The idea's OWN document pair, at its EXISTING
+                // address (the idea was created earlier, through
+                // a live PUT /ideas/:id) — this head-read finds
+                // that prior pair, so this one records Supersedes,
+                // unlike the project pair above (a fresh address,
+                // genesis).
+                const ideaSpec = WRITE_RESPONSE_SPECS['ideas/:id'];
+                if (
+                    ideaSpec === undefined
+                    || !('status' in ideaSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' ideas/:id',
+                    );
+                }
+                const ideaHeadPairId = await headPairIdAt(
+                    db,
+                    canonicalUriPrefix(organization, '/ideas/'),
+                    ideaId,
+                );
+                ideaPair = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/ideas/' + ideaId,
+                    routePattern: 'ideas/:id',
+                    routeSegments: ['ideas', ':id'],
+                    pathSegments: ['ideas', ideaId],
+                    headerFields: [],
+                    body: ideaDocument,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: 200,
+                    responseBody: ideaSpec.successBody?.(
+                        [ideaId], ideaDocument, actor,
+                        organization,
+                    ),
+                    headPairId: ideaHeadPairId,
                 });
             }
             return db.transaction(
@@ -2382,6 +2438,11 @@ export const routes: Route[] = [
                     if (projectPair !== undefined) {
                         await appendMessagePair(
                             view, projectPair,
+                        );
+                    }
+                    if (ideaPair !== undefined) {
+                        await appendMessagePair(
+                            view, ideaPair,
                         );
                     }
                 },
