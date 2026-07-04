@@ -653,12 +653,48 @@ The route LEAVES THE URI TREE entirely: a request against it now
 - actual: `workOrders.put(id, workOrder)` (org-scoped stamps org) →
   `flowWorkOrders.put(flowWorkOrderId, flowWorkOrder)` → loop i in
   0..2: `states.postEvent(stateEventIds[i], id, states[i], actor)` →
-  `appendMessagePair(pair)`.
+  three `appendMessagePair` calls (below).
 - doctrinal: `put_work_order` + `put_flow_work_order` + three
   `post_state_event` (start transition, post-start transition,
   creation-time `claimed`) as `post_create_work_order`.
 - props: atomic; the three events are applied in order; member-tier;
   `validateWorkOrderCreateBody`.
+
+**The create-triple (Phase 5 Task 3), mirroring flows' own create
+(§3.12).** The route (not `postWorkOrderCreationOp`) pre-forms two
+extra pairs beside the gate's own operation pair, ONLY when the
+gate supplied both a pair and a fence organization — a
+below-facade caller (`api/mock-data.ts`) skips all three:
+
+- **The document pair** — PUT-shaped, at `work-orders/:id`'s own
+  address (the SAME address `POST /work-orders` collapses onto,
+  via the registry's create-address override — §5.6), body
+  `{display_id, flow_graph, position}` picked directly from the
+  create body's `workOrder` (never spread verbatim, so a
+  tolerated `organization_id` never leaks in) and validated
+  through `validateWorkOrderDocumentBody` — byte-indistinguishable
+  from a live genesis `PUT /work-orders/:id`.
+- **The join pair** — PUT-shaped, at
+  `flows/:id/work-orders/:woid`'s address, body the create's own
+  `flowWorkOrder` verbatim (`validateFlowWorkOrderEntity` accepts
+  exactly `flow_id`/`work_order_id`/`at`, so it doubles as the
+  join pair's body without a second construction) —
+  byte-indistinguishable from a live
+  `PUT /flows/:id/work-orders/:woid`. Genesis-undefined: a work
+  order's create-time join is always fresh.
+
+All three pairs share ONE `requestAt` (the create's own
+origination) yet strictly-later response `at` stamps, so the
+document pair — appended AFTER the operation pair — becomes the
+entity address's head. A duplicate create (same work-order id)
+therefore records `Supersedes` on its OWN new document pair
+against the PRIOR document pair; the duplicate's own operation
+pair, reading that SAME shared address fresh at gate entry,
+supersedes that same prior document pair too (`work-orders` is
+`'simple'` concurrency, §5.4 — it chains via `Supersedes`, never
+`Follows`). Three pairs commit or none: a mid-transaction failure
+(a state-ledger collision, say) leaves zero of the three, exactly
+like every other atomic write in this catalog.
 
 ### 3.18 `POST /work-orders/:id/claim` — claim
 
