@@ -77,6 +77,7 @@ import {
     validateStateFieldValueEntity,
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
+    validateWorkOrderDocumentBody,
     validateWorkOrderEntity,
     validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
@@ -1256,6 +1257,66 @@ export async function postWorkOrderTransitionOp(
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
+        },
+    );
+}
+
+// Work-order document write — the fourth family's evidence for
+// the 'stateless' lifecycle class (Decision 7 does NOT apply
+// here): a work order's lifecycle is written ONLY by the
+// create/claim/transition ops above and the states/:id unclaim
+// path, never by a document PUT, so this op posts NO states
+// event of its own — UNLIKE postIdeaDocumentOp/
+// postProjectDocumentOp/postFlowDocumentOp, which each fold a
+// lifecycle trio into the SAME transaction. A document PUT here
+// is a pure entity edit: the work_orders row and its pair
+// commit as ONE transaction — a mid-write failure rolls the
+// whole thing back rather than leaving a half-written document.
+// validateWorkOrderDocumentBody rejects a body carrying the
+// trio at the gate (the stateless covenant is validator-
+// enforced, not caller discipline), so this op never needs to
+// defend against one downstream. The org-scoped work_orders
+// store stamps organization_id from the verified token and
+// re-validates through validateWorkOrderEntity, so the entity
+// body OMITS it; the below-facade seed path (no scoping
+// wrapper) embeds it in the raw body and this op reads it
+// straight back to merge it in — inert for the fenced route
+// (overwritten either way), load-bearing for the seed. Exported
+// so the seed can drive a work-order document write through the
+// same op the route uses (Decision 6's below-facade carve-out).
+// `pair` is optional so a below-facade caller with no pair keeps
+// compiling; the live route always supplies one, since
+// 'work-orders/:id' is pair-wired and never bearer-exempt. The
+// actor parameter is spelled `_actor`: it exists for the
+// wiring's documentOp signature uniformity only (every
+// DocumentFamilyWiring.documentOp takes one) — there is no
+// state event here to author, so the pair's own
+// requesterIdentityId is the only authorship this write carries.
+export async function postWorkOrderDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<WorkOrderEntity, 'id'>> {
+    const doc = validateWorkOrderDocumentBody(withoutId(body));
+    const organizationId = body['organization_id'];
+    return db.transaction(
+        ['work_orders', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.workOrders.put(
+                id,
+                {
+                    ...doc.entity,
+                    ...(typeof organizationId === 'string'
+                        ? { organization_id: organizationId }
+                        : {}),
+                } as unknown as Omit<WorkOrderEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
         },
     );
 }
