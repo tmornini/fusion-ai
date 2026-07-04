@@ -397,6 +397,59 @@ test('e2e: an old-shape PUT body 400s (validateFlowPutBody'
     assert.equal(res.status, 400);
 });
 
+test('e2e: an old-shape POST flows/:id/undo body (missing the'
++ ' new required graph field) 400s and stores nothing',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-undo-old-shape');
+    const published = await handleRequest(db, req(
+        'POST', '/flows/flow-undo-old-shape/versions', token, {
+            id: 'v-undo-old-shape',
+            version: {
+                flow_id: 'flow-undo-old-shape',
+                name: 'v1',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: DEFAULT_LOCK_TIMEOUT,
+                graph: emptyGraph(),
+                at: AT,
+            },
+            trimIds: [],
+        },
+    ));
+    assert.equal(published.status, 204);
+
+    const requestsBefore = await db.requests.getAll();
+    const responsesBefore = await db.responses.getAll();
+    const eventsBefore = await db.states.getAllFor(
+        'flow-undo-old-shape',
+    );
+
+    const res = await handleRequest(db, req(
+        'POST', '/flows/flow-undo-old-shape/undo', token, {
+            flow: flowFields('Old Shape Undo'),
+            eventId: 'flow-undo-old-shape-undo-ev',
+            at: AT,
+            consumedVersionId: 'v-undo-old-shape',
+            graphDelta: emptyDelta(),
+            revivals: [],
+            // `graph` deliberately omitted — the old shape.
+        },
+    ));
+    assert.equal(res.status, 400);
+
+    const requestsAfter = await db.requests.getAll();
+    const responsesAfter = await db.responses.getAll();
+    const eventsAfter = await db.states.getAllFor(
+        'flow-undo-old-shape',
+    );
+    assert.equal(requestsAfter.length, requestsBefore.length);
+    assert.equal(responsesAfter.length, responsesBefore.length);
+    assert.equal(eventsAfter.length, eventsBefore.length);
+});
+
 // --- Task 5: create + undo synthesized second pairs ---
 
 test('e2e: POST flows forms a document pair at the flow\'s'
@@ -473,6 +526,99 @@ async () => {
     assert.equal(ats.size, 1);
 });
 
+test('e2e: a duplicate POST flows (same id) succeeds — the'
++ ' create op holds no echo — and its second document pair'
++ ' carries Supersedes to the first, never Follows, while'
++ ' the first document pair was genesis', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+
+    const first = await handleRequest(db, req(
+        'POST', '/flows', token,
+        {
+            id: 'flow-dup-1',
+            flow: flowFields('Fresh Flow'),
+            projectFlowId: 'flow-dup-1-pf-a',
+            projectFlow: {
+                project_id: 'proj-1',
+                flow_id: 'flow-dup-1',
+                at: AT,
+            },
+            initialState: 'active',
+            initialStateEventId: 'flow-dup-1-ev-a',
+            initialStateAt: AT,
+            graphDelta: emptyDelta(),
+        },
+    ));
+    assert.equal(first.status, 204);
+
+    const requestsAfterFirst = await db.requests.getAll();
+    const flowAddressAfterFirst = requestsAfterFirst.filter(
+        r => r.uri_prefix === '/organizations/1/flows/'
+            && r.uri_id === 'flow-dup-1',
+    );
+    const firstDocumentRequest = flowAddressAfterFirst.find(
+        r => decodeRequestMessage(r.message).method === 'PUT',
+    );
+    assert.ok(
+        firstDocumentRequest,
+        'no document pair at the flow address after create 1',
+    );
+    const firstDocumentResponse = await db.responses.getById(
+        firstDocumentRequest!.id,
+    );
+    assert.equal(firstDocumentResponse.supersedes, undefined);
+    assert.equal(firstDocumentResponse.follows, undefined);
+
+    const SECOND_AT = '2026-01-01T00:00:01.000000Z';
+    const second = await handleRequest(db, req(
+        'POST', '/flows', token,
+        {
+            id: 'flow-dup-1',
+            flow: flowFields('Fresh Flow'),
+            projectFlowId: 'flow-dup-1-pf-b',
+            projectFlow: {
+                project_id: 'proj-1',
+                flow_id: 'flow-dup-1',
+                at: SECOND_AT,
+            },
+            initialState: 'active',
+            initialStateEventId: 'flow-dup-1-ev-b',
+            initialStateAt: SECOND_AT,
+            graphDelta: emptyDelta(),
+        },
+    ));
+    assert.equal(
+        second.status, 204,
+        'the create op holds no echo — no 412',
+    );
+
+    const requestsAfterSecond = await db.requests.getAll();
+    const flowAddressAfterSecond = requestsAfterSecond.filter(
+        r => r.uri_prefix === '/organizations/1/flows/'
+            && r.uri_id === 'flow-dup-1',
+    );
+    const documentRequests = flowAddressAfterSecond.filter(
+        r => decodeRequestMessage(r.message).method === 'PUT',
+    );
+    assert.equal(documentRequests.length, 2);
+    const secondDocumentRequest = documentRequests.find(
+        r => r.id !== firstDocumentRequest!.id,
+    );
+    assert.ok(
+        secondDocumentRequest,
+        'no second document pair at the flow address',
+    );
+    const secondDocumentResponse = await db.responses.getById(
+        secondDocumentRequest!.id,
+    );
+    assert.equal(
+        secondDocumentResponse.supersedes,
+        firstDocumentResponse.id,
+    );
+    assert.equal(secondDocumentResponse.follows, undefined);
+});
+
 test('e2e: POST flows/:id/undo forms a document pair carrying'
 + ' Follows to the pre-undo head, with graph matching the'
 + ' post-undo reassembly', async () => {
@@ -500,6 +646,9 @@ test('e2e: POST flows/:id/undo forms a document pair carrying'
         },
     ));
     assert.equal(published.status, 204);
+
+    const requestsBeforeUndo = await db.requests.getAll();
+    const responsesBeforeUndo = await db.responses.getAll();
 
     // A non-trivial undo graph (one node) — so the graph
     // comparison below actually exercises the mechanism rather
@@ -537,6 +686,19 @@ test('e2e: POST flows/:id/undo forms a document pair carrying'
         },
     ));
     assert.equal(undone.status, 204);
+
+    const requestsAfterUndo = await db.requests.getAll();
+    const responsesAfterUndo = await db.responses.getAll();
+    assert.equal(
+        requestsAfterUndo.length, requestsBeforeUndo.length + 2,
+        'undo appends exactly 2 request rows'
+        + ' (operation + document)',
+    );
+    assert.equal(
+        responsesAfterUndo.length, responsesBeforeUndo.length + 2,
+        'undo appends exactly 2 response rows'
+        + ' (operation + document)',
+    );
 
     const responses = await db.responses.getAll();
     const documentResponses = responses.filter(
