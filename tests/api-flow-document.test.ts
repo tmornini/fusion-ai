@@ -8,6 +8,10 @@ import {
 import {
     validateFlowDocumentBody,
 } from '../api/validators.ts';
+import {
+    headPairIdAt,
+    canonicalUriPrefix,
+} from '../api/message-pair.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
@@ -356,7 +360,7 @@ async () => {
 // the create response's own operation Response-ID.
 test('e2e: GET flows/:id carries Response-ID == the head pair'
 + ' id — create\'s own synthesized document pair, never its'
-+ ' operation response (pre-flip old-plane handler)',
++ ' operation response (Task 8: ledger-derived handler)',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -377,6 +381,35 @@ async () => {
     );
     assert.equal(atAddress.length, 2);
     assert.ok(atAddress.some(r => r.id === headId));
+});
+
+// Task 8: the flows/:id GET's Response-ID source switched from
+// headPairIdAt (message-pair.ts's ANY-method LOCK head) to
+// documentHeadPairId (document-family.ts's DOCUMENT head — the
+// SAME deriveDocumentsAt reduction the GET already runs to build
+// the entity). Design decision 6 means only PUT ever writes at a
+// document address, so the two reductions agree for a live flow
+// — this proves the wire Response-ID equals headPairIdAt's own,
+// independently computed value, not merely that the route
+// returns SOME header.
+test('e2e: the flows/:id Response-ID equals headPairIdAt\'s own'
++ ' reduction over the same address (documentHeadPairId parity)',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-parity-1');
+    const got = await handleRequest(
+        db, req('GET', '/flows/flow-parity-1', token),
+    );
+    assert.equal(got.status, 200);
+    const headId = got.headers.get('Response-ID');
+    assert.ok(headId);
+    const lockHead = await headPairIdAt(
+        db,
+        canonicalUriPrefix('1', '/flows/'),
+        'flow-parity-1',
+    );
+    assert.equal(headId, lockHead);
 });
 
 test('e2e: an old-shape PUT body 400s (validateFlowPutBody'

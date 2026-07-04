@@ -413,8 +413,8 @@ test(
 );
 
 test(
-    'a project-flow link added directly to'
-    + ' the table surfaces in getFlowsByProject',
+    'a project-flow link added via the wire PUT'
+    + ' surfaces in getFlowsByProject',
     async () => {
         const { db, ctx } = await setupMemDb();
         await seedProject(ctx, 'p9', 'Project Nine');
@@ -422,7 +422,13 @@ test(
             createRequestContext(db, await devToken()),
             'flow-1', 'p1',
         );
-        await db.projectFlows.put('extra-link', {
+        // NAMED re-pin (Phase 4 Task 8, Phase 3 Step 2b
+        // precedent): the flipped GET projects/:id/flows derives
+        // from the message ledger, not the raw project_flows
+        // table — a raw db.projectFlows.put leaves no pair at
+        // this address, so the link must land through the SAME
+        // wire-reachable PUT the live route serves.
+        await ctx.PUT('projects/p9/flows/extra-link', {
             project_id: 'p9',
             flow_id: 'flow-1',
             at: '2026-01-01T00:00:00.000000Z',

@@ -9,12 +9,9 @@ import type {
     Id,
     AIMemberEntity,
     FlowEntity,
-    FlowWithGraph,
     FlowVersionEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
-    FlowNodeMemberEntity,
-    FlowNodeAttributeEntity,
     HumanMemberEntity,
     IdentityEntity,
     IdentityPiiEntity,
@@ -119,7 +116,6 @@ import {
     HTTP_CONFLICT,
 } from './http-errors.ts';
 import {
-    reassembleStoredGraph,
     reduceCreateGraphDelta,
 } from './flow-graph-relations.ts';
 import {
@@ -130,18 +126,19 @@ import {
     ideaEntityOf,
 } from './derive-ideas.ts';
 import { projectEntityOf } from './derive-projects.ts';
+import { flowEntityOf } from './derive-flows.ts';
+import { deriveProjectFlows } from './derive-project-flows.ts';
 import {
     param,
     requireOrganization,
     withoutId,
+    documentCollectionGetHandler,
     documentCollectionRoute,
     documentEntityRoute,
-    documentPutHandler,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
 } from './document-family.ts';
-import type { DerivedDocument } from './derive-documents.ts';
 // Re-exported: param/requireOrganization/withoutId moved to
 // document-family.ts (see the import above and its own
 // comment), but api.ts and existing tests still import them
@@ -202,17 +199,17 @@ const PROJECTS_WIRING: DocumentFamilyWiring = {
     documentOp: postProjectDocumentOp,
     entityOf: projectEntityOf,
 };
-// The flows wiring row — Task 3's flip commit. flowEntityOf is
-// defined further below, beside postFlowDocumentOp (a forward
-// reference — `function` declarations hoist, so evaluation
-// order here is safe). UNLIKE ideas/projects (whose GET already
-// rides documentGetHandler through entityOf), flows/:id's own
-// GET stays the hand-written old-plane reassembly below in the
-// route table until Task 8 — entityOf is required by the
-// DocumentFamilyWiring shape regardless, and registering it now
-// (rather than leaving it for Task 8) means the derivation
-// mirrors ideaEntityOf/projectEntityOf's shape from day one of
-// the locked class, not bolted on later.
+// The flows wiring row — Task 3's flip commit, GET-wired at
+// Task 8. entityOf is derive-flows.ts's OWN flowEntityOf, not a
+// routes.ts-local mapper: it returns FlowWithGraph (the entity
+// plus the document's own `graph` field), the shape both
+// documentGetHandler (flows/:id) and documentCollectionRoute
+// (flows) now serve verbatim — no flows-special branch inside
+// either generic constructor. ideas/projects' own entityOf
+// mappers return their bare entity shape (no such extra field),
+// so this is the ONE per-family divergence document-family.ts's
+// `entityOf: (document, organization) => unknown` slot already
+// tolerates by design, not a widened interface.
 const FLOWS_WIRING: DocumentFamilyWiring = {
     family: 'flows',
     validateDocument: validateFlowDocumentBody,
@@ -828,33 +825,6 @@ export async function postFlowDocumentOp(
             return written;
         },
     );
-}
-
-// The derived entity for a flow's document address — mirrors
-// ideaEntityOf/projectEntityOf's shape (organization_id stamped
-// from the derivation's OWN organization parameter, never the
-// body's own value), reading the SAME flat wire keys
-// validateFlowDocumentBody expects. Lives here rather than a
-// dedicated derive-flows.ts module: flows/:id's GET stays the
-// hand-written old-plane reassembly through this task (Task 8
-// migrates it onto documentGetHandler, whose derivedDocumentEntity
-// is the first real caller of this function through
-// FLOWS_WIRING.entityOf) — required now only because
-// DocumentFamilyWiring.entityOf is non-optional.
-function flowEntityOf(
-    document: DerivedDocument,
-    organization: Id,
-): FlowEntity {
-    const body = document.body;
-    return {
-        id: document.uriId,
-        organization_id: organization,
-        name: pickString(body, 'name'),
-        is_locked: pickBoolean(body, 'is_locked'),
-        is_auto_layout: pickBoolean(body, 'is_auto_layout'),
-        is_auto_fit: pickBoolean(body, 'is_auto_fit'),
-        lock_timeout: pickNumber(body, 'lock_timeout'),
-    };
 }
 
 // Objective creation: the objective row and its FIRST
@@ -2252,78 +2222,18 @@ export const routes: Route[] = [
             postIdeaSubmissionOp(db, param(p, 1), body, pair),
     }),
     route('flows', {
-        // Reassemble each flow's graph from the four relation
-        // tables inside one consistent read transaction —
-        // mirroring GET /flows/:id so the list and the single
-        // GET derive identically (one reassembly voice). The
-        // stored blob is never consulted. PERF: this adds
-        // per-flow relation reads to the list path; acceptable
-        // at demo scale and unmeasured — do not optimize before
-        // measuring (Commandment XI). IndexedDB auto-commit:
-        // only row ops are awaited inside the tx body;
-        // reassembleStoredGraph + storedGraphField are sync
-        // compute called AFTER the awaited reads.
-        get: async (db) => {
-            return db.transaction(
-                [
-                    'flows',
-                    'flow_nodes',
-                    'flow_edges',
-                    'flow_node_members',
-                    'flow_node_attributes',
-                    'states',
-                ],
-                async (view) => {
-                    const flows =
-                        await view.flows.getAll();
-                    const result: FlowWithGraph[] = [];
-                    for (const flow of flows) {
-                        const nodes =
-                            await view.flowNodes
-                                .getAllWhere(
-                                    'flow_id', flow.id,
-                                );
-                        const edges =
-                            await view.flowEdges
-                                .getAllWhere(
-                                    'flow_id', flow.id,
-                                );
-                        const members:
-                            FlowNodeMemberEntity[] = [];
-                        const attrs:
-                            FlowNodeAttributeEntity[] = [];
-                        for (const node of nodes) {
-                            const nm =
-                                await view.flowNodeMembers
-                                    .getAllWhere(
-                                        'flow_node_id',
-                                        node.id,
-                                    );
-                            const na =
-                                await view
-                                    .flowNodeAttributes
-                                    .getAllWhere(
-                                        'flow_node_id',
-                                        node.id,
-                                    );
-                            members.push(...nm);
-                            attrs.push(...na);
-                        }
-                        // SYNC compute — no await past here.
-                        const graph =
-                            reassembleStoredGraph(
-                                nodes, edges,
-                                members, attrs,
-                            );
-                        result.push({
-                            ...flow,
-                            graph: storedGraphField(graph),
-                        });
-                    }
-                    return result;
-                },
-            );
-        },
+        // GET is FLIPPED (Phase 4 Task 8): the list derives from
+        // the message ledger rather than the old flows table plus
+        // its relation tables. Rides the generic
+        // documentCollectionRoute — wire-identical to the
+        // hand-written deriveFlows dispatch it replaces (the
+        // wiring's own entityOf, derive-flows.ts's flowEntityOf,
+        // carries the `graph` field, so the list needs no
+        // flows-special reassembly step). POST stays this
+        // hand-written create — unlike ideas/projects, flows never
+        // folded genesis into the document PUT (Decision 6), so a
+        // separate create verb remains here.
+        get: documentCollectionGetHandler(FLOWS_WIRING),
         // Member-tier POST — /flows carries POST in
         // MEMBER_VERBS. Forms the document + join pairs pre-tx
         // (Task 5) beside the gate's own operation pair — the
@@ -2430,10 +2340,17 @@ export const routes: Route[] = [
             return postFlowCreationOp(db, body, actor, pairs);
         },
     }),
-    // flows/:id is the FIRST locked-class route (Task 3):
-    // GET stays this hand-written old-plane reassembly — Task 8
-    // migrates it onto documentGetHandler — but PUT now rides
-    // the generic documentPutHandler over FLOWS_WIRING (below).
+    // flows/:id is the FIRST locked-class route (Task 3). GET is
+    // FLIPPED (Phase 4 Task 8): absorbed into the generic
+    // documentEntityRoute — the SAME wiring row PUT already rides
+    // (Task 3), so this replaces the hand-written old-plane
+    // reassembly with documentGetHandler(FLOWS_WIRING), wire-
+    // identical to it (derive-flows.ts's flowEntityOf carries the
+    // `graph` field the entity route's generic shape needs, so no
+    // flows-special branch lives inside documentGetHandler
+    // itself). After this commit NO hand-written document-family
+    // route object remains for any registered family (ideas,
+    // projects, flows) — the third-family obligation's discharge.
     // The gate's four-outcome table (api.ts, keyed off
     // familyRegistration('flows').concurrency === 'locked')
     // resolves genesis/412/follows entirely BEFORE dispatch;
@@ -2446,71 +2363,7 @@ export const routes: Route[] = [
     // transaction now (postFlowVersion, called separately by the
     // client before the save). Member-tier PUT —
     // MEMBER_VERBS['/flows'] includes 'PUT'.
-    route('flows/:id', {
-        // Reassemble the graph from the four relation tables
-        // inside a consistent read transaction — the stored
-        // blob is overridden by the live relation-derived graph
-        // so freeze, work-order creation, stats, hazard, export,
-        // and mermaid all derive from relations for free.
-        // IndexedDB auto-commit: only row ops are awaited inside
-        // the tx body; reassembleStoredGraph + storedGraphField
-        // are sync compute called AFTER the awaited reads.
-        get: async (db, p) => {
-            const id = param(p, 0);
-            return db.transaction(
-                [
-                    'flows',
-                    'flow_nodes',
-                    'flow_edges',
-                    'flow_node_members',
-                    'flow_node_attributes',
-                    'states',
-                ],
-                async (view) => {
-                    const flow =
-                        await view.flows.getById(id);
-                    const nodes =
-                        await view.flowNodes
-                            .getAllWhere('flow_id', id);
-                    const edges =
-                        await view.flowEdges
-                            .getAllWhere('flow_id', id);
-                    const members:
-                        FlowNodeMemberEntity[] = [];
-                    const attrs:
-                        FlowNodeAttributeEntity[] = [];
-                    for (const node of nodes) {
-                        const nm =
-                            await view.flowNodeMembers
-                                .getAllWhere(
-                                    'flow_node_id',
-                                    node.id,
-                                );
-                        const na =
-                            await view.flowNodeAttributes
-                                .getAllWhere(
-                                    'flow_node_id',
-                                    node.id,
-                                );
-                        members.push(...nm);
-                        attrs.push(...na);
-                    }
-                    // SYNC compute — no await past this point.
-                    // Reassemble unconditionally: the relation
-                    // tables are the read source of record. The
-                    // stored blob is never consulted here.
-                    const graph = reassembleStoredGraph(
-                        nodes, edges, members, attrs,
-                    );
-                    return {
-                        ...flow,
-                        graph: storedGraphField(graph),
-                    };
-                },
-            );
-        },
-        put: documentPutHandler(FLOWS_WIRING),
-    }),
+    documentEntityRoute(FLOWS_WIRING),
     // Undo a flow edit: the flow row PUT, the 'updated' state
     // event, the DELETE of the consumed version, the graph delta
     // to the four relation tables, and the revivals — all as ONE
@@ -2719,11 +2572,18 @@ export const routes: Route[] = [
     // project id is param 0, so the SERVER filters the collection
     // to that project (the org fence still rides the facade
     // re-entry). The leaf id is param 1; PUT and DELETE are
-    // exposed exactly as the flat makeIdRoute carried them.
+    // exposed exactly as the flat makeIdRoute carried them. GET is
+    // FLIPPED (Phase 4 Task 8): the join list derives from the
+    // message ledger at this project's flows address rather than
+    // the old project_flows table — deriveProjectFlows is a
+    // bespoke derivation (not a DocumentFamilyWiring family; a
+    // join row carries no lifecycle trio of its own), so this
+    // calls it directly rather than through a generic constructor.
     route('projects/:id/flows', {
-        get: (db, p) =>
-            db.projectFlows.getAllWhere(
-                'project_id', param(p, 0),
+        get: (db, p, _actor, organization) =>
+            deriveProjectFlows(
+                db, requireOrganization(organization),
+                param(p, 0),
             ),
     }),
     route('projects/:id/flows/:pfid', {

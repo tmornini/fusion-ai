@@ -194,6 +194,33 @@ export function documentGetHandler(
         );
 }
 
+// The document's own head pair id — DerivedDocument.pairId,
+// "the advertisable Response-ID" (derive-documents.ts) — over
+// the SAME (requests, responses) fetch and the SAME reduction
+// (deriveDocumentsAt) derivedDocumentEntity runs to build the
+// entity. Mirrors headPairIdAt's own (db, uriPrefix, uriId)
+// shape (message-pair.ts) so a caller already holding a
+// family-prefixed uriPrefix swaps the source with no other
+// change, but computes the DOCUMENT head (2xx PUT/DELETE pairs
+// only) rather than headPairIdAt's LOCK head (any method, any
+// status) — a locked family's GET Response-ID attach (api.ts)
+// is the one caller: a document-class address (design decision
+// 6) exposes only PUT at flows/:id, so the two reductions agree
+// in practice (pinned by a test), but this is now ONE mechanism
+// computing the concept, not two independently-maintained ones.
+export async function documentHeadPairId(
+    db: DbAdapter,
+    uriPrefix: string,
+    id: Id,
+): Promise<string | undefined> {
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_prefix', uriPrefix),
+        db.responses.getAllWhere('uri_prefix', uriPrefix),
+    ]);
+    return deriveDocumentsAt(requests, responses, uriPrefix)
+        .get(id)?.pairId;
+}
+
 // The route body is UNCHANGED dispatch to the documentOp for
 // BOTH concurrency classes — the locked/simple divide is
 // resolved entirely upstream, at the gate (api.ts's four-outcome
@@ -219,57 +246,70 @@ export function documentEntityRoute(
     };
 }
 
+// The generic per-family list derivation, split out from
+// documentCollectionRoute below (mirroring documentGetHandler/
+// documentEntityRoute's own split) so a caller needing the bare
+// GetHandler value — routes.ts's route('flows', {...}), which
+// pairs this get with its own hand-written post — has one typed
+// exactly `GetHandler`, not `GetHandler | undefined` off a
+// constructed Route's optional field.
+export function documentCollectionGetHandler(
+    wiring: DocumentFamilyWiring,
+): GetHandler {
+    return async (db, _params, _actor, organization) => {
+        const organizationId = requireOrganization(
+            organization,
+        );
+        const prefix = canonicalUriPrefix(
+            organizationId, '/' + wiring.family + '/',
+        );
+        const [requests, responses] = await Promise.all([
+            db.requests.getAllWhere('uri_prefix', prefix),
+            db.responses.getAllWhere('uri_prefix', prefix),
+        ]);
+        const documents = deriveDocumentsAt(
+            requests, responses, prefix,
+        );
+        const pairs = documentPairsAt(
+            requests, responses, prefix,
+        );
+        const pairsById = new Map<Id, DocumentPair[]>();
+        for (const pair of pairs) {
+            const list = pairsById.get(pair.uriId);
+            if (list === undefined) {
+                pairsById.set(pair.uriId, [pair]);
+            } else {
+                list.push(pair);
+            }
+        }
+        const rows: { id: Id }[] = [];
+        for (const [id, document] of documents) {
+            const history = stateHistoryFrom(
+                documentLifecycleEvents(
+                    pairsById.get(id) ?? [],
+                ),
+                id,
+            );
+            if (
+                currentDocumentState(history)
+                    === DELETED_STATE
+            ) continue;
+            rows.push(
+                wiring.entityOf(
+                    document, organizationId,
+                ) as { id: Id },
+            );
+        }
+        return rows.sort(byIdAscending);
+    };
+}
+
 export function documentCollectionRoute(
     wiring: DocumentFamilyWiring,
 ): Route {
     return {
         segments: [wiring.family],
-        get: async (db, _params, _actor, organization) => {
-            const organizationId = requireOrganization(
-                organization,
-            );
-            const prefix = canonicalUriPrefix(
-                organizationId, '/' + wiring.family + '/',
-            );
-            const [requests, responses] = await Promise.all([
-                db.requests.getAllWhere('uri_prefix', prefix),
-                db.responses.getAllWhere('uri_prefix', prefix),
-            ]);
-            const documents = deriveDocumentsAt(
-                requests, responses, prefix,
-            );
-            const pairs = documentPairsAt(
-                requests, responses, prefix,
-            );
-            const pairsById = new Map<Id, DocumentPair[]>();
-            for (const pair of pairs) {
-                const list = pairsById.get(pair.uriId);
-                if (list === undefined) {
-                    pairsById.set(pair.uriId, [pair]);
-                } else {
-                    list.push(pair);
-                }
-            }
-            const rows: { id: Id }[] = [];
-            for (const [id, document] of documents) {
-                const history = stateHistoryFrom(
-                    documentLifecycleEvents(
-                        pairsById.get(id) ?? [],
-                    ),
-                    id,
-                );
-                if (
-                    currentDocumentState(history)
-                        === DELETED_STATE
-                ) continue;
-                rows.push(
-                    wiring.entityOf(
-                        document, organizationId,
-                    ) as { id: Id },
-                );
-            }
-            return rows.sort(byIdAscending);
-        },
+        get: documentCollectionGetHandler(wiring),
     };
 }
 

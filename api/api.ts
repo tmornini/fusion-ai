@@ -30,7 +30,10 @@ import {
 } from './message-pair.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import { familyRegistration } from './family-registry.ts';
-import { documentFamilyWiring } from './document-family.ts';
+import {
+    documentFamilyWiring,
+    documentHeadPairId,
+} from './document-family.ts';
 import {
     ANONYMOUS_ID,
     decodeAccessToken,
@@ -597,7 +600,15 @@ export async function handleRequest(
                         organization,
                         '/' + readWiring.family + '/',
                     );
-                    const headPairId = await headPairIdAt(
+                    // The derivation's OWN head pair id (Phase 4
+                    // Task 8) — the SAME reduction the flipped GET
+                    // above just ran to build `result`, not a
+                    // second, divergent one (headPairIdAt's own
+                    // ANY-method LOCK head, still the write path's
+                    // source above). Same value for a document-
+                    // class address (tests/api-flow-document.test.ts
+                    // pins the equality); one mechanism now.
+                    const headPairId = await documentHeadPairId(
                         effective, prefix, param(params, 0),
                     );
                     if (headPairId !== undefined) {

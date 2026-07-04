@@ -17,12 +17,18 @@ import {
     postProjectStateChange,
 } from '../web-app/app/adapters/projects.ts';
 import {
+    postFlowCreation,
+} from '../web-app/app/adapters/flow-mutations.ts';
+import {
+    generateCryptoSafeBase62,
+} from '../shared/crypto-safe-base62.ts';
+import {
     type IdeaEntity,
     type IdeaState,
     type ProjectEntity,
     type ProjectState,
-    type FlowEntity,
-    DEFAULT_LOCK_TIMEOUT,
+    type FlowWithGraph,
+    nowUtc,
 } from '../api/types.ts';
 
 function buildIdea(
@@ -96,17 +102,61 @@ async function seedProject(
     });
 }
 
-function buildFlow(
+// Seeds a flow through the SAME document PUT the live route
+// uses (postFlowCreation), so a message pair exists at this
+// flow's address — required for the flipped GET flows route
+// (Phase 4 Task 8), which getDashboardStats reads
+// UNCONDITIONALLY, to derive it.
+async function seedFlow(
+    ctx: RequestContext,
     id: string,
-): Omit<FlowEntity, 'id'> {
-    return {
-        organization_id: '1',
+): Promise<void> {
+    await postFlowCreation(ctx, {
+        flowId: id,
+        linkId: id + '-link',
+        projectId: 'p-' + id,
         name: 'Flow ' + id,
-        is_locked: false,
-        is_auto_layout: true,
-        is_auto_fit: true,
-        lock_timeout: DEFAULT_LOCK_TIMEOUT,
-    };
+    });
+}
+
+// NAMED re-pin (Phase 4 Task 8): physical row removal has no
+// ledger analogue — the flipped GET derives visibility from the
+// lifecycle trio, not a raw db.flows.delete row removal — so the
+// tombstone must land as a state-'deleted' document PUT like any
+// other transition (mirrors postProjectStateChange's precedent
+// above; the only wire-reachable flow tombstone, which Task 3
+// created).
+async function tombstoneFlow(
+    ctx: RequestContext,
+    id: string,
+): Promise<void> {
+    await seedFlow(ctx, id);
+    const { body: current, responseId } =
+        await ctx.GETWithResponseId<FlowWithGraph>(
+            'flows/' + id,
+        );
+    await ctx.PUT(
+        'flows/' + id,
+        {
+            name: current.name,
+            is_locked: current.is_locked,
+            is_auto_layout: current.is_auto_layout,
+            is_auto_fit: current.is_auto_fit,
+            lock_timeout: current.lock_timeout,
+            state: 'deleted',
+            state_at: nowUtc(),
+            state_event_id: generateCryptoSafeBase62(),
+            graph: current.graph,
+            graphDelta: {
+                nodes: [], edges: [], deletions: [],
+                memberEvents: [], attributeEvents: [],
+            },
+            revivals: [],
+        },
+        responseId === undefined
+            ? undefined
+            : [['if-response-id', responseId]],
+    );
 }
 
 test(
@@ -136,12 +186,12 @@ test(
 test(
     'getDashboardStats counts seeded entities',
     async () => {
-        const { db, ctx } = await adminContext();
+        const { ctx } = await adminContext();
         await seedIdea(ctx, 'i1', 'active');
         await seedIdea(ctx, 'i2', 'in_review');
         await seedProject(ctx, 'p1', 'approved');
-        await db.flows.put('f1', buildFlow('f1'));
-        await db.flows.put('f2', buildFlow('f2'));
+        await seedFlow(ctx, 'f1');
+        await seedFlow(ctx, 'f2');
         const stats = await getDashboardStats(ctx);
         assert.deepEqual(
             stats.map(s => s.value),
@@ -189,16 +239,16 @@ test(
         // db.projects.delete row removal — so the tombstone must
         // land as a state-'deleted' document PUT like any other
         // transition (mirrors drift-projects.test.ts's lifecycle
-        // case). The flows half stays raw — flows is not
-        // flipped this phase.
+        // case).
         const {
             id: _id, organization_id: _org, ...fields
         } = await db.projects.getById('p2');
         await postProjectStateChange(
             ctx, 'p2', fields, 'deleted',
         );
-        await db.flows.put('f1', buildFlow('f1'));
-        await db.flows.delete('f1');
+        // NAMED re-pin (Phase 4 Task 8): the flows half now
+        // flips too — see tombstoneFlow's own comment above.
+        await tombstoneFlow(ctx, 'f1');
         const stats = await getDashboardStats(ctx);
         const projects = stats
             .find(s => s.label === 'Projects');
