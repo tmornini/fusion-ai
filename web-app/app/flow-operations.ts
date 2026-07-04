@@ -17,15 +17,13 @@ import {
     putFlow,
     buildFlowBody,
     buildSaveEvents,
+    buildRevivals,
     notifyFlowChange,
     getFlowGraph,
     getFlowVersions,
     generateCryptoSafeBase62,
     nowUtc,
 } from './adapters/index.ts';
-import type {
-    GraphRevival,
-} from '../../api/validators.ts';
 import type {
     FlowSaveShape,
 } from './adapters/flow-mutations.ts';
@@ -631,43 +629,6 @@ export interface HistoryOpOk {
     readonly newHistory: FlowHistorySnapshot;
 }
 
-// Compute the revival set for an undo/redo: every node/edge id
-// present in the TARGET graph but absent from the CURRENT graph
-// is a tombstoned id the target re-introduces. In undo/redo,
-// such an id is always previously-deleted, so revive it
-// unconditionally — a 'restored' event on an already-live
-// entity is harmless. `at` is the one moment of the op.
-function buildRevivals(
-    current: { nodes: GraphNode[]; edges: GraphEdge[] },
-    target: { nodes: GraphNode[]; edges: GraphEdge[] },
-    at: string,
-): GraphRevival[] {
-    const currentIds = new Set<string>([
-        ...current.nodes.map(n => n.id),
-        ...current.edges.map(e => e.id),
-    ]);
-    const revivals: GraphRevival[] = [];
-    for (const node of target.nodes) {
-        if (!currentIds.has(node.id)) {
-            revivals.push({
-                eventId: generateCryptoSafeBase62(),
-                entityId: node.id,
-                at,
-            });
-        }
-    }
-    for (const edge of target.edges) {
-        if (!currentIds.has(edge.id)) {
-            revivals.push({
-                eventId: generateCryptoSafeBase62(),
-                entityId: edge.id,
-                at,
-            });
-        }
-    }
-    return revivals;
-}
-
 function applyServerGraph(
     snap: FlowSnapshot,
     graph: {
@@ -812,15 +773,6 @@ export async function performRedo(
         };
     }
     const v = popped.version;
-    // The revivals diff the CURRENT graph (snap) against the
-    // TARGET (the popped redo version): they re-introduce ids
-    // the redo target carries that the current graph dropped
-    // (their tombstones).
-    const revivals = buildRevivals(
-        { nodes: snap.nodes, edges: snap.edges },
-        { nodes: v.nodes, edges: v.edges },
-        nowUtc(),
-    );
     // Redo folds into the locked save (R1/E5): the retired
     // POST /flows/:id/redo's ONE atomic transaction splits into
     // two independent writes — the SAME non-atomic shape every
@@ -829,10 +781,16 @@ export async function performRedo(
     // snapshot through postFlowVersion ALONE — that POST
     // computes the publish internally (the exact `version`
     // field the retired route carried), so this never also
-    // calls buildFlowVersionSnapshot (double-compute). Then
-    // save the redo target's graph through putFlow, which rides
-    // its own C6 retry loop and carries the revivals above. NO
-    // try/catch here: putFlow's own retry absorbs a 412 (up to 3
+    // calls buildFlowVersionSnapshot (double-compute). Then save
+    // the redo target's graph through putFlow, passing the
+    // TARGET graph itself as the revival intent — putFlow's own
+    // C6 retry loop derives the actual revivals fresh from EACH
+    // attempt's own baseline, never a list this function
+    // precomputes: a concurrent save landing between attempts can
+    // tombstone a node the target carries, and only a recompute
+    // against the FRESH baseline catches that (see putFlow /
+    // buildRevivals in adapters/flow-mutations.ts). NO try/catch
+    // here yet: putFlow's own retry absorbs a 412 (up to 3
     // attempts) — that is the ONLY error this composition
     // absorbs. Everything else (a missing flow, an exhausted
     // retry, any other network fault) PROPAGATES — an impossible
@@ -854,7 +812,7 @@ export async function performRedo(
             nodes: v.nodes,
             edges: v.edges,
         },
-        revivals,
+        { nodes: v.nodes, edges: v.edges },
     );
     notifyFlowChange();
     const graph = await getFlowGraph(

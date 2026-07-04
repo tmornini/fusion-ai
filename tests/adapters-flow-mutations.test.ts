@@ -522,3 +522,138 @@ test(
         );
     },
 );
+
+// Fix wave 1 (Task 4 review, Critical): putFlow's C6 retry loop
+// rebuilds the graph delta fresh per attempt, but a prior bug
+// carried the CALLER's revivals list through unchanged across
+// every attempt. Between one attempt's 412 and the next, a
+// concurrent save can tombstone a node the revival target still
+// carries — the fresh delta re-upserts that node's ROW, but a
+// stale revivals list lacks the 'restored' EVENT needed to clear
+// the tombstone (append-only states: only 'restored' clears it),
+// so the node stays invisible forever even though the retry
+// "succeeded". The fix: putFlow takes a revivalTarget (the
+// target GRAPH, not a precomputed list) and buildFlowPutBody
+// derives the actual revivals fresh, every attempt, against that
+// attempt's OWN freshly-fetched baseline — exactly like the
+// delta already does. This test simulates the race for real (no
+// fabricated error): a concurrent putFlow (on the raw ctx) drops
+// 'mid' between this putFlow's attempt-1 read and its attempt-1
+// write, which genuinely 412s via the real gate since the head
+// has moved. The retry's SECOND attempt must recompute — not
+// replay — the revivals.
+test(
+    'putFlow C6 retry recomputes revivals per attempt:'
+    + ' a node tombstoned mid-retry is restored, not'
+    + ' left invisible by a stale (once-computed)'
+    + ' revivals list',
+    async () => {
+        const { ctx } = await setupMemDb();
+        await createBaseFlow(ctx, 'flow-1');
+        const flow0 = await ctx.GET<FlowWithGraph>(
+            'flows/flow-1',
+        );
+        const baseline0 =
+            JSON.parse(flow0.graph) as StoredGraph;
+        const start = baseline0.nodes.find(
+            n => n.isCreate,
+        )!;
+        const complete = baseline0.nodes.find(
+            n => n.isArchive,
+        )!;
+        const mid = buildNode('mid');
+
+        // 'mid' starts alive — an ordinary edit, no race yet.
+        await putFlow(ctx, 'flow-1', {
+            name: 'Test Flow',
+            isLocked: false,
+            isAutoLayout: false,
+            isAutoFit: false,
+            lockTimeout: DEFAULT_LOCK_TIMEOUT,
+            nodes: [start, complete, mid],
+            edges: [],
+        });
+
+        let putCalls = 0;
+        let secondBody: Record<string, unknown> | null = null;
+        // A concurrent editor's save lands between the tracked
+        // putFlow's attempt-1 read and its attempt-1 write: it
+        // drops 'mid' (tombstoning it) and moves the head, via
+        // the SAME real putFlow path any other caller rides —
+        // so attempt 1's now-stale echo genuinely 412s through
+        // the real gate.
+        const racingCtx: RequestContext = {
+            ...ctx,
+            PUT: async <T,>(
+                path: string,
+                body: Record<string, unknown>,
+                headerFields?:
+                    readonly (readonly [string, string])[],
+            ): Promise<T> => {
+                if (path === 'flows/flow-1') {
+                    putCalls += 1;
+                    if (putCalls === 1) {
+                        await putFlow(ctx, 'flow-1', {
+                            name: 'Test Flow',
+                            isLocked: false,
+                            isAutoLayout: false,
+                            isAutoFit: false,
+                            lockTimeout:
+                                DEFAULT_LOCK_TIMEOUT,
+                            nodes: [start, complete],
+                            edges: [],
+                        });
+                    } else {
+                        secondBody = body;
+                    }
+                }
+                return ctx.PUT<T>(path, body, headerFields);
+            },
+        };
+
+        await putFlow(
+            racingCtx,
+            'flow-1',
+            {
+                name: 'Test Flow',
+                isLocked: false,
+                isAutoLayout: false,
+                isAutoFit: false,
+                lockTimeout: DEFAULT_LOCK_TIMEOUT,
+                nodes: [start, complete, mid],
+                edges: [],
+            },
+            { nodes: [start, complete, mid], edges: [] },
+        );
+
+        assert.equal(
+            putCalls, 2,
+            'exactly one 412 retry happened',
+        );
+        assert.ok(
+            secondBody, 'the retry attempt PUT a body',
+        );
+        const revivals = (
+            secondBody as Record<string, unknown>
+        ).revivals as { entityId: string }[];
+        assert.ok(
+            revivals.some(r => r.entityId === 'mid'),
+            'the recomputed retry restores the node the'
+            + ' race just tombstoned — a revivals list'
+            + ' captured once (before the race) would'
+            + ' still be empty here',
+        );
+
+        // Behavioral confirmation: 'mid' is visible again.
+        const flow = await ctx.GET<FlowWithGraph>(
+            'flows/flow-1',
+        );
+        const graph =
+            JSON.parse(flow.graph) as StoredGraph;
+        assert.ok(
+            graph.nodes.some(n => n.id === 'mid'),
+            'mid reappears once its restore rides the'
+            + ' retry that actually lands',
+        );
+    },
+);
