@@ -460,6 +460,28 @@ async function writeFlowGraphDelta(
     }
 }
 
+// The organization_id extraction/merge shape every document op
+// below needs: the org-scoped store stamps organization_id from
+// the verified token and re-validates through its own entity
+// validator, so a fenced write's `doc.entity` never carries it;
+// the below-facade seed path (no scoping wrapper) has no such
+// stamp, so it embeds organization_id in the RAW request body
+// instead, and this helper reads it straight back so the seed's
+// write still carries it — inert for the fenced route
+// (overwritten either way regardless of what this returns),
+// load-bearing for the seed. Four sites now share this exact
+// shape (ideas, projects, flows, work-orders) — past the
+// rule-of-three, so it is extracted once rather than duplicated
+// a fourth time.
+function documentOperationOrganization(
+    body: Record<string, unknown>,
+): Record<string, unknown> {
+    const organizationId = body['organization_id'];
+    return typeof organizationId === 'string'
+        ? { organization_id: organizationId }
+        : {};
+}
+
 // Idea document write (Decision 7): ONE shape serves create,
 // edit, and transition — genesis is head-presence-defined (a
 // fresh id's PUT simply finds no head, so the ternary below
@@ -490,7 +512,6 @@ export async function postIdeaDocumentOp(
     pair?: MessagePair,
 ): Promise<IdeaEntity> {
     const doc = validateIdeaDocumentBody(withoutId(body));
-    const organizationId = body['organization_id'];
     return db.transaction(
         ['ideas', 'states', 'requests', 'responses'],
         async (view) => {
@@ -505,9 +526,7 @@ export async function postIdeaDocumentOp(
                 id,
                 {
                     ...doc.entity,
-                    ...(typeof organizationId === 'string'
-                        ? { organization_id: organizationId }
-                        : {}),
+                    ...documentOperationOrganization(body),
                 } as unknown as Omit<IdeaEntity, 'id'>,
             );
             await view.states.postEvent(
@@ -552,7 +571,6 @@ export async function postProjectDocumentOp(
     pair?: MessagePair,
 ): Promise<ProjectEntity> {
     const doc = validateProjectDocumentBody(withoutId(body));
-    const organizationId = body['organization_id'];
     return db.transaction(
         ['projects', 'states', 'requests', 'responses'],
         async (view) => {
@@ -567,9 +585,7 @@ export async function postProjectDocumentOp(
                 id,
                 {
                     ...doc.entity,
-                    ...(typeof organizationId === 'string'
-                        ? { organization_id: organizationId }
-                        : {}),
+                    ...documentOperationOrganization(body),
                 } as unknown as Omit<ProjectEntity, 'id'>,
             );
             await view.states.postEvent(
@@ -795,7 +811,6 @@ export async function postFlowDocumentOp(
     pair?: MessagePair,
 ): Promise<FlowEntity> {
     const doc = validateFlowDocumentBody(withoutId(body));
-    const organizationId = body['organization_id'];
     const delta = doc.graphDelta;
     return db.transaction(
         [
@@ -810,9 +825,7 @@ export async function postFlowDocumentOp(
                 id,
                 {
                     ...doc.entity,
-                    ...(typeof organizationId === 'string'
-                        ? { organization_id: organizationId }
-                        : {}),
+                    ...documentOperationOrganization(body),
                 } as unknown as Omit<FlowEntity, 'id'>,
             );
             await view.states.postEvent(
@@ -1300,7 +1313,6 @@ export async function postWorkOrderDocumentOp(
     pair?: MessagePair,
 ): Promise<Omit<WorkOrderEntity, 'id'>> {
     const doc = validateWorkOrderDocumentBody(withoutId(body));
-    const organizationId = body['organization_id'];
     return db.transaction(
         ['work_orders', 'requests', 'responses'],
         async (view) => {
@@ -1308,9 +1320,7 @@ export async function postWorkOrderDocumentOp(
                 id,
                 {
                     ...doc.entity,
-                    ...(typeof organizationId === 'string'
-                        ? { organization_id: organizationId }
-                        : {}),
+                    ...documentOperationOrganization(body),
                 } as unknown as Omit<WorkOrderEntity, 'id'>,
             );
             if (pair !== undefined) {
