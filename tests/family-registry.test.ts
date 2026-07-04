@@ -24,8 +24,18 @@ test('projects is the second registered family', () => {
     });
 });
 
+test('flows is the third registered family, the first'
++ ' locked one', () => {
+    assert.deepEqual(familyRegistration('flows'), {
+        family: 'flows',
+        organizationNested: true,
+        concurrency: 'locked',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
-    assert.equal(familyRegistration('flows'), undefined);
+    assert.equal(familyRegistration('records'), undefined);
 });
 
 test('every registered family names a concurrency class',
