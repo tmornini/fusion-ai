@@ -479,6 +479,71 @@ test('locked arm: two writers racing the SAME echo — the'
     );
 });
 
+// The e2e sibling of the storage-level race above: TWO PUTs
+// echoing the SAME valid head, launched together through
+// handleRequest itself — never formWritePair/appendMessagePair
+// directly — so the gate's OWN UniqueConstraintError -> 412
+// mapping (api.ts's catch block) is what's under test, not the
+// storage primitive alone. On the memory backend, the global
+// transaction serializer (store-serializer.ts) processes each
+// racer's headPairIdAt read and dispatch as separate queued
+// steps, so BOTH racers observe genesis as their head and pass
+// the pre-dispatch echo check before either's write commits —
+// verified empirically (ten runs, zero flakes; see the fix
+// report) — so the SECOND-dispatched racer's write collides on
+// the unique responses.follows index, never the pre-check's
+// echo-mismatch branch (a distinct error message), pinning the
+// gate's mapping rather than re-proving the storage primitive.
+test('locked arm: two concurrent PUTs echoing the same head —'
++ ' the loser 412s via the gate\'s unique-index mapping',
+async () => {
+    await withSyntheticLockedFamily(async () => {
+        const db = await freshDb();
+        const token = await organizationToken();
+        const path = '/' + TEST_FAMILY + '/doc-race';
+        const genesis = await handleRequest(db, req(
+            'PUT', path, token, { v: 'genesis' },
+        ));
+        const head = genesis.headers.get('Response-ID')!;
+        const [first, second] = await Promise.all([
+            handleRequest(db, req(
+                'PUT', path, token, { v: 'a' },
+                { [IF_RESPONSE_ID_HEADER]: head },
+            )),
+            handleRequest(db, req(
+                'PUT', path, token, { v: 'b' },
+                { [IF_RESPONSE_ID_HEADER]: head },
+            )),
+        ]);
+        const statuses =
+            [first.status, second.status].sort();
+        assert.deepEqual(statuses, [200, 412]);
+        const loser = first.status === 412 ? first : second;
+        const loserBody =
+            await loser.json() as { error: string };
+        // The mechanism pin: this exact message is thrown
+        // only by the storage layer's unique-column scan
+        // (api/db.ts's UniqueConstraintError), never by the
+        // gate's pre-check branches (api.ts:532-550), which
+        // read "If-Response-ID is required..." or "...does
+        // not match the current document...".
+        assert.equal(
+            loserBody.error,
+            'Unique column responses.follows already holds'
+            + ' this value',
+        );
+        const responses = await db.responses.getAll();
+        const followingHead = responses.filter(
+            (row) => row.follows === head,
+        );
+        assert.equal(followingHead.length, 1);
+        // Genesis + exactly one winner write landed; the
+        // loser stored NOTHING — no partial write survives.
+        assert.equal((await db.requests.getAll()).length, 2);
+        assert.equal(responses.length, 2);
+    });
+});
+
 test('withSyntheticLockedFamily leaves no residue behind',
 () => {
     assert.equal(documentFamilyWiring(TEST_FAMILY), undefined);
