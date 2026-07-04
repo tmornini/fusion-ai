@@ -14,23 +14,72 @@ import {
     type DerivedDocument,
     type DocumentPair,
 } from './derive-documents.ts';
-import {
-    param,
-    requireOrganization,
-    withoutId,
-    postIdeaDocumentOp,
-    postProjectDocumentOp,
-    type Route,
-    type GetHandler,
-    type PutHandler,
-    type WriteResponseSpec,
+import type {
+    Route,
+    GetHandler,
+    PutHandler,
+    WriteResponseSpec,
 } from './routes.ts';
-import {
-    validateIdeaDocumentBody,
-    validateProjectDocumentBody,
-} from './validators.ts';
-import { ideaEntityOf } from './derive-ideas.ts';
-import { projectEntityOf } from './derive-projects.ts';
+
+// param/requireOrganization/withoutId live HERE, not in
+// routes.ts, so this module has NO runtime (value) dependency on
+// routes.ts — only the type-only import above, which
+// `--strip-types` erases entirely, so it never enters the
+// runtime module graph. routes.ts imports them back (a one-way
+// dependency): it needs the generic constructors below plus
+// registerDocumentFamilyWiring, so SOMETHING must break the
+// cycle, and these three small, self-contained request helpers
+// (no dependency on routes.ts's own route table) are the
+// smallest thing that can move. This is load-bearing: routes.ts
+// calls registerDocumentFamilyWiring at ITS OWN module scope
+// (below), which requires this module to be fully evaluated
+// first — true only because this module no longer has a value
+// import that could pause ITS evaluation partway through waiting
+// on routes.ts.
+
+export function param(
+    params: string[],
+    index: number,
+): string {
+    const value = params[index];
+    if (value === undefined || value === '') {
+        throw new Error(
+            'Missing route param at index '
+            + index,
+        );
+    }
+    return value;
+}
+
+// The fence organization a ledger-derived, org-owned GET
+// handler requires: the verified token claim the gate resolved,
+// never the path. Its absence is a wiring bug — a bearer-exempt
+// or global route reaching a handler that must derive org-
+// scoped state — never a valid contingency, so this crashes
+// loud rather than deriving cross-tenant or falling back to an
+// empty read.
+export function requireOrganization(
+    organization: Id | undefined,
+): Id {
+    if (organization === undefined) {
+        throw new Error(
+            'organization-owned read dispatched with no'
+            + ' fence organization',
+        );
+    }
+    return organization;
+}
+
+// Strip `id` from the request body before
+// passing to entity validators. `id` is a
+// routing/storage key, not a body field;
+// validators enforce the exact body key set.
+export function withoutId(
+    body: Record<string, unknown>,
+): Record<string, unknown> {
+    const { id: _id, ...rest } = body;
+    return rest;
+}
 
 // The generic verb-class components (spec verb-class addendum):
 // by the third registered family, the hand-written per-family
@@ -75,44 +124,25 @@ export interface DocumentFamilyWiring {
 export const DOCUMENT_FAMILY_WIRINGS:
     Record<string, DocumentFamilyWiring> = {};
 
-// ideas/projects are registered LAZILY, on documentFamilyWiring's
-// FIRST call, rather than in a top-level object literal: this
-// module and routes.ts import each other (this module's generic
-// dispatch needs routes.ts's param/requireOrganization/withoutId;
-// routes.ts's route table needs this module's builders), and a
-// top-level literal referencing routes.ts's postIdeaDocumentOp/
-// postProjectDocumentOp would race the OTHER side of that cycle
-// during module evaluation — whichever module's top-level code
-// runs first could observe the other's not-yet-initialized
-// const. Deferring the literal's construction into a function
-// body — invoked only at first REQUEST or test-call time, long
-// after every module has finished evaluating — sidesteps the
-// race entirely (function declarations, unlike const bindings,
-// are hoisted whole across the cycle, so postIdeaDocumentOp/
-// postProjectDocumentOp are always safe to reference HERE).
-let builtinFamiliesRegistered = false;
-
-function ensureBuiltinFamiliesRegistered(): void {
-    if (builtinFamiliesRegistered) return;
-    builtinFamiliesRegistered = true;
-    DOCUMENT_FAMILY_WIRINGS['ideas'] = {
-        family: 'ideas',
-        validateDocument: validateIdeaDocumentBody,
-        documentOp: postIdeaDocumentOp,
-        entityOf: ideaEntityOf,
-    };
-    DOCUMENT_FAMILY_WIRINGS['projects'] = {
-        family: 'projects',
-        validateDocument: validateProjectDocumentBody,
-        documentOp: postProjectDocumentOp,
-        entityOf: projectEntityOf,
-    };
+// The ONE place a family's wiring row is written. routes.ts
+// builds each row from ITS OWN local bindings (the ops, the
+// validators, the entity mappers all live there) and calls this
+// at module scope, once, right after defining the row — this
+// module never constructs ideas/projects' own rows itself, and
+// (per the comment above) has no runtime import of routes.ts to
+// race against, only the erased type-only import of the Route
+// family of types the generic constructors below need. A future
+// family (Task 3's flows row) registers the same way, beside
+// ITS OWN ops.
+export function registerDocumentFamilyWiring(
+    wiring: DocumentFamilyWiring,
+): void {
+    DOCUMENT_FAMILY_WIRINGS[wiring.family] = wiring;
 }
 
 export function documentFamilyWiring(
     family: string,
 ): DocumentFamilyWiring | undefined {
-    ensureBuiltinFamiliesRegistered();
     return DOCUMENT_FAMILY_WIRINGS[family];
 }
 

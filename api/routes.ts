@@ -128,25 +128,45 @@ import {
 } from './derive-ideas.ts';
 import { projectEntityOf } from './derive-projects.ts';
 import {
+    param,
+    requireOrganization,
+    withoutId,
     documentCollectionRoute,
     documentEntityRoute,
     documentWriteResponseSpec,
+    registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
 } from './document-family.ts';
+// Re-exported: param/requireOrganization/withoutId moved to
+// document-family.ts (see the import above and its own
+// comment), but api.ts and existing tests still import them
+// FROM here — this keeps that surface stable rather than
+// touching every external call site for an internal move.
+export { param, requireOrganization, withoutId };
 
-// The ideas/projects wiring rows that drive documentEntityRoute/
-// documentCollectionRoute/documentWriteResponseSpec below — built
-// HERE from routes.ts's OWN local bindings, deliberately NOT read
-// back from document-family.ts's documentFamilyWiring table:
-// routes.ts and document-family.ts import each other (this
-// module's route table needs the generic builders; the generic
-// dispatch needs param/requireOrganization/withoutId), and
-// touching a cyclically-imported CONST at EITHER side's top level
-// races the other side's still-evaluating module. document-
-// family.ts's own documentFamilyWiring registers its OWN equal
-// copy of these two rows lazily, on first CALL (never at module-
-// evaluation time), for api.ts's gate and for tests — see its
-// comment.
+// The ideas/projects wiring rows — the ONE copy, built HERE
+// beside the ops/validators/entity-mappers they reference (all
+// local bindings, so no cycle), then handed to
+// registerDocumentFamilyWiring so document-family.ts's own
+// table (api.ts's gate consult, and every documentEntityRoute/
+// documentCollectionRoute/documentWriteResponseSpec call below)
+// sees the SAME row rather than a hand-maintained duplicate.
+// This import is a ONE-WAY dependency, not a cycle:
+// param/requireOrganization/withoutId now live IN
+// document-family.ts (moved there — see its own comment) rather
+// than being re-imported from here, so document-family.ts has NO
+// runtime import of routes.ts left (only the type-only Route/
+// GetHandler/PutHandler/WriteResponseSpec import, erased by
+// --strip-types) — document-family.ts is therefore always fully
+// evaluated before ANY of this module's own top-level code runs,
+// regardless of which of the two a future entry point happens to
+// reach first, so registerDocumentFamilyWiring below is safe to
+// call at module scope. (An earlier attempt that left
+// param/requireOrganization/withoutId here, calling
+// registerDocumentFamilyWiring across a genuine two-way value
+// cycle, reproduced the exact TDZ ReferenceError the ORIGINAL
+// lazy design existed to avoid — order-dependent on which module
+// an entry point reached first; see the fix report.)
 //
 // Decision 7 state-in-entity (Phase 2/3): the PUT body is the
 // FULL document — the entity's own fields plus the state trio —
@@ -177,6 +197,8 @@ const PROJECTS_WIRING: DocumentFamilyWiring = {
     documentOp: postProjectDocumentOp,
     entityOf: projectEntityOf,
 };
+registerDocumentFamilyWiring(IDEAS_WIRING);
+registerDocumentFamilyWiring(PROJECTS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -263,53 +285,6 @@ export function route(
         segments: pattern.split('/'),
         ...handlers,
     };
-}
-
-export function param(
-    params: string[],
-    index: number,
-): string {
-    const value = params[index];
-    if (value === undefined || value === '') {
-        throw new Error(
-            'Missing route param at index '
-            + index,
-        );
-    }
-    return value;
-}
-
-// The fence organization a ledger-derived, org-owned GET
-// handler requires: the verified token claim the gate resolved,
-// never the path. Its absence is a wiring bug — a bearer-exempt
-// or global route reaching a handler that must derive org-
-// scoped state — never a valid contingency, so this crashes
-// loud rather than deriving cross-tenant or falling back to an
-// empty read.
-export function requireOrganization(
-    organization: Id | undefined,
-): Id {
-    if (organization === undefined) {
-        throw new Error(
-            'organization-owned read dispatched with no'
-            + ' fence organization',
-        );
-    }
-    return organization;
-}
-
-// Strip `id` from the request body before
-// passing to entity validators. `id` is a
-// routing/storage key, not a body field;
-// validators enforce the exact body key set.
-// Exported so api/document-family.ts's generic
-// documentWriteResponseSpec reuses the SAME strip rather than
-// duplicating it.
-export function withoutId(
-    body: Record<string, unknown>,
-): Record<string, unknown> {
-    const { id: _id, ...rest } = body;
-    return rest;
 }
 
 // Project the opaque `secret` out of a credential before it

@@ -65,11 +65,19 @@ async function freshDb(): Promise<MemoryDbAdapter> {
     return db;
 }
 
-// -- (a) documentWriteResponseSpec reproduces the ideas/
-// projects successBody outputs byte-for-byte. --------------
+// -- (a) documentWriteResponseSpec's successBody, pinned
+// against FIXED expected literals. Before the wiring-collapse
+// fix, this compared the generic builder's output against
+// WRITE_RESPONSE_SPECS['ideas|projects/:id'] — TWO hand-
+// maintained wiring copies — but that spec entry is now built
+// from the SAME single registered row (routes.ts's
+// registerDocumentFamilyWiring call), so a same-object
+// comparison would prove nothing. Pinned to literals instead —
+// a strengthening: this is the ONLY place the shape of a
+// document PUT's successBody is asserted byte-for-byte. -------
 
-test('documentWriteResponseSpec reproduces the ideas'
-+ ' successBody byte-for-byte', () => {
+test('documentWriteResponseSpec produces the ideas'
++ ' successBody', () => {
     const wiring = documentFamilyWiring('ideas')!;
     const body = {
         title: 'T', position: 1, problem_statement: 'p',
@@ -77,19 +85,18 @@ test('documentWriteResponseSpec reproduces the ideas'
         expected_outcome: 'o', success_metrics: 'm',
         state: 'active', state_at: AT, state_event_id: 'ev-1',
     };
-    const params = ['idea-1'];
-    const legacy = WRITE_RESPONSE_SPECS['ideas/:id'] as
-        WriteResponseSpec;
-    const expected = legacy.successBody!(
-        params, body, 'current', '1',
-    );
     const actual = documentWriteResponseSpec(wiring)
-        .successBody!(params, body, 'current', '1');
-    assert.deepEqual(actual, expected);
+        .successBody!(['idea-1'], body, 'current', '1');
+    assert.deepEqual(actual, {
+        id: 'idea-1', organization_id: '1',
+        title: 'T', position: 1, problem_statement: 'p',
+        target_users: 't', proposed_solution: 's',
+        expected_outcome: 'o', success_metrics: 'm',
+    });
 });
 
-test('documentWriteResponseSpec reproduces the projects'
-+ ' successBody byte-for-byte', () => {
+test('documentWriteResponseSpec produces the projects'
++ ' successBody', () => {
     const wiring = documentFamilyWiring('projects')!;
     const body = {
         title: 'T', description: 'd', progress: 5,
@@ -97,15 +104,14 @@ test('documentWriteResponseSpec reproduces the projects'
         estimated_cost: 100, actual_cost: 50, position: 1,
         state: 'submitted', state_at: AT, state_event_id: 'ev-1',
     };
-    const params = ['project-1'];
-    const legacy = WRITE_RESPONSE_SPECS['projects/:id'] as
-        WriteResponseSpec;
-    const expected = legacy.successBody!(
-        params, body, 'current', '1',
-    );
     const actual = documentWriteResponseSpec(wiring)
-        .successBody!(params, body, 'current', '1');
-    assert.deepEqual(actual, expected);
+        .successBody!(['project-1'], body, 'current', '1');
+    assert.deepEqual(actual, {
+        id: 'project-1', organization_id: '1',
+        title: 'T', description: 'd', progress: 5,
+        start_date: '2026-01-01', target_end_date: '2026-02-01',
+        estimated_cost: 100, actual_cost: 50, position: 1,
+    });
 });
 
 // -- (b) documentEntityRoute('simple') dispatches PUT to the
