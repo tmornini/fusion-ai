@@ -2,11 +2,15 @@ import type { DbAdapter } from './db.ts';
 import { EntityNotFoundError } from './db.ts';
 import type { Id, ProjectEntity, StateEntity } from './types.ts';
 import { pickString, pickNumber } from './validators.ts';
-import { latestByKey } from '../shared/ledger-reduction.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     documentPairsAt,
+    documentLifecycleEvents,
+    stateHistoryFrom,
+    currentDocumentState,
+    byIdAscending,
+    DELETED_STATE,
     type DerivedDocument,
     type DocumentPair,
 } from './derive-documents.ts';
@@ -24,7 +28,6 @@ import {
 // case anywhere.
 
 const PROJECTS_TABLE = 'projects';
-const DELETED_STATE = 'deleted';
 
 function projectsUriPrefix(organization: Id): string {
     return canonicalUriPrefix(organization, '/projects/');
@@ -37,7 +40,7 @@ function projectsUriPrefix(organization: Id): string {
 // value. A create body omits organization_id; the org-scoped
 // store stamps it on the old plane, and the prefix scanned here
 // already IS that same org, so the stamp is unconditional.
-function projectEntityOf(
+export function projectEntityOf(
     document: DerivedDocument,
     organization: Id,
 ): ProjectEntity {
@@ -57,84 +60,16 @@ function projectEntityOf(
     };
 }
 
-// One entry in a project's own lifecycle sequence: the trio a
-// document PUT's body carries, plus which identity is credited as
-// its author. Deliberately separate from DerivedDocument — the
-// entity's OTHER fields follow arrival order (whichever PUT
-// landed last), but which lifecycle event is CURRENT follows the
-// trio's own (state_at, state_event_id), never arrival order and
-// never the envelope's `at` (postProjectDocumentOp's genesis-
-// wins-under-skew guarantee, reproduced here).
-interface ProjectLifecycleEvent {
-    readonly stateEventId: Id;
-    readonly state: string;
-    readonly stateAt: string;
-    readonly memberId: Id;
-}
-
-// Walk a project's pairs in ARRIVAL order and keep the FIRST
-// occurrence of each distinct state_event_id: a later PUT
-// resending the same trio (postProjectDocumentOp's MEMBER_ID
-// CAVEAT — an unchanged-state edit replays the STORED head's
-// member_id) is a duplicate, not a new lifecycle event, so its
-// own requester never surfaces as an author.
-function projectLifecycleEvents(
-    pairs: readonly DocumentPair[],
-): ProjectLifecycleEvent[] {
-    const seen = new Set<Id>();
-    const events: ProjectLifecycleEvent[] = [];
-    for (const pair of pairs) {
-        const stateEventId = pickString(
-            pair.body, 'state_event_id',
-        );
-        if (seen.has(stateEventId)) continue;
-        seen.add(stateEventId);
-        events.push({
-            stateEventId,
-            state: pickString(pair.body, 'state'),
-            stateAt: pickString(pair.body, 'state_at'),
-            memberId: pair.requesterIdentityId,
-        });
-    }
-    return events;
-}
-
-// One StateEntity row per lifecycle event, (state_at, id)
-// ascending — the SAME order store-state.ts's getAllForIn returns
-// the real states table rows in.
-function stateHistoryFrom(
-    events: readonly ProjectLifecycleEvent[],
-    projectId: Id,
-): StateEntity[] {
-    const rows: StateEntity[] = events.map((event) => ({
-        id: event.stateEventId,
-        entity_id: projectId,
-        state: event.state,
-        member_id: event.memberId,
-        at: event.stateAt,
-    }));
-    return rows.sort((a, b) =>
-        a.at < b.at ? -1
-            : a.at > b.at ? 1
-                : a.id < b.id ? -1
-                    : a.id > b.id ? 1
-                        : 0);
-}
-
-// The CURRENT lifecycle state: the (state_at, state_event_id)
-// reduction over a project's FULL history — a later `at` wins, an
-// equal `at` falls to the larger id — never arrival order, never
-// the envelope `at`s, so a clock-skewed transition (an older
-// state_at than genesis) never displaces genesis. Mirrors
-// StateStore.getCurrentForIn's own (at, id) reduction over the
-// real states table exactly (shared/ledger-reduction.ts's default
-// compare).
-function currentProjectState(
-    history: readonly StateEntity[],
-): string | undefined {
-    return latestByKey(history, () => 'current')
-        .get('current')?.state;
-}
+// The lifecycle trio walk, its (state_at, id) history ordering,
+// and the current-state reduction are byte-identical across
+// every document family — shared in derive-documents.ts
+// (documentLifecycleEvents/stateHistoryFrom/currentDocumentState)
+// rather than duplicated here. Deliberately separate from
+// DerivedDocument — the entity's OTHER fields follow arrival
+// order (whichever PUT landed last), but which lifecycle event
+// is CURRENT follows the trio's own (state_at, state_event_id),
+// never arrival order and never the envelope's `at`
+// (postProjectDocumentOp's genesis-wins-under-skew guarantee).
 
 async function fetchProjectPairs(
     db: DbAdapter,
@@ -177,18 +112,17 @@ export async function deriveProjects(
     const projects: ProjectEntity[] = [];
     for (const [projectId, document] of documents) {
         const history = stateHistoryFrom(
-            projectLifecycleEvents(
+            documentLifecycleEvents(
                 pairsByProjectId.get(projectId) ?? [],
             ),
             projectId,
         );
-        if (currentProjectState(history) === DELETED_STATE) {
+        if (currentDocumentState(history) === DELETED_STATE) {
             continue;
         }
         projects.push(projectEntityOf(document, organization));
     }
-    return projects.sort((a, b) =>
-        a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    return projects.sort(byIdAscending);
 }
 
 export async function deriveProject(
@@ -206,12 +140,12 @@ export async function deriveProject(
         );
     }
     const history = stateHistoryFrom(
-        projectLifecycleEvents(
+        documentLifecycleEvents(
             pairs.filter((pair) => pair.uriId === projectId),
         ),
         projectId,
     );
-    if (currentProjectState(history) === DELETED_STATE) {
+    if (currentDocumentState(history) === DELETED_STATE) {
         throw new EntityNotFoundError(
             PROJECTS_TABLE, projectId,
         );
@@ -234,7 +168,7 @@ export async function deriveProjectStateHistory(
     const prefix = projectsUriPrefix(organization);
     const { pairs } = await fetchProjectPairs(db, prefix);
     return stateHistoryFrom(
-        projectLifecycleEvents(
+        documentLifecycleEvents(
             pairs.filter((pair) => pair.uriId === projectId),
         ),
         projectId,

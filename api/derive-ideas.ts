@@ -7,11 +7,15 @@ import type {
     StateEntity,
 } from './types.ts';
 import { pickString, pickNumber } from './validators.ts';
-import { latestByKey } from '../shared/ledger-reduction.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     documentPairsAt,
+    documentLifecycleEvents,
+    stateHistoryFrom,
+    currentDocumentState,
+    byIdAscending,
+    DELETED_STATE,
     type DerivedDocument,
     type DocumentPair,
 } from './derive-documents.ts';
@@ -25,7 +29,6 @@ import {
 // against the old plane.
 
 const IDEAS_TABLE = 'ideas';
-const DELETED_STATE = 'deleted';
 
 function ideasUriPrefix(organization: Id): string {
     return canonicalUriPrefix(organization, '/ideas/');
@@ -47,7 +50,7 @@ function submissionsUriPrefix(
 // value. A create body omits organization_id; the org-scoped
 // store stamps it on the old plane, and the prefix scanned here
 // already IS that same org, so the stamp is unconditional.
-function ideaEntityOf(
+export function ideaEntityOf(
     document: DerivedDocument,
     organization: Id,
 ): IdeaEntity {
@@ -65,84 +68,16 @@ function ideaEntityOf(
     };
 }
 
-// One entry in an idea's own lifecycle sequence: the trio a
-// document PUT's body carries, plus which identity is credited as
-// its author. Deliberately separate from DerivedDocument — the
-// entity's OTHER fields follow arrival order (whichever PUT
-// landed last), but which lifecycle event is CURRENT follows the
-// trio's own (state_at, state_event_id), never arrival order and
-// never the envelope's `at` (postIdeaDocumentOp's genesis-wins-
-// under-skew guarantee, reproduced here).
-interface IdeaLifecycleEvent {
-    readonly stateEventId: Id;
-    readonly state: string;
-    readonly stateAt: string;
-    readonly memberId: Id;
-}
-
-// Walk an idea's pairs in ARRIVAL order and keep the FIRST
-// occurrence of each distinct state_event_id: a later PUT
-// resending the same trio (postIdeaDocumentOp's MEMBER_ID CAVEAT
-// — an unchanged-state edit replays the STORED head's member_id)
-// is a duplicate, not a new lifecycle event, so its own requester
-// never surfaces as an author.
-function ideaLifecycleEvents(
-    pairs: readonly DocumentPair[],
-): IdeaLifecycleEvent[] {
-    const seen = new Set<Id>();
-    const events: IdeaLifecycleEvent[] = [];
-    for (const pair of pairs) {
-        const stateEventId = pickString(
-            pair.body, 'state_event_id',
-        );
-        if (seen.has(stateEventId)) continue;
-        seen.add(stateEventId);
-        events.push({
-            stateEventId,
-            state: pickString(pair.body, 'state'),
-            stateAt: pickString(pair.body, 'state_at'),
-            memberId: pair.requesterIdentityId,
-        });
-    }
-    return events;
-}
-
-// One StateEntity row per lifecycle event, (state_at, id)
-// ascending — the SAME order store-state.ts's getAllForIn returns
-// the real states table rows in.
-function stateHistoryFrom(
-    events: readonly IdeaLifecycleEvent[],
-    ideaId: Id,
-): StateEntity[] {
-    const rows: StateEntity[] = events.map((event) => ({
-        id: event.stateEventId,
-        entity_id: ideaId,
-        state: event.state,
-        member_id: event.memberId,
-        at: event.stateAt,
-    }));
-    return rows.sort((a, b) =>
-        a.at < b.at ? -1
-            : a.at > b.at ? 1
-                : a.id < b.id ? -1
-                    : a.id > b.id ? 1
-                        : 0);
-}
-
-// The CURRENT lifecycle state: the (state_at, state_event_id)
-// reduction over an idea's FULL history — a later `at` wins, an
-// equal `at` falls to the larger id — never arrival order, never
-// the envelope `at`s, so a clock-skewed transition (an older
-// state_at than genesis) never displaces genesis. Mirrors
-// StateStore.getCurrentForIn's own (at, id) reduction over the
-// real states table exactly (shared/ledger-reduction.ts's default
-// compare).
-function currentIdeaState(
-    history: readonly StateEntity[],
-): string | undefined {
-    return latestByKey(history, () => 'current')
-        .get('current')?.state;
-}
+// The lifecycle trio walk, its (state_at, id) history ordering,
+// and the current-state reduction are byte-identical across
+// every document family — shared in derive-documents.ts
+// (documentLifecycleEvents/stateHistoryFrom/currentDocumentState)
+// rather than duplicated here. Deliberately separate from
+// DerivedDocument — the entity's OTHER fields follow arrival
+// order (whichever PUT landed last), but which lifecycle event
+// is CURRENT follows the trio's own (state_at, state_event_id),
+// never arrival order and never the envelope's `at`
+// (postIdeaDocumentOp's genesis-wins-under-skew guarantee).
 
 async function fetchIdeaPairs(
     db: DbAdapter,
@@ -184,14 +119,17 @@ export async function deriveIdeas(
     const ideas: IdeaEntity[] = [];
     for (const [ideaId, document] of documents) {
         const history = stateHistoryFrom(
-            ideaLifecycleEvents(pairsByIdeaId.get(ideaId) ?? []),
+            documentLifecycleEvents(
+                pairsByIdeaId.get(ideaId) ?? [],
+            ),
             ideaId,
         );
-        if (currentIdeaState(history) === DELETED_STATE) continue;
+        if (currentDocumentState(history) === DELETED_STATE) {
+            continue;
+        }
         ideas.push(ideaEntityOf(document, organization));
     }
-    return ideas.sort((a, b) =>
-        a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    return ideas.sort(byIdAscending);
 }
 
 export async function deriveIdea(
@@ -206,12 +144,12 @@ export async function deriveIdea(
         throw new EntityNotFoundError(IDEAS_TABLE, ideaId);
     }
     const history = stateHistoryFrom(
-        ideaLifecycleEvents(
+        documentLifecycleEvents(
             pairs.filter((pair) => pair.uriId === ideaId),
         ),
         ideaId,
     );
-    if (currentIdeaState(history) === DELETED_STATE) {
+    if (currentDocumentState(history) === DELETED_STATE) {
         throw new EntityNotFoundError(IDEAS_TABLE, ideaId);
     }
     return ideaEntityOf(document, organization);
@@ -237,8 +175,7 @@ export async function deriveIdeaSubmissions(
             at: pickString(document.body, 'at'),
         });
     }
-    return submissions.sort((a, b) =>
-        a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+    return submissions.sort(byIdAscending);
 }
 
 // One row per pair whose state_event_id is NEW — the document
@@ -255,7 +192,7 @@ export async function deriveIdeaStateHistory(
     const prefix = ideasUriPrefix(organization);
     const { pairs } = await fetchIdeaPairs(db, prefix);
     return stateHistoryFrom(
-        ideaLifecycleEvents(
+        documentLifecycleEvents(
             pairs.filter((pair) => pair.uriId === ideaId),
         ),
         ideaId,
