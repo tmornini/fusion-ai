@@ -119,6 +119,39 @@ function workOrderFields(displayId: string, organization: string) {
     };
 }
 
+// The workOrder facet reuses workOrderFields() — the SAME
+// construction the entity-PUT case above already exercises —
+// so the create's synthesized document pair and this literal
+// are ONE source, never two divergent builds.
+function workOrderCreateBody(
+    id: string,
+    flowWorkOrderId: string,
+    flowId: string,
+    organization: string,
+) {
+    return {
+        id,
+        workOrder: workOrderFields('INV-WO-CREATE', organization),
+        flowWorkOrderId,
+        flowWorkOrder: {
+            flow_id: flowId,
+            work_order_id: id,
+            at: AT,
+        },
+        stateEventIds: [
+            'ev-1-' + flowWorkOrderId,
+            'ev-2-' + flowWorkOrderId,
+            'ev-3-' + flowWorkOrderId,
+        ],
+        states: ['n-start', 'n-finish', 'claimed'],
+        stateEventAts: [
+            '2026-02-01T00:00:02.000000Z',
+            '2026-02-01T00:00:03.000000Z',
+            '2026-02-01T00:00:04.000000Z',
+        ],
+    };
+}
+
 function createRecordBody(
     id: string, eventId: string, organization: string,
 ) {
@@ -146,9 +179,12 @@ function createRecordBody(
 // entity PUT (work-orders — Phase 1's final-review deferral,
 // folded in now that Phase 2's drift check has landed), one
 // DELETE (records, superseding its own PUT), one operation POST
-// (identity-tokens revocation), and one GENESIS document PUT
-// (flows — Task 7's additive pin) — five families beyond the
-// seed's own, spanning both seeded orgs.
+// (identity-tokens revocation), one GENESIS document PUT
+// (flows — Task 7's additive pin), and one work-order CREATE
+// (Phase 5 Task 3's own three-pair append — a genesis POST
+// needs no headers, so this addition is purely additive) —
+// five families beyond the seed's own, spanning both seeded
+// orgs.
 async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
@@ -249,6 +285,20 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         flowDocumentBody('Invariant Flow', 'inv-flow-1-ev'),
     ));
     assert.equal(flowGenesis.status, 200);
+
+    // Work-order CREATE (org 1) — a genesis POST, joined to the
+    // flow just created above: three pairs land (the operation
+    // pair, its synthesized document pair, its synthesized join
+    // pair), none of them route-exercised in this mixed batch
+    // before now.
+    const workOrderCreated = await handleRequest(db, req(
+        'POST', '/work-orders', org1Token,
+        workOrderCreateBody(
+            'inv-wo-create-1', 'inv-wo-create-1-fwo',
+            'inv-flow-1', STARK_ORGANIZATION,
+        ),
+    ));
+    assert.equal(workOrderCreated.status, 204);
 
     return db;
 }

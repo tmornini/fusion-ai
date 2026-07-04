@@ -4,6 +4,7 @@ import type {
 import type {
     FlowGraphDelta,
     FlowCreateBody,
+    WorkOrderCreateBody,
 } from './validators.ts';
 import type {
     Id,
@@ -1108,6 +1109,43 @@ export async function postIdentityCreationOp(
     );
 }
 
+// The create's synthesized document body (Task 3, the
+// flow-creation-triple precedent): the SAME shape a live
+// genesis PUT /work-orders/:id would carry — the work
+// order's own three fields, picked directly from b.workOrder
+// (never spread verbatim) so a below-facade caller's
+// tolerated organization_id (validateWorkOrderCreateBody
+// never restricts workOrder's own keys) never leaks into the
+// byte-compared document. The ONE construction both the
+// route's pre-tx pair body and this comment's own covenant
+// describe — never a second, divergently-picked literal.
+function workOrderCreateDocumentBody(
+    b: WorkOrderCreateBody,
+): Record<string, unknown> {
+    return {
+        display_id: pickString(b.workOrder, 'display_id'),
+        flow_graph: pickString(b.workOrder, 'flow_graph'),
+        position: pickNumber(b.workOrder, 'position'),
+    };
+}
+
+// The three pairs a live POST /work-orders forms (Task 3):
+// the gate's own operation pair (204, at the work-orders/:id
+// address per the registry's createBodyIdField — POST
+// 'work-orders' and PUT 'work-orders/:id' collapse onto the
+// SAME (uriPrefix, uriId), exactly as flows/:id did for its
+// own create), plus the document and join pairs the route
+// pre-forms below. All three share ONE requestAt (the
+// create's own origination) yet strictly-later RESPONSE `at`
+// stamps (appendMessagePair's nowUtc() is monotonic), so the
+// document pair — appended after the operation pair — becomes
+// the address's head.
+export interface WorkOrderCreationPairs {
+    readonly operation: MessagePair;
+    readonly document: MessagePair;
+    readonly join: MessagePair;
+}
+
 // Work-order creation: the work_orders row, its
 // flow_work_orders join row, and THREE initial state
 // events (the start transition, the post-start
@@ -1123,16 +1161,21 @@ export async function postIdentityCreationOp(
 // caller (actor), never the body. Exported so the seed can
 // drive work-order creation through the same gate the
 // route uses (Decision 6's below-facade carve-out) — this
-// is also Phase 1's dual-write insertion seam. `pair` is
+// is also Phase 1's dual-write insertion seam. `pairs` is
 // optional so the seed's below-facade call (api/mock-data.ts,
-// no gate, no pair) keeps compiling unchanged; the route
-// always supplies one, since 'work-orders' is pair-wired and
-// never bearer-exempt.
+// no gate, no pairs) keeps compiling unchanged; the route
+// always supplies the triple, since 'work-orders' is
+// pair-wired and never bearer-exempt. The route (not this op)
+// forms all three pairs pre-tx — see route('work-orders', ...)
+// below — since forming the document/join pairs needs the
+// fence organization and the work-orders/:id +
+// flows/:id/work-orders/:woid response specs, both
+// route-table concerns.
 export async function postWorkOrderCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     actor: Id,
-    pair?: MessagePair,
+    pairs?: WorkOrderCreationPairs,
 ): Promise<void> {
     const b = validateWorkOrderCreateBody(body);
     return db.transaction(
@@ -1160,8 +1203,16 @@ export async function postWorkOrderCreationOp(
                     b.stateEventAts[i]!,
                 );
             }
-            if (pair !== undefined) {
-                await appendMessagePair(view, pair);
+            // Three pairs or none (Atomicity): the operation
+            // pair (the gate's own), the synthesized document
+            // pair, and the synthesized join pair — appended
+            // in that order, LAST, so the document pair's
+            // response `at` strictly follows the operation
+            // pair's.
+            if (pairs !== undefined) {
+                await appendMessagePair(view, pairs.operation);
+                await appendMessagePair(view, pairs.document);
+                await appendMessagePair(view, pairs.join);
             }
         },
     );
@@ -2733,10 +2784,118 @@ export const routes: Route[] = [
             db.workOrders.getAll(),
         // Member-tier POST — /work-orders carries POST in
         // MEMBER_VERBS (the claim sub-route is also a member
-        // POST). See postWorkOrderCreationOp for the
+        // POST). Forms the document + join pairs pre-tx
+        // (Task 3) beside the gate's own operation pair — the
+        // SAME shape a live genesis PUT /work-orders/:id and a
+        // live PUT /flows/:id/work-orders/:woid would each
+        // carry — ONLY when the gate supplied both a pair and
+        // a fence organization (the Phase 3 condition
+        // verbatim); a below-facade caller (api/mock-data.ts,
+        // no gate) skips all three, preserving dual-write
+        // discipline. See postWorkOrderCreationOp for the
         // transaction shape.
-        post: (db, _p, body, actor, pair) =>
-            postWorkOrderCreationOp(db, body, actor, pair),
+        post: async (
+            db, _p, body, actor, pair, organization,
+        ) => {
+            let pairs: WorkOrderCreationPairs | undefined;
+            if (pair !== undefined && organization !== undefined) {
+                const b = validateWorkOrderCreateBody(body);
+                const documentBody =
+                    workOrderCreateDocumentBody(b);
+                validateWorkOrderDocumentBody(documentBody);
+                const documentSpec =
+                    WRITE_RESPONSE_SPECS['work-orders/:id'];
+                if (
+                    documentSpec === undefined
+                    || !('status' in documentSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' work-orders/:id',
+                    );
+                }
+                const documentHeadPairId = await headPairIdAt(
+                    db,
+                    canonicalUriPrefix(
+                        organization, '/work-orders/',
+                    ),
+                    b.id,
+                );
+                const document = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/work-orders/' + b.id,
+                    routePattern: 'work-orders/:id',
+                    routeSegments: ['work-orders', ':id'],
+                    pathSegments: ['work-orders', b.id],
+                    headerFields: [],
+                    body: documentBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: documentSpec.status,
+                    responseBody: documentSpec.successBody?.(
+                        [b.id], documentBody, actor,
+                        organization,
+                    ),
+                    headPairId: documentHeadPairId,
+                });
+                // The live :woid PUT's request shape, verified
+                // by content: validateFlowWorkOrderEntity
+                // accepts EXACTLY flow_id/work_order_id/at —
+                // the same three keys b.flowWorkOrder already
+                // carries, so it doubles as the join pair's
+                // body verbatim.
+                validateFlowWorkOrderEntity(b.flowWorkOrder);
+                const flowId = pickString(
+                    b.flowWorkOrder, 'flow_id',
+                );
+                const joinSpec = WRITE_RESPONSE_SPECS[
+                    'flows/:id/work-orders/:woid'
+                ];
+                if (
+                    joinSpec === undefined
+                    || !('status' in joinSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' flows/:id/work-orders/:woid',
+                    );
+                }
+                const join = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/flows/' + flowId
+                        + '/work-orders/' + b.flowWorkOrderId,
+                    routePattern: 'flows/:id/work-orders/:woid',
+                    routeSegments: [
+                        'flows', ':id',
+                        'work-orders', ':woid',
+                    ],
+                    pathSegments: [
+                        'flows', flowId,
+                        'work-orders', b.flowWorkOrderId,
+                    ],
+                    headerFields: [],
+                    body: b.flowWorkOrder,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: joinSpec.status,
+                    responseBody: joinSpec.successBody?.(
+                        [flowId, b.flowWorkOrderId],
+                        b.flowWorkOrder, actor, organization,
+                    ),
+                    // Genesis-undefined: a work order's
+                    // create-time join is always fresh (design
+                    // decision — no duplicate-create carve-out
+                    // at this address through this task).
+                    headPairId: undefined,
+                });
+                pairs = { operation: pair, document, join };
+            }
+            return postWorkOrderCreationOp(
+                db, body, actor, pairs,
+            );
+        },
     }),
     // The Phase 4 composable-builder split (the fourth-family
     // absorption): GET stays hand-written old-plane — unchanged
