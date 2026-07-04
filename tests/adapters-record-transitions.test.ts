@@ -16,7 +16,9 @@ import {
     postFlowCreation,
 } from '../web-app/app/adapters/flow-mutations.ts';
 import {
-    storedWorkOrderFlowGraphField,
+    putWorkOrder,
+} from '../web-app/app/adapters/work-orders-mutations.ts';
+import {
     jsonArrayField,
     SYSTEM_MEMBER_ID,
     DEFAULT_LOCK_TIMEOUT,
@@ -86,17 +88,21 @@ function buildFlowGraph(
     };
 }
 
+// NAMED re-pin (Task 7): validateRecordTransition reads
+// work-orders/:id through the flipped GET (this commit), so
+// the fixture must land through the SAME wire-reachable PUT
+// the live route serves — a raw db.workOrders.put leaves no
+// message pair at this address.
 async function seedWorkOrder(
     db: MemoryDbAdapter,
     id: string,
     flowGraph: WorkOrderFlowGraph,
     currentNodeId: string,
 ): Promise<void> {
-    await db.workOrders.put(id, {
-        organization_id: '1',
-        display_id: 'WO-1',
-        flow_graph:
-            storedWorkOrderFlowGraphField(flowGraph),
+    const ctx = createRequestContext(db, await devToken());
+    await putWorkOrder(ctx, id, {
+        displayId: 'WO-1',
+        flowGraph,
         position: 0,
     });
     await db.states.put('t-create-' + id, {
@@ -142,8 +148,14 @@ async function seedFlowLink(
         projectId: 'p-' + flowId,
         name: flowId,
     });
-    await db.flowWorkOrders.put(
-        'fwo-' + workOrderId, {
+    // NAMED re-pin (Task 7): getAllFlowWorkOrderEntities reads
+    // flows/:id/work-orders through the flipped GET (this
+    // commit) — a raw db.flowWorkOrders.put leaves no message
+    // pair at this address, so the join must land through the
+    // SAME wire-reachable PUT the live route serves.
+    await ctx.PUT(
+        'flows/' + flowId + '/work-orders/fwo-' + workOrderId,
+        {
             flow_id: flowId,
             work_order_id: workOrderId,
             at: AT_CREATED,

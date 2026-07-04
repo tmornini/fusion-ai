@@ -130,13 +130,15 @@ import { projectEntityOf } from './derive-projects.ts';
 import { flowEntityOf } from './derive-flows.ts';
 import { deriveProjectFlows } from './derive-project-flows.ts';
 import {
+    deriveFlowWorkOrders,
+} from './derive-flow-work-orders.ts';
+import {
     param,
     requireOrganization,
     withoutId,
     documentCollectionGetHandler,
     documentCollectionRoute,
     documentEntityRoute,
-    documentPutHandler,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
@@ -228,18 +230,17 @@ const FLOWS_WIRING: DocumentFamilyWiring = {
 // The work-orders wiring row — the fourth family, and the
 // FIRST 'stateless' one (Decision 7's lifecycle trio does not
 // apply to a work-order document; see postWorkOrderDocumentOp's
-// own comment for why). GET stays hand-written old-plane
-// through this task (route('work-orders/:id', ...) below) —
-// only PUT flips to the generic machinery here, so entityOf
-// serves interface uniformity and a future GET flip (Task 7),
-// not any live reader today: the head pair's body, stamped with
-// id and organization_id, already carries exactly the
-// {display_id, flow_graph, position} keys
+// own comment for why). Both PUT (Task 2/3) and GET (Task 7)
+// now ride the generic machinery, so entityOf serves a live GET
+// reader (documentGetHandler / documentCollectionGetHandler)
+// exactly as ideaEntityOf/projectEntityOf/flowEntityOf each
+// serve their OWN family's GET path: the head pair's body,
+// stamped with id and organization_id, already carries exactly
+// the {display_id, flow_graph, position} keys
 // validateWorkOrderDocumentBody's gate admits, so no per-field
-// picking is needed the way ideaEntityOf/projectEntityOf/
-// flowEntityOf each do for their OWN live GET path. notFoundTable
-// is 'work_orders' — the first family whose storage table name
-// (db-backed.ts's EntityStore key) differs from its family name.
+// picking is needed. notFoundTable is 'work_orders' — the first
+// family whose storage table name (db-backed.ts's EntityStore
+// key) differs from its family name.
 function workOrderDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
@@ -2877,9 +2878,20 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is FLIPPED (Task 7): the list derives from the
+    // message ledger rather than the old work_orders table.
+    // Rides the generic documentCollectionGetHandler —
+    // wire-identical to the hand-written
+    // db.workOrders.getAll() dispatch it replaces
+    // (WORK_ORDERS_WIRING's own entityOf,
+    // workOrderDocumentEntityOf, already carries the bare
+    // entity shape, so the list needs no work-orders-special
+    // reassembly step). POST stays this hand-written create —
+    // unlike ideas/projects, work-orders never folded genesis
+    // into the document PUT (Decision 6), mirroring flows'
+    // own precedent, so a separate create verb remains here.
     route('work-orders', {
-        get: (db) =>
-            db.workOrders.getAll(),
+        get: documentCollectionGetHandler(WORK_ORDERS_WIRING),
         // Member-tier POST — /work-orders carries POST in
         // MEMBER_VERBS (the claim sub-route is also a member
         // POST). Forms the document + join pairs pre-tx
@@ -2995,20 +3007,32 @@ export const routes: Route[] = [
             );
         },
     }),
-    // The Phase 4 composable-builder split (the fourth-family
-    // absorption): GET stays hand-written old-plane — unchanged
-    // until Task 7 flips it onto documentGetHandler
-    // (WORK_ORDERS_WIRING) — while PUT now dispatches through
-    // the SAME generic machinery ideas/projects/flows already
-    // use. This is a ZERO-CHANGE refactor: postWorkOrderDocumentOp
-    // reproduces the prior hand-written PUT's write set
-    // (work_orders.put + the pair, in that order) byte-for-byte;
-    // verbs stay {get, put} — work-orders/:id has no DELETE
-    // today, mirroring the projects/:id precedent.
-    route('work-orders/:id', {
-        get: (db, p) => db.workOrders.getById(param(p, 0)),
-        put: documentPutHandler(WORK_ORDERS_WIRING),
-    }),
+    // work-orders/:id is the fourth family. GET is FLIPPED
+    // (Task 7): absorbed into the generic documentEntityRoute
+    // — the SAME wiring row PUT already rides (Task 3), so
+    // this replaces the hand-written db.workOrders.getById
+    // dispatch with documentGetHandler(WORK_ORDERS_WIRING),
+    // wire-identical to it (workOrderDocumentEntityOf
+    // reproduces the head pair's stamped {id, organization_id,
+    // ...body} shape verbatim, so no work-orders-special
+    // branch lives inside documentGetHandler itself — the
+    // 'stateless' lifecycle also skips the trio walk
+    // derivedDocumentEntity runs for ideas/projects/flows).
+    // After this commit NO hand-written document-family route
+    // object remains for ANY registered family (ideas,
+    // projects, flows, work-orders) — the fourth-family
+    // obligation's discharge, and the LAST: every registered
+    // family now rides the generic documentEntityRoute /
+    // documentCollectionRoute pair. work-orders/:id is
+    // 'simple' concurrency (Decision 7's lifecycle trio does
+    // not apply to a stateless document), so documentPutHandler
+    // dispatches straight through with no concurrency branch,
+    // matching the projects/:id precedent. Verbs stay {get,
+    // put} — work-orders/:id has no DELETE, mirroring
+    // documentEntityRoute's shape (no change from before this
+    // flip). Member-tier PUT — MEMBER_VERBS['/work-orders']
+    // includes 'PUT'.
+    documentEntityRoute(WORK_ORDERS_WIRING),
     // See postWorkOrderClaimOp for the transaction shape.
     route('work-orders/:id/claim', {
         post: (db, p, body, actor, pair) =>
@@ -3030,13 +3054,20 @@ export const routes: Route[] = [
     // Flow work-order joins nest under their parent flow: the
     // flow id is param 0, so the SERVER filters the collection to
     // that flow. The leaf id is param 1; only PUT is exposed (the
-    // flat route never carried GET/DELETE on the leaf). Reads
-    // stay old-plane until the WORK-ORDERS phase; their GET
-    // flows/:id dependency already rides the Phase 4 flip
-    // transitively.
+    // flat route never carried GET/DELETE on the leaf). GET is
+    // FLIPPED (Task 7): the join list derives from the message
+    // ledger at this flow's work-orders address rather than the
+    // old flow_work_orders table — deriveFlowWorkOrders is a
+    // bespoke derivation (not a DocumentFamilyWiring family; a
+    // join row carries no lifecycle trio of its own), so this
+    // calls it directly rather than through a generic
+    // constructor, mirroring deriveProjectFlows' own precedent.
     route('flows/:id/work-orders', {
-        get: (db, p) =>
-            db.flowWorkOrders.getAllWhere('flow_id', param(p, 0)),
+        get: (db, p, _actor, organization) =>
+            deriveFlowWorkOrders(
+                db, requireOrganization(organization),
+                param(p, 0),
+            ),
     }),
     route('flows/:id/work-orders/:woid', {
         put: (db, p, body, actor, pair) =>
