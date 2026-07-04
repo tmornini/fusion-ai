@@ -503,12 +503,43 @@ The lone cross-aggregate write.
   4. `states.postEvent(projectStateEventId, projectId, projectState,
      actor)`
   5. for each baseline: `projectObjectiveBaselineScores.put(...)`
-  6. `appendMessagePair(pair)`
+  6. three `appendMessagePair` calls (below).
 - doctrinal: `put_project` + `put_idea` + two `post_state_event` + N
   `put_baseline_score` as `post_convert_idea`.
 - props: atomic (project never lands without its baselines, nor an
   idea promoted without its project); member-tier (segment-prefix
   match on `/ideas`); `validateIdeaConversionBody`.
+
+**Three pairs, one tx (Phase 3 Task 4 + Phase 5 Task 5).** The
+route pre-forms two extra pairs beside the gate's own operation
+pair, ONLY when the gate supplied both a pair and a fence
+organization — a below-facade caller (`api/mock-data.ts`) skips
+all three:
+
+- **The project pair (Phase 3 Task 4)** — PUT-shaped, at
+  `projects/:id`'s own address, body the entity's own fields
+  plus the lifecycle trio, validated through
+  `validateProjectDocumentBody` — byte-indistinguishable from a
+  live genesis `PUT /projects/:id` (a fresh address;
+  `headPairIdAt` finds no head, so this pair carries no
+  `Supersedes`).
+- **The idea pair (Phase 5 Task 5)** — PUT-shaped, at
+  `ideas/:id`'s OWN address, body the promoted entity's own
+  fields plus the `promoted` trio, validated through
+  `validateIdeaDocumentBody` — byte-indistinguishable from a
+  live `PUT /ideas/:id`. UNLIKE the project pair, the idea's
+  address is NOT fresh — the idea already exists, so
+  `headPairIdAt` finds its prior document pair and this one
+  records `Supersedes` against it. **This closes the standing
+  'promoted' watch-point** (named at Phase 2/3): before this
+  task, a converted idea's derived state history MISSED its
+  'promoted' event, because no pair recorded it.
+
+All three pairs share ONE `requestAt` (the conversion's own
+origination) yet strictly-later response `at` stamps. Three
+pairs commit or none: a mid-transaction failure (a state-ledger
+collision, say) leaves zero of the three, exactly like every
+other atomic write in this catalog.
 
 ### 3.12 `POST /flows` — create flow
 
