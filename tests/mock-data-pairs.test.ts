@@ -25,15 +25,13 @@ import {
 // a pair-capable op: 11 human-members + 11 ideas +
 // 11 idea-submissions (Phase 2 Task 4b: one per seeded idea,
 // closing the prior seed-only gap) + 17 projects (16 Stark +
-// seed-project-org2, Phase 3 Task 3) + 4 flows (of 5 —
-// seed-flow-org2 is a direct write, no project_flows join)
-// + 4 ai-members + 2 records + 5 objectives (4 STARK +
-// seed-objective-org2) = 65, PLUS Task 5's two synthesized
-// siblings per flow create: +4 document pairs (flows/:id,
-// genesis) and +4 join pairs (projects/:id/flows/:pfid,
-// genesis) = 73. A dropped or reordered invocation changes
-// this count.
-const EXPECTED_PAIR_COUNT = 73;
+// seed-project-org2, Phase 3 Task 3) + 13 flow-family pairs
+// (flows: 4 creates × 3 + 1 document = 13 flow-family pairs —
+// Task 5's operation/document/join triple per create, plus
+// Task 6's seed-flow-org2 genesis document) + 4 ai-members +
+// 2 records + 5 objectives (4 STARK + seed-objective-org2)
+// = 74. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 74;
 
 test('a mock-data seed populates balanced pairs',
 async () => {

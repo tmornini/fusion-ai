@@ -23,7 +23,9 @@
 // Memberships, project_objective_baseline_scores, and
 // work-order historical traces are direct writes the seed
 // never routes through a pair-capable op — the three named
-// deferrals stay untouched.
+// deferrals stay untouched. A fourth, previously-unlisted
+// direct write — seed-flow-org2 — is now ALSO covered here,
+// closed through postFlowDocumentOp (Task 6).
 
 import type {
     Id,
@@ -40,6 +42,7 @@ import {
     jsonArrayField,
     jsonObjectField,
     nowUtc,
+    DEFAULT_LOCK_TIMEOUT,
     SYSTEM_MEMBER_ID,
 } from '../types.ts';
 import {
@@ -611,6 +614,44 @@ export function flowSeedBody(
     };
 }
 
+// The genesis case of the document PUT flows/:id for
+// organization '2's own flow (Task 6): mirrors ideaSeedBody/
+// projectSeedBody's shape — the flat entity fields plus the
+// lifecycle trio — but for the flows family, which also
+// carries the client-authored graph snapshot and the two
+// transitional decomposition sidecars (validateFlowDocumentBody).
+// This flow has no project_flows join row (org '2' gets a
+// flow-free project and a work-order-free flow — no cross-org
+// coupling), so it drives through postFlowDocumentOp rather
+// than postFlowCreationOp (which requires a join row).
+// organization_id rides along as the validator's tolerated-
+// but-ignored extra — load-bearing here since the seed drives
+// postFlowDocumentOp below the org fence (no scoping wrapper
+// to stamp it). A fresh flow starts with an empty graph and
+// revives nothing.
+export function flowOrg2SeedBody(): Record<string, unknown> {
+    return {
+        organization_id: ORGANIZATION_TWO,
+        name: 'Wayne Onboarding',
+        is_locked: false,
+        is_auto_layout: true,
+        is_auto_fit: true,
+        lock_timeout: DEFAULT_LOCK_TIMEOUT,
+        state: 'active',
+        state_at: MOCK_SEED_TIMESTAMP,
+        state_event_id: 'seed-state-flow-org2',
+        graph: jsonObjectField({ nodes: [], edges: [] }),
+        graphDelta: {
+            nodes: [],
+            edges: [],
+            deletions: [],
+            memberEvents: [],
+            attributeEvents: [],
+        },
+        revivals: [],
+    };
+}
+
 export function aiMemberSeedBody(
     m: AIMemberEntity,
 ): Record<string, unknown> {
@@ -882,6 +923,18 @@ export function buildMockDataInvocations():
             body: b.projectFlow,
         });
     }
+    // Task 6: the fifth seeded flow — organization '2's own —
+    // has no project_flows join row, so it drives through
+    // postFlowDocumentOp's genesis document PUT instead of the
+    // four-above's postFlowCreationOp.
+    invocations.push({
+        key: seedPairKey('flows/:id', 'seed-flow-org2'),
+        routePattern: 'flows/:id',
+        idParams: ['seed-flow-org2'],
+        organization: ORGANIZATION_TWO,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        body: flowOrg2SeedBody(),
+    });
     for (const m of aiMembers) {
         invocations.push({
             key: seedPairKey('ai-members', m.id),

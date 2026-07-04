@@ -5,6 +5,7 @@ import {
     postIdeaSubmissionOp,
     postProjectDocumentOp,
     postFlowCreationOp,
+    postFlowDocumentOp,
     postRecordWriteOp,
     postObjectiveCreationOp,
     postAiMemberCreationOp,
@@ -105,6 +106,7 @@ import {
     projectOrg2,
     secondOrganizationProjectId,
     flowSeedBody,
+    flowOrg2SeedBody,
     aiMemberSeedBody,
     recordSeedBody,
     objectiveSeedBody,
@@ -3191,8 +3193,9 @@ async function postMockDataLoadIn(
         // by postFlowCreationOp's graphDelta below — never a
         // stored column. Each of the four mockFlows carries a
         // project_flows join row (mockProjectFlows), so all
-        // four drive through the op; seed-flow-org2 (below) has
-        // no project link and stays a direct write.
+        // four drive through the op; seed-flow-org2 (below)
+        // has no project link, so it drives through
+        // postFlowDocumentOp instead (Task 6).
         ...mockFlows.map(flow => {
             const event = flowStateEventByFlowId.get(flow.id)!;
             const projectFlow = mockProjectFlows.find(
@@ -3231,23 +3234,20 @@ async function postMockDataLoadIn(
         // above seeds projectOrg2) and flow. The whole
         // work-order graph stays in org '1', so org '2' gets a
         // work-order-free flow and a flow-free project — no
-        // cross-org coupling. seed-flow-org2 has no project_flows
-        // join row, so it cannot drive through postFlowCreationOp
-        // (which requires one) — stays a direct write.
-        adapter.flows.put('seed-flow-org2', {
-            organization_id: ORGANIZATION_TWO,
-            name: 'Wayne Onboarding',
-            is_locked: false,
-            is_auto_layout: true,
-            is_auto_fit: true,
-            lock_timeout: DEFAULT_LOCK_TIMEOUT,
-        }),
-        adapter.states.put('seed-state-flow-org2', {
-            entity_id: 'seed-flow-org2',
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: MOCK_SEED_TIMESTAMP,
-        }),
+        // cross-org coupling. seed-flow-org2 has no
+        // project_flows join row, so it drives through
+        // postFlowDocumentOp (Task 6) instead of
+        // postFlowCreationOp, which requires one.
+        postFlowDocumentOp(
+            adapter,
+            'seed-flow-org2',
+            flowOrg2SeedBody(),
+            SYSTEM_MEMBER_ID,
+            requirePair(
+                pairs,
+                seedPairKey('flows/:id', 'seed-flow-org2'),
+            ),
+        ),
     ]);
 
     const ideaSubmissions = buildIdeaSubmissions();
