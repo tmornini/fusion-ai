@@ -472,3 +472,186 @@ async () => {
     const ats = new Set(requests.map(r => r.at));
     assert.equal(ats.size, 1);
 });
+
+test('e2e: POST flows/:id/undo forms a document pair carrying'
++ ' Follows to the pre-undo head, with graph matching the'
++ ' post-undo reassembly', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-undo-pairs-1');
+    const preUndoHead = await headResponseId(
+        db, token, 'flow-undo-pairs-1',
+    );
+
+    const published = await handleRequest(db, req(
+        'POST', '/flows/flow-undo-pairs-1/versions', token, {
+            id: 'v-undo-pairs-1',
+            version: {
+                flow_id: 'flow-undo-pairs-1',
+                name: 'v1',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: DEFAULT_LOCK_TIMEOUT,
+                graph: emptyGraph(),
+                at: AT,
+            },
+            trimIds: [],
+        },
+    ));
+    assert.equal(published.status, 204);
+
+    // A non-trivial undo graph (one node) — so the graph
+    // comparison below actually exercises the mechanism rather
+    // than trivially equating two empty graphs.
+    const undoneGraph = {
+        nodes: [{
+            id: 'n-undo', name: 'N',
+            positionX: 0, positionY: 0,
+            isCreate: false, isArchive: false,
+            memberIds: [], attributes: [],
+            taskInstructions: '',
+        }],
+        edges: [],
+    };
+    const undone = await handleRequest(db, req(
+        'POST', '/flows/flow-undo-pairs-1/undo', token, {
+            flow: flowFields('Fresh Flow'),
+            eventId: 'flow-undo-pairs-1-undo-ev',
+            at: AT,
+            consumedVersionId: 'v-undo-pairs-1',
+            graph: JSON.stringify(undoneGraph),
+            graphDelta: {
+                nodes: [{
+                    id: 'n-undo',
+                    flow_id: 'flow-undo-pairs-1',
+                    name: 'N',
+                    position_x: 0, position_y: 0,
+                    is_create: false, is_archive: false,
+                    task_instructions: '', at: AT,
+                }],
+                edges: [], deletions: [],
+                memberEvents: [], attributeEvents: [],
+            },
+            revivals: [],
+        },
+    ));
+    assert.equal(undone.status, 204);
+
+    const responses = await db.responses.getAll();
+    const documentResponses = responses.filter(
+        r => r.uri_prefix === '/organizations/1/flows/'
+            && r.uri_id === 'flow-undo-pairs-1',
+    );
+    const undoDocumentResponse = documentResponses.find(
+        r => r.follows === preUndoHead,
+    );
+    assert.ok(
+        undoDocumentResponse,
+        'no document pair follows the pre-undo head',
+    );
+
+    const requests = await db.requests.getAll();
+    const undoDocumentRequest = requests.find(
+        r => r.id === undoDocumentResponse!.id,
+    );
+    assert.ok(undoDocumentRequest);
+    const decoded =
+        decodeRequestMessage(undoDocumentRequest!.message);
+    assert.equal(decoded.method, 'PUT');
+
+    const after = await handleRequest(
+        db, req('GET', '/flows/flow-undo-pairs-1', token),
+    );
+    const afterBody = await after.json() as { graph: string };
+    assert.deepEqual(
+        JSON.parse(decoded.body['graph'] as string),
+        JSON.parse(afterBody.graph),
+    );
+});
+
+test('e2e: an undo racing a save collides on the SAME follows'
++ ' target — the loser 412s, storage shows exactly one'
++ ' follower, and the whole loser transaction lands nothing',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-race-1');
+    const head = await headResponseId(db, token, 'flow-race-1');
+
+    const published = await handleRequest(db, req(
+        'POST', '/flows/flow-race-1/versions', token, {
+            id: 'v-race-1',
+            version: {
+                flow_id: 'flow-race-1',
+                name: 'v1',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: DEFAULT_LOCK_TIMEOUT,
+                graph: emptyGraph(),
+                at: AT,
+            },
+            trimIds: [],
+        },
+    ));
+    assert.equal(published.status, 204);
+
+    const [undo, save] = await Promise.all([
+        handleRequest(db, req(
+            'POST', '/flows/flow-race-1/undo', token, {
+                flow: flowFields('Undone'),
+                eventId: 'flow-race-1-undo-ev',
+                at: AT,
+                consumedVersionId: 'v-race-1',
+                graph: emptyGraph(),
+                graphDelta: emptyDelta(),
+                revivals: [],
+            },
+        )),
+        handleRequest(db, req(
+            'PUT', '/flows/flow-race-1', token,
+            documentBody('Saved', 'flow-race-1-save-ev'),
+            { 'if-response-id': head },
+        )),
+    ]);
+
+    const winners = [undo, save].filter(r => r.status !== 412);
+    const losers = [undo, save].filter(r => r.status === 412);
+    assert.equal(winners.length, 1, 'exactly one racer wins');
+    assert.equal(losers.length, 1, 'exactly one racer 412s');
+
+    const responses = await db.responses.getAll();
+    const following = responses.filter(r => r.follows === head);
+    assert.equal(
+        following.length, 1,
+        'exactly one pair may follow the pre-race head',
+    );
+
+    const flow = await db.flows.getById('flow-race-1');
+    if (flow.name === 'Undone') {
+        // Undo won the race; the save's write never landed.
+        assert.equal(undo.status, 204);
+        assert.equal(save.status, 412);
+        await assert.rejects(
+            () => db.flowVersions.getById('v-race-1'),
+        );
+    } else {
+        // The save won the race; the undo's write never landed
+        // — the version row survives unconsumed and the undo's
+        // own event never posted.
+        assert.equal(flow.name, 'Saved');
+        assert.equal(save.status, 200);
+        assert.equal(undo.status, 412);
+        const version =
+            await db.flowVersions.getById('v-race-1');
+        assert.ok(version);
+        const events = await db.states.getAllFor('flow-race-1');
+        assert.ok(
+            !events.some(
+                e => e.id === 'flow-race-1-undo-ev',
+            ),
+            'the losing undo must not have posted its event',
+        );
+    }
+});

@@ -234,6 +234,7 @@ test('undo/versions-publish are operation-addressed:'
             eventId: 'flow-4-undo-ev',
             at: AT,
             consumedVersionId: 'v-1',
+            graph: '{"nodes":[],"edges":[]}',
             graphDelta: emptyDelta(),
             revivals: [],
         },

@@ -11,7 +11,9 @@ import type {
 import {
     DEFAULT_NEW_STATE_NAME,
     DEFAULT_TRANSITION_NAME,
+    storedGraphField,
 } from '../../api/types.ts';
+import { RequestError } from '../../api/api.ts';
 import {
     postFlowVersion,
     putFlow,
@@ -27,6 +29,8 @@ import {
 import type {
     FlowSaveShape,
 } from './adapters/flow-mutations.ts';
+import type { FlowVersion } from './adapters/flow-versions.ts';
+import { jitteredBackoff } from './adapters/shared.ts';
 import {
     NODE_WIDTH,
     NODE_HEIGHT,
@@ -658,6 +662,84 @@ function applyServerGraph(
     };
 }
 
+// The C6-style retry cap for the undo POST — same three-attempt
+// bound putFlow's own PUT retry uses (adapters/flow-mutations.ts).
+const MAX_UNDO_ATTEMPTS = 3;
+
+// Drive POST /flows/:id/undo with its own jittered 412-absorb
+// (Task 5): the undo op's synthesized document pair takes the
+// LOCKED family's follows slot, so a save racing this undo for
+// the SAME head 412s the whole transaction (the responses.follows
+// unique index — message-pair.ts). Each attempt re-fetches a
+// FRESH getFlowGraph baseline before recomputing graphDelta/
+// revivals — retrying against the ORIGINAL (now-stale) baseline
+// would under-revive any node a concurrent save deleted in
+// between (the same hazard class Task 4 closed for redo's
+// revivals; re-reading getFlowVersions alone would not catch
+// it — the TARGET version stays fixed across attempts, only the
+// CURRENT baseline is re-read). Not exported: performUndo is the
+// only caller.
+async function postFlowUndo(
+    ctx: RequestContext,
+    flowId: string,
+    version: FlowVersion,
+): Promise<void> {
+    const target = {
+        nodes: version.nodes,
+        edges: version.edges,
+    };
+    for (
+        let attempt = 1;
+        attempt <= MAX_UNDO_ATTEMPTS;
+        attempt++
+    ) {
+        const baseline = await getFlowGraph(ctx, flowId);
+        const now = nowUtc();
+        const graphDelta = buildSaveEvents(
+            { nodes: baseline.nodes, edges: baseline.edges },
+            target,
+            flowId,
+            generateCryptoSafeBase62,
+            now,
+        );
+        const revivals = buildRevivals(
+            { nodes: baseline.nodes, edges: baseline.edges },
+            target,
+            now,
+        );
+        try {
+            await ctx.POST(`flows/${flowId}/undo`, {
+                flow: buildFlowBody({
+                    name: version.name,
+                    isLocked: version.isLocked,
+                    isAutoLayout: version.isAutoLayout,
+                    isAutoFit: version.isAutoFit,
+                    lockTimeout: version.lockTimeout,
+                    nodes: version.nodes,
+                    edges: version.edges,
+                }),
+                eventId: generateCryptoSafeBase62(),
+                at: now,
+                consumedVersionId: version.id,
+                graph: storedGraphField(target),
+                graphDelta,
+                revivals,
+            });
+            return;
+        } catch (err) {
+            if (
+                err instanceof RequestError
+                && err.status === 412
+                && attempt < MAX_UNDO_ATTEMPTS
+            ) {
+                await jitteredBackoff(attempt);
+                continue;
+            }
+            throw err;
+        }
+    }
+}
+
 export async function performUndo(
     ctx: RequestContext,
     snap: FlowSnapshot,
@@ -678,7 +760,6 @@ export async function performUndo(
             ),
         };
     }
-    const now = nowUtc();
     const stagedHistory = appendToRedoStack(
         history,
         {
@@ -691,47 +772,15 @@ export async function performUndo(
             lockTimeout: snap.lockTimeout,
             nodes: snap.nodes,
             edges: snap.edges,
-            createdAt: now,
+            createdAt: nowUtc(),
         },
     );
-    // The delta diffs the CURRENT graph (snap — the
-    // authoritative state at undo time) against the
-    // TARGET (the version being reverted to). The
-    // revivals re-introduce ids the target carries that
-    // the current graph dropped (their tombstones).
-    const graphDelta = buildSaveEvents(
-        { nodes: snap.nodes, edges: snap.edges },
-        { nodes: version.nodes, edges: version.edges },
-        snap.flowId,
-        generateCryptoSafeBase62,
-        now,
-    );
-    const revivals = buildRevivals(
-        { nodes: snap.nodes, edges: snap.edges },
-        { nodes: version.nodes, edges: version.edges },
-        now,
-    );
-    // Restore + consume as ONE atomic transaction
-    // through the named POST /flows/:id/undo: the
-    // flow can never land reverted while the version
-    // row survives unconsumed.
+    // Restore + consume as ONE atomic transaction through the
+    // named POST /flows/:id/undo — the flow can never land
+    // reverted while the version row survives unconsumed. The
+    // 3-attempt jittered 412-absorb lives in postFlowUndo, above.
     try {
-        await ctx.POST(`flows/${snap.flowId}/undo`, {
-            flow: buildFlowBody({
-                name: version.name,
-                isLocked: version.isLocked,
-                isAutoLayout: version.isAutoLayout,
-                isAutoFit: version.isAutoFit,
-                lockTimeout: version.lockTimeout,
-                nodes: version.nodes,
-                edges: version.edges,
-            }),
-            eventId: generateCryptoSafeBase62(),
-            at: now,
-            consumedVersionId: version.id,
-            graphDelta,
-            revivals,
-        });
+        await postFlowUndo(ctx, snap.flowId, version);
     } catch (err) {
         log.error(
             'performUndo failed',

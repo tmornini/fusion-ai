@@ -447,6 +447,10 @@ test(
             eventId: 'undo-ev',
             at: '2099-01-02T00:00:00.000000Z',
             consumedVersionId: 'ver-1',
+            // Task 5: the post-undo reduced graph — REQUIRED
+            // plumbing, consumed only by the undo route's own
+            // synthesized document pair.
+            graph: JSON.stringify({ nodes: [], edges: [] }),
             graphDelta: EMPTY_GRAPH_DELTA,
             revivals: [],
         });

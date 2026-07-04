@@ -2746,13 +2746,22 @@ export interface FlowUndoBody {
     readonly eventId: string;
     readonly consumedVersionId: string;
     readonly at: string;
+    // Task 5: the post-undo reduced graph — performUndo already
+    // computes the target working copy, so the client carries it
+    // verbatim (the SAME wire covenant validateFlowDocumentBody's
+    // `graph` field already holds). REQUIRED — an old-shape undo
+    // body (missing this field) 400s; there is no silent
+    // fallback. The ONLY consumer is the undo route's synthesized
+    // document pair (message-pair.ts); this op's own row writes
+    // never touch it.
+    readonly graph: JsonObjectField;
     readonly graphDelta: FlowGraphDelta;
     readonly revivals: GraphRevival[];
 }
 
 const FLOW_UNDO_KEYS: readonly string[] = [
     'flow', 'eventId', 'consumedVersionId', 'at',
-    'graphDelta', 'revivals',
+    'graph', 'graphDelta', 'revivals',
 ];
 
 // The revivals array gate, shared by the undo and redo
@@ -2803,6 +2812,8 @@ export function validateFlowUndoBody(
     const at = validateTimestampField(
         body, 'at', 'FlowUndoBody',
     );
+    const graph = pickJsonObjectField(body, 'graph');
+    validateStoredGraphJson(graph, 'FlowUndoBody.graph');
     const graphDelta = validateFlowGraphDelta(
         asObject(body['graphDelta'], 'FlowUndoBody.graphDelta'),
     );
@@ -2811,7 +2822,7 @@ export function validateFlowUndoBody(
     );
     return {
         flow, eventId, consumedVersionId, at,
-        graphDelta, revivals,
+        graph, graphDelta, revivals,
     };
 }
 

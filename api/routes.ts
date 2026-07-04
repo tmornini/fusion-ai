@@ -2523,12 +2523,72 @@ export const routes: Route[] = [
     // 'restored' events (authored by actor) that supersede the
     // tombstones of the nodes/edges the target re-introduces, so
     // a node the user deleted reappears in reads on undo.
-    // Member-tier POST via the /flows segment prefix.
+    // Member-tier POST via the /flows segment prefix. Task 5: the
+    // op ALSO synthesizes its own document pair pre-tx, from the
+    // body alone (no reads beyond the pre-tx head lookup) — the
+    // flows family is LOCKED, so this document write takes the
+    // FOLLOWS slot (never supersedes; the op holds no echo of its
+    // own — design decision 5). On a follows collision (a save
+    // raced this undo for the SAME head) the whole transaction
+    // aborts via the responses.follows unique index →
+    // UniqueConstraintError → the gate's existing 412 mapping
+    // (api.ts) — performUndo (web-app) absorbs that with a
+    // jittered retry, rebuilding against a FRESH baseline.
     route('flows/:id/undo', {
-        post: (db, p, body, actor, pair) => {
+        post: async (
+            db, p, body, actor, pair, organization,
+        ) => {
             const id = param(p, 0);
             const b = validateFlowUndoBody(body);
             const delta = b.graphDelta;
+            let documentPair: MessagePair | undefined;
+            if (pair !== undefined && organization !== undefined) {
+                const documentBody = {
+                    name: pickString(b.flow, 'name'),
+                    is_locked: pickBoolean(b.flow, 'is_locked'),
+                    is_auto_layout:
+                        pickBoolean(b.flow, 'is_auto_layout'),
+                    is_auto_fit: pickBoolean(b.flow, 'is_auto_fit'),
+                    lock_timeout: pickNumber(b.flow, 'lock_timeout'),
+                    state: 'updated',
+                    state_at: b.at,
+                    state_event_id: b.eventId,
+                    graph: b.graph,
+                    graphDelta: b.graphDelta,
+                    revivals: b.revivals,
+                };
+                validateFlowDocumentBody(documentBody);
+                const prefix = canonicalUriPrefix(
+                    organization, '/flows/',
+                );
+                const head = await headPairIdAt(db, prefix, id);
+                const spec = WRITE_RESPONSE_SPECS['flows/:id'];
+                if (spec === undefined || !('status' in spec)) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' flows/:id',
+                    );
+                }
+                documentPair = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/flows/' + id,
+                    routePattern: 'flows/:id',
+                    routeSegments: ['flows', ':id'],
+                    pathSegments: ['flows', id],
+                    headerFields: [],
+                    body: documentBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: spec.status,
+                    responseBody: spec.successBody?.(
+                        [id], documentBody, actor, organization,
+                    ),
+                    headPairId: undefined,
+                    ...(head === undefined
+                        ? {} : { follows: head }),
+                });
+            }
             return db.transaction(
                 [
                     'flows', 'flow_versions', 'states',
@@ -2561,6 +2621,9 @@ export const routes: Route[] = [
                     }
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
+                    }
+                    if (documentPair !== undefined) {
+                        await appendMessagePair(view, documentPair);
                     }
                 },
             );
