@@ -54,6 +54,14 @@ export interface MessagePair {
     readonly responseEtag: string;
     readonly responseHash: string;
     readonly supersedes?: string;      // absent == genesis
+    // The locked-class sibling of supersedes (spec §The two
+    // PUT classes): the verified If-Response-ID echo, carried
+    // forward as PROVENANCE rather than displacement — mutually
+    // exclusive with supersedes (a locked non-genesis write sets
+    // follows and never supersedes; a simple write sets
+    // supersedes and never follows). Absent == genesis, exactly
+    // like supersedes.
+    readonly follows?: string;
 }
 
 // The gate's seed for the two /authentication/* grant routes
@@ -95,9 +103,18 @@ export interface WritePairInput {
     readonly responseStatus: number;
     readonly responseBody: unknown | undefined;
     readonly headPairId: string | undefined;
+    // The locked-class counterpart of headPairId: the verified
+    // If-Response-ID echo, set by the caller ONLY when the gate's
+    // four-outcome table (api.ts) resolved the write as a
+    // matching-echo non-genesis locked write — mutually
+    // exclusive with headPairId (a caller passes one or the
+    // other, never both). Optional so every existing simple-
+    // family call site keeps compiling unchanged.
+    readonly follows?: string;
 }
 
 const SUPERSEDES_FIELD = 'supersedes';
+const FOLLOWS_FIELD = 'follows';
 const RESPONSE_ID_FIELD = 'response-id';
 
 // One entry per FIRST PATH SEGMENT — note the multi-word nouns
@@ -168,6 +185,10 @@ export async function formWritePair(
             name: SUPERSEDES_FIELD,
             value: input.headPairId,
         }]),
+        ...(input.follows === undefined ? [] : [{
+            name: FOLLOWS_FIELD,
+            value: input.follows,
+        }]),
     ];
     const responseModel =
         await redactAuthenticationResponse(
@@ -194,6 +215,8 @@ export async function formWritePair(
         responseHash: await messageHashOf(responseMessage),
         ...(input.headPairId === undefined
             ? {} : { supersedes: input.headPairId }),
+        ...(input.follows === undefined
+            ? {} : { follows: input.follows }),
     };
 }
 
@@ -261,13 +284,20 @@ export function httpDateOf(at: string): string {
     return new Date(at).toUTCString();
 }
 
+// The locked-class request header: the client's claimed current
+// head, echoed back so a byte-identical resend is a different
+// message from a genuinely stale one (a different echo hashes
+// differently — spec §The two PUT classes). Exported so api.ts
+// reads the SAME header name the hash covers.
+export const IF_RESPONSE_ID_HEADER = 'if-response-id';
+
 // The header fields worth storing in a pair's request message:
 // enumerated explicitly (never hoisted blindly). `authorization`
 // is redacted downstream (message-redaction.ts); the rest are
 // stored verbatim.
 const HOISTED_HEADER_NAMES: readonly string[] = [
     'authorization', 'content-type', 'idempotency-key',
-    REQUEST_ID_HEADER,
+    REQUEST_ID_HEADER, IF_RESPONSE_ID_HEADER,
 ];
 
 export function hoistedHeaderFields(request: Request): FieldLine[] {
@@ -292,6 +322,9 @@ export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
     };
     if (stored.supersedes !== undefined) {
         headers['Supersedes'] = stored.supersedes;
+    }
+    if (stored.follows !== undefined) {
+        headers['Follows'] = stored.follows;
     }
     return headers;
 }
@@ -397,6 +430,8 @@ export async function appendMessagePair(
         message: pair.responseMessage,
         ...(pair.supersedes === undefined
             ? {} : { supersedes: pair.supersedes }),
+        ...(pair.follows === undefined
+            ? {} : { follows: pair.follows }),
     });
 }
 

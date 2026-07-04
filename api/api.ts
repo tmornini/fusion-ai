@@ -26,8 +26,11 @@ import {
     PAIR_WIRED_ROUTE_PATTERNS,
     DOCUMENT_CLASS_ROUTE_PATTERNS,
     REPLAY_EXEMPT_ROUTE_PATTERNS,
+    IF_RESPONSE_ID_HEADER,
 } from './message-pair.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
+import { familyRegistration } from './family-registry.ts';
+import { documentFamilyWiring } from './document-family.ts';
 import {
     ANONYMOUS_ID,
     decodeAccessToken,
@@ -415,6 +418,37 @@ export async function handleRequest(
                         effective, canonicalPrefix, uriId,
                     )
                     : undefined;
+            // The locked/simple divide (spec §The two PUT
+            // classes): keyed by the route's family registration
+            // THROUGH THE WIRING CONSULT — never a blanket
+            // family-registry or DOCUMENT_CLASS_ROUTE_PATTERNS
+            // read — so a family whose registration says
+            // 'locked' but has no row in document-family.ts's
+            // wiring table (flows, through this task) never rides
+            // this arm; only a route actually served via
+            // documentPutHandler can. PUT-only: the two PUT
+            // classes govern PUT, never POST/DELETE.
+            const wiring = documentFamilyWiring(
+                matched.segments[0] ?? '',
+            );
+            const isLockedWrite = method === 'PUT'
+                && wiring !== undefined
+                && familyRegistration(wiring.family)
+                    ?.concurrency === 'locked';
+            // The hoisted echo: read directly (not merely via
+            // hoisted-header storage) so the gate can compare it
+            // against the head BEFORE dispatch. Only consulted
+            // for a locked write — inert (null) otherwise.
+            const echo = isLockedWrite
+                ? request.headers.get(IF_RESPONSE_ID_HEADER)
+                : null;
+            // follows is set ONLY when the echo matches the
+            // current head — the locked sibling of headPairId's
+            // supersedes; the two are mutually exclusive by
+            // construction (a locked write never supersedes).
+            const follows = isLockedWrite
+                && echo !== null && echo === headPairId
+                ? echo : undefined;
             // DELETE responses are UNIVERSALLY 204 with no
             // body — every wired DELETE handler returns void
             // (message-pair.ts resolution: DELETEs join their
@@ -451,7 +485,12 @@ export async function handleRequest(
                 responseBody: spec.successBody?.(
                     params, body, actor, organization,
                 ),
-                headPairId,
+                // A locked write never supersedes (its head-read
+                // decides genesis/412/follows, never a chain);
+                // a simple write carries headPairId exactly as
+                // today.
+                headPairId: isLockedWrite ? undefined : headPairId,
+                ...(follows === undefined ? {} : { follows }),
             });
             // The pre-tx idempotency fast-path: a byte-
             // identical resend never reaches the handler and
@@ -460,13 +499,48 @@ export async function handleRequest(
             // routes' own domain guard (or, from Task 3, their
             // redacted stored body) makes serving the cached
             // response wrong rather than merely redundant — see
-            // message-pair.ts.
+            // message-pair.ts. ORDERING IS LOAD-BEARING: this
+            // fast path runs BEFORE the locked four-outcome table
+            // below, so a byte-identical resend of an
+            // already-succeeded locked write (whose echo is now
+            // stale against the NEW head) replays instead of
+            // 412ing.
             if (!REPLAY_EXEMPT_ROUTE_PATTERNS.has(routePattern)) {
                 const replay = await storedResponseFor(
                     effective, pair.requestHash,
                 );
                 if (replay !== undefined) {
                     return responseFromStored(replay);
+                }
+            }
+            // The locked four-outcome table (spec §The two PUT
+            // classes), applied ONLY after the replay fast-path
+            // MISSES: head present + echo absent → 412; echo
+            // present + != head → 412; echo present + == head →
+            // follows already set above, proceed; head absent +
+            // echo absent → genesis, proceed. A 412 here returns
+            // BEFORE dispatch, and appendMessagePair only ever
+            // runs inside the op's own tx, so NOTHING is stored.
+            if (isLockedWrite) {
+                if (headPairId !== undefined && echo === null) {
+                    return Response.json(
+                        {
+                            error: 'If-Response-ID is required: '
+                                + 'a document already exists at '
+                                + pathname,
+                        },
+                        { status: HTTP_PRECONDITION_FAILED },
+                    );
+                }
+                if (echo !== null && echo !== headPairId) {
+                    return Response.json(
+                        {
+                            error: 'If-Response-ID does not '
+                                + 'match the current document '
+                                + 'at ' + pathname,
+                        },
+                        { status: HTTP_PRECONDITION_FAILED },
+                    );
                 }
             }
         }

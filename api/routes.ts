@@ -143,7 +143,11 @@ import {
 // read requires it (see requireOrganization) while every other
 // GET handler ignores the extra trailing arg, the same
 // fewer-parameter-closure precedent actor already established.
-type GetHandler = (
+// Exported so api/document-family.ts's generic constructors
+// declare their return types with the SAME handler vocabulary
+// routes.ts itself uses, rather than a structurally-duplicated
+// alias.
+export type GetHandler = (
     adapter: DbAdapter,
     params: string[],
     actor: Id,
@@ -159,7 +163,7 @@ type GetHandler = (
 // there is a wiring bug — crash loud); an unwired handler
 // ignores the extra argument (TypeScript permits a closure
 // with fewer declared parameters than its assigned type).
-type PutHandler = (
+export type PutHandler = (
     adapter: DbAdapter,
     params: string[],
     payload: Record<string, unknown>,
@@ -252,7 +256,10 @@ export function requireOrganization(
 // passing to entity validators. `id` is a
 // routing/storage key, not a body field;
 // validators enforce the exact body key set.
-function withoutId(
+// Exported so api/document-family.ts's generic
+// documentWriteResponseSpec reuses the SAME strip rather than
+// duplicating it.
+export function withoutId(
     body: Record<string, unknown>,
 ): Record<string, unknown> {
     const { id: _id, ...rest } = body;
