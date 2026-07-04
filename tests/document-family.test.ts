@@ -116,9 +116,9 @@ test('documentEntityRoute (simple arm) PUTs through the'
     const wiring = documentFamilyWiring('ideas')!;
     const route = documentEntityRoute(wiring);
     // Below-facade convention (postIdeaDocumentOp's own
-    // comment): a raw, unfenced caller has no org-scoping
-    // wrapper to stamp organization_id, so it embeds it in the
-    // body directly, exactly as api/mock-data.ts's seed does.
+    // comment): a raw, unfenced caller has no organization-
+    // scoping wrapper to stamp organization_id, so it embeds it
+    // in the body directly, as api/mock-data.ts's seed does.
     const body = {
         title: 'Generic', position: 1,
         problem_statement: 'p', target_users: 't',
