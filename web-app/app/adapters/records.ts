@@ -236,6 +236,13 @@ export interface RecordChangeEdit {
         RecordAttributeEntity, 'organization_id'
     >[];
     readonly removedAttributeIds: readonly string[];
+    // The echoed trio (Phase 6 Task 4): the caller already
+    // holds the detail model (Task 2's plumbing), so this is a
+    // zero-extra-fetch echo of the stored head, exactly like
+    // putRecord's own RecordDocumentFields — never a fresh mint.
+    readonly state: RecordState;
+    readonly stateAt: string;
+    readonly stateEventId: string;
 }
 
 export type RecordChange =
@@ -275,6 +282,9 @@ export async function postRecordChange(
             id,
             record,
             attributes,
+            state: change.state,
+            state_at: change.stateAt,
+            state_event_id: change.stateEventId,
             removedAttributeIds:
                 change.removedAttributeIds,
         });

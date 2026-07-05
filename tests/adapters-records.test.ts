@@ -14,6 +14,9 @@ import {
     postRecordStateChange,
 } from '../web-app/app/adapters/records.ts';
 import {
+    getRecordStateDetail,
+} from '../web-app/app/adapters/state-events.ts';
+import {
     jsonArrayField,
 } from '../api/types.ts';
 import {
@@ -146,6 +149,9 @@ test(
             ],
             initialState: 'active',
         });
+        // Echo the create's own known head — never a fresh
+        // mint (the RecordChangeEdit trio Task 4 added).
+        const head = await getRecordStateDetail(ctx, 'rec-1');
         await postRecordChange(ctx, 'rec-1', {
             kind: 'edit',
             record: {
@@ -163,6 +169,9 @@ test(
                     constraints: jsonArrayField([]),
                 },
             ],
+            state: head.state,
+            stateAt: head.stateAt,
+            stateEventId: head.stateEventId,
             removedAttributeIds: ['a-old'],
         });
         const attrs = await ctx.GET<

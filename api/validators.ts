@@ -2512,6 +2512,18 @@ export interface RecordWriteEditBody {
     readonly id: RecordId;
     readonly record: Omit<RecordEntity, 'id'>;
     readonly attributes: readonly RecordAttributeEntity[];
+    // The echoed lifecycle trio (Phase 6 Task 4, the SECOND
+    // named wire delta): an edit now carries the SAME
+    // state/state_at/state_event_id keys — and the SAME
+    // validation rules — as validateRecordDocumentBody's own
+    // trio, since the synthesized document pair forms purely
+    // from this body. A byte-identical echo of the stored head
+    // converges to a no-op event write at the op (the sameEvent
+    // decompose); a fresh mint would silently author a genuine
+    // transition instead.
+    readonly state: RecordState;
+    readonly state_at: string;
+    readonly state_event_id: string;
     readonly removedAttributeIds: readonly string[];
 }
 
@@ -2526,10 +2538,14 @@ const RECORD_WRITE_CREATE_KEYS:
     'initialStateEventId', 'initialStateAt',
 ];
 
+// The trio keys sit BEFORE removedAttributeIds (order is
+// load-bearing: assertOnlyKeys reports the first missing
+// required key it finds).
 const RECORD_WRITE_EDIT_KEYS:
     readonly string[] = [
-    'kind', 'id', 'record',
-    'attributes', 'removedAttributeIds',
+    'kind', 'id', 'record', 'attributes',
+    'state', 'state_at', 'state_event_id',
+    'removedAttributeIds',
 ];
 
 function validateRecordWriteAttribute(
@@ -2623,6 +2639,26 @@ export function validateRecordWriteBody(
                 + '.attributes[' + i + ']',
             ),
         );
+        // The document trio's OWN validation rules
+        // (validateRecordDocumentBody), reused verbatim: an
+        // edit's echoed trio is byte-identical wire shape to
+        // what a live PUT records/:id would carry.
+        const state = assertRecordState(
+            pickString(body, 'state'),
+            'RecordWriteEditBody.state',
+        );
+        const stateEventId = pickString(
+            body, 'state_event_id',
+        );
+        if (stateEventId === '') {
+            throw new ValidationError(
+                'RecordWriteEditBody.state_event_id must be'
+                + ' non-empty',
+            );
+        }
+        const stateAt = validateTimestampField(
+            body, 'state_at', 'RecordWriteEditBody.state_at',
+        );
         const removedRaw = asArray(
             body['removedAttributeIds'],
             'RecordWriteEditBody'
@@ -2638,6 +2674,9 @@ export function validateRecordWriteBody(
         return {
             kind: 'edit',
             id, record, attributes,
+            state,
+            state_at: stateAt,
+            state_event_id: stateEventId,
             removedAttributeIds,
         };
     }

@@ -60,8 +60,13 @@ import type { MessagePair } from '../message-pair.ts';
 import {
     WRITE_RESPONSE_SPECS,
     flowCreateDocumentBody,
+    recordDocumentBodyOf,
+    recordAttributeDocumentBodyOf,
 } from '../routes.ts';
-import { validateFlowCreateBody } from '../validators.ts';
+import {
+    validateFlowCreateBody,
+    validateRecordWriteBody,
+} from '../validators.ts';
 import {
     MOCK_SEED_TIMESTAMP,
     STARK_ORGANIZATION,
@@ -1073,13 +1078,48 @@ export function buildMockDataInvocations():
         const attributes = mockRecordAttributes.filter(
             a => a.record_id === r.id,
         );
+        const organization = assignOrganization(i);
+        const createBody = recordSeedBody(
+            r, i, event, attributes,
+        );
         invocations.push({
             key: seedPairKey('records', r.id),
             routePattern: 'records',
-            organization: assignOrganization(i),
+            organization,
             requesterIdentityId: event.member_id,
-            body: recordSeedBody(r, i, event, attributes),
+            body: createBody,
         });
+        // Phase 6 Task 4: create appends the document pair (at
+        // the record's own address) and one attribute-PUT pair
+        // per seeded attribute, each keyed by its OWN
+        // deterministic invocation entry — the flows document +
+        // join precedent above, generalized from fixed
+        // cardinality to 1+1+N. Bodies via the shared BODY
+        // builders (api/routes.ts) — never a second, hand-rolled
+        // copy. Every seeded attribute is genesis, so no
+        // attribute-DELETE invocation exists here (the seed
+        // never removes an attribute it just created).
+        const b = validateRecordWriteBody(createBody);
+        invocations.push({
+            key: seedPairKey('records/:id', r.id),
+            routePattern: 'records/:id',
+            idParams: [r.id],
+            organization,
+            requesterIdentityId: event.member_id,
+            body: recordDocumentBodyOf(b),
+        });
+        for (const a of attributes) {
+            invocations.push({
+                key: seedPairKey('record-attributes/:id', a.id),
+                routePattern: 'record-attributes/:id',
+                idParams: [a.id],
+                organization,
+                requesterIdentityId: event.member_id,
+                body: recordAttributeDocumentBodyOf(
+                    a as unknown as Record<string, unknown>,
+                ),
+            });
+        }
     });
     for (const seed of OBJECTIVE_SEEDS) {
         const memberId = pickHumanMember(

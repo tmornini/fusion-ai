@@ -590,6 +590,9 @@ async function handleSave(
     saveInProgress = true;
     try {
         if (attributesChanged) {
+            // Echo the trio from the already-loaded model —
+            // zero extra fetch, same source the no-attribute-
+            // change branch below already uses.
             await postRecordChange(
                 ctx, recordId,
                 {
@@ -597,6 +600,10 @@ async function handleSave(
                     record: recordFields,
                     attributes: draftEntities,
                     removedAttributeIds,
+                    state: originalRecord.stateValue(),
+                    stateAt: originalRecord.stateAtValue(),
+                    stateEventId:
+                        originalRecord.stateEventIdValue(),
                 },
             );
         } else {

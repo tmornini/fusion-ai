@@ -12,6 +12,7 @@ import {
 import { organizationToken } from './token-fixtures.ts';
 import {
     storedWorkOrderFlowGraphField,
+    jsonArrayField,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 
@@ -166,8 +167,14 @@ function workOrderCreateBody(
     };
 }
 
+// Task 4's bundle synthesis: `attributes` defaults to empty so
+// every prior call site is unaffected, but the mixed batch below
+// now passes one, so the records-family create's own document
+// and attribute pairs are exercised alongside the other six
+// families in this same mix — not merely in isolation.
 function createRecordBody(
     id: string, eventId: string, organization: string,
+    attributes: Record<string, unknown>[] = [],
 ) {
     return {
         kind: 'create',
@@ -178,7 +185,7 @@ function createRecordBody(
             description: 'd',
             position: 1,
         },
-        attributes: [],
+        attributes,
         initialState: 'active',
         initialStateEventId: eventId,
         initialStateAt: AT,
@@ -189,16 +196,17 @@ function createRecordBody(
 // mock-data-pairs.test.ts) plus one live-write batch layered on
 // top via handleRequest: one document PUT (Supersedes minted,
 // ideas), one event-append PUT (states/:id), one FAILED write
-// (a state ledger conflict), one create POST (records), one
-// entity PUT (work-orders — Phase 1's final-review deferral,
-// folded in now that Phase 2's drift check has landed), one
-// DELETE (records, superseding its own PUT), one operation POST
-// (identity-tokens revocation), one GENESIS document PUT
-// (flows — Task 7's additive pin), and one work-order CREATE
-// (Phase 5 Task 3's own three-pair append — a genesis POST
-// needs no headers, so this addition is purely additive) —
-// five families beyond the seed's own, spanning both seeded
-// orgs.
+// (a state ledger conflict), one create POST (records — Phase 6
+// Task 4's own bundle: operation + document + one attribute
+// pair, not a single pair), one entity PUT (work-orders —
+// Phase 1's final-review deferral, folded in now that Phase 2's
+// drift check has landed), one DELETE (records, superseding its
+// own PUT), one operation POST (identity-tokens revocation), one
+// GENESIS document PUT (flows — Task 7's additive pin), and one
+// work-order CREATE (Phase 5 Task 3's own three-pair append — a
+// genesis POST needs no headers, so this addition is purely
+// additive) — five families beyond the seed's own, spanning
+// both seeded orgs.
 async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
@@ -251,11 +259,24 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     ));
     assert.equal(failed.status, 409);
 
-    // Create POST (records, org 2).
+    // Create POST (records, org 2) — Task 4's bundle: the
+    // operation pair, its synthesized document pair, and one
+    // synthesized attribute-PUT pair (the create balance is now
+    // 2+N, not 1).
     const created = await handleRequest(db, req(
         'POST', '/records', org2Token,
         createRecordBody(
             'inv-rec-1', 'inv-rec-1-ev', ORGANIZATION_TWO,
+            [{
+                id: 'inv-rec-1-attr',
+                organization_id: ORGANIZATION_TWO,
+                record_id: 'inv-rec-1',
+                name: 'Field',
+                attribute_type: 'text',
+                sort_order: 0,
+                options: jsonArrayField([]),
+                constraints: jsonArrayField([]),
+            }],
         ),
     ));
     assert.equal(created.status, 204);

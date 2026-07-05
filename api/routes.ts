@@ -5,6 +5,7 @@ import type {
     FlowGraphDelta,
     FlowCreateBody,
     WorkOrderCreateBody,
+    RecordWriteBody,
 } from './validators.ts';
 import type {
     Id,
@@ -445,19 +446,98 @@ function withoutSecret(
     return rest;
 }
 
+// The bundle a live POST /records forms (Phase 6 Task 4, the
+// migration's first VARIABLE-CARDINALITY synthesis): the gate's
+// own operation pair, the synthesized document pair (at the
+// record's own records/:id address — the SAME address the
+// operation pair shares, since records' createBodyIdField
+// override collapses the two onto one uri_id, the flows
+// precedent), one synthesized attribute-PUT pair per
+// attributes[] entry, and one synthesized attribute-DELETE pair
+// per removedAttributeIds entry (edit only — removedAttributeIds
+// does not exist on RecordWriteCreateBody, so a create's
+// attributeDeletes is always empty). All pairs share ONE
+// requestAt (the write's own origination) yet strictly-later
+// RESPONSE `at` stamps (appendMessagePair's nowUtc() is
+// monotonic), so the document pair — appended after the
+// operation pair — becomes the address's head; a duplicate
+// create's Supersedes therefore resolves against the prior
+// DOCUMENT pair, not the prior operation pair (the Phase 5
+// shared-address mechanism, re-pinned here).
+export interface RecordWritePairs {
+    readonly operation: MessagePair;
+    readonly document: MessagePair;
+    readonly attributePuts: readonly MessagePair[];
+    readonly attributeDeletes: readonly MessagePair[];
+}
+
+// The shared BODY builders — the ONE-voice seam: pure functions
+// consumed by BOTH the live route-inline formation
+// (route('records', ...) below) and the seed's invocation
+// construction (api/mock-data/seed-message-pairs.ts). NOT a
+// shared pair-FORMER (Premature Generalization, verification-
+// corrected against an earlier draft): the route needs the
+// fence organization and the response specs to form a pair; the
+// seed needs neither. Pair formation stays two pipelines,
+// sharing only these bodies.
+
+// The wire body a live PUT records/:id would carry for this
+// SAME write: the entity fields (organization_id excluded, like
+// every genuine client PUT — validateRecordDocumentBody's own
+// comment) plus the lifecycle trio. Create maps the trio from
+// initialState*; edit carries the body's own echoed trio
+// verbatim (never re-derived), so a synthesized document pair
+// is byte-indistinguishable from what a live PUT would have
+// stored for the identical write.
+export function recordDocumentBodyOf(
+    writeBody: RecordWriteBody,
+): Record<string, unknown> {
+    const {
+        organization_id: _organizationId, ...entity
+    } = writeBody.record;
+    return writeBody.kind === 'create'
+        ? {
+            ...entity,
+            state: writeBody.initialState,
+            state_at: writeBody.initialStateAt,
+            state_event_id: writeBody.initialStateEventId,
+        }
+        : {
+            ...entity,
+            state: writeBody.state,
+            state_at: writeBody.state_at,
+            state_event_id: writeBody.state_event_id,
+        };
+}
+
+// The id-strip destructure precedent (Task 3's Step 0 finding):
+// a live PUT record-attributes/:id's stored body is the entity
+// fields minus `id` and `organization_id` — reproduced here
+// rather than re-derived, so a synthesized attribute pair's
+// body can never drift from what the live route would have
+// stored for the identical row.
+export function recordAttributeDocumentBodyOf(
+    row: Record<string, unknown>,
+): Record<string, unknown> {
+    const {
+        id: _id, organization_id: _organizationId, ...rest
+    } = row;
+    return rest;
+}
+
 // Record creation or edit, discriminated by payload.kind.
 // Exported so the seed can drive record creation through
 // the same gate the route uses (Decision 6's below-facade
 // carve-out) — this is also Phase 1's dual-write insertion
-// seam. `pair` is optional so the seed's below-facade call
-// (api/mock-data.ts, no gate, no pair) keeps compiling
-// unchanged; the route always supplies one, since 'records'
-// is pair-wired and never bearer-exempt.
+// seam. `pairs` is optional so the seed's below-facade call
+// (api/mock-data.ts, no gate, no pairs) keeps compiling
+// unchanged; the route always supplies the bundle, since
+// 'records' is pair-wired and never bearer-exempt.
 export async function postRecordWriteOp(
     db: DbAdapter,
     payload: Record<string, unknown>,
     actor: Id,
-    pair?: MessagePair,
+    pairs?: RecordWritePairs,
 ): Promise<void> {
     const body = validateRecordWriteBody(payload);
     const entries = body.attributes.map(attr => {
@@ -468,14 +548,11 @@ export async function postRecordWriteOp(
         body.kind === 'edit'
             ? body.removedAttributeIds
             : [];
-    // The record, its initial state event, and its
-    // attributes commit as one transaction — a mid-write
-    // failure rolls the whole thing back rather than
-    // orphaning the record. The initial state event is
-    // authored by the verified caller (actor), never a
-    // client-supplied member. Removed attributes are
-    // RESTRICTED inside the same tx: a referenced attribute
-    // 409s and the whole batch rolls back
+    // The record, its state event, and its attributes commit
+    // as one transaction — a mid-write failure rolls the whole
+    // thing back rather than orphaning the record. Removed
+    // attributes are RESTRICTED inside the same tx: a
+    // referenced attribute 409s and the whole batch rolls back
     // (api/record-attribute-refs.ts).
     await db.transaction(
         [...new Set([
@@ -486,12 +563,41 @@ export async function postRecordWriteOp(
         async (view) => {
             await view.records.put(body.id, body.record);
             if (body.kind === 'create') {
+                // Genesis: exactly ONE state event, authored by
+                // the verified caller (actor), never a client-
+                // supplied member.
                 await view.states.postEvent(
                     body.initialStateEventId,
                     body.id,
                     body.initialState,
                     actor,
                     body.initialStateAt,
+                );
+            } else {
+                // The SAME sameEvent decompose
+                // postRecordDocumentOp runs: the edit body now
+                // carries the echoed trio, so the synthesized
+                // document pair forms purely from the body. A
+                // byte-identical echo of the stored head
+                // converges to a no-op write (states.put's own
+                // idempotency by id); a genuinely different
+                // trio at the SAME id still 409s via
+                // LedgerImmutabilityError, exactly as before.
+                const head = await view.states.getCurrentFor(
+                    body.id,
+                );
+                const memberId = (
+                    head !== null
+                    && head.id === body.state_event_id
+                    && head.state === body.state
+                    && head.at === body.state_at
+                ) ? head.member_id : actor;
+                await view.states.postEvent(
+                    body.state_event_id,
+                    body.id,
+                    body.state,
+                    memberId,
+                    body.state_at,
                 );
             }
             if (removedIds.length > 0) {
@@ -516,8 +622,22 @@ export async function postRecordWriteOp(
                     entries, removedIds,
                 );
             }
-            if (pair !== undefined) {
-                await appendMessagePair(view, pair);
+            // The whole bundle or none (Atomicity): the
+            // operation pair, the document pair, N attribute-
+            // PUT pairs, and M attribute-DELETE pairs — appended
+            // LAST, in that order, so each pair's response `at`
+            // strictly follows the one before it (nowUtc
+            // monotonicity) and the document pair becomes the
+            // shared address's head.
+            if (pairs !== undefined) {
+                await appendMessagePair(view, pairs.operation);
+                await appendMessagePair(view, pairs.document);
+                for (const p of pairs.attributePuts) {
+                    await appendMessagePair(view, p);
+                }
+                for (const p of pairs.attributeDeletes) {
+                    await appendMessagePair(view, p);
+                }
             }
         },
     );
@@ -3322,8 +3442,157 @@ export const routes: Route[] = [
     }),
     route('records', {
         get: (db) => db.records.getAll(),
-        post: (db, _p, body, actor, pair) =>
-            postRecordWriteOp(db, body, actor, pair),
+        // Member-tier POST — /records carries POST in
+        // MEMBER_VERBS. Forms the document pair, one
+        // attribute-PUT pair per attributes[] entry, and one
+        // attribute-DELETE pair per removedAttributeIds entry
+        // (edit only) pre-tx, beside the gate's own operation
+        // pair — the SAME shape a live PUT records/:id and N/M
+        // live PUT/DELETE record-attributes/:id requests would
+        // each carry — ONLY when the gate supplied both a pair
+        // and a fence organization (the route('flows') condition
+        // verbatim); a below-facade caller (api/mock-data.ts, no
+        // gate) skips all pairs, preserving dual-write
+        // discipline. See postRecordWriteOp for the transaction
+        // shape.
+        post: async (
+            db, _p, body, actor, pair, organization,
+        ) => {
+            let pairs: RecordWritePairs | undefined;
+            if (pair !== undefined && organization !== undefined) {
+                const b = validateRecordWriteBody(body);
+                const documentBody = recordDocumentBodyOf(b);
+                // Belt-and-suspenders (the flows precedent): a
+                // create's initialStateEventId carries no
+                // non-empty check of its own (R2's byte-pinned
+                // birth names), so an empty value must still
+                // 400 here — at the document trio's own gate —
+                // rather than silently minting an invalid
+                // synthesized pair.
+                validateRecordDocumentBody(documentBody);
+                const documentSpec =
+                    WRITE_RESPONSE_SPECS['records/:id'];
+                if (
+                    documentSpec === undefined
+                    || !('status' in documentSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' records/:id',
+                    );
+                }
+                const recordsPrefix = canonicalUriPrefix(
+                    organization, '/records/',
+                );
+                const documentHeadPairId = await headPairIdAt(
+                    db, recordsPrefix, b.id,
+                );
+                const document = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/records/' + b.id,
+                    routePattern: 'records/:id',
+                    routeSegments: ['records', ':id'],
+                    pathSegments: ['records', b.id],
+                    headerFields: [],
+                    body: documentBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: documentSpec.status,
+                    responseBody: documentSpec.successBody?.(
+                        [b.id], documentBody, actor, organization,
+                    ),
+                    headPairId: documentHeadPairId,
+                });
+                const attributeSpec = WRITE_RESPONSE_SPECS[
+                    'record-attributes/:id'
+                ];
+                if (
+                    attributeSpec === undefined
+                    || !('status' in attributeSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' record-attributes/:id',
+                    );
+                }
+                const attributesPrefix = canonicalUriPrefix(
+                    organization, '/record-attributes/',
+                );
+                const attributePuts = await Promise.all(
+                    b.attributes.map(async (attr) => {
+                        const attributeBody =
+                            recordAttributeDocumentBodyOf(
+                                attr as unknown as
+                                    Record<string, unknown>,
+                            );
+                        const headPairId = await headPairIdAt(
+                            db, attributesPrefix, attr.id,
+                        );
+                        return formWritePair({
+                            method: 'PUT',
+                            pathname:
+                                '/record-attributes/' + attr.id,
+                            routePattern: 'record-attributes/:id',
+                            routeSegments:
+                                ['record-attributes', ':id'],
+                            pathSegments:
+                                ['record-attributes', attr.id],
+                            headerFields: [],
+                            body: attributeBody,
+                            requesterIdentityId: actor,
+                            requestAt: pair.requestAt,
+                            organization,
+                            responseStatus: attributeSpec.status,
+                            responseBody:
+                                attributeSpec.successBody?.(
+                                    [attr.id], attributeBody,
+                                    actor, organization,
+                                ),
+                            headPairId,
+                        });
+                    }),
+                );
+                const removedIds = b.kind === 'edit'
+                    ? b.removedAttributeIds : [];
+                const attributeDeletes = await Promise.all(
+                    removedIds.map(async (id) => {
+                        // DELETE responses are UNIVERSALLY 204
+                        // with no body (message-pair.ts
+                        // resolution, mirrored here for the
+                        // synthesized removal pair).
+                        const headPairId = await headPairIdAt(
+                            db, attributesPrefix, id,
+                        );
+                        return formWritePair({
+                            method: 'DELETE',
+                            pathname:
+                                '/record-attributes/' + id,
+                            routePattern: 'record-attributes/:id',
+                            routeSegments:
+                                ['record-attributes', ':id'],
+                            pathSegments:
+                                ['record-attributes', id],
+                            headerFields: [],
+                            body: undefined,
+                            requesterIdentityId: actor,
+                            requestAt: pair.requestAt,
+                            organization,
+                            responseStatus: 204,
+                            responseBody: undefined,
+                            headPairId,
+                        });
+                    }),
+                );
+                pairs = {
+                    operation: pair,
+                    document,
+                    attributePuts,
+                    attributeDeletes,
+                };
+            }
+            return postRecordWriteOp(db, body, actor, pairs);
+        },
     }),
     // A hybrid route (unlike ideas/projects/flows' full
     // documentEntityRoute swap): GET stays hand-written,

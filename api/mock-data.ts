@@ -13,7 +13,10 @@ import {
     postAiMemberCreationOp,
     postHumanMemberCreationOp,
 } from './routes.ts';
-import type { FlowCreationPairs } from './routes.ts';
+import type {
+    FlowCreationPairs,
+    RecordWritePairs,
+} from './routes.ts';
 import type {
     StateEntity,
     StateFieldValueEntity,
@@ -767,13 +770,36 @@ async function postMockDataLoadIn(
             const attributes = mockRecordAttributes.filter(
                 a => a.record_id === r.id,
             );
+            // The bundle assembled from per-pair requirePair
+            // lookups (Phase 6 Task 4) — the FlowCreationPairs
+            // assembly precedent above, generalized from fixed
+            // cardinality 3 to 1+1+N: the operation and document
+            // pairs each resolve by their own deterministic key,
+            // one attribute-PUT pair per seeded attribute, and
+            // an empty attributeDeletes (the seed never removes
+            // an attribute it just created).
+            const recordPairs: RecordWritePairs = {
+                operation: requirePair(
+                    pairs, seedPairKey('records', r.id),
+                ),
+                document: requirePair(
+                    pairs, seedPairKey('records/:id', r.id),
+                ),
+                attributePuts: attributes.map(a =>
+                    requirePair(
+                        pairs,
+                        seedPairKey(
+                            'record-attributes/:id', a.id,
+                        ),
+                    ),
+                ),
+                attributeDeletes: [],
+            };
             return postRecordWriteOp(
                 adapter,
                 recordSeedBody(r, i, event, attributes),
                 event.member_id,
-                requirePair(
-                    pairs, seedPairKey('records', r.id),
-                ),
+                recordPairs,
             );
         }),
         ...mockFlowRecords.map(r =>
