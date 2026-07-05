@@ -1238,6 +1238,42 @@ export async function postObjectiveCreationOp(
     );
 }
 
+// Objective document write — extracted byte-for-byte from the
+// hand-written objectives/:id PUT handler, the SAME extract-
+// function idiom postRecordAttributeDocumentOp's own extraction
+// commit used: the objectives row and its pair commit as ONE
+// transaction, exactly as before. Not yet a DocumentFamilyWiring
+// family — a follow-up commit adds OBJECTIVES_WIRING, the
+// document validator, and the route/response-spec swap; the
+// route dispatches here directly in the meantime. NEVER a states
+// event (Global Constraints: the states 911 pin is ABSOLUTE) —
+// this handler never touched states before this extraction, and
+// still does not. `pair` is optional so a future below-facade
+// caller keeps compiling; the live route always supplies one,
+// since 'objectives/:id' is pair-wired and never bearer-exempt.
+export async function postObjectiveDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<ObjectiveEntity> {
+    return db.transaction(
+        ['objectives', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.objectives.put(
+                id,
+                withoutId(body) as unknown as
+                    Omit<ObjectiveEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // AI-member creation: the parent member row, the
 // ai_members detail row, and the initial state event
 // commit as ONE transaction — a mid-write failure rolls
@@ -3914,32 +3950,19 @@ export const routes: Route[] = [
         post: (db, _p, body, _actor, pair) =>
             postObjectiveCreationOp(db, body, pair),
     }),
-    // Hand-written in place of makeIdRoute<ObjectiveEntity> so
-    // PUT can append its message pair in the same transaction
-    // as the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET
-    // reproduces the factory closure byte-equivalently; verbs
-    // stay {get, put} — objectives/:id has no DELETE today,
-    // mirroring the projects/:id precedent.
+    // GET stays hand-written in place of makeIdRoute
+    // <ObjectiveEntity> — it reproduces the factory closure
+    // byte-equivalently; objectives/:id has no DELETE today,
+    // mirroring the projects/:id precedent. PUT dispatches
+    // through the extracted postObjectiveDocumentOp —
+    // behavior-identical to the prior inline closure; see its
+    // own comment.
     route('objectives/:id', {
         get: (db, p) => db.objectives.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['objectives', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.objectives.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<ObjectiveEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postObjectiveDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
     }),
     // Objective revisions nest under their parent objective: the
     // objective id is param 0, so the SERVER filters the
