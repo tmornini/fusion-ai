@@ -1309,15 +1309,17 @@ pair-capable write families, in dependency order: `human-members`, `ideas`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **380** message pairs — one pair per seeded
+- The mock-data seed pre-forms **383** message pairs — one pair per seeded
   row for most families, but each seeded flow folds in an
   operation/document/join triple (4 creates × 3 pair triples + 1 genesis
   document = 13, §3.12), each seeded work order forms both a document
-  pair and a join pair (145 + 145, §3.17), and each seeded record folds
+  pair and a join pair (145 + 145, §3.17), each seeded record folds
   in its OWN document pair plus one attribute-PUT pair per seeded
   attribute (2 operations + 2 documents + 14 attribute documents = 18,
   §3.20's bundle synthesis, generalized from flows'/work-orders' fixed
-  1+1+1 to 1+1+N) — in a first pass, BEFORE the
+  1+1+1 to 1+1+N), and each seeded flow_records binding forms its
+  own join pair (3 flow-record joins, closed through
+  `postFlowRecordDocumentOp`) — in a first pass, BEFORE the
   seed's own big transaction opens (`formWritePair`'s hashing is async
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
