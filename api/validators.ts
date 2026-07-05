@@ -1915,6 +1915,59 @@ export function validateObjectiveEntity(
     };
 }
 
+const OBJECTIVE_DOCUMENT_BODY_KEYS: readonly string[] = [
+    'position',
+];
+
+export interface ObjectiveDocumentBody {
+    readonly entity:
+        Omit<ObjectiveEntity, 'id' | 'organization_id'>;
+}
+
+// The HTTP-body gate for PUT /objectives/:id: the seventh
+// family, and the THIRD 'stateless' one (work-orders and
+// record-attributes are the first two) — Author gate 3's
+// SECOND named partial amendment to Decision 7. The trio
+// COULD represent the objective alphabet, but is FORBIDDEN
+// three ways: the wire body would have to grow it (the
+// unavoidable zero-delta violation); a minted genesis event
+// would abort the states 911 pin at reseed (the genesis
+// dilemma); and absence-as-active is R2's named covenant. So
+// this validator admits the entity field alone, exactly as
+// the other two 'stateless' document bodies do — no trio, no
+// exceptions. THE LABEL MANDATE (a NAMED byte-parity-over-
+// convention choice): the assertOnlyKeys label is 'Objective',
+// matching TODAY'S store validator (validateObjectiveEntity)
+// byte-for-byte, NOT the 'ObjectiveDocumentBody' naming
+// convention every other *DocumentBody validator uses — the
+// label appears in the wire 400 body ("unexpected key ... for
+// Objective"), and the convention's label would change those
+// bytes. organization_id is a TOLERATED-BUT-IGNORED optional
+// allowance, never expected: the live client's PUT body is
+// `{position}` alone, but the seed's below-facade create
+// bodies carry organization_id too (documentOperationOrganization's
+// read-back shape in routes.ts, mirrored by every sibling
+// *DocumentBody validator), and the org-scoped store always
+// stamps organization_id downstream regardless of what it
+// finds — so a caller-forged value is tolerated, never
+// rejected. position's own rule (pickNumber) is IDENTICAL to
+// validateObjectiveEntity's — the missing-position 400 is the
+// SAME assertOnlyKeys call with the SAME label, so its message
+// stays byte-identical on both paths.
+export function validateObjectiveDocumentBody(
+    body: Record<string, unknown>,
+): ObjectiveDocumentBody {
+    assertOnlyKeys(
+        body, OBJECTIVE_DOCUMENT_BODY_KEYS, 'Objective',
+        ['organization_id'],
+    );
+    return {
+        entity: {
+            position: pickNumber(body, 'position'),
+        },
+    };
+}
+
 const OBJECTIVE_REVISION_BODY_KEYS:
     readonly string[] = [
     'objective_id', 'name',

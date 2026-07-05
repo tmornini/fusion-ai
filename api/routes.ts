@@ -63,7 +63,7 @@ import {
     validateIdentityTokenRevocationEntity,
     validateMembershipEntity,
     validateObjectiveCreateBody,
-    validateObjectiveEntity,
+    validateObjectiveDocumentBody,
     validateObjectiveRevisionEntity,
     validateBaselineScoreEntity,
     validateActualScoreEntity,
@@ -347,12 +347,65 @@ const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
     documentOp: postRecordAttributeDocumentOp,
     entityOf: recordAttributeDocumentEntityOf,
 };
+// The generic GET machinery this entityOf serves is unreached
+// through this task — GET objectives/:id and GET objectives
+// stay hand-written, old-plane (a future task flips them,
+// mirroring RECORDS_WIRING's own Task-7 note above). The wire
+// row is constructed ID FIRST — {id, organization_id,
+// position} — the SAME seven-sibling convention every shipped
+// entityOf follows; picked explicitly (pickNumber) rather than
+// a body spread, mirroring recordDocumentEntityOf's own choice
+// (NOT workOrderDocumentEntityOf's/
+// recordAttributeDocumentEntityOf's spread): the wire body
+// tolerates an organization_id key alongside position, and a
+// spread would let that raw, unstamped key leak into the read
+// path ahead of the fenced `organization` argument — picking
+// only `position` closes that off by construction.
+function objectiveDocumentEntityOf(
+    document: DerivedDocument,
+    organization: Id,
+): unknown {
+    return {
+        id: document.uriId,
+        organization_id: organization,
+        position: pickNumber(document.body, 'position'),
+    };
+}
+// The objectives wiring row — the seventh family, and the
+// THIRD 'stateless' one, with a THIRD distinct rationale (Author
+// gate 3 — the SECOND named partial amendment to Decision 7).
+// Work-orders' 'stateless' is vacuous-in-practice (its lifecycle
+// CAN be authored, just never through the document address);
+// record-attributes' is vacuous BY CONSTRUCTION (no lifecycle
+// concept exists at all). Objectives are neither: the trio COULD
+// represent the objective alphabet, but is FORBIDDEN three ways
+// — the wire body would have to grow it (a zero-delta
+// violation), a minted genesis event would abort the states 911
+// pin at reseed (the genesis dilemma), and absence-as-active is
+// R2's named covenant — so objectives' lifecycle keeps riding
+// the SHARED states log (already pair-wired) while this
+// document address carries entity fields only. This THIRD
+// distinct rationale is why 'stateless' is a type-level fork
+// (Commandment IX) rather than a two-value enum with one
+// meaning. notFoundTable is 'objectives' — its storage table
+// name matches its family name, like ideas/projects/flows/
+// records (work-orders/record-attributes are the two whose
+// names diverge).
+const OBJECTIVES_WIRING: DocumentFamilyWiring = {
+    family: 'objectives',
+    lifecycle: 'stateless',
+    notFoundTable: 'objectives',
+    validateDocument: validateObjectiveDocumentBody,
+    documentOp: postObjectiveDocumentOp,
+    entityOf: objectiveDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
 registerDocumentFamilyWiring(WORK_ORDERS_WIRING);
 registerDocumentFamilyWiring(RECORDS_WIRING);
 registerDocumentFamilyWiring(RECORD_ATTRIBUTES_WIRING);
+registerDocumentFamilyWiring(OBJECTIVES_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -715,10 +768,10 @@ async function writeFlowGraphDelta(
 // instead, and this helper reads it straight back so the seed's
 // write still carries it — inert for the fenced route
 // (overwritten either way regardless of what this returns),
-// load-bearing for the seed. Six sites now share this exact
+// load-bearing for the seed. Seven sites now share this exact
 // shape (ideas, projects, flows, work-orders, records,
-// record-attributes) — past the rule-of-three, so it is
-// extracted once rather than duplicated a sixth time.
+// record-attributes, objectives) — past the rule-of-three, so
+// it is extracted once rather than duplicated a seventh time.
 function documentOperationOrganization(
     body: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -1238,19 +1291,29 @@ export async function postObjectiveCreationOp(
     );
 }
 
-// Objective document write — extracted byte-for-byte from the
-// hand-written objectives/:id PUT handler, the SAME extract-
-// function idiom postRecordAttributeDocumentOp's own extraction
-// commit used: the objectives row and its pair commit as ONE
-// transaction, exactly as before. Not yet a DocumentFamilyWiring
-// family — a follow-up commit adds OBJECTIVES_WIRING, the
-// document validator, and the route/response-spec swap; the
-// route dispatches here directly in the meantime. NEVER a states
-// event (Global Constraints: the states 911 pin is ABSOLUTE) —
-// this handler never touched states before this extraction, and
-// still does not. `pair` is optional so a future below-facade
-// caller keeps compiling; the live route always supplies one,
-// since 'objectives/:id' is pair-wired and never bearer-exempt.
+// Objective document write — the seventh family, and the THIRD
+// 'stateless' one (OBJECTIVES_WIRING's own comment: a third
+// distinct rationale, Author gate 3). A document PUT here is a
+// pure entity edit: the objectives row and its pair commit as
+// ONE transaction — a mid-write failure rolls the whole thing
+// back rather than leaving a half-written objective.
+// validateObjectiveDocumentBody rejects a body carrying the
+// trio at the gate, so this op never needs to defend against
+// one downstream. documentOperationOrganization's merge mirrors
+// postRecordAttributeDocumentOp's own shape for uniformity,
+// though it is DORMANT here for the same reason: zero client
+// callers ever supply organization_id on this PUT, and the seed
+// batches objective creation through postObjectiveCreationOp
+// instead — never this op — so the merge is inert rather than
+// load-bearing. NEVER a states event (Global Constraints: the
+// states 911 pin is ABSOLUTE) — no genesis, no trio, no
+// lifecycle walk anywhere in this plane. `pair` is optional so
+// a future below-facade caller keeps compiling; the live route
+// always supplies one, since 'objectives/:id' is pair-wired and
+// never bearer-exempt. The actor parameter is spelled `_actor`
+// for the same reason postWorkOrderDocumentOp/
+// postRecordAttributeDocumentOp spell it that way: there is no
+// state event here to author.
 export async function postObjectiveDocumentOp(
     db: DbAdapter,
     id: Id,
@@ -1258,13 +1321,16 @@ export async function postObjectiveDocumentOp(
     _actor: Id,
     pair?: MessagePair,
 ): Promise<ObjectiveEntity> {
+    const doc = validateObjectiveDocumentBody(withoutId(body));
     return db.transaction(
         ['objectives', 'requests', 'responses'],
         async (view) => {
             const written = await view.objectives.put(
                 id,
-                withoutId(body) as unknown as
-                    Omit<ObjectiveEntity, 'id'>,
+                {
+                    ...doc.entity,
+                    ...documentOperationOrganization(body),
+                } as unknown as Omit<ObjectiveEntity, 'id'>,
             );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
@@ -1982,16 +2048,14 @@ export const WRITE_RESPONSE_SPECS:
         }),
     },
     'objectives': { status: 204 },
-    'objectives/:id': {
-        status: 200,
-        successBody: (params, body, _actor, organization) => ({
-            id: param(params, 0),
-            ...validateObjectiveEntity({
-                ...withoutId(body ?? {}),
-                organization_id: organization,
-            }),
-        }),
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody — see the ideas/:id
+    // entry above for the shared rationale. objectives/:id emits
+    // the SAME bytes as before ({id, organization_id, position}):
+    // validateObjectiveDocumentBody's entity/organization_id
+    // separation guarantees doc.entity never carries the key,
+    // byte-identical to today's hand-built body.
+    'objectives/:id': documentWriteResponseSpec(OBJECTIVES_WIRING),
     'objectives/:id/revisions/:rid': {
         status: 200,
         successBody: (params, body) => ({
@@ -3950,19 +4014,17 @@ export const routes: Route[] = [
         post: (db, _p, body, _actor, pair) =>
             postObjectiveCreationOp(db, body, pair),
     }),
-    // GET stays hand-written in place of makeIdRoute
-    // <ObjectiveEntity> — it reproduces the factory closure
-    // byte-equivalently; objectives/:id has no DELETE today,
-    // mirroring the projects/:id precedent. PUT dispatches
-    // through the extracted postObjectiveDocumentOp —
-    // behavior-identical to the prior inline closure; see its
-    // own comment.
+    // A hybrid route (unlike ideas/projects/flows/work-orders'
+    // full documentEntityRoute swap): GET stays hand-written,
+    // old-plane (a future task flips it, mirroring RECORDS_
+    // WIRING's own Task-7 note above) — it reproduces the
+    // factory closure byte-equivalently; objectives/:id has no
+    // DELETE today, mirroring the projects/:id precedent. PUT
+    // now dispatches through documentPutHandler
+    // (OBJECTIVES_WIRING).
     route('objectives/:id', {
         get: (db, p) => db.objectives.getById(param(p, 0)),
-        put: (db, p, body, actor, pair) =>
-            postObjectiveDocumentOp(
-                db, param(p, 0), body, actor, pair,
-            ),
+        put: documentPutHandler(OBJECTIVES_WIRING),
     }),
     // Objective revisions nest under their parent objective: the
     // objective id is param 0, so the SERVER filters the
