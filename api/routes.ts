@@ -2004,6 +2004,46 @@ export async function postBaselineScoreDocumentOp(
     );
 }
 
+// Objective actual-score document write — extracted byte-for-
+// byte from the hand-written projects/:id/objective-actual-
+// scores/:sid PUT handler, identically to
+// postBaselineScoreDocumentOp above (the postFlowRecordDocumentOp
+// precedent), closing the actuals half of the Phase 0 seed
+// deferral (Phase 7 Task 5). `pair` is optional so a below-facade
+// caller with no pair keeps compiling; the live route always
+// supplies one. `_actor` is unused for the same reason
+// postBaselineScoreDocumentOp's is: there is no state event here
+// to author.
+export async function postActualScoreDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<ProjectObjectiveActualScoreEntity, 'id'>> {
+    return db.transaction(
+        [
+            'project_objective_actual_scores',
+            'requests', 'responses',
+        ],
+        async (view) => {
+            const written = await view
+                .projectObjectiveActualScores.put(
+                    id,
+                    withoutId(body) as unknown as
+                        Omit<
+                            ProjectObjectiveActualScoreEntity,
+                            'id'
+                        >,
+                );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -4361,34 +4401,11 @@ export const routes: Route[] = [
                 'project_id', param(p, 0),
             ),
     }),
-    // Hand-written in place of a bare store put so PUT can
-    // append its message pair in the same transaction as the
-    // write (see message-pair.ts).
     route('projects/:id/objective-actual-scores/:sid', {
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 1);
-            return db.transaction(
-                [
-                    'project_objective_actual_scores',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    const written = await view
-                        .projectObjectiveActualScores.put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<
-                                    ProjectObjectiveActualScoreEntity,
-                                    'id'
-                                >,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postActualScoreDocumentOp(
+                db, param(p, 1), body, actor, pair,
+            ),
     }),
     route('states', {
         get: (db) => db.states.getAll(),
