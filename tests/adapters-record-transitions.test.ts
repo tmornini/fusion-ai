@@ -113,16 +113,26 @@ async function seedWorkOrder(
     });
 }
 
+// NAMED re-pin (Task 7): the flipped GET flows/:id/records
+// derives from the message ledger too, the SAME reason as
+// seedFlowLink's own flows/:id/work-orders re-pin above — a raw
+// db.flowRecords.put leaves no pair at this address, so the
+// binding must land through the SAME wire-reachable PUT the
+// live route serves.
 async function seedBinding(
     db: MemoryDbAdapter,
     flowId: string,
     recordId: string,
 ): Promise<void> {
-    await db.flowRecords.put('fr-' + flowId, {
-        flow_id: flowId,
-        record_id: recordId,
-        at: AT_CREATED,
-    });
+    const ctx = createRequestContext(db, await devToken());
+    await ctx.PUT(
+        'flows/' + flowId + '/records/fr-' + flowId,
+        {
+            flow_id: flowId,
+            record_id: recordId,
+            at: AT_CREATED,
+        },
+    );
 }
 
 // DELTA (Phase 4 Task 8 — the inventory grep, not the brief,
@@ -163,6 +173,11 @@ async function seedFlowLink(
     );
 }
 
+// NAMED re-pin (Task 7): getRecordForWorkOrder's attribute
+// lookup reads record-attributes through the flipped GET (this
+// commit) — a raw db.recordAttributes.put leaves no message
+// pair at this address, so the fixture must land through the
+// SAME wire-reachable PUT the live route serves.
 async function seedAttribute(
     db: MemoryDbAdapter,
     id: string,
@@ -175,7 +190,8 @@ async function seedAttribute(
         constraints?: unknown[];
     } = {},
 ): Promise<void> {
-    await db.recordAttributes.put(id, {
+    const ctx = createRequestContext(db, await devToken());
+    await ctx.PUT('record-attributes/' + id, {
         organization_id: '1',
         record_id: recordId,
         name: options.name ?? 'Attr',

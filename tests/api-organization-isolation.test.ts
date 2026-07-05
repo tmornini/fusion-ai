@@ -214,6 +214,10 @@ async function seedChain(
     await db.flows.put('f' + s, flowBody(organization));
     await db.objectives.put(
         'o' + s, { organization_id: organization, position: 0 });
+    // Stays raw (NAMED contrast to the flow-record join below):
+    // no flipped read in this file ever consumes the top-level
+    // records/:id entity — only the nested flows/:id/records
+    // JOIN is exercised here.
     await db.records.put('r' + s, {
         organization_id: organization, name: 'r',
         description: 'd', position: 0,
@@ -253,9 +257,15 @@ async function seedChain(
         await organizationToken(identity, organization),
         { flow_id: 'f' + s, work_order_id: 'wo' + s, at: T8_AT },
     ));
-    await db.flowRecords.put('fr' + s, {
-        flow_id: 'f' + s, record_id: 'r' + s, at: T8_AT,
-    });
+    // NAMED re-pin (Task 7): the flipped GET flows/:id/records
+    // derives from the message ledger too, the SAME reason as
+    // the flow-work-order join above — a raw db.flowRecords.put
+    // leaves no pair at this address.
+    await handleRequest(db, req(
+        'PUT', '/flows/f' + s + '/records/fr' + s,
+        await organizationToken(identity, organization),
+        { flow_id: 'f' + s, record_id: 'r' + s, at: T8_AT },
+    ));
     await db.ideaSubmissions.put('is' + s, {
         idea_id: 'i' + s, member_id: 'system', at: T8_AT,
     });

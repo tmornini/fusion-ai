@@ -134,12 +134,17 @@ import {
     deriveFlowWorkOrders,
 } from './derive-flow-work-orders.ts';
 import {
+    deriveFlowRecords,
+    deriveFlowRecord,
+} from './derive-flow-records.ts';
+import {
     param,
     requireOrganization,
     withoutId,
     documentCollectionGetHandler,
     documentCollectionRoute,
     documentEntityRoute,
+    documentGetHandler,
     documentPutHandler,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
@@ -263,9 +268,10 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
 };
 // The generic GET machinery (documentGetHandler/
 // documentCollectionGetHandler) this entityOf serves flips onto
-// records only at Task 7 — GET records/:id and GET records stay
-// hand-written, old-plane, through this task, so entityOf is
-// unreached for now. It still picks fields explicitly (never a
+// records at Task 7 (this commit): GET records/:id and GET
+// records now ride it, exactly as ideaEntityOf/projectEntityOf/
+// flowEntityOf/workOrderDocumentEntityOf each serve their OWN
+// family's GET path. It still picks fields explicitly (never a
 // body spread) rather than standing in as a placeholder, the
 // SAME shape ideaEntityOf/projectEntityOf already use, so the
 // Task 7 flip finds it already correct instead of inheriting a
@@ -297,11 +303,11 @@ const RECORDS_WIRING: DocumentFamilyWiring = {
     documentOp: postRecordDocumentOp,
     entityOf: recordDocumentEntityOf,
 };
-// The generic GET machinery this entityOf serves is unreached
-// through this task — GET record-attributes/:id and GET
-// record-attributes stay hand-written, old-plane (a future
-// task flips them, mirroring RECORDS_WIRING's own Task-7 note
-// above). A body spread is safe here exactly as
+// The generic GET machinery this entityOf serves flips onto
+// record-attributes at Task 7 too (this commit, the SAME
+// commit as RECORDS_WIRING's own flip above): GET
+// record-attributes/:id and GET record-attributes now ride it.
+// A body spread is safe here exactly as
 // workOrderDocumentEntityOf's own comment argues: the head
 // pair's body, stamped with id and organization_id, already
 // carries exactly the {record_id, name, attribute_type,
@@ -3478,8 +3484,21 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is FLIPPED (Task 7): the collection derives from the
+    // message ledger rather than the old records table. Rides
+    // the generic documentCollectionGetHandler — wire-identical
+    // to the hand-written db.records.getAll() dispatch it
+    // replaces (RECORDS_WIRING's own entityOf,
+    // recordDocumentEntityOf, already picks the exact {id,
+    // organization_id, name, description, position} shape, so
+    // the list needs no records-special reassembly step). POST
+    // stays this hand-written bundle — records' own create forms
+    // the document PLUS N attribute pairs in one pass
+    // (postRecordWriteOp), unlike ideas/projects' bare genesis
+    // fold, so a separate create verb remains here, mirroring
+    // work-orders' and flows' own precedent.
     route('records', {
-        get: (db) => db.records.getAll(),
+        get: documentCollectionGetHandler(RECORDS_WIRING),
         // Member-tier POST — /records carries POST in
         // MEMBER_VERBS. Forms the document pair, one
         // attribute-PUT pair per attributes[] entry, and one
@@ -3632,18 +3651,24 @@ export const routes: Route[] = [
             return postRecordWriteOp(db, body, actor, pairs);
         },
     }),
-    // A hybrid route (unlike ideas/projects/flows' full
-    // documentEntityRoute swap): GET stays hand-written,
-    // old-plane (Task 7 flips it, reproducing the factory
-    // closure byte-equivalently in the meantime); PUT now
-    // dispatches through documentPutHandler(RECORDS_WIRING) —
-    // the Decision 7 trio fold (see RECORDS_WIRING's own
-    // comment above); DELETE stays hand-written, unchanged — a
-    // splice + pair append in the same transaction, exactly as
-    // before (the factory's fixed closures have no per-family
-    // pair selector; see message-pair.ts).
+    // records/:id is the fifth family, and the FIRST whose own
+    // :id address also carries a live DELETE (RECORDS_WIRING's
+    // own comment names why). GET is FLIPPED (Task 7): absorbed
+    // into the generic documentGetHandler(RECORDS_WIRING) — the
+    // SAME wiring row PUT already rides — wire-identical to the
+    // hand-written db.records.getById dispatch it replaces
+    // (recordDocumentEntityOf reproduces the shape verbatim, and
+    // the 'trio' lifecycle walk 404s a lifecycle-deleted record
+    // exactly as the old physical-delete plane did). PUT stays
+    // documentPutHandler(RECORDS_WIRING) — the Decision 7 trio
+    // fold, unchanged from before this flip. DELETE stays
+    // hand-written — a splice + pair append in the same
+    // transaction, exactly as before (the factory's fixed
+    // closures have no per-family pair selector; see
+    // message-pair.ts) — a splice route is not a document
+    // verb-class member (Task 9 covers the DELETE pattern).
     route('records/:id', {
-        get: (db, p) => db.records.getById(param(p, 0)),
+        get: documentGetHandler(RECORDS_WIRING),
         put: documentPutHandler(RECORDS_WIRING),
         delete: (db, p, _actor, pair) => {
             const id = param(p, 0);
@@ -3658,22 +3683,40 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is FLIPPED (Task 7): the collection derives from the
+    // message ledger rather than the old record_attributes
+    // table. Rides the generic documentCollectionGetHandler —
+    // wire-identical to the hand-written
+    // db.recordAttributes.getAll() dispatch it replaces
+    // (RECORD_ATTRIBUTES_WIRING's own entityOf,
+    // recordAttributeDocumentEntityOf, already spreads the head
+    // pair's body verbatim, so the list needs no
+    // record-attributes-special reassembly step). No POST here —
+    // record-attributes carries no create verb of its own,
+    // unchanged from before this flip.
     route('record-attributes', {
-        get: (db) =>
-            db.recordAttributes.getAll(),
+        get: documentCollectionGetHandler(
+            RECORD_ATTRIBUTES_WIRING,
+        ),
     }),
-    // A hybrid route (unlike ideas/projects/flows/work-orders'
-    // full documentEntityRoute swap): GET stays hand-written,
-    // old-plane (a future task flips it, mirroring RECORDS_
-    // WIRING's own Task-7 note); PUT now dispatches through
-    // documentPutHandler(RECORD_ATTRIBUTES_WIRING); DELETE stays
-    // hand-written, unchanged — the RESTRICT check and the pair
-    // append ride the SAME transaction, exactly as before (the
-    // factory's fixed closures have no per-family pair selector;
-    // see message-pair.ts).
+    // record-attributes/:id is the sixth family. GET is FLIPPED
+    // (Task 7): absorbed into the generic
+    // documentGetHandler(RECORD_ATTRIBUTES_WIRING) — the SAME
+    // wiring row PUT already rides — wire-identical to the
+    // hand-written db.recordAttributes.getById dispatch it
+    // replaces (recordAttributeDocumentEntityOf reproduces the
+    // shape verbatim; the 'stateless' lifecycle skips the trio
+    // walk entirely, so a DELETE head is the only tombstone
+    // signal, already 404-absent via deriveDocumentsAt). PUT
+    // stays documentPutHandler(RECORD_ATTRIBUTES_WIRING),
+    // unchanged from before this flip. DELETE stays
+    // hand-written — the RESTRICT check and the pair append ride
+    // the SAME transaction, exactly as before (the factory's
+    // fixed closures have no per-family pair selector; see
+    // message-pair.ts) — a splice route is not a document
+    // verb-class member (Task 9 covers the DELETE pattern).
     route('record-attributes/:id', {
-        get: (db, p) =>
-            db.recordAttributes.getById(param(p, 0)),
+        get: documentGetHandler(RECORD_ATTRIBUTES_WIRING),
         put: documentPutHandler(RECORD_ATTRIBUTES_WIRING),
         // DELETE is RESTRICT, not cascade: an attribute
         // still named by state_field_values rows or bound
@@ -3703,14 +3746,29 @@ export const routes: Route[] = [
     }),
     // Flow↔record bindings nest under their parent flow: the flow
     // id is param 0, so the SERVER filters the collection to that
-    // flow. The leaf id is param 1. Reads stay old-plane until the
-    // RECORDS phase.
+    // flow. The leaf id is param 1. GET is FLIPPED (Task 7): both
+    // the collection and the by-id read now ride deriveFlowRecords
+    // / deriveFlowRecord — a bespoke derivation (not a
+    // DocumentFamilyWiring family; a join row carries no lifecycle
+    // trio of its own), so this calls it directly rather than
+    // through a generic constructor, mirroring deriveFlowWorkOrders'
+    // own precedent above. This closes the LAST deferred old-plane
+    // nested read under flows — the one remaining table-backed
+    // nested read, flows/:id/versions above, stays that way BY
+    // DESIGN (its own comment), never a deferral this phase closes.
     route('flows/:id/records', {
-        get: (db, p) =>
-            db.flowRecords.getAllWhere('flow_id', param(p, 0)),
+        get: (db, p, _actor, organization) =>
+            deriveFlowRecords(
+                db, requireOrganization(organization),
+                param(p, 0),
+            ),
     }),
     route('flows/:id/records/:frid', {
-        get: (db, p) => db.flowRecords.getById(param(p, 1)),
+        get: (db, p, _actor, organization) =>
+            deriveFlowRecord(
+                db, requireOrganization(organization),
+                param(p, 0), param(p, 1),
+            ),
         put: (db, p, body, actor, pair) =>
             postFlowRecordDocumentOp(
                 db, param(p, 1), body, actor, pair,
