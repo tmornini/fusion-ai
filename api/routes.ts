@@ -1759,6 +1759,44 @@ export async function postFlowWorkOrderDocumentOp(
     );
 }
 
+// Flow record join document write — extracted byte-for-byte
+// from the hand-written flows/:id/records/:frid PUT handler
+// (Phase 1 fix-3 / Phase 4 0a950480's extract-function idiom:
+// bundle the definition with its one call-site re-point, own
+// commit) so the seed can drive the same write path (Decision
+// 6's below-facade carve-out, mirroring
+// postFlowWorkOrderDocumentOp above). A document PUT here is a
+// pure entity edit: the flow_records row and its pair commit
+// as ONE transaction. `pair` is optional so a below-facade
+// caller with no pair keeps compiling; the live route always
+// supplies one, since 'flows/:id/records/:frid' is pair-wired
+// and never bearer-exempt. The actor parameter is spelled
+// `_actor` for the same reason postFlowWorkOrderDocumentOp
+// spells it that way: there is no state event here to author.
+export async function postFlowRecordDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<FlowRecordEntity, 'id'>> {
+    return db.transaction(
+        ['flow_records', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.flowRecords
+                .put(
+                    id,
+                    withoutId(body) as unknown as
+                        Omit<FlowRecordEntity, 'id'>,
+                );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -3673,24 +3711,10 @@ export const routes: Route[] = [
     }),
     route('flows/:id/records/:frid', {
         get: (db, p) => db.flowRecords.getById(param(p, 1)),
-        put: (db, p, body, _actor, pair) => {
-            const frid = param(p, 1);
-            return db.transaction(
-                ['flow_records', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.flowRecords
-                        .put(
-                            frid,
-                            withoutId(body) as unknown as
-                                Omit<FlowRecordEntity, 'id'>,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postFlowRecordDocumentOp(
+                db, param(p, 1), body, actor, pair,
+            ),
         delete: (db, p, _actor, pair) => {
             const frid = param(p, 1);
             return db.transaction(
