@@ -725,6 +725,42 @@ export async function postRecordDocumentOp(
     );
 }
 
+// Record attribute document write — extracted byte-for-byte
+// from the hand-written record-attributes/:id PUT handler, the
+// SAME extract-function idiom postFlowWorkOrderDocumentOp's own
+// comment names: the record_attributes row and its pair commit
+// as ONE transaction, exactly as before. Not yet a
+// DocumentFamilyWiring family — a follow-up commit adds
+// RECORD_ATTRIBUTES_WIRING, the document validator, and the
+// route/response-spec swap; the route dispatches here directly
+// in the meantime. `pair` is optional so a future below-facade
+// caller keeps compiling; the live route always supplies one,
+// since 'record-attributes/:id' is pair-wired and never
+// bearer-exempt.
+export async function postRecordAttributeDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<RecordAttributeEntity> {
+    return db.transaction(
+        ['record_attributes', 'requests', 'responses'],
+        async (view) => {
+            const written = await view
+                .recordAttributes.put(
+                    id,
+                    withoutId(body) as unknown as
+                        Omit<RecordAttributeEntity, 'id'>,
+                );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // Idea submission write: a genesis-only document address (an
 // idea is submitted once per sid; no edit/transition case
 // exists for this family) — the idea_submissions row and its
@@ -3262,29 +3298,13 @@ export const routes: Route[] = [
     route('record-attributes/:id', {
         get: (db, p) =>
             db.recordAttributes.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                [
-                    'record_attributes',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    const written = await view
-                        .recordAttributes.put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<
-                                    RecordAttributeEntity, 'id'
-                                >,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        // PUT dispatches through the extracted
+        // postRecordAttributeDocumentOp — behavior-identical
+        // to the prior inline closure; see its own comment.
+        put: (db, p, body, actor, pair) =>
+            postRecordAttributeDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
         // DELETE is RESTRICT, not cascade: an attribute
         // still named by state_field_values rows or bound
         // in a flow / work-order graph refuses to die (409
