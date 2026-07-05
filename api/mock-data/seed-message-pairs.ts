@@ -109,6 +109,7 @@ import {
     buildFlowWorkOrderJoins,
     buildWorkOrderStateEvents,
 } from './work-orders.ts';
+import type { ScoreSeedProject } from './scores.ts';
 
 // ---- hoisted static seed-event data ----
 //
@@ -646,6 +647,31 @@ export function projectOrganizationFor(
     return project.id === secondOrganizationProjectId
         ? ORGANIZATION_TWO
         : STARK_ORGANIZATION;
+}
+
+// The ScoreSeedProject view buildSeedScoreRows needs per
+// project — id, organization_id, start_date, state — resolved
+// PURELY from the SAME projectStateEvents / projectOrganizationFor
+// / buildProjects / projectOrg2 both pass 1 (this file) and
+// pass 2 (mock-data.ts) already share, so a future project
+// addition can never drift the two callers apart. State comes
+// from projectStateEvents (never a stored row column — the
+// states log is the sole source of entity state), the SAME
+// lookup postMockDataLoadIn used pre-hoist.
+export function buildScoreSeedProjects():
+    readonly ScoreSeedProject[] {
+    const projects = buildProjects();
+    const projectStateEventById = new Map(
+        projectStateEvents.map(e => [e.entity_id, e]),
+    );
+    return [...projects, projectOrg2(projects)].map(
+        project => ({
+            id: project.id,
+            organization_id: projectOrganizationFor(project),
+            start_date: project.start_date,
+            state: projectStateEventById.get(project.id)!.state,
+        }),
+    );
 }
 
 export function flowSeedBody(

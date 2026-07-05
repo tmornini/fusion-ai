@@ -24,7 +24,6 @@ import type {
     StateFieldValueEntity,
 } from './types.ts';
 import {
-    MS_PER_DAY,
     SYSTEM_MEMBER_ID,
     nowUtc,
 } from './types.ts';
@@ -35,7 +34,6 @@ import { hashPassword } from '../shared/password-hash.ts';
 import type { MessagePair } from './message-pair.ts';
 import {
     daysFromNow,
-    isoFromMs,
 } from './mock-data/seed-kit.ts';
 import {
     MOCK_SEED_TIMESTAMP,
@@ -78,7 +76,6 @@ import {
     recordStateEvents,
     mockProjectFlows,
     mockFlowRecords,
-    deterministicScore,
     humanMemberPoolsByOrganization,
     pickHumanMember,
     humanMemberSeedBody,
@@ -87,6 +84,7 @@ import {
     projectSeedBody,
     projectOrg2,
     projectOrganizationFor,
+    buildScoreSeedProjects,
     flowSeedBody,
     flowOrg2SeedBody,
     workOrderDocumentSeedBody,
@@ -100,6 +98,7 @@ import {
     seedPairKey,
     ORGANIZATION_TWO_OBJECTIVE,
 } from './mock-data/seed-message-pairs.ts';
+import { buildSeedScoreRows } from './mock-data/scores.ts';
 
 const TIER_SEATS_LIMIT = 200;
 const TIER_PROJECTS_LIMIT = 50;
@@ -790,41 +789,21 @@ async function postMockDataLoadIn(
         ),
     ]);
 
-    const humanIds = new Set(
-        (await adapter.members.getAll())
-            .filter(w => w.type === 'human')
-            .map(w => w.id),
-    );
     // A score or revision author is always a member of the
     // scored entity's org. Seed authors from that org ONLY:
     // picking across orgs produced authors outside the
     // org-scoped roster, and memberName (strict by design)
     // then threw when the project-history modal resolved them.
-    const humansByOrganization = new Map<string, string[]>();
-    for (const m of await adapter.memberships.getAll()) {
-        if (!humanIds.has(m.identity_id)) continue;
-        const pool =
-            humansByOrganization.get(m.organization_id) ?? [];
-        pool.push(m.identity_id);
-        humansByOrganization.set(m.organization_id, pool);
-    }
-    const memberFor = (
-        organization: string, seed: string,
-    ): string => {
-        const pool = humansByOrganization.get(organization) ?? [];
-        return pool[
-            deterministicScore(seed, 0, pool.length - 1)
-        ] ?? SYSTEM_MEMBER_ID;
-    };
-
-    // The STARK-org objective revisions' author cannot use the
-    // in-tx memberFor above: its pair was already formed pre-tx
+    //
+    // The STARK-org objective revisions' author cannot read
+    // memberships back in-tx: its pair was already formed pre-tx
     // (pass 1, before any membership row existed to read back),
     // so pass 2 must pick from the SAME pure pool pass 1 used —
     // see humanMemberPoolsByOrganization's doc comment for why
-    // the two are proven to agree. memberFor (DB-read-based)
-    // stays exactly as it was for the baseline/actual-score
-    // deferral below.
+    // the two are proven to agree. The baseline/actual-score
+    // deferral below (buildSeedScoreRows) draws from this SAME
+    // pool now too — the former in-tx memberFor DB-read retired
+    // once its pick moved onto pickHumanMember (Phase 7 Task 5).
     const objectiveMemberPools =
         humanMemberPoolsByOrganization(members);
     for (const seed of OBJECTIVE_SEEDS) {
@@ -897,125 +876,26 @@ async function postMockDataLoadIn(
         },
     );
 
-    const allProjects = await adapter.projects.getAll();
-    const projectStateById = new Map(
-        projectStateEvents.map(
-            ev => [ev.entity_id, ev.state],
-        ),
+    // The baseline/actual-score rows — hoisted VERBATIM into a
+    // pure builder (Phase 7 Task 5) so pass 1 (seed-message-
+    // pairs.ts) can form each row's message pair before this
+    // transaction opens, the SAME split every other seeded
+    // family already uses. buildScoreSeedProjects resolves each
+    // project's organization_id/state PURELY (never a DB read
+    // back), so this stays a plain row-write loop, no pairs yet.
+    const scoreRows = buildSeedScoreRows(
+        buildScoreSeedProjects(), objectiveMemberPools,
     );
-
-    for (const p of allProjects) {
-        const state = projectStateById.get(p.id);
-        if (state === undefined) {
-            throw new Error(
-                'seeded project has no state event: '
-                + p.id,
-            );
-        }
-        if (
-            state === 'submitted'
-            || state === 'declined'
-            || state === 'deleted'
-        ) {
-            continue;
-        }
-
-        const baselineCoverage =
-            state === 'approved'
-            || state === 'archived'
-                ? OBJECTIVE_SEEDS.length
-                : deterministicScore(
-                    p.id + ':coverage',
-                    0,
-                    OBJECTIVE_SEEDS.length - 1,
-                );
-
-        const baselineStart =
-            new Date(p.start_date).getTime();
-        // Committed work (approved + archived) is
-        // expected to advance objectives; baselines
-        // skew positive. Drafts (under_review +
-        // sent_back) can dip negative — a flagged
-        // risk worth surfacing on the dashboard.
-        const baselineMin =
-            state === 'approved'
-            || state === 'archived'
-                ? 0
-                : -100;
-        for (let i = 0; i < baselineCoverage; i++) {
-            const obj = OBJECTIVE_SEEDS[i]!;
-            const score = deterministicScore(
-                `${p.id}:${obj.id}:baseline`,
-                baselineMin,
-                100,
-            );
-            const scoredAt = isoFromMs(
-                baselineStart + i * 1000,
-            );
-            await adapter
-                .projectObjectiveBaselineScores
-                .put(
-                    `${p.id}:${obj.id}:${scoredAt}`,
-                    {
-                        project_id: p.id,
-                        objective_id: obj.id,
-                        score,
-                        member_id: memberFor(
-                            p.organization_id,
-                            `${p.id}:${obj.id}:baseline`,
-                        ),
-                        at: scoredAt,
-                    },
-                );
-        }
-
-        if (
-            state === 'approved'
-            || state === 'archived'
-        ) {
-            const minActuals = 1;
-            const baseActualTime =
-                baselineStart + MS_PER_DAY;
-            for (
-                let i = 0; i < OBJECTIVE_SEEDS.length; i++
-            ) {
-                const obj = OBJECTIVE_SEEDS[i]!;
-                const nActuals =
-                    minActuals
-                    + deterministicScore(
-                        `${p.id}:${obj.id}:nactual`,
-                        0,
-                        2,
-                    );
-                for (let k = 0; k < nActuals; k++) {
-                    const score = deterministicScore(
-                        `${p.id}:${obj.id}:actual:${k}`,
-                        -100,
-                        100,
-                    );
-                    const scoredAt = isoFromMs(
-                        baseActualTime
-                            + (i * 10 + k) * 1000,
-                    );
-                    await adapter
-                        .projectObjectiveActualScores
-                        .put(
-                            `${p.id}:${obj.id}:${scoredAt}`,
-                            {
-                                project_id: p.id,
-                                objective_id: obj.id,
-                                score,
-                                member_id: memberFor(
-                                    p.organization_id,
-                                    `${p.id}:${obj.id}:actual:${k}`,
-                                ),
-                                at: scoredAt,
-                            },
-                        );
-                }
-            }
-        }
-    }
+    await Promise.all([
+        ...scoreRows.baselines.map(row =>
+            adapter.projectObjectiveBaselineScores.put(
+                row.id, row.fields,
+            )),
+        ...scoreRows.actuals.map(row =>
+            adapter.projectObjectiveActualScores.put(
+                row.id, row.fields,
+            )),
+    ]);
 }
 
 export async function postBootstrap(
