@@ -36,6 +36,8 @@ import { hashPassword } from '../shared/password-hash.ts';
 import type { MessagePair } from './message-pair.ts';
 import {
     daysFromNow,
+    humanMemberPoolsByOrganization,
+    pickHumanMember,
 } from './mock-data/seed-kit.ts';
 import {
     MOCK_SEED_TIMESTAMP,
@@ -78,8 +80,6 @@ import {
     recordStateEvents,
     mockProjectFlows,
     mockFlowRecords,
-    humanMemberPoolsByOrganization,
-    pickHumanMember,
     humanMemberSeedBody,
     ideaSeedBody,
     ideaSubmissionSeedBody,

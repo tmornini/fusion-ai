@@ -21,24 +21,23 @@
 // from the prior memberFor pick (measured at verification),
 // invisible to the id-only fingerprint.
 //
-// Imports deterministicScore/pickHumanMember from
-// seed-message-pairs.ts, which imports buildSeedScoreRows back
+// deterministicScore/pickHumanMember live in seed-kit.ts (the
+// designated home for pure shared seed primitives) rather than
+// seed-message-pairs.ts, so this file has no import back to its
+// own caller: seed-message-pairs.ts imports buildSeedScoreRows
 // from here (pass 1's invocation builder drives the seed's
-// score-pair formation off this SAME output) — a circular
-// import that is safe: every binding crossing the cycle is a
-// top-level `function` declaration (hoisted and initialized
-// during module instantiation, before either module's body
-// runs), and each side calls the other only from inside a
-// function body invoked well after both modules finish loading.
+// score-pair formation off this SAME output), and this file
+// imports nothing from seed-message-pairs.ts in return — a
+// one-way dependency, no cycle.
 
 import type { Id, ObjectiveId } from '../types.ts';
 import { MS_PER_DAY } from '../types.ts';
-import { isoFromMs } from './seed-kit.ts';
-import { OBJECTIVE_SEEDS } from './objectives.ts';
 import {
+    isoFromMs,
     deterministicScore,
     pickHumanMember,
-} from './seed-message-pairs.ts';
+} from './seed-kit.ts';
+import { OBJECTIVE_SEEDS } from './objectives.ts';
 
 // The one project shape the scoring loop needs — narrower than
 // a full ProjectEntity: organization_id and state are resolved

@@ -17,8 +17,9 @@ import {
 import {
     mockFlowRecords,
     buildScoreSeedProjects,
-    humanMemberPoolsByOrganization,
 } from '../api/mock-data/seed-message-pairs.ts';
+import { humanMemberPoolsByOrganization }
+    from '../api/mock-data/seed-kit.ts';
 import { buildMembers } from '../api/mock-data/members.ts';
 import { buildSeedScoreRows } from '../api/mock-data/scores.ts';
 import {
