@@ -818,17 +818,102 @@ like every other atomic write in this catalog.
      removals)
   2. `records.put(id, record)`
   3. if `create`: `states.postEvent(initialStateEventId, id,
-     initialState, actor)`
-  4. if removals: `collectAttributeReferrers(...)` → if any referrer,
+     initialState, actor)` — genesis, actor-authored, exactly
+     ONE event
+  4. if `edit`: the SAME sameEvent decompose `PUT /records/:id`
+     (§3.33) runs — read the current head, replay its
+     `member_id` on a byte-identical echo, else `actor` — then
+     `states.postEvent(state_event_id, id, state, memberId,
+     state_at)`; a genuine echo converges to a no-op write
+     (`states.put`'s own idempotency by id)
+  5. if removals: `collectAttributeReferrers(...)` → if any referrer,
      `throw 409` (rolls back the whole batch)
-  5. if entries or removals:
+  6. if entries or removals:
      `recordAttributes.putMany(entries, removedIds)`
-  6. `appendMessagePair(pair)`
+  7. the bundle's pairs (below), appended LAST, in order:
+     operation, document, N attribute-PUTs, M attribute-DELETEs
 - doctrinal: `put_record` + optional `post_state_event` + a
   put/delete batch over `record_attributes` as `post_write_record`.
 - props: atomic; **RESTRICT** (a removed attribute still referenced
   409s and rolls back the whole write, so no pair lands for it
   either); member-tier.
+
+**The bundle: 2+N (create) or 2+N+M (edit) pairs, one tx (Phase
+6 Task 4 — the migration's FIRST VARIABLE-CARDINALITY
+synthesis).** Unlike the flows/work-orders create-triple
+(§3.12/§3.17, always exactly three), a record write's pair count
+scales with its own attribute arrays: the operation pair, the
+document pair, one attribute-PUT pair per `attributes[]` entry
+(N), and — edit only — one attribute-DELETE pair per
+`removedAttributeIds` entry (M; a create body has no
+`removedAttributeIds` field at all, so M is always 0 there). The
+route pre-forms every non-operation pair beside the gate's own
+operation pair, ONLY when the gate supplied both a pair and a
+fence organization — a below-facade caller (`api/mock-data.ts`)
+skips them all:
+
+- **The document pair** — PUT-shaped, at `records/:id`'s own
+  address (the SAME address `POST /records` collapses onto, via
+  the registry's create-address override — §5.6), body
+  `recordDocumentBodyOf(b)`: the entity's own three fields
+  (`name`, `description`, `position`; `organization_id`
+  excluded) plus the lifecycle trio — mapped from
+  `initialState*` on create, carried verbatim from the body's
+  own echoed trio on edit — validated through
+  `validateRecordDocumentBody` (belt-and-suspenders:
+  `initialStateEventId` carries no non-empty rule of its own on
+  create, so an empty value 400s HERE rather than minting an
+  invalid pair) — byte-indistinguishable from a live
+  genesis/edit `PUT /records/:id`.
+- **N attribute-PUT pairs** — one per `attributes[]` entry,
+  PUT-shaped at `record-attributes/:id`'s own address, body
+  `recordAttributeDocumentBodyOf(attr)` (the id-strip
+  destructure: the entity fields minus `id` and
+  `organization_id`) — byte-indistinguishable from a live
+  `PUT /record-attributes/:id`.
+- **M attribute-DELETE pairs** (edit only) — one per
+  `removedAttributeIds` entry, DELETE-shaped at the SAME
+  `record-attributes/:id` address the attribute's own PUT pair
+  used, status 204 with no body — every DELETE response is
+  UNIVERSALLY 204 with no body (`api/api.ts`'s gate) —
+  byte-indistinguishable from a live
+  `DELETE /record-attributes/:id`.
+
+The shared BODY builders (`recordDocumentBodyOf`,
+`recordAttributeDocumentBodyOf`, `api/routes.ts`) are the
+ONE-voice seam: pure functions consumed by BOTH this
+route-inline formation and the seed's own invocation
+construction (`api/mock-data/seed-message-pairs.ts`) — never a
+shared pair-FORMER, since forming a pair itself needs the fence
+organization and the response specs, which only the route
+(and, independently, the seed) hold.
+
+All pairs share ONE `requestAt` (the write's own origination) yet
+strictly-later response `at` stamps, so the document pair —
+appended AFTER the operation pair — becomes the entity address's
+head, exactly like flows'/work-orders' own create (§3.12/§3.17).
+A duplicate create (same record id) therefore records
+`Supersedes` on its own new document pair against the PRIOR
+document pair; the duplicate's own operation pair, reading that
+SAME shared address fresh at gate entry, supersedes that same
+prior document pair too (`records` is `'simple'` concurrency,
+§5.4). The whole bundle commits or none: a mid-transaction
+failure (a state-ledger collision, or a RESTRICTed removal)
+leaves ZERO of the bundle's pairs, exactly like every other
+atomic write in this catalog.
+
+**The edit-only trio.** `RecordWriteEditBody` now carries the
+SAME `state`/`state_at`/`state_event_id` keys `PUT /records/:id`
+(§3.33) accepts, with the SAME validation rules — an edit body
+without them 400s before ever reaching the referrer check above
+(step 5): the RESTRICT proof depends on that ordering. The client
+(`postRecordChange`, `web-app/app/adapters/records.ts`) echoes
+the trio from the already-loaded detail model
+(`RecordChangeEdit.state`/`stateAt`/`stateEventId`) — zero new
+hops, mirroring the records list's/detail page's existing
+no-attribute-change echo (§3.33). Create's own keys are
+UNCHANGED (`initialState`/`initialStateEventId`/
+`initialStateAt` remain R2's byte-pinned birth names).
 
 ### 3.21 `POST /objectives` — create objective
 
@@ -1224,11 +1309,15 @@ pair-capable write families, in dependency order: `human-members`, `ideas`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **364** message pairs — one pair per seeded
+- The mock-data seed pre-forms **380** message pairs — one pair per seeded
   row for most families, but each seeded flow folds in an
   operation/document/join triple (4 creates × 3 pair triples + 1 genesis
-  document = 13, §3.12) and each seeded work order forms both a document
-  pair and a join pair (145 + 145, §3.17) — in a first pass, BEFORE the
+  document = 13, §3.12), each seeded work order forms both a document
+  pair and a join pair (145 + 145, §3.17), and each seeded record folds
+  in its OWN document pair plus one attribute-PUT pair per seeded
+  attribute (2 operations + 2 documents + 14 attribute documents = 18,
+  §3.20's bundle synthesis, generalized from flows'/work-orders' fixed
+  1+1+1 to 1+1+N) — in a first pass, BEFORE the
   seed's own big transaction opens (`formWritePair`'s hashing is async
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
