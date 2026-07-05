@@ -13,6 +13,8 @@ import {
     postObjectiveCreationOp,
     postAiMemberCreationOp,
     postHumanMemberCreationOp,
+    postBaselineScoreDocumentOp,
+    postActualScoreDocumentOp,
 } from './routes.ts';
 import type {
     FlowCreationPairs,
@@ -878,22 +880,40 @@ async function postMockDataLoadIn(
 
     // The baseline/actual-score rows — hoisted VERBATIM into a
     // pure builder (Phase 7 Task 5) so pass 1 (seed-message-
-    // pairs.ts) can form each row's message pair before this
+    // pairs.ts) forms each row's message pair before this
     // transaction opens, the SAME split every other seeded
     // family already uses. buildScoreSeedProjects resolves each
     // project's organization_id/state PURELY (never a DB read
-    // back), so this stays a plain row-write loop, no pairs yet.
+    // back). This closes the scores half of the Phase 0 seed
+    // deferral WHOLE — baselines AND actuals — one document pair
+    // per row, driven through postBaselineScoreDocumentOp /
+    // postActualScoreDocumentOp exactly as every other seeded
+    // family drives through its own extracted op.
+    const baselineScorePattern =
+        'projects/:id/objective-baseline-scores/:sid';
+    const actualScorePattern =
+        'projects/:id/objective-actual-scores/:sid';
     const scoreRows = buildSeedScoreRows(
         buildScoreSeedProjects(), objectiveMemberPools,
     );
     await Promise.all([
         ...scoreRows.baselines.map(row =>
-            adapter.projectObjectiveBaselineScores.put(
-                row.id, row.fields,
+            postBaselineScoreDocumentOp(
+                adapter, row.id, row.fields,
+                row.fields.member_id,
+                requirePair(
+                    pairs,
+                    seedPairKey(baselineScorePattern, row.id),
+                ),
             )),
         ...scoreRows.actuals.map(row =>
-            adapter.projectObjectiveActualScores.put(
-                row.id, row.fields,
+            postActualScoreDocumentOp(
+                adapter, row.id, row.fields,
+                row.fields.member_id,
+                requirePair(
+                    pairs,
+                    seedPairKey(actualScorePattern, row.id),
+                ),
             )),
     ]);
 }

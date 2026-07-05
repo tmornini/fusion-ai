@@ -20,10 +20,10 @@
 // postXxxCreationOp / postRecordWriteOp call site in
 // mock-data.ts): human-members, ideas, idea-submissions,
 // projects, flows, work-orders, flow-work-orders, ai-members,
-// records, objectives, flow-records. Memberships and
-// project_objective_baseline_scores stay whole-slice
-// deferrals — direct writes the seed never routes through a
-// pair-capable op. The work-order deferral NARROWS this phase
+// records, objectives, flow-records, baseline-scores,
+// actual-scores. Memberships stays the ONLY remaining
+// whole-slice deferral — a direct write the seed never routes
+// through a pair-capable op. The work-order deferral NARROWS this phase
 // to its historical traces alone (states events +
 // state_field_values, still direct — a NAMED carve-out now
 // bound to the states-consumers flip, not "the work-orders
@@ -38,7 +38,11 @@
 // bundle grows from one pair to three (Phase 7 Task 3): the
 // existing operation invocation stays, and the SAME per-pair-key
 // discipline flows/records already established adds a document
-// and a revision invocation per seeded objective.
+// and a revision invocation per seeded objective. The scores
+// deferral closes LAST (Task 5), landing WHOLE: baselines AND
+// actuals (broader than "baselines" alone — the handoff's own
+// phrasing) — one document pair per seeded row, closed through
+// postBaselineScoreDocumentOp / postActualScoreDocumentOp.
 
 import type {
     Id,
@@ -109,6 +113,7 @@ import {
     buildFlowWorkOrderJoins,
     buildWorkOrderStateEvents,
 } from './work-orders.ts';
+import { buildSeedScoreRows } from './scores.ts';
 import type { ScoreSeedProject } from './scores.ts';
 
 // ---- hoisted static seed-event data ----
@@ -1318,6 +1323,54 @@ export function buildMockDataInvocations():
         requesterIdentityId: SYSTEM_MEMBER_ID,
         body: objectiveRevisionBodyOf(org2),
     });
+    // Phase 7 Task 5: the scores half of the seed deferral closes
+    // LAST, landing WHOLE — baselines AND actuals, one document
+    // pair per seeded row, from the SAME buildSeedScoreRows
+    // output mock-data.ts's pass-2 write drives through
+    // postBaselineScoreDocumentOp / postActualScoreDocumentOp.
+    // `pools` is the SAME pre-tx pool the objectives loop above
+    // draws from — every scored project is STARK by construction
+    // (the lone org-2 project is seeded 'submitted', so it never
+    // reaches the scoring loop), but the organization is still
+    // looked up per row's own project rather than hardcoded, so
+    // a future org-2 score would surface at the correct address.
+    const scoreProjects = buildScoreSeedProjects();
+    const scoreProjectOrganizationById = new Map(
+        scoreProjects.map(p => [p.id, p.organization_id]),
+    );
+    const scoreRows = buildSeedScoreRows(scoreProjects, pools);
+    for (const row of scoreRows.baselines) {
+        invocations.push({
+            key: seedPairKey(
+                'projects/:id/objective-baseline-scores/:sid',
+                row.id,
+            ),
+            routePattern:
+                'projects/:id/objective-baseline-scores/:sid',
+            idParams: [row.fields.project_id, row.id],
+            organization: scoreProjectOrganizationById.get(
+                row.fields.project_id,
+            )!,
+            requesterIdentityId: row.fields.member_id,
+            body: row.fields,
+        });
+    }
+    for (const row of scoreRows.actuals) {
+        invocations.push({
+            key: seedPairKey(
+                'projects/:id/objective-actual-scores/:sid',
+                row.id,
+            ),
+            routePattern:
+                'projects/:id/objective-actual-scores/:sid',
+            idParams: [row.fields.project_id, row.id],
+            organization: scoreProjectOrganizationById.get(
+                row.fields.project_id,
+            )!,
+            requesterIdentityId: row.fields.member_id,
+            body: row.fields,
+        });
+    }
     return invocations;
 }
 

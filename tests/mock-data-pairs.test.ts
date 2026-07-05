@@ -16,7 +16,11 @@ import {
 } from '../api/mock-data/work-orders.ts';
 import {
     mockFlowRecords,
+    buildScoreSeedProjects,
+    humanMemberPoolsByOrganization,
 } from '../api/mock-data/seed-message-pairs.ts';
+import { buildMembers } from '../api/mock-data/members.ts';
+import { buildSeedScoreRows } from '../api/mock-data/scores.ts';
 import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
@@ -54,9 +58,13 @@ import {
 // precedent, over the same 4 STARK + seed-objective-org2 set)
 // + 145 work-order documents + 145 flow-work-order joins
 // (Phase 5 Task 4: the entity/join gap closed, one document
-// pair and one join pair per seeded work order) = 393. A
-// dropped or reordered invocation changes this count.
-const EXPECTED_PAIR_COUNT = 393;
+// pair and one join pair per seeded work order) + 49 baseline
+// documents + 92 actual documents (Phase 7 Task 5: the scores
+// half of the Phase 0 seed deferral closes — one document pair
+// per seeded baseline/actual-score row, closed through
+// postBaselineScoreDocumentOp / postActualScoreDocumentOp) =
+// 534. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 534;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -376,18 +384,78 @@ test('a seeded flow-record join pair sits at its org-nested'
     );
 });
 
+// Phase 7 Task 5: the scores half of the seed deferral closes —
+// every seeded baseline/actual-score row now forms its own
+// message pair, driven through postBaselineScoreDocumentOp /
+// postActualScoreDocumentOp, mirroring the flow-record join
+// precedent above (address + no-`id`-key body shape). The
+// expected rows come straight from buildSeedScoreRows — the SAME
+// pure builder pass 1 (seed-message-pairs.ts) and pass 2
+// (mock-data.ts) both consume — so this test can never drift
+// from what the seed actually wrote.
+const scoreRows = buildSeedScoreRows(
+    buildScoreSeedProjects(),
+    humanMemberPoolsByOrganization(buildMembers()),
+);
+
+test('a seeded baseline-score pair sits at its org-nested'
++ ' entity address, its body carrying no id key', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstBaseline = scoreRows.baselines[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(r => r.uri_id === firstBaseline.id);
+    assert.ok(row, 'no request row for the seeded baseline score');
+    assert.equal(
+        row!.uri_prefix,
+        `/organizations/${STARK_ORGANIZATION}/projects/`
+            + `${firstBaseline.fields.project_id}`
+            + '/objective-baseline-scores/',
+    );
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['at', 'member_id', 'objective_id', 'project_id', 'score'],
+    );
+});
+
+test('a seeded actual-score pair sits at its org-nested'
++ ' entity address, its body carrying no id key', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstActual = scoreRows.actuals[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(r => r.uri_id === firstActual.id);
+    assert.ok(row, 'no request row for the seeded actual score');
+    assert.equal(
+        row!.uri_prefix,
+        `/organizations/${STARK_ORGANIZATION}/projects/`
+            + `${firstActual.fields.project_id}`
+            + '/objective-actual-scores/',
+    );
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['at', 'member_id', 'objective_id', 'project_id', 'score'],
+    );
+});
+
 test('every seeded STARK objective pair\'s embedded revision'
 + ' author matches the actually written revision row',
 async () => {
     // Guards the pure pre-tx human-member-pool reconstruction
     // (seed-message-pairs.ts's humanMemberPoolsByOrganization)
-    // against silently drifting from the in-tx DB-read
-    // `memberFor` the baseline/actual-score deferral still
-    // uses — the two are proven to agree (insertion-order trace
-    // of the buffered-tx backend plus this check over ALL four
-    // STARK objectives, not a single sample); this fails loudly
-    // if a future change (e.g. a reordered membership
-    // Promise.all) ever breaks that proof.
+    // against a reordered-Promise.all regression: pass 1 forms
+    // this pair before pass 2 writes any membership row, so the
+    // two MUST already agree on which pool position each seeded
+    // human occupies. Checked over ALL four STARK objectives, not
+    // a single sample; the SAME pool also backs buildSeedScoreRows's
+    // author pick (Phase 7 Task 5, its own STANDING content pins
+    // in tests/mock-data-objectives.test.ts).
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
     const requests = await db.requests.getAll();
