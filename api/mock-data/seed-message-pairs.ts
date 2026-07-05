@@ -20,7 +20,7 @@
 // postXxxCreationOp / postRecordWriteOp call site in
 // mock-data.ts): human-members, ideas, idea-submissions,
 // projects, flows, work-orders, flow-work-orders, ai-members,
-// records, objectives. Memberships and
+// records, objectives, flow-records. Memberships and
 // project_objective_baseline_scores stay whole-slice
 // deferrals — direct writes the seed never routes through a
 // pair-capable op. The work-order deferral NARROWS this phase
@@ -31,7 +31,10 @@
 // this phase, closed through postWorkOrderDocumentOp /
 // postFlowWorkOrderDocumentOp. A further, previously-unlisted
 // direct write — seed-flow-org2 — is ALSO covered here, closed
-// through postFlowDocumentOp (Task 6).
+// through postFlowDocumentOp (Task 6). The 3 seeded flow_records
+// join rows are the ONE genuine seed gap this phase closes last
+// (Task 5): they formed zero message pairs before, now closed
+// through postFlowRecordDocumentOp.
 
 import type {
     Id,
@@ -45,6 +48,7 @@ import type {
     ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
+    FlowRecordEntity,
 } from '../types.ts';
 import {
     jsonArrayField,
@@ -106,9 +110,9 @@ import {
 // writes share ONE declaration apiece — pure literals, so the
 // move changes nothing about when or how they're computed.
 
-// Shared with mock-data.ts's own direct writes that fall on
-// this same moment (mockFlowRecords) — exported so there is
-// exactly one `daysFromNow(-60, 9, 0)` call, not two.
+// Shared with every same-moment array below (flowStateEvents,
+// mockProjectFlows, mockFlowRecords) — exported so there is
+// exactly one `daysFromNow(-60, 9, 0)` call, not several.
 export const wfTimestamp = daysFromNow(-60, 9, 0);
 
 // One state event per seeded idea — the creation moment of
@@ -403,6 +407,40 @@ export const mockProjectFlows: ProjectFlowEntity[] = [
         id: l2cProjectFlowId,
         project_id: l2cProjectId,
         flow_id: l2cFlowId,
+        at: wfTimestamp,
+    },
+];
+
+// Flow ↔ Record bindings. Customer Profile (org '1') is bound
+// to two flows (Customer Onboarding and Lead-to-Close); Project
+// Brief (org '2') is bound to the org-'2' flow so every binding
+// stays within one org. The Layout Test flow is left unbound —
+// it exists to exercise Auto Layout. Shared with mock-data.ts's
+// own pass-2 write of the SAME rows (through
+// postFlowRecordDocumentOp, Phase 6 Task 5) — exported so there
+// is exactly one declaration, not two.
+export const mockFlowRecords: FlowRecordEntity[] = [
+    {
+        id: 'frb01CustOnbCustProfA1',
+        flow_id: 'h5mErVBQhwdMKwi1co30jB',
+        record_id: customerProfileRecordId,
+        at: wfTimestamp,
+    },
+    {
+        id: 'frb02L3adt0ClCustProf2',
+        flow_id: l2cFlowId,
+        record_id: customerProfileRecordId,
+        at: wfTimestamp,
+    },
+    {
+        // Project Brief lives in org '2'
+        // (assignOrganization(index 1)), so it binds to
+        // the org-'2' flow — flowOrganization ===
+        // recordOrganization keeps the binding visible
+        // behind the org fence.
+        id: 'frb03Fus10nPr0jBri3f03',
+        flow_id: 'seed-flow-org2',
+        record_id: projectBriefRecordId,
         at: wfTimestamp,
     },
 ];
@@ -716,6 +754,32 @@ export function flowWorkOrderJoinSeedBody(
     return { ...fields };
 }
 
+// The genesis case of the document PUT
+// flows/:id/records/:frid (Phase 6 Task 5): the flat join
+// fields, no `id` (a route param, not a body field) — the SAME
+// three keys (flow_id, record_id, at) the live :frid PUT's
+// validateFlowRecordEntity accepts.
+export function flowRecordJoinSeedBody(
+    row: FlowRecordEntity,
+): Record<string, unknown> {
+    const { id: _id, ...fields } = row;
+    return { ...fields };
+}
+
+// Every seeded flow-record join binds within one org (mirrors
+// mockFlowRecords' own comment: flowOrganization ===
+// recordOrganization keeps the binding visible behind the org
+// fence). Only 'seed-flow-org2' sits in org '2'; every other
+// seeded flow is Stark — mirrors projectOrganizationFor's own
+// single-override shape above.
+export function flowRecordOrganizationFor(
+    join: FlowRecordEntity,
+): Id {
+    return join.flow_id === 'seed-flow-org2'
+        ? ORGANIZATION_TWO
+        : STARK_ORGANIZATION;
+}
+
 export function aiMemberSeedBody(
     m: AIMemberEntity,
 ): Record<string, unknown> {
@@ -864,8 +928,9 @@ interface MockDataInvocation {
 // Dependency-ordered (matches postMockDataLoadIn's write order):
 // human-members, ideas, idea-submissions, projects, flows,
 // work-orders, flow-work-orders, ai-members, records,
-// objectives. A dropped or reordered invocation here is caught
-// by tests/mock-data-pairs.test.ts's pinned invocation count.
+// flow-records, objectives. A dropped or reordered invocation
+// here is caught by tests/mock-data-pairs.test.ts's pinned
+// invocation count.
 export function buildMockDataInvocations():
     readonly MockDataInvocation[] {
     const members = buildMembers();
@@ -1121,6 +1186,27 @@ export function buildMockDataInvocations():
             });
         }
     });
+    // Phase 6 Task 5: the flow_records seed gap closed — one
+    // join pair per seeded flow-record binding, mirroring the
+    // flow-work-order joins' shape above. The requesting
+    // identity is the bound RECORD's own state-event member —
+    // the same identity that seeded the record itself (verified
+    // by content: every recordStateEvents row above is authored
+    // by SYSTEM_MEMBER_ID), not a second, independently-picked
+    // author.
+    for (const join of mockFlowRecords) {
+        invocations.push({
+            key: seedPairKey(
+                'flows/:id/records/:frid', join.id,
+            ),
+            routePattern: 'flows/:id/records/:frid',
+            idParams: [join.flow_id, join.id],
+            organization: flowRecordOrganizationFor(join),
+            requesterIdentityId: recordStateEventByRecordId
+                .get(join.record_id)!.member_id,
+            body: flowRecordJoinSeedBody(join),
+        });
+    }
     for (const seed of OBJECTIVE_SEEDS) {
         const memberId = pickHumanMember(
             pools, STARK_ORGANIZATION,

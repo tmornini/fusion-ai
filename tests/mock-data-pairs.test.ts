@@ -15,6 +15,9 @@ import {
     buildFlowWorkOrderJoins,
 } from '../api/mock-data/work-orders.ts';
 import {
+    mockFlowRecords,
+} from '../api/mock-data/seed-message-pairs.ts';
+import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
     MOCK_SEED_TIMESTAMP,
@@ -42,12 +45,16 @@ import {
 // invocation per seeded attribute, generalized from flows'
 // fixed 1+1+1 to 1+1+N; every seeded attribute is genesis, so
 // no attribute-DELETE invocation exists in the seed) +
+// 3 flow-record joins (Phase 6 Task 5: the ONE genuine seed
+// gap this migration found — the 3 seeded flow_records rows
+// formed zero pairs before, one join pair per binding now,
+// closed through postFlowRecordDocumentOp) +
 // 5 objectives (4 STARK + seed-objective-org2) + 145 work-order
 // documents + 145 flow-work-order joins (Phase 5 Task 4: the
 // entity/join gap closed, one document pair and one join pair
-// per seeded work order) = 380. A dropped or reordered
+// per seeded work order) = 383. A dropped or reordered
 // invocation changes this count.
-const EXPECTED_PAIR_COUNT = 380;
+const EXPECTED_PAIR_COUNT = 383;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -278,6 +285,28 @@ async () => {
     assert.deepEqual(
         Object.keys(embedded.body).sort(),
         ['at', 'flow_id', 'work_order_id'],
+    );
+});
+
+test('a seeded flow-record join pair sits at its org-nested'
++ ' join address, its body carrying no id key', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstJoin = mockFlowRecords[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(r => r.uri_id === firstJoin.id);
+    assert.ok(row, 'no request row for the seeded join');
+    assert.equal(
+        row!.uri_prefix,
+        `/organizations/${STARK_ORGANIZATION}/flows/`
+            + `${firstJoin.flow_id}/records/`,
+    );
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['at', 'flow_id', 'record_id'],
     );
 });
 

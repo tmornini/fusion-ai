@@ -8,6 +8,7 @@ import {
     postFlowDocumentOp,
     postWorkOrderDocumentOp,
     postFlowWorkOrderDocumentOp,
+    postFlowRecordDocumentOp,
     postRecordWriteOp,
     postObjectiveCreationOp,
     postAiMemberCreationOp,
@@ -20,7 +21,6 @@ import type {
 import type {
     StateEntity,
     StateFieldValueEntity,
-    FlowRecordEntity,
 } from './types.ts';
 import {
     MS_PER_DAY,
@@ -59,8 +59,6 @@ import {
     OBJECTIVE_SEEDS,
 } from './mock-data/objectives.ts';
 import {
-    customerProfileRecordId,
-    projectBriefRecordId,
     buildRecords,
     buildRecordAttributes,
 } from './mock-data/records.ts';
@@ -70,16 +68,15 @@ import {
     buildWorkOrderStateEvents,
 } from './mock-data/work-orders.ts';
 import {
-    l2cFlowId,
     buildLeadToCloseWorkload,
 } from './mock-data/lead-to-close-flow.ts';
 import {
-    wfTimestamp,
     ideaStateEvents,
     projectStateEvents,
     flowStateEvents,
     recordStateEvents,
     mockProjectFlows,
+    mockFlowRecords,
     deterministicScore,
     humanMemberPoolsByOrganization,
     pickHumanMember,
@@ -93,6 +90,7 @@ import {
     flowOrg2SeedBody,
     workOrderDocumentSeedBody,
     flowWorkOrderJoinSeedBody,
+    flowRecordJoinSeedBody,
     aiMemberSeedBody,
     recordSeedBody,
     objectiveSeedBody,
@@ -457,37 +455,10 @@ async function postMockDataLoadIn(
 
     const mockRecordAttributes = buildRecordAttributes();
 
-    // Flow ↔ Record bindings. Customer Profile (org '1')
-    // is bound to two flows (Customer Onboarding and
-    // Lead-to-Close); Project Brief (org '2') is bound to
-    // the org-'2' flow so every binding stays within one
-    // org. The Layout Test flow is left unbound — it
-    // exists to exercise Auto Layout.
-    const mockFlowRecords: FlowRecordEntity[] = [
-        {
-            id: 'frb01CustOnbCustProfA1',
-            flow_id:
-                'h5mErVBQhwdMKwi1co30jB',
-            record_id: customerProfileRecordId,
-            at: wfTimestamp,
-        },
-        {
-            id: 'frb02L3adt0ClCustProf2',
-            flow_id: l2cFlowId,
-            record_id: customerProfileRecordId,
-            at: wfTimestamp,
-        },
-        {
-            // Project Brief lives in org '2'
-            // (assignOrganization(index 1)), so it binds to the
-            // org-'2' flow — flowOrganization === recordOrganization keeps
-            // the binding visible behind the org fence.
-            id: 'frb03Fus10nPr0jBri3f03',
-            flow_id: 'seed-flow-org2',
-            record_id: projectBriefRecordId,
-            at: wfTimestamp,
-        },
-    ];
+    // mockFlowRecords (the flow-record join rows) is imported
+    // from seed-message-pairs.ts — pass 1 there needs the SAME
+    // array to form each join's pair before this transaction
+    // opens.
 
     // One state event per seeded Record — the
     // creation moment of each Record on the states
@@ -803,11 +774,18 @@ async function postMockDataLoadIn(
             );
         }),
         ...mockFlowRecords.map(r =>
-            adapter.flowRecords.put(r.id, {
-                flow_id: r.flow_id,
-                record_id: r.record_id,
-                at: r.at,
-            }),
+            postFlowRecordDocumentOp(
+                adapter,
+                r.id,
+                flowRecordJoinSeedBody(r),
+                SYSTEM_MEMBER_ID,
+                requirePair(
+                    pairs,
+                    seedPairKey(
+                        'flows/:id/records/:frid', r.id,
+                    ),
+                ),
+            ),
         ),
     ]);
 
