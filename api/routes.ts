@@ -6,6 +6,7 @@ import type {
     FlowCreateBody,
     WorkOrderCreateBody,
     RecordWriteBody,
+    ObjectiveCreateBody,
 } from './validators.ts';
 import type {
     Id,
@@ -1246,6 +1247,56 @@ export async function postFlowDocumentOp(
     );
 }
 
+// The three pairs a live POST /objectives forms (Task 3): the
+// gate's own operation pair (204, at the objectives/:id address
+// per the create-body-id-field override — POST 'objectives' and
+// PUT 'objectives/:id' collapse onto the SAME (uriPrefix,
+// uriId), the flows/records precedent), the synthesized document
+// pair (objectives/:id), and the synthesized revision pair
+// (objectives/:id/revisions/:rid) the route pre-forms below. All
+// three share ONE requestAt (the create's own origination) yet
+// strictly-later RESPONSE `at` stamps (appendMessagePair's
+// nowUtc() is monotonic), so the document pair — appended after
+// the operation pair — becomes the shared address's head; the
+// revision pair lives at its OWN distinct address (a fresh
+// revision id per create), so it is always genesis there unless
+// a live PUT had already visited that exact revision id.
+export interface ObjectiveCreationPairs {
+    readonly operation: MessagePair;
+    readonly document: MessagePair;
+    readonly revision: MessagePair;
+}
+
+// The shared BODY builders — the ONE-voice seam both the live
+// route-inline formation (route('objectives', ...) below) and
+// the seed's invocation construction
+// (api/mock-data/seed-message-pairs.ts) consume — the
+// recordDocumentBodyOf precedent.
+
+// The wire body a live PUT objectives/:id would carry for this
+// SAME write: organization_id STRIPPED (the live client's PUT
+// body is `{position}` alone; the org rides the address).
+export function objectiveDocumentBodyOf(
+    createBody: ObjectiveCreateBody,
+): Record<string, unknown> {
+    const {
+        organization_id: _organizationId, ...entity
+    } = createBody.objective;
+    return entity;
+}
+
+// The wire body a live PUT objectives/:id/revisions/:rid would
+// carry for this SAME write: the create body's revision
+// sub-object VERBATIM — already the exact {objective_id, name,
+// description, member_id, at} shape validateObjectiveRevisionEntity
+// admits (objective revisions carry no organization_id column at
+// all), so no stripping is needed here.
+export function objectiveRevisionBodyOf(
+    createBody: ObjectiveCreateBody,
+): Record<string, unknown> {
+    return createBody.revision;
+}
+
 // Objective creation: the objective row and its FIRST
 // revision commit as ONE transaction — a mid-write
 // failure rolls the whole thing back rather than
@@ -1257,15 +1308,18 @@ export async function postFlowDocumentOp(
 // handler needs no actor. Exported so the seed can drive
 // objective creation through the same gate the route
 // uses (Decision 6's below-facade carve-out) — this is
-// also Phase 1's dual-write insertion seam. `pair` is
+// also Phase 1's dual-write insertion seam. `pairs` is
 // optional so the seed's below-facade calls (api/mock-
-// data.ts, no gate, no pair) keep compiling unchanged;
-// the route always supplies one, since 'objectives' is
-// pair-wired and never bearer-exempt.
+// data.ts, no gate, no pairs) keep compiling unchanged;
+// the route always supplies the bundle, since 'objectives'
+// is pair-wired and never bearer-exempt. Task 3: create
+// appends THREE pairs — the operation pair (the gate's
+// own), the synthesized document pair, and the synthesized
+// revision pair — in that order, LAST, pairs-or-nothing.
 export async function postObjectiveCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
-    pair?: MessagePair,
+    pairs?: ObjectiveCreationPairs,
 ): Promise<void> {
     const b = validateObjectiveCreateBody(body);
     return db.transaction(
@@ -1284,8 +1338,10 @@ export async function postObjectiveCreationOp(
                 b.revision as unknown as
                     Omit<ObjectiveRevisionEntity, 'id'>,
             );
-            if (pair !== undefined) {
-                await appendMessagePair(view, pair);
+            if (pairs !== undefined) {
+                await appendMessagePair(view, pairs.operation);
+                await appendMessagePair(view, pairs.document);
+                await appendMessagePair(view, pairs.revision);
             }
         },
     );
@@ -4009,10 +4065,106 @@ export const routes: Route[] = [
     documentEntityRoute(PROJECTS_WIRING),
     route('objectives', {
         get: (db) => db.objectives.getAll(),
-        // See postObjectiveCreationOp for the transaction
-        // shape.
-        post: (db, _p, body, _actor, pair) =>
-            postObjectiveCreationOp(db, body, pair),
+        // Forms the document + revision pairs pre-tx (Task 3)
+        // beside the gate's own operation pair — the SAME shape
+        // a live genesis PUT /objectives/:id and a live PUT
+        // /objectives/:id/revisions/:rid would each carry — ONLY
+        // when the gate supplied both a pair and a fence
+        // organization (the route('flows') condition verbatim);
+        // a below-facade caller (api/mock-data.ts, no gate) skips
+        // both, preserving dual-write discipline. See
+        // postObjectiveCreationOp for the transaction shape.
+        post: async (
+            db, _p, body, actor, pair, organization,
+        ) => {
+            let pairs: ObjectiveCreationPairs | undefined;
+            if (pair !== undefined && organization !== undefined) {
+                const b = validateObjectiveCreateBody(body);
+                const documentBody = objectiveDocumentBodyOf(b);
+                validateObjectiveDocumentBody(documentBody);
+                const documentSpec =
+                    WRITE_RESPONSE_SPECS['objectives/:id'];
+                if (
+                    documentSpec === undefined
+                    || !('status' in documentSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' objectives/:id',
+                    );
+                }
+                const objectivesPrefix = canonicalUriPrefix(
+                    organization, '/objectives/',
+                );
+                const documentHeadPairId = await headPairIdAt(
+                    db, objectivesPrefix, b.id,
+                );
+                const document = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/objectives/' + b.id,
+                    routePattern: 'objectives/:id',
+                    routeSegments: ['objectives', ':id'],
+                    pathSegments: ['objectives', b.id],
+                    headerFields: [],
+                    body: documentBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: documentSpec.status,
+                    responseBody: documentSpec.successBody?.(
+                        [b.id], documentBody, actor, organization,
+                    ),
+                    headPairId: documentHeadPairId,
+                });
+                const revisionBody = objectiveRevisionBodyOf(b);
+                validateObjectiveRevisionEntity(revisionBody);
+                const revisionSpec = WRITE_RESPONSE_SPECS[
+                    'objectives/:id/revisions/:rid'
+                ];
+                if (
+                    revisionSpec === undefined
+                    || !('status' in revisionSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' objectives/:id/revisions/:rid',
+                    );
+                }
+                const revisionsPrefix = canonicalUriPrefix(
+                    organization,
+                    '/objectives/' + b.id + '/revisions/',
+                );
+                const revisionHeadPairId = await headPairIdAt(
+                    db, revisionsPrefix, b.revisionId,
+                );
+                const revision = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/objectives/' + b.id
+                        + '/revisions/' + b.revisionId,
+                    routePattern: 'objectives/:id/revisions/:rid',
+                    routeSegments: [
+                        'objectives', ':id', 'revisions', ':rid',
+                    ],
+                    pathSegments: [
+                        'objectives', b.id,
+                        'revisions', b.revisionId,
+                    ],
+                    headerFields: [],
+                    body: revisionBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: revisionSpec.status,
+                    responseBody: revisionSpec.successBody?.(
+                        [b.id, b.revisionId], revisionBody,
+                        actor, organization,
+                    ),
+                    headPairId: revisionHeadPairId,
+                });
+                pairs = { operation: pair, document, revision };
+            }
+            return postObjectiveCreationOp(db, body, pairs);
+        },
     }),
     // A hybrid route (unlike ideas/projects/flows/work-orders'
     // full documentEntityRoute swap): GET stays hand-written,

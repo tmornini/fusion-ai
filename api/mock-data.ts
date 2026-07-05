@@ -17,6 +17,7 @@ import {
 import type {
     FlowCreationPairs,
     RecordWritePairs,
+    ObjectiveCreationPairs,
 } from './routes.ts';
 import type {
     StateEntity,
@@ -831,28 +832,69 @@ async function postMockDataLoadIn(
             objectiveMemberPools, STARK_ORGANIZATION,
             `${seed.id}:revision`,
         );
+        // Task 3: create threads the triple — the operation
+        // pair plus its two synthesized siblings (document,
+        // revision), each pre-formed in pass 1 under its own
+        // deterministic key (seed-message-pairs.ts) — the
+        // flows precedent, objectives' own fixed 1+1+1. The
+        // revision id is recomputed identically to
+        // objectiveSeedBody's own construction (deterministic,
+        // never random), the mock-data-pairs.test.ts precedent.
+        const revisionId = `${seed.id}:${MOCK_SEED_TIMESTAMP}`;
+        const objectivePairs: ObjectiveCreationPairs = {
+            operation: requirePair(
+                pairs, seedPairKey('objectives', seed.id),
+            ),
+            document: requirePair(
+                pairs, seedPairKey('objectives/:id', seed.id),
+            ),
+            revision: requirePair(
+                pairs,
+                seedPairKey(
+                    'objectives/:id/revisions/:rid', revisionId,
+                ),
+            ),
+        };
         await postObjectiveCreationOp(
             adapter,
             objectiveSeedBody(
                 seed, STARK_ORGANIZATION, memberId,
             ),
-            requirePair(
-                pairs, seedPairKey('objectives', seed.id),
-            ),
+            objectivePairs,
         );
     }
 
     // Organization '2' owns one objective so each org owns at least one.
+    const org2RevisionId =
+        `${ORGANIZATION_TWO_OBJECTIVE.id}:${MOCK_SEED_TIMESTAMP}`;
     await postObjectiveCreationOp(
         adapter,
         objectiveSeedBody(
             ORGANIZATION_TWO_OBJECTIVE, ORGANIZATION_TWO,
             SYSTEM_MEMBER_ID,
         ),
-        requirePair(
-            pairs,
-            seedPairKey('objectives', ORGANIZATION_TWO_OBJECTIVE.id),
-        ),
+        {
+            operation: requirePair(
+                pairs,
+                seedPairKey(
+                    'objectives', ORGANIZATION_TWO_OBJECTIVE.id,
+                ),
+            ),
+            document: requirePair(
+                pairs,
+                seedPairKey(
+                    'objectives/:id',
+                    ORGANIZATION_TWO_OBJECTIVE.id,
+                ),
+            ),
+            revision: requirePair(
+                pairs,
+                seedPairKey(
+                    'objectives/:id/revisions/:rid',
+                    org2RevisionId,
+                ),
+            ),
+        },
     );
 
     const allProjects = await adapter.projects.getAll();

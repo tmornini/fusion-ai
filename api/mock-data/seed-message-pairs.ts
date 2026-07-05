@@ -34,7 +34,11 @@
 // through postFlowDocumentOp (Task 6). The 3 seeded flow_records
 // join rows are the ONE genuine seed gap this phase closes last
 // (Task 5): they formed zero message pairs before, now closed
-// through postFlowRecordDocumentOp.
+// through postFlowRecordDocumentOp. Objectives' own create-time
+// bundle grows from one pair to three (Phase 7 Task 3): the
+// existing operation invocation stays, and the SAME per-pair-key
+// discipline flows/records already established adds a document
+// and a revision invocation per seeded objective.
 
 import type {
     Id,
@@ -66,10 +70,13 @@ import {
     flowCreateDocumentBody,
     recordDocumentBodyOf,
     recordAttributeDocumentBodyOf,
+    objectiveDocumentBodyOf,
+    objectiveRevisionBodyOf,
 } from '../routes.ts';
 import {
     validateFlowCreateBody,
     validateRecordWriteBody,
+    validateObjectiveCreateBody,
 } from '../validators.ts';
 import {
     MOCK_SEED_TIMESTAMP,
@@ -1212,16 +1219,49 @@ export function buildMockDataInvocations():
             pools, STARK_ORGANIZATION,
             `${seed.id}:revision`,
         );
+        const createBody = objectiveSeedBody(
+            seed, STARK_ORGANIZATION, memberId,
+        );
         invocations.push({
             key: seedPairKey('objectives', seed.id),
             routePattern: 'objectives',
             organization: STARK_ORGANIZATION,
             requesterIdentityId: memberId,
-            body: objectiveSeedBody(
-                seed, STARK_ORGANIZATION, memberId,
+            body: createBody,
+        });
+        // Task 3: create appends the document pair (at the
+        // objective's own address) and the revision pair (at
+        // its first revision's own address), each keyed by its
+        // OWN deterministic invocation entry — the flows
+        // document + join precedent, objectives' own fixed
+        // 1+1+1. Bodies via the shared BODY builders
+        // (api/routes.ts) — never a second, hand-rolled copy.
+        // The SAME member authors all three invocations (the
+        // revision author).
+        const b = validateObjectiveCreateBody(createBody);
+        invocations.push({
+            key: seedPairKey('objectives/:id', seed.id),
+            routePattern: 'objectives/:id',
+            idParams: [seed.id],
+            organization: STARK_ORGANIZATION,
+            requesterIdentityId: memberId,
+            body: objectiveDocumentBodyOf(b),
+        });
+        invocations.push({
+            key: seedPairKey(
+                'objectives/:id/revisions/:rid', b.revisionId,
             ),
+            routePattern: 'objectives/:id/revisions/:rid',
+            idParams: [seed.id, b.revisionId],
+            organization: STARK_ORGANIZATION,
+            requesterIdentityId: memberId,
+            body: objectiveRevisionBodyOf(b),
         });
     }
+    const org2CreateBody = objectiveSeedBody(
+        ORGANIZATION_TWO_OBJECTIVE,
+        ORGANIZATION_TWO, SYSTEM_MEMBER_ID,
+    );
     invocations.push({
         key: seedPairKey(
             'objectives', ORGANIZATION_TWO_OBJECTIVE.id,
@@ -1229,10 +1269,28 @@ export function buildMockDataInvocations():
         routePattern: 'objectives',
         organization: ORGANIZATION_TWO,
         requesterIdentityId: SYSTEM_MEMBER_ID,
-        body: objectiveSeedBody(
-            ORGANIZATION_TWO_OBJECTIVE,
-            ORGANIZATION_TWO, SYSTEM_MEMBER_ID,
+        body: org2CreateBody,
+    });
+    const org2 = validateObjectiveCreateBody(org2CreateBody);
+    invocations.push({
+        key: seedPairKey(
+            'objectives/:id', ORGANIZATION_TWO_OBJECTIVE.id,
         ),
+        routePattern: 'objectives/:id',
+        idParams: [ORGANIZATION_TWO_OBJECTIVE.id],
+        organization: ORGANIZATION_TWO,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        body: objectiveDocumentBodyOf(org2),
+    });
+    invocations.push({
+        key: seedPairKey(
+            'objectives/:id/revisions/:rid', org2.revisionId,
+        ),
+        routePattern: 'objectives/:id/revisions/:rid',
+        idParams: [ORGANIZATION_TWO_OBJECTIVE.id, org2.revisionId],
+        organization: ORGANIZATION_TWO,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        body: objectiveRevisionBodyOf(org2),
     });
     return invocations;
 }

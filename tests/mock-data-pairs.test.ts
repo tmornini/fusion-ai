@@ -49,12 +49,14 @@ import {
 // gap this migration found — the 3 seeded flow_records rows
 // formed zero pairs before, one join pair per binding now,
 // closed through postFlowRecordDocumentOp) +
-// 5 objectives (4 STARK + seed-objective-org2) + 145 work-order
-// documents + 145 flow-work-order joins (Phase 5 Task 4: the
-// entity/join gap closed, one document pair and one join pair
-// per seeded work order) = 383. A dropped or reordered
-// invocation changes this count.
-const EXPECTED_PAIR_COUNT = 383;
+// 15 objectives-family (5 ops + 5 documents + 5 revisions —
+// Phase 7 Task 3's fixed 1+1+1 bundle synthesis, the flows
+// precedent, over the same 4 STARK + seed-objective-org2 set)
+// + 145 work-order documents + 145 flow-work-order joins
+// (Phase 5 Task 4: the entity/join gap closed, one document
+// pair and one join pair per seeded work order) = 393. A
+// dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 393;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -223,21 +225,85 @@ test('a seeded objective create pair sits at its org-nested'
     await postMockDataLoad(db);
     const requests = await db.requests.getAll();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
-    const starkRow = requests.find(
+    // The document pair now shares this address with the
+    // operation pair (Task 3's create-time bundle), so a
+    // positional/single .find() is unsafe — filter/count
+    // instead (the H7/arrival-order hazard class).
+    const starkRows = requests.filter(
         r => r.uri_id === starkSeed.id,
     );
-    assert.ok(starkRow, 'no request row for the STARK objective');
-    assert.equal(
-        starkRow!.uri_prefix,
-        `/organizations/${STARK_ORGANIZATION}/objectives/`,
-    );
-    const org2Row = requests.find(
+    assert.equal(starkRows.length, 2);
+    for (const row of starkRows) {
+        assert.equal(
+            row.uri_prefix,
+            `/organizations/${STARK_ORGANIZATION}/objectives/`,
+        );
+    }
+    const org2Rows = requests.filter(
         r => r.uri_id === 'seed-objective-org2',
     );
-    assert.ok(org2Row, 'no request row for the org-2 objective');
-    assert.equal(
-        org2Row!.uri_prefix,
-        `/organizations/${ORGANIZATION_TWO}/objectives/`,
+    assert.equal(org2Rows.length, 2);
+    for (const row of org2Rows) {
+        assert.equal(
+            row.uri_prefix,
+            `/organizations/${ORGANIZATION_TWO}/objectives/`,
+        );
+    }
+});
+
+test('a seeded objective\'s document pair sits at its'
++ ' entity address, its body carrying no organization_id'
++ ' key', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const starkSeed = OBJECTIVE_SEEDS[0]!;
+    const requests = await db.requests.getAll();
+    const responseById = new Map(
+        (await db.responses.getAll()).map(r => [r.id, r]),
+    );
+    // The document pair shares its address with the operation
+    // pair (objectives' createBodyIdField collapses both onto
+    // the SAME uri_id) — distinguish it by its OWN 200
+    // response, the operation pair's being 204.
+    const documentRow = requests.find(
+        r => r.uri_id === starkSeed.id
+            && r.uri_prefix
+                === `/organizations/${STARK_ORGANIZATION}`
+                    + '/objectives/'
+            && responseById.get(r.id)?.status === 200,
+    );
+    assert.ok(
+        documentRow, 'no document pair for the seeded objective',
+    );
+    const embedded = JSON.parse(documentRow!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(Object.keys(embedded.body), ['position']);
+});
+
+test('a seeded objective\'s revision pair sits at its own'
++ ' entity address, its body carrying the five revision'
++ ' keys', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const starkSeed = OBJECTIVE_SEEDS[0]!;
+    const revisionId = `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`;
+    const requests = await db.requests.getAll();
+    const revisionRow = requests.find(
+        r => r.uri_id === revisionId
+            && r.uri_prefix
+                === `/organizations/${STARK_ORGANIZATION}`
+                    + `/objectives/${starkSeed.id}/revisions/`,
+    );
+    assert.ok(
+        revisionRow, 'no revision pair for the seeded objective',
+    );
+    const embedded = JSON.parse(revisionRow!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['at', 'description', 'member_id', 'name', 'objective_id'],
     );
 });
 
@@ -325,6 +391,9 @@ async () => {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
     const requests = await db.requests.getAll();
+    const responseById = new Map(
+        (await db.responses.getAll()).map(r => [r.id, r]),
+    );
     for (const starkSeed of OBJECTIVE_SEEDS) {
         const revision = await db.objectiveRevisions.getById(
             `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`,
@@ -333,8 +402,15 @@ async () => {
             revision,
             'no revision row for ' + starkSeed.id,
         );
+        // The operation pair alone embeds the full create body
+        // (its own `revision` sub-object) — the document pair
+        // now sharing this address carries `{position}` only, so
+        // select by the operation's OWN 204 response (the
+        // document pair's being 200), never a positional first
+        // match (the H7/arrival-order hazard class).
         const row = requests.find(
-            r => r.uri_id === starkSeed.id,
+            r => r.uri_id === starkSeed.id
+                && responseById.get(r.id)?.status === 204,
         );
         assert.ok(row, 'no request row for ' + starkSeed.id);
         const embedded = JSON.parse(row!.message) as {
