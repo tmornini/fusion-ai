@@ -2365,6 +2365,115 @@ export function validateRecordAttributeEntity(
     };
 }
 
+const RECORD_ATTRIBUTE_DOCUMENT_BODY_KEYS:
+    readonly string[] = [
+    'record_id', 'name', 'attribute_type',
+    'sort_order', 'options', 'constraints',
+];
+
+export interface RecordAttributeDocumentBody {
+    readonly entity:
+        Omit<RecordAttributeEntity, 'id' | 'organization_id'>;
+}
+
+// The HTTP-body gate for PUT /record-attributes/:id: the
+// sixth family, and the SECOND 'stateless' one (work-orders is
+// the first) — no lifecycle trio is admitted, so a document PUT
+// here is a pure entity edit. organization_id is deliberately
+// absent from the expected set (like every other org-owned
+// write, the client never supplies it; the org fence stamps it
+// downstream when view.recordAttributes.put re-validates
+// through validateRecordAttributeEntity) yet rides the
+// `optional` allowance rather than `expected` — a caller-forged
+// organization_id is tolerated-but-ignored, not rejected,
+// because the fence's stamp always overrides whatever key it
+// finds. REASON this validator exists rather than wiring
+// validateRecordAttributeEntity straight into
+// documentWriteResponseSpec: that generic builder calls
+// validateDocument WITHOUT pre-stamping organization_id (the
+// stamp lands only in the RESPONSE, after validation), while
+// today's hand-written response spec pre-stamps the key BEFORE
+// calling validateRecordAttributeEntity — wiring the shipped
+// entity validator in directly would 500 any body lacking the
+// key, where today it 200s. Every existing fixture happens to
+// carry the key, so ./validate alone would not catch that
+// regression — this validator closes it by construction. Entity
+// fields are picked directly (the same constraints/options
+// rules validateRecordAttributeEntity enforces) rather than
+// delegated to it — that function REQUIRES organization_id,
+// which this body never carries pre-stamp.
+export function validateRecordAttributeDocumentBody(
+    body: Record<string, unknown>,
+): RecordAttributeDocumentBody {
+    assertOnlyKeys(
+        body, RECORD_ATTRIBUTE_DOCUMENT_BODY_KEYS,
+        'RecordAttributeDocumentBody', ['organization_id'],
+    );
+    const name = pickString(body, 'name');
+    if (name === '') {
+        throw new ValidationError(
+            'RecordAttributeDocumentBody.name'
+            + ' must be non-empty',
+        );
+    }
+    const attributeType = asAttributeType(
+        body['attribute_type'],
+        'RecordAttributeDocumentBody.attribute_type',
+    );
+    const constraintsField =
+        pickJsonArrayField(body, 'constraints');
+    const parsedConstraints = parseOrThrow(
+        constraintsField,
+        'RecordAttributeDocumentBody.constraints',
+    );
+    const constraintsArr = asArray(
+        parsedConstraints,
+        'RecordAttributeDocumentBody.constraints',
+    );
+    for (let i = 0; i < constraintsArr.length; i++) {
+        const constraint = asConstraint(
+            constraintsArr[i],
+            'RecordAttributeDocumentBody.constraints['
+            + i + ']',
+        );
+        assertConstraintAppliesTo(
+            constraint.kind,
+            attributeType,
+            'RecordAttributeDocumentBody.constraints['
+            + i + ']',
+        );
+    }
+    const optionsField = pickJsonArrayField(
+        body, 'options',
+    );
+    const parsedOptions = validateStringArrayJson(
+        optionsField,
+        'RecordAttributeDocumentBody.options',
+    );
+    if (
+        (attributeType === 'select'
+            || attributeType === 'radio')
+        && parsedOptions.length === 0
+    ) {
+        throw new ValidationError(
+            'RecordAttributeDocumentBody.options'
+            + ' must list at least one option'
+            + " for attribute_type '"
+            + attributeType + "'",
+        );
+    }
+    return {
+        entity: {
+            record_id: pickString(body, 'record_id'),
+            name,
+            attribute_type: attributeType,
+            sort_order: pickNumber(body, 'sort_order'),
+            options: optionsField,
+            constraints: constraintsField,
+        },
+    };
+}
+
 const FLOW_RECORD_BODY_KEYS: readonly string[] = [
     'flow_id', 'record_id', 'at',
 ];

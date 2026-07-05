@@ -70,7 +70,7 @@ import {
     validateProjectDocumentBody,
     validateProjectFlowEntity,
     validateFlowRecordEntity,
-    validateRecordAttributeEntity,
+    validateRecordAttributeDocumentBody,
     validateRecordDocumentBody,
     validateRecordWriteBody,
     validateRoleGrantEntity,
@@ -296,11 +296,56 @@ const RECORDS_WIRING: DocumentFamilyWiring = {
     documentOp: postRecordDocumentOp,
     entityOf: recordDocumentEntityOf,
 };
+// The generic GET machinery this entityOf serves is unreached
+// through this task — GET record-attributes/:id and GET
+// record-attributes stay hand-written, old-plane (a future
+// task flips them, mirroring RECORDS_WIRING's own Task-7 note
+// above). A body spread is safe here exactly as
+// workOrderDocumentEntityOf's own comment argues: the head
+// pair's body, stamped with id and organization_id, already
+// carries exactly the {record_id, name, attribute_type,
+// sort_order, options, constraints} keys
+// validateRecordAttributeDocumentBody's gate admits — no
+// per-field picking needed, and (UNLIKE a 'trio' family) there
+// is no trio to leak, since 'stateless' rejects one at the gate.
+function recordAttributeDocumentEntityOf(
+    document: DerivedDocument,
+    organization: Id,
+): unknown {
+    return {
+        id: document.uriId,
+        organization_id: organization,
+        ...document.body,
+    };
+}
+// The record-attributes wiring row — the sixth family, and the
+// SECOND 'stateless' one (work-orders is the first). Sharper
+// evidence than work-orders': a work order's lifecycle CAN be
+// (and is) authored — just never through the document address —
+// so ITS 'stateless' classification is vacuous-in-PRACTICE
+// (WORK_ORDERS_WIRING's own comment). A record attribute carries
+// no lifecycle concept AT ALL: no RecordAttributeState alphabet
+// exists anywhere in types.ts, and no call site posts a states
+// event keyed to an attribute id (grep-proven at research) — its
+// 'stateless' classification is vacuous BY CONSTRUCTION, the
+// stronger of the two. notFoundTable is 'record_attributes' —
+// the SECOND family whose storage table name (db-backed.ts's
+// EntityStore key) differs from its hyphenated family/route name
+// (work-orders/work_orders was the first).
+const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
+    family: 'record-attributes',
+    lifecycle: 'stateless',
+    notFoundTable: 'record_attributes',
+    validateDocument: validateRecordAttributeDocumentBody,
+    documentOp: postRecordAttributeDocumentOp,
+    entityOf: recordAttributeDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
 registerDocumentFamilyWiring(WORK_ORDERS_WIRING);
 registerDocumentFamilyWiring(RECORDS_WIRING);
+registerDocumentFamilyWiring(RECORD_ATTRIBUTES_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -544,10 +589,10 @@ async function writeFlowGraphDelta(
 // instead, and this helper reads it straight back so the seed's
 // write still carries it — inert for the fenced route
 // (overwritten either way regardless of what this returns),
-// load-bearing for the seed. Five sites now share this exact
-// shape (ideas, projects, flows, work-orders, records) — past
-// the rule-of-three, so it is extracted once rather than
-// duplicated a fifth time.
+// load-bearing for the seed. Six sites now share this exact
+// shape (ideas, projects, flows, work-orders, records,
+// record-attributes) — past the rule-of-three, so it is
+// extracted once rather than duplicated a sixth time.
 function documentOperationOrganization(
     body: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -725,18 +770,26 @@ export async function postRecordDocumentOp(
     );
 }
 
-// Record attribute document write — extracted byte-for-byte
-// from the hand-written record-attributes/:id PUT handler, the
-// SAME extract-function idiom postFlowWorkOrderDocumentOp's own
-// comment names: the record_attributes row and its pair commit
-// as ONE transaction, exactly as before. Not yet a
-// DocumentFamilyWiring family — a follow-up commit adds
-// RECORD_ATTRIBUTES_WIRING, the document validator, and the
-// route/response-spec swap; the route dispatches here directly
-// in the meantime. `pair` is optional so a future below-facade
-// caller keeps compiling; the live route always supplies one,
-// since 'record-attributes/:id' is pair-wired and never
-// bearer-exempt.
+// Record attribute document write — the sixth family, and the
+// SECOND 'stateless' one (RECORD_ATTRIBUTES_WIRING's own
+// comment: vacuous BY CONSTRUCTION, not merely in practice, the
+// sharper contrast against work-orders). A document PUT here is
+// a pure entity edit: the record_attributes row and its pair
+// commit as ONE transaction — a mid-write failure rolls the
+// whole thing back rather than leaving a half-written attribute.
+// validateRecordAttributeDocumentBody rejects a body carrying
+// the trio at the gate, so this op never needs to defend against
+// one downstream. documentOperationOrganization's merge mirrors
+// postWorkOrderDocumentOp's own shape for uniformity, though it
+// is DORMANT here: zero client callers exist for this PUT (this
+// task's own premise), and the seed batches attribute creation
+// through postRecordWriteOp instead — never this op — so the
+// merge is inert rather than load-bearing. `pair` is optional so
+// a future below-facade caller keeps compiling; the live route
+// always supplies one, since 'record-attributes/:id' is
+// pair-wired and never bearer-exempt. The actor parameter is
+// spelled `_actor` for the same reason postWorkOrderDocumentOp
+// spells it that way: there is no state event here to author.
 export async function postRecordAttributeDocumentOp(
     db: DbAdapter,
     id: Id,
@@ -744,13 +797,19 @@ export async function postRecordAttributeDocumentOp(
     _actor: Id,
     pair?: MessagePair,
 ): Promise<RecordAttributeEntity> {
+    const doc = validateRecordAttributeDocumentBody(
+        withoutId(body),
+    );
     return db.transaction(
         ['record_attributes', 'requests', 'responses'],
         async (view) => {
             const written = await view
                 .recordAttributes.put(
                     id,
-                    withoutId(body) as unknown as
+                    {
+                        ...doc.entity,
+                        ...documentOperationOrganization(body),
+                    } as unknown as
                         Omit<RecordAttributeEntity, 'id'>,
                 );
             if (pair !== undefined) {
@@ -1702,16 +1761,17 @@ export const WRITE_RESPONSE_SPECS:
     // entity/trio separation guarantees doc.entity never carries
     // the trio, byte-identical to today's hand-built body.
     'records/:id': documentWriteResponseSpec(RECORDS_WIRING),
-    'record-attributes/:id': {
-        status: 200,
-        successBody: (params, body, _actor, organization) => ({
-            id: param(params, 0),
-            ...validateRecordAttributeEntity({
-                ...withoutId(body ?? {}),
-                organization_id: organization,
-            }),
-        }),
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody — see the ideas/:id
+    // entry above for the shared rationale. record-attributes/:id
+    // emits the SAME bytes as before ({id, organization_id,
+    // record_id, name, attribute_type, sort_order, options,
+    // constraints}): validateRecordAttributeDocumentBody's
+    // entity/organization_id separation guarantees doc.entity
+    // never carries the key, byte-identical to today's
+    // hand-built body.
+    'record-attributes/:id':
+        documentWriteResponseSpec(RECORD_ATTRIBUTES_WIRING),
     'flows/:id/records/:frid': {
         status: 200,
         successBody: (params, body) => ({
@@ -3295,16 +3355,19 @@ export const routes: Route[] = [
         get: (db) =>
             db.recordAttributes.getAll(),
     }),
+    // A hybrid route (unlike ideas/projects/flows/work-orders'
+    // full documentEntityRoute swap): GET stays hand-written,
+    // old-plane (a future task flips it, mirroring RECORDS_
+    // WIRING's own Task-7 note); PUT now dispatches through
+    // documentPutHandler(RECORD_ATTRIBUTES_WIRING); DELETE stays
+    // hand-written, unchanged — the RESTRICT check and the pair
+    // append ride the SAME transaction, exactly as before (the
+    // factory's fixed closures have no per-family pair selector;
+    // see message-pair.ts).
     route('record-attributes/:id', {
         get: (db, p) =>
             db.recordAttributes.getById(param(p, 0)),
-        // PUT dispatches through the extracted
-        // postRecordAttributeDocumentOp — behavior-identical
-        // to the prior inline closure; see its own comment.
-        put: (db, p, body, actor, pair) =>
-            postRecordAttributeDocumentOp(
-                db, param(p, 0), body, actor, pair,
-            ),
+        put: documentPutHandler(RECORD_ATTRIBUTES_WIRING),
         // DELETE is RESTRICT, not cascade: an attribute
         // still named by state_field_values rows or bound
         // in a flow / work-order graph refuses to die (409
