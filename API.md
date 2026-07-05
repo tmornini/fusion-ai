@@ -924,14 +924,66 @@ UNCHANGED (`initialState`/`initialStateEventId`/
 
 ### 3.21 `POST /objectives` — create objective
 
+`postObjectiveCreationOp` (`api/routes.ts`).
+
 - tx: `[objectives, objective_revisions, requests, responses]`
 - actual: `objectives.put(id, objective)` (org-scoped stamps org) →
-  `objectiveRevisions.put(revisionId, revision)` →
-  `appendMessagePair(pair)`.
+  `objectiveRevisions.put(revisionId, revision)` → three
+  `appendMessagePair` calls (below).
 - doctrinal: `put_objective` + `put_objective_revision` as
   `post_create_objective`.
 - props: atomic; **no state event** (a fresh objective reads as active
   until a later archival event); `validateObjectiveCreateBody`.
+
+**Three pairs, one tx (Phase 7 Task 3), the flows/work-orders
+fixed-triple precedent (§3.12/§3.17).** The route pre-forms two
+extra pairs beside the gate's own operation pair, ONLY when the
+gate supplied both a pair and a fence organization — a
+below-facade caller (`api/mock-data.ts`) skips all three:
+
+- **The operation pair** — the gate's own, at the SAME address a
+  live genesis `PUT /objectives/:id` would use:
+  `createdEntityUriId`'s override collapses `POST /objectives`
+  onto `objectives/:id`'s own (uriPrefix, uriId), so the two
+  verbs chain against one address.
+- **The document pair** — PUT-shaped, at `objectives/:id`'s own
+  address, body `objectiveDocumentBodyOf(b)` (the create body's
+  `objective` sub-object with `organization_id` stripped — the
+  live `PUT /objectives/:id` wire body is `{position}` alone),
+  validated through `validateObjectiveDocumentBody` —
+  byte-indistinguishable from a live genesis
+  `PUT /objectives/:id`.
+- **The revision pair** — PUT-shaped, at
+  `objectives/:id/revisions/:rid`'s own address (`:rid` the
+  create's own `revisionId`), body `objectiveRevisionBodyOf(b)`
+  (the create's `revision` sub-object verbatim — already the
+  exact `{objective_id, name, description, member_id, at}` shape
+  `validateObjectiveRevisionEntity` admits), validated through
+  the SAME validator — byte-indistinguishable from a live
+  `PUT /objectives/:id/revisions/:rid`. This address is
+  independent of the shared objective address above, so it is
+  always genesis on a fresh create (a fresh `revisionId` per
+  create), never `Supersedes`.
+
+The shared BODY builders (`objectiveDocumentBodyOf`,
+`objectiveRevisionBodyOf`, `api/routes.ts`) are the ONE-voice
+seam: pure functions consumed by BOTH this route-inline formation
+and the seed's own invocation construction
+(`api/mock-data/seed-message-pairs.ts`) — the records precedent
+(§3.20), never a shared pair-FORMER.
+
+All three pairs share ONE `requestAt` (the create's own
+origination) yet strictly-later response `at` stamps, so the
+document pair — appended AFTER the operation pair — becomes the
+shared objective address's head. A duplicate create (same
+objective id) therefore records `Supersedes` on its own new
+document pair against the prior document pair; the duplicate's
+own operation pair, reading that SAME shared address fresh at
+gate entry, supersedes that same prior document pair too
+(`objectives` is `'simple'` concurrency, §5.4). Three pairs
+commit or none: a mid-transaction failure (a validation 400 on
+the derived document or revision body, say) leaves zero of the
+three, exactly like every other atomic write in this catalog.
 
 ### 3.22 `POST /invitations` — grant an invitation
 
@@ -1329,7 +1381,7 @@ pair-capable write families, in dependency order: `human-members`, `ideas`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **383** message pairs — one pair per seeded
+- The mock-data seed pre-forms **393** message pairs — one pair per seeded
   row for most families, but each seeded flow folds in an
   operation/document/join triple (4 creates × 3 pair triples + 1 genesis
   document = 13, §3.12), each seeded work order forms both a document
@@ -1337,9 +1389,11 @@ the SAME way a live request would, then writes it alongside the seeded row:
   in its OWN document pair plus one attribute-PUT pair per seeded
   attribute (2 operations + 2 documents + 14 attribute documents = 18,
   §3.20's bundle synthesis, generalized from flows'/work-orders' fixed
-  1+1+1 to 1+1+N), and each seeded flow_records binding forms its
-  own join pair (3 flow-record joins, closed through
-  `postFlowRecordDocumentOp`) — in a first pass, BEFORE the
+  1+1+1 to 1+1+N), each seeded objective folds in an
+  operation/document/revision triple (5 creates × 3 = 15, §3.21, the
+  flows'/work-orders' fixed 1+1+1 precedent verbatim), and each seeded
+  flow_records binding forms its own join pair (3 flow-record joins,
+  closed through `postFlowRecordDocumentOp`) — in a first pass, BEFORE the
   seed's own big transaction opens (`formWritePair`'s hashing is async
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
