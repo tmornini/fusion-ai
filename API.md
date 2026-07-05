@@ -1392,7 +1392,7 @@ pair-capable write families, in dependency order: `human-members`, `ideas`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **393** message pairs — one pair per seeded
+- The mock-data seed pre-forms **534** message pairs — one pair per seeded
   row for most families, but each seeded flow folds in an
   operation/document/join triple (4 creates × 3 pair triples + 1 genesis
   document = 13, §3.12), each seeded work order forms both a document
@@ -1402,15 +1402,23 @@ the SAME way a live request would, then writes it alongside the seeded row:
   §3.20's bundle synthesis, generalized from flows'/work-orders' fixed
   1+1+1 to 1+1+N), each seeded objective folds in an
   operation/document/revision triple (5 creates × 3 = 15, §3.21, the
-  flows'/work-orders' fixed 1+1+1 precedent verbatim), and each seeded
+  flows'/work-orders' fixed 1+1+1 precedent verbatim), each seeded
   flow_records binding forms its own join pair (3 flow-record joins,
-  closed through `postFlowRecordDocumentOp`) — in a first pass, BEFORE the
+  closed through `postFlowRecordDocumentOp`), and each seeded baseline/
+  actual score row forms its own document pair (49 baseline + 92 actual
+  = 141, closed through `postBaselineScoreDocumentOp` /
+  `postActualScoreDocumentOp`) — in a first pass, BEFORE the
   seed's own big transaction opens (`formWritePair`'s hashing is async
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
   pre-formed pair in the SAME transaction the row lands in. The bootstrap
   seed forms exactly one such pair, for its lone `current` human-member
   create.
+- The scores deferral now closes WHOLE — baselines AND actuals, the
+  SAME `buildSeedScoreRows` output (`api/mock-data/scores.ts`) driving
+  both the pair formation above and the seeded row writes. Memberships
+  is the only remaining whole-slice seed deferral: a direct write the
+  seed never routes through a pair-capable op.
 - Every seed pair carries **no `Authorization` header** — a seed
   invocation is not a real HTTP request, so `headerFields` is empty
   rather than a synthesized fake bearer.
