@@ -64,8 +64,18 @@ test('record-attributes is the sixth registered family,'
     });
 });
 
+test('objectives is the seventh registered family, simple'
++ ' like records and record-attributes', () => {
+    assert.deepEqual(familyRegistration('objectives'), {
+        family: 'objectives',
+        organizationNested: true,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
-    assert.equal(familyRegistration('objectives'), undefined);
+    assert.equal(familyRegistration('memberships'), undefined);
 });
 
 test('every registered family names a concurrency class',
