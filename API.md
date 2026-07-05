@@ -238,8 +238,12 @@ Legend for classification:
   (§3.29). `PUT` is a document write (§5.8) — the seventh
   family, and the THIRD `'stateless'` one (§5.8): Author gate
   3's second Decision 7 amendment, a distinct rationale from
-  work-orders'/record-attributes' own. `GET` stays hand-written
-  old-plane (unchanged until a future task).
+  work-orders'/record-attributes' own. Both `GET`s now DERIVE
+  from the ledger (§3.29): the collection via
+  `documentCollectionGetHandler(OBJECTIVES_WIRING)`, the entity
+  via `documentEntityRoute(OBJECTIVES_WIRING)` — flipped below
+  the wire, key-set/value-identical to the old plane save the
+  named id-first sub-cosmetic order.
 - `POST /objectives` — operation (§3.21).
 - `GET /objectives/:id/revisions` ·
   `PUT /objectives/:id/revisions/:rid` — nested.
@@ -1677,14 +1681,12 @@ TWICE amended, not as negotiable.
 concurrency class ideas/projects/work-orders/records ride
 (§5.4) — and `WRITE_RESPONSE_SPECS['objectives/:id']` is
 `documentWriteResponseSpec(OBJECTIVES_WIRING)`. **GET
-/objectives/:id stays hand-written old-plane** (unchanged until
-a future task flips it onto the generic `documentGetHandler`) —
-only PUT rides the generic machinery this task; `entityOf`
-exists for interface uniformity and that future flip, not any
-live reader today — it already constructs the wire row ID FIRST
+/objectives/:id now DERIVES from the ledger** through the
+generic `documentEntityRoute(OBJECTIVES_WIRING)` (flipped at the
+read-flip task; see §3.29) — `entityOf` is the LIVE reader, and
+it constructs the wire row ID FIRST
 (`{id, organization_id, position}`), the SAME seven-sibling
-convention every shipped `entityOf` follows, so the future GET
-flip needs no further change here.
+convention every shipped `entityOf` follows.
 
 **The wire covenant, precisely scoped.** ZERO deltas in request
 shapes, response key sets + values, statuses, headers, and hop
@@ -1700,10 +1702,10 @@ is the SAME `assertOnlyKeys` call, so it too is unchanged. The
 ONE named sub-cosmetic exception this whole phase carries — a
 flipped GET's JSON key order moving id-last → id-first (the
 seven-sibling `entityOf` convention, verified at `f81e2c33`) —
-does not fire for objectives in THIS task: `GET /objectives/:id`
-stays old-plane, so its wire order is untouched; the exception is
-named here only because `objectiveDocumentEntityOf` is already
-built id-first, ready for that flip when it lands.
+fires for the flipped objectives GETs: `objectiveDocumentEntityOf`
+serializes id-first, JSON-semantically and client-invisible
+(consumers destructure by key; deepEqual gates are order-blind),
+the same class every prior flip shipped.
 
 `tests/api-objective-document.test.ts` (the below-gate op/
 validator pins, the PUT-chain-derives-the-head case, and the
