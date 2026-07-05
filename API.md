@@ -219,9 +219,12 @@ Legend for classification:
 - `GET /records` · `GET|PUT|DELETE /records/:id` — primitive.
   `PUT` is a document write (§3.33/§5.7) — the fifth family,
   and the first `'trio'` family whose `:id` address also
-  carries a live `DELETE`. `GET` stays hand-written, old-plane,
-  through this task (Task 7 flips it); `DELETE` stays
-  hand-written too, unchanged.
+  carries a live `DELETE`. `GET` now rides the SAME generic
+  document machinery `PUT` does — both the list (`GET
+  /records`) and the entity read (`GET /records/:id`) derive
+  from the message ledger (Task 7, Phase 6), not a
+  hand-written dispatch; `DELETE` stays hand-written,
+  unchanged.
 - `POST /records` — operation, create-or-edit write (§3.20).
   Member-tier.
 - `GET /record-attributes` · `GET|PUT /record-attributes/:id` —
@@ -1152,8 +1155,10 @@ special-casing records as PUT-only-for-edits.
 a fresh trio and fires this SAME document PUT; records no
 longer ride the generic `PUT /states/:id` (§2.10) for a
 transition — that route stays for every family without its own
-document PUT. `GET`/`DELETE /records/:id` stay hand-written,
-old-plane, unchanged (Task 7 flips the `GET`).
+document PUT. `GET /records/:id` now rides the SAME wiring row
+through `documentGetHandler` (Task 7, Phase 6) — the flip that
+retired records' last hand-written GET; `DELETE /records/:id`
+stays hand-written, unchanged.
 
 - tx: `[records, states, requests, responses]`
 - actual: read the current head event
@@ -1504,11 +1509,16 @@ reach. Author gate 9's fix: the walk now SKIPS a DELETE-method
 pair entirely, so a delete-then-recreate history (`PUT`,
 `DELETE`, `PUT`) yields the two PUT trios rather than crashing —
 behavior-preserving for ideas/projects/flows (none has a DELETE
-at its own document address). `GET /records/:id` and `GET
-/records` stay hand-written, old-plane, through this task
-(`RECORDS_WIRING`'s `entityOf` is unreached until Task 7 flips
-them), so the fix is proven directly against fabricated pairs
-(`tests/api-record-document.test.ts`), not through a live route.
+at its own document address). At the time of this fix, `GET
+/records/:id` and `GET /records` were still hand-written,
+old-plane (`RECORDS_WIRING`'s `entityOf` unreached until Task 7
+flipped them), so the fix was proven directly against
+fabricated pairs (`tests/api-record-document.test.ts`), not
+through a live route. `GET` now rides the SAME generic document
+machinery `PUT` does — both the list (`GET /records`, via
+`documentCollectionGetHandler`) and the entity read (`GET
+/records/:id`, via `documentGetHandler`) derive from the
+message ledger (Task 7, Phase 6), not a hand-written dispatch.
 
 **PUT /records/:id** now dispatches through
 `documentPutHandler(RECORDS_WIRING)` — the SAME `'simple'`
