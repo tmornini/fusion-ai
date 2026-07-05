@@ -12,8 +12,8 @@ That mechanism will replace the existing ledger's and common states system by mo
   |  └── :id
 └─|─ /records/ • derived view over org-nested canonical storage
   |  └── :id
-  |      └── /attribute-definitions.          • all of them, single document
-  |      └── /attribute-values                • all of them, single document
+  |      └── /attribute-definitions.          • RECONCILED: shipped as the sibling record-attributes/:id family (canonical storage, per-attribute documents, 'stateless', the sixth registered family), not a nested single document — see the records FLIPPED 2026-07-05 block, go-to-church-peaceful-castle.md §Phased sequence
+  |      └── /attribute-values                • RECONCILED: NOT built — no consumer; would derive the latest value per attribute (same block, B2)
 └─|─ work-orders/ • derived view over org-nested canonical storage
   |  └── :id/
   |      └── claim
