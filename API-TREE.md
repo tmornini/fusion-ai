@@ -39,7 +39,7 @@ That mechanism will replace the existing ledger's and common states system by mo
 └─|─ /organizations/
   |  └─|─ :id
   |    |  └── /notifications                  • postgres LISTEN/NOTIFY for all changes to organization
-  |    |  └── /objectives                     • all objectives in a single document
+  |    |  └── /objectives                     • RECONCILED: shipped as per-objective documents at objectives/:id (the seventh registered family, 'simple' + lifecycle 'stateless'), collection served by the generic document handler over per-entity heads, revision history as per-objective message history at objectives/:id/revisions/, NOT a single org document — see the objectives FLIPPED 2026-07-05 block, go-to-church-peaceful-castle.md §Phased sequence (Author gates 1/3)
   |    |  └── /flows/
   |    |      └── :id
   |    |          └── /undo
@@ -48,7 +48,7 @@ That mechanism will replace the existing ledger's and common states system by mo
   |    |  └── /memberships/                   • canonical storage (tenancy covenant)
   |    |  └── /projects/
   |    |      └── :id
-  |    |          └── /scores                 • all objectives scores in a single document
+  |    |          └── /scores                 • RECONCILED: NOT built — no consumer; the baseline and actual scores are shipped as per-row documents at projects/:id/objective-baseline-scores and objective-actual-scores, each flipped via a bespoke per-parent derive module — see the same block (Author gate 2)
   |    |  └── /records/                       • canonical storage
   |    |  └── /work-orders/                   • canonical storage
   \    \
