@@ -1961,6 +1961,49 @@ export async function postFlowRecordDocumentOp(
     );
 }
 
+// Objective baseline-score document write — extracted byte-for-
+// byte from the hand-written projects/:id/objective-baseline-
+// scores/:sid PUT handler (the postFlowRecordDocumentOp precedent
+// above) so the seed can drive the same write path (Decision 6's
+// below-facade carve-out, closing the scores half of the Phase 0
+// seed deferral, Phase 7 Task 5). A document PUT here is a pure
+// entity edit: the project_objective_baseline_scores row and its
+// pair commit as ONE transaction. `pair` is optional so a
+// below-facade caller with no pair keeps compiling; the live
+// route always supplies one, since this pattern is pair-wired
+// and never bearer-exempt. The actor parameter is spelled
+// `_actor` for the same reason postFlowRecordDocumentOp spells
+// it that way: there is no state event here to author.
+export async function postBaselineScoreDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<ProjectObjectiveBaselineScoreEntity, 'id'>> {
+    return db.transaction(
+        [
+            'project_objective_baseline_scores',
+            'requests', 'responses',
+        ],
+        async (view) => {
+            const written = await view
+                .projectObjectiveBaselineScores.put(
+                    id,
+                    withoutId(body) as unknown as
+                        Omit<
+                            ProjectObjectiveBaselineScoreEntity,
+                            'id'
+                        >,
+                );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -4303,34 +4346,11 @@ export const routes: Route[] = [
                 'project_id', param(p, 0),
             ),
     }),
-    // Hand-written in place of a bare store put so PUT can
-    // append its message pair in the same transaction as the
-    // write (see message-pair.ts).
     route('projects/:id/objective-baseline-scores/:sid', {
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 1);
-            return db.transaction(
-                [
-                    'project_objective_baseline_scores',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    const written = await view
-                        .projectObjectiveBaselineScores.put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<
-                                    ProjectObjectiveBaselineScoreEntity,
-                                    'id'
-                                >,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postBaselineScoreDocumentOp(
+                db, param(p, 1), body, actor, pair,
+            ),
     }),
     // Objective actual scores nest under their parent project,
     // identically: project id is param 0 (server filter), leaf id
