@@ -235,7 +235,11 @@ Legend for classification:
 ### 2.9 Objectives
 
 - `GET /objectives` · `GET|PUT /objectives/:id` — primitive
-  (§3.29).
+  (§3.29). `PUT` is a document write (§5.8) — the seventh
+  family, and the THIRD `'stateless'` one (§5.8): Author gate
+  3's second Decision 7 amendment, a distinct rationale from
+  work-orders'/record-attributes' own. `GET` stays hand-written
+  old-plane (unchanged until a future task).
 - `POST /objectives` — operation (§3.21).
 - `GET /objectives/:id/revisions` ·
   `PUT /objectives/:id/revisions/:rid` — nested.
@@ -1065,20 +1069,31 @@ A client-side quota pre-flight (`putSnapshotFromFile`,
 the file size before this route is called; that lives in the web-app
 adapter, not the api layer.
 
-### 3.29 `PUT /objectives/:id` — reposition an objective (not a POST)
+### 3.29 `PUT /objectives/:id` — objective document write (not a POST)
 
-Included alongside §3.28 for the same reason: a bare-CRUD `PUT`, hand-
-written in place of the (now-retired) `makeIdRoute` factory so its
-pair can append in the same transaction as the write. Today's only
-caller is the web-app's `putObjectivePosition` (drag-reorder), whose
-body is just `{ position }`.
+The seventh family, and the THIRD `'stateless'` one (§5.8) —
+Author gate 3's second Decision 7 amendment. `PUT` now dispatches
+through `documentPutHandler(OBJECTIVES_WIRING)`, replacing the
+hand-written stand-in this section used to describe (in place of
+the earlier-retired `makeIdRoute` factory) — the wire is
+UNCHANGED: the body stays `{ position }` (today's only caller
+remains the web-app's `putObjectivePosition`, drag-reorder), never
+a lifecycle trio. The trio COULD represent the objective alphabet,
+but the states 911 pin forbids ever minting an objective genesis
+event, so the lifecycle stays on the shared `states` log instead
+(§5.8).
 
 - tx: `[objectives, requests, responses]`
-- actual: `objectives.put(id, body)` (the org-scoped store stamps
-  `organization_id`, so the body omits it) → `appendMessagePair(pair)`.
-- props: atomic; document-class (a repeat PUT records `Supersedes`,
-  §5.1); `validateObjectiveEntity` reconstructs the written row for
-  the 200 body.
+- actual: `validateObjectiveDocumentBody(body)` → `objectives.put(
+  id, entity)` (the org-scoped store stamps `organization_id`, so
+  the body omits it) → `appendMessagePair(pair)`.
+- props: atomic; document-class (a repeat PUT records
+  `Supersedes`, §5.1); `validateObjectiveDocumentBody`'s
+  `assertOnlyKeys` label is `'Objective'` — matching
+  `validateObjectiveEntity`'s own label byte-for-byte (a NAMED
+  divergence from the `*DocumentBody` naming convention every
+  other document validator uses), so the 400 body text this route
+  raises is unchanged; no lifecycle event is ever posted here.
 
 ### 3.30 `PUT /members/:id` — edit a member directory row (not a POST)
 
@@ -1354,9 +1369,10 @@ The gate (`handleRequest`) keys the class off the route's
 family can register `'locked'` (family-registry.ts) with no live
 route riding the arm until its OWN wiring row lands.
 
-- **`simple`** (`ideas`, `projects`, `work-orders` — §5.6): the
-  existing head-read → `Supersedes` chain (§5.1) — a repeat PUT
-  ALWAYS succeeds and ALWAYS supersedes the current head.
+- **`simple`** (`ideas`, `projects`, `work-orders` — §5.6;
+  `objectives` — §5.8): the existing head-read → `Supersedes`
+  chain (§5.1) — a repeat PUT ALWAYS succeeds and ALWAYS
+  supersedes the current head.
 - **`locked`** (`flows`, live since Task 3 — §3.13): a repeat PUT
   must ECHO the current head via the request header
   `If-Response-ID`, or 412s.
@@ -1542,3 +1558,92 @@ below-gate op/validator/DELETE-filter pins) plus the untouched
 existing suite (byte-identical GET/DELETE, the deleted-
 exclusion test, `postRecordStateChange`'s states-log assertions)
 are the fold's proof.
+
+### 5.8 The seventh family: objectives and Author gate 3's second amendment
+
+Task 2 (Phase 7) registers `objectives` as the seventh
+`DocumentFamilyWiring` row (`OBJECTIVES_WIRING`, beside
+ideas/projects/flows/work-orders/records/record-attributes in
+`api/routes.ts`) — the SECOND named partial amendment to
+Decision 7 (Author gate 3).
+
+Decision 7 as amended at Phase 5 (§5.6) scopes `'stateless'` to
+lifecycles "a single trio cannot represent without loss" — the
+work-orders fork. Objectives are a DIFFERENT fork: the trio
+COULD represent the objective alphabet, but is FORBIDDEN three
+ways — the wire body would have to grow it (the unavoidable
+zero-delta violation); a minted genesis event would abort the
+states 911 pin at reseed (the genesis dilemma); and
+absence-as-active is R2's named covenant. The amendment extends
+`'stateless'` to a SECOND, distinct fork: absence-as-active
+families whose lifecycle rides the SHARED `states` log — the
+document body carries entity fields only, lifecycle events keep
+riding the generic `states` plane (already pair-wired), and the
+family's derived reads perform no lifecycle walk. THREE distinct
+`'stateless'` rationales now exist — work-orders' vacuous-in-
+practice (§5.6: its lifecycle CAN be authored, just never
+through the document address), record-attributes' vacuous-by-
+construction (no lifecycle concept exists at all), and
+objectives' forbidden-three-ways above — a third distinct
+rationale is the named trigger for a type-level fork
+(Commandment IX): the next family author reads Decision 7 as
+TWICE amended, not as negotiable.
+
+- **`notFoundTable` is `'objectives'`** — its storage table name
+  matches its family name, like ideas/projects/flows/records
+  (work-orders/record-attributes are the two families whose
+  names diverge).
+- **Consequence named:** `GET /objectives` INCLUDES archived
+  objectives on both planes — the deliberate CONTRAST to
+  records' deleted-exclusion (§5.7); nothing in the objective
+  alphabet can produce a `'deleted'` state, so no derived read
+  ever needs to filter one out.
+
+**PUT /objectives/:id** now dispatches through
+`documentPutHandler(OBJECTIVES_WIRING)` — the SAME `'simple'`
+concurrency class ideas/projects/work-orders/records ride
+(§5.4) — and `WRITE_RESPONSE_SPECS['objectives/:id']` is
+`documentWriteResponseSpec(OBJECTIVES_WIRING)`. **GET
+/objectives/:id stays hand-written old-plane** (unchanged until
+a future task flips it onto the generic `documentGetHandler`) —
+only PUT rides the generic machinery this task; `entityOf`
+exists for interface uniformity and that future flip, not any
+live reader today — it already constructs the wire row ID FIRST
+(`{id, organization_id, position}`), the SAME seven-sibling
+convention every shipped `entityOf` follows, so the future GET
+flip needs no further change here.
+
+**The wire covenant, precisely scoped.** ZERO deltas in request
+shapes, response key sets + values, statuses, headers, and hop
+counts. The response's `{id, organization_id, position}` keys
+and values are byte-identical to the prior hand-written route —
+`validateObjectiveDocumentBody`'s entity/organization_id
+separation guarantees it, and PUT responses are order-blind BY
+CONSTRUCTION (the canonical `sortJsonKeys` pipeline), so key
+order was never part of the covenant for a write. The stray-key
+400 body stays byte-identical (`unexpected key "..." for
+Objective` — the label mandate, §3.29); the missing-position 400
+is the SAME `assertOnlyKeys` call, so it too is unchanged. The
+ONE named sub-cosmetic exception this whole phase carries — a
+flipped GET's JSON key order moving id-last → id-first (the
+seven-sibling `entityOf` convention, verified at `f81e2c33`) —
+does not fire for objectives in THIS task: `GET /objectives/:id`
+stays old-plane, so its wire order is untouched; the exception is
+named here only because `objectiveDocumentEntityOf` is already
+built id-first, ready for that flip when it lands.
+
+`tests/api-objective-document.test.ts` (the below-gate op/
+validator pins, the PUT-chain-derives-the-head case, and the
+DELETE-derives-absent case, all run against the REAL registered
+wiring row) plus the untouched existing suite
+(`tests/api-shadow-ledger-objectives.test.ts`'s `Supersedes`/
+resend/hash-parity assertions) are the absorption's proof;
+`tests/api-objectives-verb-gaps.test.ts` additionally pins all
+22 deliberate verb gaps across the eight objectives/scores
+route patterns: PUT/DELETE `objectives`; POST/DELETE
+`objectives/:id`; POST/PUT/DELETE `objectives/:id/revisions`;
+GET/POST/DELETE `objectives/:id/revisions/:rid`; POST/PUT/DELETE
+`projects/:id/objective-baseline-scores`; GET/POST/DELETE
+`projects/:id/objective-baseline-scores/:sid`; POST/PUT/DELETE
+`projects/:id/objective-actual-scores`; GET/POST/DELETE
+`projects/:id/objective-actual-scores/:sid`.
