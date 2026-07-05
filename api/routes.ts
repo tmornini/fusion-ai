@@ -2822,7 +2822,7 @@ export const routes: Route[] = [
             validateIdeaDocumentBody(ideaDocument);
             let projectPair: MessagePair | undefined;
             let ideaPair: MessagePair | undefined;
-            let baselinePairs: MessagePair[] = [];
+            const baselinePairs: MessagePair[] = [];
             if (
                 pair !== undefined
                 && organization !== undefined
