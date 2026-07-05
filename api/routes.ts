@@ -2776,13 +2776,18 @@ export const routes: Route[] = [
     // read finds its prior pair, so this one records Supersedes
     // provenance. This closes the standing watch-point: before
     // this task, a converted idea's derived history MISSED its
-    // 'promoted' event because no pair recorded it. All three
-    // formed PRE-TX — crypto and the head-reads stay outside
+    // 'promoted' event because no pair recorded it. Phase 7
+    // Task 4: each validated baseline gets its OWN pair too, at
+    // its project-nested address (projects/:id/objective-
+    // baseline-scores/:sid) — every baseline id is client-
+    // minted FRESH per conversion, so these are genesis like
+    // the project pair above, never Supersedes. All 3+N formed
+    // PRE-TX — crypto and the head-reads stay outside
     // db.transaction, the IndexedDB auto-commit constraint —
     // then appended as the tx's LAST acts, beside the operation
     // pair. Formed ONLY when the gate supplied both a pair and
     // a fence organization; a below-facade caller with neither
-    // (none exists for conversion today) skips all three
+    // (none exists for conversion today) skips all 3+N
     // appends, preserving dual-write discipline.
     route('ideas/:id/conversion', {
         post: async (
@@ -2817,6 +2822,7 @@ export const routes: Route[] = [
             validateIdeaDocumentBody(ideaDocument);
             let projectPair: MessagePair | undefined;
             let ideaPair: MessagePair | undefined;
+            let baselinePairs: MessagePair[] = [];
             if (
                 pair !== undefined
                 && organization !== undefined
@@ -2893,6 +2899,70 @@ export const routes: Route[] = [
                     ),
                     headPairId: ideaHeadPairId,
                 });
+                // The per-baseline pairs (Task 4): N synthesized
+                // pairs, one per validated baseline, at each
+                // baseline's OWN address — every baseline id is
+                // client-minted FRESH for this conversion, so
+                // each pair is genesis there (headPairIdAt finds
+                // no prior pair) unless a live PUT had already
+                // visited that exact id. Body is the baseline's
+                // `fields` VERBATIM — the live standalone PUT
+                // body, unlike projectDocument/ideaDocument above
+                // (which assemble a document from disjoint
+                // parts) — so the response spec's successBody
+                // below is what runs validateBaselineScoreEntity.
+                const baselineSpec = WRITE_RESPONSE_SPECS[
+                    'projects/:id/objective-baseline-scores/:sid'
+                ];
+                if (
+                    baselineSpec === undefined
+                    || !('status' in baselineSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' projects/:id/objective-baseline'
+                        + '-scores/:sid',
+                    );
+                }
+                const baselinesPrefix = canonicalUriPrefix(
+                    organization,
+                    '/projects/' + b.projectId
+                        + '/objective-baseline-scores/',
+                );
+                for (const baseline of b.baselines) {
+                    const baselineHeadPairId = await headPairIdAt(
+                        db, baselinesPrefix, baseline.id,
+                    );
+                    baselinePairs.push(await formWritePair({
+                        method: 'PUT',
+                        pathname: '/projects/' + b.projectId
+                            + '/objective-baseline-scores/'
+                            + baseline.id,
+                        routePattern:
+                            'projects/:id/objective-baseline'
+                            + '-scores/:sid',
+                        routeSegments: [
+                            'projects', ':id',
+                            'objective-baseline-scores', ':sid',
+                        ],
+                        pathSegments: [
+                            'projects', b.projectId,
+                            'objective-baseline-scores',
+                            baseline.id,
+                        ],
+                        headerFields: [],
+                        body: baseline.fields,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                        responseStatus: baselineSpec.status,
+                        responseBody: baselineSpec.successBody?.(
+                            [b.projectId, baseline.id],
+                            baseline.fields, actor, organization,
+                        ),
+                        headPairId: baselineHeadPairId,
+                    }));
+                }
             }
             return db.transaction(
                 [
@@ -2947,6 +3017,11 @@ export const routes: Route[] = [
                     if (ideaPair !== undefined) {
                         await appendMessagePair(
                             view, ideaPair,
+                        );
+                    }
+                    for (const baselinePair of baselinePairs) {
+                        await appendMessagePair(
+                            view, baselinePair,
                         );
                     }
                 },
