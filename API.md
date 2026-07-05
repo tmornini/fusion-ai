@@ -517,18 +517,18 @@ The lone cross-aggregate write.
   4. `states.postEvent(projectStateEventId, projectId, projectState,
      actor)`
   5. for each baseline: `projectObjectiveBaselineScores.put(...)`
-  6. three `appendMessagePair` calls (below).
+  6. 3+N `appendMessagePair` calls (below).
 - doctrinal: `put_project` + `put_idea` + two `post_state_event` + N
   `put_baseline_score` as `post_convert_idea`.
 - props: atomic (project never lands without its baselines, nor an
   idea promoted without its project); member-tier (segment-prefix
   match on `/ideas`); `validateIdeaConversionBody`.
 
-**Three pairs, one tx (Phase 3 Task 4 + Phase 5 Task 5).** The
-route pre-forms two extra pairs beside the gate's own operation
-pair, ONLY when the gate supplied both a pair and a fence
-organization — a below-facade caller (`api/mock-data.ts`) skips
-all three:
+**3+N pairs, one tx (Phase 3 Task 4 + Phase 5 Task 5 + Phase 7
+Task 4).** The route pre-forms 2+N extra pairs beside the
+gate's own operation pair, ONLY when the gate supplied both a
+pair and a fence organization — a below-facade caller
+(`api/mock-data.ts`) skips all 3+N:
 
 - **The project pair (Phase 3 Task 4)** — PUT-shaped, at
   `projects/:id`'s own address, body the entity's own fields
@@ -548,12 +548,23 @@ all three:
   'promoted' watch-point** (named at Phase 2/3): before this
   task, a converted idea's derived state history MISSED its
   'promoted' event, because no pair recorded it.
+- **The N baseline pairs (Phase 7 Task 4)** — one PUT-shaped
+  pair per validated baseline, at
+  `projects/:id/objective-baseline-scores/:sid`'s OWN address
+  (the baseline's project-nested id), body the baseline's
+  `fields` VERBATIM — the live standalone PUT body, key set
+  `{project_id, objective_id, score, member_id, at}` — response
+  via the existing `WRITE_RESPONSE_SPECS` entry for that route,
+  so it is byte-indistinguishable from a live standalone `PUT
+  projects/:id/objective-baseline-scores/:sid`. Every baseline
+  id is client-minted FRESH per conversion, so each pair is
+  genesis, like the project pair, never `Supersedes`.
 
-All three pairs share ONE `requestAt` (the conversion's own
-origination) yet strictly-later response `at` stamps. Three
-pairs commit or none: a mid-transaction failure (a state-ledger
-collision, say) leaves zero of the three, exactly like every
-other atomic write in this catalog.
+All 3+N pairs share ONE `requestAt` (the conversion's own
+origination) yet strictly-later response `at` stamps. 3+N pairs
+commit or none: a mid-transaction failure (a state-ledger
+collision, say) leaves zero of the 3+N, exactly like every other
+atomic write in this catalog.
 
 ### 3.12 `POST /flows` — create flow
 
