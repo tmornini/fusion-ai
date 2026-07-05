@@ -139,6 +139,13 @@ import {
     deriveFlowRecord,
 } from './derive-flow-records.ts';
 import {
+    deriveObjectiveRevisions,
+} from './derive-objective-revisions.ts';
+import {
+    deriveBaselineScores,
+    deriveActualScores,
+} from './derive-project-scores.ts';
+import {
     param,
     requireOrganization,
     withoutId,
@@ -348,20 +355,22 @@ const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
     documentOp: postRecordAttributeDocumentOp,
     entityOf: recordAttributeDocumentEntityOf,
 };
-// The generic GET machinery this entityOf serves is unreached
-// through this task — GET objectives/:id and GET objectives
-// stay hand-written, old-plane (a future task flips them,
-// mirroring RECORDS_WIRING's own Task-7 note above). The wire
-// row is constructed ID FIRST — {id, organization_id,
-// position} — the SAME seven-sibling convention every shipped
-// entityOf follows; picked explicitly (pickNumber) rather than
-// a body spread, mirroring recordDocumentEntityOf's own choice
-// (NOT workOrderDocumentEntityOf's/
-// recordAttributeDocumentEntityOf's spread): the wire body
-// tolerates an organization_id key alongside position, and a
-// spread would let that raw, unstamped key leak into the read
-// path ahead of the fenced `organization` argument — picking
-// only `position` closes that off by construction.
+// The generic GET machinery (documentGetHandler/
+// documentCollectionGetHandler) this entityOf serves flips onto
+// objectives at Task 7 (this commit): GET objectives/:id and GET
+// objectives now ride it, exactly as recordDocumentEntityOf/
+// recordAttributeDocumentEntityOf each served their OWN family's
+// GET path at the prior flip. The wire row is constructed ID
+// FIRST — {id, organization_id, position} — the SAME seven-
+// sibling convention every shipped entityOf follows; picked
+// explicitly (pickNumber) rather than a body spread, mirroring
+// recordDocumentEntityOf's own choice (NOT
+// workOrderDocumentEntityOf's/recordAttributeDocumentEntityOf's
+// spread): the wire body tolerates an organization_id key
+// alongside position, and a spread would let that raw, unstamped
+// key leak into the read path ahead of the fenced `organization`
+// argument — picking only `position` closes that off by
+// construction.
 function objectiveDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
@@ -4221,8 +4230,20 @@ export const routes: Route[] = [
     // the shared rationale; the Decision-7/MEMBER_ID-CAVEAT
     // prose moved to the PROJECTS_WIRING block above.
     documentEntityRoute(PROJECTS_WIRING),
+    // GET is FLIPPED (Task 7): the collection derives from the
+    // message ledger rather than the old objectives table. Rides
+    // the generic documentCollectionGetHandler — wire-identical
+    // to the hand-written db.objectives.getAll() dispatch it
+    // replaces (OBJECTIVES_WIRING's own entityOf,
+    // objectiveDocumentEntityOf, already picks the exact {id,
+    // organization_id, position} shape, so the list needs no
+    // objectives-special reassembly step). POST stays this
+    // hand-written bundle — objectives' own create forms the
+    // document PLUS its first revision pair in one pass
+    // (postObjectiveCreationOp), mirroring records'/work-orders'
+    // own precedent.
     route('objectives', {
-        get: (db) => db.objectives.getAll(),
+        get: documentCollectionGetHandler(OBJECTIVES_WIRING),
         // Forms the document + revision pairs pre-tx (Task 3)
         // beside the gate's own operation pair — the SAME shape
         // a live genesis PUT /objectives/:id and a live PUT
@@ -4324,27 +4345,35 @@ export const routes: Route[] = [
             return postObjectiveCreationOp(db, body, pairs);
         },
     }),
-    // A hybrid route (unlike ideas/projects/flows/work-orders'
-    // full documentEntityRoute swap): GET stays hand-written,
-    // old-plane (a future task flips it, mirroring RECORDS_
-    // WIRING's own Task-7 note above) — it reproduces the
-    // factory closure byte-equivalently; objectives/:id has no
-    // DELETE today, mirroring the projects/:id precedent. PUT
-    // now dispatches through documentPutHandler
-    // (OBJECTIVES_WIRING).
-    route('objectives/:id', {
-        get: (db, p) => db.objectives.getById(param(p, 0)),
-        put: documentPutHandler(OBJECTIVES_WIRING),
-    }),
+    // objectives/:id is the seventh family. GET is FLIPPED
+    // (Task 7): absorbed into the generic documentEntityRoute —
+    // GET dispatches to documentGetHandler(OBJECTIVES_WIRING),
+    // wire-identical to the hand-written db.objectives.getById
+    // dispatch it replaces (objectiveDocumentEntityOf reproduces
+    // the shape verbatim; the 'stateless' lifecycle skips the
+    // trio walk entirely, so there is no DELETE-head concept to
+    // filter). PUT stays documentPutHandler(OBJECTIVES_WIRING),
+    // unchanged from before this flip (Task 2); objectives/:id
+    // has no DELETE today, mirroring the ideas/projects/
+    // work-orders precedent that already rides this same
+    // documentEntityRoute shape.
+    documentEntityRoute(OBJECTIVES_WIRING),
     // Objective revisions nest under their parent objective: the
     // objective id is param 0, so the SERVER filters the
     // collection to that objective (the org fence still rides the
-    // facade re-entry). The leaf id is param 1; only PUT is
-    // exposed, exactly as the flat makeIdRoute carried it.
+    // facade re-entry). GET is FLIPPED (Task 7): rides
+    // deriveObjectiveRevisions — a bespoke derivation, not a
+    // DocumentFamilyWiring family (a nested address carries no
+    // lifecycle trio of its own), so this calls it directly
+    // rather than through a generic constructor, mirroring
+    // deriveFlowRecords' own precedent above. The leaf id is
+    // param 1; only PUT is exposed, unchanged from before this
+    // flip.
     route('objectives/:id/revisions', {
-        get: (db, p) =>
-            db.objectiveRevisions.getAllWhere(
-                'objective_id', param(p, 0),
+        get: (db, p, _actor, organization) =>
+            deriveObjectiveRevisions(
+                db, requireOrganization(organization),
+                param(p, 0),
             ),
     }),
     // Hand-written in place of a bare store put so PUT can
@@ -4378,12 +4407,17 @@ export const routes: Route[] = [
     // Objective baseline scores nest under their parent project:
     // the project id is param 0, so the SERVER filters the
     // collection to that project (the org fence still rides the
-    // facade re-entry). The leaf id is param 1; only PUT is
-    // exposed, exactly as the flat makeIdRoute carried it.
+    // facade re-entry). GET is FLIPPED (Task 7): rides
+    // deriveBaselineScores — the SAME bespoke-derivation
+    // reasoning as deriveObjectiveRevisions above (a project-
+    // nested address, not a DocumentFamilyWiring family). The
+    // leaf id is param 1; only PUT is exposed, unchanged from
+    // before this flip.
     route('projects/:id/objective-baseline-scores', {
-        get: (db, p) =>
-            db.projectObjectiveBaselineScores.getAllWhere(
-                'project_id', param(p, 0),
+        get: (db, p, _actor, organization) =>
+            deriveBaselineScores(
+                db, requireOrganization(organization),
+                param(p, 0),
             ),
     }),
     route('projects/:id/objective-baseline-scores/:sid', {
@@ -4394,11 +4428,14 @@ export const routes: Route[] = [
     }),
     // Objective actual scores nest under their parent project,
     // identically: project id is param 0 (server filter), leaf id
-    // is param 1, PUT only.
+    // is param 1, PUT only. GET is FLIPPED (Task 7): rides
+    // deriveActualScores, the actuals byte-twin of
+    // deriveBaselineScores above.
     route('projects/:id/objective-actual-scores', {
-        get: (db, p) =>
-            db.projectObjectiveActualScores.getAllWhere(
-                'project_id', param(p, 0),
+        get: (db, p, _actor, organization) =>
+            deriveActualScores(
+                db, requireOrganization(organization),
+                param(p, 0),
             ),
     }),
     route('projects/:id/objective-actual-scores/:sid', {
