@@ -440,7 +440,6 @@ export async function appendMessagePair(
 // registry.ts) answers ONLY from its own createBodyIdField —
 // its entry here is deleted, never kept as a parallel truth.
 const CREATE_BODY_ID_FIELDS: Record<string, string> = {
-    'human-members': 'id',
     'identities': 'id',
     // Not gate-dispatched (the invitations side channel forms
     // its own pair directly in invitations-domain.ts) but reuses
