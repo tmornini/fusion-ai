@@ -45,7 +45,7 @@ import {
     validateAIMemberEntity,
     validateHumanMemberCreateBody,
     validateHumanMemberEditBody,
-    validateMemberEntity,
+    validateMemberDocumentBody,
     validateFlowCreateBody,
     validateFlowDocumentBody,
     validateFlowVersionEntity,
@@ -405,8 +405,9 @@ function objectiveDocumentEntityOf(
 // the third instance. The roster phase (Phase 8) adjudicated
 // it: no fork. Memberships (MEMBERSHIPS_WIRING below) is a
 // FOURTH 'stateless' family with yet another distinct rationale,
-// and MEMBERS_WIRING (Task 3) will be a fifth — 'stateless'
-// stays ONE type covering every one of them, never split.
+// and MEMBERS_WIRING (below, Phase 8 Task 3) is a fifth —
+// 'stateless' stays ONE type covering every one of them, never
+// split.
 // notFoundTable is 'objectives' — its storage table name
 // matches its family name, like ideas/projects/flows/records
 // (work-orders/record-attributes are the two whose names
@@ -453,9 +454,10 @@ function membershipDocumentEntityOf(
 // post through the create/claim/transition ops, just never the
 // document address); objectives' rides the states log's own
 // absence-as-active covenant (R2); the member families
-// (MEMBERS_WIRING, Task 3) will share that SAME log WITH a
-// genesis event; record-attributes and memberships share
-// neither — a membership carries NO lifecycle concept
+// (MEMBERS_WIRING below, Phase 8 Task 3, and its ai-members/
+// human-members siblings) share that SAME log WITH a genesis
+// event; record-attributes and memberships share neither — a
+// membership carries NO lifecycle concept
 // whatsoever, a pure join relation (Codd's own teaching: the
 // identities of the joined, plus the moment of union). GET stays
 // hand-written old-plane until Task 8; only PUT rides the
@@ -473,6 +475,59 @@ const MEMBERSHIPS_WIRING: DocumentFamilyWiring = {
     documentOp: postMembershipDocumentOp,
     entityOf: membershipDocumentEntityOf,
 };
+// The wire body carries exactly the member's own fields (no
+// organization_id anywhere, no trio) — a spread is safe for the
+// SAME reason membershipDocumentEntityOf's own comment gives: no
+// per-field picking needed, and 'stateless' rejects a trio at
+// the gate. `_organization` stays unused: the members directory
+// is GLOBAL plane (family-registry.ts: organizationNested:
+// false) — the FIRST family on it — so there is no fence value
+// to stamp at all.
+function memberDocumentEntityOf(
+    document: DerivedDocument,
+    _organization: Id,
+): unknown {
+    return {
+        id: document.uriId,
+        ...document.body,
+    };
+}
+// The members wiring row — the ninth family, and the FIFTH
+// 'stateless' one, opening a bucket distinct from all four
+// before it (Author gate 3, verification-corrected — no
+// type-level fork; 'stateless' stays ONE type covering all five
+// rationales). Members, ai-members, and human-members
+// (AI_MEMBERS_WIRING/HUMAN_MEMBERS_WIRING below) share ONE
+// shared-log-WITH-genesis rationale: the shared member id
+// receives REAL states events — a genesis event at create,
+// archive/reactivate via PUT states/:id — so a trio-carrying
+// document plane here would FREEZE every member's state at
+// genesis forever the moment a second states event posted — the
+// decisive refutation, distinct from every prior bucket: NOT
+// work-orders' vacuous-in-practice (family-scoped event pairs
+// post through the create/claim/transition ops, just never the
+// document address, §5.6); NOT objectives' absence-as-active
+// covenant, which rides this SAME shared log but with NO genesis
+// event ever minted (§5.8); NOT record-attributes'/memberships'
+// vacuous-BY-CONSTRUCTION pair, which carry no lifecycle concept
+// whatsoever (§5.9). notFoundTable is 'members' — its storage
+// table name matches its family name, like ideas/projects/flows/
+// records/objectives/memberships (work-orders/record-attributes
+// are the two families whose names diverge). This is also the
+// FIRST 'stateless' row served by a LIVE, wired PUT this SAME
+// commit (documentPutHandler/documentWriteResponseSpec below) —
+// documentWriteResponseSpec's own registration-first consult
+// (document-family.ts, this commit) omits the organization_id
+// stamp for exactly the reason above: no such field exists on
+// this entity at all.
+const MEMBERS_WIRING: DocumentFamilyWiring = {
+    family: 'members',
+    lifecycle: 'stateless',
+    notFoundTable: 'members',
+    validateDocument: validateMemberDocumentBody,
+    documentOp: postMemberDocumentOp,
+    entityOf: memberDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
@@ -481,6 +536,7 @@ registerDocumentFamilyWiring(RECORDS_WIRING);
 registerDocumentFamilyWiring(RECORD_ATTRIBUTES_WIRING);
 registerDocumentFamilyWiring(OBJECTIVES_WIRING);
 registerDocumentFamilyWiring(MEMBERSHIPS_WIRING);
+registerDocumentFamilyWiring(MEMBERS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -2433,13 +2489,20 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
-    'members/:id': {
-        status: 200,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateMemberEntity(withoutId(body ?? {})),
-        }),
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody — see the ideas/:id
+    // entry above for the shared rationale. members/:id is the
+    // FIRST organizationNested:false family this builder serves
+    // — documentWriteResponseSpec's own registration-first
+    // consult (this commit) omits the organization_id stamp
+    // entirely for this class, so the emitted bytes stay
+    // UNCHANGED from the hand-written body above ({id, type}):
+    // validateMemberDocumentBody's entity carries no
+    // organization_id to spread in the first place, and the
+    // consult never adds one from the fence either — key-set and
+    // value equality re-confirmed at Step 0(a) of the task that
+    // wired this row.
+    'members/:id': documentWriteResponseSpec(MEMBERS_WIRING),
     'ai-members': { status: 204 },
     // Per-verb: PUT is the bare facet put (200 + written row);
     // POST is the composed edit (204, no body).
@@ -4372,20 +4435,19 @@ export const routes: Route[] = [
             db.members.getById(actor),
     }),
 
-    // PUT dispatches to postMemberDocumentOp (extracted
-    // byte-for-byte, this commit — the postMembershipDocumentOp
-    // extract-function precedent): behavior-identical, no wiring
-    // row yet. GET reproduces the factory closure byte-
-    // equivalently; verbs stay {get, put} — members/:id has no
-    // DELETE today, mirroring the identities/:id precedent.
-    // Global plane: no organization stamping (the members
-    // directory row carries no organization_id).
+    // PUT rides the generic documentPutHandler(MEMBERS_WIRING)
+    // (this commit) — wire-identical to postMemberDocumentOp's
+    // own direct dispatch it replaces (the extraction commit
+    // immediately prior). GET stays hand-written old-plane until
+    // Task 8 (no MEMBERS_WIRING GET flip yet); verbs stay {get,
+    // put} — members/:id has no DELETE today, mirroring the
+    // identities/:id precedent. Global plane: no organization
+    // stamping (the members directory row carries no
+    // organization_id) — see documentWriteResponseSpec's own
+    // registration-first consult (document-family.ts).
     route('members/:id', {
         get: (db, p) => db.members.getById(param(p, 0)),
-        put: (db, p, body, actor, pair) =>
-            postMemberDocumentOp(
-                db, param(p, 0), body, actor, pair,
-            ),
+        put: documentPutHandler(MEMBERS_WIRING),
     }),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — GET dispatches to the derived

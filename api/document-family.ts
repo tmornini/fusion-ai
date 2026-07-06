@@ -3,6 +3,7 @@ import { EntityNotFoundError } from './db.ts';
 import type { Id } from './types.ts';
 import type { MessagePair } from './message-pair.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
+import { familyRegistration } from './family-registry.ts';
 import {
     deriveDocumentsAt,
     documentPairsAt,
@@ -342,20 +343,44 @@ export function documentCollectionRoute(
     };
 }
 
+// The registration-first consult (Phase 8 Task 3, the first
+// global-plane families: members/ai-members/human-members,
+// organizationNested:false) — mirrors canonicalUriPrefix's own
+// registration-first pattern (message-pair.ts): a family's
+// registration decides whether organization_id belongs on the
+// wire response AT ALL, never a blanket stamp. For the eight
+// org-nested families registered before this task, the stamp
+// below was a no-op — their entities already carry
+// organization_id, so the spread overwrote the stamp with the
+// SAME value the fence resolved (Step 0(a) of the task that
+// added this consult re-confirmed key-set/value equality against
+// today's hand-written bodies). But for a organizationNested:
+// false family, the entity carries NO such field, so the
+// unconditional stamp was a wire-visible EXTRA KEY with no
+// hand-written counterpart — this consult omits the line
+// entirely for that class instead of spreading over it.
 export function documentWriteResponseSpec(
     wiring: DocumentFamilyWiring,
 ): WriteResponseSpec {
+    const organizationNested =
+        familyRegistration(wiring.family)?.organizationNested
+            !== false;
     return {
         status: 200,
         successBody: (params, body, _actor, organization) => {
             const doc = wiring.validateDocument(
                 withoutId(body ?? {}),
             ) as { entity: Record<string, unknown> };
-            return {
-                id: param(params, 0),
-                organization_id: organization,
-                ...doc.entity,
-            };
+            return organizationNested
+                ? {
+                    id: param(params, 0),
+                    organization_id: organization,
+                    ...doc.entity,
+                }
+                : {
+                    id: param(params, 0),
+                    ...doc.entity,
+                };
         },
     };
 }

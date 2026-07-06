@@ -771,6 +771,48 @@ export function validateMemberEntity(
     };
 }
 
+const MEMBER_DOCUMENT_BODY_KEYS: readonly string[] = [
+    'type',
+];
+
+export interface MemberDocumentBody {
+    readonly entity: Omit<MemberEntity, 'id'>;
+}
+
+// The HTTP-body gate for PUT /members/:id: the ninth family,
+// and the FIRST of the roster's shared-log-with-genesis
+// 'stateless' bucket (see MEMBERS_WIRING in routes.ts for the
+// full rationale-contrast). THE LABEL MANDATE (the Phase 7
+// Objective precedent, a NAMED byte-parity-over-convention
+// choice): the assertOnlyKeys label is 'MemberEntity', matching
+// TODAY'S store validator (validateMemberEntity) byte-for-byte,
+// NOT the 'MemberDocumentBody' naming convention every other
+// *DocumentBody validator uses — the label appears in the wire
+// 400 body ("unexpected key ... for MemberEntity"), and the
+// convention's label would change those bytes. `type`'s own
+// rule (validateEnumField over the SAME three-member enum) is
+// IDENTICAL to validateMemberEntity's, so the missing/stray-key
+// 400s stay byte-identical on both paths too. Global plane
+// (family-registry.ts: organizationNested:false) — no
+// organization_id exists on this entity, so nothing is
+// tolerated beyond `type`.
+export function validateMemberDocumentBody(
+    body: Record<string, unknown>,
+): MemberDocumentBody {
+    assertOnlyKeys(
+        body, MEMBER_DOCUMENT_BODY_KEYS, 'MemberEntity',
+    );
+    const type = validateEnumField(
+        body, 'type', ['human', 'ai', 'system'],
+        'member type', 'MemberEntity',
+    );
+    return {
+        entity: {
+            type,
+        },
+    };
+}
+
 const IDENTITY_BODY_KEYS: readonly string[] = ['kind'];
 
 export function validateIdentityEntity(
