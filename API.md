@@ -125,12 +125,21 @@ Legend for classification:
 
 - `GET /members` — roster derived from the membership ledger (plus the
   system member). primitive (derived).
-- `GET|PUT /members/:id` — member by id. primitive (§3.30).
+- `GET|PUT /members/:id` — member by id. primitive (§3.30). `PUT`
+  is a document write (§5.10) — the ninth family, and the FIRST
+  `organizationNested:false` one: no `organization_id` exists on
+  this entity at all.
 - `GET /current-member` — the verified caller's own member row.
 - `GET /ai-members` · `GET|PUT /ai-members/:id` — primitive.
+  `PUT /ai-members/:id` is a document write (§5.10) — the tenth
+  family, joining `MEMBERS_WIRING`'s shared-log-with-genesis
+  bucket.
 - `POST /ai-members` · `POST /ai-members/:id` — operation (§3.1, §3.2).
   Admin-only.
 - `GET /human-members` · `GET /human-members/:id` — primitive.
+  `human-members/:id` is registered for the document wiring
+  (§5.10) — the eleventh family — but carries no live `PUT`, the
+  first registered family without one.
 - `POST /human-members` · `POST /human-members/:id` — operation (§3.3,
   §3.4). Admin-only.
 
@@ -1170,17 +1179,33 @@ event, so the lifecycle stays on the shared `states` log instead
 
 ### 3.30 `PUT /members/:id` — edit a member directory row (not a POST)
 
-Same shape as §3.29, on the GLOBAL plane (no organization stamping —
-the `members` row carries no `organization_id`). Registered since
-before Phase 1 but, as of this task, uncalled by any web-app adapter:
-member edits go through the composed `POST /human-members/:id` /
-`POST /ai-members/:id` operations (§3.2, §3.4) instead, which already
-touch this same `members` row as one of their own facet puts.
+The ninth family, and the FIRST `organizationNested:false` one
+(§5.10). `PUT` now dispatches through
+`documentPutHandler(MEMBERS_WIRING)`, replacing the hand-written
+stand-in this section used to describe (in place of the
+earlier-retired `makeIdRoute` factory) — the wire is UNCHANGED:
+same GLOBAL plane (no organization stamping — the `members` row
+carries no `organization_id`), same `{id, type}` response.
+Registered since before Phase 1 but, as of this task, uncalled by
+any web-app adapter: member edits go through the composed
+`POST /human-members/:id` / `POST /ai-members/:id` operations
+(§3.2, §3.4) instead, which already touch this same `members` row
+as one of their own facet puts.
 
 - tx: `[members, requests, responses]`
-- actual: `members.put(id, body)` → `appendMessagePair(pair)`.
-- props: atomic; document-class; `validateMemberEntity` (just
-  `type: 'human' | 'ai' | 'system'`) reconstructs the 200 body.
+- actual: `validateMemberDocumentBody(body)` → `members.put(
+  id, entity)` → `appendMessagePair(pair)`.
+- props: atomic; document-class (a repeat PUT records
+  `Supersedes`, §5.1); `validateMemberDocumentBody`'s
+  `assertOnlyKeys` label is `'MemberEntity'` — matching
+  `validateMemberEntity`'s own label byte-for-byte (a NAMED
+  divergence from the `*DocumentBody` naming convention every
+  other document validator uses), so the 400 body text this route
+  raises is unchanged; `documentWriteResponseSpec`'s
+  registration-first consult (§5.10) omits the `organization_id`
+  stamp for this family, so the 200 body stays `{id, type}` —
+  byte-identical to what `validateMemberEntity` reconstructed
+  before this task.
 
 ### 3.31 `flows/:id/versions/:vid` — a named version (not POST)
 
@@ -1813,3 +1838,94 @@ invitations-facade 404s (the side channel never calls
 `invitations/:id/decline`, `invitations/:id/revocation`) plus
 one bogus-path shape (`invitations/:id` bare) on every verb — 37
 combos, 15 patterns total.
+
+### 5.10 The member directory: the first global-plane families
+
+Task 3 (Phase 8) registers `members`, `ai-members`, and
+`human-members` as the ninth, tenth, and eleventh
+`DocumentFamilyWiring` rows (`MEMBERS_WIRING`,
+`AI_MEMBERS_WIRING`, `HUMAN_MEMBERS_WIRING` in `api/routes.ts`)
+— the FIRST `organizationNested:false` ("global-plane")
+registrations of any wiring row, and the FIFTH `'stateless'`
+rationale (Author gate 3, verification-corrected — still no
+type-level fork). All three share ONE shared-log-WITH-genesis
+bucket, distinct from every prior one: the shared member id
+receives REAL `states` events (a genesis event at create,
+archive/reactivate via `PUT states/:id`), so a trio-carrying
+document plane here would FREEZE every member's state at
+genesis forever the moment a second `states` event posted — the
+decisive refutation, unlike work-orders' vacuous-in-practice
+(§5.6), objectives' absence-as-active (§5.8), or record-
+attributes'/memberships' vacuous-by-construction pair (§5.9).
+
+**The blocking fix (`api/document-family.ts`).**
+`documentWriteResponseSpec` unconditionally stamped
+`organization_id: organization` before spreading the validated
+entity — a no-op for the eight org-nested families registered
+before this task (their entities already carry
+`organization_id`, so the spread overwrote the stamp with the
+SAME value), but a WIRE-VISIBLE EXTRA KEY for a global-plane
+family, whose entity carries no such field at all. The fix: the
+constructor now consults
+`familyRegistration(wiring.family)?.organizationNested` and
+OMITS the `organization_id` line entirely when it is `false` —
+mirroring `canonicalUriPrefix`'s own registration-first pattern
+(`message-pair.ts`). Two pre-existing, untouched pins are the
+regression proof this fix is byte-safe both ways: "PUT
+members/:id appends its pair..." and "PUT ai-members/:id
+appends its pair..." (both in
+`tests/api-shadow-ledger-members-identities.test.ts`) stayed
+green, unmodified, through every commit of this task.
+
+- **`notFoundTable` diverges for two of the three** —
+  `'ai_members'` and `'human_members'` (the storage table names,
+  `db-backed.ts`'s `EntityStore` keys) versus their hyphenated
+  family/route names, the SAME divergence work-orders/
+  record-attributes established; `'members'` matches its family
+  name.
+- **`human-members/:id` gains NO live PUT.** Its wiring row
+  registers (`documentOp`/`entityOf` fully shaped) but serves no
+  route — the FIRST registered family without a live document
+  PUT. `PUT /human-members/:id` still 405s (the Task 2 verb-gap
+  pin, `tests/api-roster-verb-gaps.test.ts`, proves it survives
+  untouched); the row exists for a future synthesis/seed caller
+  only.
+- **GET stays hand-written, old-plane, until Task 8** for all
+  three — same as memberships (§5.9).
+
+**PUT /members/:id** and **PUT /ai-members/:id** now dispatch
+through `documentPutHandler(MEMBERS_WIRING)` /
+`documentPutHandler(AI_MEMBERS_WIRING)`, and
+`WRITE_RESPONSE_SPECS['members/:id']` /
+the `'ai-members/:id'` `PerVerbWriteResponseSpec`'s `put` arm
+are each `documentWriteResponseSpec(...)` of the matching row —
+the SAME `'simple'` concurrency class every document family but
+flows rides (§5.4). The `'ai-members/:id'` `post` arm (the
+composed edit) is untouched.
+
+**The wire covenant, precisely scoped.** ZERO deltas in request
+shapes, response key sets + values, statuses, headers, and hop
+counts — the blocking fix above is what MAKES this true for a
+global-plane family; without it, `organization_id` would have
+leaked onto both wires. THE LABEL MANDATE, both families: the
+stray-key 400 stays byte-identical to `unexpected key "..." for
+MemberEntity` / `AIMemberEntity` (matching
+`validateMemberEntity`/`validateAIMemberEntity`'s OWN labels,
+NOT the `*DocumentBody` naming convention); the missing-key 400s
+and, for ai-members, the unknown-model-id 400, are the SAME
+calls on both paths, so all stay unchanged.
+`validateHumanMemberDocumentBody` carries the SAME label
+mandate (`'HumanMemberEntity'`) though no live route raises it
+yet.
+
+`tests/api-member-documents.test.ts` (the validator accept/
+reject cases for all three families, the below-gate op pins,
+the E6 byte-identical-resend pin for the two LIVE routes, and
+the PUT-chain-derives-the-head / DELETE-derives-absent cases
+against all three REAL registered wiring rows) plus the
+untouched existing suite
+(`tests/api-shadow-ledger-members-identities.test.ts`'s
+`Supersedes`/resend/wire-body-matches-domain-read assertions,
+and `tests/api-roster-verb-gaps.test.ts`'s full 37-combo pin,
+including `human-members/:id`'s surviving 405) are the
+absorption's proof.
