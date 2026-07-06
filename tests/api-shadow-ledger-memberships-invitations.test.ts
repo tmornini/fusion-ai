@@ -202,6 +202,15 @@ async () => {
     );
     assert.ok(row);
     assert.equal(row!.uri_id, '');
+    // The B2 closure (Phase 8 Task 6): a fresh membership-writing
+    // accept ALSO appends the memberships document, at the
+    // INVITATION-org-nested address, keyed by the caller's own
+    // membershipId.
+    const document = requests.find(
+        r => r.uri_prefix === '/organizations/1/memberships/'
+            && r.uri_id === 'ms-acc',
+    );
+    assert.ok(document);
 });
 
 test('a repeat (no-op) accept still appends its own pair,'
@@ -230,6 +239,15 @@ test('a repeat (no-op) accept still appends its own pair,'
             === '/invitations/' + id + '/acceptance/',
     );
     assert.equal(rows.length, 2);
+    // The no-op re-accept writes no membership row, so it
+    // synthesizes no document either (the security property's
+    // message-plane mirror) — exactly ONE memberships document
+    // exists, at the FIRST (fresh) accept's own membershipId.
+    const documents = requests.filter(
+        r => r.uri_prefix === '/organizations/1/memberships/',
+    );
+    assert.equal(documents.length, 1);
+    assert.equal(documents[0]!.uri_id, 'ms-5');
 });
 
 test('a conflicting (already-revoked) accept 409s and'

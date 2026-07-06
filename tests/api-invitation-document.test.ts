@@ -5,6 +5,10 @@ import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { organizationRow } from './test-fixtures.ts';
 import { documentPairsAt } from '../api/derive-documents.ts';
+import {
+    documentFamilyWiring,
+    documentGetHandler,
+} from '../api/document-family.ts';
 
 // Phase 8 Task 6: the invitation document plane — the grant's
 // PUT-shaped invitation document (the entity minus id, NO email
@@ -146,4 +150,80 @@ async () => {
     assert.equal(res.status, 409);
     assert.equal((await db.requests.getAll()).length, 0);
     assert.equal((await db.responses.getAll()).length, 0);
+});
+
+// ── accept: the memberships document pair (the B2 closure) ──
+// Distinct, strictly-increasing `at` stamps across grant/accept:
+// both share ONE invitation entity_id in the states log, so a
+// tied `at` would fall to the (at, id) reduction's id tie-break
+// rather than genuinely proving which branch ran.
+
+async function accept(
+    db: MemoryDbAdapter,
+    invitationId: string,
+    membershipId: string,
+    eventId: string,
+    acceptAt: string,
+): Promise<Response> {
+    return handleRequest(db, req(
+        'POST', '/invitations/' + invitationId + '/acceptance',
+        await organizationToken('sarah', '1'),
+        { membershipId, acceptEventId: eventId, acceptAt },
+    ));
+}
+
+test('a fresh accept appends its memberships document at the'
++ ' invitation-org address, and the derived memberships plane'
++ ' sees the new membership (the B2 closure)', async () => {
+    const db = await freshDb();
+    await grant(db, 'inv-doc-3');
+    const res = await accept(
+        db, 'inv-doc-3', 'ms-doc-3', 'ev-acc-3',
+        '2026-01-01T00:00:01.000000Z',
+    );
+    assert.equal(res.status, 204);
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    const documents = documentPairsAt(
+        requests, responses, '/organizations/1/memberships/',
+    ).filter(pair => pair.uriId === 'ms-doc-3');
+    assert.equal(documents.length, 1);
+    assert.deepEqual(documents[0]!.body, {
+        organization_id: '1', identity_id: 'sarah',
+        at: '2026-01-01T00:00:01.000000Z',
+    });
+    // The direct proof: the generic, family-agnostic document
+    // derivation (the SAME machinery a live GET /memberships/:id
+    // would use once Task 8 flips it) sees the membership the
+    // accept just synthesized.
+    const wiring = documentFamilyWiring('memberships')!;
+    const derived = await documentGetHandler(wiring)(
+        db, ['ms-doc-3'], 'sarah', '1',
+    );
+    assert.deepEqual(derived, {
+        id: 'ms-doc-3', organization_id: '1',
+        identity_id: 'sarah',
+        at: '2026-01-01T00:00:01.000000Z',
+    });
+});
+
+test('a no-op re-accept appends no memberships document',
+async () => {
+    const db = await freshDb();
+    await grant(db, 'inv-doc-4');
+    const first = await accept(
+        db, 'inv-doc-4', 'ms-doc-4', 'ev-acc-4',
+        '2026-01-01T00:00:01.000000Z',
+    );
+    assert.equal(first.status, 204);
+    const second = await accept(
+        db, 'inv-doc-4', 'ms-doc-4b', 'ev-acc-4b',
+        '2026-01-01T00:00:02.000000Z',
+    );
+    assert.equal(second.status, 204);
+    const documents = (await db.requests.getAll()).filter(
+        r => r.uri_prefix === '/organizations/1/memberships/',
+    );
+    assert.equal(documents.length, 1);
+    assert.equal(documents[0]!.uri_id, 'ms-doc-4');
 });
