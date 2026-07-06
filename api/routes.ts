@@ -2150,6 +2150,39 @@ export async function postMembershipDocumentOp(
     );
 }
 
+// Member document write — extracted byte-for-byte from the
+// hand-written members/:id PUT closure (the
+// postMembershipDocumentOp precedent above): a members row and
+// its pair commit as ONE transaction; no states interaction (an
+// edit does not move the member's lifecycle — genesis/archive
+// ride PUT states/:id instead). `pair` is optional so a
+// below-facade caller with no pair keeps compiling; the live
+// route always supplies one. `_actor` is unused for the same
+// reason postMembershipDocumentOp's is: there is no state event
+// here to author.
+export async function postMemberDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<MemberEntity, 'id'>> {
+    return db.transaction(
+        ['members', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.members.put(
+                id,
+                withoutId(body) as unknown as
+                    Omit<MemberEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -4281,34 +4314,20 @@ export const routes: Route[] = [
             db.members.getById(actor),
     }),
 
-    // Hand-written in place of makeIdRoute<MemberEntity> so PUT
-    // can append its message pair in the same transaction as
-    // the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET
-    // reproduces the factory closure byte-equivalently; verbs
-    // stay {get, put} — members/:id has no DELETE today,
-    // mirroring the identities/:id precedent. Global plane: no
-    // organization stamping (the members directory row carries
-    // no organization_id).
+    // PUT dispatches to postMemberDocumentOp (extracted
+    // byte-for-byte, this commit — the postMembershipDocumentOp
+    // extract-function precedent): behavior-identical, no wiring
+    // row yet. GET reproduces the factory closure byte-
+    // equivalently; verbs stay {get, put} — members/:id has no
+    // DELETE today, mirroring the identities/:id precedent.
+    // Global plane: no organization stamping (the members
+    // directory row carries no organization_id).
     route('members/:id', {
         get: (db, p) => db.members.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['members', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.members.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<MemberEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postMemberDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
     }),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — GET dispatches to the derived
