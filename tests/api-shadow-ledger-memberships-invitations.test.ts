@@ -130,6 +130,20 @@ async () => {
     assert.equal(requests[0]!.uri_id, 'inv-1');
 });
 
+test('a grant strips the live email from every stored'
++ ' request message (the PII strip arm, gate 2)', async () => {
+    const db = await freshDb();
+    const res = await grant(db, 'inv-1e', 'sarah@x.com');
+    assert.equal(res.status, 200);
+    const requests = await db.requests.getAll();
+    // Operation pair + the invitation document pair (Phase 8
+    // Task 6), both at this SAME address.
+    assert.equal(requests.length, 2);
+    for (const row of requests) {
+        assert.ok(!row.message.includes('sarah@x.com'));
+    }
+});
+
 test('a member-conflict grant (409) appends nothing',
 async () => {
     const db = await freshDb();
