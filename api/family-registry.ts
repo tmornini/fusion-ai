@@ -91,6 +91,12 @@ export const FAMILY_REGISTRY: readonly FamilyRegistration[] = [
             // exists for members either; the same inert slot
             // as memberships above.
     },
+    {
+        family: 'ai-members',
+        organizationNested: false,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    },
 ];
 
 export function familyRegistration(

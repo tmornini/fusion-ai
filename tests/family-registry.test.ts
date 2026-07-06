@@ -94,6 +94,16 @@ test('members is the ninth registered family, the first'
     });
 });
 
+test('ai-members is the tenth registered family,'
++ ' global-plane like members', () => {
+    assert.deepEqual(familyRegistration('ai-members'), {
+        family: 'ai-members',
+        organizationNested: false,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
     assert.equal(familyRegistration('identities'), undefined);
 });
