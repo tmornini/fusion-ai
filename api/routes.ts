@@ -3714,38 +3714,13 @@ export const routes: Route[] = [
                 pair !== undefined
                 && organization !== undefined
             ) {
-                const spec =
-                    WRITE_RESPONSE_SPECS['projects/:id'];
-                if (spec === undefined || !('status' in spec)) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' projects/:id',
-                    );
-                }
-                const projectHeadPairId = await headPairIdAt(
-                    db,
-                    canonicalUriPrefix(
-                        organization, '/projects/',
-                    ),
-                    b.projectId,
-                );
-                projectPair = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/projects/' + b.projectId,
+                projectPair = await formDocumentPairFor(db, {
                     routePattern: 'projects/:id',
-                    routeSegments: ['projects', ':id'],
-                    pathSegments: ['projects', b.projectId],
-                    headerFields: [],
+                    params: [b.projectId],
                     body: projectDocument,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: 200,
-                    responseBody: spec.successBody?.(
-                        [b.projectId], projectDocument, actor,
-                        organization,
-                    ),
-                    headPairId: projectHeadPairId,
                 });
                 // The idea's OWN document pair, at its EXISTING
                 // address (the idea was created earlier, through
@@ -3753,38 +3728,13 @@ export const routes: Route[] = [
                 // that prior pair, so this one records Supersedes,
                 // unlike the project pair above (a fresh address,
                 // genesis).
-                const ideaSpec = WRITE_RESPONSE_SPECS['ideas/:id'];
-                if (
-                    ideaSpec === undefined
-                    || !('status' in ideaSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' ideas/:id',
-                    );
-                }
-                const ideaHeadPairId = await headPairIdAt(
-                    db,
-                    canonicalUriPrefix(organization, '/ideas/'),
-                    ideaId,
-                );
-                ideaPair = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/ideas/' + ideaId,
+                ideaPair = await formDocumentPairFor(db, {
                     routePattern: 'ideas/:id',
-                    routeSegments: ['ideas', ':id'],
-                    pathSegments: ['ideas', ideaId],
-                    headerFields: [],
+                    params: [ideaId],
                     body: ideaDocument,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: 200,
-                    responseBody: ideaSpec.successBody?.(
-                        [ideaId], ideaDocument, actor,
-                        organization,
-                    ),
-                    headPairId: ideaHeadPairId,
                 });
                 // The per-baseline pairs (Task 4): N synthesized
                 // pairs, one per validated baseline, at each
@@ -3798,57 +3748,19 @@ export const routes: Route[] = [
                 // (which assemble a document from disjoint
                 // parts) — so the response spec's successBody
                 // below is what runs validateBaselineScoreEntity.
-                const baselineSpec = WRITE_RESPONSE_SPECS[
-                    'projects/:id/objective-baseline-scores/:sid'
-                ];
-                if (
-                    baselineSpec === undefined
-                    || !('status' in baselineSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' projects/:id/objective-baseline'
-                        + '-scores/:sid',
-                    );
-                }
-                const baselinesPrefix = canonicalUriPrefix(
-                    organization,
-                    '/projects/' + b.projectId
-                        + '/objective-baseline-scores/',
-                );
                 for (const baseline of b.baselines) {
-                    const baselineHeadPairId = await headPairIdAt(
-                        db, baselinesPrefix, baseline.id,
-                    );
-                    baselinePairs.push(await formWritePair({
-                        method: 'PUT',
-                        pathname: '/projects/' + b.projectId
-                            + '/objective-baseline-scores/'
-                            + baseline.id,
-                        routePattern:
-                            'projects/:id/objective-baseline'
-                            + '-scores/:sid',
-                        routeSegments: [
-                            'projects', ':id',
-                            'objective-baseline-scores', ':sid',
-                        ],
-                        pathSegments: [
-                            'projects', b.projectId,
-                            'objective-baseline-scores',
-                            baseline.id,
-                        ],
-                        headerFields: [],
-                        body: baseline.fields,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        organization,
-                        responseStatus: baselineSpec.status,
-                        responseBody: baselineSpec.successBody?.(
-                            [b.projectId, baseline.id],
-                            baseline.fields, actor, organization,
-                        ),
-                        headPairId: baselineHeadPairId,
-                    }));
+                    baselinePairs.push(await formDocumentPairFor(
+                        db, {
+                            routePattern:
+                                'projects/:id/objective-baseline'
+                                + '-scores/:sid',
+                            params: [b.projectId, baseline.id],
+                            body: baseline.fields,
+                            requesterIdentityId: actor,
+                            requestAt: pair.requestAt,
+                            organization,
+                        },
+                    ));
                 }
             }
             return db.transaction(
@@ -4310,41 +4222,13 @@ export const routes: Route[] = [
                 const documentBody =
                     workOrderCreateDocumentBody(b);
                 validateWorkOrderDocumentBody(documentBody);
-                const documentSpec =
-                    WRITE_RESPONSE_SPECS['work-orders/:id'];
-                if (
-                    documentSpec === undefined
-                    || !('status' in documentSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' work-orders/:id',
-                    );
-                }
-                const documentHeadPairId = await headPairIdAt(
-                    db,
-                    canonicalUriPrefix(
-                        organization, '/work-orders/',
-                    ),
-                    b.id,
-                );
-                const document = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/work-orders/' + b.id,
+                const document = await formDocumentPairFor(db, {
                     routePattern: 'work-orders/:id',
-                    routeSegments: ['work-orders', ':id'],
-                    pathSegments: ['work-orders', b.id],
-                    headerFields: [],
+                    params: [b.id],
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: documentSpec.status,
-                    responseBody: documentSpec.successBody?.(
-                        [b.id], documentBody, actor,
-                        organization,
-                    ),
-                    headPairId: documentHeadPairId,
                 });
                 // The live :woid PUT's request shape, verified
                 // by content: validateFlowWorkOrderEntity
@@ -4356,46 +4240,20 @@ export const routes: Route[] = [
                 const flowId = pickString(
                     b.flowWorkOrder, 'flow_id',
                 );
-                const joinSpec = WRITE_RESPONSE_SPECS[
-                    'flows/:id/work-orders/:woid'
-                ];
-                if (
-                    joinSpec === undefined
-                    || !('status' in joinSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' flows/:id/work-orders/:woid',
-                    );
-                }
-                const join = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/flows/' + flowId
-                        + '/work-orders/' + b.flowWorkOrderId,
+                // Genesis-undefined (chain 'none'): a work
+                // order's create-time join is always fresh
+                // (design decision — no duplicate-create carve-
+                // out at this address through this task; pinned
+                // by the same-join-id retry test in
+                // tests/drift-work-orders.test.ts).
+                const join = await formDocumentPairFor(db, {
                     routePattern: 'flows/:id/work-orders/:woid',
-                    routeSegments: [
-                        'flows', ':id',
-                        'work-orders', ':woid',
-                    ],
-                    pathSegments: [
-                        'flows', flowId,
-                        'work-orders', b.flowWorkOrderId,
-                    ],
-                    headerFields: [],
+                    params: [flowId, b.flowWorkOrderId],
                     body: b.flowWorkOrder,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: joinSpec.status,
-                    responseBody: joinSpec.successBody?.(
-                        [flowId, b.flowWorkOrderId],
-                        b.flowWorkOrder, actor, organization,
-                    ),
-                    // Genesis-undefined: a work order's
-                    // create-time join is always fresh (design
-                    // decision — no duplicate-create carve-out
-                    // at this address through this task).
-                    headPairId: undefined,
+                    chain: 'none',
                 });
                 pairs = { operation: pair, document, join };
             }
