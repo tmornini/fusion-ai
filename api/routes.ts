@@ -2949,7 +2949,10 @@ export interface DocumentPairFormInput {
     // :id, or ['projects/:id/objective-baseline-scores/:sid']'s
     // [projectId, baselineId]).
     readonly params: readonly Id[];
-    readonly body: Record<string, unknown>;
+    // undefined only for the record-attribute DELETE tombstone
+    // sites, which carry no body — mirroring WritePairInput's own
+    // body: Record<string, unknown> | undefined.
+    readonly body: Record<string, unknown> | undefined;
     readonly requesterIdentityId: Id;
     readonly requestAt: string;
     readonly organization: Id | undefined;
@@ -4574,55 +4577,14 @@ export const routes: Route[] = [
                 // rather than silently minting an invalid
                 // synthesized pair.
                 validateRecordDocumentBody(documentBody);
-                const documentSpec =
-                    WRITE_RESPONSE_SPECS['records/:id'];
-                if (
-                    documentSpec === undefined
-                    || !('status' in documentSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' records/:id',
-                    );
-                }
-                const recordsPrefix = canonicalUriPrefix(
-                    organization, '/records/',
-                );
-                const documentHeadPairId = await headPairIdAt(
-                    db, recordsPrefix, b.id,
-                );
-                const document = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/records/' + b.id,
+                const document = await formDocumentPairFor(db, {
                     routePattern: 'records/:id',
-                    routeSegments: ['records', ':id'],
-                    pathSegments: ['records', b.id],
-                    headerFields: [],
+                    params: [b.id],
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: documentSpec.status,
-                    responseBody: documentSpec.successBody?.(
-                        [b.id], documentBody, actor, organization,
-                    ),
-                    headPairId: documentHeadPairId,
                 });
-                const attributeSpec = WRITE_RESPONSE_SPECS[
-                    'record-attributes/:id'
-                ];
-                if (
-                    attributeSpec === undefined
-                    || !('status' in attributeSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' record-attributes/:id',
-                    );
-                }
-                const attributesPrefix = canonicalUriPrefix(
-                    organization, '/record-attributes/',
-                );
                 const attributePuts = await Promise.all(
                     b.attributes.map(async (attr) => {
                         const attributeBody =
@@ -4630,30 +4592,13 @@ export const routes: Route[] = [
                                 attr as unknown as
                                     Record<string, unknown>,
                             );
-                        const headPairId = await headPairIdAt(
-                            db, attributesPrefix, attr.id,
-                        );
-                        return formWritePair({
-                            method: 'PUT',
-                            pathname:
-                                '/record-attributes/' + attr.id,
+                        return formDocumentPairFor(db, {
                             routePattern: 'record-attributes/:id',
-                            routeSegments:
-                                ['record-attributes', ':id'],
-                            pathSegments:
-                                ['record-attributes', attr.id],
-                            headerFields: [],
+                            params: [attr.id],
                             body: attributeBody,
                             requesterIdentityId: actor,
                             requestAt: pair.requestAt,
                             organization,
-                            responseStatus: attributeSpec.status,
-                            responseBody:
-                                attributeSpec.successBody?.(
-                                    [attr.id], attributeBody,
-                                    actor, organization,
-                                ),
-                            headPairId,
                         });
                     }),
                 );
@@ -4664,27 +4609,20 @@ export const routes: Route[] = [
                         // DELETE responses are UNIVERSALLY 204
                         // with no body (message-pair.ts
                         // resolution, mirrored here for the
-                        // synthesized removal pair).
-                        const headPairId = await headPairIdAt(
-                            db, attributesPrefix, id,
-                        );
-                        return formWritePair({
-                            method: 'DELETE',
-                            pathname:
-                                '/record-attributes/' + id,
+                        // synthesized removal pair) — SPEC-LESS,
+                        // so an explicit response override skips
+                        // WRITE_RESPONSE_SPECS entirely.
+                        return formDocumentPairFor(db, {
                             routePattern: 'record-attributes/:id',
-                            routeSegments:
-                                ['record-attributes', ':id'],
-                            pathSegments:
-                                ['record-attributes', id],
-                            headerFields: [],
+                            params: [id],
                             body: undefined,
                             requesterIdentityId: actor,
                             requestAt: pair.requestAt,
                             organization,
-                            responseStatus: 204,
-                            responseBody: undefined,
-                            headPairId,
+                            method: 'DELETE',
+                            response: {
+                                status: 204, body: undefined,
+                            },
                         });
                     }),
                 );
