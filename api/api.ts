@@ -421,22 +421,22 @@ export async function handleRequest(
                         effective, canonicalPrefix, uriId,
                     )
                     : undefined;
-            // The locked/simple divide (spec §The two PUT
-            // classes): keyed by the route's family registration
-            // THROUGH THE WIRING CONSULT — never a blanket
-            // family-registry or DOCUMENT_CLASS_ROUTE_PATTERNS
-            // read — so a family whose registration says
-            // 'locked' but has no row in document-family.ts's
-            // wiring table (flows, through this task) never rides
-            // this arm; only a route actually served via
-            // documentPutHandler can. The routePattern check
-            // (not merely the first segment) matters once a
-            // family's OTHER routes share its prefix (e.g. a
-            // future locked family's own :id/sub-resource PUT
-            // must never inherit the entity route's four-outcome
-            // table) — documentEntityRoute's own pattern is
-            // always exactly `${family}/:id`. PUT-only: the two
-            // PUT classes govern PUT, never POST/DELETE.
+            // The locked/simple divide (spec §The two PUT classes): keyed by
+            // the route's family registration THROUGH THE WIRING CONSULT —
+            // never a blanket family-registry or
+            // DOCUMENT_CLASS_ROUTE_PATTERNS read — so a family whose
+            // registration says 'locked' but has no row in
+            // document-family.ts's wiring table never rides this arm; only a
+            // route actually served via documentPutHandler can — flows is
+            // the live family that rides the locked arm today (registered in
+            // document-family.ts's wiring table AND 'locked' in
+            // family-registry.ts). The routePattern check (not merely the
+            // first segment) matters once a family's OTHER routes share its
+            // prefix (e.g. a future locked family's own :id/sub-resource PUT
+            // must never inherit the entity route's four-outcome table) —
+            // documentEntityRoute's own pattern is always exactly
+            // `${family}/:id`. PUT-only: the two PUT classes govern PUT,
+            // never POST/DELETE.
             const wiring = documentFamilyWiring(
                 matched.segments[0] ?? '',
             );
