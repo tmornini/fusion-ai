@@ -97,6 +97,7 @@ import {
     pairResponseBody,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
+import { messageAddress } from './message-address.ts';
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
@@ -2904,6 +2905,129 @@ export const WRITE_RESPONSE_SPECS:
     },
 };
 
+// The plain/PerVerb resolution every route-inline document-pair
+// block shares (Phase 9 Task 2): a plain WriteResponseSpec
+// answers for itself ('status' at the top level); a
+// PerVerbWriteResponseSpec answers through its `.put` arm — the
+// SAME two shapes the hand-written call sites checked one at a
+// time, folded into one shape-driven lookup. The guard-throw
+// text is byte-kept: every site hardcoded this exact literal,
+// parameterized here by the pattern that would have been
+// hardcoded at that site.
+function resolveWriteResponseSpec(
+    routePattern: string,
+): WriteResponseSpec {
+    const entry = WRITE_RESPONSE_SPECS[routePattern];
+    const spec = entry === undefined
+        ? undefined
+        : 'status' in entry ? entry : entry.put;
+    if (spec === undefined) {
+        throw new Error(
+            'no per-write response spec for'
+            + ' ' + routePattern,
+        );
+    }
+    return spec;
+}
+
+// The chain class a formed pair's head resolution takes
+// (finding 10 iii/iv): 'supersedes' (default) reads the address'
+// real head via headPairIdAt and stores it as headPairId —
+// today's ordinary document-revisit shape. 'follows' reads the
+// SAME real head but stores it as `follows`, NEVER headPairId —
+// the flows/:id/undo locked slot (backed by the responses.follows
+// unique index). 'none' skips the head-read entirely and stores
+// neither field — the two genesis-forced join sites (flow-create,
+// work-order-create), which are Genesis-undefined BY DESIGN even
+// on a same-join-id retry (Step 0(d') pin).
+export type DocumentPairChainClass =
+    'supersedes' | 'follows' | 'none';
+
+export interface DocumentPairFormInput {
+    readonly routePattern: string;
+    // Pattern params, in order (e.g. ['members/:id']'s single
+    // :id, or ['projects/:id/objective-baseline-scores/:sid']'s
+    // [projectId, baselineId]).
+    readonly params: readonly Id[];
+    readonly body: Record<string, unknown>;
+    readonly requesterIdentityId: Id;
+    readonly requestAt: string;
+    readonly organization: Id | undefined;
+    readonly method?: 'PUT' | 'DELETE';
+    readonly chain?: DocumentPairChainClass;
+    // The spec-less tombstone sites (finding 10 i): an explicit
+    // response, bypassing WRITE_RESPONSE_SPECS entirely.
+    readonly response?: {
+        readonly status: number;
+        readonly body: unknown;
+    };
+}
+
+// The shared document-pair former (Phase 9 Task 2, Commandment
+// IX): replaces every route-inline formWritePair block that
+// shared this ONE core shape — resolve the response, resolve the
+// address, head-read per the chain class, form the pair. Lives
+// beside WRITE_RESPONSE_SPECS (routes.ts, not message-pair.ts):
+// the specs live here, and message-pair.ts must never import
+// routes.ts (Step 0(c) — the import graph stays acyclic; routes.ts
+// already imports formWritePair/headPairIdAt FROM message-pair.ts,
+// so the dependency runs one way only). Builds the pair PRE-TX
+// only — the in-tx appendMessagePair calls stay at each op's own
+// transaction, untouched.
+export async function formDocumentPairFor(
+    db: DbAdapter,
+    input: DocumentPairFormInput,
+): Promise<MessagePair> {
+    const routeSegments = input.routePattern.split('/');
+    let nextParam = 0;
+    const pathSegments = routeSegments.map((segment) =>
+        segment.startsWith(':')
+            ? input.params[nextParam++]!
+            : segment,
+    );
+    const address = messageAddress(routeSegments, pathSegments);
+    const chain = input.chain ?? 'supersedes';
+    const head = chain === 'none'
+        ? undefined
+        : await headPairIdAt(
+            db,
+            canonicalUriPrefix(
+                input.organization, address.uriPrefix,
+            ),
+            address.uriId,
+        );
+    let responseStatus: number;
+    let responseBody: unknown;
+    if (input.response !== undefined) {
+        responseStatus = input.response.status;
+        responseBody = input.response.body;
+    } else {
+        const spec = resolveWriteResponseSpec(input.routePattern);
+        responseStatus = spec.status;
+        responseBody = spec.successBody?.(
+            [...input.params], input.body,
+            input.requesterIdentityId, input.organization,
+        );
+    }
+    return formWritePair({
+        method: input.method ?? 'PUT',
+        pathname: '/' + pathSegments.join('/'),
+        routePattern: input.routePattern,
+        routeSegments,
+        pathSegments,
+        headerFields: [],
+        body: input.body,
+        requesterIdentityId: input.requesterIdentityId,
+        requestAt: input.requestAt,
+        organization: input.organization,
+        responseStatus,
+        responseBody,
+        headPairId: chain === 'supersedes' ? head : undefined,
+        ...(chain === 'follows' && head !== undefined
+            ? { follows: head } : {}),
+    });
+}
+
 export const routes: Route[] = [
     route('members', {
         // GET is FLIPPED (Task 8): derived via deriveMembers —
@@ -5116,84 +5240,23 @@ export const routes: Route[] = [
                 const b = validateObjectiveCreateBody(body);
                 const documentBody = objectiveDocumentBodyOf(b);
                 validateObjectiveDocumentBody(documentBody);
-                const documentSpec =
-                    WRITE_RESPONSE_SPECS['objectives/:id'];
-                if (
-                    documentSpec === undefined
-                    || !('status' in documentSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' objectives/:id',
-                    );
-                }
-                const objectivesPrefix = canonicalUriPrefix(
-                    organization, '/objectives/',
-                );
-                const documentHeadPairId = await headPairIdAt(
-                    db, objectivesPrefix, b.id,
-                );
-                const document = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/objectives/' + b.id,
+                const document = await formDocumentPairFor(db, {
                     routePattern: 'objectives/:id',
-                    routeSegments: ['objectives', ':id'],
-                    pathSegments: ['objectives', b.id],
-                    headerFields: [],
+                    params: [b.id],
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: documentSpec.status,
-                    responseBody: documentSpec.successBody?.(
-                        [b.id], documentBody, actor, organization,
-                    ),
-                    headPairId: documentHeadPairId,
                 });
                 const revisionBody = objectiveRevisionBodyOf(b);
                 validateObjectiveRevisionEntity(revisionBody);
-                const revisionSpec = WRITE_RESPONSE_SPECS[
-                    'objectives/:id/revisions/:rid'
-                ];
-                if (
-                    revisionSpec === undefined
-                    || !('status' in revisionSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' objectives/:id/revisions/:rid',
-                    );
-                }
-                const revisionsPrefix = canonicalUriPrefix(
-                    organization,
-                    '/objectives/' + b.id + '/revisions/',
-                );
-                const revisionHeadPairId = await headPairIdAt(
-                    db, revisionsPrefix, b.revisionId,
-                );
-                const revision = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/objectives/' + b.id
-                        + '/revisions/' + b.revisionId,
+                const revision = await formDocumentPairFor(db, {
                     routePattern: 'objectives/:id/revisions/:rid',
-                    routeSegments: [
-                        'objectives', ':id', 'revisions', ':rid',
-                    ],
-                    pathSegments: [
-                        'objectives', b.id,
-                        'revisions', b.revisionId,
-                    ],
-                    headerFields: [],
+                    params: [b.id, b.revisionId],
                     body: revisionBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: revisionSpec.status,
-                    responseBody: revisionSpec.successBody?.(
-                        [b.id, b.revisionId], revisionBody,
-                        actor, organization,
-                    ),
-                    headPairId: revisionHeadPairId,
                 });
                 pairs = { operation: pair, document, revision };
             }
