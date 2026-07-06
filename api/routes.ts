@@ -148,6 +148,10 @@ import {
     deriveActualScores,
 } from './derive-project-scores.ts';
 import {
+    deriveMembers,
+    deriveMemberParent,
+} from './derive-members.ts';
+import {
     param,
     requireOrganization,
     withoutId,
@@ -2902,28 +2906,30 @@ export const WRITE_RESPONSE_SPECS:
 
 export const routes: Route[] = [
     route('members', {
-        // Members are derived from the membership ledger off
-        // `effective`: the org-scoped memberships name the
-        // org's members; the members directory itself is
-        // global (no org column). The join IS the org fence —
-        // it re-scopes on an org switch with no denormalized
-        // column to keep in sync. The system member rides
-        // along unconditionally — it has no membership but
-        // authors events in every org, so author resolution
-        // (getMemberMap) must still find it; the human/ai
-        // roster filters it out by type.
-        get: async (db) => {
-            const memberships =
-                await db.memberships.getAll();
-            const ids = new Set(
-                memberships.map(m => m.identity_id));
-            const all = await db.members.getAll();
-            return all.filter(
-                m => ids.has(m.id) || m.type === 'system');
-        },
+        // GET is FLIPPED (Task 8): derived via deriveMembers —
+        // wire-identical to the hand-written membership-join
+        // dispatch it replaces. The org-scoped memberships
+        // prefix stands in for the fenced db.memberships
+        // read; deriveMemberParents' own global MEMBERS_PREFIX
+        // stands in for the unfenced db.members.getAll() read.
+        // The join IS the org fence — it re-scopes on an org
+        // switch with no denormalized column to keep in sync.
+        // The system member still rides along unconditionally
+        // — deriveMembers' own filter, mirrored from this
+        // closure's prior body — so author resolution
+        // (getMemberMap) still finds it; the human/ai roster
+        // filters it out by type.
+        get: (db, _p, _actor, organization) =>
+            deriveMembers(db, requireOrganization(organization)),
     }),
     route('ai-members', {
-        get: (db) => db.aiMembers.getAll(),
+        // GET is FLIPPED (Task 8): derived via
+        // documentCollectionGetHandler — wire-identical to the
+        // hand-written db.aiMembers.getAll() dispatch it
+        // replaces; ai-members is GLOBAL plane
+        // (organizationNested:false), so the read stays
+        // unfenced exactly as before.
+        get: documentCollectionGetHandler(AI_MEMBERS_WIRING),
         // Admin-only — POST /ai-members has no member-tier
         // entry, so it falls to the root admin tier in
         // ROUTE_POLICY. Task 4: forms the member-document and
@@ -3031,7 +3037,12 @@ export const routes: Route[] = [
     // (see message-pair.ts / WRITE_RESPONSE_SPECS). GET reproduces
     // the prior closure byte-equivalently.
     route('ai-members/:id', {
-        get: (db, p) => db.aiMembers.getById(param(p, 0)),
+        // GET is FLIPPED (Task 8): absorbed into the generic
+        // documentGetHandler(AI_MEMBERS_WIRING) — the SAME
+        // wiring row PUT already rides — wire-identical to the
+        // hand-written db.aiMembers.getById dispatch it
+        // replaces.
+        get: documentGetHandler(AI_MEMBERS_WIRING),
         put: documentPutHandler(AI_MEMBERS_WIRING),
         // AI-member edit (Task 4, the migration's FIRST composed-
         // EDIT synthesis): forms the SAME member-document/detail-
@@ -3136,7 +3147,13 @@ export const routes: Route[] = [
         },
     }),
     route('human-members', {
-        get: (db) => db.humanMembers.getAll(),
+        // GET is FLIPPED (Task 8): derived via
+        // documentCollectionGetHandler — wire-identical to the
+        // hand-written db.humanMembers.getAll() dispatch it
+        // replaces; human-members is GLOBAL plane
+        // (organizationNested:false), so the read stays
+        // unfenced exactly as before.
+        get: documentCollectionGetHandler(HUMAN_MEMBERS_WIRING),
         // Admin-only — POST /human-members has no member-tier
         // entry, so it falls to the root admin tier in
         // ROUTE_POLICY. Task 4: forms the member-document and
@@ -3243,9 +3260,13 @@ export const routes: Route[] = [
     // untouched. The wiring row's documentOp/entityOf, and this
     // task's WRITE_RESPONSE_SPECS['human-members/:id'].put, exist
     // for the synthesized bundle below and the seed only — see
-    // HUMAN_MEMBERS_WIRING's own comment above.
+    // HUMAN_MEMBERS_WIRING's own comment above. GET is FLIPPED
+    // (Task 8): absorbed into the generic
+    // documentGetHandler(HUMAN_MEMBERS_WIRING) — wire-identical
+    // to the hand-written db.humanMembers.getById dispatch it
+    // replaces.
     route('human-members/:id', {
-        get: (db, p) => db.humanMembers.getById(param(p, 0)),
+        get: documentGetHandler(HUMAN_MEMBERS_WIRING),
         // Human-member edit (Task 4, the SAME composed-EDIT
         // synthesis as ai-members/:id above): forms the member-
         // document/detail-document bundle beside the gate's own
@@ -4990,22 +5011,29 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is FLIPPED (Task 8): derived via
+    // documentCollectionGetHandler — wire-identical to the
+    // hand-written db.memberships.getAll() dispatch it replaces
+    // (memberships is organizationNested:true, so the derived
+    // prefix fences to the caller's org exactly as the
+    // org-scoped adapter already did for the hand-written read).
     route('memberships', {
-        get: (db) => db.memberships.getAll(),
+        get: documentCollectionGetHandler(MEMBERSHIPS_WIRING),
     }),
+    // GET is FLIPPED (Task 8): absorbed into the generic
+    // documentGetHandler(MEMBERSHIPS_WIRING) — the SAME wiring
+    // row PUT already rides — wire-identical to the
+    // hand-written db.memberships.getById dispatch it replaces.
     // PUT rides the generic documentPutHandler(MEMBERSHIPS_WIRING)
-    // (this commit) — wire-identical to postMembershipDocumentOp's
-    // own direct dispatch it replaces (the extraction commit
-    // immediately prior). GET stays hand-written old-plane until
-    // Task 8 (no MEMBERSHIPS_WIRING GET flip yet). DELETE stays
-    // hand-written in place of makeIdRoute<MembershipEntity>'s
-    // fixed closure so it can append its message pair in the same
-    // transaction as the write (the factory has no per-family pair
-    // selector — see message-pair.ts; no generic DELETE component
-    // exists either — the records/:id template). Verbs stay {get,
-    // put, delete}.
+    // (prior commit) — wire-identical to postMembershipDocumentOp's
+    // own direct dispatch it replaces. DELETE stays hand-written
+    // in place of makeIdRoute<MembershipEntity>'s fixed closure so
+    // it can append its message pair in the same transaction as
+    // the write (the factory has no per-family pair selector — see
+    // message-pair.ts; no generic DELETE component exists either —
+    // the records/:id template). Verbs stay {get, put, delete}.
     route('memberships/:id', {
-        get: (db, p) => db.memberships.getById(param(p, 0)),
+        get: documentGetHandler(MEMBERSHIPS_WIRING),
         put: documentPutHandler(MEMBERSHIPS_WIRING),
         delete: (db, p, _actor, pair) => {
             const id = param(p, 0);
@@ -5020,23 +5048,29 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is FLIPPED (Task 8): derived via
+    // deriveMemberParent(db, actor) — wire-identical to the
+    // hand-written db.members.getById(actor) dispatch it
+    // replaces (members is GLOBAL plane, so the actor's own id
+    // resolves the same row regardless of active org).
     route('current-member', {
-        get: (db, _p, actor) =>
-            db.members.getById(actor),
+        get: (db, _p, actor) => deriveMemberParent(db, actor),
     }),
 
-    // PUT rides the generic documentPutHandler(MEMBERS_WIRING)
-    // (this commit) — wire-identical to postMemberDocumentOp's
-    // own direct dispatch it replaces (the extraction commit
-    // immediately prior). GET stays hand-written old-plane until
-    // Task 8 (no MEMBERS_WIRING GET flip yet); verbs stay {get,
-    // put} — members/:id has no DELETE today, mirroring the
-    // identities/:id precedent. Global plane: no organization
-    // stamping (the members directory row carries no
-    // organization_id) — see documentWriteResponseSpec's own
-    // registration-first consult (document-family.ts).
+    // GET is FLIPPED (Task 8): absorbed into the generic
+    // documentGetHandler(MEMBERS_WIRING) — the SAME wiring row
+    // PUT already rides — wire-identical to the hand-written
+    // db.members.getById dispatch it replaces. PUT rides the
+    // generic documentPutHandler(MEMBERS_WIRING) (prior commit)
+    // — wire-identical to postMemberDocumentOp's own direct
+    // dispatch it replaces. Verbs stay {get, put} — members/:id
+    // has no DELETE today, mirroring the identities/:id
+    // precedent. Global plane: no organization stamping (the
+    // members directory row carries no organization_id) — see
+    // documentWriteResponseSpec's own registration-first consult
+    // (document-family.ts).
     route('members/:id', {
-        get: (db, p) => db.members.getById(param(p, 0)),
+        get: documentGetHandler(MEMBERS_WIRING),
         put: documentPutHandler(MEMBERS_WIRING),
     }),
     // Absorbed (Phase 4 Task 2) into the generic

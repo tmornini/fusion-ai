@@ -4,6 +4,13 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { organizationRow } from './test-fixtures.ts';
+import {
+    postMemberDocumentOp,
+    memberDocumentBodyOf,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import { formWritePair } from '../api/message-pair.ts';
+import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -52,13 +59,47 @@ async function seed(): Promise<MemoryDbAdapter> {
     return db;
 }
 
+// The member document write is re-pointed onto the message
+// pair postMemberDocumentOp appends (finding 18's fixture
+// budget): rosterIds below reads GET /members, which is now
+// ledger-derived, so an identity absent from the message plane
+// would never surface as a member-parent regardless of its
+// membership. identities/identityPii stay raw — they feed only
+// old-plane reads (identity-pii, and Step 3's invitation
+// enrichment joins), neither of which is ledger-derived here.
 async function person(
     db: MemoryDbAdapter,
     id: string,
     name: string,
     email: string,
 ): Promise<void> {
-    await db.members.put(id, { type: 'human' });
+    const body = memberDocumentBodyOf('human');
+    const spec = WRITE_RESPONSE_SPECS['members/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for members/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/members/' + id,
+        routePattern: 'members/:id',
+        routeSegments: ['members', ':id'],
+        pathSegments: ['members', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization: undefined,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, undefined,
+        ),
+        headPairId: undefined,
+    });
+    await postMemberDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
     await db.identities.put(id, { kind: 'person' });
     await db.identityPii.put(id, {
         name, email, phone: '', bio: '',
