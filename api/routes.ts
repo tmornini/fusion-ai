@@ -3968,38 +3968,13 @@ export const routes: Route[] = [
                 const b = validateFlowCreateBody(body);
                 const documentBody = flowCreateDocumentBody(b);
                 validateFlowDocumentBody(documentBody);
-                const documentSpec =
-                    WRITE_RESPONSE_SPECS['flows/:id'];
-                if (
-                    documentSpec === undefined
-                    || !('status' in documentSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' flows/:id',
-                    );
-                }
-                const documentHeadPairId = await headPairIdAt(
-                    db,
-                    canonicalUriPrefix(organization, '/flows/'),
-                    b.id,
-                );
-                const document = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/flows/' + b.id,
+                const document = await formDocumentPairFor(db, {
                     routePattern: 'flows/:id',
-                    routeSegments: ['flows', ':id'],
-                    pathSegments: ['flows', b.id],
-                    headerFields: [],
+                    params: [b.id],
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: documentSpec.status,
-                    responseBody: documentSpec.successBody?.(
-                        [b.id], documentBody, actor, organization,
-                    ),
-                    headPairId: documentHeadPairId,
                 });
                 // The live :pfid PUT's request shape, verified by
                 // content: validateProjectFlowEntity accepts
@@ -4011,45 +3986,19 @@ export const routes: Route[] = [
                 const projectId = pickString(
                     b.projectFlow, 'project_id',
                 );
-                const joinSpec = WRITE_RESPONSE_SPECS[
-                    'projects/:id/flows/:pfid'
-                ];
-                if (
-                    joinSpec === undefined
-                    || !('status' in joinSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' projects/:id/flows/:pfid',
-                    );
-                }
-                const join = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/projects/' + projectId
-                        + '/flows/' + b.projectFlowId,
+                // Genesis-undefined (chain 'none'): a flow's
+                // create-time join is always fresh (design
+                // decision — no duplicate-create carve-out at this
+                // address through this task; pinned by the same-
+                // join-id retry test in tests/drift-flows.test.ts).
+                const join = await formDocumentPairFor(db, {
                     routePattern: 'projects/:id/flows/:pfid',
-                    routeSegments: [
-                        'projects', ':id', 'flows', ':pfid',
-                    ],
-                    pathSegments: [
-                        'projects', projectId,
-                        'flows', b.projectFlowId,
-                    ],
-                    headerFields: [],
+                    params: [projectId, b.projectFlowId],
                     body: b.projectFlow,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: joinSpec.status,
-                    responseBody: joinSpec.successBody?.(
-                        [projectId, b.projectFlowId],
-                        b.projectFlow, actor, organization,
-                    ),
-                    // Genesis-undefined: a flow's create-time
-                    // join is always fresh (design decision — no
-                    // duplicate-create carve-out at this address
-                    // through this task).
-                    headPairId: undefined,
+                    chain: 'none',
                 });
                 pairs = { operation: pair, document, join };
             }
@@ -4127,35 +4076,18 @@ export const routes: Route[] = [
                     revivals: b.revivals,
                 };
                 validateFlowDocumentBody(documentBody);
-                const prefix = canonicalUriPrefix(
-                    organization, '/flows/',
-                );
-                const head = await headPairIdAt(db, prefix, id);
-                const spec = WRITE_RESPONSE_SPECS['flows/:id'];
-                if (spec === undefined || !('status' in spec)) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' flows/:id',
-                    );
-                }
-                documentPair = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/flows/' + id,
+                // The flows family is LOCKED, so this document
+                // write takes the FOLLOWS slot (never supersedes;
+                // the op holds no echo of its own — design
+                // decision 5).
+                documentPair = await formDocumentPairFor(db, {
                     routePattern: 'flows/:id',
-                    routeSegments: ['flows', ':id'],
-                    pathSegments: ['flows', id],
-                    headerFields: [],
+                    params: [id],
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    responseStatus: spec.status,
-                    responseBody: spec.successBody?.(
-                        [id], documentBody, actor, organization,
-                    ),
-                    headPairId: undefined,
-                    ...(head === undefined
-                        ? {} : { follows: head }),
+                    chain: 'follows',
                 });
             }
             return db.transaction(
