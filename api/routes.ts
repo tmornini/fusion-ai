@@ -3071,78 +3071,28 @@ export const routes: Route[] = [
                 const b = validateAIMemberCreateBody(body);
                 const memberBody = memberDocumentBodyOf('ai');
                 validateMemberDocumentBody(memberBody);
-                const memberSpec =
-                    WRITE_RESPONSE_SPECS['members/:id'];
-                if (
-                    memberSpec === undefined
-                    || !('status' in memberSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' members/:id',
-                    );
-                }
-                const membersPrefix = canonicalUriPrefix(
-                    organization, '/members/',
+                const memberDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'members/:id',
+                        params: [b.id],
+                        body: memberBody,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
                 );
-                const memberHeadPairId = await headPairIdAt(
-                    db, membersPrefix, b.id,
-                );
-                const memberDocument = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/members/' + b.id,
-                    routePattern: 'members/:id',
-                    routeSegments: ['members', ':id'],
-                    pathSegments: ['members', b.id],
-                    headerFields: [],
-                    body: memberBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                    responseStatus: memberSpec.status,
-                    responseBody: memberSpec.successBody?.(
-                        [b.id], memberBody, actor, organization,
-                    ),
-                    headPairId: memberHeadPairId,
-                });
                 const detailBody = aiMemberDetailBodyOf(body);
                 validateAiMemberDocumentBody(detailBody);
-                const detailEntry =
-                    WRITE_RESPONSE_SPECS['ai-members/:id'];
-                if (
-                    detailEntry === undefined
-                    || 'status' in detailEntry
-                    || detailEntry.put === undefined
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' ai-members/:id',
-                    );
-                }
-                const detailSpec = detailEntry.put;
-                const detailPrefix = canonicalUriPrefix(
-                    organization, '/ai-members/',
+                const detailDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'ai-members/:id',
+                        params: [b.id],
+                        body: detailBody,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
                 );
-                const detailHeadPairId = await headPairIdAt(
-                    db, detailPrefix, b.id,
-                );
-                const detailDocument = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/ai-members/' + b.id,
-                    routePattern: 'ai-members/:id',
-                    routeSegments: ['ai-members', ':id'],
-                    pathSegments: ['ai-members', b.id],
-                    headerFields: [],
-                    body: detailBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                    responseStatus: detailSpec.status,
-                    responseBody: detailSpec.successBody?.(
-                        [b.id], detailBody, actor, organization,
-                    ),
-                    headPairId: detailHeadPairId,
-                });
                 pairs = {
                     operation: pair,
                     memberDocument,
@@ -3189,78 +3139,28 @@ export const routes: Route[] = [
                 validateAIMemberEditBody(body);
                 const memberBody = memberDocumentBodyOf('ai');
                 validateMemberDocumentBody(memberBody);
-                const memberSpec =
-                    WRITE_RESPONSE_SPECS['members/:id'];
-                if (
-                    memberSpec === undefined
-                    || !('status' in memberSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' members/:id',
-                    );
-                }
-                const membersPrefix = canonicalUriPrefix(
-                    organization, '/members/',
+                const memberDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'members/:id',
+                        params: [id],
+                        body: memberBody,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
                 );
-                const memberHeadPairId = await headPairIdAt(
-                    db, membersPrefix, id,
-                );
-                const memberDocument = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/members/' + id,
-                    routePattern: 'members/:id',
-                    routeSegments: ['members', ':id'],
-                    pathSegments: ['members', id],
-                    headerFields: [],
-                    body: memberBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                    responseStatus: memberSpec.status,
-                    responseBody: memberSpec.successBody?.(
-                        [id], memberBody, actor, organization,
-                    ),
-                    headPairId: memberHeadPairId,
-                });
                 const detailBody = aiMemberDetailBodyOf(body);
                 validateAiMemberDocumentBody(detailBody);
-                const detailEntry =
-                    WRITE_RESPONSE_SPECS['ai-members/:id'];
-                if (
-                    detailEntry === undefined
-                    || 'status' in detailEntry
-                    || detailEntry.put === undefined
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' ai-members/:id',
-                    );
-                }
-                const detailSpec = detailEntry.put;
-                const detailPrefix = canonicalUriPrefix(
-                    organization, '/ai-members/',
+                const detailDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'ai-members/:id',
+                        params: [id],
+                        body: detailBody,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
                 );
-                const detailHeadPairId = await headPairIdAt(
-                    db, detailPrefix, id,
-                );
-                const detailDocument = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/ai-members/' + id,
-                    routePattern: 'ai-members/:id',
-                    routeSegments: ['ai-members', ':id'],
-                    pathSegments: ['ai-members', id],
-                    headerFields: [],
-                    body: detailBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                    responseStatus: detailSpec.status,
-                    responseBody: detailSpec.successBody?.(
-                        [id], detailBody, actor, organization,
-                    ),
-                    headPairId: detailHeadPairId,
-                });
                 pairs = {
                     operation: pair,
                     memberDocument,
@@ -3294,78 +3194,28 @@ export const routes: Route[] = [
                 const b = validateHumanMemberCreateBody(body);
                 const memberBody = memberDocumentBodyOf('human');
                 validateMemberDocumentBody(memberBody);
-                const memberSpec =
-                    WRITE_RESPONSE_SPECS['members/:id'];
-                if (
-                    memberSpec === undefined
-                    || !('status' in memberSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' members/:id',
-                    );
-                }
-                const membersPrefix = canonicalUriPrefix(
-                    organization, '/members/',
+                const memberDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'members/:id',
+                        params: [b.id],
+                        body: memberBody,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
                 );
-                const memberHeadPairId = await headPairIdAt(
-                    db, membersPrefix, b.id,
-                );
-                const memberDocument = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/members/' + b.id,
-                    routePattern: 'members/:id',
-                    routeSegments: ['members', ':id'],
-                    pathSegments: ['members', b.id],
-                    headerFields: [],
-                    body: memberBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                    responseStatus: memberSpec.status,
-                    responseBody: memberSpec.successBody?.(
-                        [b.id], memberBody, actor, organization,
-                    ),
-                    headPairId: memberHeadPairId,
-                });
                 const detailBody = humanMemberDetailBodyOf(body);
                 validateHumanMemberDocumentBody(detailBody);
-                const detailEntry =
-                    WRITE_RESPONSE_SPECS['human-members/:id'];
-                if (
-                    detailEntry === undefined
-                    || 'status' in detailEntry
-                    || detailEntry.put === undefined
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' human-members/:id',
-                    );
-                }
-                const detailSpec = detailEntry.put;
-                const detailPrefix = canonicalUriPrefix(
-                    organization, '/human-members/',
+                const detailDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'human-members/:id',
+                        params: [b.id],
+                        body: detailBody,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
                 );
-                const detailHeadPairId = await headPairIdAt(
-                    db, detailPrefix, b.id,
-                );
-                const detailDocument = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/human-members/' + b.id,
-                    routePattern: 'human-members/:id',
-                    routeSegments: ['human-members', ':id'],
-                    pathSegments: ['human-members', b.id],
-                    headerFields: [],
-                    body: detailBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                    responseStatus: detailSpec.status,
-                    responseBody: detailSpec.successBody?.(
-                        [b.id], detailBody, actor, organization,
-                    ),
-                    headPairId: detailHeadPairId,
-                });
                 pairs = {
                     operation: pair,
                     memberDocument,
@@ -3412,78 +3262,28 @@ export const routes: Route[] = [
                 validateHumanMemberEditBody(body);
                 const memberBody = memberDocumentBodyOf('human');
                 validateMemberDocumentBody(memberBody);
-                const memberSpec =
-                    WRITE_RESPONSE_SPECS['members/:id'];
-                if (
-                    memberSpec === undefined
-                    || !('status' in memberSpec)
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' members/:id',
-                    );
-                }
-                const membersPrefix = canonicalUriPrefix(
-                    organization, '/members/',
+                const memberDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'members/:id',
+                        params: [id],
+                        body: memberBody,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
                 );
-                const memberHeadPairId = await headPairIdAt(
-                    db, membersPrefix, id,
-                );
-                const memberDocument = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/members/' + id,
-                    routePattern: 'members/:id',
-                    routeSegments: ['members', ':id'],
-                    pathSegments: ['members', id],
-                    headerFields: [],
-                    body: memberBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                    responseStatus: memberSpec.status,
-                    responseBody: memberSpec.successBody?.(
-                        [id], memberBody, actor, organization,
-                    ),
-                    headPairId: memberHeadPairId,
-                });
                 const detailBody = humanMemberDetailBodyOf(body);
                 validateHumanMemberDocumentBody(detailBody);
-                const detailEntry =
-                    WRITE_RESPONSE_SPECS['human-members/:id'];
-                if (
-                    detailEntry === undefined
-                    || 'status' in detailEntry
-                    || detailEntry.put === undefined
-                ) {
-                    throw new Error(
-                        'no per-write response spec for'
-                        + ' human-members/:id',
-                    );
-                }
-                const detailSpec = detailEntry.put;
-                const detailPrefix = canonicalUriPrefix(
-                    organization, '/human-members/',
+                const detailDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'human-members/:id',
+                        params: [id],
+                        body: detailBody,
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
                 );
-                const detailHeadPairId = await headPairIdAt(
-                    db, detailPrefix, id,
-                );
-                const detailDocument = await formWritePair({
-                    method: 'PUT',
-                    pathname: '/human-members/' + id,
-                    routePattern: 'human-members/:id',
-                    routeSegments: ['human-members', ':id'],
-                    pathSegments: ['human-members', id],
-                    headerFields: [],
-                    body: detailBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                    responseStatus: detailSpec.status,
-                    responseBody: detailSpec.successBody?.(
-                        [id], detailBody, actor, organization,
-                    ),
-                    headPairId: detailHeadPairId,
-                });
                 pairs = {
                     operation: pair,
                     memberDocument,
