@@ -1132,7 +1132,11 @@ three, exactly like every other atomic write in this catalog.
      `states.getAll`) — idempotency (→ return existing pending)
   3. `invitations.put(id, {organization_id, identity_id, at})`
   4. `states.postEvent(eventId, id, 'pending', principal.id)`
-  5. `appendMessagePair(pair)`
+  5. `appendMessagePair(pair)` — the operation pair
+  6. on the SAME 'fresh' outcome only: `appendMessagePair(document)`
+     — the invitation DOCUMENT pair (Phase 8 Task 6), PUT-shaped, at
+     the SAME address as the operation pair; a duplicate echo forms
+     and appends no document (§5.11)
 - doctrinal: member/pending guards + `put_invitation` +
   `post_state_event` as `post_grant_invitation`.
 - props: atomic; admin-only; idempotent on an outstanding pending
@@ -1157,7 +1161,10 @@ membership write.
      409, appending nothing.
   2. `memberships.getAll` — already-member guard.
   3. if not already: `memberships.put(membershipId,
-     {organization_id: INVITATION's org, identity_id: caller, at})`.
+     {organization_id: INVITATION's org, identity_id: caller, at})`,
+     THEN `appendMessagePair(membershipDocument)` — the memberships
+     DOCUMENT pair (Phase 8 Task 6, the B2 closure), beside the row
+     write; the no-op and 409 branches append no document (§5.11).
   4. `states.postEvent(eventId, id, 'accepted', principal.id)`.
   5. `appendMessagePair(pair)` — both the no-op and the pending
      branches reach this step; the 409 branch never does.
@@ -2049,3 +2056,109 @@ untouched existing suite
 and `tests/api-roster-verb-gaps.test.ts`'s full 37-combo pin,
 including `human-members/:id`'s surviving 405) are the
 absorption's proof.
+
+### 5.11 The invitation document plane: grant + accept synthesis
+
+Phase 8 Task 6 gives the invitations side channel
+(`api/invitations-domain.ts`, §2.12/§3.22-3.25) its own
+document pairs and derivation, WITHOUT joining the route
+table — Author gate 2 is permanent: no `route()` entry, no
+`DocumentFamilyWiring` registration, no `WRITE_RESPONSE_SPECS`
+entry for `invitations/:id` exists or ever will. Both
+synthesized pairs are storage-only today; nothing reads them
+yet (Task 8 flips `invitationsForInvitee`/`sentInvitations`
+onto `deriveInvitations`, `api/derive-invitations.ts`).
+
+**Grant: 2 pairs on a fresh outcome, 1 on a duplicate echo.**
+`grantInvitation` forms its existing operation pair (POST,
+`/invitations/`, `uriId` = the client-minted `invitationId`) as
+before; on the 'fresh' outcome ONLY it ALSO forms a PUT-shaped
+invitation DOCUMENT pair at the SAME `(uriPrefix, uriId)` —
+body `{organization_id, identity_id, at}`, the entity minus
+`id`, so the wire NEVER carries the invitee's email (already
+resolved to `identity_id` at the gate). There is no live PUT
+route for `invitations/:id` to mirror (Author gate 2), so the
+response is hand-built to the stored-row shape (`{id,
+...body}`) rather than consulting a `WRITE_RESPONSE_SPECS`
+entry — the synthesized-only class, like the human-members
+detail document (§5.10) has no live-PUT twin either. A
+duplicate (idempotent-echo) grant's operation pair sits at the
+DUPLICATE's own submitted id, but `deriveDocumentsAt`'s
+`DOCUMENT_METHODS` filter excludes POST — only a PUT/DELETE
+pair is ever a document head — so even if a document WERE
+formed there it could never derive; this task forms nothing at
+all for that outcome, belt-and-suspenders. Every conflict path
+(already-member, the in-tx race-disagreement throw) forms and
+appends nothing, unchanged.
+
+**Accept: the B2 closure — the third memberships writer joins
+the document plane.** `acceptInvitation` forms a PUT-shaped
+MEMBERSHIPS document pair pre-tx — address =
+`canonicalUriPrefix(inv.organization_id, '/memberships/')`
+(the INVITATION's org, never the caller's active org, mirroring
+the domain write's own organization choice), `uriId` = the
+caller's own `membershipId`, body `{organization_id:
+inv.organization_id, identity_id: caller, at}` byte-mirroring
+the row, response via `WRITE_RESPONSE_SPECS['memberships/:id']`
+— the SAME spec (`documentWriteResponseSpec(MEMBERSHIPS_WIRING)`,
+§5.9) a live `PUT /memberships/:id` resolves, since THIS pair
+DOES have a live twin. Formed pre-tx (crypto cannot run inside
+a transaction body) but appended ONLY inside the `!already`
+branch, beside the `memberships.put` it mirrors: a re-accept
+that finds a membership already present, or a 409 conflict,
+writes no row and so appends no document either. Before this
+task, memberships had exactly two document writers: the live
+`PUT /memberships/:id` route and the mock-data seed (Phase 8
+Task 5, `postMembershipDocumentOp`); a live accepted invitation
+is the third — and, before Task 8 flips the readers, the ONLY
+writer whose row a derived (not old-plane) membership read
+would otherwise miss entirely, since the accepted membership
+was never seeded and never PUT directly.
+
+**The op addresses are unchanged and carry no document.**
+Accept/decline/revoke each still form their existing
+operation-addressed pair at `/invitations/<id>/<op>/` (`uriId`
+`''`, never a head-read, a repeat op always its own genesis
+pair) — `deriveInvitations`'s state derivation reads exactly
+this shape, unchanged by this task.
+
+**`api/derive-invitations.ts`: `deriveInvitations(db)`.** The
+invitation ROW comes from the grant's document head at the
+flat `/invitations/` address (one keyed `getAllWhere` read per
+store — `deriveDocumentsAt`, unchanged from every prior
+family). Its STATE comes from a SEPARATE reduction: an
+invitation's lifecycle never rides the document address (no
+trio field has room in the wire body), so state is read off
+op-address PAIR PRESENCE instead — 'accepted' iff any
+`/invitations/<id>/acceptance/` pair exists for the id,
+likewise 'declined'/'revoked', else 'pending'. This is the E13
+FULL-SCAN NAMED CLASS: no index serves "every request whose
+`uri_prefix` has the shape `/invitations/<id>/<op>/`" for an
+arbitrary id, so this ONE reduction reads `db.requests.getAll()`
+in full, regardless of invitation count; its measured cost is
+recorded at the Task 9 CLI leg, not here. Mutual exclusivity of
+the three terminal states is the domain gate's OWN covenant
+(accept/decline/revoke each require 'pending' to succeed; a
+409 conflict appends nothing), never re-derived in this
+module — an id accumulates repeat pairs of only ONE op kind.
+Reads `db.requests`/`db.responses` ONLY; nothing routes to it
+yet (revertible in isolation).
+
+**The gate-resolve settlement needs zero code change.** Today's
+grant already resolves the invitee's `email` to `identity_id`
+at the HTTP gate (the `identityPii.getAll` find, before either
+pair forms) and stores only the reference — so the document
+body's email-free shape is not a NEW redaction this task adds;
+it is what the gate already produced, now simply persisted.
+A reader expecting a diff here finds none.
+
+`tests/api-invitation-document.test.ts` (fresh/duplicate/failed
+grant; fresh/no-op accept; `deriveInvitations` round-tripping
+all four terminal states; a no-op replay; hash + balance across
+a mixed grant/accept/decline sequence) plus the re-pinned
+`tests/api-shadow-ledger-memberships-invitations.test.ts` (grant
+balance 1→2, duplicate 2→3; accept balance re-pinned per
+outcome) and the ADDITIVE `tests/api-invitations-fence.test.ts`
+KEEP-ATOMIC pin (a removed member's re-accept stays a no-op,
+proven pass-first against the PRE-task code, Author gate 6e)
+are the proof.
