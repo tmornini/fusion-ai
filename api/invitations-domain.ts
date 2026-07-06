@@ -46,7 +46,7 @@ import {
     storedPairResponse,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
-import { WRITE_RESPONSE_SPECS } from './routes.ts';
+import { formDocumentPairFor } from './routes.ts';
 import { deriveInvitations } from './derive-invitations.ts';
 
 // The active org of the caller: the verified token claim, else
@@ -635,45 +635,25 @@ async function acceptInvitation(
     // appended ONLY inside the `!already` branch, beside the
     // memberships.put it mirrors — a no-op re-accept or a
     // conflict writes no membership row, so it appends no
-    // document either. WRITE_RESPONSE_SPECS['memberships/:id']
-    // is the SAME response spec a live PUT /memberships/:id
+    // document either. Rides the shared former (Phase 9 Task 2),
+    // which resolves the SAME WRITE_RESPONSE_SPECS
+    // ['memberships/:id'] entry a live PUT /memberships/:id
     // resolves (documentWriteResponseSpec(MEMBERSHIPS_WIRING)).
-    const membershipUriPrefix = canonicalUriPrefix(
-        inv.organization_id, '/memberships/');
     const membershipDocumentBody = {
         organization_id: inv.organization_id,
         identity_id: ctx.principal.id,
         at,
     };
-    const membershipSpec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (
-        membershipSpec === undefined
-        || !('status' in membershipSpec)
-    ) {
-        throw new Error(
-            'acceptInvitation: no per-write response spec for'
-            + ' memberships/:id',
-        );
-    }
-    const membershipDocument = await formWritePair({
-        method: 'PUT',
-        pathname: '/memberships/' + membershipId,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', membershipId],
-        headerFields: [],
-        body: membershipDocumentBody,
-        requesterIdentityId: ctx.principal.id,
-        requestAt: ctx.requestAt,
-        organization: inv.organization_id,
-        responseStatus: membershipSpec.status,
-        responseBody: membershipSpec.successBody?.(
-            [membershipId], membershipDocumentBody,
-            ctx.principal.id, inv.organization_id,
-        ),
-        headPairId: await headPairIdAt(
-            ctx.base, membershipUriPrefix, membershipId),
-    });
+    const membershipDocument = await formDocumentPairFor(
+        ctx.base, {
+            routePattern: 'memberships/:id',
+            params: [membershipId],
+            body: membershipDocumentBody,
+            requesterIdentityId: ctx.principal.id,
+            requestAt: ctx.requestAt,
+            organization: inv.organization_id,
+        },
+    );
     // The pending check rides INSIDE the write transaction so a
     // concurrent revoke/decline cannot slip between the check and the
     // membership write — a revoke must actually stop access (Commandment
