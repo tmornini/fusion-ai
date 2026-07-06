@@ -17,6 +17,7 @@ import {
     redactHeaderCredentials,
     redactAuthenticationRequest,
     redactAuthenticationResponse,
+    stripPiiRequest,
 } from './message-redaction.ts';
 import type { FieldLine } from '../shared/http-message/types.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
@@ -167,15 +168,18 @@ export async function formWritePair(
     );
     const uriId = createdId ?? address.uriId;
     const requestModel =
-        await redactAuthenticationRequest(
+        await stripPiiRequest(
             input.routePattern,
-            await redactHeaderCredentials(
-                buildRequestModel({
-                    method: input.method,
-                    target: input.pathname,
-                    fields: input.headerFields,
-                    body: input.body,
-                }),
+            await redactAuthenticationRequest(
+                input.routePattern,
+                await redactHeaderCredentials(
+                    buildRequestModel({
+                        method: input.method,
+                        target: input.pathname,
+                        fields: input.headerFields,
+                        body: input.body,
+                    }),
+                ),
             ),
         );
     const responseFields = [
