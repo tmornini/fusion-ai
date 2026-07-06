@@ -350,6 +350,30 @@ async function grantInvitation(
             'no identity with that email', HTTP_NOT_FOUND);
     }
     const identityId = match.id;
+    // The stored request body substitutes the resolved
+    // identity_id for the raw email — a non-PII join reference
+    // the invitation row and document already store openly. The
+    // requestHash (below, via formWritePair) derives from this
+    // STORED body, and the whole stored plane keys request
+    // identity on it: the pre-tx fold (storedResponseFor), the
+    // in-tx dedup (appendMessagePair), and the final
+    // storedPairResponse read all key off it. A bare strip of
+    // `email` (message-redaction.ts's PII strip arm) would
+    // collapse two different invitees' grants — same minted
+    // invitationId/grantEventId/grantAt, different email — onto
+    // ONE hash, and the fold/dedup/final-read chain would then
+    // hand the SECOND caller the FIRST caller's stored response.
+    // Substituting identity_id restores hash distinctness by
+    // construction: a different invitee is a different stored
+    // body, hence a different hash; the SAME email still
+    // resolves to the SAME identity_id, so a genuine byte-
+    // identical retry still folds everywhere. The WIRE body is
+    // untouched (storage-only) — the same sanctioned stored !=
+    // wire class the auth pairs already ship (their stored
+    // bodies carry PBKDF2 fingerprints the wire never carried).
+    const storedBody: Record<string, unknown> = { ...body };
+    delete storedBody.email;
+    storedBody.identity_id = identityId;
     const preOutcome = await grantOutcomeFor(
         ctx.base, organization, identityId);
     if (preOutcome.kind === 'member') {
@@ -373,8 +397,8 @@ async function grantInvitation(
     const address = messageAddress(routeSegments, pathSegments);
     const canonicalPrefix =
         canonicalUriPrefix(undefined, address.uriPrefix);
-    const uriId =
-        createdEntityUriId('invitations', body) ?? address.uriId;
+    const uriId = createdEntityUriId('invitations', storedBody)
+        ?? address.uriId;
     const headPairId = await headPairIdAt(
         ctx.base, canonicalPrefix, uriId);
     const pair = await formWritePair({
@@ -382,7 +406,7 @@ async function grantInvitation(
         routePattern: 'invitations',
         routeSegments, pathSegments,
         headerFields: hoistedHeaderFields(request),
-        body, requesterIdentityId: ctx.principal.id,
+        body: storedBody, requesterIdentityId: ctx.principal.id,
         requestAt: ctx.requestAt, organization: undefined,
         responseStatus: 200, responseBody,
         headPairId,

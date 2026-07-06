@@ -54,6 +54,24 @@ const AUTHENTICATION_ROUTE_PATTERNS = new Set([
 // exchange, client_credentials), none of which reads
 // `username` — verified at authoring and re-verified at
 // Task-1 Step 0.
+//
+// The requestHash the whole stored plane keys request identity
+// on (message-pair.ts's pre-tx fold, appendMessagePair's in-tx
+// dedup, and storedPairResponse's final read) derives from the
+// STORED body — so a bare strip is not neutral where a field
+// this map removes is the ONLY thing distinguishing two
+// otherwise-identical requests: for 'invitations', the grant
+// handler (invitations-domain.ts) compensates by substituting
+// the resolved identity_id (a non-PII join reference) for
+// `email` BEFORE pair formation, restoring hash distinctness by
+// construction — this map's 'invitations' entry strips nothing
+// on that path today (the substitution already removed `email`)
+// but remains the gate for any FUTURE email-bearing sender that
+// does not perform the same substitution. `authentication/
+// authorize`'s stored password is independently high-entropy
+// per call (a fresh PBKDF2 salt each time), so no such
+// substitution is needed there — a genuine hash collision
+// between two different callers is not a practical concern.
 const PII_STRIP_REQUEST_FIELDS: Record<string, readonly string[]> = {
     'invitations': ['email'],
     'authentication/authorize': ['username'],
