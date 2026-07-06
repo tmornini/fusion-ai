@@ -1804,6 +1804,101 @@ export async function postHumanMemberCreationOp(
     );
 }
 
+// AI-member edit: extracted byte-for-byte from the anonymous
+// POST ai-members/:id closure (Task 4) — the parent member row
+// and the ai_members detail row re-put as ONE transaction; no
+// states interaction (an edit does not move the member's
+// lifecycle — genesis/archive ride PUT states/:id instead).
+// Exported, mirroring the creation ops above, so the route can
+// call it after forming the bundle inline; `pairs` is optional
+// so a below-facade caller with no pairs keeps compiling. Task
+// 4: the FIRST composed-EDIT synthesis — edit now appends THREE
+// pairs, the SAME order as create.
+export async function postAiMemberEditOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    pairs?: MemberWritePairs,
+): Promise<void> {
+    const b = validateAIMemberEditBody(body);
+    return db.transaction(
+        [
+            'members', 'ai_members',
+            'requests', 'responses',
+        ],
+        async (view) => {
+            await view.members.put(
+                id, { type: 'ai' },
+            );
+            await view.aiMembers.put(
+                id,
+                b.detail as unknown as
+                    Omit<AIMemberEntity, 'id'>,
+            );
+            if (pairs !== undefined) {
+                await appendMessagePair(view, pairs.operation);
+                await appendMessagePair(
+                    view, pairs.memberDocument,
+                );
+                await appendMessagePair(
+                    view, pairs.detailDocument,
+                );
+            }
+        },
+    );
+}
+
+// Human-member edit: extracted byte-for-byte from the anonymous
+// POST human-members/:id closure (Task 4) — the postAiMemberEditOp
+// precedent, for the sibling facet: the four member facets re-put
+// as ONE transaction; no states interaction (an edit does not
+// move the member's lifecycle). The identity_pii row stays
+// old-plane here too — the PII facet is NEVER synthesized, the
+// SAME forward-pointer postHumanMemberCreationOp's own comment
+// names.
+export async function postHumanMemberEditOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    pairs?: MemberWritePairs,
+): Promise<void> {
+    const b = validateHumanMemberEditBody(body);
+    return db.transaction(
+        [
+            'members', 'identities', 'identity_pii',
+            'human_members',
+            'requests', 'responses',
+        ],
+        async (view) => {
+            await view.members.put(
+                id, { type: 'human' },
+            );
+            await view.identities.put(
+                id, { kind: 'person' },
+            );
+            await view.identityPii.put(
+                id,
+                b.pii as unknown as
+                    Omit<IdentityPiiEntity, 'id'>,
+            );
+            await view.humanMembers.put(
+                id,
+                b.detail as unknown as
+                    Omit<HumanMemberEntity, 'id'>,
+            );
+            if (pairs !== undefined) {
+                await appendMessagePair(view, pairs.operation);
+                await appendMessagePair(
+                    view, pairs.memberDocument,
+                );
+                await appendMessagePair(
+                    view, pairs.detailDocument,
+                );
+            }
+        },
+    );
+}
+
 // Identity creation: the identity row and EITHER its PII
 // row (person) OR its client_secret credential row
 // (service) commit as ONE transaction — a mid-write
@@ -2938,34 +3033,106 @@ export const routes: Route[] = [
     route('ai-members/:id', {
         get: (db, p) => db.aiMembers.getById(param(p, 0)),
         put: documentPutHandler(AI_MEMBERS_WIRING),
-        // AI-member edit: the parent member row and the
-        // ai_members detail row re-put as ONE transaction — NO
-        // state event (an edit does not move the member's
-        // lifecycle), so the handler needs no actor. The facet
-        // stores re-validate their own bodies. Admin-only,
-        // exactly as create — no member-tier POST entry exists.
-        post: (db, p, body, _actor, pair) => {
+        // AI-member edit (Task 4, the migration's FIRST composed-
+        // EDIT synthesis): forms the SAME member-document/detail-
+        // document bundle the create route above forms, beside
+        // the gate's own operation pair (already pair-wired at
+        // this exact address). Admin-only, exactly as create — no
+        // member-tier POST entry exists. See postAiMemberEditOp
+        // for the transaction shape.
+        post: async (db, p, body, actor, pair, organization) => {
             const id = param(p, 0);
-            const b = validateAIMemberEditBody(body);
-            return db.transaction(
-                [
-                    'members', 'ai_members',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    await view.members.put(
-                        id, { type: 'ai' },
+            let pairs: MemberWritePairs | undefined;
+            if (
+                pair !== undefined && organization !== undefined
+            ) {
+                // Gate-check only (result discarded): guarantees
+                // body.detail is present and object-shaped before
+                // aiMemberDetailBodyOf reads it below — the SAME
+                // discard-the-result pattern the objectives route
+                // above uses for its OWN synthesized-body checks.
+                validateAIMemberEditBody(body);
+                const memberBody = memberDocumentBodyOf('ai');
+                validateMemberDocumentBody(memberBody);
+                const memberSpec =
+                    WRITE_RESPONSE_SPECS['members/:id'];
+                if (
+                    memberSpec === undefined
+                    || !('status' in memberSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' members/:id',
                     );
-                    await view.aiMembers.put(
-                        id,
-                        b.detail as unknown as
-                            Omit<AIMemberEntity, 'id'>,
+                }
+                const membersPrefix = canonicalUriPrefix(
+                    organization, '/members/',
+                );
+                const memberHeadPairId = await headPairIdAt(
+                    db, membersPrefix, id,
+                );
+                const memberDocument = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/members/' + id,
+                    routePattern: 'members/:id',
+                    routeSegments: ['members', ':id'],
+                    pathSegments: ['members', id],
+                    headerFields: [],
+                    body: memberBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: memberSpec.status,
+                    responseBody: memberSpec.successBody?.(
+                        [id], memberBody, actor, organization,
+                    ),
+                    headPairId: memberHeadPairId,
+                });
+                const detailBody = aiMemberDetailBodyOf(body);
+                validateAiMemberDocumentBody(detailBody);
+                const detailEntry =
+                    WRITE_RESPONSE_SPECS['ai-members/:id'];
+                if (
+                    detailEntry === undefined
+                    || 'status' in detailEntry
+                    || detailEntry.put === undefined
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' ai-members/:id',
                     );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                },
-            );
+                }
+                const detailSpec = detailEntry.put;
+                const detailPrefix = canonicalUriPrefix(
+                    organization, '/ai-members/',
+                );
+                const detailHeadPairId = await headPairIdAt(
+                    db, detailPrefix, id,
+                );
+                const detailDocument = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/ai-members/' + id,
+                    routePattern: 'ai-members/:id',
+                    routeSegments: ['ai-members', ':id'],
+                    pathSegments: ['ai-members', id],
+                    headerFields: [],
+                    body: detailBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: detailSpec.status,
+                    responseBody: detailSpec.successBody?.(
+                        [id], detailBody, actor, organization,
+                    ),
+                    headPairId: detailHeadPairId,
+                });
+                pairs = {
+                    operation: pair,
+                    memberDocument,
+                    detailDocument,
+                };
+            }
+            return postAiMemberEditOp(db, id, body, pairs);
         },
     }),
     route('human-members', {
@@ -3070,53 +3237,115 @@ export const routes: Route[] = [
         },
     }),
     // HUMAN_MEMBERS_WIRING registers alongside members/ai-members
-    // (Phase 8 Task 3) but serves NO live route here — this
-    // pattern gains no PUT arm and WRITE_RESPONSE_SPECS carries
-    // no per-verb swap for it; verbs stay {get, post}, the SAME
-    // 405 verb-gap pin from Task 2 (tests/api-roster-verb-gaps
-    // .test.ts) proves survives untouched. The wiring row's
-    // documentOp/entityOf exist for a future synthesis/seed
-    // caller only (the first registered family without a live
-    // document PUT — see HUMAN_MEMBERS_WIRING's own comment
-    // above).
+    // (Phase 8 Task 3) but serves NO live PUT route here — verbs
+    // stay {get, post}, the SAME 405 verb-gap pin from Task 2
+    // (tests/api-roster-verb-gaps.test.ts) proves survives
+    // untouched. The wiring row's documentOp/entityOf, and this
+    // task's WRITE_RESPONSE_SPECS['human-members/:id'].put, exist
+    // for the synthesized bundle below and the seed only — see
+    // HUMAN_MEMBERS_WIRING's own comment above.
     route('human-members/:id', {
         get: (db, p) => db.humanMembers.getById(param(p, 0)),
-        // Human-member edit: the four member facets re-put as ONE
-        // transaction — NO state event (an edit does not move the
-        // member's lifecycle), so the handler needs no actor. The
-        // facet stores re-validate their own bodies. Admin-only,
-        // exactly as create — no member-tier POST entry exists.
-        post: (db, p, body, _actor, pair) => {
+        // Human-member edit (Task 4, the SAME composed-EDIT
+        // synthesis as ai-members/:id above): forms the member-
+        // document/detail-document bundle beside the gate's own
+        // operation pair. Admin-only, exactly as create — no
+        // member-tier POST entry exists. See postHumanMemberEditOp
+        // for the transaction shape.
+        post: async (db, p, body, actor, pair, organization) => {
             const id = param(p, 0);
-            const b = validateHumanMemberEditBody(body);
-            return db.transaction(
-                [
-                    'members', 'identities', 'identity_pii',
-                    'human_members',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    await view.members.put(
-                        id, { type: 'human' },
+            let pairs: MemberWritePairs | undefined;
+            if (
+                pair !== undefined && organization !== undefined
+            ) {
+                // Gate-check only (result discarded): guarantees
+                // body.detail is present and object-shaped before
+                // humanMemberDetailBodyOf reads it below — the
+                // SAME discard-the-result pattern the objectives
+                // route above uses for its OWN synthesized-body
+                // checks.
+                validateHumanMemberEditBody(body);
+                const memberBody = memberDocumentBodyOf('human');
+                validateMemberDocumentBody(memberBody);
+                const memberSpec =
+                    WRITE_RESPONSE_SPECS['members/:id'];
+                if (
+                    memberSpec === undefined
+                    || !('status' in memberSpec)
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' members/:id',
                     );
-                    await view.identities.put(
-                        id, { kind: 'person' },
+                }
+                const membersPrefix = canonicalUriPrefix(
+                    organization, '/members/',
+                );
+                const memberHeadPairId = await headPairIdAt(
+                    db, membersPrefix, id,
+                );
+                const memberDocument = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/members/' + id,
+                    routePattern: 'members/:id',
+                    routeSegments: ['members', ':id'],
+                    pathSegments: ['members', id],
+                    headerFields: [],
+                    body: memberBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: memberSpec.status,
+                    responseBody: memberSpec.successBody?.(
+                        [id], memberBody, actor, organization,
+                    ),
+                    headPairId: memberHeadPairId,
+                });
+                const detailBody = humanMemberDetailBodyOf(body);
+                validateHumanMemberDocumentBody(detailBody);
+                const detailEntry =
+                    WRITE_RESPONSE_SPECS['human-members/:id'];
+                if (
+                    detailEntry === undefined
+                    || 'status' in detailEntry
+                    || detailEntry.put === undefined
+                ) {
+                    throw new Error(
+                        'no per-write response spec for'
+                        + ' human-members/:id',
                     );
-                    await view.identityPii.put(
-                        id,
-                        b.pii as unknown as
-                            Omit<IdentityPiiEntity, 'id'>,
-                    );
-                    await view.humanMembers.put(
-                        id,
-                        b.detail as unknown as
-                            Omit<HumanMemberEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                },
-            );
+                }
+                const detailSpec = detailEntry.put;
+                const detailPrefix = canonicalUriPrefix(
+                    organization, '/human-members/',
+                );
+                const detailHeadPairId = await headPairIdAt(
+                    db, detailPrefix, id,
+                );
+                const detailDocument = await formWritePair({
+                    method: 'PUT',
+                    pathname: '/human-members/' + id,
+                    routePattern: 'human-members/:id',
+                    routeSegments: ['human-members', ':id'],
+                    pathSegments: ['human-members', id],
+                    headerFields: [],
+                    body: detailBody,
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization,
+                    responseStatus: detailSpec.status,
+                    responseBody: detailSpec.successBody?.(
+                        [id], detailBody, actor, organization,
+                    ),
+                    headPairId: detailHeadPairId,
+                });
+                pairs = {
+                    operation: pair,
+                    memberDocument,
+                    detailDocument,
+                };
+            }
+            return postHumanMemberEditOp(db, id, body, pairs);
         },
     }),
     route('identities', {
