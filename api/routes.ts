@@ -62,7 +62,7 @@ import {
     validateIdentityProviderEntity,
     validateIdentityTokenEntity,
     validateIdentityTokenRevocationEntity,
-    validateMembershipEntity,
+    validateMembershipDocumentBody,
     validateObjectiveCreateBody,
     validateObjectiveDocumentBody,
     validateObjectiveRevisionEntity,
@@ -342,11 +342,15 @@ function recordAttributeDocumentEntityOf(
 // no lifecycle concept AT ALL: no RecordAttributeState alphabet
 // exists anywhere in types.ts, and no call site posts a states
 // event keyed to an attribute id (grep-proven at research) — its
-// 'stateless' classification is vacuous BY CONSTRUCTION, the
-// stronger of the two. notFoundTable is 'record_attributes' —
-// the SECOND family whose storage table name (db-backed.ts's
-// EntityStore key) differs from its hyphenated family/route name
-// (work-orders/work_orders was the first).
+// 'stateless' classification is vacuous BY CONSTRUCTION —
+// memberships (MEMBERSHIPS_WIRING below, Phase 8) joins this
+// SAME bucket as its actual sibling, not "the stronger of the
+// two" this comment once claimed when record-attributes stood
+// alone against work-orders' vacuous-in-practice one.
+// notFoundTable is 'record_attributes' — the SECOND family
+// whose storage table name (db-backed.ts's EntityStore key)
+// differs from its hyphenated family/route name (work-orders/
+// work_orders was the first).
 const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
     family: 'record-attributes',
     lifecycle: 'stateless',
@@ -395,12 +399,18 @@ function objectiveDocumentEntityOf(
 // R2's named covenant — so objectives' lifecycle keeps riding
 // the SHARED states log (already pair-wired) while this
 // document address carries entity fields only. This THIRD
-// distinct rationale is why 'stateless' is a type-level fork
-// (Commandment IX) rather than a two-value enum with one
-// meaning. notFoundTable is 'objectives' — its storage table
-// name matches its family name, like ideas/projects/flows/
-// records (work-orders/record-attributes are the two whose
-// names diverge).
+// distinct rationale once read as evidence that 'stateless'
+// would need to become a type-level fork (Commandment IX: three
+// is pattern) — a claim this comment made when objectives WAS
+// the third instance. The roster phase (Phase 8) adjudicated
+// it: no fork. Memberships (MEMBERSHIPS_WIRING below) is a
+// FOURTH 'stateless' family with yet another distinct rationale,
+// and MEMBERS_WIRING (Task 3) will be a fifth — 'stateless'
+// stays ONE type covering every one of them, never split.
+// notFoundTable is 'objectives' — its storage table name
+// matches its family name, like ideas/projects/flows/records
+// (work-orders/record-attributes are the two whose names
+// diverge).
 const OBJECTIVES_WIRING: DocumentFamilyWiring = {
     family: 'objectives',
     lifecycle: 'stateless',
@@ -409,6 +419,60 @@ const OBJECTIVES_WIRING: DocumentFamilyWiring = {
     documentOp: postObjectiveDocumentOp,
     entityOf: objectiveDocumentEntityOf,
 };
+// The generic GET machinery (not yet flipped for memberships —
+// Task 8) this entityOf will serve: the head pair's body already
+// carries exactly {organization_id, identity_id, at} —
+// memberships' wire PUT body includes its OWN organization_id
+// (UNLIKE work-orders'/record-attributes' tolerated-but-optional
+// stamp), so a spread is safe here for the same reason
+// recordAttributeDocumentEntityOf's own comment gives: no
+// per-field picking needed, and there is no trio to leak.
+// `_organization` stays unused: this entityOf reads
+// organization_id off the body itself, never the fence argument
+// — the org-scoped store already stamps organization_id at
+// write time (the objectives fence-stamp analogue), so this
+// read path simply echoes what a live PUT wrote.
+function membershipDocumentEntityOf(
+    document: DerivedDocument,
+    _organization: Id,
+): unknown {
+    return {
+        id: document.uriId,
+        ...document.body,
+    };
+}
+// The memberships wiring row — the eighth family, and the
+// FOURTH 'stateless' one, joining RECORD_ATTRIBUTES_WIRING's
+// vacuous-BY-CONSTRUCTION bucket as its actual sibling (that
+// row's own comment above now admits memberships rather than
+// standing alone). This is the CORRECTED stateless-fork
+// contrast (Author gate 3, adjudicated at the roster phase —
+// OBJECTIVES_WIRING's own comment above re-reads its "type-level
+// fork" claim as history, not standing doctrine): work-orders'
+// 'stateless' is vacuous-in-practice (family-scoped event pairs
+// post through the create/claim/transition ops, just never the
+// document address); objectives' rides the states log's own
+// absence-as-active covenant (R2); the member families
+// (MEMBERS_WIRING, Task 3) will share that SAME log WITH a
+// genesis event; record-attributes and memberships share
+// neither — a membership carries NO lifecycle concept
+// whatsoever, a pure join relation (Codd's own teaching: the
+// identities of the joined, plus the moment of union). GET stays
+// hand-written old-plane until Task 8; only PUT rides the
+// generic machinery this task — memberships/:id's own DELETE
+// stays hand-written too, the records/:id template (no generic
+// DELETE component exists). notFoundTable is 'memberships' — its
+// storage table name matches its family name, like ideas/
+// projects/flows/records/objectives (work-orders/record-
+// attributes are the two whose names diverge).
+const MEMBERSHIPS_WIRING: DocumentFamilyWiring = {
+    family: 'memberships',
+    lifecycle: 'stateless',
+    notFoundTable: 'memberships',
+    validateDocument: validateMembershipDocumentBody,
+    documentOp: postMembershipDocumentOp,
+    entityOf: membershipDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
@@ -416,6 +480,7 @@ registerDocumentFamilyWiring(WORK_ORDERS_WIRING);
 registerDocumentFamilyWiring(RECORDS_WIRING);
 registerDocumentFamilyWiring(RECORD_ATTRIBUTES_WIRING);
 registerDocumentFamilyWiring(OBJECTIVES_WIRING);
+registerDocumentFamilyWiring(MEMBERSHIPS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -2315,13 +2380,19 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
-    'memberships/:id': {
-        status: 200,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateMembershipEntity(withoutId(body ?? {})),
-        }),
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody — see the ideas/:id
+    // entry above for the shared rationale. memberships/:id emits
+    // the SAME bytes as before ({id, organization_id, identity_id,
+    // at}): documentWriteResponseSpec stamps organization_id from
+    // the fence FIRST, then spreads doc.entity — since
+    // MembershipDocumentBody's entity carries its OWN
+    // organization_id (unlike objectives' fence-stamped-only
+    // {position}), the spread overwrites the stamp with the SAME
+    // client-supplied value the hand-written body above already
+    // echoed verbatim — key-set and value equality, re-confirmed
+    // at Step 0(a) of the task that wired this row.
+    'memberships/:id': documentWriteResponseSpec(MEMBERSHIPS_WIRING),
     'identity-tokens/:id': {
         status: 200,
         successBody: (params, body) => ({
@@ -4178,21 +4249,20 @@ export const routes: Route[] = [
     route('memberships', {
         get: (db) => db.memberships.getAll(),
     }),
-    // PUT dispatches to postMembershipDocumentOp (extracted
-    // byte-for-byte, this commit — the postBaselineScoreDocumentOp
-    // extract-function precedent): behavior-identical, no wiring
-    // row yet. DELETE stays hand-written in place of
-    // makeIdRoute<MembershipEntity>'s fixed closure so it can
-    // append its message pair in the same transaction as the
-    // write (the factory has no per-family pair selector — see
-    // message-pair.ts). GET reproduces the factory closure
-    // byte-equivalently; verbs stay {get, put, delete}.
+    // PUT rides the generic documentPutHandler(MEMBERSHIPS_WIRING)
+    // (this commit) — wire-identical to postMembershipDocumentOp's
+    // own direct dispatch it replaces (the extraction commit
+    // immediately prior). GET stays hand-written old-plane until
+    // Task 8 (no MEMBERSHIPS_WIRING GET flip yet). DELETE stays
+    // hand-written in place of makeIdRoute<MembershipEntity>'s
+    // fixed closure so it can append its message pair in the same
+    // transaction as the write (the factory has no per-family pair
+    // selector — see message-pair.ts; no generic DELETE component
+    // exists either — the records/:id template). Verbs stay {get,
+    // put, delete}.
     route('memberships/:id', {
         get: (db, p) => db.memberships.getById(param(p, 0)),
-        put: (db, p, body, actor, pair) =>
-            postMembershipDocumentOp(
-                db, param(p, 0), body, actor, pair,
-            ),
+        put: documentPutHandler(MEMBERSHIPS_WIRING),
         delete: (db, p, _actor, pair) => {
             const id = param(p, 0);
             return db.transaction(
