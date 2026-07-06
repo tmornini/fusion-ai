@@ -1521,20 +1521,27 @@ one case) never a throw:
 
 `POST /snapshots/mock-data` and `POST /snapshots/bootstrap` are
 `BOOTSTRAP_ROUTES` — bearer-exempt and below the ledger for their OWN
-request (§3.26–§3.28). What they seed, though, is itself the output of TEN
-pair-capable write families, in dependency order: `human-members`, `ideas`,
-`idea-submissions`, `projects`, `flows`, `work-orders`, `flow-work-orders`,
-`ai-members`, `records`, and `objectives` (`buildMockDataInvocations`,
+request (§3.26–§3.28). What they seed, though, is itself the output of
+TWELVE pair-capable write families, in dependency order: `human-members`,
+`ideas`, `idea-submissions`, `projects`, `flows`, `work-orders`,
+`flow-work-orders`, `ai-members`, `records`, `objectives`, `memberships`,
+and `members` (`buildMockDataInvocations`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **564** message pairs — one pair per seeded
+- The mock-data seed pre-forms **581** message pairs — one pair per seeded
   row for most families, but each seeded human/AI member folds in an
   operation/member-document/detail-document triple (11 human-members +
   4 ai-members, each × 3 = 45 member-family pairs: 15 ops + 15 member
   documents + 15 detail documents, Phase 8 Task 4's bundle synthesis,
   the objectives-family 1+1+1 precedent generalized to the roster —
-  see §3.1–§3.4), each seeded flow folds in an
+  see §3.1–§3.4), each seeded membership row folds in its OWN document
+  pair (16 — 11 human-member-organization rows, `current` counted
+  twice for its two-organization membership, + 4 ai-member rows,
+  closed through `postMembershipDocumentOp`), the system member's own
+  `members/:id` document forms ONE more pair (closed through
+  `postMemberDocumentOp`, Phase 8 Task 5, the LAST whole-slice seed
+  deferral to close), each seeded flow folds in an
   operation/document/join triple (4 creates × 3 pair triples + 1 genesis
   document = 13, §3.12), each seeded work order forms both a document
   pair and a join pair (145 + 145, §3.17), each seeded record folds
@@ -1553,13 +1560,20 @@ the SAME way a live request would, then writes it alongside the seeded row:
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
   pre-formed pair in the SAME transaction the row lands in. The bootstrap
-  seed forms exactly three such pairs (the SAME member-family triple), for
-  its lone `current` human-member create.
+  seed forms exactly five such pairs (the SAME member-family triple, plus
+  its OWN membership and system-member document pairs), for its lone
+  `current` human-member create.
+- Memberships closed the LAST whole-slice seed deferral (Phase 8 Task
+  5): every seeded membership row and the system member's own
+  `members/:id` document now form a message pair too, closed through
+  `postMembershipDocumentOp` / `postMemberDocumentOp`. NO whole-slice
+  seed deferral remains; the work-order historical traces (states
+  events + state_field_values) stay the one NAMED direct-write
+  carve-out, bound to the states-consumers flip, not "the work-orders
+  phase" (§5.6).
 - The scores deferral now closes WHOLE — baselines AND actuals, the
   SAME `buildSeedScoreRows` output (`api/mock-data/scores.ts`) driving
-  both the pair formation above and the seeded row writes. Memberships
-  is the only remaining whole-slice seed deferral: a direct write the
-  seed never routes through a pair-capable op.
+  both the pair formation above and the seeded row writes.
 - Every seed pair carries **no `Authorization` header** — a seed
   invocation is not a real HTTP request, so `headerFields` is empty
   rather than a synthesized fake bearer.
