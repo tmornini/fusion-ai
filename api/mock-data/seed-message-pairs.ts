@@ -21,12 +21,10 @@
 // mock-data.ts): human-members, ideas, idea-submissions,
 // projects, flows, work-orders, flow-work-orders, ai-members,
 // records, objectives, flow-records, baseline-scores,
-// actual-scores. Memberships stays the ONLY remaining
-// whole-slice deferral — a direct write the seed never routes
-// through a pair-capable op. The work-order deferral NARROWS this phase
-// to its historical traces alone (states events +
-// state_field_values, still direct — a NAMED carve-out now
-// bound to the states-consumers flip, not "the work-orders
+// actual-scores, memberships, members. The work-order deferral
+// NARROWS this phase to its historical traces alone (states
+// events + state_field_values, still direct — a NAMED carve-out
+// now bound to the states-consumers flip, not "the work-orders
 // phase"); the entity and join rows leave the deferral list
 // this phase, closed through postWorkOrderDocumentOp /
 // postFlowWorkOrderDocumentOp. A further, previously-unlisted
@@ -39,11 +37,11 @@
 // existing operation invocation stays, and the SAME per-pair-key
 // discipline flows/records already established adds a document
 // and a revision invocation per seeded objective. The scores
-// deferral closes LAST (Task 5), landing WHOLE: baselines AND
-// actuals (broader than "baselines" alone — the handoff's own
-// phrasing) — one document pair per seeded row, closed through
-// postBaselineScoreDocumentOp / postActualScoreDocumentOp. The
-// human-members/ai-members create-time bundle grows from one
+// deferral closes (Task 5 of Phase 7), landing WHOLE: baselines
+// AND actuals (broader than "baselines" alone — the handoff's
+// own phrasing) — one document pair per seeded row, closed
+// through postBaselineScoreDocumentOp / postActualScoreDocumentOp.
+// The human-members/ai-members create-time bundle grows from one
 // pair to three (Phase 8 Task 4, the objectives-family
 // precedent generalized to the roster): the existing operation
 // invocation stays, and the SAME per-pair-key discipline adds a
@@ -51,7 +49,19 @@
 // every member kind writes through) and a detail-document
 // invocation (ai-members/:id or human-members/:id) per seeded
 // member. Bootstrap's lone 'current' human-member create forms
-// this SAME triple via formBootstrapMessagePair.
+// this SAME triple via formBootstrapMessagePair. Memberships
+// closed the LAST whole-slice seed deferral (Phase 8 Task 5):
+// each seeded membership row (16 — 11 human-member-organization
+// rows, `current` counted twice for its two-organization
+// membership, + 4 ai-member rows) now folds in its OWN document
+// pair, closed through postMembershipDocumentOp, and the system
+// member's own members/:id document forms ONE more pair, closed
+// through postMemberDocumentOp — the SAME per-pair-key
+// discipline every prior family already established. Bootstrap's
+// membership and system-member rows form this SAME pair of
+// invocations via formBootstrapMessagePair. NO whole-slice seed
+// deferral remains; the work-order historical traces stay the
+// one NAMED direct-write carve-out above.
 
 import type {
     Id,
@@ -778,6 +788,24 @@ export function aiMemberSeedBody(
     };
 }
 
+// The wire body a live PUT memberships/:id would carry for this
+// SAME write: {organization_id, identity_id, at} — the
+// membershipDocumentEntityOf precedent (api/routes.ts), the ONE
+// shape every seeded membership row (human, AI, bootstrap)
+// shares. Hoisted so pass 1 (this file) and pass 2
+// (mock-data.ts) share the SAME construction — the
+// humanMemberSeedBody/aiMemberSeedBody precedent, generalized to
+// the roster's own join relation.
+export function membershipSeedBody(
+    organizationId: Id, identityId: Id,
+): Record<string, unknown> {
+    return {
+        organization_id: organizationId,
+        identity_id: identityId,
+        at: MOCK_SEED_TIMESTAMP,
+    };
+}
+
 export function recordSeedBody(
     r: Omit<RecordEntity, 'organization_id'>,
     index: number,
@@ -852,6 +880,12 @@ export const ORGANIZATION_TWO_OBJECTIVE: ObjectiveSeed = {
     description: 'Second-org demo objective.',
 };
 
+// The bootstrap membership's own id — exported so pass 1 (this
+// file) and pass 2 (mock-data.ts's postBootstrapIn) compare
+// against the SAME string rather than each re-typing it, the
+// secondOrganizationProjectId precedent above.
+export const bootstrapMembershipId = 'bootstrap-membership-current';
+
 export function bootstrapCurrentMemberBody(
     initialStateAt: string,
 ): Record<string, unknown> {
@@ -911,8 +945,9 @@ interface MockDataInvocation {
 }
 
 // Dependency-ordered (matches postMockDataLoadIn's write order):
-// human-members, ideas, idea-submissions, projects, flows,
-// work-orders, flow-work-orders, ai-members, records,
+// memberships + human-members, ideas, idea-submissions,
+// projects, flows, work-orders, flow-work-orders, memberships +
+// ai-members, the system member's own document, records,
 // flow-records, objectives. A dropped or reordered invocation
 // here is caught by tests/mock-data-pairs.test.ts's pinned
 // invocation count.
@@ -966,7 +1001,31 @@ export function buildMockDataInvocations():
 
     const invocations: MockDataInvocation[] = [];
 
-    for (const member of members) {
+    members.forEach((member, index) => {
+        // Task 5: 'current' (the admin) joins BOTH orgs; every
+        // other human is single-org via assignOrganization — the
+        // SAME per-member partition postMockDataLoadIn's own
+        // membership loop uses (mock-data.ts). Each row folds in
+        // its OWN document pair, closed through
+        // postMembershipDocumentOp, ordered before the
+        // human-member triple below — the SAME write order
+        // postMockDataLoadIn uses (memberships land before the
+        // member they join is created).
+        const organizations = member.id === 'current'
+            ? [STARK_ORGANIZATION, ORGANIZATION_TWO]
+            : [assignOrganization(index)];
+        organizations.forEach((organization, n) => {
+            const membershipId =
+                'seed-membership-' + member.id + '-' + n;
+            invocations.push({
+                key: seedPairKey('memberships/:id', membershipId),
+                routePattern: 'memberships/:id',
+                idParams: [membershipId],
+                organization,
+                requesterIdentityId: SYSTEM_MEMBER_ID,
+                body: membershipSeedBody(organization, member.id),
+            });
+        });
         const createBody = humanMemberSeedBody(member);
         invocations.push({
             key: seedPairKey('human-members', member.id),
@@ -1000,7 +1059,20 @@ export function buildMockDataInvocations():
             requesterIdentityId: SYSTEM_MEMBER_ID,
             body: humanMemberDetailBodyOf(createBody),
         });
-    }
+    });
+    // Task 5: the system member's own members/:id document
+    // pair — the roster's shared address every member kind
+    // writes through, now including the system actor itself,
+    // closing the last raw members.put site the mock-data seed
+    // still held (Path A, Phase 8 Task 5).
+    invocations.push({
+        key: seedPairKey('members/:id', SYSTEM_MEMBER_ID),
+        routePattern: 'members/:id',
+        idParams: [SYSTEM_MEMBER_ID],
+        organization: undefined,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        body: memberDocumentBodyOf('system'),
+    });
     const ideaIndexById = new Map(
         ideas.map((idea, i) => [idea.id, i]),
     );
@@ -1141,6 +1213,20 @@ export function buildMockDataInvocations():
         });
     }
     for (const m of aiMembers) {
+        // Task 5: every AI member joins STARK_ORGANIZATION alone
+        // (mock-data.ts's own AI-members loop) — ordered before
+        // the ai-member triple below, the SAME write order
+        // postMockDataLoadIn uses (the membership lands before
+        // the member it joins is created).
+        const membershipId = 'seed-membership-' + m.id;
+        invocations.push({
+            key: seedPairKey('memberships/:id', membershipId),
+            routePattern: 'memberships/:id',
+            idParams: [membershipId],
+            organization: STARK_ORGANIZATION,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: membershipSeedBody(STARK_ORGANIZATION, m.id),
+        });
         const createBody = aiMemberSeedBody(m);
         invocations.push({
             key: seedPairKey('ai-members', m.id),
@@ -1484,12 +1570,19 @@ export async function formMockDataMessagePairs(
 // so no stored pair ever drifts from what was actually written.
 // Task 4: forms the SAME 1+1+1 bundle the mock-data seed's own
 // human-members loop forms per member — operation, member
-// document, detail document — sharing this ONE requestAt.
+// document, detail document — sharing this ONE requestAt. Task
+// 5: ALSO forms bootstrap's own membership pair (its lone
+// 'current' membership) and the system member's own members/:id
+// document pair — the SAME two families postMockDataLoad's own
+// invocation list now covers, closing bootstrap's last two raw
+// writes (Path A, Phase 8 Task 5).
 export async function formBootstrapMessagePair(
     requestAt: string,
 ): Promise<{
     readonly body: Record<string, unknown>;
     readonly pairs: MemberWritePairs;
+    readonly membershipPair: MessagePair;
+    readonly systemMemberPair: MessagePair;
 }> {
     const body = bootstrapCurrentMemberBody(nowUtc());
     const operation = await formSeedPair(
@@ -1524,8 +1617,32 @@ export async function formBootstrapMessagePair(
         },
         requestAt,
     );
+    const membershipPair = await formSeedPair(
+        {
+            key: seedPairKey('memberships/:id', bootstrapMembershipId),
+            routePattern: 'memberships/:id',
+            idParams: [bootstrapMembershipId],
+            organization: STARK_ORGANIZATION,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: membershipSeedBody(STARK_ORGANIZATION, 'current'),
+        },
+        requestAt,
+    );
+    const systemMemberPair = await formSeedPair(
+        {
+            key: seedPairKey('members/:id', SYSTEM_MEMBER_ID),
+            routePattern: 'members/:id',
+            idParams: [SYSTEM_MEMBER_ID],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: memberDocumentBodyOf('system'),
+        },
+        requestAt,
+    );
     return {
         body,
         pairs: { operation, memberDocument, detailDocument },
+        membershipPair,
+        systemMemberPair,
     };
 }

@@ -15,6 +15,9 @@ import {
     postHumanMemberCreationOp,
     postBaselineScoreDocumentOp,
     postActualScoreDocumentOp,
+    postMembershipDocumentOp,
+    postMemberDocumentOp,
+    memberDocumentBodyOf,
 } from './routes.ts';
 import type {
     FlowCreationPairs,
@@ -100,6 +103,8 @@ import {
     formBootstrapMessagePair,
     seedPairKey,
     ORGANIZATION_TWO_OBJECTIVE,
+    membershipSeedBody,
+    bootstrapMembershipId,
 } from './mock-data/seed-message-pairs.ts';
 import { buildSeedScoreRows } from './mock-data/scores.ts';
 
@@ -250,14 +255,29 @@ async function postMockDataLoadIn(
                 ? [STARK_ORGANIZATION, ORGANIZATION_TWO]
                 : [assignOrganization(index)];
             return [
+                // Task 5: memberships close their LAST
+                // whole-slice seed deferral — the SAME row, now
+                // driven through postMembershipDocumentOp so it
+                // forms a message pair too (Path A). The body is
+                // membershipSeedBody's own construction — the
+                // SAME one seed-message-pairs.ts used to form
+                // this row's pair, so the two can never drift.
                 ...organizations.map((organization, n) =>
-                    adapter.memberships.put(
+                    postMembershipDocumentOp(
+                        adapter,
                         'seed-membership-'
-                        + member.id + '-' + n, {
-                            organization_id: organization,
-                            identity_id: member.id,
-                            at: MOCK_SEED_TIMESTAMP,
-                        })),
+                        + member.id + '-' + n,
+                        membershipSeedBody(organization, member.id),
+                        SYSTEM_MEMBER_ID,
+                        requirePair(
+                            pairs,
+                            seedPairKey(
+                                'memberships/:id',
+                                'seed-membership-'
+                                + member.id + '-' + n,
+                            ),
+                        ),
+                    )),
                 adapter.identityDefaultOrganizations.put(
                     'seed-default-org-' + member.id, {
                         identity_id: member.id,
@@ -291,9 +311,22 @@ async function postMockDataLoadIn(
                 ),
             ];
         }),
-        adapter.members.put(SYSTEM_MEMBER_ID, {
-            type: 'system',
-        }),
+        // Task 5: the system member's own members/:id row closes
+        // the last raw members.put site — driven through
+        // postMemberDocumentOp so it forms a message pair too
+        // (Path A), the SAME op the human/AI member-document
+        // invocations above already ride. Its identities row
+        // stays a raw put — the identity spine itself is Phase
+        // 9's own scope, untouched here.
+        postMemberDocumentOp(
+            adapter,
+            SYSTEM_MEMBER_ID,
+            memberDocumentBodyOf('system'),
+            SYSTEM_MEMBER_ID,
+            requirePair(
+                pairs, seedPairKey('members/:id', SYSTEM_MEMBER_ID),
+            ),
+        ),
         adapter.identities.put(SYSTEM_MEMBER_ID, {
             kind: 'service',
         }),
@@ -700,12 +733,23 @@ async function postMockDataLoadIn(
         // same "leave and note" carve-out as projects.
         ...aiMembers.flatMap(m => {
             return [
-                adapter.memberships.put(
-                    'seed-membership-' + m.id, {
-                        organization_id: STARK_ORGANIZATION,
-                        identity_id: m.id,
-                        at: MOCK_SEED_TIMESTAMP,
-                    }),
+                // Task 5: the same memberships closure as the
+                // human-members loop above, driven through
+                // postMembershipDocumentOp with membershipSeedBody's
+                // shared construction.
+                postMembershipDocumentOp(
+                    adapter,
+                    'seed-membership-' + m.id,
+                    membershipSeedBody(STARK_ORGANIZATION, m.id),
+                    SYSTEM_MEMBER_ID,
+                    requirePair(
+                        pairs,
+                        seedPairKey(
+                            'memberships/:id',
+                            'seed-membership-' + m.id,
+                        ),
+                    ),
+                ),
                 adapter.identities.put(m.id, {
                     kind: 'service',
                 }),
@@ -956,9 +1000,17 @@ export async function postBootstrap(
     // below — never a second, independently timestamped body.
     // Task 4: the bundle grows from one pair to three (operation,
     // member document, detail document), the SAME triple every
-    // other seeded human-member create forms.
-    const { body: currentMemberBody, pairs: currentMemberPairs } =
-        await formBootstrapMessagePair(nowUtc());
+    // other seeded human-member create forms. Task 5: ALSO forms
+    // bootstrap's own membership pair and the system member's own
+    // members/:id document pair — the last two raw bootstrap
+    // writes, now closed the SAME way postMockDataLoad's own
+    // memberships/system-member sites are.
+    const {
+        body: currentMemberBody,
+        pairs: currentMemberPairs,
+        membershipPair,
+        systemMemberPair,
+    } = await formBootstrapMessagePair(nowUtc());
     // Pass 2: seed the pristine bootstrap data in one
     // transaction. Credentials seed after it commits — PBKDF2
     // hashing is ALSO async crypto and cannot run inside the tx.
@@ -969,6 +1021,7 @@ export async function postBootstrap(
         TABLE_NAMES,
         (view) => postBootstrapIn(
             view, currentMemberBody, currentMemberPairs,
+            membershipPair, systemMemberPair,
         ),
     );
     const creds = await seedHumanCredentials(adapter);
@@ -980,6 +1033,8 @@ async function postBootstrapIn(
     adapter: DbAdapter,
     currentMemberBody: Record<string, unknown>,
     currentMemberPairs: MemberWritePairs,
+    membershipPair: MessagePair,
+    systemMemberPair: MessagePair,
 ): Promise<void> {
     // The pristine seed plants only what the app needs
     // to render its shell: the system actor that authors
@@ -988,18 +1043,33 @@ async function postBootstrapIn(
     // the correct pristine state; sample Records are demo
     // content loaded by postMockDataLoad, not bootstrap.
     await Promise.all([
-        adapter.members.put(SYSTEM_MEMBER_ID, {
-            type: 'system',
-        }),
+        // Task 5: the system member's own members/:id row closes
+        // the last raw members.put site bootstrap held — driven
+        // through postMemberDocumentOp, the SAME op
+        // postMockDataLoadIn's own system-member site now rides.
+        // Its identities row stays a raw put — the identity
+        // spine itself is Phase 9's own scope, untouched here.
+        postMemberDocumentOp(
+            adapter,
+            SYSTEM_MEMBER_ID,
+            memberDocumentBodyOf('system'),
+            SYSTEM_MEMBER_ID,
+            systemMemberPair,
+        ),
         adapter.identities.put(SYSTEM_MEMBER_ID, {
             kind: 'service',
         }),
-        adapter.memberships.put(
-            'bootstrap-membership-current', {
-                organization_id: STARK_ORGANIZATION,
-                identity_id: 'current',
-                at: MOCK_SEED_TIMESTAMP,
-            }),
+        // Task 5: bootstrap's own membership closes the SAME
+        // whole-slice deferral as postMockDataLoadIn's memberships
+        // — driven through postMembershipDocumentOp with
+        // membershipSeedBody's shared construction.
+        postMembershipDocumentOp(
+            adapter,
+            bootstrapMembershipId,
+            membershipSeedBody(STARK_ORGANIZATION, 'current'),
+            SYSTEM_MEMBER_ID,
+            membershipPair,
+        ),
         adapter.identityDefaultOrganizations.put(
             'bootstrap-default-org-current', {
                 identity_id: 'current',
@@ -1009,10 +1079,10 @@ async function postBootstrapIn(
         // The 'current' human member row shares its shape
         // with postMockDataLoadIn's human-member seed —
         // driven through postHumanMemberCreationOp with the
-        // explicit actor SYSTEM_MEMBER_ID (the named
-        // bootstrap genesis carve-out only exempts the
-        // SYSTEM member itself and the schema marker).
-        // currentMemberBody is pass 1's frozen body (see
+        // explicit actor SYSTEM_MEMBER_ID (the named bootstrap
+        // genesis carve-out now exempts only the schema marker —
+        // the system member and the membership row closed this
+        // task). currentMemberBody is pass 1's frozen body (see
         // postBootstrap) — never rebuilt here, so it can never
         // drift from what currentMemberPairs was hashed from.
         postHumanMemberCreationOp(

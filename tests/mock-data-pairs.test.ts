@@ -27,11 +27,12 @@ import {
     ORGANIZATION_TWO,
     MOCK_SEED_TIMESTAMP,
 } from '../api/mock-data/seed-constants.ts';
+import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 
 // Task 4: the seed's pair-wired op-invocations (human-members,
 // ideas, idea-submissions, flows, ai-members, records,
-// objectives) each form a message pair in pass 1, before the
-// seed's one transaction opens — see
+// objectives, memberships, members) each form a message pair in
+// pass 1, before the seed's one transaction opens — see
 // api/mock-data/seed-message-pairs.ts. This is the
 // DETERMINISTIC coverage the fingerprint test excludes for the
 // two message tables (mock-data-fingerprint.test.ts).
@@ -42,6 +43,12 @@ import {
 // an operation/member-document/detail-document triple — the
 // objectives-family 1+1+1 precedent generalized to the roster —
 // 15 ops + 15 member documents + 15 detail documents) +
+// 17 membership-family pairs (Phase 8 Task 5: 16 membership
+// documents — 11 human-member-organization rows (`current`
+// counted twice for its two-organization membership) + 4
+// ai-member rows — plus the system member's own members/:id
+// document, closed through postMembershipDocumentOp /
+// postMemberDocumentOp, the LAST whole-slice seed deferral) +
 // 11 ideas +
 // 11 idea-submissions (Phase 2 Task 4b: one per seeded idea,
 // closing the prior seed-only gap) + 17 projects (16 Stark +
@@ -69,8 +76,8 @@ import {
 // half of the Phase 0 seed deferral closes — one document pair
 // per seeded baseline/actual-score row, closed through
 // postBaselineScoreDocumentOp / postActualScoreDocumentOp) =
-// 564. A dropped or reordered invocation changes this count.
-const EXPECTED_PAIR_COUNT = 564;
+// 581. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 581;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -205,6 +212,30 @@ test('a seeded ai-member\'s detail-document pair sits at its'
     assert.deepEqual(
         Object.keys(embedded.body).sort(),
         ['description', 'model', 'name', 'skill_focus'],
+    );
+});
+
+test('a seeded membership document pair sits at its org-nested'
++ ' entity address, its body carrying the three membership'
++ ' keys', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstAiMember = buildAiMembers()[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(
+        r => r.uri_id === 'seed-membership-' + firstAiMember.id,
+    );
+    assert.ok(row, 'no request row for the seeded membership');
+    assert.equal(
+        row!.uri_prefix,
+        `/organizations/${STARK_ORGANIZATION}/memberships/`,
+    );
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['at', 'identity_id', 'organization_id'],
     );
 });
 
@@ -565,19 +596,22 @@ test('seed pairs verify against their hashes', async () => {
     }
 });
 
-test('a bootstrap seed populates exactly three balanced,'
-+ ' hash-verified pairs for the current member', async () => {
+test('a bootstrap seed populates exactly five balanced,'
++ ' hash-verified pairs for the current member and the system'
++ ' member', async () => {
     const db = new MemoryDbAdapter();
     await postBootstrap(db);
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
-    // Task 4: bootstrap's lone human-member create now forms
-    // the SAME 1+1+1 bundle the mock-data seed's own
-    // human-members loop does — operation + detail document
-    // (shared human-members address) + member document (its
-    // own address).
-    assert.equal(requests.length, 3);
-    assert.equal(responses.length, 3);
+    // Task 4: bootstrap's lone human-member create forms the
+    // SAME 1+1+1 bundle the mock-data seed's own human-members
+    // loop does — operation + detail document (shared
+    // human-members address) + member document (its own
+    // address). Task 5: bootstrap's OWN membership document and
+    // the system member's OWN members/:id document close the
+    // last two raw bootstrap writes — 3 + 2 = 5.
+    assert.equal(requests.length, 5);
+    assert.equal(responses.length, 5);
     const atEntity = requests.filter(
         r => r.uri_prefix === '/human-members/'
             && r.uri_id === 'current',
@@ -587,6 +621,17 @@ test('a bootstrap seed populates exactly three balanced,'
         r => r.uri_prefix === '/members/' && r.uri_id === 'current',
     );
     assert.equal(atMember.length, 1);
+    const atSystemMember = requests.filter(
+        r => r.uri_prefix === '/members/'
+            && r.uri_id === SYSTEM_MEMBER_ID,
+    );
+    assert.equal(atSystemMember.length, 1);
+    const atMembership = requests.filter(
+        r => r.uri_prefix
+            === `/organizations/${STARK_ORGANIZATION}/memberships/`
+            && r.uri_id === 'bootstrap-membership-current',
+    );
+    assert.equal(atMembership.length, 1);
     for (const row of requests) {
         assert.equal(
             await sha256Hex(row.message), row.message_hash,
