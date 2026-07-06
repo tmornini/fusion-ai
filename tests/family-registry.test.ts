@@ -84,6 +84,16 @@ test('memberships is the eighth registered family,'
     });
 });
 
+test('members is the ninth registered family, the first'
++ ' global-plane (organizationNested false) row', () => {
+    assert.deepEqual(familyRegistration('members'), {
+        family: 'members',
+        organizationNested: false,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
     assert.equal(familyRegistration('identities'), undefined);
 });

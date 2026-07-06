@@ -80,6 +80,17 @@ export const FAMILY_REGISTRY: readonly FamilyRegistration[] = [
             // inert slot (message-pair.ts): this lookup never
             // fires.
     },
+    {
+        family: 'members',
+        organizationNested: false, // the FIRST global-plane
+            // row: the members roster is derived from the
+            // memberships ledger across every organization,
+            // never an organization-scoped store.
+        concurrency: 'simple',
+        createBodyIdField: 'id', // INERT — no collection POST
+            // exists for members either; the same inert slot
+            // as memberships above.
+    },
 ];
 
 export function familyRegistration(
