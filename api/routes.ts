@@ -2219,6 +2219,42 @@ export async function postAiMemberDocumentOp(
     );
 }
 
+// Human-member document write — authored NEW, mirroring
+// postAiMemberDocumentOp's shape exactly: NO live PUT exists to
+// extract from (human-members/:id carries only {get, post}
+// today, and this task adds no route or verb to it — the
+// first registered family without a live document PUT), so
+// this op exists for a future synthesis/seed caller only. A
+// human_members facet row and its pair would commit as ONE
+// transaction; no states interaction (an edit does not move the
+// member's lifecycle — genesis/archive ride PUT states/:id
+// instead). `pair` is optional so a below-facade caller with no
+// pair keeps compiling; `_actor` is unused for the same reason
+// postAiMemberDocumentOp's is: there is no state event here to
+// author.
+export async function postHumanMemberDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<HumanMemberEntity, 'id'>> {
+    return db.transaction(
+        ['human_members', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.humanMembers.put(
+                id,
+                withoutId(body) as unknown as
+                    Omit<HumanMemberEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
