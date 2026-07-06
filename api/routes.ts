@@ -2053,6 +2053,38 @@ export async function postActualScoreDocumentOp(
     );
 }
 
+// Membership document write — extracted byte-for-byte from the
+// hand-written memberships/:id PUT closure (the
+// postBaselineScoreDocumentOp precedent above): a membership row
+// and its pair commit as ONE transaction; no states interaction
+// (memberships never post events). `pair` is optional so a
+// below-facade caller with no pair keeps compiling; the live
+// route always supplies one. `_actor` is unused for the same
+// reason postBaselineScoreDocumentOp's is: there is no state
+// event here to author.
+export async function postMembershipDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<MembershipEntity, 'id'>> {
+    return db.transaction(
+        ['memberships', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.memberships.put(
+                id,
+                withoutId(body) as unknown as
+                    Omit<MembershipEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -4146,31 +4178,21 @@ export const routes: Route[] = [
     route('memberships', {
         get: (db) => db.memberships.getAll(),
     }),
-    // Hand-written in place of makeIdRoute<MembershipEntity> so
-    // PUT and DELETE can each append their message pair in the
-    // same transaction as the write — the factory's fixed
-    // closures have no per-family pair selector (see
+    // PUT dispatches to postMembershipDocumentOp (extracted
+    // byte-for-byte, this commit — the postBaselineScoreDocumentOp
+    // extract-function precedent): behavior-identical, no wiring
+    // row yet. DELETE stays hand-written in place of
+    // makeIdRoute<MembershipEntity>'s fixed closure so it can
+    // append its message pair in the same transaction as the
+    // write (the factory has no per-family pair selector — see
     // message-pair.ts). GET reproduces the factory closure
     // byte-equivalently; verbs stay {get, put, delete}.
     route('memberships/:id', {
         get: (db, p) => db.memberships.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['memberships', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.memberships.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<MembershipEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postMembershipDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
         delete: (db, p, _actor, pair) => {
             const id = param(p, 0);
             return db.transaction(
