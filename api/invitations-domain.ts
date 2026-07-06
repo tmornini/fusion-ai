@@ -47,6 +47,7 @@ import {
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
 import { WRITE_RESPONSE_SPECS } from './routes.ts';
+import { deriveInvitations } from './derive-invitations.ts';
 
 // The active org of the caller: the verified token claim, else
 // the identity's resolved default. Null when the identity can
@@ -142,10 +143,26 @@ export async function invitationsRequest(
 // grant (its actor is the inviter); the last event is the
 // current state. The whole result is the caller's own — never
 // another identity's.
+//
+// GET is FLIPPED (Task 8): the invitation row + its current
+// state are derived via deriveInvitations(ctx.base) — wire-
+// identical to the hand-written ctx.base.invitations.getAll()
+// + states-derived-current-state dispatch it replaces (every
+// row deriveInvitations returns already carries a resolved
+// state, defaulting to 'pending', so the old "no state event
+// yet" skip is now unreachable — no live write path ever grants
+// without its genesis pending event). The enrichment joins
+// (organization_name, identityPii for invited_by_name) stay
+// old-plane reads — NAMED transitive rides. The states read
+// below is NOT the current-state source anymore; it survives
+// ONLY to find each invitation's grant ('pending') event so its
+// author (the inviter) can be named — a lookup deriveInvitations
+// cannot answer, since it derives a resolved current state, not
+// per-event authorship.
 async function invitationsForInvitee(
     ctx: AuthenticatedContext,
 ): Promise<Response> {
-    const mine = (await ctx.base.invitations.getAll())
+    const mine = (await deriveInvitations(ctx.base))
         .filter(inv =>
             inv.identity_id === ctx.principal.id);
     if (mine.length === 0) return Response.json([]);
@@ -159,18 +176,15 @@ async function invitationsForInvitee(
     // getAllFor opened one transaction per invitation for the
     // same log.
     const events = await ctx.base.states.getAll();
-    const latest = latestByKey(events, ev => ev.entity_id);
     const eventsFor = Map.groupBy(events, ev => ev.entity_id);
     const out = [];
     for (const inv of mine) {
-        const current = latest.get(inv.id);
-        if (current === undefined) continue;
         // The inviter is the actor of the grant ('pending') event —
         // found by state, not position, so a same-`at` tie cannot
         // misattribute it. An absent related row (erased PII,
         // vanished org) omits its key — absence on the wire is
         // the absent key, never a '' sentinel.
-        const grant = eventsFor.get(inv.id)!
+        const grant = (eventsFor.get(inv.id) ?? [])
             .find(ev => ev.state === 'pending');
         const name = organizationName.get(inv.organization_id);
         const inviter = grant === undefined
@@ -187,8 +201,7 @@ async function invitationsForInvitee(
                 ? { invited_by_name: inviter }
                 : {}),
             at: inv.at,
-            state: assertInvitationState(
-                current.state, 'invitation ' + inv.id),
+            state: inv.state,
         });
     }
     return Response.json(out);
@@ -197,6 +210,17 @@ async function invitationsForInvitee(
 // The active org's outstanding (pending) invitations, for an
 // admin. The invitee email rides along because the admin
 // supplied it at grant time — need-to-know, not a PII leak.
+//
+// GET is FLIPPED (Task 8): the invitation row + its current
+// state are derived via deriveInvitations(ctx.base) — wire-
+// identical to the hand-written ctx.base.invitations.getAll()
+// + states-derived-current-state dispatch it replaces (every
+// row deriveInvitations returns already carries a resolved
+// state, so the old "no state event yet" skip is unreachable,
+// the same reason invitationsForInvitee's own comment gives).
+// The pending-only + active-org + admin filters are preserved
+// exactly. The invitee-email enrichment join (identityPii)
+// stays an old-plane read — a NAMED transitive ride.
 async function sentInvitations(
     ctx: AuthenticatedContext,
 ): Promise<Response> {
@@ -211,24 +235,15 @@ async function sentInvitations(
             'forbidden: listing sent invitations requires'
             + ' an admin role', HTTP_FORBIDDEN);
     }
-    const organizationInvites =
-        (await ctx.base.invitations.getAll())
-            .filter(inv => inv.organization_id === organization);
+    const organizationInvites = (await deriveInvitations(ctx.base))
+        .filter(inv => inv.organization_id === organization
+            && inv.state === 'pending');
     if (organizationInvites.length === 0) return Response.json([]);
     const email = new Map(
         (await ctx.base.identityPii.getAll())
             .map(p => [p.id, p.email]));
-    // One states read serves every row — getCurrentFor per
-    // invitation opened one transaction each for the same log.
-    const latest = latestByKey(
-        await ctx.base.states.getAll(), ev => ev.entity_id);
     const out = [];
     for (const inv of organizationInvites) {
-        const current = latest.get(inv.id);
-        if (current === undefined) continue;
-        const state = assertInvitationState(
-            current.state, 'invitation ' + inv.id);
-        if (state !== 'pending') continue;
         // Erased invitee PII omits the key — absence on the
         // wire is the absent key, never a '' sentinel.
         const inviteeEmail = email.get(inv.identity_id);
