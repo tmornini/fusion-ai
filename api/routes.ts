@@ -2573,6 +2573,38 @@ export async function postHumanMemberDocumentOp(
     );
 }
 
+// Identity PII document write — extracted byte-for-byte from the
+// hand-written identities/:id/pii PUT closure (the
+// postMembershipDocumentOp precedent above): an identity_pii row
+// and its pair commit as ONE transaction; no states interaction
+// (a PII write does not move the identity's own lifecycle).
+// `pair` is optional so a below-facade caller with no pair keeps
+// compiling; the live route always supplies one. `_actor` is
+// unused for the same reason postMembershipDocumentOp's is:
+// there is no state event here to author.
+export async function postIdentityPiiDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<IdentityPiiEntity, 'id'>> {
+    return db.transaction(
+        ['identity_pii', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.identityPii.put(
+                id,
+                withoutId(body) as unknown as
+                    Omit<IdentityPiiEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -3341,23 +3373,10 @@ export const routes: Route[] = [
     // '' (a singleton document at a collection-style address).
     route('identities/:id/pii', {
         get: (db, p) => db.identityPii.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['identity_pii', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.identityPii.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<IdentityPiiEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postIdentityPiiDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
         delete: (db, p, _actor, pair) => {
             const id = param(p, 0);
             return db.transaction(
