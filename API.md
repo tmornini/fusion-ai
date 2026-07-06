@@ -1210,17 +1210,17 @@ membership write.
 
 ### 3.26 `POST /snapshots/mock-data` — seed the demo dataset
 
-`postMockDataLoad` (`api/mock-data.ts:173`). Bearer-exempt, demo-only,
+`postMockDataLoad` (`api/mock-data.ts:217`). Bearer-exempt, demo-only,
 and — as a `BOOTSTRAP_ROUTES` member — below the shadow ledger
 entirely: this call forms and appends no pair for ITSELF (none of
 §5.1's headers appear on its own response). What it seeds, though,
-includes 37 of its OWN pre-formed message pairs, one per pair-capable
+includes 581 of its OWN pre-formed message pairs, one per pair-capable
 seed write — see §5.3.
 
 - **Three sequential steps, not one atomic op:**
   1. `ensureTables(TABLE_NAMES)`
   2. `transaction(TABLE_NAMES, postMockDataLoadIn)` — builds the whole
-     dataset, including the 37 seed pairs, in one tx (a mid-seed
+     dataset, including the 581 seed pairs, in one tx (a mid-seed
      failure leaves no half-populated schema).
   3. `seedHumanCredentials(adapter)` — its **own** tx
      `[identity_credentials]`; the PBKDF2 hashing runs outside the tx
@@ -1232,7 +1232,7 @@ seed write — see §5.3.
 
 ### 3.27 `POST /snapshots/bootstrap` — seed the pristine minimal state
 
-`postBootstrap` (`api/mock-data.ts:3744`). Same four-step shape as
+`postBootstrap` (`api/mock-data.ts:990`). Same four-step shape as
 §3.26 — no pair for itself, below the ledger — with `postBootstrapIn`
 planting only the shell essentials (system actor, current user, the
 singleton org — no Records) and its own single pre-formed pair for
