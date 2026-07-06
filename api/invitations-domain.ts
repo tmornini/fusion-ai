@@ -359,6 +359,8 @@ async function grantInvitation(
         canonicalUriPrefix(undefined, address.uriPrefix);
     const uriId =
         createdEntityUriId('invitations', body) ?? address.uriId;
+    const headPairId = await headPairIdAt(
+        ctx.base, canonicalPrefix, uriId);
     const pair = await formWritePair({
         method: 'POST', pathname: '/invitations',
         routePattern: 'invitations',
@@ -367,14 +369,50 @@ async function grantInvitation(
         body, requesterIdentityId: ctx.principal.id,
         requestAt: ctx.requestAt, organization: undefined,
         responseStatus: 200, responseBody,
-        headPairId: await headPairIdAt(
-            ctx.base, canonicalPrefix, uriId),
+        headPairId,
     });
     const replay = await storedResponseFor(
         ctx.base, pair.requestHash);
     if (replay !== undefined) {
         return responseFromStored(replay);
     }
+    // The invitation DOCUMENT pair (Phase 8 Task 6): PUT-shaped,
+    // at the SAME (uriPrefix, uriId) as the operation pair above
+    // — the entity minus id, so the wire NEVER carries the
+    // invitee's email (the invitee is already resolved to
+    // identity_id above; the document stores only the
+    // reference). Formed ONLY on the 'fresh' outcome — a
+    // duplicate echo's operation pair sits at the duplicate's
+    // own submitted id, and no document is ever formed for it,
+    // so no phantom document can exist there. There is no live
+    // PUT route this mirrors (Author gate 2 — the side channel
+    // never joins the route table), so the response body is
+    // hand-built to the stored-row shape (id-first), like the
+    // human-members detail document's own synthesized-only class
+    // (Phase 8 Task 4) — no WRITE_RESPONSE_SPECS entry exists for
+    // 'invitations/:id' to consult.
+    const documentBody = {
+        organization_id: organization,
+        identity_id: identityId,
+        at: grantAt,
+    };
+    const document = preOutcome.kind === 'fresh'
+        ? await formWritePair({
+            method: 'PUT',
+            pathname: '/invitations/' + invitationId,
+            routePattern: 'invitations/:id',
+            routeSegments: ['invitations', ':id'],
+            pathSegments: ['invitations', invitationId],
+            headerFields: [],
+            body: documentBody,
+            requesterIdentityId: ctx.principal.id,
+            requestAt: ctx.requestAt,
+            organization: undefined,
+            responseStatus: 200,
+            responseBody: { id: invitationId, ...documentBody },
+            headPairId,
+        })
+        : undefined;
     // The member/pending checks and the write run in ONE transaction so
     // two concurrent grants cannot both pass the check and each append a
     // pending invitation (Commandment VII).
@@ -409,6 +447,9 @@ async function grantInvitation(
                     'pending', ctx.principal.id, grantAt);
             }
             await appendMessagePair(view, pair);
+            if (document !== undefined) {
+                await appendMessagePair(view, document);
+            }
         },
     );
     if (preOutcome.kind === 'fresh') {
