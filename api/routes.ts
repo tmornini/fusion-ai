@@ -44,6 +44,7 @@ import {
     validateAIMemberEditBody,
     validateAiMemberDocumentBody,
     validateHumanMemberCreateBody,
+    validateHumanMemberDocumentBody,
     validateHumanMemberEditBody,
     validateMemberDocumentBody,
     validateFlowCreateBody,
@@ -558,6 +559,40 @@ const AI_MEMBERS_WIRING: DocumentFamilyWiring = {
     documentOp: postAiMemberDocumentOp,
     entityOf: aiMemberDocumentEntityOf,
 };
+// The human_members facet row spreads safely, the SAME reason
+// aiMemberDocumentEntityOf's own comment gives. `_organization`
+// stays unused: human-members is GLOBAL plane too
+// (family-registry.ts: organizationNested:false).
+function humanMemberDocumentEntityOf(
+    document: DerivedDocument,
+    _organization: Id,
+): unknown {
+    return {
+        id: document.uriId,
+        ...document.body,
+    };
+}
+// The human-members wiring row — the eleventh family, and the
+// THIRD (last) member of MEMBERS_WIRING's shared-log-with-
+// genesis 'stateless' bucket (see its own comment above for the
+// full rationale-contrast). UNLIKE members/ai-members, this
+// wiring row serves NO live route: human-members/:id carries
+// only {get, post} today, and this task adds no route or verb —
+// the FIRST registered family without a live document PUT
+// (documentOp/entityOf exist for a future synthesis/seed caller
+// only, mirroring the projects-createBodyIdField inert-slot
+// precedent: a fully-shaped row with no live caller yet).
+// notFoundTable is 'human_members' — its storage table name
+// diverges from its hyphenated family/route name, the SAME
+// snake_case divergence AI_MEMBERS_WIRING's own comment names.
+const HUMAN_MEMBERS_WIRING: DocumentFamilyWiring = {
+    family: 'human-members',
+    lifecycle: 'stateless',
+    notFoundTable: 'human_members',
+    validateDocument: validateHumanMemberDocumentBody,
+    documentOp: postHumanMemberDocumentOp,
+    entityOf: humanMemberDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
@@ -568,6 +603,7 @@ registerDocumentFamilyWiring(OBJECTIVES_WIRING);
 registerDocumentFamilyWiring(MEMBERSHIPS_WIRING);
 registerDocumentFamilyWiring(MEMBERS_WIRING);
 registerDocumentFamilyWiring(AI_MEMBERS_WIRING);
+registerDocumentFamilyWiring(HUMAN_MEMBERS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -2743,6 +2779,16 @@ export const routes: Route[] = [
         post: (db, _p, body, actor, pair) =>
             postHumanMemberCreationOp(db, body, actor, pair),
     }),
+    // HUMAN_MEMBERS_WIRING registers alongside members/ai-members
+    // (Phase 8 Task 3) but serves NO live route here — this
+    // pattern gains no PUT arm and WRITE_RESPONSE_SPECS carries
+    // no per-verb swap for it; verbs stay {get, post}, the SAME
+    // 405 verb-gap pin from Task 2 (tests/api-roster-verb-gaps
+    // .test.ts) proves survives untouched. The wiring row's
+    // documentOp/entityOf exist for a future synthesis/seed
+    // caller only (the first registered family without a live
+    // document PUT — see HUMAN_MEMBERS_WIRING's own comment
+    // above).
     route('human-members/:id', {
         get: (db, p) => db.humanMembers.getById(param(p, 0)),
         // Human-member edit: the four member facets re-put as ONE

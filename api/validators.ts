@@ -1102,6 +1102,70 @@ export function validateHumanMemberEntity(
     };
 }
 
+const HUMAN_MEMBER_DOCUMENT_BODY_KEYS:
+    readonly string[] = [
+    'title', 'department',
+    'strengths', 'team_dimensions',
+];
+
+export interface HumanMemberDocumentBody {
+    readonly entity: Omit<HumanMemberEntity, 'id'>;
+}
+
+// The HTTP-body gate for PUT /human-members/:id: the eleventh
+// family, and the THIRD (last) member of MEMBERS_WIRING's
+// shared-log-with-genesis 'stateless' bucket (see MEMBERS_WIRING
+// in routes.ts for the full rationale-contrast) — but UNLIKE
+// members/ai-members, no live PUT route exists to serve this
+// validator today (human-members/:id carries only {get, post});
+// it exists for a future synthesis/seed caller only, mirroring
+// validateAiMemberDocumentBody's shape exactly. THE LABEL
+// MANDATE: the assertOnlyKeys label is 'HumanMemberEntity',
+// matching TODAY'S store validator (validateHumanMemberEntity)
+// byte-for-byte, NOT the 'HumanMemberDocumentBody' naming
+// convention every other *DocumentBody validator uses. The
+// strengths/team_dimensions structural gates (validateStringArrayJson/
+// validateStringNumberRecordJson) are the SAME calls
+// validateHumanMemberEntity makes, so every 400 this validator
+// can raise stays byte-identical to its store counterpart. Global
+// plane (family-registry.ts: organizationNested:false) — no
+// organization_id exists on this entity, so nothing is tolerated
+// beyond the four fields above.
+export function validateHumanMemberDocumentBody(
+    body: Record<string, unknown>,
+): HumanMemberDocumentBody {
+    assertOnlyKeys(
+        body,
+        HUMAN_MEMBER_DOCUMENT_BODY_KEYS,
+        'HumanMemberEntity',
+    );
+    const strengths = pickJsonArrayField(
+        body, 'strengths',
+    );
+    validateStringArrayJson(
+        strengths, 'HumanMemberEntity.strengths',
+    );
+    const teamDimensions = pickJsonObjectField(
+        body, 'team_dimensions',
+    );
+    validateStringNumberRecordJson(
+        teamDimensions,
+        'HumanMemberEntity.team_dimensions',
+    );
+    return {
+        entity: {
+            title: pickString(
+                body, 'title',
+            ),
+            department: pickString(
+                body, 'department',
+            ),
+            strengths,
+            team_dimensions: teamDimensions,
+        },
+    };
+}
+
 const AI_MEMBER_BODY_KEYS:
     readonly string[] = [
     'name', 'description', 'model', 'skill_focus',
