@@ -2183,6 +2183,42 @@ export async function postMemberDocumentOp(
     );
 }
 
+// AI-member document write — extracted byte-for-byte from the
+// hand-written ai-members/:id PUT closure (the
+// postMemberDocumentOp precedent above): a bare ai_members facet
+// row and its pair commit as ONE transaction; no states
+// interaction (an edit does not move the member's lifecycle —
+// genesis/archive ride PUT states/:id instead). This is the
+// SAME PUT the composed POST edit arm at this route sits beside
+// (UNTOUCHED by this extraction — Task 4's own scope); the two
+// verbs stay independent, per-verb dispatches. `pair` is
+// optional so a below-facade caller with no pair keeps
+// compiling; the live route always supplies one. `_actor` is
+// unused for the same reason postMemberDocumentOp's is: there
+// is no state event here to author.
+export async function postAiMemberDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<AIMemberEntity, 'id'>> {
+    return db.transaction(
+        ['ai_members', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.aiMembers.put(
+                id,
+                withoutId(body) as unknown as
+                    Omit<AIMemberEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -2530,34 +2566,20 @@ export const routes: Route[] = [
         post: (db, _p, body, actor, pair) =>
             postAiMemberCreationOp(db, body, actor, pair),
     }),
-    // Hand-written PUT (in place of a bare store put) and POST
-    // so each can append its message pair in the same
-    // transaction as its write — the pattern carries BOTH a
-    // wired PUT (the bare ai_members facet put) and a wired
-    // POST (the composed members + ai_members edit), the first
-    // pattern in this codebase to need a PER-VERB
-    // WriteResponseSpec entry (see message-pair.ts /
-    // WRITE_RESPONSE_SPECS). GET reproduces the prior closure
-    // byte-equivalently.
+    // PUT dispatches to postAiMemberDocumentOp (extracted
+    // byte-for-byte, this commit — the postMemberDocumentOp
+    // extract-function precedent): behavior-identical, no wiring
+    // row yet. POST stays hand-written beside it — the composed
+    // members + ai_members edit, the first pattern in this
+    // codebase to need a PER-VERB WriteResponseSpec entry (see
+    // message-pair.ts / WRITE_RESPONSE_SPECS). GET reproduces the
+    // prior closure byte-equivalently.
     route('ai-members/:id', {
         get: (db, p) => db.aiMembers.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['ai_members', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.aiMembers.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<AIMemberEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postAiMemberDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
         // AI-member edit: the parent member row and the
         // ai_members detail row re-put as ONE transaction — NO
         // state event (an edit does not move the member's
