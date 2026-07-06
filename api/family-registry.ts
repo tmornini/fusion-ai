@@ -69,6 +69,17 @@ export const FAMILY_REGISTRY: readonly FamilyRegistration[] = [
         concurrency: 'simple',
         createBodyIdField: 'id',
     },
+    {
+        family: 'memberships',
+        organizationNested: true,
+        concurrency: 'simple',
+        createBodyIdField: 'id', // INERT — no collection POST
+            // exists for memberships; a row is created only
+            // when an invitee accepts an invitation (see
+            // adapters/invitations.ts) — the projects-precedent
+            // inert slot (message-pair.ts): this lookup never
+            // fires.
+    },
 ];
 
 export function familyRegistration(

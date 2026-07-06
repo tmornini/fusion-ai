@@ -74,8 +74,18 @@ test('objectives is the seventh registered family, simple'
     });
 });
 
+test('memberships is the eighth registered family,'
++ ' organization-nested like the rest', () => {
+    assert.deepEqual(familyRegistration('memberships'), {
+        family: 'memberships',
+        organizationNested: true,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
-    assert.equal(familyRegistration('memberships'), undefined);
+    assert.equal(familyRegistration('identities'), undefined);
 });
 
 test('every registered family names a concurrency class',

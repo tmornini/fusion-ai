@@ -129,7 +129,7 @@ const RESPONSE_ID_FIELD = 'response-id';
 // here is deleted, never kept as a parallel truth.
 const ORGANIZATION_NESTED_FIRST_SEGMENTS: ReadonlySet<string> =
     new Set([
-        'memberships', 'states',
+        'states',
     ]);
 
 // The tier rule, exported so gate, seed, and derivations share
@@ -456,7 +456,7 @@ export function createdEntityUriId(
 ): string | undefined {
     // A registered family's createBodyIdField serves a bare
     // collection-POST create route whose pattern IS the family
-    // name (e.g. 'ai-members' below, still an unregistered
+    // name (e.g. 'identities' below, still an unregistered
     // literal). Ideas registered this slot in Task 1 for its own
     // POST /ideas, which Phase 2 Task 3 (R1) retired — genesis
     // folded into the document-class PUT ideas/:id, whose uriId
