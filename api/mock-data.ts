@@ -20,6 +20,7 @@ import type {
     FlowCreationPairs,
     RecordWritePairs,
     ObjectiveCreationPairs,
+    MemberWritePairs,
 } from './routes.ts';
 import type {
     StateEntity,
@@ -267,12 +268,26 @@ async function postMockDataLoadIn(
                     adapter,
                     humanMemberSeedBody(member),
                     SYSTEM_MEMBER_ID,
-                    requirePair(
-                        pairs,
-                        seedPairKey(
-                            'human-members', member.id,
+                    {
+                        operation: requirePair(
+                            pairs,
+                            seedPairKey(
+                                'human-members', member.id,
+                            ),
                         ),
-                    ),
+                        memberDocument: requirePair(
+                            pairs,
+                            seedPairKey(
+                                'members/:id', member.id,
+                            ),
+                        ),
+                        detailDocument: requirePair(
+                            pairs,
+                            seedPairKey(
+                                'human-members/:id', member.id,
+                            ),
+                        ),
+                    },
                 ),
             ];
         }),
@@ -698,10 +713,20 @@ async function postMockDataLoadIn(
                     adapter,
                     aiMemberSeedBody(m),
                     SYSTEM_MEMBER_ID,
-                    requirePair(
-                        pairs,
-                        seedPairKey('ai-members', m.id),
-                    ),
+                    {
+                        operation: requirePair(
+                            pairs,
+                            seedPairKey('ai-members', m.id),
+                        ),
+                        memberDocument: requirePair(
+                            pairs,
+                            seedPairKey('members/:id', m.id),
+                        ),
+                        detailDocument: requirePair(
+                            pairs,
+                            seedPairKey('ai-members/:id', m.id),
+                        ),
+                    },
                 ),
             ];
         }),
@@ -922,14 +947,17 @@ export async function postBootstrap(
     adapter: DbAdapter,
 ): Promise<SeededCredentials> {
     // Pass 1 (no tx): the lone 'current' human-member create's
-    // pair, formed up front — see postMockDataLoad's pass 1 for
+    // bundle, formed up front — see postMockDataLoad's pass 1 for
     // why (formWritePair's hashing is async crypto, which would
     // auto-commit an IndexedDB transaction early if awaited
     // inside one). Bootstrap's body embeds nowUtc() (there is
     // no fixed seed timestamp here), so it is minted ONCE inside
     // formBootstrapMessagePair and reused verbatim by pass 2
     // below — never a second, independently timestamped body.
-    const { body: currentMemberBody, pair: currentMemberPair } =
+    // Task 4: the bundle grows from one pair to three (operation,
+    // member document, detail document), the SAME triple every
+    // other seeded human-member create forms.
+    const { body: currentMemberBody, pairs: currentMemberPairs } =
         await formBootstrapMessagePair(nowUtc());
     // Pass 2: seed the pristine bootstrap data in one
     // transaction. Credentials seed after it commits — PBKDF2
@@ -940,7 +968,7 @@ export async function postBootstrap(
     await adapter.transaction(
         TABLE_NAMES,
         (view) => postBootstrapIn(
-            view, currentMemberBody, currentMemberPair,
+            view, currentMemberBody, currentMemberPairs,
         ),
     );
     const creds = await seedHumanCredentials(adapter);
@@ -951,7 +979,7 @@ export async function postBootstrap(
 async function postBootstrapIn(
     adapter: DbAdapter,
     currentMemberBody: Record<string, unknown>,
-    currentMemberPair: MessagePair,
+    currentMemberPairs: MemberWritePairs,
 ): Promise<void> {
     // The pristine seed plants only what the app needs
     // to render its shell: the system actor that authors
@@ -986,10 +1014,10 @@ async function postBootstrapIn(
         // SYSTEM member itself and the schema marker).
         // currentMemberBody is pass 1's frozen body (see
         // postBootstrap) — never rebuilt here, so it can never
-        // drift from what currentMemberPair was hashed from.
+        // drift from what currentMemberPairs was hashed from.
         postHumanMemberCreationOp(
             adapter, currentMemberBody,
-            SYSTEM_MEMBER_ID, currentMemberPair,
+            SYSTEM_MEMBER_ID, currentMemberPairs,
         ),
         adapter.states.postEvent(
             'bootstrap-system-active',

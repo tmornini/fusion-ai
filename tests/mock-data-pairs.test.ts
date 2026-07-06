@@ -37,13 +37,18 @@ import {
 // two message tables (mock-data-fingerprint.test.ts).
 
 // The exact op-invocation count postMockDataLoad drives through
-// a pair-capable op: 11 human-members + 11 ideas +
+// a pair-capable op: 45 member-family pairs (Phase 8 Task 4's
+// create-time bundle: 11 human-members + 4 ai-members, each now
+// an operation/member-document/detail-document triple — the
+// objectives-family 1+1+1 precedent generalized to the roster —
+// 15 ops + 15 member documents + 15 detail documents) +
+// 11 ideas +
 // 11 idea-submissions (Phase 2 Task 4b: one per seeded idea,
 // closing the prior seed-only gap) + 17 projects (16 Stark +
 // seed-project-org2, Phase 3 Task 3) + 13 flow-family pairs
 // (flows: 4 creates × 3 + 1 document = 13 flow-family pairs —
 // Task 5's operation/document/join triple per create, plus
-// Task 6's seed-flow-org2 genesis document) + 4 ai-members +
+// Task 6's seed-flow-org2 genesis document) +
 // 18 records-family (Phase 6 Task 4's bundle synthesis, the
 // migration's first VARIABLE-cardinality one: 2 operations + 2
 // documents + 14 attribute documents — one attribute-PUT
@@ -64,8 +69,8 @@ import {
 // half of the Phase 0 seed deferral closes — one document pair
 // per seeded baseline/actual-score row, closed through
 // postBaselineScoreDocumentOp / postActualScoreDocumentOp) =
-// 534. A dropped or reordered invocation changes this count.
-const EXPECTED_PAIR_COUNT = 534;
+// 564. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 564;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -148,6 +153,59 @@ test('a seeded ai-member create pair sits at the global'
     );
     assert.ok(row, 'no request row for the seeded ai member');
     assert.equal(row!.uri_prefix, '/ai-members/');
+});
+
+test('a seeded ai-member\'s member-document pair sits at the'
++ ' shared members/:id address, its body carrying `type`'
++ ' alone', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstAiMember = buildAiMembers()[0]!;
+    const requests = await db.requests.getAll();
+    const memberRow = requests.find(
+        r => r.uri_id === firstAiMember.id
+            && r.uri_prefix === '/members/',
+    );
+    assert.ok(
+        memberRow,
+        'no member-document pair for the seeded ai member',
+    );
+    const embedded = JSON.parse(memberRow!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(embedded.body, { type: 'ai' });
+});
+
+test('a seeded ai-member\'s detail-document pair sits at its'
++ ' entity address, its body carrying the four AI detail'
++ ' keys', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstAiMember = buildAiMembers()[0]!;
+    const requests = await db.requests.getAll();
+    const responseById = new Map(
+        (await db.responses.getAll()).map(r => [r.id, r]),
+    );
+    // The detail-document pair shares its address with the
+    // operation pair (the create-address-collapse precedent —
+    // ai-members' own createBodyIdField), so distinguish it by
+    // its OWN 200 response, the operation pair's being 204.
+    const detailRow = requests.find(
+        r => r.uri_id === firstAiMember.id
+            && r.uri_prefix === '/ai-members/'
+            && responseById.get(r.id)?.status === 200,
+    );
+    assert.ok(
+        detailRow,
+        'no detail-document pair for the seeded ai member',
+    );
+    const embedded = JSON.parse(detailRow!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['description', 'model', 'name', 'skill_focus'],
+    );
 });
 
 test('a seeded record create pair sits at its org-nested'
@@ -507,22 +565,36 @@ test('seed pairs verify against their hashes', async () => {
     }
 });
 
-test('a bootstrap seed populates exactly one balanced,'
-+ ' hash-verified pair for the current member', async () => {
+test('a bootstrap seed populates exactly three balanced,'
++ ' hash-verified pairs for the current member', async () => {
     const db = new MemoryDbAdapter();
     await postBootstrap(db);
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
-    assert.equal(requests.length, 1);
-    assert.equal(responses.length, 1);
-    assert.equal(requests[0]!.uri_id, 'current');
-    assert.equal(requests[0]!.uri_prefix, '/human-members/');
-    assert.equal(
-        await sha256Hex(requests[0]!.message),
-        requests[0]!.message_hash,
+    // Task 4: bootstrap's lone human-member create now forms
+    // the SAME 1+1+1 bundle the mock-data seed's own
+    // human-members loop does — operation + detail document
+    // (shared human-members address) + member document (its
+    // own address).
+    assert.equal(requests.length, 3);
+    assert.equal(responses.length, 3);
+    const atEntity = requests.filter(
+        r => r.uri_prefix === '/human-members/'
+            && r.uri_id === 'current',
     );
-    assert.equal(
-        await sha256Hex(responses[0]!.message),
-        responses[0]!.message_hash,
+    assert.equal(atEntity.length, 2);
+    const atMember = requests.filter(
+        r => r.uri_prefix === '/members/' && r.uri_id === 'current',
     );
+    assert.equal(atMember.length, 1);
+    for (const row of requests) {
+        assert.equal(
+            await sha256Hex(row.message), row.message_hash,
+        );
+    }
+    for (const row of responses) {
+        assert.equal(
+            await sha256Hex(row.message), row.message_hash,
+        );
+    }
 });

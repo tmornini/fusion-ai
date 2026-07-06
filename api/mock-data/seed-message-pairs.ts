@@ -42,7 +42,16 @@
 // deferral closes LAST (Task 5), landing WHOLE: baselines AND
 // actuals (broader than "baselines" alone — the handoff's own
 // phrasing) — one document pair per seeded row, closed through
-// postBaselineScoreDocumentOp / postActualScoreDocumentOp.
+// postBaselineScoreDocumentOp / postActualScoreDocumentOp. The
+// human-members/ai-members create-time bundle grows from one
+// pair to three (Phase 8 Task 4, the objectives-family
+// precedent generalized to the roster): the existing operation
+// invocation stays, and the SAME per-pair-key discipline adds a
+// member-document invocation (the shared members/:id address
+// every member kind writes through) and a detail-document
+// invocation (ai-members/:id or human-members/:id) per seeded
+// member. Bootstrap's lone 'current' human-member create forms
+// this SAME triple via formBootstrapMessagePair.
 
 import type {
     Id,
@@ -76,7 +85,11 @@ import {
     recordAttributeDocumentBodyOf,
     objectiveDocumentBodyOf,
     objectiveRevisionBodyOf,
+    memberDocumentBodyOf,
+    aiMemberDetailBodyOf,
+    humanMemberDetailBodyOf,
 } from '../routes.ts';
+import type { MemberWritePairs } from '../routes.ts';
 import {
     validateFlowCreateBody,
     validateRecordWriteBody,
@@ -954,12 +967,38 @@ export function buildMockDataInvocations():
     const invocations: MockDataInvocation[] = [];
 
     for (const member of members) {
+        const createBody = humanMemberSeedBody(member);
         invocations.push({
             key: seedPairKey('human-members', member.id),
             routePattern: 'human-members',
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
-            body: humanMemberSeedBody(member),
+            body: createBody,
+        });
+        // Task 4: create appends the member-document pair (the
+        // shared members/:id address every member kind writes
+        // through) and the detail-document pair
+        // (human-members/:id), each keyed by its OWN
+        // deterministic invocation entry — the objectives
+        // document/revision precedent, the roster's own fixed
+        // 1+1+1. Bodies via the shared BODY builders
+        // (api/routes.ts) — never a second, hand-rolled copy.
+        // The SAME system author authors all three invocations.
+        invocations.push({
+            key: seedPairKey('members/:id', member.id),
+            routePattern: 'members/:id',
+            idParams: [member.id],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: memberDocumentBodyOf('human'),
+        });
+        invocations.push({
+            key: seedPairKey('human-members/:id', member.id),
+            routePattern: 'human-members/:id',
+            idParams: [member.id],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: humanMemberDetailBodyOf(createBody),
         });
     }
     const ideaIndexById = new Map(
@@ -1102,12 +1141,31 @@ export function buildMockDataInvocations():
         });
     }
     for (const m of aiMembers) {
+        const createBody = aiMemberSeedBody(m);
         invocations.push({
             key: seedPairKey('ai-members', m.id),
             routePattern: 'ai-members',
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
-            body: aiMemberSeedBody(m),
+            body: createBody,
+        });
+        // Task 4: the human-members precedent above, for the AI
+        // facet.
+        invocations.push({
+            key: seedPairKey('members/:id', m.id),
+            routePattern: 'members/:id',
+            idParams: [m.id],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: memberDocumentBodyOf('ai'),
+        });
+        invocations.push({
+            key: seedPairKey('ai-members/:id', m.id),
+            routePattern: 'ai-members/:id',
+            idParams: [m.id],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: aiMemberDetailBodyOf(createBody),
         });
     }
     mockRecords.forEach((r, i) => {
@@ -1370,14 +1428,22 @@ async function formSeedPair(
 // response can never drift from what the gate would have stored
 // for the identical request. `params` mirrors matchRoute's own
 // extraction (routes.ts): the path segment at each `:`-prefixed
-// route segment, in order.
+// route segment, in order. Every document-class invocation here
+// forms a PUT (formSeedPair's own method === 'PUT' when idParams
+// is defined), so a PerVerbWriteResponseSpec entry (Task 4:
+// ai-members/:id, human-members/:id) resolves through its OWN
+// `put` slot — the writeResponseSpecFor precedent (api/api.ts),
+// narrowed to the one verb this function ever sees.
 function documentSeedResponse(
     inv: MockDataInvocation,
     routeSegments: readonly string[],
     pathSegments: readonly string[],
 ): { readonly status: number; readonly body: unknown } {
-    const spec = WRITE_RESPONSE_SPECS[inv.routePattern];
-    if (spec === undefined || !('status' in spec)) {
+    const entry = WRITE_RESPONSE_SPECS[inv.routePattern];
+    const spec = entry === undefined || 'status' in entry
+        ? entry
+        : entry.put;
+    if (spec === undefined) {
         throw new Error(
             'no per-write response spec for seeded document'
             + ' route: ' + inv.routePattern,
@@ -1413,18 +1479,20 @@ export async function formMockDataMessagePairs(
 // Pass 1 for postBootstrap: the lone 'current' human-member
 // create. Its body embeds nowUtc() (bootstrap has no fixed
 // seed timestamp), so it is minted ONCE here and returned
-// alongside the pair it was hashed from — postBootstrapIn
+// alongside the bundle it was hashed from — postBootstrapIn
 // (pass 2) writes this SAME body, never a second nowUtc() call,
-// so the stored pair never drifts from what was actually
-// written.
+// so no stored pair ever drifts from what was actually written.
+// Task 4: forms the SAME 1+1+1 bundle the mock-data seed's own
+// human-members loop forms per member — operation, member
+// document, detail document — sharing this ONE requestAt.
 export async function formBootstrapMessagePair(
     requestAt: string,
 ): Promise<{
     readonly body: Record<string, unknown>;
-    readonly pair: MessagePair;
+    readonly pairs: MemberWritePairs;
 }> {
     const body = bootstrapCurrentMemberBody(nowUtc());
-    const pair = await formSeedPair(
+    const operation = await formSeedPair(
         {
             key: seedPairKey('human-members', 'current'),
             routePattern: 'human-members',
@@ -1434,5 +1502,30 @@ export async function formBootstrapMessagePair(
         },
         requestAt,
     );
-    return { body, pair };
+    const memberDocument = await formSeedPair(
+        {
+            key: seedPairKey('members/:id', 'current'),
+            routePattern: 'members/:id',
+            idParams: ['current'],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: memberDocumentBodyOf('human'),
+        },
+        requestAt,
+    );
+    const detailDocument = await formSeedPair(
+        {
+            key: seedPairKey('human-members/:id', 'current'),
+            routePattern: 'human-members/:id',
+            idParams: ['current'],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: humanMemberDetailBodyOf(body),
+        },
+        requestAt,
+    );
+    return {
+        body,
+        pairs: { operation, memberDocument, detailDocument },
+    };
 }
