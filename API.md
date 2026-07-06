@@ -326,12 +326,15 @@ Notation in the doctrinal lines: `put_x` ≈ `PUT /x/:id`;
 
 ### 3.1 `POST /ai-members` — create AI member
 
+`postAiMemberCreationOp` (`api/routes.ts`).
+
 - tx: `[members, ai_members, states, requests, responses]`
 - actual:
   1. `members.put(id, {type:'ai'})`
   2. `aiMembers.put(id, detail)`
   3. `states.postEvent(initialStateEventId, id, initialState, actor)`
-  4. `appendMessagePair(pair)`
+  4. three `appendMessagePair` calls — operation, member document,
+     detail document (the bundle, below)
 - doctrinal: `put_member` + `put_ai_member` + `post_state_event`
   composed as `post_create_ai_member`.
 - props: atomic; admin-only; `validateAIMemberCreateBody` at the gate;
@@ -339,14 +342,20 @@ Notation in the doctrinal lines: `put_x` ≈ `PUT /x/:id`;
 
 ### 3.2 `POST /ai-members/:id` — edit AI member
 
+`postAiMemberEditOp` (`api/routes.ts`) — extracted from an anonymous
+closure this same task, the FIRST composed-EDIT synthesis (below).
+
 - tx: `[members, ai_members, requests, responses]`
 - actual: `members.put(id, {type:'ai'})` then
-  `aiMembers.put(id, detail)`, then `appendMessagePair(pair)`.
+  `aiMembers.put(id, detail)`, then three `appendMessagePair` calls —
+  operation, member document, detail document (the bundle, below).
 - doctrinal: `put_member` + `put_ai_member` as `post_edit_ai_member`.
 - props: atomic; **no state event** (an edit does not move lifecycle);
   admin-only; `validateAIMemberEditBody`.
 
 ### 3.3 `POST /human-members` — create human member
+
+`postHumanMemberCreationOp` (`api/routes.ts`).
 
 - tx: `[members, identities, identity_pii, human_members, states,
   requests, responses]`
@@ -356,20 +365,112 @@ Notation in the doctrinal lines: `put_x` ≈ `PUT /x/:id`;
   3. `identityPii.put(id, pii)`
   4. `humanMembers.put(id, detail)`
   5. `states.postEvent(initialStateEventId, id, initialState, actor)`
-  6. `appendMessagePair(pair)`
+  6. three `appendMessagePair` calls — operation, member document,
+     detail document (the bundle, below)
 - doctrinal: four `put_*` primitives + `post_state_event` as
   `post_create_human_member`.
 - props: atomic; admin-only; `validateHumanMemberCreateBody`.
 
 ### 3.4 `POST /human-members/:id` — edit human member
 
+`postHumanMemberEditOp` (`api/routes.ts`) — the postAiMemberEditOp
+precedent above, for the sibling facet.
+
 - tx: `[members, identities, identity_pii, human_members, requests,
   responses]`
 - actual: the four facet `put`s (member, identity, pii, detail), then
-  `appendMessagePair(pair)`.
+  three `appendMessagePair` calls — operation, member document,
+  detail document (the bundle, below).
 - doctrinal: four `put_*` primitives as `post_edit_human_member`.
 - props: atomic; **no state event**; admin-only;
   `validateHumanMemberEditBody`.
+
+**The member write-pair bundle (Phase 8 Task 4), the
+records/objectives-bundle sibling (§3.20/§3.21) — and the
+migration's FIRST composed-EDIT synthesis: not only the two
+CREATEs above (3.1, 3.3) but ALSO the two EDITs (3.2, 3.4) now
+pre-form extra pairs beside the gate's own operation pair, ONLY
+when the gate supplied both a pair and a fence organization — a
+below-facade caller (`api/mock-data.ts`) skips all three, exactly
+like every prior bundle.**
+
+- **The operation pair** — the gate's own. For a create, the SAME
+  address a live genesis `PUT /ai-members/:id` (or
+  `/human-members/:id`) would use: the family's own
+  `createBodyIdField` override collapses the bare
+  `POST /ai-members` (or `/human-members`) onto the entity
+  address's own (uriPrefix, uriId) — the flows/objectives
+  precedent (§3.12/§3.21). For an edit, the address IS the entity
+  address already — `POST /ai-members/:id` / `/human-members/:id`
+  were already pair-wired there.
+- **The member document pair** — PUT-shaped, at the ONE shared
+  `members/:id` address every member kind writes through
+  regardless of family, body `memberDocumentBodyOf(type)` →
+  `{type}` alone — the exact live `PUT /members/:id` wire body —
+  validated through `validateMemberDocumentBody`. The member kind
+  is a server-supplied fact (never read off the request body), so
+  this body is IDENTICAL for a create and every later edit of the
+  SAME member — see the fold note below.
+- **The detail document pair** — PUT-shaped, at the family's own
+  `ai-members/:id` or `human-members/:id` address (the SAME
+  address the operation pair uses), body `aiMemberDetailBodyOf` /
+  `humanMemberDetailBodyOf` (the create/edit body's `detail`
+  sub-object VERBATIM), validated through
+  `validateAiMemberDocumentBody` / `validateHumanMemberDocumentBody`
+  — byte-indistinguishable from a live `PUT /ai-members/:id`.
+  `human-members/:id` carries NO live PUT of its own (Task 3's own
+  comment, §5.10), so this is the ONLY writer its wiring row's
+  `documentOp`/`entityOf` ever serves besides the seed;
+  `WRITE_RESPONSE_SPECS['human-members/:id']` becomes a
+  `PerVerbWriteResponseSpec` this task for exactly that reason —
+  its `put` slot serves this synthesized bundle and the seed alone,
+  never a real client PUT.
+
+The shared BODY builders (`memberDocumentBodyOf`,
+`aiMemberDetailBodyOf`, `humanMemberDetailBodyOf`, `api/routes.ts`)
+are the ONE-voice seam: pure functions consumed by BOTH the four
+routes' inline formation above and the seed's own invocation
+construction (`api/mock-data/seed-message-pairs.ts`) — the
+objectives precedent (§3.21), never a shared pair-FORMER.
+
+All three pairs share ONE `requestAt` yet strictly-later response
+`at` stamps, so each address's LAST-appended pair becomes its
+head: the member document is `members/:id`'s first-ever pair on a
+member's first write and its new (superseding) head on every
+later write; the detail document shares the operation pair's own
+address and becomes THAT address's new head, appended after it. A
+mid-write failure (an invalid AI model id or a malformed human
+`strengths` JSON string, caught by the pre-tx document-body check
+or by the op's own re-validating store put) leaves zero of the
+three, exactly like every other atomic write in this catalog.
+
+**The PII facet is NEVER synthesized.** `identity_pii` stays
+old-plane on BOTH the human create and edit — its own document
+address awaits the identity spine (a forward-pointer commented at
+both `postHumanMemberCreationOp` and `postHumanMemberEditOp`,
+`api/routes.ts`).
+
+**The member-document fold (the E6 note, made concrete).** A
+member's `type` is a server-pinned fact that never changes across
+an edit, so `memberDocumentBodyOf`'s body — `{type}` — is
+byte-identical, at the SAME address, on every write to the SAME
+member from its genesis onward. `appendMessagePair`'s global
+by-hash fold therefore skips the member-document pair on every
+edit following the first write to that member — a genuinely
+PERMANENT fold, not a fixture accident: the address needs no
+second write since its one field never varies. The detail
+document and the operation pair carry the write's actual changes,
+so they fold only when a caller resends byte-identical field
+values (the general E6 hazard every bundle shares).
+
+`tests/api-shadow-ledger-members-identities.test.ts`'s create and
+composed-edit cases (balance re-pinned 1 → 3 per write, address
+and key-set assertions for both synthesized documents, and a
+failed-create/failed-edit-appends-nothing pair for both families)
+are the bundle's proof; `tests/mock-data-pairs.test.ts`'s
+`EXPECTED_PAIR_COUNT` (§5.3) and its member-document/
+detail-document address spot-checks extend the SAME proof to the
+seed.
 
 ### 3.5 `POST /identities` — create identity
 
@@ -1427,8 +1528,13 @@ pair-capable write families, in dependency order: `human-members`, `ideas`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **534** message pairs — one pair per seeded
-  row for most families, but each seeded flow folds in an
+- The mock-data seed pre-forms **564** message pairs — one pair per seeded
+  row for most families, but each seeded human/AI member folds in an
+  operation/member-document/detail-document triple (11 human-members +
+  4 ai-members, each × 3 = 45 member-family pairs: 15 ops + 15 member
+  documents + 15 detail documents, Phase 8 Task 4's bundle synthesis,
+  the objectives-family 1+1+1 precedent generalized to the roster —
+  see §3.1–§3.4), each seeded flow folds in an
   operation/document/join triple (4 creates × 3 pair triples + 1 genesis
   document = 13, §3.12), each seeded work order forms both a document
   pair and a join pair (145 + 145, §3.17), each seeded record folds
@@ -1447,8 +1553,8 @@ the SAME way a live request would, then writes it alongside the seeded row:
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
   pre-formed pair in the SAME transaction the row lands in. The bootstrap
-  seed forms exactly one such pair, for its lone `current` human-member
-  create.
+  seed forms exactly three such pairs (the SAME member-family triple), for
+  its lone `current` human-member create.
 - The scores deferral now closes WHOLE — baselines AND actuals, the
   SAME `buildSeedScoreRows` output (`api/mock-data/scores.ts`) driving
   both the pair formation above and the seeded row writes. Memberships

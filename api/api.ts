@@ -182,13 +182,16 @@ function postWriteNotification(
 }
 
 // Resolve a route pattern's WRITE_RESPONSE_SPECS entry for the
-// verb actually in flight. Every entry but one is a plain
+// verb actually in flight. Every entry but two is a plain
 // WriteResponseSpec, applying regardless of which non-DELETE
 // verb hit it (no prior pattern wired both a PUT and a POST at
 // once). A PerVerbWriteResponseSpec — recognized by the absence
 // of `status` at its top level — supplies one spec per verb
-// instead; today only 'ai-members/:id' needs this (see
-// routes.ts).
+// instead; 'ai-members/:id' needs this because it wires a real
+// PUT alongside its composed-edit POST, and 'human-members/:id'
+// joins it (Phase 8 Task 4) for a DIFFERENT reason — its `put`
+// slot serves no live route at all, only the synthesized
+// detail-document bundle and the seed (see routes.ts).
 function writeResponseSpecFor(
     routePattern: string,
     method: string,
@@ -470,8 +473,10 @@ export async function handleRequest(
             // written row) and a DELETE (204) — the map's one
             // entry per pattern serves the PUT/POST verb only.
             // The rare pattern that wires BOTH a PUT and a POST
-            // with genuinely different shapes (ai-members/:id)
-            // supplies a PerVerbWriteResponseSpec instead — see
+            // with genuinely different shapes (ai-members/:id),
+            // or a synthesized-only PUT beside a live POST
+            // (human-members/:id, Phase 8 Task 4), supplies a
+            // PerVerbWriteResponseSpec instead — see
             // writeResponseSpecFor.
             const spec = method === 'DELETE'
                 ? { status: 204 }
