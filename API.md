@@ -266,7 +266,13 @@ Legend for classification:
   runs above the admin gate so a roleless member can boot).
 - `GET|PUT /organizations/:id` — primitive (global passthrough; reads
   fence to the caller's memberships).
-- `GET /memberships` · `GET|PUT|DELETE /memberships/:id` — primitive.
+- `GET /memberships` · `GET|PUT|DELETE /memberships/:id` —
+  primitive. `PUT` is a document write (§5.9) — the eighth
+  family, and the FOURTH `'stateless'` one (§5.9): a pure join
+  relation with no lifecycle concept at all — record-attributes'
+  actual sibling, not work-orders'/objectives' own distinct
+  rationale. `GET` and `DELETE` stay hand-written, old-plane,
+  until Task 8.
 - `GET|PUT /identities/:id/default-org` — the read/write face of the
   default-org ledger. Self-only.
 
@@ -1722,3 +1728,88 @@ GET/POST/DELETE `objectives/:id/revisions/:rid`; POST/PUT/DELETE
 `projects/:id/objective-baseline-scores/:sid`; POST/PUT/DELETE
 `projects/:id/objective-actual-scores`; GET/POST/DELETE
 `projects/:id/objective-actual-scores/:sid`.
+
+### 5.9 The eighth family: memberships and the no-fork ruling
+
+Task 2 (Phase 8) registers `memberships` as the eighth
+`DocumentFamilyWiring` row (`MEMBERSHIPS_WIRING`, beside
+ideas/projects/flows/work-orders/records/record-attributes/
+objectives in `api/routes.ts`) — the FOURTH `'stateless'`
+family, with yet another distinct rationale from the other
+three. Work-orders' `'stateless'` is vacuous-in-practice (its
+lifecycle CAN be authored, just never through the document
+address, §5.6); objectives' rides the `states` log's own
+absence-as-active covenant (§5.8); memberships carries NO
+lifecycle concept WHATSOEVER — a pure join relation (Codd's own
+teaching: the identities of the joined, plus the moment of
+union) — joining record-attributes' vacuous-BY-CONSTRUCTION
+bucket as its actual sibling, not standing alone against
+work-orders' as record-attributes' own comment once implied.
+
+**The no-fork adjudication (Author gate 3).** §5.8 named a
+THIRD distinct `'stateless'` rationale (objectives') as the
+trigger for a type-level fork (Commandment IX: three is
+pattern), read at the time as the next family author's binding
+expectation. The roster phase settles it instead: a FOURTH
+distinct rationale (memberships', above) arrived with no fork
+needed, and the roster's remaining families (`MEMBERS_WIRING`,
+Task 3 onward) share the SAME `states` log WITH a genesis event
+— a FIFTH bucket, still no fork. `'stateless'` stays ONE type
+covering every one of them; the §5.8 comment's "type-level
+fork" claim now reads as history, not standing doctrine.
+
+- **`notFoundTable` is `'memberships'`** — its storage table
+  name matches its family name, like ideas/projects/flows/
+  records/objectives (work-orders/record-attributes are the two
+  families whose names diverge).
+- **GET stays hand-written, old-plane, until Task 8.** Unlike
+  objectives (§5.8, whose `GET` flipped in the SAME phase it
+  registered), `memberships/:id`'s `get` arm is untouched this
+  task — `MEMBERSHIPS_WIRING`'s `entityOf` exists (the contract
+  requires it) but serves no live route yet.
+- **DELETE stays hand-written too** — the `records/:id`
+  template (§5.7): no generic DELETE component exists for any
+  family.
+
+**PUT /memberships/:id** now dispatches through
+`documentPutHandler(MEMBERSHIPS_WIRING)` — the SAME `'simple'`
+concurrency class every other document family but flows rides
+(§5.4) — and `WRITE_RESPONSE_SPECS['memberships/:id']` is
+`documentWriteResponseSpec(MEMBERSHIPS_WIRING)`.
+
+**The wire covenant, precisely scoped.** ZERO deltas in request
+shapes, response key sets + values, statuses, headers, and hop
+counts. UNLIKE objectives' fence-stamped-only `{position}` body,
+memberships' entity carries its OWN `organization_id` on the
+wire — all three keys (`organization_id`, `identity_id`, `at`)
+REQUIRED, none tolerated-but-optional; the org-scoped store
+still stamps `organization_id` from the fence at write time
+regardless (the same fence-stamp the store applies to every
+org-owned entity), so the wire acceptance and the stored value
+agree whenever a client's own organization_id is honest. THE
+LABEL MANDATE: the stray-key 400 body stays byte-identical
+(`unexpected key "..." for MembershipEntity` — matching
+`validateMembershipEntity`'s OWN label, NOT the
+`MembershipDocumentBody` naming convention every other
+`*DocumentBody` validator uses); the missing-key 400s are the
+SAME `assertOnlyKeys` call on both paths, so they too are
+unchanged.
+
+`tests/api-membership-document.test.ts` (the below-gate op/
+validator pins, the PUT-chain-derives-the-head case, and the
+DELETE-derives-absent case, all run against the REAL registered
+wiring row) plus the untouched existing suite
+(`tests/api-shadow-ledger-memberships-invitations.test.ts`'s
+`Supersedes`/resend/wire-body-matches-domain-read assertions)
+are the absorption's proof; `tests/api-roster-verb-gaps.test.ts`
+additionally pins the WHOLE roster surface's verb gaps, both
+dispatch regimes: 19 route-table 405s across the nine roster
+`route()` patterns (`members`, `ai-members`, `ai-members/:id`,
+`human-members`, `human-members/:id`, `memberships`,
+`memberships/:id`, `current-member`, `members/:id`); 18
+invitations-facade 404s (the side channel never calls
+`matchRoute`) across its five real shapes (`invitations`,
+`invitations/sent`, `invitations/:id/acceptance`,
+`invitations/:id/decline`, `invitations/:id/revocation`) plus
+one bogus-path shape (`invitations/:id` bare) on every verb — 37
+combos, 15 patterns total.
