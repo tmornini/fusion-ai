@@ -9,6 +9,8 @@ import {
     documentFamilyWiring,
     documentGetHandler,
 } from '../api/document-family.ts';
+import { sha256Hex } from '../shared/digest.ts';
+import { deriveInvitations } from '../api/derive-invitations.ts';
 
 // Phase 8 Task 6: the invitation document plane — the grant's
 // PUT-shaped invitation document (the entity minus id, NO email
@@ -226,4 +228,132 @@ async () => {
     );
     assert.equal(documents.length, 1);
     assert.equal(documents[0]!.uri_id, 'ms-doc-4');
+});
+
+// ── deriveInvitations: the message-plane reduction ──
+
+async function declineFor(
+    db: MemoryDbAdapter,
+    invitationId: string,
+    invitee: string,
+    eventId: string,
+    declineAt: string,
+): Promise<Response> {
+    return handleRequest(db, req(
+        'POST', '/invitations/' + invitationId + '/decline',
+        await organizationToken(invitee, '1'),
+        { declineEventId: eventId, declineAt },
+    ));
+}
+
+async function revokeFor(
+    db: MemoryDbAdapter,
+    invitationId: string,
+    eventId: string,
+    revokeAt: string,
+): Promise<Response> {
+    return handleRequest(db, req(
+        'POST', '/invitations/' + invitationId + '/revocation',
+        await organizationToken(),
+        { revokeEventId: eventId, revokeAt },
+    ));
+}
+
+test('deriveInvitations round-trips every terminal state:'
++ ' grant→pending, accept→accepted, decline→declined,'
++ ' revoke→revoked', async () => {
+    const db = await freshDb();
+    await person(db, 'bruce', 'Bruce', 'bruce@x.com');
+    await person(db, 'clark', 'Clark', 'clark@x.com');
+    await person(db, 'diana', 'Diana', 'diana@x.com');
+
+    await grant(db, 'inv-derive-pending', 'sarah@x.com');
+
+    await grant(db, 'inv-derive-accept', 'bruce@x.com');
+    await handleRequest(db, req(
+        'POST', '/invitations/inv-derive-accept/acceptance',
+        await organizationToken('bruce', '1'),
+        {
+            membershipId: 'ms-derive-bruce',
+            acceptEventId: 'ev-derive-acc',
+            acceptAt: '2026-01-01T00:00:01.000000Z',
+        },
+    ));
+
+    await grant(db, 'inv-derive-decline', 'clark@x.com');
+    await declineFor(
+        db, 'inv-derive-decline', 'clark', 'ev-derive-dec',
+        '2026-01-01T00:00:01.000000Z',
+    );
+
+    await grant(db, 'inv-derive-revoke', 'diana@x.com');
+    await revokeFor(
+        db, 'inv-derive-revoke', 'ev-derive-rev',
+        '2026-01-01T00:00:01.000000Z',
+    );
+
+    const derived = await deriveInvitations(db);
+    const byId = new Map(derived.map(row => [row.id, row]));
+    assert.equal(
+        byId.get('inv-derive-pending')?.state, 'pending');
+    assert.equal(
+        byId.get('inv-derive-accept')?.state, 'accepted');
+    assert.equal(
+        byId.get('inv-derive-decline')?.state, 'declined');
+    assert.equal(
+        byId.get('inv-derive-revoke')?.state, 'revoked');
+    // id-lex ordered (byIdAscending, the IndexedDB reference).
+    const ids = derived.map(row => row.id);
+    assert.deepEqual(ids, [...ids].sort());
+});
+
+test('a no-op replay changes nothing deriveInvitations reads',
+async () => {
+    const db = await freshDb();
+    await grant(db, 'inv-derive-replay');
+    const before = await deriveInvitations(db);
+    await grant(db, 'inv-derive-replay');   // byte-identical resend
+    const after = await deriveInvitations(db);
+    assert.deepEqual(after, before);
+});
+
+test('every stored invitation-family message verifies against'
++ ' its hash, and requests/responses stay balanced across a'
++ ' full grant→accept→decline mix', async () => {
+    const db = await freshDb();
+    await person(db, 'bruce', 'Bruce', 'bruce@x.com');
+    await person(db, 'clark', 'Clark', 'clark@x.com');
+    await grant(db, 'inv-balance-1', 'sarah@x.com');
+    await grant(db, 'inv-balance-2', 'bruce@x.com');
+    await handleRequest(db, req(
+        'POST', '/invitations/inv-balance-2/acceptance',
+        await organizationToken('bruce', '1'),
+        {
+            membershipId: 'ms-balance-2',
+            acceptEventId: 'ev-balance-acc',
+            acceptAt: '2026-01-01T00:00:01.000000Z',
+        },
+    ));
+    await grant(db, 'inv-balance-3', 'clark@x.com');
+    await declineFor(
+        db, 'inv-balance-3', 'clark', 'ev-balance-dec',
+        '2026-01-01T00:00:01.000000Z',
+    );
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    // 3 grants x 2 (operation + invitation document) + 1 accept
+    // x 2 (operation + memberships document) + 1 decline x 1
+    // (operation only — decline synthesizes no document) = 9.
+    assert.equal(requests.length, 9);
+    assert.equal(responses.length, 9);
+    for (const row of requests) {
+        assert.equal(
+            await sha256Hex(row.message), row.message_hash,
+        );
+    }
+    for (const row of responses) {
+        assert.equal(
+            await sha256Hex(row.message), row.message_hash,
+        );
+    }
 });
