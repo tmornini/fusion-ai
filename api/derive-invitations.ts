@@ -73,9 +73,9 @@ async function invitationOpStates(
     return states;
 }
 
-// Reads db.requests/db.responses ONLY. Nothing routes to this
-// yet (Task 8 flips invitationsForInvitee/sentInvitations onto
-// it) — revertible in isolation.
+// Reads db.requests/db.responses ONLY. invitationsForInvitee and
+// sentInvitations derive their rows + state through this; the
+// enrichment joins (organization/pii) stay old-plane reads.
 export async function deriveInvitations(
     db: DbAdapter,
 ): Promise<DerivedInvitationRow[]> {

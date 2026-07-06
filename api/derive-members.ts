@@ -33,9 +33,9 @@ import {
 // non-null assertion on a parent that may not exist.
 //
 // Reads db.requests/db.responses (+ pickString over their decoded
-// bodies) ONLY. Nothing routes to this yet (Task 8 flips
-// route('members')/route('members/:id') onto it) — revertible in
-// isolation; tests/drift-roster.test.ts is the gate.
+// bodies) ONLY. route('members') and route('members/:id') derive
+// through this; tests/drift-roster.test.ts pins parity with the
+// retired old-plane closure.
 
 const MEMBERS_PREFIX = canonicalUriPrefix(undefined, '/members/');
 
