@@ -1138,6 +1138,59 @@ export function validateAIMemberEntity(
     };
 }
 
+const AI_MEMBER_DOCUMENT_BODY_KEYS:
+    readonly string[] = [
+    'name', 'description', 'model', 'skill_focus',
+];
+
+export interface AiMemberDocumentBody {
+    readonly entity: Omit<AIMemberEntity, 'id'>;
+}
+
+// The HTTP-body gate for PUT /ai-members/:id: the tenth family,
+// joining MEMBERS_WIRING's shared-log-with-genesis 'stateless'
+// bucket (see MEMBERS_WIRING in routes.ts for the full
+// rationale-contrast; the fifth bucket's SECOND member — no new
+// rationale, no new bucket). THE LABEL MANDATE: the
+// assertOnlyKeys label is 'AIMemberEntity', matching TODAY'S
+// store validator (validateAIMemberEntity) byte-for-byte, NOT
+// the 'AiMemberDocumentBody' naming convention every other
+// *DocumentBody validator uses. `model`'s own rule
+// (isProviderModelId, the SAME catalog-membership gate) is
+// IDENTICAL to validateAIMemberEntity's, so the missing/stray-
+// key 400s AND the model-rejection 400 stay byte-identical on
+// both paths. Global plane (family-registry.ts:
+// organizationNested:false) — no organization_id exists on this
+// entity, so nothing is tolerated beyond the four fields above.
+export function validateAiMemberDocumentBody(
+    body: Record<string, unknown>,
+): AiMemberDocumentBody {
+    assertOnlyKeys(
+        body,
+        AI_MEMBER_DOCUMENT_BODY_KEYS,
+        'AIMemberEntity',
+    );
+    const model = pickString(body, 'model');
+    if (!isProviderModelId(model)) {
+        throw new ValidationError(
+            'model must be a known provider'
+            + ' model id on AIMemberEntity',
+        );
+    }
+    return {
+        entity: {
+            name: pickString(body, 'name'),
+            description: pickString(
+                body, 'description',
+            ),
+            skill_focus: pickString(
+                body, 'skill_focus',
+            ),
+            model,
+        },
+    };
+}
+
 const IDEA_BODY_KEYS: readonly string[] = [
     'organization_id', 'title', 'position',
     'problem_statement', 'target_users',

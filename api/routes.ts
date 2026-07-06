@@ -42,7 +42,7 @@ import type {
 import {
     validateAIMemberCreateBody,
     validateAIMemberEditBody,
-    validateAIMemberEntity,
+    validateAiMemberDocumentBody,
     validateHumanMemberCreateBody,
     validateHumanMemberEditBody,
     validateMemberDocumentBody,
@@ -528,6 +528,36 @@ const MEMBERS_WIRING: DocumentFamilyWiring = {
     documentOp: postMemberDocumentOp,
     entityOf: memberDocumentEntityOf,
 };
+// The bare ai_members facet row spreads safely (no
+// organization_id, no trio — the SAME reason memberDocumentEntityOf's
+// own comment gives). `_organization` stays unused: ai-members is
+// GLOBAL plane too (family-registry.ts: organizationNested:false).
+function aiMemberDocumentEntityOf(
+    document: DerivedDocument,
+    _organization: Id,
+): unknown {
+    return {
+        id: document.uriId,
+        ...document.body,
+    };
+}
+// The ai-members wiring row — the tenth family, joining
+// MEMBERS_WIRING's shared-log-with-genesis 'stateless' bucket
+// (see its own comment above for the full rationale-contrast):
+// the SAME shared member id, the SAME genesis-at-create/PUT-
+// states/:id lifecycle, no new bucket needed. notFoundTable is
+// 'ai_members' — its storage table name (db-backed.ts's
+// EntityStore key) diverges from its hyphenated family/route
+// name, the SAME snake_case divergence work-orders/record-
+// attributes established.
+const AI_MEMBERS_WIRING: DocumentFamilyWiring = {
+    family: 'ai-members',
+    lifecycle: 'stateless',
+    notFoundTable: 'ai_members',
+    validateDocument: validateAiMemberDocumentBody,
+    documentOp: postAiMemberDocumentOp,
+    entityOf: aiMemberDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
@@ -537,6 +567,7 @@ registerDocumentFamilyWiring(RECORD_ATTRIBUTES_WIRING);
 registerDocumentFamilyWiring(OBJECTIVES_WIRING);
 registerDocumentFamilyWiring(MEMBERSHIPS_WIRING);
 registerDocumentFamilyWiring(MEMBERS_WIRING);
+registerDocumentFamilyWiring(AI_MEMBERS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -2504,18 +2535,15 @@ export const WRITE_RESPONSE_SPECS:
     // wired this row.
     'members/:id': documentWriteResponseSpec(MEMBERS_WIRING),
     'ai-members': { status: 204 },
-    // Per-verb: PUT is the bare facet put (200 + written row);
-    // POST is the composed edit (204, no body).
+    // Per-verb: PUT rides the generic document-form builder (see
+    // the ideas/:id entry above for the shared rationale) — the
+    // SAME registration-first consult that keeps members/:id
+    // byte-unchanged applies here too (ai-members is also
+    // organizationNested:false), so the emitted bytes stay
+    // UNCHANGED from the hand-written body this replaces. POST
+    // is the composed edit (204, no body), untouched this task.
     'ai-members/:id': {
-        put: {
-            status: 200,
-            successBody: (params, body) => ({
-                id: param(params, 0),
-                ...validateAIMemberEntity(
-                    withoutId(body ?? {}),
-                ),
-            }),
-        },
+        put: documentWriteResponseSpec(AI_MEMBERS_WIRING),
         post: { status: 204 },
     },
     'human-members': { status: 204 },
@@ -2665,20 +2693,17 @@ export const routes: Route[] = [
         post: (db, _p, body, actor, pair) =>
             postAiMemberCreationOp(db, body, actor, pair),
     }),
-    // PUT dispatches to postAiMemberDocumentOp (extracted
-    // byte-for-byte, this commit — the postMemberDocumentOp
-    // extract-function precedent): behavior-identical, no wiring
-    // row yet. POST stays hand-written beside it — the composed
-    // members + ai_members edit, the first pattern in this
-    // codebase to need a PER-VERB WriteResponseSpec entry (see
-    // message-pair.ts / WRITE_RESPONSE_SPECS). GET reproduces the
-    // prior closure byte-equivalently.
+    // PUT rides the generic documentPutHandler(AI_MEMBERS_WIRING)
+    // (this commit) — wire-identical to postAiMemberDocumentOp's
+    // own direct dispatch it replaces (the extraction commit
+    // immediately prior). POST stays hand-written beside it — the
+    // composed members + ai_members edit, the first pattern in
+    // this codebase to need a PER-VERB WriteResponseSpec entry
+    // (see message-pair.ts / WRITE_RESPONSE_SPECS). GET reproduces
+    // the prior closure byte-equivalently.
     route('ai-members/:id', {
         get: (db, p) => db.aiMembers.getById(param(p, 0)),
-        put: (db, p, body, actor, pair) =>
-            postAiMemberDocumentOp(
-                db, param(p, 0), body, actor, pair,
-            ),
+        put: documentPutHandler(AI_MEMBERS_WIRING),
         // AI-member edit: the parent member row and the
         // ai_members detail row re-put as ONE transaction — NO
         // state event (an edit does not move the member's
