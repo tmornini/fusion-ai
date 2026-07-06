@@ -6,9 +6,9 @@ Know that every entity will be kept in a backend structured in this way: ~/.clau
 
 That mechanism will replace the existing ledger's and common states system by moving said state into each message stored message.
 
-└─|─ /invitations/ • derived view over org-nested canonical storage
+└─|─ /invitations/ • RECONCILED: derived view, but NOT a registered family — the permanent side channel (Author gate 2); grant/accept synthesize PUT-shaped document pairs off the route table, rows derive from PUT-method document heads at /invitations/ and state from op-address pair presence (accepted/declined/revoked/pending), the facade's 404-only verb regime preserved — see the roster seam FLIPPED 2026-07-06 block, go-to-church-peaceful-castle.md §Phases 3…N
   |  └── :id
-└─|─ /memberships/ • derived view over org-nested canonical storage
+└─|─ /memberships/ • RECONCILED: shipped as the EIGHTH registered family (organizationNested:true, 'stateless' — a pure join relation, no lifecycle), collection + entity GETs served by the generic document handlers, DELETE a marked tombstone; the members/human-members/ai-members derive-on-read directory is realized over this ∩ the ninth-through-eleventh global-plane member families — see the same block (Author gate 1)
   |  └── :id
 └─|─ /records/ • derived view over org-nested canonical storage
   |  └── :id
