@@ -43,7 +43,6 @@ import {
 } from './notifications.ts';
 import {
     ownerOrganizationOfEntity,
-    organizationOwnedProbes,
     rawOrganizationOwnedProbes,
     graphEntityProbe,
 } from './store-parent-scoped.ts';
@@ -338,7 +337,7 @@ export async function handleRequest(
             // two-hop for node/edge deletion events.
             // rawReadRow bypasses EntityStore's deleted filter.
             const owner = await ownerOrganizationOfEntity(
-                organizationOwnedProbes(adapter),
+                rawOrganizationOwnedProbes(adapter),
                 adapter.memberships, fenced.organization,
                 param(params, 0),
                 graphEntityProbe(adapter, adapter.flows),

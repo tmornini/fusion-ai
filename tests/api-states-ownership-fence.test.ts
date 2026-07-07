@@ -197,3 +197,43 @@ test('PUT states/:id naming an ALREADY-DELETED org-B entity'
     ));
     assert.equal(res.status, 404);
 });
+
+// ---- 7. the read leak: org B's OWN deletion of its idea ----
+// must stay hidden from every OTHER org, not resolve to a
+// visible orphan. The read-side companion of the write fence
+// above: rawOrganizationOwnedProbes resolves a DELETED
+// entity to its true owner, closing the leak where the
+// filtered organizationOwnedProbes let a foreign org's own
+// deletion resolve to a visible "orphan".
+
+test('org B deleting its own idea hides it from org A'
++ ' entity-states history (was visible pre-fix)', async () => {
+    const db = await seed();
+    const del = await handleRequest(db, req(
+        'PUT', '/states/ev-b-own-delete',
+        await tokenFor('memberB', 'B'),
+        { entity_id: 'idea-b', state: 'deleted', at: AT },
+    ));
+    assert.equal(del.status, 200);
+    const fromA = await handleRequest(db, req(
+        'GET', '/entity-states/idea-b/history',
+        await tokenFor('memberA', 'A'),
+    ));
+    assert.equal(fromA.status, 404);
+    const listFromA = await handleRequest(db, req(
+        'GET', '/states', await tokenFor('memberA', 'A'),
+    ));
+    assert.equal(listFromA.status, 200);
+    const idsFromA =
+        (await listFromA.json() as { id: string }[])
+            .map(r => r.id);
+    assert.ok(
+        !idsFromA.includes('ev-b-own-delete'),
+        "org A must not see org B's own deletion event",
+    );
+    const fromB = await handleRequest(db, req(
+        'GET', '/entity-states/idea-b/history',
+        await tokenFor('memberB', 'B'),
+    ));
+    assert.equal(fromB.status, 200);
+});
