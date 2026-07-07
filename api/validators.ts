@@ -3421,14 +3421,14 @@ export function validateHumanMemberCreateBody(
 }
 
 // Identity creation, discriminated by kind. A person carries
-// its PII sub-object; a service carries its credential sub-
-// object (a deterministic-id'd client_secret row whose secret
-// is hashed client-side before it crosses the gate). The route
-// pins the identity kind and composes the two writes.
+// only {id, kind} — its PII enters later via the separate PUT
+// identities/:id/pii (Phase 10 Task 2's intake decomposition);
+// a service carries its credential sub-object (a deterministic-
+// id'd client_secret row whose secret is hashed client-side
+// before it crosses the gate). The route pins the identity kind.
 export interface IdentityCreatePersonBody {
     readonly id: string;
     readonly kind: 'person';
-    readonly pii: Record<string, unknown>;
 }
 
 export interface IdentityCreateServiceBody {
@@ -3442,22 +3442,22 @@ export type IdentityCreateBody =
     | IdentityCreateServiceBody;
 
 const IDENTITY_CREATE_PERSON_KEYS: readonly string[] = [
-    'id', 'kind', 'pii',
+    'id', 'kind',
 ];
 
 const IDENTITY_CREATE_SERVICE_KEYS: readonly string[] = [
     'id', 'kind', 'credential',
 ];
 
-// The HTTP-body gate for POST /identities: a person identity +
-// its PII row, OR a service identity + its client_secret
-// credential row, written atomically. The sub-object fields are
-// NOT fully validated here — the parent-scoped identity_pii and
-// identity_credentials stores re-validate their own bodies
-// (validateIdentityPiiEntity, validateIdentityCredentialEntity)
-// when the composing put lands, and the identities store pins
-// the kind through validateIdentityEntity. The credential's
-// secret is hashed client-side; the route never touches crypto.
+// The HTTP-body gate for POST /identities: a bare person
+// identity (its PII lands later via PUT identities/:id/pii), OR
+// a service identity + its client_secret credential row, written
+// atomically. The credential sub-object is NOT fully validated
+// here — the parent-scoped identity_credentials store re-
+// validates its own body (validateIdentityCredentialEntity) when
+// the composing put lands, and the identities store pins the
+// kind through validateIdentityEntity. The credential's secret
+// is hashed client-side; the route never touches crypto.
 // Identity creation writes NO state event — identities carry no
 // lifecycle event at creation — so the handler needs no actor.
 export function validateIdentityCreateBody(
@@ -3479,13 +3479,7 @@ export function validateIdentityCreateBody(
             IDENTITY_CREATE_PERSON_KEYS,
             'IdentityCreatePersonBody',
         );
-        return {
-            id,
-            kind,
-            pii: asObject(
-                body['pii'], 'IdentityCreatePersonBody.pii',
-            ),
-        };
+        return { id, kind };
     }
     assertOnlyKeys(
         body,

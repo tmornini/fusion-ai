@@ -1227,11 +1227,6 @@ test('THE ORPHANED-MEMBERSHIP CASE: an identity created via'
 
     await postIdentityCreationOp(db, {
         id: orphanId, kind: 'person',
-        pii: {
-            name: 'Orphan Identity',
-            email: 'orphan-drift-1@example.com',
-            phone: '', bio: '',
-        },
     });
     // No members row exists for orphanId — verified on the OLD
     // plane directly (the join-direction precondition this case

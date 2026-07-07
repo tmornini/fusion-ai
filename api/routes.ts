@@ -1904,20 +1904,23 @@ export async function postHumanMemberEditOp(
     );
 }
 
-// Identity creation: the identity row and EITHER its PII
-// row (person) OR its client_secret credential row
-// (service) commit as ONE transaction — a mid-write
-// failure rolls the whole thing back rather than orphaning
-// a kindless identity. The identity kind is the server-
-// supplied fact the handler pins; identities/identity_pii/
-// identity_credentials are GLOBAL/parent-scoped stores (no
-// org stamp), so the facet puts go straight to their
-// stores, each re-validating its own body as the composing
-// put lands. The credential's secret is hashed client-side
-// — the route touches no crypto. NO state event (an
+// Identity creation: the identity row alone (person), OR the
+// identity row and its client_secret credential row (service)
+// as ONE transaction — a mid-write failure rolls the service
+// pair back rather than orphaning a kindless identity. A
+// person's PII no longer lands here (Phase 10 Task 2's intake
+// decomposition): it enters later via the separate PUT
+// identities/:id/pii, so a person create can never roll back on
+// a bad PII sub-object — the torn-state acceptance the phase
+// names. The identity kind is the server-supplied fact the
+// handler pins; identities/identity_credentials are GLOBAL/
+// parent-scoped stores (no org stamp), so the facet puts go
+// straight to their stores, each re-validating its own body as
+// the composing put lands. The credential's secret is hashed
+// client-side — the route touches no crypto. NO state event (an
 // identity carries no lifecycle event at creation), so the
-// handler needs no actor. The tx table set branches per
-// mode so each names exactly the tables it writes.
+// handler needs no actor. The tx table set branches per mode so
+// each names exactly the tables it writes.
 // Exported so the seed can drive identity creation through
 // the same gate the route uses (Decision 6's below-facade
 // carve-out) — this is also Phase 1's dual-write insertion
@@ -1932,7 +1935,7 @@ export async function postIdentityCreationOp(
 ): Promise<void> {
     const b = validateIdentityCreateBody(body);
     const tables = b.kind === 'person'
-        ? ['identities', 'identity_pii', 'requests', 'responses']
+        ? ['identities', 'requests', 'responses']
         : [
             'identities', 'identity_credentials',
             'requests', 'responses',
@@ -1943,13 +1946,7 @@ export async function postIdentityCreationOp(
             await view.identities.put(
                 b.id, { kind: b.kind },
             );
-            if (b.kind === 'person') {
-                await view.identityPii.put(
-                    b.id,
-                    b.pii as unknown as
-                        Omit<IdentityPiiEntity, 'id'>,
-                );
-            } else {
+            if (b.kind === 'service') {
                 const { id: credId, ...fields } =
                     b.credential as {
                         id: string;

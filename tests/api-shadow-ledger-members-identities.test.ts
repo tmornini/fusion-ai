@@ -469,17 +469,34 @@ test('a failed human-member edit appends nothing', async () => {
 // ── identities ──
 
 test('an identity (person) create appends its pair at the'
-+ ' entity address', async () => {
++ ' entity address, and its PII intake forms its own pair at'
++ ' identities/:id/pii', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
         'POST', '/identities', DEV_TOKEN,
-        { id: 'idp-1', kind: 'person', pii: humanPii('Carol') },
+        { id: 'idp-1', kind: 'person' },
     ));
     assert.equal(res.status, 204);
+    const pii = await handleRequest(db, req(
+        'PUT', '/identities/idp-1/pii', DEV_TOKEN,
+        humanPii('Carol'),
+    ));
+    assert.equal(pii.status, 200);
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 1);
-    assert.equal(requests[0]!.uri_prefix, '/identities/');
-    assert.equal(requests[0]!.uri_id, 'idp-1');
+    // The bare create (its own pair) + the PII intake's own pair
+    // at its own address (Phase 10 Task 2's intake decomposition
+    // — pii no longer rides the create's own request) = 2.
+    assert.equal(requests.length, 2);
+    const atEntity = requests.find(
+        r => r.uri_prefix === '/identities/'
+            && r.uri_id === 'idp-1',
+    );
+    assert.ok(atEntity, 'no request row for the identity create');
+    const atPii = requests.find(
+        r => r.uri_prefix === '/identities/idp-1/pii/',
+    );
+    assert.ok(atPii, 'no request row for the PII intake');
+    assert.equal(atPii!.uri_id, '');
 });
 
 test('an identity (service) create appends its pair at the'
