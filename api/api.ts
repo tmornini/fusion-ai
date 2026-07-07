@@ -408,6 +408,33 @@ export async function handleRequest(
             }
         }
     }
+    // The field-values sibling: the leaf carries no entity_id
+    // of its own — it is owned by whatever owns its PARENT
+    // state event (states/:id/field-values/:fvid — param 0 is
+    // the parent event, param 1 the leaf). Read raw so an
+    // event whose entity was since deleted still resolves.
+    if (
+        (method === 'PUT' || method === 'DELETE')
+        && routePattern === 'states/:id/field-values/:fvid'
+    ) {
+        const parentEvent = await adapter.rawReadRow<
+            { id: string; entity_id: Id }
+        >('states', param(params, 0));
+        if (parentEvent !== null) {
+            const owner = await ownerOrganizationOfEntity(
+                rawOrganizationOwnedProbes(adapter),
+                adapter.memberships, organization!,
+                parentEvent.entity_id,
+                graphEntityProbe(adapter, adapter.flows),
+            );
+            if (owner !== null && owner !== organization) {
+                return Response.json(
+                    { error: 'Not found: ' + pathname },
+                    { status: HTTP_NOT_FOUND },
+                );
+            }
+        }
+    }
 
     const isWrite = method === 'PUT' || method === 'POST'
         || method === 'DELETE';

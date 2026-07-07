@@ -172,6 +172,52 @@ async () => {
     assert.equal(res.status, 200);
 });
 
+// ---- 5. field-values sibling ----
+
+test('a field value on a cross-org parent event is 404, and'
++ ' writes nothing', async () => {
+    const db = await seed();
+    await db.states.put('ev-b', {
+        entity_id: 'idea-b', state: 'active',
+        member_id: 'memberB', at: AT,
+    });
+    const res = await handleRequest(db, req(
+        'PUT', '/states/ev-b/field-values/fv-cross',
+        await tokenFor('memberA', 'A'),
+        {
+            state_event_id: 'ev-b', attribute_id: 'attr-1',
+            value: 'x',
+        },
+    ));
+    assert.equal(res.status, 404);
+    await assert.rejects(
+        () => db.stateFieldValues.getById('fv-cross'),
+        EntityNotFoundError,
+    );
+});
+
+test('a field value on an own-org parent event writes',
+async () => {
+    const db = await seed();
+    await db.states.put('ev-a', {
+        entity_id: 'idea-a', state: 'active',
+        member_id: 'memberA', at: AT,
+    });
+    const res = await handleRequest(db, req(
+        'PUT', '/states/ev-a/field-values/fv-own',
+        await tokenFor('memberA', 'A'),
+        {
+            state_event_id: 'ev-a', attribute_id: 'attr-1',
+            value: 'x',
+        },
+    ));
+    assert.equal(res.status, 200);
+    assert.equal(
+        (await db.stateFieldValues.getById('fv-own')).value,
+        'x',
+    );
+});
+
 // ---- 6. the write escalation: live AND already-deleted ----
 
 test('PUT states/:id naming an org-B LIVE entity is 404',
