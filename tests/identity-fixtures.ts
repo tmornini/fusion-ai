@@ -226,15 +226,3 @@ export async function seedPersonIdentity(
     );
     await seedIdentityPii(db, id, pii);
 }
-
-export async function seedServiceIdentity(
-    db: DbAdapter,
-    id: string,
-): Promise<void> {
-    const requestAt = nowUtc();
-    await postIdentityDocumentOp(
-        db, id, identityDocumentBodyOf('service'),
-        SYSTEM_MEMBER_ID,
-        await identityDocumentPair(id, 'service', requestAt),
-    );
-}
