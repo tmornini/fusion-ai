@@ -355,35 +355,40 @@ closure this same task, the FIRST composed-EDIT synthesis (below).
 
 ### 3.3 `POST /human-members` — create human member
 
-`postHumanMemberCreationOp` (`api/routes.ts`).
+`postHumanMemberCreationOp` (`api/routes.ts`). PII no longer
+lands here (Phase 10 Task 2's intake decomposition, prose
+below) — it enters via a second, separate hop.
 
-- tx: `[members, identities, identity_pii, human_members, states,
-  requests, responses]`
+- tx: `[members, identities, human_members, states, requests,
+  responses]`
 - actual:
   1. `members.put(id, {type:'human'})`
   2. `identities.put(id, {kind:'person'})`
-  3. `identityPii.put(id, pii)`
-  4. `humanMembers.put(id, detail)`
-  5. `states.postEvent(initialStateEventId, id, initialState, actor)`
-  6. three `appendMessagePair` calls — operation, member document,
+  3. `humanMembers.put(id, detail)`
+  4. `states.postEvent(initialStateEventId, id, initialState, actor)`
+  5. three `appendMessagePair` calls — operation, member document,
      detail document (the bundle, below)
-- doctrinal: four `put_*` primitives + `post_state_event` as
+- doctrinal: three `put_*` primitives + `post_state_event` as
   `post_create_human_member`.
-- props: atomic; admin-only; `validateHumanMemberCreateBody`.
+- props: atomic; admin-only; `validateHumanMemberCreateBody`
+  (`['id', 'detail', 'initialState', 'initialStateEventId',
+  'initialStateAt']` — `pii` retired from this key set).
 
 ### 3.4 `POST /human-members/:id` — edit human member
 
 `postHumanMemberEditOp` (`api/routes.ts`) — the postAiMemberEditOp
-precedent above, for the sibling facet.
+precedent above, for the sibling facet. PII no longer lands here
+either — it changes ONLY via the separate hop, fired IFF the
+client's dirty check finds it changed.
 
-- tx: `[members, identities, identity_pii, human_members, requests,
-  responses]`
-- actual: the four facet `put`s (member, identity, pii, detail), then
+- tx: `[members, identities, human_members, requests, responses]`
+- actual: the three facet `put`s (member, identity, detail), then
   three `appendMessagePair` calls — operation, member document,
   detail document (the bundle, below).
-- doctrinal: four `put_*` primitives as `post_edit_human_member`.
+- doctrinal: three `put_*` primitives as `post_edit_human_member`.
 - props: atomic; **no state event**; admin-only;
-  `validateHumanMemberEditBody`.
+  `validateHumanMemberEditBody` (`['detail']` alone — `pii`
+  retired from this key set).
 
 **The member write-pair bundle (Phase 8 Task 4), the
 records/objectives-bundle sibling (§3.20/§3.21) — and the
@@ -449,9 +454,86 @@ three, exactly like every other atomic write in this catalog.
 
 **The PII facet is NEVER synthesized.** `identity_pii` stays
 old-plane on BOTH the human create and edit — its own document
-address awaits the identity spine (a forward-pointer commented at
-both `postHumanMemberCreationOp` and `postHumanMemberEditOp`,
-`api/routes.ts`).
+address (`identities/:id/pii`, §2.2) already exists and carries
+its own message pair independently, never folded into the
+bundle above.
+
+**The PII intake decomposition (Phase 10 Task 2) — the phase's
+NAMED browser-visible change.** The three `pii{}` carriers close
+prospectively: the person branch of `POST /identities` (§3.5)
+narrows to `{id, kind}`; `POST /human-members` (§3.3) narrows to
+`{id, detail, initialState, initialStateEventId,
+initialStateAt}`; `POST /human-members/:id` (§3.4) narrows to
+`{detail}` alone. PII enters ONLY through `PUT
+identities/:id/pii` (§2.2, §5.1) — the client adapters
+(`web-app/app/adapters/identities.ts`'s `postIdentityCreation`,
+`web-app/app/adapters/members.ts`'s `postHumanMemberCreation` and
+`putHumanMember`) gain a SECOND, sequential hop after the
+create/edit succeeds and BEFORE the change notification fires:
+
+- `postIdentityCreation` (person branch): `POST /identities`
+  (bare), then `PUT identities/:id/pii`, then `notify()`.
+- `postHumanMemberCreation`: `POST /human-members` (pii-free),
+  then `PUT identities/:id/pii`, then `notify()` — this hop is
+  UNCONDITIONAL, since a freshly created member always supplies
+  its initial contact facet.
+- `putHumanMember`: `POST /human-members/:id` (detail alone),
+  then `PUT identities/:id/pii` IFF the caller supplies a `pii`
+  argument — the ONLY conditional hop of the three, decided by
+  the dirty check below.
+
+**The dirty check (`web-app/members/detail.ts`'s
+`humanMemberPiiPatchIfDirty`, a pure function).** The detail
+page's save compares the draft's four contact fields — after the
+SAME `trimStrings` normalization the save already applies —
+against the member's FETCHED `pii()` (read at page load, before
+any edit). An erased original has no stored fields to diff
+against, so it baselines against blank strings, the SAME fallback
+`humanMemberDraftFromMember` uses to seed the draft in the first
+place — an untouched erased member's save never fires a spurious
+PUT. `saveHumanMember` passes the resulting patch (or `undefined`)
+straight to `putHumanMember`'s optional `pii` argument, so a
+detail-only save stays exactly ONE hop.
+
+**THE TORN-STATE ACCEPTANCE (gate 3).** The PII facet leaves the
+creates' atomicity: a second-hop failure leaves a PII-less
+member/identity, rendered first-class rather than rolled back.
+- For a human member, this is SELF-HEALING: the next detail-page
+  save re-supplies contact fields, the dirty check finds them
+  differing from the still-erased original, and the PUT fires —
+  one hop closes the gap.
+- For a standalone identity (the Add Identity dialog's person
+  branch), the residual is PERMANENT — there is no PII-edit UI
+  for a bare identity outside the member surfaces.
+- **The mint-once discipline caps the blast radius at ONE orphan
+  per abandoned dialog.** Both Add dialogs
+  (`web-app/identities/index.ts`, `web-app/members/index.ts`)
+  used to mint a fresh entity id on every submit attempt — a
+  retry after a second-hop failure minted a SECOND identity,
+  orphaning the first forever. Both dialogs now mint the id ONCE
+  when the dialog opens (reset on the next open, so a later,
+  unrelated session never reuses a stale id) and REUSE it across
+  retries, so a retry re-targets the SAME partially created
+  entity instead of minting a new one. A second-hop failure
+  surfaces its OWN fault message (`IdentityPiiIntakeFailedError`,
+  `HumanMemberPiiIntakeFailedError`) naming the partial state,
+  never the blanket create-failure toast.
+- The seed inherits the SAME two-step dev-tier shape (§5.3):
+  `api/mock-data.ts` calls `postIdentityPiiDocumentOp` once per
+  seeded human, nested inside the SAME outer `TABLE_NAMES`
+  transaction the member-facet writes already share — ordered
+  BEFORE `seedHumanCredentials` runs (its pii-presence filter
+  reads `identityPii.getAll()` to pick login-capable persons; a
+  pii-empty read after this transaction commits would collapse
+  the credential set to the system row alone).
+
+**Wire-level accounting.** Every response stays byte-identical;
+every OTHER request stays byte-identical; only the three request
+bodies above narrow, and each of the three flows gains its own
++1 hop at its own `identities/:id/pii` address. Old-plane rows
+stay byte-identical too — the op path writes the SAME
+`identity_pii` ids/content, just through a second request instead
+of folded into the first.
 
 **The member-document fold (the E6 note, made concrete).** A
 member's `type` is a server-pinned fact that never changes across
@@ -477,19 +559,27 @@ seed.
 
 ### 3.5 `POST /identities` — create identity
 
+The person branch narrows to a bare `{id, kind}` (Phase 10 Task
+2's intake decomposition, prose above §3.5) — its PII enters via
+a second, separate `PUT identities/:id/pii` hop, so a bad PII
+sub-object can no longer roll a person identity back; the
+service branch is untouched (its credential facet was never
+PII, so it stays one atomic write).
+
 - tx (branches by kind):
-  - person → `[identities, identity_pii, requests, responses]`
+  - person → `[identities, requests, responses]`
   - service → `[identities, identity_credentials, requests,
     responses]`
-- actual: `identities.put(id, {kind})`; then person →
-  `identityPii.put(id, pii)`; service →
+- actual: `identities.put(id, {kind})`; then, service only,
   `identityCredentials.put(credId, fields)`; then
   `appendMessagePair(pair)`.
-- doctrinal: `put_identity` + (`put_identity_pii` |
-  `put_identity_credential`) as `post_create_identity`.
+- doctrinal: `put_identity` (+ `put_identity_credential` for
+  service) as `post_create_identity`.
 - props: atomic; **no state event** (an identity has no creation
   lifecycle event); admin-only; secret hashed client-side (the route
-  touches no crypto); `validateIdentityCreateBody`.
+  touches no crypto); `validateIdentityCreateBody`
+  (`['id', 'kind']` for person — `pii` retired from this key set;
+  `['id', 'kind', 'credential']` for service, unchanged).
 
 ### 3.6 `POST /identity-tokens/:jti/rotation` — rotate refresh jti
 
@@ -1225,13 +1315,13 @@ membership write.
 and — as a `BOOTSTRAP_ROUTES` member — below the shadow ledger
 entirely: this call forms and appends no pair for ITSELF (none of
 §5.1's headers appear on its own response). What it seeds, though,
-includes 581 of its OWN pre-formed message pairs, one per pair-capable
+includes 592 of its OWN pre-formed message pairs, one per pair-capable
 seed write — see §5.3.
 
 - **Three sequential steps, not one atomic op:**
   1. `ensureTables(TABLE_NAMES)`
   2. `transaction(TABLE_NAMES, postMockDataLoadIn)` — builds the whole
-     dataset, including the 581 seed pairs, in one tx (a mid-seed
+     dataset, including the 592 seed pairs, in one tx (a mid-seed
      failure leaves no half-populated schema).
   3. `seedHumanCredentials(adapter)` — its **own** tx
      `[identity_credentials]`; the PBKDF2 hashing runs outside the tx
@@ -1547,13 +1637,19 @@ and `members` (`buildMockDataInvocations`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **581** message pairs — one pair per seeded
+- The mock-data seed pre-forms **592** message pairs — one pair per seeded
   row for most families, but each seeded human/AI member folds in an
   operation/member-document/detail-document triple (11 human-members +
   4 ai-members, each × 3 = 45 member-family pairs: 15 ops + 15 member
   documents + 15 detail documents, Phase 8 Task 4's bundle synthesis,
   the objectives-family 1+1+1 precedent generalized to the roster —
-  see §3.1–§3.4), each seeded membership row folds in its OWN document
+  see §3.1–§3.4), PLUS each seeded human ALSO folds in its OWN
+  `identities/:id/pii` document pair (11 more — Phase 10 Task 2's
+  intake decomposition, prose at §3.4: `postIdentityPiiDocumentOp`
+  nested in the SAME transaction as the member-facet writes, ordered
+  BEFORE `seedHumanCredentials` runs so its pii-presence filter still
+  finds every login-capable person), each seeded membership row folds
+  in its OWN document
   pair (16 — 11 human-member-organization rows, `current` counted
   twice for its two-organization membership, + 4 ai-member rows,
   closed through `postMembershipDocumentOp`), the system member's own
@@ -1578,9 +1674,10 @@ the SAME way a live request would, then writes it alongside the seeded row:
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
   pre-formed pair in the SAME transaction the row lands in. The bootstrap
-  seed forms exactly five such pairs (the SAME member-family triple, plus
-  its OWN membership and system-member document pairs), for its lone
-  `current` human-member create.
+  seed forms exactly six such pairs (the SAME member-family triple, its
+  OWN membership and system-member document pairs, PLUS its own
+  `identities/:id/pii` document pair), for its lone `current`
+  human-member create.
 - Memberships closed the LAST whole-slice seed deferral (Phase 8 Task
   5): every seeded membership row and the system member's own
   `members/:id` document now form a message pair too, closed through
