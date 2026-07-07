@@ -1727,11 +1727,14 @@ FIFTEEN pair-capable write families, in dependency order:
 `work-orders`, `flow-work-orders`, `ai-members`, `records`,
 `objectives`, `memberships`, `members`, `identities`,
 `identity-credentials`, and `role-grants` (the last three, Phase 10
-Task 6, §5.15) (`buildMockDataInvocations`,
-`api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
-the SAME way a live request would, then writes it alongside the seeded row:
+Task 6, §5.15), PLUS the historical-trace carve-out's own bare
+`states` / `state_field_values` writes (Phase 11 Task 3, §5.16 — no
+dedicated op wraps them, so they stand outside the FIFTEEN)
+(`buildMockDataInvocations`, `api/mock-data/seed-message-pairs.ts`),
+so the seed forms each family's pair the SAME way a live request
+would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **632** message pairs — one pair per seeded
+- The mock-data seed pre-forms **1500** message pairs — one pair per seeded
   row for most families, but each seeded human/AI member folds in an
   operation/member-document/detail-document triple (11 human-members +
   4 ai-members, each × 3 = 45 member-family pairs: 15 ops + 15 member
@@ -1779,26 +1782,39 @@ the SAME way a live request would, then writes it alongside the seeded row:
   credential's hashed secret is unknown until PBKDF2 resolves),
   PLUS every seeded role grant folds in its OWN `role-grants/:id`
   document pair (12 more — the 2 admin grants for `current` plus
-  one member grant per non-admin human) — in a first pass, BEFORE the
+  one member grant per non-admin human), PLUS every work-order
+  historical trace event forms its OWN `states/:id` pair (860 —
+  211 hand-authored + 649 generated, Phase 11 Task 3, §5.16: no
+  dedicated op wraps it, a bare `adapter.states.put` untouched
+  beside its own new pair), PLUS every seeded `state_field_value`
+  forms its OWN nested `states/:id/field-values/:fvid` pair (7
+  more, same §5.16), PLUS the system member's OWN genesis event
+  forms its OWN pair (1 more, same §5.16 — bootstrap's own mirror
+  event is counted in the bootstrap count below, never here) —
+  in a first pass, BEFORE the
   seed's own big transaction opens (`formWritePair`'s hashing is async
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
   pre-formed pair in the SAME transaction the row lands in. The bootstrap
-  seed forms exactly eleven such pairs (the SAME member-family bundle —
+  seed forms exactly twelve such pairs (the SAME member-family bundle —
   now a quadruple, Phase 10 Task 5 — its
   OWN membership and system-member document pairs, its own
   `identities/:id/pii` document pair, PLUS Phase 10 Task 6's OWN
   system-identity document pair, role-grant pair, and the two
   credential pairs — current's password + the system client
-  secret), for its lone `current` human-member create.
+  secret, PLUS Phase 11 Task 3's OWN system-member genesis-event
+  pair, §5.16), for its lone `current` human-member create.
 - Memberships closed the LAST whole-slice seed deferral (Phase 8 Task
   5): every seeded membership row and the system member's own
   `members/:id` document now form a message pair too, closed through
   `postMembershipDocumentOp` / `postMemberDocumentOp`. NO whole-slice
   seed deferral remains; the work-order historical traces (states
-  events + state_field_values) stay the one NAMED direct-write
+  events + state_field_values) stayed the one NAMED direct-write
   carve-out, bound to the states-consumers flip, not "the work-orders
-  phase" (§5.6).
+  phase" (§5.6) — until Phase 11 Task 3 (§5.16) closed it: every
+  trace event and field value now ALSO forms its own message pair,
+  Path A (the states / state_field_values ROWS themselves stay the
+  SAME direct writes mock-data.ts already made).
 - The scores deferral now closes WHOLE — baselines AND actuals, the
   SAME `buildSeedScoreRows` output (`api/mock-data/scores.ts`) driving
   both the pair formation above and the seeded row writes.
@@ -2825,3 +2841,90 @@ raw puts did; only the message plane (excluded from that
 fingerprint) grew. Reseed marginal cost measured ~2 ms for the
 +29 pairs (order-of-magnitude consistent with the ~0.144 ms/pair
 baseline; within this harness's run-to-run noise floor).
+
+### 5.16 Gate-seeding the historical-trace carve-out (Phase 11
+Task 3)
+
+Path A throughout, the migration's most FINGERPRINT-CRITICAL
+task: the 860 work-order historical trace events (211 hand-
+authored + 649 generated), the 7 `state_field_values` rows, and
+the system member's OWN genesis event (2 — one per seed path)
+ALSO form their own message pair, beside rows that stay the SAME
+direct writes mock-data.ts already made. Unlike every other
+family §5.3 names, none of these three slices rides a dedicated
+op — `adapter.states.put` / `adapter.stateFieldValues.put` /
+`adapter.states.postEvent` stay bare, and the new pair is appended
+alongside via `appendMessagePair` directly, in the SAME
+transaction the row lands in. `states` 911/`679a7541`,
+`state_field_values` 7/`95d00f3a`, `work_orders` 145/`b57d1e25`,
+`members` 16/`0c164977` — every fingerprint pin the row-write
+side of this task touches — HOLD unchanged (`tests/mock-data-
+fingerprint.test.ts`, re-run, UNCHANGED file).
+
+**The three slices (+869).** Every work-order trace event
+(`buildWorkOrderStateEvents()` + `leadToCloseWorkload.stateEvents`,
+860) forms its OWN `states/:id` pair — idParams `[event.id]`,
+byte-identical to the id the row already carries, so the derived
+plane's future ids can never drift. `requesterIdentityId` is the
+EVENT'S OWN `member_id` — never `workOrderFirstEventMemberId`, the
+sibling map ~30 lines away that answers a DIFFERENT question (a
+work order DOCUMENT's own authorship, not one of its many trace
+events). Every seeded work order is Stark (§3.17's own finding),
+so every trace event nests under `STARK_ORGANIZATION`. The 7
+`state_field_values` rows (`mockStateFieldValues`) each form their
+OWN pair at `states/:id/field-values/:fvid` — idParams
+`[stateEventId, fvId]`, matching `WRITE_RESPONSE_SPECS`'s own
+`param(params, 1)` leaf-id read — authored by the PARENT event's
+OWN `member_id`, looked up off the SAME trace-event map, never a
+second, independently-picked author. The system member's OWN
+genesis event forms its OWN pair too (2 — `memberStateEvents` in
+the mock-data seed, `bootstrapSystemStateEventId` in
+`formBootstrapMessagePair`'s own SEPARATE mirror for bootstrap),
+organization `undefined` — the system member is the org-less
+global actor, the SAME choice its `members/:id` and
+`identities/:id` pairs already make.
+
+**The body shape (a sharp edge the task brief named).** Every
+trace/genesis pair's body is `{entity_id, state, at}` —
+DESTRUCTURED off the stored `StateEntity`, never spread, so a
+leaked `id`/`member_id` can never ride along (`assertOnlyKeys`
+throws on either). Every field-value pair's body is
+`{state_event_id, attribute_id, value}`, the SAME destructuring
+discipline. `stateEventSeedBody` accepts the narrower
+`Pick<StateEntity, 'entity_id' | 'state' | 'at'>`, not the full
+entity, so bootstrap's own system-event — which mints its `at`
+fresh, never from a stored row — shares this ONE construction
+without fabricating a dummy `id`/`member_id`.
+
+**The member_id content spot-check (the role-grant precedent, in
+THIS task).** Fingerprints hash row ids only and exclude
+`requests`/`responses`, so a wrong-but-real `member_id` in a
+gate-seeded pair would be fingerprint-INVISIBLE — the SAME class
+of gap §5.15's role-grant org-stamp spot-check closed. A NEW
+assertion (`tests/mock-data-pairs.test.ts`) reads BOTH a seeded
+trace pair's stored request `requester_identity_id` and the
+ACTUALLY-WRITTEN `states` row's `member_id` for the SAME event id
+and asserts they agree.
+
+**The re-pins (`tests/mock-data-pairs.test.ts`).**
+`EXPECTED_PAIR_COUNT` 632 → 1500 (+860 trace +7 field-value +1
+mock-data-seed system-genesis — NOTE: NOT +2; bootstrap's OWN
+system-genesis pair is counted in the bootstrap total below, a
+SEPARATE seed path with its OWN test) + the breakdown prose; the
+bootstrap count 11 → 12; THREE new address/body-shape spot-checks
+(a trace event, a field value, the mock-data seed's OWN
+system-genesis pair at the GLOBAL, non-org-nested `/states/`
+address) + the member_id content spot-check above.
+`tests/mock-data-fingerprint.test.ts` is UNCHANGED — re-ran green.
+
+**Contract.** `states` 911/`679a7541`, `work_orders` 145/
+`b57d1e25`, `state_field_values` 7/`95d00f3a`, `members` 16/
+`0c164977` HOLD (`tests/mock-data-fingerprint.test.ts`, file
+byte-unchanged) — Path A: `appendMessagePair` writes ONLY
+`requests`/`responses`, proven disjoint from every row-write side
+this task touches. Reseed marginal cost measured ~125 ms for the
++868 `postMockDataLoad`-side pairs (baseline ~351 ms → ~478 ms,
+5 runs each; ≈0.144 ms/pair, consistent with §5.15's own baseline)
+— the largest single-task increment of the migration, ~60× the
+prior (§5.15's +29 at ~2 ms), tracking the pair COUNT rather than
+any new per-pair cost.
