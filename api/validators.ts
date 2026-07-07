@@ -1594,11 +1594,14 @@ export interface FlowDocumentBody {
     // validateStoredGraphJson but stored as the SAME encoded
     // string — the op never re-serializes it.
     readonly graph: JsonObjectField;
-    // TRANSITIONAL decomposition sidecars — the ONLY consumer
-    // is the old-plane relation writer (writeFlowGraphDelta);
-    // no derivation reads either one. Retiring at Phase Final,
-    // once the relation tables alone are the graph's source of
-    // truth for every reader, not only the reassembly GET.
+    // TRANSITIONAL decomposition sidecars — consumed by the
+    // old-plane relation writer (writeFlowGraphDelta) AND by
+    // deriveFlowGraphStates (api/derive-states.ts), the sole
+    // ledger source of flow-node/edge deleted/restored history.
+    // Retiring at Phase Final is now GATED on that lifecycle
+    // source being re-anchored elsewhere first — dropping these
+    // sidecars before then would silently stop recording every
+    // future node/edge delete/restore.
     readonly graphDelta: FlowGraphDelta;
     readonly revivals: readonly GraphRevival[];
 }

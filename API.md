@@ -928,12 +928,15 @@ every save (Decision 7): the body is the entity's own fields
 plus the lifecycle trio (`state`, `state_at`, `state_event_id`),
 the client-authored post-save `graph` (byte-identical to the GET
 wire form, no transform), and two TRANSITIONAL decomposition
-sidecars (`graphDelta`, `revivals` — consumed only by the
-old-plane relation writer below; no derivation reads either,
-and both retire at Phase Final). UNLIKE `PUT /ideas/:id` /
-`PUT /projects/:id`, this op mints NO `member_id` ternary —
-every attempt (including a client retry) mints a fresh trio, so
-nothing here ever resends a STORED trio verbatim.
+sidecars (`graphDelta`, `revivals` — consumed by the old-plane
+relation writer below AND by `deriveFlowGraphStates`
+(`api/derive-states.ts`), the sole ledger source of flow-node/
+edge deleted/restored history; retirement at Phase Final is now
+GATED on that lifecycle source being re-anchored elsewhere
+first). UNLIKE `PUT /ideas/:id` / `PUT /projects/:id`, this op
+mints NO `member_id` ternary — every attempt (including a
+client retry) mints a fresh trio, so nothing here ever resends
+a STORED trio verbatim.
 
 **flows is the FIRST locked-class route** (§5.4, Task 3): a
 save on an existing flow must carry `If-Response-ID`, echoing
