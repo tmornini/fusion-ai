@@ -56,10 +56,12 @@ import {
 // entity from the caller directly, so no visibility fence applies
 // there.
 //
-// NOTHING reads this module in production yet — no route flip;
-// Task 1's row-plane fence (api/store-parent-scoped.ts) still
-// serves live traffic. This module exists to prove the pair-plane
-// machinery ahead of that later flip (Task 7).
+// FLIPPED (Task 7): api/routes.ts's GET /states and GET
+// /entity-states/:id/history dispatch to deriveStates/
+// deriveStatesFor below — Task 1's row-plane fence
+// (api/store-parent-scoped.ts) no longer serves either read.
+// GET /states/:id and GET /entity-states/:id stay on the row
+// plane — zero product callers, deferred to Phase Final.
 //
 // THE GATE-15 PRECEDENT (Phase 10, tests/drift-identities.test.ts
 // + api/routes.ts's module-private membershipsAcrossAllOrganiza

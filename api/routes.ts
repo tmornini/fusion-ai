@@ -167,6 +167,10 @@ import {
     deriveTokenRevocation,
 } from './derive-identity-spine.ts';
 import {
+    deriveStates,
+    deriveStatesFor,
+} from './derive-states.ts';
+import {
     param,
     requireOrganization,
     withoutId,
@@ -5456,9 +5460,18 @@ export const routes: Route[] = [
                 db, param(p, 1), body, actor, pair,
             ),
     }),
+    // GET is FLIPPED (Task 7): the collection derives from the
+    // message ledger via deriveStates (api/derive-states.ts's
+    // six-source union), not the raw states table — the
+    // client's own GET consumer (deriveOrganizationFacts and
+    // every get*States/get*StateDetails reader in
+    // state-events.ts) rides transitively, no web-app change.
     route('states', {
-        get: (db) => db.states.getAll(),
+        get: (db, _p, _actor, organization) =>
+            deriveStates(db, requireOrganization(organization)),
     }),
+    // GET is NOT flipped: a single event by its OWN event id has
+    // zero product callers (deferred to Phase Final).
     route('states/:id', {
         get: (db, p) =>
             db.states.getById(param(p, 0)),
@@ -5487,13 +5500,27 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is NOT flipped: an entity's bare CURRENT state has
+    // zero product callers (deferred to Phase Final).
     route('entity-states/:id', {
         get: (db, p) =>
             db.states.getCurrentFor(param(p, 0)),
     }),
+    // GET is FLIPPED (Task 7): derives via deriveStatesFor —
+    // the gate ALREADY fences this route (api/api.ts's
+    // entity-states/:id[/history] guard resolves the entity's
+    // owner via the RAW probes before dispatch), so the handler
+    // does not re-fence; deriveStatesFor's own header documents
+    // that precondition. Every client reader that names this
+    // address (getWorkOrderCurrentNodeId, getWorkOrderActive
+    // Claim, getProjectState/getRecordStateDetail/etc.) rides
+    // transitively, no web-app change.
     route('entity-states/:id/history', {
-        get: (db, p) =>
-            db.states.getAllFor(param(p, 0)),
+        get: (db, p, _actor, organization) =>
+            deriveStatesFor(
+                db, requireOrganization(organization),
+                param(p, 0),
+            ),
     }),
 
     route('snapshots/schema', {
