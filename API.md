@@ -270,14 +270,24 @@ Legend for classification:
 
 ### 2.10 States — the append-only event log
 
-- `GET /states` · `GET /states/:id` — primitive.
+- `GET /states` — primitive, DERIVED (Phase 11 Task 7): the
+  collection reads `deriveStates(db, organization)`
+  (`api/derive-states.ts`), a six-source union over the message
+  ledger reduced by `(at, id)`, returned `byIdAscending`. The old
+  `states` table is untouched (Phase Final deletes it); this route no
+  longer reads it. `GET /states/:id` (a single event by its own event
+  id) stays a store primitive — zero product callers, flipped at Phase
+  Final.
 - `PUT /states/:id` — append/stamp a state event; the author is the
   verified caller, stamped over any client-supplied `member_id`. Gated
   by the OWNERSHIP FENCE below — a foreign org's entity_id 404s.
-- `GET /entity-states/:id` — the current (latest) state for an entity.
+- `GET /entity-states/:id` — the current (latest) state for an entity;
+  a store primitive — zero product callers, flipped at Phase Final.
 - `GET /entity-states/:id/history` — the full event history for an
-  entity. Both are parent-ownership gated (a foreign org's entity
-  404s) by the SAME fence the write side uses.
+  entity, DERIVED (Phase 11 Task 7): reads `deriveStatesFor(db,
+  organization, entityId)` in `(at, id)` order. The GATE still fences
+  it on parent ownership (a foreign org's entity 404s) via the raw
+  probes; the derived handler does NOT re-fence.
 - `GET /states/:id/field-values` ·
   `PUT|DELETE /states/:id/field-values/:fvid` — nested; PUT/DELETE
   gated by the ownership fence too, resolved through the leaf's PARENT
