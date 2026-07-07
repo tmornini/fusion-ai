@@ -3873,12 +3873,33 @@ export const routes: Route[] = [
     // identical to parentScope.getAllWhere silently dropping every
     // matched-but-invisible row (never a 404 — getAllWhere never
     // throws).
+    // FENCE-INPUT FIX (post-session review): the path :id only
+    // ADDRESSES the ledger scan (deriveCredentialsFor reads the
+    // /identities/{path id}/credentials/ prefix — that is where
+    // the pairs live); the pre-flip fence read each ROW's OWN
+    // identity_id field (parentScope's getAllWhere('identity_id',
+    // path id) filters the OLD-plane store by that field BEFORE
+    // fencing, then viaMembership fences on that SAME field). A
+    // below-facade write whose body.identity_id disagrees with
+    // its own address (producible only below-facade or by a
+    // hand-crafted admin call — no validator ties the two, and no
+    // live write path can produce it) would otherwise fence on
+    // the wrong identity. Reproduced here by filtering the
+    // derived rows to identity_id === the path id FIRST — exactly
+    // the OLD plane's WHERE — so a mismatched row never survives
+    // to the fence step, on either plane.
     route('identities/:id/credentials', {
         get: async (db, p, actor, organization) => {
             const organizationId = requireOrganization(
                 organization,
             );
             const identityId = param(p, 0);
+            const rows = (
+                await deriveCredentialsFor(db, identityId)
+            ).filter(
+                (credential) => credential.identity_id === identityId,
+            );
+            if (rows.length === 0) return [];
             const memberships =
                 await membershipsAcrossAllOrganizations(
                     db, actor,
@@ -3889,8 +3910,7 @@ export const routes: Route[] = [
             if (owner !== null && owner !== organizationId) {
                 return [];
             }
-            return (await deriveCredentialsFor(db, identityId))
-                .map(withoutSecret);
+            return rows.map(withoutSecret);
         },
     }),
     // GET is FLIPPED (Phase 10 Task 8): derived via
@@ -3898,7 +3918,18 @@ export const routes: Route[] = [
     // identity's credential 404s BYTE-IDENTICALLY to a genuinely
     // absent one (EntityNotFoundError('identity_credentials', cid),
     // the SAME table/id parentScope.getById throws — no existence
-    // is confirmed either way).
+    // is confirmed either way). FENCE-INPUT FIX (post-session
+    // review): the path :id only ADDRESSES the scan
+    // (deriveCredential reads the row at /identities/{path id}/
+    // credentials/{cid} — that is where the pair lives); the
+    // pre-flip fence read the ROW's OWN identity_id field — the
+    // hand-written route this flip replaced ignored the path
+    // entirely, fetching by cid alone via parentScope.getById,
+    // which then fenced via viaMembership on the ROW's stored
+    // identity_id. So the fence input below is
+    // `credential.identity_id`, never the path — a below-facade
+    // write whose body.identity_id disagrees with its own address
+    // now fences EXACTLY as the row plane did.
     route('identities/:id/credentials/:cid', {
         get: async (db, p, actor, organization) => {
             const organizationId = requireOrganization(
@@ -3914,7 +3945,7 @@ export const routes: Route[] = [
                     db, actor,
                 );
             const owner = ownerOrganizationViaMembershipPairPlane(
-                memberships, identityId, organizationId,
+                memberships, credential.identity_id, organizationId,
             );
             if (owner !== null && owner !== organizationId) {
                 throw new EntityNotFoundError(

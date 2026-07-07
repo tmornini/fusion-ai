@@ -6,6 +6,7 @@ import { EntityNotFoundError } from '../api/db.ts';
 import type { DbAdapter } from '../api/db.ts';
 import type {
     Id,
+    IdentityCredentialEntity,
     IdentityPiiEntity,
     MembershipEntity,
 } from '../api/types.ts';
@@ -45,6 +46,7 @@ import {
     ORGANIZATION_TWO,
 } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
+import { seedIdentityCredential } from './identity-fixtures.ts';
 
 // The E10 drift check (Phase 10 Task 7): message-derived reads
 // over the identity spine's remaining facets (pii, credentials,
@@ -519,6 +521,123 @@ test('credentials parity per identity + per cid (12 seeded rows)'
             err instanceof EntityNotFoundError
             && err.message === expectedMessage,
     );
+});
+
+// -- 3b. GATE 15 FENCE-INPUT FIX (post-session review finding): --
+// -- a mismatched below-facade write — address under identity A, -
+// -- body.identity_id names B — must fence on the ROW's -----------
+// -- identity_id (B), never the path (A), on BOTH planes; the -----
+// -- collection's WHERE(identity_id==path) semantics must ALSO ----
+// -- exclude it under path A on both planes, regardless of org ----
+
+test('credentials fence-input fix: a mismatched write (address'
++ ' under identity A, body.identity_id names B) fences on the'
++ ' ROW identity (B), never the path (A) — the leaf, checked from'
++ " BOTH A's and B's org; the collection's WHERE(identity_id=="
++ 'path) excludes the row under path A on both planes regardless'
++ ' of org; the secret never rides either plane', async () => {
+    const db = await seededDb();
+    const adminToken = await organizationToken(
+        'current', STARK_ORGANIZATION,
+    );
+    const identityA = 'cred-mismatch-a';
+    const identityB = 'cred-mismatch-b';
+    for (const id of [identityA, identityB]) {
+        await handleRequest(db, req(
+            'POST', '/identities', adminToken,
+            { id, kind: 'person' },
+        ));
+    }
+    // Different org memberships (the adjudicated scenario): A in
+    // STARK, B in ORGANIZATION_TWO only — so the fence's answer
+    // depends entirely on WHICH identity it keys on.
+    await handleRequest(db, req(
+        'PUT', '/memberships/ms-' + identityA, adminToken,
+        {
+            organization_id: STARK_ORGANIZATION,
+            identity_id: identityA, at: nowUtc(),
+        },
+    ));
+    await handleRequest(db, req(
+        'PUT', '/memberships/ms-' + identityB,
+        await organizationToken('current', ORGANIZATION_TWO),
+        {
+            organization_id: ORGANIZATION_TWO,
+            identity_id: identityB, at: nowUtc(),
+        },
+    ));
+
+    // The mismatched write itself — address under A, body names
+    // B — producible only below-facade (no validator ties the
+    // path to the body; no live write path can construct this).
+    const cid = 'cred-mismatch-1';
+    await seedIdentityCredential(db, identityA, cid, {
+        identity_id: identityB, kind: 'password',
+        status: 'set', secret: 'mismatch-secret', at: nowUtc(),
+    });
+
+    const memberships =
+        await pairPlaneMembershipsAcrossKnownOrganizations(db);
+
+    for (const organization of [
+        STARK_ORGANIZATION, ORGANIZATION_TWO,
+    ]) {
+        // -- leaf, path A --
+        let oldVisible: boolean;
+        let oldRow: IdentityCredentialEntity | undefined;
+        try {
+            oldRow = await organizationScopedAdapter(
+                db, organization,
+            ).identityCredentials.getById(cid);
+            oldVisible = true;
+        } catch (e) {
+            assert.ok(e instanceof EntityNotFoundError);
+            oldVisible = false;
+        }
+        const credential = await deriveCredential(
+            db, identityA, cid,
+        );
+        assert.equal(credential.identity_id, identityB);
+        const owner = pairPlaneOwnerOrganization(
+            memberships, credential.identity_id, organization,
+        );
+        const derivedVisible =
+            owner === null || owner === organization;
+        assert.equal(
+            oldVisible, derivedVisible,
+            'leaf visibility diverged for ' + organization,
+        );
+        // B is an ORGANIZATION_TWO-only member: hidden from
+        // STARK, visible from ORGANIZATION_TWO — never vacuous
+        // (a fence keyed on A, the path, would invert this).
+        assert.equal(
+            oldVisible, organization === ORGANIZATION_TWO,
+        );
+        if (oldVisible) {
+            assert.deepEqual(
+                withoutSecret(credential), withoutSecret(oldRow!),
+            );
+            assert.equal(
+                'secret' in withoutSecret(credential), false,
+            );
+        }
+
+        // -- collection, path A: the mismatched row's identity_id
+        // (B) never equals the path (A), so the OLD plane's
+        // getAllWhere('identity_id', A) never matches it and the
+        // derived WHERE-filter drops it too — empty on BOTH
+        // planes, regardless of org. --
+        const oldCollection = await organizationScopedAdapter(
+            db, organization,
+        ).identityCredentials.getAllWhere(
+            'identity_id', identityA,
+        );
+        assert.deepEqual(oldCollection, []);
+        const derivedCollection = (
+            await deriveCredentialsFor(db, identityA)
+        ).filter((row) => row.identity_id === identityA);
+        assert.deepEqual(derivedCollection, []);
+    }
 });
 
 // -- 4. role-grants parity (both org fence legs) + getById + ----
