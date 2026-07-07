@@ -105,6 +105,10 @@ test('a member of org A cannot PUT a states event naming an'
         { entity_id: 'idea-b', state: 'active', at: AT },
     ));
     assert.equal(res.status, 404);
+    assert.deepEqual(
+        await res.json(),
+        { error: 'Not found: /states/ev-cross' },
+    );
     await assert.rejects(
         () => db.states.getById('ev-cross'),
         EntityNotFoundError,
@@ -190,6 +194,13 @@ test('a field value on a cross-org parent event is 404, and'
         },
     ));
     assert.equal(res.status, 404);
+    assert.deepEqual(
+        await res.json(),
+        {
+            error:
+                'Not found: /states/ev-b/field-values/fv-cross',
+        },
+    );
     await assert.rejects(
         () => db.stateFieldValues.getById('fv-cross'),
         EntityNotFoundError,
@@ -228,6 +239,10 @@ async () => {
         { entity_id: 'idea-b', state: 'deleted', at: AT },
     ));
     assert.equal(res.status, 404);
+    assert.deepEqual(
+        await res.json(),
+        { error: 'Not found: /states/ev-live' },
+    );
 });
 
 test('PUT states/:id naming an ALREADY-DELETED org-B entity'
@@ -242,6 +257,10 @@ test('PUT states/:id naming an ALREADY-DELETED org-B entity'
         { entity_id: 'idea-b', state: 'active', at: AT },
     ));
     assert.equal(res.status, 404);
+    assert.deepEqual(
+        await res.json(),
+        { error: 'Not found: /states/ev-second' },
+    );
 });
 
 // ---- 7. the read leak: org B's OWN deletion of its idea ----
@@ -266,6 +285,13 @@ test('org B deleting its own idea hides it from org A'
         await tokenFor('memberA', 'A'),
     ));
     assert.equal(fromA.status, 404);
+    assert.deepEqual(
+        await fromA.json(),
+        {
+            error:
+                'Not found: /entity-states/idea-b/history',
+        },
+    );
     const listFromA = await handleRequest(db, req(
         'GET', '/states', await tokenFor('memberA', 'A'),
     ));
