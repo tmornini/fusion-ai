@@ -52,6 +52,15 @@ import { appendMessagePair } from './message-pair.ts';
 // tabs racing the SAME /pii address there still resolve to
 // exactly one genuine winner — the single-slot invariant holds
 // for real, not merely by convention.
+//
+// Concurrency note: under a genuinely concurrent byte-identical
+// PUT/PUT (or DELETE/DELETE) race at one /pii address, the
+// second writer's slot replacement removes the first writer's
+// pair before appendMessagePair's in-tx hash-dedup could see
+// it, so the duplicate appends FRESH instead of folding into
+// the surviving row — the single-slot invariant still holds
+// (exactly one pair survives); only the ordinary-address fold
+// behavior differs, confined to genuine concurrency.
 export async function replacePiiSlot(
     view: DbAdapter,
     uriPrefix: string,
