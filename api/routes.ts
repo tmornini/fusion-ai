@@ -160,6 +160,11 @@ import {
     deriveIdentityPii,
     deriveCredentialsFor,
     deriveCredential,
+    deriveRoleGrants,
+    deriveRoleGrant,
+    deriveIdentityProviders,
+    deriveIdentityProvider,
+    deriveTokenRevocation,
 } from './derive-identity-spine.ts';
 import {
     param,
@@ -3927,15 +3932,19 @@ export const routes: Route[] = [
     // IdentityTokenRevocationEntity> so PUT can append its
     // message pair in the same transaction as the write — the
     // factory's fixed closures have no per-family pair
-    // selector (see message-pair.ts). GET reproduces the
-    // factory closure byte-equivalently; verbs stay {get,
-    // put}. identity_token_revocations is a HistoryEntityStore
-    // ledger row, so this is EVENT-APPEND: no head-read, no
-    // Supersedes (message-pair.ts DOCUMENT_CLASS_ROUTE_
-    // PATTERNS omits it on purpose).
+    // selector (see message-pair.ts). identity_token_revocations
+    // is a HistoryEntityStore ledger row, so this is
+    // EVENT-APPEND: no head-read, no Supersedes (message-pair.ts
+    // DOCUMENT_CLASS_ROUTE_PATTERNS omits it on purpose). Verbs
+    // stay {get, put}. GET is FLIPPED (Phase 10 Task 8): derived
+    // via deriveTokenRevocation — wire-identical to the
+    // hand-written db.identityTokenRevocations.getById dispatch
+    // it replaces. No fence: identity_token_revocations is
+    // GLOBAL-plane (no organization_id field at all), matching
+    // its sibling identity-providers below.
     route('identity-token-revocations/:id', {
         get: (db, p) =>
-            db.identityTokenRevocations.getById(param(p, 0)),
+            deriveTokenRevocation(db, param(p, 0)),
         put: (db, p, body, _actor, pair) => {
             const id = param(p, 0);
             return db.transaction(
@@ -3961,25 +3970,62 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is FLIPPED (Phase 10 Task 8): derived via
+    // deriveRoleGrants, THEN fenced to the caller's org by
+    // organization_id — SIMPLER than identity-pii/credentials'
+    // gate 15 membership-pair-plane fence above, because
+    // role_grants carries its OWN organization_id (gate 16:
+    // deriveRoleGrants reads it off the stored RESPONSE, the
+    // fence-stamped value), matching the row plane's
+    // OrganizationScopedEntityStore#getAll (filter ==
+    // organization_id).
     route('role-grants', {
-        get: (db) => db.roleGrants.getAll(),
+        get: async (db, _p, _actor, organization) => {
+            const organizationId = requireOrganization(
+                organization,
+            );
+            return (await deriveRoleGrants(db)).filter(
+                (grant) => grant.organization_id === organizationId,
+            );
+        },
     }),
     // Hand-written in place of makeIdRoute<RoleGrantEntity> so
     // PUT can append its message pair in the same transaction
     // as the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET
-    // reproduces the factory closure byte-equivalently; verbs
-    // stay {get, put}. role_grants is a HistoryEntityStore
-    // ledger row (latest-wins per (organization_id,
-    // identity_id, role)), so this is EVENT-APPEND: no
-    // head-read, no Supersedes.
+    // per-family pair selector (see message-pair.ts). role_grants
+    // is a HistoryEntityStore ledger row (latest-wins per
+    // (organization_id, identity_id, role)), so this is
+    // EVENT-APPEND: no head-read, no Supersedes. Verbs stay
+    // {get, put}. GET is FLIPPED (Phase 10 Task 8): derived via
+    // deriveRoleGrant, then fenced the SAME way the collection
+    // above is — a foreign-org grant 404s BYTE-IDENTICALLY to a
+    // genuinely absent one (EntityNotFoundError('role_grants',
+    // id), the SAME table/id OrganizationScopedEntityStore#getById
+    // throws — Step 0 confirmed this exact byte shape before the
+    // flip).
     route('role-grants/:id', {
-        get: (db, p) => db.roleGrants.getById(param(p, 0)),
+        get: async (db, p, _actor, organization) => {
+            const organizationId = requireOrganization(
+                organization,
+            );
+            const id = param(p, 0);
+            const grant = await deriveRoleGrant(db, id);
+            if (grant.organization_id !== organizationId) {
+                throw new EntityNotFoundError('role_grants', id);
+            }
+            return grant;
+        },
         put: (db, p, body, actor, pair) =>
             postRoleGrantDocumentOp(
                 db, param(p, 0), body, actor, pair,
             ),
     }),
+    // NOT FLIPPED (gate 7): identity_tokens carries THREE
+    // pair-less writers (grant/refresh/exchange mint tokens
+    // directly, below any wired PUT route this migration's pair
+    // plane covers) — flipping this read to message-derivation
+    // would render the Tokens page empty for every token minted
+    // that way. Stays a hand-written old-plane read.
     route('identity-tokens', {
         get: (db) => db.identityTokens.getAll(),
     }),
@@ -3987,7 +4033,9 @@ export const routes: Route[] = [
     // so PUT can append its message pair in the same
     // transaction as the write. identity_tokens is a
     // HistoryEntityStore ledger row, so this is EVENT-APPEND:
-    // no head-read, no Supersedes.
+    // no head-read, no Supersedes. NOT FLIPPED (gate 7 — see
+    // GET /identity-tokens above): stays a hand-written
+    // old-plane read.
     route('identity-tokens/:id', {
         get: (db, p) => db.identityTokens.getById(param(p, 0)),
         put: (db, p, body, _actor, pair) => {
@@ -4061,21 +4109,30 @@ export const routes: Route[] = [
             await revokeTokenChain(db, param(p, 0), pair);
         },
     }),
+    // GET is FLIPPED (Phase 10 Task 8): derived via
+    // deriveIdentityProviders — wire-identical to the
+    // hand-written db.identityProviders.getAll() dispatch it
+    // replaces. No fence: GLOBAL-plane (no organization_id field
+    // at all), matching identities' own global-plane collection
+    // above.
     route('identity-providers', {
-        get: (db) => db.identityProviders.getAll(),
+        get: (db) => deriveIdentityProviders(db),
     }),
     // Hand-written in place of makeIdRoute<
     // IdentityProviderEntity> so PUT can append its message
     // pair in the same transaction as the write — the
     // factory's fixed closures have no per-family pair
-    // selector (see message-pair.ts). GET reproduces the
-    // factory closure byte-equivalently; verbs stay {get,
-    // put}. identity_providers is a HistoryEntityStore ledger
-    // row (linked/unlinked events) and a GLOBAL-plane store (no
-    // organization_id field at all), so this is EVENT-APPEND:
-    // no head-read, no Supersedes.
+    // selector (see message-pair.ts). identity_providers is a
+    // HistoryEntityStore ledger row (linked/unlinked events) and
+    // a GLOBAL-plane store (no organization_id field at all), so
+    // this is EVENT-APPEND: no head-read, no Supersedes. Verbs
+    // stay {get, put}. GET is FLIPPED (Phase 10 Task 8): derived
+    // via deriveIdentityProvider — wire-identical to the
+    // hand-written db.identityProviders.getById dispatch it
+    // replaces. PUT rides postIdentityProviderDocumentOp (the
+    // controller-sanctioned extraction, prior commit).
     route('identity-providers/:id', {
-        get: (db, p) => db.identityProviders.getById(param(p, 0)),
+        get: (db, p) => deriveIdentityProvider(db, param(p, 0)),
         put: (db, p, body, actor, pair) =>
             postIdentityProviderDocumentOp(
                 db, param(p, 0), body, actor, pair,
@@ -5100,6 +5157,11 @@ export const routes: Route[] = [
         },
     }),
 
+    // NOT FLIPPED (gate 9): organizations stays an UNREGISTERED
+    // family (family-registry.ts, tests/family-registry.test.ts's
+    // own unregistered-family control) — a named spec gap
+    // assigned by spec amendment, out of this migration's scope.
+    // Stays a hand-written old-plane read.
     route('organizations', {
         get: (db) => db.organizations.getAll(),
     }),
@@ -5112,6 +5174,8 @@ export const routes: Route[] = [
     // EntityStore (mutable), so this is DOCUMENT-class: a
     // repeat PUT records Supersedes. GLOBAL plane — no
     // organization_id stamp (this table IS the tenant root).
+    // NOT FLIPPED (gate 9 — see GET /organizations above): stays
+    // a hand-written old-plane read.
     route('organizations/:id', {
         get: (db, p) => db.organizations.getById(param(p, 0)),
         put: (db, p, body, _actor, pair) => {

@@ -48,6 +48,9 @@ import {
 import type { MessagePair } from './message-pair.ts';
 import { formDocumentPairFor } from './routes.ts';
 import { deriveInvitations } from './derive-invitations.ts';
+import {
+    deriveIdentityPiiRows,
+} from './derive-identity-spine.ts';
 
 // The active org of the caller: the verified token claim, else
 // the identity's resolved default. Null when the identity can
@@ -151,14 +154,25 @@ export async function invitationsRequest(
 // row deriveInvitations returns already carries a resolved
 // state, defaulting to 'pending', so the old "no state event
 // yet" skip is now unreachable — no live write path ever grants
-// without its genesis pending event). The enrichment joins
-// (organization_name, identityPii for invited_by_name) stay
-// old-plane reads — NAMED transitive rides. The states read
-// below is NOT the current-state source anymore; it survives
-// ONLY to find each invitation's grant ('pending') event so its
-// author (the inviter) can be named — a lookup deriveInvitations
-// cannot answer, since it derives a resolved current state, not
-// per-event authorship.
+// without its genesis pending event). The organization_name join
+// stays an old-plane read — a NAMED transitive ride (gate 9,
+// organizations is unregistered). The invited_by_name join is
+// ALSO FLIPPED (Phase 10 Task 8 Session B, gate 13): derived via
+// deriveIdentityPiiRows(ctx.base) — wire-identical to the
+// hand-written ctx.base.identityPii.getAll() dispatch it
+// replaces, since ctx.base is the UNFENCED base adapter already
+// (invitations are global-spine — an invitee reads an invite to
+// an org it is not yet in, which an org fence would hide — see
+// db-organization-scoped.ts), so no fence needs reproducing here,
+// unlike routes.ts's gate-15 identity-pii/credentials reads. The
+// ABSENT-key omission on an erased identity is preserved
+// byte-identically (tests/drift-identities.test.ts case 6 proves
+// the two row sets equal, transitively proving this join too).
+// The states read below is NOT the current-state source anymore;
+// it survives ONLY to find each invitation's grant ('pending')
+// event so its author (the inviter) can be named — a lookup
+// deriveInvitations cannot answer, since it derives a resolved
+// current state, not per-event authorship.
 async function invitationsForInvitee(
     ctx: AuthenticatedContext,
 ): Promise<Response> {
@@ -170,7 +184,7 @@ async function invitationsForInvitee(
         (await ctx.base.organizations.getAll())
             .map(o => [o.id, o.name]));
     const personName = new Map(
-        (await ctx.base.identityPii.getAll())
+        (await deriveIdentityPiiRows(ctx.base))
             .map(p => [p.id, p.name]));
     // One states read serves every row — a per-invitation
     // getAllFor opened one transaction per invitation for the
@@ -219,8 +233,11 @@ async function invitationsForInvitee(
 // state, so the old "no state event yet" skip is unreachable,
 // the same reason invitationsForInvitee's own comment gives).
 // The pending-only + active-org + admin filters are preserved
-// exactly. The invitee-email enrichment join (identityPii)
-// stays an old-plane read — a NAMED transitive ride.
+// exactly. The invitee-email enrichment join is ALSO FLIPPED
+// (Phase 10 Task 8 Session B, gate 13) — the SAME
+// deriveIdentityPiiRows(ctx.base) re-point
+// invitationsForInvitee's own comment above explains (ctx.base
+// is already unfenced, so no fence needs reproducing here).
 async function sentInvitations(
     ctx: AuthenticatedContext,
 ): Promise<Response> {
@@ -240,7 +257,7 @@ async function sentInvitations(
             && inv.state === 'pending');
     if (organizationInvites.length === 0) return Response.json([]);
     const email = new Map(
-        (await ctx.base.identityPii.getAll())
+        (await deriveIdentityPiiRows(ctx.base))
             .map(p => [p.id, p.email]));
     const out = [];
     for (const inv of organizationInvites) {
