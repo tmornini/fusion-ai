@@ -13,6 +13,7 @@ import {
 } from '../web-app/app/adapters/shared.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { organizationRow } from './test-fixtures.ts';
+import { seedIdentityPii } from './identity-fixtures.ts';
 import {
     postInvitationGrant,
     postInvitationAcceptance,
@@ -72,6 +73,14 @@ async function seedWithNotify(
     return db;
 }
 
+// identities stays a raw put — no GET /identities (or
+// /identities/:id) reads it anywhere in this file. identityPii
+// DOES feed a flip: getInvitations/getSentInvitations enrich
+// invited_by_name/invitee_email by reading the identity_pii
+// plane (api/invitations-domain.ts), which Task 8 Step 3
+// re-points onto deriveIdentityPiiRows — so this facet forms
+// its pair below-facade (finding 18's fixture budget) via the
+// SAME exported op the live PUT identities/:id/pii route uses.
 async function seedPerson(
     db: DbAdapter,
     id: string,
@@ -80,7 +89,7 @@ async function seedPerson(
 ): Promise<void> {
     await db.members.put(id, { type: 'human' });
     await db.identities.put(id, { kind: 'person' });
-    await db.identityPii.put(id, {
+    await seedIdentityPii(db, id, {
         name, email, phone: '', bio: '',
     });
 }

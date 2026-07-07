@@ -9,6 +9,11 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import { jsonObjectField } from '../api/types.ts';
+import {
+    seedIdentityCredential,
+    seedIdentityPii,
+    seedPersonIdentity,
+} from './identity-fixtures.ts';
 
 const BASE = 'http://localhost';
 
@@ -339,12 +344,17 @@ async function deepDb(): Promise<MemoryDbAdapter> {
         ['pa', 'A'], ['pb', 'B'],
     ] as const) {
         await db.members.put(id, { type: 'human' });
-        await db.identities.put(id, { kind: 'person' });
-        await db.identityPii.put(id, {
+        // Re-pointed onto the SAME exported ops the live
+        // identities/:id, identities/:id/pii and identities/:id/
+        // credentials/:cid PUT routes use (finding 18's fixture
+        // budget): the identity-pii/credentials facade GETs
+        // exercised below are flip targets, so a raw put with no
+        // pair would go derivation-invisible once Task 8 lands.
+        await seedPersonIdentity(db, id, {
             name: id, email: id + '@x.com',
             phone: '', bio: '',
         });
-        await db.identityCredentials.put('cred-' + id, {
+        await seedIdentityCredential(db, id, 'cred-' + id, {
             identity_id: id, kind: 'password',
             status: 'set', secret: 'HASH-' + id, at: T8_AT,
         });
@@ -716,7 +726,7 @@ test('organizations/:id 404s a non-member org', async () => {
 test('identity-pii shows an orphan with no membership',
 async () => {
     const db = await deepDb();
-    await db.identityPii.put('orphan', {
+    await seedIdentityPii(db, 'orphan', {
         name: 'orphan', email: 'orphan@x.com',
         phone: '', bio: '',
     });
@@ -731,7 +741,7 @@ async () => {
 test('nested credentials show an orphan with no membership',
 async () => {
     const db = await deepDb();
-    await db.identityCredentials.put('cred-orphan', {
+    await seedIdentityCredential(db, 'orphan', 'cred-orphan', {
         identity_id: 'orphan', kind: 'password',
         status: 'set', secret: 'HASH-orphan', at: T8_AT,
     });

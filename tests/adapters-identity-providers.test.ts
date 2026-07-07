@@ -75,6 +75,16 @@ async () => {
     // Appended in REVERSE chronological order: the later
     // 'linked' precedes the earlier 'unlinked', so
     // array-order "last wins" would wrongly drop it.
+    //
+    // NAMED GAP (Phase 10 Task 8 Session A, finding 18's fixture
+    // budget): getProvidersFor reads GET /identity-providers, a
+    // Step 3 flip target, so these raw puts WILL go derivation-
+    // invisible once that lands — but unlike identities/pii/
+    // credentials/role-grants, identity-providers/:id's live PUT
+    // is a hand-written INLINE closure (api/routes.ts), never
+    // extracted into an exported below-facade op. Re-pointing
+    // this fixture needs that extraction first; deferred to
+    // Step 3, which lands the providers flip in the same change.
     await db.identityProviders.put('pl', {
         ...goodRow, identity_id: 'p2', action: 'linked',
         at: '2026-02-01T00:00:00.000000Z',
