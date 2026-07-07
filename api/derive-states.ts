@@ -13,6 +13,10 @@ import {
     byIdAscending,
     type DocumentPair,
 } from './derive-documents.ts';
+import { deriveIdeaStateHistory } from './derive-ideas.ts';
+import { deriveProjectStateHistory } from './derive-projects.ts';
+import { deriveRecordStateHistory } from './derive-records.ts';
+import { deriveFlowStateHistory } from './derive-flows.ts';
 import { latestClaimEvent } from './work-order-claims.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
 import { parseJson } from '../shared/http-message/json-codec.ts';
@@ -20,19 +24,42 @@ import {
     defaultBodyRegistry,
 } from '../shared/http-message/media-registry.ts';
 
-// The states-log derivation, Phase 11 Task 2 (the derive-
-// identity-spine.ts precedent applied to the unified event log):
-// the event-pair reader (deriveEventPairStates, gate 5a's simple
-// half — a document family's OWN embedded lifecycle trio is a
-// SEPARATE, later union source, never read here) plus the
-// PAIR-PLANE org fence (resolveOwningOrganization /
-// fenceStatesByOwner, gate 4). Task 4 adds a second reader,
-// deriveWorkOrderLifecycle (gate 5d) — see its own section header
-// below for the work-order-specific edges. NOTHING reads this
-// module in production yet — no route flip; Task 1's row-plane
-// fence (api/store-parent-scoped.ts) still serves live traffic.
-// This module exists to prove the pair-plane machinery ahead of
-// that later flip.
+// The states-log derivation, Phase 11 (the derive-identity-
+// spine.ts precedent applied to the unified event log). SIX
+// sources feed the union deriveStates/deriveStatesFor assemble
+// (Task 5, at the bottom of this file):
+//   (a) deriveEventPairStates — the states/:id event-pair reader
+//       (gate 5a).
+//   (b) the four trio families' OWN embedded lifecycle history —
+//       deriveIdeaStateHistory/deriveProjectStateHistory/
+//       deriveRecordStateHistory/deriveFlowStateHistory, IMPORTED
+//       from their own modules (gate 5b) via deriveTrioFamilyStates
+//       below, never rebuilt here.
+//   (c) deriveMemberGenesis — the human/AI member create-op
+//       genesis trio (gate 5c).
+//   (d) deriveWorkOrderLifecycle — the work-order op-pair replay
+//       (gate 5d) — see its own section header below for the
+//       work-order-specific edges.
+//   (e) deriveFlowGraphStates — flow-node/edge deleted/restored
+//       sidecars (gate 5e).
+//   (f) deriveInvitationStates — the invitation grant + its three
+//       answering ops (gate 5f).
+// Objectives need no seventh source: their archive/reactivate ride
+// states/:id pairs like any other entity's (source (a) already
+// covers them), and a fresh objective has no genesis event at all
+// — absence IS active (api/routes.ts's postObjectiveCreationOp
+// comment) — so there is no genesis row to derive anywhere.
+//
+// The PAIR-PLANE org fence (resolveOwningOrganization /
+// fenceStatesByOwner, gate 4) is applied ONCE, by deriveStates
+// alone — deriveStatesFor takes both the organization and the
+// entity from the caller directly, so no visibility fence applies
+// there.
+//
+// NOTHING reads this module in production yet — no route flip;
+// Task 1's row-plane fence (api/store-parent-scoped.ts) still
+// serves live traffic. This module exists to prove the pair-plane
+// machinery ahead of that later flip (Task 7).
 //
 // THE GATE-15 PRECEDENT (Phase 10, tests/drift-identities.test.ts
 // + api/routes.ts's module-private membershipsAcrossAllOrganiza
@@ -538,7 +565,13 @@ function atIdCompare(
 }
 
 // Every successful (2xx) POST pair at `uriPrefix`, (at, id)
-// ascending.
+// ascending. REUSED below by source (c) (deriveMemberGenesis) and
+// source (f) (deriveInvitationStates) — both read a flat, non-
+// work-order collection's own 2xx POST pairs, the exact shape
+// this function already reads generically (Task 4's own report
+// flagged this as the anticipated reuse; Generality: the better
+// way rises to replace every similar site rather than resting
+// beside them).
 function operationPairsAt(
     requests: readonly RequestEntity[],
     responses: readonly ResponseEntity[],
@@ -871,4 +904,487 @@ export async function deriveWorkOrderLifecycle(
             return events.sort(atIdCompare);
         },
     );
+}
+
+// ---- deriveMemberGenesis — the member create-op reader (gate 5c)
+
+// Source (c) of the states-log union. A human/AI member's OWN
+// genesis event never rides the states/:id address (source a) nor
+// the member's own document address (members/:id or {ai,human}-
+// members/:id carry no trio — api/routes.ts's
+// memberDocumentEntityOf and the {ai,human}MemberDetailBodyOf
+// sidecars never mention state). It rides the CREATE-OP pair BODY
+// instead — POST /ai-members or POST /human-members, validated by
+// AI_MEMBER_CREATE_KEYS/HUMAN_MEMBER_CREATE_KEYS (api/
+// validators.ts): {id, detail, initialState, initialStateEventId,
+// initialStateAt}. Authorship (member_id) is the pair's OWN
+// requester — "stamped from the verified caller in the route,
+// never the body" (validateHumanMemberCreateBody's own header) —
+// mirroring deriveEventPairStates' identical member_id sourcing
+// above, never a body field. Both families are GLOBAL plane
+// (family-registry.ts: organizationNested: false for both), so
+// their prefixes are flat, like INVITATIONS_PREFIX below. A
+// member's LATER archive/reactivate rides PUT states/:id instead
+// (source a) — this reader covers ONLY the one-time genesis.
+const AI_MEMBERS_PREFIX =
+    canonicalUriPrefix(undefined, '/ai-members/');
+const HUMAN_MEMBERS_PREFIX =
+    canonicalUriPrefix(undefined, '/human-members/');
+
+export async function deriveMemberGenesis(
+    db: DbAdapter,
+): Promise<StateEntity[]> {
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            const [requests, responses] = await Promise.all([
+                view.requests.getAll(),
+                view.responses.getAll(),
+            ]);
+            const rows: StateEntity[] = [];
+            for (const prefix of [
+                AI_MEMBERS_PREFIX, HUMAN_MEMBERS_PREFIX,
+            ]) {
+                for (const pair of operationPairsAt(
+                    requests, responses, prefix,
+                )) {
+                    rows.push({
+                        id: pickString(
+                            pair.body, 'initialStateEventId',
+                        ),
+                        entity_id: pickString(pair.body, 'id'),
+                        state: pickString(
+                            pair.body, 'initialState',
+                        ),
+                        member_id: pair.requesterIdentityId,
+                        at: pickString(
+                            pair.body, 'initialStateAt',
+                        ),
+                    });
+                }
+            }
+            return rows.sort(byIdAscending);
+        },
+    );
+}
+
+// ---- deriveFlowGraphStates — the flow-graph sidecar reader ------
+// ---- (gate 5e) ---------------------------------------------------
+
+// Source (e) of the states-log union. flow_nodes/flow_edges carry
+// no address of their own (see graphDeltaHasMember's own header
+// above) — their 'deleted'/'restored' lifecycle rides, as
+// SIDECARS, on the FLOW's own document-pair body:
+// writeFlowGraphDelta's deletions array posts 'deleted'
+// unconditionally for every entry, on every PUT (api/routes.ts);
+// postFlowDocumentOp's own revivals loop posts 'restored' the same
+// way, right after — both authored by the pair's OWN requester
+// (the route's stamped `actor`, the same identity as
+// pair.requesterIdentityId). Scanning EVERY document pair (never
+// merely the head) finds every such event ever recorded, across
+// every PUT to every flow — a create pair's own deletions/revivals
+// are always empty ("a fresh flow tombstones nothing",
+// postFlowCreationOp's own comment), so this source contributes
+// nothing for a never-edited flow. The dedicated 'flows/:id/undo'
+// route (and redo, which reuses the same route) synthesizes its
+// OWN document pair at the SAME 'flows/:id' address (routes.ts:
+// formDocumentPairFor defaults method to PUT), so its own
+// deletions/revivals ride the same scan with no special case.
+//
+// UNLIKE the invitation ops (source f, below), a flow PUT carries
+// no idempotent-resend covenant of its own beyond the gate's
+// byte-identical requestHash fast path (which never reaches this
+// body a second time) — so no cross-referencing is needed here:
+// every deletions/revivals entry documentPairsAt surfaces
+// genuinely posted its own states event.
+//
+// entity_id here is a flow-NODE or flow-EDGE id, never the flow's
+// own id — resolveFlowGraphOwner (gate 4, above) already resolves
+// its owner by finding that SAME id among the flow's OWN
+// graphDelta.nodes/.edges upserts, which always precede (or
+// coincide with) the deletion/revival that names it: a node/edge
+// must exist before it can be deleted or restored.
+function graphSidecarRows(
+    entries: unknown,
+    state: string,
+    memberId: Id,
+): StateEntity[] {
+    if (!Array.isArray(entries)) return [];
+    const rows: StateEntity[] = [];
+    for (const entry of entries) {
+        if (typeof entry !== 'object' || entry === null) continue;
+        const fields = entry as Record<string, unknown>;
+        rows.push({
+            id: pickString(fields, 'eventId'),
+            entity_id: pickString(fields, 'entityId'),
+            state,
+            member_id: memberId,
+            at: pickString(fields, 'at'),
+        });
+    }
+    return rows;
+}
+
+const FLOWS_ADDRESS_PATTERN =
+    /^\/organizations\/[^/]+\/flows\/$/;
+
+export async function deriveFlowGraphStates(
+    db: DbAdapter,
+): Promise<StateEntity[]> {
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            const [requests, responses] = await Promise.all([
+                view.requests.getAll(),
+                view.responses.getAll(),
+            ]);
+            const prefixes = new Set<string>();
+            for (const request of requests) {
+                if (
+                    FLOWS_ADDRESS_PATTERN.test(request.uri_prefix)
+                ) {
+                    prefixes.add(request.uri_prefix);
+                }
+            }
+            const rows: StateEntity[] = [];
+            for (const prefix of prefixes) {
+                for (const pair of documentPairsAt(
+                    requests, responses, prefix,
+                )) {
+                    const delta = pair.body['graphDelta'];
+                    const deletions =
+                        typeof delta === 'object' && delta !== null
+                            ? (delta as
+                                Record<string, unknown>)[
+                                    'deletions'
+                                ]
+                            : undefined;
+                    rows.push(...graphSidecarRows(
+                        deletions, 'deleted',
+                        pair.requesterIdentityId,
+                    ));
+                    rows.push(...graphSidecarRows(
+                        pair.body['revivals'], 'restored',
+                        pair.requesterIdentityId,
+                    ));
+                }
+            }
+            return rows.sort(byIdAscending);
+        },
+    );
+}
+
+// ---- deriveInvitationStates — the invitation lifecycle reader ---
+// ---- (gate 5f) ---------------------------------------------------
+
+// Source (f) of the states-log union. An invitation's own states
+// never ride the states/:id address (source a) — the invitations
+// side channel forms its own operation pairs at the flat
+// '/invitations/' collection (the grant) and at
+// 'invitations/:id/<op>/' (the three answering ops), api/
+// invitations-domain.ts's own formWritePair/formInvitationOpPair
+// calls. Deliberately NOT built atop deriveInvitations/
+// invitationOpStates (api/derive-invitations.ts) — both resolve
+// only a RESOLVED CURRENT STATE and DISCARD the event id and
+// member_id a StateEntity row needs (the brief's own NOTE) — this
+// is a fresh, StateEntity-emitting extraction over the SAME two
+// address families, never a retrofit of either.
+//
+// THE GRANT'S OWN DUPLICATE-ECHO (grantInvitation, api/invitations-
+// domain.ts): an ALREADY-pending (org, identity) pair still forms
+// its OWN operation pair at whatever invitationId the SECOND
+// caller submitted (the 'existing' outcome branch) — but writes
+// NEITHER a states event NOR a document there. Cross-referencing
+// against the invitation's DOCUMENT plane (formed ONLY on the
+// 'fresh' outcome, at the SAME invitationId) excludes that phantom
+// pair: a document exists at an id iff its grant operation pair
+// genuinely posted 'pending'.
+//
+// THE ANSWERING OPS' OWN NO-OP RESENDS (accept/decline/revoke):
+// each is idempotent on its OWN already-reached terminal state (a
+// re-accept/re-decline/re-revoke still forms an operation pair but
+// posts NO event) — mutual exclusivity across the three op KINDS
+// is the domain gate's own covenant (derive-invitations.ts's
+// header), so at most one op kind ever succeeds per invitation,
+// but THAT kind can still accumulate repeat pairs. Since
+// appendMessagePair mints each pair's response `at` synchronously
+// inside its own (serialized) transaction, the group's
+// chronologically EARLIEST (at, id) pair is always the one that
+// found the invitation still 'pending' and genuinely posted the
+// event — operationPairsAt already returns each group (at, id)
+// ascending, so its first entry is that pair.
+const INVITATION_OP_ADDRESS_PATTERN =
+    /^\/invitations\/([^/]+)\/(acceptance|decline|revocation)\/$/;
+
+interface InvitationOpFields {
+    readonly state: string;
+    readonly eventIdField: string;
+    readonly atField: string;
+}
+
+const INVITATION_OP_FIELDS: Readonly<
+    Record<string, InvitationOpFields>
+> = {
+    acceptance: {
+        state: 'accepted',
+        eventIdField: 'acceptEventId',
+        atField: 'acceptAt',
+    },
+    decline: {
+        state: 'declined',
+        eventIdField: 'declineEventId',
+        atField: 'declineAt',
+    },
+    revocation: {
+        state: 'revoked',
+        eventIdField: 'revokeEventId',
+        atField: 'revokeAt',
+    },
+};
+
+export async function deriveInvitationStates(
+    db: DbAdapter,
+): Promise<StateEntity[]> {
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            const [requests, responses] = await Promise.all([
+                view.requests.getAll(),
+                view.responses.getAll(),
+            ]);
+            const rows: StateEntity[] = [];
+
+            const documentIds = new Set(
+                documentPairsAt(
+                    requests, responses, INVITATIONS_PREFIX,
+                ).map((pair) => pair.uriId),
+            );
+            for (const pair of operationPairsAt(
+                requests, responses, INVITATIONS_PREFIX,
+            )) {
+                if (!documentIds.has(pair.uriId)) continue;
+                rows.push({
+                    id: pickString(pair.body, 'grantEventId'),
+                    entity_id: pair.uriId,
+                    state: 'pending',
+                    member_id: pair.requesterIdentityId,
+                    at: pickString(pair.body, 'grantAt'),
+                });
+            }
+
+            const opPrefixes = new Set<string>();
+            for (const request of requests) {
+                if (INVITATION_OP_ADDRESS_PATTERN.test(
+                    request.uri_prefix,
+                )) {
+                    opPrefixes.add(request.uri_prefix);
+                }
+            }
+            for (const prefix of opPrefixes) {
+                const match =
+                    INVITATION_OP_ADDRESS_PATTERN.exec(prefix)!;
+                const fields = INVITATION_OP_FIELDS[match[2]!];
+                if (fields === undefined) continue;
+                const earliest = operationPairsAt(
+                    requests, responses, prefix,
+                )[0];
+                if (earliest === undefined) continue;
+                rows.push({
+                    id: pickString(
+                        earliest.body, fields.eventIdField,
+                    ),
+                    entity_id: match[1]!,
+                    state: fields.state,
+                    member_id: earliest.requesterIdentityId,
+                    at: pickString(earliest.body, fields.atField),
+                });
+            }
+
+            return rows.sort(byIdAscending);
+        },
+    );
+}
+
+// ---- deriveTrioFamilyStates — the trio families' state history --
+// ---- wiring (gate 5b) --------------------------------------------
+
+// Source (b) of the states-log union. Each trio family's own
+// per-id state-history reader is IMPORTED, never rebuilt — the
+// entity/lifecycle knowledge lives in its OWN module (derive-
+// ideas.ts/derive-projects.ts/derive-records.ts/derive-flows.ts),
+// each already drift-tested against the real states table. This
+// function's own job is narrower: discover EVERY id that ever had
+// a document pair at the family's own prefix — via documentPairsAt,
+// the shared family-agnostic reduction (derive-documents.ts),
+// NEVER the family's own document derivation — so an id whose
+// CURRENT head is a hard DELETE (records only, Author gate 9) is
+// still walked: its earlier trio-embedded transitions belong on
+// the real states log forever (append-only), even after the
+// document itself is gone.
+interface TrioFamily {
+    readonly prefix: string;
+    readonly stateHistory: (
+        db: DbAdapter, organization: Id, id: Id,
+    ) => Promise<StateEntity[]>;
+}
+
+function trioFamiliesFor(organization: Id): readonly TrioFamily[] {
+    return [
+        {
+            prefix: canonicalUriPrefix(organization, '/ideas/'),
+            stateHistory: deriveIdeaStateHistory,
+        },
+        {
+            prefix: canonicalUriPrefix(organization, '/projects/'),
+            stateHistory: deriveProjectStateHistory,
+        },
+        {
+            prefix: canonicalUriPrefix(organization, '/records/'),
+            stateHistory: deriveRecordStateHistory,
+        },
+        {
+            prefix: canonicalUriPrefix(organization, '/flows/'),
+            stateHistory: deriveFlowStateHistory,
+        },
+    ];
+}
+
+async function deriveTrioFamilyStates(
+    db: DbAdapter,
+    organization: Id,
+): Promise<StateEntity[]> {
+    const perFamily = await Promise.all(
+        trioFamiliesFor(organization).map(async (family) => {
+            const [requests, responses] = await Promise.all([
+                db.requests.getAllWhere(
+                    'uri_prefix', family.prefix,
+                ),
+                db.responses.getAllWhere(
+                    'uri_prefix', family.prefix,
+                ),
+            ]);
+            const ids = new Set(
+                documentPairsAt(
+                    requests, responses, family.prefix,
+                ).map((pair) => pair.uriId),
+            );
+            const perId = await Promise.all(
+                [...ids].map((id) =>
+                    family.stateHistory(db, organization, id)),
+            );
+            return perId.flat();
+        }),
+    );
+    return perFamily.flat();
+}
+
+// ---- deriveStates / deriveStatesFor — the SIX-source union ------
+// ---- (Task 5) ------------------------------------------------------
+
+// WHY SIX, NOT SEVEN: objectives need no source of their own — an
+// objective's archive/reactivate are states/:id pairs like any
+// other entity's (source (a) already carries them), and a fresh
+// objective has NO genesis event at all (absence IS active), so
+// there is no genesis row for a seventh source to derive.
+//
+// The union invariant every id in the merged set is checked
+// against: IDENTICAL content across sources is a harmless (never
+// expected in practice, since every source above reads a DISJOINT
+// address family) double-derivation; DIFFERING content at the SAME
+// id is a bug in one of the six sources and must crash loud — never
+// a silent last-writer-wins pick (Commandment I: Reliability; the
+// Sin of Swallowed Failures).
+function sameStateEntity(a: StateEntity, b: StateEntity): boolean {
+    return a.id === b.id
+        && a.entity_id === b.entity_id
+        && a.state === b.state
+        && a.member_id === b.member_id
+        && a.at === b.at;
+}
+
+function unionById(
+    sources: readonly (readonly StateEntity[])[],
+): StateEntity[] {
+    const byId = new Map<Id, StateEntity>();
+    for (const rows of sources) {
+        for (const row of rows) {
+            const existing = byId.get(row.id);
+            if (existing === undefined) {
+                byId.set(row.id, row);
+                continue;
+            }
+            if (!sameStateEntity(existing, row)) {
+                throw new Error(
+                    'deriveStates: colliding states rows found'
+                    + ' for id ' + row.id,
+                );
+            }
+        }
+    }
+    return [...byId.values()];
+}
+
+// The full union (gate 5, all six sources), fenced to
+// boundOrganization and returned in the states table's own
+// id-lex order (byIdAscending) — the order Task 7's route flip
+// will serve.
+export async function deriveStates(
+    db: DbAdapter,
+    boundOrganization: Id,
+): Promise<StateEntity[]> {
+    const sources = await Promise.all([
+        deriveEventPairStates(db),
+        deriveTrioFamilyStates(db, boundOrganization),
+        deriveMemberGenesis(db),
+        deriveWorkOrderLifecycle(db),
+        deriveFlowGraphStates(db),
+        deriveInvitationStates(db),
+    ]);
+    const merged = unionById(sources);
+    const fenced = await fenceStatesByOwner(
+        db, merged, boundOrganization,
+    );
+    return fenced.sort(byIdAscending);
+}
+
+// The entity's OWN subset — no family-classification shortcut
+// exists (resolveOwningOrganization resolves an OWNING
+// ORGANIZATION, never which of the six sources an id belongs to),
+// so every source is queried and the result filtered by entity_id:
+// an id only ever appears in ONE source's own address family, so
+// the filter alone disambiguates — no dedup-assert is needed here
+// (unlike deriveStates above), since no genuine cross-source
+// collision is possible once filtered to one entity. organization
+// is REQUIRED — the four trio derives are org-prefixed and cannot
+// resolve their own address without it. Never a visibility fence
+// here, unlike deriveStates' own fenceStatesByOwner call — the
+// caller already names both the org AND the entity.
+export async function deriveStatesFor(
+    db: DbAdapter,
+    organization: Id,
+    entityId: Id,
+): Promise<StateEntity[]> {
+    const [
+        eventPairRows,
+        ideaRows, projectRows, recordRows, flowRows,
+        memberGenesisRows, workOrderRows,
+        flowGraphRows, invitationRows,
+    ] = await Promise.all([
+        deriveEventPairStates(db),
+        deriveIdeaStateHistory(db, organization, entityId),
+        deriveProjectStateHistory(db, organization, entityId),
+        deriveRecordStateHistory(db, organization, entityId),
+        deriveFlowStateHistory(db, organization, entityId),
+        deriveMemberGenesis(db),
+        deriveWorkOrderLifecycle(db),
+        deriveFlowGraphStates(db),
+        deriveInvitationStates(db),
+    ]);
+    const rows = [
+        ...eventPairRows,
+        ...ideaRows, ...projectRows, ...recordRows, ...flowRows,
+        ...memberGenesisRows, ...workOrderRows,
+        ...flowGraphRows, ...invitationRows,
+    ].filter((row) => row.entity_id === entityId);
+    return rows.sort(atIdCompare);
 }
