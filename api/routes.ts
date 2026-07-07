@@ -3881,10 +3881,11 @@ export const routes: Route[] = [
     // path id) filters the OLD-plane store by that field BEFORE
     // fencing, then viaMembership fences on that SAME field). A
     // below-facade write whose body.identity_id disagrees with
-    // its own address (producible only below-facade or by a
-    // hand-crafted admin call — no validator ties the two, and no
-    // live write path can produce it) would otherwise fence on
-    // the wrong identity. Reproduced here by filtering the
+    // its own address (producible below-facade, or via a hand-
+    // crafted admin PUT — no validator ties body.identity_id to
+    // the path :id, so an admin-crafted request CAN produce it;
+    // only a web-app-generated request cannot) would otherwise
+    // fence on the wrong identity. Reproduced here by filtering the
     // derived rows to identity_id === the path id FIRST — exactly
     // the OLD plane's WHERE — so a mismatched row never survives
     // to the fence step, on either plane.
