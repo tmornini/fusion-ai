@@ -210,24 +210,28 @@ export class HumanMemberPiiIntakeFailedError extends Error {
     }
 }
 
-// Split a human-member write across the parent (type), the
-// identity, the PII row, and the detail row. Used by edits;
-// creation goes through postHumanMemberCreation. The named
-// composing POST /human-members/:id lands all four facet puts
-// in ONE transaction; no state event (an edit does not move the
-// member's lifecycle).
+// Re-put the human-member detail facet (the parent member type
+// and identity kind are server-supplied facts the composing
+// POST re-pins; the named composing POST /human-members/:id
+// lands them in ONE transaction; no state event — an edit does
+// not move the member's lifecycle). PII changes via a separate
+// PUT identities/:id/pii second hop, fired IFF the caller
+// supplies a `pii` arg — the dirty check (members/detail.ts's
+// saveHumanMember) decides, so a detail-only save stays ONE hop
+// (Phase 10 Task 2's intake decomposition).
 export async function putHumanMember(
     ctx: RequestContext,
     id: string,
-    input: HumanMemberDraft,
+    detail: Omit<HumanMemberEntity, 'id'>,
+    pii?: Omit<IdentityPiiEntity, 'id'>,
 ): Promise<void> {
-    const { name, email, phone, bio, ...detail } =
-        input;
     await ctx.POST(`human-members/${id}`, {
-        pii: { name, email, phone, bio },
         detail: detail as unknown as
             Record<string, unknown>,
     });
+    if (pii !== undefined) {
+        await ctx.PUT(`identities/${id}/pii`, { ...pii });
+    }
     humanMemberChanges.notify();
 }
 

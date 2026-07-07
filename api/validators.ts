@@ -3863,33 +3863,34 @@ export function validateAIMemberEditBody(
 }
 
 export interface HumanMemberEditBody {
-    readonly pii: Record<string, unknown>;
     readonly detail: Record<string, unknown>;
 }
 
 const HUMAN_MEMBER_EDIT_KEYS: readonly string[] = [
-    'pii', 'detail',
+    'detail',
 ];
 
-// The HTTP-body gate for POST /human-members/:id: the four
-// member facets re-put, NO state event (an edit does not move
-// the member's lifecycle), so the handler needs no actor. As
-// with create, each facet store re-validates its own body when
-// the composing POST puts it; the id is the route param, the
-// member type and identity kind are server-supplied facts.
+// The HTTP-body gate for POST /human-members/:id: the member and
+// identity facets re-pin, the detail facet re-puts, NO state
+// event (an edit does not move the member's lifecycle), so the
+// handler needs no actor. PII no longer rides this body (Phase
+// 10 Task 2's intake decomposition) — it changes ONLY via the
+// separate PUT identities/:id/pii, fired by the client IFF the
+// caller's dirty check finds it changed. As with create, the
+// detail facet is NOT fully validated here — human_members
+// re-validates its own body when the composing POST puts it;
+// the id is the route param, the member type and identity kind
+// are server-supplied facts.
 export function validateHumanMemberEditBody(
     body: Record<string, unknown>,
 ): HumanMemberEditBody {
     assertOnlyKeys(
         body, HUMAN_MEMBER_EDIT_KEYS, 'HumanMemberEditBody',
     );
-    const pii = asObject(
-        body['pii'], 'HumanMemberEditBody.pii',
-    );
     const detail = asObject(
         body['detail'], 'HumanMemberEditBody.detail',
     );
-    return { pii, detail };
+    return { detail };
 }
 
 // ── Flow graph delta ─────────────────

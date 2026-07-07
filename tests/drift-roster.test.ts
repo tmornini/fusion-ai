@@ -345,14 +345,11 @@ function humanMemberCreateBody(
     };
 }
 
-function humanMemberEditBody(
-    name: string,
-): Record<string, unknown> {
+// PII no longer rides the edit body (Phase 10 Task 2's intake
+// decomposition) — it changes ONLY via a separate PUT
+// identities/:id/pii, which this drift chain does not exercise.
+function humanMemberEditBody(): Record<string, unknown> {
     return {
-        pii: {
-            name, email: name + '@example.com',
-            phone: '', bio: '',
-        },
         detail: {
             title: 't2', department: 'd2',
             strengths: jsonArrayField([]),
@@ -770,7 +767,7 @@ test('live-write chain: create an AI member (bundle balance 3),'
     // Step 5: composed edit (POST /human-members/:id).
     const humanEdited = await handleRequest(db, req(
         'POST', '/human-members/' + humanId, token,
-        humanMemberEditBody('Chain Human Edited'),
+        humanMemberEditBody(),
     ));
     assert.equal(humanEdited.status, 204);
     await assertMemberParity(humanId);

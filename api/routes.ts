@@ -1855,12 +1855,13 @@ export async function postAiMemberEditOp(
 
 // Human-member edit: extracted byte-for-byte from the anonymous
 // POST human-members/:id closure (Task 4) — the postAiMemberEditOp
-// precedent, for the sibling facet: the four member facets re-put
-// as ONE transaction; no states interaction (an edit does not
-// move the member's lifecycle). The identity_pii row stays
-// old-plane here too — the PII facet is NEVER synthesized, the
-// SAME forward-pointer postHumanMemberCreationOp's own comment
-// names.
+// precedent, for the sibling facet: the member facets re-put as
+// ONE transaction; no states interaction (an edit does not move
+// the member's lifecycle). PII no longer lands here (Phase 10
+// Task 2's intake decomposition): it changes ONLY via the
+// separate PUT identities/:id/pii, fired by the client IFF its
+// dirty check finds it changed — this op never sees it either
+// way, so a detail-only edit stays exactly this one write.
 export async function postHumanMemberEditOp(
     db: DbAdapter,
     id: Id,
@@ -1870,7 +1871,7 @@ export async function postHumanMemberEditOp(
     const b = validateHumanMemberEditBody(body);
     return db.transaction(
         [
-            'members', 'identities', 'identity_pii',
+            'members', 'identities',
             'human_members',
             'requests', 'responses',
         ],
@@ -1880,11 +1881,6 @@ export async function postHumanMemberEditOp(
             );
             await view.identities.put(
                 id, { kind: 'person' },
-            );
-            await view.identityPii.put(
-                id,
-                b.pii as unknown as
-                    Omit<IdentityPiiEntity, 'id'>,
             );
             await view.humanMembers.put(
                 id,

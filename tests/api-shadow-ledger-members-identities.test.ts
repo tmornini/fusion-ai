@@ -438,7 +438,6 @@ async () => {
     const edit = await handleRequest(db, req(
         'POST', '/human-members/hm-2', DEV_TOKEN,
         {
-            pii: humanPii('Bobby'),
             detail: { ...humanDetail(), title: 'Senior Engineer' },
         },
     ));
@@ -474,7 +473,6 @@ test('a failed human-member edit appends nothing', async () => {
     const res = await handleRequest(db, req(
         'POST', '/human-members/hm-edit-fail', DEV_TOKEN,
         {
-            pii: humanPii('Base'),
             detail: { ...humanDetail(), strengths: 'not-json' },
         },
     ));

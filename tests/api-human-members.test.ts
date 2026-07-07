@@ -138,8 +138,10 @@ test(
 );
 
 test(
-    'POST human-members/:id re-puts the facets without a'
-    + ' state event',
+    'POST human-members/:id re-puts the detail facet without a'
+    + ' state event; PII is unaffected by the edit — it changes'
+    + ' ONLY via a separate PUT identities/:id/pii (Phase 10'
+    + ' Task 2 intake decomposition)',
     async () => {
         const db = await freshDb();
         await POST(db, 'human-members', {
@@ -149,12 +151,12 @@ test(
             initialStateEventId: 'ev-1',
             initialStateAt: '2099-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
+        await PUT(db, 'identities/w1/pii', pii('Alice'), DEV_TOKEN);
         await POST(db, 'human-members/w1', {
-            pii: pii('Renamed'),
             detail: { ...detail(), title: 'Director' },
         }, DEV_TOKEN);
         const piiRow = await db.identityPii.getById('w1');
-        assert.equal(piiRow.name, 'Renamed');
+        assert.equal(piiRow.name, 'Alice');
         const facet = await GET<{ title: string }>(
             db, 'human-members/w1', DEV_TOKEN);
         assert.equal(facet.title, 'Director');
@@ -181,7 +183,6 @@ test(
         assert.equal(create.status, 204);
         const edit = await handleRequest(adminDb, req(
             'POST', '/human-members/w1', DEV_TOKEN, {
-                pii: pii('Renamed'),
                 detail: detail(),
             }));
         assert.equal(edit.status, 204);
@@ -202,7 +203,6 @@ test(
         const deniedEdit = await handleRequest(
             memberDb, req(
                 'POST', '/human-members/w2', token, {
-                    pii: pii('Bob'),
                     detail: detail(),
                 }));
         assert.equal(deniedEdit.status, 403);
