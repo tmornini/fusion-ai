@@ -67,7 +67,27 @@
 // — a human member's own identity row, which an AI member never
 // has (finding 10), so the ai-members loop below stays a triple.
 // Bootstrap's lone 'current' human-member create forms this SAME
-// quadruple via formBootstrapMessagePair.
+// quadruple via formBootstrapMessagePair. Phase 10 Task 6 closes
+// the identity spine's remaining raw writes: each seeded AI
+// member and the system member ALSO form their OWN identities/:id
+// document pair (a standalone invocation — neither create-time
+// bundle above ever carried one, so this widens no triple/
+// quadruple), and each seeded role grant forms its OWN
+// role-grants/:id document pair. Every invocation here (as
+// always) forms through the SAME formSeedPair pipeline, UNTOUCHED
+// — formSeedPair carries no `chain` argument at all, so
+// headPairId is undefined for EVERY seed pair by construction
+// (always-genesis; the live-path `chain: 'none'` vocabulary,
+// api/routes.ts's formDocumentPairFor, does not apply here). The
+// 12 identity-credential document pairs (11 human passwords + the
+// system client secret) are the ONE exception: a credential's
+// hashed secret is unknown until PBKDF2 resolves inside
+// seedHumanCredentials (api/mock-data.ts), which runs AFTER this
+// file's shared pre-tx pass already completed — so those 12 pairs
+// are formed by seedHumanCredentials' OWN local pass-1/pass-2
+// split, calling formSeedPair directly (formSeedCredentialPairs,
+// below) rather than riding buildMockDataInvocations /
+// formBootstrapMessagePair.
 
 import type {
     Id,
@@ -82,6 +102,7 @@ import type {
     WorkOrderEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
+    IdentityCredentialKind,
 } from '../types.ts';
 import {
     jsonArrayField,
@@ -825,6 +846,49 @@ export function membershipSeedBody(
     };
 }
 
+// The wire body a live PUT role-grants/:id would carry for this
+// SAME write: {organization_id, identity_id, role, action,
+// by_member_id, at} — the ONE shape every seeded role grant
+// (the two `current` admin grants, one per-member grant, and
+// bootstrap's own) shares. Hoisted (Phase 10 Task 6) so pass 1
+// (this file) and pass 2 (mock-data.ts) share the SAME
+// construction — the membershipSeedBody precedent above, for the
+// role ledger.
+export function roleGrantSeedBody(
+    organizationId: Id, identityId: Id, role: string,
+): Record<string, unknown> {
+    return {
+        organization_id: organizationId,
+        identity_id: identityId,
+        role,
+        action: 'granted',
+        by_member_id: SYSTEM_MEMBER_ID,
+        at: MOCK_SEED_TIMESTAMP,
+    };
+}
+
+// The wire body a live PUT identities/:id/credentials/:cid would
+// carry for this SAME write: {identity_id, kind, status, secret,
+// at} — the ONE shape every seeded credential (11 human
+// passwords + the system client secret, both mock-data and
+// bootstrap) shares. Hoisted (Phase 10 Task 6) so
+// formSeedCredentialPairs (this file) and seedHumanCredentials
+// (mock-data.ts) share the SAME construction — the
+// membershipSeedBody precedent above, for the credential ledger.
+// `secret` is the POST-HASH value only — the plaintext never
+// reaches this construction (CLAUDE.md § the threshold of trust).
+export function identityCredentialSeedBody(
+    identityId: Id, kind: IdentityCredentialKind, secret: string,
+): Record<string, unknown> {
+    return {
+        identity_id: identityId,
+        kind,
+        status: 'set',
+        secret,
+        at: MOCK_SEED_TIMESTAMP,
+    };
+}
+
 export function recordSeedBody(
     r: Omit<RecordEntity, 'organization_id'>,
     index: number,
@@ -904,6 +968,11 @@ export const ORGANIZATION_TWO_OBJECTIVE: ObjectiveSeed = {
 // against the SAME string rather than each re-typing it, the
 // secondOrganizationProjectId precedent above.
 export const bootstrapMembershipId = 'bootstrap-membership-current';
+
+// The bootstrap role grant's own id — the SAME
+// bootstrapMembershipId precedent above, for the admin grant
+// Task 6 re-points onto postRoleGrantDocumentOp.
+export const bootstrapRoleGrantId = 'bootstrap-role-current-admin';
 
 export function bootstrapCurrentMemberBody(
     initialStateAt: string,
@@ -1134,6 +1203,61 @@ export function buildMockDataInvocations():
         requesterIdentityId: SYSTEM_MEMBER_ID,
         body: memberDocumentBodyOf('system'),
     });
+    // Task 6: the system identity's OWN identities/:id document
+    // pair — the last raw identities.put site the mock-data seed
+    // still held for the system actor (the human-member loop
+    // above forms this SAME pair per human member already; the
+    // ai-members loop below forms its OWN, per member).
+    invocations.push({
+        key: seedPairKey('identities/:id', SYSTEM_MEMBER_ID),
+        routePattern: 'identities/:id',
+        idParams: [SYSTEM_MEMBER_ID],
+        organization: undefined,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        body: identityDocumentBodyOf('service'),
+    });
+    // Task 6: the two admin role grants for `current` (one per
+    // organization it joins), then one member-role grant per
+    // non-admin human — the SAME assignOrganization(index)
+    // partition the membership loop above uses — closing the
+    // last raw roleGrants.put sites the mock-data seed held.
+    invocations.push({
+        key: seedPairKey(
+            'role-grants/:id', 'seed-role-current-admin',
+        ),
+        routePattern: 'role-grants/:id',
+        idParams: ['seed-role-current-admin'],
+        organization: STARK_ORGANIZATION,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        body: roleGrantSeedBody(
+            STARK_ORGANIZATION, 'current', 'admin',
+        ),
+    });
+    invocations.push({
+        key: seedPairKey(
+            'role-grants/:id', 'seed-role-current-admin-org2',
+        ),
+        routePattern: 'role-grants/:id',
+        idParams: ['seed-role-current-admin-org2'],
+        organization: ORGANIZATION_TWO,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        body: roleGrantSeedBody(
+            ORGANIZATION_TWO, 'current', 'admin',
+        ),
+    });
+    members.forEach((member, index) => {
+        if (member.id === 'current') return;
+        const organization = assignOrganization(index);
+        const id = 'seed-role-' + member.id + '-member';
+        invocations.push({
+            key: seedPairKey('role-grants/:id', id),
+            routePattern: 'role-grants/:id',
+            idParams: [id],
+            organization,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: roleGrantSeedBody(organization, member.id, 'member'),
+        });
+    });
     const ideaIndexById = new Map(
         ideas.map((idea, i) => [idea.id, i]),
     );
@@ -1287,6 +1411,25 @@ export function buildMockDataInvocations():
             organization: STARK_ORGANIZATION,
             requesterIdentityId: SYSTEM_MEMBER_ID,
             body: membershipSeedBody(STARK_ORGANIZATION, m.id),
+        });
+        // Task 6: the AI member's OWN identities/:id document
+        // pair — an AI member's identity row exists (finding 10
+        // only excludes AI members from the human-only PII
+        // facet), but its write sits OUTSIDE the ai-members
+        // triple below (mock-data.ts's own separate op call), so
+        // it forms its OWN standalone invocation rather than
+        // widening that triple. Its message pair shares its
+        // uri_id with the triple's operation/detail pairs — the
+        // H7/arrival-order hazard; tests/mock-data-pairs.test.ts's
+        // AI-member request lookups disambiguate by response
+        // status, never by arrival order.
+        invocations.push({
+            key: seedPairKey('identities/:id', m.id),
+            routePattern: 'identities/:id',
+            idParams: [m.id],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: identityDocumentBodyOf('service'),
         });
         const createBody = aiMemberSeedBody(m);
         invocations.push({
@@ -1623,6 +1766,70 @@ export async function formMockDataMessagePairs(
     return pairs;
 }
 
+// Pass 1 for seedHumanCredentials (mock-data.ts), called for
+// BOTH seed paths: the 12 (mock-data) / 2 (bootstrap) identity-
+// credential document pairs, formed from their OWN post-hash
+// bodies — content unknown until PBKDF2 resolves inside
+// seedHumanCredentials, which runs AFTER formMockDataMessagePairs
+// / formBootstrapMessagePair above already completed, so these
+// pairs can never join either. `requestAt` is minted once by the
+// caller, this credential batch's own arrival moment — the SAME
+// pattern every other pass 1 shares. Calls the SAME formSeedPair
+// every other family here does — untouched — so a seeded
+// credential pair can never drift from the shape the live PUT
+// identities/:id/credentials/:cid would have formed for an
+// identical request.
+export async function formSeedCredentialPairs(
+    planned: readonly {
+        readonly id: Id;
+        readonly identityId: Id;
+        readonly secret: string;
+    }[],
+    systemCredential: {
+        readonly id: Id;
+        readonly secret: string;
+    },
+    requestAt: string,
+): Promise<ReadonlyMap<string, MessagePair>> {
+    const pairs = new Map<string, MessagePair>();
+    for (const cred of planned) {
+        const key = seedPairKey(
+            'identities/:id/credentials/:cid', cred.id,
+        );
+        pairs.set(key, await formSeedPair(
+            {
+                key,
+                routePattern: 'identities/:id/credentials/:cid',
+                idParams: [cred.identityId, cred.id],
+                organization: undefined,
+                requesterIdentityId: SYSTEM_MEMBER_ID,
+                body: identityCredentialSeedBody(
+                    cred.identityId, 'password', cred.secret,
+                ),
+            },
+            requestAt,
+        ));
+    }
+    const systemKey = seedPairKey(
+        'identities/:id/credentials/:cid', systemCredential.id,
+    );
+    pairs.set(systemKey, await formSeedPair(
+        {
+            key: systemKey,
+            routePattern: 'identities/:id/credentials/:cid',
+            idParams: [SYSTEM_MEMBER_ID, systemCredential.id],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: identityCredentialSeedBody(
+                SYSTEM_MEMBER_ID, 'client_secret',
+                systemCredential.secret,
+            ),
+        },
+        requestAt,
+    ));
+    return pairs;
+}
+
 // Pass 1 for postBootstrap: the lone 'current' human-member
 // create. Its body embeds nowUtc() (bootstrap has no fixed
 // seed timestamp), so it is minted ONCE here and returned
@@ -1642,7 +1849,13 @@ export async function formMockDataMessagePairs(
 // Phase 10 Task 5: the human-member bundle grows from 1+1+1 to
 // 1+1+1+1 — the current member's own identities/:id document
 // pair, the SAME fourth invocation the mock-data seed's own
-// human-members loop now forms per member.
+// human-members loop now forms per member. Phase 10 Task 6: ALSO
+// forms the system member's OWN identities/:id document pair and
+// its OWN role-grant pair — the SAME two mock-data-seed families
+// (system identity, admin role grant) closing bootstrap's last
+// two raw writes. The credential pairs stay OUTSIDE this
+// function — seedHumanCredentials' own local pass-1/pass-2 split
+// (formSeedCredentialPairs) forms them, for both seed paths.
 export async function formBootstrapMessagePair(
     requestAt: string,
 ): Promise<{
@@ -1651,6 +1864,8 @@ export async function formBootstrapMessagePair(
     readonly membershipPair: MessagePair;
     readonly systemMemberPair: MessagePair;
     readonly piiPair: MessagePair;
+    readonly systemIdentityPair: MessagePair;
+    readonly roleGrantPair: MessagePair;
 }> {
     const body = bootstrapCurrentMemberBody(nowUtc());
     const operation = await formSeedPair(
@@ -1732,6 +1947,37 @@ export async function formBootstrapMessagePair(
         },
         requestAt,
     );
+    // Task 6: the system identity's OWN identities/:id document
+    // pair — the mock-data seed's own system-identity precedent
+    // above, mirrored here for bootstrap.
+    const systemIdentityPair = await formSeedPair(
+        {
+            key: seedPairKey('identities/:id', SYSTEM_MEMBER_ID),
+            routePattern: 'identities/:id',
+            idParams: [SYSTEM_MEMBER_ID],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: identityDocumentBodyOf('service'),
+        },
+        requestAt,
+    );
+    // Task 6: bootstrap's own admin role-grant document pair —
+    // the mock-data seed's own 'seed-role-current-admin'
+    // precedent above, mirrored here for bootstrap's lone
+    // organization.
+    const roleGrantPair = await formSeedPair(
+        {
+            key: seedPairKey('role-grants/:id', bootstrapRoleGrantId),
+            routePattern: 'role-grants/:id',
+            idParams: [bootstrapRoleGrantId],
+            organization: STARK_ORGANIZATION,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: roleGrantSeedBody(
+                STARK_ORGANIZATION, 'current', 'admin',
+            ),
+        },
+        requestAt,
+    );
     return {
         body,
         pairs: {
@@ -1741,5 +1987,7 @@ export async function formBootstrapMessagePair(
         membershipPair,
         systemMemberPair,
         piiPair,
+        systemIdentityPair,
+        roleGrantPair,
     };
 }

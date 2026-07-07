@@ -86,9 +86,22 @@ import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 // pair — the create-time bundle widens from a triple to a
 // quadruple for human members only; an AI member forms no
 // identities row — finding 10 — so its own bundle stays a
-// triple) =
-// 603. A dropped or reordered invocation changes this count.
-const EXPECTED_PAIR_COUNT = 603;
+// triple) + 5 identities-document pairs (Phase 10 Task 6: the
+// 4 AI members + the system member each form their OWN
+// identities/:id document pair too — a standalone invocation,
+// not a bundle-widening, since neither create-time bundle ever
+// carried one) + 12 identity-credential document pairs (Phase 10
+// Task 6: 11 human password credentials + the system client-
+// secret credential, one identities/:id/credentials/:cid pair
+// per row — formed by seedHumanCredentials' OWN local pass-1/
+// pass-2 split, api/mock-data.ts, since a credential's hashed
+// secret is unknown until PBKDF2 resolves and so can never join
+// this file's shared pre-tx pass) + 12 role-grant document pairs
+// (Phase 10 Task 6: the 2 admin grants for `current` plus one
+// member grant per non-admin human, one role-grants/:id pair per
+// row) =
+// 632. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 632;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -208,8 +221,18 @@ test('a seeded ai-member create pair sits at the global'
     await postMockDataLoad(db);
     const firstAiMember = buildAiMembers()[0]!;
     const requests = await db.requests.getAll();
+    const responseById = new Map(
+        (await db.responses.getAll()).map(r => [r.id, r]),
+    );
+    // The operation pair shares its uri_id with its OWN detail-
+    // document pair (ai-members/:id) and, since Phase 10 Task 6,
+    // its OWN identities/:id document pair too — distinguish it
+    // by its OWN 204 response (the document pairs' being 200),
+    // the detail-document test's own precedent below (the
+    // H7/arrival-order hazard class).
     const row = requests.find(
-        r => r.uri_id === firstAiMember.id,
+        r => r.uri_id === firstAiMember.id
+            && responseById.get(r.id)?.status === 204,
     );
     assert.ok(row, 'no request row for the seeded ai member');
     assert.equal(row!.uri_prefix, '/ai-members/');
@@ -654,6 +677,57 @@ async () => {
     }
 });
 
+test('a seeded credential\'s response body carries the full'
++ ' credential key set (Phase 10 Task 6 — content is'
++ ' nondeterministic per reseed, finding 13, so only the'
++ ' key set is falsifiable here)', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const id = 'seed-cred-system-client-secret';
+    const requests = await db.requests.getAll();
+    const requestRow = requests.find(r => r.uri_id === id);
+    assert.ok(requestRow, 'no request row for ' + id);
+    const responses = await db.responses.getAll();
+    const responseRow = responses.find(
+        r => r.id === requestRow!.id,
+    );
+    assert.ok(responseRow, 'no response row for ' + id);
+    const embedded = JSON.parse(responseRow!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['at', 'id', 'identity_id', 'kind', 'secret', 'status'],
+    );
+});
+
+test('a seeded role grant\'s response body organization_id'
++ ' matches the row it was actually granted for (Phase 10'
++ ' Task 6 — the org-stamp regression no fingerprint pin'
++ ' catches, since requests/responses are excluded'
++ ' tables)', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const id = 'seed-role-current-admin-org2';
+    const row = await db.roleGrants.getById(id);
+    assert.ok(row, 'no role grant row for ' + id);
+    assert.equal(row!.organization_id, ORGANIZATION_TWO);
+    const requests = await db.requests.getAll();
+    const requestRow = requests.find(r => r.uri_id === id);
+    assert.ok(requestRow, 'no request row for ' + id);
+    const responses = await db.responses.getAll();
+    const responseRow = responses.find(
+        r => r.id === requestRow!.id,
+    );
+    assert.ok(responseRow, 'no response row for ' + id);
+    const embedded = JSON.parse(responseRow!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.equal(
+        embedded.body.organization_id, row!.organization_id,
+    );
+});
+
 test('seed pairs verify against their hashes', async () => {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
@@ -669,7 +743,7 @@ test('seed pairs verify against their hashes', async () => {
     }
 });
 
-test('a bootstrap seed populates exactly seven balanced,'
+test('a bootstrap seed populates exactly eleven balanced,'
 + ' hash-verified pairs for the current member and the system'
 + ' member', async () => {
     const db = new MemoryDbAdapter();
@@ -688,9 +762,15 @@ test('a bootstrap seed populates exactly seven balanced,'
     // close the last two raw bootstrap writes. Phase 10 Task 2:
     // the current member's OWN PII document pair
     // (identities/:id/pii) closes the intake decomposition's
-    // bootstrap side — 4 + 2 + 1 = 7.
-    assert.equal(requests.length, 7);
-    assert.equal(responses.length, 7);
+    // bootstrap side — 4 + 2 + 1 = 7. Phase 10 Task 6 mirrors
+    // the mock-data seed's own remaining raw writes: the system
+    // member's OWN identities/:id document, its OWN role grant
+    // (bootstrap-role-current-admin), and the current member's
+    // + the system member's OWN identity-credential documents
+    // (formed by seedHumanCredentials' local pass-1/pass-2
+    // split, api/mock-data.ts) — 7 + 1 + 1 + 2 = 11.
+    assert.equal(requests.length, 11);
+    assert.equal(responses.length, 11);
     const atEntity = requests.filter(
         r => r.uri_prefix === '/human-members/'
             && r.uri_id === 'current',

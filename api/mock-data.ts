@@ -19,6 +19,10 @@ import {
     postMembershipDocumentOp,
     postMemberDocumentOp,
     memberDocumentBodyOf,
+    postIdentityDocumentOp,
+    postIdentityCredentialDocumentOp,
+    postRoleGrantDocumentOp,
+    identityDocumentBodyOf,
 } from './routes.ts';
 import type {
     FlowCreationPairs,
@@ -102,12 +106,16 @@ import {
     objectiveSeedBody,
     formMockDataMessagePairs,
     formBootstrapMessagePair,
+    formSeedCredentialPairs,
     seedPairKey,
     ORGANIZATION_TWO_OBJECTIVE,
     membershipSeedBody,
     bootstrapMembershipId,
+    bootstrapRoleGrantId,
     humanMemberPiiSeedBody,
     bootstrapCurrentMemberPiiBody,
+    roleGrantSeedBody,
+    identityCredentialSeedBody,
 } from './mock-data/seed-message-pairs.ts';
 import { buildSeedScoreRows } from './mock-data/scores.ts';
 
@@ -159,7 +167,19 @@ export interface SeededCredentials {
 // transaction body auto-commits the IndexedDB transaction
 // early (CLAUDE.md § IndexedDB auto-commit). So every hash is
 // computed up front, then the credential rows land together in
-// one transaction of pure row ops.
+// one transaction of pure row ops. Phase 10 Task 6: each
+// credential row ALSO forms its OWN message pair, re-pointed
+// onto postIdentityCredentialDocumentOp — its OWN local pass-1/
+// pass-2 split (formSeedCredentialPairs, seed-message-pairs.ts),
+// since a credential's body embeds the post-hash secret computed
+// HERE, after formMockDataMessagePairs / formBootstrapMessagePair
+// already ran. The write transaction widens to
+// ['identity_credentials', 'requests', 'responses'] — the bare
+// ['identity_credentials'] set from before this task would trip
+// postIdentityCredentialDocumentOp's OWN nested
+// ['identity_credentials', 'requests', 'responses'] transaction
+// on the nested-subset guard (api/db-backed.ts's #assertSubset:
+// 'requests'/'responses' not in the outer declared set).
 async function seedHumanCredentials(
     adapter: DbAdapter,
 ): Promise<SeededCredentials> {
@@ -181,28 +201,62 @@ async function seedHumanCredentials(
                 secret: await hashPassword(password),
             };
         }));
+    const systemCredentialId = 'seed-cred-system-client-secret';
     const systemSecret = await hashPassword(
         generateCryptoSafeBase62());
+    // Pass 1 (no tx): each credential's message pair, formed from
+    // the SAME post-hash secret pass 2 below writes — the row
+    // content is unknown until PBKDF2 resolves above, so this
+    // batch cannot join either seed path's own pre-tx pass (both
+    // already ran before this function was even called).
+    // requestAt is minted once, this credential batch's own
+    // arrival moment.
+    const requestAt = nowUtc();
+    const credentialPairs = await formSeedCredentialPairs(
+        planned,
+        { id: systemCredentialId, secret: systemSecret },
+        requestAt,
+    );
+    // Pass 2: the widened tx — row ops only, each paired with its
+    // pre-formed pass-1 pair via postIdentityCredentialDocumentOp,
+    // the SAME extracted op every live PUT
+    // identities/:id/credentials/:cid rides.
     await adapter.transaction(
-        ['identity_credentials'],
+        ['identity_credentials', 'requests', 'responses'],
         async (view) => {
             await Promise.all([
                 ...planned.map(cred =>
-                    view.identityCredentials.put(cred.id, {
-                        identity_id: cred.identityId,
-                        kind: 'password',
-                        status: 'set',
-                        secret: cred.secret,
-                        at: MOCK_SEED_TIMESTAMP,
-                    })),
-                view.identityCredentials.put(
-                    'seed-cred-system-client-secret', {
-                        identity_id: SYSTEM_MEMBER_ID,
-                        kind: 'client_secret',
-                        status: 'set',
-                        secret: systemSecret,
-                        at: MOCK_SEED_TIMESTAMP,
-                    }),
+                    postIdentityCredentialDocumentOp(
+                        view,
+                        cred.id,
+                        identityCredentialSeedBody(
+                            cred.identityId, 'password', cred.secret,
+                        ),
+                        SYSTEM_MEMBER_ID,
+                        requirePair(
+                            credentialPairs,
+                            seedPairKey(
+                                'identities/:id/credentials/:cid',
+                                cred.id,
+                            ),
+                        ),
+                    )),
+                postIdentityCredentialDocumentOp(
+                    view,
+                    systemCredentialId,
+                    identityCredentialSeedBody(
+                        SYSTEM_MEMBER_ID, 'client_secret',
+                        systemSecret,
+                    ),
+                    SYSTEM_MEMBER_ID,
+                    requirePair(
+                        credentialPairs,
+                        seedPairKey(
+                            'identities/:id/credentials/:cid',
+                            systemCredentialId,
+                        ),
+                    ),
+                ),
             ]);
         },
     );
@@ -281,6 +335,11 @@ async function postMockDataLoadIn(
                             ),
                         ),
                     )),
+                // STAYS RAW (Task 6 boundary): the
+                // identity_default_organizations family is
+                // deferred WHOLE to a later gate — this row
+                // forms no message pair, unlike every write
+                // around it.
                 adapter.identityDefaultOrganizations.put(
                     'seed-default-org-' + member.id, {
                         identity_id: member.id,
@@ -341,9 +400,7 @@ async function postMockDataLoadIn(
         // the last raw members.put site — driven through
         // postMemberDocumentOp so it forms a message pair too
         // (Path A), the SAME op the human/AI member-document
-        // invocations above already ride. Its identities row
-        // stays a raw put — the identity spine itself is Phase
-        // 9's own scope, untouched here.
+        // invocations above already ride.
         postMemberDocumentOp(
             adapter,
             SYSTEM_MEMBER_ID,
@@ -353,46 +410,77 @@ async function postMockDataLoadIn(
                 pairs, seedPairKey('members/:id', SYSTEM_MEMBER_ID),
             ),
         ),
-        adapter.identities.put(SYSTEM_MEMBER_ID, {
-            kind: 'service',
-        }),
-        adapter.roleGrants.put(
-            'seed-role-current-admin', {
-                organization_id: STARK_ORGANIZATION,
-                identity_id: 'current',
-                role: 'admin',
-                action: 'granted',
-                by_member_id: SYSTEM_MEMBER_ID,
-                at: MOCK_SEED_TIMESTAMP,
-            },
+        // Task 6: the system identity's own identities/:id row —
+        // driven through postIdentityDocumentOp so it forms a
+        // message pair too (Path A), the SAME op the human-member
+        // loop's own identityDocument invocation above already
+        // rides.
+        postIdentityDocumentOp(
+            adapter,
+            SYSTEM_MEMBER_ID,
+            identityDocumentBodyOf('service'),
+            SYSTEM_MEMBER_ID,
+            requirePair(
+                pairs,
+                seedPairKey('identities/:id', SYSTEM_MEMBER_ID),
+            ),
         ),
-        adapter.roleGrants.put(
-            'seed-role-current-admin-org2', {
-                organization_id: ORGANIZATION_TWO,
-                identity_id: 'current',
-                role: 'admin',
-                action: 'granted',
-                by_member_id: SYSTEM_MEMBER_ID,
-                at: MOCK_SEED_TIMESTAMP,
-            },
+        // Task 6: the two admin role grants for `current` — driven
+        // through postRoleGrantDocumentOp so each forms a message
+        // pair too (Path A). ORG-STAMP (verification finding):
+        // each invocation carries its OWN organization — role-
+        // grants/:id's successBody re-stamps organization_id from
+        // THIS argument, so an undefined/wrong value here would
+        // silently corrupt the stored response body with no
+        // fingerprint pin catching it (requests/responses are
+        // excluded tables).
+        postRoleGrantDocumentOp(
+            adapter,
+            'seed-role-current-admin',
+            roleGrantSeedBody(
+                STARK_ORGANIZATION, 'current', 'admin',
+            ),
+            SYSTEM_MEMBER_ID,
+            requirePair(
+                pairs,
+                seedPairKey(
+                    'role-grants/:id', 'seed-role-current-admin',
+                ),
+            ),
+        ),
+        postRoleGrantDocumentOp(
+            adapter,
+            'seed-role-current-admin-org2',
+            roleGrantSeedBody(
+                ORGANIZATION_TWO, 'current', 'admin',
+            ),
+            SYSTEM_MEMBER_ID,
+            requirePair(
+                pairs,
+                seedPairKey(
+                    'role-grants/:id',
+                    'seed-role-current-admin-org2',
+                ),
+            ),
         ),
         // Every non-admin human gets the member role in its
         // membership org (same assignOrganization(index) partition as
         // the membership seed above), so each seeded sign-in
         // lands on a working content tier — not a 403 wall.
-        ...members.flatMap((member, index) =>
-            member.id === 'current'
-                ? []
-                : [adapter.roleGrants.put(
-                    'seed-role-' + member.id + '-member', {
-                        organization_id: assignOrganization(index),
-                        identity_id: member.id,
-                        role: 'member',
-                        action: 'granted',
-                        by_member_id: SYSTEM_MEMBER_ID,
-                        at: MOCK_SEED_TIMESTAMP,
-                    },
-                )]),
+        ...members.flatMap((member, index) => {
+            if (member.id === 'current') return [];
+            const organization = assignOrganization(index);
+            const id = 'seed-role-' + member.id + '-member';
+            return [postRoleGrantDocumentOp(
+                adapter,
+                id,
+                roleGrantSeedBody(organization, member.id, 'member'),
+                SYSTEM_MEMBER_ID,
+                requirePair(
+                    pairs, seedPairKey('role-grants/:id', id),
+                ),
+            )];
+        }),
     ]);
 
     // The system member's initial state event. Every OTHER
@@ -754,9 +842,11 @@ async function postMockDataLoadIn(
         // postAiMemberCreationOp. POST /ai-members (and so
         // the op) writes no identities row — only members +
         // ai_members + the initial event — so the identities
-        // row rides a separate direct put through the bare
-        // PUT /identities/:id primitive (makeIdRoute), the
-        // same "leave and note" carve-out as projects.
+        // row rides a separate write, the same "leave and note"
+        // carve-out as projects. Task 6: that separate write now
+        // rides postIdentityDocumentOp (Path A) instead of the
+        // bare PUT /identities/:id primitive, so it forms a
+        // message pair too.
         ...aiMembers.flatMap(m => {
             return [
                 // Task 5: the same memberships closure as the
@@ -776,9 +866,26 @@ async function postMockDataLoadIn(
                         ),
                     ),
                 ),
-                adapter.identities.put(m.id, {
-                    kind: 'service',
-                }),
+                // Task 6: the AI member's own identities/:id row
+                // — re-pointed onto postIdentityDocumentOp so it
+                // forms a message pair too (Path A), the SAME op
+                // the system-identity site above and the human-
+                // members loop's own identityDocument invocation
+                // already ride. Its own message pair shares its
+                // uri_id with the ai-members operation/detail
+                // pairs below (the H7/arrival-order hazard —
+                // tests/mock-data-pairs.test.ts's AI-member
+                // request lookups disambiguate by response status,
+                // never by arrival order).
+                postIdentityDocumentOp(
+                    adapter,
+                    m.id,
+                    identityDocumentBodyOf('service'),
+                    SYSTEM_MEMBER_ID,
+                    requirePair(
+                        pairs, seedPairKey('identities/:id', m.id),
+                    ),
+                ),
                 postAiMemberCreationOp(
                     adapter,
                     aiMemberSeedBody(m),
@@ -1032,13 +1139,21 @@ export async function postBootstrap(
     // writes, now closed the SAME way postMockDataLoad's own
     // memberships/system-member sites are. Phase 10 Task 2: ALSO
     // forms the current member's PII document pair, closing the
-    // intake decomposition's bootstrap side.
+    // intake decomposition's bootstrap side. Task 6: ALSO forms
+    // the system member's own identities/:id document pair and
+    // its own role-grant pair — bootstrap's last two raw writes,
+    // closed the SAME way postMockDataLoad's own system-identity/
+    // role-grant sites are. The credential pairs are NOT here —
+    // seedHumanCredentials forms those itself, below, since their
+    // content is unknown until PBKDF2 resolves.
     const {
         body: currentMemberBody,
         pairs: currentMemberPairs,
         membershipPair,
         systemMemberPair,
         piiPair,
+        systemIdentityPair,
+        roleGrantPair,
     } = await formBootstrapMessagePair(nowUtc());
     // Pass 2: seed the pristine bootstrap data in one
     // transaction. Credentials seed after it commits — PBKDF2
@@ -1051,6 +1166,7 @@ export async function postBootstrap(
         (view) => postBootstrapIn(
             view, currentMemberBody, currentMemberPairs,
             membershipPair, systemMemberPair, piiPair,
+            systemIdentityPair, roleGrantPair,
         ),
     );
     const creds = await seedHumanCredentials(adapter);
@@ -1065,6 +1181,8 @@ async function postBootstrapIn(
     membershipPair: MessagePair,
     systemMemberPair: MessagePair,
     piiPair: MessagePair,
+    systemIdentityPair: MessagePair,
+    roleGrantPair: MessagePair,
 ): Promise<void> {
     // The pristine seed plants only what the app needs
     // to render its shell: the system actor that authors
@@ -1077,8 +1195,6 @@ async function postBootstrapIn(
         // the last raw members.put site bootstrap held — driven
         // through postMemberDocumentOp, the SAME op
         // postMockDataLoadIn's own system-member site now rides.
-        // Its identities row stays a raw put — the identity
-        // spine itself is Phase 9's own scope, untouched here.
         postMemberDocumentOp(
             adapter,
             SYSTEM_MEMBER_ID,
@@ -1086,9 +1202,16 @@ async function postBootstrapIn(
             SYSTEM_MEMBER_ID,
             systemMemberPair,
         ),
-        adapter.identities.put(SYSTEM_MEMBER_ID, {
-            kind: 'service',
-        }),
+        // Task 6: the system identity's own identities/:id row —
+        // driven through postIdentityDocumentOp, the SAME op
+        // postMockDataLoadIn's own system-identity site now rides.
+        postIdentityDocumentOp(
+            adapter,
+            SYSTEM_MEMBER_ID,
+            identityDocumentBodyOf('service'),
+            SYSTEM_MEMBER_ID,
+            systemIdentityPair,
+        ),
         // Task 5: bootstrap's own membership closes the SAME
         // whole-slice deferral as postMockDataLoadIn's memberships
         // — driven through postMembershipDocumentOp with
@@ -1100,6 +1223,10 @@ async function postBootstrapIn(
             SYSTEM_MEMBER_ID,
             membershipPair,
         ),
+        // STAYS RAW (Task 6 boundary): the
+        // identity_default_organizations family is deferred WHOLE
+        // to a later gate — this row forms no message pair,
+        // unlike every write around it.
         adapter.identityDefaultOrganizations.put(
             'bootstrap-default-org-current', {
                 identity_id: 'current',
@@ -1142,15 +1269,20 @@ async function postBootstrapIn(
             projects_limit: TIER_PROJECTS_LIMIT,
             ideas_limit: TIER_IDEAS_LIMIT,
         }),
-        adapter.roleGrants.put(
-            'bootstrap-role-current-admin', {
-                organization_id: STARK_ORGANIZATION,
-                identity_id: 'current',
-                role: 'admin',
-                action: 'granted',
-                by_member_id: SYSTEM_MEMBER_ID,
-                at: MOCK_SEED_TIMESTAMP,
-            },
+        // Task 6: bootstrap's own admin role grant — driven
+        // through postRoleGrantDocumentOp, the SAME op
+        // postMockDataLoadIn's own admin role-grant sites now
+        // ride. ORG-STAMP (verification finding): roleGrantPair
+        // was formed carrying THIS grant's own organization_id
+        // (STARK_ORGANIZATION) — see formBootstrapMessagePair.
+        postRoleGrantDocumentOp(
+            adapter,
+            bootstrapRoleGrantId,
+            roleGrantSeedBody(
+                STARK_ORGANIZATION, 'current', 'admin',
+            ),
+            SYSTEM_MEMBER_ID,
+            roleGrantPair,
         ),
     ]);
 }
