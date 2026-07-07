@@ -148,7 +148,8 @@ Legend for classification:
 - `GET /identities` · `GET|PUT /identities/:id` — primitive.
 - `POST /identities` — operation (§3.5). Admin-only.
 - `GET|PUT|DELETE /identities/:id/pii` — facet. Self-only read;
-  self-or-admin write.
+  self-or-admin write. PUT/DELETE ride the message plane's
+  sanctioned hard-delete zone (§5.12).
 - `GET /identity-pii` — admin PII roster.
 - `GET /identities/:id/credentials` ·
   `GET|PUT /identities/:id/credentials/:cid` — nested; the opaque
@@ -2270,3 +2271,115 @@ outcome) and the ADDITIVE `tests/api-invitations-fence.test.ts`
 KEEP-ATOMIC pin (a removed member's re-accept stays a no-op,
 proven pass-first against the PRE-task code, Author gate 6e)
 are the proof.
+
+### 5.12 The /pii hard-delete zone: single-slot erasure
+
+Phase 10 Task 3 gives `identities/:id/pii` (§2.2) the message
+plane's ONE sanctioned exception to the append-only covenant
+every other family honors. `replacePiiSlot`
+(`api/pii-hard-delete.ts`) is THE ONLY code path that deletes
+rows from `requests` or `responses` — grep-provable. Its two
+callers (`postIdentityPiiDocumentOp`'s PUT,
+the `identities/:id/pii` DELETE closure — both `api/routes.ts`)
+already ran inside `['identity_pii', 'requests', 'responses']`
+before this task; the zone rides that SAME transaction, never a
+second one (Commandment X — wrap the indivisible in the
+platform's existing primitive).
+
+**The single-slot register.** Every write at the address —
+PUT or DELETE — enumerates whatever pair(s) currently occupy it
+by ONE scan (`requests.getAllWhere('uri_prefix', ...)`), deletes
+THAT id-set from BOTH tables, then appends its own pair. A PUT
+leaves a PUT pair (the PII document); a DELETE leaves a DELETE
+pair (a bodyless erasure tombstone — evidence of erasure without
+erased content). Supersession and erasure are the SAME
+mechanism: PUT-PUT leaves exactly one (the latest) PUT pair;
+PUT-DELETE leaves exactly one tombstone; DELETE-PUT re-sets the
+slot to exactly one fresh PUT pair.
+
+**THE SINGLE-AUTHORITATIVE-ID-SET RULE.** `responses` is NEVER
+re-scanned independently and trusted to agree with `requests` —
+two independent scans could disagree (a pre-existing torn pair,
+a mid-flight anomaly), and reconciling them defensively would be
+Internal Defense over a covenant this one function alone must
+keep. Deriving both deletions from ONE id-set structurally
+preserves the orphan-pair balance (`requests.length ===
+responses.length`, asserted throughout the shadow-ledger suite)
+and guarantees the zone never MANUFACTURES a torn pair — a
+pre-existing one still surfaces on its own terms, via
+`storedResponseFor`'s `responses.getById` throwing
+`EntityNotFoundError` (message-pair.ts) rather than silently
+reading as a missing replay.
+
+**Chainless (gate 4) — sanctioned wire delta 5.**
+`identities/:id/pii` is retired from `DOCUMENT_CLASS_ROUTE_
+PATTERNS` (message-pair.ts), so the gate's pre-tx head-read
+never runs for it: every /pii pair forms with NEITHER Supersedes
+nor Follows. A stored provenance pointer at a physically removed
+pair would be a stored lie, so the absence is asserted
+EXPLICITLY (`Supersedes === null`) at both re-pinned chain
+cases, never merely the old assertion deleted. This is the ONLY
+wire delta this task ships — GET behavior is unchanged (reads
+stay old-plane until Task 8) and every PUT/DELETE status and
+body is unchanged.
+
+**The zone's confinement.** Every OTHER document-class address
+still chains exactly as before — a memberships DELETE still
+appends a tombstone that supersedes its PUT
+(`tests/api-pii-hard-delete.test.ts`'s confinement case). The
+retirement above touches ONE Set entry; it is not a blanket
+append-only exemption.
+
+**THE ERASURE-COMPLETENESS PIN (gate 5) — a theorem of gates
+1-4, scoped to the STORED SERVER PLANE.** Because gate 1 confines
+every PII byte to the /pii address alone, and gates 2-4 keep
+that ONE address chainless and single-slot, erasing it (DELETE)
+leaves zero PII bytes anywhere `requests`/`responses` or
+`identity_pii` can be scanned — proven end to end by a real
+grant → accept → human-member create → edit → erase chain
+(`tests/api-pii-hard-delete.test.ts`), scanning every stored
+message for the erased name/email/phone/bio values after the
+fact. Four residuals sit OUTSIDE this theorem, named rather than
+hidden:
+
+1. **Pre-phase historical pairs.** A database that predates this
+   task may already hold a multi-pair chain at some /pii
+   address. No scrub pass ships (gate 2's historical-residual
+   disposition, honestly stated): that chain persists until the
+   NEXT write or erase at the SAME address — `replacePiiSlot`'s
+   own next invocation is what cleans it up, lazily, as a side
+   effect of ordinary use, never a background sweep. An address
+   nobody ever revisits again keeps its full historical chain
+   forever.
+2. **Exported snapshots.** A snapshot taken before an erasure
+   carries the pre-erasure PII rows verbatim (§ Snapshots,
+   §3.26-§3.28); the theorem covers live storage, not files
+   already written to disk.
+3. **The browser's own session credential.** The `fusion.
+   session-credentials` localStorage entry carries the caller's
+   own JWT, whose `name` claim is base64-decodable client-side
+   for the token's lifetime (up to the 30-day refresh TTL). The
+   pin does not scan localStorage — an erased member's OWN prior
+   session token, if retained, still decodes to the pre-erasure
+   name until it expires or is revoked.
+4. **Replay resurrection.** A client that retained a pre-erasure
+   PUT request (the exact bytes, not merely the values) can
+   resend it: hash-keyed idempotency composed with hard-delete
+   means a byte-identical resend after the slot has moved on
+   finds no stored hash (§ The E6 branches, above) and is
+   processed as a FRESH write — which re-installs the old PII as
+   a new, live slot. The theorem proves the LEDGER holds no
+   trace between erasure and such a resend; it cannot prove no
+   such resend will ever arrive.
+
+`tests/api-pii-hard-delete.test.ts` (new) is the proof: PUT-PUT
+single slot; PUT-DELETE tombstone; DELETE-PUT re-set; the E6
+branches (a byte-identical resend against the live slot replays
+and appends nothing; the same resend after supersession finds
+no stored hash and appends fresh); the erasure-completeness
+chain; the zone's confinement; the tombstone-Supersedes absence
+asserted explicitly on both verbs. The re-pinned
+`tests/api-shadow-ledger-members-identities.test.ts` moves its
+two pii chain cases (PUT-PUT, PUT-DELETE) from asserting a
+Supersedes chain to asserting the single-slot replacement —
+the ONLY re-pins this task authorizes.
