@@ -9,6 +9,7 @@ import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 import {
     deriveStates,
     deriveStatesFor,
+    deriveInvitationStates,
 } from '../api/derive-states.ts';
 import {
     formWritePair, appendMessagePair,
@@ -577,5 +578,196 @@ test('deriveStatesFor: each family\'s own entity subset', async () => {
         (await deriveStatesFor(fx.db, 'A', fx.invitationId))
             .map((row) => row.id),
         ['ev-union-grant', 'ev-union-accept'],
+    );
+});
+
+// ---- 3. invitation phantom-pair regressions (gate 5f) -----------
+
+// deriveInvitationStates cross-references the invitation
+// DOCUMENT plane to exclude a duplicate grant's own operation
+// pair (which forms but writes neither a document nor a states
+// event), and takes only the EARLIEST pair per answering-op
+// address to exclude an idempotent resend's own operation pair
+// (which forms but posts no second lifecycle event). Both
+// exclusions are hand-trace-verified in deriveInvitationStates'
+// own header comment above but had no regression coverage before
+// this section — these three tests drive each phantom shape
+// through handleRequest and assert row counts, not just presence.
+
+test('deriveInvitationStates: a duplicate grant on the same'
++ ' pending (organization, invitee) pair derives exactly ONE'
++ ' \'pending\' row, and posts no event on the old plane for'
++ ' the duplicate\'s own id', async () => {
+    const db = await seed();
+    const tokenA = await organizationToken('adminA', 'A');
+    await person(
+        db, 'invitee-dup', 'Dup Invitee', 'invitee-dup@x.com',
+    );
+
+    const first = await handleRequest(db, req(
+        'POST', '/invitations', tokenA,
+        {
+            email: 'invitee-dup@x.com',
+            invitationId: 'inv-dup-a',
+            grantEventId: 'ev-dup-grant-a',
+            grantAt: '2026-04-01T00:00:00.000000Z',
+        },
+    ));
+    assert.equal(first.status, 200, 'first grant failed');
+
+    const second = await handleRequest(db, req(
+        'POST', '/invitations', tokenA,
+        {
+            email: 'invitee-dup@x.com',
+            invitationId: 'inv-dup-b',
+            grantEventId: 'ev-dup-grant-b',
+            grantAt: '2026-04-01T00:00:00.000001Z',
+        },
+    ));
+    assert.equal(second.status, 200, 'duplicate grant failed');
+    const secondBody = await second.json() as { id: string };
+    // The duplicate echoes the ORIGINAL invitation id, never its
+    // own submitted one.
+    assert.equal(secondBody.id, 'inv-dup-a');
+
+    // The old plane: no event was ever posted for the
+    // duplicate's own submitted id — a REAL second pending row
+    // here would be a live parity bug, not a test gap.
+    assert.deepEqual(
+        await db.states.getAllFor('inv-dup-b'), [],
+    );
+
+    const rows = await deriveInvitationStates(db);
+    const pendingForOriginal = rows.filter(
+        (row) => row.entity_id === 'inv-dup-a'
+            && row.state === 'pending',
+    );
+    assert.equal(pendingForOriginal.length, 1);
+    assert.equal(pendingForOriginal[0]!.id, 'ev-dup-grant-a');
+
+    // No phantom row was derived for the duplicate's own id.
+    assert.equal(
+        rows.some((row) => row.entity_id === 'inv-dup-b'), false,
+    );
+});
+
+test('deriveInvitationStates: a re-accept (idempotent resend)'
++ ' derives exactly ONE \'accepted\' row, keyed to the FIRST'
++ ' accept\'s own event id', async () => {
+    const db = await seed();
+    const tokenA = await organizationToken('adminA', 'A');
+    await person(
+        db, 'invitee-reaccept', 'Reaccept Invitee',
+        'invitee-reaccept@x.com',
+    );
+    const inviteeToken = await organizationToken(
+        'invitee-reaccept', 'A',
+    );
+
+    const grantRes = await handleRequest(db, req(
+        'POST', '/invitations', tokenA,
+        {
+            email: 'invitee-reaccept@x.com',
+            invitationId: 'inv-reaccept',
+            grantEventId: 'ev-reaccept-grant',
+            grantAt: '2026-04-02T00:00:00.000000Z',
+        },
+    ));
+    assert.equal(grantRes.status, 200, 'grant failed');
+
+    const firstAccept = await handleRequest(db, req(
+        'POST', '/invitations/inv-reaccept/acceptance',
+        inviteeToken,
+        {
+            membershipId: 'ms-reaccept-1',
+            acceptEventId: 'ev-reaccept-accept-1',
+            acceptAt: '2026-04-02T00:00:00.000001Z',
+        },
+    ));
+    assert.equal(firstAccept.status, 204, 'first accept failed');
+
+    const secondAccept = await handleRequest(db, req(
+        'POST', '/invitations/inv-reaccept/acceptance',
+        inviteeToken,
+        {
+            membershipId: 'ms-reaccept-2',
+            acceptEventId: 'ev-reaccept-accept-2',
+            acceptAt: '2026-04-02T00:00:00.000002Z',
+        },
+    ));
+    assert.equal(
+        secondAccept.status, 204, 're-accept must stay a no-op',
+    );
+
+    const rows = await deriveInvitationStates(db);
+    const accepted = rows.filter(
+        (row) => row.entity_id === 'inv-reaccept'
+            && row.state === 'accepted',
+    );
+    assert.equal(accepted.length, 1);
+    assert.equal(accepted[0]!.id, 'ev-reaccept-accept-1');
+    assert.equal(
+        rows.some((row) => row.id === 'ev-reaccept-accept-2'),
+        false,
+    );
+});
+
+test('deriveInvitationStates: a re-decline (idempotent resend)'
++ ' derives exactly ONE \'declined\' row, keyed to the FIRST'
++ ' decline\'s own event id', async () => {
+    const db = await seed();
+    const tokenA = await organizationToken('adminA', 'A');
+    await person(
+        db, 'invitee-redecline', 'Redecline Invitee',
+        'invitee-redecline@x.com',
+    );
+    const inviteeToken = await organizationToken(
+        'invitee-redecline', 'A',
+    );
+
+    const grantRes = await handleRequest(db, req(
+        'POST', '/invitations', tokenA,
+        {
+            email: 'invitee-redecline@x.com',
+            invitationId: 'inv-redecline',
+            grantEventId: 'ev-redecline-grant',
+            grantAt: '2026-04-03T00:00:00.000000Z',
+        },
+    ));
+    assert.equal(grantRes.status, 200, 'grant failed');
+
+    const firstDecline = await handleRequest(db, req(
+        'POST', '/invitations/inv-redecline/decline',
+        inviteeToken,
+        {
+            declineEventId: 'ev-redecline-decline-1',
+            declineAt: '2026-04-03T00:00:00.000001Z',
+        },
+    ));
+    assert.equal(firstDecline.status, 204, 'first decline failed');
+
+    const secondDecline = await handleRequest(db, req(
+        'POST', '/invitations/inv-redecline/decline',
+        inviteeToken,
+        {
+            declineEventId: 'ev-redecline-decline-2',
+            declineAt: '2026-04-03T00:00:00.000002Z',
+        },
+    ));
+    assert.equal(
+        secondDecline.status, 204,
+        're-decline must stay a no-op',
+    );
+
+    const rows = await deriveInvitationStates(db);
+    const declined = rows.filter(
+        (row) => row.entity_id === 'inv-redecline'
+            && row.state === 'declined',
+    );
+    assert.equal(declined.length, 1);
+    assert.equal(declined[0]!.id, 'ev-redecline-decline-1');
+    assert.equal(
+        rows.some((row) => row.id === 'ev-redecline-decline-2'),
+        false,
     );
 });
