@@ -22,6 +22,12 @@ import {
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
+// Strictly later than AT: at an EQUAL `at`, latestByKey's
+// (at, id) tiebreak falls to the larger event id, and
+// 'idea-b-genesis' sorts after 'ev-b-delete' — an equal-`at`
+// delete would lose the tiebreak and idea-b would never
+// genuinely read as deleted.
+const LATER = '2026-06-01T00:00:00.000000Z';
 
 function req(
     method: string,
@@ -222,7 +228,7 @@ async () => {
     // tests/api-states-ownership-fence.test.ts).
     const del = await handleRequest(db, req(
         'PUT', '/states/ev-b-delete', tokenB,
-        { entity_id: 'idea-b', state: 'deleted', at: AT },
+        { entity_id: 'idea-b', state: 'deleted', at: LATER },
     ));
     assert.equal(del.status, 200);
 
