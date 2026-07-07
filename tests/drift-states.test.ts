@@ -608,6 +608,112 @@ async () => {
     assert.equal(derived.length, 2);
 });
 
+test('case 4d: claim, release via the STANDALONE PUT'
++ ' /states/:id address (the deleteWorkOrderClaim shape — a'
++ ' claim_released event with no claim/transition op pair'
++ ' beside it), then RE-claim — the replay must see that'
++ ' states/:id release as the prior claim event (exactly as'
++ ' postWorkOrderClaimOp\'s own in-tx getAllFor sees it), so'
++ ' the fresh claim posts a PLAIN \'claimed\' event with no'
++ ' synthetic \'claim_expired\' — parity holds at every step',
+async () => {
+    const db = await seededDb();
+    const token = await organizationToken(
+        'current', STARK_ORGANIZATION,
+    );
+    const workOrderId = 'drift-states-wo-standalone-release-1';
+    const flowWorkOrderId = workOrderId + '-fwo';
+    const flowId = 'drift-states-wo-standalone-release-flow';
+    // A large lock_timeout: if the replay wrongly fell back to
+    // the ORIGINAL claim as "prior" (never seeing the standalone
+    // release), that claim would read as still LIVE at the
+    // reclaim below, and the bug (zero events emitted) would
+    // reproduce. A tiny lock_timeout would let a correct-by-
+    // accident expiry takeover mask the same bug.
+    const bigLockTimeoutSeconds = 8 * 60 * 60;
+
+    const created = await handleRequest(db, req(
+        'POST', '/work-orders', token,
+        createWorkOrderBody(
+            workOrderId, flowWorkOrderId, flowId,
+            workOrderFlowGraph(bigLockTimeoutSeconds),
+            {
+                ids: [
+                    workOrderId + '-ev1',
+                    workOrderId + '-ev2',
+                    workOrderId + '-ev3',
+                ],
+                ats: [nowUtc(), nowUtc(), nowUtc()],
+                states: ['n-start', 'n-middle', 'n-finish'],
+            },
+            nowUtc(),
+        ),
+    ));
+    assert.equal(created.status, 204);
+    await assertHistoryParity(db, STARK_ORGANIZATION, workOrderId);
+
+    const claimAt = nowUtc();
+    const claim = await handleRequest(db, req(
+        'POST', '/work-orders/' + workOrderId + '/claim', token, {
+            claimEventId: workOrderId + '-ce1',
+            claimAt,
+            expireEventId: workOrderId + '-ee1',
+            expireAt: claimAt,
+        },
+    ));
+    assert.equal(claim.status, 204);
+    await assertHistoryParity(db, STARK_ORGANIZATION, workOrderId);
+
+    // The standalone release: web-app/app/adapters/work-orders-
+    // deletions.ts's deleteWorkOrderClaim posts this EXACT shape
+    // via postStateEvent — PUT states/:id with {entity_id, state:
+    // 'claim_released', at} — never a claim/transition op pair.
+    const releaseEventId = workOrderId + '-release1';
+    const releaseAt = nowUtc();
+    const released = await handleRequest(db, req(
+        'PUT', '/states/' + releaseEventId, token, {
+            entity_id: workOrderId,
+            state: 'claim_released',
+            at: releaseAt,
+        },
+    ));
+    assert.equal(released.status, 200);
+    await assertHistoryParity(db, STARK_ORGANIZATION, workOrderId);
+
+    // The RE-claim, MILLISECONDS after the release and nowhere
+    // near the (large) lock_timeout of the ORIGINAL claim. The
+    // live route grants it outright (its in-tx getAllFor reads
+    // the full log and finds the release, not the stale claim,
+    // as the prior claim-vocabulary event).
+    const reclaimAt = nowUtc();
+    const reclaimed = await handleRequest(db, req(
+        'POST', '/work-orders/' + workOrderId + '/claim', token, {
+            claimEventId: workOrderId + '-ce2',
+            claimAt: reclaimAt,
+            expireEventId: workOrderId + '-ee2',
+            expireAt: reclaimAt,
+        },
+    ));
+    assert.equal(reclaimed.status, 204);
+
+    const derived = await assertHistoryParity(
+        db, STARK_ORGANIZATION, workOrderId,
+    );
+    // The expiry-interaction pin: the fresh claim lands as a
+    // PLAIN 'claimed' event, never preceded by a synthetic
+    // 'claim_expired' — a standalone release resets the
+    // prior-claim baseline entirely, so the reclaim is never
+    // treated as an expiry takeover of the (chronologically
+    // superseded) original claim.
+    assert.deepEqual(
+        derived.map((row) => row.state),
+        [
+            'n-start', 'n-middle', 'n-finish',
+            'claimed', 'claim_released', 'claimed',
+        ],
+    );
+});
+
 // ---- case 5: the NEW sources — flow-node delete+undo, ------------
 // ---- invitation grant/accept/decline (the seed has NEITHER) ------
 

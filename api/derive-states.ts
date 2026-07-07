@@ -109,6 +109,47 @@ import {
 const STATES_ADDRESS_PATTERN =
     /^(?:\/organizations\/([^/]+))?\/states\/$/;
 
+// The pure states/:id pair-decode — factored out of
+// deriveEventPairStates so deriveWorkOrderLifecycle's own claim
+// replay (below) can consult the SAME rows, over requests/
+// responses it has ALREADY fetched inside its own torn-read
+// transaction, rather than re-implementing the address match or
+// opening a second, independently-snapshotted transaction.
+function eventPairStatesFrom(
+    requests: readonly RequestEntity[],
+    responses: readonly ResponseEntity[],
+): StateEntity[] {
+    const prefixes = new Set<string>();
+    for (const request of requests) {
+        if (STATES_ADDRESS_PATTERN.test(request.uri_prefix)) {
+            prefixes.add(request.uri_prefix);
+        }
+    }
+    const rows: StateEntity[] = [];
+    for (const prefix of prefixes) {
+        for (const pair of documentPairsAt(
+            requests, responses, prefix,
+        )) {
+            rows.push({
+                id: pair.uriId,
+                entity_id: pickString(pair.body, 'entity_id'),
+                state: pickString(pair.body, 'state'),
+                // The stored member_id: the pair's own
+                // requester — stamped from the verified
+                // actor at write time (routes.ts's PUT
+                // /states/:id handler), never a body
+                // field (validateStateBody admits no
+                // member_id key at all). No response-body
+                // decode needed here, unlike the identity
+                // spine's gate-16 role-grants deviation.
+                member_id: pair.requesterIdentityId,
+                at: pickString(pair.body, 'at'),
+            });
+        }
+    }
+    return rows;
+}
+
 // Every LIVE event posted through the dedicated PUT /states/:id
 // address, across every organization — an entity family's OWN
 // embedded lifecycle trio (ideas/projects/flows/work-orders) is a
@@ -127,38 +168,8 @@ export async function deriveEventPairStates(
                 view.requests.getAll(),
                 view.responses.getAll(),
             ]);
-            const prefixes = new Set<string>();
-            for (const request of requests) {
-                if (
-                    STATES_ADDRESS_PATTERN.test(request.uri_prefix)
-                ) {
-                    prefixes.add(request.uri_prefix);
-                }
-            }
-            const rows: StateEntity[] = [];
-            for (const prefix of prefixes) {
-                for (const pair of documentPairsAt(
-                    requests, responses, prefix,
-                )) {
-                    rows.push({
-                        id: pair.uriId,
-                        entity_id:
-                            pickString(pair.body, 'entity_id'),
-                        state: pickString(pair.body, 'state'),
-                        // The stored member_id: the pair's own
-                        // requester — stamped from the verified
-                        // actor at write time (routes.ts's PUT
-                        // /states/:id handler), never a body
-                        // field (validateStateBody admits no
-                        // member_id key at all). No response-body
-                        // decode needed here, unlike the identity
-                        // spine's gate-16 role-grants deviation.
-                        member_id: pair.requesterIdentityId,
-                        at: pickString(pair.body, 'at'),
-                    });
-                }
-            }
-            return rows.sort(byIdAscending);
+            return eventPairStatesFrom(requests, responses)
+                .sort(byIdAscending);
         },
     );
 }
@@ -658,14 +669,44 @@ function lockTimeoutAsOf(
     ).lockTimeout;
 }
 
+// Every candidate event a claim pair's prior-claim decision may
+// draw from: the replay's OWN emitted events so far, MERGED with
+// the states/:id event-append rows for this SAME work-order
+// entity (gate 5a's own rows — releasing a claim through the
+// standalone PUT states/:id address, e.g. deleteWorkOrderClaim's
+// 'claim_released', is a REAL product path this replay never
+// otherwise sees, since it lands as an EVENT-APPEND pair, not a
+// claim/transition OP pair). This reproduces the SAME full-log
+// view postWorkOrderClaimOp's own in-tx `view.states.getAllFor
+// (workOrderId)` sees live (routes.ts), as a pure merge over two
+// already-fetched arrays rather than a live table read.
+//
+// The `replayed` half is already bounded to "earlier" by the
+// caller's own (at, id)-ordered processing; the states/:id half
+// is NOT — it is the entity's FULL direct-address history, which
+// can include events chronologically AFTER this claim (a later
+// release, a later unrelated event) — so filtering both halves to
+// strictly-before `claim` is load-bearing here, not a redundant
+// re-check.
+function priorClaimCandidates(
+    replayed: readonly StateEntity[],
+    statesAddressEvents: readonly StateEntity[],
+    claim: OperationPair,
+): StateEntity[] {
+    return [...replayed, ...statesAddressEvents]
+        .filter((row) => atIdCompare(row, claim) < 0)
+        .sort(atIdCompare);
+}
+
 // Each claim pair re-runs the route's own 0/1/2-event decision
 // with the pair BODY's claimAt as the reference clock (EDGE 2).
-// PRIOR state reduces from the REPLAYED events so far (never
+// PRIOR state reduces from priorClaimCandidates above (never
 // old-plane rows) via latestClaimEvent's own CLAIM_STATES filter +
 // (at, id) max.
 function applyClaimPair(
     replayed: StateEntity[],
     entityPairs: readonly DocumentPair[],
+    statesAddressEvents: readonly StateEntity[],
     claim: OperationPair,
     workOrderId: Id,
 ): void {
@@ -676,7 +717,10 @@ function applyClaimPair(
     );
     const expireAt = pickString(claim.body, 'expireAt');
     const lockTimeout = lockTimeoutAsOf(entityPairs, claim.at);
-    const prior = latestClaimEvent(replayed, workOrderId);
+    const prior = latestClaimEvent(
+        priorClaimCandidates(replayed, statesAddressEvents, claim),
+        workOrderId,
+    );
     const priorLive = prior !== null
         && prior.state === 'claimed'
         && !isExpiredAsOf(claimAt, prior.at, lockTimeout);
@@ -752,10 +796,14 @@ type WorkOrderAction =
 // more three-slot arrays, one per create pair found), then its
 // claim/transition actions applied in (at, id) order so each
 // claim's prior-claim lookup only ever sees chronologically
-// earlier events.
+// earlier events. `statesAddressEvents` is this SAME work
+// order's own states/:id rows (gate 5a) — threaded through so
+// applyClaimPair's prior-claim decision can see a standalone
+// release, exactly as the live route's own full-log read does.
 function replayWorkOrderOperations(
     createPairs: readonly OperationPair[],
     entityPairs: readonly DocumentPair[],
+    statesAddressEvents: readonly StateEntity[],
     claimPairs: readonly OperationPair[],
     transitionPairs: readonly OperationPair[],
     workOrderId: Id,
@@ -791,7 +839,8 @@ function replayWorkOrderOperations(
     for (const action of actions) {
         if (action.kind === 'claim') {
             applyClaimPair(
-                events, entityPairs, action.pair, workOrderId,
+                events, entityPairs, statesAddressEvents,
+                action.pair, workOrderId,
             );
         } else {
             applyTransitionPair(events, action.pair, workOrderId);
@@ -847,6 +896,20 @@ export async function deriveWorkOrderLifecycle(
                 entityPairs, (pair) => pair.uriId,
             );
 
+            // Gate 5a's own rows, reused (not re-read) here: a
+            // claim released through the standalone PUT
+            // states/:id address (deleteWorkOrderClaim) is
+            // invisible to this reader's own claim/transition op
+            // pairs, yet the live route's prior-claim decision
+            // DOES see it (its in-tx getAllFor reads every
+            // address). Grouped by entity_id so each work order's
+            // replay merges only its OWN rows (priorClaimCandidates
+            // above).
+            const statesAddressByWorkOrder = Map.groupBy(
+                eventPairStatesFrom(requests, responses),
+                (row) => row.entity_id,
+            );
+
             const claimPrefixByWorkOrder = new Map<Id, string>();
             const transitionPrefixByWorkOrder =
                 new Map<Id, string>();
@@ -896,6 +959,7 @@ export async function deriveWorkOrderLifecycle(
                 events.push(...replayWorkOrderOperations(
                     createPairsByWorkOrder.get(workOrderId) ?? [],
                     entityPairsByWorkOrder.get(workOrderId) ?? [],
+                    statesAddressByWorkOrder.get(workOrderId) ?? [],
                     claimPairs,
                     transitionPairs,
                     workOrderId,
