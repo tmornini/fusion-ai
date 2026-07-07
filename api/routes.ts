@@ -2602,6 +2602,41 @@ export async function postIdentityPiiDocumentOp(
     );
 }
 
+// Identity document write — extracted byte-for-byte from the
+// hand-written identities/:id PUT closure (the
+// postIdentityPiiDocumentOp precedent above): an identities row
+// and its pair commit as ONE transaction; no states interaction
+// — an edit does not move the identity's own lifecycle, since
+// the shared id's REAL states events ride the untouched states
+// plane instead (the members-family precedent: MEMBERS_WIRING's
+// shared-log-with-genesis bucket below). `pair` is optional so
+// a below-facade caller with no pair keeps compiling; the live
+// route always supplies one. `_actor` is unused for the same
+// reason postIdentityPiiDocumentOp's is: there is no state
+// event here to author.
+export async function postIdentityDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<IdentityEntity, 'id'>> {
+    return db.transaction(
+        ['identities', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.identities.put(
+                id,
+                withoutId(body) as unknown as
+                    Omit<IdentityEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -3334,31 +3369,18 @@ export const routes: Route[] = [
         post: (db, _p, body, _actor, pair) =>
             postIdentityCreationOp(db, body, pair),
     }),
-    // Hand-written in place of makeIdRoute<IdentityEntity> so
-    // PUT can append its message pair in the same transaction
-    // as the write — the factory's fixed closures have no
-    // per-family pair selector (see message-pair.ts). GET
-    // reproduces the factory closure byte-equivalently; verbs
-    // stay {get, put}.
+    // Hand-written in place of makeIdRoute<IdentityEntity>: PUT
+    // dispatches to postIdentityDocumentOp (above) so it can
+    // append its message pair in the same transaction as the
+    // write — the factory's fixed closures have no per-family
+    // pair selector (see message-pair.ts). GET reproduces the
+    // factory closure byte-equivalently; verbs stay {get, put}.
     route('identities/:id', {
         get: (db, p) => db.identities.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['identities', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.identities.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<IdentityEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postIdentityDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
     }),
     // PII is a facet of the identity's own subtree: GET is
     // self-only, PUT/DELETE self-or-admin (enforced in the
