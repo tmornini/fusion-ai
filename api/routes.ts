@@ -58,7 +58,7 @@ import {
     validateIdeaDocumentBody,
     validateIdeaSubmissionEntity,
     validateIdentityCreateBody,
-    validateIdentityEntity,
+    validateIdentityDocumentBody,
     validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
     validateIdentityProviderEntity,
@@ -600,6 +600,44 @@ const HUMAN_MEMBERS_WIRING: DocumentFamilyWiring = {
     documentOp: postHumanMemberDocumentOp,
     entityOf: humanMemberDocumentEntityOf,
 };
+// The bare identities row spreads safely (no organization_id, no
+// trio — the SAME reason memberDocumentEntityOf's own comment
+// gives). `_organization` stays unused: identities is GLOBAL
+// plane too (family-registry.ts: organizationNested:false).
+function identityDocumentEntityOf(
+    document: DerivedDocument,
+    _organization: Id,
+): unknown {
+    return {
+        id: document.uriId,
+        ...document.body,
+    };
+}
+// The identities wiring row — the TWELFTH registered family, and
+// the FOURTH member of MEMBERS_WIRING's shared-log-with-genesis
+// 'stateless' bucket (see its own comment above for the full
+// rationale-contrast): the shared id (member.id === identity.id,
+// always) already receives a genesis states event at create and
+// archive/reactivate via PUT states/:id, so the identities
+// document plane carries NO lifecycle of its own — its REAL
+// states events ride the untouched states plane instead. A
+// 'stateless' family's ONLY tombstone signal is a DELETE-method
+// head, already 404-absent via deriveDocumentsAt with no further
+// walk needed (document-family.ts's derivedDocumentEntity) — the
+// SAME deleted-filter escape hatch every 'stateless' family
+// before it accepted. notFoundTable is 'identities' — its
+// storage table name matches its family name, like ideas/
+// projects/flows/records/objectives/memberships/members (work-
+// orders/record-attributes/ai-members/human-members are the
+// families whose names diverge).
+const IDENTITIES_WIRING: DocumentFamilyWiring = {
+    family: 'identities',
+    lifecycle: 'stateless',
+    notFoundTable: 'identities',
+    validateDocument: validateIdentityDocumentBody,
+    documentOp: postIdentityDocumentOp,
+    entityOf: identityDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
@@ -611,6 +649,7 @@ registerDocumentFamilyWiring(MEMBERSHIPS_WIRING);
 registerDocumentFamilyWiring(MEMBERS_WIRING);
 registerDocumentFamilyWiring(AI_MEMBERS_WIRING);
 registerDocumentFamilyWiring(HUMAN_MEMBERS_WIRING);
+registerDocumentFamilyWiring(IDENTITIES_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -2927,13 +2966,19 @@ export const WRITE_RESPONSE_SPECS:
         post: { status: 204 },
     },
     'identities': { status: 204 },
-    'identities/:id': {
-        status: 200,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateIdentityEntity(withoutId(body ?? {})),
-        }),
-    },
+    // The generic document-form builder (api/document-family.ts)
+    // absorbs the hand-written successBody — see the members/:id
+    // entry above for the shared rationale. identities is ALSO
+    // organizationNested:false, so documentWriteResponseSpec's
+    // registration-first consult omits the organization_id stamp
+    // here too — the emitted bytes stay UNCHANGED from the
+    // hand-written body above ({id, kind}):
+    // validateIdentityDocumentBody's entity carries no
+    // organization_id to spread in the first place, and the
+    // consult never adds one from the fence either — key-set and
+    // value equality re-confirmed at Step 0(a) of the task that
+    // wired this row.
+    'identities/:id': documentWriteResponseSpec(IDENTITIES_WIRING),
     'identities/:id/pii': {
         status: 200,
         successBody: (params, body) => ({
@@ -3440,18 +3485,13 @@ export const routes: Route[] = [
         post: (db, _p, body, _actor, pair) =>
             postIdentityCreationOp(db, body, pair),
     }),
-    // Hand-written in place of makeIdRoute<IdentityEntity>: PUT
-    // dispatches to postIdentityDocumentOp (above) so it can
-    // append its message pair in the same transaction as the
-    // write — the factory's fixed closures have no per-family
-    // pair selector (see message-pair.ts). GET reproduces the
-    // factory closure byte-equivalently; verbs stay {get, put}.
+    // PUT rides the generic documentPutHandler(IDENTITIES_WIRING)
+    // — wire-identical to postIdentityDocumentOp's own direct
+    // dispatch it replaces. GET stays hand-written (Task 8 flips
+    // reads); verbs stay {get, put}.
     route('identities/:id', {
         get: (db, p) => db.identities.getById(param(p, 0)),
-        put: (db, p, body, actor, pair) =>
-            postIdentityDocumentOp(
-                db, param(p, 0), body, actor, pair,
-            ),
+        put: documentPutHandler(IDENTITIES_WIRING),
     }),
     // PII is a facet of the identity's own subtree: GET is
     // self-only, PUT/DELETE self-or-admin (enforced in the

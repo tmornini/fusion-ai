@@ -443,8 +443,15 @@ export async function appendMessagePair(
 // family by family in Tasks 2-5. A registered family (family-
 // registry.ts) answers ONLY from its own createBodyIdField —
 // its entry here is deleted, never kept as a parallel truth.
+// Identities' own entry retired here (Phase 10 Task 4): the
+// twelfth registered family now answers ONLY from its own
+// family-registry.ts createBodyIdField. 'invitations' is the
+// ONE entry this table keeps PERMANENTLY — the invitations side
+// channel is never a family-registry.ts registrant (it has no
+// organization-nesting tier, no concurrency class, no document
+// address of its own to register), so this literal table stays
+// its one consult forever, not a waypoint to registration.
 const CREATE_BODY_ID_FIELDS: Record<string, string> = {
-    'identities': 'id',
     // Not gate-dispatched (the invitations side channel forms
     // its own pair directly in invitations-domain.ts) but reuses
     // this SAME override table so createdEntityUriId serves both
@@ -458,8 +465,7 @@ export function createdEntityUriId(
 ): string | undefined {
     // A registered family's createBodyIdField serves a bare
     // collection-POST create route whose pattern IS the family
-    // name (e.g. 'identities' below, still an unregistered
-    // literal). Ideas registered this slot in Task 1 for its own
+    // name. Ideas registered this slot in Task 1 for its own
     // POST /ideas, which Phase 2 Task 3 (R1) retired — genesis
     // folded into the document-class PUT ideas/:id, whose uriId
     // messageAddress already derives from the path segment, so
@@ -480,8 +486,13 @@ export function createdEntityUriId(
     // Task 1) is the third: POST records is also a live bare
     // collection-POST create route whose pattern is literally
     // 'records', so the coincidence now fires for THREE live
-    // routes. Falls back to the literal table for every
-    // not-yet-registered pattern.
+    // routes. Identities (twelfth family, Phase 10 Task 4) is the
+    // fourth: POST identities is also a live bare collection-POST
+    // create route whose pattern is literally 'identities' — the
+    // SAME slot the literal table above used to answer, now
+    // answered from the registry instead, so the coincidence now
+    // fires for FOUR live routes. Falls back to the literal table
+    // for every not-yet-registered pattern.
     const registered = familyRegistration(routePattern);
     const field = registered !== undefined
         ? registered.createBodyIdField

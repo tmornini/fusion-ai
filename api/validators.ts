@@ -828,6 +828,49 @@ export function validateIdentityEntity(
     return { kind };
 }
 
+const IDENTITY_DOCUMENT_BODY_KEYS: readonly string[] = ['kind'];
+
+export interface IdentityDocumentBody {
+    readonly entity: Omit<IdentityEntity, 'id'>;
+}
+
+// The HTTP-body gate for PUT /identities/:id: the twelfth
+// registered family, and the FOURTH member of MEMBERS_WIRING's
+// shared-log-with-genesis 'stateless' bucket (see MEMBERS_WIRING
+// in routes.ts for the full rationale-contrast) — the shared id
+// (member.id === identity.id, always) already receives a genesis
+// states event at create and archive/reactivate via PUT
+// states/:id, so a document-address trio here would FREEZE that
+// lifecycle at genesis forever. THE LABEL MANDATE (the Phase 7
+// Objective precedent, a NAMED byte-parity-over-convention
+// choice): the assertOnlyKeys label is 'IdentityEntity', matching
+// TODAY'S store validator (validateIdentityEntity) byte-for-byte,
+// NOT the 'IdentityDocumentBody' naming convention every other
+// *DocumentBody validator uses — the label appears in the wire
+// 400 body ("unexpected key ... for IdentityEntity"), and the
+// convention's label would change those bytes. `kind`'s own rule
+// (validateEnumField over the SAME two-member enum) is IDENTICAL
+// to validateIdentityEntity's, so the missing/stray-key 400s stay
+// byte-identical on both paths too. Global plane (family-
+// registry.ts: organizationNested:false) — no organization_id
+// exists on this entity, so nothing is tolerated beyond `kind`.
+export function validateIdentityDocumentBody(
+    body: Record<string, unknown>,
+): IdentityDocumentBody {
+    assertOnlyKeys(
+        body, IDENTITY_DOCUMENT_BODY_KEYS, 'IdentityEntity',
+    );
+    const kind = validateEnumField(
+        body, 'kind', ['person', 'service'],
+        'identity kind', 'IdentityEntity',
+    );
+    return {
+        entity: {
+            kind,
+        },
+    };
+}
+
 const IDENTITY_PII_BODY_KEYS: readonly string[] = [
     'name', 'email', 'phone', 'bio',
 ];
