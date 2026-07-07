@@ -30,10 +30,6 @@ import type {
     ObjectiveCreationPairs,
     MemberWritePairs,
 } from './routes.ts';
-import type {
-    StateEntity,
-    StateFieldValueEntity,
-} from './types.ts';
 import {
     SYSTEM_MEMBER_ID,
     nowUtc,
@@ -43,6 +39,7 @@ import {
 } from '../shared/crypto-safe-base62.ts';
 import { hashPassword } from '../shared/password-hash.ts';
 import type { MessagePair } from './message-pair.ts';
+import { appendMessagePair } from './message-pair.ts';
 import {
     daysFromNow,
     humanMemberPoolsByOrganization,
@@ -87,6 +84,8 @@ import {
     projectStateEvents,
     flowStateEvents,
     recordStateEvents,
+    memberStateEvents,
+    mockStateFieldValues,
     mockProjectFlows,
     mockFlowRecords,
     humanMemberSeedBody,
@@ -112,6 +111,7 @@ import {
     membershipSeedBody,
     bootstrapMembershipId,
     bootstrapRoleGrantId,
+    bootstrapSystemStateEventId,
     humanMemberPiiSeedBody,
     bootstrapCurrentMemberPiiBody,
     roleGrantSeedBody,
@@ -488,15 +488,9 @@ async function postMockDataLoadIn(
     // event posted by its create op (postHumanMemberCreationOp
     // / postAiMemberCreationOp) below. The states log is the
     // sole source of member state; the row carries no column.
-    const memberStateEvents: StateEntity[] = [
-        {
-            id: `seed-member-${SYSTEM_MEMBER_ID}-active`,
-            entity_id: SYSTEM_MEMBER_ID,
-            state: 'active',
-            member_id: SYSTEM_MEMBER_ID,
-            at: MOCK_SEED_TIMESTAMP,
-        },
-    ];
+    // memberStateEvents is imported from seed-message-pairs.ts —
+    // pass 1 there needs the SAME array to form its own message
+    // pair before this transaction opens (Phase 11 Task 3).
 
     const ideas = buildIdeas();
 
@@ -639,72 +633,16 @@ async function postMockDataLoadIn(
         recordStateEvents.map(e => [e.entity_id, e]),
     );
 
-    const fCompanyName =
-        '5JZ0LeKdPCa4QMtg1RsF1M';
-    const fEmail =
-        'nplTIh0qXNtAyoWSwRaBYe';
-    const fPhone =
-        'kzHpMw9f1thq79VoBYeIX3';
-    const fIndustry =
-        'QsmqiOmPtoMLGpSjHOqdHA';
-    const fRevenue =
-        '0TyjQRcygn3DIyXTe6x1F6';
-    const fEmployees =
-        '8Z62tcRHBpwCRH1kBffx0G';
-    const fReviewerNotes =
-        'AdQlKf43JV6yrhQbyskDkR';
-
     const mockWorkOrders = buildWorkOrders();
 
     const mockFlowWorkOrders = buildFlowWorkOrderJoins();
 
     const mockStateEvents = buildWorkOrderStateEvents();
 
-    const mockStateFieldValues:
-        StateFieldValueEntity[] = [
-        {
-            id: '4izDJCuygAL7iqjeHdephl',
-            state_event_id: 'eJEybxfXaf3sjwFilZnunU',
-            attribute_id: fCompanyName,
-            value: 'Acme Corp',
-        },
-        {
-            id: 'NBmVbZMOWPSMZ11zhTpzEQ',
-            state_event_id: 'eJEybxfXaf3sjwFilZnunU',
-            attribute_id: fEmail,
-            value: 'onboard@acme.com',
-        },
-        {
-            id: 'lxSMfOtoXk89FTuxLj895r',
-            state_event_id: 'eJEybxfXaf3sjwFilZnunU',
-            attribute_id: fPhone,
-            value: '+1-555-0100',
-        },
-        {
-            id: 'F8Cagh2PlkwHakidXqGEXq',
-            state_event_id: 'eJEybxfXaf3sjwFilZnunU',
-            attribute_id: fIndustry,
-            value: 'Technology',
-        },
-        {
-            id: '57xrfe07Pqj38qvutRJk2N',
-            state_event_id: 'eJEybxfXaf3sjwFilZnunU',
-            attribute_id: fRevenue,
-            value: '5000000',
-        },
-        {
-            id: 'juYwNY2S35qCJqT3SAnwyW',
-            state_event_id: 'eJEybxfXaf3sjwFilZnunU',
-            attribute_id: fEmployees,
-            value: '250',
-        },
-        {
-            id: 'vtXOj3CjsGIYGlnds0FSJd',
-            state_event_id: 'C2xb2bbjyHD11WfLayh8Om',
-            attribute_id: fReviewerNotes,
-            value: 'Approved. Strong fit.',
-        },
-    ];
+    // mockStateFieldValues is imported from seed-message-pairs.ts
+    // — pass 1 there needs the SAME array to form each field
+    // value's own message pair before this transaction opens
+    // (Phase 11 Task 3).
 
     // mockProjectFlows is imported from
     // seed-message-pairs.ts — pass 1 there needs the SAME
@@ -817,26 +755,49 @@ async function postMockDataLoadIn(
                 ),
             ),
         ),
-        ...mockStateEvents.map(r =>
+        // Phase 11 Task 3: the historical-trace carve-out closes
+        // — each raw states.put/stateFieldValues.put row below
+        // ALSO gets its own message pair, appended alongside it
+        // in this SAME transaction (Path A: appendMessagePair
+        // writes ONLY requests/responses, so the row write itself
+        // is byte-identical to before).
+        ...mockStateEvents.flatMap(r => [
             adapter.states.put(r.id, {
                 entity_id: r.entity_id,
                 state: r.state,
                 member_id: r.member_id,
                 at: r.at,
             }),
-        ),
-        ...memberStateEvents.map(r =>
+            appendMessagePair(
+                adapter,
+                requirePair(pairs, seedPairKey('states/:id', r.id)),
+            ),
+        ]),
+        ...memberStateEvents.flatMap(r => [
             adapter.states.put(r.id, {
                 entity_id: r.entity_id,
                 state: r.state,
                 member_id: r.member_id,
                 at: r.at,
             }),
-        ),
-        ...mockStateFieldValues.map(r =>
+            appendMessagePair(
+                adapter,
+                requirePair(pairs, seedPairKey('states/:id', r.id)),
+            ),
+        ]),
+        ...mockStateFieldValues.flatMap(r => [
             adapter.stateFieldValues
                 .put(r.id, r),
-        ),
+            appendMessagePair(
+                adapter,
+                requirePair(
+                    pairs,
+                    seedPairKey(
+                        'states/:id/field-values/:fvid', r.id,
+                    ),
+                ),
+            ),
+        ]),
         // AI members start at 'active' on creation — same
         // single-event seeding as humans, driven through
         // postAiMemberCreationOp. POST /ai-members (and so
@@ -932,14 +893,18 @@ async function postMockDataLoadIn(
                 ),
             ),
         ),
-        ...leadToCloseData.stateEvents.map(r =>
+        ...leadToCloseData.stateEvents.flatMap(r => [
             adapter.states.put(r.id, {
                 entity_id: r.entity_id,
                 state: r.state,
                 member_id: r.member_id,
                 at: r.at,
             }),
-        ),
+            appendMessagePair(
+                adapter,
+                requirePair(pairs, seedPairKey('states/:id', r.id)),
+            ),
+        ]),
         ...mockRecords.map((r, i) => {
             const event = recordStateEventByRecordId.get(r.id)!;
             const attributes = mockRecordAttributes.filter(
@@ -1145,7 +1110,12 @@ export async function postBootstrap(
     // closed the SAME way postMockDataLoad's own system-identity/
     // role-grant sites are. The credential pairs are NOT here —
     // seedHumanCredentials forms those itself, below, since their
-    // content is unknown until PBKDF2 resolves.
+    // content is unknown until PBKDF2 resolves. Phase 11 Task 3:
+    // ALSO forms bootstrap's own system-member genesis-event pair
+    // — systemStateEventAt is minted ONCE inside
+    // formBootstrapMessagePair and reused verbatim by pass 2
+    // below, the SAME discipline currentMemberBody's own nowUtc()
+    // already follows.
     const {
         body: currentMemberBody,
         pairs: currentMemberPairs,
@@ -1154,6 +1124,8 @@ export async function postBootstrap(
         piiPair,
         systemIdentityPair,
         roleGrantPair,
+        systemStateEventPair,
+        systemStateEventAt,
     } = await formBootstrapMessagePair(nowUtc());
     // Pass 2: seed the pristine bootstrap data in one
     // transaction. Credentials seed after it commits — PBKDF2
@@ -1167,6 +1139,7 @@ export async function postBootstrap(
             view, currentMemberBody, currentMemberPairs,
             membershipPair, systemMemberPair, piiPair,
             systemIdentityPair, roleGrantPair,
+            systemStateEventPair, systemStateEventAt,
         ),
     );
     const creds = await seedHumanCredentials(adapter);
@@ -1183,6 +1156,8 @@ async function postBootstrapIn(
     piiPair: MessagePair,
     systemIdentityPair: MessagePair,
     roleGrantPair: MessagePair,
+    systemStateEventPair: MessagePair,
+    systemStateEventAt: string,
 ): Promise<void> {
     // The pristine seed plants only what the app needs
     // to render its shell: the system actor that authors
@@ -1254,13 +1229,19 @@ async function postBootstrapIn(
             adapter, 'current', bootstrapCurrentMemberPiiBody(),
             SYSTEM_MEMBER_ID, piiPair,
         ),
+        // Phase 11 Task 3: bootstrap's own system-member genesis
+        // event forms its OWN pair too — systemStateEventAt is
+        // pass 1's frozen timestamp (see postBootstrap), never a
+        // second nowUtc() call, so it can never drift from what
+        // systemStateEventPair was hashed from.
         adapter.states.postEvent(
-            'bootstrap-system-active',
+            bootstrapSystemStateEventId,
             SYSTEM_MEMBER_ID,
             'active',
             SYSTEM_MEMBER_ID,
-            nowUtc(),
+            systemStateEventAt,
         ),
+        appendMessagePair(adapter, systemStateEventPair),
         adapter.organizations.put(STARK_ORGANIZATION, {
             name: 'Stark Industries',
             domain: 'acmecorp.com',

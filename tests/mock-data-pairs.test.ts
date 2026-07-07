@@ -13,9 +13,12 @@ import {
 import {
     buildWorkOrders,
     buildFlowWorkOrderJoins,
+    buildWorkOrderStateEvents,
 } from '../api/mock-data/work-orders.ts';
 import {
     mockFlowRecords,
+    mockStateFieldValues,
+    memberStateEvents,
     buildScoreSeedProjects,
 } from '../api/mock-data/seed-message-pairs.ts';
 import { humanMemberPoolsByOrganization }
@@ -99,9 +102,20 @@ import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 // this file's shared pre-tx pass) + 12 role-grant document pairs
 // (Phase 10 Task 6: the 2 admin grants for `current` plus one
 // member grant per non-admin human, one role-grants/:id pair per
-// row) =
-// 632. A dropped or reordered invocation changes this count.
-const EXPECTED_PAIR_COUNT = 632;
+// row) + 860 work-order historical-trace pairs (Phase 11 Task 3:
+// the migration's LAST carve-out closes — 211 hand-authored + 649
+// generated states/:id events, each event's OWN member_id
+// authoring its OWN pair; Path A — the states row itself stays
+// the SAME direct `adapter.states.put`, untouched) + 7
+// state_field_value pairs (the SAME carve-out's nested captures,
+// states/:id/field-values/:fvid, idParams [stateEventId, fvId],
+// authored by the PARENT event's own member_id) + 1 system-member
+// genesis pair (the mock-data seed's OWN last raw-write site, the
+// system actor's 'active' event — bootstrap forms its OWN mirror
+// of this ONE event separately, counted in the bootstrap pair
+// count below, never here) =
+// 1500. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 1500;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -570,6 +584,84 @@ test('a seeded flow-record join pair sits at its org-nested'
     );
 });
 
+// Phase 11 Task 3: the work-order historical-trace carve-out
+// closes — every trace event (211 hand-authored + 649 generated)
+// and every state_field_value now forms its own pair too, Path A
+// (the states / state_field_values rows themselves stay the SAME
+// direct writes mock-data.ts already made).
+
+test('a seeded work-order trace event\'s pair sits at its'
++ ' org-nested states address, its body carrying the three'
++ ' state-event keys (no id or member_id key)', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstTrace = buildWorkOrderStateEvents()[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(r => r.uri_id === firstTrace.id);
+    assert.ok(row, 'no request row for the seeded trace event');
+    assert.equal(
+        row!.uri_prefix,
+        `/organizations/${STARK_ORGANIZATION}/states/`,
+    );
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['at', 'entity_id', 'state'],
+    );
+});
+
+test('a seeded trace pair\'s stored request requester_identity_id'
++ ' matches its states row\'s member_id (the role-grant'
++ ' precedent: fingerprints hash ids only, so a wrong-but-real'
++ ' member_id is otherwise fingerprint-invisible)', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstTrace = buildWorkOrderStateEvents()[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(r => r.uri_id === firstTrace.id);
+    assert.ok(row, 'no request row for the seeded trace event');
+    const written = await db.states.getById(firstTrace.id);
+    assert.equal(row!.requester_identity_id, written.member_id);
+});
+
+test('a seeded state_field_value pair sits at its nested'
++ ' states/field-values address, its body carrying the three'
++ ' field-value keys (no id key)', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstFieldValue = mockStateFieldValues[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(r => r.uri_id === firstFieldValue.id);
+    assert.ok(row, 'no request row for the seeded field value');
+    assert.equal(
+        row!.uri_prefix,
+        `/organizations/${STARK_ORGANIZATION}/states/`
+            + `${firstFieldValue.state_event_id}/field-values/`,
+    );
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['attribute_id', 'state_event_id', 'value'],
+    );
+});
+
+test('the mock-data seed\'s own system-member genesis pair sits'
++ ' at the GLOBAL (non-org-nested) states address', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const systemEvent = memberStateEvents[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(r => r.uri_id === systemEvent.id);
+    assert.ok(
+        row, 'no request row for the system-member genesis event',
+    );
+    assert.equal(row!.uri_prefix, '/states/');
+});
+
 // Phase 7 Task 5: the scores half of the seed deferral closes —
 // every seeded baseline/actual-score row now forms its own
 // message pair, driven through postBaselineScoreDocumentOp /
@@ -743,7 +835,7 @@ test('seed pairs verify against their hashes', async () => {
     }
 });
 
-test('a bootstrap seed populates exactly eleven balanced,'
+test('a bootstrap seed populates exactly twelve balanced,'
 + ' hash-verified pairs for the current member and the system'
 + ' member', async () => {
     const db = new MemoryDbAdapter();
@@ -768,9 +860,18 @@ test('a bootstrap seed populates exactly eleven balanced,'
     // (bootstrap-role-current-admin), and the current member's
     // + the system member's OWN identity-credential documents
     // (formed by seedHumanCredentials' local pass-1/pass-2
-    // split, api/mock-data.ts) — 7 + 1 + 1 + 2 = 11.
-    assert.equal(requests.length, 11);
-    assert.equal(responses.length, 11);
+    // split, api/mock-data.ts) — 7 + 1 + 1 + 2 = 11. Phase 11
+    // Task 3 mirrors the mock-data seed's OWN last raw-write
+    // site: bootstrap's OWN system-member genesis event
+    // ('bootstrap-system-active') forms its OWN pair too —
+    // 11 + 1 = 12.
+    assert.equal(requests.length, 12);
+    assert.equal(responses.length, 12);
+    const atSystemStateEvent = requests.filter(
+        r => r.uri_prefix === '/states/'
+            && r.uri_id === 'bootstrap-system-active',
+    );
+    assert.equal(atSystemStateEvent.length, 1);
     const atEntity = requests.filter(
         r => r.uri_prefix === '/human-members/'
             && r.uri_id === 'current',
