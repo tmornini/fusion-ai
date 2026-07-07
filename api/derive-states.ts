@@ -265,6 +265,12 @@ async function organizationHasMemberPair(
         db.requests.getAllWhere('uri_prefix', prefix),
         db.responses.getAllWhere('uri_prefix', prefix),
     ]);
+    // HEAD-REDUCED (deriveDocumentsAt), not raw pairs, unlike
+    // every other leg in this module: a membership REMOVAL is a
+    // genuine hard row-DELETE — no states-log soft-delete event
+    // exists for memberships — so a DELETE head must exclude the
+    // row here to reproduce old-plane parity. Do not swap this
+    // for documentPairsAt for "consistency" with the other legs.
     const documents = deriveDocumentsAt(
         requests, responses, prefix,
     );
