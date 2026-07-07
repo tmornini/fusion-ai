@@ -1,3 +1,4 @@
+import { EntityNotFoundError } from './db.ts';
 import type {
     DbAdapter,
 } from './db.ts';
@@ -154,6 +155,12 @@ import {
     deriveMembers,
     deriveMemberParent,
 } from './derive-members.ts';
+import {
+    deriveIdentityPiiRows,
+    deriveIdentityPii,
+    deriveCredentialsFor,
+    deriveCredential,
+} from './derive-identity-spine.ts';
 import {
     param,
     requireOrganization,
@@ -748,6 +755,65 @@ function withoutSecret(
 ): Omit<IdentityCredentialEntity, 'secret'> {
     const { secret: _secret, ...rest } = cred;
     return rest;
+}
+
+// GATE 15 — THE PRODUCTION MEMBERSHIP PAIR PLANE (Phase 10 Task
+// 8 Session B): identity_pii and identity_credentials carry NO
+// organization_id of their own, so their read fence (viaMembership,
+// api/store-parent-scoped.ts) derives visibility from the
+// membership ledger instead. A GET handler here receives ONLY the
+// caller's already-org-SCOPED adapter (api.ts hands it `effective`)
+// — that adapter's OWN .memberships facet is filtered to the
+// caller's org already, so it cannot see a foreign-org row and
+// would misreport it as an orphan (visible), silently WIDENING the
+// fence rather than reproducing it. The scoped adapter's
+// .requests/.responses DO pass through globally (db-organization-
+// scoped.ts: "the message plane... passes through unwrapped"), so
+// this reads the SAME membership ledger every org's derivation
+// would, via the SAME documentCollectionGetHandler(MEMBERSHIPS_
+// WIRING) reduction GET /memberships itself rides — mirroring
+// tests/drift-identities.test.ts's own gate-15 proof
+// (pairPlaneMembershipsAcrossKnownOrganizations), generalized from
+// that test's hardcoded two-org set to db.organizations.getAll()
+// (itself a global passthrough, like requests/responses above) so
+// this holds for however many organizations actually exist, not
+// only the ones a test happened to seed.
+async function membershipsAcrossAllOrganizations(
+    db: DbAdapter, actor: Id,
+): Promise<MembershipEntity[]> {
+    const organizations = await db.organizations.getAll();
+    const perOrganization = await Promise.all(
+        organizations.map((organization) =>
+            documentCollectionGetHandler(MEMBERSHIPS_WIRING)(
+                db, [], actor, organization.id,
+            ) as Promise<MembershipEntity[]>,
+        ),
+    );
+    return perOrganization.flat();
+}
+
+// viaMembership's OWN three-way algorithm (api/store-parent-
+// scoped.ts), re-derived here over the PAIR-PLANE union above
+// rather than the row-plane's identity_id index — the SAME
+// reduction tests/drift-identities.test.ts's
+// pairPlaneOwnerOrganization proves equal to the row-plane fence
+// on all three legs (co-member, FOREIGN-org, orphan): null
+// (orphan, visible), the bound org (co-member, visible), or a
+// DIFFERENT org (foreign, hidden).
+function ownerOrganizationViaMembershipPairPlane(
+    memberships: readonly MembershipEntity[],
+    identityId: Id,
+    boundOrganization: Id,
+): Id | null {
+    const mine = memberships.filter(
+        (m) => m.identity_id === identityId,
+    );
+    if (mine.length === 0) return null;
+    return mine.some(
+        (m) => m.organization_id === boundOrganization,
+    )
+        ? boundOrganization
+        : mine[0]!.organization_id;
 }
 
 // The bundle a live POST /records forms (Phase 6 Task 4, the
@@ -3637,7 +3703,14 @@ export const routes: Route[] = [
         },
     }),
     route('identities', {
-        get: (db) => db.identities.getAll(),
+        // GET is FLIPPED (Phase 10 Task 8): derived via
+        // documentCollectionGetHandler — wire-identical to the
+        // hand-written db.identities.getAll() dispatch it
+        // replaces (identities is organizationNested:false, so
+        // the derivation ignores whatever organization value the
+        // caller passes, exactly as the GLOBAL-plane scoped
+        // adapter's own db.identities alias already did).
+        get: documentCollectionGetHandler(IDENTITIES_WIRING),
         // Admin-only — POST /identities has no member-tier
         // entry, so it falls to the root admin tier in
         // ROUTE_POLICY. Task 5: forms the identities/:id
@@ -3695,12 +3768,15 @@ export const routes: Route[] = [
             return postIdentityCreationOp(db, body, pairs);
         },
     }),
-    // PUT rides the generic documentPutHandler(IDENTITIES_WIRING)
-    // — wire-identical to postIdentityDocumentOp's own direct
-    // dispatch it replaces. GET stays hand-written (Task 8 flips
-    // reads); verbs stay {get, put}.
+    // GET is FLIPPED (Phase 10 Task 8): absorbed into the generic
+    // documentGetHandler(IDENTITIES_WIRING) — the SAME wiring row
+    // PUT already rides — wire-identical to the hand-written
+    // db.identities.getById dispatch it replaces. PUT rides the
+    // generic documentPutHandler(IDENTITIES_WIRING) — wire-
+    // identical to postIdentityDocumentOp's own direct dispatch
+    // it replaces. Verbs stay {get, put}.
     route('identities/:id', {
-        get: (db, p) => db.identities.getById(param(p, 0)),
+        get: documentGetHandler(IDENTITIES_WIRING),
         put: documentPutHandler(IDENTITIES_WIRING),
     }),
     // PII is a facet of the identity's own subtree: GET is
@@ -3716,9 +3792,17 @@ export const routes: Route[] = [
     // physically deleted rather than superseded. The pattern's
     // last segment ('pii') is not a :param, so messageAddress
     // yields uriId '' (a singleton document at a collection-
-    // style address).
+    // style address). GET is FLIPPED (Phase 10 Task 8): derived
+    // via deriveIdentityPii — wire-identical to the hand-written
+    // db.identityPii.getById dispatch it replaces. No fence is
+    // reproduced HERE: authorizeIdentityPii (the gate dispatch,
+    // api.ts/request-auth.ts, UNTOUCHED by this task) already
+    // restricts a GET to the caller reading its OWN pii, and a
+    // fenced request's own membership always includes its active
+    // org, so the row is always visible to itself regardless of
+    // any org fence.
     route('identities/:id/pii', {
-        get: (db, p) => db.identityPii.getById(param(p, 0)),
+        get: (db, p) => deriveIdentityPii(db, param(p, 0)),
         put: (db, p, body, actor, pair) =>
             postIdentityPiiDocumentOp(
                 db, param(p, 0), body, actor, pair,
@@ -3738,8 +3822,29 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET is FLIPPED (Phase 10 Task 8): derived via
+    // deriveIdentityPiiRows, THEN fenced by gate 15's production
+    // membership pair plane (above) — reproducing, byte-
+    // identically, the SAME three-way viaMembership decision the
+    // hand-written db.identityPii.getAll() dispatch (the org-
+    // scoped adapter's own parentScope+viaMembership) made.
     route('identity-pii', {
-        get: (db) => db.identityPii.getAll(),
+        get: async (db, _p, actor, organization) => {
+            const organizationId = requireOrganization(
+                organization,
+            );
+            const rows = await deriveIdentityPiiRows(db);
+            const memberships =
+                await membershipsAcrossAllOrganizations(
+                    db, actor,
+                );
+            return rows.filter((row) => {
+                const owner = ownerOrganizationViaMembershipPairPlane(
+                    memberships, row.id, organizationId,
+                );
+                return owner === null || owner === organizationId;
+            });
+        },
     }),
     // Credentials nest under their parent identity: the identity
     // id is param 0, so the SERVER filters the collection to that
@@ -3755,20 +3860,64 @@ export const routes: Route[] = [
     // change carry-over from the un-wired behavior (see
     // WRITE_RESPONSE_SPECS's 'identities/:id/credentials/:cid'
     // entry, which reconstructs the FULL entity, unlike the GETs'
-    // withoutSecret projection).
+    // withoutSecret projection). GET is FLIPPED (Phase 10 Task 8):
+    // derived via deriveCredentialsFor, fenced the SAME way
+    // identity-pii's collection above is (gate 15, keyed on the
+    // PARENT identity id rather than each row's own id) — a
+    // hidden identity's credentials read as an EMPTY array, byte-
+    // identical to parentScope.getAllWhere silently dropping every
+    // matched-but-invisible row (never a 404 — getAllWhere never
+    // throws).
     route('identities/:id/credentials', {
-        get: async (db, p) =>
-            (await db.identityCredentials.getAllWhere(
-                'identity_id', param(p, 0),
-            )).map(withoutSecret),
+        get: async (db, p, actor, organization) => {
+            const organizationId = requireOrganization(
+                organization,
+            );
+            const identityId = param(p, 0);
+            const memberships =
+                await membershipsAcrossAllOrganizations(
+                    db, actor,
+                );
+            const owner = ownerOrganizationViaMembershipPairPlane(
+                memberships, identityId, organizationId,
+            );
+            if (owner !== null && owner !== organizationId) {
+                return [];
+            }
+            return (await deriveCredentialsFor(db, identityId))
+                .map(withoutSecret);
+        },
     }),
+    // GET is FLIPPED (Phase 10 Task 8): derived via
+    // deriveCredential, fenced the SAME way (gate 15) — a hidden
+    // identity's credential 404s BYTE-IDENTICALLY to a genuinely
+    // absent one (EntityNotFoundError('identity_credentials', cid),
+    // the SAME table/id parentScope.getById throws — no existence
+    // is confirmed either way).
     route('identities/:id/credentials/:cid', {
-        get: async (db, p) =>
-            withoutSecret(
-                await db.identityCredentials.getById(
-                    param(p, 1),
-                ),
-            ),
+        get: async (db, p, actor, organization) => {
+            const organizationId = requireOrganization(
+                organization,
+            );
+            const identityId = param(p, 0);
+            const cid = param(p, 1);
+            const credential = await deriveCredential(
+                db, identityId, cid,
+            );
+            const memberships =
+                await membershipsAcrossAllOrganizations(
+                    db, actor,
+                );
+            const owner = ownerOrganizationViaMembershipPairPlane(
+                memberships, identityId, organizationId,
+            );
+            if (owner !== null && owner !== organizationId) {
+                throw new EntityNotFoundError(
+                    'identity_credentials', cid,
+                );
+            }
+            return withoutSecret(credential);
+        },
         put: (db, p, body, actor, pair) =>
             postIdentityCredentialDocumentOp(
                 db, param(p, 1), body, actor, pair,

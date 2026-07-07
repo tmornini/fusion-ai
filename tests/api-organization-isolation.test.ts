@@ -8,12 +8,21 @@ import {
     organizationRow,
     seedAdminSchema,
 } from './test-fixtures.ts';
-import { jsonObjectField } from '../api/types.ts';
+import { jsonObjectField, nowUtc, SYSTEM_MEMBER_ID } from
+    '../api/types.ts';
 import {
     seedIdentityCredential,
     seedIdentityPii,
     seedPersonIdentity,
 } from './identity-fixtures.ts';
+import {
+    postMembershipDocumentOp,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import {
+    formWritePair,
+    type MessagePair,
+} from '../api/message-pair.ts';
 
 const BASE = 'http://localhost';
 
@@ -326,6 +335,57 @@ async function seedChain(
 // member of B only, so its PII / credentials / member-lifecycle
 // events stay invisible to A. Member events name the org-less
 // member id directly (member.id === identity.id).
+//
+// Below-facade pair formation for pa/pb's memberships (Phase 10
+// Task 8 Session B): gate 15's THREE-WAY fence derives visibility
+// from the membership PAIR PLANE (api/routes.ts), so a raw
+// db.memberships.put with no pair reads as an orphan (null owner,
+// visible everywhere) rather than a foreign-org member — silently
+// defeating the co-member/foreign distinction the tests below
+// assert. Mirrors tests/member-fixtures.ts's own seedMembership,
+// parameterized by organization (that fixture is hardcoded to
+// ONE org; this file seeds two). Every id/field value stays
+// IDENTICAL to the raw put this replaces — only the write
+// mechanism changes.
+async function seedMembershipPair(
+    db: MemoryDbAdapter,
+    membershipId: string,
+    organization: string,
+    identityId: string,
+): Promise<void> {
+    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for memberships/:id',
+        );
+    }
+    const body = {
+        organization_id: organization,
+        identity_id: identityId,
+        at: T8_AT,
+    };
+    const pair: MessagePair = await formWritePair({
+        method: 'PUT',
+        pathname: `/memberships/${membershipId}`,
+        routePattern: 'memberships/:id',
+        routeSegments: ['memberships', ':id'],
+        pathSegments: ['memberships', membershipId],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [membershipId], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postMembershipDocumentOp(
+        db, membershipId, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
 async function deepDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
@@ -358,9 +418,7 @@ async function deepDb(): Promise<MemoryDbAdapter> {
             identity_id: id, kind: 'password',
             status: 'set', secret: 'HASH-' + id, at: T8_AT,
         });
-        await db.memberships.put('mem-' + id, {
-            organization_id: organization, identity_id: id, at: T8_AT,
-        });
+        await seedMembershipPair(db, 'mem-' + id, organization, id);
         await db.states.put('seMem-' + id, {
             entity_id: id, state: 'active',
             member_id: 'system', at: T8_AT,
