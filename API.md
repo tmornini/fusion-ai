@@ -145,7 +145,9 @@ Legend for classification:
 
 ### 2.2 Identities & subtree
 
-- `GET /identities` · `GET|PUT /identities/:id` — primitive.
+- `GET /identities` · `GET|PUT /identities/:id` — primitive. `PUT`
+  is a document write (§5.13) — the TWELFTH registered family,
+  joining `MEMBERS_WIRING`'s shared-log-with-genesis bucket.
 - `POST /identities` — operation (§3.5). Admin-only.
 - `GET|PUT|DELETE /identities/:id/pii` — facet. Self-only read;
   self-or-admin write. PUT/DELETE ride the message plane's
@@ -153,7 +155,10 @@ Legend for classification:
 - `GET /identity-pii` — admin PII roster.
 - `GET /identities/:id/credentials` ·
   `GET|PUT /identities/:id/credentials/:cid` — nested; the opaque
-  `secret` is projected out on every read. Admin-only.
+  `secret` is projected out on every read. Admin-only. `PUT`'s
+  closure is extracted to `postIdentityCredentialDocumentOp`
+  (§5.13) but stays hand-dispatched, never family-registered
+  (§5.13's nested-plane rationale).
 
 ### 2.3 Auth spine — tokens, providers, grants
 
@@ -164,6 +169,11 @@ Legend for classification:
 - `GET /identity-providers` · `GET|PUT /identity-providers/:id` —
   primitive.
 - `GET /role-grants` · `GET|PUT /role-grants/:id` — primitive.
+  `PUT`'s closure is extracted to `postRoleGrantDocumentOp`
+  (§5.13) but stays hand-dispatched, never family-registered
+  (§5.13's event-plane rationale); its `WRITE_RESPONSE_SPECS`
+  entry keeps re-stamping `organization_id` from the fence,
+  untouched by the extraction.
 - `POST /authentication/token` — grant dispatch (§3.8). Bearer-exempt.
 - `POST /authentication/authorize` — interactive front door (§3.9).
   Bearer-exempt.
@@ -2383,3 +2393,131 @@ asserted explicitly on both verbs. The re-pinned
 two pii chain cases (PUT-PUT, PUT-DELETE) from asserting a
 Supersedes chain to asserting the single-slot replacement —
 the ONLY re-pins this task authorizes.
+
+### 5.13 The twelfth family: identities
+
+Phase 10 Task 4 registers `identities` as the TWELFTH
+`DocumentFamilyWiring` row (`IDENTITIES_WIRING` in
+`api/routes.ts`) and the family-registry row it consults
+(`api/family-registry.ts`): `organizationNested: false`
+("global-plane"), `concurrency: 'simple'`, `createBodyIdField:
+'id'`. It joins `MEMBERS_WIRING`'s shared-log-with-genesis
+`'stateless'` bucket as the FOURTH member (§5.10): the shared id
+(`member.id === identity.id`, always) already receives a genesis
+`states` event at create and archive/reactivate via `PUT
+states/:id`, so the identities document plane carries NO
+lifecycle of its own — a trio here would FREEZE that lifecycle
+at genesis forever. The stateless arm's ONLY tombstone signal is
+a DELETE-method head, already 404-absent via `deriveDocumentsAt`
+with no further walk needed (`document-family.ts`'s
+`derivedDocumentEntity`) — the SAME deleted-filter escape hatch
+every `'stateless'` family before it accepted.
+
+**The slot is LIVE, not inert.** Unlike the projects/members-
+family inert-`createBodyIdField` precedent, `POST /identities` IS
+a live bare collection-POST create route whose pattern is
+literally `'identities'` — the registry consult in
+`createdEntityUriId` (`message-pair.ts`) now fires for real, the
+FOURTH live-firing registered family after flows, work-orders,
+and records. `'identities'` retires from `CREATE_BODY_ID_FIELDS`
+(the same literal table) — the registered family answers ONLY
+from its own registration now. `'invitations'` is the ONE entry
+that literal table keeps PERMANENTLY: the invitations side
+channel has no organization-nesting tier, no concurrency class,
+and no document address of its own to register, so it is never a
+family-registry waypoint, only a standing exception.
+
+**The three extractions (own commit each, behavior-identical).**
+`postIdentityDocumentOp`, `postIdentityCredentialDocumentOp`,
+and `postRoleGrantDocumentOp` are lifted byte-for-byte out of
+their hand-written PUT closures (`identities/:id`,
+`identities/:id/credentials/:cid`, `role-grants/:id`), mirroring
+the `postIdentityPiiDocumentOp` precedent (§5.12). All three are
+EXPORTED — Task 6 seeds through them, and Task 7's drift-mirror
+wiring imports them to compile — alongside
+`validateIdentityDocumentBody`, also exported for the same
+reason. Only `postIdentityDocumentOp` joins a
+`DocumentFamilyWiring` row; the other two stay directly
+dispatched from their own route closures, per the non-
+registration rationale below.
+
+**Why credentials and role-grants do NOT get their own
+family-registry row.** `family-registry.ts` answers exactly
+three axes a document-class, per-id family needs: organization-
+nesting tier, PUT concurrency class, and create-address body
+field. Neither plane is such a family:
+
+- `identities/:id/credentials/:cid` is a NESTED facet of the
+  identity subtree (the identity id is param 0; the credential id
+  is param 1) — it has no address of its own independent of the
+  identity it hangs off, so it never needs an organization-
+  nesting or create-address answer separate from `identities`'
+  own.
+- `role-grants/:id` is an EVENT-APPEND ledger row
+  (`HistoryEntityStore`, latest-wins per `(organization_id,
+  identity_id, role)`) — a grant/revoke history, not a document
+  address with a genesis-then-edit lifecycle a family-registry
+  row exists to describe.
+
+Both extractions leave their own `WRITE_RESPONSE_SPECS` entries
+untouched: `'identities/:id/credentials/:cid'` still reconstructs
+the full entity (including `secret`, a deliberate zero-change
+carry-over); `'role-grants/:id'` still re-stamps
+`organization_id` from the fence — the ONE org-stamped spine
+spec, since `role_grants` rides the ORG-SCOPED store (unlike its
+global-plane siblings) and the wire body omits the field the
+scoped store auto-stamps.
+
+**PUT /identities/:id** now dispatches through
+`documentPutHandler(IDENTITIES_WIRING)`, and
+`WRITE_RESPONSE_SPECS['identities/:id']` is
+`documentWriteResponseSpec(IDENTITIES_WIRING)` — the
+registration-first consult (§5.10's blocking fix) omits the
+`organization_id` stamp for this `organizationNested:false`
+family, so the emitted bytes stay UNCHANGED from the hand-written
+`{id, kind}` body this replaces (validated: Step 0 of this task
+re-confirmed key-set/value equality before the swap landed). GET
+stays hand-written, old-plane, until Task 8 (§5.10's same
+deferral).
+
+**The verb-gap pins (finding 20), COUNT AT EXECUTION: 41
+combos across three regimes**
+(`tests/api-identity-spine-verb-gaps.test.ts`, own commit BEFORE
+the wiring landed):
+
+1. The route-table regime — 36 combos across the FIFTEEN
+   identity-spine `route()` patterns (`identities` through
+   `identity-providers/:id`): a matched pattern with no handler
+   for the request's verb 405s via `handleRequest`'s own
+   per-method branch.
+2. The `identities/:id/default-org` side channel regime — 2
+   combos: this side channel never calls `matchRoute` — a POST or
+   DELETE falls through its own if-chain to ITS OWN inline 405
+   terminal (`organization-requests.ts`).
+3. The identity-tokens authz-tier regime — 3 combos: `GET
+   /identity-tokens` is admin-only (absent from `MEMBER_VERBS`),
+   so a member-tier token 403s at the authz layer BEFORE
+   `matchRoute` runs; `POST /identity-tokens/:jti/rotation` and
+   `.../revocation`, by contrast, DO match `MEMBER_VERBS`'
+   `'/identity-tokens'` entry (POST), so a member-tier token
+   clears authz and reaches the route handler's own domain terms
+   (409 reuse; 204 idempotent no-op) instead of 403.
+
+`tests/family-registry.test.ts` gains the twelfth case
+(`identities`, global-plane like `members`) and swaps its
+unregistered-family control exemplar from `'identities'` (now
+registered) to `'organizations'` — a NAMED re-pin: organizations
+stays unregistered by design (family-registry.ts answers
+document-class per-id families, and `organizations/:id` rides its
+own hand-written PUT with no genesis-address concept the registry
+needs to describe).
+
+`tests/api-identity-document.test.ts` (new) is the wiring's
+proof, mirroring `tests/api-member-documents.test.ts` (§5.10) for
+the identities family alone: `validateIdentityDocumentBody`'s
+accept/reject bytes (the label mandate — `'IdentityEntity'`,
+matching `validateIdentityEntity` byte-for-byte); the below-gate
+op pin; the E6 byte-identical-resend pin; the PUT-chain-derives-
+the-head / DELETE-derives-absent cases against the REAL
+registered wiring row; and a direct assertion that the wire
+response carries `{id, kind}` only, no `organization_id`.
