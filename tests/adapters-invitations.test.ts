@@ -378,6 +378,34 @@ test('granting the same email twice is idempotent', async () => {
     assert.equal((await db.invitations.getAll()).length, 1);
 });
 
+// The dedup treats only a PENDING invitation as outstanding — a
+// DECLINED one is spent. Contrast the idempotent-duplicate case
+// above (still pending): here the invitee has answered, so the
+// re-grant must mint a FRESH invitation, never echo the declined
+// row's id.
+test('re-inviting a declined invitee mints a fresh invitation',
+async () => {
+    const { db } = await ctxFor('current', '2');
+    const tony = await ctxOn(db, 'current', '2');
+    await postInvitationGrant(tony, 'sarah@x.com');
+    const first = (await db.invitations.getAll())[0]!;
+    const sarah = await ctxOn(db, 'sarah', '1');
+    await postInvitationDecline(sarah, first.id);
+
+    assert.equal(
+        await postInvitationGrant(tony, 'sarah@x.com'), 'sent');
+
+    const invs = await db.invitations.getAll();
+    assert.equal(invs.length, 2);
+    const fresh = invs.find(inv => inv.id !== first.id);
+    assert.ok(fresh !== undefined);
+
+    const mine = await getInvitations(sarah);
+    const stateById = new Map(mine.map(v => [v.id, v.state]));
+    assert.equal(stateById.get(first.id), 'declined');
+    assert.equal(stateById.get(fresh!.id), 'pending');
+});
+
 test('sent invitations list the active org pending only',
 async () => {
     const { db } = await ctxFor('current', '2');
