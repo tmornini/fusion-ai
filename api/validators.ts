@@ -3355,7 +3355,6 @@ export function validateFlowUndoBody(
 
 export interface HumanMemberCreateBody {
     readonly id: string;
-    readonly pii: Record<string, unknown>;
     readonly detail: Record<string, unknown>;
     readonly initialState: MemberState;
     readonly initialStateEventId: string;
@@ -3363,23 +3362,24 @@ export interface HumanMemberCreateBody {
 }
 
 const HUMAN_MEMBER_CREATE_KEYS: readonly string[] = [
-    'id', 'pii', 'detail',
+    'id', 'detail',
     'initialState', 'initialStateEventId',
     'initialStateAt',
 ];
 
-// The HTTP-body gate for POST /human-members: the four member
-// facets (the parent member row, the identity, the PII row, the
-// detail row) plus the initial state event, written atomically.
-// The facet fields are NOT fully validated here — each facet
-// store re-validates its own body (validateMemberEntity,
-// validateIdentityEntity, validateIdentityPiiEntity,
+// The HTTP-body gate for POST /human-members: the three member
+// facets (the parent member row, the identity, the detail row)
+// plus the initial state event, written atomically. PII no
+// longer rides this body (Phase 10 Task 2's intake
+// decomposition) — it enters later via the separate PUT
+// identities/:id/pii. The facet fields are NOT fully validated
+// here — each facet store re-validates its own body
+// (validateMemberEntity, validateIdentityEntity,
 // validateHumanMemberEntity) when the composing POST puts it.
 // The member parent (type) and the identity (kind) are
 // server-supplied facts the handler pins, so the body carries
-// only the PII and detail sub-objects. Authorship of the initial
-// event is stamped from the verified caller in the route, never
-// the body.
+// only the detail sub-object. Authorship of the initial event is
+// stamped from the verified caller in the route, never the body.
 export function validateHumanMemberCreateBody(
     body: Record<string, unknown>,
 ): HumanMemberCreateBody {
@@ -3392,9 +3392,6 @@ export function validateHumanMemberCreateBody(
             'HumanMemberCreateBody.id must be non-empty',
         );
     }
-    const pii = asObject(
-        body['pii'], 'HumanMemberCreateBody.pii',
-    );
     const detail = asObject(
         body['detail'], 'HumanMemberCreateBody.detail',
     );
@@ -3415,7 +3412,7 @@ export function validateHumanMemberCreateBody(
         body, 'initialStateAt', 'HumanMemberCreateBody',
     );
     return {
-        id, pii, detail, initialState,
+        id, detail, initialState,
         initialStateEventId, initialStateAt,
     };
 }

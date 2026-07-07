@@ -75,9 +75,14 @@ import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 // documents + 92 actual documents (Phase 7 Task 5: the scores
 // half of the Phase 0 seed deferral closes — one document pair
 // per seeded baseline/actual-score row, closed through
-// postBaselineScoreDocumentOp / postActualScoreDocumentOp) =
-// 581. A dropped or reordered invocation changes this count.
-const EXPECTED_PAIR_COUNT = 581;
+// postBaselineScoreDocumentOp / postActualScoreDocumentOp) +
+// 11 identity_pii document pairs (Phase 10 Task 2's intake
+// decomposition: each seeded human's PUT identities/:id/pii,
+// formerly folded into the human-members create body, now its
+// own document address, closed through
+// postIdentityPiiDocumentOp) =
+// 592. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 592;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -135,6 +140,28 @@ test('a seeded human-member create pair sits at the global'
     const row = requests.find(r => r.uri_id === 'current');
     assert.ok(row, 'no request row for the current member');
     assert.equal(row!.uri_prefix, '/human-members/');
+});
+
+test('a seeded human member\'s PII intake pair sits at its own'
++ ' identities/:id/pii address, its body carrying the four PII'
++ ' keys (Phase 10 Task 2\'s intake decomposition)', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstMember = buildMembers()[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(
+        r => r.uri_prefix
+            === '/identities/' + firstMember.id + '/pii/',
+    );
+    assert.ok(row, 'no request row for the seeded PII intake');
+    assert.equal(row!.uri_id, '');
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['bio', 'email', 'name', 'phone'],
+    );
 });
 
 test('a seeded flow create pair sits at its org-nested'
@@ -616,7 +643,7 @@ test('seed pairs verify against their hashes', async () => {
     }
 });
 
-test('a bootstrap seed populates exactly five balanced,'
+test('a bootstrap seed populates exactly six balanced,'
 + ' hash-verified pairs for the current member and the system'
 + ' member', async () => {
     const db = new MemoryDbAdapter();
@@ -629,9 +656,12 @@ test('a bootstrap seed populates exactly five balanced,'
     // human-members address) + member document (its own
     // address). Task 5: bootstrap's OWN membership document and
     // the system member's OWN members/:id document close the
-    // last two raw bootstrap writes — 3 + 2 = 5.
-    assert.equal(requests.length, 5);
-    assert.equal(responses.length, 5);
+    // last two raw bootstrap writes. Phase 10 Task 2: the
+    // current member's OWN PII document pair (identities/:id/pii)
+    // closes the intake decomposition's bootstrap side —
+    // 3 + 2 + 1 = 6.
+    assert.equal(requests.length, 6);
+    assert.equal(responses.length, 6);
     const atEntity = requests.filter(
         r => r.uri_prefix === '/human-members/'
             && r.uri_id === 'current',
@@ -652,6 +682,10 @@ test('a bootstrap seed populates exactly five balanced,'
             && r.uri_id === 'bootstrap-membership-current',
     );
     assert.equal(atMembership.length, 1);
+    const atPii = requests.filter(
+        r => r.uri_prefix === '/identities/current/pii/',
+    );
+    assert.equal(atPii.length, 1);
     for (const row of requests) {
         assert.equal(
             await sha256Hex(row.message), row.message_hash,

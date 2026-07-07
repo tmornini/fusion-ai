@@ -495,14 +495,13 @@ export function humanMemberSeedBody(
     member: SeedHumanMember,
 ): Record<string, unknown> {
     const {
-        id: _id, state, name,
-        email, phone, bio,
+        id: _id, state, name: _name,
+        email: _email, phone: _phone, bio: _bio,
         strengths, team_dimensions,
         ...detail
     } = member;
     return {
         id: member.id,
-        pii: { name, email, phone, bio },
         detail: {
             ...detail,
             strengths: jsonArrayField(strengths),
@@ -514,6 +513,19 @@ export function humanMemberSeedBody(
             `seed-member-${member.id}-${state}`,
         initialStateAt: MOCK_SEED_TIMESTAMP,
     };
+}
+
+// The PII facet a human seed's separate PUT identities/:id/pii
+// carries (Phase 10 Task 2's intake decomposition) — the SAME
+// four fields humanMemberSeedBody once embedded in its own
+// `pii` key, now split into their own document write. The ONE
+// construction both pass 1 (this file's invocation body) and
+// pass 2 (mock-data.ts's postIdentityPiiDocumentOp call) share.
+export function humanMemberPiiSeedBody(
+    member: SeedHumanMember,
+): Record<string, unknown> {
+    const { name, email, phone, bio } = member;
+    return { name, email, phone, bio };
 }
 
 // The genesis case of the document PUT ideas/:id (Decision 7,
@@ -891,14 +903,6 @@ export function bootstrapCurrentMemberBody(
 ): Record<string, unknown> {
     return {
         id: 'current',
-        pii: {
-            name: 'Tony Stark',
-            email: 'demo@example.com',
-            phone: '+1 (555) 123-4567',
-            bio: 'Passionate about building'
-                + ' products that solve'
-                + ' real problems.',
-        },
         detail: {
             title: 'Admin',
             department: 'Product',
@@ -917,6 +921,24 @@ export function bootstrapCurrentMemberBody(
         initialState: 'active',
         initialStateEventId: 'bootstrap-current-active',
         initialStateAt,
+    };
+}
+
+// The bootstrap current-member's PII facet, split into its own
+// PUT identities/:id/pii write (Phase 10 Task 2's intake
+// decomposition) — the SAME fields bootstrapCurrentMemberBody
+// once embedded in its own `pii` key. The ONE construction both
+// pass 1 (this file's invocation body) and pass 2 (mock-data.ts's
+// postIdentityPiiDocumentOp call) share.
+export function bootstrapCurrentMemberPiiBody():
+    Record<string, unknown> {
+    return {
+        name: 'Tony Stark',
+        email: 'demo@example.com',
+        phone: '+1 (555) 123-4567',
+        bio: 'Passionate about building'
+            + ' products that solve'
+            + ' real problems.',
     };
 }
 
@@ -1058,6 +1080,25 @@ export function buildMockDataInvocations():
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
             body: humanMemberDetailBodyOf(createBody),
+        });
+        // Phase 10 Task 2: the PII facet's own document pair,
+        // closing the intake decomposition's seed side — its own
+        // address (identities/:id/pii), formed the SAME way
+        // every other per-member invocation above is, over the
+        // SAME body humanMemberPiiSeedBody hands the actual write
+        // (mock-data.ts) so the two can never drift. ORDERING
+        // (verification finding): mock-data.ts nests this
+        // invocation's write inside the SAME outer TABLE_NAMES
+        // transaction the human-members create already spans, so
+        // it commits BEFORE seedHumanCredentials' pii-presence
+        // filter runs.
+        invocations.push({
+            key: seedPairKey('identities/:id/pii', member.id),
+            routePattern: 'identities/:id/pii',
+            idParams: [member.id],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: humanMemberPiiSeedBody(member),
         });
     });
     // Task 5: the system member's own members/:id document
@@ -1575,7 +1616,9 @@ export async function formMockDataMessagePairs(
 // 'current' membership) and the system member's own members/:id
 // document pair — the SAME two families postMockDataLoad's own
 // invocation list now covers, closing bootstrap's last two raw
-// writes (Path A, Phase 8 Task 5).
+// writes (Path A, Phase 8 Task 5). Phase 10 Task 2: ALSO forms
+// the current member's PII document pair (identities/:id/pii),
+// the SAME facet-split every other seeded human now carries.
 export async function formBootstrapMessagePair(
     requestAt: string,
 ): Promise<{
@@ -1583,6 +1626,7 @@ export async function formBootstrapMessagePair(
     readonly pairs: MemberWritePairs;
     readonly membershipPair: MessagePair;
     readonly systemMemberPair: MessagePair;
+    readonly piiPair: MessagePair;
 }> {
     const body = bootstrapCurrentMemberBody(nowUtc());
     const operation = await formSeedPair(
@@ -1639,10 +1683,22 @@ export async function formBootstrapMessagePair(
         },
         requestAt,
     );
+    const piiPair = await formSeedPair(
+        {
+            key: seedPairKey('identities/:id/pii', 'current'),
+            routePattern: 'identities/:id/pii',
+            idParams: ['current'],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: bootstrapCurrentMemberPiiBody(),
+        },
+        requestAt,
+    );
     return {
         body,
         pairs: { operation, memberDocument, detailDocument },
         membershipPair,
         systemMemberPair,
+        piiPair,
     };
 }

@@ -1735,16 +1735,19 @@ export async function postAiMemberCreationOp(
 }
 
 // Human-member creation: the parent member row, the
-// identity, the PII row, the detail row, and the initial
-// state event commit as ONE transaction — a mid-write
-// failure rolls the whole thing back rather than
-// orphaning a half-built member. Each facet store
-// re-validates its own body as the composing puts land.
-// The parent member type and the identity kind are
-// server-supplied facts the handler pins; PII/identity
-// are GLOBAL passthrough stores, identity_pii is parent-
-// scoped, so the facet puts go straight to their stores.
-// The initial event is authored by the verified caller
+// identity, the detail row, and the initial state event
+// commit as ONE transaction — a mid-write failure rolls
+// the whole thing back rather than orphaning a half-built
+// member. PII no longer lands here (Phase 10 Task 2's
+// intake decomposition): it enters later via the separate
+// PUT identities/:id/pii, so a create can never roll back
+// on a bad PII sub-object — the torn-state acceptance the
+// phase names. Each facet store re-validates its own body
+// as the composing puts land. The parent member type and
+// the identity kind are server-supplied facts the handler
+// pins; members/identities are GLOBAL passthrough stores,
+// so the facet puts go straight to their stores. The
+// initial event is authored by the verified caller
 // (actor), never the body. Exported so the seed can drive
 // human-member creation through the same gate the route
 // uses (Decision 6's below-facade carve-out) — this is
@@ -1756,9 +1759,11 @@ export async function postAiMemberCreationOp(
 // Task 4: create appends THREE pairs — the operation pair
 // (the gate's own), the synthesized member document pair,
 // and the synthesized detail document pair — in that
-// order, LAST, pairs-or-nothing. The identity_pii row
-// stays old-plane: the PII facet is NEVER synthesized here
-// — its own document address awaits the identity spine.
+// order, LAST, pairs-or-nothing. The PII facet's own
+// document pair (identities/:id/pii) is formed and
+// appended by its OWN, separate write (the client's second
+// hop; the seed's own companion postIdentityPiiDocumentOp
+// call) — never synthesized here.
 export async function postHumanMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
@@ -1768,7 +1773,7 @@ export async function postHumanMemberCreationOp(
     const b = validateHumanMemberCreateBody(body);
     return db.transaction(
         [
-            'members', 'identities', 'identity_pii',
+            'members', 'identities',
             'human_members', 'states',
             'requests', 'responses',
         ],
@@ -1778,11 +1783,6 @@ export async function postHumanMemberCreationOp(
             );
             await view.identities.put(
                 b.id, { kind: 'person' },
-            );
-            await view.identityPii.put(
-                b.id,
-                b.pii as unknown as
-                    Omit<IdentityPiiEntity, 'id'>,
             );
             await view.humanMembers.put(
                 b.id,

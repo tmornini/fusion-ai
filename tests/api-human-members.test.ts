@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { GET, POST, handleRequest } from '../api/api.ts';
+import { GET, POST, PUT, handleRequest } from '../api/api.ts';
 import {
     MemoryDbAdapter,
 } from '../api/db-memory.ts';
@@ -58,13 +58,14 @@ function req(
 }
 
 test(
-    'POST human-members writes all four facets and its'
-    + ' initial state event in one operation',
+    'POST human-members writes three facets and its initial'
+    + ' state event in one operation; PII enters via a separate'
+    + ' PUT identities/:id/pii (Phase 10 Task 2 intake'
+    + ' decomposition)',
     async () => {
         const db = await freshDb();
         await POST(db, 'human-members', {
             id: 'w1',
-            pii: pii('Alice'),
             detail: detail(),
             initialState: 'active',
             initialStateEventId: 'ev-1',
@@ -83,6 +84,10 @@ test(
         }>(db, 'human-members/w1', DEV_TOKEN);
         assert.equal(facet.title, 'Engineer');
         assert.equal(facet.department, 'Product');
+        // No PII row yet — the create body carries no pii key.
+        await assert.rejects(
+            () => db.identityPii.getById('w1'));
+        await PUT(db, 'identities/w1/pii', pii('Alice'), DEV_TOKEN);
         const piiRow = await db.identityPii.getById('w1');
         assert.equal(piiRow.name, 'Alice');
         const current = await GET<{
@@ -118,7 +123,6 @@ test(
         await assert.rejects(
             () => POST(db, 'human-members', {
                 id: 'doomed',
-                pii: pii('Doomed'),
                 detail: detail(),
                 initialState: 'active',
                 initialStateEventId: 'ev-x',
@@ -130,8 +134,6 @@ test(
             () => GET(db, 'members/doomed', DEV_TOKEN));
         await assert.rejects(
             () => GET(db, 'human-members/doomed', DEV_TOKEN));
-        await assert.rejects(
-            () => db.identityPii.getById('doomed'));
     },
 );
 
@@ -142,7 +144,6 @@ test(
         const db = await freshDb();
         await POST(db, 'human-members', {
             id: 'w1',
-            pii: pii('Alice'),
             detail: detail(),
             initialState: 'active',
             initialStateEventId: 'ev-1',
@@ -172,7 +173,6 @@ test(
         const create = await handleRequest(adminDb, req(
             'POST', '/human-members', DEV_TOKEN, {
                 id: 'w1',
-                pii: pii('Alice'),
                 detail: detail(),
                 initialState: 'active',
                 initialStateEventId: 'ev-1',
@@ -193,7 +193,6 @@ test(
         const deniedCreate = await handleRequest(
             memberDb, req('POST', '/human-members', token, {
                 id: 'w2',
-                pii: pii('Bob'),
                 detail: detail(),
                 initialState: 'active',
                 initialStateEventId: 'ev-2',

@@ -323,18 +323,17 @@ function aiMemberDocumentBody(
     };
 }
 
+// PII no longer rides the create body (Phase 10 Task 2's intake
+// decomposition) — `name` stays a parameter so callers keep one
+// literal call shape even though this builder no longer uses it.
 function humanMemberCreateBody(
     id: string,
-    name: string,
+    _name: string,
     stateEventId: string,
     stateAt: string,
 ): Record<string, unknown> {
     return {
         id,
-        pii: {
-            name, email: id + '@example.com',
-            phone: '', bio: '',
-        },
         detail: {
             title: 't', department: 'd',
             strengths: jsonArrayField([]),

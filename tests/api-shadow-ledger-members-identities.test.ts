@@ -69,10 +69,13 @@ function humanDetail() {
     };
 }
 
-function humanCreateBody(id: string, eventId: string, name: string) {
+// PII no longer rides the create body (Phase 10 Task 2's intake
+// decomposition) — it enters via a separate PUT
+// identities/:id/pii, formed independently via humanPii() at
+// call sites that need it.
+function humanCreateBody(id: string, eventId: string) {
     return {
         id,
-        pii: humanPii(name),
         detail: humanDetail(),
         initialState: 'active',
         initialStateEventId: eventId,
@@ -353,18 +356,27 @@ test('a failed ai-member edit appends nothing', async () => {
 
 test('a human-member create appends its bundle: operation +'
 + ' detail document share the entity address, member document'
-+ ' sits at its own', async () => {
++ ' sits at its own; its PII intake forms its own pair at'
++ ' identities/:id/pii', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
         'POST', '/human-members', DEV_TOKEN,
-        humanCreateBody('hm-1', 'ev-2', 'Alice'),
+        humanCreateBody('hm-1', 'ev-2'),
     ));
     assert.equal(res.status, 204);
+    const pii = await handleRequest(db, req(
+        'PUT', '/identities/hm-1/pii', DEV_TOKEN,
+        humanPii('Alice'),
+    ));
+    assert.equal(pii.status, 200);
     const requests = await db.requests.getAll();
     // Create balance: operation + detail document (both at the
     // shared human-members address) + member document (its own
-    // address) = 3 — the ai-members precedent above.
-    assert.equal(requests.length, 3);
+    // address) = 3 — the ai-members precedent above. + 1 for the
+    // PII intake's own pair at its own address (Phase 10 Task 2's
+    // intake decomposition — pii no longer rides the create's own
+    // request) = 4.
+    assert.equal(requests.length, 4);
     const atEntity = requests.filter(
         r => r.uri_prefix === '/human-members/'
             && r.uri_id === 'hm-1',
@@ -374,6 +386,11 @@ test('a human-member create appends its bundle: operation +'
         r => r.uri_prefix === '/members/' && r.uri_id === 'hm-1',
     );
     assert.equal(atMember.length, 1);
+    const atPii = requests.filter(
+        r => r.uri_prefix === '/identities/hm-1/pii/',
+    );
+    assert.equal(atPii.length, 1);
+    assert.equal(atPii[0]!.uri_id, '');
     const memberBody = JSON.parse(atMember[0]!.message) as {
         body: Record<string, unknown>;
     };
@@ -400,7 +417,7 @@ async () => {
     const db = await freshDb();
     const created = await handleRequest(db, req(
         'POST', '/human-members', DEV_TOKEN,
-        humanCreateBody('hm-2', 'ev-3', 'Bob'),
+        humanCreateBody('hm-2', 'ev-3'),
     ));
     assert.equal(created.status, 204);
     // The create's OWN detail-document pair — appended strictly
@@ -451,7 +468,7 @@ test('a failed human-member edit appends nothing', async () => {
     const db = await freshDb();
     await handleRequest(db, req(
         'POST', '/human-members', DEV_TOKEN,
-        humanCreateBody('hm-edit-fail', 'ev-hf', 'Base'),
+        humanCreateBody('hm-edit-fail', 'ev-hf'),
     ));
     const before = (await db.requests.getAll()).length;
     const res = await handleRequest(db, req(
@@ -652,7 +669,7 @@ test('request and response counts stay equal across a mix'
     ));
     await handleRequest(db, req(
         'POST', '/human-members', DEV_TOKEN,
-        humanCreateBody('hm-10', 'ev-11', 'Mixed'),
+        humanCreateBody('hm-10', 'ev-11'),
     ));
     await handleRequest(db, req(
         'PUT', '/identities/idp-10', DEV_TOKEN, { kind: 'person' },

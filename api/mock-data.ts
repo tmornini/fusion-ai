@@ -13,6 +13,7 @@ import {
     postObjectiveCreationOp,
     postAiMemberCreationOp,
     postHumanMemberCreationOp,
+    postIdentityPiiDocumentOp,
     postBaselineScoreDocumentOp,
     postActualScoreDocumentOp,
     postMembershipDocumentOp,
@@ -105,6 +106,8 @@ import {
     ORGANIZATION_TWO_OBJECTIVE,
     membershipSeedBody,
     bootstrapMembershipId,
+    humanMemberPiiSeedBody,
+    bootstrapCurrentMemberPiiBody,
 } from './mock-data/seed-message-pairs.ts';
 import { buildSeedScoreRows } from './mock-data/scores.ts';
 
@@ -308,6 +311,23 @@ async function postMockDataLoadIn(
                             ),
                         ),
                     },
+                ),
+                // Phase 10 Task 2: the PII facet's own write,
+                // nested in this SAME outer TABLE_NAMES
+                // transaction (the ordering constraint) so it
+                // commits before seedHumanCredentials' pii-
+                // presence filter runs after this transaction.
+                postIdentityPiiDocumentOp(
+                    adapter,
+                    member.id,
+                    humanMemberPiiSeedBody(member),
+                    SYSTEM_MEMBER_ID,
+                    requirePair(
+                        pairs,
+                        seedPairKey(
+                            'identities/:id/pii', member.id,
+                        ),
+                    ),
                 ),
             ];
         }),
@@ -1004,12 +1024,15 @@ export async function postBootstrap(
     // bootstrap's own membership pair and the system member's own
     // members/:id document pair — the last two raw bootstrap
     // writes, now closed the SAME way postMockDataLoad's own
-    // memberships/system-member sites are.
+    // memberships/system-member sites are. Phase 10 Task 2: ALSO
+    // forms the current member's PII document pair, closing the
+    // intake decomposition's bootstrap side.
     const {
         body: currentMemberBody,
         pairs: currentMemberPairs,
         membershipPair,
         systemMemberPair,
+        piiPair,
     } = await formBootstrapMessagePair(nowUtc());
     // Pass 2: seed the pristine bootstrap data in one
     // transaction. Credentials seed after it commits — PBKDF2
@@ -1021,7 +1044,7 @@ export async function postBootstrap(
         TABLE_NAMES,
         (view) => postBootstrapIn(
             view, currentMemberBody, currentMemberPairs,
-            membershipPair, systemMemberPair,
+            membershipPair, systemMemberPair, piiPair,
         ),
     );
     const creds = await seedHumanCredentials(adapter);
@@ -1035,6 +1058,7 @@ async function postBootstrapIn(
     currentMemberPairs: MemberWritePairs,
     membershipPair: MessagePair,
     systemMemberPair: MessagePair,
+    piiPair: MessagePair,
 ): Promise<void> {
     // The pristine seed plants only what the app needs
     // to render its shell: the system actor that authors
@@ -1088,6 +1112,14 @@ async function postBootstrapIn(
         postHumanMemberCreationOp(
             adapter, currentMemberBody,
             SYSTEM_MEMBER_ID, currentMemberPairs,
+        ),
+        // Phase 10 Task 2: the current member's PII facet, nested
+        // in this SAME outer TABLE_NAMES transaction (the ordering
+        // constraint) so it commits before seedHumanCredentials'
+        // pii-presence filter runs after this transaction.
+        postIdentityPiiDocumentOp(
+            adapter, 'current', bootstrapCurrentMemberPiiBody(),
+            SYSTEM_MEMBER_ID, piiPair,
         ),
         adapter.states.postEvent(
             'bootstrap-system-active',
