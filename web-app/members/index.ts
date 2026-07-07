@@ -357,6 +357,13 @@ async function handleInviteSubmit(): Promise<void> {
 }
 
 function onKindRadioChange(e: Event): void {
+    // Switching Kind starts a NEW logical operation, so the
+    // mint-once id (above) must not follow it: reusing the id
+    // would let a switched-to submit re-put the OTHER kind's
+    // facet onto an entity already claimed by the first kind's
+    // partial create. Retries WITHIN a kind still reuse the id
+    // via currentMemberId()'s lazy mint.
+    pendingMemberId = null;
     const target = e.target as HTMLInputElement;
     const kind = target.value;
     const humanForm = $(
