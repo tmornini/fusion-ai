@@ -1661,10 +1661,27 @@ export async function postObjectiveDocumentOp(
 // the SAME (uriPrefix, uriId) as a live PUT there would) — so it
 // becomes THAT address's new head, appended after the operation
 // pair.
+//
+// identityDocument (Task 5) widens this SAME bundle for the
+// human create/edit routes alone: the synthesized identities/:id
+// document pair, byte-indistinguishable from a live PUT there
+// ({kind:'person'}), appended LAST — after detailDocument. The AI
+// routes never populate it (finding 10: postAiMemberCreationOp
+// writes no identities row — an AI member has no identity of its
+// own), so postAiMemberCreationOp/postAiMemberEditOp always
+// receive it undefined; the field stays on this ONE shared type
+// rather than forking a person-only sibling, since every
+// consuming op already honors it uniformly via the SAME
+// `!== undefined` guard the other two fields use. On a human
+// EDIT the body is byte-identical to the create's own, so it
+// FOLDS by message_hash (appendMessagePair's dedup skip) rather
+// than appending a second row — the SAME fold memberDocument's
+// own `type` field already exercises on every edit.
 export interface MemberWritePairs {
     readonly operation: MessagePair;
     readonly memberDocument: MessagePair;
     readonly detailDocument: MessagePair;
+    readonly identityDocument?: MessagePair;
 }
 
 // The shared BODY builders — the ONE-voice seam both the live
@@ -1818,7 +1835,12 @@ export async function postAiMemberCreationOp(
 // document pair (identities/:id/pii) is formed and
 // appended by its OWN, separate write (the client's second
 // hop; the seed's own companion postIdentityPiiDocumentOp
-// call) — never synthesized here.
+// call) — never synthesized here. Task 5: a FOURTH pair —
+// the synthesized identities/:id document — appends LAST,
+// after detailDocument, IFF the route supplied one (a human
+// member's own identity row, unlike an AI member — finding
+// 10 — which never carries one, so postAiMemberCreationOp's
+// OWN bundle stays exactly three).
 export async function postHumanMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
@@ -1859,6 +1881,11 @@ export async function postHumanMemberCreationOp(
                 await appendMessagePair(
                     view, pairs.detailDocument,
                 );
+                if (pairs.identityDocument !== undefined) {
+                    await appendMessagePair(
+                        view, pairs.identityDocument,
+                    );
+                }
             }
         },
     );
@@ -1916,7 +1943,12 @@ export async function postAiMemberEditOp(
 // Task 2's intake decomposition): it changes ONLY via the
 // separate PUT identities/:id/pii, fired by the client IFF its
 // dirty check finds it changed — this op never sees it either
-// way, so a detail-only edit stays exactly this one write.
+// way, so a detail-only edit stays exactly this one write. Task
+// 5: a FOURTH pair — the synthesized identities/:id document —
+// appends LAST, IFF the route supplied one; its body
+// ({kind:'person'}) is byte-identical to the create's own, so it
+// FOLDS by message_hash (appendMessagePair's dedup skip) rather
+// than appending a second row.
 export async function postHumanMemberEditOp(
     db: DbAdapter,
     id: Id,
@@ -1950,6 +1982,11 @@ export async function postHumanMemberEditOp(
                 await appendMessagePair(
                     view, pairs.detailDocument,
                 );
+                if (pairs.identityDocument !== undefined) {
+                    await appendMessagePair(
+                        view, pairs.identityDocument,
+                    );
+                }
             }
         },
     );
@@ -3419,7 +3456,10 @@ export const routes: Route[] = [
         // entry, so it falls to the root admin tier in
         // ROUTE_POLICY. Task 4: forms the member-document and
         // detail-document pairs INLINE PRE-TX, the ai-members
-        // precedent above, at the human-facet addresses. See
+        // precedent above, at the human-facet addresses. Task 5:
+        // ALSO forms the identities/:id document pair — a human
+        // member's own identity row, which an AI member never has
+        // (finding 10) — appended LAST. See
         // postHumanMemberCreationOp for the transaction shape.
         post: async (
             db, _p, body, actor, pair, organization,
@@ -3453,10 +3493,21 @@ export const routes: Route[] = [
                         organization,
                     },
                 );
+                const identityDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'identities/:id',
+                        params: [b.id],
+                        body: identityDocumentBodyOf('person'),
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
+                );
                 pairs = {
                     operation: pair,
                     memberDocument,
                     detailDocument,
+                    identityDocument,
                 };
             }
             return postHumanMemberCreationOp(
@@ -3481,9 +3532,14 @@ export const routes: Route[] = [
         // Human-member edit (Task 4, the SAME composed-EDIT
         // synthesis as ai-members/:id above): forms the member-
         // document/detail-document bundle beside the gate's own
-        // operation pair. Admin-only, exactly as create — no
-        // member-tier POST entry exists. See postHumanMemberEditOp
-        // for the transaction shape.
+        // operation pair. Task 5: ALSO forms the identities/:id
+        // document pair, the SAME {kind:'person'} body the create
+        // route forms — byte-identical, so it FOLDS by
+        // message_hash rather than appending a second row (the
+        // memberDocument fold precedent, cross-family). Admin-
+        // only, exactly as create — no member-tier POST entry
+        // exists. See postHumanMemberEditOp for the transaction
+        // shape.
         post: async (db, p, body, actor, pair, organization) => {
             const id = param(p, 0);
             let pairs: MemberWritePairs | undefined;
@@ -3521,10 +3577,21 @@ export const routes: Route[] = [
                         organization,
                     },
                 );
+                const identityDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'identities/:id',
+                        params: [id],
+                        body: identityDocumentBodyOf('person'),
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
+                );
                 pairs = {
                     operation: pair,
                     memberDocument,
                     detailDocument,
+                    identityDocument,
                 };
             }
             return postHumanMemberEditOp(db, id, body, pairs);

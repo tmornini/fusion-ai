@@ -61,7 +61,13 @@
 // membership and system-member rows form this SAME pair of
 // invocations via formBootstrapMessagePair. NO whole-slice seed
 // deferral remains; the work-order historical traces stay the
-// one NAMED direct-write carve-out above.
+// one NAMED direct-write carve-out above. The human-member
+// create-time bundle widens once more, human-only (Phase 10 Task
+// 5): a fourth invocation forms the identities/:id document pair
+// — a human member's own identity row, which an AI member never
+// has (finding 10), so the ai-members loop below stays a triple.
+// Bootstrap's lone 'current' human-member create forms this SAME
+// quadruple via formBootstrapMessagePair.
 
 import type {
     Id,
@@ -98,6 +104,7 @@ import {
     memberDocumentBodyOf,
     aiMemberDetailBodyOf,
     humanMemberDetailBodyOf,
+    identityDocumentBodyOf,
 } from '../routes.ts';
 import type { MemberWritePairs } from '../routes.ts';
 import {
@@ -1062,9 +1069,10 @@ export function buildMockDataInvocations():
         // (human-members/:id), each keyed by its OWN
         // deterministic invocation entry — the objectives
         // document/revision precedent, the roster's own fixed
-        // 1+1+1. Bodies via the shared BODY builders
-        // (api/routes.ts) — never a second, hand-rolled copy.
-        // The SAME system author authors all three invocations.
+        // 1+1+1 (now 1+1+1+1, Task 5 below). Bodies via the
+        // shared BODY builders (api/routes.ts) — never a second,
+        // hand-rolled copy. The SAME system author authors every
+        // invocation.
         invocations.push({
             key: seedPairKey('members/:id', member.id),
             routePattern: 'members/:id',
@@ -1080,6 +1088,18 @@ export function buildMockDataInvocations():
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
             body: humanMemberDetailBodyOf(createBody),
+        });
+        // Task 5: the identities/:id document pair — a human
+        // member's own identity row, which an AI member never has
+        // (finding 10), so no sibling invocation exists in the
+        // ai-members loop below.
+        invocations.push({
+            key: seedPairKey('identities/:id', member.id),
+            routePattern: 'identities/:id',
+            idParams: [member.id],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: identityDocumentBodyOf('person'),
         });
         // Phase 10 Task 2: the PII facet's own document pair,
         // closing the intake decomposition's seed side — its own
@@ -1619,6 +1639,10 @@ export async function formMockDataMessagePairs(
 // writes (Path A, Phase 8 Task 5). Phase 10 Task 2: ALSO forms
 // the current member's PII document pair (identities/:id/pii),
 // the SAME facet-split every other seeded human now carries.
+// Phase 10 Task 5: the human-member bundle grows from 1+1+1 to
+// 1+1+1+1 — the current member's own identities/:id document
+// pair, the SAME fourth invocation the mock-data seed's own
+// human-members loop now forms per member.
 export async function formBootstrapMessagePair(
     requestAt: string,
 ): Promise<{
@@ -1661,6 +1685,20 @@ export async function formBootstrapMessagePair(
         },
         requestAt,
     );
+    // Task 5: the current member's own identities/:id document
+    // pair — the SAME fourth invocation the mock-data seed's own
+    // human-members loop now forms per member.
+    const identityDocument = await formSeedPair(
+        {
+            key: seedPairKey('identities/:id', 'current'),
+            routePattern: 'identities/:id',
+            idParams: ['current'],
+            organization: undefined,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            body: identityDocumentBodyOf('person'),
+        },
+        requestAt,
+    );
     const membershipPair = await formSeedPair(
         {
             key: seedPairKey('memberships/:id', bootstrapMembershipId),
@@ -1696,7 +1734,10 @@ export async function formBootstrapMessagePair(
     );
     return {
         body,
-        pairs: { operation, memberDocument, detailDocument },
+        pairs: {
+            operation, memberDocument, detailDocument,
+            identityDocument,
+        },
         membershipPair,
         systemMemberPair,
         piiPair,

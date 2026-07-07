@@ -310,6 +310,12 @@ async function postMockDataLoadIn(
                                 'human-members/:id', member.id,
                             ),
                         ),
+                        identityDocument: requirePair(
+                            pairs,
+                            seedPairKey(
+                                'identities/:id', member.id,
+                            ),
+                        ),
                     },
                 ),
                 // Phase 10 Task 2: the PII facet's own write,

@@ -356,8 +356,8 @@ test('a failed ai-member edit appends nothing', async () => {
 
 test('a human-member create appends its bundle: operation +'
 + ' detail document share the entity address, member document'
-+ ' sits at its own; its PII intake forms its own pair at'
-+ ' identities/:id/pii', async () => {
++ ' and the identities document each sit at their own; its PII'
++ ' intake forms its own pair at identities/:id/pii', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
         'POST', '/human-members', DEV_TOKEN,
@@ -372,11 +372,12 @@ test('a human-member create appends its bundle: operation +'
     const requests = await db.requests.getAll();
     // Create balance: operation + detail document (both at the
     // shared human-members address) + member document (its own
-    // address) = 3 — the ai-members precedent above. + 1 for the
-    // PII intake's own pair at its own address (Phase 10 Task 2's
-    // intake decomposition — pii no longer rides the create's own
-    // request) = 4.
-    assert.equal(requests.length, 4);
+    // address) + identities document (its own address, Task 5) =
+    // 4 — the ai-members precedent above, widened by one. + 1 for
+    // the PII intake's own pair at its own address (Phase 10 Task
+    // 2's intake decomposition — pii no longer rides the create's
+    // own request) = 5.
+    assert.equal(requests.length, 5);
     const atEntity = requests.filter(
         r => r.uri_prefix === '/human-members/'
             && r.uri_id === 'hm-1',
@@ -386,6 +387,10 @@ test('a human-member create appends its bundle: operation +'
         r => r.uri_prefix === '/members/' && r.uri_id === 'hm-1',
     );
     assert.equal(atMember.length, 1);
+    const atIdentity = requests.filter(
+        r => r.uri_prefix === '/identities/' && r.uri_id === 'hm-1',
+    );
+    assert.equal(atIdentity.length, 1);
     const atPii = requests.filter(
         r => r.uri_prefix === '/identities/hm-1/pii/',
     );
@@ -395,6 +400,12 @@ test('a human-member create appends its bundle: operation +'
         body: Record<string, unknown>;
     };
     assert.deepEqual(memberBody.body, { type: 'human' });
+    // The synthesized identities document — byte-indistinguishable
+    // from a live PUT identities/:id pair: `kind` alone.
+    const identityBody = JSON.parse(atIdentity[0]!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(identityBody.body, { kind: 'person' });
     const responseById = new Map(
         (await db.responses.getAll()).map(r => [r.id, r]),
     );
@@ -443,15 +454,18 @@ async () => {
     ));
     assert.equal(edit.status, 204);
     assert.equal(edit.headers.get('Supersedes'), trueHead!.id);
-    // Balance: create's 3 + the edit's operation and detail
-    // document (2) = 5. The edit's OWN member-document pair
-    // folds: `type` is invariant per member (a human never
-    // becomes non-human across an edit), so its body ({type:
-    // 'human'}) is byte-identical to the create's own — the
-    // member-document address permanently folds after genesis,
-    // by construction, for every member.
+    // Balance: create's 4 (Task 5's widened bundle) + the edit's
+    // operation and detail document (2) = 6. The edit's OWN
+    // member-document pair folds: `type` is invariant per member
+    // (a human never becomes non-human across an edit), so its
+    // body ({type: 'human'}) is byte-identical to the create's
+    // own — the member-document address permanently folds after
+    // genesis, by construction, for every member. The edit's OWN
+    // identities document pair folds the SAME way (the E6 fold):
+    // {kind:'person'} is byte-identical to the create's own, so it
+    // never appends a second row either.
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 5);
+    assert.equal(requests.length, 6);
     const atEntity = requests.filter(
         r => r.uri_prefix === '/human-members/'
             && r.uri_id === 'hm-2',
@@ -461,6 +475,10 @@ async () => {
         r => r.uri_prefix === '/members/' && r.uri_id === 'hm-2',
     );
     assert.equal(atMember.length, 1);
+    const atIdentity = requests.filter(
+        r => r.uri_prefix === '/identities/' && r.uri_id === 'hm-2',
+    );
+    assert.equal(atIdentity.length, 1);
 });
 
 test('a failed human-member edit appends nothing', async () => {

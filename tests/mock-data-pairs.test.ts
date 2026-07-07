@@ -80,9 +80,15 @@ import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 // decomposition: each seeded human's PUT identities/:id/pii,
 // formerly folded into the human-members create body, now its
 // own document address, closed through
-// postIdentityPiiDocumentOp) =
-// 592. A dropped or reordered invocation changes this count.
-const EXPECTED_PAIR_COUNT = 592;
+// postIdentityPiiDocumentOp) +
+// 11 identities-document pairs (Phase 10 Task 5: each seeded
+// human-member create ALSO forms its own identities/:id document
+// pair — the create-time bundle widens from a triple to a
+// quadruple for human members only; an AI member forms no
+// identities row — finding 10 — so its own bundle stays a
+// triple) =
+// 603. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 603;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -162,6 +168,26 @@ test('a seeded human member\'s PII intake pair sits at its own'
         Object.keys(embedded.body).sort(),
         ['bio', 'email', 'name', 'phone'],
     );
+});
+
+test('a seeded human member\'s identities-document pair sits at'
++ ' the shared identities/:id address, its body carrying `kind`'
++ ' alone (Phase 10 Task 5)', async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstMember = buildMembers()[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(
+        r => r.uri_prefix === '/identities/'
+            && r.uri_id === firstMember.id,
+    );
+    assert.ok(
+        row, 'no request row for the seeded identities document',
+    );
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(embedded.body, { kind: 'person' });
 });
 
 test('a seeded flow create pair sits at its org-nested'
@@ -643,7 +669,7 @@ test('seed pairs verify against their hashes', async () => {
     }
 });
 
-test('a bootstrap seed populates exactly six balanced,'
+test('a bootstrap seed populates exactly seven balanced,'
 + ' hash-verified pairs for the current member and the system'
 + ' member', async () => {
     const db = new MemoryDbAdapter();
@@ -654,14 +680,17 @@ test('a bootstrap seed populates exactly six balanced,'
     // SAME 1+1+1 bundle the mock-data seed's own human-members
     // loop does — operation + detail document (shared
     // human-members address) + member document (its own
-    // address). Task 5: bootstrap's OWN membership document and
-    // the system member's OWN members/:id document close the
-    // last two raw bootstrap writes. Phase 10 Task 2: the
-    // current member's OWN PII document pair (identities/:id/pii)
-    // closes the intake decomposition's bootstrap side —
-    // 3 + 2 + 1 = 6.
-    assert.equal(requests.length, 6);
-    assert.equal(responses.length, 6);
+    // address). Task 5: the current member's OWN identities/:id
+    // document widens that bundle to 1+1+1+1 (4) — the SAME
+    // fourth invocation the mock-data seed's own human-members
+    // loop now forms per member. bootstrap's OWN membership
+    // document and the system member's OWN members/:id document
+    // close the last two raw bootstrap writes. Phase 10 Task 2:
+    // the current member's OWN PII document pair
+    // (identities/:id/pii) closes the intake decomposition's
+    // bootstrap side — 4 + 2 + 1 = 7.
+    assert.equal(requests.length, 7);
+    assert.equal(responses.length, 7);
     const atEntity = requests.filter(
         r => r.uri_prefix === '/human-members/'
             && r.uri_id === 'current',
@@ -671,6 +700,11 @@ test('a bootstrap seed populates exactly six balanced,'
         r => r.uri_prefix === '/members/' && r.uri_id === 'current',
     );
     assert.equal(atMember.length, 1);
+    const atIdentity = requests.filter(
+        r => r.uri_prefix === '/identities/'
+            && r.uri_id === 'current',
+    );
+    assert.equal(atIdentity.length, 1);
     const atSystemMember = requests.filter(
         r => r.uri_prefix === '/members/'
             && r.uri_id === SYSTEM_MEMBER_ID,

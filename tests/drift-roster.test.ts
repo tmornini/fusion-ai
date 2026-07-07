@@ -739,7 +739,11 @@ test('live-write chain: create an AI member (bundle balance 3),'
     );
     assert.equal(derivedAiDetail3.name, 'Chain AI Facet');
 
-    // Step 4: create a human member.
+    // Step 4: create a human member — bundle balance 4 (Phase 10
+    // Task 5 widens it from 3: operation + member-document +
+    // detail-document + the synthesized identities/:id document,
+    // a human member's own identity row an AI member never has —
+    // finding 10).
     const humanId = 'human-drift-chain-1';
     const beforeHumanCreate = (await db.requests.getAll()).length;
     const humanCreated = await handleRequest(db, req(
@@ -752,7 +756,7 @@ test('live-write chain: create an AI member (bundle balance 3),'
     assert.equal(humanCreated.status, 204);
     assert.equal(
         (await db.requests.getAll()).length,
-        beforeHumanCreate + 3,
+        beforeHumanCreate + 4,
     );
     await assertMemberParity(humanId);
     const derivedHumanDetail1 = await derivedHumanMember(
