@@ -333,10 +333,11 @@ test('case 3: the fence\'s legs — own-org visible, foreign hidden'
     // (which 404s a foreign row, reading as a harmless orphan)
     // instead of the RAW, unfenced probes.
     const foreignIdeaId = 'drift-states-fence-foreign-idea';
-    await handleRequest(db, req(
+    const foreignCreated = await handleRequest(db, req(
         'PUT', '/ideas/' + foreignIdeaId, tokenOrg2,
         ideaDocument('Foreign', foreignIdeaId + '-genesis', AT),
     ));
+    assert.equal(foreignCreated.status, 200);
 
     const orphanEntityId = 'drift-states-fence-orphan';
     await handleRequest(db, req(
@@ -349,11 +350,12 @@ test('case 3: the fence\'s legs — own-org visible, foreign hidden'
     // filter (requests/responses are append-only), so it must
     // still resolve the idea's TRUE owner and stay hidden from
     // STARK on both planes.
-    await handleRequest(db, req(
+    const foreignDeleted = await handleRequest(db, req(
         'PUT', '/states/drift-states-fence-foreign-del-ev',
         tokenOrg2,
         { entity_id: foreignIdeaId, state: 'deleted', at: AT },
     ));
+    assert.equal(foreignDeleted.status, 200);
 
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
