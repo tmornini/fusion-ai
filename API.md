@@ -1674,14 +1674,16 @@ one case) never a throw:
 `POST /snapshots/mock-data` and `POST /snapshots/bootstrap` are
 `BOOTSTRAP_ROUTES` — bearer-exempt and below the ledger for their OWN
 request (§3.26–§3.28). What they seed, though, is itself the output of
-TWELVE pair-capable write families, in dependency order: `human-members`,
-`ideas`, `idea-submissions`, `projects`, `flows`, `work-orders`,
-`flow-work-orders`, `ai-members`, `records`, `objectives`, `memberships`,
-and `members` (`buildMockDataInvocations`,
+FIFTEEN pair-capable write families, in dependency order:
+`human-members`, `ideas`, `idea-submissions`, `projects`, `flows`,
+`work-orders`, `flow-work-orders`, `ai-members`, `records`,
+`objectives`, `memberships`, `members`, `identities`,
+`identity-credentials`, and `role-grants` (the last three, Phase 10
+Task 6, §5.15) (`buildMockDataInvocations`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **603** message pairs — one pair per seeded
+- The mock-data seed pre-forms **632** message pairs — one pair per seeded
   row for most families, but each seeded human/AI member folds in an
   operation/member-document/detail-document triple (11 human-members +
   4 ai-members, each × 3 = 45 member-family pairs: 15 ops + 15 member
@@ -1715,19 +1717,32 @@ the SAME way a live request would, then writes it alongside the seeded row:
   operation/document/revision triple (5 creates × 3 = 15, §3.21, the
   flows'/work-orders' fixed 1+1+1 precedent verbatim), each seeded
   flow_records binding forms its own join pair (3 flow-record joins,
-  closed through `postFlowRecordDocumentOp`), and each seeded baseline/
+  closed through `postFlowRecordDocumentOp`), each seeded baseline/
   actual score row forms its own document pair (49 baseline + 92 actual
   = 141, closed through `postBaselineScoreDocumentOp` /
-  `postActualScoreDocumentOp`) — in a first pass, BEFORE the
+  `postActualScoreDocumentOp`), PLUS the 4 AI members + the system
+  member each fold in their OWN `identities/:id` document pair (5
+  more — Phase 10 Task 6, §5.15: a standalone invocation, not a
+  bundle-widening, since neither create-time bundle ever carried
+  one), PLUS every seeded human/system credential row folds in its
+  OWN `identities/:id/credentials/:cid` document pair (12 more —
+  11 human passwords + the system client secret, formed by
+  `seedHumanCredentials`' OWN local pass-1/pass-2 split since a
+  credential's hashed secret is unknown until PBKDF2 resolves),
+  PLUS every seeded role grant folds in its OWN `role-grants/:id`
+  document pair (12 more — the 2 admin grants for `current` plus
+  one member grant per non-admin human) — in a first pass, BEFORE the
   seed's own big transaction opens (`formWritePair`'s hashing is async
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
   pre-formed pair in the SAME transaction the row lands in. The bootstrap
-  seed forms exactly seven such pairs (the SAME member-family bundle —
+  seed forms exactly eleven such pairs (the SAME member-family bundle —
   now a quadruple, Phase 10 Task 5 — its
-  OWN membership and system-member document pairs, PLUS its own
-  `identities/:id/pii` document pair), for its lone `current`
-  human-member create.
+  OWN membership and system-member document pairs, its own
+  `identities/:id/pii` document pair, PLUS Phase 10 Task 6's OWN
+  system-identity document pair, role-grant pair, and the two
+  credential pairs — current's password + the system client
+  secret), for its lone `current` human-member create.
 - Memberships closed the LAST whole-slice seed deferral (Phase 8 Task
   5): every seeded membership row and the system member's own
   `members/:id` document now form a message pair too, closed through
@@ -1749,6 +1764,10 @@ the SAME way a live request would, then writes it alongside the seeded row:
   human-members and AI members).
 - `requestAt` is minted ONCE per seed run and shared by every pair
   that run forms, so seeded pairs read as arriving together.
+- `identity_default_organizations` (both seed paths' `seed-default-
+  org-*` / `bootstrap-default-org-current` rows) STAYS RAW — a
+  later gate defers this family WHOLE; it forms no message pair,
+  unlike every write around it (Phase 10 Task 6, §5.15).
 
 ### 5.4 The two PUT classes
 
@@ -2666,3 +2685,95 @@ byte-indistinguishable from a live `PUT /identities/:id` pair's
 shape at the same address; old-plane rows/states are untouched
 (fingerprints + the states-911 pin hold); the wire is unchanged
 — the bundles are storage-only.
+
+### 5.15 Gate-seeding the remaining spine slices: AI/system
+identities, credentials, role grants (Phase 10 Task 6)
+
+Path A throughout: the THREE ops §5.13 extracted and exported
+(`postIdentityDocumentOp`, `postIdentityCredentialDocumentOp`,
+`postRoleGrantDocumentOp`) + per-row invocations through the
+UNTOUCHED `formSeedPair` pipeline — no logic change to
+`formSeedPair` itself, only new callers. `formSeedPair` carries
+no `chain` argument at all, so `headPairId` is undefined for
+EVERY seed pair by construction (always-genesis); the live-path
+`chain: 'none'` vocabulary (`formDocumentPairFor`, api/routes.ts)
+does not apply here. Row ids/ats/content stay byte-identical —
+only `EXPECTED_PAIR_COUNT` (§5.3, 603 → 632) and the bootstrap
+count (7 → 11) move.
+
+**The three slices (+29).** The 4 AI + 1 system identities' raw
+`identities.put` sites re-point onto `postIdentityDocumentOp`
+(+5 — a standalone invocation each, since neither the ai-members
+nor the system-member write ever carried an `identityDocument`
+slot the way the human-member bundle does, §5.14). The 12
+credential writes in `seedHumanCredentials` re-point onto
+`postIdentityCredentialDocumentOp` (+12 — 11 human passwords +
+the system client secret). The 12 role-grant raw `roleGrants.put`
+sites re-point onto `postRoleGrantDocumentOp` (+12 — the 2 admin
+grants for `current` plus one member grant per non-admin human).
+Bootstrap mirrors its own system identity, 2 credentials, and 1
+role grant (+4, 7 → 11). `identity_default_organizations` STAYS
+RAW — see §5.3's own boundary note; a later gate defers that
+family whole.
+
+**The tx-widening trap (a verification finding).**
+`seedHumanCredentials` opened its OWN
+`adapter.transaction(['identity_credentials'], ...)` — calling
+`postIdentityCredentialDocumentOp` inside it would throw the
+nested-subset guard (`api/db-backed.ts`'s `#assertSubset`:
+`identities/:id/credentials/:cid`'s wiring transacts
+`['identity_credentials', 'requests', 'responses']`, and
+`'requests'`/`'responses'` are not in the outer declared set).
+The fix widens `seedHumanCredentials`' own transaction to that
+SAME three-table set — one fix covers both the mock-data and
+bootstrap call sites, since both share this one function. Each
+credential pair is PRE-FORMED from the post-hash secret BEFORE
+the widened transaction opens (`formSeedCredentialPairs`,
+`api/mock-data/seed-message-pairs.ts`) — a credential's body is
+unknown until PBKDF2 resolves, and crypto never runs in-tx
+(CLAUDE.md § the IndexedDB auto-commit constraint), so this
+credential batch runs its OWN local pass-1/pass-2 split rather
+than joining `formMockDataMessagePairs` / `formBootstrapMessagePair`
+(both already ran, before `seedHumanCredentials` is even called).
+`tests/credential-surfacing.test.ts` is the Task 2 ordering
+canary — it re-ran green (12 credentials still surface).
+
+**The org-stamp trap (a verification finding).**
+`role-grants/:id`'s `successBody` re-stamps `organization_id`
+from the invocation's `organization` argument (§5.3's
+`documentSeedResponse`, `api/mock-data/seed-message-pairs.ts`,
+threads `inv.organization` straight into it) — so each of the 12
+role-grant seed invocations MUST carry its OWN grant's
+`organization_id` (`STARK_ORGANIZATION`/`ORGANIZATION_TWO` per
+the write body, `assignOrganization(index)` for members), never
+undefined. A wrong/undefined value silently corrupts the STORED
+RESPONSE body with no fingerprint pin catching it —
+`requests`/`responses` are excluded tables (`tests/mock-data-
+fingerprint.test.ts`). Only the spot-check below catches it.
+
+**The re-pins (`tests/mock-data-pairs.test.ts`).**
+`EXPECTED_PAIR_COUNT` 603 → 632 + the breakdown prose; ONE
+credentials-document spot-check, KEY-SET ONLY (`{at, id,
+identity_id, kind, secret, status}`) — a credential's `secret`
+is nondeterministic per reseed, so content can never be pinned;
+ONE role-grant spot-check that reads BOTH the stored response
+body and the actually-written row for the `current`/
+`ORGANIZATION_TWO` admin grant and asserts they agree — the only
+place the org-stamp bug surfaces, not a mere key-set check; the
+bootstrap count 7 → 11. One PRE-EXISTING assertion also needed a
+disambiguating fix, not a re-pin: the ai-member create-pair
+lookup matched by `uri_id` alone, which the new identities-
+document pair (sharing that SAME `uri_id`) now makes ambiguous —
+fixed by filtering on the operation pair's OWN 204 response, the
+SAME technique the ai-member detail-document test already uses
+(the H7/arrival-order hazard class) — the assertion itself is
+unchanged.
+
+**Contract.** Every fingerprint pin holds — `identities` 16/
+`0c164977`, `identity_credentials` 12/`4990628d`, `role_grants`
+12/`4b2311dd`, the full table (`tests/mock-data-fingerprint.
+test.ts`) — because the three ops write the SAME row content the
+raw puts did; only the message plane (excluded from that
+fingerprint) grew. Reseed marginal cost measured ~2 ms for the
++29 pairs (order-of-magnitude consistent with the ~0.144 ms/pair
+baseline; within this harness's run-to-run noise floor).
