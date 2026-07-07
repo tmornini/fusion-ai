@@ -223,7 +223,26 @@ async function seedChain(
     db: MemoryDbAdapter, organization: string, s: string,
     identity: string,
 ): Promise<void> {
-    await db.ideas.put('i' + s, ideaBody(organization, 'idea'));
+    // Seeded through the wire (NAMED re-pin: the READ-side
+    // pair-plane fence, api/derive-states.ts's
+    // resolveOwningOrganization, resolves an org-nested entity's
+    // owner ONLY from a genuine response row at its own uri_id —
+    // a raw db.ideas.put leaves none, so 'i'+s's own 'se'+s
+    // state event would resolve as a visible ORPHAN, not a
+    // fenced-hidden foreign row, once GET /states is flipped),
+    // mirroring twoOrganizations()'s own a1 precedent above.
+    const { organization_id: _organizationId, ...ideaFields } =
+        ideaBody(organization, 'idea');
+    await handleRequest(db, req(
+        'PUT', '/organizations/' + organization + '/ideas/i' + s,
+        await organizationToken(identity, organization),
+        {
+            ...ideaFields,
+            state: 'active',
+            state_at: T8_AT,
+            state_event_id: 'i' + s + '-genesis',
+        },
+    ));
     await db.projects.put('p' + s, projectBody(organization));
     await db.flows.put('f' + s, flowBody(organization));
     // Stays raw (NAMED contrast to the revisions/scores re-pins

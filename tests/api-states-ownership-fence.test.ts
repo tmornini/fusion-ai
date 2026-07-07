@@ -76,12 +76,27 @@ async function seed(): Promise<MemoryDbAdapter> {
         proposed_solution: '', expected_outcome: '',
         success_metrics: '',
     });
-    await db.ideas.put('idea-b', {
-        organization_id: 'B', title: 'Idea B', position: 0,
-        problem_statement: '', target_users: '',
-        proposed_solution: '', expected_outcome: '',
-        success_metrics: '',
-    });
+    // Seeded through the wire (NAMED re-pin: the READ-side
+    // pair-plane fence, api/derive-states.ts's
+    // resolveOwningOrganization, resolves an org-nested entity's
+    // owner ONLY from a genuine response row at its own uri_id —
+    // a raw db.ideas.put leaves none, so 'org B deleting its own
+    // idea...' below would see idea-b's own events resolve as a
+    // visible ORPHAN once GET /states/GET entity-states/:id/
+    // history are flipped). idea-a stays a raw row — no test
+    // here reads it through either flipped route.
+    const ideaBWrite = await handleRequest(db, req(
+        'PUT', '/ideas/idea-b', await tokenFor('memberB', 'B'),
+        {
+            title: 'Idea B', position: 0,
+            problem_statement: '', target_users: '',
+            proposed_solution: '', expected_outcome: '',
+            success_metrics: '',
+            state: 'active', state_at: AT,
+            state_event_id: 'idea-b-genesis',
+        },
+    ));
+    assert.equal(ideaBWrite.status, 200);
     await db.workOrders.put('wo-a', {
         organization_id: 'A', display_id: 'WO-1',
         flow_graph: jsonObjectField({

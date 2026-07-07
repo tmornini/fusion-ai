@@ -74,22 +74,53 @@ async function seed(): Promise<MemoryDbAdapter> {
         organization_id: 'A', identity_id: 'current',
         at: AT,
     });
-    await db.flows.put('flow-a', {
-        organization_id: 'A', name: 'Flow A',
-        is_locked: false, is_auto_layout: false,
-        is_auto_fit: false, lock_timeout: 0,
-    });
-    await db.flowNodes.put('node-a', {
-        flow_id: 'flow-a', name: 'Node A',
-        position_x: 0, position_y: 0,
-        is_create: false, is_archive: false,
-        task_instructions: '', at: AT,
-    });
-    await db.flowEdges.put('edge-a', {
-        flow_id: 'flow-a', name: 'Edge A',
-        from_node_id: 'node-a', to_node_id: 'node-a',
-        at: AT,
-    });
+    // Seeded through the wire (NAMED re-pin: the READ-side
+    // pair-plane fence, api/derive-states.ts's
+    // resolveFlowGraphOwner, resolves a flow-node/edge's owner
+    // ONLY by finding its id inside the flow's OWN document-pair
+    // graphDelta — raw db.flows/flowNodes/flowEdges puts leave
+    // no such pair, so node-a/edge-a's own deletion events would
+    // resolve as visible ORPHANs instead of fenced-hidden A-owned
+    // rows, once GET /states/GET entity-states/:id/history are
+    // flipped. Mirrors tests/drift-states.test.ts's own case 5a
+    // POST /flows precedent.
+    const created = await handleRequest(db, req(
+        'POST', '/flows', await organizationToken('current', 'A'),
+        {
+            id: 'flow-a',
+            flow: {
+                name: 'Flow A', is_locked: false,
+                is_auto_layout: false, is_auto_fit: false,
+                lock_timeout: 0,
+            },
+            projectFlowId: 'flow-a-pf',
+            projectFlow: {
+                project_id: 'flow-a-proj', flow_id: 'flow-a',
+                at: AT,
+            },
+            initialState: 'active',
+            initialStateEventId: 'flow-a-genesis',
+            initialStateAt: AT,
+            graphDelta: {
+                nodes: [{
+                    id: 'node-a', flow_id: 'flow-a',
+                    name: 'Node A',
+                    position_x: 0, position_y: 0,
+                    is_create: false, is_archive: false,
+                    task_instructions: '', at: AT,
+                }],
+                edges: [{
+                    id: 'edge-a', flow_id: 'flow-a',
+                    name: 'Edge A',
+                    from_node_id: 'node-a', to_node_id: 'node-a',
+                    at: AT,
+                }],
+                deletions: [], memberEvents: [],
+                attributeEvents: [],
+            },
+        },
+    ));
+    assert.equal(created.status, 204);
     // Post 'deleted' state events with the node/edge ids as
     // entity_id — these are the events that must be fenced.
     await seedStateEvent(
