@@ -2637,6 +2637,40 @@ export async function postIdentityDocumentOp(
     );
 }
 
+// Identity credential document write — extracted byte-for-byte
+// from the hand-written identities/:id/credentials/:cid PUT
+// closure (the postIdentityDocumentOp precedent above): an
+// identity_credentials row and its pair commit as ONE
+// transaction; no states interaction (a credential write does
+// not move the identity's own lifecycle). `pair` is optional so
+// a below-facade caller with no pair keeps compiling; the live
+// route always supplies one. `_actor` is unused for the same
+// reason postIdentityDocumentOp's is: there is no state event
+// here to author.
+export async function postIdentityCredentialDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<IdentityCredentialEntity, 'id'>> {
+    return db.transaction(
+        ['identity_credentials', 'requests', 'responses'],
+        async (view) => {
+            const written = await view
+                .identityCredentials.put(
+                    id,
+                    withoutId(body) as unknown as
+                        Omit<IdentityCredentialEntity, 'id'>,
+                );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -3448,29 +3482,10 @@ export const routes: Route[] = [
                     param(p, 1),
                 ),
             ),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 1);
-            return db.transaction(
-                [
-                    'identity_credentials',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    const written = await view
-                        .identityCredentials.put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<
-                                    IdentityCredentialEntity, 'id'
-                                >,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postIdentityCredentialDocumentOp(
+                db, param(p, 1), body, actor, pair,
+            ),
     }),
     // Hand-written in place of makeIdRoute<
     // IdentityTokenRevocationEntity> so PUT can append its
