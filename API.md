@@ -377,8 +377,9 @@ below) — it enters via a second, separate hop.
   2. `identities.put(id, {kind:'person'})`
   3. `humanMembers.put(id, detail)`
   4. `states.postEvent(initialStateEventId, id, initialState, actor)`
-  5. three `appendMessagePair` calls — operation, member document,
-     detail document (the bundle, below)
+  5. FOUR `appendMessagePair` calls — operation, member document,
+     detail document, identities document (the bundle, below;
+     Phase 10 Task 5 widens the triple to a quadruple, human-only)
 - doctrinal: three `put_*` primitives + `post_state_event` as
   `post_create_human_member`.
 - props: atomic; admin-only; `validateHumanMemberCreateBody`
@@ -394,8 +395,10 @@ client's dirty check finds it changed.
 
 - tx: `[members, identities, human_members, requests, responses]`
 - actual: the three facet `put`s (member, identity, detail), then
-  three `appendMessagePair` calls — operation, member document,
-  detail document (the bundle, below).
+  FOUR `appendMessagePair` calls — operation, member document,
+  detail document, identities document (the bundle, below) — the
+  LAST of which FOLDS (§5.14): its `{kind:'person'}` body is
+  byte-identical to the create's own, at the SAME address.
 - doctrinal: three `put_*` primitives as `post_edit_human_member`.
 - props: atomic; **no state event**; admin-only;
   `validateHumanMemberEditBody` (`['detail']` alone — `pii`
@@ -441,27 +444,42 @@ like every prior bundle.**
   `PerVerbWriteResponseSpec` this task for exactly that reason —
   its `put` slot serves this synthesized bundle and the seed alone,
   never a real client PUT.
+- **The identities document pair (Phase 10 Task 5) — human-only,
+  a fourth member appended LAST.** PUT-shaped, at the identity's
+  own `identities/:id` address (its OWN address, distinct from
+  `members/:id` and the family's own detail address), body
+  `identityDocumentBodyOf('person')` → `{kind:'person'}` alone —
+  the exact live `PUT /identities/:id` wire body — validated
+  through `validateIdentityDocumentBody`. An AI member carries
+  none: it has no identity row of its own (finding 10), so
+  `postAiMemberCreationOp`/`postAiMemberEditOp` never receive one
+  and their bundle stays the ORIGINAL three (§5.14 has the full
+  writeup — the discriminated-union rationale, the fold, and the
+  seed's own extension).
 
 The shared BODY builders (`memberDocumentBodyOf`,
-`aiMemberDetailBodyOf`, `humanMemberDetailBodyOf`) feed
-`formDocumentPairFor` (`api/routes.ts`), the shared pair-FORMER
-the four routes above now call directly (Phase 9 Task 2 retired
-their own route-inline formation). The seed's own invocation
-construction (`api/mock-data/seed-message-pairs.ts`) still forms
-its pairs independently — a different pipeline by design, with no
+`aiMemberDetailBodyOf`, `humanMemberDetailBodyOf`,
+`identityDocumentBodyOf`) feed `formDocumentPairFor`
+(`api/routes.ts`), the shared pair-FORMER the four routes above
+now call directly (Phase 9 Task 2 retired their own route-inline
+formation). The seed's own invocation construction
+(`api/mock-data/seed-message-pairs.ts`) still forms its pairs
+independently — a different pipeline by design, with no
 dispatched route to resolve a fence organization or response spec
 from.
 
-All three pairs share ONE `requestAt` yet strictly-later response
-`at` stamps, so each address's LAST-appended pair becomes its
-head: the member document is `members/:id`'s first-ever pair on a
-member's first write and its new (superseding) head on every
+Every pair in the bundle shares ONE `requestAt` yet strictly-later
+response `at` stamps, so each address's LAST-appended pair becomes
+its head: the member document is `members/:id`'s first-ever pair
+on a member's first write and its new (superseding) head on every
 later write; the detail document shares the operation pair's own
-address and becomes THAT address's new head, appended after it. A
-mid-write failure (an invalid AI model id or a malformed human
-`strengths` JSON string, caught by the pre-tx document-body check
-or by the op's own re-validating store put) leaves zero of the
-three, exactly like every other atomic write in this catalog.
+address and becomes THAT address's new head, appended after it;
+the identities document (human-only) sits at its OWN address and
+becomes THAT address's new head, appended last. A mid-write
+failure (an invalid AI model id or a malformed human `strengths`
+JSON string, caught by the pre-tx document-body check or by the
+op's own re-validating store put) leaves zero of the bundle,
+exactly like every other atomic write in this catalog.
 
 **The PII facet is NEVER synthesized.** `identity_pii` stays
 old-plane on BOTH the human create and edit — its own document
@@ -554,19 +572,29 @@ member from its genesis onward. `appendMessagePair`'s global
 by-hash fold therefore skips the member-document pair on every
 edit following the first write to that member — a genuinely
 PERMANENT fold, not a fixture accident: the address needs no
-second write since its one field never varies. The detail
+second write since its one field never varies. The identities
+document (Phase 10 Task 5) folds the SAME way, for the SAME
+reason: a human member's identity `kind` is ALSO a server-pinned
+fact ('person', always), so `identityDocumentBodyOf('person')`'s
+body is byte-identical across create and every edit — a second,
+independent PERMANENT fold at a DIFFERENT address. The detail
 document and the operation pair carry the write's actual changes,
 so they fold only when a caller resends byte-identical field
 values (the general E6 hazard every bundle shares).
 
 `tests/api-shadow-ledger-members-identities.test.ts`'s create and
-composed-edit cases (balance re-pinned 1 → 3 per write, address
-and key-set assertions for both synthesized documents, and a
-failed-create/failed-edit-appends-nothing pair for both families)
-are the bundle's proof; `tests/mock-data-pairs.test.ts`'s
-`EXPECTED_PAIR_COUNT` (§5.3) and its member-document/
-detail-document address spot-checks extend the SAME proof to the
-seed.
+composed-edit cases (balance re-pinned 1 → 3 per write at Phase 8
+Task 4; human create re-pinned again, 3 → 4, at Phase 10 Task 5 —
+AI stays 3, finding 10; the human edit gains the identities
+document but folds it; address and key-set assertions for every
+synthesized document, including the identities document's
+`{kind}` alone; a failed-create/failed-edit-appends-nothing pair
+for both families) are the bundle's proof.
+`tests/mock-data-pairs.test.ts`'s `EXPECTED_PAIR_COUNT` (§5.3) and
+its member-document/detail-document/identities-document address
+spot-checks extend the SAME proof to the seed. §5.14 has the
+identity-create bundle's own proof (person 1 → 2, service
+1 → 3) and the bundle-or-nothing case.
 
 ### 3.5 `POST /identities` — create identity
 
@@ -582,15 +610,20 @@ PII, so it stays one atomic write).
   - service → `[identities, identity_credentials, requests,
     responses]`
 - actual: `identities.put(id, {kind})`; then, service only,
-  `identityCredentials.put(credId, fields)`; then
-  `appendMessagePair(pair)`.
+  `identityCredentials.put(credId, fields)`; then the bundle
+  (Phase 10 Task 5, §5.14): `appendMessagePair(operation)`, then
+  `appendMessagePair(identityDocument)`, then — service only —
+  `appendMessagePair(credentialDocument)`.
 - doctrinal: `put_identity` (+ `put_identity_credential` for
   service) as `post_create_identity`.
 - props: atomic; **no state event** (an identity has no creation
   lifecycle event); admin-only; secret hashed client-side (the route
   touches no crypto); `validateIdentityCreateBody`
   (`['id', 'kind']` for person — `pii` retired from this key set;
-  `['id', 'kind', 'credential']` for service, unchanged).
+  `['id', 'kind', 'credential']` for service, unchanged); the
+  bundle is pairs-or-nothing IFF the gate supplied a pair and a
+  fence organization — a below-facade caller (`api/mock-data.ts`,
+  Task 6's own scope) skips it, exactly like every prior bundle.
 
 ### 3.6 `POST /identity-tokens/:jti/rotation` — rotate refresh jti
 
@@ -1326,13 +1359,13 @@ membership write.
 and — as a `BOOTSTRAP_ROUTES` member — below the shadow ledger
 entirely: this call forms and appends no pair for ITSELF (none of
 §5.1's headers appear on its own response). What it seeds, though,
-includes 592 of its OWN pre-formed message pairs, one per pair-capable
+includes 603 of its OWN pre-formed message pairs, one per pair-capable
 seed write — see §5.3.
 
 - **Three sequential steps, not one atomic op:**
   1. `ensureTables(TABLE_NAMES)`
   2. `transaction(TABLE_NAMES, postMockDataLoadIn)` — builds the whole
-     dataset, including the 592 seed pairs, in one tx (a mid-seed
+     dataset, including the 603 seed pairs, in one tx (a mid-seed
      failure leaves no half-populated schema).
   3. `seedHumanCredentials(adapter)` — its **own** tx
      `[identity_credentials]`; the PBKDF2 hashing runs outside the tx
@@ -1648,7 +1681,7 @@ and `members` (`buildMockDataInvocations`,
 `api/mock-data/seed-message-pairs.ts`), so the seed forms each family's pair
 the SAME way a live request would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **592** message pairs — one pair per seeded
+- The mock-data seed pre-forms **603** message pairs — one pair per seeded
   row for most families, but each seeded human/AI member folds in an
   operation/member-document/detail-document triple (11 human-members +
   4 ai-members, each × 3 = 45 member-family pairs: 15 ops + 15 member
@@ -1659,7 +1692,12 @@ the SAME way a live request would, then writes it alongside the seeded row:
   intake decomposition, prose at §3.4: `postIdentityPiiDocumentOp`
   nested in the SAME transaction as the member-facet writes, ordered
   BEFORE `seedHumanCredentials` runs so its pii-presence filter still
-  finds every login-capable person), each seeded membership row folds
+  finds every login-capable person), PLUS each seeded human ALSO folds
+  in its OWN `identities/:id` document pair (11 more — Phase 10 Task 5,
+  §5.14: the human-member create-time bundle widens from a triple to a
+  quadruple, human-only — an AI member forms no identities row,
+  finding 10, so its own triple is unchanged), each seeded membership
+  row folds
   in its OWN document
   pair (16 — 11 human-member-organization rows, `current` counted
   twice for its two-organization membership, + 4 ai-member rows,
@@ -1685,7 +1723,8 @@ the SAME way a live request would, then writes it alongside the seeded row:
   crypto, which would auto-commit an IndexedDB transaction early if awaited
   inside one); a second pass then writes the seeded rows and appends each
   pre-formed pair in the SAME transaction the row lands in. The bootstrap
-  seed forms exactly six such pairs (the SAME member-family triple, its
+  seed forms exactly seven such pairs (the SAME member-family bundle —
+  now a quadruple, Phase 10 Task 5 — its
   OWN membership and system-member document pairs, PLUS its own
   `identities/:id/pii` document pair), for its lone `current`
   human-member create.
@@ -2521,3 +2560,109 @@ op pin; the E6 byte-identical-resend pin; the PUT-chain-derives-
 the-head / DELETE-derives-absent cases against the REAL
 registered wiring row; and a direct assertion that the wire
 response carries `{id, kind}` only, no `organization_id`.
+
+### 5.14 The composed-write bundle widenings: identities
+documents + the service credential document (Phase 10 Task 5)
+
+Every widened site consumes `formDocumentPairFor` (gate 10) — NO
+new formation machinery. Message-side only: old-plane write sets
+(the actual `.put` calls) are untouched, fingerprints and the
+states-911 pin hold, and the wire is byte-unchanged — the bundles
+are storage-only.
+
+**`IdentityWritePairs`, a discriminated union on `kind` (a
+verification finding).** `POST /identities` (§3.5) forms one of
+two shapes: a person carries `{kind: 'person', operation,
+identityDocument}`; a service carries `{kind: 'service',
+operation, identityDocument, credentialDocument}` — the SAME
+`operation`/`identityDocument` pair every kind forms, plus the
+service-only `credentialDocument`. The union mirrors
+`IdentityCreatePersonBody`/
+`IdentityCreateServiceBody` one layer down (`validators.ts`)
+rather than an optional `credentialDocument` field — the
+doctrine lens: prefer the union over an optional field wherever
+the codebase's OWN body-validation axis already draws the same
+line, so a person bundle can never carry a stray credential pair
+by construction (the type system, not a runtime check, closes
+the gap).
+
+**The identity-create bundle (person 1 → 2, service 1 → 3).**
+`postIdentityCreationOp` appends the operation pair, the
+synthesized `identityDocument` pair (+ `credentialDocument` for
+service) LAST, bundle-or-nothing — forming ALL pairs pre-tx
+before the transaction opens means a mid-formation failure (an
+invalid credential `kind`, say) leaves the transaction never
+even called, so zero rows land. The `identities` route forms the
+bundle inline pre-tx:
+
+- `identityDocumentBodyOf(kind)` → `{kind}` — byte-indistinguish-
+  able from a live `PUT /identities/:id` body — at the identity's
+  own `identities/:id` address. `createBodyIdField` collapses
+  `POST /identities` and `PUT /identities/:id` onto the SAME
+  address (§5.13), so `identityDocument` shares the operation
+  pair's own address and becomes its new head, appended after it
+  — the ai-members/detail-document create-address-collapse
+  precedent (§3.1–§3.4).
+- The credential document body (service only) is the create
+  body's credential sub-object MINUS its `id` — mirroring the
+  live `PUT /identities/:id/credentials/:cid` wire body
+  (hash-bearing per the covenant: the secret arrives ALREADY
+  client-hashed, so no crypto runs here) — at the credential's
+  OWN `identities/:id/credentials/:cid` address.
+
+**`MemberWritePairs` gains `identityDocument?: MessagePair`
+(human create/edit 3 → 4; AI stays 3, finding 10).** The human
+create/edit routes (§3.3/§3.4) form + append it LAST, after
+`detailDocument`; the AI routes (§3.1/§3.2) never do —
+`postAiMemberCreationOp` writes no `identities` row (an AI member
+has no identity of its own), so `postAiMemberCreationOp`/
+`postAiMemberEditOp` always receive it `undefined`. The field
+stays on this ONE shared type rather than forking a person-only
+sibling — every consuming op already honors it uniformly via the
+SAME `!== undefined` guard `memberDocument`/`detailDocument` use,
+so the AI ops' own bundle-forming code is untouched by this task.
+
+**The fold (the E6 fold, the member-document fold's own
+precedent — §3.3/§3.4's prose).** A human member's identity
+`kind` is a server-pinned fact, always `'person'`, so
+`identityDocumentBodyOf('person')`'s body is byte-identical
+across a create and every later edit of the SAME member.
+`appendMessagePair`'s global by-hash fold therefore skips the
+identities-document pair on every edit following the member's
+first write — a genuinely PERMANENT fold, at a DIFFERENT address
+than the member-document fold, for the SAME structural reason.
+
+**The seed (`api/mock-data/seed-message-pairs.ts` +
+`api/mock-data.ts`, the SAME commit as the member-op widening —
+two callers of one covenant).** The 11 seeded human-member create
+bundles each gain their `identities/:id` document invocation
+(`seedPairKey('identities/:id', id)`, body `{kind:'person'}`);
+bootstrap's lone `current` bundle widens 3 → 4 the SAME way.
+`EXPECTED_PAIR_COUNT` (§5.3) moves 592 → 603 (+11); the bootstrap
+seed's own count moves 6 → 7. The 4 AI + 1 system identities and
+the credentials/role-grants seed slices are Task 6's — this task
+seeds NEITHER.
+
+**The re-pins.** In
+`tests/api-shadow-ledger-members-identities.test.ts`: identity
+person-create 1 → 2, service-create 1 → 3 (+ a bundle-or-nothing
+case: a service create with an invalid credential body appends
+nothing, since `postIdentityCreationOp` is never even called);
+human create 3 → 4; the human edit gains the identities document
+but it FOLDS, so its OWN balance stays the running total, not +1;
+key-set pins for the identities document (`{kind}`) and the
+credential document (the SAME five keys
+`validateIdentityCredentialEntity` admits). In
+`tests/mock-data-pairs.test.ts`: `EXPECTED_PAIR_COUNT` 592 → 603,
+the breakdown prose (§5.3), an identities-document spot-check
+(the PII spot-check's own precedent), and bootstrap 6 → 7. In
+`tests/drift-roster.test.ts`: the live-write chain re-pins its
+human-member create balance 3 → 4 alongside — the SAME fact
+named above, exercised a second time through the live route
+rather than the shadow-ledger suite.
+
+**Contract.** The synthesized identities document is
+byte-indistinguishable from a live `PUT /identities/:id` pair's
+shape at the same address; old-plane rows/states are untouched
+(fingerprints + the states-911 pin hold); the wire is unchanged
+— the bundles are storage-only.
