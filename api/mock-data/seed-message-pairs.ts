@@ -1015,6 +1015,23 @@ export function identityCredentialSeedBody(
     };
 }
 
+// The wire body a live PUT identities/:id/default-org would carry
+// for this SAME write: {organization_id, eventId, at} — the ONE
+// shape every seeded default-org event (11 mock-data rows +
+// bootstrap's own) shares. `at` is always MOCK_SEED_TIMESTAMP, the
+// SAME fixed moment both mock-data.ts's raw
+// identityDefaultOrganizations.put sites already stamp their row
+// with (Path A: the row stays raw, unchanged by this task).
+export function defaultOrganizationSeedBody(
+    organizationId: Id, eventId: Id,
+): Record<string, unknown> {
+    return {
+        organization_id: organizationId,
+        eventId,
+        at: MOCK_SEED_TIMESTAMP,
+    };
+}
+
 export function recordSeedBody(
     r: Omit<RecordEntity, 'organization_id'>,
     index: number,
@@ -1105,6 +1122,37 @@ export const bootstrapRoleGrantId = 'bootstrap-role-current-admin';
 // Phase 11 Task 3 gate-seeds (postBootstrapIn's own
 // adapter.states.postEvent call, mock-data.ts).
 export const bootstrapSystemStateEventId = 'bootstrap-system-active';
+
+// Bootstrap's own default-org event id — the SAME
+// bootstrapMembershipId precedent above, for the default-org
+// event Task 8 (Phase 11) gate-seeds (postBootstrapIn's own raw
+// identityDefaultOrganizations.put call, mock-data.ts).
+export const bootstrapDefaultOrganizationEventId =
+    'bootstrap-default-org-current';
+
+// Every seeded human member's own default-org event id — the ONE
+// construction both this file's pass 1 (the pair former below)
+// and mock-data.ts's pass 2 (the raw
+// identityDefaultOrganizations.put call) share, so neither can
+// drift from the other.
+export function defaultOrganizationSeedEventId(memberId: Id): string {
+    return 'seed-default-org-' + memberId;
+}
+
+// Every member's PRIMARY organization: 'current' orders Stark
+// first (alongside org Two, in postMockDataLoadIn's own
+// membership loop); every other human has exactly one, via
+// assignOrganization. The identity_default_organizations seed
+// (Task 8) needs this SAME "first org" value the membership
+// loop's own `organizations[0]` already resolves to — hoisted so
+// neither site can silently drift from the other.
+export function memberPrimaryOrganization(
+    memberId: Id, index: number,
+): Id {
+    return memberId === 'current'
+        ? STARK_ORGANIZATION
+        : assignOrganization(index);
+}
 
 export function bootstrapCurrentMemberBody(
     initialStateAt: string,
@@ -1954,6 +2002,48 @@ function documentSeedResponse(
     };
 }
 
+// The default-org side channel's OWN pair former (Task 8, Phase
+// 11 — closing the LAST "STAYS RAW" deferral mock-data.ts's two
+// direct identityDefaultOrganizations.put sites still name):
+// mirrors identityDefaultOrganizationRequest's own formWritePair
+// call (api/organization-requests.ts) byte-for-byte — routeSegments
+// carries a FABRICATED trailing :eventId segment no real URL ever
+// has (the live PUT's eventId is a BODY key, never a path
+// segment), so this cannot ride formSeedPair's generic
+// routePattern.split('/') convention above, the SAME reason the
+// invitations side channel forms its own pairs directly rather
+// than through buildMockDataInvocations. organization is
+// undefined (global plane); the response is always 204/no-body,
+// byte-identical to the live route's own shape for every write
+// regardless of whether the row's organization actually changed.
+async function formDefaultOrganizationSeedPair(
+    identityId: Id,
+    eventId: Id,
+    organizationId: Id,
+    requestAt: string,
+): Promise<MessagePair> {
+    const pathSegments = [
+        'identities', identityId, 'default-org', eventId,
+    ];
+    return formWritePair({
+        method: 'PUT',
+        pathname: '/' + pathSegments.join('/'),
+        routePattern: 'identities/:id/default-org',
+        routeSegments: [
+            'identities', ':id', 'default-org', ':eventId',
+        ],
+        pathSegments,
+        headerFields: [],
+        body: defaultOrganizationSeedBody(organizationId, eventId),
+        requesterIdentityId: identityId,
+        requestAt,
+        organization: undefined,
+        responseStatus: 204,
+        responseBody: undefined,
+        headPairId: undefined,
+    });
+}
+
 // Pass 1 for postMockDataLoad: every op-invocation's pair,
 // formed BEFORE the seed's transaction opens. `requestAt` is
 // minted once by the caller (the seed's arrival moment) and
@@ -1964,6 +2054,22 @@ export async function formMockDataMessagePairs(
     const pairs = new Map<string, MessagePair>();
     for (const inv of buildMockDataInvocations()) {
         pairs.set(inv.key, await formSeedPair(inv, requestAt));
+    }
+    // Task 8 (Phase 11): the identity_default_organizations
+    // family's own pair, one per seeded human member — kept
+    // OUTSIDE buildMockDataInvocations/formSeedPair (the
+    // formSeedCredentialPairs precedent) since its address
+    // fabricates a trailing :eventId segment no real URL carries.
+    for (const [index, member] of buildMembers().entries()) {
+        pairs.set(
+            seedPairKey('identities/:id/default-org', member.id),
+            await formDefaultOrganizationSeedPair(
+                member.id,
+                defaultOrganizationSeedEventId(member.id),
+                memberPrimaryOrganization(member.id, index),
+                requestAt,
+            ),
+        );
     }
     return pairs;
 }
@@ -2079,6 +2185,7 @@ export async function formBootstrapMessagePair(
     readonly roleGrantPair: MessagePair;
     readonly systemStateEventPair: MessagePair;
     readonly systemStateEventAt: string;
+    readonly defaultOrganizationPair: MessagePair;
 }> {
     const body = bootstrapCurrentMemberBody(nowUtc());
     const operation = await formSeedPair(
@@ -2215,6 +2322,14 @@ export async function formBootstrapMessagePair(
         },
         requestAt,
     );
+    // Task 8 (Phase 11): bootstrap's own default-org event forms
+    // its OWN pair too — the mock-data seed's own per-member
+    // precedent above, mirrored here for bootstrap's lone
+    // identity.
+    const defaultOrganizationPair = await formDefaultOrganizationSeedPair(
+        'current', bootstrapDefaultOrganizationEventId,
+        STARK_ORGANIZATION, requestAt,
+    );
     return {
         body,
         pairs: {
@@ -2228,5 +2343,6 @@ export async function formBootstrapMessagePair(
         roleGrantPair,
         systemStateEventPair,
         systemStateEventAt,
+        defaultOrganizationPair,
     };
 }

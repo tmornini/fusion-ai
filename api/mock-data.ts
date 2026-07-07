@@ -112,6 +112,9 @@ import {
     bootstrapMembershipId,
     bootstrapRoleGrantId,
     bootstrapSystemStateEventId,
+    bootstrapDefaultOrganizationEventId,
+    defaultOrganizationSeedEventId,
+    memberPrimaryOrganization,
     humanMemberPiiSeedBody,
     bootstrapCurrentMemberPiiBody,
     roleGrantSeedBody,
@@ -335,17 +338,30 @@ async function postMockDataLoadIn(
                             ),
                         ),
                     )),
-                // STAYS RAW (Task 6 boundary): the
-                // identity_default_organizations family is
-                // deferred WHOLE to a later gate — this row
-                // forms no message pair, unlike every write
-                // around it.
+                // Task 8 (Phase 11): the row itself STAYS RAW
+                // (Path A) — the SAME direct put as before — but
+                // now forms its OWN message pair beside it,
+                // closing the identity_default_organizations
+                // family's last deferral.
                 adapter.identityDefaultOrganizations.put(
-                    'seed-default-org-' + member.id, {
+                    defaultOrganizationSeedEventId(member.id), {
                         identity_id: member.id,
-                        organization_id: organizations[0]!,
+                        organization_id:
+                            memberPrimaryOrganization(
+                                member.id, index,
+                            ),
                         at: MOCK_SEED_TIMESTAMP,
                     }),
+                appendMessagePair(
+                    adapter,
+                    requirePair(
+                        pairs,
+                        seedPairKey(
+                            'identities/:id/default-org',
+                            member.id,
+                        ),
+                    ),
+                ),
                 postHumanMemberCreationOp(
                     adapter,
                     humanMemberSeedBody(member),
@@ -1115,7 +1131,9 @@ export async function postBootstrap(
     // — systemStateEventAt is minted ONCE inside
     // formBootstrapMessagePair and reused verbatim by pass 2
     // below, the SAME discipline currentMemberBody's own nowUtc()
-    // already follows.
+    // already follows. Phase 11 Task 8: ALSO forms bootstrap's own
+    // default-org event pair — the mock-data seed's own per-member
+    // precedent, mirrored here for bootstrap's lone identity.
     const {
         body: currentMemberBody,
         pairs: currentMemberPairs,
@@ -1126,6 +1144,7 @@ export async function postBootstrap(
         roleGrantPair,
         systemStateEventPair,
         systemStateEventAt,
+        defaultOrganizationPair,
     } = await formBootstrapMessagePair(nowUtc());
     // Pass 2: seed the pristine bootstrap data in one
     // transaction. Credentials seed after it commits — PBKDF2
@@ -1140,6 +1159,7 @@ export async function postBootstrap(
             membershipPair, systemMemberPair, piiPair,
             systemIdentityPair, roleGrantPair,
             systemStateEventPair, systemStateEventAt,
+            defaultOrganizationPair,
         ),
     );
     const creds = await seedHumanCredentials(adapter);
@@ -1158,6 +1178,7 @@ async function postBootstrapIn(
     roleGrantPair: MessagePair,
     systemStateEventPair: MessagePair,
     systemStateEventAt: string,
+    defaultOrganizationPair: MessagePair,
 ): Promise<void> {
     // The pristine seed plants only what the app needs
     // to render its shell: the system actor that authors
@@ -1198,16 +1219,17 @@ async function postBootstrapIn(
             SYSTEM_MEMBER_ID,
             membershipPair,
         ),
-        // STAYS RAW (Task 6 boundary): the
-        // identity_default_organizations family is deferred WHOLE
-        // to a later gate — this row forms no message pair,
-        // unlike every write around it.
+        // Task 8 (Phase 11): the row itself STAYS RAW (Path A) —
+        // the SAME direct put as before — but now forms its OWN
+        // message pair beside it, mirroring the mock-data seed's
+        // own per-member sites.
         adapter.identityDefaultOrganizations.put(
-            'bootstrap-default-org-current', {
+            bootstrapDefaultOrganizationEventId, {
                 identity_id: 'current',
                 organization_id: STARK_ORGANIZATION,
                 at: MOCK_SEED_TIMESTAMP,
             }),
+        appendMessagePair(adapter, defaultOrganizationPair),
         // The 'current' human member row shares its shape
         // with postMockDataLoadIn's human-member seed —
         // driven through postHumanMemberCreationOp with the

@@ -113,9 +113,15 @@ import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 // genesis pair (the mock-data seed's OWN last raw-write site, the
 // system actor's 'active' event — bootstrap forms its OWN mirror
 // of this ONE event separately, counted in the bootstrap pair
-// count below, never here) =
-// 1500. A dropped or reordered invocation changes this count.
-const EXPECTED_PAIR_COUNT = 1500;
+// count below, never here) + 11 identity-default-organization
+// pairs (Phase 11 Task 8: the identity_default_organizations
+// family closes its own LAST "STAYS RAW" deferral — one
+// event-append pair per seeded human member, formed at its own
+// identity-keyed /identities/:id/default-org/ address; Path A —
+// the row itself stays the SAME direct
+// adapter.identityDefaultOrganizations.put, untouched) =
+// 1511. A dropped or reordered invocation changes this count.
+const EXPECTED_PAIR_COUNT = 1511;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -346,6 +352,28 @@ test('a seeded membership document pair sits at its org-nested'
     assert.deepEqual(
         Object.keys(embedded.body).sort(),
         ['at', 'identity_id', 'organization_id'],
+    );
+});
+
+test('a seeded default-org pair sits at its identity-keyed'
++ ' address, its body carrying the three default-org keys',
+async () => {
+    const db = new MemoryDbAdapter();
+    await postMockDataLoad(db);
+    const firstMember = buildMembers()[0]!;
+    const requests = await db.requests.getAll();
+    const row = requests.find(
+        r => r.uri_prefix
+            === '/identities/' + firstMember.id + '/default-org/',
+    );
+    assert.ok(row, 'no request row for the seeded default-org event');
+    assert.equal(row!.uri_id, 'seed-default-org-' + firstMember.id);
+    const embedded = JSON.parse(row!.message) as {
+        body: Record<string, unknown>;
+    };
+    assert.deepEqual(
+        Object.keys(embedded.body).sort(),
+        ['at', 'eventId', 'organization_id'],
     );
 });
 
@@ -886,9 +914,12 @@ test('a bootstrap seed populates exactly twelve balanced,'
     // Task 3 mirrors the mock-data seed's OWN last raw-write
     // site: bootstrap's OWN system-member genesis event
     // ('bootstrap-system-active') forms its OWN pair too —
-    // 11 + 1 = 12.
-    assert.equal(requests.length, 12);
-    assert.equal(responses.length, 12);
+    // 11 + 1 = 12. Phase 11 Task 8 mirrors the mock-data seed's
+    // own last "STAYS RAW" deferral: bootstrap's OWN default-org
+    // event ('bootstrap-default-org-current') forms its OWN pair
+    // too — 12 + 1 = 13.
+    assert.equal(requests.length, 13);
+    assert.equal(responses.length, 13);
     const atSystemStateEvent = requests.filter(
         r => r.uri_prefix === '/states/'
             && r.uri_id === 'bootstrap-system-active',
@@ -923,6 +954,11 @@ test('a bootstrap seed populates exactly twelve balanced,'
         r => r.uri_prefix === '/identities/current/pii/',
     );
     assert.equal(atPii.length, 1);
+    const atDefaultOrganization = requests.filter(
+        r => r.uri_prefix === '/identities/current/default-org/'
+            && r.uri_id === 'bootstrap-default-org-current',
+    );
+    assert.equal(atDefaultOrganization.length, 1);
     for (const row of requests) {
         assert.equal(
             await sha256Hex(row.message), row.message_hash,
