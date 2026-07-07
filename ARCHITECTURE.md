@@ -422,9 +422,17 @@ session token. Tests pass `createRequestContext` a
 `api/routes.ts` defines four state-route patterns covering
 five HTTP operations — `GET/PUT states/:id`, `GET states`,
 `GET entity-states/:id` (current), and
-`GET entity-states/:id/history` (ordered) — each dispatching
-to a store method (`getAll`/`getById`/`put`,
-`getCurrentFor`, `getAllFor`).
+`GET entity-states/:id/history` (ordered). The two CONSUMED
+reads derive from the message ledger (Phase 11 Task 7):
+`GET states` → `deriveStates(db, organization)` and
+`GET entity-states/:id/history` →
+`deriveStatesFor(db, organization, entityId)`
+(`api/derive-states.ts`, a six-source union fenced from the
+pair plane). The two zero-caller reads (`GET states/:id` by
+event id, `GET entity-states/:id` current) still dispatch to
+the store methods (`getById`, `getCurrentFor`) and flip at
+Phase Final; `PUT states/:id` still appends through `put`,
+gated by the ownership fence.
 When no schema exists, non-entry pages redirect to snapshots.
 
 ## Storage tiers
