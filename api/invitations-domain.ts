@@ -51,6 +51,7 @@ import { deriveInvitations } from './derive-invitations.ts';
 import {
     deriveIdentityPiiRows,
 } from './derive-identity-spine.ts';
+import { deriveInvitationStates } from './derive-states.ts';
 
 // The active org of the caller: the verified token claim, else
 // the identity's resolved default. Null when the identity can
@@ -173,6 +174,18 @@ export async function invitationsRequest(
 // event so its author (the inviter) can be named — a lookup
 // deriveInvitations cannot answer, since it derives a resolved
 // current state, not per-event authorship.
+//
+// GET is FLIPPED (Task 7): re-points onto deriveInvitationStates
+// (api/derive-states.ts's source f) — wire-identical to the
+// hand-written ctx.base.states.getAll() dispatch it replaces.
+// deriveInvitationStates emits ONLY invitation-lifecycle rows
+// (the grant plus its three answering ops), so it is a STRICT
+// SUBSET of the old bulk read, never a wider one — the grant
+// ('pending') event this function looks for is present on both
+// planes, byte-identical (its own header: the grant's stamped
+// requester_identity_id IS the inviter for that pair). The
+// ABSENT-key omission on a missing grant is preserved on both
+// planes for the same reason.
 async function invitationsForInvitee(
     ctx: AuthenticatedContext,
 ): Promise<Response> {
@@ -186,10 +199,10 @@ async function invitationsForInvitee(
     const personName = new Map(
         (await deriveIdentityPiiRows(ctx.base))
             .map(p => [p.id, p.name]));
-    // One states read serves every row — a per-invitation
+    // One derived read serves every row — a per-invitation
     // getAllFor opened one transaction per invitation for the
     // same log.
-    const events = await ctx.base.states.getAll();
+    const events = await deriveInvitationStates(ctx.base);
     const eventsFor = Map.groupBy(events, ev => ev.entity_id);
     const out = [];
     for (const inv of mine) {
