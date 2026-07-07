@@ -624,6 +624,28 @@ test('a seeded trace pair\'s stored request requester_identity_id'
     assert.ok(row, 'no request row for the seeded trace event');
     const written = await db.states.getById(firstTrace.id);
     assert.equal(row!.requester_identity_id, written.member_id);
+    // Index 0 is its work order's OWN first event, so a
+    // regression that sources every trace pair's requester
+    // from the work order's first-event member (rather than
+    // the event's own) would pass the assertion above
+    // undetected. Index 2 (state woNodeReview, member
+    // woPersonEmily) is the SAME work order's third event, and
+    // its member_id diverges from index 0's (woPersonSarah) —
+    // only the per-event implementation matches it.
+    const divergingTrace = buildWorkOrderStateEvents()[2]!;
+    const divergingRow = requests.find(
+        r => r.uri_id === divergingTrace.id,
+    );
+    assert.ok(
+        divergingRow,
+        'no request row for the diverging trace event',
+    );
+    const divergingWritten =
+        await db.states.getById(divergingTrace.id);
+    assert.equal(
+        divergingRow!.requester_identity_id,
+        divergingWritten.member_id,
+    );
 });
 
 test('a seeded state_field_value pair sits at its nested'
