@@ -559,11 +559,14 @@ test('PUT identities/:id appends its pair, and a second PUT'
 
 // ── identities/:id/pii — singleton at a collection-style
 // address (uriId ''): the pattern's last segment 'pii' is not
-// a :param, so messageAddress yields uriId '' — a second PUT
-// must still record Supersedes at that same (prefix, '') key.
+// a :param, so messageAddress yields uriId ''. The address is
+// ALSO the message plane's sanctioned hard-delete zone (Phase
+// 10 Task 3): chainless, single-slot — a second write REPLACES
+// the prior pair rather than recording Supersedes over it.
 
 test('PUT identities/:id/pii appends its pair at uriId'
-+ ' empty, and a second PUT supersedes it', async () => {
++ ' empty, and a second PUT REPLACES it (the single-slot'
++ ' zone, Phase 10 Task 3)', async () => {
     const db = await freshDb();
     await db.identities.put('sarah', { kind: 'person' });
     const first = await handleRequest(db, req(
@@ -586,11 +589,19 @@ test('PUT identities/:id/pii appends its pair at uriId'
         humanPii('Sarah Lee'),
     ));
     assert.equal(second.status, 200);
-    assert.equal(second.headers.get('Supersedes'), firstId);
+    // Chainless (gate 4): the zone never records Supersedes —
+    // the second write REPLACES the slot under its OWN, fresh
+    // Response-ID, so exactly ONE pair survives at the address.
+    assert.equal(second.headers.get('Supersedes'), null);
+    assert.notEqual(second.headers.get('Response-ID'), firstId);
+    const atAddress = (await db.requests.getAll()).filter(
+        r => r.uri_prefix === '/identities/sarah/pii/',
+    );
+    assert.equal(atAddress.length, 1);
 });
 
 test('DELETE identities/:id/pii appends its tombstone pair,'
-+ ' superseding the PUT', async () => {
++ ' REPLACING the PUT (the single-slot zone)', async () => {
     const db = await freshDb();
     await db.identities.put('sarah2', { kind: 'person' });
     const put = await handleRequest(db, req(
@@ -602,7 +613,15 @@ test('DELETE identities/:id/pii appends its tombstone pair,'
         'DELETE', '/identities/sarah2/pii', DEV_TOKEN,
     ));
     assert.equal(del.status, 204);
-    assert.equal(del.headers.get('Supersedes'), putId);
+    // Chainless: the tombstone carries no Supersedes either — it
+    // physically replaces the PUT's row rather than chaining
+    // past it.
+    assert.equal(del.headers.get('Supersedes'), null);
+    assert.notEqual(del.headers.get('Response-ID'), putId);
+    const atAddress = (await db.requests.getAll()).filter(
+        r => r.uri_prefix === '/identities/sarah2/pii/',
+    );
+    assert.equal(atAddress.length, 1);
     await assert.rejects(() => db.identityPii.getById('sarah2'));
 });
 
