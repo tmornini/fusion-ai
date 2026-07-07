@@ -1,12 +1,24 @@
 import type { DbAdapter } from './db.ts';
-import type { Id, StateEntity } from './types.ts';
-import { pickString } from './validators.ts';
+import type {
+    Id, RequestEntity, ResponseEntity, StateEntity,
+} from './types.ts';
+import { MS_PER_SECOND } from './types.ts';
+import {
+    pickString, validateWorkOrderFlowGraphJson,
+} from './validators.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
 import {
     documentPairsAt,
     deriveDocumentsAt,
     byIdAscending,
+    type DocumentPair,
 } from './derive-documents.ts';
+import { latestClaimEvent } from './work-order-claims.ts';
+import { HttpMessage } from '../shared/http-message/http-message.ts';
+import { parseJson } from '../shared/http-message/json-codec.ts';
+import {
+    defaultBodyRegistry,
+} from '../shared/http-message/media-registry.ts';
 
 // The states-log derivation, Phase 11 Task 2 (the derive-
 // identity-spine.ts precedent applied to the unified event log):
@@ -14,11 +26,13 @@ import {
 // half — a document family's OWN embedded lifecycle trio is a
 // SEPARATE, later union source, never read here) plus the
 // PAIR-PLANE org fence (resolveOwningOrganization /
-// fenceStatesByOwner, gate 4). NOTHING reads this module in
-// production yet — no route flip; Task 1's row-plane fence
-// (api/store-parent-scoped.ts) still serves live traffic. This
-// module exists to prove the pair-plane machinery ahead of that
-// later flip.
+// fenceStatesByOwner, gate 4). Task 4 adds a second reader,
+// deriveWorkOrderLifecycle (gate 5d) — see its own section header
+// below for the work-order-specific edges. NOTHING reads this
+// module in production yet — no route flip; Task 1's row-plane
+// fence (api/store-parent-scoped.ts) still serves live traffic.
+// This module exists to prove the pair-plane machinery ahead of
+// that later flip.
 //
 // THE GATE-15 PRECEDENT (Phase 10, tests/drift-identities.test.ts
 // + api/routes.ts's module-private membershipsAcrossAllOrganiza
@@ -399,4 +413,462 @@ export async function fenceStatesByOwner(
     return rows.filter((_, index) =>
         owners[index] === null
         || owners[index] === boundOrganization);
+}
+
+// ---- deriveWorkOrderLifecycle — the op-pair reader (gate 5d) ---
+
+// Source (d) of the states-log union — the LAST source, and the
+// only one that reads work-order CREATE/CLAIM/TRANSITION
+// operation pairs rather than the states/:id address
+// deriveEventPairStates (source a) already covers. Every SEEDED
+// work order (buildWorkOrders/buildLeadToCloseWorkload) was
+// formed via a bare document PUT — zero operation pairs — so its
+// births and claims ride source (a) alone; this function emits
+// NOTHING for it. Its output materializes ONLY for a work order
+// created, claimed, or transitioned through the LIVE route
+// (postWorkOrderCreationOp/postWorkOrderClaimOp/
+// postWorkOrderTransitionOp), so a HYBRID work order (a seeded
+// document plus a live claim) draws its births from source (a)
+// and its claim from here — the two addresses are DISJOINT, so no
+// row is ever double-counted across the two readers.
+//
+// THE CREATE-PAIR RELAXATION (EDGE 1): a work order's create pair
+// is a DOMAIN fact, not a defensive fallback — 100% of seeded work
+// orders lack one (they were never created through this route), so
+// its absence NEVER throws; it simply means this reader
+// contributes no births for that id (its births already exist via
+// source (a)'s own read of the seed's states/:id trace). Only a
+// LIVE creation — and a caller's RETRY of one, each landing its
+// OWN create pair at the same work-order id — contributes birth
+// events, one three-slot array PER create pair found.
+//
+// THE REFERENCE-CLOCK RESIDUAL (EDGE 2 — a SERVER-TIER TODO): the
+// live claim route (postWorkOrderClaimOp) decides expiry against
+// REAL Date.now() at the moment the NEXT claim happens to be
+// processed — an instant NEVER stored in any pair body. This
+// replay instead compares the claim pair's own body `claimAt`
+// against the prior claim's `at`, with the route's exact `>=`
+// boundary (isExpiredAsOf below) — a PURE, Date.now-free
+// comparator, deliberately never isClaimEventExpired (api/
+// work-order-claims.ts), which IS Date.now-coupled. Byte-exact
+// replay holds ONLY under this demo's zero-latency, single-process
+// architecture, where the claim body's claimAt and the route's
+// real decision instant are, for all practical purposes, the same
+// moment; the eventual server tier must record the ACTUAL expiry
+// decision as its own event rather than lean on this replay trick.
+
+// The work-orders COLLECTION address: POST 'work-orders' (create)
+// and PUT/DELETE 'work-orders/:id' (document) share this ONE
+// prefix per organization (family-registry.ts: work-orders is
+// organizationNested), partitioned apart by METHOD alone
+// (tests/drift-work-orders.test.ts case 8) — the create's uriId is
+// the body's OWN minted id, the SAME id a later PUT's uriId names.
+const WORK_ORDERS_COLLECTION_PATTERN =
+    /^\/organizations\/[^/]+\/work-orders\/$/;
+
+// The claim/transition sub-resource addresses: UNLIKE the
+// collection prefix above, the work-order id rides the PREFIX
+// itself here (routes.ts: 'work-orders/:id/claim' /
+// 'work-orders/:id/transition'), so each distinct match names ONE
+// work order directly — captured, the organization segment is not
+// (a work-order id is globally unique, so it is never needed to
+// disambiguate).
+const WORK_ORDER_CLAIM_PATTERN =
+    /^\/organizations\/[^/]+\/work-orders\/([^/]+)\/claim\/$/;
+const WORK_ORDER_TRANSITION_PATTERN =
+    /^\/organizations\/[^/]+\/work-orders\/([^/]+)\/transition\/$/;
+
+// One decoded 2xx POST pair — an OPERATION address (create/claim/
+// transition are POST-only), the documentPairsAt (derive-
+// documents.ts) twin restricted to the OTHER method: that reader
+// deliberately EXCLUDES POST (the DOCUMENT head is PUT/DELETE
+// only); this one deliberately admits POST ALONE, since a work
+// order's operations are never PUT/DELETE. Production
+// genericization of tests/drift-work-orders.test.ts case 9's
+// AnyPair/allPairsAt, narrowed to exactly what a work-order
+// replay ever consumes — never a configurable multi-method reader
+// nobody asked for.
+interface OperationPair {
+    readonly id: Id;
+    readonly at: string;
+    readonly uriId: Id;
+    readonly body: Record<string, unknown>;
+    readonly requesterIdentityId: Id;
+}
+
+// requestMethodOf/requestBodyOf's own twin (api/derive-
+// documents.ts), needed here ONLY because operationPairsAt reads
+// POST — mirrors derive-identity-spine.ts's own responseBodyOf,
+// which duplicates the same decode plumbing for its OWN reason
+// (the response side, there; the POST method, here) rather than
+// exporting derive-documents.ts's private helpers across a module
+// boundary they were never meant to cross.
+function decodeRequestOperation(message: string): {
+    readonly method: string;
+    readonly body: Record<string, unknown>;
+} {
+    const model = parseJson(message, defaultBodyRegistry());
+    if (model.startLine.kind !== 'request') {
+        throw new Error(
+            'stored request message carries no request line',
+        );
+    }
+    const body = HttpMessage.fromModel(model).body();
+    return {
+        method: model.startLine.method,
+        body: body.exists()
+            ? JSON.parse(body.toText()) as
+                Record<string, unknown>
+            : {},
+    };
+}
+
+// (at, id) ascending — the total order every replay step below
+// orders its actions by, and the order the final derivation
+// returns rows in (deriveWorkOrderLifecycle's own header).
+function atIdCompare(
+    a: { readonly at: string; readonly id: string },
+    b: { readonly at: string; readonly id: string },
+): number {
+    return a.at < b.at ? -1
+        : a.at > b.at ? 1
+            : a.id < b.id ? -1
+                : a.id > b.id ? 1
+                    : 0;
+}
+
+// Every successful (2xx) POST pair at `uriPrefix`, (at, id)
+// ascending.
+function operationPairsAt(
+    requests: readonly RequestEntity[],
+    responses: readonly ResponseEntity[],
+    uriPrefix: string,
+): OperationPair[] {
+    const requestById = new Map(
+        requests.map((request) => [request.id, request]),
+    );
+    const pairs: OperationPair[] = [];
+    for (const response of responses) {
+        if (
+            response.uri_prefix !== uriPrefix
+            || response.status < 200 || response.status > 299
+        ) continue;
+        const request = requestById.get(response.id);
+        if (request === undefined) continue;
+        const decoded = decodeRequestOperation(request.message);
+        if (decoded.method !== 'POST') continue;
+        pairs.push({
+            id: response.id,
+            at: response.at,
+            uriId: response.uri_id,
+            body: decoded.body,
+            requesterIdentityId: request.requester_identity_id,
+        });
+    }
+    return pairs.sort(atIdCompare);
+}
+
+// A pure Date-parse subtraction — never Date.now() (EDGE 2).
+function msBetween(laterIso: string, earlierIso: string): number {
+    return Date.parse(laterIso) - Date.parse(earlierIso);
+}
+
+// The route's EXACT `>=` boundary (postWorkOrderClaimOp's own
+// `isClaimEventExpired` call), reproduced as a pure comparator
+// over two body timestamps instead of one body timestamp and
+// Date.now().
+function isExpiredAsOf(
+    claimAt: string,
+    priorAt: string,
+    lockTimeoutSeconds: number,
+): boolean {
+    return msBetween(claimAt, priorAt)
+        >= lockTimeoutSeconds * MS_PER_SECOND;
+}
+
+// LOCKTIMEOUT SOURCING: the work order's DOCUMENT HEAD as of
+// `momentAt` — the (at, id) winner among PUT/DELETE pairs whose
+// response `at` strictly precedes it. `entityPairs` is ascending
+// by (at, id) already (documentPairsAt's own contract), so the
+// last entry passing the filter IS that winner.
+function documentHeadBefore(
+    entityPairs: readonly DocumentPair[],
+    momentAt: string,
+): DocumentPair | undefined {
+    const before = entityPairs.filter((p) => p.at < momentAt);
+    return before[before.length - 1];
+}
+
+// lock_timeout is a MOVING TARGET — an entity PUT can change it
+// mid-history — so every claim sources it FRESH from the document
+// head as of that claim's OWN response.at, never a single graph
+// read cached across the whole replay.
+function lockTimeoutAsOf(
+    entityPairs: readonly DocumentPair[],
+    momentAt: string,
+): number {
+    const head = documentHeadBefore(entityPairs, momentAt);
+    if (head === undefined) {
+        // A genuine invariant violation, not a defensive
+        // fallback: postWorkOrderClaimOp requires the work order
+        // to already exist (view.workOrders.getById), and every
+        // path that can create one also writes a document pair
+        // beside it — so a claim/transition pair can never
+        // legitimately precede every document pair at this id.
+        throw new Error(
+            'no document head before ' + momentAt,
+        );
+    }
+    return validateWorkOrderFlowGraphJson(
+        pickString(head.body, 'flow_graph'),
+        'work-order lifecycle document head flow_graph',
+    ).lockTimeout;
+}
+
+// Each claim pair re-runs the route's own 0/1/2-event decision
+// with the pair BODY's claimAt as the reference clock (EDGE 2).
+// PRIOR state reduces from the REPLAYED events so far (never
+// old-plane rows) via latestClaimEvent's own CLAIM_STATES filter +
+// (at, id) max.
+function applyClaimPair(
+    replayed: StateEntity[],
+    entityPairs: readonly DocumentPair[],
+    claim: OperationPair,
+    workOrderId: Id,
+): void {
+    const claimEventId = pickString(claim.body, 'claimEventId');
+    const claimAt = pickString(claim.body, 'claimAt');
+    const expireEventId = pickString(
+        claim.body, 'expireEventId',
+    );
+    const expireAt = pickString(claim.body, 'expireAt');
+    const lockTimeout = lockTimeoutAsOf(entityPairs, claim.at);
+    const prior = latestClaimEvent(replayed, workOrderId);
+    const priorLive = prior !== null
+        && prior.state === 'claimed'
+        && !isExpiredAsOf(claimAt, prior.at, lockTimeout);
+
+    if (priorLive) {
+        // Idempotent re-claim by the same actor — zero events,
+        // matching postWorkOrderClaimOp's own early return (a
+        // foreign live claim 409s before any pair ever forms, so
+        // it never reaches a replay at all).
+        return;
+    }
+    if (prior !== null && prior.state === 'claimed') {
+        replayed.push({
+            id: expireEventId,
+            entity_id: workOrderId,
+            state: 'claim_expired',
+            // Recovered from the PRIOR claim's OWN replayed
+            // author, never the current pair's.
+            member_id: prior.member_id,
+            at: expireAt,
+        });
+    }
+    replayed.push({
+        id: claimEventId,
+        entity_id: workOrderId,
+        state: 'claimed',
+        member_id: claim.requesterIdentityId,
+        at: claimAt,
+    });
+}
+
+// A transition pair's own target-state event, plus its OPTIONAL
+// release event — field values ride a SEPARATE table
+// (state_field_values), outside this states-log derivation's own
+// contract (StateEntity rows only).
+function applyTransitionPair(
+    replayed: StateEntity[],
+    transition: OperationPair,
+    workOrderId: Id,
+): void {
+    replayed.push({
+        id: pickString(transition.body, 'transitionEventId'),
+        entity_id: workOrderId,
+        state: pickString(transition.body, 'targetState'),
+        member_id: transition.requesterIdentityId,
+        at: pickString(transition.body, 'transitionAt'),
+    });
+
+    const release = transition.body['release'];
+    if (release !== null) {
+        const releaseFields = release as {
+            readonly id: string;
+            readonly state: string;
+            readonly at: string;
+        };
+        replayed.push({
+            id: releaseFields.id,
+            entity_id: workOrderId,
+            // VERBATIM from the pair body — the gate does not
+            // constrain release.state to 'claim_released'.
+            state: releaseFields.state,
+            member_id: transition.requesterIdentityId,
+            at: releaseFields.at,
+        });
+    }
+}
+
+type WorkOrderAction =
+    | { readonly kind: 'claim'; readonly pair: OperationPair }
+    | { readonly kind: 'transition'; readonly pair: OperationPair };
+
+// One work order's full replay: its births (EDGE 1 — zero or
+// more three-slot arrays, one per create pair found), then its
+// claim/transition actions applied in (at, id) order so each
+// claim's prior-claim lookup only ever sees chronologically
+// earlier events.
+function replayWorkOrderOperations(
+    createPairs: readonly OperationPair[],
+    entityPairs: readonly DocumentPair[],
+    claimPairs: readonly OperationPair[],
+    transitionPairs: readonly OperationPair[],
+    workOrderId: Id,
+): StateEntity[] {
+    const events: StateEntity[] = [];
+    for (const createPair of createPairs) {
+        const ids = createPair.body['stateEventIds'] as
+            readonly string[];
+        const ats = createPair.body['stateEventAts'] as
+            readonly string[];
+        const states = createPair.body['states'] as
+            readonly string[];
+        for (let i = 0; i < ids.length; i++) {
+            events.push({
+                id: ids[i]!,
+                entity_id: workOrderId,
+                state: states[i]!,
+                member_id: createPair.requesterIdentityId,
+                at: ats[i]!,
+            });
+        }
+    }
+
+    const actions: WorkOrderAction[] = [
+        ...claimPairs.map((pair) => (
+            { kind: 'claim' as const, pair }
+        )),
+        ...transitionPairs.map((pair) => (
+            { kind: 'transition' as const, pair }
+        )),
+    ].sort((a, b) => atIdCompare(a.pair, b.pair));
+
+    for (const action of actions) {
+        if (action.kind === 'claim') {
+            applyClaimPair(
+                events, entityPairs, action.pair, workOrderId,
+            );
+        } else {
+            applyTransitionPair(events, action.pair, workOrderId);
+        }
+    }
+
+    return events;
+}
+
+// The op-pair reader (gate 5d). ONE shared readonly tx over
+// requests+responses (the deriveEventPairStates torn-read
+// closure) — every grouping and replay step below is pure over
+// the two fetched arrays, no further db reads. (at, id) ascending
+// overall: these rows are SYNTHESIZED (no address of their own to
+// read 1:1, unlike deriveEventPairStates' states/:id rows), so
+// there is no raw-store scan order to reproduce — chronological
+// (at, id) is the meaningful order, and filtering this total order
+// by entity_id preserves it per work order, matching
+// db.states.getAllFor's own (at, id) contract exactly.
+export async function deriveWorkOrderLifecycle(
+    db: DbAdapter,
+): Promise<StateEntity[]> {
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            const [requests, responses] = await Promise.all([
+                view.requests.getAll(),
+                view.responses.getAll(),
+            ]);
+
+            const collectionPrefixes = new Set<string>();
+            for (const request of requests) {
+                if (WORK_ORDERS_COLLECTION_PATTERN.test(
+                    request.uri_prefix,
+                )) {
+                    collectionPrefixes.add(request.uri_prefix);
+                }
+            }
+            const createPairs: OperationPair[] = [];
+            const entityPairs: DocumentPair[] = [];
+            for (const prefix of collectionPrefixes) {
+                createPairs.push(...operationPairsAt(
+                    requests, responses, prefix,
+                ));
+                entityPairs.push(...documentPairsAt(
+                    requests, responses, prefix,
+                ));
+            }
+            const createPairsByWorkOrder = Map.groupBy(
+                createPairs, (pair) => pair.uriId,
+            );
+            const entityPairsByWorkOrder = Map.groupBy(
+                entityPairs, (pair) => pair.uriId,
+            );
+
+            const claimPrefixByWorkOrder = new Map<Id, string>();
+            const transitionPrefixByWorkOrder =
+                new Map<Id, string>();
+            for (const request of requests) {
+                const claimMatch = WORK_ORDER_CLAIM_PATTERN.exec(
+                    request.uri_prefix,
+                );
+                if (claimMatch !== null) {
+                    claimPrefixByWorkOrder.set(
+                        claimMatch[1]!, request.uri_prefix,
+                    );
+                }
+                const transitionMatch =
+                    WORK_ORDER_TRANSITION_PATTERN.exec(
+                        request.uri_prefix,
+                    );
+                if (transitionMatch !== null) {
+                    transitionPrefixByWorkOrder.set(
+                        transitionMatch[1]!, request.uri_prefix,
+                    );
+                }
+            }
+
+            const workOrderIds = new Set<Id>([
+                ...createPairsByWorkOrder.keys(),
+                ...claimPrefixByWorkOrder.keys(),
+                ...transitionPrefixByWorkOrder.keys(),
+            ]);
+
+            const events: StateEntity[] = [];
+            for (const workOrderId of workOrderIds) {
+                const claimPrefix =
+                    claimPrefixByWorkOrder.get(workOrderId);
+                const transitionPrefix =
+                    transitionPrefixByWorkOrder.get(workOrderId);
+                const claimPairs = claimPrefix === undefined
+                    ? []
+                    : operationPairsAt(
+                        requests, responses, claimPrefix,
+                    );
+                const transitionPairs =
+                    transitionPrefix === undefined
+                        ? []
+                        : operationPairsAt(
+                            requests, responses, transitionPrefix,
+                        );
+                events.push(...replayWorkOrderOperations(
+                    createPairsByWorkOrder.get(workOrderId) ?? [],
+                    entityPairsByWorkOrder.get(workOrderId) ?? [],
+                    claimPairs,
+                    transitionPairs,
+                    workOrderId,
+                ));
+            }
+            return events.sort(atIdCompare);
+        },
+    );
 }
