@@ -1359,6 +1359,13 @@ export async function deriveStates(
 // resolve their own address without it. Never a visibility fence
 // here, unlike deriveStates' own fenceStatesByOwner call — the
 // caller already names both the org AND the entity.
+//
+// PRECONDITION: callers must already have established
+// entityId's visibility to `organization` before calling — the
+// route's own gate (api/api.ts's entity-states/:id[/history]
+// guard, ownerOrganizationOfEntity) IS the fence. A caller that
+// trusts an unverified (organization, entityId) pairing reads
+// another organization's rows.
 export async function deriveStatesFor(
     db: DbAdapter,
     organization: Id,
