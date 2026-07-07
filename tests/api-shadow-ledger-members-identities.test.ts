@@ -483,9 +483,9 @@ test('a failed human-member edit appends nothing', async () => {
 
 // ── identities ──
 
-test('an identity (person) create appends its pair at the'
-+ ' entity address, and its PII intake forms its own pair at'
-+ ' identities/:id/pii', async () => {
+test('an identity (person) create appends its bundle: operation'
++ ' + identities document share the entity address, and its PII'
++ ' intake forms its own pair at identities/:id/pii', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
         'POST', '/identities', DEV_TOKEN,
@@ -498,15 +498,31 @@ test('an identity (person) create appends its pair at the'
     ));
     assert.equal(pii.status, 200);
     const requests = await db.requests.getAll();
-    // The bare create (its own pair) + the PII intake's own pair
-    // at its own address (Phase 10 Task 2's intake decomposition
-    // — pii no longer rides the create's own request) = 2.
-    assert.equal(requests.length, 2);
-    const atEntity = requests.find(
+    // The bare create's own bundle — operation + the synthesized
+    // identities document, both at the entity address (Task 5's
+    // create-address-collapse, the ai-members/detail-document
+    // precedent) — = 2, + the PII intake's own pair at its own
+    // address (Phase 10 Task 2's intake decomposition — pii no
+    // longer rides the create's own request) = 3.
+    assert.equal(requests.length, 3);
+    const atEntity = requests.filter(
         r => r.uri_prefix === '/identities/'
             && r.uri_id === 'idp-1',
     );
-    assert.ok(atEntity, 'no request row for the identity create');
+    assert.equal(atEntity.length, 2);
+    const responseById = new Map(
+        (await db.responses.getAll()).map(r => [r.id, r]),
+    );
+    const documentRow = atEntity.find(
+        r => responseById.get(r.id)?.status === 200,
+    );
+    assert.ok(documentRow, 'no identities document pair');
+    const documentBody = JSON.parse(documentRow!.message) as {
+        body: Record<string, unknown>;
+    };
+    // Byte-indistinguishable from a live PUT identities/:id pair:
+    // `kind` alone.
+    assert.deepEqual(documentBody.body, { kind: 'person' });
     const atPii = requests.find(
         r => r.uri_prefix === '/identities/idp-1/pii/',
     );
@@ -514,8 +530,9 @@ test('an identity (person) create appends its pair at the'
     assert.equal(atPii!.uri_id, '');
 });
 
-test('an identity (service) create appends its pair at the'
-+ ' entity address', async () => {
+test('an identity (service) create appends its bundle:'
++ ' operation + identities document share the entity address,'
++ ' credential document sits at its own', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
         'POST', '/identities', DEV_TOKEN,
@@ -529,9 +546,52 @@ test('an identity (service) create appends its pair at the'
     ));
     assert.equal(res.status, 204);
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 1);
-    assert.equal(requests[0]!.uri_prefix, '/identities/');
-    assert.equal(requests[0]!.uri_id, 'ids-1');
+    // operation + identities document (both at the entity
+    // address, Task 5's create-address-collapse) + credential
+    // document (its own address) = 3.
+    assert.equal(requests.length, 3);
+    const atEntity = requests.filter(
+        r => r.uri_prefix === '/identities/'
+            && r.uri_id === 'ids-1',
+    );
+    assert.equal(atEntity.length, 2);
+    const atCredential = requests.filter(
+        r => r.uri_prefix === '/identities/ids-1/credentials/'
+            && r.uri_id === 'ids-1-secret',
+    );
+    assert.equal(atCredential.length, 1);
+    const credentialBody = JSON.parse(
+        atCredential[0]!.message,
+    ) as { body: Record<string, unknown> };
+    // Byte-indistinguishable from a live PUT
+    // identities/:id/credentials/:cid pair: the five credential
+    // keys, mirroring the live wire body (hash-bearing per the
+    // covenant — the secret arrives already client-hashed).
+    assert.deepEqual(
+        Object.keys(credentialBody.body).sort(),
+        ['at', 'identity_id', 'kind', 'secret', 'status'],
+    );
+});
+
+test('a service identity create with an invalid credential body'
++ ' appends nothing: the credential-document pair never forms,'
++ ' so postIdentityCreationOp is never even called'
++ ' (bundle-or-nothing)', async () => {
+    const db = await freshDb();
+    const res = await handleRequest(db, req(
+        'POST', '/identities', DEV_TOKEN,
+        {
+            id: 'ids-bad', kind: 'service',
+            credential: {
+                id: 'ids-bad-secret',
+                ...credentialFields('ids-bad'),
+                kind: 'not-a-kind',
+            },
+        },
+    ));
+    assert.equal(res.status, 400);
+    assert.equal((await db.requests.getAll()).length, 0);
+    assert.equal((await db.responses.getAll()).length, 0);
 });
 
 test('PUT identities/:id appends its pair, and a second PUT'

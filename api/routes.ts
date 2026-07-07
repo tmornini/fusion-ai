@@ -17,6 +17,7 @@ import type {
     FlowRecordEntity,
     HumanMemberEntity,
     IdentityEntity,
+    IdentityKind,
     IdentityPiiEntity,
     IdentityCredentialEntity,
     IdentityTokenRevocationEntity,
@@ -1684,6 +1685,20 @@ export function memberDocumentBodyOf(
     return { type };
 }
 
+// The wire body a live PUT identities/:id would carry for this
+// SAME write: `kind` alone — validateIdentityDocumentBody's only
+// field. Same rationale as memberDocumentBodyOf: the identity
+// kind is a server-supplied fact the caller pins, never read off
+// a request body — the ONE builder both the identity-create
+// route and the human create/edit routes share (the latter
+// always pass 'person', the sole kind a member's own identity
+// ever takes).
+export function identityDocumentBodyOf(
+    kind: IdentityKind,
+): Record<string, unknown> {
+    return { kind };
+}
+
 // The wire body a live PUT ai-members/:id would carry for this
 // SAME write: the create/edit body's detail sub-object VERBATIM
 // — already the exact {name, description, model, skill_focus}
@@ -1957,17 +1972,48 @@ export async function postHumanMemberEditOp(
 // identity carries no lifecycle event at creation), so the
 // handler needs no actor. The tx table set branches per mode so
 // each names exactly the tables it writes.
+// The pairs a live POST /identities create forms (Task 5): the
+// gate's own operation pair (the 204 at the identities/:id
+// address — createBodyIdField collapses POST identities and PUT
+// identities/:id onto the SAME address, the ai-members/detail-
+// document create-address-collapse precedent), and the
+// synthesized identities/:id document pair — byte-
+// indistinguishable from a live PUT there ({kind} alone) —
+// sharing that SAME address, appended after the operation pair.
+// A service ALSO forms the credential-document pair
+// (identities/:id/credentials/:cid — its OWN address; the secret
+// already arrives client-hashed), appended last. The
+// discriminated union mirrors IdentityCreatePersonBody/
+// IdentityCreateServiceBody one layer down (validators.ts) rather
+// than an optional credentialDocument field, so a person bundle
+// can never carry a stray credential pair by construction.
+export type IdentityWritePairs =
+    | {
+        readonly kind: 'person';
+        readonly operation: MessagePair;
+        readonly identityDocument: MessagePair;
+    }
+    | {
+        readonly kind: 'service';
+        readonly operation: MessagePair;
+        readonly identityDocument: MessagePair;
+        readonly credentialDocument: MessagePair;
+    };
+
 // Exported so the seed can drive identity creation through
 // the same gate the route uses (Decision 6's below-facade
 // carve-out) — this is also Phase 1's dual-write insertion
-// seam. `pair` is optional so the seed's below-facade calls
-// (api/mock-data.ts, no gate, no pair) keep compiling
-// unchanged; the route always supplies one, since
-// 'identities' is pair-wired and never bearer-exempt.
+// seam. `pairs` is optional so the seed's below-facade calls
+// (api/mock-data.ts, no gate, no pairs) keep compiling
+// unchanged; the route always supplies the bundle, since
+// 'identities' is pair-wired and never bearer-exempt. Task 5:
+// create appends the operation pair, the synthesized identities
+// document pair (+ the credential document pair for service) —
+// in that order, LAST, bundle-or-nothing.
 export async function postIdentityCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
-    pair?: MessagePair,
+    pairs?: IdentityWritePairs,
 ): Promise<void> {
     const b = validateIdentityCreateBody(body);
     const tables = b.kind === 'person'
@@ -1995,8 +2041,16 @@ export async function postIdentityCreationOp(
                         >,
                 );
             }
-            if (pair !== undefined) {
-                await appendMessagePair(view, pair);
+            if (pairs !== undefined) {
+                await appendMessagePair(view, pairs.operation);
+                await appendMessagePair(
+                    view, pairs.identityDocument,
+                );
+                if (pairs.kind === 'service') {
+                    await appendMessagePair(
+                        view, pairs.credentialDocument,
+                    );
+                }
             }
         },
     );
@@ -3480,10 +3534,60 @@ export const routes: Route[] = [
         get: (db) => db.identities.getAll(),
         // Admin-only — POST /identities has no member-tier
         // entry, so it falls to the root admin tier in
-        // ROUTE_POLICY. See postIdentityCreationOp for the
-        // transaction shape.
-        post: (db, _p, body, _actor, pair) =>
-            postIdentityCreationOp(db, body, pair),
+        // ROUTE_POLICY. Task 5: forms the identities/:id
+        // document pair (+ the credential-document pair for a
+        // service) INLINE PRE-TX, beside the gate's own operation
+        // pair — the human-members precedent above. See
+        // postIdentityCreationOp for the transaction shape.
+        post: async (
+            db, _p, body, actor, pair, organization,
+        ) => {
+            let pairs: IdentityWritePairs | undefined;
+            if (
+                pair !== undefined && organization !== undefined
+            ) {
+                const b = validateIdentityCreateBody(body);
+                const identityDocument = await formDocumentPairFor(
+                    db, {
+                        routePattern: 'identities/:id',
+                        params: [b.id],
+                        body: identityDocumentBodyOf(b.kind),
+                        requesterIdentityId: actor,
+                        requestAt: pair.requestAt,
+                        organization,
+                    },
+                );
+                if (b.kind === 'service') {
+                    const { id: credId, ...fields } =
+                        b.credential as {
+                            id: string;
+                        } & Record<string, unknown>;
+                    const credentialDocument =
+                        await formDocumentPairFor(db, {
+                            routePattern:
+                                'identities/:id/credentials/:cid',
+                            params: [b.id, credId],
+                            body: fields,
+                            requesterIdentityId: actor,
+                            requestAt: pair.requestAt,
+                            organization,
+                        });
+                    pairs = {
+                        kind: 'service',
+                        operation: pair,
+                        identityDocument,
+                        credentialDocument,
+                    };
+                } else {
+                    pairs = {
+                        kind: 'person',
+                        operation: pair,
+                        identityDocument,
+                    };
+                }
+            }
+            return postIdentityCreationOp(db, body, pairs);
+        },
     }),
     // PUT rides the generic documentPutHandler(IDENTITIES_WIRING)
     // — wire-identical to postIdentityDocumentOp's own direct
