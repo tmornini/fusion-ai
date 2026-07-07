@@ -580,6 +580,11 @@ export const REPLAY_EXEMPT_ROUTE_PATTERNS: Set<string> =
 // minted id every write, e.g. states/:id) never chain, even
 // though an event-append uriId is never ''. Grown family by
 // family alongside PAIR_WIRED_ROUTE_PATTERNS.
+// 'identities/:id/pii' is RETIRED here (Phase 10 Task 3): the
+// /pii address is the message plane's sanctioned hard-delete
+// zone (api/pii-hard-delete.ts) — CHAINLESS by construction, so
+// this Set's pre-tx head-read must never run for it. It stays
+// wired for pair STORAGE in PAIR_WIRED_ROUTE_PATTERNS above.
 export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
     new Set([
         'members/:id',
@@ -608,7 +613,6 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'human-members/:id',
         'identities',
         'identities/:id',
-        'identities/:id/pii',
         'identities/:id/credentials/:cid',
         'memberships/:id',
         'organizations/:id',

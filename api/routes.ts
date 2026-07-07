@@ -97,6 +97,7 @@ import {
     pairResponseBody,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
+import { replacePiiSlot } from './pii-hard-delete.ts';
 import { messageAddress } from './message-address.ts';
 import {
     generateCryptoSafeBase62,
@@ -2574,7 +2575,10 @@ export async function postHumanMemberDocumentOp(
 // `pair` is optional so a below-facade caller with no pair keeps
 // compiling; the live route always supplies one. `_actor` is
 // unused for the same reason postMembershipDocumentOp's is:
-// there is no state event here to author.
+// there is no state event here to author. The pair rides
+// `replacePiiSlot` (Phase 10 Task 3), not the generic
+// `appendMessagePair` — /pii is the message plane's sanctioned
+// hard-delete zone (api/pii-hard-delete.ts).
 export async function postIdentityPiiDocumentOp(
     db: DbAdapter,
     id: Id,
@@ -2591,7 +2595,7 @@ export async function postIdentityPiiDocumentOp(
                     Omit<IdentityPiiEntity, 'id'>,
             );
             if (pair !== undefined) {
-                await appendMessagePair(view, pair);
+                await replacePiiSlot(view, pair.uriPrefix, pair);
             }
             return written;
         },
@@ -3360,10 +3364,16 @@ export const routes: Route[] = [
     // self-only, PUT/DELETE self-or-admin (enforced in the
     // request gate, mirroring /identities/:id/default-org). The
     // identity-pii COLLECTION below (admin roster) is separate.
-    // PUT/DELETE each append their message pair in the same
-    // transaction as the write — the pattern's last segment
-    // ('pii') is not a :param, so messageAddress yields uriId
-    // '' (a singleton document at a collection-style address).
+    // PUT/DELETE each REPLACE the slot's message pair
+    // (replacePiiSlot, api/pii-hard-delete.ts) in the same
+    // transaction as the write — the message plane's sanctioned
+    // hard-delete zone: CHAINLESS (retired from DOCUMENT_CLASS_
+    // ROUTE_PATTERNS, message-pair.ts — no Supersedes, no
+    // Follows) and the ONLY address whose prior pair is
+    // physically deleted rather than superseded. The pattern's
+    // last segment ('pii') is not a :param, so messageAddress
+    // yields uriId '' (a singleton document at a collection-
+    // style address).
     route('identities/:id/pii', {
         get: (db, p) => db.identityPii.getById(param(p, 0)),
         put: (db, p, body, actor, pair) =>
@@ -3377,7 +3387,9 @@ export const routes: Route[] = [
                 async (view) => {
                     await view.identityPii.delete(id);
                     if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
+                        await replacePiiSlot(
+                            view, pair.uriPrefix, pair,
+                        );
                     }
                 },
             );
