@@ -44,6 +44,7 @@ import {
 import {
     ownerOrganizationOfEntity,
     organizationOwnedProbes,
+    rawOrganizationOwnedProbes,
     graphEntityProbe,
 } from './store-parent-scoped.ts';
 import {
@@ -375,6 +376,38 @@ export async function handleRequest(
             );
         }
         body = parse.body;
+    }
+
+    // THE STATE OWNERSHIP WRITE FENCE (Phase 11 Task 1):
+    // MEMBER_VERBS permits member-tier PUT here, and the body
+    // names entity_id itself — with no upstream ownership
+    // check, a member of one org could PUT a state event
+    // naming ANOTHER org's entity and forge or tombstone its
+    // lifecycle. PutHandler carries no organization argument
+    // (routes.ts) and the route's `db` is already the SCOPED
+    // adapter (which 404s a foreign row as merely absent), so
+    // the fence cannot live in the route closure — it runs
+    // HERE, pre-dispatch, mirroring the entity-states GET
+    // guard below. The RAW probes resolve a foreign entity's
+    // true owner even after it is soft-deleted — the filtered
+    // organizationOwnedProbes would let a self-deleted foreign
+    // row masquerade as an orphan.
+    if (method === 'PUT' && routePattern === 'states/:id') {
+        const entityId = body?.entity_id;
+        if (typeof entityId === 'string') {
+            const owner = await ownerOrganizationOfEntity(
+                rawOrganizationOwnedProbes(adapter),
+                adapter.memberships, organization!,
+                entityId,
+                graphEntityProbe(adapter, adapter.flows),
+            );
+            if (owner !== null && owner !== organization) {
+                return Response.json(
+                    { error: 'Not found: ' + pathname },
+                    { status: HTTP_NOT_FOUND },
+                );
+            }
+        }
     }
 
     const isWrite = method === 'PUT' || method === 'POST'
