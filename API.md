@@ -272,13 +272,61 @@ Legend for classification:
 
 - `GET /states` · `GET /states/:id` — primitive.
 - `PUT /states/:id` — append/stamp a state event; the author is the
-  verified caller, stamped over any client-supplied `member_id`.
+  verified caller, stamped over any client-supplied `member_id`. Gated
+  by the OWNERSHIP FENCE below — a foreign org's entity_id 404s.
 - `GET /entity-states/:id` — the current (latest) state for an entity.
 - `GET /entity-states/:id/history` — the full event history for an
   entity. Both are parent-ownership gated (a foreign org's entity
-  404s).
+  404s) by the SAME fence the write side uses.
 - `GET /states/:id/field-values` ·
-  `PUT|DELETE /states/:id/field-values/:fvid` — nested.
+  `PUT|DELETE /states/:id/field-values/:fvid` — nested; PUT/DELETE
+  gated by the ownership fence too, resolved through the leaf's PARENT
+  state event.
+
+**The state ownership fence** (`api/api.ts`, mirroring the pre-existing
+entity-states GET guard): `MEMBER_VERBS` permits member-tier PUT on
+both `/states/:id` and `/states/:id/field-values/:fvid`
+(`api/authorization.ts`), and each body names its target entity_id
+directly — the field-values leaf via its parent event's entity_id,
+read raw via `adapter.rawReadRow('states', param0)`. Neither
+`PutHandler`/`DeleteHandler` carries an organization argument
+(`routes.ts`), and the route's own `db` is already the ORG-SCOPED
+adapter — which 404s a foreign row as merely absent, making a
+route-level fence a no-op — so both checks run at the GATE, right
+after the body-parse block and before the write dispatches.
+`ownerOrganizationOfEntity` (`api/store-parent-scoped.ts`) resolves
+three outcomes: an OWN-org entity_id passes; a GENUINE orphan (no
+owning row anywhere — an org-less member event, say) passes, since an
+incomplete-but-harmless row is not a foreign tenant's; a foreign
+entity_id — LIVE or already soft-deleted — 404s, byte-identical to the
+existing read guard's `{error: 'Not found: ' + pathname}` (never an
+`EntityNotFoundError`, which keys on the wrong id).
+
+The resolver walks `rawOrganizationOwnedProbes(adapter)` — the SAME
+seven org-owned tables (`ideas`, `projects`, `flows`, `records`,
+`objectives`, `work_orders`, `invitations`) as the filtered
+`organizationOwnedProbes`, but read via `rawReadRow`, bypassing
+`EntityStore`'s deleted filter (the pattern `graphEntityProbe` already
+used for `flow_nodes`/`flow_edges`). This closes a read leak: the
+filtered probes resolve a DELETED entity to "not found" at every
+probed table, falling through to a visible orphan — so an org's OWN
+legitimate deletion of its own entity used to unhide that entity's
+whole lifecycle to every OTHER org's `/states` and
+`/entity-states/:id[/history]` reads. The raw probes resolve the
+entity's TRUE owner whether it is live or deleted, closing both the
+write escalation and the read leak with one probe set. The filtered
+`organizationOwnedProbes` stays exported for any future non-fence
+caller; every fence today — write and read alike — uses the raw one.
+
+Named residual: within ONE org, a member-tier PUT `/states/:id` can
+still post a `'deleted'` event naming a fellow member/membership/
+ai-member/human-member id (MEMBER_VERBS allows it, and those roster
+kinds are not in the organization-owned probe list, so they resolve
+via the membership ledger, not a table). This intra-org reachability
+is unchanged by this fence — the user elected the ORG boundary, not a
+kind/alphabet gate — and is tracked as a named acceptance (see
+`tests/drift-roster.test.ts`'s "states/:id escape hatch"), not a bug
+this task closes.
 
 ### 2.11 Organizations & memberships
 
