@@ -2671,6 +2671,43 @@ export async function postIdentityCredentialDocumentOp(
     );
 }
 
+// Role grant document write — extracted byte-for-byte from the
+// hand-written role-grants/:id PUT closure (the
+// postIdentityCredentialDocumentOp precedent above): a
+// role_grants row and its pair commit as ONE transaction; no
+// states interaction (a role grant is its own ledger, not a
+// states event). The written row's organization_id is stamped
+// by the ORG-SCOPED store this transaction's `view` binds to
+// (the role-grants/:id WRITE_RESPONSE_SPECS entry re-derives the
+// SAME stamp from the fence for the wire body, untouched by this
+// extraction — see its own comment in WRITE_RESPONSE_SPECS).
+// `pair` is optional so a below-facade caller with no pair keeps
+// compiling; the live route always supplies one. `_actor` is
+// unused for the same reason postIdentityCredentialDocumentOp's
+// is: there is no state event here to author.
+export async function postRoleGrantDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<RoleGrantEntity, 'id'>> {
+    return db.transaction(
+        ['role_grants', 'requests', 'responses'],
+        async (view) => {
+            const written = await view.roleGrants.put(
+                id,
+                withoutId(body) as unknown as
+                    Omit<RoleGrantEntity, 'id'>,
+            );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -3539,23 +3576,10 @@ export const routes: Route[] = [
     // head-read, no Supersedes.
     route('role-grants/:id', {
         get: (db, p) => db.roleGrants.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['role_grants', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.roleGrants.put(
-                        id,
-                        withoutId(body) as unknown as
-                            Omit<RoleGrantEntity, 'id'>,
-                    );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postRoleGrantDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
     }),
     route('identity-tokens', {
         get: (db) => db.identityTokens.getAll(),
