@@ -23,13 +23,37 @@ function req(
     method: string,
     path: string,
     token: string,
+    body?: unknown,
 ): Request {
     return new Request(`${BASE}${path}`, {
         method,
         headers: {
-            Authorization: 'Bearer ' + token,
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token,
         },
+        ...(body ? { body: JSON.stringify(body) } : {}),
     });
+}
+
+// A states-log event, posted through the SAME wire-reachable
+// PUT states/:id the live route serves (NAMED re-pin, Task 7):
+// the flipped GET /states and GET /entity-states/:id routes
+// derive from the message ledger, not the raw states table — a
+// raw db.states.put leaves no pair at this address, so this
+// suite's fence assertions must land through the wire.
+async function seedStateEvent(
+    db: MemoryDbAdapter,
+    organization: string,
+    id: string,
+    entityId: string,
+    state: string,
+): Promise<void> {
+    const token = await organizationToken('current', organization);
+    const res = await handleRequest(db, req(
+        'PUT', '/states/' + id, token,
+        { entity_id: entityId, state, at: AT },
+    ));
+    assert.equal(res.status, 200);
 }
 
 // Two orgs: A (admin = current) and B. A flow + node + edge
@@ -68,14 +92,12 @@ async function seed(): Promise<MemoryDbAdapter> {
     });
     // Post 'deleted' state events with the node/edge ids as
     // entity_id — these are the events that must be fenced.
-    await db.states.put('se-node-del', {
-        entity_id: 'node-a', state: 'deleted',
-        member_id: 'current', at: AT,
-    });
-    await db.states.put('se-edge-del', {
-        entity_id: 'edge-a', state: 'deleted',
-        member_id: 'current', at: AT,
-    });
+    await seedStateEvent(
+        db, 'A', 'se-node-del', 'node-a', 'deleted',
+    );
+    await seedStateEvent(
+        db, 'A', 'se-edge-del', 'edge-a', 'deleted',
+    );
     return db;
 }
 
@@ -203,10 +225,7 @@ test('entity-states for a node id is 404 in org B', async () => {
 test('orphan deletion event remains visible to all orgs',
 async () => {
     const db = await seed();
-    await db.states.put('se-ghost', {
-        entity_id: 'ghost', state: 'deleted',
-        member_id: 'system', at: AT,
-    });
+    await seedStateEvent(db, 'A', 'se-ghost', 'ghost', 'deleted');
     const rows = await getStates(db, 'A');
     const ids = rows.map(r => r.id);
     assert.ok(ids.includes('se-ghost'),

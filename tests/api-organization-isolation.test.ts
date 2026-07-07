@@ -321,10 +321,17 @@ async function seedChain(
             score: 2, member_id: 'system', at: T8_AT,
         },
     ));
-    await db.states.put('se' + s, {
-        entity_id: 'i' + s, state: 'active',
-        member_id: 'system', at: T8_AT,
-    });
+    // NAMED re-pin (Task 7): the flipped GET /states route
+    // derives from the message ledger, not the raw states
+    // table — a raw db.states.put leaves no pair at this
+    // address, so the 'states lists only the bound org events'
+    // test must land through the SAME wire-reachable PUT the
+    // live route serves.
+    await handleRequest(db, req(
+        'PUT', '/states/se' + s,
+        await organizationToken(identity, organization),
+        { entity_id: 'i' + s, state: 'active', at: T8_AT },
+    ));
     await db.stateFieldValues.put('sfv' + s, {
         state_event_id: 'se' + s, attribute_id: 'x', value: 'v',
     });
@@ -419,10 +426,6 @@ async function deepDb(): Promise<MemoryDbAdapter> {
             status: 'set', secret: 'HASH-' + id, at: T8_AT,
         });
         await seedMembershipPair(db, 'mem-' + id, organization, id);
-        await db.states.put('seMem-' + id, {
-            entity_id: id, state: 'active',
-            member_id: 'system', at: T8_AT,
-        });
     }
     // Grants 'pb' admin in B TOO (on top of its plain
     // membership above) — solely so seedChain's project-flow
@@ -435,6 +438,24 @@ async function deepDb(): Promise<MemoryDbAdapter> {
         role: 'admin', action: 'granted',
         by_member_id: 'system', at: T8_AT,
     });
+    // NAMED re-pin (Task 7): the flipped GET /states route
+    // derives from the message ledger, not the raw states
+    // table — a raw db.states.put leaves no pair at this
+    // address. Landed here (after pb's own admin grant above,
+    // the only identity authorized to write in B) so both pa's
+    // and pb's genesis event can ride the SAME wire-reachable
+    // PUT the live route serves. pa's own event is authored by
+    // 'current' (admin in A already) — no case in this file
+    // exercises pa's OWN authorization either.
+    for (const [id, organization, author] of [
+        ['pa', 'A', 'current'], ['pb', 'B', 'pb'],
+    ] as const) {
+        await handleRequest(db, req(
+            'PUT', '/states/seMem-' + id,
+            await organizationToken(author, organization),
+            { entity_id: id, state: 'active', at: T8_AT },
+        ));
+    }
     await seedChain(db, 'A', 'A', 'current');
     await seedChain(db, 'B', 'B', 'pb');
     // isA's message pair, on top of the raw row seedChain already
@@ -816,10 +837,15 @@ async () => {
 
 test('states show an orphan event with no owner', async () => {
     const db = await deepDb();
-    await db.states.put('seGhost', {
-        entity_id: 'ghost', state: 'active',
-        member_id: 'system', at: T8_AT,
-    });
+    // NAMED re-pin (Task 7): the flipped GET /states route
+    // derives from the message ledger, not the raw states
+    // table — a raw db.states.put leaves no pair at this
+    // address.
+    await handleRequest(db, req(
+        'PUT', '/states/seGhost',
+        await organizationToken('current', 'A'),
+        { entity_id: 'ghost', state: 'active', at: T8_AT },
+    ));
     const res = await facadeGet(db, '/states');
     assert.equal(res.status, 200);
     const ids = new Set(
