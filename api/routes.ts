@@ -2838,6 +2838,45 @@ export async function postRoleGrantDocumentOp(
     );
 }
 
+// Identity provider document write — extracted byte-for-byte
+// from the hand-written identity-providers/:id PUT closure (the
+// postRoleGrantDocumentOp precedent above): an identity_providers
+// row and its pair commit as ONE transaction; no states
+// interaction (a provider link/unlink is its own ledger, not a
+// states event). `pair` is optional so a below-facade caller
+// with no pair keeps compiling; the live route always supplies
+// one. `_actor` is unused for the same reason
+// postRoleGrantDocumentOp's is: there is no state event here to
+// author. Extracted for Phase 10 Task 8 Session B, the
+// controller-sanctioned deviation mirroring Task 4's own
+// extraction: a below-facade fixture (tests/identity-fixtures.ts)
+// needs an exported op to form a pair for a raw-put row that
+// would otherwise go derivation-invisible once GET
+// identity-providers flips.
+export async function postIdentityProviderDocumentOp(
+    db: DbAdapter,
+    id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<IdentityProviderEntity, 'id'>> {
+    return db.transaction(
+        ['identity_providers', 'requests', 'responses'],
+        async (view) => {
+            const written = await view
+                .identityProviders.put(
+                    id,
+                    withoutId(body) as unknown as
+                        Omit<IdentityProviderEntity, 'id'>,
+                );
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return written;
+        },
+    );
+}
+
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
@@ -3888,24 +3927,10 @@ export const routes: Route[] = [
     // no head-read, no Supersedes.
     route('identity-providers/:id', {
         get: (db, p) => db.identityProviders.getById(param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['identity_providers', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view
-                        .identityProviders.put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<IdentityProviderEntity, 'id'>,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
+        put: (db, p, body, actor, pair) =>
+            postIdentityProviderDocumentOp(
+                db, param(p, 0), body, actor, pair,
+            ),
     }),
     // The grant closures retire into api.ts's dedicated
     // authentication POST arm (Task 3, C1 discharge): both

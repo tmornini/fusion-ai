@@ -12,6 +12,7 @@ import { seedAdminSchema } from './test-fixtures.ts';
 import {
     getProvidersFor,
 } from '../web-app/app/adapters/identity-providers.ts';
+import { seedIdentityProvider } from './identity-fixtures.ts';
 
 async function adminCtx() {
     const db = new MemoryDbAdapter();
@@ -76,20 +77,19 @@ async () => {
     // 'linked' precedes the earlier 'unlinked', so
     // array-order "last wins" would wrongly drop it.
     //
-    // NAMED GAP (Phase 10 Task 8 Session A, finding 18's fixture
-    // budget): getProvidersFor reads GET /identity-providers, a
-    // Step 3 flip target, so these raw puts WILL go derivation-
-    // invisible once that lands — but unlike identities/pii/
-    // credentials/role-grants, identity-providers/:id's live PUT
-    // is a hand-written INLINE closure (api/routes.ts), never
-    // extracted into an exported below-facade op. Re-pointing
-    // this fixture needs that extraction first; deferred to
-    // Step 3, which lands the providers flip in the same change.
-    await db.identityProviders.put('pl', {
+    // Re-pointed (Phase 10 Task 8 Session B, closing session A's
+    // named gap): getProvidersFor reads GET /identity-providers,
+    // now flipped to derive-identity-spine.ts's
+    // deriveIdentityProviders, so a raw put with no message pair
+    // would go derivation-invisible. seedIdentityProvider forms
+    // both — the SAME below-facade mechanism identity-fixtures.ts
+    // uses throughout, riding the postIdentityProviderDocumentOp
+    // extraction this session lands.
+    await seedIdentityProvider(db, 'pl', {
         ...goodRow, identity_id: 'p2', action: 'linked',
         at: '2026-02-01T00:00:00.000000Z',
     });
-    await db.identityProviders.put('pe', {
+    await seedIdentityProvider(db, 'pe', {
         ...goodRow, identity_id: 'p2', action: 'unlinked',
         at: '2026-01-01T00:00:00.000000Z',
     });

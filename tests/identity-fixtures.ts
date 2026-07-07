@@ -4,6 +4,7 @@ import {
     postIdentityDocumentOp,
     postIdentityPiiDocumentOp,
     postIdentityCredentialDocumentOp,
+    postIdentityProviderDocumentOp,
     identityDocumentBodyOf,
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
@@ -120,6 +121,55 @@ async function identityCredentialDocumentPair(
         ),
         headPairId: undefined,
     });
+}
+
+async function identityProviderDocumentPair(
+    id: Id,
+    body: Record<string, unknown>,
+    requestAt: string,
+): Promise<MessagePair> {
+    const spec = WRITE_RESPONSE_SPECS['identity-providers/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for'
+            + ' identity-providers/:id',
+        );
+    }
+    return formWritePair({
+        method: 'PUT',
+        pathname: `/identity-providers/${id}`,
+        routePattern: 'identity-providers/:id',
+        routeSegments: ['identity-providers', ':id'],
+        pathSegments: ['identity-providers', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt,
+        organization: undefined,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, undefined,
+        ),
+        headPairId: undefined,
+    });
+}
+
+// One identity-providers/:id document — a link/unlink event,
+// GLOBAL plane (no organization_id field). Session B's own
+// fixture (identity-providers had no exported below-facade op
+// until the controller-sanctioned extraction this session
+// lands), needed so a raw-put provider row does not go
+// derivation-invisible once GET identity-providers flips.
+export async function seedIdentityProvider(
+    db: DbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const requestAt = nowUtc();
+    await postIdentityProviderDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID,
+        await identityProviderDocumentPair(id, body, requestAt),
+    );
 }
 
 // The PII facet alone — the identities/:id/pii document, no
