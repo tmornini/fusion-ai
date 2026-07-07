@@ -216,6 +216,12 @@ async function derivedIdentity(
 // scan, and the two seeded organizations are the drift-roster.
 // test.ts precedent's own known-org set (its case 1's "10/6
 // split", its THIRD_ORGANIZATION empty leg).
+//
+// Both legs ride documentCollectionGetHandler bare, uncoupled
+// by any wrapping transaction across the Promise.all pair — no
+// hazard: this suite seeds its db once per test and never
+// mutates it concurrently with a read, so no writer can land
+// between the two legs and tear the union.
 
 async function pairPlaneMembershipsAcrossKnownOrganizations(
     db: DbAdapter,
