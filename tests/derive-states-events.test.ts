@@ -272,6 +272,31 @@ test('resolveOwningOrganization: an org-less identity resolves'
     assert.deepEqual(kept, []);
 });
 
+test('resolveOwningOrganization: an identity holding memberships'
++ ' in BOTH organizations resolves the ASKING organization from'
++ ' either side (co-membership is asker-relative)', async () => {
+    const db = await seed();
+    const tokenA = await organizationToken('adminA', 'A');
+    const tokenB = await organizationToken('adminB', 'B');
+    const resA = await handleRequest(db, req(
+        'PUT', '/memberships/ms-both-a', tokenA,
+        { organization_id: 'A', identity_id: 'memberBoth', at: AT },
+    ));
+    assert.equal(resA.status, 200);
+    const resB = await handleRequest(db, req(
+        'PUT', '/memberships/ms-both-b', tokenB,
+        { organization_id: 'B', identity_id: 'memberBoth', at: AT },
+    ));
+    assert.equal(resB.status, 200);
+
+    assert.equal(
+        await resolveOwningOrganization(db, 'memberBoth', 'A'), 'A',
+    );
+    assert.equal(
+        await resolveOwningOrganization(db, 'memberBoth', 'B'), 'B',
+    );
+});
+
 // ---- 4. the invitation's own organization_id body field --------
 
 test('resolveOwningOrganization: an invitation resolves its'
