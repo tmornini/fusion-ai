@@ -60,8 +60,10 @@ import {
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import { deriveMembershipsForIdentity } from
     './derive-memberships.ts';
-import { deriveTokenRevocationsFor } from
-    './derive-identity-spine.ts';
+import {
+    deriveIdentityPii,
+    deriveTokenRevocationsFor,
+} from './derive-identity-spine.ts';
 import {
     deriveIdentityTokens,
     deriveIdentityTokenEventsForJti,
@@ -117,13 +119,16 @@ async function nameFor(
     adapter: DbAdapter,
     identityId: Id,
 ): Promise<string> {
-    // The id IS the PII keyPath, so a point read replaces the
-    // scan. An absent row (a service identity has no PII) 404s,
-    // which falls back to the id — the same value the scan's
-    // miss returned.
+    // FLIPPED (Phase 13 Task 8): deriveIdentityPii reads the
+    // identity's own /pii prefix — a targeted, identity-keyed
+    // read, never a full-ledger scan — and throws
+    // EntityNotFoundError('identity_pii', id) on absence (a
+    // service identity has no PII) exactly as the row-plane
+    // point read it replaces did, so the catch below is
+    // unchanged.
     try {
         return (
-            await adapter.identityPii.getById(identityId)
+            await deriveIdentityPii(adapter, identityId)
         ).name;
     } catch (e) {
         if (e instanceof EntityNotFoundError) return identityId;
