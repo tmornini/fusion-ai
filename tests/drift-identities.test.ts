@@ -47,6 +47,8 @@ import {
 } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedIdentityCredential } from './identity-fixtures.ts';
+import { currentRolesForInOrganization } from
+    '../api/authorization.ts';
 
 // The E10 drift check (Phase 10 Task 7): message-derived reads
 // over the identity spine's remaining facets (pii, credentials,
@@ -832,6 +834,69 @@ test('role-grants parity (org fence legs both orgs) + getById +'
             err instanceof EntityNotFoundError
             && err.message === expectedRevocationMessage,
     );
+});
+
+// -- 4b. the hot-path FILTERED shape: currentRolesForInOrganization
+// -- over derived vs row-plane role-grant rows, for a seeded -----
+// -- admin and a seeded member, per organization — case 4's own --
+// -- collection parity proves the UNFILTERED row sets equal; it --
+// -- does NOT exercise the per-identity, per-org FILTER the two --
+// -- flipped readers (callerRolesInOrganization,
+// -- callerIsOrganizationAdmin) actually apply --------------------
+
+test("role-grants hot-path filtered shape: currentRolesFor"
++ "InOrganization over derived vs row-plane rows agrees for a"
++ " seeded admin ('current') and a seeded member, per"
++ ' organization', async () => {
+    const db = await seededDb();
+    // sarahId: STARK-only seeded member. mikeId: ORGANIZATION_TWO-
+    // only seeded member (both from the mock-data member pool;
+    // 'current' is seeded admin in BOTH orgs).
+    const sarahId = 'LhfaUUf4IumVsCSGB4xjdK';
+    const mikeId = 'bLP3X1hb1mSz8gY9neogU3';
+    const memberIdFor = new Map([
+        [STARK_ORGANIZATION, sarahId],
+        [ORGANIZATION_TWO, mikeId],
+    ]);
+
+    for (const organization of [
+        STARK_ORGANIZATION, ORGANIZATION_TWO,
+    ]) {
+        // The admin leg: 'current' — derived-all vs the OLD
+        // reader's own identity_id-indexed row read.
+        const derivedAdminRows = await deriveRoleGrants(db);
+        const oldAdminRows = await db.roleGrants
+            .getAllWhere('identity_id', 'current');
+        const derivedAdminRoles = currentRolesForInOrganization(
+            derivedAdminRows, 'current', organization,
+        );
+        const oldAdminRoles = currentRolesForInOrganization(
+            oldAdminRows, 'current', organization,
+        );
+        assert.deepEqual(
+            [...derivedAdminRoles].sort(),
+            [...oldAdminRoles].sort(),
+        );
+        assert.ok(derivedAdminRoles.includes('admin'));
+
+        // The member leg: the org's own seeded, roleless-of-admin
+        // member.
+        const memberId = memberIdFor.get(organization)!;
+        const derivedMemberRows = await deriveRoleGrants(db);
+        const oldMemberRows = await db.roleGrants
+            .getAllWhere('identity_id', memberId);
+        const derivedMemberRoles = currentRolesForInOrganization(
+            derivedMemberRows, memberId, organization,
+        );
+        const oldMemberRoles = currentRolesForInOrganization(
+            oldMemberRows, memberId, organization,
+        );
+        assert.deepEqual(
+            [...derivedMemberRoles].sort(),
+            [...oldMemberRoles].sort(),
+        );
+        assert.ok(!derivedMemberRoles.includes('admin'));
+    }
 });
 
 // -- 5. live-write chain, re-compared on BOTH planes at every ---
