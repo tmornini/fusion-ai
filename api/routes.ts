@@ -175,6 +175,10 @@ import {
     deriveOrganizations,
 } from './derive-organizations.ts';
 import {
+    deriveIdentityTokens,
+    deriveIdentityToken,
+} from './derive-identity-tokens.ts';
+import {
     param,
     requireOrganization,
     withoutId,
@@ -4062,24 +4066,31 @@ export const routes: Route[] = [
                 db, param(p, 0), body, actor, pair,
             ),
     }),
-    // NOT FLIPPED (gate 7): identity_tokens carries THREE
-    // pair-less writers (grant/refresh/exchange mint tokens
-    // directly, below any wired PUT route this migration's pair
-    // plane covers) — flipping this read to message-derivation
-    // would render the Tokens page empty for every token minted
-    // that way. Stays a hand-written old-plane read.
+    // GET is FLIPPED (Phase 13 Task 6, gate 7 discharged):
+    // derived via deriveIdentityTokens — every identity_tokens
+    // writer forms its own event pair from Task 5 on (issued
+    // roots, rotations, revocations alike), so the derivation now
+    // sees every row the old plane did. Wire-identical to the
+    // hand-written db.identityTokens.getAll() dispatch it
+    // replaces: id-LAST key order (the stored row's own shape),
+    // byIdAscending collection order (== IndexedDB's production
+    // getAll order) — tests/drift-identity-tokens.test.ts pins
+    // both.
     route('identity-tokens', {
-        get: (db) => db.identityTokens.getAll(),
+        get: (db) => deriveIdentityTokens(db),
     }),
     // Hand-written in place of makeIdRoute<IdentityTokenEntity>
     // so PUT can append its message pair in the same
     // transaction as the write. identity_tokens is a
     // HistoryEntityStore ledger row, so this is EVENT-APPEND:
-    // no head-read, no Supersedes. NOT FLIPPED (gate 7 — see
-    // GET /identity-tokens above): stays a hand-written
-    // old-plane read.
+    // no head-read, no Supersedes. GET is FLIPPED (Phase 13 Task
+    // 6, gate 7 discharged): derived via deriveIdentityToken —
+    // wire-identical to the hand-written
+    // db.identityTokens.getById dispatch it replaces, including
+    // the 404 body. PUT stays on the row plane, dual-plane until
+    // Task 9.
     route('identity-tokens/:id', {
-        get: (db, p) => db.identityTokens.getById(param(p, 0)),
+        get: (db, p) => deriveIdentityToken(db, param(p, 0)),
         put: (db, p, body, _actor, pair) => {
             const id = param(p, 0);
             return db.transaction(

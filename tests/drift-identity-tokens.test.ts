@@ -440,3 +440,68 @@ test('the live-minted chain sweep: derived collection parity +'
         await deriveIdentityTokenEventsForJti(db, chain2Root);
     assert.ok(chain2Events.some((e) => e.action === 'revoked'));
 });
+
+// -- 5: GET wire byte-parity — the ACTUAL flipped route, not the --
+// -- derivation directly: id-LAST key order, byIdAscending -------
+// -- collection order (== IndexedDB's production getAll order), --
+// -- and the 404 body -----------------------------------------------
+
+test('GET /identity-tokens + /:id are wire byte-identical to'
++ ' the row plane through the ACTUAL flipped route: id-LAST key'
++ ' order, byIdAscending collection order, and the 404 body',
+async () => {
+    const db = await freshDb();
+    // Inserted in NON-lex order (w3, then w1, then w2) so the
+    // memory backend's own insertion-ordered getAll and the
+    // derivation's byIdAscending order genuinely diverge — a test
+    // that inserted in lex order already would pass by ACCIDENT
+    // of insertion order, never by the property it claims to
+    // prove (the COLLECTION-ORDER CAUTION, Step 0).
+    await PUT(db, 'identity-tokens/tok-w3', {
+        jti: 'jti-w3', identity_id: 'current',
+        action: 'issued', chain_id: 'chain-w3', at: AT,
+    }, DEV_TOKEN);
+    await PUT(db, 'identity-tokens/tok-w1', {
+        jti: 'jti-w1', identity_id: 'current',
+        action: 'issued', chain_id: 'chain-w', at: AT,
+    }, DEV_TOKEN);
+    await PUT(db, 'identity-tokens/tok-w2', {
+        jti: 'jti-w1', identity_id: 'current',
+        action: 'rotated', chain_id: 'chain-w', at: AT2,
+    }, DEV_TOKEN);
+
+    // The row plane's OWN natural order, re-sorted id-lex (as
+    // production IndexedDB's getAll already is) is the expected
+    // wire text — proving the flipped route's actual HTTP
+    // response bytes, not merely the derivation function's return
+    // value, match what the row plane would have served.
+    const oldRowsSorted = sortById(await db.identityTokens.getAll());
+    const collectionRes = await handleRequest(
+        db, req('GET', '/identity-tokens', DEV_TOKEN),
+    );
+    assert.equal(collectionRes.status, 200);
+    assert.equal(
+        await collectionRes.text(), JSON.stringify(oldRowsSorted),
+    );
+
+    for (const row of oldRowsSorted) {
+        const singleRes = await handleRequest(db, req(
+            'GET', '/identity-tokens/' + row.id, DEV_TOKEN,
+        ));
+        assert.equal(singleRes.status, 200);
+        assert.equal(
+            await singleRes.text(), JSON.stringify(row),
+        );
+    }
+
+    const missingRes = await handleRequest(db, req(
+        'GET', '/identity-tokens/no-such-token', DEV_TOKEN,
+    ));
+    assert.equal(missingRes.status, 404);
+    const missingBody =
+        await missingRes.json() as { error: string };
+    assert.equal(
+        missingBody.error,
+        'Not found: identity_tokens/no-such-token',
+    );
+});
