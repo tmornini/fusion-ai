@@ -4,6 +4,7 @@ import { pickString, validateMembershipEntity } from
     './validators.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     type DerivedDocument,
@@ -56,6 +57,25 @@ import {
 // trust it completely) — this is reconstruction, not a downstream
 // defensive re-check.
 //
+// withoutId FIRST, always (the organizationEntityOf precedent,
+// re-confirmed here after a Fable review Critical): PUT
+// memberships/:id is a LIVE wired route
+// (documentPutHandler(MEMBERSHIPS_WIRING)), and
+// documentWriteResponseSpec's own validateDocument call tolerates
+// a stray `id` for the RESPONSE ONLY
+// (`wiring.validateDocument(withoutId(body ?? {}))`, api/document-
+// family.ts) — formWritePair still stores the caller's RAW body
+// verbatim in the ledger (api/api.ts). The fetch-edit-PUT client
+// pattern (a GET response's own `id` echoed back into a later
+// PUT) therefore lands a STORED body carrying `id` even though
+// the live write itself succeeds. validateMembershipEntity's
+// assertOnlyKeys rejects an unknown key unconditionally, so
+// skipping withoutId here would throw INSIDE the per-organization
+// document loop, before the identity filter — one echoed-id row
+// poisons deriveMembershipsForIdentity for EVERY identity sharing
+// that row's organization. tests/drift-memberships-identity.
+// test.ts leg 9 pins this against a LIVE echoed-id PUT.
+//
 // THE OUTPUT ORDER IS DEFINED, NOT ACCIDENTAL (Author gate 1):
 // `at` ASCENDING with an id tiebreak — join chronology, backend-
 // independent. Neither backend's own row order is a fact to copy:
@@ -93,7 +113,7 @@ function membershipEntityOf(
     document: DerivedDocument,
 ): MembershipEntity {
     return {
-        ...validateMembershipEntity(document.body),
+        ...validateMembershipEntity(withoutId(document.body)),
         id: document.uriId,
     };
 }

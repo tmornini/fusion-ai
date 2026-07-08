@@ -364,3 +364,55 @@ async () => {
         [],
     );
 });
+
+// -- leg 9: the ECHOED-id regression (Fable review, Critical) -----
+//
+// The fetch-edit-PUT client pattern echoes a GET response's own
+// `id` field back into a later PUT body. formWritePair stores the
+// RAW wire body verbatim in the ledger (api/api.ts) — it is
+// documentWriteResponseSpec's OWN validateDocument call that
+// tolerates (strips) a stray id, and ONLY for the write's
+// RESPONSE body (api/document-family.ts:
+// `wiring.validateDocument(withoutId(body ?? {}))`). The
+// derive-organizations.ts precedent (organizationEntityOf) names
+// this exact divergence and strips id before validating;
+// membershipEntityOf must do the same, or a single echoed-id row
+// throws INSIDE the per-organization document loop — BEFORE the
+// identity filter — poisoning deriveMembershipsForIdentity for
+// EVERY identity sharing that row's organization.
+
+test('leg 9: an ECHOED id in a live PUT /memberships/:id body'
++ ' (the fetch-edit-PUT client pattern) still derives — the'
++ ' stray id never poisons deriveMembershipsForIdentity, and the'
++ ' derived row still matches the row plane', async () => {
+    const db = await seededDb();
+    const davidId = '6xBfK5If82JKfThXb1wlzS'; // David Martinez
+    const [existing] = await db.memberships.getAllWhere(
+        'identity_id', davidId,
+    );
+    assert.ok(existing);
+
+    const echoPut = await handleRequest(db, req(
+        'PUT', '/memberships/' + existing!.id,
+        await organizationToken(
+            'current', existing!.organization_id,
+        ),
+        {
+            id: existing!.id,
+            organization_id: existing!.organization_id,
+            identity_id: existing!.identity_id,
+            at: existing!.at,
+        },
+    ));
+    assert.equal(echoPut.status, 200);
+
+    const derived = sortById(
+        await deriveMembershipsForIdentity(db, davidId),
+    );
+    const old = sortById(
+        await db.memberships.getAllWhere('identity_id', davidId),
+    );
+    assert.deepEqual(derived, old);
+    assert.equal(derived.length, 1);
+    assert.equal(derived[0]!.id, existing!.id);
+});
