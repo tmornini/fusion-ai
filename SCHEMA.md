@@ -230,10 +230,10 @@ identity chose its default organization — the org a
 flat (un-exchanged) token lands in. The current
 default is the LATEST `at` per `identity_id`
 (`currentDefaultOrgFor` in `api/authorization.ts` is
-its single home); `identityDefaultOrg` falls through
-to the PRIMARY membership org when the ledger is
-empty, else a 403. A re-choice is a NEW row — never a
-mutated column. `at` is validated as a well-formed
+its single home); `identityDefaultOrganization` falls
+through to the PRIMARY membership org when the ledger
+is empty, else a 403. A re-choice is a NEW row — never
+a mutated column. `at` is validated as a well-formed
 RFC-3339 Zulu timestamp at the storage gate.
 
 | Column | Type |
