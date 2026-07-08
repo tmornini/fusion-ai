@@ -383,12 +383,31 @@ runs on the base adapter with explicit guards:
 ### 2.13 Snapshots (bootstrap plane, bearer-exempt)
 
 - `GET /snapshots/schema` — schema existence + full export, else null.
+  The export (`getSnapshot`, `api/db-backed.ts`) stamps one reserved
+  top-level key, `__schema_version__` (`SNAPSHOT_SCHEMA_VERSION`,
+  `api/db.ts`, Phase 12 Task 6), beside the `TABLE_NAMES` arrays.
 - `DELETE /snapshots/schema` — drop the schema and reopen clean.
 - `POST /snapshots/mock-data` — seed the full demo dataset (§3.26).
 - `POST /snapshots/bootstrap` — seed the pristine minimal state
   (§3.27).
 - `PUT /snapshots/import` — validate then atomically restore a snapshot
-  (§3.28).
+  (§3.28). `parseAndValidateSnapshot` (`api/snapshot-validator.ts`)
+  REJECTS an absent or mismatched `__schema_version__` with
+  `SnapshotVersionMismatchError`, before any table is read — the
+  universal gate, covering every `DbAdapter.putSnapshot` caller.
+  ASYMMETRIC by design: it closes "a new build imports an old
+  export" only — an old build's importer has no way to know the
+  marker exists, so it silently ignores the key and imports
+  anyway. The client-side `scanForRetiredKeys` pre-flight
+  (`web-app/app/adapters/snapshots.ts`) checks the same key
+  before upload, as a convenience only; the server gate is the
+  guarantee.
+
+`getHasAnyHumanMembers` (`web-app/app/adapters/snapshots.ts`) — the
+first-run check gating the pristine-vs-seeded boot choice —
+re-anchored (Task 6) from a raw `members` table slice onto a scan
+of the SAME export's `requests` rows at the `/members/` address,
+matching what the now-derived `GET /members` (§2.1) actually sees.
 
 ---
 
