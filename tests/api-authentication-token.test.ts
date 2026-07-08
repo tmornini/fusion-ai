@@ -8,6 +8,13 @@ import {
     makeAssertionSigner,
 } from './client-assertion-fixtures.ts';
 import { decodeAccessToken } from '../api/access-token.ts';
+import {
+    postMembershipDocumentOp,
+    postRoleGrantDocumentOp,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import { formWritePair } from '../api/message-pair.ts';
+import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 
 const BASE = 'http://localhost';
 
@@ -21,6 +28,80 @@ async function freshDb() {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
     return db;
+}
+
+// Below-facade pair formation (the member-fixtures.ts idiom):
+// the token-exchange org-scoping tests below authorize through
+// memberships/role_grants once they derive from the pair plane,
+// so a raw row here would go derivation-invisible. Every
+// id/field value stays IDENTICAL to the raw puts these replace —
+// only the write mechanism changes.
+async function seedMembershipPair(
+    db: MemoryDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const organization = body.organization_id as string;
+    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for memberships/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/memberships/' + id,
+        routePattern: 'memberships/:id',
+        routeSegments: ['memberships', ':id'],
+        pathSegments: ['memberships', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postMembershipDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
+async function seedRoleGrantPair(
+    db: MemoryDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const organization = body.organization_id as string;
+    const spec = WRITE_RESPONSE_SPECS['role-grants/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for role-grants/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/role-grants/' + id,
+        routePattern: 'role-grants/:id',
+        routeSegments: ['role-grants', ':id'],
+        pathSegments: ['role-grants', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postRoleGrantDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
 }
 
 function tokenRequest(body: Record<string, unknown>): Request {
@@ -241,7 +322,7 @@ async () => {
 test('token-exchange into a member org carries org + orgs',
 async () => {
     const db = await freshDb();
-    await db.memberships.put('m-current', {
+    await seedMembershipPair(db, 'm-current', {
         organization_id: '1',
         identity_id: 'current',
         at: '2026-06-04T00:00:00.000000Z',
@@ -263,7 +344,7 @@ test('token-exchange into a non-member org is 403',
 async () => {
     const db = await freshDb();
     // current is a member of '1' but not org '7'
-    await db.memberships.put('m-current', {
+    await seedMembershipPair(db, 'm-current', {
         organization_id: '1',
         identity_id: 'current',
         at: '2026-06-04T00:00:00.000000Z',
@@ -285,7 +366,7 @@ async () => {
 test('a flat exchange carries orgs but no active org',
 async () => {
     const db = await freshDb();
-    await db.memberships.put('m-current', {
+    await seedMembershipPair(db, 'm-current', {
         organization_id: '1',
         identity_id: 'current',
         at: '2026-06-04T00:00:00.000000Z',
@@ -327,13 +408,13 @@ async function signedClientSetup() {
 test('client_credentials issues a gate-valid token', async () => {
     const db = await freshDb();
     // the service principal (client id) holds an admin role
-    await db.roleGrants.put('rg-svc', {
+    await seedRoleGrantPair(db, 'rg-svc', {
         organization_id: '1',
         identity_id: 'svc-client', role: 'admin',
         action: 'granted', by_member_id: 'system',
         at: '2020-01-01T00:00:00.000000Z',
     });
-    await db.memberships.put('m-svc', {
+    await seedMembershipPair(db, 'm-svc', {
         organization_id: '1',
         identity_id: 'svc-client',
         at: '2020-01-01T00:00:00.000000Z',

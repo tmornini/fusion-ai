@@ -58,6 +58,13 @@ import {
 import {
     getSessionToken,
 } from '../web-app/app/adapters/init.ts';
+import {
+    postMembershipDocumentOp,
+    postRoleGrantDocumentOp,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import { formWritePair } from '../api/message-pair.ts';
+import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 
 const BASE = 'http://localhost';
 
@@ -89,19 +96,93 @@ async function issuePair(db: MemoryDbAdapter): Promise<{
     return res.json();
 }
 
+// Below-facade pair formation (the member-fixtures.ts idiom):
+// the recovery/re-scope paths below authorize through
+// role_grants/memberships once they derive from the pair plane,
+// so a raw row here would go derivation-invisible. Every
+// id/field value stays IDENTICAL to the raw puts these replace —
+// only the write mechanism changes.
+async function seedMembershipPair(
+    db: MemoryDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const organization = body.organization_id as string;
+    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for memberships/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/memberships/' + id,
+        routePattern: 'memberships/:id',
+        routeSegments: ['memberships', ':id'],
+        pathSegments: ['memberships', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postMembershipDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
+async function seedRoleGrantPair(
+    db: MemoryDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const organization = body.organization_id as string;
+    const spec = WRITE_RESPONSE_SPECS['role-grants/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for role-grants/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/role-grants/' + id,
+        routePattern: 'role-grants/:id',
+        routeSegments: ['role-grants', ':id'],
+        pathSegments: ['role-grants', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postRoleGrantDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
 // Authorize `current` as admin of `org` and stamp the
 // membership the gate fences on — the per-org grant the
 // facade reads (mirrors api-org-isolation's twoOrganizations).
 async function seedOrganizationAdmin(
     db: MemoryDbAdapter, organization: string,
 ): Promise<void> {
-    await db.roleGrants.put('role-current-' + organization, {
+    await seedRoleGrantPair(db, 'role-current-' + organization, {
         organization_id: organization, identity_id: 'current',
         role: 'admin', action: 'granted',
         by_member_id: 'system',
         at: '2020-01-01T00:00:00.000000Z',
     });
-    await db.memberships.put('m-current-' + organization, {
+    await seedMembershipPair(db, 'm-current-' + organization, {
         organization_id: organization, identity_id: 'current',
         at: '2026-06-04T00:00:00.000000Z',
     });

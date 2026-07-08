@@ -3,6 +3,13 @@ import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { devToken } from './token-fixtures.ts';
+import {
+    postMembershipDocumentOp,
+    postRoleGrantDocumentOp,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import { formWritePair } from '../api/message-pair.ts';
+import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-06-04T00:00:00.000000Z';
@@ -13,19 +20,53 @@ async function freshDb() {
     return db;
 }
 
+// Below-facade pair formation (the member-fixtures.ts idiom):
+// identityDefaultOrganization's primary-membership fallback (this
+// file's own motivating case) and the deny-by-default role check
+// both derive from the pair plane once role_grants/memberships
+// flip, so a raw row here would go derivation-invisible. Every
+// id/field value stays IDENTICAL to the raw puts these replace —
+// only the write mechanism changes.
 async function grantAdmin(
     db: MemoryDbAdapter,
     identityId: string,
     organization: string,
 ) {
-    await db.roleGrants.put('g-' + identityId + '-' + organization, {
+    const id = 'g-' + identityId + '-' + organization;
+    const body = {
         organization_id: organization,
         identity_id: identityId,
         role: 'admin',
         action: 'granted',
         by_member_id: 'system',
         at: AT,
+    };
+    const spec = WRITE_RESPONSE_SPECS['role-grants/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for role-grants/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/role-grants/' + id,
+        routePattern: 'role-grants/:id',
+        routeSegments: ['role-grants', ':id'],
+        pathSegments: ['role-grants', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
     });
+    await postRoleGrantDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
 }
 
 async function join(
@@ -33,11 +74,38 @@ async function join(
     identityId: string,
     organization: string,
 ) {
-    await db.memberships.put('m-' + identityId + '-' + organization, {
+    const id = 'm-' + identityId + '-' + organization;
+    const body = {
         organization_id: organization,
         identity_id: identityId,
         at: AT,
+    };
+    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for memberships/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/memberships/' + id,
+        routePattern: 'memberships/:id',
+        routeSegments: ['memberships', ':id'],
+        pathSegments: ['memberships', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
     });
+    await postMembershipDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
 }
 
 function getMembers(token: string) {

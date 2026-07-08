@@ -4,6 +4,13 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { organizationRow } from './test-fixtures.ts';
+import {
+    postMembershipDocumentOp,
+    postRoleGrantDocumentOp,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import { formWritePair } from '../api/message-pair.ts';
+import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 
 // Flow-graph entity deletion events must be fenced by the
 // flow's owning org. A 'deleted' states event whose entity_id
@@ -56,6 +63,79 @@ async function seedStateEvent(
     assert.equal(res.status, 200);
 }
 
+// Below-facade pair formation (the member-fixtures.ts idiom):
+// the org-A/org-B admin checks below derive from the pair plane
+// once role_grants/memberships flip, so a raw row here would go
+// derivation-invisible. Every id/field value stays IDENTICAL to
+// the raw puts these replace — only the write mechanism changes.
+async function seedMembershipPair(
+    db: MemoryDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const organization = body.organization_id as string;
+    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for memberships/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/memberships/' + id,
+        routePattern: 'memberships/:id',
+        routeSegments: ['memberships', ':id'],
+        pathSegments: ['memberships', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postMembershipDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
+async function seedRoleGrantPair(
+    db: MemoryDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const organization = body.organization_id as string;
+    const spec = WRITE_RESPONSE_SPECS['role-grants/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for role-grants/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/role-grants/' + id,
+        routePattern: 'role-grants/:id',
+        routeSegments: ['role-grants', ':id'],
+        pathSegments: ['role-grants', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postRoleGrantDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
 // Two orgs: A (admin = current) and B. A flow + node + edge
 // seeded in org A. Deletion events posted for the node and
 // edge (the 'deleted' state). `current` is admin+member of A;
@@ -63,12 +143,12 @@ async function seedStateEvent(
 async function seed(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.roleGrants.put('rg-current-a', {
+    await seedRoleGrantPair(db, 'rg-current-a', {
         organization_id: 'A', identity_id: 'current',
         role: 'admin', action: 'granted',
         by_member_id: 'system', at: AT,
     });
-    await db.memberships.put('m-current-a', {
+    await seedMembershipPair(db, 'm-current-a', {
         organization_id: 'A', identity_id: 'current',
         at: AT,
     });
@@ -188,12 +268,12 @@ test('node deletion event is hidden from org B', async () => {
         'se-node-del',
     );
     // Grant current admin access to B so the facade opens.
-    await db.roleGrants.put('rg-current-b', {
+    await seedRoleGrantPair(db, 'rg-current-b', {
         organization_id: 'B', identity_id: 'current',
         role: 'admin', action: 'granted',
         by_member_id: 'system', at: AT,
     });
-    await db.memberships.put('m-current-b', {
+    await seedMembershipPair(db, 'm-current-b', {
         organization_id: 'B', identity_id: 'current',
         at: AT,
     });
@@ -219,12 +299,12 @@ test('edge deletion event is hidden from org B', async () => {
         (await db.states.getById('se-edge-del')).id,
         'se-edge-del',
     );
-    await db.roleGrants.put('rg-current-b', {
+    await seedRoleGrantPair(db, 'rg-current-b', {
         organization_id: 'B', identity_id: 'current',
         role: 'admin', action: 'granted',
         by_member_id: 'system', at: AT,
     });
-    await db.memberships.put('m-current-b', {
+    await seedMembershipPair(db, 'm-current-b', {
         organization_id: 'B', identity_id: 'current',
         at: AT,
     });
@@ -245,12 +325,12 @@ test('entity-states for a node id is 200 in org A', async () => {
 
 test('entity-states for a node id is 404 in org B', async () => {
     const db = await seed();
-    await db.roleGrants.put('rg-current-b', {
+    await seedRoleGrantPair(db, 'rg-current-b', {
         organization_id: 'B', identity_id: 'current',
         role: 'admin', action: 'granted',
         by_member_id: 'system', at: AT,
     });
-    await db.memberships.put('m-current-b', {
+    await seedMembershipPair(db, 'm-current-b', {
         organization_id: 'B', identity_id: 'current',
         at: AT,
     });

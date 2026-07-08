@@ -17,6 +17,7 @@ import {
 } from './identity-fixtures.ts';
 import {
     postMembershipDocumentOp,
+    postRoleGrantDocumentOp,
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import {
@@ -51,16 +52,11 @@ function req(
 async function twoOrganizations(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await seedAdminSchema(db);
-    await db.roleGrants.put('role-current-admin-a', {
-        organization_id: 'A', identity_id: 'current',
-        role: 'admin', action: 'granted',
-        by_member_id: 'system',
-        at: '2020-01-01T00:00:00.000000Z',
-    });
-    await db.memberships.put('m-a', {
-        organization_id: 'A', identity_id: 'current',
-        at: '2026-06-04T00:00:00.000000Z',
-    });
+    await seedRoleGrantPair(
+        db, 'role-current-admin-a', 'A', 'current', 'admin',
+        '2020-01-01T00:00:00.000000Z',
+    );
+    await seedMembershipPair(db, 'm-a', 'A', 'current');
     // Seeded through the live document PUT (not a raw
     // db.ideas.put) so a1's message pair exists — the flipped
     // GET ideas / GET ideas/:id routes (Phase 2 Task 5) derive
@@ -168,10 +164,7 @@ async function rolelessMemberDb(): Promise<MemoryDbAdapter> {
     // B stays a raw row: sarah is never a member of B, so the
     // membership filter excludes it whether or not it derives.
     await db.organizations.put('B', organizationRow('Beta'));
-    await db.memberships.put('m-sarah-a', {
-        organization_id: 'A', identity_id: 'sarah',
-        at: '2026-06-04T00:00:00.000000Z',
-    });
+    await seedMembershipPair(db, 'm-sarah-a', 'A', 'sarah');
     return db;
 }
 
@@ -432,18 +425,66 @@ async function seedMembershipPair(
     );
 }
 
+// The role-grants twin of seedMembershipPair above (Phase 13
+// Task 1): gate 4's own role check derives from the role_grants
+// PAIR PLANE once it flips, so a raw db.roleGrants.put with no
+// pair would go derivation-invisible. Parameterized by `role`
+// and `at` (unlike seedMembershipPair's own hardcodes) since
+// this file's role-grant call sites span both admin and member
+// grants, at two distinct timestamps. Every id/field value stays
+// IDENTICAL to the raw put this replaces — only the write
+// mechanism changes.
+async function seedRoleGrantPair(
+    db: MemoryDbAdapter,
+    roleGrantId: string,
+    organization: string,
+    identityId: string,
+    role: string,
+    at: string,
+): Promise<void> {
+    const spec = WRITE_RESPONSE_SPECS['role-grants/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for role-grants/:id',
+        );
+    }
+    const body = {
+        organization_id: organization,
+        identity_id: identityId,
+        role,
+        action: 'granted',
+        by_member_id: 'system',
+        at,
+    };
+    const pair: MessagePair = await formWritePair({
+        method: 'PUT',
+        pathname: `/role-grants/${roleGrantId}`,
+        routePattern: 'role-grants/:id',
+        routeSegments: ['role-grants', ':id'],
+        pathSegments: ['role-grants', roleGrantId],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [roleGrantId], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postRoleGrantDocumentOp(
+        db, roleGrantId, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
 async function deepDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.roleGrants.put('rg-current-a', {
-        organization_id: 'A', identity_id: 'current',
-        role: 'admin', action: 'granted',
-        by_member_id: 'system', at: T8_AT,
-    });
-    await db.memberships.put('mem-current-a', {
-        organization_id: 'A', identity_id: 'current',
-        at: T8_AT,
-    });
+    await seedRoleGrantPair(
+        db, 'rg-current-a', 'A', 'current', 'admin', T8_AT,
+    );
+    await seedMembershipPair(db, 'mem-current-a', 'A', 'current');
     // A's message pair, on top of the raw-row precedent above:
     // both the flipped GET organizations/:id (Phase 12 Task 5)
     // and the gate-15 fence's own organization enumeration
@@ -481,11 +522,9 @@ async function deepDb(): Promise<MemoryDbAdapter> {
     // flipped GET projects/:id/flows route reads only the
     // message ledger). No case in this file exercises 'pb's OWN
     // authorization, so this is inert everywhere but the seed.
-    await db.roleGrants.put('rg-pb-admin-b', {
-        organization_id: 'B', identity_id: 'pb',
-        role: 'admin', action: 'granted',
-        by_member_id: 'system', at: T8_AT,
-    });
+    await seedRoleGrantPair(
+        db, 'rg-pb-admin-b', 'B', 'pb', 'admin', T8_AT,
+    );
     // B's message pair (the SAME Phase 12 Task 5 need as A's own
     // PUT above), authored by 'pb' — the only identity authorized
     // to write in B, now that its admin grant lands just above.
@@ -818,11 +857,9 @@ async () => {
     const db = await deepDb();
     // Grant pa the member role in A so it resolves a non-admin
     // role through the gate (membership alone is roleless).
-    await db.roleGrants.put('rg-pa-member-a', {
-        organization_id: 'A', identity_id: 'pa',
-        role: 'member', action: 'granted',
-        by_member_id: 'system', at: T8_AT,
-    });
+    await seedRoleGrantPair(
+        db, 'rg-pa-member-a', 'A', 'pa', 'member', T8_AT,
+    );
     const asAdmin = await handleRequest(db, req(
         'GET', '/organizations/A/identities/pa/credentials',
         await organizationToken('current', 'A')));

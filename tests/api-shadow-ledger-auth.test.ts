@@ -14,6 +14,13 @@ import {
 } from './client-assertion-fixtures.ts';
 import type { NotificationEvent } from '../api/notifications.ts';
 import { REQUEST_ID_HEADER } from '../api/request-context.ts';
+import {
+    postMembershipDocumentOp,
+    postRoleGrantDocumentOp,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import { formWritePair } from '../api/message-pair.ts';
+import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 
 // C1 discharge: the /authentication/{token,authorize} message
 // pairs carry live secrets in BOTH directions (a request's
@@ -323,16 +330,90 @@ test('a token-exchange grant stores its own redacted pair'
     }
 });
 
+// Below-facade pair formation (the member-fixtures.ts idiom):
+// the client_credentials grant's own admin role check derives
+// from the pair plane once role_grants/memberships flip, so a
+// raw row here would go derivation-invisible. Every id/field
+// value stays IDENTICAL to the raw puts these replace — only the
+// write mechanism changes.
+async function seedMembershipPair(
+    db: GuardedDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const organization = body.organization_id as string;
+    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for memberships/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/memberships/' + id,
+        routePattern: 'memberships/:id',
+        routeSegments: ['memberships', ':id'],
+        pathSegments: ['memberships', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postMembershipDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
+async function seedRoleGrantPair(
+    db: GuardedDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    const organization = body.organization_id as string;
+    const spec = WRITE_RESPONSE_SPECS['role-grants/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for role-grants/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/role-grants/' + id,
+        routePattern: 'role-grants/:id',
+        routeSegments: ['role-grants', ':id'],
+        pathSegments: ['role-grants', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postRoleGrantDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
 test('a client_credentials grant stores its own redacted pair'
 + ' with no live secrets', async () => {
     const db = await dbWithPasswordUser();
-    await db.roleGrants.put('rg-svc', {
+    await seedRoleGrantPair(db, 'rg-svc', {
         organization_id: '1',
         identity_id: 'svc-client', role: 'admin',
         action: 'granted', by_member_id: 'system',
         at: '2020-01-01T00:00:00.000000Z',
     });
-    await db.memberships.put('m-svc', {
+    await seedMembershipPair(db, 'm-svc', {
         organization_id: '1',
         identity_id: 'svc-client',
         at: '2020-01-01T00:00:00.000000Z',
@@ -362,7 +443,9 @@ test('a client_credentials grant stores its own redacted pair'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    assert.equal(requests.length, 1);
+    // 3: the fixture's own role-grant + membership pair (Phase
+    // 13 Task 1) precede the token grant's own pair.
+    assert.equal(requests.length, 3);
     const liveSecrets = [
         assertion, body.access_token, body.refresh_token,
     ];
