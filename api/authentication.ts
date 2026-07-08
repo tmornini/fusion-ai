@@ -156,8 +156,8 @@ async function primaryMembershipOrganization(
 ): Promise<Id | null> {
     // The index already narrows to this identity's rows, so no
     // per-row identity guard after (trust the gate).
-    const rows = await adapter.memberships
-        .getAllWhere('identity_id', identityId);
+    const rows = await deriveMembershipsForIdentity(
+        adapter, identityId);
     let best: { organization: Id; at: string } | null = null;
     for (const row of rows) {
         if (best === null
