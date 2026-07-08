@@ -51,6 +51,7 @@ import { deriveInvitations } from './derive-invitations.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import {
     deriveIdentityPiiRows,
+    deriveRoleGrants,
 } from './derive-identity-spine.ts';
 import { deriveInvitationStates } from './derive-states.ts';
 import { membershipExistsFor } from './derive-memberships.ts';
@@ -71,8 +72,7 @@ async function callerIsOrganizationAdmin(
     ctx: AuthenticatedContext,
     organization: Id,
 ): Promise<boolean> {
-    const rows = await ctx.base.roleGrants
-        .getAllWhere('identity_id', ctx.principal.id);
+    const rows = await deriveRoleGrants(ctx.base);
     return currentRolesForInOrganization(
         rows, ctx.principal.id, organization,
     ).includes('admin');
