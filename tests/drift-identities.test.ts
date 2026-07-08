@@ -40,6 +40,7 @@ import {
     deriveIdentityProviders,
     deriveIdentityProvider,
     deriveTokenRevocation,
+    deriveTokenRevocationsFor,
 } from '../api/derive-identity-spine.ts';
 import {
     STARK_ORGANIZATION,
@@ -834,6 +835,34 @@ test('role-grants parity (org fence legs both orgs) + getById +'
             err instanceof EntityNotFoundError
             && err.message === expectedRevocationMessage,
     );
+
+    // -- the by-identity fold (Phase 13 Task 4): the coarse
+    // 'sign out everywhere' gate reads THIS shape. Parity with
+    // the row plane is necessary but not sufficient (II
+    // Security) — a derivation MISS here would ADMIT a
+    // signed-out session, so the leg also drives adminToken
+    // (minted with an iat that predates the revocation's `at`
+    // above) through the LIVE Bearer gate and proves it now
+    // 401s, showing the revocation is SEEN, not merely mirrored
+    // on the row plane. --
+    const derivedForCurrent = sortById(
+        await deriveTokenRevocationsFor(db, 'current'),
+    );
+    const oldForCurrent = sortById(
+        await db.identityTokenRevocations.getAllWhere(
+            'identity_id', 'current',
+        ),
+    );
+    assert.deepEqual(derivedForCurrent, oldForCurrent);
+    assert.equal(derivedForCurrent.length, 1);
+    assert.deepEqual(
+        await deriveTokenRevocationsFor(db, 'no-such-identity'),
+        [],
+    );
+    const revoked = await handleRequest(
+        db, req('GET', '/members', adminToken),
+    );
+    assert.equal(revoked.status, 401);
 });
 
 // -- 4b. the hot-path FILTERED shape: currentRolesForInOrganization
