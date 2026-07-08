@@ -139,3 +139,32 @@ async () => {
     const derived = await deriveOrganization(db, 'org-d');
     assert.equal(derived.id, 'org-d');
 });
+
+// -- the id-echo roundtrip ----------------------------------------
+
+// The idiomatic fetch-edit-PUT client pattern: a GET response
+// carries `id` in its body, and a client that spreads that body
+// back into its own PUT payload echoes it right back on the
+// wire. The write path tolerates this (routes.ts's PUT handler
+// strips it via withoutId before validating, mirroring
+// EntityStore.put) — derivation must tolerate it too, since the
+// STORED request body is the raw wire body, echoed id and all.
+test('a PUT whose body echoes id round-trips through'
++ ' derivation, mirroring the write path\'s own'
++ ' withoutId(body) strip', async () => {
+    const db = await freshDb();
+    const res = await handleRequest(db, req(
+        'PUT', '/organizations/org-echo', DEV_TOKEN,
+        { id: 'org-echo', ...organizationRow('Echo') },
+    ));
+    assert.equal(res.status, 200);
+    const row = await db.organizations.getById('org-echo');
+
+    const derived = await deriveOrganization(db, 'org-echo');
+    assert.deepEqual(derived, row);
+
+    const all = await deriveOrganizations(db);
+    assert.deepEqual(
+        all.find((org) => org.id === 'org-echo'), row,
+    );
+});

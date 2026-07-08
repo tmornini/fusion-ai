@@ -3,6 +3,7 @@ import { EntityNotFoundError } from './db.ts';
 import type { Id, OrganizationEntity } from './types.ts';
 import { validateOrganizationEntity } from './validators.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -36,10 +37,15 @@ import {
 // Reusing the validator rather than re-listing its six field
 // names here is the DRY choice: ORGANIZATION_BODY_KEYS
 // (validators.ts) stays the one place that vocabulary lives.
-// Safe because the wire body never carries a stray `id` key —
-// putOrganization's own `Omit<OrganizationEntity, 'id'>`
-// parameter type (web-app/app/adapters/organizations.ts) — so
-// assertOnlyKeys never rejects a head pair the live PUT formed.
+// withoutId strips a stray `id` FIRST — the fetch-edit-PUT
+// client pattern echoes the GET body's own `id` right back into
+// the PUT payload, and the STORED request body is the raw wire
+// body, echoed id and all (formWritePair stores the caller's
+// body verbatim; only the route handler's own withoutId(body)
+// call, ahead of EntityStore.put, strips it before validating
+// the ROW — api/routes.ts's PUT organizations/:id handler).
+// Mirroring that same strip here is what keeps assertOnlyKeys
+// from rejecting a head pair the live PUT legitimately formed.
 //
 // ONE shared readonly tx per call (Efficiency): both stores
 // read inside the SAME db.transaction(['requests', 'responses'],
@@ -63,7 +69,7 @@ function organizationEntityOf(
     document: DerivedDocument,
 ): OrganizationEntity {
     return {
-        ...validateOrganizationEntity(document.body),
+        ...validateOrganizationEntity(withoutId(document.body)),
         id: document.uriId,
     };
 }
