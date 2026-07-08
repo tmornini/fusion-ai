@@ -12,6 +12,7 @@ import {
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
+import { sha256Hex } from '../shared/digest.ts';
 import {
     nowUtc,
     nowEpochSeconds,
@@ -900,6 +901,22 @@ async function grantClientCredentials(
     };
 }
 
+// GATE 3 — KEY-BY-ANCHOR (Phase 13 Task 7, commit 1 of 2): the
+// presented code's sha256 digest. Pre-tx, always — crypto never
+// runs inside an open transaction (the IndexedDB auto-commit
+// constraint every other pair-forming call site in this file
+// already honors). This commit uses it ONLY to key the issued
+// root's row id (and, by construction, that row's own event
+// pair's uri_id — formTokenEventPair derives uriId from the id it
+// is given); the double-spend guard itself still reads codeState
+// this commit — the SAME derived value becomes that guard's own
+// anchor in the commit that re-keys it onto the pair plane.
+async function deriveAuthorizationCodeId(
+    code: string,
+): Promise<string> {
+    return sha256Hex(code);
+}
+
 // authorization_code grant: consume an ISSUED code, then issue a
 // token pair. A consumed (replay) or unknown code is a clean 401
 // that mints nothing and appends nothing (grant-first). PRE-tx:
@@ -930,7 +947,10 @@ async function grantAuthorizationCode(
         );
     }
     const refreshJti = generateCryptoSafeBase62();
-    const rootId = generateCryptoSafeBase62();
+    // KEY-BY-ANCHOR (Phase 13 Task 7): the root's row id is now
+    // the code's own derived id, not a fresh mint — see
+    // deriveAuthorizationCodeId's own comment.
+    const rootId = await deriveAuthorizationCodeId(code);
     const chainId = generateCryptoSafeBase62();
     const at = nowUtc();
     const name = await nameFor(adapter, state.identityId);

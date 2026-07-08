@@ -426,6 +426,12 @@ async () => {
     });
     assert.equal(res.status, 200);
     await assertRootEventPair(db);
+    // KEY-BY-ANCHOR (Phase 13 Task 7, gate 3): the issued root's
+    // row id is now the code's OWN sha256 digest, not a fresh
+    // mint — the same value the SAME address's event pair uri_id
+    // carries (assertRootEventPair's own uri_id match above).
+    const [root] = await db.identityTokens.getAll();
+    assert.equal(root!.id, await sha256Hex('the-code'));
     const requests = await db.requests.getAll();
     const opPair = requests.find(
         r => r.uri_prefix === '/authentication/token/',
