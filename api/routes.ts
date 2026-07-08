@@ -5199,16 +5199,6 @@ export const routes: Route[] = [
         },
     }),
 
-    // organizations IS a registered family now (family-registry.
-    // ts, the 13th — tests/family-registry.test.ts's own pin) —
-    // "UNREGISTERED family" no longer describes it. This
-    // collection GET stays hand-written old-plane regardless:
-    // registration alone does not flip a read, and this route is
-    // untouched by Phase 12 Task 5 (which flips organizations/:id
-    // alone, below).
-    route('organizations', {
-        get: (db) => db.organizations.getAll(),
-    }),
     // Hand-written in place of makeIdRoute<OrganizationEntity>
     // so PUT can append its message pair in the same
     // transaction as the write — the factory's fixed closures
