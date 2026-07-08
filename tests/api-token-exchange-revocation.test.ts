@@ -6,7 +6,12 @@ import {
     mintAccessToken,
     TOKEN_AUDIENCE,
 } from '../api/access-token.ts';
-import { nowUtc } from '../api/types.ts';
+import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
+import {
+    postMembershipDocumentOp,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import { formWritePair } from '../api/message-pair.ts';
 
 // A revoked-but-unexpired token must not be launderable into a
 // fresh valid pair by the token-exchange or refresh grants —
@@ -23,13 +28,57 @@ async function tokenFor(sub: string): Promise<string> {
     });
 }
 
+// Below-facade pair formation (the member-fixtures.ts idiom): the
+// token-exchange grant's own membership check derives from the
+// pair plane once memberships flips, so a raw row here would go
+// derivation-invisible. Every id/field value stays IDENTICAL to
+// the raw put this replaces — only the write mechanism changes.
+async function seedMembershipPair(
+    db: MemoryDbAdapter,
+    id: string,
+    organization: string,
+    identityId: string,
+    at: string,
+): Promise<void> {
+    const body = {
+        organization_id: organization,
+        identity_id: identityId,
+        at,
+    };
+    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for memberships/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/memberships/' + id,
+        routePattern: 'memberships/:id',
+        routeSegments: ['memberships', ':id'],
+        pathSegments: ['memberships', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postMembershipDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
 async function revokedDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.memberships.put('m', {
-        organization_id: 'A', identity_id: 'u1',
-        at: '2020-01-01T00:00:00.000000Z',
-    });
+    await seedMembershipPair(
+        db, 'm', 'A', 'u1', '2020-01-01T00:00:00.000000Z',
+    );
     // logout-everywhere as of now: every u1 token minted
     // before this stamp is dead.
     await db.identityTokenRevocations.put('r1', {
@@ -57,10 +106,9 @@ async () => {
     // u2 is a clean subject and a member; u1 is the
     // logged-out actor. The subject passes every check,
     // so only the actor-revocation check can reject.
-    await db.memberships.put('m2', {
-        organization_id: 'A', identity_id: 'u2',
-        at: '2020-01-01T00:00:00.000000Z',
-    });
+    await seedMembershipPair(
+        db, 'm2', 'A', 'u2', '2020-01-01T00:00:00.000000Z',
+    );
     const subject = await tokenFor('u2');
     const actor = await tokenFor('u1');
     const res = await postToken(db, {

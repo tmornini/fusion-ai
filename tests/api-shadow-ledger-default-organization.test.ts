@@ -4,6 +4,12 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { sha256Hex } from '../shared/digest.ts';
 import { devToken } from './token-fixtures.ts';
+import {
+    postMembershipDocumentOp,
+    WRITE_RESPONSE_SPECS,
+} from '../api/routes.ts';
+import { formWritePair } from '../api/message-pair.ts';
+import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 
 const BASE = 'http://localhost';
 const AT = '2099-01-01T00:00:00.000000Z';
@@ -14,17 +20,49 @@ async function freshDb(): Promise<MemoryDbAdapter> {
     return db;
 }
 
+// Below-facade pair formation (the member-fixtures.ts idiom): the
+// PUT identities/:id/default-org route's own membership check
+// derives from the pair plane once memberships flips, so a raw
+// row here would go derivation-invisible. Every id/field value
+// stays IDENTICAL to the raw put this replaces — only the write
+// mechanism changes.
 async function seedMembership(
     db: MemoryDbAdapter,
     identityId: string,
     organization: string,
 ): Promise<void> {
-    await db.memberships.put(
-        'm-' + identityId + '-' + organization, {
-            organization_id: organization,
-            identity_id: identityId,
-            at: AT,
-        });
+    const id = 'm-' + identityId + '-' + organization;
+    const body = {
+        organization_id: organization,
+        identity_id: identityId,
+        at: AT,
+    };
+    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for memberships/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/memberships/' + id,
+        routePattern: 'memberships/:id',
+        routeSegments: ['memberships', ':id'],
+        pathSegments: ['memberships', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await postMembershipDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
 }
 
 function putDefaultOrganization(
@@ -61,12 +99,14 @@ test('a default-org write appends its pair addressed at the'
     ));
     assert.equal(res.status, 204);
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 1);
+    // 2: the fixture's own membership pair (Phase 13 Task 1)
+    // precedes this write.
+    assert.equal(requests.length, 2);
     assert.equal(
-        requests[0]!.uri_prefix,
+        requests[1]!.uri_prefix,
         '/identities/current/default-org/',
     );
-    assert.equal(requests[0]!.uri_id, 'ev-1');
+    assert.equal(requests[1]!.uri_id, 'ev-1');
 });
 
 test('two writes to different orgs each append their OWN'
@@ -86,7 +126,9 @@ test('two writes to different orgs each append their OWN'
     assert.equal(second.status, 204);
     assert.equal(second.headers.get('Supersedes'), null);
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 2);
+    // 4: the fixture's own two membership pairs (Phase 13 Task 1)
+    // precede these two writes.
+    assert.equal(requests.length, 4);
 });
 
 test('the idempotent no-change branch still appends its own'
@@ -106,7 +148,9 @@ async () => {
     ));
     assert.equal(res.status, 204);
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 2);
+    // 3: the fixture's own membership pair (Phase 13 Task 1)
+    // precedes these two writes.
+    assert.equal(requests.length, 3);
     const ledgerRows =
         await db.identityDefaultOrganizations.getAll();
     // The no-op write appended NO ledger row (the org already
@@ -129,8 +173,10 @@ test('a byte-identical PUT resend returns the stored response'
         token, 'current', '1', 'ev-4', AT,
     ));
     assert.equal(second.headers.get('Response-ID'), firstId);
-    assert.equal((await db.requests.getAll()).length, 1);
-    assert.equal((await db.responses.getAll()).length, 1);
+    // 2: the fixture's own membership pair (Phase 13 Task 1)
+    // precedes this write; the resend appends nothing further.
+    assert.equal((await db.requests.getAll()).length, 2);
+    assert.equal((await db.responses.getAll()).length, 2);
 });
 
 test('a forbidden (non-member org) PUT appends nothing',
@@ -142,8 +188,10 @@ async () => {
         token, 'current', '2', 'ev-5', AT,
     ));
     assert.equal(res.status, 403);
-    assert.equal((await db.requests.getAll()).length, 0);
-    assert.equal((await db.responses.getAll()).length, 0);
+    // 1: only the fixture's own membership pair (Phase 13 Task 1)
+    // — the forbidden write appends nothing.
+    assert.equal((await db.requests.getAll()).length, 1);
+    assert.equal((await db.responses.getAll()).length, 1);
 });
 
 test('stored messages verify against their hashes',
