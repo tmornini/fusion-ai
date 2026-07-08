@@ -48,6 +48,8 @@ import {
     formAuthPair,
 } from './message-pair.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
+import { deriveMembershipsForIdentity } from
+    './derive-memberships.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an
@@ -119,8 +121,8 @@ export async function subjectOrganizations(
     adapter: DbAdapter,
     identityId: Id,
 ): Promise<Id[]> {
-    const rows = await adapter.memberships
-        .getAllWhere('identity_id', identityId);
+    const rows = await deriveMembershipsForIdentity(
+        adapter, identityId);
     return rows.map(m => m.organization_id);
 }
 
