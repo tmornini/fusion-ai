@@ -818,6 +818,17 @@ async () => {
 
 test('organizations/:id 404s a non-member org', async () => {
     const db = await deepDb();
+    // deepDb's own 'A' row is raw (db.organizations.put) — the
+    // flipped GET (Phase 12 Task 5) derives from the ledger, so
+    // it needs a message pair too, unlike every other deepDb
+    // consumer in this file. B does not: the pre-dispatch
+    // membership fence 404s it before any read runs, row or
+    // derived, so it can stay a raw row.
+    await handleRequest(db, req(
+        'PUT', '/organizations/A',
+        await organizationToken('current', 'A'),
+        organizationRow('Acme'),
+    ));
     const mine = await handleRequest(db, req(
         'GET', '/organizations/A',
         await organizationToken('current', 'A')));

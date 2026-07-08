@@ -170,6 +170,7 @@ import {
     deriveStates,
     deriveStatesFor,
 } from './derive-states.ts';
+import { deriveOrganization } from './derive-organizations.ts';
 import {
     param,
     requireOrganization,
@@ -5193,11 +5194,13 @@ export const routes: Route[] = [
         },
     }),
 
-    // NOT FLIPPED (gate 9): organizations stays an UNREGISTERED
-    // family (family-registry.ts, tests/family-registry.test.ts's
-    // own unregistered-family control) — a named spec gap
-    // assigned by spec amendment, out of this migration's scope.
-    // Stays a hand-written old-plane read.
+    // organizations IS a registered family now (family-registry.
+    // ts, the 13th — tests/family-registry.test.ts's own pin) —
+    // "UNREGISTERED family" no longer describes it. This
+    // collection GET stays hand-written old-plane regardless:
+    // registration alone does not flip a read, and this route is
+    // untouched by Phase 12 Task 5 (which flips organizations/:id
+    // alone, below).
     route('organizations', {
         get: (db) => db.organizations.getAll(),
     }),
@@ -5210,10 +5213,22 @@ export const routes: Route[] = [
     // EntityStore (mutable), so this is DOCUMENT-class: a
     // repeat PUT records Supersedes. GLOBAL plane — no
     // organization_id stamp (this table IS the tenant root).
-    // NOT FLIPPED (gate 9 — see GET /organizations above): stays
-    // a hand-written old-plane read.
+    // GET is FLIPPED (Phase 12 Task 5): dispatches to
+    // deriveOrganization (api/derive-organizations.ts) — wire-
+    // identical to the hand-written db.organizations.getById
+    // read it replaces (tests/drift-organizations.test.ts legs
+    // 2/2b/3a/4/6 pin the parity, including the id-LAST key
+    // order the seven-sibling entityOf convention departs from
+    // on purpose). A bespoke call, not the generic
+    // documentGetHandler(wiring) every other flipped family
+    // rides: that machinery requires a wiring row's documentOp,
+    // and organizations has none — PUT stays hand-written and
+    // unflipped below, so a documentOp built only to satisfy the
+    // type would never be called. PUT: the row write and its
+    // message-pair append still happen in the SAME transaction
+    // as always — only this read moved.
     route('organizations/:id', {
-        get: (db, p) => db.organizations.getById(param(p, 0)),
+        get: (db, p) => deriveOrganization(db, param(p, 0)),
         put: (db, p, body, _actor, pair) => {
             const id = param(p, 0);
             return db.transaction(
