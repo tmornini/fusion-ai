@@ -352,7 +352,16 @@ re-verified by the automated suite:
   (RS256/ES256, WebCrypto) plus RFC 7523 claim checks.
 - **500 fallback body** (`handleRequest`, `api/api.ts`): a
   fixed opaque `internal error` body; fault detail goes to
-  the console, never the wire.
+  the console, never the wire. Through Phase 11 this covered
+  only the domain-boundary catch; a thrown pre-dispatch
+  ownership-fence read (`fenceRequest` itself, or the
+  `states/:id` PUT / field-values ownership guards) still
+  propagated unredacted. Phase 12 Task 1 closed that gap: the
+  two fence regions now share one redaction catch with the
+  same fixed body, so the claim holds everywhere a request can
+  fault. `MissingTableError` still re-raises past all three
+  catches, recovered by `redirectIfMissingTable`
+  (`web-app/app/core.ts`).
 - **Route policy tiers** (`ROUTE_POLICY`,
   `api/authorization.ts`): `admin` everywhere plus a real
   `member` tier on the content surfaces; identity, credential,
