@@ -214,20 +214,26 @@ async function mintPair(
 // the issue can be atomic with whatever the grant consumes. The
 // jti itself is generated OUTSIDE, pre-tx (Task 3: every grant's
 // TokenResponse — and the mintPair HMAC signing behind it — must
-// be fully known before a transaction opens).
+// be fully known before a transaction opens). The row id, chain
+// id, and `at` stamp are ALSO caller-supplied (Phase 13 Task 5):
+// every caller hoists them pre-tx too, alongside the row's own
+// event pair, which needs that SAME id/at to address and stamp
+// itself identically to the row it will describe.
 async function recordIssuedRoot(
     view: DbAdapter,
     identityId: Id,
     refreshJti: string,
+    id: Id,
+    chainId: string,
+    at: string,
 ): Promise<void> {
-    await view.identityTokens.put(
-        generateCryptoSafeBase62(), {
-            jti: refreshJti,
-            identity_id: identityId,
-            action: 'issued',
-            chain_id: generateCryptoSafeBase62(),
-            at: nowUtc(),
-        });
+    await view.identityTokens.put(id, {
+        jti: refreshJti,
+        identity_id: identityId,
+        action: 'issued',
+        chain_id: chainId,
+        at,
+    });
 }
 
 // Issue a pair on a NEW chain: the refresh jti is recorded as a
@@ -256,6 +262,9 @@ async function issueTokenPair(
     readonly requestHash: string | undefined;
 }> {
     const refreshJti = generateCryptoSafeBase62();
+    const rootId = generateCryptoSafeBase62();
+    const chainId = generateCryptoSafeBase62();
+    const at = nowUtc();
     const organizations =
         await subjectOrganizations(adapter, identityId);
     const response = await mintPair(identityId, name, refreshJti, act, {
@@ -268,7 +277,9 @@ async function issueTokenPair(
     await adapter.transaction(
         ['identity_tokens', 'requests', 'responses'],
         async (view) => {
-            await recordIssuedRoot(view, identityId, refreshJti);
+            await recordIssuedRoot(
+                view, identityId, refreshJti, rootId, chainId, at,
+            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -670,6 +681,9 @@ async function grantAuthorizationCode(
         );
     }
     const refreshJti = generateCryptoSafeBase62();
+    const rootId = generateCryptoSafeBase62();
+    const chainId = generateCryptoSafeBase62();
+    const at = nowUtc();
     const name = await nameFor(adapter, state.identityId);
     const organizations =
         await subjectOrganizations(adapter, state.identityId);
@@ -702,6 +716,7 @@ async function grantAuthorizationCode(
                 });
             await recordIssuedRoot(
                 view, fresh.identityId, refreshJti,
+                rootId, chainId, at,
             );
             await appendMessagePair(view, pair);
             return true;
