@@ -1,6 +1,10 @@
 import type { RequestContext } from './shared.ts';
 import type { SeededCredentials } from '../../../api/mock-data.ts';
-import { MissingTableError } from '../../../api/db.ts';
+import {
+    MissingTableError,
+    SNAPSHOT_SCHEMA_VERSION,
+    SNAPSHOT_SCHEMA_VERSION_KEY,
+} from '../../../api/db.ts';
 
 // Fallback when navigator.storage.estimate() is
 // unavailable (older browsers, Node test runtime).
@@ -115,6 +119,19 @@ function scanForRetiredKeys(
         return findings;
     }
     const snap = parsed as Record<string, unknown>;
+    // A pre-flight CONVENIENCE only — fails fast on the file-
+    // upload path before a network round trip. The UNIVERSAL
+    // guarantee is server-side (parseAndValidateSnapshot, api/
+    // snapshot-validator.ts): every DbAdapter.putSnapshot
+    // caller crosses that gate, not only this one. Same no-
+    // default rule here: an absent or mismatched marker is a
+    // finding, never silently accepted.
+    if (
+        snap[SNAPSHOT_SCHEMA_VERSION_KEY]
+            !== SNAPSHOT_SCHEMA_VERSION
+    ) {
+        findings.push(SNAPSHOT_SCHEMA_VERSION_KEY);
+    }
     for (const table of RETIRED_TABLES) {
         if (table in snap) {
             findings.push(table);
