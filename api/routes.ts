@@ -170,7 +170,10 @@ import {
     deriveStates,
     deriveStatesFor,
 } from './derive-states.ts';
-import { deriveOrganization } from './derive-organizations.ts';
+import {
+    deriveOrganization,
+    deriveOrganizations,
+} from './derive-organizations.ts';
 import {
     param,
     requireOrganization,
@@ -784,14 +787,16 @@ function withoutSecret(
 // WIRING) reduction GET /memberships itself rides — mirroring
 // tests/drift-identities.test.ts's own gate-15 proof
 // (pairPlaneMembershipsAcrossKnownOrganizations), generalized from
-// that test's hardcoded two-org set to db.organizations.getAll()
-// (itself a global passthrough, like requests/responses above) so
-// this holds for however many organizations actually exist, not
-// only the ones a test happened to seed.
+// that test's hardcoded two-org set to deriveOrganizations(db)
+// (Phase 12 Task 5: the pair-plane derivation, api/derive-
+// organizations.ts — itself reading only requests/responses, the
+// SAME global passthrough the prior db.organizations.getAll()
+// read rode) so this holds for however many organizations
+// actually exist, not only the ones a test happened to seed.
 async function membershipsAcrossAllOrganizations(
     db: DbAdapter, actor: Id,
 ): Promise<MembershipEntity[]> {
-    const organizations = await db.organizations.getAll();
+    const organizations = await deriveOrganizations(db);
     const perOrganization = await Promise.all(
         organizations.map((organization) =>
             documentCollectionGetHandler(MEMBERSHIPS_WIRING)(

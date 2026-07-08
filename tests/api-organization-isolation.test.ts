@@ -435,8 +435,6 @@ async function seedMembershipPair(
 async function deepDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.organizations.put('A', organizationRow('Acme'));
-    await db.organizations.put('B', organizationRow('Beta'));
     await db.roleGrants.put('rg-current-a', {
         organization_id: 'A', identity_id: 'current',
         role: 'admin', action: 'granted',
@@ -446,6 +444,17 @@ async function deepDb(): Promise<MemoryDbAdapter> {
         organization_id: 'A', identity_id: 'current',
         at: T8_AT,
     });
+    // A's message pair, on top of the raw-row precedent above:
+    // both the flipped GET organizations/:id (Phase 12 Task 5)
+    // and the gate-15 fence's own organization enumeration
+    // (deriveOrganizations, routes.ts) derive from the ledger, so
+    // a raw db.organizations.put leaves both derivation-invisible.
+    // Authored by 'current' — already admin in A above.
+    await handleRequest(db, req(
+        'PUT', '/organizations/A',
+        await organizationToken('current', 'A'),
+        organizationRow('Acme'),
+    ));
     for (const [id, organization] of [
         ['pa', 'A'], ['pb', 'B'],
     ] as const) {
@@ -477,6 +486,14 @@ async function deepDb(): Promise<MemoryDbAdapter> {
         role: 'admin', action: 'granted',
         by_member_id: 'system', at: T8_AT,
     });
+    // B's message pair (the SAME Phase 12 Task 5 need as A's own
+    // PUT above), authored by 'pb' — the only identity authorized
+    // to write in B, now that its admin grant lands just above.
+    await handleRequest(db, req(
+        'PUT', '/organizations/B',
+        await organizationToken('pb', 'B'),
+        organizationRow('Beta'),
+    ));
     // NAMED re-pin (Task 7): the flipped GET /states route
     // derives from the message ledger, not the raw states
     // table — a raw db.states.put leaves no pair at this
@@ -818,17 +835,6 @@ async () => {
 
 test('organizations/:id 404s a non-member org', async () => {
     const db = await deepDb();
-    // deepDb's own 'A' row is raw (db.organizations.put) — the
-    // flipped GET (Phase 12 Task 5) derives from the ledger, so
-    // it needs a message pair too, unlike every other deepDb
-    // consumer in this file. B does not: the pre-dispatch
-    // membership fence 404s it before any read runs, row or
-    // derived, so it can stay a raw row.
-    await handleRequest(db, req(
-        'PUT', '/organizations/A',
-        await organizationToken('current', 'A'),
-        organizationRow('Acme'),
-    ));
     const mine = await handleRequest(db, req(
         'GET', '/organizations/A',
         await organizationToken('current', 'A')));
