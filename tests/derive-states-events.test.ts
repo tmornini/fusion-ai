@@ -52,8 +52,6 @@ function req(
 async function seed(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.organizations.put('A', organizationRow('Acme'));
-    await db.organizations.put('B', organizationRow('Beta'));
     await db.roleGrants.put('rg-a', {
         organization_id: 'A', identity_id: 'adminA',
         role: 'admin', action: 'granted',
@@ -70,6 +68,21 @@ async function seed(): Promise<MemoryDbAdapter> {
     await db.memberships.put('m-b', {
         organization_id: 'B', identity_id: 'adminB', at: AT,
     });
+    // Message pairs, not raw rows: organizationIds (Phase 12
+    // Task 5, api/derive-states.ts) is the ALL-orgs scan
+    // resolveOwningOrganization/resolveFlowGraphOwner both walk
+    // — it now derives from the ledger, so a raw
+    // db.organizations.put would leave A/B invisible to it.
+    await handleRequest(db, req(
+        'PUT', '/organizations/A',
+        await organizationToken('adminA', 'A'),
+        organizationRow('Acme'),
+    ));
+    await handleRequest(db, req(
+        'PUT', '/organizations/B',
+        await organizationToken('adminB', 'B'),
+        organizationRow('Beta'),
+    ));
     return db;
 }
 
