@@ -561,11 +561,14 @@ test('an Authorization header sent alongside the token grant is'
 + ' fingerprinted, never stored live', async () => {
     const db = await dbWithPasswordUser();
     await seedRootAdmin(db);
-    await db.authorizationCodes.put('ev-hdr', {
-        code: 'code-with-header', identity_id: 'current',
-        client_id: 'web', status: 'issued',
-        at: '2026-06-03T00:00:00.000000Z',
-    });
+    const authorizeRes = await handleRequest(db, jsonPost(
+        'authentication/authorize', {
+            method: 'password', username: 'demo@example.com',
+            password: PASSWORD, client_id: 'web',
+        }));
+    const { code } = await authorizeRes.json() as {
+        code: string;
+    };
     const req = new Request(`${BASE}/authentication/token`, {
         method: 'POST',
         headers: {
@@ -574,7 +577,7 @@ test('an Authorization header sent alongside the token grant is'
         },
         body: JSON.stringify({
             grant_type: 'authorization_code',
-            code: 'code-with-header',
+            code,
         }),
     });
     const res = await handleRequest(db, req);

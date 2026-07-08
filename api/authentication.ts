@@ -22,7 +22,12 @@ import {
     type IdentityCredentialEntity,
     type IdentityPiiEntity,
 } from './types.ts';
-import { codeState } from './authorization-codes.ts';
+import { pickString } from './validators.ts';
+import { HttpMessage } from '../shared/http-message/http-message.ts';
+import { parseJson } from '../shared/http-message/json-codec.ts';
+import {
+    defaultBodyRegistry,
+} from '../shared/http-message/media-registry.ts';
 import {
     planRotation,
     isTokenRevoked,
@@ -48,6 +53,7 @@ import {
 } from '../shared/ledger-reduction.ts';
 import {
     appendMessagePair,
+    canonicalUriPrefix,
     formAuthPair,
     formTokenEventPair,
 } from './message-pair.ts';
@@ -901,35 +907,117 @@ async function grantClientCredentials(
     };
 }
 
-// GATE 3 — KEY-BY-ANCHOR (Phase 13 Task 7, commit 1 of 2): the
-// presented code's sha256 digest. Pre-tx, always — crypto never
-// runs inside an open transaction (the IndexedDB auto-commit
-// constraint every other pair-forming call site in this file
-// already honors). This commit uses it ONLY to key the issued
-// root's row id (and, by construction, that row's own event
-// pair's uri_id — formTokenEventPair derives uriId from the id it
-// is given); the double-spend guard itself still reads codeState
-// this commit — the SAME derived value becomes that guard's own
-// anchor in the commit that re-keys it onto the pair plane.
-async function deriveAuthorizationCodeId(
+// GATE 3 — KEY-BY-ANCHOR (Phase 13 Task 7): the presented code's
+// sha256 digest, pre-tx always — crypto never runs inside an open
+// transaction (the IndexedDB auto-commit constraint every other
+// pair-forming call site in this file already honors). It keys
+// the issued root's row id (and, by construction, that row's own
+// event pair's uri_id — formTokenEventPair derives uriId from the
+// id it is given) AND, prefixed 'sha256:', is the fingerprint
+// authorizeCodeIssuer below matches against the authorize response
+// family's stored (redacted) `code` field — one digest, both
+// halves of the guard.
+export async function deriveAuthorizationCodeId(
     code: string,
 ): Promise<string> {
     return sha256Hex(code);
 }
 
+const AUTHORIZE_PREFIX =
+    canonicalUriPrefix(undefined, '/authentication/authorize/');
+const IDENTITY_TOKENS_EVENT_PREFIX =
+    canonicalUriPrefix(undefined, '/identity-tokens/');
+
+// A stored message's JSON body — the ONE local decode this file
+// needs for both the request and response side of the authorize
+// scan below. derive-documents.ts's requestBodyOf and derive-
+// identity-spine.ts's responseBodyOf already do these identical
+// three lines, each private to its own module; a third copy here
+// stays below the exploratory-duplication threshold (Commandment
+// IX) rather than forcing a shared extraction across three
+// unrelated modules for a task that touches only this one.
+function decodedBodyOf(message: string): Record<string, unknown> {
+    const model = parseJson(message, defaultBodyRegistry());
+    const body = HttpMessage.fromModel(model).body();
+    return body.exists()
+        ? JSON.parse(body.toText()) as Record<string, unknown>
+        : {};
+}
+
+interface AuthorizeCodeIssuer {
+    readonly identityId: Id;
+    readonly clientId: Id;
+}
+
+// PRE-TX (i), gate 3: the code -> identity/client point-match
+// over the WHOLE '/authentication/authorize/' response family.
+// That address is operation-addressed (uriId always ''), so no
+// per-uriId head reduction applies here — deriveDocumentsAt's
+// latest-per-uriId would wrongly collapse every distinct code's
+// pair down to a single latest one. Every stored pair at this
+// prefix is a genuine 2xx: authorizePassword forms a pair ONLY on
+// success (grant-first, pinned), so no status re-check is needed.
+// A miss — no stored pair's response `code` field fingerprints to
+// the presented code — returns null; the caller's 401 is
+// byte-identical whether the code was never issued or has already
+// been spent (authorizationCodeSpent decides that, second).
+async function authorizeCodeIssuer(
+    adapter: DbAdapter,
+    codeFingerprint: string,
+): Promise<AuthorizeCodeIssuer | null> {
+    const responses = await adapter.responses
+        .getAllWhere('uri_prefix', AUTHORIZE_PREFIX);
+    const matched = responses.find(
+        (response) =>
+            decodedBodyOf(response.message).code === codeFingerprint,
+    );
+    if (matched === undefined) return null;
+    const request = await adapter.requests.getById(matched.id);
+    return {
+        identityId: request.requester_identity_id,
+        clientId: pickString(
+            decodedBodyOf(request.message), 'client_id',
+        ),
+    };
+}
+
+// PRE-TX (ii) fast-fail AND the in-tx re-check share this ONE
+// function — adapter-shaped (the membershipExistsFor /
+// deriveIdentityTokenEventsForJti precedent), `dbOrView` is
+// whichever face is in scope: the plain adapter pre-tx, the open
+// transaction view in-tx. A genuine row already lives at
+// 'identity-tokens/<derivedId>' exactly when this code has already
+// minted a chain root — the row+pair append at that KEYED address
+// IS the spend marker (KEY-BY-ANCHOR), replacing the retired
+// authorization_codes 'consumed' row. Filtered to the identity-
+// tokens prefix so a coincidental non-identity-tokens hit —
+// astronomically unlikely for a 64-hex-char sha256 digest against
+// 22-char base62 ids, but never assumed — cannot false-positive
+// the guard.
+export async function authorizationCodeSpent(
+    dbOrView: DbAdapter,
+    derivedId: Id,
+): Promise<boolean> {
+    const rows = await dbOrView.requests
+        .getAllWhere('uri_id', derivedId);
+    return rows.some(
+        (row) => row.uri_prefix === IDENTITY_TOKENS_EVENT_PREFIX,
+    );
+}
+
 // authorization_code grant: consume an ISSUED code, then issue a
-// token pair. A consumed (replay) or unknown code is a clean 401
-// that mints nothing and appends nothing (grant-first). PRE-tx:
-// read the code state (mintPair's inputs beyond the jti come
-// from the identity this read alone discovers), mint the
-// refresh jti and the full TokenResponse, and form the pair —
-// all before any transaction opens. Then ONE tx RE-READS the
-// code and RE-RUNS codeState: a concurrent consumer may have
-// won the race between the pre-tx read and here, in which case
-// this call aborts (401, mints nothing further, appends
-// nothing — the pre-minted response and pair above are simply
-// discarded, wasted crypto on the losing side of the race)
-// exactly as the pre-restructure single-tx version did.
+// token pair. A consumed (replay), raced, or unknown code is a
+// clean 401 that mints nothing and appends nothing (grant-first).
+// PRE-tx: authorizeCodeIssuer resolves (identity, client) from the
+// matched authorize pair, then authorizationCodeSpent fast-fails
+// an already-spent code — both before mintPair's HMAC signing or
+// formAuthPair/formTokenEventPair's fingerprinting run. Then ONE
+// tx RE-RUNS the spend check on the OPEN VIEW: a concurrent
+// consumer may have won the race between the pre-tx read and
+// here, in which case this call aborts (401, mints nothing
+// further, appends nothing — the pre-minted response and pairs
+// above are simply discarded, wasted crypto on the losing side of
+// the race) exactly as the retired codeState-driven version did.
 async function grantAuthorizationCode(
     adapter: DbAdapter,
     body: Record<string, unknown>,
@@ -938,63 +1026,53 @@ async function grantAuthorizationCode(
     const code = typeof body.code === 'string'
         ? body.code
         : '';
-    const rows = await adapter.authorizationCodes
-        .getAllWhere('code', code);
-    const state = codeState(rows, code);
-    if (state === null || state.status !== 'issued') {
-        return failure(
-            401, 'invalid or used authorization code',
-        );
+    const invalid: TokenResult = failure(
+        401, 'invalid or used authorization code',
+    );
+    const derivedId = await deriveAuthorizationCodeId(code);
+    const issuer = await authorizeCodeIssuer(
+        adapter, 'sha256:' + derivedId,
+    );
+    if (issuer === null) return invalid;
+    if (await authorizationCodeSpent(adapter, derivedId)) {
+        return invalid;
     }
     const refreshJti = generateCryptoSafeBase62();
-    // KEY-BY-ANCHOR (Phase 13 Task 7): the root's row id is now
-    // the code's own derived id, not a fresh mint — see
-    // deriveAuthorizationCodeId's own comment.
-    const rootId = await deriveAuthorizationCodeId(code);
+    // KEY-BY-ANCHOR: the root row's id (and, by construction, its
+    // own event pair's uri_id) IS the derived id — see
+    // deriveAuthorizationCodeId's own comment for why that
+    // collision is the spend guard itself.
+    const rootId = derivedId;
     const chainId = generateCryptoSafeBase62();
     const at = nowUtc();
-    const name = await nameFor(adapter, state.identityId);
+    const name = await nameFor(adapter, issuer.identityId);
     const organizations =
-        await subjectOrganizations(adapter, state.identityId);
+        await subjectOrganizations(adapter, issuer.identityId);
     const response = await mintPair(
-        state.identityId, name, refreshJti,
+        issuer.identityId, name, refreshJti,
         undefined, { organizations },
     );
     const pair = await formAuthPair(
-        seed, body, state.identityId, 200, response,
+        seed, body, issuer.identityId, 200, response,
     );
     // The root's OWN event pair (Phase 13 Task 5): formed pre-tx
-    // against `state.identityId`, mirroring how `pair`/`response`
-    // above already do — the in-tx write below stamps the row
-    // with `fresh.identityId` instead, the SAME asymmetry the
-    // existing code already carries (a code's issuer cannot
-    // change between the pre-tx read and the re-read here).
+    // against `issuer.identityId` — a code's issuer cannot change
+    // between the pre-tx read and the in-tx write below (its own
+    // authorize pair is immutable once appended), so this task
+    // retires the old codeState-driven re-read that used to
+    // (defensively) re-resolve it in-tx.
     const eventPair = await formTokenEventPair(rootId, {
-        jti: refreshJti, identity_id: state.identityId,
+        jti: refreshJti, identity_id: issuer.identityId,
         action: 'issued', chain_id: chainId, at,
     });
     const consumed = await adapter.transaction(
-        [
-            'authorization_codes', 'identity_tokens',
-            'requests', 'responses',
-        ],
+        ['identity_tokens', 'requests', 'responses'],
         async (view) => {
-            const freshRows = await view.authorizationCodes
-                .getAllWhere('code', code);
-            const fresh = codeState(freshRows, code);
-            if (fresh === null || fresh.status !== 'issued') {
+            if (await authorizationCodeSpent(view, derivedId)) {
                 return false;
             }
-            await view.authorizationCodes.put(
-                generateCryptoSafeBase62(), {
-                    code,
-                    identity_id: fresh.identityId,
-                    client_id: fresh.clientId,
-                    status: 'consumed',
-                    at: nowUtc(),
-                });
             await recordIssuedRoot(
-                view, fresh.identityId, refreshJti,
+                view, issuer.identityId, refreshJti,
                 rootId, chainId, at,
             );
             await appendMessagePair(view, eventPair);
@@ -1002,12 +1080,9 @@ async function grantAuthorizationCode(
             return true;
         },
     );
-    if (!consumed) {
-        return failure(
-            401, 'invalid or used authorization code',
-        );
-    }
-    return { ok: true, response, requestHash: pair.requestHash };
+    return consumed
+        ? { ok: true, response, requestHash: pair.requestHash }
+        : invalid;
 }
 
 // Dispatch on grant_type. Single-grant primitives are added one

@@ -13,22 +13,73 @@ import {
     postRoleGrantDocumentOp,
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
-import { formWritePair } from '../api/message-pair.ts';
+import {
+    appendMessagePair, formAuthPair, formWritePair,
+} from '../api/message-pair.ts';
+import type { AuthPairSeed } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
+import { generateCryptoSafeBase62 } from
+    '../shared/crypto-safe-base62.ts';
+import {
+    authorizationCodeSpent, deriveAuthorizationCodeId,
+} from '../api/authentication.ts';
 
 const BASE = 'http://localhost';
 
-const issuedCode = {
-    code: 'the-code', identity_id: 'current',
-    client_id: 'web', status: 'issued',
-    at: '2026-06-03T00:00:00.000000Z',
-};
+const INVALID_CODE_ERROR = 'invalid or used authorization code';
 
 async function freshDb() {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
     return db;
+}
+
+// Below-facade pair formation, mirroring authorizePassword's OWN
+// storage effect (Phase 13 Task 7, Gate 3): grantAuthorizationCode
+// 's pre-tx lookup now scans the '/authentication/authorize/'
+// response family for a stored pair whose (redacted) `code` field
+// fingerprints to the presented code, so a raw
+// db.authorizationCodes.put alone (no pair) 401s as unknown. This
+// forms BOTH halves a real login forms: the authorization_codes
+// row (status 'issued' — the row half keeps dual-writing until
+// Task 9) AND the matching authorize pair, in ONE transaction.
+// Every id/field value stays IDENTICAL to the raw puts this
+// replaces — only the write mechanism changes.
+async function seedAuthorizationCodePair(
+    db: MemoryDbAdapter,
+    code: string,
+    identityId: string,
+    clientId: string,
+): Promise<void> {
+    const seed: AuthPairSeed = {
+        requestAt: nowUtc(),
+        headerFields: [],
+        method: 'POST',
+        pathname: '/authentication/authorize',
+        routePattern: 'authentication/authorize',
+        routeSegments: ['authentication', 'authorize'],
+        pathSegments: ['authentication', 'authorize'],
+    };
+    const requestBody = {
+        method: 'password', username: 'seed@example.com',
+        password: 'seed-password', client_id: clientId,
+    };
+    const pair = await formAuthPair(
+        seed, requestBody, identityId, 200, { code },
+    );
+    await db.transaction(
+        ['authorization_codes', 'requests', 'responses'],
+        async (view) => {
+            await view.authorizationCodes.put(
+                generateCryptoSafeBase62(), {
+                    code, identity_id: identityId,
+                    client_id: clientId, status: 'issued',
+                    at: nowUtc(),
+                });
+            await appendMessagePair(view, pair);
+        },
+    );
 }
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
@@ -145,7 +196,8 @@ test('authorization_code grant issues a gate-valid token pair',
 async () => {
     const db = await freshDb();
     await seedRootAdmin(db);   // 'current' is admin
-    await db.authorizationCodes.put('ev1', issuedCode);
+    await seedAuthorizationCodePair(
+        db, 'the-code', 'current', 'web');
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
     }));
@@ -164,7 +216,8 @@ async () => {
 
 test('replaying a consumed code is a 401 no-op', async () => {
     const db = await freshDb();
-    await db.authorizationCodes.put('ev1', issuedCode);
+    await seedAuthorizationCodePair(
+        db, 'the-code', 'current', 'web');
     const first = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
     }));
@@ -185,7 +238,8 @@ test(
     async () => {
         const db = await freshDb();
         await seedRootAdmin(db);
-        await db.authorizationCodes.put('ev1', issuedCode);
+        await seedAuthorizationCodePair(
+            db, 'the-code', 'current', 'web');
         const [a, b] = await Promise.all([
             handleRequest(db, tokenRequest({
                 grant_type: 'authorization_code',
@@ -214,10 +268,71 @@ test('an unknown code is a 401', async () => {
     assert.equal(res.status, 401);
 });
 
+// GATE 3 (Phase 13 Task 7): the code-spend guard's three 401
+// classes — unknown (never issued), spent (replayed), raced
+// (lost a concurrent exchange) — all carry the SAME byte-exact
+// body. The pair-plane guard (authorizeCodeIssuer /
+// authorizationCodeSpent, api/authentication.ts) makes no
+// distinction between them at the wire, exactly as the retired
+// codeState-driven guard never did either.
+test('GATE 3: unknown / spent / raced code all 401 with the'
++ ' SAME byte-exact body', async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+
+    const unknown = await handleRequest(db, tokenRequest({
+        grant_type: 'authorization_code', code: 'ghost',
+    }));
+    assert.equal(unknown.status, 401);
+    assert.deepEqual(
+        await unknown.json(), { error: INVALID_CODE_ERROR });
+
+    await seedAuthorizationCodePair(
+        db, 'the-code-spent', 'current', 'web');
+    const first = await handleRequest(db, tokenRequest({
+        grant_type: 'authorization_code',
+        code: 'the-code-spent',
+    }));
+    assert.equal(first.status, 200);
+    const spent = await handleRequest(db, tokenRequest({
+        grant_type: 'authorization_code',
+        code: 'the-code-spent',
+    }));
+    assert.equal(spent.status, 401);
+    assert.deepEqual(
+        await spent.json(), { error: INVALID_CODE_ERROR });
+
+    await seedAuthorizationCodePair(
+        db, 'the-code-raced', 'current', 'web');
+    const [a, b] = await Promise.all([
+        handleRequest(db, tokenRequest({
+            grant_type: 'authorization_code',
+            code: 'the-code-raced',
+        })),
+        handleRequest(db, tokenRequest({
+            grant_type: 'authorization_code',
+            code: 'the-code-raced',
+        })),
+    ]);
+    assert.deepEqual([a.status, b.status].sort(), [200, 401]);
+    const raced = a.status === 401 ? a : b;
+    assert.deepEqual(
+        await raced.json(), { error: INVALID_CODE_ERROR });
+
+    // The derived id itself: a live-minted spend is visible on
+    // the pair plane by exactly that id, the SAME value the
+    // guard above already checked internally.
+    const derivedId =
+        await deriveAuthorizationCodeId('the-code-spent');
+    assert.equal(
+        await authorizationCodeSpent(db, derivedId), true);
+});
+
 async function initialPair(
     db: MemoryDbAdapter,
 ): Promise<{ access_token: string; refresh_token: string }> {
-    await db.authorizationCodes.put('ev1', issuedCode);
+    await seedAuthorizationCodePair(
+        db, 'the-code', 'current', 'web');
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
     }));

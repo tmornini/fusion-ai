@@ -7,7 +7,10 @@ import { DEV_TOKEN, devToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import { latestActionForJti } from '../api/identity-tokens.ts';
-import { responseFromStored } from '../api/message-pair.ts';
+import {
+    appendMessagePair, formAuthPair, responseFromStored,
+} from '../api/message-pair.ts';
+import type { AuthPairSeed } from '../api/message-pair.ts';
 import {
     rotateRefreshJti,
     revokeTokenChain,
@@ -18,6 +21,8 @@ import {
     makeAssertionSigner,
 } from './client-assertion-fixtures.ts';
 import type { IdentityTokenEntity } from '../api/types.ts';
+import { generateCryptoSafeBase62 } from
+    '../shared/crypto-safe-base62.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -413,14 +418,55 @@ async function assertRootEventPair(
     assert.deepEqual(eventBody, root satisfies IdentityTokenEntity);
 }
 
+// Below-facade pair formation, mirroring authorizePassword's OWN
+// storage effect (Phase 13 Task 7, Gate 3): grantAuthorizationCode
+// 's pre-tx lookup now scans the '/authentication/authorize/'
+// response family for a stored pair whose (redacted) `code` field
+// fingerprints to the presented code, so a raw
+// db.authorizationCodes.put alone (no pair) 401s as unknown. This
+// forms BOTH halves a real login forms: the authorization_codes
+// row (status 'issued' — the row half keeps dual-writing until
+// Task 9) AND the matching authorize pair, in ONE transaction.
+async function seedAuthorizationCodePair(
+    db: MemoryDbAdapter,
+    code: string,
+    identityId: string,
+    clientId: string,
+): Promise<void> {
+    const seed: AuthPairSeed = {
+        requestAt: AT,
+        headerFields: [],
+        method: 'POST',
+        pathname: '/authentication/authorize',
+        routePattern: 'authentication/authorize',
+        routeSegments: ['authentication', 'authorize'],
+        pathSegments: ['authentication', 'authorize'],
+    };
+    const requestBody = {
+        method: 'password', username: 'seed@example.com',
+        password: 'seed-password', client_id: clientId,
+    };
+    const pair = await formAuthPair(
+        seed, requestBody, identityId, 200, { code },
+    );
+    await db.transaction(
+        ['authorization_codes', 'requests', 'responses'],
+        async (view) => {
+            await view.authorizationCodes.put(
+                generateCryptoSafeBase62(), {
+                    code, identity_id: identityId,
+                    client_id: clientId, status: 'issued', at: AT,
+                });
+            await appendMessagePair(view, pair);
+        },
+    );
+}
+
 test('an authorization_code grant appends its root\'s own'
 + ' event pair, distinct from the grant\'s operation pair',
 async () => {
     const db = await freshDb();
-    await db.authorizationCodes.put('ac-1', {
-        code: 'the-code', identity_id: 'current',
-        client_id: 'web', status: 'issued', at: AT,
-    });
+    await seedAuthorizationCodePair(db, 'the-code', 'current', 'web');
     const res = await postToken(db, {
         grant_type: 'authorization_code', code: 'the-code',
     });
@@ -438,9 +484,11 @@ async () => {
     );
     assert.ok(opPair);
     assert.equal(opPair!.uri_id, '');
-    // 3 bootstrap + the root's own event pair + the grant's own
-    // operation pair.
-    assert.equal(requests.length, 5);
+    // 3 bootstrap + the seeded authorize pair (Phase 13 Task 7:
+    // the pre-tx lookup now needs a real authorize pair, not a
+    // raw authorizationCodes row alone) + the root's own event
+    // pair + the grant's own operation pair.
+    assert.equal(requests.length, 6);
 });
 
 test('a token-exchange grant (a real /authentication/token'
