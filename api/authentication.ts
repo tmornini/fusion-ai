@@ -75,13 +75,15 @@ export type TokenResult =
     | {
         readonly ok: true;
         readonly response: TokenResponse;
-        // The just-appended pair's request hash — undefined
+        // The just-appended AUTH pair's request hash — undefined
         // only for exchangeBearerForOrganization's internal,
         // seedless hop (never a real /authentication/token
-        // request, so it forms no pair). The dedicated gate
-        // arm (api.ts) always supplies a seed, so a result it
-        // sees always carries one — see storedPairResponse's
-        // sibling crash-loud idiom.
+        // request, so it forms no AUTH pair; its issued root's
+        // OWN event pair still lands, Phase 13 Task 5, but this
+        // field tracks the auth-pair hash specifically). The
+        // dedicated gate arm (api.ts) always supplies a seed, so
+        // a result it sees always carries one — see
+        // storedPairResponse's sibling crash-loud idiom.
         readonly requestHash: string | undefined;
     }
     | {
@@ -251,10 +253,12 @@ async function recordIssuedRoot(
 // pair. `seed` is undefined for exchangeBearerForOrganization's
 // internal, non-route hop (the org-switch facade never was an
 // /authentication/token request), so that caller mints its chain
-// root with no AUTH pair — exactly as before Task 3; its root's
-// OWN event pair stays gated on the SAME `seed` here (Task 5
-// gains the exchange hop's event pair separately, once its own
-// commit decouples the two).
+// root with no AUTH pair — exactly as before Task 3. The root's
+// OWN event pair is UNGATED (Phase 13 Task 5): the recorded row
+// exists either way, so the ledger visibility the event pair
+// grants must too — the exchange hop's own election, decoupled
+// from whether an /authentication/token request occasioned the
+// mint.
 async function issueTokenPair(
     adapter: DbAdapter,
     identityId: Id,
@@ -280,21 +284,17 @@ async function issueTokenPair(
     const pair = seed === undefined
         ? undefined
         : await formAuthPair(seed, body, identityId, 200, response);
-    const eventPair = seed === undefined
-        ? undefined
-        : await formTokenEventPair(rootId, {
-            jti: refreshJti, identity_id: identityId,
-            action: 'issued', chain_id: chainId, at,
-        });
+    const eventPair = await formTokenEventPair(rootId, {
+        jti: refreshJti, identity_id: identityId,
+        action: 'issued', chain_id: chainId, at,
+    });
     await adapter.transaction(
         ['identity_tokens', 'requests', 'responses'],
         async (view) => {
             await recordIssuedRoot(
                 view, identityId, refreshJti, rootId, chainId, at,
             );
-            if (eventPair !== undefined) {
-                await appendMessagePair(view, eventPair);
-            }
+            await appendMessagePair(view, eventPair);
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -787,7 +787,10 @@ async function grantTokenExchange(
 // not a member — the gate's tenant fence. This is an INTERNAL
 // hop (api.ts's facadeRequest), never a real
 // /authentication/token request, so it supplies no seed —
-// issueTokenPair forms no pair for it, exactly as before Task 3.
+// issueTokenPair forms no AUTH pair for it, exactly as before
+// Task 3. Its issued root STILL gets its own event pair (Phase
+// 13 Task 5): the row is written either way, so the ledger
+// visibility the event pair grants must too.
 export async function exchangeBearerForOrganization(
     adapter: DbAdapter,
     bearer: string,

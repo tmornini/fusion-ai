@@ -5,6 +5,7 @@ import { handleRequest } from '../api/api.ts';
 import { sha256Hex } from '../shared/digest.ts';
 import { DEV_TOKEN, devToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
+import { seedRootAdmin } from './root-admin-fixture.ts';
 import { latestActionForJti } from '../api/identity-tokens.ts';
 import { responseFromStored } from '../api/message-pair.ts';
 import {
@@ -613,4 +614,40 @@ test('two concurrent rotations of one jti: exactly one'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
+});
+
+// ── the org-exchange hop: issueTokenPair's SEEDLESS branch
+// (Phase 13 Task 5's fourth commit) — exchangeBearerForOrganization
+// forms no AUTH pair (it is never a real /authentication/token
+// request), but the chain root it mints still gets its own event
+// pair, decoupled from that seed.
+
+test('the org-exchange facade hop mints its OWN chain root and'
++ ' appends that root\'s own event pair — even though it forms'
++ ' NO auth pair (never a real /authentication/token request)',
+async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+    const flatToken = await devToken('current');
+    const before = await db.identityTokens.getAll();
+    const beforeIds = new Set(before.map(r => r.id));
+    const res = await handleRequest(db, new Request(
+        `${BASE}/organizations/1/identity-tokens`, {
+            method: 'GET',
+            headers: { 'Authorization': 'Bearer ' + flatToken },
+        },
+    ));
+    assert.equal(res.status, 200);
+    const after = await db.identityTokens.getAll();
+    const newRows = after.filter(r => !beforeIds.has(r.id));
+    assert.equal(newRows.length, 1);
+    await assertEventPairForRow(db, newRows[0]!.id);
+    // NO auth pair: the exchange hop is an internal, non-route
+    // hop — /authentication/token was never requested.
+    const requests = await db.requests.getAll();
+    assert.equal(
+        requests.filter(
+            r => r.uri_prefix === '/authentication/token/',
+        ).length, 0,
+    );
 });
