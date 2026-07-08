@@ -122,7 +122,16 @@ async () => {
 test('enumerate returns only the caller member orgs',
 async () => {
     const db = await twoOrganizations();
-    await db.organizations.put('A', organizationRow('Acme'));
+    // Seeded through the live document PUT (not a raw
+    // db.organizations.put) so 'A' has a message pair — the
+    // flipped GET /organizations (Phase 12 Task 5) derives from
+    // the ledger, not the old organizations table. 'B' stays a
+    // raw row: `current` is never a member of B, so the
+    // membership filter excludes it whether or not it derives.
+    await handleRequest(db, req(
+        'PUT', '/organizations/A', await devToken('current'),
+        organizationRow('Acme'),
+    ));
     await db.organizations.put('B', organizationRow('Beta'));
     const res = await handleRequest(db, req(
         'GET', '/organizations', await devToken('current')));
@@ -145,8 +154,19 @@ test('the facade requires a bearer token', async () => {
 
 async function rolelessMemberDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
-    await db.postSchemaCreation();
-    await db.organizations.put('A', organizationRow('Acme'));
+    // seedAdminSchema (not bare postSchemaCreation) so `current`
+    // can create org A through the live document PUT below —
+    // the flipped GET /organizations (Phase 12 Task 5) derives
+    // from the ledger, so a raw db.organizations.put would be
+    // invisible to it. `current` never appears in an assertion
+    // here; it exists only to author the org A document.
+    await seedAdminSchema(db);
+    await handleRequest(db, req(
+        'PUT', '/organizations/A', await devToken('current'),
+        organizationRow('Acme'),
+    ));
+    // B stays a raw row: sarah is never a member of B, so the
+    // membership filter excludes it whether or not it derives.
     await db.organizations.put('B', organizationRow('Beta'));
     await db.memberships.put('m-sarah-a', {
         organization_id: 'A', identity_id: 'sarah',
