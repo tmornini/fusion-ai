@@ -106,7 +106,7 @@ import {
     validateResponseEntity,
 } from './validators.ts';
 
-// One adapter over any StorageBackend. The 36-store wiring,
+// One adapter over any StorageBackend. The 39-store wiring,
 // the transaction view, and the tx-based snapshot ops live
 // here once (Commandment IX — the third backend, IndexedDB,
 // triggers the abstraction). The per-tier variation rides in
@@ -297,7 +297,7 @@ export class BackedDbAdapter
         );
     }
 
-    // An adapter whose 36 stores are bound to the open tx
+    // An adapter whose 39 stores are bound to the open tx
     // (ambientRunner joins it), so every op runs in one
     // transaction. Lifecycle methods delegate to the parent;
     // a nested transaction RE-ENTERS this same tx — it runs
@@ -355,7 +355,7 @@ export class BackedDbAdapter
         }
     }
 
-    // The 36-store wiring lives here once. The constructor
+    // The 39-store wiring lives here once. The constructor
     // binds it to the backend; the transaction view rebinds
     // the same wiring to an open tx via ambientRunner.
     #buildStores(run: TxRunner): GuardedDbStores {
