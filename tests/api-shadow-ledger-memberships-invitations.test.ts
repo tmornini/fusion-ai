@@ -4,7 +4,7 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { sha256Hex } from '../shared/digest.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { organizationRow } from './test-fixtures.ts';
+import { seedOrganizationDocument } from './test-fixtures.ts';
 import {
     postMembershipDocumentOp,
     postRoleGrantDocumentOp,
@@ -122,7 +122,11 @@ async function seedRoleGrantPair(
 async function freshDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.organizations.put('1', organizationRow('Stark'));
+    // A real organizations/:id document (Phase 13 Task 3's fixture
+    // prerequisite) — a raw db.organizations.put leaves '1'
+    // derivation-invisible to deriveMembershipsForIdentity's own
+    // enumerate-then-probe (via deriveOrganizations).
+    await seedOrganizationDocument(db, '1', 'Stark');
     await seedRoleGrantPair(db, 'rg-current-1', {
         organization_id: '1', identity_id: 'current',
         role: 'admin', action: 'granted',
@@ -168,14 +172,15 @@ async () => {
     ));
     assert.equal(res.status, 200);
     const requests = await db.requests.getAll();
-    // 3: the fixture's own role-grant + membership pair (Phase
-    // 13 Task 1) precede this write, at indices 0-1.
-    assert.equal(requests.length, 3);
+    // 4: the fixture's own organization document + role-grant +
+    // membership pair (Phase 13 Tasks 1 and 3) precede this
+    // write, at indices 0-2.
+    assert.equal(requests.length, 4);
     assert.equal(
-        requests[2]!.uri_prefix,
+        requests[3]!.uri_prefix,
         '/organizations/1/memberships/',
     );
-    assert.equal(requests[2]!.uri_id, 'ms-1');
+    assert.equal(requests[3]!.uri_id, 'ms-1');
     const domainRow = await db.memberships.getById('ms-1');
     assert.deepEqual(await res.json(), domainRow);
 });
@@ -207,12 +212,13 @@ async () => {
     assert.equal(res.status, 200);
     const requests = await db.requests.getAll();
     // Operation pair + the invitation document pair (Phase 8
-    // Task 6), both at this SAME address; 4 total once the
-    // fixture's own role-grant + membership pair (Phase 13
-    // Task 1, indices 0-1) precede them.
-    assert.equal(requests.length, 4);
-    assert.equal(requests[2]!.uri_prefix, '/invitations/');
-    assert.equal(requests[2]!.uri_id, 'inv-1');
+    // Task 6), both at this SAME address; 5 total once the
+    // fixture's own organization document + role-grant +
+    // membership pair (Phase 13 Tasks 1 and 3, indices 0-2)
+    // precede them.
+    assert.equal(requests.length, 5);
+    assert.equal(requests[3]!.uri_prefix, '/invitations/');
+    assert.equal(requests[3]!.uri_id, 'inv-1');
 });
 
 test('a grant strips the live email from every stored'
@@ -223,7 +229,7 @@ test('a grant strips the live email from every stored'
     const requests = await db.requests.getAll();
     // Operation pair + the invitation document pair (Phase 8
     // Task 6), both at this SAME address.
-    assert.equal(requests.length, 4);
+    assert.equal(requests.length, 5);
     for (const row of requests) {
         assert.ok(!row.message.includes('sarah@x.com'));
     }
@@ -267,8 +273,8 @@ test('a grant sharing invitationId/grantEventId/grantAt with a'
     // rows total, no fold anywhere.
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
-    assert.equal(requests.length, 6);
-    assert.equal(responses.length, 6);
+    assert.equal(requests.length, 7);
+    assert.equal(responses.length, 7);
     // The two OPERATION pairs (same invitationId/grantEventId/
     // grantAt) are distinguished from the two document pairs by
     // the grantEventId key, present only on the operation body.
@@ -293,8 +299,8 @@ async () => {
     });
     const res = await grant(db, 'inv-conflict');
     assert.equal(res.status, 409);
-    assert.equal((await db.requests.getAll()).length, 3);
-    assert.equal((await db.responses.getAll()).length, 3);
+    assert.equal((await db.requests.getAll()).length, 4);
+    assert.equal((await db.responses.getAll()).length, 4);
 });
 
 test('a duplicate (idempotent-echo) grant still appends its'
@@ -317,13 +323,17 @@ async () => {
     // — ONLY its operation pair lands at 'inv-2b', no document
     // (a duplicate never synthesizes one).
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 5);
+    assert.equal(requests.length, 6);
     const ids = requests.map(r => r.uri_id).sort();
-    // The fixture's own role-grant + membership pair (Phase 13
-    // Task 1) sort in alongside this call's own ids.
+    // The fixture's own organization document + role-grant +
+    // membership pair (Phase 13 Tasks 1 and 3) sort in alongside
+    // this call's own ids.
     assert.deepEqual(
         ids,
-        ['inv-2a', 'inv-2a', 'inv-2b', 'm-current-1', 'rg-current-1'],
+        [
+            '1', 'inv-2a', 'inv-2a', 'inv-2b',
+            'm-current-1', 'rg-current-1',
+        ],
     );
 });
 
@@ -335,8 +345,8 @@ test('a byte-identical grant resend returns the stored'
     const second = await grant(db, 'inv-3');
     assert.equal(second.headers.get('Response-ID'), firstId);
     // 2 (operation + document); the resend appends nothing.
-    assert.equal((await db.requests.getAll()).length, 4);
-    assert.equal((await db.responses.getAll()).length, 4);
+    assert.equal((await db.requests.getAll()).length, 5);
+    assert.equal((await db.responses.getAll()).length, 5);
 });
 
 // ── invitations: acceptance/decline/revocation ──

@@ -3,7 +3,10 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { devToken } from './token-fixtures.ts';
-import { seedAdminSchema } from './test-fixtures.ts';
+import {
+    seedAdminSchema,
+    seedOrganizationDocument,
+} from './test-fixtures.ts';
 import {
     postMembershipDocumentOp,
     postRoleGrantDocumentOp,
@@ -64,6 +67,13 @@ async function seedMembershipPair(
     body: Record<string, unknown>,
 ): Promise<void> {
     const organization = body.organization_id as string;
+    // A real organizations/:id document (Phase 13 Task 3's
+    // fixture prerequisite; seedOrganizationDocument is idempotent
+    // — a no-op on a repeat organization id) — a membership pair
+    // with no document for its own org stays derivation-invisible
+    // to deriveMembershipsForIdentity's own enumerate-then-probe
+    // (via deriveOrganizations).
+    await seedOrganizationDocument(db, organization, organization);
     const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
     if (spec === undefined || !('status' in spec)) {
         throw new Error(

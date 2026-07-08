@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { organizationRow } from './test-fixtures.ts';
+import { seedOrganizationDocument } from './test-fixtures.ts';
 import { firstProviderModel } from './member-fixtures.ts';
 import {
     DEFAULT_LOCK_TIMEOUT, nowUtc, SYSTEM_MEMBER_ID,
@@ -140,8 +140,12 @@ async function seedRoleGrantPair(
 async function seed(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.organizations.put('A', organizationRow('Acme'));
-    await db.organizations.put('B', organizationRow('Beta'));
+    // Real organizations/:id documents (Phase 13 Task 3's fixture
+    // prerequisite) — a raw db.organizations.put leaves A/B
+    // derivation-invisible to deriveMembershipsForIdentity's own
+    // enumerate-then-probe (via deriveOrganizations).
+    await seedOrganizationDocument(db, 'A', 'Acme');
+    await seedOrganizationDocument(db, 'B', 'Beta');
     await seedRoleGrantPair(db, 'rg-a', {
         organization_id: 'A', identity_id: 'adminA',
         role: 'admin', action: 'granted',

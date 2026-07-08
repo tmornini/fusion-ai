@@ -1,5 +1,8 @@
 import type { DbAdapter } from '../api/db.ts';
-import { nowUtc, SYSTEM_MEMBER_ID, type Id } from '../api/types.ts';
+import {
+    nowUtc, SYSTEM_MEMBER_ID, type Id,
+    type OrganizationEntity,
+} from '../api/types.ts';
 import {
     postMembershipDocumentOp,
     postRoleGrantDocumentOp,
@@ -7,8 +10,10 @@ import {
 } from '../api/routes.ts';
 import {
     formWritePair,
+    appendMessagePair,
     type MessagePair,
 } from '../api/message-pair.ts';
+import { deriveOrganizations } from '../api/derive-organizations.ts';
 
 // Below-facade pair formation for the two seeded writes below
 // (Phase 13 Task 1's blocking prerequisite): every row rides the
@@ -21,6 +26,97 @@ import {
 // only the write MECHANISM changes, so a role_grants/memberships
 // read that flips onto the pair plane still finds the root admin.
 const ROOT_ADMIN_ORGANIZATION: Id = '1';
+
+// A complete organization row (minus id) for tests needing a
+// tenant root. `name` varies; the rest are fixed demo values.
+// Relocated from tests/test-fixtures.ts (Phase 13 Task 3's
+// fixture prerequisite) so seedRootAdmin below can call
+// seedOrganizationDocument without a test-fixtures.ts <->
+// root-admin-fixture.ts import cycle (test-fixtures.ts already
+// imports seedRootAdmin from here); test-fixtures.ts re-exports
+// both names so its existing importers see no path change.
+export function organizationRow(
+    name: string,
+): Omit<OrganizationEntity, 'id'> {
+    return {
+        name,
+        domain: 'x.com',
+        next_billing: '2026-01-01T00:00:00.000000Z',
+        seats: 10,
+        projects_limit: 10,
+        ideas_limit: 10,
+    };
+}
+
+// Below-facade pair formation for an organization document (the
+// identity-fixtures.ts precedent, applied to organizations):
+// every reader flipped onto deriveOrganization(s) (Phase 12 Task
+// 5) — and, from Phase 13 Task 3 on, deriveMembershipsForIdentity
+// (which enumerates via deriveOrganizations before probing each
+// org's own membership prefix) — sees ONLY the message ledger, so
+// a raw db.organizations.put, or a membership/role-grant pair
+// whose organization was never itself given a document, leaves
+// the identity's membership derivation-invisible even though the
+// row-plane sees it (production is never in this state — POST
+// /organizations always forms the pair before any membership can
+// name that org). Writes the SAME row + pair shape the live PUT
+// organizations/:id route forms, without handleRequest's
+// auth/notification overhead — organizations/:id's PUT stays
+// hand-written (no exported documentOp to call directly), so this
+// mirrors its transaction body instead. GLOBAL plane
+// (organizationNested: false) — `organization` stays undefined
+// throughout, the identity-fixtures.ts GLOBAL_PLANE_PLACEHOLDER
+// precedent. IDEMPOTENT on the PAIR PLANE (deriveOrganizations),
+// never the row plane: a handful of multi-org fixtures
+// (store-parent-scoped-flowgraph-fence.test.ts's own B-stays-raw
+// precedent) legitimately write `id`'s row directly, with no pair,
+// for an unrelated reason — checking db.organizations.getById
+// would read that raw row as "already seeded" and skip forming
+// the pair this function exists to guarantee. Checking the pair
+// plane instead means seedRootAdmin/seedOrganizationMember still
+// avoid a duplicate pair when both run against the same db, AND a
+// later call still forms the pair a raw-row-only site never did.
+export async function seedOrganizationDocument(
+    db: DbAdapter,
+    id: Id,
+    name: string,
+): Promise<void> {
+    const live = await deriveOrganizations(db);
+    if (live.some((organization) => organization.id === id)) {
+        return;
+    }
+    const body = organizationRow(name);
+    const spec = WRITE_RESPONSE_SPECS['organizations/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for organizations/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: `/organizations/${id}`,
+        routePattern: 'organizations/:id',
+        routeSegments: ['organizations', ':id'],
+        pathSegments: ['organizations', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization: undefined,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, undefined,
+        ),
+        headPairId: undefined,
+    });
+    await db.transaction(
+        ['organizations', 'requests', 'responses'],
+        async (view) => {
+            await view.organizations.put(id, body);
+            await appendMessagePair(view, pair);
+        },
+    );
+}
 
 async function membershipDocumentPair(
     membershipId: Id,
@@ -107,6 +203,9 @@ async function roleGrantDocumentPair(
 export async function seedRootAdmin(
     db: DbAdapter,
 ): Promise<void> {
+    await seedOrganizationDocument(
+        db, ROOT_ADMIN_ORGANIZATION, 'Root Admin Org',
+    );
     const requestAt = nowUtc();
     const roleGrantId = 'test-role-current-admin';
     const roleGrantBody = {
@@ -146,6 +245,9 @@ export async function seedOrganizationMember(
     db: DbAdapter,
     identityId: string,
 ): Promise<void> {
+    await seedOrganizationDocument(
+        db, ROOT_ADMIN_ORGANIZATION, 'Root Admin Org',
+    );
     const requestAt = nowUtc();
     const roleGrantId = 'test-role-' + identityId + '-member';
     const roleGrantBody = {

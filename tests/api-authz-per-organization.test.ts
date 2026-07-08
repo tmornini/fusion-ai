@@ -10,6 +10,7 @@ import {
 } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { seedOrganizationDocument } from './test-fixtures.ts';
 
 const BASE = 'http://localhost';
 
@@ -33,6 +34,13 @@ async function seedMembershipPair(
     body: Record<string, unknown>,
 ): Promise<void> {
     const organization = body.organization_id as string;
+    // A real organizations/:id document (Phase 13 Task 3's
+    // fixture prerequisite; seedOrganizationDocument is idempotent
+    // — a no-op on a repeat organization id) — a membership pair
+    // with no document for its own org stays derivation-invisible
+    // to deriveMembershipsForIdentity's own enumerate-then-probe
+    // (via deriveOrganizations).
+    await seedOrganizationDocument(db, organization, organization);
     const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
     if (spec === undefined || !('status' in spec)) {
         throw new Error(

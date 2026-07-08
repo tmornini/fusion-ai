@@ -8,6 +8,7 @@ import {
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import { SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { seedOrganizationDocument } from './test-fixtures.ts';
 
 const T1 = '2026-01-01T00:00:00.000000Z';
 const T2 = '2026-02-01T00:00:00.000000Z';
@@ -31,6 +32,14 @@ async function seedMembershipPair(
     identityId: string,
     at: string,
 ): Promise<void> {
+    // A real organizations/:id document (Phase 13 Task 3's
+    // fixture prerequisite; seedOrganizationDocument is idempotent
+    // — a no-op on a repeat organization id) — a membership pair
+    // with no document for its own org stays derivation-invisible
+    // to deriveMembershipsForIdentity's own enumerate-then-probe
+    // (via deriveOrganizations).
+    await seedOrganizationDocument(
+        db, organizationId, organizationId);
     const body = {
         organization_id: organizationId,
         identity_id: identityId,

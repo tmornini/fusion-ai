@@ -4,7 +4,7 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { EntityNotFoundError } from '../api/db.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { organizationRow } from './test-fixtures.ts';
+import { seedOrganizationDocument } from './test-fixtures.ts';
 import { jsonObjectField, nowUtc, SYSTEM_MEMBER_ID } from
     '../api/types.ts';
 import {
@@ -139,8 +139,13 @@ async function seedRoleGrantPair(
 async function seed(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.organizations.put('A', organizationRow('Acme'));
-    await db.organizations.put('B', organizationRow('Beta'));
+    // Real organizations/:id documents (Phase 13 Task 3's fixture
+    // prerequisite) — a raw db.organizations.put leaves the org
+    // derivation-invisible, so deriveMembershipsForIdentity's own
+    // enumerate-then-probe (via deriveOrganizations) never reaches
+    // memberA's/memberB's membership prefix below.
+    await seedOrganizationDocument(db, 'A', 'Acme');
+    await seedOrganizationDocument(db, 'B', 'Beta');
     await seedMembershipPair(db, 'm-a', {
         organization_id: 'A', identity_id: 'memberA', at: AT,
     });

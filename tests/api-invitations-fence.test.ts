@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { organizationRow } from './test-fixtures.ts';
+import { seedOrganizationDocument } from './test-fixtures.ts';
 import { seedIdentityPii } from './identity-fixtures.ts';
 import {
     postMemberDocumentOp,
@@ -115,8 +115,12 @@ function req(
 async function seed(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.organizations.put('1', organizationRow('Stark'));
-    await db.organizations.put('2', organizationRow('Wayne'));
+    // Real organizations/:id documents (Phase 13 Task 3's fixture
+    // prerequisite) — a raw db.organizations.put leaves '1'/'2'
+    // derivation-invisible to deriveMembershipsForIdentity's own
+    // enumerate-then-probe (via deriveOrganizations).
+    await seedOrganizationDocument(db, '1', 'Stark');
+    await seedOrganizationDocument(db, '2', 'Wayne');
     for (const organization of ['1', '2']) {
         await seedRoleGrantPair(db, 'rg-current-' + organization, {
             organization_id: organization, identity_id: 'current',

@@ -7,6 +7,7 @@ import {
     ideaBody,
     organizationRow,
     seedAdminSchema,
+    seedOrganizationDocument,
 } from './test-fixtures.ts';
 import { jsonObjectField, nowUtc, SYSTEM_MEMBER_ID } from
     '../api/types.ts';
@@ -52,6 +53,12 @@ function req(
 async function twoOrganizations(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await seedAdminSchema(db);
+    // A real organizations/:id document (Phase 13 Task 3's fixture
+    // prerequisite): deriveMembershipsForIdentity enumerates via
+    // deriveOrganizations before probing an org's own membership
+    // prefix, so an org referenced only by a membership/role-grant
+    // pair stays derivation-invisible without its own document.
+    await seedOrganizationDocument(db, 'A', 'Acme');
     await seedRoleGrantPair(
         db, 'role-current-admin-a', 'A', 'current', 'admin',
         '2020-01-01T00:00:00.000000Z',
@@ -133,7 +140,11 @@ async () => {
         'GET', '/organizations', await devToken('current')));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];
-    assert.deepEqual(rows.map(r => r.id), ['A']);
+    // 'current' is ALSO a member of seedRootAdmin's own org '1'
+    // (Phase 13 Task 3's fixture prerequisite gave it a real,
+    // derivable organizations/:id document) — fixture-faithful,
+    // not a narrowing of what this case proves.
+    assert.deepEqual(rows.map(r => r.id), ['1', 'A']);
 });
 
 test('the facade requires a bearer token', async () => {
@@ -481,21 +492,24 @@ async function seedRoleGrantPair(
 async function deepDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
+    // A's and B's own organizations/:id documents, FIRST and
+    // below-facade (Phase 13 Task 3's fixture prerequisite): both
+    // the flipped GET organizations/:id (Phase 12 Task 5) and the
+    // gate-15 fence's own organization enumeration
+    // (deriveOrganizations, routes.ts) derive from the ledger, so
+    // a raw db.organizations.put — or a live PUT authenticated
+    // with a token ALREADY scoped to the org it is creating —
+    // leaves both derivation-invisible; deriveMembershipsForIdentity
+    // enumerates via deriveOrganizations before probing an org's
+    // own membership prefix, so 'current'/'pb's membership/role-
+    // grant pairs below need A/B to already be derivable, not the
+    // other way around.
+    await seedOrganizationDocument(db, 'A', 'Acme');
+    await seedOrganizationDocument(db, 'B', 'Beta');
     await seedRoleGrantPair(
         db, 'rg-current-a', 'A', 'current', 'admin', T8_AT,
     );
     await seedMembershipPair(db, 'mem-current-a', 'A', 'current');
-    // A's message pair, on top of the raw-row precedent above:
-    // both the flipped GET organizations/:id (Phase 12 Task 5)
-    // and the gate-15 fence's own organization enumeration
-    // (deriveOrganizations, routes.ts) derive from the ledger, so
-    // a raw db.organizations.put leaves both derivation-invisible.
-    // Authored by 'current' — already admin in A above.
-    await handleRequest(db, req(
-        'PUT', '/organizations/A',
-        await organizationToken('current', 'A'),
-        organizationRow('Acme'),
-    ));
     for (const [id, organization] of [
         ['pa', 'A'], ['pb', 'B'],
     ] as const) {
@@ -525,14 +539,6 @@ async function deepDb(): Promise<MemoryDbAdapter> {
     await seedRoleGrantPair(
         db, 'rg-pb-admin-b', 'B', 'pb', 'admin', T8_AT,
     );
-    // B's message pair (the SAME Phase 12 Task 5 need as A's own
-    // PUT above), authored by 'pb' — the only identity authorized
-    // to write in B, now that its admin grant lands just above.
-    await handleRequest(db, req(
-        'PUT', '/organizations/B',
-        await organizationToken('pb', 'B'),
-        organizationRow('Beta'),
-    ));
     // NAMED re-pin (Task 7): the flipped GET /states route
     // derives from the message ledger, not the raw states
     // table — a raw db.states.put leaves no pair at this

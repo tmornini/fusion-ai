@@ -42,6 +42,7 @@ import {
 } from '../web-app/app/adapters/session-credentials.ts';
 import {
     ideaBody, organizationRow, seedAdminSchema,
+    seedOrganizationDocument as seedOrganizationDocumentPair,
 } from './test-fixtures.ts';
 import {
     devToken, expiredToken, organizationToken,
@@ -176,6 +177,16 @@ async function seedRoleGrantPair(
 async function seedOrganizationAdmin(
     db: MemoryDbAdapter, organization: string,
 ): Promise<void> {
+    // A real organizations/:id document (Phase 13 Task 3's
+    // fixture prerequisite; idempotent — a no-op on a repeat
+    // organization id, so this file's own separate
+    // seedOrganizationDocument calls below stay harmless) —
+    // deriveMembershipsForIdentity's own enumerate-then-probe (via
+    // deriveOrganizations) needs `organization` to already be
+    // derivable before the role-grant/membership pairs below can
+    // resolve.
+    await seedOrganizationDocumentPair(
+        db, organization, organization);
     await seedRoleGrantPair(db, 'role-current-' + organization, {
         organization_id: organization, identity_id: 'current',
         role: 'admin', action: 'granted',

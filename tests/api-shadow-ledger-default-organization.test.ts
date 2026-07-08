@@ -10,6 +10,7 @@ import {
 } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { seedOrganizationDocument } from './test-fixtures.ts';
 
 const BASE = 'http://localhost';
 const AT = '2099-01-01T00:00:00.000000Z';
@@ -31,6 +32,13 @@ async function seedMembership(
     identityId: string,
     organization: string,
 ): Promise<void> {
+    // A real organizations/:id document (Phase 13 Task 3's
+    // fixture prerequisite; seedOrganizationDocument is idempotent
+    // — a no-op on a repeat organization id) — a membership pair
+    // with no document for its own org stays derivation-invisible
+    // to deriveMembershipsForIdentity's own enumerate-then-probe
+    // (via deriveOrganizations).
+    await seedOrganizationDocument(db, organization, organization);
     const id = 'm-' + identityId + '-' + organization;
     const body = {
         organization_id: organization,
@@ -99,14 +107,14 @@ test('a default-org write appends its pair addressed at the'
     ));
     assert.equal(res.status, 204);
     const requests = await db.requests.getAll();
-    // 2: the fixture's own membership pair (Phase 13 Task 1)
-    // precedes this write.
-    assert.equal(requests.length, 2);
+    // 3: the fixture's own organization document + membership
+    // pair (Phase 13 Tasks 1 and 3) precede this write.
+    assert.equal(requests.length, 3);
     assert.equal(
-        requests[1]!.uri_prefix,
+        requests[2]!.uri_prefix,
         '/identities/current/default-org/',
     );
-    assert.equal(requests[1]!.uri_id, 'ev-1');
+    assert.equal(requests[2]!.uri_id, 'ev-1');
 });
 
 test('two writes to different orgs each append their OWN'
@@ -126,9 +134,10 @@ test('two writes to different orgs each append their OWN'
     assert.equal(second.status, 204);
     assert.equal(second.headers.get('Supersedes'), null);
     const requests = await db.requests.getAll();
-    // 4: the fixture's own two membership pairs (Phase 13 Task 1)
-    // precede these two writes.
-    assert.equal(requests.length, 4);
+    // 6: the fixture's own two organization documents + two
+    // membership pairs (Phase 13 Tasks 1 and 3) precede these
+    // two writes.
+    assert.equal(requests.length, 6);
 });
 
 test('the idempotent no-change branch still appends its own'
@@ -148,9 +157,9 @@ async () => {
     ));
     assert.equal(res.status, 204);
     const requests = await db.requests.getAll();
-    // 3: the fixture's own membership pair (Phase 13 Task 1)
-    // precedes these two writes.
-    assert.equal(requests.length, 3);
+    // 4: the fixture's own organization document + membership
+    // pair (Phase 13 Tasks 1 and 3) precede these two writes.
+    assert.equal(requests.length, 4);
     const ledgerRows =
         await db.identityDefaultOrganizations.getAll();
     // The no-op write appended NO ledger row (the org already
@@ -173,10 +182,11 @@ test('a byte-identical PUT resend returns the stored response'
         token, 'current', '1', 'ev-4', AT,
     ));
     assert.equal(second.headers.get('Response-ID'), firstId);
-    // 2: the fixture's own membership pair (Phase 13 Task 1)
-    // precedes this write; the resend appends nothing further.
-    assert.equal((await db.requests.getAll()).length, 2);
-    assert.equal((await db.responses.getAll()).length, 2);
+    // 3: the fixture's own organization document + membership
+    // pair (Phase 13 Tasks 1 and 3) precede this write; the
+    // resend appends nothing further.
+    assert.equal((await db.requests.getAll()).length, 3);
+    assert.equal((await db.responses.getAll()).length, 3);
 });
 
 test('a forbidden (non-member org) PUT appends nothing',
@@ -188,10 +198,11 @@ async () => {
         token, 'current', '2', 'ev-5', AT,
     ));
     assert.equal(res.status, 403);
-    // 1: only the fixture's own membership pair (Phase 13 Task 1)
-    // — the forbidden write appends nothing.
-    assert.equal((await db.requests.getAll()).length, 1);
-    assert.equal((await db.responses.getAll()).length, 1);
+    // 2: only the fixture's own organization document + membership
+    // pair (Phase 13 Tasks 1 and 3) — the forbidden write appends
+    // nothing.
+    assert.equal((await db.requests.getAll()).length, 2);
+    assert.equal((await db.responses.getAll()).length, 2);
 });
 
 test('stored messages verify against their hashes',

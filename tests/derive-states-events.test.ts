@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { organizationRow } from './test-fixtures.ts';
+import { seedOrganizationDocument } from './test-fixtures.ts';
 import type { StateEntity } from '../api/types.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 import {
@@ -133,6 +133,18 @@ async function seedRoleGrantPair(
 async function seed(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
+    // A's and B's own organizations/:id documents, FIRST and
+    // below-facade (Phase 13 Task 3's fixture prerequisite):
+    // organizationIds (Phase 12 Task 5, api/derive-states.ts) is
+    // the ALL-orgs scan resolveOwningOrganization/
+    // resolveFlowGraphOwner both walk, and
+    // deriveMembershipsForIdentity's own enumerate-then-probe (via
+    // deriveOrganizations) needs A/B to already be derivable
+    // before adminA's/adminB's role-grant/membership pairs below
+    // can resolve — a live PUT authenticated with a token ALREADY
+    // scoped to the org it is creating cannot bootstrap that org.
+    await seedOrganizationDocument(db, 'A', 'Acme');
+    await seedOrganizationDocument(db, 'B', 'Beta');
     await seedRoleGrantPair(db, 'rg-a', {
         organization_id: 'A', identity_id: 'adminA',
         role: 'admin', action: 'granted',
@@ -149,21 +161,6 @@ async function seed(): Promise<MemoryDbAdapter> {
     await seedMembershipPair(db, 'm-b', {
         organization_id: 'B', identity_id: 'adminB', at: AT,
     });
-    // Message pairs, not raw rows: organizationIds (Phase 12
-    // Task 5, api/derive-states.ts) is the ALL-orgs scan
-    // resolveOwningOrganization/resolveFlowGraphOwner both walk
-    // — it now derives from the ledger, so a raw
-    // db.organizations.put would leave A/B invisible to it.
-    await handleRequest(db, req(
-        'PUT', '/organizations/A',
-        await organizationToken('adminA', 'A'),
-        organizationRow('Acme'),
-    ));
-    await handleRequest(db, req(
-        'PUT', '/organizations/B',
-        await organizationToken('adminB', 'B'),
-        organizationRow('Beta'),
-    ));
     return db;
 }
 

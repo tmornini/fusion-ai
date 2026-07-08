@@ -181,19 +181,20 @@ test('a full login flow keeps requests/responses balanced,'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    assert.equal(requests.length, 4);
-    // slice(2): seedRootAdmin's own role-grant + membership pair
-    // (Phase 13 Task 1) precedes the login flow's two hops and
-    // carries a non-empty uri_id (its own row id), unlike the
-    // authorize/token hops this loop pins.
-    for (const row of requests.slice(2)) {
+    assert.equal(requests.length, 5);
+    // slice(3): seedRootAdmin's own organization document + role-
+    // grant + membership pairs (Phase 13 Tasks 1 and 3) precede
+    // the login flow's two hops and carry a non-empty uri_id
+    // (their own row ids), unlike the authorize/token hops this
+    // loop pins.
+    for (const row of requests.slice(3)) {
         assert.equal(row.uri_id, '');
     }
     // supersedes/follows are RESPONSE-row columns (ResponseEntity,
     // api/types.ts) — a genesis pair (no predecessor) leaves BOTH
     // absent; header absence on the wire mirrors column absence
     // here (message-pair.ts's wireHeadersFor).
-    for (const row of responses.slice(2)) {
+    for (const row of responses.slice(3)) {
         assert.equal(row.uri_id, '');
         assert.equal(row.supersedes, undefined);
         assert.equal(row.follows, undefined);
@@ -289,7 +290,7 @@ test('a refresh grant stores its own redacted pair with no'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    assert.equal(requests.length, 5);   // authorize + token + refresh
+    assert.equal(requests.length, 6);   // authorize + token + refresh
     const liveSecrets = [
         first.refresh_token, rotated.access_token,
         rotated.refresh_token,
@@ -319,7 +320,7 @@ test('a token-exchange grant stores its own redacted pair'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    assert.equal(requests.length, 3);
+    assert.equal(requests.length, 4);
     const liveSecrets = [
         subjectToken, body.access_token, body.refresh_token,
     ];
