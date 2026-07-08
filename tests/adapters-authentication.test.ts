@@ -20,6 +20,10 @@ import {
 import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
+import {
+    seedIdentityCredential,
+    seedIdentityPii,
+} from './identity-fixtures.ts';
 
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 
@@ -118,11 +122,15 @@ async function passwordUserCtx() {
         identity_id: 'current',
         at: '2020-01-01T00:00:00.000000Z',
     });
-    await db.identityPii.put('current', {
+    // Below-facade pair formation (Phase 13 Task 8): the login
+    // grant's pii-by-email lookup and credential check now derive
+    // from the message ledger, so a raw row here would go
+    // derivation-invisible.
+    await seedIdentityPii(db, 'current', {
         name: 'Demo', email: 'demo@example.com',
         phone: '555-0100', bio: 'demo user',
     });
-    await db.identityCredentials.put('c1', {
+    await seedIdentityCredential(db, 'current', 'c1', {
         identity_id: 'current', kind: 'password',
         status: 'set', secret: await hashPassword('s3cret'),
         at: '2026-06-03T00:00:00.000000Z',

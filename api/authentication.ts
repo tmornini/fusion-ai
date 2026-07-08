@@ -62,6 +62,7 @@ import { deriveMembershipsForIdentity } from
     './derive-memberships.ts';
 import {
     deriveIdentityPii,
+    deriveIdentityPiiRows,
     deriveTokenRevocationsFor,
 } from './derive-identity-spine.ts';
 import {
@@ -1135,7 +1136,11 @@ export type AuthorizeResult =
     };
 
 // The identity that owns an email login (null if none).
-function identityByEmail(
+// Exported so tests/drift-identities.test.ts can prove the
+// derived-plane pii rows resolve the SAME identity id this
+// reducer would resolve from the row plane — the reducer's own
+// bytes are unchanged either way (Phase 13 Task 8).
+export function identityByEmail(
     rows: readonly IdentityPiiEntity[],
     email: string,
 ): Id | null {
@@ -1209,8 +1214,14 @@ async function authorizePassword(
     const denied: AuthorizeResult = {
         ok: false, status: 401, error: 'invalid credentials',
     };
-    const piiRows = await adapter.identityPii
-        .getAllWhere('email', username);
+    // FLIPPED (Phase 13 Task 8): deriveIdentityPiiRows is the E13
+    // full-scan derive (derive-identity-spine.ts) — a whole-
+    // ledger scan is unavoidable here, exactly as the row-plane
+    // getAllWhere('email', ...) it replaces was: email carries no
+    // dedicated index either plane, so both planes scan every
+    // slot to find the match. identityByEmail (the reducer) is
+    // BYTE-UNCHANGED — only the row source moves.
+    const piiRows = await deriveIdentityPiiRows(adapter);
     const identityId = identityByEmail(piiRows, username);
     if (identityId === null) {
         await equalizeFailureTiming(password);

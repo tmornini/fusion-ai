@@ -50,6 +50,7 @@ import { organizationToken } from './token-fixtures.ts';
 import { seedIdentityCredential } from './identity-fixtures.ts';
 import { currentRolesForInOrganization } from
     '../api/authorization.ts';
+import { identityByEmail } from '../api/authentication.ts';
 
 // The E10 drift check (Phase 10 Task 7): message-derived reads
 // over the identity spine's remaining facets (pii, credentials,
@@ -473,6 +474,37 @@ test('identity-pii collection parity (11 seeded slots) fenced'
         ),
         true,
     );
+});
+
+// -- 2b. the by-email login-shape leg (Phase 13 Task 8, concern -
+// -- 2): authorizePassword's identity lookup now feeds -----------
+// -- identityByEmail from deriveIdentityPiiRows rather than the --
+// -- row-plane identityPii.getAllWhere('email', ...) scan — this -
+// -- proves the reducer resolves the SAME identity id from BOTH --
+// -- planes, for every seeded email AND an unknown one (both -----
+// -- null, the no-enumeration shape) -------------------------------
+
+test('by-email login-shape parity: identityByEmail resolves the'
++ ' same identity id from derived pii rows as from the row'
++ ' plane, for every seeded email + an unknown email (both'
++ ' null)', async () => {
+    const db = await seededDb();
+    const derivedRows = await deriveIdentityPiiRows(db);
+    const oldRows = await db.identityPii.getAll();
+    for (const row of oldRows) {
+        const fromDerived = identityByEmail(
+            derivedRows, row.email,
+        );
+        const fromOld = identityByEmail(oldRows, row.email);
+        assert.equal(fromDerived, fromOld);
+        assert.equal(fromDerived, row.id);
+    }
+    const unknownEmail = 'nobody@example.com';
+    assert.equal(
+        identityByEmail(derivedRows, unknownEmail),
+        identityByEmail(oldRows, unknownEmail),
+    );
+    assert.equal(identityByEmail(derivedRows, unknownEmail), null);
 });
 
 // -- 3. credentials parity per identity + per cid + the ---------

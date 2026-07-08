@@ -21,6 +21,10 @@ import {
 } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
+import {
+    seedIdentityCredential,
+    seedIdentityPii,
+} from './identity-fixtures.ts';
 
 // C1 discharge: the /authentication/{token,authorize} message
 // pairs carry live secrets in BOTH directions (a request's
@@ -48,14 +52,21 @@ function jsonPost(
     });
 }
 
+// Below-facade pair formation (the identity-fixtures.ts idiom),
+// re-pointed from a raw row-plane put (Phase 13 Task 8): the
+// authorize grant's pii-by-email lookup and credential check now
+// derive from the message ledger, so a pair-less row would go
+// derivation-invisible even though it is the same row either
+// way — dual-write keeps db.identityPii/identityCredentials
+// readable exactly as before, only the write MECHANISM changes.
 async function seedPasswordUser(
     db: GuardedDbAdapter,
 ): Promise<void> {
-    await db.identityPii.put('current', {
+    await seedIdentityPii(db, 'current', {
         name: 'Demo', email: 'demo@example.com',
         phone: '555-0100', bio: 'demo user',
     });
-    await db.identityCredentials.put('c1', {
+    await seedIdentityCredential(db, 'current', 'c1', {
         identity_id: 'current', kind: 'password',
         status: 'set', secret: await hashPassword(PASSWORD),
         at: '2026-06-03T00:00:00.000000Z',
@@ -139,16 +150,27 @@ test('no live secret survives into the ledger', async () => {
 // pin above proves no HIGH-ENTROPY value survives; this proves
 // the LOW-entropy identifying value (the password-flow
 // username, an email) is likewise absent from every stored
-// auth message — removed outright, not fingerprinted, since a
-// fingerprint over a low-entropy value is reversible.
-test('no live username/email survives into the ledger',
-async () => {
+// AUTH-FLOW message — removed outright, not fingerprinted,
+// since a fingerprint over a low-entropy value is reversible.
+// Scoped to the authentication/* rows (message-redaction.ts's
+// own scope: only 'authentication/authorize' strips `username`)
+// — the fixture's OWN identities/:id/pii document (Phase 13
+// Task 8's seedIdentityPii) legitimately carries the email in
+// plaintext at a DIFFERENT address; that document is not this
+// pin's concern.
+test('no live username/email survives into the AUTH-FLOW'
++ ' ledger rows', async () => {
     const db = await dbWithPasswordUser();
     await seedRootAdmin(db);
     await fullLoginFlow(db);
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
-    for (const row of [...requests, ...responses]) {
+    const authFlowRows = [...requests, ...responses].filter(
+        row => row.uri_prefix === '/authentication/authorize/'
+            || row.uri_prefix === '/authentication/token/',
+    );
+    assert.equal(authFlowRows.length, 4);
+    for (const row of authFlowRows) {
         assert.ok(
             !row.message.includes('demo@example.com'),
             'ledger row ' + row.id + ' leaked the live email',
@@ -182,19 +204,21 @@ test('a full login flow keeps requests/responses balanced,'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    // 6: seedRootAdmin's own organization document + role-grant +
+    // 8: the fixture's own pii + credential pairs (2, Phase 13
+    // Task 8's seedIdentityPii/seedIdentityCredential re-point) +
+    // seedRootAdmin's own organization document + role-grant +
     // membership pairs (3) precede the login flow's two AUTH hops
     // (authorize, token — operation-addressed) plus the token
     // grant's OWN identity_tokens row event pair (Phase 13 Task 5:
     // grantAuthorizationCode's root gains its own pair at the
     // row's address, distinct from the token hop's operation
     // pair).
-    assert.equal(requests.length, 6);
+    assert.equal(requests.length, 8);
     // The AUTH hops stay operation-addressed (uriId ''); the
     // token grant's row event pair rides its OWN row's address
     // instead, so it alone carries a non-empty uri_id in this
     // slice.
-    const authHops = requests.slice(3).filter(
+    const authHops = requests.slice(5).filter(
         row => row.uri_prefix === '/authentication/authorize/'
             || row.uri_prefix === '/authentication/token/',
     );
@@ -202,7 +226,7 @@ test('a full login flow keeps requests/responses balanced,'
     for (const row of authHops) {
         assert.equal(row.uri_id, '');
     }
-    const tokenEventRequest = requests.slice(3).find(
+    const tokenEventRequest = requests.slice(5).find(
         row => row.uri_prefix === '/identity-tokens/',
     );
     assert.ok(tokenEventRequest);
@@ -213,7 +237,7 @@ test('a full login flow keeps requests/responses balanced,'
     // empty) uri_id — a request/response pair shares one `id`
     // AND one (uri_prefix, uri_id) address (appendMessagePair),
     // so this is the identical classification, re-applied.
-    const responseAuthHops = responses.slice(3).filter(
+    const responseAuthHops = responses.slice(5).filter(
         row => row.uri_prefix === '/authentication/authorize/'
             || row.uri_prefix === '/authentication/token/',
     );
@@ -221,7 +245,7 @@ test('a full login flow keeps requests/responses balanced,'
     for (const row of responseAuthHops) {
         assert.equal(row.uri_id, '');
     }
-    const tokenEventResponse = responses.slice(3).find(
+    const tokenEventResponse = responses.slice(5).find(
         row => row.uri_prefix === '/identity-tokens/',
     );
     assert.ok(tokenEventResponse);
@@ -231,7 +255,7 @@ test('a full login flow keeps requests/responses balanced,'
     // absent on every one of these rows, auth hop or token event
     // alike; header absence on the wire mirrors column absence
     // here (message-pair.ts's wireHeadersFor).
-    for (const row of responses.slice(3)) {
+    for (const row of responses.slice(5)) {
         assert.equal(row.supersedes, undefined);
         assert.equal(row.follows, undefined);
     }
@@ -251,7 +275,8 @@ test('stored messages verify against their hashes', async () => {
     }
 });
 
-test('a wrong password stores nothing', async () => {
+test('a wrong password stores no NEW pair beyond the'
++ " fixture's own pii + credential seed", async () => {
     const db = await dbWithPasswordUser();
     const res = await handleRequest(db, jsonPost(
         'authentication/authorize', {
@@ -259,8 +284,11 @@ test('a wrong password stores nothing', async () => {
             password: 'WRONG', client_id: 'web',
         }));
     assert.equal(res.status, 401);
-    assert.equal((await db.requests.getAll()).length, 0);
-    assert.equal((await db.responses.getAll()).length, 0);
+    // 2: the fixture's own pii + credential pairs (Phase 13 Task
+    // 8's seedIdentityPii/seedIdentityCredential re-point) — the
+    // failed attempt itself appends no further pair.
+    assert.equal((await db.requests.getAll()).length, 2);
+    assert.equal((await db.responses.getAll()).length, 2);
 });
 
 test('a double-spent authorization code stores nothing on'
@@ -301,12 +329,16 @@ async () => {
     assert.ok(res.headers.get('Date'));
 });
 
-test('an unsupported grant_type stores nothing', async () => {
+test('an unsupported grant_type stores no NEW pair beyond the'
++ " fixture's own pii + credential seed", async () => {
     const db = await dbWithPasswordUser();
     const res = await handleRequest(db, jsonPost(
         'authentication/token', { grant_type: 'wat' }));
     assert.equal(res.status, 400);
-    assert.equal((await db.requests.getAll()).length, 0);
+    // 2: the fixture's own pii + credential pairs (Phase 13 Task
+    // 8's seedIdentityPii/seedIdentityCredential re-point) — the
+    // rejected grant itself appends no further pair.
+    assert.equal((await db.requests.getAll()).length, 2);
 });
 
 test('a refresh grant stores its own redacted pair with no'
@@ -326,12 +358,13 @@ test('a refresh grant stores its own redacted pair with no'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    // 9: authorize + token (the token hop's own event pair,
-    // Phase 13 Task 5, brings fullLoginFlow's count to 6) +
-    // refresh's own operation pair + refresh's rotate-branch
-    // event pairs (2: the retired root, the issued successor —
-    // Phase 13 Task 5).
-    assert.equal(requests.length, 9);
+    // 11: the fixture's own pii + credential pairs (2, Phase 13
+    // Task 8) + seedRootAdmin's 3 fixture pairs + authorize +
+    // token (the token hop's own event pair, Phase 13 Task 5,
+    // brings fullLoginFlow's count to 8) + refresh's own
+    // operation pair + refresh's rotate-branch event pairs (2:
+    // the retired root, the issued successor — Phase 13 Task 5).
+    assert.equal(requests.length, 11);
     const liveSecrets = [
         first.refresh_token, rotated.access_token,
         rotated.refresh_token,
@@ -361,10 +394,12 @@ test('a token-exchange grant stores its own redacted pair'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    // 5: seedRootAdmin's 3 fixture pairs + the exchange's own
-    // event pair (Phase 13 Task 5: issueTokenPair's root gains
-    // its own pair at the row's address) + its operation pair.
-    assert.equal(requests.length, 5);
+    // 7: the fixture's own pii + credential pairs (2, Phase 13
+    // Task 8) + seedRootAdmin's 3 fixture pairs + the exchange's
+    // own event pair (Phase 13 Task 5: issueTokenPair's root
+    // gains its own pair at the row's address) + its operation
+    // pair.
+    assert.equal(requests.length, 7);
     const liveSecrets = [
         subjectToken, body.access_token, body.refresh_token,
     ];
@@ -488,11 +523,13 @@ test('a client_credentials grant stores its own redacted pair'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    // 4: the fixture's own role-grant + membership pair (Phase
-    // 13 Task 1) precede the token grant's own event pair (Phase
-    // 13 Task 5: issueTokenPair's root gains its own pair at the
-    // row's address) plus its operation pair.
-    assert.equal(requests.length, 4);
+    // 6: dbWithPasswordUser's own pii + credential pairs (2,
+    // Phase 13 Task 8) + the fixture's own role-grant +
+    // membership pair (Phase 13 Task 1) precede the token grant's
+    // own event pair (Phase 13 Task 5: issueTokenPair's root
+    // gains its own pair at the row's address) plus its operation
+    // pair.
+    assert.equal(requests.length, 6);
     const liveSecrets = [
         assertion, body.access_token, body.refresh_token,
     ];
