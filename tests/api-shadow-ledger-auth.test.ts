@@ -307,9 +307,12 @@ test('a refresh grant stores its own redacted pair with no'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    // 7: authorize + token (the token hop's own event pair, Phase
-    // 13 Task 5, brings fullLoginFlow's count to 6) + refresh.
-    assert.equal(requests.length, 7);
+    // 9: authorize + token (the token hop's own event pair,
+    // Phase 13 Task 5, brings fullLoginFlow's count to 6) +
+    // refresh's own operation pair + refresh's rotate-branch
+    // event pairs (2: the retired root, the issued successor —
+    // Phase 13 Task 5).
+    assert.equal(requests.length, 9);
     const liveSecrets = [
         first.refresh_token, rotated.access_token,
         rotated.refresh_token,
@@ -567,7 +570,10 @@ test('an Authorization header sent alongside the token grant is'
 });
 
 test('a reused (already-rotated-away) refresh token grant is a'
-+ ' 401 that stores nothing further', async () => {
++ ' 401 that stores NO further operation pair — but its'
++ ' replay-branch chain-revocation DOES grow the ledger by its'
++ ' own event pairs (Phase 13 Task 5: revocationAppends is not'
++ ' idempotent, and it now carries a pair per row)', async () => {
     const db = await dbWithPasswordUser();
     await seedRootAdmin(db);
     const first = await fullLoginFlow(db);
@@ -576,6 +582,10 @@ test('a reused (already-rotated-away) refresh token grant is a'
         refresh_token: first.refresh_token,
     }));
     const before = (await db.requests.getAll()).length;
+    const opPairsBefore = (await db.requests.getAll()).filter(
+        r => r.uri_prefix === '/authentication/token/'
+            && r.uri_id === '',
+    ).length;
     // Same reasoning as the double-spent-code test above: a
     // distinguishing header keeps this reuse attempt from
     // being byte-identical to the rotation that already
@@ -586,7 +596,20 @@ test('a reused (already-rotated-away) refresh token grant is a'
             refresh_token: first.refresh_token,
         }, { [REQUEST_ID_HEADER]: 'replay-attempt' }));
     assert.equal(reused.status, 401);
-    assert.equal((await db.requests.getAll()).length, before);
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    assert.equal(requests.length, responses.length);
+    const opPairsAfter = requests.filter(
+        r => r.uri_prefix === '/authentication/token/'
+            && r.uri_id === '',
+    ).length;
     assert.equal(
-        (await db.responses.getAll()).length, before);
+        opPairsAfter, opPairsBefore,
+        'no NEW operation pair for the replay-branch 401',
+    );
+    // +2: the chain's two distinct jtis (the original root, the
+    // rotate's successor) each gain a fresh 'revoked' event pair
+    // — the replay branch's own no-operation-pair-but-growing-
+    // event-pairs shape (Phase 13 Task 5).
+    assert.equal(requests.length, before + 2);
 });

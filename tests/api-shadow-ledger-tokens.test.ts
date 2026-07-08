@@ -176,7 +176,11 @@ test('a rotation appends its pair at an operation address:'
 
 test('a byte-identical second rotation of the SAME jti still'
 + ' 409s — the domain guard, NOT a replay of the first'
-+ ' success — and appends nothing further', async () => {
++ ' success — and appends NO further OPERATION pair, though'
++ ' its replay-branch revocation DOES grow the ledger by its'
++ ' own event pairs (Phase 13 Task 5: revocationAppends is not'
++ ' idempotent, and it now carries a pair per row)',
+async () => {
     const db = await seededDb();
     const first = await handleRequest(db, req(
         'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
@@ -196,8 +200,13 @@ test('a byte-identical second rotation of the SAME jti still'
     assert.equal(latestActionForJti(rows, ROOT_JTI), 'revoked');
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
-    assert.equal(requests.length, before);
     assert.equal(requests.length, responses.length);
+    // +2: the chain's two distinct jtis (the seeded root, the
+    // first rotation's successor) each gain a fresh 'revoked'
+    // event pair on the replay branch — NO new operation pair
+    // (the rotation route's own pair only ever appends on the
+    // 'rotate' branch, unchanged).
+    assert.equal(requests.length, before + 2);
 });
 
 test('rotating an unknown jti is a 409 that appends nothing',
@@ -439,4 +448,169 @@ test('a client_credentials grant appends its root\'s own'
     });
     assert.equal(res.status, 200);
     await assertRootEventPair(db);
+});
+
+// ── synthesized event pairs: rotation and revocation (Phase 13
+// Task 5, Gate 7's PRE-FORM + IN-TX VERIFY-OR-RETRY writers) —
+// every row EITHER function writes gets its own event pair,
+// distinct from the wired route's own operation pair.
+
+// ANY identity_tokens row has its own event pair whose stored
+// response deep-equals the row itself — the SAME shape
+// assertRootEventPair checks for a bare issuance, generalized to
+// an arbitrary row id (rotation and revocation can write more
+// than one row per call).
+async function assertEventPairForRow(
+    db: MemoryDbAdapter, rowId: string,
+): Promise<void> {
+    const row = await db.identityTokens.getById(rowId);
+    const requests = await db.requests.getAll();
+    const eventRequest = requests.find(
+        r => r.uri_prefix === '/identity-tokens/'
+            && r.uri_id === rowId,
+    );
+    assert.ok(eventRequest, 'no event pair for row ' + rowId);
+    const responses = await db.responses.getAll();
+    const eventResponse = responses.find(
+        r => r.id === eventRequest!.id,
+    );
+    assert.ok(eventResponse);
+    const eventBody =
+        await responseFromStored(eventResponse!).json();
+    assert.deepEqual(eventBody, row satisfies IdentityTokenEntity);
+}
+
+test('a rotation\'s ROTATE branch appends an event pair for'
++ ' EACH of its two written rows (the retired presented jti,'
++ ' the issued successor), distinct from the rotation route\'s'
++ ' OWN operation pair', async () => {
+    const db = await seededDb();
+    const res = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(res.status, 200);
+    const { jti: newJti } = await res.json() as { jti: string };
+    const rows = await db.identityTokens.getAll();
+    const retired = rows.find(
+        r => r.jti === ROOT_JTI && r.action === 'rotated',
+    );
+    const issued = rows.find(
+        r => r.jti === newJti && r.action === 'issued',
+    );
+    assert.ok(retired);
+    assert.ok(issued);
+    await assertEventPairForRow(db, retired!.id);
+    await assertEventPairForRow(db, issued!.id);
+    const requests = await db.requests.getAll();
+    const opPair = requests.find(
+        r => r.uri_prefix
+            === `/identity-tokens/${ROOT_JTI}/rotation/`,
+    );
+    assert.ok(opPair);
+    assert.equal(opPair!.uri_id, '');
+});
+
+test('a rotation\'s REPLAY branch appends an event pair for'
++ ' EVERY jti the chain has ever held', async () => {
+    const db = await seededDb();
+    const first = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    const { jti: successorJti } =
+        await first.json() as { jti: string };
+    const replay = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(replay.status, 409);
+    const rows = await db.identityTokens.getAll();
+    const revokedRoot = rows.find(
+        r => r.jti === ROOT_JTI && r.action === 'revoked',
+    );
+    const revokedSuccessor = rows.find(
+        r => r.jti === successorJti && r.action === 'revoked',
+    );
+    assert.ok(revokedRoot);
+    assert.ok(revokedSuccessor);
+    await assertEventPairForRow(db, revokedRoot!.id);
+    await assertEventPairForRow(db, revokedSuccessor!.id);
+});
+
+test('a revocation appends an event pair for the revoked row,'
++ ' distinct from the revocation route\'s OWN operation pair',
+async () => {
+    const db = await seededDb();
+    const res = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/revocation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(res.status, 204);
+    const rows = await db.identityTokens.getAll();
+    const revoked = rows.find(
+        r => r.jti === ROOT_JTI && r.action === 'revoked',
+    );
+    assert.ok(revoked);
+    await assertEventPairForRow(db, revoked!.id);
+});
+
+test('revoking an unknown jti appends NO event pair — only its'
++ ' own operation pair (the no-op precedent)', async () => {
+    const db = await seededDb();
+    const before = (await db.requests.getAll()).length;
+    const res = await handleRequest(db, req(
+        'POST', '/identity-tokens/ghost/revocation',
+        DEV_TOKEN, {},
+    ));
+    assert.equal(res.status, 204);
+    const requests = await db.requests.getAll();
+    // +1: only the operation pair — no row written, so no event
+    // pair to match it.
+    assert.equal(requests.length, before + 1);
+    const rows = await db.identityTokens.getAll();
+    assert.equal(rows.length, 1);   // the seeded root, untouched
+});
+
+test('two concurrent rotations of one jti: exactly one'
++ ' \'rotate\' winner, the loser converges to the replay'
++ ' branch (chain revoked + 409) — today\'s exact outcome, now'
++ ' with pairs (the retry loop\'s divergence path)', async () => {
+    const db = await seededDb();
+    const before = await db.identityTokens.getAll();
+    const beforeIds = new Set(before.map(r => r.id));
+    const [a, b] = await Promise.all([
+        handleRequest(db, req(
+            'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+            DEV_TOKEN, {},
+        )),
+        handleRequest(db, req(
+            'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+            DEV_TOKEN, {},
+        )),
+    ]);
+    assert.deepEqual([a.status, b.status].sort(), [200, 409]);
+    const winner = a.status === 200 ? a : b;
+    const { jti: successorJti } =
+        await winner.json() as { jti: string };
+    const rows = await db.identityTokens.getAll();
+    // The whole chain ends up dead: the seeded root AND the
+    // winner's own successor both revoked — the loser's replay
+    // branch revoked everything the chain has ever held.
+    assert.equal(
+        latestActionForJti(rows, ROOT_JTI), 'revoked');
+    assert.equal(
+        latestActionForJti(rows, successorJti), 'revoked');
+    // Every NEWLY written row (the winner's rotate pair, the
+    // loser's replay revocations) carries its own event pair —
+    // excluding the pre-existing seeded root, which predates any
+    // pair-forming writer and so never got one.
+    const newRows = rows.filter(r => !beforeIds.has(r.id));
+    assert.equal(newRows.length, 4);
+    for (const row of newRows) {
+        await assertEventPairForRow(db, row.id);
+    }
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    assert.equal(requests.length, responses.length);
 });

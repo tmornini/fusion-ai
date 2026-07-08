@@ -1,5 +1,5 @@
 import { EntityNotFoundError } from './db.ts';
-import type { DbAdapter } from './db.ts';
+import type { DbAdapter, EntityStore } from './db.ts';
 import {
     verifyClientAssertion,
 } from './client-assertion.ts';
@@ -28,7 +28,9 @@ import {
     chainIdForJti,
     identityForJti,
     revocationAppends,
+    jtiSetsEqual,
 } from './identity-tokens.ts';
+import type { RotationPlan } from './identity-tokens.ts';
 import {
     hashPassword,
     verifyPassword,
@@ -304,11 +306,10 @@ async function issueTokenPair(
 async function appendEvents(
     adapter: DbAdapter,
     events: readonly Omit<IdentityTokenEntity, 'id'>[],
+    ids: readonly Id[],
 ): Promise<void> {
-    for (const event of events) {
-        await adapter.identityTokens.put(
-            generateCryptoSafeBase62(), event,
-        );
+    for (let i = 0; i < events.length; i++) {
+        await adapter.identityTokens.put(ids[i]!, events[i]!);
     }
 }
 
@@ -328,8 +329,9 @@ export async function tokenRevocationReason(
     // FIRST read FLIPPED (Phase 13 Task 4): derived via
     // deriveTokenRevocationsFor — row-identical to the
     // getAllWhere('identity_id', sub) read it replaces. The
-    // by-jti SECOND read below stays on identityTokens directly
-    // until Task 5 wires its own gate-7 pairs.
+    // by-jti SECOND read below now has a matching event pair for
+    // every row (Phase 13 Task 5), but stays on identityTokens
+    // directly until Task 6 flips this read too.
     const revs = await deriveTokenRevocationsFor(adapter, sub);
     const revokedThrough = revokedThroughSeconds(revs, sub);
     if (revokedThrough !== null && iat <= revokedThrough) {
@@ -346,6 +348,84 @@ export async function tokenRevocationReason(
     return null;
 }
 
+// The two-step narrow shared by rotation and revocation, run
+// BOTH pre-tx (the provisional read) and in-tx (the
+// authoritative re-read): find the presented jti's chain, then
+// read the WHOLE chain — planRotation's replay path (and an
+// explicit revocation) act on every jti the chain has ever held,
+// so a jti-only read would under-revoke. `tokens` is whichever
+// face is in scope — the plain adapter pre-tx, the open view
+// in-tx — EntityStore's contract is identical either side.
+async function readTokenChain(
+    tokens: EntityStore<IdentityTokenEntity>,
+    jti: string,
+): Promise<{
+    readonly chainId: string | null;
+    readonly identityId: Id | null;
+    readonly rows: readonly IdentityTokenEntity[];
+}> {
+    const byJti = await tokens.getAllWhere('jti', jti);
+    const chainId = chainIdForJti(byJti, jti);
+    const identityId = identityForJti(byJti, jti);
+    const rows = chainId === null
+        ? byJti
+        : await tokens.getAllWhere('chain_id', chainId);
+    return { chainId, identityId, rows };
+}
+
+// One pre-minted row id, its event, and its formed event pair —
+// zipped by construction (Phase 13 Task 5) so an in-tx write can
+// never mismatch a row against the wrong pair. Pair formation is
+// async crypto, so `formTokenEventWrites` below runs PRE-TX only
+// (the IndexedDB auto-commit constraint bars awaiting anything
+// but row ops inside an open transaction).
+interface TokenEventWrite {
+    readonly id: Id;
+    readonly event: Omit<IdentityTokenEntity, 'id'>;
+    readonly pair: MessagePair;
+}
+
+async function formTokenEventWrites(
+    appends: readonly Omit<IdentityTokenEntity, 'id'>[],
+): Promise<TokenEventWrite[]> {
+    const writes: TokenEventWrite[] = [];
+    for (const event of appends) {
+        const id = generateCryptoSafeBase62();
+        writes.push({
+            id, event, pair: await formTokenEventPair(id, event),
+        });
+    }
+    return writes;
+}
+
+// The retry budget shared by rotation and revocation's verify-
+// or-retry loops (the doctrine's default): a diverged attempt
+// aborts its transaction and retries with a WHOLLY FRESH attempt
+// — re-reading, re-planning, and re-forming pairs from scratch,
+// never reusing a prior attempt's stale snapshot.
+const MAX_TOKEN_WRITE_ATTEMPTS = 3;
+
+// Thrown INSIDE an attempt's transaction body when the in-tx
+// re-plan's jti SET diverges from the pre-formed writes' jti set
+// — a concurrent sibling wrote between this attempt's pre-tx read
+// and its transaction opening. The throw aborts the attempt's
+// transaction (the backends' proven abort path: a thrown body
+// never flushes); the retry loops below catch ONLY this class and
+// retry — any other throw (a store fault, a validation error) is
+// a real failure and must surface, never be mistaken for
+// contention.
+class TokenPlanDivergedError extends Error {}
+
+// Thrown when rotation's OR revocation's retry budget exhausts
+// with every attempt diverging — sustained, adversarial
+// contention, not a normal outcome. Rotation has a clean
+// non-throwing failure vocabulary already (RotationOutcome
+// 'fail', the 409) and uses it instead; revocation has none —
+// silently returning as though the revocation completed would
+// leave an unrevoked jti live, a Commandment II hole — so it
+// throws this.
+class TokenWriteRetriesExhaustedError extends Error {}
+
 // The outcome of an atomic rotation attempt. 'rotate' carries
 // the successor jti; 'fail' covers reuse and unknown — on
 // reuse the whole chain's revocation has already landed in
@@ -354,65 +434,137 @@ export type RotationOutcome =
     | { readonly kind: 'rotate'; readonly newJti: string }
     | { readonly kind: 'fail' };
 
+// One rotation attempt's PRE-TX groundwork: the provisional read
+// against the plain adapter, the provisional plan (planRotation,
+// bytes unchanged), and a pre-minted row id + event pair for
+// whichever appends that plan carries. `newJti` is the ONE value
+// that survives every attempt unchanged (Step 0: the rotation
+// route pre-mints it in its own response spec and threads it back
+// via pairResponseBody, so re-minting it here would desync the
+// wire response from what commits); the chain id is READ, not
+// minted, so it too stays consistent attempt to attempt — only
+// row ids and `at` are genuinely fresh per attempt.
+async function planRotationAttempt(
+    adapter: DbAdapter,
+    presentedJti: string,
+    newJti: string,
+): Promise<{
+    readonly plan: RotationPlan;
+    readonly writes: readonly TokenEventWrite[];
+}> {
+    const { rows } = await readTokenChain(
+        adapter.identityTokens, presentedJti,
+    );
+    const plan = planRotation(rows, presentedJti, newJti, nowUtc());
+    const appends = plan.kind === 'unknown' ? [] : plan.appends;
+    return { plan, writes: await formTokenEventWrites(appends) };
+}
+
 // Read the token ledger, plan the rotation, and append its
-// events in ONE transaction — a concurrent reuse of the same
-// jti can not double-rotate. Shared by the refresh grant and
-// the POST identity-tokens/:jti/rotation route: one truth for
-// the atomic rotate. `newJti` is caller-supplied (synchronous
-// generateCryptoSafeBase62() is safe on either side of the
-// tx boundary) rather than minted internally, so the route can
-// pre-mint it at the gate and thread the SAME value through;
-// `pair` is optional and appends as the LAST act, ONLY on the
-// 'rotate' branch — a 409 (reuse or unknown) stores no pair
-// even though the reuse branch still revokes the chain for
-// real. The route is REPLAY_EXEMPT_ROUTE_PATTERNS-wired
-// (message-pair.ts / api.ts): the gate never serves a stored
-// response for a byte-identical resend of this route, so a
-// resent reuse attempt genuinely re-enters this function and
-// re-fails 409 — this function's own re-check IS the guard the
-// exemption relies on; it must stay live on every call.
-export function rotateRefreshJti(
+// events (plus their own event pairs) in ONE transaction — a
+// concurrent reuse of the same jti can not double-rotate. Shared
+// by the refresh grant and the POST identity-tokens/:jti/rotation
+// route: one truth for the atomic rotate. `pair` is optional and
+// appends as the LAST act, ONLY on the 'rotate' branch — a 409
+// (reuse or unknown) stores no OPERATION pair even though the
+// reuse branch still revokes the chain for real. The route is
+// REPLAY_EXEMPT_ROUTE_PATTERNS-wired (message-pair.ts / api.ts):
+// the gate never serves a stored response for a byte-identical
+// resend of this route, so a resent reuse attempt genuinely
+// re-enters this function and re-fails 409 — this function's own
+// re-check IS the guard the exemption relies on; it must stay
+// live on every call.
+//
+// PRE-FORM + IN-TX VERIFY-OR-RETRY (Phase 13 Task 5, Gate 7): the
+// pre-tx plan above is provisional — a concurrent sibling can
+// still land between that read and this transaction opening. The
+// in-tx body RE-READS and RE-PLANS from scratch, then compares
+// the FULL re-planned jti SET against the pre-formed writes' jti
+// set — never `kind` alone (two 'replay' plans can carry
+// DIFFERENT append sets if a sibling rotation grew the chain
+// between reads). Equal → commit the PRE-TX-prepared writes
+// (never the fresh re-plan's own appends: its `at` would desync
+// the already-formed event pairs' stored messages from the rows
+// they describe — its ONLY job is the equality check). Diverged
+// → abort the transaction and retry with a wholly fresh attempt.
+export async function rotateRefreshJti(
     adapter: DbAdapter,
     presentedJti: string,
     newJti: string,
     pair?: MessagePair,
 ): Promise<RotationOutcome> {
-    return adapter.transaction(
-        ['identity_tokens', 'requests', 'responses'],
-        async (view) => {
-            // Two-step narrow: find the presented jti's chain,
-            // then read the WHOLE chain — planRotation's replay
-            // path revokes every jti in it, so a jti-only read
-            // would under-revoke. Both reads are index hits in
-            // the open tx (no interleaved non-IDB await).
-            const tokens = view.identityTokens;
-            const byJti = await tokens.getAllWhere(
-                'jti', presentedJti);
-            const chainId = chainIdForJti(
-                byJti, presentedJti);
-            const rows = chainId === null
-                ? byJti
-                : await tokens.getAllWhere(
-                    'chain_id', chainId);
-            const plan = planRotation(
-                rows, presentedJti, newJti, nowUtc(),
+    for (
+        let attempt = 0;
+        attempt < MAX_TOKEN_WRITE_ATTEMPTS;
+        attempt++
+    ) {
+        const provisional = await planRotationAttempt(
+            adapter, presentedJti, newJti,
+        );
+        try {
+            return await adapter.transaction(
+                ['identity_tokens', 'requests', 'responses'],
+                async (view) => {
+                    const { rows } = await readTokenChain(
+                        view.identityTokens, presentedJti,
+                    );
+                    const freshPlan = planRotation(
+                        rows, presentedJti, newJti, nowUtc(),
+                    );
+                    const freshAppends =
+                        freshPlan.kind === 'unknown'
+                            ? [] : freshPlan.appends;
+                    if (!jtiSetsEqual(
+                        freshAppends.map(a => a.jti),
+                        provisional.writes.map(w => w.event.jti),
+                    )) {
+                        throw new TokenPlanDivergedError();
+                    }
+                    await appendEvents(
+                        view,
+                        provisional.writes.map(w => w.event),
+                        provisional.writes.map(w => w.id),
+                    );
+                    for (const write of provisional.writes) {
+                        await appendMessagePair(view, write.pair);
+                    }
+                    if (provisional.plan.kind === 'rotate') {
+                        if (pair !== undefined) {
+                            await appendMessagePair(view, pair);
+                        }
+                        return {
+                            kind: 'rotate' as const,
+                            newJti: provisional.plan.newJti,
+                        };
+                    }
+                    return { kind: 'fail' as const };
+                },
             );
-            if (plan.kind === 'rotate') {
-                await appendEvents(view, plan.appends);
-                if (pair !== undefined) {
-                    await appendMessagePair(view, pair);
-                }
-                return {
-                    kind: 'rotate' as const,
-                    newJti: plan.newJti,
-                };
-            }
-            if (plan.kind === 'replay') {
-                await appendEvents(view, plan.appends);
-            }
-            return { kind: 'fail' as const };
-        },
+        } catch (e) {
+            if (!(e instanceof TokenPlanDivergedError)) throw e;
+        }
+    }
+    return { kind: 'fail' as const };
+}
+
+// One revocation attempt's PRE-TX groundwork: the provisional
+// read + revocationAppends' plan (bytes unchanged) + a
+// pre-minted row id and event pair per append. An unknown jti
+// (no chain, no identity) plans zero appends — the SAME no-op
+// shape revokeTokenChain has always handed an unknown jti.
+async function planRevocationAttempt(
+    adapter: DbAdapter,
+    jti: string,
+): Promise<{
+    readonly writes: readonly TokenEventWrite[];
+}> {
+    const { chainId, identityId, rows } = await readTokenChain(
+        adapter.identityTokens, jti,
     );
+    const appends = chainId === null || identityId === null
+        ? []
+        : revocationAppends(rows, chainId, identityId, nowUtc());
+    return { writes: await formTokenEventWrites(appends) };
 }
 
 // Revoke every jti in the chain `jti` belongs to (logging out
@@ -421,33 +573,75 @@ export function rotateRefreshJti(
 // revoke. A no-op for an unknown jti — `pair` still appends on
 // BOTH exit paths (the claim-op precedent: a 2xx no-op is not
 // a failure).
-export function revokeTokenChain(
+//
+// PRE-FORM + IN-TX VERIFY-OR-RETRY (Phase 13 Task 5, Gate 7 — see
+// rotateRefreshJti's own comment for the full mechanism). The
+// jti-SET equality check is THIS function's own BLOCKING fix
+// (Author gate 4, lens-2): a concurrent sibling rotation can grow
+// the chain between the pre-tx and in-tx reads, so committing the
+// stale pre-formed set would leave the new jti UNREVOKED.
+// revocationAppends is NOT idempotent (jtisInChain re-emits every
+// jti on every call) — the retry's re-plan on a genuinely
+// unchanged chain reproduces the SAME jti set (equal → proceed)
+// even though a wholly separate THIRD call would re-emit fresh
+// rows again; that non-idempotency is a named, pre-existing
+// property this task mirrors, not one it introduces (watch-point
+// e). Retry exhaustion throws (see TokenWriteRetriesExhaustedError
+// above) — never a silent, incomplete success.
+export async function revokeTokenChain(
     adapter: DbAdapter,
     jti: string,
     pair?: MessagePair,
 ): Promise<void> {
-    return adapter.transaction(
-        ['identity_tokens', 'requests', 'responses'],
-        async (view) => {
-            const tokens = view.identityTokens;
-            const byJti = await tokens.getAllWhere('jti', jti);
-            const chainId = chainIdForJti(byJti, jti);
-            const identityId = identityForJti(byJti, jti);
-            if (chainId === null || identityId === null) {
-                if (pair !== undefined) {
-                    await appendMessagePair(view, pair);
-                }
-                return;
-            }
-            const rows = await tokens.getAllWhere(
-                'chain_id', chainId);
-            await appendEvents(view, revocationAppends(
-                rows, chainId, identityId, nowUtc(),
-            ));
-            if (pair !== undefined) {
-                await appendMessagePair(view, pair);
-            }
-        },
+    for (
+        let attempt = 0;
+        attempt < MAX_TOKEN_WRITE_ATTEMPTS;
+        attempt++
+    ) {
+        const provisional = await planRevocationAttempt(
+            adapter, jti,
+        );
+        try {
+            await adapter.transaction(
+                ['identity_tokens', 'requests', 'responses'],
+                async (view) => {
+                    const { chainId, identityId, rows } =
+                        await readTokenChain(
+                            view.identityTokens, jti,
+                        );
+                    const freshAppends =
+                        chainId === null || identityId === null
+                            ? []
+                            : revocationAppends(
+                                rows, chainId, identityId,
+                                nowUtc(),
+                            );
+                    if (!jtiSetsEqual(
+                        freshAppends.map(a => a.jti),
+                        provisional.writes.map(w => w.event.jti),
+                    )) {
+                        throw new TokenPlanDivergedError();
+                    }
+                    await appendEvents(
+                        view,
+                        provisional.writes.map(w => w.event),
+                        provisional.writes.map(w => w.id),
+                    );
+                    for (const write of provisional.writes) {
+                        await appendMessagePair(view, write.pair);
+                    }
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+            return;
+        } catch (e) {
+            if (!(e instanceof TokenPlanDivergedError)) throw e;
+        }
+    }
+    throw new TokenWriteRetriesExhaustedError(
+        'revocation retry attempts exhausted for jti: ' + jti,
     );
 }
 
