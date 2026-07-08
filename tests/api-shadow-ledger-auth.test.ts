@@ -207,6 +207,25 @@ test('a full login flow keeps requests/responses balanced,'
     );
     assert.ok(tokenEventRequest);
     assert.notEqual(tokenEventRequest!.uri_id, '');
+    // uri_id mirrors the SAME partition the requests loop above
+    // pins: the two AUTH hops stay operation-addressed, the token
+    // grant's row event response carries its OWN row's (non-
+    // empty) uri_id — a request/response pair shares one `id`
+    // AND one (uri_prefix, uri_id) address (appendMessagePair),
+    // so this is the identical classification, re-applied.
+    const responseAuthHops = responses.slice(3).filter(
+        row => row.uri_prefix === '/authentication/authorize/'
+            || row.uri_prefix === '/authentication/token/',
+    );
+    assert.equal(responseAuthHops.length, 2);
+    for (const row of responseAuthHops) {
+        assert.equal(row.uri_id, '');
+    }
+    const tokenEventResponse = responses.slice(3).find(
+        row => row.uri_prefix === '/identity-tokens/',
+    );
+    assert.ok(tokenEventResponse);
+    assert.notEqual(tokenEventResponse!.uri_id, '');
     // supersedes/follows are RESPONSE-row columns (ResponseEntity,
     // api/types.ts) — a genesis pair (no predecessor) leaves BOTH
     // absent on every one of these rows, auth hop or token event

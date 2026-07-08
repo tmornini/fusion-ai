@@ -9,6 +9,12 @@ import { seedRootAdmin } from './root-admin-fixture.ts';
 import { latestActionForJti } from '../api/identity-tokens.ts';
 import { responseFromStored } from '../api/message-pair.ts';
 import {
+    rotateRefreshJti,
+    revokeTokenChain,
+    tokenRevocationReason,
+} from '../api/authentication.ts';
+import type { DbAdapter } from '../api/db.ts';
+import {
     makeAssertionSigner,
 } from './client-assertion-fixtures.ts';
 import type { IdentityTokenEntity } from '../api/types.ts';
@@ -380,6 +386,13 @@ async function assertRootEventPair(
             && r.uri_id === root.id,
     );
     assert.ok(eventRequest, 'no event pair for the issued root');
+    // requesterIdentityId is the event's OWN identity_id (the
+    // affected identity) — the NAMED convention formTokenEventPair
+    // implements, since no authenticated actor is in view at this
+    // depth (message-pair.ts).
+    assert.equal(
+        eventRequest!.requester_identity_id, root.identity_id,
+    );
     const responses = await db.responses.getAll();
     const eventResponse = responses.find(
         r => r.id === eventRequest!.id,
@@ -471,6 +484,11 @@ async function assertEventPairForRow(
             && r.uri_id === rowId,
     );
     assert.ok(eventRequest, 'no event pair for row ' + rowId);
+    // requesterIdentityId is the event's OWN identity_id — same
+    // NAMED convention as assertRootEventPair above.
+    assert.equal(
+        eventRequest!.requester_identity_id, row.identity_id,
+    );
     const responses = await db.responses.getAll();
     const eventResponse = responses.find(
         r => r.id === eventRequest!.id,
@@ -650,4 +668,127 @@ async () => {
             r => r.uri_prefix === '/authentication/token/',
         ).length, 0,
     );
+});
+
+// ── revokeTokenChain's OWN divergence→retry branch — the two
+// retry loops are hand-duplicated (Premature Generalization
+// avoidance: two call sites, below the exploratory-duplication
+// threshold), so the rotation-vs-rotation contention test above
+// exercises ONLY rotateRefreshJti's copy. This races a chain
+// revocation against a concurrent rotation of that SAME chain's
+// live successor — the shape that can grow the chain between
+// revokeTokenChain's pre-tx and in-tx reads (Author gate 4,
+// lens-2 BLOCKING fix).
+
+test('revokeTokenChain racing a concurrent rotateRefreshJti on'
++ ' the chain\'s live successor: the chain ends FULLY revoked'
++ ' regardless of which wins, including any jti the rotation'
++ ' minted mid-race, and the gate denies every one of them'
++ ' afterward', async () => {
+    const db = await seededDb();
+    // Establish a live successor first: rotate the seeded root
+    // once, synchronously, so the chain has a rotated root AND a
+    // live (issued) successor jti — "the chain's live successor"
+    // the racing rotation below targets.
+    const firstRotation = await handleRequest(db, req(
+        'POST', `/identity-tokens/${ROOT_JTI}/rotation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(firstRotation.status, 200);
+    const { jti: liveSuccessor } =
+        await firstRotation.json() as { jti: string };
+    const [revoke, rotate] = await Promise.all([
+        handleRequest(db, req(
+            'POST', `/identity-tokens/${ROOT_JTI}/revocation`,
+            DEV_TOKEN, {},
+        )),
+        handleRequest(db, req(
+            'POST', `/identity-tokens/${liveSuccessor}/rotation`,
+            DEV_TOKEN, {},
+        )),
+    ]);
+    // revokeTokenChain never fails (the claim-op 2xx precedent)
+    // — this holds regardless of which side of the race wins.
+    assert.equal(revoke.status, 204);
+    assert.ok([200, 409].includes(rotate.status));
+    const rows = await db.identityTokens.getAll();
+    const chainId = rows.find(r => r.jti === ROOT_JTI)!.chain_id;
+    const everyJti = new Set(
+        rows.filter(r => r.chain_id === chainId).map(r => r.jti),
+    );
+    // At least the seeded root and its first successor — plus a
+    // SECOND (race-minted) successor if the racing rotation won.
+    assert.ok(everyJti.size >= 2);
+    for (const jti of everyJti) {
+        assert.equal(latestActionForJti(rows, jti), 'revoked');
+    }
+    if (rotate.status === 200) {
+        const { jti: raceSuccessor } =
+            await rotate.json() as { jti: string };
+        assert.ok(everyJti.has(raceSuccessor));
+    }
+    // The gate denies every jti in the chain afterward — driven
+    // through the real gate-check function, not merely the
+    // ledger-reduction it wraps.
+    for (const jti of everyJti) {
+        assert.equal(
+            await tokenRevocationReason(db, 'current', 0, jti),
+            'token chain revoked',
+        );
+    }
+    const requests = await db.requests.getAll();
+    const responses = await db.responses.getAll();
+    assert.equal(requests.length, responses.length);
+});
+
+// ── fault discrimination — the retry catch names ONLY the
+// divergence sentinel (TokenPlanDivergedError, module-private to
+// authentication.ts). Any OTHER thrown error — a genuine store
+// fault, driven here behaviorally by faulting adapter.transaction
+// itself, rather than exporting the sentinel class — must
+// propagate on attempt 1: never retried (the Greedy Catch
+// abomination this task's brief named explicitly), never
+// swallowed, never converted into the operation's own ordinary
+// failure shape (rotation's 409 outcome / revocation's silent
+// void success).
+
+function adapterWithFaultingTransaction(
+    real: MemoryDbAdapter, fault: Error,
+): { readonly adapter: DbAdapter; readonly calls: () => number } {
+    let calls = 0;
+    (real as unknown as {
+        transaction: () => Promise<never>;
+    }).transaction = async () => {
+        calls += 1;
+        throw fault;
+    };
+    return { adapter: real as unknown as DbAdapter, calls: () => calls };
+}
+
+test('rotateRefreshJti propagates a non-divergence transaction'
++ ' fault on attempt 1 — no retry, no swallow, no conversion'
++ ' to the 409 outcome', async () => {
+    const db = await seededDb();
+    const fault = new Error('store exploded');
+    const faulting = adapterWithFaultingTransaction(db, fault);
+    await assert.rejects(
+        () => rotateRefreshJti(
+            faulting.adapter, ROOT_JTI, 'newjti-fault',
+        ),
+        /store exploded/,
+    );
+    assert.equal(faulting.calls(), 1);
+});
+
+test('revokeTokenChain propagates a non-divergence transaction'
++ ' fault on attempt 1 — no retry, no swallow, no silent'
++ ' success', async () => {
+    const db = await seededDb();
+    const fault = new Error('store exploded');
+    const faulting = adapterWithFaultingTransaction(db, fault);
+    await assert.rejects(
+        () => revokeTokenChain(faulting.adapter, ROOT_JTI),
+        /store exploded/,
+    );
+    assert.equal(faulting.calls(), 1);
 });
