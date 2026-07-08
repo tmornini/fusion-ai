@@ -61,6 +61,7 @@ import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import { deriveMembershipsForIdentity } from
     './derive-memberships.ts';
 import {
+    deriveCredentialsFor,
     deriveIdentityPii,
     deriveIdentityPiiRows,
     deriveTokenRevocationsFor,
@@ -1227,8 +1228,13 @@ async function authorizePassword(
         await equalizeFailureTiming(password);
         return denied;
     }
-    const credRows = await adapter.identityCredentials
-        .getAllWhere('identity_id', identityId);
+    // FLIPPED (Phase 13 Task 8): deriveCredentialsFor reads the
+    // identity's own /credentials prefix — a targeted, identity-
+    // keyed read, never a full-ledger scan — carrying full rows
+    // (secret included, gate 16's role-grants-only deviation does
+    // not apply here). currentPasswordSecret (the reducer) is
+    // BYTE-UNCHANGED — only the row source moves.
+    const credRows = await deriveCredentialsFor(adapter, identityId);
     const secret =
         currentPasswordSecret(credRows, identityId);
     if (secret === null) {
