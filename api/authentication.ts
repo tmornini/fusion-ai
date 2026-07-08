@@ -393,19 +393,20 @@ async function readTokenChain(
     return { chainId, identityId, rows };
 }
 
-// The PRE-TX ledger-derived twin of readTokenChain above (Phase
-// 13 Task 6, gate 7 discharged): the SAME two-step shape — find
-// the presented jti's chain via the by-jti fold, then read the
-// WHOLE chain — but sourced from deriveIdentityTokenEventsForJti/
-// deriveIdentityTokens rather than an EntityStore. `db` is always
-// the plain adapter here, never an open transaction view:
-// planRotationAttempt/planRevocationAttempt call this ONLY for
-// their own PRE-TX provisional read below; their IN-TX re-read
-// stays on readTokenChain(view.identityTokens, ...) inside
-// rotateRefreshJti/revokeTokenChain's own transaction bodies until
-// Task 9a moves it too. Two independent family scans (one per
-// derivation call) mirror readTokenChain's own two independent
-// getAllWhere calls above — the SAME shape, never worse.
+// The ledger-derived twin of readTokenChain above (Phase 13 Task
+// 6, gate 7 discharged): the SAME two-step shape — find the
+// presented jti's chain via the by-jti fold, then read the WHOLE
+// chain — but sourced from deriveIdentityTokenEventsForJti/
+// deriveIdentityTokens rather than an EntityStore. `db` is the
+// plain adapter for planRotationAttempt/planRevocationAttempt's
+// own PRE-TX provisional read below; it is an open transaction
+// view (adapter-shaped) for rotateRefreshJti's own IN-TX re-read
+// (Task 9a's first re-anchor) — revokeTokenChain's IN-TX re-read
+// stays on readTokenChain(view.identityTokens, ...) until Task
+// 9a's second re-anchor moves it too. Two independent family
+// scans (one per derivation call) mirror readTokenChain's own two
+// independent getAllWhere calls above — the SAME shape, never
+// worse.
 async function readTokenChainFromLedger(
     db: DbAdapter,
     jti: string,
@@ -558,8 +559,8 @@ export async function rotateRefreshJti(
             return await adapter.transaction(
                 ['identity_tokens', 'requests', 'responses'],
                 async (view) => {
-                    const { rows } = await readTokenChain(
-                        view.identityTokens, presentedJti,
+                    const { rows } = await readTokenChainFromLedger(
+                        view, presentedJti,
                     );
                     const freshPlan = planRotation(
                         rows, presentedJti, newJti, nowUtc(),
