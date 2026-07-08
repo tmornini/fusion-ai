@@ -229,7 +229,7 @@ Append-only set-default-org ledger
 identity chose its default organization — the org a
 flat (un-exchanged) token lands in. The current
 default is the LATEST `at` per `identity_id`
-(`currentDefaultOrgFor` in `api/authorization.ts` is
+(`currentDefaultOrganizationFor` in `api/authorization.ts` is
 its single home); `identityDefaultOrganization` falls
 through to the PRIMARY membership org when the ledger
 is empty, else a 403. A re-choice is a NEW row — never
