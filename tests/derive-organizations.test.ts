@@ -17,11 +17,11 @@ import {
 // commit's sibling) and its seed pairs (Task 3) —
 // api-shadow-ledger-organizations.test.ts's own freshDb/
 // DEV_TOKEN/organizationRow fixtures, reused rather than
-// re-invented, since the mock-data seed still writes
-// organizations ROWS with ZERO pairs (adapter.organizations.put
-// directly, never through the message plane) — every pair this
-// file compares against is built through the SAME live PUT
-// route the shadow-ledger suite already exercises.
+// re-invented: this file predates Task 3's own seed pairs, so
+// every pair it compares against is built through the SAME
+// live PUT route the shadow-ledger suite already exercises,
+// never the mock-data seed (which now forms its own
+// organizations pairs too).
 
 const BASE = 'http://localhost';
 
