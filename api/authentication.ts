@@ -50,6 +50,8 @@ import {
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import { deriveMembershipsForIdentity } from
     './derive-memberships.ts';
+import { deriveTokenRevocationsFor } from
+    './derive-identity-spine.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an
@@ -299,8 +301,12 @@ export async function tokenRevocationReason(
     iat: number,
     jti: string,
 ): Promise<string | null> {
-    const revs = await adapter.identityTokenRevocations
-        .getAllWhere('identity_id', sub);
+    // FIRST read FLIPPED (Phase 13 Task 4): derived via
+    // deriveTokenRevocationsFor — row-identical to the
+    // getAllWhere('identity_id', sub) read it replaces. The
+    // by-jti SECOND read below stays on identityTokens directly
+    // until Task 5 wires its own gate-7 pairs.
+    const revs = await deriveTokenRevocationsFor(adapter, sub);
     const revokedThrough = revokedThroughSeconds(revs, sub);
     if (revokedThrough !== null && iat <= revokedThrough) {
         return 'token revoked';

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
+import { PUT } from '../api/api.ts';
 import { postToken } from '../api/authentication.ts';
 import {
     mintAccessToken,
@@ -12,6 +13,8 @@ import {
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
+import { devToken } from './token-fixtures.ts';
+import { seedRootAdmin } from './root-admin-fixture.ts';
 
 // A revoked-but-unexpired token must not be launderable into a
 // fresh valid pair by the token-exchange or refresh grants —
@@ -73,17 +76,39 @@ async function seedMembershipPair(
     );
 }
 
+// Pair-wired the same way seedMembershipPair is above, but
+// through handleRequest itself (api-token-gate.test.ts's own
+// 'a logout-everywhere revokes earlier tokens' precedent) —
+// Phase 13 Task 4: a raw store write would leave this
+// revocation invisible to deriveTokenRevocationsFor once the
+// coarse gate reads it, silently admitting a signed-out
+// session. identity-token-revocations/:id PUT is admin-only
+// (ROUTE_POLICY, api/authorization.ts), so the writer is
+// seedRootAdmin's 'current', never u1/u2 — the two identities
+// under test.
+async function seedTokenRevocationPair(
+    db: MemoryDbAdapter,
+    id: string,
+    identityId: string,
+    at: string,
+): Promise<void> {
+    await PUT(
+        db, 'identity-token-revocations/' + id,
+        { identity_id: identityId, at },
+        await devToken(),
+    );
+}
+
 async function revokedDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
+    await seedRootAdmin(db);
     await seedMembershipPair(
         db, 'm', 'A', 'u1', '2020-01-01T00:00:00.000000Z',
     );
     // logout-everywhere as of now: every u1 token minted
     // before this stamp is dead.
-    await db.identityTokenRevocations.put('r1', {
-        identity_id: 'u1', at: nowUtc(),
-    });
+    await seedTokenRevocationPair(db, 'r1', 'u1', nowUtc());
     return db;
 }
 
