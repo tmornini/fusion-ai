@@ -46,6 +46,7 @@ import {
 import {
     appendMessagePair,
     formAuthPair,
+    formTokenEventPair,
 } from './message-pair.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import { deriveMembershipsForIdentity } from
@@ -239,16 +240,19 @@ async function recordIssuedRoot(
 // Issue a pair on a NEW chain: the refresh jti is recorded as a
 // fresh chain root. Used by grants that start a session without
 // consuming a single-use resource. All crypto (jti generation,
-// mintPair's HMAC signing, formAuthPair's fingerprinting) runs
-// PRE-tx; the chain-root write and the pair append are this
-// grant's only row writes, so they ride ONE minimal transaction
-// (the default-organization no-change precedent) — a mid-write
-// fault can never leave an issued chain root with no matching
-// ledger pair. `seed` is undefined for
-// exchangeBearerForOrganization's internal, non-route hop (the
-// org-switch facade never was an /authentication/token request),
-// so that caller mints its chain root with no pair at all —
-// exactly as before Task 3.
+// mintPair's HMAC signing, formAuthPair's and
+// formTokenEventPair's fingerprinting) runs PRE-tx; the
+// chain-root write and its pair appends are this grant's only
+// row writes, so they ride ONE minimal transaction (the
+// default-organization no-change precedent) — a mid-write fault
+// can never leave an issued chain root with no matching ledger
+// pair. `seed` is undefined for exchangeBearerForOrganization's
+// internal, non-route hop (the org-switch facade never was an
+// /authentication/token request), so that caller mints its chain
+// root with no AUTH pair — exactly as before Task 3; its root's
+// OWN event pair stays gated on the SAME `seed` here (Task 5
+// gains the exchange hop's event pair separately, once its own
+// commit decouples the two).
 async function issueTokenPair(
     adapter: DbAdapter,
     identityId: Id,
@@ -274,12 +278,21 @@ async function issueTokenPair(
     const pair = seed === undefined
         ? undefined
         : await formAuthPair(seed, body, identityId, 200, response);
+    const eventPair = seed === undefined
+        ? undefined
+        : await formTokenEventPair(rootId, {
+            jti: refreshJti, identity_id: identityId,
+            action: 'issued', chain_id: chainId, at,
+        });
     await adapter.transaction(
         ['identity_tokens', 'requests', 'responses'],
         async (view) => {
             await recordIssuedRoot(
                 view, identityId, refreshJti, rootId, chainId, at,
             );
+            if (eventPair !== undefined) {
+                await appendMessagePair(view, eventPair);
+            }
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -694,6 +707,16 @@ async function grantAuthorizationCode(
     const pair = await formAuthPair(
         seed, body, state.identityId, 200, response,
     );
+    // The root's OWN event pair (Phase 13 Task 5): formed pre-tx
+    // against `state.identityId`, mirroring how `pair`/`response`
+    // above already do — the in-tx write below stamps the row
+    // with `fresh.identityId` instead, the SAME asymmetry the
+    // existing code already carries (a code's issuer cannot
+    // change between the pre-tx read and the re-read here).
+    const eventPair = await formTokenEventPair(rootId, {
+        jti: refreshJti, identity_id: state.identityId,
+        action: 'issued', chain_id: chainId, at,
+    });
     const consumed = await adapter.transaction(
         [
             'authorization_codes', 'identity_tokens',
@@ -718,6 +741,7 @@ async function grantAuthorizationCode(
                 view, fresh.identityId, refreshJti,
                 rootId, chainId, at,
             );
+            await appendMessagePair(view, eventPair);
             await appendMessagePair(view, pair);
             return true;
         },

@@ -174,28 +174,45 @@ async () => {
 });
 
 test('a full login flow keeps requests/responses balanced,'
-+ ' one genesis pair per hop', async () => {
++ ' one genesis pair per hop plus the token grant\'s own'
++ ' identity_tokens row event pair', async () => {
     const db = await dbWithPasswordUser();
     await seedRootAdmin(db);
     await fullLoginFlow(db);
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    assert.equal(requests.length, 5);
-    // slice(3): seedRootAdmin's own organization document + role-
-    // grant + membership pairs (Phase 13 Tasks 1 and 3) precede
-    // the login flow's two hops and carry a non-empty uri_id
-    // (their own row ids), unlike the authorize/token hops this
-    // loop pins.
-    for (const row of requests.slice(3)) {
+    // 6: seedRootAdmin's own organization document + role-grant +
+    // membership pairs (3) precede the login flow's two AUTH hops
+    // (authorize, token — operation-addressed) plus the token
+    // grant's OWN identity_tokens row event pair (Phase 13 Task 5:
+    // grantAuthorizationCode's root gains its own pair at the
+    // row's address, distinct from the token hop's operation
+    // pair).
+    assert.equal(requests.length, 6);
+    // The AUTH hops stay operation-addressed (uriId ''); the
+    // token grant's row event pair rides its OWN row's address
+    // instead, so it alone carries a non-empty uri_id in this
+    // slice.
+    const authHops = requests.slice(3).filter(
+        row => row.uri_prefix === '/authentication/authorize/'
+            || row.uri_prefix === '/authentication/token/',
+    );
+    assert.equal(authHops.length, 2);
+    for (const row of authHops) {
         assert.equal(row.uri_id, '');
     }
+    const tokenEventRequest = requests.slice(3).find(
+        row => row.uri_prefix === '/identity-tokens/',
+    );
+    assert.ok(tokenEventRequest);
+    assert.notEqual(tokenEventRequest!.uri_id, '');
     // supersedes/follows are RESPONSE-row columns (ResponseEntity,
     // api/types.ts) — a genesis pair (no predecessor) leaves BOTH
-    // absent; header absence on the wire mirrors column absence
+    // absent on every one of these rows, auth hop or token event
+    // alike; header absence on the wire mirrors column absence
     // here (message-pair.ts's wireHeadersFor).
     for (const row of responses.slice(3)) {
-        assert.equal(row.uri_id, '');
         assert.equal(row.supersedes, undefined);
         assert.equal(row.follows, undefined);
     }
@@ -290,7 +307,9 @@ test('a refresh grant stores its own redacted pair with no'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    assert.equal(requests.length, 6);   // authorize + token + refresh
+    // 7: authorize + token (the token hop's own event pair, Phase
+    // 13 Task 5, brings fullLoginFlow's count to 6) + refresh.
+    assert.equal(requests.length, 7);
     const liveSecrets = [
         first.refresh_token, rotated.access_token,
         rotated.refresh_token,
@@ -320,7 +339,10 @@ test('a token-exchange grant stores its own redacted pair'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    assert.equal(requests.length, 4);
+    // 5: seedRootAdmin's 3 fixture pairs + the exchange's own
+    // event pair (Phase 13 Task 5: issueTokenPair's root gains
+    // its own pair at the row's address) + its operation pair.
+    assert.equal(requests.length, 5);
     const liveSecrets = [
         subjectToken, body.access_token, body.refresh_token,
     ];
@@ -444,9 +466,11 @@ test('a client_credentials grant stores its own redacted pair'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    // 3: the fixture's own role-grant + membership pair (Phase
-    // 13 Task 1) precede the token grant's own pair.
-    assert.equal(requests.length, 3);
+    // 4: the fixture's own role-grant + membership pair (Phase
+    // 13 Task 1) precede the token grant's own event pair (Phase
+    // 13 Task 5: issueTokenPair's root gains its own pair at the
+    // row's address) plus its operation pair.
+    assert.equal(requests.length, 4);
     const liveSecrets = [
         assertion, body.access_token, body.refresh_token,
     ];

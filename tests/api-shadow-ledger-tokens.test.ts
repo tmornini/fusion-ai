@@ -3,10 +3,14 @@ import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { sha256Hex } from '../shared/digest.ts';
-import { DEV_TOKEN } from './token-fixtures.ts';
+import { DEV_TOKEN, devToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { latestActionForJti } from '../api/identity-tokens.ts';
 import { responseFromStored } from '../api/message-pair.ts';
+import {
+    makeAssertionSigner,
+} from './client-assertion-fixtures.ts';
+import type { IdentityTokenEntity } from '../api/types.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -329,4 +333,110 @@ test('request and response counts stay equal across a mix'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
+});
+
+// ── synthesized event pairs: the issued-root writers (Phase 13
+// Task 5, Gate 7) — every identity_tokens row write now appends
+// a matching event pair at 'identity-tokens/:id', in the SAME
+// transaction as the row, distinct from whatever operation pair
+// the grant's own /authentication/token request forms.
+
+function postToken(
+    db: MemoryDbAdapter, body: unknown,
+): Promise<Response> {
+    return handleRequest(db, new Request(
+        `${BASE}/authentication/token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body),
+        },
+    ));
+}
+
+// The ONE identity_tokens row a bare issuance grant writes has
+// its own event pair at the row's address — a genesis pair
+// (identity-tokens/:id carries no DOCUMENT_CLASS entry, so no
+// head-read ever chains it), whose stored response deep-equals
+// the row itself.
+async function assertRootEventPair(
+    db: MemoryDbAdapter,
+): Promise<void> {
+    const rows = await db.identityTokens.getAll();
+    assert.equal(rows.length, 1);
+    const root = rows[0]!;
+    const requests = await db.requests.getAll();
+    const eventRequest = requests.find(
+        r => r.uri_prefix === '/identity-tokens/'
+            && r.uri_id === root.id,
+    );
+    assert.ok(eventRequest, 'no event pair for the issued root');
+    const responses = await db.responses.getAll();
+    const eventResponse = responses.find(
+        r => r.id === eventRequest!.id,
+    );
+    assert.ok(eventResponse);
+    const eventBody =
+        await responseFromStored(eventResponse!).json();
+    assert.deepEqual(eventBody, root satisfies IdentityTokenEntity);
+}
+
+test('an authorization_code grant appends its root\'s own'
++ ' event pair, distinct from the grant\'s operation pair',
+async () => {
+    const db = await freshDb();
+    await db.authorizationCodes.put('ac-1', {
+        code: 'the-code', identity_id: 'current',
+        client_id: 'web', status: 'issued', at: AT,
+    });
+    const res = await postToken(db, {
+        grant_type: 'authorization_code', code: 'the-code',
+    });
+    assert.equal(res.status, 200);
+    await assertRootEventPair(db);
+    const requests = await db.requests.getAll();
+    const opPair = requests.find(
+        r => r.uri_prefix === '/authentication/token/',
+    );
+    assert.ok(opPair);
+    assert.equal(opPair!.uri_id, '');
+    // 3 bootstrap + the root's own event pair + the grant's own
+    // operation pair.
+    assert.equal(requests.length, 5);
+});
+
+test('a token-exchange grant (a real /authentication/token'
++ ' request, not the internal org-exchange hop) appends its'
++ ' root\'s own event pair', async () => {
+    const db = await freshDb();
+    const subject = await devToken('current');
+    const res = await postToken(db, {
+        grant_type: 'token-exchange',
+        subject_token: subject, actor_token: subject,
+    });
+    assert.equal(res.status, 200);
+    await assertRootEventPair(db);
+});
+
+test('a client_credentials grant appends its root\'s own'
++ ' event pair', async () => {
+    const db = await freshDb();
+    const signer = await makeAssertionSigner('ES256');
+    const now = Math.floor(Date.now() / 1000);
+    const assertion = await signer.sign({
+        iss: 'svc-shadow', sub: 'svc-shadow',
+        aud: 'fusion-ai-web',
+        exp: now + 300, iat: now,
+        jti: 'assert-shadow-tokens-1',
+    });
+    await db.clients.put('svc-shadow', {
+        grant_types: 'client_credentials',
+        redirect_uris: '', jwks: signer.jwks,
+        aud: 'fusion-ai-web', status: 'active',
+    });
+    const res = await postToken(db, {
+        grant_type: 'client_credentials',
+        client_id: 'svc-shadow', client_assertion: assertion,
+    });
+    assert.equal(res.status, 200);
+    await assertRootEventPair(db);
 });
