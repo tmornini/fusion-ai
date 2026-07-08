@@ -543,6 +543,88 @@ test(
     },
 );
 
+// A hand-built schema, served the same way the partial-schema
+// stub above serves one — lets these tests pin the DERIVATION
+// (pairs vs. the raw members table slice) directly, without
+// driving a full member-creation op through the gate.
+function stubSnapshotCtx(
+    schema: Record<string, unknown>,
+): RequestContext {
+    return {
+        GET: async (resource: string) => {
+            if (resource === 'snapshots/schema') {
+                return JSON.stringify(schema);
+            }
+            return null;
+        },
+    } as unknown as RequestContext;
+}
+
+// Phase 12 Task 6: re-anchored from the raw `members` table
+// slice onto the requests/responses message ledger — the SAME
+// family address api/derive-members.ts already reads
+// (MEMBERS_PREFIX, '/members/'). A raw table row with no
+// backing pair is exactly the staleness class this closes: the
+// live app's own reads already derive from pairs, so a row that
+// exists only in the raw slice would show here but derive EMPTY
+// everywhere else.
+test(
+    'getHasAnyHumanMembers ignores a raw members-table row'
+    + ' with no backing message pair',
+    async () => {
+        const ctx = stubSnapshotCtx({
+            members: [{ id: 'stale', type: 'human' }],
+            requests: [], responses: [],
+        });
+        assert.equal(
+            await getHasAnyHumanMembers(ctx), false);
+    },
+);
+
+test(
+    'getHasAnyHumanMembers is true from a members-family pair'
+    + ' even when the raw members table is empty',
+    async () => {
+        const ctx = stubSnapshotCtx({
+            members: [],
+            requests: [{
+                id: 'r1', uri_prefix: '/members/',
+                uri_id: 'm1',
+                at: '2026-01-01T00:00:00.000000Z',
+                requester_identity_id: 'system',
+                message_hash: 'h', message: '{}',
+            }],
+            responses: [],
+        });
+        assert.equal(
+            await getHasAnyHumanMembers(ctx), true);
+    },
+);
+
+// NOT human-members: that family's own address would under-
+// report AI/system seeds, whose one parent document always
+// rides /members/, never /human-members/. A pair at the detail
+// address alone (no /members/ parent pair) must NOT count.
+test(
+    'getHasAnyHumanMembers ignores a human-members detail'
+    + ' pair with no matching /members/ parent pair',
+    async () => {
+        const ctx = stubSnapshotCtx({
+            members: [],
+            requests: [{
+                id: 'r1', uri_prefix: '/human-members/',
+                uri_id: 'u1',
+                at: '2026-01-01T00:00:00.000000Z',
+                requester_identity_id: 'system',
+                message_hash: 'h', message: '{}',
+            }],
+            responses: [],
+        });
+        assert.equal(
+            await getHasAnyHumanMembers(ctx), false);
+    },
+);
+
 // A partial/incompatible schema makes the snapshot export
 // throw MissingTableError. The recovery page must still
 // render its seed/import controls, so this resolves to false

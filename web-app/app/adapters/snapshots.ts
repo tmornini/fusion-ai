@@ -19,6 +19,16 @@ const FALLBACK_SNAPSHOT_CAP_BYTES = 5_000_000;
 // us off the QuotaExceededError edge.
 const QUOTA_HEADROOM_RATIO = 0.5;
 
+// The MEMBERS family's own flat, global-plane address —
+// members is the FIRST global-plane family (family-registry.ts:
+// organizationNested: false), so canonicalUriPrefix(undefined,
+// '/members/') (api/message-pair.ts) is this same literal
+// unchanged; mirrored BY CONTENT rather than imported, since
+// the value is self-disclosing (Commandment III) and importing
+// canonicalUriPrefix would drag the family registry in for one
+// constant. Matches api/derive-members.ts's own MEMBERS_PREFIX.
+const MEMBERS_PAIR_PREFIX = '/members/';
+
 export class SnapshotTooLargeError extends Error {
     readonly fileSize: number;
     readonly available: number;
@@ -292,9 +302,29 @@ export async function getHasAnyHumanMembers(
     if (snapshot === null) {
         return false;
     }
-    const tables = JSON.parse(snapshot) as {
-        members?: unknown[];
+    // Re-anchored (Phase 12 Task 6) from the raw `members`
+    // table slice onto the message ledger itself: the MEMBERS
+    // family's own reads already derive from requests/
+    // responses pairs (MEMBERS_PREFIX, api/derive-members.ts),
+    // so first-run presence must see what the live app sees —
+    // a raw table row with no backing pair (or the reverse)
+    // would otherwise diverge from the derived truth. Scans
+    // `requests` only: appendMessagePair (api/message-pair.ts)
+    // always writes both rows of a pair together, so a request
+    // row's presence at the family address IS the pair's
+    // presence. NEVER /human-members/ — that family's own
+    // address under-reports AI/system parents, whose one parent
+    // document always rides /members/, regardless of type.
+    const parsed = JSON.parse(snapshot) as {
+        requests?: unknown[];
     };
-    return Array.isArray(tables.members)
-        && tables.members.length > 0;
+    const requests =
+        Array.isArray(parsed.requests) ? parsed.requests : [];
+    return requests.some(
+        (row) =>
+            typeof row === 'object'
+            && row !== null
+            && (row as { uri_prefix?: unknown }).uri_prefix
+                === MEMBERS_PAIR_PREFIX,
+    );
 }
