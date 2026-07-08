@@ -4,6 +4,10 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { GET, handleRequest } from '../api/api.ts';
 import { hashPassword } from '../shared/password-hash.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
+import {
+    seedIdentityCredential,
+    seedIdentityPii,
+} from './identity-fixtures.ts';
 
 const BASE = 'http://localhost';
 
@@ -23,11 +27,11 @@ const token = (b: unknown) =>
 async function dbWithPasswordUser(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.identityPii.put('current', {
+    await seedIdentityPii(db, 'current', {
         name: 'Demo', email: 'demo@example.com',
         phone: '555-0100', bio: 'demo user',
     });
-    await db.identityCredentials.put('c1', {
+    await seedIdentityCredential(db, 'current', 'c1', {
         identity_id: 'current', kind: 'password',
         status: 'set', secret: await hashPassword('s3cret'),
         at: '2026-06-03T00:00:00.000000Z',
@@ -87,11 +91,11 @@ test('a revoked password credential is the same 401',
 async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
-    await db.identityPii.put('current', {
+    await seedIdentityPii(db, 'current', {
         name: 'Demo', email: 'demo@example.com',
         phone: '555-0100', bio: 'demo user',
     });
-    await db.identityCredentials.put('c1', {
+    await seedIdentityCredential(db, 'current', 'c1', {
         identity_id: 'current', kind: 'password',
         status: 'revoked',
         secret: await hashPassword('s3cret'),
