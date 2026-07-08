@@ -496,8 +496,8 @@ async () => {
 
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
-    assert.equal(requests.length, 3);
-    assert.equal(responses.length, 3);
+    assert.equal(requests.length, 5);
+    assert.equal(responses.length, 5);
 
     const flowAddress = requests.filter(
         r => r.uri_prefix === '/organizations/1/flows/'
@@ -554,8 +554,10 @@ async () => {
     });
 
     // All three pairs share ONE origination — the create's own
-    // requestAt.
-    const ats = new Set(requests.map(r => r.at));
+    // requestAt. slice(2): the fixture's own root-admin pair
+    // (role grant + membership, Phase 13 Task 1) precedes every
+    // test write and carries its OWN requestAt.
+    const ats = new Set(requests.slice(2).map(r => r.at));
     assert.equal(ats.size, 1);
 });
 

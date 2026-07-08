@@ -65,9 +65,9 @@ test('PUT identity-tokens/:id appends its pair at the entity'
     ));
     assert.equal(res.status, 200);
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 1);
-    assert.equal(requests[0]!.uri_prefix, '/identity-tokens/');
-    assert.equal(requests[0]!.uri_id, 'tok-1');
+    assert.equal(requests.length, 3);
+    assert.equal(requests[2]!.uri_prefix, '/identity-tokens/');
+    assert.equal(requests[2]!.uri_id, 'tok-1');
     const domainRow = await db.identityTokens.getById('tok-1');
     assert.deepEqual(await res.json(), domainRow);
 });
@@ -124,11 +124,11 @@ test('PUT identity-token-revocations/:id appends its pair at'
     ));
     assert.equal(res.status, 200);
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 1);
+    assert.equal(requests.length, 3);
     assert.equal(
-        requests[0]!.uri_prefix, '/identity-token-revocations/',
+        requests[2]!.uri_prefix, '/identity-token-revocations/',
     );
-    assert.equal(requests[0]!.uri_id, 'rev-1');
+    assert.equal(requests[2]!.uri_id, 'rev-1');
     const domainRow =
         await db.identityTokenRevocations.getById('rev-1');
     assert.deepEqual(await res.json(), domainRow);
@@ -204,8 +204,8 @@ async () => {
         DEV_TOKEN, {},
     ));
     assert.equal(res.status, 409);
-    assert.equal((await db.requests.getAll()).length, 0);
-    assert.equal((await db.responses.getAll()).length, 0);
+    assert.equal((await db.requests.getAll()).length, 2);
+    assert.equal((await db.responses.getAll()).length, 2);
 });
 
 // ── identity-tokens/:jti/revocation — operation address ──

@@ -196,8 +196,8 @@ test(
         // pairs — Phase 7 Task 4's 3+N widening, N=2 here).
         const allRequests = await db.requests.getAll();
         const allResponses = await db.responses.getAll();
-        assert.equal(allRequests.length, 5);
-        assert.equal(allResponses.length, 5);
+        assert.equal(allRequests.length, 7);
+        assert.equal(allResponses.length, 7);
         assert.equal(allRequests.length, allResponses.length);
 
         const atProjectAddress = allRequests.filter(
@@ -351,8 +351,8 @@ test(
         // idea pairs, not one of the synthesized baseline pairs.
         const allRequests = await db.requests.getAll();
         const allResponses = await db.responses.getAll();
-        assert.equal(allRequests.length, 0);
-        assert.equal(allResponses.length, 0);
+        assert.equal(allRequests.length, 2);
+        assert.equal(allResponses.length, 2);
 
         // The idea stayed at 'approved' — the 'promoted' event
         // rolled back with the rest.

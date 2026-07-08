@@ -132,9 +132,9 @@ async () => {
     const db = await freshDb();
     await putOrganization(db, 'org-d', 'Flat');
     const requests = await db.requests.getAll();
-    assert.equal(requests.length, 1);
-    assert.equal(requests[0]!.uri_prefix, '/organizations/');
-    assert.equal(requests[0]!.uri_id, 'org-d');
+    assert.equal(requests.length, 3);
+    assert.equal(requests[2]!.uri_prefix, '/organizations/');
+    assert.equal(requests[2]!.uri_id, 'org-d');
 
     const derived = await deriveOrganization(db, 'org-d');
     assert.equal(derived.id, 'org-d');
