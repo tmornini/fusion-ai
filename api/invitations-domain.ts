@@ -53,6 +53,7 @@ import {
     deriveIdentityPiiRows,
 } from './derive-identity-spine.ts';
 import { deriveInvitationStates } from './derive-states.ts';
+import { membershipExistsFor } from './derive-memberships.ts';
 
 // The active org of the caller: the verified token claim, else
 // the identity's resolved default. Null when the identity can
@@ -568,9 +569,8 @@ async function grantOutcomeFor(
     organization: Id,
     identityId: Id,
 ): Promise<GrantOutcome> {
-    const member = (await adapter.memberships.getAll())
-        .some(m => m.identity_id === identityId
-            && m.organization_id === organization);
+    const member = await membershipExistsFor(
+        adapter, organization, identityId);
     if (member) return { kind: 'member' };
     const existing = await pendingInvitationFor(
         adapter, organization, identityId);
