@@ -5,6 +5,8 @@ import {
 } from '../api/db-localstorage.ts';
 import {
     TABLE_NAMES,
+    SNAPSHOT_SCHEMA_VERSION,
+    SNAPSHOT_SCHEMA_VERSION_KEY,
 } from '../api/db.ts';
 import {
     jsonObjectField,
@@ -345,10 +347,30 @@ test(
             TABLE_NAMES.length,
             'TABLE_NAMES contains duplicates',
         );
+        // TABLE_NAMES entries plus the ONE reserved schema-
+        // version marker key (SNAPSHOT_SCHEMA_VERSION_KEY) —
+        // never a second table, never a wrapper.
         assert.strictEqual(
             Object.keys(parsed).length,
-            TABLE_NAMES.length,
-            'export key count !== TABLE_NAMES length',
+            TABLE_NAMES.length + 1,
+            'export key count !== TABLE_NAMES length + 1'
+            + ' (the schema-version marker)',
+        );
+    },
+);
+
+test(
+    'getSnapshot stamps the schema version marker',
+    async () => {
+        installShim();
+        const adapter =
+            new LocalStorageDbAdapter();
+        await adapter.postSchemaCreation();
+        const json = await adapter.getSnapshot();
+        const parsed = JSON.parse(json);
+        assert.strictEqual(
+            parsed[SNAPSHOT_SCHEMA_VERSION_KEY],
+            SNAPSHOT_SCHEMA_VERSION,
         );
     },
 );

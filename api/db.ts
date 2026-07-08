@@ -522,6 +522,34 @@ export const TABLE_NAMES = [
     'states',
 ];
 
+// The snapshot export's ONE reserved top-level key, stamped
+// beside the TABLE_NAMES entries by getSnapshot (api/db-
+// backed.ts) and checked by parseAndValidateSnapshot (api/
+// snapshot-validator.ts) before any table is read. Never a
+// TABLE_NAMES entry itself — picked to share the '__schema__'
+// marker-store naming voice (backend-indexeddb.ts) while
+// staying visibly distinct from it. Twelve+one families now
+// derive their reads from the requests/responses message
+// ledger (Phase 12); a snapshot exported before a family's own
+// pairs existed would import clean but derive EMPTY reads
+// against the current build. SNAPSHOT_SCHEMA_VERSION closes
+// that class BY REJECTION, not migration: an absent or
+// mismatched marker rejects the import outright — never a
+// default, never a best-effort import. Bump it whenever
+// TABLE_NAMES (or a family's derivation shape) changes in a
+// way that would strand an older export; Phase Final's planned
+// TABLE_NAMES shrink is the first known future bump.
+//
+// THE ASYMMETRY: this closes only "a new build imports an old
+// export." A new build's OWN marked export is silently accepted
+// by an OLD build's importer — parseAndValidateSnapshot has
+// always ignored unknown top-level keys, and that stays true
+// here (an old build's validator loop never looks at this key
+// at all). Intended and dev-tier-acceptable: the old build has
+// no way to know a marker scheme was ever invented.
+export const SNAPSHOT_SCHEMA_VERSION = 1;
+export const SNAPSHOT_SCHEMA_VERSION_KEY = '__schema_version__';
+
 // A secondary index is either a plain column name (the
 // existing shape) or an object form declaring `unique: true`
 // — a UNIQUE index. Absent keys are unindexed in IndexedDB,
