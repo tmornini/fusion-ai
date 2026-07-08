@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
     POST,
+    PUT,
     RequestError,
 } from '../api/api.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
@@ -24,11 +25,16 @@ const ROOT_JTI = 'jti-1';
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await seedAdminSchema(db);
-    await db.identityTokens.put('t-root', {
+    // Seeded via the PUT route (not a raw store write): Phase 13
+    // Task 6 flips rotateRefreshJti/revokeTokenChain's PRE-TX
+    // chain lookup onto the message ledger, so a pair-less row
+    // is invisible to it — the PUT route forms both the row AND
+    // its pair, the SAME mechanism a live write uses.
+    await PUT(db, 'identity-tokens/t-root', {
         jti: ROOT_JTI, identity_id: 'current',
         action: 'issued', chain_id: 'chain-1',
         at: '2026-06-01T00:00:00.000000Z',
-    });
+    }, DEV_TOKEN);
     return db;
 }
 

@@ -47,10 +47,17 @@ async function freshDb(): Promise<MemoryDbAdapter> {
 
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = await freshDb();
-    await db.identityTokens.put('t-root', {
-        jti: ROOT_JTI, identity_id: 'current',
-        action: 'issued', chain_id: 'chain-1', at: AT,
-    });
+    // Seeded via the PUT route (not a raw store write): Phase 13
+    // Task 6 flips rotateRefreshJti/revokeTokenChain's PRE-TX
+    // chain lookup onto the message ledger, so a pair-less row
+    // is invisible to it — the PUT route forms both the row AND
+    // its pair, the SAME mechanism a live write uses.
+    await handleRequest(db, req(
+        'PUT', '/identity-tokens/t-root', DEV_TOKEN, {
+            jti: ROOT_JTI, identity_id: 'current',
+            action: 'issued', chain_id: 'chain-1', at: AT,
+        },
+    ));
     return db;
 }
 
@@ -224,8 +231,11 @@ async () => {
         DEV_TOKEN, {},
     ));
     assert.equal(res.status, 409);
-    assert.equal((await db.requests.getAll()).length, 3);
-    assert.equal((await db.responses.getAll()).length, 3);
+    // 3 bootstrap + seededDb's own pair-forming PUT (Phase 13
+    // Task 6's seeding re-point) = 4; the 409 itself appends
+    // nothing further.
+    assert.equal((await db.requests.getAll()).length, 4);
+    assert.equal((await db.responses.getAll()).length, 4);
 });
 
 // ── identity-tokens/:jti/revocation — operation address ──

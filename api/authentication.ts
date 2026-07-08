@@ -55,6 +55,10 @@ import { deriveMembershipsForIdentity } from
     './derive-memberships.ts';
 import { deriveTokenRevocationsFor } from
     './derive-identity-spine.ts';
+import {
+    deriveIdentityTokens,
+    deriveIdentityTokenEventsForJti,
+} from './derive-identity-tokens.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an
@@ -328,20 +332,22 @@ export async function tokenRevocationReason(
 ): Promise<string | null> {
     // FIRST read FLIPPED (Phase 13 Task 4): derived via
     // deriveTokenRevocationsFor — row-identical to the
-    // getAllWhere('identity_id', sub) read it replaces. The
-    // by-jti SECOND read below now has a matching event pair for
-    // every row (Phase 13 Task 5), but stays on identityTokens
-    // directly until Task 6 flips this read too.
+    // getAllWhere('identity_id', sub) read it replaces.
     const revs = await deriveTokenRevocationsFor(adapter, sub);
     const revokedThrough = revokedThroughSeconds(revs, sub);
     if (revokedThrough !== null && iat <= revokedThrough) {
         return 'token revoked';
     }
-    // The gate check needs only THIS jti's events: a chain-wide
-    // revoke writes a 'revoked' event per jti, so the latest
-    // action for the presented jti already reflects it.
-    const events = await adapter.identityTokens
-        .getAllWhere('jti', jti);
+    // SECOND read FLIPPED (Phase 13 Task 6, gate 7 discharged):
+    // derived via deriveIdentityTokenEventsForJti — row-identical
+    // to the getAllWhere('jti', jti) read it replaces, now that
+    // every identity_tokens writer forms its own event pair
+    // (Phase 13 Task 5). The gate check needs only THIS jti's
+    // events: a chain-wide revoke writes a 'revoked' event per
+    // jti, so the latest action for the presented jti already
+    // reflects it.
+    const events =
+        await deriveIdentityTokenEventsForJti(adapter, jti);
     if (isTokenRevoked(events, jti)) {
         return 'token chain revoked';
     }
@@ -370,6 +376,38 @@ async function readTokenChain(
     const rows = chainId === null
         ? byJti
         : await tokens.getAllWhere('chain_id', chainId);
+    return { chainId, identityId, rows };
+}
+
+// The PRE-TX ledger-derived twin of readTokenChain above (Phase
+// 13 Task 6, gate 7 discharged): the SAME two-step shape — find
+// the presented jti's chain via the by-jti fold, then read the
+// WHOLE chain — but sourced from deriveIdentityTokenEventsForJti/
+// deriveIdentityTokens rather than an EntityStore. `db` is always
+// the plain adapter here, never an open transaction view:
+// planRotationAttempt/planRevocationAttempt call this ONLY for
+// their own PRE-TX provisional read below; their IN-TX re-read
+// stays on readTokenChain(view.identityTokens, ...) inside
+// rotateRefreshJti/revokeTokenChain's own transaction bodies until
+// Task 9a moves it too. Two independent family scans (one per
+// derivation call) mirror readTokenChain's own two independent
+// getAllWhere calls above — the SAME shape, never worse.
+async function readTokenChainFromLedger(
+    db: DbAdapter,
+    jti: string,
+): Promise<{
+    readonly chainId: string | null;
+    readonly identityId: Id | null;
+    readonly rows: readonly IdentityTokenEntity[];
+}> {
+    const byJti = await deriveIdentityTokenEventsForJti(db, jti);
+    const chainId = chainIdForJti(byJti, jti);
+    const identityId = identityForJti(byJti, jti);
+    const rows = chainId === null
+        ? byJti
+        : (await deriveIdentityTokens(db)).filter(
+            (row) => row.chain_id === chainId,
+        );
     return { chainId, identityId, rows };
 }
 
@@ -435,15 +473,16 @@ export type RotationOutcome =
     | { readonly kind: 'fail' };
 
 // One rotation attempt's PRE-TX groundwork: the provisional read
-// against the plain adapter, the provisional plan (planRotation,
-// bytes unchanged), and a pre-minted row id + event pair for
-// whichever appends that plan carries. `newJti` is the ONE value
-// that survives every attempt unchanged (Step 0: the rotation
-// route pre-mints it in its own response spec and threads it back
-// via pairResponseBody, so re-minting it here would desync the
-// wire response from what commits); the chain id is READ, not
-// minted, so it too stays consistent attempt to attempt — only
-// row ids and `at` are genuinely fresh per attempt.
+// — FLIPPED onto readTokenChainFromLedger (Phase 13 Task 6) —
+// the provisional plan (planRotation, bytes unchanged), and a
+// pre-minted row id + event pair for whichever appends that plan
+// carries. `newJti` is the ONE value that survives every attempt
+// unchanged (Step 0: the rotation route pre-mints it in its own
+// response spec and threads it back via pairResponseBody, so
+// re-minting it here would desync the wire response from what
+// commits); the chain id is READ, not minted, so it too stays
+// consistent attempt to attempt — only row ids and `at` are
+// genuinely fresh per attempt.
 async function planRotationAttempt(
     adapter: DbAdapter,
     presentedJti: string,
@@ -452,8 +491,8 @@ async function planRotationAttempt(
     readonly plan: RotationPlan;
     readonly writes: readonly TokenEventWrite[];
 }> {
-    const { rows } = await readTokenChain(
-        adapter.identityTokens, presentedJti,
+    const { rows } = await readTokenChainFromLedger(
+        adapter, presentedJti,
     );
     const plan = planRotation(rows, presentedJti, newJti, nowUtc());
     const appends = plan.kind === 'unknown' ? [] : plan.appends;
@@ -548,19 +587,19 @@ export async function rotateRefreshJti(
 }
 
 // One revocation attempt's PRE-TX groundwork: the provisional
-// read + revocationAppends' plan (bytes unchanged) + a
-// pre-minted row id and event pair per append. An unknown jti
-// (no chain, no identity) plans zero appends — the SAME no-op
-// shape revokeTokenChain has always handed an unknown jti.
+// read — FLIPPED onto readTokenChainFromLedger (Phase 13 Task 6)
+// — + revocationAppends' plan (bytes unchanged) + a pre-minted
+// row id and event pair per append. An unknown jti (no chain, no
+// identity) plans zero appends — the SAME no-op shape
+// revokeTokenChain has always handed an unknown jti.
 async function planRevocationAttempt(
     adapter: DbAdapter,
     jti: string,
 ): Promise<{
     readonly writes: readonly TokenEventWrite[];
 }> {
-    const { chainId, identityId, rows } = await readTokenChain(
-        adapter.identityTokens, jti,
-    );
+    const { chainId, identityId, rows } =
+        await readTokenChainFromLedger(adapter, jti);
     const appends = chainId === null || identityId === null
         ? []
         : revocationAppends(rows, chainId, identityId, nowUtc());

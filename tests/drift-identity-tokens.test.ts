@@ -505,3 +505,71 @@ async () => {
         'Not found: identity_tokens/no-such-token',
     );
 });
+
+// -- 6: THE SECURITY PIN — mint via a real grant, revoke the ----
+// -- chain, the Bearer gate 401s on the DERIVED plane -----------
+// -- (live-minted end-to-end; the fail-open hazard's regression --
+// -- guard) -----------------------------------------------------------
+
+test('SECURITY: a session minted via a real grant is admitted'
++ ' by the Bearer gate; once its chain is revoked, the SAME'
++ ' refresh token — presented live, through authenticateRequest'
++ ' — is 401ed by tokenRevocationReason\'s by-jti fold, now'
++ ' running against the DERIVED plane (isTokenRevoked treats an'
++ ' unknown jti as NOT revoked, so a derivation miss here would'
++ ' fail OPEN)', async () => {
+    const db = new MemoryDbAdapter();
+    await db.postSchemaCreation();
+    await seedRootAdmin(db);
+    await seedIdentityPii(db, 'current', {
+        name: 'Security Pin', email: 'security-pin@example.com',
+        phone: '', bio: '',
+    });
+    await seedIdentityCredential(
+        db, 'current', 'cred-security-pin', {
+            identity_id: 'current', kind: 'password',
+            status: 'set', secret: await hashPassword(PASSWORD),
+            at: AT,
+        },
+    );
+
+    const authorizeRes = await authorize(db, {
+        method: 'password', username: 'security-pin@example.com',
+        password: PASSWORD, client_id: 'web',
+    });
+    assert.equal(authorizeRes.status, 200);
+    const { code } = await authorizeRes.json() as { code: string };
+    const grantRes = await tokenGrant(db, {
+        grant_type: 'authorization_code', code,
+    });
+    assert.equal(grantRes.status, 200);
+    const { refresh_token: refreshToken } =
+        await grantRes.json() as { refresh_token: string };
+    const rootJti = jtiOf(refreshToken);
+
+    // Live BEFORE revocation: the refresh token itself, presented
+    // as a Bearer through the REAL gate (authenticateRequest),
+    // reaches an admin-only route.
+    const before = await handleRequest(
+        db, req('GET', '/identity-tokens', refreshToken),
+    );
+    assert.equal(before.status, 200);
+
+    // Revoke the whole chain — any member-tier bearer may POST
+    // the rotation/revocation sub-routes (MEMBER_VERBS
+    // '/identity-tokens': ['POST']).
+    const revokeRes = await handleRequest(db, req(
+        'POST', `/identity-tokens/${rootJti}/revocation`,
+        DEV_TOKEN, {},
+    ));
+    assert.equal(revokeRes.status, 204);
+
+    // The SAME refresh token, re-presented: the gate denies it,
+    // live end-to-end, on the DERIVED plane.
+    const after = await handleRequest(
+        db, req('GET', '/identity-tokens', refreshToken),
+    );
+    assert.equal(after.status, 401);
+    const afterBody = await after.json() as { error: string };
+    assert.equal(afterBody.error, 'token chain revoked');
+});
