@@ -477,11 +477,34 @@ test('a RESTRICTed DELETE record-attributes/:id 409s and'
         'PUT', '/record-attributes/attr-3', token,
         recordAttributeFields('rec-7', 'Bound'),
     ));
-    await db.stateFieldValues.put('sfv-1', {
-        state_event_id: 'ev-x',
-        attribute_id: 'attr-3',
-        value: 'v',
+    // The parent event names a REAL org-owned record ('rec-7',
+    // the SAME id attr-3 is bound to) — raw (the leaf's own
+    // parent-event fence reads it, never writes it) so the
+    // field-value's org resolves through the ordinary
+    // organization-owned-probe path, matching a genuine live
+    // trace.
+    await db.records.put('rec-7', {
+        organization_id: '1', name: 'r',
+        description: 'd', position: 0,
     });
+    await db.states.put('ev-x', {
+        entity_id: 'rec-7', state: 'active',
+        member_id: 'system', at: AT,
+    });
+    // NAMED re-pin (Phase 14 Task 6): RESTRICT's field-value
+    // leg is pair-plane derived now — a raw
+    // db.stateFieldValues.put leaves no pair at the leaf
+    // address (states/:id/field-values/:fvid), so the row must
+    // land through the SAME wire-reachable PUT the live route
+    // serves.
+    await handleRequest(db, req(
+        'PUT', '/states/ev-x/field-values/sfv-1', token,
+        {
+            state_event_id: 'ev-x',
+            attribute_id: 'attr-3',
+            value: 'v',
+        },
+    ));
     const countBefore = (await db.requests.getAll()).length;
     const del = await handleRequest(db, req(
         'DELETE', '/record-attributes/attr-3', token,
