@@ -100,29 +100,41 @@ is HTTP-only.
 - **Auth.** Real OAuth 2.1 spine. `/authentication/token`
   (grant dispatch) + `/authentication/authorize` (password
   loop) mint/verify HMAC-SHA256 JWTs (`api/access-token.ts`);
-  a Bearer gate in `handleRequest` enforces them, backed by
-  token-lifecycle + revocation ledgers and PBKDF2 password
-  hashing. The HMAC key is client-shipped, so isolation is
+  a Bearer gate in `handleRequest` enforces them. Token
+  lifecycle (issue/rotate/revoke) lives only as message-pair
+  events now — `identity_tokens` and `authorization_codes`
+  are RETIRED tables (Phase 13 Task 9); the
+  `identity_token_revocations` ledger and PBKDF2 password
+  hashing back the gate too. Every per-request check —
+  revocation, the tenancy fence, roles — derives fresh from
+  the pair plane, never a snapshot the token claim itself
+  carries. The HMAC key is client-shipped, so isolation is
   demo-grade until the server tier. The snapshot plane
   (`BOOTSTRAP_ROUTES`) is intentionally auth-free dev-tier —
   removed or re-gated when the Postgres server tier lands; see
   [ARCHITECTURE.md](ARCHITECTURE.md) § Server-tier deploy
   blockers.
 - **Tenancy.** Every authenticated request runs org-scoped:
-  `handleRequest` wraps the adapter in `orgScopedAdapter`
-  bound to the org from the VERIFIED token claim (never the
-  path). A flat (un-exchanged) token resolves its org via
-  `identityDefaultOrganization`: the identity's SET default org
+  `handleRequest` wraps the adapter in
+  `organizationScopedAdapter` bound to the org from the
+  VERIFIED token claim (never the path). A flat (un-exchanged)
+  token resolves its org via `identityDefaultOrganization`:
+  the identity's SET default org
   (`identity_default_organizations` ledger, latest wins), else its
   PRIMARY membership org, else a 403 — there is no global default.
-  `organizations` is the tenant root; `memberships`
-  joins identity↔org; the members roster is derived from that
-  ledger. A `memberships` row is created when an invitee
-  ACCEPTS an `invitations` grant (the only live membership
-  write; `web-app/app/adapters/invitations.ts` + the
-  `invitations` facade in `api/api.ts`) — accept stamps the
-  INVITATION's org, not the caller's active org. Per-org roles
-  via `currentRolesForInOrganization`. See [SCHEMA.md](SCHEMA.md) /
+  The membership fence itself derives fresh every request too
+  (`callerOrganizationIds` → `deriveMembershipsForIdentity`,
+  Phase 13), so a revoked membership loses access on the very
+  next request, never waiting on token expiry. `organizations`
+  is the tenant root; `memberships` joins identity↔org; the
+  members roster is derived from that ledger. A `memberships`
+  row is created when an invitee ACCEPTS an `invitations`
+  grant (the only live membership write;
+  `web-app/app/adapters/invitations.ts` + the `invitations`
+  facade in `api/api.ts`) — accept stamps the INVITATION's
+  org, not the caller's active org. Per-org roles (also
+  derived, `deriveRoleGrants`) via
+  `currentRolesForInOrganization`. See [SCHEMA.md](SCHEMA.md) /
   [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Data.** REST-style API (`api/`) over IndexedDB. Adapters
   in `web-app/app/adapters/` shape rows for pages. The live
