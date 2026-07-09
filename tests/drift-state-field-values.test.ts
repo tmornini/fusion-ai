@@ -10,6 +10,8 @@ import {
     deriveStateFieldValueReferrers,
     stateFieldValuesForStateEvent,
 } from '../api/derive-state-field-values.ts';
+import { STARK_ORGANIZATION } from
+    '../api/mock-data/seed-constants.ts';
 
 // Phase 14 Task 6's own drift suite: state_field_values (SFV)
 // truth, pair-plane derived (api/derive-state-field-values.ts),
@@ -102,7 +104,9 @@ test('RESTRICT parity: deriveStateFieldValueReferrers'
     );
 
     const derived =
-        await deriveStateFieldValueReferrers(db, ['attr-1']);
+        await deriveStateFieldValueReferrers(
+            db, STARK_ORGANIZATION, ['attr-1'],
+        );
     const old = await db.stateFieldValues
         .getAllWhere('attribute_id', 'attr-1');
 
@@ -147,7 +151,9 @@ async () => {
     );
 
     const derived =
-        await stateFieldValuesForStateEvent(db, 'te1');
+        await stateFieldValuesForStateEvent(
+            db, STARK_ORGANIZATION, 'te1',
+        );
     const old = await db.stateFieldValues
         .getAllWhere('state_event_id', 'te1');
 

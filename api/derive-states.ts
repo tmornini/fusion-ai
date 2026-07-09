@@ -490,9 +490,10 @@ export async function fenceStatesByOwner(
 // ---- stateEventVisibilityFor — the field-values fence --------
 // ---- successor (Phase 15 Task 1, Author gate 2) --------------
 
-// Three-way disposition matching isVisibleStateEvent's own
-// branches (api/derive-state-field-values.ts): (1) nowhere —
-// a visible orphan; (2) own-org (or owner-null entity) —
+// Three-way disposition matching the retired
+// isVisibleStateEvent row-plane branches (now re-pointed
+// onto this function, Phase 15 Task 3): (1) nowhere — a
+// visible orphan; (2) own-org (or owner-null entity) —
 // visible; (3) foreign — hidden. The return type is PART of
 // the gate, not an implementation detail. Boolean isVisible
 // folds as `visibility !== 'hidden'`.
@@ -758,8 +759,10 @@ async function organizationHasOpBornEvent(
     return false;
 }
 
-// Tiered pair-plane successor of isVisibleStateEvent. Always
-// view-accepting (dbOrView); opens no nested transaction.
+// Tiered pair-plane visibility disposition (successor of the
+// retired isVisibleStateEvent row-plane fence; live callers
+// re-pointed Phase 15 Task 3). Always view-accepting
+// (dbOrView); opens no nested transaction.
 // Cheapest tier first:
 //   (i) uri_id point-read over responses — event-append
 //       pairs (every seeded trace + live PUT states/:id);

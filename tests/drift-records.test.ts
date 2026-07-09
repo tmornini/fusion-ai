@@ -1203,7 +1203,7 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     assert.equal(flagshipScan.size, 0);
 
     const flagshipReferrers = await collectAttributeReferrers(
-        scoped, flagshipAttributeIds,
+        scoped, STARK_ORGANIZATION, flagshipAttributeIds,
     );
     let flagshipTotal = 0;
     for (const attributeId of flagshipAttributeIds) {
@@ -1280,7 +1280,8 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
         db, STARK_ORGANIZATION, liveWorkOrderId,
     );
     const liveReferrers = await collectAttributeReferrers(
-        scoped, [liveAttributeX, liveAttributeY],
+        scoped, STARK_ORGANIZATION,
+        [liveAttributeX, liveAttributeY],
     );
     assert.equal(liveScan.get(liveAttributeX), 1);
     assert.equal(liveScan.get(liveAttributeY), 1);

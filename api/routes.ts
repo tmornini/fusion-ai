@@ -948,6 +948,12 @@ export async function postRecordWriteOp(
     payload: Record<string, unknown>,
     actor: Id,
     pairs?: RecordWritePairs,
+    // Verified token organization for the RESTRICT SFV
+    // visibility probe (stateEventVisibilityFor). Optional so
+    // the below-facade seed path (creates only; never removes
+    // referenced attributes) keeps compiling; the live route
+    // always supplies it when removals can fire.
+    organization?: Id,
 ): Promise<void> {
     const body = validateRecordWriteBody(payload);
     const entries = body.attributes.map(attr => {
@@ -1011,9 +1017,16 @@ export async function postRecordWriteOp(
                 );
             }
             if (removedIds.length > 0) {
+                // Prefer the verified token claim; fall back to
+                // the body's stamped organization_id only for
+                // below-facade callers that omit organization
+                // (seed never removes referenced attributes).
+                const boundOrganization = requireOrganization(
+                    organization ?? body.record.organization_id,
+                );
                 const referrers =
                     await collectAttributeReferrers(
-                        view, removedIds,
+                        view, boundOrganization, removedIds,
                     );
                 for (const [id, refs] of referrers) {
                     if (hasReferrers(refs)) {
@@ -5129,16 +5142,21 @@ export const routes: Route[] = [
     // derive-state-field-values.ts) derives the collection from
     // the pair plane's two-source union (a transition's folded
     // fieldValues ∪ the leaf address's own PUT/DELETE pairs)
-    // rather than the state_field_values table — the org fence
-    // rides db.states.getById on the parent event (the SAME
-    // fence the retired parentScope resolver applied via a
-    // different route). The leaf id is param 1; PUT and DELETE
-    // are exposed exactly as the flat makeIdRoute carried them —
-    // unchanged, still writing the table directly (dual-write
-    // continues).
+    // rather than the state_field_values table — visibility
+    // re-anchored onto stateEventVisibilityFor (Phase 15 Task
+    // 3) with the verified token organization, never the path.
+    // Wire shape held: ALWAYS 200; three-way filtered array
+    // (orphan/own → rows; foreign → []). The leaf id is param
+    // 1; PUT and DELETE are exposed exactly as the flat
+    // makeIdRoute carried them — unchanged, still writing the
+    // table directly (dual-write continues; Task 7 retires).
     route('states/:id/field-values', {
-        get: (db, p) =>
-            stateFieldValuesForStateEvent(db, param(p, 0)),
+        get: (db, p, _actor, organization) =>
+            stateFieldValuesForStateEvent(
+                db,
+                requireOrganization(organization),
+                param(p, 0),
+            ),
     }),
     // PUT/DELETE each append their message pair in the same
     // transaction as the write (message-pair.ts). DOCUMENT-
@@ -5288,7 +5306,9 @@ export const routes: Route[] = [
                     attributeDeletes,
                 };
             }
-            return postRecordWriteOp(db, body, actor, pairs);
+            return postRecordWriteOp(
+                db, body, actor, pairs, organization,
+            );
         },
     }),
     // records/:id is the fifth family, and the FIRST whose own
@@ -5376,7 +5396,18 @@ export const routes: Route[] = [
                     'requests', 'responses',
                 ])],
                 async (view) => {
-                    await deleteRecordAttributeSafe(view, id);
+                    // DeleteHandler carries no organization;
+                    // the fenced attribute row stamps the
+                    // verified claim as organization_id.
+                    const attribute =
+                        await view.recordAttributes.getById(
+                            id,
+                        );
+                    await deleteRecordAttributeSafe(
+                        view,
+                        attribute.organization_id,
+                        id,
+                    );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }

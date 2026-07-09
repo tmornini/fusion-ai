@@ -1,5 +1,4 @@
 import type { DbAdapter } from './db.ts';
-import { EntityNotFoundError } from './db.ts';
 import type {
     Id, RequestEntity, ResponseEntity, StateFieldValueEntity,
 } from './types.ts';
@@ -9,7 +8,9 @@ import {
     documentPairsAt, byIdAscending, type DocumentPair,
 } from './derive-documents.ts';
 import {
-    operationPairsAt, WORK_ORDER_TRANSITION_PATTERN,
+    operationPairsAt,
+    WORK_ORDER_TRANSITION_PATTERN,
+    stateEventVisibilityFor,
 } from './derive-states.ts';
 
 // Phase 14 Task 6: state_field_values (SFV) truth, derived from
@@ -107,8 +108,9 @@ function transitionFieldValueCandidates(
 // The leaf address's own document pairs, across every state
 // event's field-values sub-collection — UNFENCED (a caller
 // narrows to its own organization; see isVisibleStateEvent
-// below), matching deriveEventPairStates' own unfenced read at
-// gate 5a (derive-states.ts).
+// → stateEventVisibilityFor below), matching
+// deriveEventPairStates' own unfenced read at gate 5a
+// (derive-states.ts).
 function leafFieldValueCandidates(
     requests: readonly RequestEntity[],
     responses: readonly ResponseEntity[],
@@ -155,71 +157,42 @@ export function stateFieldValuesFrom(
     return rows.sort(byIdAscending);
 }
 
-// The row-plane fence, delegated rather than re-derived: a
-// field-value row is visible iff its PARENT STATE EVENT is.
-// `view.states` is ALREADY org-scoped (db-organization-scoped.ts's
-// ParentScopedStateStore) for any caller-supplied view this
-// module's own exports receive, so this is the SAME resolution
-// the RETIRING state_field_values parentScope resolver performed
-// (base.states.getById(row.state_event_id), then
-// ownerOrganizationOfEntity on a hit) — reused via the store that
-// already carries it, never rebuilt over the pair plane a second
-// time.
-//
-// THE THREE-WAY RULE, restored verbatim (fix wave, Critical 1):
-// the retiring resolver's own three branches are (1) no row for
-// state_event_id AT ALL — a visible orphan (its own try/catch:
-// EntityNotFoundError on the RAW base.states.getById returns
-// null, and isVisible(null, org) is true); (2) a row exists and
-// its entity resolves to this organization, OR to no owner at
-// all (a visible orphan again) — both fold through
-// ParentScopedStateStore's OWN getById succeeding; (3) a row
-// exists and its entity resolves to a DIFFERENT, existing
-// organization — hidden. view.states.getById ALONE cannot tell
-// (1) apart from (3): both throw EntityNotFoundError identically
-// (case 1 from the unfenced inner getById; case 3 from
-// ParentScopedStateStore's own re-throw after a foreign-owner
-// resolution). rawHasRow (api/db.ts's StateStore interface, the
-// fence-mechanics addition this fix wave adds) settles (1) first
-// — a raw presence check delegated to the SAME wrapped inner
-// store the retired resolver closed over, never a second
-// top-level transaction (db-backed.ts's ambientRunner reuses
-// whatever tx `view` is already bound to).
+// Pair-plane fence successor (Phase 15 Task 3): a field-value
+// row is visible iff its PARENT STATE EVENT is. Re-anchored
+// from the row-plane rawHasRow + fenced getById three-way onto
+// stateEventVisibilityFor (api/derive-states.ts, Phase 15
+// Task 1 gate 2) — same disposition, pair-plane sourced:
+//   orphan  → visible (no event anywhere)
+//   visible → own-org (or owner-null entity)
+//   hidden  → foreign organization
+// Boolean fold: visibility !== 'hidden'. Wire shape held
+// exactly (ALWAYS 200 for GET field-values; three-way filtered
+// array). boundOrganization is the verified token claim, never
+// a path segment.
 async function isVisibleStateEvent(
     view: DbAdapter,
+    boundOrganization: Id,
     stateEventId: Id,
 ): Promise<boolean> {
-    if (!(await view.states.rawHasRow(stateEventId))) {
-        // Case (1): no row anywhere — a visible orphan.
-        return true;
-    }
-    try {
-        // Case (2): the row exists and is visible (same org, or
-        // an orphan entity) — ParentScopedStateStore's own
-        // getById already applies exactly this rule.
-        await view.states.getById(stateEventId);
-        return true;
-    } catch (e) {
-        if (e instanceof EntityNotFoundError) {
-            // Case (3): the row exists but resolves to a
-            // different, existing organization — hidden.
-            return false;
-        }
-        throw e;
-    }
+    const visibility = await stateEventVisibilityFor(
+        view, boundOrganization, stateEventId,
+    );
+    return visibility !== 'hidden';
 }
 
 // The RESTRICT-facing reader (api/record-attribute-refs.ts's
 // collectAttributeReferrers): every LIVE field-value row whose
-// attribute_id is among `attributeIds`, visible to `view`'s bound
-// organization, keyed by attribute_id — ONE derive pass serves
-// every id the caller's own loop asks about, rather than
-// rescanning the plane per id (the pair plane has no attribute_id
-// index the way the retired table's getAllWhere did). `view` is
-// the ALREADY-OPEN write-gate transaction (ATTRIBUTE_RESTRICT_
-// TABLES: requests, responses, and states are all in its ring) —
-// no nested transaction opens here, matching workOrderClaim
-// SourcesFor's own in-tx contract (derive-states.ts).
+// attribute_id is among `attributeIds`, visible to
+// `boundOrganization`, keyed by attribute_id — ONE derive pass
+// serves every id the caller's own loop asks about, rather than
+// rescanning the plane per id (the pair plane has no
+// attribute_id index the way the retired table's getAllWhere
+// did). `view` is the ALREADY-OPEN write-gate transaction
+// (ATTRIBUTE_RESTRICT_TABLES: requests, responses, and states
+// are all in its ring) — no nested transaction opens here,
+// matching workOrderClaimSourcesFor's own in-tx contract
+// (derive-states.ts). Visibility reuses stateEventVisibilityFor
+// (pair plane), not the row-plane rawHasRow fence.
 //
 // NAMED DEVIATION — Author gate 1(d) (fix wave, Critical 2): this
 // reads the WHOLE requests/responses plane inside a write-gate
@@ -257,6 +230,7 @@ async function isVisibleStateEvent(
 // does not introduce on its own authority.
 export async function deriveStateFieldValueReferrers(
     view: DbAdapter,
+    boundOrganization: Id,
     attributeIds: readonly Id[],
 ): Promise<Map<Id, readonly StateFieldValueEntity[]>> {
     const [requests, responses] = await Promise.all([
@@ -270,15 +244,17 @@ export async function deriveStateFieldValueReferrers(
     // IMPORTANT 3 (fix wave): resolve visibility ONCE per
     // DISTINCT parent state event, not once per candidate row —
     // a hot attribute referenced by many rows under the SAME
-    // event previously repeated the same rawHasRow/getById pair
-    // once per row.
+    // event previously repeated the same visibility probe once
+    // per row.
     const distinctEventIds = [...new Set(
         candidates.map((row) => row.state_event_id),
     )];
     const visibilityFlags = await Promise.all(
         distinctEventIds.map(
             (stateEventId) =>
-                isVisibleStateEvent(view, stateEventId),
+                isVisibleStateEvent(
+                    view, boundOrganization, stateEventId,
+                ),
         ),
     );
     const visibility = new Map(
@@ -302,24 +278,30 @@ export async function deriveStateFieldValueReferrers(
 
 // The GET-facing reader (states/:id/field-values, flipped by
 // DEFAULT — Task 6, Author gate 5). The visibility check runs
-// FIRST, against `db` directly (already org-scoped): an absent OR
-// foreign event returns [] without ever deriving anything — byte-
-// identical to the retired table read's own empty-array outcome
-// for both cases (db.stateFieldValues.getAllWhere trivially found
-// no rows for an absent event, and the SFV parentScope resolver
-// fenced a foreign event's rows to invisible — this route never
-// 404s). Once visible, ONE shared readonly tx over requests+
-// responses (the deriveEventPairStates torn-read closure, derive-
-// states.ts) derives the WHOLE plane: the GET path may scan wider
-// than the RESTRICT write gate (Author gate 5's own hard
-// constraint), and the transition fold has no address of its own
-// keyed by state_event_id, so a narrower read is not available
+// FIRST via stateEventVisibilityFor (pair plane): an absent OR
+// foreign event returns [] without ever deriving anything —
+// byte-identical to the retired table read's own empty-array
+// outcome for both cases (db.stateFieldValues.getAllWhere
+// trivially found no rows for an absent event, and the SFV
+// parentScope resolver fenced a foreign event's rows to
+// invisible — this route never 404s). Once visible, ONE shared
+// readonly tx over requests+responses (the
+// deriveEventPairStates torn-read closure, derive-states.ts)
+// derives the WHOLE plane: the GET path may scan wider than the
+// RESTRICT write gate (Author gate 5's own hard constraint),
+// and the transition fold has no address of its own keyed by
+// state_event_id, so a narrower read is not available
 // regardless — see this module's header.
 export async function stateFieldValuesForStateEvent(
     db: DbAdapter,
+    boundOrganization: Id,
     stateEventId: Id,
 ): Promise<StateFieldValueEntity[]> {
-    if (!(await isVisibleStateEvent(db, stateEventId))) return [];
+    if (!(await isVisibleStateEvent(
+        db, boundOrganization, stateEventId,
+    ))) {
+        return [];
+    }
     return db.transaction(
         ['requests', 'responses'],
         async (view) => {

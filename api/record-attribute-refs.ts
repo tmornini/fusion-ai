@@ -36,15 +36,15 @@ export interface AttributeReferrers {
 // leg is pair-plane derived (Phase 14 Task 6,
 // deriveStateFieldValueReferrers in api/derive-state-field-
 // values.ts): requests + responses feed the derive, and each
-// candidate row's visibility is settled by view.states.getById
-// on its parent state event — the row-plane fence db-
-// organization-scoped.ts already carries, reused rather than
-// rebuilt. 'states' was already required regardless — every
-// EntityStore read here consults it for the soft-delete filter
-// (getDeletedIdsIn). The flow-node-attribute scan reads
-// flow_node_attributes + flow_nodes. An in-tx caller must
-// declare the whole ring — IndexedDB throws on any store a
-// transaction did not name.
+// candidate row's visibility is settled by
+// stateEventVisibilityFor (Phase 15 Task 3) on its parent
+// state event — pair-plane, not the row-plane
+// rawHasRow/getById fence. 'states' was already required
+// regardless — every EntityStore read here consults it for
+// the soft-delete filter (getDeletedIdsIn). The flow-node-
+// attribute scan reads flow_node_attributes + flow_nodes. An
+// in-tx caller must declare the whole ring — IndexedDB throws
+// on any store a transaction did not name.
 export const ATTRIBUTE_RESTRICT_TABLES:
     readonly string[] = [
     'flows', 'work_orders',
@@ -74,8 +74,11 @@ function graphBindsAttribute(
 }
 
 // Referrers for each of `attributeIds`. `view` is the
-// org-fenced transaction view. Live-flow referrers derive
-// from the flow_node_attributes relation (latest action per
+// organization-fenced transaction view; `boundOrganization`
+// is the verified token claim that fence was bound to (the
+// pair-plane visibility probe needs it explicitly —
+// stateEventVisibilityFor). Live-flow referrers derive from
+// the flow_node_attributes relation (latest action per
 // flow_node_id — a 'removed' row means no current binding).
 // Frozen work-order referrers still parse the
 // work_orders.flow_graph blob (the frozen plane keeps its
@@ -85,6 +88,7 @@ function graphBindsAttribute(
 // per-id table read (the pair plane has no such index).
 export async function collectAttributeReferrers(
     view: DbAdapter,
+    boundOrganization: string,
     attributeIds: readonly string[],
 ): Promise<Map<string, AttributeReferrers>> {
     const workOrders = await view.workOrders.getAll();
@@ -95,7 +99,9 @@ export async function collectAttributeReferrers(
         ),
     }));
     const fieldValuesByAttribute =
-        await deriveStateFieldValueReferrers(view, attributeIds);
+        await deriveStateFieldValueReferrers(
+            view, boundOrganization, attributeIds,
+        );
     const referrers = new Map<string, AttributeReferrers>();
     for (const attributeId of attributeIds) {
         const values =
@@ -146,12 +152,18 @@ export async function collectAttributeReferrers(
 // route wraps this in its own transaction; a composing POST
 // calls it on the view it already holds, so the referrer
 // check and the splice share that one transaction.
+// `boundOrganization` is the verified token claim (pair-plane
+// visibility on the SFV leg needs it; DeleteHandler does not
+// carry organization, so the route resolves it from the
+// attribute row's own organization_id before calling).
 export async function deleteRecordAttributeSafe(
     view: DbAdapter,
+    boundOrganization: string,
     id: string,
 ): Promise<void> {
-    const referrers =
-        await collectAttributeReferrers(view, [id]);
+    const referrers = await collectAttributeReferrers(
+        view, boundOrganization, [id],
+    );
     const refs = referrers.get(id)!;
     if (hasReferrers(refs)) {
         throw new ApiError(
