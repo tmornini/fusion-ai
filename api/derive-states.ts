@@ -102,9 +102,13 @@ import {
 // event id is client-minted fresh per write, and the states table
 // is ledger-immutable (StateStore.put throws
 // LedgerImmutabilityError on a differing re-put of the same id),
-// so a given uriId is visited by AT MOST one distinct 2xx pair —
+// so a given uriId is visited by at most one distinct-CONTENT
+// pair — a different-envelope resend (fresh x-request-id →
+// different message_hash) may land a SECOND 2xx pair at the same
+// uri_id while the row write no-ops (finding 2; Phase 15 Task 6).
 // documentPairsAt's full pair list IS the event list; no head
-// reduction is needed or appropriate.
+// reduction is needed or appropriate (unionById collapses
+// duplicate-content rows).
 //
 // SEGMENT-BOUNDARY CORRECTNESS (the derive-identity-spine.ts E13
 // precedent): 'states' is organization-nested
