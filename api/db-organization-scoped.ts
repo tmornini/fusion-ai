@@ -36,6 +36,7 @@ import {
     graphEntityProbe,
     type OwningOrganizationResolver,
 } from './store-parent-scoped.ts';
+import { resolveOwningOrganization } from './derive-states.ts';
 
 // Wrap `base` in an org-scoped view. The org-owned entity
 // stores fence by their stamped organization_id; the
@@ -83,24 +84,23 @@ export function organizationScopedAdapter(
 
     // A state event's entity_id is any org-owned entity, or an
     // org-less member visible only to a co-member of this org —
-    // resolved through the UNFENCED stores so a foreign owner
-    // reports its real org and is hidden. The graphProbe closes
-    // the flow_nodes / flow_edges two-hop for deletion events.
-    // rawReadRow bypasses EntityStore's deleted filter so the
-    // probe works even after the node/edge is soft-deleted.
+    // resolved on the PAIR PLANE (Phase 15 Task 5) so a foreign
+    // owner reports its real org and is hidden even after the
+    // parent row is soft-deleted or hard-spliced.
     const organizationOwned = rawOrganizationOwnedProbes(base);
     const graphProbe = graphEntityProbe(base, base.flows);
     const states = new ParentScopedStateStore(
         base.states, organization, 'states',
-        (row) => ownerOrganizationOfEntity(
-            organizationOwned, memberships, organization,
-            row.entity_id, graphProbe,
+        (row) => resolveOwningOrganization(
+            base, row.entity_id, organization,
         ),
     );
 
     // state_field_values pin to a parent state event — they are
     // owned by whatever owns that event (multi-hop). The same
     // graphProbe resolves flow-graph deletion events here too.
+    // NAMED residual (Phase 15 Task 7 retires the leaf routes
+    // and this row-plane parent resolve together).
     const stateFieldValues = parentScope(
         base.stateFieldValues, 'state_field_values',
         async (row: StateFieldValueEntity) => {

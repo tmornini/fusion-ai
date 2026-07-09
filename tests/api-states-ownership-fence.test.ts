@@ -20,9 +20,9 @@ import { formWritePair } from '../api/message-pair.ts';
 // itself — with no upstream ownership check, a member of one
 // org could PUT a state event naming ANOTHER org's entity and
 // forge or tombstone its lifecycle. The fence resolves
-// ownership through the RAW probes (deleted-blind), so a
-// foreign entity 404s whether it is live or already
-// soft-deleted.
+// ownership on the PAIR PLANE (Phase 15 Task 5,
+// resolveOwningOrganization), so a foreign entity 404s whether
+// it is live, soft-deleted, or hard-spliced.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -353,7 +353,7 @@ async () => {
 });
 
 test('PUT states/:id naming an ALREADY-DELETED org-B entity'
-+ ' is still 404 (the raw probe resolves it)', async () => {
++ ' is still 404 (the pair plane resolves it)', async () => {
     const db = await seed();
     await db.states.put('ev-b-del', {
         entity_id: 'idea-b', state: 'deleted',
@@ -373,10 +373,10 @@ test('PUT states/:id naming an ALREADY-DELETED org-B entity'
 // ---- 7. the read leak: org B's OWN deletion of its idea ----
 // must stay hidden from every OTHER org, not resolve to a
 // visible orphan. The read-side companion of the write fence
-// above: rawOrganizationOwnedProbes resolves a DELETED
-// entity to its true owner, closing the leak where the
-// filtered organizationOwnedProbes let a foreign org's own
-// deletion resolve to a visible "orphan".
+// above: resolveOwningOrganization resolves a DELETED
+// entity to its true owner via the append-only pair plane,
+// closing the leak where a filtered row-plane probe let a
+// foreign org's own deletion resolve to a visible "orphan".
 
 test('org B deleting its own idea hides it from org A'
 + ' entity-states history (was visible pre-fix)', async () => {

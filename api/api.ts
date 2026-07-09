@@ -452,18 +452,16 @@ export async function handleRequest(
         // foreign row as merely absent), so the fence cannot
         // live in the route closure — it runs HERE, pre-
         // dispatch, mirroring the entity-states GET guard
-        // above. The RAW probes resolve a foreign entity's true
-        // owner even after it is soft-deleted — the filtered
-        // organizationOwnedProbes would let a self-deleted
-        // foreign row masquerade as an orphan.
+        // above. PAIR-PLANE (Phase 15 Task 5): ownership
+        // resolves through resolveOwningOrganization — soft-
+        // deleted parents, hard-spliced records, and
+        // organization document ids all report their true
+        // owner via the append-only pair plane.
         if (method === 'PUT' && routePattern === 'states/:id') {
             const entityId = body?.entity_id;
             if (typeof entityId === 'string') {
-                const owner = await ownerOrganizationOfEntity(
-                    rawOrganizationOwnedProbes(adapter),
-                    adapter.memberships, organization!,
-                    entityId,
-                    graphEntityProbe(adapter, adapter.flows),
+                const owner = await resolveOwningOrganization(
+                    adapter, entityId, organization!,
                 );
                 if (owner !== null && owner !== organization) {
                     return Response.json(
