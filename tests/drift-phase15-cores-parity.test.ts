@@ -9,6 +9,7 @@ import { jsonObjectField, nowUtc } from '../api/types.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     workOrderDocumentHeadFor,
+    workOrderClaimHistoryFor,
     stateEventVisibilityFor,
     resolveOwningOrganization,
 } from '../api/derive-states.ts';
@@ -29,10 +30,20 @@ import {
 import { organizationToken } from './token-fixtures.ts';
 import { organizationScopedAdapter } from
     '../api/db-organization-scoped.ts';
+import {
+    validateWorkOrderFlowGraphJson,
+} from '../api/validators.ts';
+import {
+    latestClaimEvent,
+    isClaimEventExpired,
+} from '../api/work-order-claims.ts';
+import {
+    generateCryptoSafeBase62,
+} from '../shared/crypto-safe-base62.ts';
 
-// Phase 15 Task 1: view-safe derive cores — pre-tx-vs-in-tx
-// parity + drift pins against the still-live row plane. Cores
-// only; no production call site flips (Tasks 2–6 re-anchor).
+// Phase 15: view-safe derive cores (Task 1) + claim-gate
+// graph re-anchor pins (Task 2). Pre-tx-vs-in-tx parity and
+// residual drift against the dual-write row plane.
 
 const BASE = 'http://localhost';
 
@@ -203,6 +214,119 @@ async () => {
     assert.deepEqual(derived, rowOracle);
     assert.equal(derived!.display_id, 'after');
     assert.equal(derived!.position, 3);
+});
+
+// -- claim graph parity (Phase 15 Task 2) ------------------------
+
+// The claim gate's LIVE graph source since Task 2's re-anchor.
+// Pin pre-tx vs in-tx parity of flow_graph (the field
+// isClaimEventExpired consumes via lockTimeout) over
+// postWorkOrderClaimOp's REAL table list, residual equality
+// to workOrders.getById, and claim-outcome parity: the
+// priorLive decision computed from the document-head graph
+// matches the decision from the residual row-plane graph.
+// Seed via PUT (document pair + dual-write row, no birth
+// claim) so the live-path claim is a real append, not an
+// idempotent re-claim of a create-time 'claimed' event.
+test('claim graph: pre-tx vs in-tx flow_graph parity and'
++ ' claim-outcome parity against the residual row plane',
+async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+    const workOrderId = 'wo-p15-claim-graph';
+    const lockTimeoutSeconds = 8 * 60 * 60;
+    const graph = workOrderFlowGraph(lockTimeoutSeconds);
+
+    const put = await handleRequest(db, req(
+        'PUT', '/work-orders/' + workOrderId, token, {
+            display_id: 'p15-cg-' + workOrderId,
+            flow_graph: graph,
+            position: 2,
+        },
+    ));
+    assert.equal(put.status, 200);
+
+    const rowOracle = await db.workOrders
+        .getById(workOrderId);
+    const preTx = await workOrderDocumentHeadFor(
+        db, STARK_ORGANIZATION, workOrderId,
+    );
+    const inTx = await db.transaction(
+        [...CLAIM_TX_TABLES],
+        (view) => workOrderDocumentHeadFor(
+            view, STARK_ORGANIZATION, workOrderId,
+        ),
+    );
+    assert.deepEqual(preTx, inTx);
+    assert.deepEqual(preTx, rowOracle);
+    assert.equal(preTx!.flow_graph, rowOracle.flow_graph);
+
+    const headGraph = validateWorkOrderFlowGraphJson(
+        preTx!.flow_graph, 'work_orders.flow_graph',
+    );
+    const rowGraph = validateWorkOrderFlowGraphJson(
+        rowOracle.flow_graph, 'work_orders.flow_graph',
+    );
+    assert.equal(headGraph.lockTimeout, lockTimeoutSeconds);
+    assert.equal(
+        headGraph.lockTimeout, rowGraph.lockTimeout,
+    );
+
+    // Claim-outcome parity: priorLive from the document-head
+    // graph equals priorLive from the residual row graph —
+    // isClaimEventExpired + latestClaimEvent stay untouched.
+    const history = await workOrderClaimHistoryFor(
+        db, STARK_ORGANIZATION, workOrderId,
+    );
+    const prior = latestClaimEvent(history, workOrderId);
+    const priorLiveFromHead = prior !== null
+        && prior.state === 'claimed'
+        && !isClaimEventExpired(
+            prior, headGraph.lockTimeout,
+        );
+    const priorLiveFromRow = prior !== null
+        && prior.state === 'claimed'
+        && !isClaimEventExpired(
+            prior, rowGraph.lockTimeout,
+        );
+    assert.equal(priorLiveFromHead, priorLiveFromRow);
+    assert.equal(priorLiveFromHead, false);
+
+    // Live path: claim against the re-anchored gate succeeds.
+    const claimResponse = await handleRequest(db, req(
+        'POST',
+        '/work-orders/' + workOrderId + '/claim',
+        token, {
+            claimEventId: generateCryptoSafeBase62(),
+            claimAt: nowUtc(),
+            expireEventId: generateCryptoSafeBase62(),
+            expireAt: nowUtc(),
+        },
+    ));
+    assert.equal(claimResponse.status, 204);
+
+    // Absent id: document head null pre-tx and in-tx; row
+    // plane throws the same EntityNotFoundError bytes the
+    // live gate maps null onto.
+    const missingId = 'no-such-claim-graph-wo';
+    const preMissing = await workOrderDocumentHeadFor(
+        db, STARK_ORGANIZATION, missingId,
+    );
+    const inMissing = await db.transaction(
+        [...CLAIM_TX_TABLES],
+        (view) => workOrderDocumentHeadFor(
+            view, STARK_ORGANIZATION, missingId,
+        ),
+    );
+    assert.equal(preMissing, null);
+    assert.equal(inMissing, null);
+    await assert.rejects(
+        () => db.workOrders.getById(missingId),
+        (err: unknown) =>
+            err instanceof EntityNotFoundError
+            && err.message
+                === 'Not found: work_orders/' + missingId,
+    );
 });
 
 // -- stateEventVisibilityFor -------------------------------------
