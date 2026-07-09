@@ -1,10 +1,12 @@
 import type { DbAdapter } from './db.ts';
 import type {
     Id, RequestEntity, ResponseEntity, StateEntity,
+    WorkOrderEntity,
 } from './types.ts';
 import { MS_PER_SECOND } from './types.ts';
 import {
-    pickString, validateWorkOrderFlowGraphJson,
+    pickString, pickNumber, pickJsonObjectField,
+    validateWorkOrderFlowGraphJson,
 } from './validators.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
 import {
@@ -1158,6 +1160,64 @@ export async function workOrderClaimHistoryFor(
         );
     return [...replayed, ...statesAddressEvents]
         .sort(atIdCompare);
+}
+
+// ---- workOrderDocumentHeadFor — the claim-gate graph head -----
+// ---- (Phase 15 Task 1, Author gate 4) --------------------------
+
+// Derives the work order's CURRENT document head
+// ({display_id, flow_graph, position, …}) from the entity's
+// OWN document pairs — the pair-plane successor of
+// view.workOrders.getById that postWorkOrderClaimOp still
+// reads for flow_graph (Task 2 re-anchors the call site).
+//
+// REUSE TARGET: the entity-scoped entityPairs computation
+// inside workOrderClaimSourcesFor (uri_id-indexed +
+// collection-prefix filter) — NOT derivedDocumentEntity /
+// documentGetHandler, whose collection-wide prefix scan is
+// the forbidden whole-plane shape inside a write gate.
+//
+// HEAD REDUCTION: documentPairsAt already sorts by (at, id)
+// ascending and admits only PUT/DELETE, so the last pair IS
+// the document head; a DELETE head (or no pairs) yields null
+// so the claim gate can map absent to the same
+// EntityNotFoundError bytes as workOrders.getById.
+// dbOrView-shaped and opens no nested transaction — callable
+// from WITHIN an already-open write-gate transaction.
+export async function workOrderDocumentHeadFor(
+    dbOrView: DbAdapter,
+    organization: Id,
+    workOrderId: Id,
+): Promise<WorkOrderEntity | null> {
+    const collectionPrefix = canonicalUriPrefix(
+        organization, '/work-orders/',
+    );
+    const [byIdRequests, byIdResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere('uri_id', workOrderId),
+        dbOrView.responses.getAllWhere('uri_id', workOrderId),
+    ]);
+    const collectionRequests = byIdRequests.filter(
+        (r) => r.uri_prefix === collectionPrefix,
+    );
+    const collectionResponses = byIdResponses.filter(
+        (r) => r.uri_prefix === collectionPrefix,
+    );
+    const entityPairs = documentPairsAt(
+        collectionRequests, collectionResponses,
+        collectionPrefix,
+    );
+    if (entityPairs.length === 0) return null;
+    const head = entityPairs[entityPairs.length - 1]!;
+    if (head.method === 'DELETE') return null;
+    return {
+        id: workOrderId,
+        organization_id: organization,
+        display_id: pickString(head.body, 'display_id'),
+        flow_graph: pickJsonObjectField(
+            head.body, 'flow_graph',
+        ),
+        position: pickNumber(head.body, 'position'),
+    };
 }
 
 // ---- deriveMemberGenesis — the member create-op reader (gate 5c)
