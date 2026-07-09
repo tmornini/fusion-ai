@@ -14,6 +14,9 @@ import {
     resolveOwningOrganization,
 } from '../api/derive-states.ts';
 import {
+    stateFieldValuesForStateEvent,
+} from '../api/derive-state-field-values.ts';
+import {
     flowGraphBindingsFromPairs,
 } from '../api/derive-flows.ts';
 import {
@@ -42,7 +45,8 @@ import {
 } from '../shared/crypto-safe-base62.ts';
 
 // Phase 15: view-safe derive cores (Task 1) + claim-gate
-// graph re-anchor pins (Task 2). Pre-tx-vs-in-tx parity and
+// graph re-anchor pins (Task 2) + field-values visibility
+// re-anchor pins (Task 3). Pre-tx-vs-in-tx parity and
 // residual drift against the dual-write row plane.
 
 const BASE = 'http://localhost';
@@ -1022,4 +1026,222 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
         relationFailClosed,
     );
     assert.equal(latest.get(nodeId)!.action, 'removed');
+});
+
+// -- field-values visibility re-anchor (Phase 15 Task 3) ------
+
+// Shared fixture: live create a work order (so tier-ii can
+// discover its id from the collection pair), then transition
+// with ONE folded field-value. Op-born transitionEventId has
+// no states/:id pair — visibility rides tier (ii)/(iii).
+async function transitionWithFieldValue(
+    db: MemoryDbAdapter,
+    workOrderId: string,
+    transitionEventId: string,
+    fieldValueId: string,
+    attributeId: string,
+): Promise<void> {
+    const token = await organizationToken();
+    const graph = workOrderFlowGraph(8 * 60 * 60);
+    const created = await handleRequest(db, req(
+        'POST', '/work-orders', token, {
+            id: workOrderId,
+            workOrder: {
+                display_id: 'fv-' + workOrderId,
+                flow_graph: graph,
+                position: 1,
+            },
+            flowWorkOrderId: workOrderId + '-fwo',
+            flowWorkOrder: {
+                flow_id: EMPTY_FLOW_ID,
+                work_order_id: workOrderId,
+                at: nowUtc(),
+            },
+            stateEventIds: [
+                workOrderId + '-ev1',
+                workOrderId + '-ev2',
+                workOrderId + '-ev3',
+            ],
+            stateEventAts: [nowUtc(), nowUtc(), nowUtc()],
+            states: ['n-start', 'n-finish', 'claimed'],
+        },
+    ));
+    assert.equal(created.status, 204);
+
+    await db.recordAttributes.put(attributeId, {
+        organization_id: STARK_ORGANIZATION,
+        record_id: 'rec-p15-fv',
+        name: 'Note',
+        attribute_type: 'text',
+        sort_order: 0,
+        options: '[]',
+        constraints: '[]',
+    });
+
+    const transitioned = await handleRequest(db, req(
+        'POST',
+        '/work-orders/' + workOrderId + '/transition',
+        token,
+        {
+            transitionEventId,
+            targetState: 'n-finish',
+            fieldValues: [{
+                id: fieldValueId,
+                fields: {
+                    state_event_id: transitionEventId,
+                    attribute_id: attributeId,
+                    value: 'high',
+                },
+            }],
+            release: null,
+            transitionAt: nowUtc(),
+        },
+    ));
+    assert.equal(transitioned.status, 204);
+}
+
+// Wire-shape pin: GET states/:id/field-values is ALWAYS 200
+// with a three-way filtered array (own → rows; foreign → [];
+// nowhere → []). Never 404. Pair-plane visibility successor
+// (stateEventVisibilityFor) must hold these bytes exactly.
+test('field-values GET: always-200 three-way array for'
++ ' own / foreign / orphan parent events', async () => {
+    const db = await seededDb();
+    const starkToken = await organizationToken(
+        'current', STARK_ORGANIZATION,
+    );
+    const twoToken = await organizationToken(
+        'current', ORGANIZATION_TWO,
+    );
+    const workOrderId = 'wo-p15-fv-get';
+    const transitionEventId = workOrderId + '-te';
+    const fieldValueId = workOrderId + '-fv';
+    await transitionWithFieldValue(
+        db, workOrderId, transitionEventId,
+        fieldValueId, workOrderId + '-attr',
+    );
+
+    // (own) Stark sees the folded row.
+    const own = await handleRequest(
+        db,
+        req(
+            'GET',
+            '/states/' + transitionEventId + '/field-values',
+            starkToken,
+        ),
+    );
+    assert.equal(own.status, 200);
+    const ownRows = await own.json() as { id: string }[];
+    assert.deepEqual(
+        ownRows.map((r) => r.id), [fieldValueId],
+    );
+
+    // (foreign) Org two sees [] — never 404.
+    const foreign = await handleRequest(
+        db,
+        req(
+            'GET',
+            '/states/' + transitionEventId + '/field-values',
+            twoToken,
+        ),
+    );
+    assert.equal(foreign.status, 200);
+    const foreignRows =
+        await foreign.json() as { id: string }[];
+    assert.deepEqual(foreignRows, []);
+
+    // (orphan / nowhere) Ghost event id → [] / 200.
+    const orphan = await handleRequest(
+        db,
+        req(
+            'GET',
+            '/states/ghost-p15-nowhere/field-values',
+            starkToken,
+        ),
+    );
+    assert.equal(orphan.status, 200);
+    const orphanRows =
+        await orphan.json() as { id: string }[];
+    assert.deepEqual(orphanRows, []);
+});
+
+// Derive-path parity: stateFieldValuesForStateEvent's
+// visibility gate matches the row-plane three-way oracle
+// (rawHasRow + fenced getById) for own / foreign / orphan.
+test('stateFieldValuesForStateEvent visibility matches'
++ ' the row-plane three-way (own / foreign / orphan)',
+async () => {
+    const db = await seededDb();
+    const workOrderId = 'wo-p15-fv-derive';
+    const transitionEventId = workOrderId + '-te';
+    const fieldValueId = workOrderId + '-fv';
+    await transitionWithFieldValue(
+        db, workOrderId, transitionEventId,
+        fieldValueId, workOrderId + '-attr',
+    );
+
+    const starkScoped = organizationScopedAdapter(
+        db, STARK_ORGANIZATION,
+    );
+    const twoScoped = organizationScopedAdapter(
+        db, ORGANIZATION_TWO,
+    );
+
+    // Own → visible on both planes; derive returns the row.
+    assert.equal(
+        await rowPlaneVisibility(
+            starkScoped, transitionEventId,
+        ),
+        'visible',
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, STARK_ORGANIZATION, transitionEventId,
+        ),
+        'visible',
+    );
+    const ownDerived = await stateFieldValuesForStateEvent(
+        db, STARK_ORGANIZATION, transitionEventId,
+    );
+    assert.equal(ownDerived.length, 1);
+    assert.equal(ownDerived[0]!.id, fieldValueId);
+
+    // Foreign → hidden on both planes; derive returns [].
+    assert.equal(
+        await rowPlaneVisibility(
+            twoScoped, transitionEventId,
+        ),
+        'hidden',
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, ORGANIZATION_TWO, transitionEventId,
+        ),
+        'hidden',
+    );
+    const foreignDerived =
+        await stateFieldValuesForStateEvent(
+            db, ORGANIZATION_TWO, transitionEventId,
+        );
+    assert.deepEqual(foreignDerived, []);
+
+    // Orphan → orphan on both planes; derive returns []
+    // (no field-value pairs name the ghost id).
+    assert.equal(
+        await rowPlaneVisibility(
+            starkScoped, 'ghost-p15-vis',
+        ),
+        'orphan',
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, STARK_ORGANIZATION, 'ghost-p15-vis',
+        ),
+        'orphan',
+    );
+    const orphanDerived =
+        await stateFieldValuesForStateEvent(
+            db, STARK_ORGANIZATION, 'ghost-p15-vis',
+        );
+    assert.deepEqual(orphanDerived, []);
 });
