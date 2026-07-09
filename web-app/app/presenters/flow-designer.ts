@@ -187,23 +187,44 @@ export class FlowDesignerPresenter {
         };
     }
 
-    #saveChain: Promise<void> = Promise.resolve();
+    // Saves are SERIALIZED on one promise chain PER FLOW,
+    // so concurrent gestures can never reorder against each
+    // other; a failed save surfaces through reportFault and
+    // the chain survives for the saves queued behind it. Fix
+    // wave (Phase 14 Task 8, post-Task-11-browser-regression):
+    // this chain lives at MODULE scope, keyed by flowId — NOT
+    // as an instance field — because `commit()` (detail.ts)
+    // constructs a BRAND NEW FlowDesignerPresenter on EVERY
+    // commit; an instance field resets to a fresh
+    // Promise.resolve() each time, so the "serialized" claim
+    // was pure fiction the moment TWO DIFFERENT commits each
+    // queued a save (the load-time auto-layout reconcile
+    // racing the FIRST user edit is exactly this: two
+    // presenter instances, two unlinked chains, two
+    // concurrent putFlow calls targeting the SAME baseline —
+    // the `responses.follows` collision the Task 11 browser
+    // report caught). Keyed by flowId so saves for DIFFERENT
+    // flows never serialize against each other; persists for
+    // the life of the page's module (module-level Maps in a
+    // single-flow-per-tab app never grow unboundedly in
+    // practice — a demo-tier concession, not correctness-
+    // load-bearing).
+    static readonly #saveChains = new Map<string, Promise<void>>();
 
-    // Saves are SERIALIZED on one promise chain, so
-    // concurrent gestures can never reorder against
-    // each other; a failed save surfaces through
-    // reportFault and the chain survives for the
-    // saves queued behind it. Undo-as-replay (Phase 14
-    // Task 8) drops the versioned/non-versioned split: every
-    // save used to OPTIONALLY archive the pre-edit state
-    // through postFlowVersion first (feeding the OLD undo
-    // mechanism's flow_versions consume) — undo now resolves
-    // its target from the flows/:id document-pair history
-    // instead, so that archive write served no purpose once
-    // its one reader (the undo route's own consume) was
-    // retired, whichever call site queued it.
+    // Undo-as-replay (Phase 14 Task 8) drops the versioned/
+    // non-versioned split: every save used to OPTIONALLY
+    // archive the pre-edit state through postFlowVersion
+    // first (feeding the OLD undo mechanism's flow_versions
+    // consume) — undo now resolves its target from the
+    // flows/:id document-pair history instead, so that
+    // archive write served no purpose once its one reader
+    // (the undo route's own consume) was retired, whichever
+    // call site queued it.
     #queueSave(snap: FlowSnapshot): void {
-        this.#saveChain = this.#saveChain.then(
+        const chains = FlowDesignerPresenter.#saveChains;
+        const previous =
+            chains.get(snap.flowId) ?? Promise.resolve();
+        const next = previous.then(
             async () => {
                 const ctx = sessionContext();
                 try {
@@ -217,6 +238,7 @@ export class FlowDesignerPresenter {
                 }
             },
         );
+        chains.set(snap.flowId, next);
     }
 
     async #persistFlow(
