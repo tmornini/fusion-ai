@@ -220,6 +220,41 @@ async function isVisibleStateEvent(
 // TABLES: requests, responses, and states are all in its ring) —
 // no nested transaction opens here, matching workOrderClaim
 // SourcesFor's own in-tx contract (derive-states.ts).
+//
+// NAMED DEVIATION — Author gate 1(d) (fix wave, Critical 2): this
+// reads the WHOLE requests/responses plane inside a write-gate
+// transaction, which gate 1(d) disfavors in favor of entity-
+// scoped indexed reads (the workOrderClaimSourcesFor precedent
+// this header cites). TWO family-scoped alternatives were
+// investigated and REJECTED before falling back here, not
+// skipped:
+//   - Leaf family (states/:id/field-values/): no cheaper
+//     entity-id source exists. A leaf pair's own uri_prefix is
+//     keyed by state_event_id (api/message-address.ts), and
+//     nothing enumerates "every state event that might carry a
+//     field value" more cheaply than reading the plane that
+//     would answer it.
+//   - Transition family (work-orders/:id/transition/): WOULD be
+//     servable via N indexed requests/responses.getAllWhere
+//     ('uri_prefix', ...) reads (api/db.ts's TABLE_INDEXES: both
+//     tables index uri_prefix — an EXACT-match index, one value
+//     per entity, not a family-wide constant), one per known
+//     work-order id, EXCEPT the only cheap work-order id source
+//     — view.workOrders.getAll() — is an EntityStore read, which
+//     applies its OWN deleted-filter (getDeletedIdsIn,
+//     store-entity.ts) and silently excludes a since-deleted
+//     work order. The OLD table-plane state_field_values read
+//     never filtered by work-order lifecycle at all (a field-
+//     value row survives its work order's own deletion), so
+//     scoping by view.workOrders.getAll() would introduce a
+//     genuine wire delta — dropping a since-deleted work order's
+//     field-value history from the RESTRICT count — not merely
+//     miss an optimization. Rejected for that reason; no
+//     DbAdapter-level primitive enumerates work-order ids
+//     WITHOUT the deleted filter today.
+// Task 11 measures this; closing the transition half would need
+// a raw, undeleted-filtered work-order id enumeration this task
+// does not introduce on its own authority.
 export async function deriveStateFieldValueReferrers(
     view: DbAdapter,
     attributeIds: readonly Id[],
@@ -231,11 +266,33 @@ export async function deriveStateFieldValueReferrers(
     const wanted = new Set(attributeIds);
     const candidates = stateFieldValuesFrom(requests, responses)
         .filter((row) => wanted.has(row.attribute_id));
+
+    // IMPORTANT 3 (fix wave): resolve visibility ONCE per
+    // DISTINCT parent state event, not once per candidate row —
+    // a hot attribute referenced by many rows under the SAME
+    // event previously repeated the same rawHasRow/getById pair
+    // once per row.
+    const distinctEventIds = [...new Set(
+        candidates.map((row) => row.state_event_id),
+    )];
+    const visibilityFlags = await Promise.all(
+        distinctEventIds.map(
+            (stateEventId) =>
+                isVisibleStateEvent(view, stateEventId),
+        ),
+    );
+    const visibility = new Map(
+        distinctEventIds.map(
+            (stateEventId, i) =>
+                [stateEventId, visibilityFlags[i]!] as const,
+        ),
+    );
+
     const byAttribute = new Map<Id, StateFieldValueEntity[]>();
     for (const row of candidates) {
-        if (!(await isVisibleStateEvent(
-            view, row.state_event_id,
-        ))) continue;
+        if (visibility.get(row.state_event_id) !== true) {
+            continue;
+        }
         const list = byAttribute.get(row.attribute_id) ?? [];
         list.push(row);
         byAttribute.set(row.attribute_id, list);
