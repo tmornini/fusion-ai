@@ -133,7 +133,9 @@ const MEMBER_VERBS: Readonly<
     '/flows/:id/tags': ['GET', 'PUT', 'DELETE'],
     '/records': ['GET', 'PUT', 'DELETE', 'POST'],
     '/record-attributes': ['GET', 'PUT', 'DELETE'],
-    '/states/:id/field-values': ['GET', 'PUT', 'DELETE'],
+    // leaf PUT/DELETE retired (Phase 15 Task 7); collection
+    // GET survives.
+    '/states/:id/field-values': ['GET'],
     '/work-orders': ['GET', 'PUT', 'POST'],
     '/states': ['GET', 'PUT'],
     '/entity-states': ['GET'],

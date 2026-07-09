@@ -41,11 +41,6 @@ import {
 import {
     identityTargetsFor,
 } from './notifications.ts';
-import {
-    ownerOrganizationOfEntity,
-    rawOrganizationOwnedProbes,
-    graphEntityProbe,
-} from './store-parent-scoped.ts';
 import { resolveOwningOrganization } from './derive-states.ts';
 import {
     exchangeBearerForOrganization,
@@ -471,52 +466,8 @@ export async function handleRequest(
                 }
             }
         }
-        // The field-values sibling: the leaf carries no
-        // entity_id of its own — it is owned by whatever owns
-        // its PARENT state event (states/:id/field-values/:fvid
-        // — param 0 is the parent event, param 1 the leaf).
-        // Read raw so an event whose entity was since deleted
-        // still resolves.
-        if (
-            (method === 'PUT' || method === 'DELETE')
-            && routePattern === 'states/:id/field-values/:fvid'
-        ) {
-            // NAMED DEVIATION (Phase 14 Task 7, controller-
-            // adjudicated): Author gate 6 intended this
-            // lookup re-anchored onto the pair plane.
-            // INFEASIBLE — op-born parent events (work-order
-            // transition/claim, document-trio embedded
-            // events) carry NO states/:id pair; the id lives
-            // only inside an op pair's BODY, addressed by the
-            // OWNING ENTITY, never the event id — exactly why
-            // deriveStates/deriveStatesFor (derive-states.ts)
-            // union SIX sources rather than read states/:id
-            // pairs alone. A pair-plane lookup here would need
-            // an unbounded cross-organization scan on this hot
-            // pre-dispatch path, or silently misread an
-            // op-born foreign parent as absent — a cross-
-            // tenant regression. Stays states-table-based,
-            // joining the Final-gated residual family (entity-
-            // table probes, EntityStore tombstones); retires
-            // at Phase Final alongside state_field_values.
-            const parentEvent = await adapter.rawReadRow<
-                { id: string; entity_id: Id }
-            >('states', param(params, 0));
-            if (parentEvent !== null) {
-                const owner = await ownerOrganizationOfEntity(
-                    rawOrganizationOwnedProbes(adapter),
-                    adapter.memberships, organization!,
-                    parentEvent.entity_id,
-                    graphEntityProbe(adapter, adapter.flows),
-                );
-                if (owner !== null && owner !== organization) {
-                    return Response.json(
-                        { error: 'Not found: ' + pathname },
-                        { status: HTTP_NOT_FOUND },
-                    );
-                }
-            }
-        }
+        // field-values leaf write fence RETIRED with the leaf
+        // routes (Phase 15 Task 7).
         // WP8 (Phase 13 Task 8): the self-only revocation guard.
         // MEMBER_VERBS widens PUT /identity-token-revocations to
         // the member tier (Region A's route-policy check already

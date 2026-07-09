@@ -15,17 +15,17 @@ import {
 
 // Phase 14 Task 6: state_field_values (SFV) truth, derived from
 // the pair plane instead of read off its own table. Author gate
-// 5's own census, re-run at Step 0 and unchanged: the row plane
-// has exactly ONE writer, postWorkOrderTransitionOp (api/
-// routes.ts) — it folds every field-value row for a transition
-// into that SAME transaction's state_field_values.put calls,
-// alongside ONE transition OPERATION pair (work-orders/:id/
-// transition) whose body carries the fold (fieldValues: [{id,
-// fields}]) — no per-value pair of its own. The STANDALONE leaf
-// address (states/:id/field-values/:fvid) is BOTH PAIR_WIRED and
-// DOCUMENT_CLASS (message-pair.ts), so a direct leaf PUT/DELETE —
-// live OR seeded (api/mock-data/seed-message-pairs.ts pair-wires
-// every mock row the same way) — DOES pair-wire itself.
+// 5's own census: the LIVE writer is postWorkOrderTransitionOp
+// (api/routes.ts) — it folds every field-value row for a
+// transition into that SAME transaction's state_field_values
+// .put calls, alongside ONE transition OPERATION pair
+// (work-orders/:id/transition) whose body carries the fold
+// (fieldValues: [{id, fields}]) — no per-value pair of its
+// own. The STANDALONE leaf address
+// (states/:id/field-values/:fvid) RETIRED its live routes
+// (Phase 15 Task 7) but SEED still forms pairs there via
+// formSeedPair + WRITE_RESPONSE_SPECS (finding 7); historical
+// leaf pairs remain in the two-source union.
 //
 // ELECTED (a) TWO-SOURCE UNION (spec B2) over (b) close-the-gap:
 // zero ledger growth. The union is EXACT, not approximate — the

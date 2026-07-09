@@ -3521,6 +3521,14 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
+    // SEED-FORMATION CONSTRAINT (Phase 15 Task 7 / finding 7):
+    // the leaf write routes RETIRE below, but this entry
+    // SURVIVES — formSeedPair re-forms the 7 mock
+    // state_field_values pairs at
+    // states/:id/field-values/:fvid on every reseed
+    // (EXPECTED_PAIR_COUNT 1513 absolute). Live product
+    // writes ride the transition fold only; address-
+    // formation machinery must stay for seed fidelity.
     'states/:id/field-values/:fvid': {
         status: 200,
         successBody: (params, body) => ({
@@ -5145,15 +5153,14 @@ export const routes: Route[] = [
     // (Phase 14 Task 6): stateFieldValuesForStateEvent (api/
     // derive-state-field-values.ts) derives the collection from
     // the pair plane's two-source union (a transition's folded
-    // fieldValues ∪ the leaf address's own PUT/DELETE pairs)
-    // rather than the state_field_values table — visibility
-    // re-anchored onto stateEventVisibilityFor (Phase 15 Task
-    // 3) with the verified token organization, never the path.
-    // Wire shape held: ALWAYS 200; three-way filtered array
-    // (orphan/own → rows; foreign → []). The leaf id is param
-    // 1; PUT and DELETE are exposed exactly as the flat
-    // makeIdRoute carried them — unchanged, still writing the
-    // table directly (dual-write continues; Task 7 retires).
+    // fieldValues ∪ historical leaf-address pairs from seed
+    // and pre-retirement writes) rather than the
+    // state_field_values table — visibility re-anchored onto
+    // stateEventVisibilityFor (Phase 15 Task 3) with the
+    // verified token organization, never the path. Wire shape
+    // held: ALWAYS 200; three-way filtered array (orphan/own →
+    // rows; foreign → []). Leaf PUT/DELETE retired Phase 15
+    // Task 7; collection GET survives.
     route('states/:id/field-values', {
         get: (db, p, _actor, organization) =>
             stateFieldValuesForStateEvent(
@@ -5162,55 +5169,10 @@ export const routes: Route[] = [
                 param(p, 0),
             ),
     }),
-    // PUT/DELETE each append their message pair in the same
-    // transaction as the write (message-pair.ts). DOCUMENT-
-    // class: state_field_values is a plain, revisitable row
-    // (unlike its parent states log), so a repeat PUT records
-    // Supersedes and a DELETE tombstones it. The leaf nests
-    // under its parent STATE EVENT (param 0), fenced by the
-    // multi-hop resolver (api/store-parent-scoped.ts) exactly
-    // as the bare store call was — this is a transaction wrap
-    // plus pair append, not a behavior change.
-    route('states/:id/field-values/:fvid', {
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 1);
-            return db.transaction(
-                [
-                    'state_field_values',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    const written = await view
-                        .stateFieldValues.put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<
-                                    StateFieldValueEntity, 'id'
-                                >,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
-        delete: (db, p, _actor, pair) => {
-            const id = param(p, 1);
-            return db.transaction(
-                [
-                    'state_field_values',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    await view.stateFieldValues.delete(id);
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                },
-            );
-        },
-    }),
+    // PUT/DELETE states/:id/field-values/:fvid RETIRED
+    // (Phase 15 Task 7): zero product callers; live writes
+    // ride the transition fold only. WRITE_RESPONSE_SPECS
+    // entry + seed address formation SURVIVE (finding 7).
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger rather than the old records table. Rides
     // the generic documentCollectionGetHandler — wire-identical

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
-import { POST, PUT, DELETE } from '../api/api.ts';
+import { POST } from '../api/api.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedCurrentMember } from './member-fixtures.ts';
@@ -13,15 +13,12 @@ import {
 import { STARK_ORGANIZATION } from
     '../api/mock-data/seed-constants.ts';
 
-// Phase 14 Task 6's own drift suite: state_field_values (SFV)
-// truth, pair-plane derived (api/derive-state-field-values.ts),
-// proven byte-equal to the row plane it replaces as a decision
-// surface for RESTRICT (api/record-attribute-refs.ts) and the
-// GET states/:id/field-values read (api/routes.ts). Mirrors the
-// sibling drift suites' own conventions (tests/drift-states.
-// test.ts): sortByIdAscending on BOTH sides before deepEqual
-// (H7's own reason — insertion order on the memory tier is not
-// the derive's own order).
+// Phase 14 Task 6's own drift suite, re-pinned Phase 15 Task 7:
+// state_field_values truth is pair-plane derived. Leaf
+// PUT/DELETE routes retired — live writes ride the transition
+// fold only. Seed still forms leaf-address pairs via
+// formSeedPair (WRITE_RESPONSE_SPECS survives); this suite
+// pins the LIVE writer path vs the row plane.
 
 function sortByIdAscending<T extends { id: string }>(
     rows: readonly T[],
@@ -57,14 +54,12 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 }
 
 test('RESTRICT parity: deriveStateFieldValueReferrers'
-+ ' deepEquals the row plane over a live transition, a'
-+ ' standalone leaf PUT, and a leaf DELETE of the'
-+ ' transition-born row', async () => {
++ ' deepEquals the row plane over a live transition fold',
+async () => {
     const db = await seededDb();
 
     // A live transition folds ONE field-value row (fv-1) into
-    // its OWN operation pair — no leaf pair of its own (Author
-    // gate 5's own census, this module's header).
+    // its OWN operation pair — no leaf pair of its own.
     await POST(
         db, 'work-orders/wo1/transition', {
             transitionEventId: 'te1',
@@ -83,26 +78,6 @@ test('RESTRICT parity: deriveStateFieldValueReferrers'
         DEV_TOKEN,
     );
 
-    // A standalone leaf PUT adds a SECOND row under the SAME
-    // transition event, pair-wired at its own address.
-    await PUT(
-        db, 'states/te1/field-values/fv-2',
-        {
-            state_event_id: 'te1',
-            attribute_id: 'attr-1',
-            value: 'medium',
-        },
-        DEV_TOKEN,
-    );
-
-    // The leaf DELETE tombstones the TRANSITION-born row through
-    // the standalone address — proving deletion reproduces
-    // across sources, not merely within one (the leaf-DELETE
-    // pair-visibility gate this task's brief names).
-    await DELETE(
-        db, 'states/te1/field-values/fv-1', DEV_TOKEN,
-    );
-
     const derived =
         await deriveStateFieldValueReferrers(
             db, STARK_ORGANIZATION, ['attr-1'],
@@ -115,12 +90,11 @@ test('RESTRICT parity: deriveStateFieldValueReferrers'
         sortByIdAscending(old),
     );
     assert.equal(old.length, 1);
-    assert.equal(old[0]!.id, 'fv-2');
+    assert.equal(old[0]!.id, 'fv-1');
 });
 
 test('GET drift: stateFieldValuesForStateEvent deepEquals the'
-+ ' row plane, both sides sorted, over a live transition'
-+ ' plus a standalone leaf PUT under the SAME event',
++ ' row plane, both sides sorted, over a live transition fold',
 async () => {
     const db = await seededDb();
     await POST(
@@ -140,15 +114,6 @@ async () => {
         },
         DEV_TOKEN,
     );
-    await PUT(
-        db, 'states/te1/field-values/fv-2',
-        {
-            state_event_id: 'te1',
-            attribute_id: 'attr-1',
-            value: 'medium',
-        },
-        DEV_TOKEN,
-    );
 
     const derived =
         await stateFieldValuesForStateEvent(
@@ -159,5 +124,5 @@ async () => {
 
     assert.deepEqual(
         sortByIdAscending(derived), sortByIdAscending(old));
-    assert.equal(old.length, 2);
+    assert.equal(old.length, 1);
 });

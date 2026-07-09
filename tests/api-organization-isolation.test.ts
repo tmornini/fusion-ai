@@ -23,6 +23,7 @@ import {
 } from '../api/routes.ts';
 import {
     formWritePair,
+    appendMessagePair,
     type MessagePair,
 } from '../api/message-pair.ts';
 
@@ -375,17 +376,69 @@ async function seedChain(
         await organizationToken(identity, organization),
         { entity_id: 'i' + s, state: 'active', at: T8_AT },
     ));
-    // NAMED re-pin (Phase 14 Task 6): the flipped GET states/:id/
-    // field-values route derives from the message ledger too,
-    // the SAME reason as the /states re-pin just above — a raw
-    // db.stateFieldValues.put leaves no pair at the leaf address
-    // (states/:id/field-values/:fvid), so the row must land
-    // through the SAME wire-reachable PUT the live route serves.
-    await handleRequest(db, req(
-        'PUT', '/states/se' + s + '/field-values/sfv' + s,
-        await organizationToken(identity, organization),
-        { state_event_id: 'se' + s, attribute_id: 'x', value: 'v' },
-    ));
+    // NAMED re-pin (Phase 15 Task 7): leaf PUT
+    // states/:id/field-values/:fvid retires; seed the SFV pair
+    // below-gate via formWritePair + row put — WRITE_RESPONSE_
+    // SPECS entry SURVIVES for seed address formation
+    // (finding 7). Transition fold is work-order-only; these
+    // nest under idea-backed se* events. Collection GET still
+    // derives from the pair plane.
+    await seedStateFieldValuePair(
+        db, organization, 'se' + s, 'sfv' + s,
+    );
+}
+
+// Below-gate SFV pair (leaf route retired; seed-formation
+// WRITE_RESPONSE_SPECS entry remains).
+async function seedStateFieldValuePair(
+    db: MemoryDbAdapter,
+    organization: string,
+    stateEventId: string,
+    fvId: string,
+): Promise<void> {
+    const spec = WRITE_RESPONSE_SPECS[
+        'states/:id/field-values/:fvid'
+    ];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no write response spec for field-values leaf',
+        );
+    }
+    const body = {
+        state_event_id: stateEventId,
+        attribute_id: 'x',
+        value: 'v',
+    };
+    const pair: MessagePair = await formWritePair({
+        method: 'PUT',
+        pathname: '/states/' + stateEventId
+            + '/field-values/' + fvId,
+        routePattern: 'states/:id/field-values/:fvid',
+        routeSegments: [
+            'states', ':id', 'field-values', ':fvid',
+        ],
+        pathSegments: [
+            'states', stateEventId, 'field-values', fvId,
+        ],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [stateEventId, fvId], body,
+            SYSTEM_MEMBER_ID, organization,
+        ),
+        headPairId: undefined,
+    });
+    await db.transaction(
+        ['state_field_values', 'requests', 'responses'],
+        async (view) => {
+            await view.stateFieldValues.put(fvId, body);
+            await appendMessagePair(view, pair);
+        },
+    );
 }
 
 // Two full chains (A, B) plus the identity spine; `current` is

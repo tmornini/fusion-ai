@@ -619,7 +619,9 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'organizations/:id',
     'role-grants/:id',
     'identity-providers/:id',
-    'states/:id/field-values/:fvid',
+    // states/:id/field-values/:fvid RETIRED from live wire
+    // (Phase 15 Task 7); seed still forms pairs at that
+    // address via formSeedPair + WRITE_RESPONSE_SPECS.
 ]);
 
 // Route patterns wired for pair STORAGE (PAIR_WIRED_ROUTE_
@@ -700,5 +702,7 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'identities/:id/credentials/:cid',
         'memberships/:id',
         'organizations/:id',
-        'states/:id/field-values/:fvid',
+        // states/:id/field-values/:fvid RETIRED from live wire
+        // (Phase 15 Task 7); seed still forms pairs at that
+        // address via formSeedPair + WRITE_RESPONSE_SPECS.
     ]);
