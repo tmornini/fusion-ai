@@ -1,4 +1,7 @@
-import { EntityNotFoundError } from './db.ts';
+import {
+    EntityNotFoundError,
+    LedgerImmutabilityError,
+} from './db.ts';
 import type {
     DbAdapter,
 } from './db.ts';
@@ -187,6 +190,7 @@ import {
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
     documentStateHeadFor,
+    stateEventCollisionFromPairs,
 } from './derive-states.ts';
 import {
     stateFieldValuesForStateEvent,
@@ -5790,19 +5794,73 @@ export const routes: Route[] = [
         // The author is the verified caller (actor), stamped
         // over any client-supplied member_id — the ledger
         // records who acted, not who the body claims.
+        //
+        // IMMUTABILITY PARITY (Phase 15 Task 6 / gate 7):
+        // pair-plane collision check AND the still-live row
+        // sameEvent check both run; if they disagree on a
+        // present opinion the strangler asserts. Final strips
+        // the row half. 409 bytes stay LedgerImmutabilityError.
         put: (db, p, body, actor, pair) => {
             const id = param(p, 0);
             return db.transaction(
                 ['states', 'requests', 'responses'],
                 async (view) => {
+                    const fields = {
+                        ...validateStateBody(
+                            withoutId(body),
+                        ),
+                        member_id: actor,
+                    };
+                    const pairCollision =
+                        await stateEventCollisionFromPairs(
+                            view, id, fields,
+                        );
+                    let rowCollision:
+                        | 'absent' | 'same' | 'conflict' =
+                        'absent';
+                    try {
+                        const existing =
+                            await view.states.getById(id);
+                        rowCollision =
+                            existing.entity_id
+                                === fields.entity_id
+                            && existing.state === fields.state
+                            && existing.member_id
+                                === fields.member_id
+                            && existing.at === fields.at
+                                ? 'same'
+                                : 'conflict';
+                    } catch (error) {
+                        if (!(
+                            error instanceof EntityNotFoundError
+                        )) {
+                            throw error;
+                        }
+                    }
+                    // Strangler agreement: when both planes
+                    // hold an opinion they must match.
+                    if (
+                        pairCollision !== 'absent'
+                        && rowCollision !== 'absent'
+                        && pairCollision !== rowCollision
+                    ) {
+                        throw new Error(
+                            'state event immutability planes'
+                            + ' disagree for ' + id
+                            + ': pair=' + pairCollision
+                            + ' row=' + rowCollision,
+                        );
+                    }
+                    if (
+                        pairCollision === 'conflict'
+                        || rowCollision === 'conflict'
+                    ) {
+                        throw new LedgerImmutabilityError(
+                            'states', id,
+                        );
+                    }
                     const written = await view.states.put(
-                        id,
-                        {
-                            ...validateStateBody(
-                                withoutId(body),
-                            ),
-                            member_id: actor,
-                        },
+                        id, fields,
                     );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
