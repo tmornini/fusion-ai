@@ -8,6 +8,7 @@ import { seedCurrentMember } from './member-fixtures.ts';
 import { nowUtc } from '../api/types.ts';
 import {
     deriveStateFieldValueReferrers,
+    stateFieldValuesForStateEvent,
 } from '../api/derive-state-field-values.ts';
 
 // Phase 14 Task 6's own drift suite: state_field_values (SFV)
@@ -111,4 +112,46 @@ test('RESTRICT parity: deriveStateFieldValueReferrers'
     );
     assert.equal(old.length, 1);
     assert.equal(old[0]!.id, 'fv-2');
+});
+
+test('GET drift: stateFieldValuesForStateEvent deepEquals the'
++ ' row plane, both sides sorted, over a live transition'
++ ' plus a standalone leaf PUT under the SAME event',
+async () => {
+    const db = await seededDb();
+    await POST(
+        db, 'work-orders/wo1/transition', {
+            transitionEventId: 'te1',
+            targetState: 'n-next',
+            fieldValues: [{
+                id: 'fv-1',
+                fields: {
+                    state_event_id: 'te1',
+                    attribute_id: 'attr-1',
+                    value: 'high',
+                },
+            }],
+            release: null,
+            transitionAt: nowUtc(),
+        },
+        DEV_TOKEN,
+    );
+    await PUT(
+        db, 'states/te1/field-values/fv-2',
+        {
+            state_event_id: 'te1',
+            attribute_id: 'attr-1',
+            value: 'medium',
+        },
+        DEV_TOKEN,
+    );
+
+    const derived =
+        await stateFieldValuesForStateEvent(db, 'te1');
+    const old = await db.stateFieldValues
+        .getAllWhere('state_event_id', 'te1');
+
+    assert.deepEqual(
+        sortByIdAscending(derived), sortByIdAscending(old));
+    assert.equal(old.length, 2);
 });

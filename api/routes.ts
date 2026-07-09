@@ -172,6 +172,9 @@ import {
     documentStateHeadFor,
 } from './derive-states.ts';
 import {
+    stateFieldValuesForStateEvent,
+} from './derive-state-field-values.ts';
+import {
     deriveOrganization,
     deriveOrganizations,
 } from './derive-organizations.ts';
@@ -4917,17 +4920,21 @@ export const routes: Route[] = [
             ),
     }),
     // Field values nest under their parent STATE EVENT: the
-    // state event id is param 0, so the SERVER filters the
-    // collection to that event by its state_event_id FK (the org
-    // fence still rides the facade re-entry — the multi-hop
-    // resolver derives the owning org from the event's entity).
-    // The leaf id is param 1; PUT and DELETE are exposed exactly
-    // as the flat makeIdRoute carried them.
+    // state event id is param 0. GET is FLIPPED by DEFAULT
+    // (Phase 14 Task 6): stateFieldValuesForStateEvent (api/
+    // derive-state-field-values.ts) derives the collection from
+    // the pair plane's two-source union (a transition's folded
+    // fieldValues ∪ the leaf address's own PUT/DELETE pairs)
+    // rather than the state_field_values table — the org fence
+    // rides db.states.getById on the parent event (the SAME
+    // fence the retired parentScope resolver applied via a
+    // different route). The leaf id is param 1; PUT and DELETE
+    // are exposed exactly as the flat makeIdRoute carried them —
+    // unchanged, still writing the table directly (dual-write
+    // continues).
     route('states/:id/field-values', {
         get: (db, p) =>
-            db.stateFieldValues.getAllWhere(
-                'state_event_id', param(p, 0),
-            ),
+            stateFieldValuesForStateEvent(db, param(p, 0)),
     }),
     // PUT/DELETE each append their message pair in the same
     // transaction as the write (message-pair.ts). DOCUMENT-

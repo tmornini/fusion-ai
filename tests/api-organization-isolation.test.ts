@@ -375,9 +375,17 @@ async function seedChain(
         await organizationToken(identity, organization),
         { entity_id: 'i' + s, state: 'active', at: T8_AT },
     ));
-    await db.stateFieldValues.put('sfv' + s, {
-        state_event_id: 'se' + s, attribute_id: 'x', value: 'v',
-    });
+    // NAMED re-pin (Phase 14 Task 6): the flipped GET states/:id/
+    // field-values route derives from the message ledger too,
+    // the SAME reason as the /states re-pin just above — a raw
+    // db.stateFieldValues.put leaves no pair at the leaf address
+    // (states/:id/field-values/:fvid), so the row must land
+    // through the SAME wire-reachable PUT the live route serves.
+    await handleRequest(db, req(
+        'PUT', '/states/se' + s + '/field-values/sfv' + s,
+        await organizationToken(identity, organization),
+        { state_event_id: 'se' + s, attribute_id: 'x', value: 'v' },
+    ));
 }
 
 // Two full chains (A, B) plus the identity spine; `current` is
