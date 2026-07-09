@@ -6,6 +6,7 @@ import { sha256Hex } from '../shared/digest.ts';
 import { latestByKey } from '../shared/ledger-reduction.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
+import { seedOrganizationMember } from './root-admin-fixture.ts';
 import { jsonArrayField } from '../api/types.ts';
 
 const BASE = 'http://localhost';
@@ -218,6 +219,45 @@ test('an edit POST shares the SAME address as create and'
         editOperationPair, 'no stored operation-pair response',
     );
     assert.equal(editOperationPair!.supersedes, trueHead!.id);
+});
+
+// Phase 14 Task 5, site 4 — the ONE missing two-actor echo
+// regression (research finding 4): 'current' creates a record;
+// 'member-b' then edits it via the composed POST /records edit
+// arm, echoing the SAME trio verbatim (editRecordBody's own
+// contract). sameEvent (store-state.ts) compares member_id too,
+// so replaying 'member-b' as author would 409 against the
+// already-stored (current-authored) event — mirroring the
+// api-record-document op-tier echo test's shape (tests/api-
+// record-document.test.ts) at the route tier. Lands PASS-FIRST,
+// green on the OLD (row-plane view.states.getCurrentFor) path,
+// before the composed-write flip commit re-anchors
+// postRecordWriteOp's edit arm onto documentStateHeadFor.
+test('two actors, same trio: a composed POST /records edit'
++ ' echoes the stored head\'s author — exactly one state event,'
++ ' member_id unchanged', async () => {
+    const db = await freshDb();
+    await seedOrganizationMember(db, 'member-b');
+    const tokenA = await organizationToken();
+    const tokenB = await organizationToken('member-b');
+
+    const created = await handleRequest(db, req(
+        'POST', '/records', tokenA,
+        createRecordBody('rec-echo', 'ev-echo'),
+    ));
+    assert.equal(created.status, 204);
+
+    const edited = await handleRequest(db, req(
+        'POST', '/records', tokenB,
+        editRecordBody('rec-echo', 'ev-echo'),
+    ));
+    assert.equal(edited.status, 204);
+
+    const events = await db.states.getAllFor('rec-echo');
+    assert.equal(events.length, 1);
+    assert.equal(events[0]!.member_id, 'current');
+    const row = await db.records.getById('rec-echo');
+    assert.equal(row.name, 'Edited Record');
 });
 
 test('a record create with attributes appends the'
