@@ -3,7 +3,6 @@ import { strict as assert } from 'node:assert';
 import {
     DELETE,
     POST,
-    PUT,
     RequestError,
 } from '../api/api.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
@@ -210,27 +209,52 @@ test(
     },
 );
 
+// NAMED re-pin (Phase 15 Task 7): leaf PUT
+// states/:id/field-values/:fvid retires; seed a field-value
+// referrer through the transition fold — the ONLY live
+// writer of state_field_values (postWorkOrderTransitionOp).
+async function seedFieldValueReferrer(
+    db: MemoryDbAdapter,
+    attributeId: string,
+    sfvId: string,
+    value: string,
+): Promise<void> {
+    await db.workOrders.put('wo-restrict-fv', {
+        organization_id: '1',
+        display_id: 'rfv1',
+        flow_graph: jsonObjectField({
+            name: 'Restrict FV',
+            lockTimeout: 0,
+            nodes: [],
+            edges: [],
+        }),
+        position: 1,
+    });
+    await POST(
+        db, 'work-orders/wo-restrict-fv/transition', {
+            transitionEventId: 'te-restrict-1',
+            targetState: 'n-next',
+            fieldValues: [{
+                id: sfvId,
+                fields: {
+                    state_event_id: 'te-restrict-1',
+                    attribute_id: attributeId,
+                    value,
+                },
+            }],
+            release: null,
+            transitionAt: AT,
+        },
+        DEV_TOKEN,
+    );
+}
+
 test(
     'a field-value referrer blocks deletion with 409',
     async () => {
         const db = await seededDb();
-        await db.states.put('ev1', {
-            entity_id: 'r1', state: 'active',
-            member_id: 'current', at: AT,
-        });
-        // NAMED re-pin (Phase 14 Task 6): RESTRICT's field-
-        // value leg is pair-plane derived now — a raw
-        // db.stateFieldValues.put leaves no pair at the leaf
-        // address (states/:id/field-values/:fvid), so the row
-        // must land through the SAME wire-reachable PUT the
-        // live route serves.
-        await PUT(
-            db, 'states/ev1/field-values/sfv1',
-            {
-                state_event_id: 'ev1', attribute_id: 'attr1',
-                value: 'High',
-            },
-            DEV_TOKEN,
+        await seedFieldValueReferrer(
+            db, 'attr1', 'sfv1', 'High',
         );
         await assert.rejects(
             () => DELETE(
@@ -430,23 +454,16 @@ test(
     + ' record-write batch',
     async () => {
         const db = await seededDb();
+        // Record-edit trio echo still needs a sameEvent head
+        // on the RECORD (not the field-value parent). SFV
+        // referrer lands through the transition fold (Phase
+        // 15 Task 7) — leaf PUT retires.
         await db.states.put('ev1', {
             entity_id: 'r1', state: 'active',
             member_id: 'current', at: AT,
         });
-        // NAMED re-pin (Phase 14 Task 6): RESTRICT's field-
-        // value leg is pair-plane derived now — a raw
-        // db.stateFieldValues.put leaves no pair at the leaf
-        // address (states/:id/field-values/:fvid), so the row
-        // must land through the SAME wire-reachable PUT the
-        // live route serves.
-        await PUT(
-            db, 'states/ev1/field-values/sfv1',
-            {
-                state_event_id: 'ev1', attribute_id: 'attr1',
-                value: 'High',
-            },
-            DEV_TOKEN,
+        await seedFieldValueReferrer(
+            db, 'attr1', 'sfv1', 'High',
         );
         const requestsBefore = await db.requests.getAll();
         const responsesBefore = await db.responses.getAll();

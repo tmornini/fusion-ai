@@ -477,31 +477,40 @@ test('a RESTRICTed DELETE record-attributes/:id 409s and'
         'PUT', '/record-attributes/attr-3', token,
         recordAttributeFields('rec-7', 'Bound'),
     ));
-    // NAMED re-pin (Phase 14 Task 6): RESTRICT's field-value
-    // leg is pair-plane derived now — a raw
-    // db.stateFieldValues.put leaves no pair at the leaf
-    // address (states/:id/field-values/:fvid), so the row must
-    // land through the SAME wire-reachable PUT the live route
-    // serves. 'ev-x' itself is DELIBERATELY never created —
-    // the ORIGINAL dangling-parent fixture, restored (fix wave,
-    // Critical 1): no states row exists for it at all, so it
-    // resolves as a visible orphan (isVisibleStateEvent's
-    // rawHasRow branch, api/derive-state-field-values.ts),
-    // exactly as the retired parentScope resolver treated it
-    // (db-organization-scoped.ts's own try/catch on
-    // base.states.getById). This is the three-way visibility
-    // rule's FIRST branch — it never reaches the entity-
-    // ownership probe, so it does not depend on the flow_edges/
-    // ATTRIBUTE_RESTRICT_TABLES pre-existing gap either (see
-    // this file's Concerns note in the Task 6 report).
-    await handleRequest(db, req(
-        'PUT', '/states/ev-x/field-values/sfv-1', token,
-        {
-            state_event_id: 'ev-x',
-            attribute_id: 'attr-3',
-            value: 'v',
+    // NAMED re-pin (Phase 15 Task 7): leaf PUT
+    // states/:id/field-values/:fvid retires; seed the
+    // field-value referrer through the transition fold —
+    // the ONLY live writer of state_field_values
+    // (postWorkOrderTransitionOp). Prior dangling-parent
+    // leaf fixture is retired with the leaf arm; RESTRICT
+    // still 409s on a real transition-born referrer.
+    await db.workOrders.put('wo-restrict-3', {
+        organization_id: '1',
+        display_id: 'r3',
+        flow_graph: JSON.stringify({
+            name: 'R', lockTimeout: 0,
+            nodes: [], edges: [],
+        }),
+        position: 1,
+    });
+    const transition = await handleRequest(db, req(
+        'POST', '/work-orders/wo-restrict-3/transition',
+        token, {
+            transitionEventId: 'te-restrict-3',
+            targetState: 'n-next',
+            fieldValues: [{
+                id: 'sfv-1',
+                fields: {
+                    state_event_id: 'te-restrict-3',
+                    attribute_id: 'attr-3',
+                    value: 'v',
+                },
+            }],
+            release: null,
+            transitionAt: AT,
         },
     ));
+    assert.equal(transition.status, 204);
     const countBefore = (await db.requests.getAll()).length;
     const del = await handleRequest(db, req(
         'DELETE', '/record-attributes/attr-3', token,
