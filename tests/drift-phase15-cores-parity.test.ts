@@ -4,6 +4,7 @@ import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import {
     EntityNotFoundError, type DbAdapter,
+    TABLE_NAMES,
 } from '../api/db.ts';
 import { jsonObjectField, nowUtc } from '../api/types.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
@@ -15,6 +16,7 @@ import {
 } from '../api/derive-states.ts';
 import {
     stateFieldValuesForStateEvent,
+    deriveStateFieldValueReferrers,
 } from '../api/derive-state-field-values.ts';
 import {
     flowGraphBindingsFromPairs,
@@ -24,8 +26,11 @@ import {
 } from '../api/flow-graph-relations.ts';
 import { latestByKey } from
     '../shared/ledger-reduction.ts';
-import { TABLE_NAMES } from '../api/db.ts';
 import type { GraphEdge } from '../api/types.ts';
+import {
+    collectAttributeReferrers,
+    type AttributeReferrers,
+} from '../api/record-attribute-refs.ts';
 import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
@@ -46,8 +51,9 @@ import {
 
 // Phase 15: view-safe derive cores (Task 1) + claim-gate
 // graph re-anchor pins (Task 2) + field-values visibility
-// re-anchor pins (Task 3). Pre-tx-vs-in-tx parity and
-// residual drift against the dual-write row plane.
+// re-anchor pins (Task 3) + RESTRICT graph-leg re-anchor
+// pins (Task 4). Pre-tx-vs-in-tx parity and residual drift
+// against the dual-write row plane.
 
 const BASE = 'http://localhost';
 
@@ -1244,4 +1250,301 @@ async () => {
             db, STARK_ORGANIZATION, 'ghost-p15-vis',
         );
     assert.deepEqual(orphanDerived, []);
+});
+
+// -- RESTRICT graph-leg re-anchor (Phase 15 Task 4) ------------
+
+// Row-plane oracle for the three graph legs collectAttribute
+// Referrers used BEFORE Task 4: workOrders.getAll graph walk,
+// flowNodeAttributes.getAllWhere + flowNodes.getById. SFV
+// valueCount is already pair-plane (Phase 14 Task 6 / Task 3);
+// the production collectAttributeReferrers is the pair-plane
+// NEW legs. Parity pin: sorted flowIds / workOrderIds /
+// valueCount byte-equal over seed + live fixtures.
+async function rowPlaneGraphReferrers(
+    view: DbAdapter,
+    boundOrganization: string,
+    attributeIds: readonly string[],
+): Promise<Map<string, AttributeReferrers>> {
+    const workOrders = await view.workOrders.getAll();
+    const workOrderGraphs = workOrders.map((wo) => ({
+        id: wo.id,
+        graph: validateWorkOrderFlowGraphJson(
+            wo.flow_graph, 'work_orders.flow_graph',
+        ),
+    }));
+    // valueCount rides the same pair-plane SFV derive the
+    // production path uses — this pin isolates the GRAPH legs.
+    const fieldValuesByAttribute =
+        await deriveStateFieldValueReferrers(
+            view, boundOrganization, attributeIds,
+        );
+    const referrers = new Map<string, AttributeReferrers>();
+    for (const attributeId of attributeIds) {
+        const values =
+            fieldValuesByAttribute.get(attributeId) ?? [];
+        const attrRows = await view.flowNodeAttributes
+            .getAllWhere('attribute_id', attributeId);
+        const latestPerNode = latestByKey(
+            attrRows,
+            (r) => r.flow_node_id,
+            relationFailClosed,
+        );
+        const flowIds = new Set<string>();
+        for (const [flowNodeId, last] of latestPerNode) {
+            if (last.action !== 'added') continue;
+            try {
+                const node = await view.flowNodes.getById(
+                    flowNodeId,
+                );
+                flowIds.add(node.flow_id);
+            } catch (e) {
+                if (e instanceof EntityNotFoundError) {
+                    continue;
+                }
+                throw e;
+            }
+        }
+        const workOrderIds = workOrderGraphs
+            .filter((wo) => wo.graph.nodes.some((node) =>
+                node.attributes.some(
+                    (a) => a.attributeId === attributeId,
+                ),
+            ))
+            .map((wo) => wo.id);
+        referrers.set(attributeId, {
+            valueCount: values.length,
+            flowIds: [...flowIds],
+            workOrderIds,
+        });
+    }
+    return referrers;
+}
+
+function sortedReferrerShape(
+    refs: AttributeReferrers,
+): {
+    valueCount: number;
+    flowIds: string[];
+    workOrderIds: string[];
+} {
+    return {
+        valueCount: refs.valueCount,
+        flowIds: [...refs.flowIds].sort(),
+        workOrderIds: [...refs.workOrderIds].sort(),
+    };
+}
+
+function assertReferrerParity(
+    label: string,
+    pairPlane: Map<string, AttributeReferrers>,
+    rowPlane: Map<string, AttributeReferrers>,
+    attributeIds: readonly string[],
+): void {
+    for (const attributeId of attributeIds) {
+        const pair = pairPlane.get(attributeId);
+        const row = rowPlane.get(attributeId);
+        assert.ok(pair, label + ' pair ' + attributeId);
+        assert.ok(row, label + ' row ' + attributeId);
+        assert.deepEqual(
+            sortedReferrerShape(pair!),
+            sortedReferrerShape(row!),
+            label + ' ' + attributeId,
+        );
+    }
+}
+
+test('collectAttributeReferrers graph legs: pair plane'
++ ' byte-equal the row plane over seed attributes with'
++ ' any referrer; pre-tx vs in-tx parity', async () => {
+    const db = await seededDb();
+    const scoped = organizationScopedAdapter(
+        db, STARK_ORGANIZATION,
+    );
+    // Every seeded attribute that appears in a live binding
+    // or a WO graph — union of flow_node_attributes +
+    // attributes named inside work_orders.flow_graph.
+    const attrFromRelations = new Set(
+        (await db.flowNodeAttributes.getAll())
+            .map((r) => r.attribute_id),
+    );
+    const attrFromWorkOrders = new Set<string>();
+    for (const wo of await db.workOrders.getAll()) {
+        if (wo.organization_id !== STARK_ORGANIZATION) {
+            continue;
+        }
+        const graph = validateWorkOrderFlowGraphJson(
+            wo.flow_graph, 'work_orders.flow_graph',
+        );
+        for (const node of graph.nodes) {
+            for (const attr of node.attributes) {
+                attrFromWorkOrders.add(attr.attributeId);
+            }
+        }
+    }
+    const attributeIds = [...new Set([
+        ...attrFromRelations,
+        ...attrFromWorkOrders,
+    ])].sort();
+    assert.ok(
+        attributeIds.length > 0,
+        'seed must name at least one bound attribute',
+    );
+
+    const preTx = await collectAttributeReferrers(
+        scoped, STARK_ORGANIZATION, attributeIds,
+    );
+    const inTx = await db.transaction(
+        [
+            'flows', 'work_orders', 'states', 'ideas',
+            'projects', 'records', 'objectives',
+            'invitations', 'memberships',
+            'flow_node_attributes', 'flow_nodes',
+            'requests', 'responses',
+        ],
+        (view) => collectAttributeReferrers(
+            organizationScopedAdapter(
+                view, STARK_ORGANIZATION,
+            ),
+            STARK_ORGANIZATION,
+            attributeIds,
+        ),
+    );
+    assertReferrerParity(
+        'pre-tx vs in-tx', preTx, inTx, attributeIds,
+    );
+
+    const rowOracle = await rowPlaneGraphReferrers(
+        scoped, STARK_ORGANIZATION, attributeIds,
+    );
+    assertReferrerParity(
+        'pair vs row seed', preTx, rowOracle, attributeIds,
+    );
+});
+
+test('collectAttributeReferrers graph legs: live-minted'
++ ' flow binding + work-order head stay pair/row equal',
+async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+    const flowId = 'p15-restrict-flow';
+    const nodeId = 'p15-restrict-node';
+    const attrId = 'p15-restrict-attr';
+    const woId = 'p15-restrict-wo';
+    const at = '2026-06-16T00:00:00.000000Z';
+    const projectId = 'u6YkHhlGc91oDMkr3x0isa';
+
+    const attrPut = await handleRequest(db, req(
+        'PUT', '/record-attributes/' + attrId, token, {
+            record_id: 'rec01CustProfRec0rdAB1',
+            name: 'P15 Restrict',
+            attribute_type: 'text',
+            sort_order: 99,
+            options: '[]',
+            constraints: '[]',
+        },
+    ));
+    assert.equal(attrPut.status, 200);
+
+    const created = await handleRequest(db, req(
+        'POST', '/flows', token, {
+            id: flowId,
+            flow: {
+                name: 'P15 Restrict Flow',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: 8 * 60 * 60,
+            },
+            projectFlowId: flowId + '-pf',
+            projectFlow: {
+                project_id: projectId,
+                flow_id: flowId,
+                at,
+            },
+            initialState: 'active',
+            initialStateEventId: flowId + '-ev',
+            initialStateAt: at,
+            graphDelta: {
+                nodes: [{
+                    id: nodeId, flow_id: flowId,
+                    name: 'Bind',
+                    position_x: 0, position_y: 0,
+                    is_create: true, is_archive: false,
+                    task_instructions: '', at,
+                }],
+                edges: [],
+                deletions: [],
+                memberEvents: [],
+                attributeEvents: [{
+                    id: 'p15-restrict-fna',
+                    flow_node_id: nodeId,
+                    attribute_id: attrId,
+                    mode: 'editable',
+                    is_required: false,
+                    action: 'added',
+                    at,
+                }],
+            },
+        },
+    ));
+    assert.equal(created.status, 204);
+
+    const woGraph = jsonObjectField({
+        name: 'P15 Restrict WO',
+        lockTimeout: 8 * 60 * 60,
+        nodes: [{
+            id: 'n-wo', name: 'Step',
+            positionX: 0, positionY: 0,
+            isCreate: true, isArchive: false,
+            memberIds: [],
+            attributes: [{
+                attribute_id: attrId,
+                mode: 'editable',
+                isRequired: false,
+            }],
+            taskInstructions: '',
+        }],
+        edges: [],
+    });
+    const woCreated = await handleRequest(db, req(
+        'POST', '/work-orders', token, {
+            id: woId,
+            workOrder: {
+                display_id: 'p15-restrict-wo',
+                flow_graph: woGraph,
+                position: 1,
+            },
+            flowWorkOrderId: woId + '-fwo',
+            flowWorkOrder: {
+                flow_id: EMPTY_FLOW_ID,
+                work_order_id: woId,
+                at: nowUtc(),
+            },
+            stateEventIds: [
+                woId + '-ev1',
+                woId + '-ev2',
+                woId + '-ev3',
+            ],
+            stateEventAts: [nowUtc(), nowUtc(), nowUtc()],
+            states: ['n-start', 'n-finish', 'claimed'],
+        },
+    ));
+    assert.equal(woCreated.status, 204);
+
+    const scoped = organizationScopedAdapter(
+        db, STARK_ORGANIZATION,
+    );
+    const pairPlane = await collectAttributeReferrers(
+        scoped, STARK_ORGANIZATION, [attrId],
+    );
+    const rowPlane = await rowPlaneGraphReferrers(
+        scoped, STARK_ORGANIZATION, [attrId],
+    );
+    assertReferrerParity(
+        'live mint', pairPlane, rowPlane, [attrId],
+    );
+    const refs = pairPlane.get(attrId)!;
+    assert.ok(refs.flowIds.includes(flowId));
+    assert.ok(refs.workOrderIds.includes(woId));
 });
