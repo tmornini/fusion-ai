@@ -12,6 +12,16 @@ import {
     stateEventVisibilityFor,
 } from '../api/derive-states.ts';
 import {
+    flowGraphBindingsFromPairs,
+} from '../api/derive-flows.ts';
+import {
+    relationFailClosed,
+} from '../api/flow-graph-relations.ts';
+import { latestByKey } from
+    '../shared/ledger-reduction.ts';
+import { TABLE_NAMES } from '../api/db.ts';
+import type { GraphEdge } from '../api/types.ts';
+import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
 } from '../api/mock-data/seed-constants.ts';
@@ -370,5 +380,114 @@ test('stateEventVisibilityFor: tier (ii) op-born transition'
             db, ORGANIZATION_TWO, transitionEventId,
         ),
         'hidden',
+    );
+});
+
+// -- flowGraphBindingsFromPairs ----------------------------------
+
+function sortById<T extends { id: string }>(
+    rows: readonly T[],
+): T[] {
+    return [...rows].sort((a, b) =>
+        a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+}
+
+test('flowGraphBindingsFromPairs: attribute + member ledgers'
++ ' byte-equal the row plane over seed; nodeFlowIds match'
++ ' flowNodes.flow_id; pre-tx vs in-tx parity', async () => {
+    const db = await seededDb();
+    const txTables = [
+        'requests', 'responses',
+        'flow_node_attributes', 'flow_node_members',
+        'flow_nodes',
+    ];
+    const preTx = await flowGraphBindingsFromPairs(
+        db, STARK_ORGANIZATION,
+    );
+    const inTx = await db.transaction(
+        txTables,
+        (view) => flowGraphBindingsFromPairs(
+            view, STARK_ORGANIZATION,
+        ),
+    );
+    assert.deepEqual(inTx, preTx);
+
+    const rowAttrs = sortById(
+        await db.flowNodeAttributes.getAll(),
+    );
+    const rowMembers = sortById(
+        await db.flowNodeMembers.getAll(),
+    );
+    // Seed is all Stark — org-two has zero flow graph
+    // bindings.
+    assert.deepEqual(
+        sortById([...preTx.attributeEvents]), rowAttrs,
+    );
+    assert.deepEqual(
+        sortById([...preTx.memberEvents]), rowMembers,
+    );
+
+    // nodeFlowIds parity against flow_nodes.flow_id.
+    const nodes = await db.flowNodes.getAll();
+    for (const node of nodes) {
+        assert.equal(
+            preTx.nodeFlowIds.get(node.id),
+            node.flow_id,
+            'node ' + node.id,
+        );
+    }
+
+    // latestByKey/fail-closed reduction matches the
+    // row-plane RESTRICT shape (current 'added' bindings).
+    const derivedLatest = latestByKey(
+        preTx.attributeEvents,
+        (r) => r.flow_node_id + '\0' + r.attribute_id,
+        relationFailClosed,
+    );
+    const rowLatest = latestByKey(
+        rowAttrs,
+        (r) => r.flow_node_id + '\0' + r.attribute_id,
+        relationFailClosed,
+    );
+    assert.deepEqual(
+        [...derivedLatest.entries()].sort(
+            (a, b) => a[0] < b[0] ? -1 : 1,
+        ),
+        [...rowLatest.entries()].sort(
+            (a, b) => a[0] < b[0] ? -1 : 1,
+        ),
+    );
+});
+
+// GraphEdge carries no attributes field and no
+// flow_edge_attributes table exists — prove-impossible so
+// RESTRICT never grows an edges leg (Author gate 5).
+test('prove-impossible: attribute bindings cannot reach'
++ ' flow edges (GraphEdge has no attributes; no'
++ ' flow_edge_attributes table)', () => {
+    type GraphEdgeHasNoAttributes =
+        'attributes' extends keyof GraphEdge
+            ? never
+            : true;
+    const typeProof: GraphEdgeHasNoAttributes = true;
+    assert.equal(typeProof, true);
+
+    const edgeKeys: readonly (keyof GraphEdge)[] = [
+        'id', 'name', 'fromNodeId', 'toNodeId',
+    ];
+    assert.deepEqual(
+        edgeKeys.slice().sort(),
+        (['id', 'name', 'fromNodeId', 'toNodeId'] as const)
+            .slice().sort(),
+    );
+    assert.equal(
+        (edgeKeys as readonly string[])
+            .includes('attributes'),
+        false,
+    );
+    assert.equal(
+        (TABLE_NAMES as readonly string[])
+            .includes('flow_edge_attributes'),
+        false,
     );
 });
