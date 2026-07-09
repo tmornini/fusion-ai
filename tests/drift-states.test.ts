@@ -781,20 +781,17 @@ test('case 5a: a LIVE flow-node delete + undo (source e — the'
     // flow's own address (chain 'follows'), doing its own pre-tx
     // head-read — no If-Response-Id echo is needed on this outer,
     // operation-addressed request (api/routes.ts's own undo
-    // header, formDocumentPairFor).
+    // header, formDocumentPairFor). Undo-as-replay (Phase 14
+    // Task 8, NAMED REWRITE): the target (genesis, the one-node
+    // graph) is resolved from the flows/:id document-pair
+    // history, and the revival of nodeId is computed by the
+    // server's own current-vs-target diff — never client-
+    // supplied.
     const undoAt = '2026-02-03T00:00:00.000000Z';
     const undone = await handleRequest(db, req(
         'POST', '/flows/' + flowId + '/undo', token, {
-            flow: flowFields('Drift Node Flow'),
             eventId: flowId + '-undo-ev',
             at: undoAt,
-            consumedVersionId: flowId + '-unused-version',
-            graph: emptyGraph(),
-            graphDelta: emptyDelta(),
-            revivals: [{
-                eventId: flowId + '-node-restored',
-                entityId: nodeId, at: undoAt,
-            }],
         },
     ));
     assert.equal(undone.status, 204);

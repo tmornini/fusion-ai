@@ -1016,13 +1016,13 @@ absorbs a 412 with up to 3 attempts total — each retry backs off
 (jittered) and rebuilds the body against the NEW head (a fresh
 baseline, fresh delta, fresh trio) before resubmitting; any other
 error, or a third 412, propagates to the caller. version-publish
-is no longer an option embedded in this PUT (Decision 3) — it
-rides its own `POST /flows/:id/versions` (§3.16) transaction,
-called by the client BEFORE the save on a versioned edit. That
-splits a versioned rename/drag-move into two independent
-round-trips (1→2 hops) instead of one: a failure between them
-leaves an extra version snapshot (one extra undo point) but never
-a lost save — the structural path's already-shipped behavior.
+is no longer an option embedded in this PUT (Decision 3), nor is
+it a client-side prerequisite of this PUT any more (Phase 14
+Task 8, undo-as-replay): `POST /flows/:id/versions` (§3.16)
+still exists as a standalone route but has NO live caller —
+undo now resolves its own restore target from THIS route's own
+document-pair history (§3.14), so nothing archives a snapshot
+before a save any more.
 
 - tx: `[flows, states, flow_nodes, flow_edges,
   flow_node_members, flow_node_attributes, requests, responses]`
@@ -1058,52 +1058,115 @@ a lost save — the structural path's already-shipped behavior.
   Undo therefore moves `flows/:id`'s own head exactly like any
   other save. A save racing an undo for the same head loses the
   `responses.follows` unique index and 412s; the client absorbs
-  it with a jittered retry (`postFlowUndo`, web-app), rebuilt
-  against a fresh baseline — the SAME shape redo (Phase 4 Task
-  4, R1/E5) carries, since its document half rides
-  `PUT /flows/:id` (§3.13) directly.
+  it with a jittered retry (`postFlowUndo`, web-app) — with NO
+  baseline of its own to rebuild (Phase 14 Task 8): the SERVER
+  re-resolves the restore target fresh against the new head on
+  each attempt, so a retry is just a re-POST with a fresh
+  `eventId`/`at`. Redo's own document half still rides
+  `PUT /flows/:id` directly, unchanged.
 
 ### 3.14 `POST /flows/:id/undo` — undo a flow edit
+### (undo-as-replay, Phase 14 Task 8)
 
-- tx: `[flows, flow_versions, states, flow_nodes, flow_edges,
+Undo no longer requires a `flow_versions` row to consume —
+`flow_versions` is not in this route's transaction at all any
+more. The restore target is resolved SERVER-SIDE, pre-tx (the
+IndexedDB auto-commit constraint bars anything but row ops
+inside a transaction), by walking this flow's OWN `flows/:id`
+document-pair history and this flow's OWN `flows/:id/undo`
+operation-pair history together
+(`resolveFlowUndoTarget`, `api/derive-flows.ts`): a stack+pointer
+replay where a document pair correlated (by its STORED REQUEST
+`at`, never the response `at`) to an undo operation pair only
+moves the pointer back, never pushes a new logical state — the
+one piece a naive "N pairs back" count gets wrong across an
+undo-save-undo sequence. `target === undefined` is exhaustion
+(nothing before the current head) — a graceful no-op, described
+below.
+
+- **Wire body** (`validateFlowUndoBody`) shrinks to the state
+  trio's two free fields — `eventId`, `at` — both still
+  client-minted (S1: body timestamps belong to the message's
+  creator) so each attempt's stored request stays unique (an
+  empty body would collide on the gate's idempotency fast path
+  across separate undo calls for the same flow). Every OTHER
+  field the pre-Task-8 body carried (`flow`, `consumedVersionId`,
+  `graph`, `graphDelta`, `revivals`) is now resolved or computed
+  by the route itself.
+- tx (target resolved): `[flows, states, flow_nodes, flow_edges,
   flow_node_members, flow_node_attributes, requests,
-  responses]`
-- actual: `flows.put(id, flow)` (reverted graph) →
-  `states.postEvent(eventId, id, 'updated', actor)` →
-  `flowVersions.delete(consumedVersionId)` → the graph delta's
-  node/edge upserts, member/attribute events, and deletion
-  events (`writeFlowGraphDelta`, the SAME helper
-  `PUT /flows/:id` and create use) → for each revival:
+  responses]` — NO `flow_versions`.
+- actual (target resolved): `flows.put(id, targetFields)` (the
+  RESOLVED target's own scalar fields) →
+  `states.postEvent(eventId, id, 'updated', actor, at)` → the
+  graph delta's node/edge upserts, member/attribute events, and
+  deletion events (`writeFlowGraphDelta`, the SAME helper
+  `PUT /flows/:id` and create use) — the delta itself computed
+  by `api/flow-graph-diff.ts` from CURRENT (this flow's own
+  head document pair's `graph` field) vs TARGET (the resolved
+  pair's own `graph` field), both already in hand from the SAME
+  pre-tx pair-plane read — for each revival:
   `states.postEvent(eventId, entityId, 'restored', actor, at)`
   → `appendMessagePair(pair)` → `appendMessagePair(documentPair)`.
-- doctrinal: `put_flow` + `post_state_event` +
-  `delete_flow_version` + graph-relation writes + N
-  `post_restored_event` as `post_undo_flow`.
-- **Two pairs, one tx.** Undo synthesizes a second pair — a
-  PUT-shaped document pair at `flows/:id`'s own address
+- **Exhaustion is a graceful no-op, not an error.** When
+  resolution finds no target, the route still appends its OWN
+  operation pair alone — no document pair, no domain writes —
+  since the gate requires every wired write to have stored a
+  pair (`api.ts`'s "wired write stored no pair" guard fires
+  otherwise). A LATER resolution walk correctly ignores this
+  attempt: it carries no correlated document pair to displace
+  anything. 204 either way — the client cannot and does not
+  need to distinguish "restored" from "no-op" from the response
+  alone (see `hasUndoHistory` below).
+- **`hasUndoHistory` rides the flow's own GET, not this
+  response.** `WRITE_RESPONSE_SPECS`-driven responses are
+  computed PRE-HANDLER, from request params/body alone — this
+  route's own 204 can never carry post-resolution data. Instead,
+  `FlowWithGraph`/`FlowGraph` (§5.x) carry a `hasUndoHistory`
+  boolean — this flow's own document-pair count exceeding one —
+  computed by `flowEntityOf` (`api/derive-flows.ts`) and reused
+  by the trailing `GET /flows/:id` the client already makes
+  after every undo (and at page load), so the signal costs zero
+  new wire reads.
+- **SIDECAR-KEEP.** `graphDelta`/`revivals` still land in the
+  restore's own document pair body, feeding
+  `deriveFlowGraphStates` (`api/derive-states.ts`) exactly like
+  any other save's — the MECHANISM persists even though the
+  VALUES are now server-computed rather than client-supplied
+  (the client cannot diff against a target it is never told,
+  since no new GET route is sanctioned for this).
+- doctrinal: `put_flow` + `post_state_event` + graph-relation
+  writes + N `post_restored_event` as `post_undo_flow`.
+- **Two pairs, one tx (or one pair, zero domain writes, on
+  exhaustion).** Undo synthesizes a second pair — a PUT-shaped
+  document pair at `flows/:id`'s own address
   (`put_flow_document`, §3.13), taking the FOLLOWS slot at the
   pre-undo head — beside its own operation pair; both append in
-  the ONE transaction, so a pair count of two or zero, never
-  one (+2 to the message-pair balance per undo). See §3.13's
-  own note on the follows collision this creates.
+  the ONE transaction when a target resolves, so a pair count of
+  two or one (exhaustion) or zero (a genuinely missing flow —
+  `EntityNotFoundError`), never anything else. See §3.13's own
+  note on the follows collision this creates.
 - props: atomic; member-tier; `validateFlowUndoBody`.
 
 ### 3.15 `POST /flows/:id/redo` — retired (Phase 4 Task 4, R1/E5)
 
-Redo folds into two writes already documented elsewhere: the
-CURRENT state archives through `POST /flows/:id/versions` (§3.16
-— the SAME op version-publish already rode; the client's
-`postFlowVersion` computes the publish internally, so this is
-never a second, bespoke snapshot), then the redo target's graph
-lands through `PUT /flows/:id` (§3.13, the locked document save,
-which also carries the revivals). The two writes are no longer
-one transaction — the same non-atomic shape every other
-client-composed flow edit already carries (§3.13's own retry
-loop absorbs a 412; any other fault propagates to the caller).
-The route LEAVES THE URI TREE entirely: a request against it now
-404s (no pattern match), unlike the retired `POST /ideas`
-(§2.4/§3.10), which 405s because `ideas` GET stays wired —
-`flows/:id/redo` had no other verb left to survive it.
+Redo is now a SINGLE write: the redo target's graph lands
+through `PUT /flows/:id` (§3.13, the locked document save, which
+also carries the revivals) — the two-write fold this section
+originally described (archive the current state through
+`POST /flows/:id/versions`, THEN save) collapsed to one write at
+Phase 14 Task 8 (undo-as-replay): that archive existed solely to
+give the OLD undo mechanism a `flow_versions` row to consume: now
+that undo resolves its target from the `flows/:id` document-pair
+history instead, this PUT's OWN document pair is exactly what a
+LATER undo's pair-plane walk finds as "the state before the
+redo," with no archive needed. Any fault — putFlow's own
+exhausted retry or a non-412 error — propagates to the caller
+(§3.13's own retry loop absorbs a 412 internally). The route
+LEAVES THE URI TREE entirely: a request against it now 404s (no
+pattern match), unlike the retired `POST /ideas` (§2.4/§3.10),
+which 405s because `ideas` GET stays wired — `flows/:id/redo`
+had no other verb left to survive it.
 
 ### 3.16 `POST /flows/:id/versions` — publish a version
 
@@ -1114,11 +1177,16 @@ The route LEAVES THE URI TREE entirely: a request against it now
   `post_publish_flow_version`.
 - props: atomic; **no state event**; the web-app computes which
   versions to trim; member-tier; `validateFlowVersionPublishBody`.
-- **Two callers (Phase 4 Task 4).** A versioned edit's own
-  save calls this BEFORE its `PUT /flows/:id` (§3.13); redo
-  (retired §3.15) now calls it too, ALONE, to archive the
-  CURRENT state before its own `PUT /flows/:id` lands the redo
-  target — the same two-call shape, never a third variant.
+- **Zero live callers (Phase 14 Task 8, undo-as-replay).** A
+  versioned edit's own save used to call this BEFORE its
+  `PUT /flows/:id` (§3.13), and redo (retired §3.15) called it
+  too, ALONE, to archive the CURRENT state before its own
+  `PUT /flows/:id` landed the redo target — undo-as-replay
+  retired BOTH callers (neither archive served any purpose once
+  undo stopped consuming `flow_versions`). The route, the
+  `flow_versions` table, and its cap-trim logic all REMAIN —
+  reachable, correct, simply unreached by the live UI — until
+  Phase Final retires the table itself.
 
 ### 3.17 `POST /work-orders` — create work order
 

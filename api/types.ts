@@ -1057,13 +1057,22 @@ export interface FlowEntity {
     lock_timeout: number;
 }
 
-// The GET-response shape for a flow: the stored row PLUS the
-// `graph` field the GET handlers derive by reassembling the
-// four relation tables (single GET /flows/:id and the list GET
-// /flows). The stored row no longer carries the blob; readers
-// that need the graph annotate their GET as FlowWithGraph.
+// The GET-response shape for a flow: the stored row plus the
+// `graph` field (the head document pair's OWN `graph` field,
+// carried verbatim — api/derive-flows.ts's flowEntityOf; single
+// GET /flows/:id and the list GET /flows both serve this
+// shape). `hasUndoHistory` (Phase 14 Task 8) is a CHEAP,
+// approximate signal — this flow's own flows/:id document-pair
+// count exceeds 1 (i.e. it has been edited past genesis) —
+// reusing whatever GET already fetched the flow (page load,
+// the post-undo refresh) rather than a new wire read; a rare
+// false positive (undo has already reached genesis, but a
+// save/undo cycle since kept the pair count above 1) degrades
+// to a silent server-side no-op on the next undo, never a
+// crash or wrong restore.
 export type FlowWithGraph = FlowEntity & {
     graph: JsonObjectField;
+    hasUndoHistory: boolean;
 };
 
 export interface FlowVersionEntity {
