@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
     POST,
+    PUT,
     RequestError,
     handleRequest,
 } from '../api/api.ts';
@@ -49,16 +50,29 @@ function graphJson(): string {
     });
 }
 
+// wo1 is seeded via a REAL PUT (never a raw db.workOrders.put)
+// so it carries a genuine work-orders/:id document pair —
+// Phase 14 Task 4's flip needs one: applyClaimPair's
+// lockTimeoutAsOf requires a document head before ANY claim
+// pair (api/derive-states.ts), an invariant every real work
+// order satisfies (postWorkOrderCreationOp always synthesizes
+// one beside the create; every seeded work order gets its own,
+// api/mock-data/seed-message-pairs.ts's Phase 5 Task 4). A raw
+// row poke has no real-world analog, so it stopped being a
+// faithful fixture once the gate started reading the pair
+// plane.
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await seedAdminSchema(db);
     await seedCurrentMember(db);
-    await db.workOrders.put('wo1', {
-        organization_id: '1',
-        display_id: 'abcd',
-        flow_graph: graphJson(),
-        position: 1,
-    });
+    await PUT(
+        db, 'work-orders/wo1', {
+            display_id: 'abcd',
+            flow_graph: graphJson(),
+            position: 1,
+        },
+        DEV_TOKEN,
+    );
     return db;
 }
 
@@ -115,12 +129,15 @@ test(
     'a live claim by another member is a 409',
     async () => {
         const db = await seededDb();
-        await db.states.put('cl-other', {
-            entity_id: 'wo1',
-            state: 'claimed',
-            member_id: 'other',
-            at: nowUtc(),
-        });
+        // A live claim by 'other' — via a REAL claim POST, not
+        // a raw row poke: the gate's own decision read now
+        // sources the pair plane (Phase 14 Task 4), which a
+        // row-only write leaves no trace in.
+        await seedOrganizationMember(db, 'other');
+        await POST(
+            db, 'work-orders/wo1/claim',
+            freshClaimBody(), await devToken('other'),
+        );
         await assert.rejects(
             () => POST(
                 db, 'work-orders/wo1/claim',
@@ -140,12 +157,21 @@ test(
     'an expired claim is superseded atomically',
     async () => {
         const db = await seededDb();
-        await db.states.put('cl-stale', {
-            entity_id: 'wo1',
-            state: 'claimed',
-            member_id: 'other',
-            at: '2020-01-01T00:00:00.000000Z',
-        });
+        // A stale 'claimed' by 'other' — old enough to have
+        // expired relative to lockTimeout — via a REAL claim
+        // POST with a caller-minted past claimAt (see the test
+        // above for why a raw row poke no longer reaches the
+        // gate).
+        await seedOrganizationMember(db, 'other');
+        await POST(
+            db, 'work-orders/wo1/claim', {
+                claimEventId: generateCryptoSafeBase62(),
+                claimAt: '2020-01-01T00:00:00.000000Z',
+                expireEventId: generateCryptoSafeBase62(),
+                expireAt: '2020-01-01T00:00:00.000000Z',
+            },
+            await devToken('other'),
+        );
         await POST(
             db, 'work-orders/wo1/claim',
             freshClaimBody(), DEV_TOKEN,
@@ -221,14 +247,20 @@ test(
     'claim over a stale prior consumes the expire pair',
     async () => {
         const db = await seededDb();
-        // Seed a stale 'claimed' by 'prior-holder' — old
-        // enough to have expired relative to lockTimeout.
-        await db.states.put('prior-claim', {
-            entity_id: 'wo1',
-            state: 'claimed',
-            member_id: 'prior-holder',
-            at: '2020-01-01T00:00:00.000000Z',
-        });
+        // A stale 'claimed' by 'prior-holder' — old enough to
+        // have expired relative to lockTimeout — via a REAL
+        // claim POST (see the expired-claim test above for why
+        // a raw row poke no longer reaches the gate).
+        await seedOrganizationMember(db, 'prior-holder');
+        await POST(
+            db, 'work-orders/wo1/claim', {
+                claimEventId: generateCryptoSafeBase62(),
+                claimAt: '2020-01-01T00:00:00.000000Z',
+                expireEventId: generateCryptoSafeBase62(),
+                expireAt: '2020-01-01T00:00:00.000000Z',
+            },
+            await devToken('prior-holder'),
+        );
         const claimEventId = generateCryptoSafeBase62();
         const claimAt = '2099-01-01T00:00:01.000000Z';
         const expireEventId = generateCryptoSafeBase62();

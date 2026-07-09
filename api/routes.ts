@@ -168,6 +168,7 @@ import {
 import {
     deriveStates,
     deriveStatesFor,
+    workOrderClaimHistoryFor,
 } from './derive-states.ts';
 import {
     deriveOrganization,
@@ -2303,11 +2304,20 @@ export async function postWorkOrderCreationOp(
 // no-op included), since a wired route must never resolve a
 // pair the transaction never stored (the gate crashes loud
 // on that mismatch).
+//
+// PHASE 14 TASK 4: the prior-claim decision read is re-
+// anchored onto the pair plane (workOrderClaimHistoryFor,
+// api/derive-states.ts) — ENTITY-SCOPED indexed reads inside
+// this SAME transaction, never a nested tx — in place of the
+// row-plane view.states.getAllFor(workOrderId). Author gate 3:
+// latestClaimEvent and isClaimEventExpired (the live Date.now
+// clock) stay byte-identical — ONLY the event SOURCE flips.
 export async function postWorkOrderClaimOp(
     db: DbAdapter,
     workOrderId: Id,
     body: Record<string, unknown>,
     actor: Id,
+    organization: Id,
     pair?: MessagePair,
 ): Promise<void> {
     return db.transaction(
@@ -2322,8 +2332,9 @@ export async function postWorkOrderClaimOp(
                     wo.flow_graph,
                     'work_orders.flow_graph',
                 );
-            const events = await view.states
-                .getAllFor(workOrderId);
+            const events = await workOrderClaimHistoryFor(
+                view, organization, workOrderId,
+            );
             const prior = latestClaimEvent(
                 events, workOrderId,
             );
@@ -4863,9 +4874,10 @@ export const routes: Route[] = [
     documentEntityRoute(WORK_ORDERS_WIRING),
     // See postWorkOrderClaimOp for the transaction shape.
     route('work-orders/:id/claim', {
-        post: (db, p, body, actor, pair) =>
+        post: (db, p, body, actor, pair, organization) =>
             postWorkOrderClaimOp(
-                db, param(p, 0), body, actor, pair,
+                db, param(p, 0), body, actor,
+                requireOrganization(organization), pair,
             ),
     }),
     // Member-tier POST — /work-orders carries POST in
