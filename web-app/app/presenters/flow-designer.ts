@@ -151,18 +151,42 @@ export class FlowDesignerPresenter {
     #needsFit: boolean;
     #history: FlowHistorySnapshot;
 
+    // Fix wave (Phase 14 Task 8, post-Task-11-browser-
+    // regression, round 2): migrateToCenter defaults FALSE
+    // because `commit()` (detail.ts) builds a BRAND NEW
+    // presenter on EVERY commit — including undo/redo's own
+    // `commit(op.freshSnap)` — so an unconditional migrate
+    // check here fired the legacy-recenter #queueSave on every
+    // single re-render, not just page load. Auto-layout's own
+    // output is already centered (applyAutoLayout / runFlowLayout
+    // sum to zero), so the ONLY legitimate target for this
+    // migration is a freshly LOADED, possibly-legacy graph —
+    // onFlowLoaded (detail.ts) is the one call site that opts
+    // in. Every other construction (commit(), including undo/
+    // redo's) now leaves an off-center snapshot exactly as
+    // given: no silent recenter, no silent save. That silent
+    // save was landing as a "genuine" (non-undo-correlated)
+    // document pair 3-7s after undo/redo — exactly the kind of
+    // pair resolveFlowUndoTarget's stack+pointer walk treats as
+    // a real edit, corrupting the target for the NEXT undo
+    // click (it kept re-resolving to "one step back from the
+    // recenter noise" instead of the user's actual prior edit —
+    // the same class of symptom the two prior fix-wave commits
+    // targeted, from a third source neither touched).
     constructor(
         snap: FlowSnapshot,
         canvasW: number,
         canvasH: number,
         history: FlowHistorySnapshot,
+        migrateToCenter: boolean = false,
     ) {
         this.#canvasW = canvasW;
         this.#canvasH = canvasH;
         this.#needsFit = true;
         this.#history = history;
-        this.#snapshot =
-            this.#computeMigrateToCenter(snap);
+        this.#snapshot = migrateToCenter
+            ? this.#computeMigrateToCenter(snap)
+            : snap;
     }
 
     history(): FlowHistorySnapshot {
