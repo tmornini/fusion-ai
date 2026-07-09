@@ -37,6 +37,8 @@ import {
     type OwningOrganizationResolver,
 } from './store-parent-scoped.ts';
 import { resolveOwningOrganization } from './derive-states.ts';
+import { deriveMembershipsForIdentity } from
+    './derive-memberships.ts';
 
 // Wrap `base` in an org-scoped view. The org-owned entity
 // stores fence by their stamped organization_id; the
@@ -76,11 +78,28 @@ export function organizationScopedAdapter(
     ): ParentScopedEntityStore<T> =>
         new ParentScopedEntityStore(inner, organization, table, resolver);
 
-    // The membership ledger is read for parent-derived
-    // ownership (PII, credentials, state events): an identity's
-    // memberships resolve through the identity_id index, never
-    // a per-row whole-ledger scan.
+    // Row-plane memberships residual for the state_field_values
+    // parent resolve (Task 7 retires that arm). Identity facets
+    // re-pointed onto deriveMembershipsForIdentity below.
     const memberships = base.memberships;
+    // Pair-plane membership reader for identity facet fences
+    // (Phase 15 Task 5): same three-way viaMembership algorithm,
+    // sourced from deriveMembershipsForIdentity rather than the
+    // row-plane identity_id index.
+    const membershipsFromPairPlane = {
+        getAllWhere: async (
+            column: string,
+            key: string,
+        ) => {
+            if (column !== 'identity_id') {
+                throw new Error(
+                    'membershipsFromPairPlane supports only'
+                    + ' identity_id',
+                );
+            }
+            return deriveMembershipsForIdentity(base, key);
+        },
+    };
 
     // A state event's entity_id is any org-owned entity, or an
     // org-less member visible only to a co-member of this org —
@@ -195,18 +214,18 @@ export function organizationScopedAdapter(
 
         // Identity PII / credential facets — visible to the
         // caller's org only for co-members (need-to-know),
-        // derived from the membership ledger. Credentials also
-        // get `secret` projected out at the route.
+        // derived from the membership PAIR plane. Credentials
+        // also get `secret` projected out at the route.
         identityPii: parentScope(
             base.identityPii, 'identity_pii',
             viaMembership(
-                memberships,
+                membershipsFromPairPlane,
                 (r: IdentityPiiEntity) => r.id, organization),
         ),
         identityCredentials: parentScope(
             base.identityCredentials, 'identity_credentials',
             viaMembership(
-                memberships,
+                membershipsFromPairPlane,
                 (r: IdentityCredentialEntity) =>
                     r.identity_id, organization),
         ),
