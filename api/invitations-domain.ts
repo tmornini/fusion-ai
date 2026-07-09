@@ -1,8 +1,5 @@
 import type { DbAdapter } from './db.ts';
 import {
-    EntityNotFoundError,
-} from './db.ts';
-import {
     assertInvitationState,
     ValidationError,
     type Id,
@@ -617,17 +614,20 @@ async function grantOutcomeFor(
 // re-points onto invitationOpStateFor (api/derive-invitations.ts,
 // Task 1) — wire-identical to the states.getAll()+latestByKey
 // dispatch it replaces (tests/drift-invitation-pending-dedup.
-// test.ts's Step 0 equivalence proof). Candidate DISCOVERY stays
-// on the invitations ROW plane (adapter.invitations.getAll()) —
-// dual-write keeps that table current, and no (organization,
-// identity) index exists on the pair plane to discover candidates
-// without it. `undefined` means "no terminal op yet" — the same
-// 'pending' conclusion the old current.state check reached, since
-// every genuine invitations row already carries its own genesis
-// 'pending' pair (the dual-write invariant grantInvitation's own
-// transaction keeps). Exported for
-// tests/pin-invitation-write-path-parity.test.ts's pre-tx-vs-in-tx
-// pin (Task 2 commit 3) — called BOTH pre-tx (to decide the
+// test.ts's Step 0 equivalence proof).
+//
+// FLIPPED (Phase 15 gate 6): candidate DISCOVERY re-points onto
+// deriveInvitations(adapter) — wire-identical to the hand-
+// written invitations.getAll() filter it replaces while dual-
+// write holds (tests/drift-invitation-pending-dedup.test.ts;
+// pin-invitation-write-path-parity.test.ts). View-safe: only
+// requests/responses getAllWhere + getAll, no nested tx. The
+// grant write-gate already lists requests/responses. `undefined`
+// from invitationOpStateFor still means "no terminal op yet" —
+// the same 'pending' conclusion, since every genuine invitation
+// document carries its genesis pending pair.
+// Exported for tests/pin-invitation-write-path-parity.test.ts's
+// pre-tx-vs-in-tx pin — called BOTH pre-tx (to decide the
 // response) and in-tx (the `agrees` re-check) inside
 // grantInvitation's own transaction, so both calls already run
 // this SAME body; the pin makes that a proven property, not a
@@ -637,7 +637,7 @@ export async function pendingInvitationFor(
     organization: Id,
     identityId: Id,
 ): Promise<{ id: Id; at: string } | null> {
-    const candidates = (await adapter.invitations.getAll())
+    const candidates = (await deriveInvitations(adapter))
         .filter(inv => inv.organization_id === organization
             && inv.identity_id === identityId);
     for (const inv of candidates) {
@@ -991,17 +991,22 @@ async function revokeInvitation(
         ctx.base, pair.requestHash, 'revokeInvitation');
 }
 
-// Read one invitation by id from the base store, or null when
-// absent — the 404 the invitation routes raise.
+// Read one invitation by id from the pair plane, or null when
+// absent — the 404 the invitation routes raise. PRE-TX only
+// (accept/decline/revoke call sites).
+//
+// FLIPPED (Phase 15 gate 6): re-points onto deriveInvitations
+// find-by-id — wire-identical to the hand-written
+// invitations.getById it replaces while dual-write holds.
+// Returns the same shape (id, organization_id, identity_id, at)
+// the accept/decline/revoke guards need; the derived state
+// field is present but unused by those callers.
 async function loadInvitation(
     adapter: DbAdapter,
     id: Id,
 ): Promise<{ id: Id; organization_id: Id;
     identity_id: Id; at: string } | null> {
-    try {
-        return await adapter.invitations.getById(id);
-    } catch (e) {
-        if (e instanceof EntityNotFoundError) return null;
-        throw e;
-    }
+    const found = (await deriveInvitations(adapter))
+        .find(inv => inv.id === id);
+    return found === undefined ? null : found;
 }
