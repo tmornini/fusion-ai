@@ -1316,14 +1316,23 @@ opens and renders.)
 
 ### Flow Designer — Undo/Redo
 
-(The undo/redo version-stack semantics — apply the previous
-version, advance the redo cursor, clear the redo stack on a new
-action, no-op at the ends of the stack, the persisted
-`FLOW_VERSION_CAP` trimming — are covered by
-`tests/flow-operations.test.ts` (`performUndo` / `performRedo`)
-and `tests/adapters-flow-versions.test.ts`. The cases below
-verify the toolbar buttons, the keyboard shortcuts, the disabled
-states, and that the canvas re-renders after each step.)
+(Undo is undo-as-replay (Phase 14 Task 8): the server
+resolves the restore target by replaying the flow's own
+document-pair history against its own undo operation-pair
+history (stack+pointer — a second consecutive undo goes
+FURTHER back rather than oscillating; a save after an
+undo-undo truncates the abandoned branch). This cursor
+algorithm, redo's in-memory stack, exhaustion as a graceful
+no-op, and the 412-retry-then-fresh-resolve on a save racing
+an undo are covered by `tests/flow-undo-cursor.test.ts` and
+`tests/flow-operations.test.ts` (`performUndo` /
+`performRedo`). `flow_versions` no longer receives any write
+on this path — its publish/consume machinery remains
+reachable directly (`tests/adapters-flow-versions.test.ts`,
+`tests/api-flow-versions-publish.test.ts`) but is dead code
+on the live flow-designer path. The cases below verify the
+toolbar buttons, the keyboard shortcuts, the disabled states,
+and that the canvas re-renders after each step.)
 
 - [ ] **F32** After adding a state, click the Undo
   toolbar button. PASS: the state and its
@@ -1331,9 +1340,10 @@ states, and that the canvas re-renders after each step.)
   becomes enabled.
 - [ ] **F33** Click the Redo toolbar button. PASS:
   the state and edge reappear.
-- [ ] **F34** After moving a node, press Cmd+Z (Mac)
-  or Ctrl+Z. PASS: node returns to its previous
-  position.
+- [ ] **F34** On a non-auto-layout flow, after moving a
+  node, press Cmd+Z (Mac) or Ctrl+Z. PASS: node returns
+  to its previous position, pixel-identical (see F37b for
+  the auto-layout exception to this promise).
 - [ ] **F35** After deleting a state, undo. PASS:
   the state and all its connected edges are
   restored.
@@ -1343,6 +1353,25 @@ states, and that the canvas re-renders after each step.)
 - [ ] **F37** Perform an action, undo, then perform
   a new action. PASS: the redo stack is cleared
   (redo button disabled).
+- [ ] **F37a** Open the same flow in two tabs. In tab A, edit
+  a node name and let auto-save complete. In tab B (which
+  still shows the pre-edit head), click Undo immediately.
+  PASS: nothing looks wrong — no error toast, no stuck
+  spinner, no console error surfaces to the user. Under the
+  hood the stale-basis undo collides with tab A's save (HTTP
+  412) and the client silently retries with a freshly
+  resolved target against the new head — the 412-retry is
+  invisible to the tester by design.
+- [ ] **F37b** On a flow with Auto Layout ON, add a node
+  (which auto-lays-out the graph), then Undo. PASS: the
+  canvas restores to the pre-edit graph. Now make ANY new
+  edit (e.g. rename a node). PASS: node positions may
+  re-flow to the auto-layout orientation on this next edit —
+  this is expected, not a regression (the server-resolved
+  restore is canvas-less; auto-layout re-computes positions
+  on its own next content change). Pixel-identical restores
+  are only promised for non-auto-layout (manually-positioned)
+  flows, per F34.
 
 ### Flow Designer — Keyboard Shortcuts
 
@@ -1397,20 +1426,34 @@ states, and that the canvas re-renders after each step.)
   case verifies the `.zip` import path through the dialog and the
   preserved-position rendering.)
 - [ ] **F45** Make 11 edits in the flow designer (e.g. rename 11
-  nodes one at a time, waiting for each auto-save). PASS: the
-  persistent undo history retains at most 10 versions (inspect
-  the `flow_versions` store in DevTools — at most 10 rows for this
-  `flow_id`; the oldest has been hard-deleted). (The
-  `FLOW_VERSION_CAP` trimming logic itself is covered by
-  `tests/adapters-flow-versions.test.ts`; this case verifies it
-  end-to-end through the designer's auto-save.)
+  nodes one at a time, waiting for each auto-save), then click
+  Undo 11 times in a row. PASS: every one of the 11 edits
+  reverts in order — undo history is NO LONGER capped at 10
+  (Phase 14 Task 8 retired the `FLOW_VERSION_CAP` trim from the
+  live path; undo now walks the flow's own full document-pair
+  history). Inspect the `flow_versions` store in DevTools: it
+  stays EMPTY for this `flow_id` throughout — the table is no
+  longer written on the live path (`tests/adapters-flow-
+  versions.test.ts` still covers its dead-but-present
+  publish/cap-trim logic directly, off the live route).
 - [ ] **F46** Edit a flow (rename a state), let auto-save complete.
   Navigate away from the designer to `flows/index.html`. Re-open the
   same flow. Click Undo. PASS: the rename reverts — the undo history
-  survived navigation because versions are persisted to the schema,
-  not held in memory. (Single-edit undo persistence is bounded by
-  `FLOW_VERSION_CAP` (10) per F45 — mass-rename testing beyond 10
-  edits will see the oldest version evicted.)
+  survived navigation because it is the flow's own message-pair
+  history, persisted to the schema, not held in memory. Unlike
+  before Phase 14, this persistence has no 10-edit bound (see F45).
+
+### Flow Designer — Flow Tags (API-only, no UI this phase)
+
+(No manual browser case — Step 0 (Phase 14 Task 9) elected
+API-ONLY: no designer affordance lands this phase. The
+automated suite (`tests/api-flow-tags.test.ts`,
+`tests/api-organization-isolation.test.ts`'s "nested
+flows/:id/tags" fence case) is the sole coverage: PUT/GET/
+DELETE lifecycle, Response-ID pinning survives further flow
+saves, marked delete, member-tier authorization, two-tag
+concurrency, and the org fence. Revisit this note if/when a
+designer "tag current" action lands.)
 
 ### Space Toggle (Pan Mode)
 
@@ -1487,9 +1530,12 @@ states, and that the canvas re-renders after each step.)
   "Transition Properties" title and close button — no
   Members fieldset.
 - [ ] **F66** Inspect the `flow_versions` object store
-  (IndexedDB) before and after a `memberIds` change. PASS: a new
-  version row appears for the flow after the change
-  (member assignment participates in versioning).
+  (IndexedDB) before and after a `memberIds` change. PASS: NO
+  new row appears — `flow_versions` is no longer written on
+  the live path (Phase 14 Task 8); member assignment is
+  captured only in the flow's own document-pair history, in
+  `requests`/`responses`. F67 confirms the change is still
+  undoable through that history.
 - [ ] **F67** Tick one checkbox in the Members fieldset,
   then press Cmd+Z (Mac) / Ctrl+Z (Win/Linux). PASS: the
   checkbox unticks — `memberIds` changes are undoable
