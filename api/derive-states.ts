@@ -654,8 +654,13 @@ async function organizationHasOpBornEvent(
     }
 
     // Member genesis (global plane): initialStateEventId rides
-    // the human/AI create-op body. Own-org iff the member holds
-    // a live membership in this organization.
+    // the human/AI create-op body. Live create writes the
+    // states row + op body but no states/:id pair and no
+    // membership — disposition via resolveOwningOrganization
+    // (null → visible to every asker; own/foreign as usual),
+    // matching the row-plane owner-null isVisible rule. The
+    // membership boolean alone would mis-orphan unowned
+    // genesis events (create never mints a membership).
     for (const prefix of [
         canonicalUriPrefix(undefined, '/ai-members/'),
         canonicalUriPrefix(undefined, '/human-members/'),
@@ -674,10 +679,12 @@ async function organizationHasOpBornEvent(
             if (!bodyNamesStateEvent(pair.body, eventId)) {
                 continue;
             }
+            const owner = await resolveOwningOrganization(
+                dbOrView, pair.uriId, organization,
+            );
             if (
-                await organizationHasMemberPair(
-                    dbOrView, organization, pair.uriId,
-                )
+                owner === null
+                || owner === organization
             ) {
                 return true;
             }

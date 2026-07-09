@@ -386,6 +386,138 @@ test('stateEventVisibilityFor: tier (ii) op-born transition'
     );
 });
 
+test('stateEventVisibilityFor: member-genesis op-born'
++ ' initialStateEventId is visible when unowned (no'
++ ' membership); own when membership present; hidden'
++ ' to a foreign org', async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+
+    // Live create without a membership row: owner-null
+    // on the member id → visible to every asker.
+    const unownedId = 'hm-p15-vis-unowned';
+    const unownedEventId = unownedId + '-genesis';
+    const unownedCreate = await handleRequest(db, req(
+        'POST', '/human-members', token, {
+            id: unownedId,
+            detail: {
+                title: 'Engineer',
+                department: 'Product',
+                strengths: '[]',
+                team_dimensions: '{}',
+            },
+            initialState: 'active',
+            initialStateEventId: unownedEventId,
+            initialStateAt: nowUtc(),
+        },
+    ));
+    assert.equal(unownedCreate.status, 204);
+
+    // Op-born: no states/:id pair at the genesis id.
+    const byId = await db.responses.getAllWhere(
+        'uri_id', unownedEventId,
+    );
+    const statesHits = byId.filter((r) =>
+        /\/states\/$/.test(r.uri_prefix));
+    assert.equal(statesHits.length, 0);
+
+    assert.equal(
+        await resolveOwningOrganization(
+            db, unownedId, STARK_ORGANIZATION,
+        ),
+        null,
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, STARK_ORGANIZATION, unownedEventId,
+        ),
+        'visible',
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, ORGANIZATION_TWO, unownedEventId,
+        ),
+        'visible',
+    );
+    // Row-plane three-way agrees (owner-null isVisible).
+    const starkScoped = organizationScopedAdapter(
+        db, STARK_ORGANIZATION,
+    );
+    const twoScoped = organizationScopedAdapter(
+        db, ORGANIZATION_TWO,
+    );
+    assert.equal(
+        await rowPlaneVisibility(
+            starkScoped, unownedEventId,
+        ),
+        'visible',
+    );
+    assert.equal(
+        await rowPlaneVisibility(
+            twoScoped, unownedEventId,
+        ),
+        'visible',
+    );
+
+    // Membership present → own org visible, foreign hidden.
+    const ownedId = 'hm-p15-vis-owned';
+    const ownedEventId = ownedId + '-genesis';
+    const ownedCreate = await handleRequest(db, req(
+        'POST', '/human-members', token, {
+            id: ownedId,
+            detail: {
+                title: 'Engineer',
+                department: 'Product',
+                strengths: '[]',
+                team_dimensions: '{}',
+            },
+            initialState: 'active',
+            initialStateEventId: ownedEventId,
+            initialStateAt: nowUtc(),
+        },
+    ));
+    assert.equal(ownedCreate.status, 204);
+    const membership = await handleRequest(db, req(
+        'PUT', '/memberships/ms-p15-vis-owned', token, {
+            organization_id: STARK_ORGANIZATION,
+            identity_id: ownedId,
+            at: nowUtc(),
+        },
+    ));
+    assert.equal(membership.status, 200);
+
+    assert.equal(
+        await resolveOwningOrganization(
+            db, ownedId, STARK_ORGANIZATION,
+        ),
+        STARK_ORGANIZATION,
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, STARK_ORGANIZATION, ownedEventId,
+        ),
+        'visible',
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, ORGANIZATION_TWO, ownedEventId,
+        ),
+        'hidden',
+    );
+    assert.equal(
+        await rowPlaneVisibility(
+            starkScoped, ownedEventId,
+        ),
+        'visible',
+    );
+    assert.equal(
+        await rowPlaneVisibility(
+            twoScoped, ownedEventId,
+        ),
+        'hidden',
+    );
+});
+
 // -- flowGraphBindingsFromPairs ----------------------------------
 
 function sortById<T extends { id: string }>(
