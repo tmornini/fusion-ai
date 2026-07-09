@@ -463,6 +463,170 @@ Phase Final; `PUT states/:id` still appends through `put`,
 gated by the ownership fence.
 When no schema exists, non-entry pages redirect to snapshots.
 
+## Write-path derives (Phase 14)
+
+### The view-accepting convention, generalized
+
+Several write-path decision reads — "what is the CURRENT
+state before I write?" — derive from the pair plane
+(`requests`/`responses`) rather than a table read, so a gate
+never trusts a stale row-plane snapshot the ledger has
+already superseded. Earlier phases established the shape for
+invitations, memberships, and identity tokens; Phase 14
+GENERALIZED it to invitation lifecycle state, work-order
+claim history, the member_id-echo head-reads, and
+`state_field_values` (SFV).
+
+The convention is small helpers, not a framework — no
+`ViewAwareDerive` class: (a) every core takes `dbOrView:
+DbAdapter`, the SAME type an open transaction's `view`
+satisfies, so a core is callable both pre-tx (passed `db`)
+and from WITHIN an already-open write-gate transaction
+(passed `view`); (b) a core never opens its OWN nested
+transaction (see below); (c) a core reads only the stores
+its caller already listed in its own `transaction(...)`
+call, never widening the caller's table set on its own
+authority; (d) every write-gate read is ENTITY-SCOPED —
+indexed or prefix reads (`getAllWhere('uri_id', ...)`,
+`getAllWhere('uri_prefix', ...)`), never a whole-plane
+`getAll()` of `requests`/`responses` on a hot path (the one
+named exception is below); (e) a pre-tx call and an in-tx
+call of the same core return byte-identical results, pinned
+by drift/parity tests.
+
+New Phase 14 cores riding this shape: `invitationOpStateFor`
++ `invitationLifecycleStatesFor` (`derive-invitations.ts` /
+`derive-states.ts`, entity-scoped siblings of the
+whole-ledger `invitationOpStates`/`deriveStatesFor`, wired
+into `pendingInvitationFor`/`currentInvitationState`);
+`workOrderClaimHistoryFor` (`derive-states.ts`, pair-plane
+claim history — op pairs ∪ `states/:id` event-append pairs,
+disjoint by id, no dedup needed); `documentStateHeadFor`
+(`derive-states.ts`, the one helper behind all four
+member_id-echo head-reads); and `stateFieldValuesFrom` /
+`deriveStateFieldValueReferrers` /
+`stateFieldValuesForStateEvent` (`derive-state-field-
+values.ts`, a TWO-SOURCE UNION — transition-pair-folded
+field values ∪ standalone leaf-PUT/DELETE pairs, head-reduced
+by the shared `(at, id)` order — backing both the
+`record-attributes` RESTRICT gate and `GET
+states/:id/field-values`).
+
+### Nested-transaction re-entry
+
+`api/db.ts`'s `DbAdapter.transaction` documents nested
+re-entry as a LEGAL subset case: "a nested view.transaction
+re-enters this same tx; its tables must be a subset of the
+outer set" — the same open `IDBTransaction` is reused, not a
+second transaction opened inside the first (which IndexedDB
+forbids outright). The write-path convention still FORBIDS a
+derive core from opening one on its own initiative (rule (b)
+above): every derive is written to accept whichever view its
+caller already holds, so nesting is never needed to reach the
+open tx, and a caller's own table list stays the single,
+auditable source of truth for what one transaction touches.
+
+### LedgerImmutabilityError vs. the document-plane 412
+
+Two DIFFERENT conflict mechanisms coexist, and Phase 14 did
+not merge or replace either. The DOCUMENT plane — every
+`flows/:id`-shaped save, including undo's own restore write —
+detects a stale basis via the `responses.follows` unique
+index: a racing write against the same head throws
+`UniqueConstraintError`, mapped to HTTP 412 by
+`handleRequest`, and the caller retries with a fresh basis.
+The STATE plane (`states.postEvent`, the table-backed
+event-append the states log still uses) detects a genuinely
+different re-put of an existing event id via
+`LedgerImmutabilityError`, mapped to HTTP 409 — an identical
+resend still converges silently, the idempotent retry the
+id-keyed PUT exists for. The state plane's mechanism REMAINS
+unreplaced through Phase 14; it retires only when `states`
+itself migrates onto the pair plane at Phase Final.
+
+### SIDECAR-KEEP and undo-as-replay
+
+Flow undo (`POST /flows/:id/undo`) resolves its restore
+target SERVER-SIDE, pre-tx, by replaying this flow's own
+`flows/:id` document-pair history against its own
+`flows/:id/undo` OPERATION-pair history — a stack+pointer
+replay, not a naive "N pairs back" count, since a genuine
+save after an undo truncates the abandoned branch rather
+than oscillating back into it. The cursor correlates by the
+STORED REQUEST `at` (never the response `at`, independently
+minted per pair) against the undo address's own
+operation-pair `at` values. `graphDelta`/`revivals` still
+land in the restore's own document-pair body feeding
+`deriveFlowGraphStates`, exactly like an ordinary save's —
+SIDECAR-KEEP names this MECHANISM persisting even though the
+VALUES are now SERVER-computed rather than client-supplied
+(the client cannot diff against a target it is never told;
+no new GET route is sanctioned for this). `hasUndoHistory`
+rides the flow's own `GET` response (a document-pair-count
+signal, zero marginal reads) rather than a `flow_versions`
+row count. `flow_versions` consume (undo) and publish (every
+content edit, redo's archive) both STOPPED on the live path —
+the table, its routes, and its cap-trim logic all REMAIN
+(`DELETE NOTHING`), simply unreached; retirement is
+Phase-Final-gated.
+
+### Three named deviations
+
+Phase 14 recorded three deviations from its own plan rather
+than silently reaching for a workaround:
+
+1. **SFV RESTRICT whole-plane scan** (Task 6).
+   `deriveStateFieldValueReferrers` reads
+   `view.requests.getAll()`/`view.responses.getAll()` inside
+   the RESTRICT write gate — a whole-plane scan rule (d)
+   above otherwise forbids. No `attribute_id` index exists on
+   the pair plane; the leaf family has no cheaper entity-id
+   source, and the one candidate for the transition family
+   (`view.workOrders.getAll()`) was REJECTED because
+   `EntityStore.getAll()`'s own deleted-row filter would
+   silently exclude a since-deleted work order's field-value
+   history — a NEW wire delta, not a safe optimization.
+2. **Region B / `rawHasRow` pair-plane re-anchor infeasible**
+   (Task 7). A field value's parent state event resolves via
+   the pair plane ONLY for event-append-born parents
+   (`states/:id` PUT, indexed by the event's own `uri_id`).
+   The COMMON case — a work-order-transition-folded parent
+   event — has no pair addressed by the event's own id at
+   all (only by the owning work order's id); resolving it
+   needs an unbounded, cross-organization scan. `api/api.ts`'s
+   Region B `rawReadRow('states', parentEventId)` and
+   `derive-state-field-values.ts`'s `rawHasRow` presence
+   probe both REMAIN states-table fence mechanics, retiring
+   at Phase Final alongside `state_field_values` itself.
+3. **Server-computed undo sidecars** (Task 8). "Client-owned
+   graphDelta/revivals," read literally, is impossible under
+   the server-side restore-resolution default: the client is
+   never told the target it would need to diff against.
+   Elected reading: "client-owned" names the WIRE SHAPE
+   (every document pair, including undo's, carries these
+   fields), not literally who computes the values — the
+   SERVER now does, reusing the exact diff semantics
+   `web-app/app/adapters/flow-mutations.ts` uses for an
+   ordinary save, duplicated (not imported, per the `api/` →
+   `web-app/` layering rule) into `api/flow-graph-diff.ts`.
+
+### Flow tags: the first pair-plane-only document family
+
+`flows/:id/tags/:name` (PUT/GET/DELETE, SIMPLE class) is the
+first document family with NO backing table at all —
+`postFlowTagDocumentOp`'s transaction touches only
+`requests`/`responses`. A tag pins one flow document pair's
+response id (`flow_response_id`, the tag's only body field);
+GET replays the tag's own stored body, so a tag's pin
+survives every later save of the flow it names. DELETE is a
+marked tombstone (a `deriveDocumentsAt`-excluded head), never
+a row splice — there is no row to splice. Registered in
+`PAIR_WIRED_ROUTE_PATTERNS`; the locked write-class is
+structurally MOOT for this address (`isLockedWrite`
+exact-matches `family/:id`, never a 4-segment tag address).
+No UI landed this phase (see [TEST-PLAN.md](TEST-PLAN.md));
+the API surface is the sole coverage.
+
 ## Storage tiers
 
 `StorageBackend` (`api/db.ts`) is the byte-level seam:
