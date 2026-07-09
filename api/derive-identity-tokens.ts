@@ -69,12 +69,12 @@ import {
 // session. ADAPTER-SHAPED (`dbOrView: DbAdapter`, the
 // membershipExistsFor precedent, api/derive-memberships.ts) so a
 // live open transaction view can call it without nesting a
-// transaction of its own — Task 9a's own future flip moves
-// rotateRefreshJti/revokeTokenChain's IN-TX re-reads onto it; this
-// task flips only their PRE-TX provisional reads (api/
-// authentication.ts) plus tokenRevocationReason's own by-jti read.
-// tests/drift-identity-tokens.test.ts ships the pre-tx-vs-in-tx
-// PARITY leg (the membershipExistsFor leg-5 precedent).
+// transaction of its own — Task 9a re-anchors
+// rotateRefreshJti/revokeTokenChain's own IN-TX re-reads here too
+// (this task flipped only their PRE-TX provisional reads plus
+// tokenRevocationReason's own by-jti read). tests/drift-identity-
+// tokens.test.ts ships the pre-tx-vs-in-tx PARITY leg (the
+// membershipExistsFor leg-5 precedent).
 //
 // No internal db.transaction wrap here (unlike derive-
 // organizations.ts / deriveIdentityPiiRows): identity_tokens is
@@ -86,8 +86,10 @@ import {
 // Reads db.requests/db.responses (+ pickString/validate-
 // IdentityTokenEntity over their decoded bodies) ONLY — never
 // db.identityTokens, the row-plane table this task's GET flip
-// retires as a production READ (the PUT route keeps WRITING it,
-// dual-plane, until Task 9).
+// retired as a production READ; Phase 13 Task 9 retires the
+// row-plane WRITE too (the PUT route goes pair-only), so the
+// table itself carries no production traffic on either side from
+// here on.
 
 const IDENTITY_TOKENS_TABLE = 'identity_tokens';
 

@@ -232,51 +232,25 @@ async function mintPair(
     };
 }
 
-// Record a fresh chain root for a CALLER-SUPPLIED refresh jti —
-// a pure DB write, safe to run inside a caller's transaction so
-// the issue can be atomic with whatever the grant consumes. The
-// jti itself is generated OUTSIDE, pre-tx (Task 3: every grant's
-// TokenResponse — and the mintPair HMAC signing behind it — must
-// be fully known before a transaction opens). The row id, chain
-// id, and `at` stamp are ALSO caller-supplied (Phase 13 Task 5):
-// every caller hoists them pre-tx too, alongside the row's own
-// event pair, which needs that SAME id/at to address and stamp
-// itself identically to the row it will describe.
-async function recordIssuedRoot(
-    view: DbAdapter,
-    identityId: Id,
-    refreshJti: string,
-    id: Id,
-    chainId: string,
-    at: string,
-): Promise<void> {
-    await view.identityTokens.put(id, {
-        jti: refreshJti,
-        identity_id: identityId,
-        action: 'issued',
-        chain_id: chainId,
-        at,
-    });
-}
-
-// Issue a pair on a NEW chain: the refresh jti is recorded as a
-// fresh chain root. Used by grants that start a session without
-// consuming a single-use resource. All crypto (jti generation,
-// mintPair's HMAC signing, formAuthPair's and
-// formTokenEventPair's fingerprinting) runs PRE-tx; the
-// chain-root write and its pair appends are this grant's only
-// row writes, so they ride ONE minimal transaction (the
-// default-organization no-change precedent) — a mid-write fault
-// can never leave an issued chain root with no matching ledger
-// pair. `seed` is undefined for exchangeBearerForOrganization's
-// internal, non-route hop (the org-switch facade never was an
-// /authentication/token request), so that caller mints its chain
-// root with no AUTH pair — exactly as before Task 3. The root's
-// OWN event pair is UNGATED (Phase 13 Task 5): the recorded row
-// exists either way, so the ledger visibility the event pair
-// grants must too — the exchange hop's own election, decoupled
-// from whether an /authentication/token request occasioned the
-// mint.
+// Issue a pair on a NEW chain: the refresh jti anchors a fresh
+// chain root, recorded PAIR-ONLY (Phase 13 Task 9: the row half
+// retires here — nothing has read identity_tokens rows since
+// Task 6). Used by grants that start a session without consuming
+// a single-use resource. All crypto (jti generation, mintPair's
+// HMAC signing, formAuthPair's and formTokenEventPair's
+// fingerprinting) runs PRE-tx; the root's own event pair (plus
+// the auth pair, when seeded) is this grant's only write, so it
+// rides ONE minimal transaction (the default-organization
+// no-change precedent) — a mid-write fault can never leave one
+// pair stored without the other. `seed` is undefined for
+// exchangeBearerForOrganization's internal, non-route hop (the
+// org-switch facade never was an /authentication/token request),
+// so that caller mints its chain root with no AUTH pair — exactly
+// as before Task 3. The root's OWN event pair is UNGATED (Phase
+// 13 Task 5): the chain root is recorded either way, so the
+// ledger visibility the event pair grants must too — the exchange
+// hop's own election, decoupled from whether an
+// /authentication/token request occasioned the mint.
 async function issueTokenPair(
     adapter: DbAdapter,
     identityId: Id,
@@ -307,11 +281,8 @@ async function issueTokenPair(
         action: 'issued', chain_id: chainId, at,
     });
     await adapter.transaction(
-        ['identity_tokens', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            await recordIssuedRoot(
-                view, identityId, refreshJti, rootId, chainId, at,
-            );
             await appendMessagePair(view, eventPair);
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
@@ -319,16 +290,6 @@ async function issueTokenPair(
         },
     );
     return { response, requestHash: pair?.requestHash };
-}
-
-async function appendEvents(
-    adapter: DbAdapter,
-    events: readonly Omit<IdentityTokenEntity, 'id'>[],
-    ids: readonly Id[],
-): Promise<void> {
-    for (let i = 0; i < events.length; i++) {
-        await adapter.identityTokens.put(ids[i]!, events[i]!);
-    }
 }
 
 // Both revocation controls the gate enforces, in ONE place so
@@ -403,14 +364,12 @@ async function readTokenChainFromLedger(
     return { chainId, identityId, rows };
 }
 
-// One pre-minted row id, its event, and its formed event pair —
-// zipped by construction (Phase 13 Task 5) so an in-tx write can
-// never mismatch a row against the wrong pair. Pair formation is
-// async crypto, so `formTokenEventWrites` below runs PRE-TX only
-// (the IndexedDB auto-commit constraint bars awaiting anything
-// but row ops inside an open transaction).
+// Each append's event, paired with its OWN formed event pair —
+// formTokenEventPair mints a fresh id per event and addresses the
+// pair by it (Phase 13 Task 5), so pair formation runs PRE-TX
+// only (async crypto — the IndexedDB auto-commit constraint bars
+// awaiting anything but row ops inside an open transaction).
 interface TokenEventWrite {
-    readonly id: Id;
     readonly event: Omit<IdentityTokenEntity, 'id'>;
     readonly pair: MessagePair;
 }
@@ -422,7 +381,7 @@ async function formTokenEventWrites(
     for (const event of appends) {
         const id = generateCryptoSafeBase62();
         writes.push({
-            id, event, pair: await formTokenEventPair(id, event),
+            event, pair: await formTokenEventPair(id, event),
         });
     }
     return writes;
@@ -534,7 +493,7 @@ export async function rotateRefreshJti(
         );
         try {
             return await adapter.transaction(
-                ['identity_tokens', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
                     const { rows } = await readTokenChainFromLedger(
                         view, presentedJti,
@@ -551,11 +510,6 @@ export async function rotateRefreshJti(
                     )) {
                         throw new TokenPlanDivergedError();
                     }
-                    await appendEvents(
-                        view,
-                        provisional.writes.map(w => w.event),
-                        provisional.writes.map(w => w.id),
-                    );
                     for (const write of provisional.writes) {
                         await appendMessagePair(view, write.pair);
                     }
@@ -634,7 +588,7 @@ export async function revokeTokenChain(
         );
         try {
             await adapter.transaction(
-                ['identity_tokens', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
                     const { chainId, identityId, rows } =
                         await readTokenChainFromLedger(
@@ -653,11 +607,6 @@ export async function revokeTokenChain(
                     )) {
                         throw new TokenPlanDivergedError();
                     }
-                    await appendEvents(
-                        view,
-                        provisional.writes.map(w => w.event),
-                        provisional.writes.map(w => w.id),
-                    );
                     for (const write of provisional.writes) {
                         await appendMessagePair(view, write.pair);
                     }
@@ -970,10 +919,10 @@ async function authorizeCodeIssuer(
 // function — adapter-shaped (the membershipExistsFor /
 // deriveIdentityTokenEventsForJti precedent), `dbOrView` is
 // whichever face is in scope: the plain adapter pre-tx, the open
-// transaction view in-tx. A genuine row already lives at
+// transaction view in-tx. A genuine event already lives at
 // 'identity-tokens/<derivedId>' exactly when this code has already
-// minted a chain root — the row+pair append at that KEYED address
-// IS the spend marker (KEY-BY-ANCHOR), replacing the retired
+// minted a chain root — the pair append at that KEYED address IS
+// the spend marker (KEY-BY-ANCHOR), replacing the retired
 // authorization_codes 'consumed' row. Filtered to the identity-
 // tokens prefix so a coincidental non-identity-tokens hit —
 // astronomically unlikely for a 64-hex-char sha256 digest against
@@ -1051,15 +1000,11 @@ async function grantAuthorizationCode(
         action: 'issued', chain_id: chainId, at,
     });
     const consumed = await adapter.transaction(
-        ['identity_tokens', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
             if (await authorizationCodeSpent(view, derivedId)) {
                 return false;
             }
-            await recordIssuedRoot(
-                view, issuer.identityId, refreshJti,
-                rootId, chainId, at,
-            );
             await appendMessagePair(view, eventPair);
             await appendMessagePair(view, pair);
             return true;
@@ -1168,14 +1113,13 @@ async function equalizeFailureTiming(
 // The password loop: verify username + password, and on success
 // issue an authorization code bound to (identity, client). Every
 // failure returns the SAME 401 (no user enumeration) and appends
-// nothing — grant-first, no-op on failure. On success there is
-// no prior state to race (a fresh code always issues cleanly),
-// so — unlike grantAuthorizationCode's consume path — the store
-// put and the pair append simply ride ONE transaction, no in-tx
-// re-check needed. The stored request carries the PBKDF2-
-// fingerprinted password and the stored response the sha256-
-// fingerprinted code (redactAuthenticationRequest/Response,
-// applied inside formAuthPair) — never the live values.
+// nothing — grant-first, no-op on failure. The code is recorded
+// PAIR-ONLY (Phase 13 Task 9: the row half retires here — nothing
+// has read authorization_codes rows since Task 7). The stored
+// request carries the PBKDF2-fingerprinted password and the
+// stored response the sha256-fingerprinted code
+// (redactAuthenticationRequest/Response, applied inside
+// formAuthPair) — never the live values.
 async function authorizePassword(
     adapter: DbAdapter,
     body: Record<string, unknown>,
@@ -1186,9 +1130,6 @@ async function authorizePassword(
         : '';
     const password = typeof body.password === 'string'
         ? body.password
-        : '';
-    const clientId = typeof body.client_id === 'string'
-        ? body.client_id
         : '';
     const denied: AuthorizeResult = {
         ok: false, status: 401, error: 'invalid credentials',
@@ -1228,16 +1169,8 @@ async function authorizePassword(
         seed, body, identityId, 200, response,
     );
     await adapter.transaction(
-        ['authorization_codes', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            await view.authorizationCodes.put(
-                generateCryptoSafeBase62(), {
-                    code,
-                    identity_id: identityId,
-                    client_id: clientId,
-                    status: 'issued',
-                    at: nowUtc(),
-                });
             await appendMessagePair(view, pair);
         },
     );

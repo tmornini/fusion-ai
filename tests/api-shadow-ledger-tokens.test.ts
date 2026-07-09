@@ -21,8 +21,10 @@ import {
     makeAssertionSigner,
 } from './client-assertion-fixtures.ts';
 import type { IdentityTokenEntity } from '../api/types.ts';
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
+import {
+    deriveIdentityToken,
+    deriveIdentityTokens,
+} from '../api/derive-identity-tokens.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -91,7 +93,7 @@ test('PUT identity-tokens/:id appends its pair at the entity'
     assert.equal(requests.length, 4);
     assert.equal(requests[3]!.uri_prefix, '/identity-tokens/');
     assert.equal(requests[3]!.uri_id, 'tok-1');
-    const domainRow = await db.identityTokens.getById('tok-1');
+    const domainRow = await deriveIdentityToken(db, 'tok-1');
     assert.deepEqual(await res.json(), domainRow);
 });
 
@@ -113,10 +115,11 @@ test('two PUTs to DIFFERENT identity-tokens/:id ids each'
     assert.equal(second.headers.get('Supersedes'), null);
 });
 
-test('a second PUT to the SAME identity-tokens/:id id'
-+ ' overwrites the row (a raw store put, no ledger guard)'
-+ ' and forms its OWN genesis pair — this address never'
-+ ' chains', async () => {
+test('a second PUT to the SAME identity-tokens/:id id forms'
++ ' its OWN genesis pair — no Supersedes, this address never'
++ ' chains — and the DERIVED read reflects the LATEST pair at'
++ ' that address (deriveDocumentsAt\'s latest-per-uriId head'
++ ' resolution, never a ledger guard)', async () => {
     const db = await freshDb();
     const first = await handleRequest(db, req(
         'PUT', '/identity-tokens/tok-3', DEV_TOKEN,
@@ -132,7 +135,7 @@ test('a second PUT to the SAME identity-tokens/:id id'
     assert.equal(second.status, 200);
     assert.notEqual(second.headers.get('Response-ID'), firstId);
     assert.equal(second.headers.get('Supersedes'), null);
-    const domainRow = await db.identityTokens.getById('tok-3');
+    const domainRow = await deriveIdentityToken(db, 'tok-3');
     assert.equal(domainRow.jti, 'jti-3-again');
 });
 
@@ -188,7 +191,7 @@ test('a rotation appends its pair at an operation address:'
     assert.ok(stored);
     const storedBody = await responseFromStored(stored!).json();
     assert.deepEqual(storedBody, wireBody);
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     assert.equal(
         latestActionForJti(rows, wireBody.jti), 'issued');
 });
@@ -215,7 +218,7 @@ async () => {
         DEV_TOKEN, {},
     ));
     assert.equal(second.status, 409);
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     assert.equal(latestActionForJti(rows, ROOT_JTI), 'revoked');
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
@@ -260,7 +263,7 @@ test('a revocation appends its pair at an operation address:'
     );
     assert.ok(row);
     assert.equal(row!.uri_id, '');
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     assert.equal(latestActionForJti(rows, ROOT_JTI), 'revoked');
 });
 
@@ -281,7 +284,7 @@ async () => {
     assert.ok(row);
     // The domain ledger stays untouched by the no-op — only
     // the shadow pair records that the request happened.
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     assert.equal(rows.length, 1);
 });
 
@@ -384,15 +387,15 @@ function postToken(
     ));
 }
 
-// The ONE identity_tokens row a bare issuance grant writes has
-// its own event pair at the row's address — a genesis pair
+// The ONE identity-token event a bare issuance grant forms has
+// its own event pair at its own address — a genesis pair
 // (identity-tokens/:id carries no DOCUMENT_CLASS entry, so no
 // head-read ever chains it), whose stored response deep-equals
-// the row itself.
+// the derived event itself.
 async function assertRootEventPair(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     assert.equal(rows.length, 1);
     const root = rows[0]!;
     const requests = await db.requests.getAll();
@@ -420,13 +423,11 @@ async function assertRootEventPair(
 
 // Below-facade pair formation, mirroring authorizePassword's OWN
 // storage effect (Phase 13 Task 7, Gate 3): grantAuthorizationCode
-// 's pre-tx lookup now scans the '/authentication/authorize/'
-// response family for a stored pair whose (redacted) `code` field
-// fingerprints to the presented code, so a raw
-// db.authorizationCodes.put alone (no pair) 401s as unknown. This
-// forms BOTH halves a real login forms: the authorization_codes
-// row (status 'issued' — the row half keeps dual-writing until
-// Task 9) AND the matching authorize pair, in ONE transaction.
+// 's pre-tx lookup scans the '/authentication/authorize/' response
+// family for a stored pair whose (redacted) `code` field
+// fingerprints to the presented code, so a bare pair — the SAME
+// shape a real login forms (Phase 13 Task 9: the authorization_
+// codes row half retired) — is all a seed needs.
 async function seedAuthorizationCodePair(
     db: MemoryDbAdapter,
     code: string,
@@ -449,17 +450,7 @@ async function seedAuthorizationCodePair(
     const pair = await formAuthPair(
         seed, requestBody, identityId, 200, { code },
     );
-    await db.transaction(
-        ['authorization_codes', 'requests', 'responses'],
-        async (view) => {
-            await view.authorizationCodes.put(
-                generateCryptoSafeBase62(), {
-                    code, identity_id: identityId,
-                    client_id: clientId, status: 'issued', at: AT,
-                });
-            await appendMessagePair(view, pair);
-        },
-    );
+    await appendMessagePair(db, pair);
 }
 
 test('an authorization_code grant appends its root\'s own'
@@ -476,7 +467,7 @@ async () => {
     // row id is now the code's OWN sha256 digest, not a fresh
     // mint — the same value the SAME address's event pair uri_id
     // carries (assertRootEventPair's own uri_id match above).
-    const [root] = await db.identityTokens.getAll();
+    const [root] = await deriveIdentityTokens(db);
     assert.equal(root!.id, await sha256Hex('the-code'));
     const requests = await db.requests.getAll();
     const opPair = requests.find(
@@ -541,7 +532,7 @@ test('a client_credentials grant appends its root\'s own'
 async function assertEventPairForRow(
     db: MemoryDbAdapter, rowId: string,
 ): Promise<void> {
-    const row = await db.identityTokens.getById(rowId);
+    const row = await deriveIdentityToken(db, rowId);
     const requests = await db.requests.getAll();
     const eventRequest = requests.find(
         r => r.uri_prefix === '/identity-tokens/'
@@ -574,7 +565,7 @@ test('a rotation\'s ROTATE branch appends an event pair for'
     ));
     assert.equal(res.status, 200);
     const { jti: newJti } = await res.json() as { jti: string };
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     const retired = rows.find(
         r => r.jti === ROOT_JTI && r.action === 'rotated',
     );
@@ -608,7 +599,7 @@ test('a rotation\'s REPLAY branch appends an event pair for'
         DEV_TOKEN, {},
     ));
     assert.equal(replay.status, 409);
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     const revokedRoot = rows.find(
         r => r.jti === ROOT_JTI && r.action === 'revoked',
     );
@@ -630,7 +621,7 @@ async () => {
         DEV_TOKEN, {},
     ));
     assert.equal(res.status, 204);
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     const revoked = rows.find(
         r => r.jti === ROOT_JTI && r.action === 'revoked',
     );
@@ -651,7 +642,7 @@ test('revoking an unknown jti appends NO event pair — only its'
     // +1: only the operation pair — no row written, so no event
     // pair to match it.
     assert.equal(requests.length, before + 1);
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     assert.equal(rows.length, 1);   // the seeded root, untouched
 });
 
@@ -660,7 +651,7 @@ test('two concurrent rotations of one jti: exactly one'
 + ' branch (chain revoked + 409) — today\'s exact outcome, now'
 + ' with pairs (the retry loop\'s divergence path)', async () => {
     const db = await seededDb();
-    const before = await db.identityTokens.getAll();
+    const before = await deriveIdentityTokens(db);
     const beforeIds = new Set(before.map(r => r.id));
     const [a, b] = await Promise.all([
         handleRequest(db, req(
@@ -676,7 +667,7 @@ test('two concurrent rotations of one jti: exactly one'
     const winner = a.status === 200 ? a : b;
     const { jti: successorJti } =
         await winner.json() as { jti: string };
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     // The whole chain ends up dead: the seeded root AND the
     // winner's own successor both revoked — the loser's replay
     // branch revoked everything the chain has ever held.
@@ -711,7 +702,7 @@ async () => {
     const db = await freshDb();
     await seedRootAdmin(db);
     const flatToken = await devToken('current');
-    const before = await db.identityTokens.getAll();
+    const before = await deriveIdentityTokens(db);
     const beforeIds = new Set(before.map(r => r.id));
     const res = await handleRequest(db, new Request(
         `${BASE}/organizations/1/identity-tokens`, {
@@ -720,7 +711,7 @@ async () => {
         },
     ));
     assert.equal(res.status, 200);
-    const after = await db.identityTokens.getAll();
+    const after = await deriveIdentityTokens(db);
     const newRows = after.filter(r => !beforeIds.has(r.id));
     assert.equal(newRows.length, 1);
     await assertEventPairForRow(db, newRows[0]!.id);
@@ -775,7 +766,7 @@ test('revokeTokenChain racing a concurrent rotateRefreshJti on'
     // — this holds regardless of which side of the race wins.
     assert.equal(revoke.status, 204);
     assert.ok([200, 409].includes(rotate.status));
-    const rows = await db.identityTokens.getAll();
+    const rows = await deriveIdentityTokens(db);
     const chainId = rows.find(r => r.jti === ROOT_JTI)!.chain_id;
     const everyJti = new Set(
         rows.filter(r => r.chain_id === chainId).map(r => r.jti),

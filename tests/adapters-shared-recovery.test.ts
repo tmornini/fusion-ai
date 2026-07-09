@@ -69,8 +69,9 @@ import {
 } from '../api/message-pair.ts';
 import type { AuthPairSeed } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
+import {
+    deriveIdentityTokens,
+} from '../api/derive-identity-tokens.ts';
 
 const BASE = 'http://localhost';
 
@@ -82,13 +83,11 @@ async function freshDb() {
 
 // Below-facade pair formation, mirroring authorizePassword's OWN
 // storage effect (Phase 13 Task 7, Gate 3): grantAuthorizationCode
-// 's pre-tx lookup now scans the '/authentication/authorize/'
-// response family for a stored pair whose (redacted) `code` field
-// fingerprints to the presented code, so a raw
-// db.authorizationCodes.put alone (no pair) 401s as unknown. This
-// forms BOTH halves a real login forms: the authorization_codes
-// row (status 'issued' — the row half keeps dual-writing until
-// Task 9) AND the matching authorize pair, in ONE transaction.
+// 's pre-tx lookup scans the '/authentication/authorize/' response
+// family for a stored pair whose (redacted) `code` field
+// fingerprints to the presented code, so a bare pair — the SAME
+// shape a real login forms (Phase 13 Task 9: the authorization_
+// codes row half retired) — is all a seed needs.
 async function seedAuthorizationCodePair(
     db: MemoryDbAdapter,
     code: string,
@@ -109,18 +108,7 @@ async function seedAuthorizationCodePair(
     const pair = await formAuthPair(
         seed, requestBody, 'current', 200, { code },
     );
-    await db.transaction(
-        ['authorization_codes', 'requests', 'responses'],
-        async (view) => {
-            await view.authorizationCodes.put(
-                generateCryptoSafeBase62(), {
-                    code, identity_id: 'current',
-                    client_id: 'web', status: 'issued',
-                    at: nowUtc(),
-                });
-            await appendMessagePair(view, pair);
-        },
-    );
+    await appendMessagePair(db, pair);
 }
 
 async function issuePair(db: MemoryDbAdapter): Promise<{
@@ -317,7 +305,7 @@ async () => {
     assert.ok(Array.isArray(members));
     assert.ok(Array.isArray(organizations));
     // exactly ONE rotation event: the refresh jti was spent once
-    const rotations = (await db.identityTokens.getAll())
+    const rotations = (await deriveIdentityTokens(db))
         .filter(row => row.action === 'rotated');
     assert.equal(rotations.length, 1);
     // the session survived (nothing was branded reuse)

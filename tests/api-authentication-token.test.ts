@@ -19,11 +19,12 @@ import {
 import type { AuthPairSeed } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
 import {
     authorizationCodeSpent, deriveAuthorizationCodeId,
 } from '../api/authentication.ts';
+import {
+    deriveIdentityTokens,
+} from '../api/derive-identity-tokens.ts';
 
 const BASE = 'http://localhost';
 
@@ -37,15 +38,13 @@ async function freshDb() {
 
 // Below-facade pair formation, mirroring authorizePassword's OWN
 // storage effect (Phase 13 Task 7, Gate 3): grantAuthorizationCode
-// 's pre-tx lookup now scans the '/authentication/authorize/'
-// response family for a stored pair whose (redacted) `code` field
-// fingerprints to the presented code, so a raw
-// db.authorizationCodes.put alone (no pair) 401s as unknown. This
-// forms BOTH halves a real login forms: the authorization_codes
-// row (status 'issued' — the row half keeps dual-writing until
-// Task 9) AND the matching authorize pair, in ONE transaction.
-// Every id/field value stays IDENTICAL to the raw puts this
-// replaces — only the write mechanism changes.
+// 's pre-tx lookup scans the '/authentication/authorize/' response
+// family for a stored pair whose (redacted) `code` field
+// fingerprints to the presented code, so a bare pair — the SAME
+// shape a real login forms (Phase 13 Task 9: the authorization_
+// codes row half retired) — is all a seed needs. Every id/field
+// value stays IDENTICAL to the raw puts this replaces — only the
+// write mechanism changes.
 async function seedAuthorizationCodePair(
     db: MemoryDbAdapter,
     code: string,
@@ -68,18 +67,7 @@ async function seedAuthorizationCodePair(
     const pair = await formAuthPair(
         seed, requestBody, identityId, 200, { code },
     );
-    await db.transaction(
-        ['authorization_codes', 'requests', 'responses'],
-        async (view) => {
-            await view.authorizationCodes.put(
-                generateCryptoSafeBase62(), {
-                    code, identity_id: identityId,
-                    client_id: clientId, status: 'issued',
-                    at: nowUtc(),
-                });
-            await appendMessagePair(view, pair);
-        },
-    );
+    await appendMessagePair(db, pair);
 }
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
@@ -187,9 +175,7 @@ async () => {
         db, tokenRequest({ grant_type: 'wat' }));
     assert.equal(res.status, 400);
     assert.equal(
-        (await db.identityTokens.getAll()).length, 0);
-    assert.equal(
-        (await db.authorizationCodes.getAll()).length, 0);
+        (await deriveIdentityTokens(db)).length, 0);
 });
 
 test('authorization_code grant issues a gate-valid token pair',
@@ -222,14 +208,14 @@ test('replaying a consumed code is a 401 no-op', async () => {
         grant_type: 'authorization_code', code: 'the-code',
     }));
     assert.equal(first.status, 200);
-    const before = (await db.identityTokens.getAll()).length;
+    const before = (await deriveIdentityTokens(db)).length;
     const replay = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
     }));
     assert.equal(replay.status, 401);
     // no new token chain minted on the replay
     assert.equal(
-        (await db.identityTokens.getAll()).length, before);
+        (await deriveIdentityTokens(db)).length, before);
 });
 
 test(
@@ -254,7 +240,7 @@ test(
             [a.status, b.status].sort(), [200, 401],
         );
         assert.equal(
-            (await db.identityTokens.getAll()).length, 1,
+            (await deriveIdentityTokens(db)).length, 1,
             'exactly one token chain minted',
         );
     },
@@ -387,7 +373,7 @@ test('an invalid refresh token is a 401 no-op', async () => {
     }));
     assert.equal(res.status, 401);
     assert.equal(
-        (await db.identityTokens.getAll()).length, 0);
+        (await deriveIdentityTokens(db)).length, 0);
 });
 
 test('token-exchange shapes sub=subject and act=actor',
@@ -414,7 +400,7 @@ async () => {
     const db = await freshDb();
     await seedRootAdmin(db);
     const before =
-        (await db.identityTokens.getAll()).length;
+        (await deriveIdentityTokens(db)).length;
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'token-exchange',
         subject_token: await devToken('current'),
@@ -425,7 +411,7 @@ async () => {
     assert.match(body.error, /self-delegation/);
     // grant-first: a denied exchange mints nothing
     assert.equal(
-        (await db.identityTokens.getAll()).length, before);
+        (await deriveIdentityTokens(db)).length, before);
 });
 
 test('token-exchange rejects unverifiable tokens with 401',
@@ -473,7 +459,7 @@ async () => {
         at: '2026-06-04T00:00:00.000000Z',
     });
     const before =
-        (await db.identityTokens.getAll()).length;
+        (await deriveIdentityTokens(db)).length;
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'token-exchange',
         subject_token: await devToken('current'),
@@ -483,7 +469,7 @@ async () => {
     assert.equal(res.status, 403);
     // grant-first: a denied exchange mints nothing
     assert.equal(
-        (await db.identityTokens.getAll()).length, before);
+        (await deriveIdentityTokens(db)).length, before);
 });
 
 test('a flat exchange carries orgs but no active org',

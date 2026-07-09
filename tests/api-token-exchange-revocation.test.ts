@@ -161,12 +161,15 @@ test('refresh on a logged-out but live jti is the'
     // A LIVE issued jti in the ledger: without the
     // logout-everywhere stamp this would rotate cleanly, so
     // the ONLY thing that can reject it is the revoked-through
-    // branch — pinning that branch, not the reuse path.
-    await db.identityTokens.put('t-live', {
+    // branch — pinning that branch, not the reuse path. Seeded
+    // via the PUT route (not a raw store write, Phase 13 Task 9:
+    // the row plane no longer receives writes at all) — revokedDb
+    // already grants 'current' admin, the role this route needs.
+    await PUT(db, 'identity-tokens/t-live', {
         jti: 'live-jti', identity_id: 'u1',
         action: 'issued', chain_id: 'c1',
         at: '2019-01-01T00:00:00.000000Z',
-    });
+    }, await devToken());
     const iat = Math.floor(
         Date.parse('2019-01-01T00:00:00.000000Z') / 1000);
     const token = await mintAccessToken({
