@@ -182,6 +182,75 @@ export async function deriveEventPairStates(
     );
 }
 
+// ---- stateEventCollisionFromPairs — gate 7 / finding 6 -------
+//
+// Pair-plane twin of StateStore.put's sameEvent row check
+// (store-state.ts). PUT /states/:id runs BOTH (strangler
+// parity); Final strips the row half. REDUCE over ALL pairs
+// at the event-append address — "at most one 2xx pair" is
+// FALSE (finding 2): a different-envelope resend (fresh
+// x-request-id → different message_hash) appends a SECOND
+// pair at the same uri_id while the row write no-ops.
+//
+// Disposition:
+//   absent   — no 2xx states/:id pair names eventId
+//   same     — every such pair matches candidate (sameEvent
+//              fields: entity_id/state/member_id/at)
+//   conflict — any such pair differs from candidate
+
+export type StateEventCollision =
+    | 'absent'
+    | 'same'
+    | 'conflict';
+
+function stateEventFieldsEqual(
+    a: Omit<StateEntity, 'id'>,
+    b: Omit<StateEntity, 'id'>,
+): boolean {
+    return a.entity_id === b.entity_id
+        && a.state === b.state
+        && a.member_id === b.member_id
+        && a.at === b.at;
+}
+
+// In-tx-safe: accepts a view or a standalone adapter. uri_id
+// point-read only (indexed) — never a whole-plane scan.
+export async function stateEventCollisionFromPairs(
+    dbOrView: DbAdapter,
+    eventId: Id,
+    candidate: Omit<StateEntity, 'id'>,
+): Promise<StateEventCollision> {
+    const [byIdRequests, byIdResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere('uri_id', eventId),
+        dbOrView.responses.getAllWhere('uri_id', eventId),
+    ]);
+    const prefixes = new Set<string>();
+    for (const response of byIdResponses) {
+        if (STATES_ADDRESS_PATTERN.test(response.uri_prefix)) {
+            prefixes.add(response.uri_prefix);
+        }
+    }
+    let sawPair = false;
+    for (const prefix of prefixes) {
+        for (const pair of documentPairsAt(
+            byIdRequests, byIdResponses, prefix,
+        )) {
+            if (pair.uriId !== eventId) continue;
+            sawPair = true;
+            const existing: Omit<StateEntity, 'id'> = {
+                entity_id: pickString(pair.body, 'entity_id'),
+                state: pickString(pair.body, 'state'),
+                member_id: pair.requesterIdentityId,
+                at: pickString(pair.body, 'at'),
+            };
+            if (!stateEventFieldsEqual(existing, candidate)) {
+                return 'conflict';
+            }
+        }
+    }
+    return sawPair ? 'same' : 'absent';
+}
+
 // ---- resolveOwningOrganization — the PAIR-PLANE fence (gate 4) -
 
 // The org-owned, org-nested document families whose OWN id can
