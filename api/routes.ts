@@ -1547,8 +1547,9 @@ export async function postFlowCreationOp(
 // same-id, genuinely different-content collision still 409s
 // via LedgerImmutabilityError — today's covenant, unchanged.
 // version-publish (a flow_versions row) is NOT part of this op
-// (Decision 3) — it rides its own POST /flows/:id/versions
-// transaction. `graphDelta`/`revivals` are TRANSITIONAL
+// (Decision 3); the versions routes retired Phase 15 Task 7
+// — undo-as-replay no longer freezes via flow_versions.
+// `graphDelta`/`revivals` are TRANSITIONAL
 // decomposition-only sidecars — the old-plane relation writer
 // alone consumes them; no derivation reads either one, and
 // both retire at Phase Final. `graph` is the client-authored
@@ -5290,10 +5291,8 @@ export const routes: Route[] = [
     // DocumentFamilyWiring family; a join row carries no lifecycle
     // trio of its own), so this calls it directly rather than
     // through a generic constructor, mirroring deriveFlowWorkOrders'
-    // own precedent above. This closes the LAST deferred old-plane
-    // nested read under flows — the one remaining table-backed
-    // nested read, flows/:id/versions above, stays that way BY
-    // DESIGN (its own comment), never a deferral this phase closes.
+    // own precedent above. flows/:id/versions table-backed
+    // nested read RETIRED Phase 15 Task 7 (zero callers).
     route('flows/:id/records', {
         get: (db, p, _actor, organization) =>
             deriveFlowRecords(

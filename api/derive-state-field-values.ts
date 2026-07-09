@@ -72,9 +72,10 @@ interface TransitionFieldValue {
 // `id`/`at` are the TRANSITION pair's OWN envelope (every row it
 // folds landed inside that ONE atomic write, so they share one
 // order-key); `uriId` is the field-value row's OWN id — the SAME
-// id a later leaf PUT/DELETE at states/:id/field-values/:fvid
-// would revisit. `method: 'PUT'` — a transition only ever CREATES
-// a row (validateWorkOrderTransitionBody carries no delete arm),
+// id a historical leaf PUT/DELETE pair (or seed pair) at
+// states/:id/field-values/:fvid revisits. `method: 'PUT'` — a
+// transition only ever CREATES a row
+// (validateWorkOrderTransitionBody carries no delete arm),
 // never tombstones one.
 function transitionFieldValueCandidates(
     requests: readonly RequestEntity[],

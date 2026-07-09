@@ -526,3 +526,74 @@ test('records hard-delete forgery: foreign entity-states'
     ));
     assert.equal(fromB.status, 200);
 });
+
+// ---- Phase 15 Task 7: surviving fence pins after route
+// retirements (re-pin pass) --------------------------------
+// Wire delta (1) ONLY for retired routes (router 404). A
+// foreign-404 that would pass as router miss after
+// retirement is a STEALTH-WEAKENING trap — surviving
+// addresses below still exercise the ownership fence.
+
+test('retired bare GET states/:id is method-absent 405'
++ ' for OWN event too (PUT route survives; GET is gone'
++ ' — not a fence-only 404)', async () => {
+    const db = await seed();
+    await handleRequest(db, req(
+        'PUT', '/states/ev-own-retire',
+        await tokenFor('memberA', 'A'),
+        { entity_id: 'idea-a', state: 'active', at: AT },
+    ));
+    // Own event exists in storage; GET arm is gone; PUT
+    // pattern still matches → 405, not fence 404.
+    assert.equal(
+        (await db.states.getById('ev-own-retire')).id,
+        'ev-own-retire',
+    );
+    const res = await handleRequest(db, req(
+        'GET', '/states/ev-own-retire',
+        await tokenFor('memberA', 'A'),
+    ));
+    assert.equal(res.status, 405);
+});
+
+test('surviving GET entity-states/:id/history still fences'
++ ' foreign ownership (404 with Not found body)',
+async () => {
+    const db = await seed();
+    const res = await handleRequest(db, req(
+        'GET', '/entity-states/idea-b/history',
+        await tokenFor('memberA', 'A'),
+    ));
+    assert.equal(res.status, 404);
+    assert.deepEqual(
+        await res.json(),
+        {
+            error:
+                'Not found: /entity-states/idea-b/history',
+        },
+    );
+});
+
+test('retired leaf PUT field-values is router 404 (own'
++ ' parent event still present)', async () => {
+    const db = await seed();
+    await handleRequest(db, req(
+        'PUT', '/states/ev-a-leaf',
+        await tokenFor('memberA', 'A'),
+        { entity_id: 'idea-a', state: 'active', at: AT },
+    ));
+    const res = await handleRequest(db, req(
+        'PUT', '/states/ev-a-leaf/field-values/fv-x',
+        await tokenFor('memberA', 'A'),
+        {
+            state_event_id: 'ev-a-leaf',
+            attribute_id: 'attr-1',
+            value: 'x',
+        },
+    ));
+    assert.equal(res.status, 404);
+    await assert.rejects(
+        () => db.stateFieldValues.getById('fv-x'),
+        EntityNotFoundError,
+    );
+});

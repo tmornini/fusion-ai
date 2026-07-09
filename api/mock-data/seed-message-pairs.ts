@@ -1681,12 +1681,14 @@ export function buildMockDataInvocations():
     }
     // The 7 state_field_values rows nest under their OWN parent
     // trace event: idParams [stateEventId, fvId] — matches the
-    // live PUT states/:id/field-values/:fvid's params order
-    // (WRITE_RESPONSE_SPECS reads param(params, 1) as the leaf
-    // id). requesterIdentityId is the PARENT event's OWN
-    // member_id (the same person who authored that transition),
-    // looked up off the SAME traceEvents list above — never a
-    // second, independently-picked author.
+    // retired leaf PUT states/:id/field-values/:fvid params
+    // order (WRITE_RESPONSE_SPECS entry SURVIVES for seed
+    // formation, Phase 15 Task 7 / finding 7; reads
+    // param(params, 1) as the leaf id). requesterIdentityId is
+    // the PARENT event's OWN member_id (the same person who
+    // authored that transition), looked up off the SAME
+    // traceEvents list above — never a second, independently-
+    // picked author.
     const traceEventById = new Map(
         traceEvents.map(e => [e.id, e]),
     );
