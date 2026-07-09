@@ -1034,6 +1034,169 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
     assert.equal(latest.get(nodeId)!.action, 'removed');
 });
 
+// F1 fix pin: soft-deleting a node via graphDelta.deletions
+// must drop it from nodeFlowIds. writeFlowGraphDelta does
+// NOT emit attributeEvents 'removed' for attributes on a
+// fully deleted node — residual 'added' must NOT RESTRICT
+// attribute DELETE (old path: flowNodes.getById →
+// EntityNotFoundError → skip; new path must match).
+test('residual pin: soft-deleted node drops from'
++ ' nodeFlowIds so residual attribute binding is not a'
++ ' RESTRICT referrer (DELETE → 204)', async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+    const flowId = 'p15-softdel-flow';
+    const nodeId = 'p15-softdel-node';
+    const attrId = 'p15-softdel-attr';
+    const at1 = '2026-06-17T00:00:00.000000Z';
+    const at2 = '2026-06-17T00:00:01.000000Z';
+    const projectId = 'u6YkHhlGc91oDMkr3x0isa';
+
+    const attrPut = await handleRequest(db, req(
+        'PUT', '/record-attributes/' + attrId, token, {
+            record_id: 'rec01CustProfRec0rdAB1',
+            name: 'P15 SoftDel',
+            attribute_type: 'text',
+            sort_order: 99,
+            options: '[]',
+            constraints: '[]',
+        },
+    ));
+    assert.equal(attrPut.status, 200);
+
+    const created = await handleRequest(db, req(
+        'POST', '/flows', token, {
+            id: flowId,
+            flow: {
+                name: 'P15 SoftDel Flow',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: 8 * 60 * 60,
+            },
+            projectFlowId: flowId + '-pf',
+            projectFlow: {
+                project_id: projectId,
+                flow_id: flowId,
+                at: at1,
+            },
+            initialState: 'active',
+            initialStateEventId: flowId + '-ev',
+            initialStateAt: at1,
+            graphDelta: {
+                nodes: [{
+                    id: nodeId, flow_id: flowId,
+                    name: 'Doomed',
+                    position_x: 0, position_y: 0,
+                    is_create: true, is_archive: false,
+                    task_instructions: '', at: at1,
+                }],
+                edges: [],
+                deletions: [],
+                memberEvents: [],
+                attributeEvents: [{
+                    id: 'p15-softdel-fna',
+                    flow_node_id: nodeId,
+                    attribute_id: attrId,
+                    mode: 'editable',
+                    is_required: false,
+                    action: 'added',
+                    at: at1,
+                }],
+            },
+        },
+    ));
+    assert.equal(created.status, 204);
+
+    const afterAdd = await flowGraphBindingsFromPairs(
+        db, STARK_ORGANIZATION,
+    );
+    assert.equal(
+        afterAdd.nodeFlowIds.get(nodeId), flowId,
+    );
+
+    const headGet = await handleRequest(
+        db, req('GET', '/flows/' + flowId, token),
+    );
+    assert.equal(headGet.status, 200);
+    const headId = headGet.headers.get('Response-ID');
+    assert.ok(headId);
+
+    // Soft-delete the bound node only — residual 'added'
+    // attributeEvent remains; no attributeEvents 'removed'.
+    const putDelete = await handleRequest(db, req(
+        'PUT', '/flows/' + flowId, token,
+        {
+            name: 'P15 SoftDel Flow',
+            is_locked: false,
+            is_auto_layout: false,
+            is_auto_fit: false,
+            lock_timeout: 8 * 60 * 60,
+            state: 'active',
+            state_at: at2,
+            state_event_id: flowId + '-ev-del',
+            graph: jsonObjectField({
+                nodes: [],
+                edges: [],
+            }),
+            graphDelta: {
+                nodes: [],
+                edges: [],
+                deletions: [{
+                    eventId: 'p15-softdel-del',
+                    entityId: nodeId,
+                    at: at2,
+                }],
+                memberEvents: [],
+                attributeEvents: [],
+            },
+            revivals: [],
+        },
+        { 'if-response-id': headId! },
+    ));
+    assert.equal(putDelete.status, 200);
+
+    const afterDel = await flowGraphBindingsFromPairs(
+        db, STARK_ORGANIZATION,
+    );
+    assert.equal(
+        afterDel.nodeFlowIds.has(nodeId), false,
+        'soft-deleted node must leave nodeFlowIds',
+    );
+    // Residual 'added' still in the event ledger.
+    const residual = afterDel.attributeEvents.find(
+        (r) => r.id === 'p15-softdel-fna',
+    );
+    assert.ok(residual);
+    assert.equal(residual!.action, 'added');
+
+    const scoped = organizationScopedAdapter(
+        db, STARK_ORGANIZATION,
+    );
+    const pairPlane = await collectAttributeReferrers(
+        scoped, STARK_ORGANIZATION, [attrId],
+    );
+    const rowPlane = await rowPlaneGraphReferrers(
+        scoped, STARK_ORGANIZATION, [attrId],
+    );
+    assertReferrerParity(
+        'soft-deleted node', pairPlane, rowPlane, [attrId],
+    );
+    assert.deepEqual(
+        pairPlane.get(attrId)!.flowIds, [],
+        'no current-node flow referrer',
+    );
+
+    // Wire contract: residual binding on a soft-deleted
+    // node is NOT a RESTRICT referrer → DELETE 204.
+    const deleted = await handleRequest(db, req(
+        'DELETE',
+        '/record-attributes/' + attrId,
+        token,
+    ));
+    assert.equal(deleted.status, 204);
+});
+
 // -- field-values visibility re-anchor (Phase 15 Task 3) ------
 
 // Shared fixture: live create a work order (so tier-ii can

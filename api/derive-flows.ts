@@ -299,10 +299,13 @@ export async function deriveFlowStateHistory(
 // latestByKey/relationFailClosed reduction over either source
 // is byte-equal by construction.
 //
-// nodeFlowIds is the latest flow_id stamp per node id from
-// graphDelta.nodes upserts — the pair-plane successor of
+// nodeFlowIds is the CURRENT flow_id stamp per node id —
+// graphDelta.nodes upserts set it, graphDelta.deletions drop
+// it when the entityId is still mapped (soft-deleted nodes
+// are no longer current). Pair-plane successor of
 // flowNodes.getById(flowNodeId).flow_id that RESTRICT uses to
-// name referring flows.
+// name referring flows. A later pair that re-upserts the
+// node restores the map entry (documentPairsAt ascending).
 //
 // Do NOT use the client-authored document `graph` snapshot
 // (unvalidated against the relation ledgers). dbOrView-shaped
@@ -375,6 +378,31 @@ export async function flowGraphBindingsFromPairs(
                     // Later pairs win — full-history walk is
                     // (at, id) ascending (documentPairsAt).
                     nodeFlowIds.set(nodeId, flowId);
+                }
+            }
+        }
+        // AFTER nodes so a re-upsert in this same delta (or
+        // a later pair) restores before/without a delete
+        // wiping a current node. Soft-delete posts
+        // states 'deleted' only — no attributeEvents
+        // 'removed' — so RESTRICT must drop the node map
+        // entry or residual 'added' bindings 409 forever.
+        const deletions = fields['deletions'];
+        if (Array.isArray(deletions)) {
+            for (const item of deletions) {
+                if (
+                    typeof item !== 'object'
+                    || item === null
+                ) {
+                    continue;
+                }
+                const del = item as Record<string, unknown>;
+                const entityId = del['entityId'];
+                if (
+                    typeof entityId === 'string'
+                    && nodeFlowIds.has(entityId)
+                ) {
+                    nodeFlowIds.delete(entityId);
                 }
             }
         }
