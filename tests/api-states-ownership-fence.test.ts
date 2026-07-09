@@ -416,3 +416,159 @@ test('org B deleting its own idea hides it from org A'
     ));
     assert.equal(fromB.status, 200);
 });
+
+// ---- 8. WP1 — organization id as entity_id (Phase 15 Task 5) --
+// Pair-plane self-as-owner (Task 1 gate 3) makes an organizations
+// document id resolve to ITSELF. A foreign tenant's forged
+// PUT /states/:id naming that id is 404; derived reads hide it.
+// Own-org write still succeeds (self-as-owner, not orphan).
+
+test('WP1: foreign PUT states/:id naming an ORGANIZATION id'
++ ' as entity_id is 404 and writes nothing', async () => {
+    const db = await seed();
+    const res = await handleRequest(db, req(
+        'PUT', '/states/ev-org-forge',
+        await tokenFor('memberA', 'A'),
+        { entity_id: 'B', state: 'active', at: AT },
+    ));
+    assert.equal(res.status, 404);
+    assert.deepEqual(
+        await res.json(),
+        { error: 'Not found: /states/ev-org-forge' },
+    );
+    await assert.rejects(
+        () => db.states.getById('ev-org-forge'),
+        EntityNotFoundError,
+    );
+});
+
+test('WP1: own-org PUT states/:id naming its ORGANIZATION'
++ ' id as entity_id still writes', async () => {
+    const db = await seed();
+    const res = await handleRequest(db, req(
+        'PUT', '/states/ev-org-own',
+        await tokenFor('memberA', 'A'),
+        { entity_id: 'A', state: 'active', at: AT },
+    ));
+    assert.equal(res.status, 200);
+    assert.equal(
+        (await db.states.getById('ev-org-own')).entity_id,
+        'A',
+    );
+});
+
+test('WP1: entity-states history for a foreign ORGANIZATION'
++ ' id is 404 (hidden on the derived read path)', async () => {
+    const db = await seed();
+    // Seed a state event ON organization B from B itself so
+    // the history would be non-empty if the fence opened.
+    const own = await handleRequest(db, req(
+        'PUT', '/states/ev-org-b-seed',
+        await tokenFor('memberB', 'B'),
+        { entity_id: 'B', state: 'active', at: AT },
+    ));
+    assert.equal(own.status, 200);
+    const fromA = await handleRequest(db, req(
+        'GET', '/entity-states/B/history',
+        await tokenFor('memberA', 'A'),
+    ));
+    assert.equal(fromA.status, 404);
+    assert.deepEqual(
+        await fromA.json(),
+        { error: 'Not found: /entity-states/B/history' },
+    );
+    const fromB = await handleRequest(db, req(
+        'GET', '/entity-states/B/history',
+        await tokenFor('memberB', 'B'),
+    ));
+    assert.equal(fromB.status, 200);
+});
+
+// ---- 9. records hard-delete forgery (finding 1i inverted) ----
+// DELETE /records/:id is a genuine row splice with NO states
+// tombstone. Raw probes treated the spliced id as an orphan and
+// admitted a foreign PUT. The pair plane still owns the id via
+// the document history — foreign forge 404s; own-org write
+// still succeeds.
+
+test('records hard-delete forgery: foreign PUT states/:id'
++ ' naming a spliced record id is 404', async () => {
+    const db = await seed();
+    const created = await handleRequest(db, req(
+        'PUT', '/records/rec-b1',
+        await tokenFor('memberB', 'B'),
+        {
+            name: 'Rec B', description: '', position: 0,
+            state: 'active', state_at: AT,
+            state_event_id: 'rec-b1-genesis',
+        },
+    ));
+    assert.equal(created.status, 200);
+    const deleted = await handleRequest(db, req(
+        'DELETE', '/records/rec-b1',
+        await tokenFor('memberB', 'B'),
+    ));
+    assert.equal(deleted.status, 204);
+    await assert.rejects(
+        () => db.records.getById('rec-b1'),
+        EntityNotFoundError,
+    );
+    const forge = await handleRequest(db, req(
+        'PUT', '/states/ev-rec-forge',
+        await tokenFor('memberA', 'A'),
+        { entity_id: 'rec-b1', state: 'active', at: AT },
+    ));
+    assert.equal(forge.status, 404);
+    assert.deepEqual(
+        await forge.json(),
+        { error: 'Not found: /states/ev-rec-forge' },
+    );
+    await assert.rejects(
+        () => db.states.getById('ev-rec-forge'),
+        EntityNotFoundError,
+    );
+    // Own org still owns the hard-spliced id on the pair plane.
+    const own = await handleRequest(db, req(
+        'PUT', '/states/ev-rec-own',
+        await tokenFor('memberB', 'B'),
+        { entity_id: 'rec-b1', state: 'active', at: AT },
+    ));
+    assert.equal(own.status, 200);
+});
+
+test('records hard-delete forgery: foreign entity-states'
++ ' history of a spliced record id is 404', async () => {
+    const db = await seed();
+    const created = await handleRequest(db, req(
+        'PUT', '/records/rec-b2',
+        await tokenFor('memberB', 'B'),
+        {
+            name: 'Rec B2', description: '', position: 1,
+            state: 'active', state_at: AT,
+            state_event_id: 'rec-b2-genesis',
+        },
+    ));
+    assert.equal(created.status, 200);
+    const deleted = await handleRequest(db, req(
+        'DELETE', '/records/rec-b2',
+        await tokenFor('memberB', 'B'),
+    ));
+    assert.equal(deleted.status, 204);
+    const fromA = await handleRequest(db, req(
+        'GET', '/entity-states/rec-b2/history',
+        await tokenFor('memberA', 'A'),
+    ));
+    assert.equal(fromA.status, 404);
+    assert.deepEqual(
+        await fromA.json(),
+        {
+            error:
+                'Not found: /entity-states/rec-b2/history',
+        },
+    );
+    const fromB = await handleRequest(db, req(
+        'GET', '/entity-states/rec-b2/history',
+        await tokenFor('memberB', 'B'),
+    ));
+    assert.equal(fromB.status, 200);
+});
