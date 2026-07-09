@@ -345,3 +345,49 @@ test('e2e: two different tag names PUT concurrently on one flow'
         (await gotBeta.json() as { id: string }).id, 'beta',
     );
 });
+
+// --- commit 3: pin tag resolution to response ids ---
+
+test('e2e: a tag written once still resolves to the EXACT'
++ ' tagged response after the flow is saved twice more — the'
++ ' pin never follows the flow\'s own moving head', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await createFlow(db, token, 'flow-tag-pin-1');
+    const r1 = await headResponseId(db, token, 'flow-tag-pin-1');
+
+    const tagged = await handleRequest(db, req(
+        'PUT', '/flows/flow-tag-pin-1/tags/v1', token,
+        { flow_response_id: r1 },
+    ));
+    assert.equal(tagged.status, 200);
+
+    const save2 = await handleRequest(db, req(
+        'PUT', '/flows/flow-tag-pin-1', token,
+        documentBody('Second Save', 'flow-tag-pin-1-ev-2'),
+        { 'if-response-id': r1 },
+    ));
+    assert.equal(save2.status, 200);
+    const r2 = await headResponseId(db, token, 'flow-tag-pin-1');
+    assert.notEqual(r2, r1);
+
+    const save3 = await handleRequest(db, req(
+        'PUT', '/flows/flow-tag-pin-1', token,
+        documentBody('Third Save', 'flow-tag-pin-1-ev-3'),
+        { 'if-response-id': r2 },
+    ));
+    assert.equal(save3.status, 200);
+    const r3 = await headResponseId(db, token, 'flow-tag-pin-1');
+    assert.notEqual(r3, r2);
+
+    const get = await handleRequest(db, req(
+        'GET', '/flows/flow-tag-pin-1/tags/v1', token,
+    ));
+    assert.equal(get.status, 200);
+    const body = await get.json() as { flow_response_id: string };
+    assert.equal(
+        body.flow_response_id, r1,
+        'the tag must still name the ORIGINAL pinned response,'
+        + ' never the flow\'s current head',
+    );
+});
