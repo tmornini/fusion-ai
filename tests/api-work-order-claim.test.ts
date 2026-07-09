@@ -192,26 +192,42 @@ test(
     'a released claim allows a fresh claim',
     async () => {
         const db = await seededDb();
-        await db.states.put('cl-1', {
-            entity_id: 'wo1',
-            state: 'claimed',
-            member_id: 'other',
-            at: '2026-01-01T00:00:00.000000Z',
-        });
-        await db.states.put('cl-2', {
-            entity_id: 'wo1',
-            state: 'claim_released',
-            member_id: 'other',
-            at: '2026-01-01T00:00:01.000000Z',
-        });
+        // A live claim by 'other', released via the SAME
+        // standalone PUT states/:id address the live
+        // deleteWorkOrderClaim route uses (workbox's "release
+        // claim" action) — never a raw row poke, so the release
+        // is visible to the flipped gate's own pair-plane read
+        // (workOrderClaimHistoryFor). This is the hazard-closure
+        // scenario itself, driven through postWorkOrderClaimOp
+        // end to end, not just at the derive layer.
+        await seedOrganizationMember(db, 'other');
+        await POST(
+            db, 'work-orders/wo1/claim',
+            freshClaimBody(), await devToken('other'),
+        );
+        await PUT(
+            db, 'states/' + generateCryptoSafeBase62(), {
+                entity_id: 'wo1',
+                state: 'claim_released',
+                at: nowUtc(),
+            },
+            await devToken('other'),
+        );
+        // 'current's fresh claim succeeds THROUGH THE LIVE
+        // GATE — a foreign live claim would 409 here (see the
+        // sibling test above), so success alone proves the
+        // release was seen.
         await POST(
             db, 'work-orders/wo1/claim',
             freshClaimBody(), DEV_TOKEN,
         );
         const events = await claimEventsFor(db);
-        const last = events[events.length - 1]!;
-        assert.equal(last.state, 'claimed');
-        assert.equal(last.member_id, 'current');
+        assert.deepEqual(
+            events.map(ev => ev.state),
+            ['claimed', 'claim_released', 'claimed'],
+        );
+        assert.equal(events[0]!.member_id, 'other');
+        assert.equal(events[2]!.member_id, 'current');
     },
 );
 
