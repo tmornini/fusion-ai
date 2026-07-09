@@ -526,7 +526,10 @@ const WORK_ORDERS_COLLECTION_PATTERN =
 // disambiguate).
 const WORK_ORDER_CLAIM_PATTERN =
     /^\/organizations\/[^/]+\/work-orders\/([^/]+)\/claim\/$/;
-const WORK_ORDER_TRANSITION_PATTERN =
+// Exported (Phase 14 Task 6): api/derive-state-field-values.ts
+// scans for this SAME prefix shape to find every transition's
+// fieldValues fold, without re-deriving the address pattern.
+export const WORK_ORDER_TRANSITION_PATTERN =
     /^\/organizations\/[^/]+\/work-orders\/([^/]+)\/transition\/$/;
 
 // One decoded 2xx POST pair — an OPERATION address (create/claim/
@@ -595,8 +598,11 @@ function atIdCompare(
 // this function already reads generically (Task 4's own report
 // flagged this as the anticipated reuse; Generality: the better
 // way rises to replace every similar site rather than resting
-// beside them).
-function operationPairsAt(
+// beside them). Exported (Phase 14 Task 6): api/derive-state-
+// field-values.ts's transition-fold reader reuses this SAME
+// decode over the work-orders/:id/transition address, rather
+// than re-implementing the POST-only, (at, id)-sorted read.
+export function operationPairsAt(
     requests: readonly RequestEntity[],
     responses: readonly ResponseEntity[],
     uriPrefix: string,
