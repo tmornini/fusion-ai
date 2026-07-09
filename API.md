@@ -226,6 +226,13 @@ Legend for classification:
   `PUT /flows/:id/work-orders/:woid` — nested.
 - `GET /flows/:id/records` ·
   `GET|PUT|DELETE /flows/:id/records/:frid` — nested.
+- `GET|PUT|DELETE /flows/:id/tags/:name` — nested, PAIR-PLANE
+  ONLY (Phase 14 Task 9): the codebase's FIRST document family
+  with no backing table — `flow_response_id` (the pinned
+  response id of a `flows/:id` document pair) is the tag's only
+  body field. SIMPLE class, not locked (§5.4's locked arm
+  exact-matches `flows/:id`, never this 4-segment address).
+  `DELETE` is marked, like every other family.
 
 ### 2.7 Work orders
 

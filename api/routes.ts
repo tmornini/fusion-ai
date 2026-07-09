@@ -76,6 +76,8 @@ import {
     validateProjectDocumentBody,
     validateProjectFlowEntity,
     validateFlowRecordEntity,
+    validateFlowTagEntity,
+    validateFlowTagName,
     validateRecordAttributeDocumentBody,
     validateRecordDocumentBody,
     validateRecordWriteBody,
@@ -156,6 +158,7 @@ import {
     deriveFlowRecords,
     deriveFlowRecord,
 } from './derive-flow-records.ts';
+import { deriveFlowTag } from './derive-flow-tags.ts';
 import {
     deriveObjectiveRevisions,
 } from './derive-objective-revisions.ts';
@@ -2717,6 +2720,31 @@ export async function postFlowRecordDocumentOp(
     );
 }
 
+// Flow tag document write — the codebase's FIRST pair-plane-ONLY
+// write (Phase 14 Task 9): no table, no row, no dual-write. The
+// pair alone carries everything (uriPrefix/uriId encode the
+// address; the stored request's method distinguishes a PUT tag
+// from a DELETE tombstone; supersedes/follows encode the SIMPLE-
+// class chain), so this op needs neither `id` nor `body` — the
+// SAME shape identity-tokens/:id's own pair-only PUT rides (Phase
+// 13 Task 9). `pair` is optional so a below-facade caller with no
+// pair keeps compiling; ZERO seed tags means no such caller
+// exists today (Step 0), but the shape stays uniform with every
+// sibling op above.
+export async function postFlowTagDocumentOp(
+    db: DbAdapter,
+    pair?: MessagePair,
+): Promise<void> {
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+        },
+    );
+}
+
 // Objective baseline-score document write — extracted byte-for-
 // byte from the hand-written projects/:id/objective-baseline-
 // scores/:sid PUT handler (the postFlowRecordDocumentOp precedent
@@ -3255,6 +3283,24 @@ export const WRITE_RESPONSE_SPECS:
         successBody: (params, body) => ({
             id: param(params, 1),
             ...validateFlowRecordEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
+    // The ONE validation site for a tag PUT (Phase 14 Task 9):
+    // the tag NAME (param 1, the address's own uriId) through
+    // validateFlowTagName, the body through validateFlowTagEntity
+    // — both pure, run pre-tx while the pair is formed, so a
+    // malformed name or body throws BEFORE anything is stored
+    // (the ideas/:id/submissions/:sid precedent above). GET/DELETE
+    // never re-validate the name (route comment); `flow_id` is
+    // stamped from the address here, never a client body key.
+    'flows/:id/tags/:name': {
+        status: 200,
+        successBody: (params, body) => ({
+            id: validateFlowTagName(param(params, 1)),
+            flow_id: param(params, 0),
+            ...validateFlowTagEntity(
                 withoutId(body ?? {}),
             ),
         }),
@@ -5365,6 +5411,49 @@ export const routes: Route[] = [
                 },
             );
         },
+    }),
+    // Flow tags: the codebase's FIRST pair-plane-ONLY document
+    // family (Phase 14 Task 9, election #2's companion) — no
+    // backing table, no dual-write, derived entirely from message
+    // pairs. Bespoke route() wiring reusing deriveDocumentsAt/
+    // documentPairsAt exactly like the identities/:id/pii analog
+    // (gate 8), SIMPLE class (a repeat PUT records Supersedes —
+    // 'flows/:id/tags/:name' is registered in message-pair.ts's
+    // DOCUMENT_CLASS_ROUTE_PATTERNS below): the locked class flows
+    // itself rides is structurally MOOT here — api.ts's isLockedWrite
+    // exact-matches routePattern === family + '/:id' ('flows/:id'),
+    // and this pattern is 4 segments, so it never rides that arm
+    // no matter what family-registry.ts declares for 'flows'. The
+    // tag NAME (param 1) is the address's own uriId — the FIRST
+    // user-authored address segment in this codebase
+    // (validateFlowTagName, api/validators.ts), validated ONLY at
+    // the write gate below (WRITE_RESPONSE_SPECS), never re-checked
+    // on GET/DELETE — mirroring how every sibling family's :id
+    // param is unchecked on read (an address that never validly
+    // wrote can never be found either way). DELETE is MARKED, not
+    // physical: postFlowTagDocumentOp appends a DELETE pair at the
+    // SAME address, and deriveFlowTag's own deriveDocumentsAt call
+    // already excludes a DELETE head, exactly like every other
+    // document family. PUT and DELETE share ONE op
+    // (postFlowTagDocumentOp) since NEITHER needs `id` or `body` —
+    // the pair alone (formed by the gate from the matched route)
+    // carries the address and the method; a hand-written DELETE
+    // closure calling the SAME op keeps the PUT-only op's own name
+    // honest (it writes a tag document, never a tombstone) while
+    // avoiding a second, byte-identical transaction body.
+    // Member-tier — '/flows/:id/tags' carries GET/PUT/DELETE in
+    // MEMBER_VERBS (api/authorization.ts), mirroring
+    // '/flows/:id/records'.
+    route('flows/:id/tags/:name', {
+        get: (db, p, _actor, organization) =>
+            deriveFlowTag(
+                db, requireOrganization(organization),
+                param(p, 0), param(p, 1),
+            ),
+        put: (db, _p, _body, _actor, pair) =>
+            postFlowTagDocumentOp(db, pair),
+        delete: (db, _p, _actor, pair) =>
+            postFlowTagDocumentOp(db, pair),
     }),
 
     // Hand-written in place of makeIdRoute<OrganizationEntity>

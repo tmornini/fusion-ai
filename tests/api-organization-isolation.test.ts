@@ -698,6 +698,32 @@ for (const c of NESTED_FLOW_CASES) {
     }
 }
 
+// flows/:id/tags/:name (Phase 14 Task 9): PAIR-PLANE ONLY, so it
+// cannot join NESTED_FLOW_CASES above (no backing table for
+// `store` to probe). A DIRECT fence, not the facade re-entry:
+// fB belongs to org B (seeded via seedChain(db, 'B', 'B', 'pb')
+// in deepDb()), so a tag written there through 'pb's org-B token
+// lands at the '/organizations/B/flows/fB/tags/' address; a read
+// of the SAME path with 'current's org-A-scoped token resolves
+// an entirely different '/organizations/A/...' prefix — the
+// same structural fence every org-nested address rides, with no
+// tag-specific code of its own.
+test('nested flows/:id/tags 404s a foreign-org flow', async () => {
+    const db = await deepDb();
+    const tagged = await handleRequest(db, req(
+        'PUT', '/flows/fB/tags/v1',
+        await organizationToken('pb', 'B'),
+        { flow_response_id: 'r-b-1' },
+    ));
+    assert.equal(tagged.status, 200);
+
+    const res = await handleRequest(db, req(
+        'GET', '/flows/fB/tags/v1',
+        await organizationToken('current', 'A'),
+    ));
+    assert.equal(res.status, 404);
+});
+
 // The three project-subordinate resources nest under
 // projects/:id. The collection is fetched at projects/pA/<seg> —
 // the SERVER filters to the parent project — so the foreign
