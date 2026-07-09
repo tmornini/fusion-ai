@@ -237,6 +237,9 @@ export interface StateStore {
     // the latter is hidden — db-organization-scoped.ts's
     // stateFieldValues resolver). Retires alongside the
     // row-plane state_field_values plane at Phase Final.
+    // Phase 14 Task 7 adjudicated a pair-plane re-point of
+    // this same probe infeasible, for the same reason — see
+    // api/api.ts's Region B NAMED DEVIATION comment.
     rawHasRow(id: Id): Promise<boolean>;
 }
 
