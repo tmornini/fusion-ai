@@ -248,6 +248,97 @@ test(
     },
 );
 
+// Wire delta (4) — Phase 15 Task 3: a field value whose
+// state_event_id is not THIS transition's own
+// transitionEventId is rejected at the gate (400). The
+// shipped UI always sends the transaction's own id; only a
+// forged client observes this terminal.
+test(
+    'a field value with a dangling state_event_id is a 400',
+    async () => {
+        const db = await seededDb();
+        await db.recordAttributes.put('attr-1', {
+            organization_id: '1',
+            record_id: 'rec-1',
+            name: 'Severity',
+            attribute_type: 'text',
+            sort_order: 0,
+            options: '[]',
+            constraints: '[]',
+        });
+        await assert.rejects(
+            () => POST(
+                db, 'work-orders/wo1/transition', {
+                    transitionEventId: 'te1',
+                    targetState: 'n-next',
+                    fieldValues: [
+                        {
+                            id: 'fv-1',
+                            fields: {
+                                state_event_id: 'other-event',
+                                attribute_id: 'attr-1',
+                                value: 'high',
+                            },
+                        },
+                    ],
+                    release: null,
+                    transitionAt: nowUtc(),
+                },
+                DEV_TOKEN,
+            ),
+            (err: unknown) =>
+                err instanceof RequestError
+                && err.status === 400
+                && typeof err.message === 'string'
+                && err.message.includes(
+                    'state_event_id must equal'
+                    + ' transitionEventId',
+                ),
+        );
+        const events = await eventsFor(db);
+        assert.equal(events.length, 0);
+        const rows = await db.stateFieldValues.getAll();
+        assert.equal(rows.length, 0);
+    },
+);
+
+test(
+    'a field value with an absent state_event_id is a 400',
+    async () => {
+        const db = await seededDb();
+        await assert.rejects(
+            () => POST(
+                db, 'work-orders/wo1/transition', {
+                    transitionEventId: 'te1',
+                    targetState: 'n-next',
+                    fieldValues: [
+                        {
+                            id: 'fv-1',
+                            fields: {
+                                attribute_id: 'attr-1',
+                                value: 'high',
+                            },
+                        },
+                    ],
+                    release: null,
+                    transitionAt: nowUtc(),
+                },
+                DEV_TOKEN,
+            ),
+            (err: unknown) =>
+                err instanceof RequestError
+                && err.status === 400
+                && typeof err.message === 'string'
+                && err.message.includes(
+                    'state_event_id must equal'
+                    + ' transitionEventId',
+                ),
+        );
+        const events = await eventsFor(db);
+        assert.equal(events.length, 0);
+    },
+);
+
 test(
     'transitionAt is recorded as the transition event at',
     async () => {

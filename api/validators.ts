@@ -3684,10 +3684,12 @@ const TRANSITION_FIELD_VALUE_KEYS: readonly string[] = [
 // target node, the field rows, and whether a live claim must be
 // released — exactly as POST /work-orders keeps graph derivation
 // client-side. The field-value `fields` are NOT fully validated
-// here: the state_field_values store re-validates each row
-// through validateStateFieldValueEntity AFTER the transition
-// event id is woven in. Authorship of the transition event AND
-// the release event is stamped from the verified caller in the
+// here beyond the MANDATORY state_event_id === transitionEventId
+// pin (Phase 15 Task 3, wire delta (4)): the state_field_values
+// store re-validates each row through
+// validateStateFieldValueEntity AFTER the transition event id
+// is woven in. Authorship of the transition event AND the
+// release event is stamped from the verified caller in the
 // route, never the body — matching the old commit batch, where
 // both events flowed through PUT /states/:id and were stamped
 // with the actor.
@@ -3731,12 +3733,31 @@ export function validateWorkOrderTransitionBody(
                 label + '.id must be non-empty',
             );
         }
-        return {
-            id,
-            fields: asObject(
-                row['fields'], label + '.fields',
-            ),
-        };
+        const fields = asObject(
+            row['fields'], label + '.fields',
+        );
+        // Wire delta (4) — MANDATORY (Phase 15 Task 3): a
+        // transition-fold field value may only name THIS
+        // transaction's own transitionEventId. Dangling,
+        // foreign, or absent state_event_id values are
+        // unmintable prospectively (historical orphans still
+        // render via tier semantics on the read path). Shipped
+        // UI always sends the transaction's own id; only a
+        // forged client observes this 400. Soft-read so
+        // absent folds into the same message as a mismatch
+        // rather than pickString's type-error voice.
+        const rawStateEventId = fields['state_event_id'];
+        const stateEventId =
+            typeof rawStateEventId === 'string'
+                ? rawStateEventId
+                : '';
+        if (stateEventId !== transitionEventId) {
+            throw new ValidationError(
+                label + '.fields.state_event_id must equal'
+                + ' transitionEventId',
+            );
+        }
+        return { id, fields };
     });
     const rawRelease = body['release'];
     let release: WorkOrderTransitionRelease | null = null;
