@@ -15,10 +15,6 @@ import {
 } from
 '../web-app/app/adapters/flow-mutations.ts';
 import {
-    postFlowVersion,
-} from
-'../web-app/app/adapters/flow-versions.ts';
-import {
     postWorkOrderCreation,
 } from
 '../web-app/app/adapters/work-orders-mutations.ts';
@@ -211,46 +207,11 @@ test(
     },
 );
 
-// ── 2. FREEZE auto-derives: published version captures ────
-//    the reassembled graph, not the blob.
+// postFlowVersion freeze RETIRED (Phase 15 Task 7) with the
+// versions routes/adapters. Work-order freeze below still
+// proves reassembly from relations.
 
-test(
-    'postFlowVersion freeze captures the'
-    + ' reassembled graph from relations',
-    async () => {
-        const { db, ctx } = await setupMemDb();
-        const flowId = 'flow-freeze-rt';
-        const intended = buildNonTrivialGraph();
-        await seedFlowWithGraph(ctx, flowId, intended);
-
-        // Freeze captures the relation-derived graph via
-        // GET /flows/:id — there is no stored blob to read.
-        await postFlowVersion(ctx, 'ver-freeze', flowId);
-
-        const versionRows =
-            await db.flowVersions.getAll();
-        assert.equal(versionRows.length, 1);
-        const frozenGraph = asStoredGraph(
-            JSON.parse(versionRows[0]!.graph),
-            'flow_versions.graph',
-        );
-        const fromRelations =
-            await reassembleFromDb(db, flowId);
-
-        assert.deepEqual(
-            norm(frozenGraph),
-            norm(fromRelations),
-            'frozen version graph equals relations',
-        );
-        assert.deepEqual(
-            norm(frozenGraph),
-            norm(intended),
-            'frozen version graph equals intended',
-        );
-    },
-);
-
-// 3. WORK ORDER auto-derives: creation captures the
+// WORK ORDER auto-derives: creation captures the
 //    reassembled graph from relations.
 
 test(

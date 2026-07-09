@@ -490,9 +490,9 @@ test('the two-flows project orders both join rows'
 
 // -- 6. live-write chain, re-compared at each step -------------
 
-test('live-write chain: create, save, versioned save, node '
-+ 'delete, undo, redo, and a terminal delete — re-compared on '
-+ 'both planes at every step', async () => {
+test('live-write chain: create, save, node delete, undo, '
++ 'redo, and a terminal delete — re-compared on both planes '
++ 'at every step', async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const flowId = 'flow-drift-chain';
@@ -559,26 +559,8 @@ test('live-write chain: create, save, versioned save, node '
     old = await oldPlaneFlow(db, STARK_ORGANIZATION, flowId);
     assertFlowsEqual(derived, old);
 
-    // Versioned save: publish a snapshot of the current graph,
-    // then a further save (no structural change yet).
+    // Further save (versions POST retired Phase 15 Task 7).
     const versionAt = '2026-03-03T00:00:00.000000Z';
-    const published = await handleRequest(db, req(
-        'POST', '/flows/' + flowId + '/versions', token, {
-            id: flowId + '-v1',
-            version: {
-                flow_id: flowId,
-                name: 'Chain Flow Saved',
-                is_locked: false,
-                is_auto_layout: false,
-                is_auto_fit: false,
-                lock_timeout: DEFAULT_LOCK_TIMEOUT,
-                graph: fullGraph,
-                at: versionAt,
-            },
-            trimIds: [],
-        },
-    ));
-    assert.equal(published.status, 204);
     const versionedSave = await handleRequest(db, req(
         'PUT', '/flows/' + flowId, token,
         documentBody(
@@ -665,26 +647,8 @@ test('live-write chain: create, save, versioned save, node '
         'the revived node must be visible on the old plane too',
     );
 
-    // Redo-as-save: publish a fresh snapshot, then re-apply the
-    // node deletion (redoing what undo reverted).
-    const redoVersionAt = '2026-03-06T00:00:00.000000Z';
-    const redoPublished = await handleRequest(db, req(
-        'POST', '/flows/' + flowId + '/versions', token, {
-            id: flowId + '-v2',
-            version: {
-                flow_id: flowId,
-                name: 'Chain Flow Versioned',
-                is_locked: false,
-                is_auto_layout: false,
-                is_auto_fit: false,
-                lock_timeout: DEFAULT_LOCK_TIMEOUT,
-                graph: fullGraph,
-                at: redoVersionAt,
-            },
-            trimIds: [],
-        },
-    ));
-    assert.equal(redoPublished.status, 204);
+    // Redo-as-save: re-apply the node deletion (versions POST
+    // retired Phase 15 Task 7 — document PUT only).
     const redoAt = '2026-03-06T00:00:01.000000Z';
     const redone = await handleRequest(db, req(
         'PUT', '/flows/' + flowId, token,

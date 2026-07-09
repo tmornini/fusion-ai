@@ -713,9 +713,8 @@ interface NestedFlowCase {
     hasGetById?: boolean;
 }
 
+// versions row RETIRED (Phase 15 Task 7) with the routes.
 const NESTED_FLOW_CASES: NestedFlowCase[] = [
-    { seg: 'versions', hasGetById: true,
-        store: d => d.flowVersions, a: 'fvA', b: 'fvB' },
     { seg: 'records', hasGetById: true,
         store: d => d.flowRecords, a: 'frA', b: 'frB' },
     { seg: 'work-orders',

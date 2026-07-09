@@ -436,23 +436,8 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await createFlow(db, token, 'flow-undo-old-shape');
-    const published = await handleRequest(db, req(
-        'POST', '/flows/flow-undo-old-shape/versions', token, {
-            id: 'v-undo-old-shape',
-            version: {
-                flow_id: 'flow-undo-old-shape',
-                name: 'v1',
-                is_locked: false,
-                is_auto_layout: false,
-                is_auto_fit: false,
-                lock_timeout: DEFAULT_LOCK_TIMEOUT,
-                graph: emptyGraph(),
-                at: AT,
-            },
-            trimIds: [],
-        },
-    ));
-    assert.equal(published.status, 204);
+    // versions setup RETIRED (Phase 15 Task 7); undo no longer
+    // consumes a flow_versions row.
 
     const requestsBefore = await db.requests.getAll();
     const responsesBefore = await db.responses.getAll();
@@ -465,7 +450,6 @@ async () => {
             flow: flowFields('Old Shape Undo'),
             eventId: 'flow-undo-old-shape-undo-ev',
             at: AT,
-            consumedVersionId: 'v-undo-old-shape',
             graphDelta: emptyDelta(),
             revivals: [],
             // `graph` deliberately omitted — the old shape.

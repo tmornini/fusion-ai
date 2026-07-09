@@ -17,7 +17,6 @@ import type {
     Id,
     AIMemberEntity,
     FlowEntity,
-    FlowVersionEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
     HumanMemberEntity,
@@ -55,8 +54,6 @@ import {
     validateMemberDocumentBody,
     validateFlowCreateBody,
     validateFlowDocumentBody,
-    validateFlowVersionEntity,
-    validateFlowVersionPublishBody,
     validateFlowWorkOrderEntity,
     validateFlowUndoBody,
     validateIdeaConversionBody,
@@ -3265,16 +3262,8 @@ export const WRITE_RESPONSE_SPECS:
     // successBody.
     'flows/:id': documentWriteResponseSpec(FLOWS_WIRING),
     'flows/:id/undo': { status: 204 },
-    'flows/:id/versions': { status: 204 },
-    'flows/:id/versions/:vid': {
-        status: 200,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateFlowVersionEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
-    },
+    // flows/:id/versions[+/:vid] WRITE_RESPONSE_SPECS RETIRED
+    // (Phase 15 Task 7): ZERO seed pairs at those addresses.
     'work-orders': { status: 204 },
     'work-orders/:id':
         documentWriteResponseSpec(WORK_ORDERS_WIRING),
@@ -4862,98 +4851,10 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Flow versions nest under their parent flow: the flow id is
-    // param 0, so the SERVER filters the collection to that flow
-    // (the org fence still rides the facade re-entry). The leaf
-    // id is param 1. Reads stay TABLE-BACKED BY DESIGN, not
-    // deferral: flow_versions is a mutable working set with
-    // sanctioned physical deletes (version-cap trims store no
-    // tombstone pairs), so the append-only ledger cannot serve
-    // it. It stays until the undo-as-replay election — whose
-    // trigger is the Phase 4 retrospective, an author decision,
-    // never this code's.
-    route('flows/:id/versions', {
-        get: (db, p) =>
-            db.flowVersions.getAllWhere('flow_id', param(p, 0)),
-        // Publish a flow version: the new snapshot row is put and
-        // the named over-cap versions are deleted as ONE
-        // transaction — a mid-write failure rolls the whole thing
-        // back rather than landing the snapshot with the trim
-        // half-applied (or vice versa). The web-app computes WHICH
-        // versions to trim (its own cap-retention derivation), so
-        // the route writes the put + the named deletes exactly.
-        // flow_versions is parent-scoped — its org derives from the
-        // flow at read time and writes delegate — and re-validates
-        // the snapshot through validateFlowVersionEntity as the put
-        // lands. NO state event is written, so the handler needs no
-        // actor. The body already carries flow_id; the flow id is
-        // param 0. Member-tier POST — /flows/:id/versions carries
-        // POST in MEMBER_VERBS.
-        post: (db, _p, body, _actor, pair) => {
-            const b = validateFlowVersionPublishBody(body);
-            return db.transaction(
-                ['flow_versions', 'requests', 'responses'],
-                async (view) => {
-                    await view.flowVersions.put(
-                        b.id,
-                        b.version as unknown as
-                            Omit<FlowVersionEntity, 'id'>,
-                    );
-                    for (const t of b.trimIds) {
-                        await view.flowVersions.delete(t);
-                    }
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                },
-            );
-        },
-    }),
-    // PUT/DELETE each append their message pair in the same
-    // transaction as the write (message-pair.ts). DOCUMENT-
-    // class: a version row is a plain, revisitable row — a
-    // repeat PUT records Supersedes and a DELETE tombstones it,
-    // exactly like flow_work_orders/state_field_values above.
-    // The cap-trim machinery (flows.ts's save/undo/redo/publish
-    // ops) calls `flowVersions.delete` directly, inside ITS OWN
-    // transaction, for versions past the retention cap — that
-    // physical splice is untouched and stores no pair; only a
-    // request through THIS route (a client-addressed DELETE of
-    // one named version) appends one. The leaf nests under its
-    // parent flow (param 0); `vid` is param 1.
-    route('flows/:id/versions/:vid', {
-        get: (db, p) => db.flowVersions.getById(param(p, 1)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 1);
-            return db.transaction(
-                ['flow_versions', 'requests', 'responses'],
-                async (view) => {
-                    const written = await view.flowVersions
-                        .put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<FlowVersionEntity, 'id'>,
-                        );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return written;
-                },
-            );
-        },
-        delete: (db, p, _actor, pair) => {
-            const id = param(p, 1);
-            return db.transaction(
-                ['flow_versions', 'requests', 'responses'],
-                async (view) => {
-                    await view.flowVersions.delete(id);
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                },
-            );
-        },
-    }),
+    // flows/:id/versions[+/:vid] RETIRED (Phase 15 Task 7):
+    // zero live product callers; FlowVersion TYPE lives in
+    // flow-history.ts; flow_versions TABLE stays (storage
+    // DELETE NOTHING). ZERO seed pairs — specs deleted fully.
     // Project↔flow joins nest under their parent project: the
     // project id is param 0, so the SERVER filters the collection
     // to that project (the org fence still rides the facade
