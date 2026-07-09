@@ -22,9 +22,6 @@ import {
 } from
 '../web-app/app/adapters/flow-mutations.ts';
 import {
-    type FlowVersion,
-} from '../web-app/app/adapters/index.ts';
-import {
     buildInitialFlowSnapshot,
     type FlowSnapshot,
 } from
@@ -32,6 +29,7 @@ import {
 import {
     buildFlowHistorySnapshot,
     appendToRedoStack,
+    type FlowVersion,
 } from '../web-app/app/flow-history.ts';
 import {
     NODE_WIDTH, NODE_HEIGHT,

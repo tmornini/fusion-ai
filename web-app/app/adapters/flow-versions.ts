@@ -1,8 +1,6 @@
 import type {
     FlowWithGraph,
     FlowVersionEntity,
-    GraphNode,
-    GraphEdge,
 } from '../../../api/types.ts';
 import {
     nowUtc,
@@ -17,19 +15,11 @@ import {
 import type {
     RequestContext,
 } from './shared.ts';
-
-export interface FlowVersion {
-    id: string;
-    flowId: string;
-    name: string;
-    isLocked: boolean;
-    isAutoLayout: boolean;
-    isAutoFit: boolean;
-    lockTimeout: number;
-    nodes: GraphNode[];
-    edges: GraphEdge[];
-    createdAt: string;
-}
+// Type home is flow-history (Phase 15 Task 7 relocate);
+// re-export so existing adapter importers keep working until
+// the versions routes/adapters retire in the next commit.
+export type { FlowVersion } from '../flow-history.ts';
+import type { FlowVersion } from '../flow-history.ts';
 
 export const FLOW_VERSION_CAP = 10;
 
