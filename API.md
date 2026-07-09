@@ -162,10 +162,16 @@ Legend for classification:
 
 ### 2.3 Auth spine — tokens, providers, grants
 
-- `GET /identity-tokens` · `GET|PUT /identity-tokens/:id` — primitive.
+- `GET /identity-tokens` (derived) · `GET /identity-tokens/:id`
+  (derived) · `PUT /identity-tokens/:id` — primitive. `PUT` is
+  pair-only (Phase 13 Task 9 retired the row write — nothing
+  has read `identity_tokens` rows since Task 6).
 - `POST /identity-tokens/:jti/rotation` — operation (§3.6).
 - `POST /identity-tokens/:jti/revocation` — operation (§3.7).
-- `GET|PUT /identity-token-revocations/:id` — primitive.
+- `GET|PUT /identity-token-revocations/:id` — primitive. `GET`
+  admin-only; `PUT` is self-or-admin (WP8, Phase 13 Task 8) — a
+  member may revoke its OWN token chain, naming another
+  identity still requires admin.
 - `GET /identity-providers` · `GET|PUT /identity-providers/:id` —
   primitive.
 - `GET /role-grants` · `GET|PUT /role-grants/:id` — primitive.
@@ -342,9 +348,11 @@ this task closes.
 
 - `GET /organizations` — the caller's reachable orgs (identity-scoped;
   runs above the admin gate so a roleless member can boot). The row
-  list is now the pair-plane derivation (Phase 12 Task 5):
-  `deriveOrganizations` (`api/derive-organizations.ts`, §5.18) — the
-  membership filter itself stays old-plane.
+  list is the pair-plane derivation (Phase 12 Task 5):
+  `deriveOrganizations` (`api/derive-organizations.ts`, §5.18); the
+  membership filter is ALSO derived now (Phase 13 Task 3):
+  `callerOrganizationIds` (`api/request-auth.ts`) reads
+  `deriveMembershipsForIdentity`, never `memberships.getAllWhere`.
 - `GET|PUT /organizations/:id` — primitive (global passthrough; reads
   fence to the caller's memberships). `GET` is FLIPPED too (Phase 12
   Task 5): a bespoke `deriveOrganization` call in the route closure
@@ -716,85 +724,101 @@ PII, so it stays one atomic write).
 
 ### 3.6 `POST /identity-tokens/:jti/rotation` — rotate refresh jti
 
-Delegates to `rotateRefreshJti` (`api/authentication.ts:276`).
+Delegates to `rotateRefreshJti` (`api/authentication.ts:480`).
 
-- tx: `[identity_tokens, requests, responses]`
-- actual:
-  1. `identityTokens.getAllWhere('jti', presented)`
-  2. `chainIdForJti(...)`
-  3. `identityTokens.getAllWhere('chain_id', chainId)`
-  4. `planRotation(...)` (pure)
-  5. rotate → `appendEvents` (successor jti) →
-     `appendMessagePair(pair)`; replay/reuse → `appendEvents` (revoke
-     the whole chain), no pair append.
+- tx: `[requests, responses]`
+- actual: PRE-TX — `deriveIdentityTokenEventsForJti(presented)`
+  → `chainIdForJti(...)` → `deriveIdentityTokens` filtered to
+  the chain → `planRotation(...)` (pure) → `formTokenEventWrites`
+  (one `formTokenEventPair` per planned append). IN-TX
+  VERIFY-OR-RETRY (Phase 13 Task 5, gate 7): re-derive the SAME
+  chain, re-`planRotation`, compare the fresh jti set against
+  the pre-formed writes' — diverged → abort and retry (3
+  attempts); equal → `appendMessagePair` each pre-formed write,
+  then, rotate only, `appendMessagePair(pair)`.
 - doctrinal: read the token ledger + `post_token_event`(s) as
   `post_rotate_refresh_token`.
-- props: atomic; TOCTOU-safe (read + plan + append in one tx, so two
+- props: atomic; TOCTOU-safe (verify-or-retry inside the tx, so two
   concurrent rotations cannot both rotate); live jti → `{jti}`,
   reuse/unknown → 409; replay-exempt (§5.1) — a byte-identical resend
-  re-enters this function rather than replaying a cached response.
+  re-enters this function rather than replaying a cached response;
+  PAIR-ONLY (Phase 13 Task 9 retired the `identity_tokens` row
+  write — every event lives only as its own message pair).
 
 ### 3.7 `POST /identity-tokens/:jti/revocation` — revoke chain
 
-Delegates to `revokeTokenChain` (`api/authentication.ts:320`).
+Delegates to `revokeTokenChain` (`api/authentication.ts:576`).
 
-- tx: `[identity_tokens, requests, responses]`
-- actual: `getAllWhere('jti')` → `chainIdForJti` / `identityForJti` →
-  `getAllWhere('chain_id')` → `appendEvents(revocationAppends(...))`
-  (a `revoked` event per jti in the chain) →
-  `appendMessagePair(pair)` (both the known-chain and unknown-jti
-  no-op exits append their pair).
+- tx: `[requests, responses]`
+- actual: PRE-TX — `deriveIdentityTokenEventsForJti(jti)` →
+  `chainIdForJti` / `identityForJti` → `deriveIdentityTokens`
+  filtered to the chain → `revocationAppends(...)` (pure) →
+  `formTokenEventWrites`. IN-TX VERIFY-OR-RETRY (Phase 13 Task
+  5, gate 7): re-derive, re-plan, compare jti sets — diverged →
+  abort and retry (3 attempts); equal → `appendMessagePair` each
+  pre-formed write, then `appendMessagePair(pair)` (both the
+  known-chain and unknown-jti no-op exits append their pair).
 - doctrinal: read chain + `post_token_event`(s) as
   `post_revoke_token_chain` (log out one session).
 - props: atomic; idempotent no-op for an unknown jti — the pair still
-  appends, that request's only write.
+  appends, that request's only write; PAIR-ONLY (Phase 13 Task 9
+  retired the `identity_tokens` row write); retry exhaustion throws
+  `TokenWriteRetriesExhaustedError` rather than a silent, incomplete
+  revoke.
 
 ### 3.8 `POST /authentication/token` — grant dispatch
 
-`postToken` (`api/authentication.ts:598`) dispatches on `grant_type`.
-Every grant is **grant-first**: it authenticates the presented grant
-before any side effect, so a failed grant appends nothing and mints
-nothing. `mintPair` is pure crypto (no DB). Every SUCCESSFUL grant
-also forms its own message pair pre-tx (`formAuthPair`, from the
-`AuthPairSeed` the dedicated arm seeds in `api/api.ts`) and appends
-it as the tx's LAST row op — see §5.1 for the headers this produces
-and §5.2 for the redaction the stored pair carries.
+`postToken` (`api/authentication.ts:1022`) dispatches on
+`grant_type`. Every grant is **grant-first**: it authenticates
+the presented grant before any side effect, so a failed grant
+appends nothing and mints nothing. `mintPair` is pure crypto (no
+DB). Every SUCCESSFUL grant also forms its own message pair
+pre-tx (`formAuthPair`, from the `AuthPairSeed` the dedicated
+arm seeds in `api/api.ts`) and appends it as the tx's LAST row
+op — see §5.1 for the headers this produces and §5.2 for the
+redaction the stored pair carries.
 
 - **`authorization_code`** → `grantAuthorizationCode`:
-  - tx `[authorization_codes, identity_tokens, requests, responses]`:
-    `authorizationCodes.getAllWhere('code')` → `codeState` (must be
-    `issued`) → `authorizationCodes.put(consumed)` →
-    `recordIssuedRoot` (`identityTokens.put(issued)`) →
-    `appendMessagePair(pair)`.
-  - then (outside tx): `nameFor` (`identityPii.getById`) →
-    `subjectOrgs` (`memberships.getAllWhere`) → `mintPair` →
-    `formAuthPair`.
-  - props: the consume + chain-root issue + pair append are atomic
-    (no double-spend on replay); a used/unknown code → 401, appending
-    nothing.
+  - PRE-TX: `deriveAuthorizationCodeId` (`sha256Hex(code)`) →
+    `authorizeCodeIssuer` (scans the
+    `/authentication/authorize/` response family for the
+    fingerprint match) → `authorizationCodeSpent` fast-fail
+    (`requests.getAllWhere('uri_id', derivedId)` filtered to the
+    `identity-tokens/` prefix — a hit IS the spend marker,
+    KEY-BY-ANCHOR: the issued root's row id equals the code's
+    own digest) → `mintPair` → `formAuthPair` →
+    `formTokenEventPair` (the root's own event).
+  - tx `[requests, responses]`: re-run `authorizationCodeSpent`
+    on the open view — a race loser aborts, appending nothing
+    further — then `appendMessagePair` the root's event pair,
+    then the auth pair.
+  - props: the spend re-check + chain-root issue + pair append
+    are atomic (no double-spend on replay); a used/unknown code
+    → 401, appending nothing.
 - **`refresh`** → `grantRefresh`:
   - `verifyAccessToken` (crypto) → `tokenRevocationReason`
-    (`identityTokenRevocations.getAllWhere` +
-    `identityTokens.getAllWhere`) → `nameFor` → `subjectOrgs` →
-    `mintPair` → `formAuthPair` → `rotateRefreshJti` (the §3.6 tx,
-    passed the pre-formed pair; it appends the pair ONLY on the
-    'rotate' branch).
+    (`deriveTokenRevocationsFor` +
+    `deriveIdentityTokenEventsForJti`) → `nameFor` →
+    `subjectOrganizations` → `mintPair` → `formAuthPair` →
+    `rotateRefreshJti` (the §3.6 tx, passed the pre-formed pair;
+    it appends the pair ONLY on the 'rotate' branch).
   - props: rotation + pair append are atomic; reuse revokes the
     chain then 401, discarding the pre-formed pair unstored;
-    replay-exempt (§5.1) so a resent reuse genuinely re-fails rather
-    than replaying a cached 200.
+    replay-exempt (§5.1) so a resent reuse genuinely re-fails
+    rather than replaying a cached 200.
 - **`token-exchange`** → `grantTokenExchange` (RFC 8693,
   self-delegation only):
   - `verifyAccessToken`×2 → `tokenRevocationReason`×2 → assert
-    subject == actor → optional `subjectOrgs` membership check →
-    `nameFor` → `issueTokenPair`.
+    subject == actor → optional `subjectOrganizations`
+    membership check → `nameFor` → `issueTokenPair`.
   - `issueTokenPair` = `mintPair` + `formAuthPair` (both pre-tx),
-    then tx `[identity_tokens, requests, responses]`:
-    `recordIssuedRoot` (a single put) → `appendMessagePair(pair)`.
-  - props: the issue + pair append ride ONE minimal transaction — a
-    mid-write fault can never leave an issued chain root with no
-    matching ledger pair. Cross-party exchange → 403, appending
-    nothing.
+    plus the root's own `formTokenEventPair` (also pre-tx), then
+    tx `[requests, responses]`: `appendMessagePair` the root's
+    event pair, then the auth pair (when seeded).
+  - props: the issue + pair append ride ONE minimal transaction
+    — a mid-write fault can never leave an issued chain root
+    with no matching ledger pair. Cross-party exchange → 403,
+    appending nothing.
 - **`client_credentials`** → `grantClientCredentials`
   (private_key_jwt):
   - `clients.getById` → status/grant-type checks →
@@ -805,21 +829,26 @@ and §5.2 for the redaction the stored pair carries.
 
 ### 3.9 `POST /authentication/authorize` — interactive front door
 
-`postAuthorize` (`api/authentication.ts:736`) dispatches on `method`.
+`postAuthorize` (`api/authentication.ts:1183`) dispatches on
+`method`.
 
 - **`password`** → `authorizePassword`:
-  - `identityPii.getAllWhere('email')` → `identityByEmail` →
-    `identityCredentials.getAllWhere('identity_id')` →
-    `currentPasswordSecret` → `verifyPassword` (PBKDF2) → on success
-    `formAuthPair` (pre-tx) → tx `[authorization_codes, requests,
-    responses]`: `authorizationCodes.put(issued)` →
+  - `deriveIdentityPiiRows` (full-ledger scan) →
+    `identityByEmail` → `deriveCredentialsFor` (identity-keyed)
+    → `currentPasswordSecret` → `verifyPassword` (PBKDF2) → on
+    success `formAuthPair` (pre-tx) → tx `[requests, responses]`:
     `appendMessagePair(pair)`.
   - doctrinal: verify credentials, then `post_authorization_code`.
   - props: every failure returns the **same** 401 and appends nothing
     (no user enumeration); unknown-user / missing-secret paths run
     `equalizeFailureTiming` to close the timing channel; the STORED
     pair carries the PBKDF2-fingerprinted password and the
-    sha256-fingerprinted code (§5.2), never the live values.
+    sha256-fingerprinted code (§5.2), never the live values;
+    PAIR-ONLY (Phase 13 Task 9 retired the `authorization_codes`
+    row write — the issued code lives only as its own message
+    pair; `authorizationCodeSpent` in the `authorization_code`
+    grant arm above replaces the retired `codeState`-driven
+    re-read as the spend check).
 - **`passkey` / `provider` / `oidc`** → 501 seam; no pair is formed
   (only the successful password branch calls `formAuthPair`).
 - default → 400, appending nothing.
@@ -3143,7 +3172,9 @@ removed:**
 - `enumerateMyOrganizations` (`api/organization-requests.ts`) —
   row source only: `deriveOrganizations` replaces
   `ctx.base.organizations.getAll()`. The `callerOrganizationIds`
-  membership filter STAYS old-plane — Phase 13's own scope.
+  membership filter stayed old-plane through this task — Phase
+  13 Task 3 has since flipped it onto
+  `deriveMembershipsForIdentity` too (§2.11).
 - `GET /organizations/:id` (`api/routes.ts`) — a BESPOKE
   `deriveOrganization` call in the route closure, not the
   generic `documentGetHandler(wiring)` every other flipped
@@ -3170,9 +3201,13 @@ removed:**
   PRE-`matchRoute` in `api/api.ts` (the `pathSegments.length ===
   1 && GET` guard, §1.1) — the route-table row never dispatched.
 
-**What stayed old-plane.** The `organizations` row store is
-fully intact — every write above is STILL Path A, dual-writing
-the row beside its pair. `PUT /organizations/:id` is untouched,
-hand-written. `callerOrganizationIds`'s membership filter and
-`derive-states.ts`'s ALL-orgs shape are both UNCHANGED — this
+**What stayed old-plane (at Task 5's own close).** The
+`organizations` row store is fully intact — every write above
+is STILL Path A, dual-writing the row beside its pair. `PUT
+/organizations/:id` is untouched, hand-written.
+`callerOrganizationIds`'s membership filter and
+`derive-states.ts`'s ALL-orgs shape were both UNCHANGED — this
 task flips the row SOURCE only, never a fence or a filter.
+`callerOrganizationIds`'s OWN row source flips later, at Phase
+13 Task 3 (§2.11) — its membership FILTER (caller-only, never
+ALL-orgs) stays exactly as this task left it.
