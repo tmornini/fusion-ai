@@ -1279,6 +1279,89 @@ export async function deriveInvitationStates(
     );
 }
 
+// ENTITY-SCOPED sibling of deriveInvitationStates above (Phase
+// 14 Task 1): the SAME grant + op-address reduction, restricted
+// to ONE known invitation id via INDEXED reads — uri_id for the
+// grant/document pair (both share ONE uriId: the operation
+// pair's own createdEntityUriId resolution and the document
+// PUT's own path segment, api/invitations-domain.ts's
+// grantInvitation) and uri_prefix for each of the three op
+// addresses — rather than the whole-collection scan
+// (documentIds discovery) and the whole-ledger requests.getAll()
+// (op-prefix discovery) the multi-invitation reader above needs
+// to find EVERY id at once. dbOrView-shaped and opens no nested
+// transaction — callable from WITHIN an already-open write-gate
+// transaction (currentInvitationState's own accept/decline/
+// revoke in-tx reads, api/invitations-domain.ts — a LATER task
+// wires the call site; this task lands the core alone).
+//
+// THE PHANTOM-ECHO EXCLUSION carries over unchanged (deriveInvit-
+// ationStates' own header): the documentIds cross-reference,
+// applied here to the id-scoped read alone, still excludes a
+// duplicate grant's own operation pair when no document was ever
+// written at this id.
+export async function invitationLifecycleStatesFor(
+    dbOrView: DbAdapter,
+    id: Id,
+): Promise<StateEntity[]> {
+    const rows: StateEntity[] = [];
+
+    const [byIdRequests, byIdResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere('uri_id', id),
+        dbOrView.responses.getAllWhere('uri_id', id),
+    ]);
+    const collectionRequests = byIdRequests.filter(
+        (r) => r.uri_prefix === INVITATIONS_PREFIX,
+    );
+    const collectionResponses = byIdResponses.filter(
+        (r) => r.uri_prefix === INVITATIONS_PREFIX,
+    );
+    const hasDocument = documentPairsAt(
+        collectionRequests, collectionResponses,
+        INVITATIONS_PREFIX,
+    ).some((pair) => pair.uriId === id);
+    if (hasDocument) {
+        for (const pair of operationPairsAt(
+            collectionRequests, collectionResponses,
+            INVITATIONS_PREFIX,
+        )) {
+            rows.push({
+                id: pickString(pair.body, 'grantEventId'),
+                entity_id: pair.uriId,
+                state: 'pending',
+                member_id: pair.requesterIdentityId,
+                at: pickString(pair.body, 'grantAt'),
+            });
+        }
+    }
+
+    for (const op of [
+        'acceptance', 'decline', 'revocation',
+    ] as const) {
+        const prefix = canonicalUriPrefix(
+            undefined, '/invitations/' + id + '/' + op + '/',
+        );
+        const [opRequests, opResponses] = await Promise.all([
+            dbOrView.requests.getAllWhere('uri_prefix', prefix),
+            dbOrView.responses.getAllWhere('uri_prefix', prefix),
+        ]);
+        const fields = INVITATION_OP_FIELDS[op]!;
+        const earliest = operationPairsAt(
+            opRequests, opResponses, prefix,
+        )[0];
+        if (earliest === undefined) continue;
+        rows.push({
+            id: pickString(earliest.body, fields.eventIdField),
+            entity_id: id,
+            state: fields.state,
+            member_id: earliest.requesterIdentityId,
+            at: pickString(earliest.body, fields.atField),
+        });
+    }
+
+    return rows.sort(byIdAscending);
+}
+
 // ---- deriveTrioFamilyStates — the trio families' state history --
 // ---- wiring (gate 5b) --------------------------------------------
 
