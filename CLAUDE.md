@@ -249,8 +249,9 @@ in-browser): REST routing, DB adapter interface, mock data,
 validators, plus the auth/authz/tenancy spine:
 `authentication.ts` (OAuth grants), `access-token.ts` (JWT
 mint/verify), `authorization.ts` (per-org roles),
-`db-org-scoped.ts` / `store-org-scoped.ts` (the org fence),
-and the identity/organizations/memberships stores.
+`db-organization-scoped.ts` / `store-organization-scoped.ts`
+(the org fence), and the identity/organizations/memberships
+stores.
 `shared/` — code that crosses the client/server chasm, imported
 by both `api/` and `web-app/`: the HTTP wire schema
 (`http-message/`, with its own `types.ts`) plus pure cross-chasm

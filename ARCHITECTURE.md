@@ -266,9 +266,9 @@ scoped to `:org` (RFC 8693 self-delegation, membership-
 fenced — a non-member exchange is a 403 minting nothing),
 then re-enters the flat gate with the scoped token so the
 existing handler is org-fenced automatically. `GET
-/organizations` (`enumerateMyOrgs`) returns the caller's
-reachable orgs, derived fresh from the membership ledger
-(never the possibly-stale token claim).
+/organizations` (`enumerateMyOrganizations`) returns the
+caller's reachable orgs, derived fresh from the membership
+ledger (never the possibly-stale token claim).
 
 ### Boot + org-switcher
 
