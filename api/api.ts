@@ -46,6 +46,7 @@ import {
     rawOrganizationOwnedProbes,
     graphEntityProbe,
 } from './store-parent-scoped.ts';
+import { resolveOwningOrganization } from './derive-states.ts';
 import {
     exchangeBearerForOrganization,
     postToken,
@@ -331,10 +332,11 @@ export async function handleRequest(
         // Region A of the pre-dispatch ownership fence (Phase 12
         // Task 1): every read below — fenceRequest's own
         // memberships/roleGrants/requests/responses reads, and
-        // the entity-states guard's rawReadRow probes — is
-        // storage-corruption territory should it throw. Redact
-        // through the shared helper rather than letting the
-        // fault reach the wire; MissingTableError still escapes.
+        // the entity-states guard's pair-plane ownership
+        // resolve — is storage-corruption territory should it
+        // throw. Redact through the shared helper rather than
+        // letting the fault reach the wire; MissingTableError
+        // still escapes.
         try {
             const fence = await fenceRequest(authed);
             if (!fence.ok) {
@@ -378,17 +380,18 @@ export async function handleRequest(
                 && (routePattern === 'entity-states/:id'
                     || routePattern
                         === 'entity-states/:id/history')) {
-                // The owner resolves through the memberships
-                // identity_id index, never a whole-ledger scan.
-                // The graphProbe closes the flow_nodes /
-                // flow_edges two-hop for node/edge deletion
-                // events. rawReadRow bypasses EntityStore's
-                // deleted filter.
-                const owner = await ownerOrganizationOfEntity(
-                    rawOrganizationOwnedProbes(adapter),
-                    adapter.memberships, fenced.organization,
+                // PAIR-PLANE (Phase 15 Task 5): ownership
+                // resolves through resolveOwningOrganization
+                // (org-nested documents, invitations, flow-
+                // graph history, memberships, organizations
+                // self-as-owner) — never the raw entity-table
+                // probes. Soft-deleted and hard-spliced parents
+                // still report their true owner via the
+                // append-only pair plane.
+                const owner = await resolveOwningOrganization(
+                    adapter,
                     param(params, 0),
-                    graphEntityProbe(adapter, adapter.flows),
+                    fenced.organization,
                 );
                 if (owner !== null
                     && owner !== fenced.organization) {

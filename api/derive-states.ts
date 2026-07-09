@@ -2121,7 +2121,7 @@ export async function deriveStates(
 // PRECONDITION: callers must already have established
 // entityId's visibility to `organization` before calling — the
 // route's own gate (api/api.ts's entity-states/:id[/history]
-// guard, ownerOrganizationOfEntity) IS the fence. A caller that
+// guard, resolveOwningOrganization) IS the fence. A caller that
 // trusts an unverified (organization, entityId) pairing reads
 // another organization's rows.
 export async function deriveStatesFor(
