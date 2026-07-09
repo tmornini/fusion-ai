@@ -371,15 +371,15 @@ export async function handleRequest(
                     { status: HTTP_NOT_FOUND },
                 );
             }
-            // entity-states/:id[/history] read StateStore
-            // methods the store fence cannot cover; gate on
-            // PARENT ownership — a DIFFERENT org's entity 404s,
-            // an orphan or own entity passes. The history-leak
-            // bug gated on entity_id alone.
+            // entity-states/:id/history reads derived state
+            // the store fence cannot cover; gate on PARENT
+            // ownership — a DIFFERENT org's entity 404s, an
+            // orphan or own entity passes. The history-leak
+            // bug gated on entity_id alone. Bare
+            // entity-states/:id RETIRED (Phase 15 Task 7).
             if (method === 'GET'
-                && (routePattern === 'entity-states/:id'
-                    || routePattern
-                        === 'entity-states/:id/history')) {
+                && routePattern
+                    === 'entity-states/:id/history') {
                 // PAIR-PLANE (Phase 15 Task 5): ownership
                 // resolves through resolveOwningOrganization
                 // (org-nested documents, invitations, flow-

@@ -68,11 +68,15 @@ test(
             name: string; description: string;
         }>(db, 'ai-members/a1', DEV_TOKEN);
         assert.equal(facet.name, 'Claude');
-        const current = await GET<{
+        // bare entity-states/:id RETIRED (Phase 15 Task 7);
+        // post-write check rides surviving /history.
+        const history = await GET<{
             state: string;
             member_id: string;
             at: string;
-        }>(db, 'entity-states/a1', DEV_TOKEN);
+        }[]>(db, 'entity-states/a1/history', DEV_TOKEN);
+        assert.equal(history.length, 1);
+        const current = history[0]!;
         assert.equal(current.state, 'active');
         // Authorship is the verified caller, never the body.
         assert.equal(current.member_id, 'current');

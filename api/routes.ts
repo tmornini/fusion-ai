@@ -5786,11 +5786,11 @@ export const routes: Route[] = [
         get: (db, _p, _actor, organization) =>
             deriveStates(db, requireOrganization(organization)),
     }),
-    // GET is NOT flipped: a single event by its OWN event id has
-    // zero product callers (deferred to Phase Final).
+    // GET states/:id RETIRED (Phase 15 Task 7): zero product
+    // callers; bare event-by-id read is dead. PUT survives —
+    // members/ai-members/objectives/work-orders unclaim and
+    // the ownership write fence still ride it.
     route('states/:id', {
-        get: (db, p) =>
-            db.states.getById(param(p, 0)),
         // The author is the verified caller (actor), stamped
         // over any client-supplied member_id — the ledger
         // records who acted, not who the body claims.
@@ -5870,18 +5870,15 @@ export const routes: Route[] = [
             );
         },
     }),
-    // GET is NOT flipped: an entity's bare CURRENT state has
-    // zero product callers (deferred to Phase Final).
-    route('entity-states/:id', {
-        get: (db, p) =>
-            db.states.getCurrentFor(param(p, 0)),
-    }),
-    // GET is FLIPPED (Task 7): derives via deriveStatesFor —
-    // the gate ALREADY fences this route (api/api.ts's
-    // entity-states/:id[/history] guard resolves the entity's
-    // owner via the RAW probes before dispatch), so the handler
-    // does not re-fence; deriveStatesFor's own header documents
-    // that precondition. Every client reader that names this
+    // bare GET entity-states/:id RETIRED (Phase 15 Task 7):
+    // zero product callers. History below is the LIVE read.
+    // GET is FLIPPED (Phase 14 Task 7): derives via
+    // deriveStatesFor — the gate ALREADY fences this route
+    // (api/api.ts's entity-states/:id/history guard resolves
+    // the entity's owner via resolveOwningOrganization before
+    // dispatch), so the handler does not re-fence;
+    // deriveStatesFor's own header documents that
+    // precondition. Every client reader that names this
     // address (getWorkOrderCurrentNodeId, getWorkOrderActive
     // Claim, getProjectState/getRecordStateDetail/etc.) rides
     // transitively, no web-app change.

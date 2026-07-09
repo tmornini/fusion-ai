@@ -780,11 +780,20 @@ test('states lists only the bound org events', async () => {
     assert.ok(!ids.has('seMem-pb'));  // B-only member hidden
 });
 
-test('states 404s a foreign event id', async () => {
+// STEALTH-WEAKENING trap (Phase 15 Task 7): bare GET
+// states/:id retired — a router 404 would pass for ANY id.
+// Re-point to the surviving collection GET which still
+// fences by ownership (raw seB exists; collection omits it).
+test('states collection hides a foreign event id',
+async () => {
     const db = await deepDb();
     assert.equal((await db.states.getById('seB')).id, 'seB');
-    const res = await facadeGet(db, '/states/seB');
-    assert.equal(res.status, 404);
+    const res = await facadeGet(db, '/states');
+    assert.equal(res.status, 200);
+    const ids = new Set(
+        (await res.json() as { id: string }[])
+            .map(r => r.id));
+    assert.ok(!ids.has('seB'));
 });
 
 test('nested states/:id/field-values fence follows the event',
@@ -816,17 +825,23 @@ async () => {
     assert.deepEqual(rows.map(r => r.id), []);
 });
 
-test('entity-states gates on parent ownership', async () => {
+// bare entity-states/:id RETIRED (Phase 15 Task 7); fence
+// re-points to surviving /history (same Region A ownership
+// guard). STEALTH-WEAKENING trap: do not leave a bare-route
+// foreign-404 that would pass as router miss.
+test('entity-states history gates on parent ownership',
+async () => {
     const db = await deepDb();
-    const mine = await facadeGet(db, '/entity-states/iA');
+    const mine = await facadeGet(
+        db, '/entity-states/iA/history');
     assert.equal(mine.status, 200);
+    const mineRows = await mine.json() as { id: string }[];
+    assert.ok(mineRows.length >= 1);
     // iB exists, but A does not own it — the history-leak bug.
     assert.equal((await db.ideas.getById('iB')).id, 'iB');
-    const foreign = await facadeGet(db, '/entity-states/iB');
-    assert.equal(foreign.status, 404);
-    const hist = await facadeGet(
+    const foreign = await facadeGet(
         db, '/entity-states/iB/history');
-    assert.equal(hist.status, 404);
+    assert.equal(foreign.status, 404);
 });
 
 test('identity-pii lists only co-members', async () => {

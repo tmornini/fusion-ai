@@ -90,11 +90,15 @@ test(
         await PUT(db, 'identities/w1/pii', pii('Alice'), DEV_TOKEN);
         const piiRow = await db.identityPii.getById('w1');
         assert.equal(piiRow.name, 'Alice');
-        const current = await GET<{
+        // bare entity-states/:id RETIRED (Phase 15 Task 7);
+        // post-write check rides surviving /history.
+        const history = await GET<{
             state: string;
             member_id: string;
             at: string;
-        }>(db, 'entity-states/w1', DEV_TOKEN);
+        }[]>(db, 'entity-states/w1/history', DEV_TOKEN);
+        assert.equal(history.length, 1);
+        const current = history[0]!;
         assert.equal(current.state, 'active');
         // Authorship is the verified caller, never the body.
         assert.equal(current.member_id, 'current');

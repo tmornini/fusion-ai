@@ -93,14 +93,19 @@ test(
         assert.equal(idea.title, 'Fresh Idea');
         // The fence stamped the bound org — never the body.
         assert.equal(idea.organization_id, '1');
+        // bare entity-states/:id RETIRED (Phase 15 Task 7);
+        // post-write check rides surviving /history.
         const stateRes = await handleRequest(db, req(
-            'GET', '/entity-states/idea-1', DEV_TOKEN,
+            'GET', '/entity-states/idea-1/history',
+            DEV_TOKEN,
         ));
-        const current = await stateRes.json() as {
+        const history = await stateRes.json() as {
             state: string;
             member_id: string;
             at: string;
-        };
+        }[];
+        assert.equal(history.length, 1);
+        const current = history[0]!;
         assert.equal(current.state, 'active');
         // Authorship is the verified caller, never the body.
         assert.equal(current.member_id, 'current');

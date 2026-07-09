@@ -62,12 +62,12 @@ import {
 // entity from the caller directly, so no visibility fence applies
 // there.
 //
-// FLIPPED (Task 7): api/routes.ts's GET /states and GET
-// /entity-states/:id/history dispatch to deriveStates/
+// FLIPPED (Phase 14 Task 7): api/routes.ts's GET /states and
+// GET /entity-states/:id/history dispatch to deriveStates/
 // deriveStatesFor below — Task 1's row-plane fence
 // (api/store-parent-scoped.ts) no longer serves either read.
-// GET /states/:id and GET /entity-states/:id stay on the row
-// plane — zero product callers, deferred to Phase Final.
+// bare GET /states/:id and GET /entity-states/:id RETIRED
+// (Phase 15 Task 7) — zero product callers.
 //
 // THE GATE-15 PRECEDENT (Phase 10, tests/drift-identities.test.ts
 // + api/routes.ts's module-private membershipsAcrossAllOrganiza
@@ -2193,7 +2193,7 @@ export async function deriveStates(
 //
 // PRECONDITION: callers must already have established
 // entityId's visibility to `organization` before calling — the
-// route's own gate (api/api.ts's entity-states/:id[/history]
+// route's own gate (api/api.ts's entity-states/:id/history
 // guard, resolveOwningOrganization) IS the fence. A caller that
 // trusts an unverified (organization, entityId) pairing reads
 // another organization's rows.

@@ -64,10 +64,13 @@ test(
             name: string;
         }>(db, 'records/rec-1', DEV_TOKEN);
         assert.equal(record.name, 'Quarterly Renewals');
-        const current = await GET<{
+        // bare entity-states/:id RETIRED (Phase 15 Task 7);
+        // post-write check rides surviving /history.
+        const history = await GET<{
             state: string;
-        }>(db, 'entity-states/rec-1', DEV_TOKEN);
-        assert.equal(current.state, 'active');
+        }[]>(db, 'entity-states/rec-1/history', DEV_TOKEN);
+        assert.equal(history.length, 1);
+        assert.equal(history[0]!.state, 'active');
         const attrs = await GET<unknown[]>(
             db, 'record-attributes', DEV_TOKEN,
         );
@@ -101,13 +104,15 @@ test(
             db, 'records/rec-2', DEV_TOKEN,
         );
         assert.equal(record.name, 'Empty');
-        const current = await GET<{
+        // bare entity-states/:id RETIRED (Phase 15 Task 7).
+        const history = await GET<{
             state: string;
             member_id: string;
-        }>(db, 'entity-states/rec-2', DEV_TOKEN);
-        assert.equal(current.state, 'active');
+        }[]>(db, 'entity-states/rec-2/history', DEV_TOKEN);
+        assert.equal(history.length, 1);
+        assert.equal(history[0]!.state, 'active');
         assert.equal(
-            current.member_id, 'current',
+            history[0]!.member_id, 'current',
         );
     },
 );
@@ -523,11 +528,14 @@ test(
             initialStateAt:
                 '2099-07-01T00:00:00.000000Z',
         }, DEV_TOKEN);
-        const current = await GET<{
+        // bare entity-states/:id RETIRED (Phase 15 Task 7).
+        const history = await GET<{
             state: string;
             member_id: string;
             at: string;
-        }>(db, 'entity-states/rec-at', DEV_TOKEN);
+        }[]>(db, 'entity-states/rec-at/history', DEV_TOKEN);
+        assert.equal(history.length, 1);
+        const current = history[0]!;
         assert.equal(current.state, 'active');
         // Authorship is the verified caller, never the body.
         assert.equal(current.member_id, 'current');
