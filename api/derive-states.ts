@@ -10,9 +10,12 @@ import { canonicalUriPrefix } from './message-pair.ts';
 import {
     documentPairsAt,
     deriveDocumentsAt,
+    documentLifecycleEvents,
+    stateHistoryFrom,
     byIdAscending,
     type DocumentPair,
 } from './derive-documents.ts';
+import { latestByKey } from '../shared/ledger-reduction.ts';
 import { deriveIdeaStateHistory } from './derive-ideas.ts';
 import { deriveProjectStateHistory } from './derive-projects.ts';
 import { deriveRecordStateHistory } from './derive-records.ts';
@@ -1722,4 +1725,86 @@ export async function deriveStatesFor(
         ...flowGraphRows, ...invitationRows,
     ].filter((row) => row.entity_id === entityId);
     return rows.sort(atIdCompare);
+}
+
+// ---- documentStateHeadFor — the member_id-echo head helper -----
+// ---- (Phase 14 Task 5) --------------------------------------------
+
+// THE FOUR WRITE-PATH DECISION READS THIS SERVES (api/routes.ts:
+// postIdeaDocumentOp, postProjectDocumentOp, postRecordDocumentOp,
+// postRecordWriteOp's edit arm): each compares an incoming write's
+// trio (state_event_id, state, state_at) against the STORED head
+// to decide an ECHO (keep the head's member_id) from a fresh
+// transition (author as actor) — Decision 7's MEMBER_ID CAVEAT.
+// Re-anchored off the row-plane view.states.getCurrentForIn onto
+// this entity's OWN pair-plane trace: its document-address trio
+// history (documentLifecycleEvents/stateHistoryFrom over
+// documentPairsAt) UNIONED with its states/:id event-append pairs
+// (eventPairStatesFrom) — the SAME two-source composition
+// workOrderClaimSourcesFor assembles for its own entity above,
+// reduced to the (at, id) CURRENT row exactly as
+// StateStore.getCurrentForIn's own latestByKey reduction does.
+//
+// ENTITY-SCOPED, NO ORGANIZATION ARGUMENT NEEDED: the document
+// half resolves its own organization via the `uri_id` index (an
+// id is globally unique — computeOwningOrganization's own
+// technique above), reading it straight off the MATCHED document
+// pair's own stored uri_prefix rather than a caller-supplied
+// value. Deliberate, not an oversight: PutHandler (api/routes.ts)
+// carries no organization argument at all (only PostHandler
+// does), so a caller-supplied organization would force every
+// 'trio' family's DocumentFamilyWiring to grow one — widening
+// eleven registrations to serve four callers. A genuinely fresh
+// id carries no document pair yet (the genesis case), so this
+// returns null before an organization is ever needed, mirroring
+// getCurrentForIn's own null-for-absent contract.
+export async function documentStateHeadFor(
+    dbOrView: DbAdapter,
+    id: Id,
+): Promise<StateEntity | null> {
+    const [byIdRequests, byIdResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere('uri_id', id),
+        dbOrView.responses.getAllWhere('uri_id', id),
+    ]);
+    const documentResponse = byIdResponses.find((response) =>
+        ORGANIZATION_NESTED_FAMILY_ADDRESS_PATTERN.test(
+            response.uri_prefix,
+        ));
+    if (documentResponse === undefined) return null;
+    const prefix = documentResponse.uri_prefix;
+    const documentRequests = byIdRequests.filter(
+        (r) => r.uri_prefix === prefix,
+    );
+    const documentResponses = byIdResponses.filter(
+        (r) => r.uri_prefix === prefix,
+    );
+    const documentHistory = stateHistoryFrom(
+        documentLifecycleEvents(
+            documentPairsAt(
+                documentRequests, documentResponses, prefix,
+            ),
+        ),
+        id,
+    );
+
+    const organization =
+        ORGANIZATION_NESTED_FAMILY_ADDRESS_PATTERN
+            .exec(prefix)![1]!;
+    const statesPrefix = canonicalUriPrefix(
+        organization, '/states/',
+    );
+    const [stateRequests, stateResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere('uri_prefix', statesPrefix),
+        dbOrView.responses.getAllWhere(
+            'uri_prefix', statesPrefix,
+        ),
+    ]);
+    const statesAddressEvents = eventPairStatesFrom(
+        stateRequests, stateResponses,
+    ).filter((row) => row.entity_id === id);
+
+    const merged = [...documentHistory, ...statesAddressEvents];
+    return merged.length === 0
+        ? null
+        : latestByKey(merged, () => 'current').get('current')!;
 }
