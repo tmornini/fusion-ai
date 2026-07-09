@@ -2,16 +2,22 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
-import { EntityNotFoundError } from '../api/db.ts';
+import {
+    EntityNotFoundError, type DbAdapter,
+} from '../api/db.ts';
 import { jsonObjectField, nowUtc } from '../api/types.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     workOrderDocumentHeadFor,
+    stateEventVisibilityFor,
 } from '../api/derive-states.ts';
 import {
     STARK_ORGANIZATION,
+    ORGANIZATION_TWO,
 } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
+import { organizationScopedAdapter } from
+    '../api/db-organization-scoped.ts';
 
 // Phase 15 Task 1: view-safe derive cores — pre-tx-vs-in-tx
 // parity + drift pins against the still-live row plane. Cores
@@ -184,4 +190,185 @@ async () => {
     assert.deepEqual(derived, rowOracle);
     assert.equal(derived!.display_id, 'after');
     assert.equal(derived!.position, 3);
+});
+
+// -- stateEventVisibilityFor -------------------------------------
+
+// Row-plane three-way oracle matching isVisibleStateEvent
+// (derive-state-field-values.ts): (1) no raw row → orphan;
+// (2) fenced getById succeeds → visible; (3) raw row but
+// fenced getById 404s → hidden.
+async function rowPlaneVisibility(
+    scoped: DbAdapter,
+    eventId: string,
+): Promise<'orphan' | 'visible' | 'hidden'> {
+    if (!(await scoped.states.rawHasRow(eventId))) {
+        return 'orphan';
+    }
+    try {
+        await scoped.states.getById(eventId);
+        return 'visible';
+    } catch (e) {
+        if (e instanceof EntityNotFoundError) {
+            return 'hidden';
+        }
+        throw e;
+    }
+}
+
+test('stateEventVisibilityFor: tier (i) event-append pairs'
++ ' match the row-plane three-way (own / foreign / orphan);'
++ ' pre-tx vs in-tx parity', async () => {
+    const db = await seededDb();
+    const allStates = await db.states.getAll();
+    const starkScoped = organizationScopedAdapter(
+        db, STARK_ORGANIZATION,
+    );
+    let ownEventId = '';
+    for (const row of allStates) {
+        const v = await rowPlaneVisibility(
+            starkScoped, row.id,
+        );
+        if (v === 'visible') {
+            ownEventId = row.id;
+            break;
+        }
+    }
+    assert.notEqual(ownEventId, '');
+
+    const twoScoped = organizationScopedAdapter(
+        db, ORGANIZATION_TWO,
+    );
+    let foreignEventId = '';
+    for (const row of allStates) {
+        const v = await rowPlaneVisibility(
+            twoScoped, row.id,
+        );
+        if (v === 'hidden') {
+            foreignEventId = row.id;
+            break;
+        }
+    }
+    assert.notEqual(foreignEventId, '');
+
+    const txTables = ['requests', 'responses', 'states'];
+
+    // Own → visible (tier i).
+    const preOwn = await stateEventVisibilityFor(
+        db, STARK_ORGANIZATION, ownEventId,
+    );
+    const inOwn = await db.transaction(
+        txTables,
+        (view) => stateEventVisibilityFor(
+            view, STARK_ORGANIZATION, ownEventId,
+        ),
+    );
+    assert.equal(preOwn, 'visible');
+    assert.equal(inOwn, preOwn);
+    assert.equal(
+        await rowPlaneVisibility(starkScoped, ownEventId),
+        'visible',
+    );
+
+    // Foreign → hidden (tier i, cross-org by construction).
+    // foreignEventId is hidden TO org two — so its owner is
+    // not org two. Ask as org two.
+    const preForeign = await stateEventVisibilityFor(
+        db, ORGANIZATION_TWO, foreignEventId,
+    );
+    assert.equal(preForeign, 'hidden');
+    assert.equal(
+        await rowPlaneVisibility(twoScoped, foreignEventId),
+        'hidden',
+    );
+
+    // Nowhere → orphan.
+    const preOrphan = await stateEventVisibilityFor(
+        db, STARK_ORGANIZATION, 'ghost-event-nowhere',
+    );
+    const inOrphan = await db.transaction(
+        txTables,
+        (view) => stateEventVisibilityFor(
+            view, STARK_ORGANIZATION, 'ghost-event-nowhere',
+        ),
+    );
+    assert.equal(preOrphan, 'orphan');
+    assert.equal(inOrphan, 'orphan');
+    assert.equal(
+        await rowPlaneVisibility(
+            starkScoped, 'ghost-event-nowhere',
+        ),
+        'orphan',
+    );
+});
+
+test('stateEventVisibilityFor: tier (ii) op-born transition'
++ ' event is visible to the owning org and hidden to a'
++ ' foreign org (tier iii)', async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+    const workOrderId = 'wo-p15-vis-transition';
+    const graph = workOrderFlowGraph(8 * 60 * 60);
+    const transitionEventId = workOrderId + '-te1';
+
+    const created = await handleRequest(db, req(
+        'POST', '/work-orders', token, {
+            id: workOrderId,
+            workOrder: {
+                display_id: 'vis-' + workOrderId,
+                flow_graph: graph,
+                position: 1,
+            },
+            flowWorkOrderId: workOrderId + '-fwo',
+            flowWorkOrder: {
+                flow_id: EMPTY_FLOW_ID,
+                work_order_id: workOrderId,
+                at: nowUtc(),
+            },
+            stateEventIds: [
+                workOrderId + '-ev1',
+                workOrderId + '-ev2',
+                workOrderId + '-ev3',
+            ],
+            stateEventAts: [nowUtc(), nowUtc(), nowUtc()],
+            states: ['n-start', 'n-finish', 'claimed'],
+        },
+    ));
+    assert.equal(created.status, 204);
+
+    const transitioned = await handleRequest(db, req(
+        'POST',
+        '/work-orders/' + workOrderId + '/transition',
+        token,
+        {
+            transitionEventId,
+            targetState: 'n-finish',
+            fieldValues: [],
+            release: null,
+            transitionAt: nowUtc(),
+        },
+    ));
+    assert.equal(transitioned.status, 204);
+
+    // Op-born: no states/:id pair at transitionEventId;
+    // lives only inside the transition op body.
+    const byId = await db.responses.getAllWhere(
+        'uri_id', transitionEventId,
+    );
+    const statesHits = byId.filter((r) =>
+        /\/states\/$/.test(r.uri_prefix));
+    assert.equal(statesHits.length, 0);
+
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, STARK_ORGANIZATION, transitionEventId,
+        ),
+        'visible',
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, ORGANIZATION_TWO, transitionEventId,
+        ),
+        'hidden',
+    );
 });
