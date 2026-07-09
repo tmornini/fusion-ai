@@ -211,10 +211,18 @@ export class FlowDesignerPresenter {
         };
     }
 
-    // Saves are SERIALIZED on one promise chain PER FLOW,
-    // so concurrent gestures can never reorder against each
-    // other; a failed save surfaces through reportFault and
-    // the chain survives for the saves queued behind it. Fix
+    // Saves ORIGINATING FROM THIS PRESENTER'S OWN methods
+    // are SERIALIZED on one promise chain PER FLOW, so the
+    // presenter's concurrent gestures can never reorder
+    // against each other; a failed save surfaces through
+    // reportFault and the chain survives for the saves
+    // queued behind it. NOT covered: flow-operations.ts's
+    // commitFlowMutation writes (graph edits, redo) call
+    // putFlow directly — those rely on putFlow's own
+    // optimistic-concurrency retry, so contention there
+    // degrades to a visible fault, never silent loss;
+    // routing them through this queue is a named
+    // fast-follow (Phase 14 final review). Fix
     // wave (Phase 14 Task 8, post-Task-11-browser-regression):
     // this chain lives at MODULE scope, keyed by flowId — NOT
     // as an instance field — because `commit()` (detail.ts)
