@@ -46,6 +46,7 @@ import type {
     RecordId,
     RecordState,
     FlowRecordEntity,
+    FlowTagEntity,
     ObjectiveEntity,
     ObjectiveRevisionEntity,
     ProjectObjectiveBaselineScoreEntity,
@@ -2776,6 +2777,52 @@ export function validateFlowRecordEntity(
             body, 'at', 'FlowRecordEntity',
         ),
     };
+}
+
+// A flow tag's own NAME is the FIRST user-authored address
+// segment this codebase validates (every prior :id path segment
+// is either server-generated or a client-picked-but-opaque
+// identifier never rendered) — pinned at least as strict as
+// GRAPH_ID_ALPHABET above, plus a length cap, since an address
+// segment has no natural bound the way a body field's own
+// pickString does.
+const FLOW_TAG_NAME_MAX_LENGTH = 64;
+const FLOW_TAG_NAME_ALPHABET = /^[A-Za-z0-9_-]+$/;
+
+export function validateFlowTagName(value: string): string {
+    if (
+        value.length > FLOW_TAG_NAME_MAX_LENGTH
+        || !FLOW_TAG_NAME_ALPHABET.test(value)
+    ) {
+        throw new ValidationError(
+            'flow tag name must contain only [A-Za-z0-9_-],'
+            + ' 1-' + FLOW_TAG_NAME_MAX_LENGTH
+            + ' characters, got ' + value,
+        );
+    }
+    return value;
+}
+
+// The tag's own body (design decision — Step 0, Phase 14 Task
+// 9): MINIMAL — the pinned response id of the flow document pair
+// this tag names, and nothing else. `flow_id` is never a client
+// key here (the address's own :id segment already names it; the
+// route stamps it onto the wire response) — Omit<FlowTagEntity,
+// 'id' | 'flow_id'> mirrors validateFlowRecordEntity's own
+// Omit<_, 'id'> shape, one field narrower.
+const FLOW_TAG_BODY_KEYS: readonly string[] = ['flow_response_id'];
+
+export function validateFlowTagEntity(
+    body: Record<string, unknown>,
+): Omit<FlowTagEntity, 'id' | 'flow_id'> {
+    assertOnlyKeys(body, FLOW_TAG_BODY_KEYS, 'FlowTagEntity');
+    const flowResponseId = pickString(body, 'flow_response_id');
+    if (flowResponseId === '') {
+        throw new ValidationError(
+            'FlowTagEntity.flow_response_id must be non-empty',
+        );
+    }
+    return { flow_response_id: flowResponseId };
 }
 
 export interface RecordWriteCreateBody {

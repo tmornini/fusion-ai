@@ -1279,6 +1279,20 @@ export interface FlowRecordEntity {
     at: string;
 }
 
+// A flow tag: the codebase's FIRST pair-plane-ONLY document
+// family (Phase 14 Task 9) — no backing table, derived entirely
+// from message pairs at /flows/:id/tags/:name. `id` is the tag's
+// own NAME — user-authored address text (validateFlowTagName,
+// api/validators.ts), never a generated id, unlike every sibling
+// entity's `id` above. The body carries ONLY the pinned response
+// id of the flow document pair this tag names — never a copy of
+// the flow's own content (Entangled Nouns).
+export interface FlowTagEntity {
+    id: string;
+    flow_id: Id;
+    flow_response_id: Id;
+}
+
 // Per-field values written when a state event
 // records a work-order transition. Each row pins
 // the payload to its parent event by state_event_id
