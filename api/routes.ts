@@ -5,6 +5,7 @@ import type {
 import type {
     FlowGraphDelta,
     FlowCreateBody,
+    FlowUndoBody,
     WorkOrderCreateBody,
     RecordWriteBody,
     ObjectiveCreateBody,
@@ -141,6 +142,7 @@ import {
     deriveFlow,
     deriveFlows,
     resolveFlowUndoTarget,
+    type FlowUndoResolution,
 } from './derive-flows.ts';
 import {
     buildFlowGraphDelta,
@@ -1587,6 +1589,134 @@ export async function postFlowDocumentOp(
                 await appendMessagePair(view, pair);
             }
             return written;
+        },
+    );
+}
+
+// Undo-as-replay (Phase 14 Task 8, election #2): given a
+// resolution ALREADY produced by resolveFlowUndoTarget
+// (api/derive-flows.ts), perform the restore write — the flow
+// row PUT, the 'updated' state event, the graph delta to the
+// four relation tables, and the revivals — all as ONE
+// transaction (or, on exhaustion, just the operation pair; see
+// route('flows/:id/undo', ...) below for the full design note).
+// Extracted from the route handler itself (fix wave, review
+// finding) so `resolution` is an EXPLICIT parameter, never a
+// second internal read — this is the seam
+// tests/flow-undo-cursor.test.ts's stale-basis regression test
+// drives directly, supplying a DELIBERATELY stale resolution to
+// prove the write still 412s rather than silently overwriting a
+// concurrent save. `follows: current.id` (not a fresh
+// headPairIdAt read) is the fix itself: it anchors the
+// synthesized document pair to the EXACT head this resolution's
+// own read saw — current IS that read's own DocumentPair, and
+// DocumentPair.id IS the response id — so a save landing after
+// `resolution` was captured collides on the responses.follows
+// unique index (UniqueConstraintError → the gate's 412 mapping)
+// instead of succeeding against a head the diff below never saw.
+export async function postFlowUndoOp(
+    db: DbAdapter,
+    id: Id,
+    actor: Id,
+    organization: Id,
+    pair: MessagePair,
+    resolution: FlowUndoResolution,
+    b: FlowUndoBody,
+): Promise<unknown> {
+    const { current, target } = resolution;
+    if (target === undefined) {
+        // Exhaustion: the gate still requires this wired write's
+        // own operation pair to land (api.ts's post-dispatch
+        // "wired write stored no pair" guard, true for every
+        // pair-wired route), so it is appended ALONE — no
+        // document pair, no domain writes — a genuine no-op a
+        // LATER resolution walk correctly ignores (it carries no
+        // correlated document pair to displace anything).
+        return db.transaction(
+            ['requests', 'responses'],
+            async (view) => {
+                await appendMessagePair(view, pair);
+            },
+        );
+    }
+    const currentGraph = validateStoredGraphJson(
+        pickJsonObjectField(current.body, 'graph'),
+        'flows/:id/undo current.graph',
+    );
+    const targetGraph = validateStoredGraphJson(
+        pickJsonObjectField(target.body, 'graph'),
+        'flows/:id/undo target.graph',
+    );
+    const delta = buildFlowGraphDelta(
+        currentGraph, targetGraph, id,
+        generateCryptoSafeBase62, b.at,
+    );
+    const revivals = buildFlowGraphRevivals(
+        currentGraph, targetGraph,
+        generateCryptoSafeBase62, b.at,
+    );
+    const flowFields = {
+        name: pickString(target.body, 'name'),
+        is_locked: pickBoolean(target.body, 'is_locked'),
+        is_auto_layout:
+            pickBoolean(target.body, 'is_auto_layout'),
+        is_auto_fit:
+            pickBoolean(target.body, 'is_auto_fit'),
+        lock_timeout:
+            pickNumber(target.body, 'lock_timeout'),
+    };
+    const documentBody = {
+        ...flowFields,
+        state: 'updated',
+        state_at: b.at,
+        state_event_id: b.eventId,
+        graph: pickJsonObjectField(target.body, 'graph'),
+        graphDelta: delta,
+        revivals,
+    };
+    validateFlowDocumentBody(documentBody);
+    // The flows family is LOCKED, so this document write takes
+    // the FOLLOWS slot (never supersedes; the op holds no echo
+    // of its own — design decision 5).
+    const documentPair = await formDocumentPairFor(db, {
+        routePattern: 'flows/:id',
+        params: [id],
+        body: documentBody,
+        requesterIdentityId: actor,
+        requestAt: pair.requestAt,
+        organization,
+        chain: 'follows',
+        follows: current.id,
+    });
+    return db.transaction(
+        [
+            'flows', 'states',
+            'flow_nodes', 'flow_edges',
+            'flow_node_members',
+            'flow_node_attributes',
+            'requests', 'responses',
+        ],
+        async (view) => {
+            await view.flows.put(
+                id,
+                flowFields as unknown as
+                    Omit<FlowEntity, 'id'>,
+            );
+            await view.states.postEvent(
+                b.eventId, id, 'updated', actor,
+                b.at,
+            );
+            await writeFlowGraphDelta(
+                view, delta, actor,
+            );
+            for (const r of revivals) {
+                await view.states.postEvent(
+                    r.eventId, r.entityId,
+                    'restored', actor, r.at,
+                );
+            }
+            await appendMessagePair(view, pair);
+            await appendMessagePair(view, documentPair);
         },
     );
 }
@@ -3378,6 +3508,21 @@ export interface DocumentPairFormInput {
     readonly organization: Id | undefined;
     readonly method?: 'PUT' | 'DELETE';
     readonly chain?: DocumentPairChainClass;
+    // Anchors chain 'follows' to a CALLER-SUPPLIED pair id
+    // instead of a fresh headPairIdAt read — REQUIRED whenever
+    // the caller already read the address' head as part of
+    // computing the pair's own BODY (undo-as-replay's
+    // resolveFlowUndoTarget, api/derive-flows.ts, Phase 14 Task
+    // 8 fix wave): letting this function's OWN independent
+    // headPairIdAt read decide `follows` AFTER the body was
+    // already diffed against an earlier read opens a window —
+    // a save landing BETWEEN the two reads moves the real head,
+    // so the undo write would anchor to that FRESH head (no
+    // collision, 204) while its own diff still reflects the
+    // STALE snapshot, silently discarding the concurrent save
+    // instead of colliding on the responses.follows unique
+    // index and 412ing. Ignored unless chain === 'follows'.
+    readonly follows?: Id;
     // The spec-less tombstone sites (finding 10 i): an explicit
     // response, bypassing WRITE_RESPONSE_SPECS entirely.
     readonly response?: {
@@ -3412,13 +3557,15 @@ export async function formDocumentPairFor(
     const chain = input.chain ?? 'supersedes';
     const head = chain === 'none'
         ? undefined
-        : await headPairIdAt(
-            db,
-            canonicalUriPrefix(
-                input.organization, address.uriPrefix,
-            ),
-            address.uriId,
-        );
+        : chain === 'follows' && input.follows !== undefined
+            ? input.follows
+            : await headPairIdAt(
+                db,
+                canonicalUriPrefix(
+                    input.organization, address.uriPrefix,
+                ),
+                address.uriId,
+            );
     let responseStatus: number;
     let responseBody: unknown;
     if (input.response !== undefined) {
@@ -4625,94 +4772,8 @@ export const routes: Route[] = [
             if (resolution === undefined) {
                 throw new EntityNotFoundError('flows', id);
             }
-            const { current, target } = resolution;
-            if (target === undefined) {
-                return db.transaction(
-                    ['requests', 'responses'],
-                    async (view) => {
-                        await appendMessagePair(view, pair);
-                    },
-                );
-            }
-            const currentGraph = validateStoredGraphJson(
-                pickJsonObjectField(current.body, 'graph'),
-                'flows/:id/undo current.graph',
-            );
-            const targetGraph = validateStoredGraphJson(
-                pickJsonObjectField(target.body, 'graph'),
-                'flows/:id/undo target.graph',
-            );
-            const delta = buildFlowGraphDelta(
-                currentGraph, targetGraph, id,
-                generateCryptoSafeBase62, b.at,
-            );
-            const revivals = buildFlowGraphRevivals(
-                currentGraph, targetGraph,
-                generateCryptoSafeBase62, b.at,
-            );
-            const flowFields = {
-                name: pickString(target.body, 'name'),
-                is_locked: pickBoolean(target.body, 'is_locked'),
-                is_auto_layout:
-                    pickBoolean(target.body, 'is_auto_layout'),
-                is_auto_fit:
-                    pickBoolean(target.body, 'is_auto_fit'),
-                lock_timeout:
-                    pickNumber(target.body, 'lock_timeout'),
-            };
-            const documentBody = {
-                ...flowFields,
-                state: 'updated',
-                state_at: b.at,
-                state_event_id: b.eventId,
-                graph: pickJsonObjectField(target.body, 'graph'),
-                graphDelta: delta,
-                revivals,
-            };
-            validateFlowDocumentBody(documentBody);
-            // The flows family is LOCKED, so this document
-            // write takes the FOLLOWS slot (never supersedes;
-            // the op holds no echo of its own — design
-            // decision 5).
-            const documentPair = await formDocumentPairFor(db, {
-                routePattern: 'flows/:id',
-                params: [id],
-                body: documentBody,
-                requesterIdentityId: actor,
-                requestAt: pair.requestAt,
-                organization,
-                chain: 'follows',
-            });
-            return db.transaction(
-                [
-                    'flows', 'states',
-                    'flow_nodes', 'flow_edges',
-                    'flow_node_members',
-                    'flow_node_attributes',
-                    'requests', 'responses',
-                ],
-                async (view) => {
-                    await view.flows.put(
-                        id,
-                        flowFields as unknown as
-                            Omit<FlowEntity, 'id'>,
-                    );
-                    await view.states.postEvent(
-                        b.eventId, id, 'updated', actor,
-                        b.at,
-                    );
-                    await writeFlowGraphDelta(
-                        view, delta, actor,
-                    );
-                    for (const r of revivals) {
-                        await view.states.postEvent(
-                            r.eventId, r.entityId,
-                            'restored', actor, r.at,
-                        );
-                    }
-                    await appendMessagePair(view, pair);
-                    await appendMessagePair(view, documentPair);
-                },
+            return postFlowUndoOp(
+                db, id, actor, organization, pair, resolution, b,
             );
         },
     }),
