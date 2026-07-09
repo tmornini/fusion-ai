@@ -33,6 +33,7 @@ import { buildAiMembers } from '../api/mock-data/ai-members.ts';
 import { OBJECTIVE_SEEDS } from '../api/mock-data/objectives.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { firstProviderModel } from './member-fixtures.ts';
+import { seedIdentityPii } from './identity-fixtures.ts';
 
 // The E10 drift check (Phase 11 Task 6): the per-family parity
 // proof comparing OLD-plane states reads to the message-derived
@@ -130,12 +131,17 @@ function ideaDocument(
     };
 }
 
+// Phase 15 gate 6: grantInvitation resolves email via
+// deriveIdentityPiiRows — seedIdentityPii dual-writes the row
+// and the identities/:id/pii pair so email resolution works.
 async function person(
     db: MemoryDbAdapter, id: string, name: string, email: string,
 ): Promise<void> {
     await db.members.put(id, { type: 'human' });
     await db.identities.put(id, { kind: 'person' });
-    await db.identityPii.put(id, { name, email, phone: '', bio: '' });
+    await seedIdentityPii(db, id, {
+        name, email, phone: '', bio: '',
+    });
 }
 
 function aiMemberDetail(name: string) {

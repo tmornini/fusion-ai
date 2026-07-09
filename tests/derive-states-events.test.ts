@@ -18,6 +18,7 @@ import {
 } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { seedIdentityPii } from './identity-fixtures.ts';
 
 // Phase 11 Task 2: the event-pair reader (deriveEventPairStates)
 // plus the PAIR-PLANE org fence (resolveOwningOrganization /
@@ -185,12 +186,15 @@ async function createIdea(
     assert.equal(res.status, 200, 'idea genesis PUT failed');
 }
 
+// Phase 15 gate 6: grantInvitation resolves email via
+// deriveIdentityPiiRows — seedIdentityPii dual-writes the row
+// and the identities/:id/pii pair so email resolution works.
 async function person(
     db: MemoryDbAdapter, id: string, name: string, email: string,
 ): Promise<void> {
     await db.members.put(id, { type: 'human' });
     await db.identities.put(id, { kind: 'person' });
-    await db.identityPii.put(id, {
+    await seedIdentityPii(db, id, {
         name, email, phone: '', bio: '',
     });
 }

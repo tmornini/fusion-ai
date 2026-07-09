@@ -411,7 +411,14 @@ async function grantInvitation(
     // plan defers new-identity creation — of the same demo grade as the
     // client-shipped HMAC key. A server tier would resolve emails
     // without reflecting existence through the status code.
-    const match = (await ctx.base.identityPii.getAll())
+    //
+    // FLIPPED (Phase 15 gate 6): email resolution re-points onto
+    // deriveIdentityPiiRows(ctx.base) — wire-identical to the
+    // hand-written identityPii.getAll() dispatch it replaces
+    // (tests/drift-identities.test.ts case 6 pins the two row
+    // sets equal). PRE-TX only; the derive opens its own
+    // requests/responses transaction.
+    const match = (await deriveIdentityPiiRows(ctx.base))
         .find(p => p.email === email);
     if (match === undefined) {
         return errorJson(
