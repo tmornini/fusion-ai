@@ -194,13 +194,15 @@ async function isVisibleStateEvent(
 // (derive-states.ts). Visibility reuses stateEventVisibilityFor
 // (pair plane), not the row-plane rawHasRow fence.
 //
-// NAMED DEVIATION — Author gate 1(d) (fix wave, Critical 2): this
-// reads the WHOLE requests/responses plane inside a write-gate
-// transaction, which gate 1(d) disfavors in favor of entity-
-// scoped indexed reads (the workOrderClaimSourcesFor precedent
-// this header cites). TWO family-scoped alternatives were
-// investigated and REJECTED before falling back here, not
-// skipped:
+// NAMED DEVIATION — Author gate 1(d) (fix wave, Critical 2):
+// this SFV RESTRICT leg still reads the WHOLE requests/
+// responses plane inside a write-gate transaction, which gate
+// 1(d) disfavors in favor of entity-scoped indexed reads (the
+// workOrderClaimSourcesFor precedent this header cites). The
+// deviation PERSISTS BY DESIGN at the browser tier — it is not
+// a Phase Final residual for the SFV count. TWO family-scoped
+// alternatives were investigated and REJECTED before falling
+// back here, not skipped:
 //   - Leaf family (states/:id/field-values/): no cheaper
 //     entity-id source exists. A leaf pair's own uri_prefix is
 //     keyed by state_event_id (api/message-address.ts), and
@@ -212,22 +214,18 @@ async function isVisibleStateEvent(
 //     ('uri_prefix', ...) reads (api/db.ts's TABLE_INDEXES: both
 //     tables index uri_prefix — an EXACT-match index, one value
 //     per entity, not a family-wide constant), one per known
-//     work-order id, EXCEPT the only cheap work-order id source
-//     — view.workOrders.getAll() — is an EntityStore read, which
-//     applies its OWN deleted-filter (getDeletedIdsIn,
-//     store-entity.ts) and silently excludes a since-deleted
-//     work order. The OLD table-plane state_field_values read
-//     never filtered by work-order lifecycle at all (a field-
-//     value row survives its work order's own deletion), so
-//     scoping by view.workOrders.getAll() would introduce a
-//     genuine wire delta — dropping a since-deleted work order's
-//     field-value history from the RESTRICT count — not merely
-//     miss an optimization. Rejected for that reason; no
-//     DbAdapter-level primitive enumerates work-order ids
-//     WITHOUT the deleted filter today.
-// Task 11 measures this; closing the transition half would need
-// a raw, undeleted-filtered work-order id enumeration this task
-// does not introduce on its own authority.
+//     work-order id, EXCEPT enumerating those ids WITHOUT the
+//     EntityStore deleted-filter would drop a since-deleted
+//     work order's field-value history from the RESTRICT count
+//     — a genuine wire delta vs the old table-plane read (a
+//     field-value row survives its work order's own deletion).
+//     Rejected for that reason.
+// Contrast: Phase 15 Task 4 re-anchored the three GRAPH legs of
+// collectAttributeReferrers onto organization-scoped pair
+// prefixes (WO document heads) and graphDelta replay
+// (flowGraphBindingsFromPairs) — those legs are no longer a
+// whole-plane scan. This SFV comment's scope is the field-value
+// count alone. Task 11 measures the residual whole-plane cost.
 export async function deriveStateFieldValueReferrers(
     view: DbAdapter,
     boundOrganization: Id,

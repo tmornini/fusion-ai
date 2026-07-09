@@ -7,6 +7,7 @@ import {
     RequestError,
 } from '../api/api.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
+import { jsonObjectField } from '../api/types.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedCurrentMember } from './member-fixtures.ts';
@@ -19,11 +20,15 @@ import { seedCurrentMember } from './member-fixtures.ts';
 // batch rolls back — cascading would orphan immutable
 // event payloads.
 //
-// The LIVE flow referrer scan reads the flow_node_attributes
-// relation (latest action per flow_node_id); a frozen
-// work-order referrer scan still reads work_orders.flow_graph.
+// NAMED re-pin (Phase 15 Task 4): RESTRICT's three graph legs
+// are pair-plane derived now — a raw
+// db.flowNodeAttributes.put / db.workOrders.put leaves no
+// graphDelta / work-orders document pair, so live flow and
+// work-order referrers must land through the SAME wire-
+// reachable writers the live routes serve.
 
 const AT = '2026-06-01T00:00:00.000000Z';
+const AT2 = '2026-06-02T00:00:00.000000Z';
 
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
@@ -43,7 +48,8 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 }
 
 // Seed a live flow with one node bound to `attributeId` via
-// the relation. Returns the db so the caller can continue.
+// the wire-reachable POST /flows graphDelta. Returns after
+// the create succeeds so the caller can continue.
 async function seedFlowNodeAttribute(
     db: MemoryDbAdapter,
     opts: {
@@ -52,29 +58,66 @@ async function seedFlowNodeAttribute(
         attributeId: string;
         action?: 'added' | 'removed';
         rowId?: string;
+        // Extra attributeEvents folded into the same create
+        // (e.g. an add then remove chain, or a second node).
+        extraAttributeEvents?: readonly Record<
+            string, unknown
+        >[];
+        extraNodes?: readonly Record<string, unknown>[];
     },
 ): Promise<void> {
     const {
         flowId, nodeId, attributeId,
         action = 'added', rowId = 'fna1',
+        extraAttributeEvents = [],
+        extraNodes = [],
     } = opts;
-    await db.flows.put(flowId, {
-        organization_id: '1', name: 'Intake',
-        is_locked: false, is_auto_layout: false,
-        is_auto_fit: false, lock_timeout: 0,
-    });
-    await db.flowNodes.put(nodeId, {
-        flow_id: flowId, name: 'Step',
-        position_x: 0, position_y: 0,
-        is_create: false, is_archive: false,
-        task_instructions: '', at: AT,
-    });
-    await db.flowNodeAttributes.put(rowId, {
-        flow_node_id: nodeId,
-        attribute_id: attributeId,
-        mode: 'editable', is_required: false,
-        action, at: AT,
-    });
+    await POST(db, 'flows', {
+        id: flowId,
+        flow: {
+            name: 'Intake',
+            is_locked: false,
+            is_auto_layout: false,
+            is_auto_fit: false,
+            lock_timeout: 0,
+        },
+        projectFlowId: flowId + '-pf',
+        projectFlow: {
+            project_id: 'proj-restrict-1',
+            flow_id: flowId,
+            at: AT,
+        },
+        initialState: 'active',
+        initialStateEventId: flowId + '-ev',
+        initialStateAt: AT,
+        graphDelta: {
+            nodes: [
+                {
+                    id: nodeId, flow_id: flowId,
+                    name: 'Step',
+                    position_x: 0, position_y: 0,
+                    is_create: false, is_archive: false,
+                    task_instructions: '', at: AT,
+                },
+                ...extraNodes,
+            ],
+            edges: [],
+            deletions: [],
+            memberEvents: [],
+            attributeEvents: [
+                {
+                    id: rowId,
+                    flow_node_id: nodeId,
+                    attribute_id: attributeId,
+                    mode: 'editable',
+                    is_required: false,
+                    action,
+                    at: AT,
+                },
+                ...extraAttributeEvents,
+            ],
+        },
+    }, DEV_TOKEN);
 }
 
 function workOrderNodeBinding(
@@ -171,17 +214,21 @@ test(
     async () => {
         const db = await seededDb();
         // seed added then removed: latest action is 'removed'
+        // (both events ride the same create graphDelta; the
+        // later `at` wins under latestByKey/fail-closed).
         await seedFlowNodeAttribute(db, {
             flowId: 'f1', nodeId: 'n1',
             attributeId: 'attr1',
             action: 'added', rowId: 'fna1',
-        });
-        await db.flowNodeAttributes.put('fna2', {
-            flow_node_id: 'n1',
-            attribute_id: 'attr1',
-            mode: 'editable', is_required: false,
-            action: 'removed',
-            at: '2026-06-02T00:00:00.000000Z',
+            extraAttributeEvents: [{
+                id: 'fna2',
+                flow_node_id: 'n1',
+                attribute_id: 'attr1',
+                mode: 'editable',
+                is_required: false,
+                action: 'removed',
+                at: AT2,
+            }],
         });
         // deletion must succeed — 'removed' is not a referrer
         await DELETE(
@@ -200,18 +247,22 @@ test(
         await seedFlowNodeAttribute(db, {
             flowId: 'f1', nodeId: 'n1',
             attributeId: 'attr1', rowId: 'fna1',
-        });
-        await db.flowNodes.put('n2', {
-            flow_id: 'f1', name: 'Review',
-            position_x: 1, position_y: 0,
-            is_create: false, is_archive: false,
-            task_instructions: '', at: AT,
-        });
-        await db.flowNodeAttributes.put('fna2', {
-            flow_node_id: 'n2',
-            attribute_id: 'attr1',
-            mode: 'editable', is_required: false,
-            action: 'added', at: AT,
+            extraNodes: [{
+                id: 'n2', flow_id: 'f1',
+                name: 'Review',
+                position_x: 1, position_y: 0,
+                is_create: false, is_archive: false,
+                task_instructions: '', at: AT,
+            }],
+            extraAttributeEvents: [{
+                id: 'fna2',
+                flow_node_id: 'n2',
+                attribute_id: 'attr1',
+                mode: 'editable',
+                is_required: false,
+                action: 'added',
+                at: AT,
+            }],
         });
         await assert.rejects(
             () => DELETE(
@@ -236,16 +287,66 @@ test(
     'a work-order binding blocks deletion naming it',
     async () => {
         const db = await seededDb();
-        await db.workOrders.put('wo1', {
-            organization_id: '1', display_id: 'WO',
-            flow_graph: JSON.stringify({
-                flowId: 'f1', name: 'Intake',
-                lockTimeout: 0,
-                nodes: [workOrderNodeBinding('attr1')],
+        // Bare host flow (no attribute binding) for the WO
+        // join — WO referrers ride the frozen flow_graph head.
+        await POST(db, 'flows', {
+            id: 'f-wo-host',
+            flow: {
+                name: 'Host',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: 0,
+            },
+            projectFlowId: 'f-wo-host-pf',
+            projectFlow: {
+                project_id: 'proj-restrict-1',
+                flow_id: 'f-wo-host',
+                at: AT,
+            },
+            initialState: 'active',
+            initialStateEventId: 'f-wo-host-ev',
+            initialStateAt: AT,
+            graphDelta: {
+                nodes: [{
+                    id: 'n-host', flow_id: 'f-wo-host',
+                    name: 'Host',
+                    position_x: 0, position_y: 0,
+                    is_create: true, is_archive: false,
+                    task_instructions: '', at: AT,
+                }],
                 edges: [],
-            }),
-            position: 1,
-        });
+                deletions: [],
+                memberEvents: [],
+                attributeEvents: [],
+            },
+        }, DEV_TOKEN);
+        await POST(db, 'work-orders', {
+            id: 'wo1',
+            workOrder: {
+                display_id: 'WO',
+                flow_graph: jsonObjectField({
+                    name: 'Intake',
+                    lockTimeout: 0,
+                    nodes: [
+                        workOrderNodeBinding('attr1'),
+                    ],
+                    edges: [],
+                }),
+                position: 1,
+            },
+            flowWorkOrderId: 'wo1-fwo',
+            flowWorkOrder: {
+                flow_id: 'f-wo-host',
+                work_order_id: 'wo1',
+                at: AT,
+            },
+            stateEventIds: [
+                'wo1-ev1', 'wo1-ev2', 'wo1-ev3',
+            ],
+            stateEventAts: [AT, AT, AT],
+            states: ['n-host', 'n-host', 'claimed'],
+        }, DEV_TOKEN);
         await assert.rejects(
             () => DELETE(
                 db, 'record-attributes/attr1',

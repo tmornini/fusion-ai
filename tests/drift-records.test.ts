@@ -1090,8 +1090,8 @@ test('delete-then-recreate: DELETE via the wire, re-PUT the'
 // attribute from the wire body of every POST transition pair at
 // that prefix. The flow/work-order referrer legs of
 // collectAttributeReferrers (its flowIds/workOrderIds fields)
-// re-derive from flow/work-order document pairs only at Phase
-// Final — NOT proven here; their sources retire only then.
+// re-derive from flow/work-order document pairs as of Phase 15
+// Task 4 — NOT proven here; this case pins valueCount alone.
 async function transitionFieldValueCounts(
     db: MemoryDbAdapter,
     organization: string,
@@ -1178,13 +1178,12 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     // calls, never through the wire — so NO transition pair
     // exists at this work order's own address (verified: the
     // scan below returns an EMPTY map). The value-count LEG is
-    // therefore, like the flow/work-order referrer legs, NOT
-    // ledger-re-derivable for this PRE-EXISTING seed data — a
-    // limitation this proof discloses rather than hides.
-    // collectAttributeReferrers itself reads state_field_values
-    // directly (never the ledger), so it still reports the real
-    // counts regardless — pinning finding 12's 6+1-across-7
-    // split as a regression guard.
+    // therefore NOT ledger-re-derivable FROM TRANSITION pairs
+    // for this PRE-EXISTING seed data — a limitation this proof
+    // discloses rather than hides. collectAttributeReferrers
+    // still reports the real counts (pair-plane SFV derive),
+    // pinning finding 12's 6+1-across-7 split as a regression
+    // guard.
     const flagshipWorkOrderId = 'wg25b0R2gwy5kYPIhQB6cS';
     const flagshipAttributeIds = [
         '5JZ0LeKdPCa4QMtg1RsF1M', // Company Name
