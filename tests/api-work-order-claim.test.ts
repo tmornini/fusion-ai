@@ -357,3 +357,30 @@ test(
         );
     },
 );
+
+// Phase 15 Task 2 Author gate 4 — pass-first pin on the OLD
+// workOrders.getById path: a claim against a work order that
+// does not exist must map to the SAME EntityNotFoundError
+// bytes the store already emits. Held unchanged through the
+// document-head re-anchor (null head → same throw).
+test(
+    'claim on a nonexistent work order is a byte-exact 404',
+    async () => {
+        const db = await seededDb();
+        const missingId = 'no-such-work-order';
+        const response = await handleRequest(db, req(
+            'POST',
+            '/work-orders/' + missingId + '/claim',
+            DEV_TOKEN,
+            freshClaimBody(),
+        ));
+        assert.equal(response.status, 404);
+        assert.deepEqual(
+            await response.json(),
+            {
+                error:
+                    'Not found: work_orders/' + missingId,
+            },
+        );
+    },
+);
