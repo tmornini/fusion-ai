@@ -1003,15 +1003,35 @@ export async function deriveWorkOrderLifecycle(
 //     resolveViaMembershipPairPlane already relies on elsewhere
 //     in this module.
 // dbOrView-shaped and opens no nested transaction — callable from
-// WITHIN an already-open write-gate transaction
-// (postWorkOrderClaimOp's own in-tx `view.states.getAllFor(
-// workOrderId)` read, api/routes.ts — a LATER task wires the call
-// site; this task lands the core alone).
-export async function workOrderLifecycleStatesFor(
+// WITHIN an already-open write-gate transaction. Phase 14 Task 4
+// wires the claim gate to the SIBLING below
+// (workOrderClaimHistoryFor), never to this function directly:
+// this function's OWN contract — its replayed op-pair events
+// ALONE, excluding gate 5a's states/:id rows — is right for the
+// whole-log union (deriveStates/deriveStatesFor already union gate
+// 5a in separately) but WRONG for a claim decision. A standalone
+// release posted through states/:id (deleteWorkOrderClaim, a real
+// wired workbox action) would stay invisible to a caller reading
+// ONLY this function's return, stranding a released work order as
+// falsely still-claimed until natural expiry. See
+// workOrderClaimHistoryFor below, and its own header, for the
+// fix.
+interface WorkOrderClaimSources {
+    readonly replayed: readonly StateEntity[];
+    readonly statesAddressEvents: readonly StateEntity[];
+}
+
+// The reads + replay shared by workOrderLifecycleStatesFor and
+// workOrderClaimHistoryFor below, factored out so neither
+// duplicates the index reads or the replayWorkOrderOperations
+// call — each composes the SAME two pieces (the op-pair replay,
+// and this entity's own states/:id address rows) differently for
+// its own contract.
+async function workOrderClaimSourcesFor(
     dbOrView: DbAdapter,
     organization: Id,
     workOrderId: Id,
-): Promise<StateEntity[]> {
+): Promise<WorkOrderClaimSources> {
     const collectionPrefix = canonicalUriPrefix(
         organization, '/work-orders/',
     );
@@ -1073,10 +1093,62 @@ export async function workOrderLifecycleStatesFor(
         stateRequests, stateResponses,
     ).filter((row) => row.entity_id === workOrderId);
 
-    return replayWorkOrderOperations(
-        createPairs, entityPairs, statesAddressEvents,
-        claimPairs, transitionPairs, workOrderId,
-    ).sort(atIdCompare);
+    return {
+        replayed: replayWorkOrderOperations(
+            createPairs, entityPairs, statesAddressEvents,
+            claimPairs, transitionPairs, workOrderId,
+        ),
+        statesAddressEvents,
+    };
+}
+
+export async function workOrderLifecycleStatesFor(
+    dbOrView: DbAdapter,
+    organization: Id,
+    workOrderId: Id,
+): Promise<StateEntity[]> {
+    const { replayed } = await workOrderClaimSourcesFor(
+        dbOrView, organization, workOrderId,
+    );
+    return [...replayed].sort(atIdCompare);
+}
+
+// THE CLAIM GATE'S OWN SOURCE (Phase 14 Task 4, the controller-
+// named standalone-unclaim hazard's resolution): the SAME union
+// deriveStates/deriveStatesFor assemble for the whole-log case —
+// gate 5a's deriveEventPairStates UNIONED with gate 5d's
+// deriveWorkOrderLifecycle — reproduced here over the INDEXED,
+// entity-scoped reads workOrderClaimSourcesFor already performs,
+// rather than deriveStatesFor's own whole-plane getAll (forbidden
+// inside a write-gate transaction — CLAUDE.md's tx-body gotcha:
+// entity-scoped in-tx reads only, never a whole-plane getAll of
+// requests/responses). The two halves are DISJOINT addresses (a
+// work order's op-pair replay never shares an event id with its
+// own states/:id rows — deriveWorkOrderLifecycle's own header),
+// so the union is a plain concatenation, no dedup-assert needed.
+// Byte-identical to db.states.getAllFor(workOrderId) for every
+// reachable event sequence: every LIVE writer of a work order's
+// states rows is one of the four sites api/routes.ts posts
+// through (create/claim/transition op pairs, or the generic
+// states/:id PUT) — the SAME two source families this union
+// reads — and tests/drift-states.test.ts case 4d already proves
+// the whole-log entity union (deriveStatesFor) byte-equal to the
+// row-plane oracle across exactly the scenario the hazard named:
+// create, claim, a STANDALONE release via states/:id
+// (deleteWorkOrderClaim's own shape), then reclaim. This function
+// is that same two-source composition, indexed. postWorkOrderClaimOp
+// (api/routes.ts) is its only live caller.
+export async function workOrderClaimHistoryFor(
+    dbOrView: DbAdapter,
+    organization: Id,
+    workOrderId: Id,
+): Promise<StateEntity[]> {
+    const { replayed, statesAddressEvents } =
+        await workOrderClaimSourcesFor(
+            dbOrView, organization, workOrderId,
+        );
+    return [...replayed, ...statesAddressEvents]
+        .sort(atIdCompare);
 }
 
 // ---- deriveMemberGenesis — the member create-op reader (gate 5c)

@@ -7,6 +7,7 @@ import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     deriveWorkOrderLifecycle,
     workOrderLifecycleStatesFor,
+    workOrderClaimHistoryFor,
 } from '../api/derive-states.ts';
 import { STARK_ORGANIZATION } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
@@ -360,6 +361,64 @@ test('workOrderLifecycleStatesFor: a standalone unclaim (bare'
     assert.equal(
         (await db.states.getAllFor(workOrderId)).length, 4,
     );
+});
+
+// The claim gate's OWN source (Phase 14 Task 4): the SAME
+// standalone unclaim the test above proves EXCLUDED from
+// workOrderLifecycleStatesFor's return is INCLUDED here —
+// workOrderClaimHistoryFor unions that function's replayed
+// events with this entity's own states/:id address rows, so it
+// stays byte-identical to the row-plane oracle
+// (db.states.getAllFor) even across a standalone release. This
+// is the resolution to the controller-named hazard: the claim
+// gate reads THIS function, never workOrderLifecycleStatesFor
+// directly.
+test('workOrderClaimHistoryFor: the SAME standalone unclaim IS'
++ ' included, unlike workOrderLifecycleStatesFor\'s own return —'
++ ' byte-identical to the row-plane oracle', async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+    const workOrderId = 'wo-task4-unclaim';
+    const graph = workOrderFlowGraph(8 * 60 * 60);
+
+    const created = await handleRequest(db, req(
+        'POST', '/work-orders', token,
+        createWorkOrderBody(
+            workOrderId, workOrderId + '-fwo', graph,
+            {
+                ids: [
+                    workOrderId + '-ev1',
+                    workOrderId + '-ev2',
+                    workOrderId + '-ev3',
+                ],
+                ats: [nowUtc(), nowUtc(), nowUtc()],
+                states: ['n-start', 'n-middle', 'claimed'],
+            },
+            nowUtc(),
+        ),
+    ));
+    assert.equal(created.status, 204);
+
+    const unclaimEventId = generateCryptoSafeBase62();
+    const unclaim = await handleRequest(db, req(
+        'PUT', '/states/' + unclaimEventId, token, {
+            entity_id: workOrderId,
+            state: 'claim_released',
+            at: nowUtc(),
+        },
+    ));
+    assert.equal(unclaim.status, 200);
+
+    const scoped = sortByAtId(
+        await workOrderClaimHistoryFor(
+            db, STARK_ORGANIZATION, workOrderId,
+        ),
+    );
+    const oracle = sortByAtId(
+        await db.states.getAllFor(workOrderId),
+    );
+    assert.equal(scoped.length, 4);
+    assert.deepEqual(scoped, oracle);
 });
 
 test('workOrderLifecycleStatesFor: a never-created work-order id'
