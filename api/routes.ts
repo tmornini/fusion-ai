@@ -973,8 +973,8 @@ export async function postRecordWriteOp(
                 // idempotency by id); a genuinely different
                 // trio at the SAME id still 409s via
                 // LedgerImmutabilityError, exactly as before.
-                const head = await view.states.getCurrentFor(
-                    body.id,
+                const head = await documentStateHeadFor(
+                    view, body.id,
                 );
                 const memberId = (
                     head !== null
