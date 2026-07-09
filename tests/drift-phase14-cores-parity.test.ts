@@ -8,6 +8,7 @@ import { invitationOpStateFor } from '../api/derive-invitations.ts';
 import {
     invitationLifecycleStatesFor,
     workOrderLifecycleStatesFor,
+    workOrderClaimHistoryFor,
 } from '../api/derive-states.ts';
 import {
     ORGANIZATION_TWO,
@@ -25,9 +26,13 @@ import { organizationToken } from './token-fixtures.ts';
 // db.transaction view sharing its EVENTUAL write-gate caller's
 // own table list — invitations-domain.ts's accept/decline/
 // revoke transactions and routes.ts's postWorkOrderClaimOp) and
-// proven byte-identical. No write path calls these cores yet —
-// this file alone gates the parity contract Tasks 2-5 will lean
-// on when they wire the call sites.
+// proven byte-identical. Below, workOrderClaimHistoryFor (Phase
+// 14 Task 4's own claim-gate source, the SIBLING that unions
+// workOrderLifecycleStatesFor's replayed events with this
+// entity's states/:id rows) gets the SAME pin — the write path
+// this ONE calls (postWorkOrderClaimOp) is live since Task 4;
+// the other two cores' own write paths (invitations-domain.ts)
+// land in a later task.
 
 const BASE = 'http://localhost';
 
@@ -254,6 +259,71 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
     const inTxMissing = await db.transaction(
         claimTxTables,
         (view) => workOrderLifecycleStatesFor(
+            view, STARK_ORGANIZATION, 'no-such-work-order',
+        ),
+    );
+    assert.deepEqual(inTxMissing, preTxMissing);
+    assert.deepEqual(preTxMissing, []);
+});
+
+// -- workOrderClaimHistoryFor -------------------------------------
+
+// The claim gate's OWN source (Phase 14 Task 4) — the SAME
+// pin as workOrderLifecycleStatesFor above, over
+// postWorkOrderClaimOp's REAL table list (this core's only
+// live caller since this task).
+test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
++ ' plain adapter) vs in-tx (an open db.transaction view sharing'
++ ' postWorkOrderClaimOp\'s own table list)', async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+    const workOrderId = 'wo-parity-claim-history';
+    const graph = workOrderFlowGraph(8 * 60 * 60);
+
+    const created = await handleRequest(db, req(
+        'POST', '/work-orders', token, {
+            id: workOrderId,
+            workOrder: {
+                display_id: 'parity-' + workOrderId,
+                flow_graph: graph, position: 1,
+            },
+            flowWorkOrderId: workOrderId + '-fwo',
+            flowWorkOrder: {
+                flow_id: EMPTY_FLOW_ID,
+                work_order_id: workOrderId, at: nowUtc(),
+            },
+            stateEventIds: [
+                workOrderId + '-ev1',
+                workOrderId + '-ev2',
+                workOrderId + '-ev3',
+            ],
+            stateEventAts: [nowUtc(), nowUtc(), nowUtc()],
+            states: ['n-start', 'n-middle', 'claimed'],
+        },
+    ));
+    assert.equal(created.status, 204);
+
+    const claimTxTables = [
+        'work_orders', 'states', 'requests', 'responses',
+    ];
+    const preTx = await workOrderClaimHistoryFor(
+        db, STARK_ORGANIZATION, workOrderId,
+    );
+    const inTx = await db.transaction(
+        claimTxTables,
+        (view) => workOrderClaimHistoryFor(
+            view, STARK_ORGANIZATION, workOrderId,
+        ),
+    );
+    assert.deepEqual(inTx, preTx);
+    assert.equal(preTx.length, 3);
+
+    const preTxMissing = await workOrderClaimHistoryFor(
+        db, STARK_ORGANIZATION, 'no-such-work-order',
+    );
+    const inTxMissing = await db.transaction(
+        claimTxTables,
+        (view) => workOrderClaimHistoryFor(
             view, STARK_ORGANIZATION, 'no-such-work-order',
         ),
     );
