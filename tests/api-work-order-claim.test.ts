@@ -3,15 +3,35 @@ import { strict as assert } from 'node:assert';
 import {
     POST,
     RequestError,
+    handleRequest,
 } from '../api/api.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
-import { DEV_TOKEN } from './token-fixtures.ts';
+import { DEV_TOKEN, devToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedCurrentMember } from './member-fixtures.ts';
+import { seedOrganizationMember } from './root-admin-fixture.ts';
 import { nowUtc } from '../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
+
+const BASE = 'http://localhost';
+
+function req(
+    method: string,
+    path: string,
+    token: string,
+    body?: unknown,
+): Request {
+    return new Request(`${BASE}${path}`, {
+        method,
+        headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + token,
+        },
+        ...(body ? { body: JSON.stringify(body) } : {}),
+    });
+}
 
 // POST work-orders/:id/claim decides and appends in ONE
 // transaction: a live foreign claim is a 409, a live own
@@ -236,5 +256,56 @@ test(
         assert.equal(claimEv.id, claimEventId);
         assert.equal(claimEv.at, claimAt);
         assert.equal(claimEv.state, 'claimed');
+    },
+);
+
+// The codebase's FIRST genuine two-actor contention pin (Phase
+// 14 Task 4 mandate — every prior "race" test in this suite is
+// sequential). Structural assertions ONLY: exactly one 'claimed'
+// event lands, and exactly one of the two responses carries the
+// byte-exact 409 body — never which actor wins, never a timing
+// margin. MemoryDbAdapter serializes whole transaction bodies
+// (api/store-serializer.ts's promise-chain tail), so this cannot
+// exercise a genuinely interleaved read-then-write — the SAME
+// atomicity that makes the gate correct also makes the two
+// transaction bodies here run one fully before the other starts.
+// It still proves the invariant under Promise.all-driven
+// concurrent DISPATCH (two requests in flight at once, racing to
+// enqueue), and pins the SAME atomicity: were the gate ever
+// changed to read its prior-claim decision outside the
+// transaction (or to await a non-row-op mid-transaction — the
+// CLAUDE.md auto-commit gotcha), this test would catch the
+// regression even though it cannot force a live interleaving
+// today. Pass-first on the OLD (row-plane) path; held unchanged
+// through the pair-plane flip.
+test(
+    'two-actor contention: exactly one claimed event lands and'
+    + ' exactly one request gets the byte-exact 409 body — never'
+    + ' which actor wins',
+    async () => {
+        const db = await seededDb();
+        await seedOrganizationMember(db, 'other');
+        const tokenOther = await devToken('other');
+        const [a, b] = await Promise.all([
+            handleRequest(db, req(
+                'POST', '/work-orders/wo1/claim',
+                DEV_TOKEN, freshClaimBody(),
+            )),
+            handleRequest(db, req(
+                'POST', '/work-orders/wo1/claim',
+                tokenOther, freshClaimBody(),
+            )),
+        ]);
+        assert.deepEqual([a.status, b.status].sort(), [204, 409]);
+        const loser = a.status === 409 ? a : b;
+        assert.deepEqual(
+            await loser.json(),
+            { error: 'work order is already claimed' },
+        );
+        const events = await claimEventsFor(db);
+        assert.equal(
+            events.filter((ev) => ev.state === 'claimed').length,
+            1,
+        );
     },
 );
