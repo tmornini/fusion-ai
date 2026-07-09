@@ -466,3 +466,49 @@ async () => {
         null,
     );
 });
+
+// ---- 7. organizations self-as-owner (Phase 15 Task 1, gate 3) --
+
+test('resolveOwningOrganization: an organizations document id'
++ ' resolves to itself (self-as-owner; own-org visible,'
++ ' foreign hidden)', async () => {
+    const db = await seed();
+    // seed() puts organizations A and B via PUT
+    // /organizations/:id — each document id owns itself.
+    assert.equal(
+        await resolveOwningOrganization(db, 'A', 'A'), 'A',
+    );
+    assert.equal(
+        await resolveOwningOrganization(db, 'A', 'B'), 'A',
+    );
+    assert.equal(
+        await resolveOwningOrganization(db, 'B', 'B'), 'B',
+    );
+    assert.equal(
+        await resolveOwningOrganization(db, 'B', 'A'), 'B',
+    );
+
+    // Fence: a state event on organization A is visible to A
+    // and hidden from B.
+    const keptA = await fenceStatesByOwner(
+        db,
+        [{
+            id: 'ev-org-a', entity_id: 'A',
+            state: 'active', member_id: 'adminA', at: AT,
+        }],
+        'A',
+    );
+    assert.deepEqual(
+        keptA.map((row) => row.id),
+        ['ev-org-a'],
+    );
+    const keptB = await fenceStatesByOwner(
+        db,
+        [{
+            id: 'ev-org-a2', entity_id: 'A',
+            state: 'active', member_id: 'adminA', at: AT,
+        }],
+        'B',
+    );
+    assert.deepEqual(keptB, []);
+});

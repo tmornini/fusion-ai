@@ -205,6 +205,14 @@ const ORGANIZATION_NESTED_FAMILY_ADDRESS_PATTERN = new RegExp(
 const INVITATIONS_PREFIX =
     canonicalUriPrefix(undefined, '/invitations/');
 
+// organizations is the tenant root (global plane, never itself
+// organization-nested — derive-organizations.ts). An
+// organizations document id resolves to itself (Phase 15 Task
+// 1, Author gate 3 — the ONE new resolveOwningOrganization
+// leg).
+const ORGANIZATIONS_ADDRESS_PREFIX =
+    canonicalUriPrefix(undefined, '/organizations/');
+
 // ALL-orgs, server-side ownership resolution — distinct from
 // api/organization-requests.ts's enumerateMyOrganizations, which
 // filters to the caller's own memberships. This walk NEVER
@@ -381,14 +389,23 @@ async function computeOwningOrganization(
     entityId: Id,
     boundOrganization: Id,
 ): Promise<Id | null> {
-    // (a) org-nested document families: a targeted uri_id index
-    // read (mirrors message-pair.ts's own headPairIdAt) rather
-    // than a full-ledger scan — an entity id is globally unique
+    // (a) org-nested document families + (e) organizations
+    // self-as-owner: a targeted uri_id index read (mirrors
+    // message-pair.ts's own headPairIdAt) rather than a full-
+    // ledger scan — an entity id is globally unique
     // (generateCryptoSafeBase62), so at most one distinct
-    // org-nested prefix can ever match.
+    // document prefix can ever match.
     const responseHits =
         await db.responses.getAllWhere('uri_id', entityId);
     for (const response of responseHits) {
+        if (
+            response.uri_prefix
+                === ORGANIZATIONS_ADDRESS_PREFIX
+        ) {
+            // (e) organizations self-as-owner: the document
+            // id IS the owning organization.
+            return entityId;
+        }
         const match = ORGANIZATION_NESTED_FAMILY_ADDRESS_PATTERN
             .exec(response.uri_prefix);
         if (match !== null) return match[1]!;
@@ -412,9 +429,11 @@ async function computeOwningOrganization(
     );
 }
 
-// The PAIR-PLANE fence resolver (gate 4). Resolves entityId's
-// owning organization across all four sources above, or null for
-// a genuine orphan (no pair anywhere names the entity).
+// The PAIR-PLANE fence resolver (gate 4 + Phase 15 gate 3).
+// Resolves entityId's owning organization across the five
+// sources above (org-nested, invitations, flow-graph,
+// membership, organizations self-as-owner), or null for a
+// genuine orphan (no pair anywhere names the entity).
 //
 // MEMOIZATION SCOPE: memoized per distinct entityId WITHIN one
 // derivation pass — `memo` is a Map created per call chain (a
