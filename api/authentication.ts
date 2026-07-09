@@ -1,5 +1,5 @@
 import { EntityNotFoundError } from './db.ts';
-import type { DbAdapter, EntityStore } from './db.ts';
+import type { DbAdapter } from './db.ts';
 import {
     verifyClientAssertion,
 } from './client-assertion.ts';
@@ -373,40 +373,17 @@ export async function tokenRevocationReason(
 // authoritative re-read): find the presented jti's chain, then
 // read the WHOLE chain — planRotation's replay path (and an
 // explicit revocation) act on every jti the chain has ever held,
-// so a jti-only read would under-revoke. `tokens` is whichever
-// face is in scope — the plain adapter pre-tx, the open view
-// in-tx — EntityStore's contract is identical either side.
-async function readTokenChain(
-    tokens: EntityStore<IdentityTokenEntity>,
-    jti: string,
-): Promise<{
-    readonly chainId: string | null;
-    readonly identityId: Id | null;
-    readonly rows: readonly IdentityTokenEntity[];
-}> {
-    const byJti = await tokens.getAllWhere('jti', jti);
-    const chainId = chainIdForJti(byJti, jti);
-    const identityId = identityForJti(byJti, jti);
-    const rows = chainId === null
-        ? byJti
-        : await tokens.getAllWhere('chain_id', chainId);
-    return { chainId, identityId, rows };
-}
-
-// The ledger-derived twin of readTokenChain above (Phase 13 Task
-// 6, gate 7 discharged): the SAME two-step shape — find the
-// presented jti's chain via the by-jti fold, then read the WHOLE
-// chain — but sourced from deriveIdentityTokenEventsForJti/
-// deriveIdentityTokens rather than an EntityStore. `db` is the
-// plain adapter for planRotationAttempt/planRevocationAttempt's
-// own PRE-TX provisional read below; it is an open transaction
-// view (adapter-shaped) for rotateRefreshJti's own IN-TX re-read
-// (Task 9a's first re-anchor) — revokeTokenChain's IN-TX re-read
-// stays on readTokenChain(view.identityTokens, ...) until Task
-// 9a's second re-anchor moves it too. Two independent family
-// scans (one per derivation call) mirror readTokenChain's own two
-// independent getAllWhere calls above — the SAME shape, never
-// worse.
+// so a jti-only read would under-revoke. Ledger-derived (Phase 13
+// Task 6, gate 7 discharged; Task 9a re-anchors BOTH call sites'
+// former row-plane reads here) — sourced from
+// deriveIdentityTokenEventsForJti/deriveIdentityTokens rather than
+// the identity_tokens EntityStore. `db` is the plain adapter for
+// planRotationAttempt/planRevocationAttempt's own PRE-TX
+// provisional read below, and an open transaction view (adapter-
+// shaped) for rotateRefreshJti/revokeTokenChain's own IN-TX
+// re-read. Two independent family scans (one per derivation call)
+// mirror an EntityStore's own two independent getAllWhere calls —
+// the SAME shape, never worse.
 async function readTokenChainFromLedger(
     db: DbAdapter,
     jti: string,
@@ -660,8 +637,8 @@ export async function revokeTokenChain(
                 ['identity_tokens', 'requests', 'responses'],
                 async (view) => {
                     const { chainId, identityId, rows } =
-                        await readTokenChain(
-                            view.identityTokens, jti,
+                        await readTokenChainFromLedger(
+                            view, jti,
                         );
                     const freshAppends =
                         chainId === null || identityId === null
