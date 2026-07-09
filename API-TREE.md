@@ -42,7 +42,9 @@ That mechanism will replace the existing ledger's and common states system by mo
   |    |  └── /objectives                     • RECONCILED: shipped as per-objective documents at objectives/:id (the seventh registered family, 'simple' + lifecycle 'stateless'), collection served by the generic document handler over per-entity heads, revision history as per-objective message history at objectives/:id/revisions/, NOT a single org document — see the objectives FLIPPED 2026-07-05 block, go-to-church-peaceful-castle.md §Phased sequence (Author gates 1/3)
   |    |  └── /flows/
   |    |      └── :id
-  |    |          └── /undo
+  |    |          └── /undo                    • RECONCILED: undo-as-replay (Phase 14 Task 8) — body shrinks to {eventId, at}, both still client-minted; the restore target resolves SERVER-SIDE pre-tx by replaying this flow's OWN flows/:id document-pair history against its OWN undo operation-pair history (stack+pointer, cursor keyed by the undo pairs' stored REQUEST at, never the response at); graphDelta/revivals are now SERVER-computed (SIDECAR-KEEP: the wire SHAPE persists, the client is never told the target to diff against); flow_versions no longer receives a write on this path — routes/table REMAIN (DELETE NOTHING), Phase Final retires — see .superpowers/sdd/progress.md, Phase 14 Task 8
+  |    |          └── /tags/                   • RECONCILED: flow tags (Phase 14 Task 9) — GET|PUT|DELETE flows/:id/tags/:name, SIMPLE class (the locked four-outcome table is structurally MOOT here — isLockedWrite exact-matches flows/:id, never this 4-segment address); the codebase's FIRST document family with NO backing table at all, derived entirely from the pair plane — flow_response_id (one flow document pair's own pinned response id) is the tag's only body field; DELETE is a marked tombstone, no row to splice; API-only this phase, no designer UI — see .superpowers/sdd/progress.md, Phase 14 Task 9
+  |    |              └── :name
   |    |  └── /ideas/
   |    |      └── :id
   |    |  └── /memberships/                   • canonical storage (tenancy covenant)
