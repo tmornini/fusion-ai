@@ -20,7 +20,6 @@ import {
     authorizationCodeSpent,
     deriveAuthorizationCodeId,
 } from '../api/authentication.ts';
-import { codeState } from '../api/authorization-codes.ts';
 
 // Phase 13 Task 6/7 shipped two ledger-derived reads that replace
 // row-plane lookups on Commandment II hot paths: the by-jti fold
@@ -337,7 +336,7 @@ test('SECURITY: a session minted via a real grant is admitted'
 });
 
 // -- 5: GATE 3 (Phase 13 Task 7) — the code-spend guard's -------
-// -- pre-tx-vs-in-tx PARITY + the spend-state drift leg ---------
+// -- pre-tx-vs-in-tx PARITY ------------------------------------------
 
 const CODE_PASSWORD = 's3cret-gate3';
 const CODE_EMAIL = 'gate3-code@example.com';
@@ -397,63 +396,4 @@ test('authorizationCodeSpent: byte-identical pre-tx (the plain'
     );
     assert.equal(inTxAfter, preTxAfter);
     assert.equal(preTxAfter, true);
-});
-
-test('SPEND-STATE DRIFT (Gate 3): the pair-plane spend boolean'
-+ ' over a live login -> exchange -> replay sequence matches'
-+ ' the row-plane codeState verdict fed the SAME issued/'
-+ ' consumed event trail the pre-Task-7 grant used to append'
-+ ' (the consume-row WRITE itself retired with its only'
-+ ' reader — Step 0\'s reader census found zero residual'
-+ ' readers in production — so the trail is test-authored'
-+ ' here: an oracle, not a production read)', async () => {
-    const db = await dbWithCodeLoginUser();
-    const authorizeRes = await authorize(db, {
-        method: 'password', username: CODE_EMAIL,
-        password: CODE_PASSWORD, client_id: 'web',
-    });
-    assert.equal(authorizeRes.status, 200);
-    const { code } = await authorizeRes.json() as { code: string };
-    const derivedId = await deriveAuthorizationCodeId(code);
-
-    const issuedRow = {
-        code, identity_id: 'current', client_id: 'web',
-        status: 'issued' as const, at: AT,
-    };
-
-    // BEFORE exchange: neither plane has observed a spend.
-    assert.equal(
-        await authorizationCodeSpent(db, derivedId), false);
-    assert.equal(codeState([issuedRow], code)?.status, 'issued');
-
-    // exchange: the real grant, live.
-    const grantRes = await tokenGrant(db, {
-        grant_type: 'authorization_code', code,
-    });
-    assert.equal(grantRes.status, 200);
-
-    // AFTER exchange: the pair plane alone reflects the spend —
-    // the row plane is frozen at 'issued' (the consume WRITE
-    // retired this task), so its verdict is reconstructed here
-    // from the SAME issued -> consumed trail the retired write
-    // used to append, proving the two planes agree on the
-    // SEMANTICS of spend even though only the pair plane still
-    // observes it in production.
-    assert.equal(
-        await authorizationCodeSpent(db, derivedId), true);
-    const consumedRow = {
-        ...issuedRow, status: 'consumed' as const, at: AT2,
-    };
-    assert.equal(
-        codeState([issuedRow, consumedRow], code)?.status,
-        'consumed');
-
-    // replay: denied on the pair plane, byte-exact 401.
-    const replay = await tokenGrant(db, {
-        grant_type: 'authorization_code', code,
-    });
-    assert.equal(replay.status, 401);
-    const replayBody = await replay.json() as { error: string };
-    assert.equal(
-        replayBody.error, 'invalid or used authorization code');
 });

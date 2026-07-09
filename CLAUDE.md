@@ -394,7 +394,9 @@ apply to it (RED is the audit's first finding).
   — before the atomicity above ever runs. ASYMMETRIC: it only
   closes "a new build imports an old export"; an old build's
   importer ignores the unknown key and imports anyway. The
-  constant bumps at Phase Final, when `TABLE_NAMES` shrinks.
+  constant bumps whenever `TABLE_NAMES` shrinks — Phase 13
+  Task 9 (identity_tokens + authorization_codes retire) is
+  the first bump, 1→2.
 - **`file:///` protocol.** Page URLs use relative paths.
   Code supports `file:///` locally but testing is HTTP-only.
 - **View Transition aborts.** rapid programmatic navigation
