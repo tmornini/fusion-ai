@@ -7,7 +7,13 @@ import {
     RequestError,
 } from '../api/api.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
-import { jsonObjectField } from '../api/types.ts';
+import { TABLE_NAMES } from '../api/db.ts';
+import {
+    jsonObjectField,
+    type GraphEdge,
+} from '../api/types.ts';
+import type { AttributeReferrers } from
+    '../api/record-attribute-refs.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedCurrentMember } from './member-fixtures.ts';
@@ -134,6 +140,63 @@ function workOrderNodeBinding(
         taskInstructions: '',
     };
 }
+
+// Author gate 5 (Phase 15 Task 4): attribute bindings cannot
+// reach flow edges — GraphEdge has no attributes field and no
+// flow_edge_attributes table exists. RESTRICT therefore grows
+// NO edges leg; AttributeReferrers names only valueCount /
+// flowIds / workOrderIds. Short type-level + unit proof, not
+// an edges scan.
+test(
+    'prove attribute bindings cannot reach flow edges',
+    () => {
+        type GraphEdgeHasNoAttributes =
+            'attributes' extends keyof GraphEdge
+                ? never
+                : true;
+        const edgeTypeProof: GraphEdgeHasNoAttributes = true;
+        assert.equal(edgeTypeProof, true);
+
+        const edgeKeys: readonly (keyof GraphEdge)[] = [
+            'id', 'name', 'fromNodeId', 'toNodeId',
+        ];
+        assert.equal(
+            (edgeKeys as readonly string[])
+                .includes('attributes'),
+            false,
+        );
+        assert.equal(
+            (TABLE_NAMES as readonly string[])
+                .includes('flow_edge_attributes'),
+            false,
+        );
+
+        // AttributeReferrers is the RESTRICT wire shape —
+        // no edgeIds / edge referrer slot exists.
+        type ReferrerKeys = keyof AttributeReferrers;
+        type OnlyKnownReferrerKeys =
+            ReferrerKeys extends
+                'valueCount' | 'flowIds' | 'workOrderIds'
+                ? (
+                    'valueCount' | 'flowIds' | 'workOrderIds'
+                ) extends ReferrerKeys
+                    ? true
+                    : never
+                : never;
+        const referrerShapeProof: OnlyKnownReferrerKeys =
+            true;
+        assert.equal(referrerShapeProof, true);
+        const sample: AttributeReferrers = {
+            valueCount: 0,
+            flowIds: [],
+            workOrderIds: [],
+        };
+        assert.deepEqual(
+            Object.keys(sample).sort(),
+            ['flowIds', 'valueCount', 'workOrderIds'],
+        );
+    },
+);
 
 test(
     'an unreferenced attribute deletes cleanly',
