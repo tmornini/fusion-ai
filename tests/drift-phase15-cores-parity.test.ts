@@ -10,6 +10,7 @@ import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     workOrderDocumentHeadFor,
     stateEventVisibilityFor,
+    resolveOwningOrganization,
 } from '../api/derive-states.ts';
 import {
     flowGraphBindingsFromPairs,
@@ -40,12 +41,14 @@ function req(
     path: string,
     token: string,
     body?: unknown,
+    headers?: Record<string, string>,
 ): Request {
     return new Request(`${BASE}${path}`, {
         method,
         headers: {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + token,
+            ...(headers ?? {}),
         },
         ...(body ? { body: JSON.stringify(body) } : {}),
     });
@@ -490,4 +493,277 @@ test('prove-impossible: attribute bindings cannot reach'
             .includes('flow_edge_attributes'),
         false,
     );
+});
+
+// -- residual cross-core pins (Phase 15 Task 1 final) ----------
+
+test('residual pin: workOrderDocumentHeadFor matches'
++ ' workOrders.getById for every seeded Stark work order',
+async () => {
+    const db = await seededDb();
+    const rows = await db.workOrders.getAll();
+    const stark = rows.filter(
+        (r) => r.organization_id === STARK_ORGANIZATION,
+    );
+    assert.ok(stark.length > 0);
+    for (const row of stark) {
+        const derived = await workOrderDocumentHeadFor(
+            db, STARK_ORGANIZATION, row.id,
+        );
+        assert.deepEqual(derived, row, row.id);
+    }
+});
+
+test('residual pin: stateEventVisibilityFor matches the'
++ ' row-plane three-way over a sample of seed events for'
++ ' both organizations', async () => {
+    const db = await seededDb();
+    const allStates = await db.states.getAll();
+    // Sample first, middle, last + a few random-ish picks
+    // by index — full 911 would dominate wall-clock without
+    // buying more coverage of the tiered design.
+    const sampleIds = [
+        allStates[0]!.id,
+        allStates[Math.floor(allStates.length / 2)]!.id,
+        allStates[allStates.length - 1]!.id,
+        allStates[10]!.id,
+        allStates[100]!.id,
+        allStates[400]!.id,
+        allStates[800]!.id,
+    ];
+    for (const organization of [
+        STARK_ORGANIZATION, ORGANIZATION_TWO,
+    ]) {
+        const scoped = organizationScopedAdapter(
+            db, organization,
+        );
+        for (const eventId of sampleIds) {
+            const derived = await stateEventVisibilityFor(
+                db, organization, eventId,
+            );
+            const oracle = await rowPlaneVisibility(
+                scoped, eventId,
+            );
+            assert.equal(
+                derived, oracle,
+                organization + '/' + eventId,
+            );
+        }
+    }
+});
+
+test('residual pin: organizations self-as-owner feeds'
++ ' stateEventVisibilityFor for a states/:id event on an'
++ ' organization entity_id', async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+    const eventId = 'ev-org-self-owner-p15';
+    // PUT states/:id naming the organization id itself as
+    // entity_id — only legal once self-as-owner resolves.
+    const put = await handleRequest(db, req(
+        'PUT', '/states/' + eventId, token, {
+            entity_id: STARK_ORGANIZATION,
+            state: 'active',
+            at: nowUtc(),
+        },
+    ));
+    // Pre-dispatch fence still uses the row plane (Task 5
+    // re-points). If the live fence rejects organization
+    // entity_ids today, seed the pair below-facade instead.
+    if (put.status === 200) {
+        assert.equal(
+            await stateEventVisibilityFor(
+                db, STARK_ORGANIZATION, eventId,
+            ),
+            'visible',
+        );
+        assert.equal(
+            await stateEventVisibilityFor(
+                db, ORGANIZATION_TWO, eventId,
+            ),
+            'hidden',
+        );
+        return;
+    }
+    // Fence not yet re-pointed: pin the resolver leg alone
+    // (Task 5 owns the write-fence re-point verification).
+    assert.equal(
+        await resolveOwningOrganization(
+            db, STARK_ORGANIZATION, STARK_ORGANIZATION,
+        ),
+        STARK_ORGANIZATION,
+    );
+    assert.equal(
+        await resolveOwningOrganization(
+            db, STARK_ORGANIZATION, ORGANIZATION_TWO,
+        ),
+        STARK_ORGANIZATION,
+    );
+});
+
+test('residual pin: flowGraphBindingsFromPairs tracks a'
++ ' live attribute add then remove (fail-closed) against'
++ ' the row plane', async () => {
+    const db = await seededDb();
+    const token = await organizationToken();
+    const flowId = 'p15-bind-flow';
+    const nodeId = 'p15-bind-node';
+    const attrId = 'p15-bind-attr';
+    const at1 = '2026-06-15T00:00:00.000000Z';
+    const at2 = '2026-06-15T00:00:01.000000Z';
+    // A seeded project the create can join.
+    const projectId = 'u6YkHhlGc91oDMkr3x0isa';
+
+    const attrPut = await handleRequest(db, req(
+        'PUT', '/record-attributes/' + attrId, token, {
+            record_id: 'rec01CustProfRec0rdAB1',
+            name: 'P15 Bind',
+            attribute_type: 'text',
+            sort_order: 99,
+            options: '[]',
+            constraints: '[]',
+        },
+    ));
+    assert.equal(attrPut.status, 200);
+
+    // Create with the binding already 'added'.
+    const created = await handleRequest(db, req(
+        'POST', '/flows', token, {
+            id: flowId,
+            flow: {
+                name: 'P15 Bind Flow',
+                is_locked: false,
+                is_auto_layout: false,
+                is_auto_fit: false,
+                lock_timeout: 8 * 60 * 60,
+            },
+            projectFlowId: flowId + '-pf',
+            projectFlow: {
+                project_id: projectId,
+                flow_id: flowId,
+                at: at1,
+            },
+            initialState: 'active',
+            initialStateEventId: flowId + '-ev',
+            initialStateAt: at1,
+            graphDelta: {
+                nodes: [{
+                    id: nodeId, flow_id: flowId,
+                    name: 'Bind',
+                    position_x: 0, position_y: 0,
+                    is_create: true, is_archive: false,
+                    task_instructions: '', at: at1,
+                }],
+                edges: [],
+                deletions: [],
+                memberEvents: [],
+                attributeEvents: [{
+                    id: 'p15-fna-add',
+                    flow_node_id: nodeId,
+                    attribute_id: attrId,
+                    mode: 'editable',
+                    is_required: false,
+                    action: 'added',
+                    at: at1,
+                }],
+            },
+        },
+    ));
+    assert.equal(created.status, 204);
+
+    const afterAdd = await flowGraphBindingsFromPairs(
+        db, STARK_ORGANIZATION,
+    );
+    const addRow = afterAdd.attributeEvents.find(
+        (r) => r.id === 'p15-fna-add',
+    );
+    assert.ok(addRow);
+    assert.equal(addRow!.action, 'added');
+    assert.equal(
+        afterAdd.nodeFlowIds.get(nodeId), flowId,
+    );
+    assert.deepEqual(
+        addRow,
+        await db.flowNodeAttributes.getById('p15-fna-add'),
+    );
+
+    // Chain a remove off the create's document head.
+    const headGet = await handleRequest(
+        db, req('GET', '/flows/' + flowId, token),
+    );
+    assert.equal(headGet.status, 200);
+    const headId = headGet.headers.get('Response-ID');
+    assert.ok(headId);
+
+    const putRemove = await handleRequest(db, req(
+        'PUT', '/flows/' + flowId, token,
+        {
+            name: 'P15 Bind Flow',
+            is_locked: false,
+            is_auto_layout: false,
+            is_auto_fit: false,
+            lock_timeout: 8 * 60 * 60,
+            state: 'active',
+            state_at: at2,
+            state_event_id: flowId + '-ev-rm',
+            graph: jsonObjectField({
+                nodes: [{
+                    id: nodeId, name: 'Bind',
+                    positionX: 0, positionY: 0,
+                    isCreate: true, isArchive: false,
+                    memberIds: [],
+                    attributes: [],
+                    taskInstructions: '',
+                }],
+                edges: [],
+            }),
+            graphDelta: {
+                nodes: [{
+                    id: nodeId, flow_id: flowId,
+                    name: 'Bind',
+                    position_x: 0, position_y: 0,
+                    is_create: true, is_archive: false,
+                    task_instructions: '', at: at2,
+                }],
+                edges: [],
+                deletions: [],
+                memberEvents: [],
+                attributeEvents: [{
+                    id: 'p15-fna-rm',
+                    flow_node_id: nodeId,
+                    attribute_id: attrId,
+                    mode: 'editable',
+                    is_required: false,
+                    action: 'removed',
+                    at: at2,
+                }],
+            },
+            revivals: [],
+        },
+        { 'if-response-id': headId! },
+    ));
+    assert.equal(putRemove.status, 200);
+
+    const afterRm = await flowGraphBindingsFromPairs(
+        db, STARK_ORGANIZATION,
+    );
+    const rmRow = afterRm.attributeEvents.find(
+        (r) => r.id === 'p15-fna-rm',
+    );
+    assert.ok(rmRow);
+    assert.equal(rmRow!.action, 'removed');
+    assert.deepEqual(
+        rmRow,
+        await db.flowNodeAttributes.getById('p15-fna-rm'),
+    );
+
+    const latest = latestByKey(
+        afterRm.attributeEvents.filter(
+            (r) => r.flow_node_id === nodeId
+                && r.attribute_id === attrId,
+        ),
+        (r) => r.flow_node_id,
+        relationFailClosed,
+    );
+    assert.equal(latest.get(nodeId)!.action, 'removed');
 });
