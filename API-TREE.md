@@ -25,15 +25,15 @@ That mechanism will replace the existing ledger's and common states system by mo
   |      └─|─ /pii                             • full physical removal from the DB required, i.e. physical delete, all others: Delete-At: header
   |      └─|─ /role-grants                     • all of them, single document
   |      └─|─ /third-party-identity-providers  • all of them, single document
-  |      └─|─ /token-revocations               • if the answer to the question directly above is "PUT/GET"
+  |      └─|─ /token-revocations               • RECONCILED: shipped FLAT, not nested here — GET|PUT /identity-token-revocations/:id (GLOBAL-plane, no organization_id), the answer WAS "PUT/GET"; GET stays admin-only, PUT widened to member-tier SELF-target only at WP8 (Phase 13 Task 8) — a member may revoke its own chain, naming another identity still requires admin — see the Auth RECONCILED 2026-07-06 block, go-to-church-peaceful-castle.md §Phases 3…N
   |      └─|─ /memberships/                    • /memberships/ with forced and/or filtered identity
   |      └─|─ /organizations/                  • /organizations/ with forced and/or filtered identity
   |      └─|─ /work-orders/                    • /work-orders/ with forced and/or filtered identity
-  |      └─|─ /tokens/
+  |      └─|─ /tokens/                         • RECONCILED: shipped FLAT, not nested here — GET /identity-tokens, GET|PUT /identity-tokens/:id, POST /identity-tokens/:jti/rotation, POST /identity-tokens/:jti/revocation; both GETs derive from the pair plane (Phase 13 Task 6), PUT is pair-only and rotation/revocation append event pairs only (Task 5) — Phase 13 Task 9 retired the identity_tokens row store outright (SNAPSHOT_SCHEMA_VERSION 1→2, alongside authorization_codes) — see the Auth RECONCILED 2026-07-06 block, go-to-church-peaceful-castle.md §Phases 3…N
   |        |  └── :id
-  |        |      ├── /rotation                • is this a POST?
-  |        |      └── /revocation              • is this a POST?
-  |        |      └── /revocation              • is this a POST, if not, a PUT/GET pair?
+  |        |      ├── /rotation                • is this a POST? — YES, see the /tokens/ RECONCILED note above
+  |        |      └── /revocation              • is this a POST? — YES, see the /tokens/ RECONCILED note above
+  |        |      └── /revocation              • is this a POST, if not, a PUT/GET pair? — POST, see above
   |        \
   |         \- identity authz realm 
 └─|─ /organizations/
