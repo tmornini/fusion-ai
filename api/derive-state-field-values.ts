@@ -159,20 +159,52 @@ export function stateFieldValuesFrom(
 // field-value row is visible iff its PARENT STATE EVENT is.
 // `view.states` is ALREADY org-scoped (db-organization-scoped.ts's
 // ParentScopedStateStore) for any caller-supplied view this
-// module's own exports receive, so this is the SAME two-hop
-// resolution the RETIRING state_field_values parentScope resolver
-// performed (base.states.getById(row.state_event_id) then
-// ownerOrganizationOfEntity) — reused via the store that already
-// carries it, never rebuilt over the pair plane a second time.
+// module's own exports receive, so this is the SAME resolution
+// the RETIRING state_field_values parentScope resolver performed
+// (base.states.getById(row.state_event_id), then
+// ownerOrganizationOfEntity on a hit) — reused via the store that
+// already carries it, never rebuilt over the pair plane a second
+// time.
+//
+// THE THREE-WAY RULE, restored verbatim (fix wave, Critical 1):
+// the retiring resolver's own three branches are (1) no row for
+// state_event_id AT ALL — a visible orphan (its own try/catch:
+// EntityNotFoundError on the RAW base.states.getById returns
+// null, and isVisible(null, org) is true); (2) a row exists and
+// its entity resolves to this organization, OR to no owner at
+// all (a visible orphan again) — both fold through
+// ParentScopedStateStore's OWN getById succeeding; (3) a row
+// exists and its entity resolves to a DIFFERENT, existing
+// organization — hidden. view.states.getById ALONE cannot tell
+// (1) apart from (3): both throw EntityNotFoundError identically
+// (case 1 from the unfenced inner getById; case 3 from
+// ParentScopedStateStore's own re-throw after a foreign-owner
+// resolution). rawHasRow (api/db.ts's StateStore interface, the
+// fence-mechanics addition this fix wave adds) settles (1) first
+// — a raw presence check delegated to the SAME wrapped inner
+// store the retired resolver closed over, never a second
+// top-level transaction (db-backed.ts's ambientRunner reuses
+// whatever tx `view` is already bound to).
 async function isVisibleStateEvent(
     view: DbAdapter,
     stateEventId: Id,
 ): Promise<boolean> {
+    if (!(await view.states.rawHasRow(stateEventId))) {
+        // Case (1): no row anywhere — a visible orphan.
+        return true;
+    }
     try {
+        // Case (2): the row exists and is visible (same org, or
+        // an orphan entity) — ParentScopedStateStore's own
+        // getById already applies exactly this rule.
         await view.states.getById(stateEventId);
         return true;
     } catch (e) {
-        if (e instanceof EntityNotFoundError) return false;
+        if (e instanceof EntityNotFoundError) {
+            // Case (3): the row exists but resolves to a
+            // different, existing organization — hidden.
+            return false;
+        }
         throw e;
     }
 }

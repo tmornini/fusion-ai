@@ -477,26 +477,23 @@ test('a RESTRICTed DELETE record-attributes/:id 409s and'
         'PUT', '/record-attributes/attr-3', token,
         recordAttributeFields('rec-7', 'Bound'),
     ));
-    // The parent event names a REAL org-owned record ('rec-7',
-    // the SAME id attr-3 is bound to) — raw (the leaf's own
-    // parent-event fence reads it, never writes it) so the
-    // field-value's org resolves through the ordinary
-    // organization-owned-probe path, matching a genuine live
-    // trace.
-    await db.records.put('rec-7', {
-        organization_id: '1', name: 'r',
-        description: 'd', position: 0,
-    });
-    await db.states.put('ev-x', {
-        entity_id: 'rec-7', state: 'active',
-        member_id: 'system', at: AT,
-    });
     // NAMED re-pin (Phase 14 Task 6): RESTRICT's field-value
     // leg is pair-plane derived now — a raw
     // db.stateFieldValues.put leaves no pair at the leaf
     // address (states/:id/field-values/:fvid), so the row must
     // land through the SAME wire-reachable PUT the live route
-    // serves.
+    // serves. 'ev-x' itself is DELIBERATELY never created —
+    // the ORIGINAL dangling-parent fixture, restored (fix wave,
+    // Critical 1): no states row exists for it at all, so it
+    // resolves as a visible orphan (isVisibleStateEvent's
+    // rawHasRow branch, api/derive-state-field-values.ts),
+    // exactly as the retired parentScope resolver treated it
+    // (db-organization-scoped.ts's own try/catch on
+    // base.states.getById). This is the three-way visibility
+    // rule's FIRST branch — it never reaches the entity-
+    // ownership probe, so it does not depend on the flow_edges/
+    // ATTRIBUTE_RESTRICT_TABLES pre-existing gap either (see
+    // this file's Concerns note in the Task 6 report).
     await handleRequest(db, req(
         'PUT', '/states/ev-x/field-values/sfv-1', token,
         {
