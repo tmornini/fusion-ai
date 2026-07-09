@@ -169,6 +169,7 @@ import {
     deriveStates,
     deriveStatesFor,
     workOrderClaimHistoryFor,
+    documentStateHeadFor,
 } from './derive-states.ts';
 import {
     deriveOrganization,
@@ -1144,7 +1145,7 @@ export async function postIdeaDocumentOp(
     return db.transaction(
         ['ideas', 'states', 'requests', 'responses'],
         async (view) => {
-            const head = await view.states.getCurrentFor(id);
+            const head = await documentStateHeadFor(view, id);
             const memberId = (
                 head !== null
                 && head.id === doc.state_event_id
