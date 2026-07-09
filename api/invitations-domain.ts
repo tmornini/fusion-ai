@@ -11,7 +11,6 @@ import {
 import {
     currentRolesForInOrganization,
 } from './authorization.ts';
-import { latestByKey } from '../shared/ledger-reduction.ts';
 import { identityDefaultOrganization } from './authentication.ts';
 import {
     errorJson,
@@ -47,7 +46,10 @@ import {
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
 import { formDocumentPairFor } from './routes.ts';
-import { deriveInvitations } from './derive-invitations.ts';
+import {
+    deriveInvitations,
+    invitationOpStateFor,
+} from './derive-invitations.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import {
     deriveIdentityPiiRows,
@@ -581,7 +583,27 @@ async function grantOutcomeFor(
 
 // The org's outstanding pending invitation for an identity, or
 // null. The grant idempotency check.
-async function pendingInvitationFor(
+//
+// FLIPPED (Phase 14 Task 2): the per-candidate STATE lookup
+// re-points onto invitationOpStateFor (api/derive-invitations.ts,
+// Task 1) — wire-identical to the states.getAll()+latestByKey
+// dispatch it replaces (tests/drift-invitation-pending-dedup.
+// test.ts's Step 0 equivalence proof). Candidate DISCOVERY stays
+// on the invitations ROW plane (adapter.invitations.getAll()) —
+// dual-write keeps that table current, and no (organization,
+// identity) index exists on the pair plane to discover candidates
+// without it. `undefined` means "no terminal op yet" — the same
+// 'pending' conclusion the old current.state check reached, since
+// every genuine invitations row already carries its own genesis
+// 'pending' pair (the dual-write invariant grantInvitation's own
+// transaction keeps). Exported for
+// tests/pin-invitation-write-path-parity.test.ts's pre-tx-vs-in-tx
+// pin (Task 2 commit 3) — called BOTH pre-tx (to decide the
+// response) and in-tx (the `agrees` re-check) inside
+// grantInvitation's own transaction, so both calls already run
+// this SAME body; the pin makes that a proven property, not a
+// coincidence.
+export async function pendingInvitationFor(
     adapter: DbAdapter,
     organization: Id,
     identityId: Id,
@@ -589,17 +611,9 @@ async function pendingInvitationFor(
     const candidates = (await adapter.invitations.getAll())
         .filter(inv => inv.organization_id === organization
             && inv.identity_id === identityId);
-    if (candidates.length === 0) return null;
-    // One states read answers every candidate; on the grant
-    // path this joins the already-open transaction.
-    const latest = latestByKey(
-        await adapter.states.getAll(), ev => ev.entity_id);
     for (const inv of candidates) {
-        const current = latest.get(inv.id);
-        if (current === undefined) continue;
-        const state = assertInvitationState(
-            current.state, 'invitation ' + inv.id);
-        if (state === 'pending') {
+        const state = await invitationOpStateFor(adapter, inv.id);
+        if (state === undefined) {
             return { id: inv.id, at: inv.at };
         }
     }
