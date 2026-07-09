@@ -185,6 +185,7 @@ import {
     deriveStates,
     deriveStatesFor,
     workOrderClaimHistoryFor,
+    workOrderDocumentHeadFor,
     documentStateHeadFor,
 } from './derive-states.ts';
 import {
@@ -2460,6 +2461,13 @@ export async function postWorkOrderCreationOp(
 // row-plane view.states.getAllFor(workOrderId). Author gate 3:
 // latestClaimEvent and isClaimEventExpired (the live Date.now
 // clock) stay byte-identical — ONLY the event SOURCE flips.
+//
+// PHASE 15 TASK 2: the claim-gate graph read is re-anchored
+// onto workOrderDocumentHeadFor (pair-plane document head)
+// in place of view.workOrders.getById. isClaimEventExpired +
+// 409 bytes + EntityNotFoundError mapping stay byte-identical
+// — ONLY the row source flips. Tx tables keep 'work_orders'
+// until Final (dual-write half still lists it).
 export async function postWorkOrderClaimOp(
     db: DbAdapter,
     workOrderId: Id,
@@ -2473,8 +2481,14 @@ export async function postWorkOrderClaimOp(
         async (view) => {
             const b =
                 validateWorkOrderClaimBody(body);
-            const wo = await view.workOrders
-                .getById(workOrderId);
+            const wo = await workOrderDocumentHeadFor(
+                view, organization, workOrderId,
+            );
+            if (wo === null) {
+                throw new EntityNotFoundError(
+                    'work_orders', workOrderId,
+                );
+            }
             const graph =
                 validateWorkOrderFlowGraphJson(
                     wo.flow_graph,
