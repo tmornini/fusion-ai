@@ -980,6 +980,105 @@ export async function deriveWorkOrderLifecycle(
     );
 }
 
+// ENTITY-SCOPED sibling of deriveWorkOrderLifecycle above (Phase
+// 14 Task 1): reuses the SAME pure replay core
+// (replayWorkOrderOperations) over INDEXED reads scoped to ONE
+// known (organization, workOrderId) pair, rather than the
+// whole-org scan the multi-work-order reader needs to discover
+// EVERY id at once —
+//   * create + document pairs: uri_id (both a create's response
+//     and its later document PUT/DELETE share ONE uriId at the
+//     work-orders collection address — the SAME finding
+//     drift-work-orders.test.ts case 8 pins), filtered to the
+//     collection prefix;
+//   * claim/transition: uri_prefix at each sub-resource's own
+//     per-id address (WORK_ORDER_CLAIM_PATTERN/
+//     WORK_ORDER_TRANSITION_PATTERN's own shape, constructed
+//     directly since the id is already known);
+//   * gate 5a's states/:id rows: uri_prefix at the organization's
+//     OWN states address, filtered locally to this entity —
+//     states/:id carries no per-entity path segment (the
+//     entity_id lives in the body), so the organization prefix is
+//     the tightest available index, the SAME fallback
+//     resolveViaMembershipPairPlane already relies on elsewhere
+//     in this module.
+// dbOrView-shaped and opens no nested transaction — callable from
+// WITHIN an already-open write-gate transaction
+// (postWorkOrderClaimOp's own in-tx `view.states.getAllFor(
+// workOrderId)` read, api/routes.ts — a LATER task wires the call
+// site; this task lands the core alone).
+export async function workOrderLifecycleStatesFor(
+    dbOrView: DbAdapter,
+    organization: Id,
+    workOrderId: Id,
+): Promise<StateEntity[]> {
+    const collectionPrefix = canonicalUriPrefix(
+        organization, '/work-orders/',
+    );
+    const [byIdRequests, byIdResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere('uri_id', workOrderId),
+        dbOrView.responses.getAllWhere('uri_id', workOrderId),
+    ]);
+    const collectionRequests = byIdRequests.filter(
+        (r) => r.uri_prefix === collectionPrefix,
+    );
+    const collectionResponses = byIdResponses.filter(
+        (r) => r.uri_prefix === collectionPrefix,
+    );
+    const createPairs = operationPairsAt(
+        collectionRequests, collectionResponses, collectionPrefix,
+    );
+    const entityPairs = documentPairsAt(
+        collectionRequests, collectionResponses, collectionPrefix,
+    );
+
+    const claimPrefix = canonicalUriPrefix(
+        organization,
+        '/work-orders/' + workOrderId + '/claim/',
+    );
+    const [claimRequests, claimResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere('uri_prefix', claimPrefix),
+        dbOrView.responses.getAllWhere('uri_prefix', claimPrefix),
+    ]);
+    const claimPairs = operationPairsAt(
+        claimRequests, claimResponses, claimPrefix,
+    );
+
+    const transitionPrefix = canonicalUriPrefix(
+        organization,
+        '/work-orders/' + workOrderId + '/transition/',
+    );
+    const [
+        transitionRequests, transitionResponses,
+    ] = await Promise.all([
+        dbOrView.requests.getAllWhere(
+            'uri_prefix', transitionPrefix,
+        ),
+        dbOrView.responses.getAllWhere(
+            'uri_prefix', transitionPrefix,
+        ),
+    ]);
+    const transitionPairs = operationPairsAt(
+        transitionRequests, transitionResponses, transitionPrefix,
+    );
+
+    const statesPrefix = canonicalUriPrefix(
+        organization, '/states/',
+    );
+    const [stateRequests, stateResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere('uri_prefix', statesPrefix),
+        dbOrView.responses.getAllWhere('uri_prefix', statesPrefix),
+    ]);
+    const statesAddressEvents = eventPairStatesFrom(
+        stateRequests, stateResponses,
+    ).filter((row) => row.entity_id === workOrderId);
+
+    return replayWorkOrderOperations(
+        createPairs, entityPairs, statesAddressEvents,
+        claimPairs, transitionPairs, workOrderId,
+    ).sort(atIdCompare);
+}
+
 // ---- deriveMemberGenesis — the member create-op reader (gate 5c)
 
 // Source (c) of the states-log union. A human/AI member's OWN
