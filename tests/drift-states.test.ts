@@ -808,9 +808,9 @@ test('case 5a: a LIVE flow-node delete + undo (source e — the'
     );
 });
 
-test('case 5b: a LIVE invitation grant/accept chain and a LIVE'
-+ ' grant/decline chain (source f — the seed has NONE) — each'
-+ ' deepEquals the old plane', async () => {
+test('case 5b: a LIVE invitation grant/accept chain, a LIVE'
++ ' grant/decline chain, and a LIVE grant/revoke chain (source f'
++ ' — the seed has NONE) — each deepEquals the old plane', async () => {
     const db = await seededDb();
     const adminToken = await organizationToken(
         'current', STARK_ORGANIZATION,
@@ -881,6 +881,40 @@ test('case 5b: a LIVE invitation grant/accept chain and a LIVE'
     assert.deepEqual(
         declineDerived.map((row) => row.state),
         ['pending', 'declined'],
+    );
+
+    // The revoked leg: the ONE terminal invitation state that
+    // had NO old-plane parity evidence anywhere before this task
+    // (currentInvitationState's Phase 14 Task 2 flip reads
+    // exactly this history for its own 'revoked' branch).
+    await person(
+        db, 'drift-states-invitee-revoke', 'Revoke Invitee',
+        'drift-states-invitee-revoke@x.com',
+    );
+    const revokeGrant = await handleRequest(db, req(
+        'POST', '/invitations', adminToken, {
+            email: 'drift-states-invitee-revoke@x.com',
+            invitationId: 'drift-states-inv-revoke',
+            grantEventId: 'drift-states-inv-revoke-grant',
+            grantAt: '2026-03-03T00:00:00.000000Z',
+        },
+    ));
+    assert.equal(revokeGrant.status, 200);
+    const revoke = await handleRequest(db, req(
+        'POST',
+        '/invitations/drift-states-inv-revoke/revocation',
+        adminToken, {
+            revokeEventId: 'drift-states-inv-revoke-revoke',
+            revokeAt: '2026-03-03T00:00:00.000001Z',
+        },
+    ));
+    assert.equal(revoke.status, 204);
+    const revokeDerived = await assertHistoryParity(
+        db, STARK_ORGANIZATION, 'drift-states-inv-revoke',
+    );
+    assert.deepEqual(
+        revokeDerived.map((row) => row.state),
+        ['pending', 'revoked'],
     );
 });
 

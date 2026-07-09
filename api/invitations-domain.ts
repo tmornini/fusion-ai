@@ -11,6 +11,7 @@ import {
 import {
     currentRolesForInOrganization,
 } from './authorization.ts';
+import { latestByKey } from '../shared/ledger-reduction.ts';
 import { identityDefaultOrganization } from './authentication.ts';
 import {
     errorJson,
@@ -55,7 +56,10 @@ import {
     deriveIdentityPiiRows,
     deriveRoleGrants,
 } from './derive-identity-spine.ts';
-import { deriveInvitationStates } from './derive-states.ts';
+import {
+    deriveInvitationStates,
+    invitationLifecycleStatesFor,
+} from './derive-states.ts';
 import { membershipExistsFor } from './derive-memberships.ts';
 
 // The active org of the caller: the verified token claim, else
@@ -80,16 +84,34 @@ async function callerIsOrganizationAdmin(
     ).includes('admin');
 }
 
-// An invitation's current state: the latest event on its id —
-// states.getCurrentFor, the same (at, id) derivation every
-// entity's lifecycle uses. Null when no event has been
-// recorded.
-async function currentInvitationState(
+// An invitation's current state: the latest lifecycle event on
+// its id, derived from the pair plane.
+//
+// FLIPPED (Phase 14 Task 2): re-points onto
+// invitationLifecycleStatesFor (api/derive-states.ts, Task 1) —
+// wire-identical to the old adapter.states.getCurrentFor(id)
+// dispatch it replaces (tests/drift-states.test.ts case 5b's
+// revoke leg proves old-plane parity for the one terminal state
+// that had none before this task). latestByKey applies the SAME
+// (at, id) total order getCurrentForIn itself delegates to
+// (shared/ledger-reduction.ts) — mutual exclusivity of the three
+// terminal ops (derive-invitations.ts's own covenant) means at
+// most a 'pending' row and ONE terminal row can ever compete, but
+// the shared reduction is reused rather than hand-rolled so no
+// ordering assumption is duplicated. Null when no lifecycle event
+// has been recorded at all — a genuinely absent invitation, or
+// the rare pre-tx race grantInvitation's own header describes.
+// Exported for tests/pin-invitation-write-path-parity.test.ts's
+// pre-tx-vs-in-tx pin (Task 2 commit 3) — accept/decline/revoke
+// each call this ONLY in-tx today; the export lets the pin also
+// call it pre-tx, over the SAME plain adapter, for comparison.
+export async function currentInvitationState(
     adapter: DbAdapter,
     id: Id,
 ): Promise<InvitationState | null> {
-    const latest = await adapter.states.getCurrentFor(id);
-    return latest === null
+    const rows = await invitationLifecycleStatesFor(adapter, id);
+    const latest = latestByKey(rows, ev => ev.entity_id).get(id);
+    return latest === undefined
         ? null
         : assertInvitationState(latest.state, 'invitation ' + id);
 }
