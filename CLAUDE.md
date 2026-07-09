@@ -142,7 +142,13 @@ is HTTP-only.
   `flow_edges`, `flow_node_members`, `flow_node_attributes`)
   and reassembled at the GET route into `FlowWithGraph`;
   `flows.graph` is retired live but kept frozen
-  (`flow_versions.graph`, `work_orders.flow_graph`).
+  (`flow_versions.graph`, `work_orders.flow_graph`). Flow
+  undo now resolves its restore target from the flow's own
+  document-pair history (Phase 14 Task 8) — `flow_versions`
+  no longer receives writes on the live path (table/routes
+  remain, Phase Final retires). Flow tags
+  (`flows/:id/tags/:name`) are the first document family with
+  no backing table, derived entirely from message pairs.
 - **Presentation.** Presenters in `web-app/app/presenters/` emit
   `SafeHtml`.
 - **Database.** IndexedDB (`api/backend-indexeddb.ts`): one
@@ -322,7 +328,15 @@ formatter), and the invitation lifecycle
 (`adapters-invitations.test.ts` for grant/accept/decline/
 revoke + derive-from-states, `api-invitations-fence.test.ts`
 for the org fence + authz, `presenter-invitation-list.test.ts`
-for the SafeHtml) — see `tests/` for the current set.
+for the SafeHtml); Phase 14 added the view-accepting
+write-path cores' drift/parity suite
+(`drift-phase14-cores-parity.test.ts`), the SFV two-source-
+union derive (`drift-state-field-values.test.ts`), the
+invitation write-path parity pin
+(`pin-invitation-write-path-parity.test.ts`), the undo-as-
+replay cursor algorithm (`flow-undo-cursor.test.ts`), and the
+first pair-plane-only document family
+(`api-flow-tags.test.ts`) — see `tests/` for the current set.
 `api/db-memory.ts` provides an in-memory `DbAdapter` so
 adapter and api-layer tests run without `localStorage`.
 
