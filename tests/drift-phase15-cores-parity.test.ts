@@ -15,6 +15,11 @@ import {
     resolveOwningOrganization,
 } from '../api/derive-states.ts';
 import {
+    ownerOrganizationOfEntity,
+    rawOrganizationOwnedProbes,
+    graphEntityProbe,
+} from '../api/store-parent-scoped.ts';
+import {
     stateFieldValuesForStateEvent,
     deriveStateFieldValueReferrers,
 } from '../api/derive-state-field-values.ts';
@@ -52,7 +57,8 @@ import {
 // Phase 15: view-safe derive cores (Task 1) + claim-gate
 // graph re-anchor pins (Task 2) + field-values visibility
 // re-anchor pins (Task 3) + RESTRICT graph-leg re-anchor
-// pins (Task 4). Pre-tx-vs-in-tx parity and residual drift
+// pins (Task 4) + pre-dispatch fence re-anchor parity
+// (Task 5). Pre-tx-vs-in-tx parity and residual drift
 // against the dual-write row plane.
 
 const BASE = 'http://localhost';
@@ -825,7 +831,8 @@ test('residual pin: organizations self-as-owner feeds'
     const token = await organizationToken();
     const eventId = 'ev-org-self-owner-p15';
     // PUT states/:id naming the organization id itself as
-    // entity_id — only legal once self-as-owner resolves.
+    // entity_id — legal once the pre-dispatch fence rides
+    // resolveOwningOrganization (Phase 15 Task 5).
     const put = await handleRequest(db, req(
         'PUT', '/states/' + eventId, token, {
             entity_id: STARK_ORGANIZATION,
@@ -833,38 +840,131 @@ test('residual pin: organizations self-as-owner feeds'
             at: nowUtc(),
         },
     ));
-    // Pre-dispatch fence still uses the row plane (Task 5
-    // re-points). If the live fence rejects organization
-    // entity_ids today, seed the pair below-facade instead.
-    if (put.status === 200) {
-        assert.equal(
-            await stateEventVisibilityFor(
-                db, STARK_ORGANIZATION, eventId,
+    assert.equal(put.status, 200);
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, STARK_ORGANIZATION, eventId,
+        ),
+        'visible',
+    );
+    assert.equal(
+        await stateEventVisibilityFor(
+            db, ORGANIZATION_TWO, eventId,
+        ),
+        'hidden',
+    );
+});
+
+// -- Task 5: fence parity across pair plane vs row plane ------
+
+test('fence parity: resolveOwningOrganization agrees with'
++ ' ownerOrganizationOfEntity on dual-write seed entities;'
++ ' pair plane is strictly stronger on WP1 + hard-delete',
+async () => {
+    const db = await seededDb();
+    const probes = rawOrganizationOwnedProbes(db);
+    const graph = graphEntityProbe(db, db.flows);
+    async function bothPlanes(
+        entityId: string,
+        boundOrganization: string,
+    ): Promise<{
+        pair: string | null;
+        row: string | null;
+    }> {
+        return {
+            pair: await resolveOwningOrganization(
+                db, entityId, boundOrganization,
             ),
-            'visible',
-        );
-        assert.equal(
-            await stateEventVisibilityFor(
-                db, ORGANIZATION_TWO, eventId,
+            row: await ownerOrganizationOfEntity(
+                probes, db.memberships, boundOrganization,
+                entityId, graph,
             ),
-            'hidden',
-        );
-        return;
+        };
     }
-    // Fence not yet re-pointed: pin the resolver leg alone
-    // (Task 5 owns the write-fence re-point verification).
-    assert.equal(
-        await resolveOwningOrganization(
-            db, STARK_ORGANIZATION, STARK_ORGANIZATION,
-        ),
-        STARK_ORGANIZATION,
-    );
-    assert.equal(
-        await resolveOwningOrganization(
-            db, STARK_ORGANIZATION, ORGANIZATION_TWO,
-        ),
-        STARK_ORGANIZATION,
-    );
+
+    const ideas = await db.ideas.getAll();
+    const records = await db.records.getAll();
+    const flows = await db.flows.getAll();
+    const nodes = await db.flowNodes.getAll();
+    const memberships = await db.memberships.getAll();
+
+    const ideaStark = ideas.find(
+        (r) => r.organization_id === STARK_ORGANIZATION,
+    )!;
+    const ideaTwo = ideas.find(
+        (r) => r.organization_id === ORGANIZATION_TWO,
+    )!;
+    const recordStark = records.find(
+        (r) => r.organization_id === STARK_ORGANIZATION,
+    )!;
+    const flowStark = flows.find(
+        (r) => r.organization_id === STARK_ORGANIZATION,
+    )!;
+    const nodeStark = nodes.find(
+        (n) => n.flow_id === flowStark.id,
+    )!;
+    const memberStark = memberships.find(
+        (m) => m.organization_id === STARK_ORGANIZATION,
+    )!;
+
+    // Dual-write agreement across bound orgs.
+    for (const entityId of [
+        ideaStark.id, ideaTwo.id, recordStark.id,
+        flowStark.id, nodeStark.id,
+        memberStark.identity_id,
+    ]) {
+        for (const bound of [
+            STARK_ORGANIZATION, ORGANIZATION_TWO,
+        ]) {
+            const { pair, row } =
+                await bothPlanes(entityId, bound);
+            assert.equal(
+                pair, row,
+                'dual-write parity for ' + entityId
+                + ' bound=' + bound,
+            );
+        }
+    }
+    // Genuine orphan: both null.
+    {
+        const { pair, row } = await bothPlanes(
+            'ghost-nowhere-p15-fence', STARK_ORGANIZATION,
+        );
+        assert.equal(pair, null);
+        assert.equal(row, null);
+    }
+
+    // WP1 strengthening: organization id self-as-owner on
+    // the pair plane; row plane treats it as an orphan.
+    {
+        const own = await bothPlanes(
+            STARK_ORGANIZATION, STARK_ORGANIZATION,
+        );
+        assert.equal(own.pair, STARK_ORGANIZATION);
+        assert.equal(own.row, null);
+        const foreign = await bothPlanes(
+            STARK_ORGANIZATION, ORGANIZATION_TWO,
+        );
+        assert.equal(foreign.pair, STARK_ORGANIZATION);
+        assert.equal(foreign.row, null);
+    }
+
+    // Hard-delete strengthening (finding 1i inverted): pair
+    // plane retains ownership after the row is spliced; row
+    // plane resolves orphan (null).
+    await db.records.delete(recordStark.id);
+    {
+        const own = await bothPlanes(
+            recordStark.id, STARK_ORGANIZATION,
+        );
+        assert.equal(own.pair, STARK_ORGANIZATION);
+        assert.equal(own.row, null);
+        const foreign = await bothPlanes(
+            recordStark.id, ORGANIZATION_TWO,
+        );
+        assert.equal(foreign.pair, STARK_ORGANIZATION);
+        assert.equal(foreign.row, null);
+    }
 });
 
 test('residual pin: flowGraphBindingsFromPairs tracks a'
