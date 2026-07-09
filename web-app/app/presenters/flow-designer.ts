@@ -7,7 +7,6 @@ import { showToast } from '../toast.ts';
 import {
     sessionContext,
     putFlow,
-    postFlowVersion,
     HumanMember,
     AIMember,
 } from '../adapters/index.ts';
@@ -25,7 +24,6 @@ import type {
     MemberId,
 } from '../../../api/types.ts';
 import {
-    generateCryptoSafeBase62,
     type RecordAttribute,
 } from '../adapters/index.ts';
 import {
@@ -195,18 +193,21 @@ export class FlowDesignerPresenter {
     // concurrent gestures can never reorder against
     // each other; a failed save surfaces through
     // reportFault and the chain survives for the
-    // saves queued behind it.
-    #queueSave(
-        versioned: boolean,
-        snap: FlowSnapshot,
-    ): void {
+    // saves queued behind it. Undo-as-replay (Phase 14
+    // Task 8) drops the versioned/non-versioned split: every
+    // save used to OPTIONALLY archive the pre-edit state
+    // through postFlowVersion first (feeding the OLD undo
+    // mechanism's flow_versions consume) — undo now resolves
+    // its target from the flows/:id document-pair history
+    // instead, so that archive write served no purpose once
+    // its one reader (the undo route's own consume) was
+    // retired, whichever call site queued it.
+    #queueSave(snap: FlowSnapshot): void {
         this.#saveChain = this.#saveChain.then(
             async () => {
                 const ctx = sessionContext();
                 try {
-                    await this.#persistFlow(
-                        ctx, versioned, snap,
-                    );
+                    await this.#persistFlow(ctx, snap);
                 } catch (err) {
                     reportFault(
                         ctx,
@@ -220,16 +221,8 @@ export class FlowDesignerPresenter {
 
     async #persistFlow(
         ctx: RequestContext,
-        versioned: boolean,
         snap: FlowSnapshot,
     ): Promise<void> {
-        if (versioned) {
-            await postFlowVersion(
-                ctx,
-                generateCryptoSafeBase62(),
-                snap.flowId,
-            );
-        }
         await putFlow(
             ctx, snap.flowId, this.#buildSaveShape(snap),
         );
@@ -261,7 +254,7 @@ export class FlowDesignerPresenter {
             isLocked: result.isLocked,
             isEditingName: result.isEditingName,
         };
-        this.#queueSave(false, next);
+        this.#queueSave(next);
         return next;
     }
 
@@ -276,7 +269,7 @@ export class FlowDesignerPresenter {
             ...this.#snapshot,
             isAutoLayout: toggled,
         };
-        this.#queueSave(false, next);
+        this.#queueSave(next);
         if (toggled) {
             next = this.#applyLayoutReconcile(next);
         }
@@ -303,7 +296,7 @@ export class FlowDesignerPresenter {
             ...this.#snapshot,
             isAutoFit: toggled,
         };
-        this.#queueSave(false, next);
+        this.#queueSave(next);
         if (toggled) {
             this.#applyZoomToFit(next);
         }
@@ -341,7 +334,7 @@ export class FlowDesignerPresenter {
             flowName: result.flowName,
             isEditingName: result.isEditingName,
         };
-        this.#queueSave(true, next);
+        this.#queueSave(next);
         this.#noteMutation();
         return next;
     }
@@ -379,7 +372,7 @@ export class FlowDesignerPresenter {
                 positionY: n.positionY - centerY,
             })),
         };
-        this.#queueSave(false, next);
+        this.#queueSave(next);
         return next;
     }
 
@@ -704,7 +697,7 @@ Auto Fit</label>
                 this.#snapshot.nodes, updates,
             ),
         };
-        this.#queueSave(true, moved);
+        this.#queueSave(moved);
         this.#noteMutation();
         return this.#applyLayoutReconcile(moved);
     }
@@ -760,7 +753,7 @@ Auto Fit</label>
             nodes: result.nodes,
             edgeWaypoints: result.edgeWaypoints,
         };
-        this.#queueSave(false, next);
+        this.#queueSave(next);
         return next;
     }
 
@@ -781,7 +774,7 @@ Auto Fit</label>
                 { name: name.trim() },
             ),
         };
-        this.#queueSave(true, next);
+        this.#queueSave(next);
         this.#noteMutation();
         return next;
     }
@@ -803,7 +796,7 @@ Auto Fit</label>
                 { taskInstructions: text },
             ),
         };
-        this.#queueSave(true, next);
+        this.#queueSave(next);
         this.#noteMutation();
         return next;
     }
@@ -825,7 +818,7 @@ Auto Fit</label>
                 { memberIds },
             ),
         };
-        this.#queueSave(true, next);
+        this.#queueSave(next);
         this.#noteMutation();
         return next;
     }
@@ -850,7 +843,7 @@ Auto Fit</label>
                 { name: name.trim() },
             ),
         };
-        this.#queueSave(true, next);
+        this.#queueSave(next);
         this.#noteMutation();
         return next;
     }

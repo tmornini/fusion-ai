@@ -17,7 +17,6 @@ import {
     getFlowGraph,
     getFlowMermaid,
     getFlowZip,
-    getFlowVersions,
     getHumanMembers,
     getAIMembers,
     getRecordEntities,
@@ -1418,17 +1417,23 @@ export async function init(
     });
 }
 
+// Undo-as-replay (Phase 14 Task 8): no longer fetches
+// getFlowVersions to seed hasUndoHistory — flow_versions stops
+// being written on the live path entirely (Step 0), so that
+// list would always be empty. getFlowGraph's own response now
+// carries hasUndoHistory verbatim (FlowGraph.hasUndoHistory,
+// api/derive-flows.ts's cheap document-pair-count
+// approximation) — one fewer round-trip at load, not one more.
 async function loadFlowDesignerBundle(
     flowId: string,
 ) {
     const ctx = sessionContext();
     const [
-        graph, versions,
+        graph,
         humanMembers, aiMembers,
         records, boundRecordId,
     ] = await Promise.all([
         getFlowGraph(ctx, flowId),
-        getFlowVersions(ctx, flowId),
         getHumanMembers(ctx),
         getAIMembers(ctx),
         getRecordEntities(ctx),
@@ -1441,7 +1446,7 @@ async function loadFlowDesignerBundle(
             )
             : [];
     return {
-        graph, versions,
+        graph,
         humanMembers, aiMembers,
         records, boundRecordId,
         recordAttributes,
@@ -1459,7 +1464,7 @@ function onFlowLoaded(
     pageState.setNeedsFit(true);
     pageState.setHistory(
         buildFlowHistorySnapshot(
-            loaded.versions.length > 0,
+            loaded.graph.hasUndoHistory,
         ),
     );
 
