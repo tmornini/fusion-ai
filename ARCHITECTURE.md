@@ -149,33 +149,41 @@ adapter; the facade re-entry keeps the outer request's id
 via the `x-request-id` header). The authentication step
 enriches it to `AuthenticatedContext` (principal), and
 `fenceRequest` (`api/request-auth.ts`) completes the
-`RequestContext` — organization, live `memberOrgs`, roles,
-and the org-scoped adapter — each field set exactly once.
-Every handler runs against the vessel's scoped adapter. The
-org rides the VERIFIED token claim, never the path; a flat
-(un-exchanged) token has none and resolves via
-`identityDefaultOrg`: the identity's SET default org
-(`identity_default_organizations` ledger, latest wins), else its
-PRIMARY membership org, else a 403 — there is no global
-default to fall back on. Two covenants bound the vessel:
-it never carries the bearer token (authentication reads the
-header from the raw Request, so the vessel stays loggable),
-and route handlers keep their `(adapter, params, body)`
-contract — the route table is the chosen boundary where the
-vessel hands its scoped adapter to the handler, keeping
-handlers transport-free.
+`RequestContext` — organization, live
+`memberOrganizations`, roles, and the org-scoped adapter —
+each field set exactly once. Every handler runs against the
+vessel's scoped adapter. The org rides the VERIFIED token
+claim, never the path; a flat (un-exchanged) token has none
+and resolves via `identityDefaultOrganization`: the
+identity's SET default org (`identity_default_organizations`
+ledger, latest wins), else its PRIMARY membership org, else a
+403 — there is no global default to fall back on. Both
+`memberOrganizations` (`callerOrganizationIds` →
+`deriveMembershipsForIdentity`, Phase 13 Task 3) and `roles`
+(`callerRolesInOrganization` → `deriveRoleGrants`, same
+phase) derive FRESH from the pair plane on EVERY fenced
+request — never a snapshot the token claim carries — so a
+revoked membership or role stops access on the identity's
+very next request, not when the token expires. Two covenants
+bound the vessel: it never carries the bearer token
+(authentication reads the header from the raw Request, so
+the vessel stays loggable), and route handlers keep their
+`(adapter, params, body)` contract — the route table is the
+chosen boundary where the vessel hands its scoped adapter to
+the handler, keeping handlers transport-free.
 
-`OrgScopedEntityStore` (`api/store-org-scoped.ts`) is an
-`EntityStore` decorator bound to one org: it filters reads,
-stamps the org onto writes, and 404s a foreign id — NEVER
-403, which would confirm a foreign row exists. The write
-fence (`#assertMine`) rejects a write that targets an id
-another tenant owns, the write-side twin of the read fence.
-`orgScopedAdapter` (`api/db-org-scoped.ts`) fences the
-org-owned stores (ideas, projects, flows, work_orders,
-records, record_attributes, objectives, role_grants,
-memberships) by their stamped org, and the parent-derived
-leaves (`flow_versions`, junctions, scores, …) by
+`OrganizationScopedEntityStore`
+(`api/store-organization-scoped.ts`) is an `EntityStore`
+decorator bound to one org: it filters reads, stamps the org
+onto writes, and 404s a foreign id — NEVER 403, which would
+confirm a foreign row exists. The write fence (`#assertMine`)
+rejects a write that targets an id another tenant owns, the
+write-side twin of the read fence. `organizationScopedAdapter`
+(`api/db-organization-scoped.ts`) fences the org-owned stores
+(ideas, projects, flows, work_orders, records,
+record_attributes, objectives, role_grants, memberships) by
+their stamped org, and the parent-derived leaves
+(`flow_versions`, junctions, scores, …) by
 `ParentScopedEntityStore` (the append-only states log by its
 sibling `ParentScopedStateStore`) — a READ-time server-side
 join that resolves each leaf's owning org THROUGH its
@@ -187,8 +195,8 @@ key is client-shipped, so this is demo-grade isolation
 until the server tier.
 
 Leaf isolation is READ derivation, not a WRITE stamp:
-`OrgScopedEntityStore` stamps the BOUND org onto each
-org-owned parent row on write, but the parent-derived
+`OrganizationScopedEntityStore` stamps the BOUND org onto
+each org-owned parent row on write, but the parent-derived
 leaves carry no org column — so `ParentScopedEntityStore`
 isolates them on READ, resolving each leaf's org through
 its already-fenced parent.
@@ -231,8 +239,9 @@ cannot ride the org-stamped write path. Decline (invitee)
 appends `declined`; Revoke (admin) appends `revoked`.
 
 The surface is dedicated facade request handlers on the BASE
-(un-org-scoped) adapter — like `identityDefaultOrgRequest` —
-bypassing the admin-only `ROUTE_POLICY` with explicit guards:
+(un-org-scoped) adapter — like
+`identityDefaultOrganizationRequest` — bypassing the
+admin-only `ROUTE_POLICY` with explicit guards:
 grant/revoke and the sent-list require an admin role in the
 relevant org; accept/decline and the invitee read require the
 caller to BE the invitee (identity match). That identity
@@ -417,6 +426,16 @@ member plus the human and AI rosters), `api/validators.ts`
 `validateStateEntity`, where the AI validator verifies
 `model` is a known catalog id). The `DbAdapter`
 interface is the migration seam to Postgres.
+
+Phase 13 Task 9 retired `identity_tokens` and
+`authorization_codes` from `TABLE_NAMES` — token issue,
+rotation, and revocation live only as message-pair events now
+(`requests`/`responses`), never a dedicated row store.
+IndexedDB's own open is UNVERSIONED, so an origin that already
+has a database never re-runs `onupgradeneeded` (the only place
+object stores are created): an EXISTING origin keeps the two
+dropped stores as harmless, unread orphans; only `deleteSchema`
+(a full database delete) clears them.
 
 `web-app/app/adapters/init.ts` wires the production IndexedDB
 adapter singleton (`initAdapter()` / `getDbAdapter()`); the
