@@ -287,6 +287,23 @@ async function reportOpFailure(
     });
 }
 
+// Fix wave (Phase 14 Task 8, post-Task-11-browser-regression):
+// undo/redo no longer follow their own commit with a SAVE-
+// TRIGGERING commitAndFit(...withLayoutReconciled()) — op.freshSnap
+// already carries server-reconciled positions (performUndo/
+// performRedo build it from getFlowGraph, whose
+// withRenderableLayout ALWAYS recomputes fresh positions for an
+// auto-layout flow, purely client-side, no write). A further
+// reconcile-and-save was therefore redundant for display AND
+// actively harmful for undo-as-replay: it landed its OWN
+// document pair immediately after every undo/redo, which the
+// cursor (api/derive-flows.ts's resolveFlowUndoTarget) treats as
+// a full, indistinguishable history step — so the NEXT undo
+// click reverted that reconcile-only noise instead of reaching
+// the user's actual prior edit (the Task 11 browser report's
+// "Undo flips the toolbar but the canvas never visibly
+// changes"). reconcileFitFromDom() alone still adjusts the
+// VIEWPORT (zoom/pan) — a read-only, non-saving operation.
 async function handleUndo(): Promise<void> {
     const snap = pageState.presenter().snapshot();
     const op = await performUndo(
@@ -298,9 +315,7 @@ async function handleUndo(): Promise<void> {
     }
     pageState.setHistory(op.newHistory);
     commit(op.freshSnap);
-    commitAndFit(
-        pageState.presenter().withLayoutReconciled(),
-    );
+    reconcileFitFromDom();
 }
 
 async function handleRedo(): Promise<void> {
@@ -314,9 +329,7 @@ async function handleRedo(): Promise<void> {
     }
     pageState.setHistory(op.newHistory);
     commit(op.freshSnap);
-    commitAndFit(
-        pageState.presenter().withLayoutReconciled(),
-    );
+    reconcileFitFromDom();
 }
 
 async function handleDeleteSelected(): Promise<void> {

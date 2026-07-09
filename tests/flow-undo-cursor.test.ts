@@ -647,3 +647,92 @@ test(
         );
     },
 );
+
+// -- 7. fix wave 2 (Task 11 browser regression) ------
+
+// ROOT CAUSE, wire evidence, and the two fixes are narrated in
+// full in .superpowers/sdd/phase14-task-8-report.md's
+// "Fix wave 2" section. Short version: web-app/flows/detail.ts's
+// handleUndo/handleRedo used to follow their OWN commit with
+// commitAndFit(pageState.presenter().withLayoutReconciled()) —
+// a SAVE-TRIGGERING call, even though op.freshSnap already
+// carries server-reconciled positions (performUndo/performRedo
+// build it from getFlowGraph, whose withRenderableLayout ALWAYS
+// recomputes fresh positions for an auto-layout flow, purely
+// client-side). That redundant save landed its own document
+// pair immediately after every undo/redo click — and the cursor
+// (resolveFlowUndoTarget) correctly, BY DESIGN, treats every
+// flows/:id document pair as a full history step (that's the
+// whole point of undo-as-replay) — so it "ate" the NEXT undo
+// click, which reverted the reconcile noise instead of reaching
+// the user's actual prior edit. The fix (removing the two
+// commitAndFit(...withLayoutReconciled()) calls,
+// web-app/flows/detail.ts) is NOT reachable from this test file:
+// it is a page-level DOM change with no automated seam
+// (FlowDesignerPresenter#queueSave calls sessionContext()
+// internally, which requires a real browser IndexedDB
+// connection — "IndexedDB has no Node stub, and we add no fake"
+// per web-app/app/adapters/init.ts's own comment;
+// tests/flow-designer-presenter.test.ts's own header comment
+// independently documents the SAME wall for every
+// #queueSave-triggering presenter method). This test instead
+// pins the MECHANISM the fix prevents from ever occurring: an
+// interleaved, content-invisible reconcile-only save DOES
+// consume an undo step, at the server-side cursor level — proof
+// that the fix (stopping the client from ever queuing such a
+// save after undo/redo) is necessary and correctly targeted.
+// The fix's ACTUAL effect (no such save is queued any more) is
+// verified in the browser, not here — see the report's browser
+// re-sweep.
+test(
+    'undo cursor (fix wave 2): an interleaved, content-'
+    + 'invisible reconcile-only save consumes an undo step —'
+    + ' the mechanism the detail.ts fix (dropping'
+    + ' handleUndo/handleRedo\'s own extra commitAndFit) now'
+    + ' prevents from ever being queued',
+    async () => {
+        const db = await freshDb();
+        const token = await organizationToken();
+        const flowId = 'cursor-reconcile-noise';
+        await createFlow(db, token, flowId);
+        await save(db, token, flowId, 'A', flowId + '-a');
+        await save(db, token, flowId, 'B', flowId + '-b');
+
+        // Undo #1 (the user's first click): reverts B -> A.
+        const first = await undo(
+            db, token, flowId, flowId + '-u1', AT,
+        );
+        assert.equal(first.status, 204);
+        assert.equal(
+            await currentGraphName(db, token, flowId), 'A',
+        );
+
+        // The OLD, buggy handleUndo/handleRedo pattern: an
+        // auto-layout reconcile save with the SAME name (no
+        // visible change) immediately after the undo — exactly
+        // what commitAndFit(...withLayoutReconciled()) used to
+        // queue. A genuine document pair despite changing
+        // nothing the user perceives.
+        await save(
+            db, token, flowId, 'A', flowId + '-reconcile',
+        );
+
+        // Undo #2 (the user's second click): with the reconcile
+        // noise present, it lands back on 'A' AGAIN — the SAME
+        // content undo #1 already reached — never progressing
+        // to a NEW, earlier state. This is precisely the Task 11
+        // browser report's "Undo flips the toolbar but the
+        // canvas never visibly changes."
+        const second = await undo(
+            db, token, flowId, flowId + '-u2',
+            '2026-01-01T00:00:01.000000Z',
+        );
+        assert.equal(second.status, 204);
+        assert.equal(
+            await currentGraphName(db, token, flowId), 'A',
+            'without the fix, a second undo click cannot make'
+            + ' visible progress past the reconcile noise —'
+            + ' this is the danger the detail.ts fix closes',
+        );
+    },
+);
