@@ -776,11 +776,23 @@ async function acceptInvitation(
                 return;
             }
             if (state !== 'pending') { conflict = true; return; }
-            const already = (await view.memberships.getAll())
-                .some(m =>
-                    m.identity_id === ctx.principal.id
-                    && m.organization_id
-                        === inv.organization_id);
+            // The membership-presence check is FLIPPED (Phase 14
+            // Task 3): re-points onto membershipExistsFor (api/
+            // derive-memberships.ts) — the SAME view.memberships.
+            // getAll().some(...) dispatch it replaces, byte-
+            // identical for member/non-member (tests/drift-
+            // memberships-identity.test.ts leg 5 already proves the
+            // derive via grantOutcomeFor; pin-invitation-write-path-
+            // parity.test.ts adds the accept-tx-table parity leg).
+            // membershipExistsFor is ADAPTER-SHAPED (dbOrView:
+            // DbAdapter) so this in-tx `view` — which already
+            // carries 'requests'/'responses' in its own table list
+            // — calls it directly; no nested transaction. The
+            // 'accepted' no-op short-circuit above still runs FIRST
+            // (KEEP-ATOMIC): a removed member's re-accept never
+            // reaches this check at all.
+            const already = await membershipExistsFor(
+                view, inv.organization_id, ctx.principal.id);
             if (!already) {
                 await view.memberships.put(membershipId, {
                     organization_id: inv.organization_id,

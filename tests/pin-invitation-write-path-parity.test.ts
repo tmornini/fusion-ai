@@ -6,6 +6,7 @@ import {
     pendingInvitationFor,
     currentInvitationState,
 } from '../api/invitations-domain.ts';
+import { membershipExistsFor } from '../api/derive-memberships.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
 import { ORGANIZATION_TWO } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
@@ -24,6 +25,14 @@ import { organizationToken } from './token-fixtures.ts';
 // (both now exported for this purpose) rather than the raw
 // Task 1 cores beneath them. "The SAME derivation" is thereby a
 // proven property, not a coincidence.
+//
+// Phase 14 Task 3 ADDS to this proof: acceptInvitation's own
+// `already`-membership gate now calls membershipExistsFor
+// in-tx (api/invitations-domain.ts), so this file's own
+// ACCEPT_TX_TABLES list is the flipped check's REAL table set,
+// not a stand-in — the parity test below proves the pair-plane
+// derive is honest under acceptInvitation's own transaction
+// shape, both before a membership exists and after one lands.
 
 const BASE = 'http://localhost';
 
@@ -262,5 +271,67 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
             'no-such-invitation', ACCEPT_TX_TABLES,
         ),
         null,
+    );
+});
+
+async function assertMembershipExistsWritePathParity(
+    db: MemoryDbAdapter,
+    organization: string,
+    identityId: string,
+): Promise<boolean> {
+    const preTx = await membershipExistsFor(
+        db, organization, identityId);
+    const inTx = await db.transaction(
+        ACCEPT_TX_TABLES,
+        (view) => membershipExistsFor(
+            view, organization, identityId),
+    );
+    assert.equal(inTx, preTx);
+    return preTx;
+}
+
+test('membershipExistsFor: pre-tx vs in-tx (acceptInvitation\'s'
++ " own table list) agree before and after a live accept — the"
++ ' `already` gate\'s derived row source, held honest', async () => {
+    const db = await seededDb();
+    const admin = await organizationToken(
+        'current', ORGANIZATION_TWO);
+    const inviteeId = 'LhfaUUf4IumVsCSGB4xjdK'; // Sarah Chen
+    const inviteeToken = await organizationToken(
+        inviteeId, ORGANIZATION_TWO);
+
+    assert.equal(
+        await assertMembershipExistsWritePathParity(
+            db, ORGANIZATION_TWO, inviteeId,
+        ),
+        false,
+    );
+
+    const grant = await handleRequest(db, req(
+        'POST', '/invitations', admin, {
+            email: 'sarah.chen@company.com',
+            invitationId: 'inv-parity-membership-exists',
+            grantEventId: 'inv-parity-membership-exists-grant',
+            grantAt: '2026-06-04T00:00:00.000000Z',
+        },
+    ));
+    assert.equal(grant.status, 200);
+
+    const accept = await handleRequest(db, req(
+        'POST',
+        '/invitations/inv-parity-membership-exists/acceptance',
+        inviteeToken, {
+            membershipId: 'inv-parity-membership-exists-ms',
+            acceptEventId: 'inv-parity-membership-exists-accept',
+            acceptAt: '2026-06-04T00:00:01.000000Z',
+        },
+    ));
+    assert.equal(accept.status, 204);
+
+    assert.equal(
+        await assertMembershipExistsWritePathParity(
+            db, ORGANIZATION_TWO, inviteeId,
+        ),
+        true,
     );
 });
