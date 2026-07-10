@@ -26,28 +26,32 @@ function installShim(): Map<string, string> {
     return map;
 }
 
-// Phase Final Stage B: records retired — pin the
-// localStorage write surface on objectives (surviving
-// store with organization_id + numeric).
-const baseObjective = {
-    organization_id: '1',
-    position: 1,
+// Phase Final Stage B: objectives retired — pin the
+// localStorage write surface on organizations (surviving
+// store with numeric seats + string fields).
+const baseOrganization = {
+    name: 'Test Org',
+    domain: 'test.example',
+    next_billing: '2026-01-01T00:00:00.000000Z',
+    seats: 5,
+    projects_limit: 10,
+    ideas_limit: 20,
 };
 
 // Writes are plain JSON since the F-080 measurement
 // retired compression; the gz1: decoder survives for
 // READS of legacy payloads only (pinned below).
 test(
-    'objectives write stores raw JSON',
+    'organizations write stores raw JSON',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.objectives.put(
-            'obj-prefix-test', baseObjective,
+        await adapter.organizations.put(
+            'org-prefix-test', baseOrganization,
         );
         const stored = map.get(
-            KEY_PREFIX + 'objectives',
+            KEY_PREFIX + 'organizations',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -59,21 +63,21 @@ test(
 );
 
 test(
-    'objectives round-trips through put → getById',
+    'organizations round-trips through put → getById',
     async () => {
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.objectives.put(
-            'obj-rt', baseObjective,
+        await adapter.organizations.put(
+            'org-rt', baseOrganization,
         );
-        const got = await adapter.objectives.getById(
-            'obj-rt',
+        const got = await adapter.organizations.getById(
+            'org-rt',
         );
-        assert.equal(got.id, 'obj-rt');
+        assert.equal(got.id, 'org-rt');
         assert.equal(
-            got.organization_id,
-            baseObjective.organization_id,
+            got.name,
+            baseOrganization.name,
         );
     },
 );
@@ -84,14 +88,14 @@ test(
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.objectives.put(
-            'obj-num', baseObjective,
+        await adapter.organizations.put(
+            'org-num', baseOrganization,
         );
-        const got = await adapter.objectives.getById(
-            'obj-num',
+        const got = await adapter.organizations.getById(
+            'org-num',
         );
-        assert.strictEqual(got.position, 1);
-        assert.strictEqual(typeof got.position, 'number');
+        assert.strictEqual(got.seats, 5);
+        assert.strictEqual(typeof got.seats, 'number');
     },
 );
 
@@ -178,37 +182,37 @@ test(
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.objectives.put(
-            'obj-export', baseObjective,
+        await adapter.organizations.put(
+            'org-export', baseOrganization,
         );
         const json = await adapter.getSnapshot();
         const parsed = JSON.parse(json);
         assert.ok(
-            Array.isArray(parsed.objectives),
-            'objectives should be an array in snapshot',
+            Array.isArray(parsed.organizations),
+            'organizations should be an array in snapshot',
         );
-        assert.equal(parsed.objectives.length, 1);
+        assert.equal(parsed.organizations.length, 1);
         assert.equal(
-            parsed.objectives[0].id, 'obj-export',
+            parsed.organizations[0].id, 'org-export',
         );
     },
 );
 
 test(
-    'snapshot import stores objectives raw',
+    'snapshot import stores organizations raw',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         const snapshot = JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            objectives: [
-                { id: 'obj-imp', ...baseObjective },
+            organizations: [
+                { id: 'org-imp', ...baseOrganization },
             ],
         });
         await adapter.putSnapshot(snapshot);
         const stored = map.get(
-            KEY_PREFIX + 'objectives',
+            KEY_PREFIX + 'organizations',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -225,11 +229,11 @@ test(
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        const objectiveRow = {
-            id: 'obj-gz1',
-            ...baseObjective,
+        const organizationRow = {
+            id: 'org-gz1',
+            ...baseOrganization,
         };
-        const rawJson = JSON.stringify([objectiveRow]);
+        const rawJson = JSON.stringify([organizationRow]);
         const stream = new Blob([rawJson]).stream()
             .pipeThrough(new CompressionStream('gzip'));
         const buffer = await new Response(stream)
@@ -240,11 +244,11 @@ test(
             binary += String.fromCharCode(b);
         }
         map.set(
-            KEY_PREFIX + 'objectives',
+            KEY_PREFIX + 'organizations',
             'gz1:' + btoa(binary),
         );
-        const result = await adapter.objectives.getAll();
+        const result = await adapter.organizations.getAll();
         assert.equal(result.length, 1);
-        assert.equal(result[0]!.position, 1);
+        assert.equal(result[0]!.seats, 5);
     },
 );

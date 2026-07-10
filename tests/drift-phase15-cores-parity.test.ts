@@ -1656,10 +1656,9 @@ async () => {
         scoped, STARK_ORGANIZATION, attributeIds,
     );
     const inTx = await db.transaction(
-        // Stage B: records/work_orders tables retired.
+        // Stage B: objectives/records/work_orders retired.
         [
             'states',
-            'objectives',
             'invitations', 'memberships',
             'requests', 'responses',
         ],

@@ -407,36 +407,6 @@ the SAME atomic commit, in the INVITATION's organization
 | identity_id | TEXT (FK → identities) |
 | at | TEXT |
 
-## Relationships
-
-### objectives
-
-Org-owned (org-fenced): NOT-NULL `organization_id`.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| organization_id | TEXT | FK → organizations |
-| position | REAL | Display order |
-
-The objective's name and description live in
-`objective_revisions` — an objective is a long-lived
-identity whose human-facing text evolves over time.
-
-### objective_revisions
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| objective_id | TEXT | References objectives |
-| name | TEXT | Human-facing name at this revision |
-| description | TEXT | Human-facing description |
-| member_id | TEXT | FK → members (author) |
-| at | TEXT | RFC-3339 Zulu |
-
-The latest row per `objective_id` by `at` is the
-current text.
-
 ## State Event Log
 
 ### states

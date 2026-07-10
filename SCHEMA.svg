@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1504 890" width="1504" height="890">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 908" width="1200" height="908">
   <defs>
     <style>
       text { font-family: ui-sans-serif, system-ui,
@@ -19,17 +19,14 @@
         stroke-width: 1.5; }
     </style>
   </defs>
-  <rect x="0" y="0" width="1504" height="890" fill="hsl(217 30% 97%)" />
+  <rect x="0" y="0" width="1200" height="908" fill="hsl(217 30% 97%)" />
   <path class="edge" d="M 648 244 C 590.4 244, 609.6 71, 552 71" />
   <path class="edge" d="M 648 98 C 590.4 98, 609.6 71, 552 71" />
   <path class="edge" d="M 648 381 C 590.4 381, 609.6 208, 552 208" />
-  <path class="edge" d="M 952 116 C 894.4 116, 609.6 208, 552 208" />
+  <path class="edge" d="M 648 792 C 590.4 792, 609.6 208, 552 208" />
   <path class="edge" d="M 648 637 C 590.4 637, 609.6 208, 552 208" />
   <path class="edge" d="M 648 509 C 590.4 509, 609.6 208, 552 208" />
-  <path class="edge" d="M 648 756 C 590.4 756, 609.6 208, 552 208" />
-  <path class="edge" d="M 1256 107 C 1198.4 107, 913.6 756, 856 756" />
-  <path class="edge" d="M 1256 107 C 1198.4 107, 609.6 71, 552 71" />
-  <path class="edge" d="M 952 280 C 894.4 280, 609.6 71, 552 71" />
+  <path class="edge" d="M 952 98 C 894.4 98, 609.6 71, 552 71" />
   <g class="table">
     <rect class="box" x="344" y="40" width="208" height="62" rx="6" />
     <rect class="head" x="344" y="40" width="208" height="26" rx="6" />
@@ -135,23 +132,23 @@
     <text class="type" x="846" y="425">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="952" y="40" width="208" height="152" rx="6" />
-    <rect class="head" x="952" y="40" width="208" height="26" rx="6" />
-    <text class="thead" x="962" y="58">role_grants</text>
-    <text class="pk" x="962" y="79">id</text>
-    <text class="type" x="1150" y="79">id</text>
-    <text class="fk" x="962" y="97">organization_id</text>
-    <text class="type" x="1150" y="97">id</text>
-    <text class="col" x="962" y="115">identity_id</text>
-    <text class="type" x="1150" y="115">id</text>
-    <text class="col" x="962" y="133">role</text>
-    <text class="type" x="1150" y="133">text</text>
-    <text class="col" x="962" y="151">action</text>
-    <text class="type" x="1150" y="151">RoleGrantAction</text>
-    <text class="col" x="962" y="169">by_member_id</text>
-    <text class="type" x="1150" y="169">id</text>
-    <text class="col" x="962" y="187">at</text>
-    <text class="type" x="1150" y="187">text</text>
+    <rect class="box" x="648" y="716" width="208" height="152" rx="6" />
+    <rect class="head" x="648" y="716" width="208" height="26" rx="6" />
+    <text class="thead" x="658" y="734">role_grants</text>
+    <text class="pk" x="658" y="755">id</text>
+    <text class="type" x="846" y="755">id</text>
+    <text class="fk" x="658" y="773">organization_id</text>
+    <text class="type" x="846" y="773">id</text>
+    <text class="col" x="658" y="791">identity_id</text>
+    <text class="type" x="846" y="791">id</text>
+    <text class="col" x="658" y="809">role</text>
+    <text class="type" x="846" y="809">text</text>
+    <text class="col" x="658" y="827">action</text>
+    <text class="type" x="846" y="827">RoleGrantAction</text>
+    <text class="col" x="658" y="845">by_member_id</text>
+    <text class="type" x="846" y="845">id</text>
+    <text class="col" x="658" y="863">at</text>
+    <text class="type" x="846" y="863">text</text>
   </g>
   <g class="table">
     <rect class="box" x="40" y="40" width="208" height="134" rx="6" />
@@ -233,34 +230,6 @@
     <text class="type" x="846" y="553">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="648" y="716" width="208" height="80" rx="6" />
-    <rect class="head" x="648" y="716" width="208" height="26" rx="6" />
-    <text class="thead" x="658" y="734">objectives</text>
-    <text class="pk" x="658" y="755">id</text>
-    <text class="type" x="846" y="755">id</text>
-    <text class="fk" x="658" y="773">organization_id</text>
-    <text class="type" x="846" y="773">id</text>
-    <text class="col" x="658" y="791">position</text>
-    <text class="type" x="846" y="791">num</text>
-  </g>
-  <g class="table">
-    <rect class="box" x="1256" y="40" width="208" height="134" rx="6" />
-    <rect class="head" x="1256" y="40" width="208" height="26" rx="6" />
-    <text class="thead" x="1266" y="58">objective_revisions</text>
-    <text class="pk" x="1266" y="79">id</text>
-    <text class="type" x="1454" y="79">id</text>
-    <text class="fk" x="1266" y="97">objective_id</text>
-    <text class="type" x="1454" y="97">id</text>
-    <text class="col" x="1266" y="115">name</text>
-    <text class="type" x="1454" y="115">text</text>
-    <text class="col" x="1266" y="133">description</text>
-    <text class="type" x="1454" y="133">text</text>
-    <text class="fk" x="1266" y="151">member_id</text>
-    <text class="type" x="1454" y="151">id</text>
-    <text class="col" x="1266" y="169">at</text>
-    <text class="type" x="1454" y="169">text</text>
-  </g>
-  <g class="table">
     <rect class="box" x="344" y="314" width="208" height="152" rx="6" />
     <rect class="head" x="344" y="314" width="208" height="26" rx="6" />
     <text class="thead" x="354" y="332">requests</text>
@@ -305,18 +274,18 @@
     <text class="type" x="542" y="697">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="952" y="222" width="208" height="116" rx="6" />
-    <rect class="head" x="952" y="222" width="208" height="26" rx="6" />
-    <text class="thead" x="962" y="240">states</text>
-    <text class="pk" x="962" y="261">id</text>
-    <text class="type" x="1150" y="261">id</text>
-    <text class="col" x="962" y="279">entity_id</text>
-    <text class="type" x="1150" y="279">id</text>
-    <text class="col" x="962" y="297">state</text>
-    <text class="type" x="1150" y="297">text</text>
-    <text class="fk" x="962" y="315">member_id</text>
-    <text class="type" x="1150" y="315">id</text>
-    <text class="col" x="962" y="333">at</text>
-    <text class="type" x="1150" y="333">text</text>
+    <rect class="box" x="952" y="40" width="208" height="116" rx="6" />
+    <rect class="head" x="952" y="40" width="208" height="26" rx="6" />
+    <text class="thead" x="962" y="58">states</text>
+    <text class="pk" x="962" y="79">id</text>
+    <text class="type" x="1150" y="79">id</text>
+    <text class="col" x="962" y="97">entity_id</text>
+    <text class="type" x="1150" y="97">id</text>
+    <text class="col" x="962" y="115">state</text>
+    <text class="type" x="1150" y="115">text</text>
+    <text class="fk" x="962" y="133">member_id</text>
+    <text class="type" x="1150" y="133">id</text>
+    <text class="col" x="962" y="151">at</text>
+    <text class="type" x="1150" y="151">text</text>
   </g>
 </svg>

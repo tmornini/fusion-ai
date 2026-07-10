@@ -30,7 +30,6 @@ const KEYED_READS: ReadonlyArray<{
     { table: 'identity_credentials', column: 'identity_id' },
     { table: 'role_grants', column: 'identity_id' },
     { table: 'identity_pii', column: 'email' },
-    { table: 'objective_revisions', column: 'objective_id' },
     { table: 'requests', column: 'message_hash' },
     { table: 'responses', column: 'uri_id' },
     { table: 'requests', column: 'uri_prefix' },

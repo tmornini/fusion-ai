@@ -207,10 +207,7 @@ async () => {
         db, THIRD_ORGANIZATION,
     );
     assert.deepEqual(empty, []);
-    assert.equal((await db.objectives.getAll()).length, 0);
-    assert.equal(
-        (await db.objectiveRevisions.getAll()).length, 0,
-    );
+    // Phase Final Stage B: objectives tables retired.
 });
 
 // -- 2. per-objective GET wire equals derive; foreign 404 ----

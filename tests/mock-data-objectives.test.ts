@@ -73,9 +73,7 @@ async () => {
         db, ORGANIZATION_TWO, ORGANIZATION_TWO_OBJECTIVE.id,
     );
     assert.equal(org2Revs.length, 1);
-    assert.equal(
-        (await db.objectives.getAll()).length, 0,
-    );
+    // Phase Final Stage B: objectives table retired.
 });
 
 test('postMockDataLoad seeds one revision per objective',
@@ -101,9 +99,7 @@ test('postMockDataLoad seeds one revision per objective',
         assert.equal(org2Revs.length, 1);
         total += 1;
         assert.equal(total, OBJECTIVE_SEEDS.length + 1);
-        assert.equal(
-            (await db.objectiveRevisions.getAll()).length, 0,
-        );
+        // Phase Final Stage B: objective_revisions retired.
     });
 
 test('postMockDataLoad seeds zero archived objectives',

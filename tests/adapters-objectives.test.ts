@@ -206,7 +206,7 @@ test(
 
         const archived = await getArchivedObjectiveIds(ctx);
         assert.equal(archived.size, 0);
-        assert.equal((await db.objectives.getAll()).length, 0);
+        // Phase Final Stage B: objectives table retired.
     },
 );
 

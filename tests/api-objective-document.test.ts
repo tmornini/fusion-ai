@@ -137,7 +137,7 @@ async () => {
         organization_id: '1',
         ...documentFields(),
     });
-    assert.equal((await db.objectives.getAll()).length, 0);
+    // Phase Final Stage B: objectives table retired.
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });

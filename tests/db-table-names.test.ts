@@ -18,7 +18,7 @@ test('TABLE_NAMES keeps the permanent survivors', () => {
 });
 
 test(
-    'TABLE_NAMES drops ideas..work-orders and records',
+    'TABLE_NAMES drops ideas..records and objectives',
     () => {
         for (const name of [
             'ideas',
@@ -39,6 +39,8 @@ test(
             'records',
             'record_attributes',
             'flow_records',
+            'objectives',
+            'objective_revisions',
         ] as const) {
             assert.ok(
                 !TABLE_NAMES.includes(name),
@@ -47,41 +49,6 @@ test(
         }
     },
 );
-
-test('TABLE_NAMES includes the objective tables', () => {
-    for (const name of [
-        'objectives',
-        'objective_revisions',
-    ] as const) {
-        assert.ok(
-            TABLE_NAMES.includes(name),
-            `TABLE_NAMES missing ${name}`,
-        );
-    }
-});
-
-test('MemoryDbAdapter exposes objective stores',
-    async () => {
-        const db = new MemoryDbAdapter();
-        await db.postSchemaCreation();
-        await db.objectives.put('o1', {
-            organization_id: '1', position: 0,
-        });
-        const all = await db.objectives.getAll();
-        assert.equal(all.length, 1);
-        assert.equal(all[0]!.id, 'o1');
-
-        await db.objectiveRevisions.put('o1:t1', {
-            objective_id: 'o1',
-            name: 'Revenue',
-            description: 'd',
-            member_id: 'w1',
-            at: '2026-05-14T00:00:00.000000Z',
-        });
-        const revs =
-            await db.objectiveRevisions.getAll();
-        assert.equal(revs.length, 1);
-    });
 
 test('MemoryDbAdapter exposes message stores', async () => {
     const db = new MemoryDbAdapter();

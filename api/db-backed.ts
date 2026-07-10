@@ -29,8 +29,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    ObjectiveEntity,
-    ObjectiveRevisionEntity,
     RequestEntity,
     ResponseEntity,
 } from './types.ts';
@@ -59,8 +57,6 @@ import {
     validateClientEntity,
     validateIdentityProviderEntity,
     validateStateEntity,
-    validateObjectiveEntity,
-    validateObjectiveRevisionEntity,
     validateOrganizationEntity,
     validateMembershipEntity,
     validateInvitationEntity,
@@ -108,9 +104,6 @@ export class BackedDbAdapter
         GuardedEntityStore<MembershipEntity>;
     readonly invitations!:
         GuardedEntityStore<InvitationEntity>;
-    readonly objectives!: GuardedEntityStore<ObjectiveEntity>;
-    readonly objectiveRevisions!:
-        GuardedEntityStore<ObjectiveRevisionEntity>;
     readonly requests!: GuardedEntityStore<RequestEntity>;
     readonly responses!: GuardedEntityStore<ResponseEntity>;
     readonly states!: IStateStore;
@@ -356,14 +349,6 @@ export class BackedDbAdapter
             identityProviders: new HistoryEntityStore(
                 'identity_providers', run,
                 validateIdentityProviderEntity,
-            ),
-            objectives: new EntityStore(
-                'objectives', run, stateStore,
-                validateObjectiveEntity,
-            ),
-            objectiveRevisions: new HistoryEntityStore(
-                'objective_revisions', run,
-                validateObjectiveRevisionEntity,
             ),
             requests: new HistoryEntityStore(
                 'requests', run, validateRequestEntity,

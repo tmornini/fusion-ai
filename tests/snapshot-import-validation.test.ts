@@ -338,43 +338,54 @@ test(
 );
 
 test(
-    'rejects objective row with unknown key',
+    'rejects organization row with unknown key',
     async () => {
         installShim();
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            objectives: [{
+            organizations: [{
                 id: 'o1',
-                organization_id: '1',
-                position: 1,
+                name: 'Acme',
+                domain: 'acme.example',
+                next_billing:
+                    '2026-01-01T00:00:00.000000Z',
+                seats: 5,
+                projects_limit: 10,
+                ideas_limit: 20,
                 rogue_field: 'invalid',
             }],
         }));
         await assert.rejects(
             () => adapter.putSnapshot(json),
-            /snapshot\.objectives\[0\]/,
+            /snapshot\.organizations\[0\]/,
         );
     },
 );
 
 test(
-    'accepts valid objective row through the'
+    'accepts valid organization row through the'
     + ' snapshot-validation gate',
     async () => {
         const map = installShim();
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            objectives: [{
-                id: 'o1', organization_id: '1',
-                position: 1,
+            organizations: [{
+                id: 'o1',
+                name: 'Acme',
+                domain: 'acme.example',
+                next_billing:
+                    '2026-01-01T00:00:00.000000Z',
+                seats: 5,
+                projects_limit: 10,
+                ideas_limit: 20,
             }],
         }));
         await adapter.putSnapshot(json);
         assert.ok(
-            map.get(KEY_PREFIX + 'objectives'),
-            'objective row should persist',
+            map.get(KEY_PREFIX + 'organizations'),
+            'organization row should persist',
         );
     },
 );

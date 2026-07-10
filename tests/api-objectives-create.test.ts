@@ -67,10 +67,7 @@ test(
         assert.ok(revision);
         assert.equal(revision.objective_id, 'obj-1');
         assert.equal(revision.name, 'Revenue');
-        assert.equal((await db.objectives.getAll()).length, 0);
-        assert.equal(
-            (await db.objectiveRevisions.getAll()).length, 0,
-        );
+        // Phase Final Stage B: objectives tables retired.
     },
 );
 

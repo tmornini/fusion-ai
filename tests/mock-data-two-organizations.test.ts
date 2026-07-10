@@ -245,8 +245,7 @@ test('each org owns at least one of every org-scoped'
             `org ${organization} owns no objectives`,
         );
     }
-    // Phase Final Stage B: records table retired.
-    assert.equal((await db.objectives.getAll()).length, 0);
+    // Phase Final Stage B: objectives table retired.
 });
 
 test('every work order belongs to org 1', async () => {

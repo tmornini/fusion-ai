@@ -14,8 +14,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    ObjectiveEntity,
-    ObjectiveRevisionEntity,
     RequestEntity,
     ResponseEntity,
     StateEntity,
@@ -302,7 +300,7 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 19 stores an adapter exposes, factored out of
+// The 17 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
 // bound to an open tx (A9).
@@ -335,10 +333,6 @@ export interface DbStores {
         EntityStore<MembershipEntity>;
     invitations:
         EntityStore<InvitationEntity>;
-    objectives:
-        EntityStore<ObjectiveEntity>;
-    objectiveRevisions:
-        EntityStore<ObjectiveRevisionEntity>;
     requests:
         EntityStore<RequestEntity>;
     responses:
@@ -442,8 +436,6 @@ export const TABLE_NAMES = [
     'organizations',
     'memberships',
     'invitations',
-    'objectives',
-    'objective_revisions',
     'requests',
     'responses',
     'states',
@@ -528,8 +520,6 @@ export const TABLE_INDEXES:
     identity_token_revocations: ['identity_id'],
     identity_default_organizations: ['identity_id'],
     role_grants: ['organization_id', 'identity_id'],
-    objectives: ['organization_id'],
-    objective_revisions: ['objective_id'],
     memberships: ['organization_id', 'identity_id'],
     requests: ['uri_prefix', 'uri_id', 'message_hash'],
     responses: [

@@ -59,7 +59,7 @@ export interface AttributeReferrers {
 export const ATTRIBUTE_RESTRICT_TABLES:
     readonly string[] = [
     'states',
-    'objectives', 'invitations', 'memberships',
+    'invitations', 'memberships',
     'requests', 'responses',
 ];
 

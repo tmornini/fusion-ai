@@ -5,7 +5,6 @@ import type {
 } from './db.ts';
 import type {
     Id,
-    ObjectiveRevisionEntity,
     IdentityPiiEntity,
     IdentityCredentialEntity,
 } from './types.ts';
@@ -16,7 +15,6 @@ import {
 import {
     ParentScopedEntityStore,
     ParentScopedStateStore,
-    viaParent,
     viaMembership,
     type OwningOrganizationResolver,
 } from './store-parent-scoped.ts';
@@ -175,19 +173,10 @@ export function organizationScopedAdapter(
 
         // Parent-derived leaves still on residual tables until
         // their own Stage B groups.
-        objectiveRevisions: parentScope(
-            base.objectiveRevisions, 'objective_revisions',
-            viaParent(
-                base.objectives,
-                (r: ObjectiveRevisionEntity) =>
-                    r.objective_id,
-            ),
-        ),
         states,
 
         // Organization-owned entities — fenced to `org`.
         roleGrants: scope(base.roleGrants, 'role_grants'),
-        objectives: scope(base.objectives, 'objectives'),
         memberships: scope(base.memberships, 'memberships'),
     };
 }

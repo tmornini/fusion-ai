@@ -20,8 +20,6 @@ import {
     validateMembershipEntity,
     validateInvitationEntity,
     validateStateEntity,
-    validateObjectiveEntity,
-    validateObjectiveRevisionEntity,
     validateRequestEntity,
     validateResponseEntity,
 } from './validators.ts';
@@ -85,12 +83,6 @@ function validateSnapshotRow(
                 break;
             case 'states':
                 validateStateEntity(body);
-                break;
-            case 'objectives':
-                validateObjectiveEntity(body);
-                break;
-            case 'objective_revisions':
-                validateObjectiveRevisionEntity(body);
                 break;
             case 'requests':
                 validateRequestEntity(body);

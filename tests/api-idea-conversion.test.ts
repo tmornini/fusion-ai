@@ -75,13 +75,14 @@ async function seededDb(): Promise<MemoryDbAdapter> {
         state_at: '2026-01-01T00:00:00.000000Z',
         state_event_id: 'st-idea-1',
     }, DEV_TOKEN);
-    // The objectives the baselines reference.
-    await db.objectives.put('obj-1', {
-        organization_id: '1', position: 1,
-    });
-    await db.objectives.put('obj-2', {
-        organization_id: '1', position: 2,
-    });
+    // Phase Final Stage B: objectives table retired — seed
+    // through the live document PUT so the pair plane owns it.
+    await PUT(db, 'objectives/obj-1', {
+        position: 1,
+    }, DEV_TOKEN);
+    await PUT(db, 'objectives/obj-2', {
+        position: 2,
+    }, DEV_TOKEN);
     return db;
 }
 
@@ -198,15 +199,17 @@ test(
         }, DEV_TOKEN);
 
         // Balance invariant: the wire-seeded idea genesis PUT
-        // (1) + five conversion pairs (the operation pair, the
-        // synthesized project document pair, the synthesized
-        // idea document pair, and TWO synthesized baseline
-        // pairs — Phase 7 Task 4's 3+N widening, N=2 here) +
-        // three schema/bootstrap pairs = 9.
+        // (1) + two objective document PUTs (Stage B: pair
+        // plane owns objectives) + five conversion pairs
+        // (the operation pair, the synthesized project
+        // document pair, the synthesized idea document pair,
+        // and TWO synthesized baseline pairs — Phase 7 Task
+        // 4's 3+N widening, N=2 here) + three schema/
+        // bootstrap pairs = 11.
         const allRequests = await db.requests.getAll();
         const allResponses = await db.responses.getAll();
-        assert.equal(allRequests.length, 9);
-        assert.equal(allResponses.length, 9);
+        assert.equal(allRequests.length, 11);
+        assert.equal(allResponses.length, 11);
         assert.equal(allRequests.length, allResponses.length);
 
         const atProjectAddress = allRequests.filter(
