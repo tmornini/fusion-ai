@@ -27,14 +27,18 @@ import {
 import {
     validateRecordDocumentBody,
     validateRecordAttributeDocumentBody,
+    validateObjectiveDocumentBody,
+    pickNumber,
 } from '../api/validators.ts';
 import {
     postRecordDocumentOp,
     postRecordAttributeDocumentOp,
+    postObjectiveDocumentOp,
 } from '../api/routes.ts';
 import type {
     RecordEntity,
     RecordAttributeEntity,
+    ObjectiveEntity,
 } from '../api/types.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
@@ -88,6 +92,27 @@ async function derivedRecordAttributes(
     )(
         db, [], 'current', organization,
     ) as Promise<RecordAttributeEntity[]>;
+}
+
+const OBJECTIVES_WIRING: DocumentFamilyWiring = {
+    family: 'objectives',
+    lifecycle: 'stateless',
+    notFoundTable: 'objectives',
+    validateDocument: validateObjectiveDocumentBody,
+    documentOp: postObjectiveDocumentOp,
+    entityOf: (document, organization) => ({
+        id: document.uriId,
+        organization_id: organization,
+        position: pickNumber(document.body, 'position'),
+    }),
+};
+
+async function derivedObjectives(
+    db: MemoryDbAdapter, organization: string,
+): Promise<ObjectiveEntity[]> {
+    return documentCollectionGetHandler(OBJECTIVES_WIRING)(
+        db, [], 'current', organization,
+    ) as Promise<ObjectiveEntity[]>;
 }
 
 const ORGANIZATION_ONE = '1';
@@ -158,7 +183,8 @@ test('each org owns at least one of every org-scoped'
             `org ${organization} owns no flows`,
         );
     }
-    // Phase Final Task 2: records from the pair plane.
+    // Phase Final Task 2: records + objectives from the
+    // pair plane.
     for (const organization of [
         ORGANIZATION_ONE, ORGANIZATION_TWO,
     ]) {
@@ -169,18 +195,16 @@ test('each org owns at least one of every org-scoped'
             records.length >= 1,
             `org ${organization} owns no records`,
         );
-    }
-    const objectives = await db.objectives.getAll();
-    for (const organization of [
-        ORGANIZATION_ONE, ORGANIZATION_TWO,
-    ]) {
-        const owned = objectives.filter(
-            r => r.organization_id === organization);
+        const objectives = await derivedObjectives(
+            db, organization,
+        );
         assert.ok(
-            owned.length >= 1,
-            `org ${organization} owns no objectives`);
+            objectives.length >= 1,
+            `org ${organization} owns no objectives`,
+        );
     }
     assert.equal((await db.records.getAll()).length, 0);
+    assert.equal((await db.objectives.getAll()).length, 0);
 });
 
 test('every work order belongs to org 1', async () => {

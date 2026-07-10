@@ -14,6 +14,7 @@ import { createRequestContext }
 import { devToken } from './token-fixtures.ts';
 import {
     getArchivedObjectiveIds,
+    getObjectives,
 } from '../web-app/app/adapters/objectives.ts';
 import { getProjectStates } from
     '../web-app/app/adapters/state-events.ts';
@@ -30,6 +31,19 @@ import {
 } from '../web-app/app/adapters/project-scoring.ts';
 import { deriveProjects } from
     '../api/derive-projects.ts';
+import {
+    deriveObjectiveRevisions,
+} from '../api/derive-objective-revisions.ts';
+import {
+    STARK_ORGANIZATION,
+    ORGANIZATION_TWO,
+} from '../api/mock-data/seed-constants.ts';
+import {
+    ORGANIZATION_TWO_OBJECTIVE,
+} from '../api/mock-data/seed-message-pairs.ts';
+
+// Phase Final Task 2: objectives(+objective_revisions) seed
+// row halves stripped — assertions ride the pair plane.
 
 async function projectIdsByState(
     ctx: RequestContext,
@@ -46,12 +60,22 @@ async () => {
     const db = new MemoryDbAdapter();
     await seedAdminSchema(db);
     await postMockDataLoad(db);
-    const rows = await db.objectives.getAll();
-    assert.equal(rows.length, OBJECTIVE_SEEDS.length + 1);
+    const ctx = createRequestContext(db, await devToken());
+    const rows = await getObjectives(ctx);
+    // getObjectives is org-scoped to the token's org (Stark).
+    assert.equal(rows.length, OBJECTIVE_SEEDS.length);
     for (const r of rows) {
         const { id: _id, ...body } = r;
         validateObjectiveEntity(body);
     }
+    // Org-2 objective via derive from the other plane.
+    const org2Revs = await deriveObjectiveRevisions(
+        db, ORGANIZATION_TWO, ORGANIZATION_TWO_OBJECTIVE.id,
+    );
+    assert.equal(org2Revs.length, 1);
+    assert.equal(
+        (await db.objectives.getAll()).length, 0,
+    );
 });
 
 test('postMockDataLoad seeds one revision per objective',
@@ -59,19 +83,27 @@ test('postMockDataLoad seeds one revision per objective',
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
         await postMockDataLoad(db);
-        const revs =
-            await db.objectiveRevisions.getAll();
-        assert.equal(revs.length, OBJECTIVE_SEEDS.length + 1);
-        for (const r of revs) {
-            const { id: _id, ...body } = r;
+        // Stark revisions (4) + org-2 revision (1).
+        let total = 0;
+        for (const seed of OBJECTIVE_SEEDS) {
+            const revs = await deriveObjectiveRevisions(
+                db, STARK_ORGANIZATION, seed.id,
+            );
+            assert.equal(revs.length, 1);
+            const { id: _id, ...body } = revs[0]!;
             validateObjectiveRevisionEntity(body);
+            total += 1;
         }
-        const objs = await db.objectives.getAll();
-        const objIds = new Set(objs.map(o => o.id));
-        const revObjIds = new Set(
-            revs.map(r => r.objective_id),
+        const org2Revs = await deriveObjectiveRevisions(
+            db, ORGANIZATION_TWO,
+            ORGANIZATION_TWO_OBJECTIVE.id,
         );
-        assert.deepEqual(revObjIds, objIds);
+        assert.equal(org2Revs.length, 1);
+        total += 1;
+        assert.equal(total, OBJECTIVE_SEEDS.length + 1);
+        assert.equal(
+            (await db.objectiveRevisions.getAll()).length, 0,
+        );
     });
 
 test('postMockDataLoad seeds zero archived objectives',
@@ -99,9 +131,8 @@ test('approved projects have full baseline coverage',
         );
         // Coverage is per-org since SP-6: an approved project
         // is scored against the objectives in ITS org, not the
-        // global set. Phase Final Task 2: projects + scores
+        // global set. Phase Final Task 2: objectives + scores
         // from the pair plane.
-        const objectives = await db.objectives.getAll();
         const organizationByProject = new Map<string, string>();
         for (const organization of ['1', '2']) {
             for (const p of await deriveProjects(
@@ -114,13 +145,16 @@ test('approved projects have full baseline coverage',
             const baselines = await getBaselineScoresForProject(
                 ctx, pid,
             );
-            // ObjectiveScore is camelCase at the adapter.
             const pairs = new Set(
                 baselines.map(b => b.objectiveId),
             );
-            const organizationObjCount = objectives.filter(
-                o => o.organization_id
-                    === organizationByProject.get(pid)).length;
+            const organization =
+                organizationByProject.get(pid)!;
+            // Stark has OBJECTIVE_SEEDS.length; org-2 has 1.
+            const organizationObjCount =
+                organization === STARK_ORGANIZATION
+                    ? OBJECTIVE_SEEDS.length
+                    : 1;
             assert.equal(
                 pairs.size,
                 organizationObjCount,
@@ -221,11 +255,10 @@ test('submitted projects have zero scores', async () => {
     }
 });
 
-// Phase 7 Task 5's STANDING content pins: the id-only fingerprint
-// (tests/mock-data-fingerprint.test.ts) hashes row ids ONLY —
-// member_id never enters it — so a regression in the author pick
-// would pass every existing check yet silently hand out the
-// WRONG author. Phase Final Task 2: scores from the pair plane.
+// Phase 7 Task 5's STANDING content pins: the id-only
+// fingerprint (tests/mock-data-fingerprint.test.ts) no longer
+// covers objectives after the strip, so these pin author picks
+// via the pair-plane score adapter.
 test('a seeded baseline score\'s author matches the pinned'
 + ' pre-hoist pick', async () => {
     const db = new MemoryDbAdapter();
@@ -257,9 +290,6 @@ test('a seeded actual-score triple\'s per-index authors match'
         )
         .sort((a, b) => a.at.localeCompare(b.at));
     assert.equal(rows.length, 3);
-    // Sorted by `at` ascending resolves the per-actual index
-    // k = 0, 1, 2 (buildSeedScoreRows mints each k's scoredAt
-    // strictly increasing within a (project, objective) pair).
     assert.deepEqual(
         rows.map(r => r.memberId),
         [

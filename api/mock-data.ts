@@ -1019,6 +1019,9 @@ async function postMockDataLoadIn(
     // deferral below (buildSeedScoreRows) draws from this SAME
     // pool now too — the former in-tx memberFor DB-read retired
     // once its pick moved onto pickHumanMember (Phase 7 Task 5).
+    // Phase Final Task 2: objectives + objective_revisions
+    // ROW halves stripped — seed drives through
+    // postObjectiveCreationOp (pairs only).
     const objectiveMemberPools =
         humanMemberPoolsByOrganization(members);
     for (const seed of OBJECTIVE_SEEDS) {
@@ -1026,14 +1029,12 @@ async function postMockDataLoadIn(
             objectiveMemberPools, STARK_ORGANIZATION,
             `${seed.id}:revision`,
         );
-        // Task 3: create threads the triple — the operation
-        // pair plus its two synthesized siblings (document,
-        // revision), each pre-formed in pass 1 under its own
-        // deterministic key (seed-message-pairs.ts) — the
-        // flows precedent, objectives' own fixed 1+1+1. The
+        // Create threads the triple — the operation pair plus
+        // its two synthesized siblings (document, revision),
+        // each pre-formed in pass 1 under its own deterministic
+        // key (seed-message-pairs.ts) — fixed 1+1+1. The
         // revision id is recomputed identically to
-        // objectiveSeedBody's own construction (deterministic,
-        // never random), the mock-data-pairs.test.ts precedent.
+        // objectiveSeedBody's own construction (deterministic).
         const revisionId = `${seed.id}:${MOCK_SEED_TIMESTAMP}`;
         const objectivePairs: ObjectiveCreationPairs = {
             operation: requirePair(
@@ -1058,7 +1059,8 @@ async function postMockDataLoadIn(
         );
     }
 
-    // Organization '2' owns one objective so each org owns at least one.
+    // Organization '2' owns one objective so each org owns
+    // at least one (pair plane only after Task 2 strip).
     const org2RevisionId =
         `${ORGANIZATION_TWO_OBJECTIVE.id}:${MOCK_SEED_TIMESTAMP}`;
     await postObjectiveCreationOp(

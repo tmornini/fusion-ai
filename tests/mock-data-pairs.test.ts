@@ -808,17 +808,16 @@ test('a seeded actual-score pair sits at its org-nested'
 });
 
 test('every seeded STARK objective pair\'s embedded revision'
-+ ' author matches the actually written revision row',
++ ' author matches the revision document pair body',
 async () => {
     // Guards the pure pre-tx human-member-pool reconstruction
     // (seed-message-pairs.ts's humanMemberPoolsByOrganization)
     // against a reordered-Promise.all regression: pass 1 forms
     // this pair before pass 2 writes any membership row, so the
     // two MUST already agree on which pool position each seeded
-    // human occupies. Checked over ALL four STARK objectives, not
-    // a single sample; the SAME pool also backs buildSeedScoreRows's
-    // author pick (Phase 7 Task 5, its own STANDING content pins
-    // in tests/mock-data-objectives.test.ts).
+    // human occupies. Phase Final Task 2: objective_revisions
+    // ROW half stripped — compare create-op embedded revision
+    // author against the revision document pair body.
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
     const requests = await db.requests.getAll();
@@ -826,13 +825,19 @@ async () => {
         (await db.responses.getAll()).map(r => [r.id, r]),
     );
     for (const starkSeed of OBJECTIVE_SEEDS) {
-        const revision = await db.objectiveRevisions.getById(
-            `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`,
+        const revisionId =
+            `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`;
+        const revisionRow = requests.find(
+            r => r.uri_id === revisionId
+                && r.uri_prefix.includes('/revisions/'),
         );
         assert.ok(
-            revision,
-            'no revision row for ' + starkSeed.id,
+            revisionRow,
+            'no revision pair for ' + starkSeed.id,
         );
+        const revisionBody = JSON.parse(
+            revisionRow!.message,
+        ) as { body: { member_id: string } };
         // The operation pair alone embeds the full create body
         // (its own `revision` sub-object) — the document pair
         // now sharing this address carries `{position}` only, so
@@ -849,7 +854,7 @@ async () => {
         };
         assert.equal(
             embedded.body.revision.member_id,
-            revision!.member_id,
+            revisionBody.body.member_id,
         );
     }
 });

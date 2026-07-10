@@ -1628,47 +1628,30 @@ export function objectiveRevisionBodyOf(
     return createBody.revision;
 }
 
-// Objective creation: the objective row and its FIRST
-// revision commit as ONE transaction — a mid-write
-// failure rolls the whole thing back rather than
-// orphaning a definitionless objective. The org-scoped
-// store stamps organization_id from the verified token
-// before validating the objective, so the body OMITS
-// it. No state event is written (a fresh objective reads
-// as active until a later archival event), so the
-// handler needs no actor. Exported so the seed can drive
-// objective creation through the same gate the route
-// uses (Decision 6's below-facade carve-out) — this is
-// also Phase 1's dual-write insertion seam. `pairs` is
-// optional so the seed's below-facade calls (api/mock-
-// data.ts, no gate, no pairs) keep compiling unchanged;
-// the route always supplies the bundle, since 'objectives'
-// is pair-wired and never bearer-exempt. Task 3: create
-// appends THREE pairs — the operation pair (the gate's
-// own), the synthesized document pair, and the synthesized
-// revision pair — in that order, LAST, pairs-or-nothing.
+// Objective creation: operation + document + first-revision
+// pairs commit as ONE transaction. Phase Final Task 2:
+// objectives + objective_revisions ROW halves stripped —
+// pure pair-plane write. No state event is written (a
+// fresh objective reads as active until a later archival
+// event), so the handler needs no actor. Exported so the
+// seed can drive objective creation through the same gate
+// the route uses (Decision 6's below-facade carve-out).
+// `pairs` is optional so the seed's below-facade shape
+// keeps compiling; the route always supplies the bundle,
+// since 'objectives' is pair-wired and never bearer-
+// exempt. Create appends THREE pairs — operation,
+// document, revision — in that order, LAST.
 export async function postObjectiveCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     pairs?: ObjectiveCreationPairs,
 ): Promise<void> {
-    const b = validateObjectiveCreateBody(body);
+    validateObjectiveCreateBody(body);
     return db.transaction(
-        [
-            'objectives', 'objective_revisions',
-            'requests', 'responses',
-        ],
+        // Phase Final Task 2: objectives +
+        // objective_revisions ROW halves stripped.
+        ['requests', 'responses'],
         async (view) => {
-            await view.objectives.put(
-                b.id,
-                b.objective as unknown as
-                    Omit<ObjectiveEntity, 'id'>,
-            );
-            await view.objectiveRevisions.put(
-                b.revisionId,
-                b.revision as unknown as
-                    Omit<ObjectiveRevisionEntity, 'id'>,
-            );
             if (pairs !== undefined) {
                 await appendMessagePair(view, pairs.operation);
                 await appendMessagePair(view, pairs.document);
@@ -1680,20 +1663,14 @@ export async function postObjectiveCreationOp(
 
 // Objective document write — the seventh family, and the THIRD
 // 'stateless' one (OBJECTIVES_WIRING's own comment: a third
-// distinct rationale, Author gate 3). A document PUT here is a
-// pure entity edit: the objectives row and its pair commit as
-// ONE transaction — a mid-write failure rolls the whole thing
-// back rather than leaving a half-written objective.
+// distinct rationale, Author gate 3). Phase Final Task 2: the
+// objectives ROW half is stripped — pure pair-plane write
+// (postFlowTagDocumentOp shape). WRITE_RESPONSE_SPECS
+// successBody forms the wire bytes; the reconstructed return
+// is for below-facade callers and type parity.
 // validateObjectiveDocumentBody rejects a body carrying the
-// trio at the gate, so this op never needs to defend against
-// one downstream. documentOperationOrganization's merge mirrors
-// postRecordAttributeDocumentOp's own shape for uniformity,
-// though it is DORMANT here for the same reason: zero client
-// callers ever supply organization_id on this PUT, and the seed
-// batches objective creation through postObjectiveCreationOp
-// instead — never this op — so the merge is inert rather than
-// load-bearing. NEVER a states event (Global Constraints: the
-// states 911 pin is ABSOLUTE) — no genesis, no trio, no
+// trio at the gate. NEVER a states event (Global Constraints:
+// the states 911 pin is ABSOLUTE) — no genesis, no trio, no
 // lifecycle walk anywhere in this plane. `pair` is optional so
 // a future below-facade caller keeps compiling; the live route
 // always supplies one, since 'objectives/:id' is pair-wired and
@@ -1709,20 +1686,18 @@ export async function postObjectiveDocumentOp(
     pair?: MessagePair,
 ): Promise<ObjectiveEntity> {
     const doc = validateObjectiveDocumentBody(withoutId(body));
+    const entity = {
+        ...doc.entity,
+        ...documentOperationOrganization(body),
+    } as unknown as Omit<ObjectiveEntity, 'id'>;
     return db.transaction(
-        ['objectives', 'requests', 'responses'],
+        // Phase Final Task 2: objectives ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.objectives.put(
-                id,
-                {
-                    ...doc.entity,
-                    ...documentOperationOrganization(body),
-                } as unknown as Omit<ObjectiveEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return { id, ...entity };
         },
     );
 }
@@ -5258,30 +5233,26 @@ export const routes: Route[] = [
                 param(p, 0),
             ),
     }),
-    // Hand-written in place of a bare store put so PUT can
-    // append its message pair in the same transaction as the
-    // write (see message-pair.ts).
+    // Hand-written so PUT can append its message pair in the
+    // same transaction (see message-pair.ts). Phase Final
+    // Task 2: objective_revisions ROW half stripped — pure
+    // pair-plane write. WRITE_RESPONSE_SPECS successBody forms
+    // the wire bytes; the reconstructed return is for type
+    // parity with the former store put.
     route('objectives/:id/revisions/:rid', {
         put: (db, p, body, _actor, pair) => {
             const id = param(p, 1);
+            const entity = withoutId(body) as unknown as
+                Omit<ObjectiveRevisionEntity, 'id'>;
             return db.transaction(
-                [
-                    'objective_revisions',
-                    'requests', 'responses',
-                ],
+                // Phase Final Task 2: objective_revisions ROW
+                // half stripped.
+                ['requests', 'responses'],
                 async (view) => {
-                    const written = await view
-                        .objectiveRevisions.put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<
-                                    ObjectiveRevisionEntity, 'id'
-                                >,
-                        );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
-                    return written;
+                    return { id, ...entity };
                 },
             );
         },
