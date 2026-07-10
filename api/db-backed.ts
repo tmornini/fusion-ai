@@ -7,8 +7,8 @@ import {
 } from './db.ts';
 import type {
     GuardedDbAdapter,
-    GuardedDbStores,
-    GuardedEntityStore,
+    DbStores,
+    EntityStore,
     StorageBackend,
     Tx,
     TxRunner,
@@ -43,9 +43,8 @@ import {
 // before any store op. Schema lifecycle delegates to the
 // backend, which signals "schema exists" its own way.
 //
-// Phase Final Stage B: states table retired. clients rides
-// HistoryEntityStore (no soft-delete filter against the
-// states log). EntityStore class retired in Task 5.
+// Phase Final Stage B: states table retired. All three
+// surviving stores ride HistoryEntityStore.
 export class BackedDbAdapter
     implements GuardedDbAdapter, LatencySimulation
 {
@@ -54,9 +53,9 @@ export class BackedDbAdapter
     readonly #open: () => Promise<void>;
     readonly #notify: NotificationPost;
 
-    readonly clients!: GuardedEntityStore<ClientEntity>;
-    readonly requests!: GuardedEntityStore<RequestEntity>;
-    readonly responses!: GuardedEntityStore<ResponseEntity>;
+    readonly clients!: EntityStore<ClientEntity>;
+    readonly requests!: EntityStore<RequestEntity>;
+    readonly responses!: EntityStore<ResponseEntity>;
 
     constructor(
         backend: StorageBackend,
@@ -166,8 +165,8 @@ export class BackedDbAdapter
         );
     }
 
-    // Raw single-row read bypassing the EntityStore deleted
-    // filter — see GuardedDbAdapter.rawReadRow.
+    // Raw single-row read by primary key — see
+    // GuardedDbAdapter.rawReadRow.
     rawReadRow<T extends { id: string }>(
         table: string,
         id: string,
@@ -222,7 +221,7 @@ export class BackedDbAdapter
         }
     }
 
-    #buildStores(run: TxRunner): GuardedDbStores {
+    #buildStores(run: TxRunner): DbStores {
         return {
             clients: new HistoryEntityStore(
                 'clients', run, validateClientEntity,

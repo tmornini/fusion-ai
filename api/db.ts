@@ -82,11 +82,9 @@ export interface EntityStore<
 > {
     getAll(): Promise<T[]>;
     // The keyed sub-collection read: the rows whose indexed
-    // `column` equals `key`, tombstones already removed. The
-    // concrete stores serve it over `Tx.getWhere`; the fences
-    // serve it by matching through the inner index and then
-    // filtering to their slice. Every store face honors the
-    // same read, so no caller re-acquires it by assertion.
+    // `column` equals `key`. Concrete stores serve it over
+    // `Tx.getWhere`. Every store face honors the same read,
+    // so no caller re-acquires it by assertion.
     getAllWhere(
         column: string,
         key: string,
@@ -102,50 +100,6 @@ export interface EntityStore<
     ): Promise<void>;
     delete(id: string): Promise<void>;
 }
-
-// The write-side fence capability: peek + decide + write in
-// ONE transaction, so no concurrent writer can slip between
-// the check and the row op. The peek hands each guard the
-// RAW row (or null when absent) — tombstone-blind, because a
-// fence must decide on the row that EXISTS, not the row
-// lifecycle presents. putGuarded's guard throws to reject
-// (the tx aborts, nothing written); deleteGuarded's guard
-// returns whether to splice — false is a silent no-op, so a
-// replayed or foreign DELETE is indistinguishable from
-// deleting an absent row (Commandment VII). putManyGuarded
-// applies both guards inside the batch's one transaction.
-export interface GuardedEntityWriter<
-    T extends { id: string },
-> {
-    putGuarded(
-        id: string,
-        fields: Omit<T, 'id'>,
-        guard: (
-            existing: T | null,
-            id: string,
-        ) => void,
-    ): Promise<T>;
-    putManyGuarded(
-        entries: readonly EntityPut<T>[],
-        deleteIds: readonly string[],
-        putGuard: (
-            existing: T | null,
-            id: string,
-        ) => void,
-        deleteGuard: (existing: T | null) => boolean,
-    ): Promise<void>;
-    deleteGuarded(
-        id: string,
-        guard: (existing: T | null) => boolean,
-    ): Promise<void>;
-}
-
-// The full face of an unfenced leaf store: the plain
-// contract plus the guarded write capability the org fence
-// consumes. Kept off EntityStore by Interface Segregation —
-// the fence needs it inward but never re-exposes it.
-export type GuardedEntityStore<T extends { id: string }> =
-    EntityStore<T> & GuardedEntityWriter<T>;
 
 // The storage-edge validator. Stores accept one at
 // construction and re-verify every `put` body through
@@ -292,35 +246,22 @@ export interface DbAdapter extends DbLifecycle, DbStores {
     ): Promise<R>;
 }
 
-// The unfenced tier's stores: every entity store carries the
-// guarded write capability the concrete leaf stores
-// implement; the states log keeps its own contract.
-export type GuardedDbStores = {
-    [K in keyof DbStores]: DbStores[K] extends
-        EntityStore<infer T>
-        ? GuardedEntityStore<T>
-        : DbStores[K];
-};
-
-// The unfenced tier's honest contract. The org fence consumes
-// THIS face, so the guarded write capability is carried by
-// the type from construction to use — never re-acquired by
-// assertion. The fenced face it returns is a plain DbAdapter:
-// the fence spends the guard; it does not re-expose it.
+// The unfenced tier: same stores as DbAdapter, plus a raw
+// primary-key probe. Phase Final Task 5 retired the guarded
+// write capability (putGuarded family) with the store
+// decorator shell — surviving tables never soft-delete.
 export interface GuardedDbAdapter
-    extends DbLifecycle, GuardedDbStores
+    extends DbLifecycle, DbStores
 {
     transaction<R>(
         tables: readonly string[],
         fn: (view: GuardedDbAdapter) => Promise<R>,
     ): Promise<R>;
-    // Raw single-row read bypassing the EntityStore deleted
-    // filter — the shared primitive of the cross-tenant
-    // OWNERSHIP FENCE probes: rawOrganizationOwnedProbes
-    // (the remaining org-owned stores) and residual field-
-    // values parent-event resolution. A deleted entity must
-    // still resolve to its TRUE owner, never surface as an
-    // ownerless orphan.
+    // Raw single-row read by primary key — no store-layer
+    // semantics. Surviving tables never soft-delete, so this
+    // is byte-identical to EntityStore.getById for present
+    // rows and returns null for absence (getById throws).
+    // Kept for the client-lookup path and residual probes.
     rawReadRow<T extends { id: string }>(
         table: string,
         id: string,
