@@ -288,11 +288,12 @@ export async function handleRequest(
     const { route: matched, params } = match;
 
     const routePattern = matched.segments.join('/');
-    // Every authenticated request runs org-scoped — see
-    // fenceRequest, which completes the vessel: the org, the
-    // live memberships, the roles, and the scoped adapter.
-    // Organization-owned stores fence to the org; the global
-    // identity/auth spine passes through.
+    // Every authenticated request is fenced — see
+    // fenceRequest, which completes the vessel: the
+    // organization, the live memberships, and the roles.
+    // Surviving stores are global (clients + message plane);
+    // pair-plane tenancy rides uri_prefix. effective stays
+    // the unfenced base adapter.
     let effective: DbAdapter = adapter;
     // The acting member, sourced from the verified token and
     // handed to every handler so authorship is never client-
@@ -400,7 +401,6 @@ export async function handleRequest(
                     );
                 }
             }
-            effective = fenced.scoped;
             actor = fenced.principal.id;
             organization = fenced.organization;
             callerIsAdmin = fenced.roles.includes('admin');

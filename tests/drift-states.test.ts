@@ -10,8 +10,6 @@ import {
     jsonObjectField, SYSTEM_MEMBER_ID,
 } from '../api/types.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
-import { organizationScopedAdapter } from
-    '../api/db-organization-scoped.ts';
 import {
     deriveStates,
     deriveStatesFor,
@@ -46,13 +44,13 @@ import { seedIdentityPii } from './identity-fixtures.ts';
 // serves live traffic); this file alone GATES that flip (Task 7)
 // and stays as a regression guard through Phase Final.
 //
-// Every comparison below reads the OLD plane through the
-// ORG-SCOPED adapter (organizationScopedAdapter), post-Task-1
-// raw-probe semantics — never the bare, unfenced base adapter —
-// mirroring the sibling drift suites (tests/drift-identities.
-// test.ts, tests/drift-work-orders.test.ts, tests/drift-flows.
-// test.ts, tests/drift-records.test.ts) this file's structure and
-// fixture voice are drawn from.
+// Every comparison below reads the pair plane through the
+// base adapter (Phase Final Task 5 retired the store
+// decorator shell). Mirrors the sibling drift suites
+// (tests/drift-identities.test.ts,
+// tests/drift-work-orders.test.ts, tests/drift-flows.
+// test.ts, tests/drift-records.test.ts) this file's structure
+// and fixture voice are drawn from.
 //
 // H7: `states.getAll()` is INSERTION-ordered on the memory tier
 // (api/store-state.ts's getAll has no sort of its own) while

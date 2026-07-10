@@ -17,11 +17,6 @@ import {
     resolveOwningOrganization,
 } from '../api/derive-states.ts';
 import {
-    ownerOrganizationOfEntity,
-    rawOrganizationOwnedProbes,
-    graphEntityProbe,
-} from '../api/store-parent-scoped.ts';
-import {
     stateFieldValuesForStateEvent,
 } from '../api/derive-state-field-values.ts';
 import {
@@ -43,8 +38,6 @@ import {
     ORGANIZATION_TWO,
 } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { organizationScopedAdapter } from
-    '../api/db-organization-scoped.ts';
 import {
     validateWorkOrderFlowGraphJson,
 } from '../api/validators.ts';
@@ -364,9 +357,6 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
 + ' pre-tx vs in-tx parity', async () => {
     const db = await seededDb();
     const allStates = await deriveStates(db, STARK_ORGANIZATION);
-    const starkScoped = organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    );
     let ownEventId = '';
     for (const row of allStates) {
         const v = await pairPlaneVisibility(db, STARK_ORGANIZATION, row.id,
@@ -378,9 +368,6 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
     }
     assert.notEqual(ownEventId, '');
 
-    const twoScoped = organizationScopedAdapter(
-        db, ORGANIZATION_TWO,
-    );
     let foreignEventId = '';
     for (const row of allStates) {
         const v = await pairPlaneVisibility(db, ORGANIZATION_TWO, row.id,
@@ -567,13 +554,7 @@ test('stateEventVisibilityFor: member-genesis op-born'
         ),
         'visible',
     );
-    // Row-plane three-way agrees (owner-null isVisible).
-    const starkScoped = organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    );
-    const twoScoped = organizationScopedAdapter(
-        db, ORGANIZATION_TWO,
-    );
+    // Pair-plane owner-null isVisible (orphan → visible).
     assert.equal(
         await pairPlaneVisibility(db, STARK_ORGANIZATION, unownedEventId,
         ),
@@ -790,9 +771,6 @@ test('residual pin: stateEventVisibilityFor matches the'
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
-        const scoped = organizationScopedAdapter(
-            db, organization,
-        );
         for (const eventId of sampleIds) {
             const derived = await stateEventVisibilityFor(
                 db, organization, eventId,
@@ -840,45 +818,23 @@ test('residual pin: organizations self-as-owner feeds'
     );
 });
 
-// -- Task 5: fence parity across pair plane vs row plane ------
+// -- Task 5: pair-plane ownership (row-plane fence retired) --
 
-test('fence parity: resolveOwningOrganization agrees with'
-+ ' ownerOrganizationOfEntity on dual-write seed entities;'
-+ ' pair plane is strictly stronger on WP1 + hard-delete',
+test('fence pin: resolveOwningOrganization owns seed'
++ ' entities on the pair plane; orphan stays null',
 async () => {
     const db = await seededDb();
-    const probes = rawOrganizationOwnedProbes(db);
-    // Phase Final Stage B: flows table retired — graph probe
-    // is a null-returning stub.
-    const graph = graphEntityProbe(db);
-    async function bothPlanes(
+    async function pairOwner(
         entityId: string,
         boundOrganization: string,
-    ): Promise<{
-        pair: string | null;
-        row: string | null;
-    }> {
-        return {
-            pair: await resolveOwningOrganization(
-                db, entityId, boundOrganization,
-            ),
-            row: await ownerOrganizationOfEntity(
-                probes,
-                // Phase Final Stage B: memberships table
-                // retired — empty row-plane reader.
-                {
-                    getAllWhere: async () => [],
-                },
-                boundOrganization,
-                entityId, graph,
-            ),
-        };
+    ): Promise<string | null> {
+        return resolveOwningOrganization(
+            db, entityId, boundOrganization,
+        );
     }
 
-    // Phase Final Task 2: ideas + projects seed row halves
-    // stripped — load from the pair plane. Dual-write
-    // agreement no longer holds (row plane empty); pair-plane
-    // ownership still resolves.
+    // Ideas + projects + flows + records load from the pair
+    // plane (row halves retired across Stage B).
     const ideasStark = await deriveIdeas(
         db, STARK_ORGANIZATION,
     );
@@ -891,8 +847,6 @@ async () => {
     const projectsTwo = await deriveProjects(
         db, ORGANIZATION_TWO,
     );
-    // Phase Final Task 2: records seed row halves stripped —
-    // load records from the pair plane via wire GET.
     const recordToken = await organizationToken(
         'current', STARK_ORGANIZATION,
     );
@@ -903,16 +857,12 @@ async () => {
     const recordsStark = await recordsRes.json() as {
         id: string;
     }[];
-    // Phase Final Task 2: flows(+graph) seed row halves
-    // stripped — load flows from the pair plane.
     const flowsStark = await deriveFlows(
         db, STARK_ORGANIZATION,
     );
     const flowsTwo = await deriveFlows(
         db, ORGANIZATION_TWO,
     );
-    // Phase Final Task 2: memberships ROW half stripped —
-    // load a stark membership from the pair plane.
     const { deriveMembershipsForIdentity } = await import(
         '../api/derive-memberships.ts'
     );
@@ -922,7 +872,6 @@ async () => {
         (m) => m.organization_id === STARK_ORGANIZATION,
     )!;
     assert.ok(memberStark, 'current has stark membership');
-    // Phase Final Stage B: roster tables retired.
 
     const ideaStark = ideasStark[0]!;
     const ideaTwo = ideasTwo[0]!;
@@ -942,12 +891,6 @@ async () => {
     // upserts) — seed Customer Onboarding create node.
     const nodeStarkId = 'lzkYvFNCEHARBQmZ4YHAn4';
 
-    // Pair-plane ownership for stripped ideas + projects +
-    // flows + records (+ graph node). Row plane empty for
-    // those families. Memberships stripped too, but
-    // ownership of a membership id is not a pair-plane
-    // resolveOwningOrganization path (identity dual-write
-    // still covers the identity_id below).
     for (const [entityId, owner] of [
         [ideaStark.id, STARK_ORGANIZATION],
         [ideaTwo.id, ORGANIZATION_TWO],
@@ -958,80 +901,69 @@ async () => {
         [nodeStarkId, STARK_ORGANIZATION],
         [recordStark.id, STARK_ORGANIZATION],
     ] as const) {
-        const own = await bothPlanes(entityId, owner);
-        assert.equal(own.pair, owner);
-        assert.equal(own.row, null);
+        assert.equal(
+            await pairOwner(entityId, owner), owner,
+        );
         const foreignBound = owner === STARK_ORGANIZATION
             ? ORGANIZATION_TWO
             : STARK_ORGANIZATION;
-        const foreign = await bothPlanes(
-            entityId, foreignBound,
+        assert.equal(
+            await pairOwner(entityId, foreignBound), owner,
         );
-        assert.equal(foreign.pair, owner);
-        assert.equal(foreign.row, null);
     }
 
-    // Phase Final Task 2: identity ownership resolves through
-    // memberships — and memberships ROW half is stripped —
-    // so pair plane returns the bound org when a membership
-    // document exists there; row probe via db.memberships is
-    // null. Identity ROW half itself still dual-writes until
-    // the identity-spine strip.
+    // Identity ownership resolves through memberships on
+    // the pair plane: bound organization when a membership
+    // document exists there.
     for (const bound of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
-        const { pair, row } = await bothPlanes(
-            memberStark.identity_id, bound,
-        );
         assert.equal(
-            pair, bound,
-            'pair-plane owner for ' + memberStark.identity_id
+            await pairOwner(
+                memberStark.identity_id, bound,
+            ),
+            bound,
+            'pair-plane owner for '
+            + memberStark.identity_id
             + ' bound=' + bound,
         );
-        assert.equal(
-            row, null,
-            'memberships row probe empty after strip',
-        );
     }
-    // Genuine orphan: both null.
-    {
-        const { pair, row } = await bothPlanes(
-            'ghost-nowhere-p15-fence', STARK_ORGANIZATION,
-        );
-        assert.equal(pair, null);
-        assert.equal(row, null);
-    }
+    // Genuine orphan: null.
+    assert.equal(
+        await pairOwner(
+            'ghost-nowhere-p15-fence',
+            STARK_ORGANIZATION,
+        ),
+        null,
+    );
 
-    // WP1 strengthening: organization id self-as-owner on
-    // the pair plane; row plane treats it as an orphan.
-    {
-        const own = await bothPlanes(
+    // WP1: organization id is self-as-owner.
+    assert.equal(
+        await pairOwner(
             STARK_ORGANIZATION, STARK_ORGANIZATION,
-        );
-        assert.equal(own.pair, STARK_ORGANIZATION);
-        assert.equal(own.row, null);
-        const foreign = await bothPlanes(
+        ),
+        STARK_ORGANIZATION,
+    );
+    assert.equal(
+        await pairOwner(
             STARK_ORGANIZATION, ORGANIZATION_TWO,
-        );
-        assert.equal(foreign.pair, STARK_ORGANIZATION);
-        assert.equal(foreign.row, null);
-    }
+        ),
+        STARK_ORGANIZATION,
+    );
 
-    // Hard-delete strengthening: records row half is already
-    // stripped — pair plane retains ownership; row null.
-    // Phase Final Stage B: records table retired.
-    {
-        const own = await bothPlanes(
+    // Records retain pair-plane ownership after row strip.
+    assert.equal(
+        await pairOwner(
             recordStark.id, STARK_ORGANIZATION,
-        );
-        assert.equal(own.pair, STARK_ORGANIZATION);
-        assert.equal(own.row, null);
-        const foreign = await bothPlanes(
+        ),
+        STARK_ORGANIZATION,
+    );
+    assert.equal(
+        await pairOwner(
             recordStark.id, ORGANIZATION_TWO,
-        );
-        assert.equal(foreign.pair, STARK_ORGANIZATION);
-        assert.equal(foreign.row, null);
-    }
+        ),
+        STARK_ORGANIZATION,
+    );
 });
 
 // Phase Final Task 2: graph ROW half stripped — pair plane
@@ -1328,11 +1260,8 @@ test('residual pin: soft-deleted node drops from'
     assert.ok(residual);
     assert.equal(residual!.action, 'added');
 
-    const scoped = organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    );
     const pairPlane = await collectAttributeReferrers(
-        scoped, STARK_ORGANIZATION, [attrId],
+        db, STARK_ORGANIZATION, [attrId],
     );
     assert.deepEqual(
         pairPlane.get(attrId)!.flowIds, [],
@@ -1509,14 +1438,7 @@ async () => {
         fieldValueId, workOrderId + '-attr',
     );
 
-    const starkScoped = organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    );
-    const twoScoped = organizationScopedAdapter(
-        db, ORGANIZATION_TWO,
-    );
-
-    // Own → visible on both planes; derive returns the row.
+    // Own → visible on the pair plane; derive returns the row.
     assert.equal(
         await pairPlaneVisibility(db, STARK_ORGANIZATION, transitionEventId,
         ),
@@ -1614,9 +1536,6 @@ test('collectAttributeReferrers graph legs: seed attributes'
 + ' with any referrer; pre-tx vs in-tx parity (pair plane)',
 async () => {
     const db = await seededDb();
-    const scoped = organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    );
     // Seed attributes from pair-plane graph bindings + WO
     // frozen graphs.
     const bindings = await flowGraphBindingsFromPairs(
@@ -1659,7 +1578,7 @@ async () => {
     );
 
     const preTx = await collectAttributeReferrers(
-        scoped, STARK_ORGANIZATION, attributeIds,
+        db, STARK_ORGANIZATION, attributeIds,
     );
     const inTx = await db.transaction(
         // Stage B: roster + objectives/records retired.
@@ -1667,9 +1586,7 @@ async () => {
             'requests', 'responses',
         ],
         (view) => collectAttributeReferrers(
-            organizationScopedAdapter(
-                view, STARK_ORGANIZATION,
-            ),
+            view,
             STARK_ORGANIZATION,
             attributeIds,
         ),
@@ -1795,11 +1712,8 @@ async () => {
     ));
     assert.equal(woCreated.status, 204);
 
-    const scoped = organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    );
     const pairPlane = await collectAttributeReferrers(
-        scoped, STARK_ORGANIZATION, [attrId],
+        db, STARK_ORGANIZATION, [attrId],
     );
     // Pre-tx vs in-tx parity (pair plane only).
     const inTx = await db.transaction(
@@ -1808,9 +1722,7 @@ async () => {
             'requests', 'responses',
         ],
         (view) => collectAttributeReferrers(
-            organizationScopedAdapter(
-                view, STARK_ORGANIZATION,
-            ),
+            view,
             STARK_ORGANIZATION,
             [attrId],
         ),

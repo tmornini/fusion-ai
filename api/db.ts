@@ -320,8 +320,8 @@ export interface DbLifecycle {
     // so cross-tab (and future cross-process) subscribers are
     // informed of state changes — never polled. Carried on the
     // COMMON ancestor of DbAdapter and GuardedDbAdapter so
-    // both the fenced view (organizationScopedAdapter) and the
-    // open-tx view (#viewForTx) type-check.
+    // both the open-tx view (#viewForTx) and plain adapters
+    // type-check.
     postNotification: NotificationPost;
 }
 
