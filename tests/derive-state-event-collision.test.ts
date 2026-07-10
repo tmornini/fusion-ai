@@ -9,11 +9,11 @@ import {
     stateEventCollisionFromPairs,
 } from '../api/derive-states.ts';
 
-// Phase 15 Task 6: stateEventCollisionFromPairs — pair-plane
-// twin of StateStore.put's sameEvent check. REDUCE over all
-// pairs at the event-append address (finding 2: singularity
-// is FALSE). Wire pins (commit 2): both planes agree; 409
-// bytes held; different-envelope resend is a pinned case.
+// Phase 15 Task 6 / Phase Final Task 1(b): 
+// stateEventCollisionFromPairs — pair-plane immutability for
+// PUT /states/:id. Row half STRIPPED at Task 1(b); this file
+// is pure pair-plane. Wire pins: 409 LedgerImmutabilityError
+// bytes; different-envelope resend is a pinned case.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -23,6 +23,9 @@ const BODY = {
     state: 'active',
     at: AT,
 };
+// DEV_TOKEN's sub is the root admin identity — stamped as
+// member_id / requesterIdentityId on live writes.
+const ACTOR = 'current';
 
 // Exact wire body of LedgerImmutabilityError for states/:id.
 function ledger409Body(id: string): { error: string } {
@@ -54,13 +57,17 @@ async function freshDb(): Promise<MemoryDbAdapter> {
     return db;
 }
 
-// DEV_TOKEN's sub is the root admin identity — that id is
-// stamped as member_id / requesterIdentityId on live writes.
-async function rootActorId(
-    db: MemoryDbAdapter,
-): Promise<string> {
-    const row = await db.states.getById(EVENT_ID);
-    return row.member_id;
+function statesPairCount(
+    responses: readonly { uri_prefix: string;
+        uri_id: string; status: number }[],
+    eventId: string,
+): number {
+    return responses.filter((r) =>
+        r.uri_id === eventId
+        && /\/states\/$/.test(r.uri_prefix)
+        && r.status >= 200
+        && r.status < 300,
+    ).length;
 }
 
 test('stateEventCollisionFromPairs: absent when no pairs'
@@ -84,12 +91,11 @@ test('stateEventCollisionFromPairs: same after a live PUT'
         'PUT', '/states/' + EVENT_ID, DEV_TOKEN, BODY,
     ));
     assert.equal(res.status, 200);
-    const actor = await rootActorId(db);
     const disposition = await stateEventCollisionFromPairs(
         db, EVENT_ID, {
             entity_id: BODY.entity_id,
             state: BODY.state,
-            member_id: actor,
+            member_id: ACTOR,
             at: BODY.at,
         },
     );
@@ -103,12 +109,11 @@ test('stateEventCollisionFromPairs: conflict when candidate'
         'PUT', '/states/' + EVENT_ID, DEV_TOKEN, BODY,
     ));
     assert.equal(res.status, 200);
-    const actor = await rootActorId(db);
     const disposition = await stateEventCollisionFromPairs(
         db, EVENT_ID, {
             entity_id: BODY.entity_id,
             state: 'deleted',
-            member_id: actor,
+            member_id: ACTOR,
             at: BODY.at,
         },
     );
@@ -132,32 +137,26 @@ test('stateEventCollisionFromPairs: different-envelope resend'
     const responses = await db.responses.getAllWhere(
         'uri_id', EVENT_ID,
     );
-    const statesPairs = responses.filter((r) =>
-        /\/states\/$/.test(r.uri_prefix)
-        && r.status >= 200
-        && r.status < 300,
-    );
     assert.equal(
-        statesPairs.length, 2,
+        statesPairCount(responses, EVENT_ID), 2,
         'finding 2: two 2xx pairs at one uri_id',
     );
 
-    const actor = await rootActorId(db);
     const disposition = await stateEventCollisionFromPairs(
         db, EVENT_ID, {
             entity_id: BODY.entity_id,
             state: BODY.state,
-            member_id: actor,
+            member_id: ACTOR,
             at: BODY.at,
         },
     );
     assert.equal(disposition, 'same');
 });
 
-// -- Wire pins: parity across both planes (Task 6 commit 2) --
+// -- Wire pins: pure pair-plane (Task 1(b) strip) --
 
-test('immutability parity: differing body is 409 with exact'
-+ ' LedgerImmutabilityError bytes; both planes conflict',
+test('immutability: differing body is 409 with exact'
++ ' LedgerImmutabilityError bytes; pair plane conflict',
 async () => {
     const db = await freshDb();
     const id = 'ev-parity-409';
@@ -179,37 +178,25 @@ async () => {
         ledger409Body(id),
     );
 
-    // Row intact; no second pair for the rejected write.
-    const row = await db.states.getById(id);
-    assert.equal(row.state, 'active');
+    // No second pair for the rejected write.
     const responses = await db.responses.getAllWhere(
         'uri_id', id,
     );
-    assert.equal(
-        responses.filter((r) =>
-            /\/states\/$/.test(r.uri_prefix)
-            && r.status >= 200
-            && r.status < 300,
-        ).length,
-        1,
-    );
+    assert.equal(statesPairCount(responses, id), 1);
 
-    const actor = row.member_id;
     assert.equal(
         await stateEventCollisionFromPairs(db, id, {
             entity_id: BODY.entity_id,
             state: 'deleted',
-            member_id: actor,
+            member_id: ACTOR,
             at: BODY.at,
         }),
         'conflict',
     );
-    // Row plane: raw row still active → sameEvent would fail.
-    assert.notEqual(row.state, 'deleted');
 });
 
-test('immutability parity: different-envelope same-content'
-+ ' resend is 200 no-op; two 2xx pairs; one row',
+test('immutability: different-envelope same-content resend'
++ ' is 200 no-op; two 2xx pairs',
 async () => {
     const db = await freshDb();
     const id = 'ev-parity-resend';
@@ -218,41 +205,34 @@ async () => {
         { 'x-request-id': 'resend-a' },
     ));
     assert.equal(first.status, 200);
-    const firstBody = await first.json();
+    const firstBody = await first.json() as {
+        id: string; state: string;
+    };
 
     const second = await handleRequest(db, req(
         'PUT', '/states/' + id, DEV_TOKEN, BODY,
         { 'x-request-id': 'resend-b' },
     ));
     assert.equal(second.status, 200);
-    const secondBody = await second.json();
-    // Written shape holds (idempotent return of the event).
+    const secondBody = await second.json() as {
+        id: string; state: string;
+    };
     assert.equal(secondBody.id, id);
     assert.equal(secondBody.state, BODY.state);
     assert.equal(firstBody.id, secondBody.id);
-
-    const rows = (await db.states.getAll())
-        .filter((r) => r.id === id);
-    assert.equal(rows.length, 1);
 
     const responses = await db.responses.getAllWhere(
         'uri_id', id,
     );
     assert.equal(
-        responses.filter((r) =>
-            /\/states\/$/.test(r.uri_prefix)
-            && r.status >= 200
-            && r.status < 300,
-        ).length,
-        2,
+        statesPairCount(responses, id), 2,
         'finding 2 probe: two 2xx pairs at one uri_id',
     );
 
-    const actor = rows[0]!.member_id;
     const candidate = {
         entity_id: BODY.entity_id,
         state: BODY.state,
-        member_id: actor,
+        member_id: ACTOR,
         at: BODY.at,
     };
     assert.equal(
@@ -261,11 +241,10 @@ async () => {
         ),
         'same',
     );
-    assert.deepEqual(rows[0], { id, ...candidate });
 });
 
-test('immutability parity: byte-identical resend folds at'
-+ ' the message_hash gate (one pair, one row)',
+test('immutability: byte-identical resend folds at the'
++ ' message_hash gate (one pair)',
 async () => {
     const db = await freshDb();
     const id = 'ev-parity-fold';
@@ -283,18 +262,7 @@ async () => {
         'uri_id', id,
     );
     assert.equal(
-        responses.filter((r) =>
-            /\/states\/$/.test(r.uri_prefix)
-            && r.status >= 200
-            && r.status < 300,
-        ).length,
-        1,
+        statesPairCount(responses, id), 1,
         'E6 message_hash fold: no second pair',
     );
-    assert.equal(
-        (await db.states.getAll())
-            .filter((r) => r.id === id).length,
-        1,
-    );
 });
-

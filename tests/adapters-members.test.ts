@@ -14,6 +14,7 @@ import {
     seedCurrentMember,
     seedHumanMember,
 } from './member-fixtures.ts';
+import type { StateEntity } from '../api/types.ts';
 
 function buildHumanMember(
     name: string,
@@ -71,7 +72,12 @@ test(
 
         const after = await db.members.getById('w1');
         assert.deepEqual(after, before);
-        const events = await db.states.getAllFor('w1');
+        // Phase Final Task 1(b): archive rides pair-plane-only
+        // PUT /states/:id — pin history via the live derived
+        // path, never the retired row half.
+        const events = await ctx.GET<StateEntity[]>(
+            'entity-states/w1/history',
+        );
         assert.equal(events.length, 2);
         assert.equal(
             events.at(-1)?.state, 'archived',

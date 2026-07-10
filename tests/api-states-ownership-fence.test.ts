@@ -13,6 +13,9 @@ import {
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
+import {
+    stateEventCollisionFromPairs,
+} from '../api/derive-states.ts';
 
 // The state ownership WRITE fence (Phase 11 Task 1).
 // MEMBER_VERBS permits member-tier PUT /states/:id
@@ -227,14 +230,28 @@ test('a member of org A cannot PUT a states event naming an'
 test('a member of org A can PUT a states event naming its'
 + ' own idea', async () => {
     const db = await seed();
+    const body = {
+        entity_id: 'idea-a', state: 'active', at: AT,
+    };
     const res = await handleRequest(db, req(
         'PUT', '/states/ev-own', await tokenFor('memberA', 'A'),
-        { entity_id: 'idea-a', state: 'active', at: AT },
+        body,
     ));
     assert.equal(res.status, 200);
+    // Phase Final Task 1(b): row half stripped — pin the pair
+    // plane (collision same) and the 200 wire body entity_id.
+    const wire = await res.json() as { entity_id: string };
+    assert.equal(wire.entity_id, 'idea-a');
     assert.equal(
-        (await db.states.getById('ev-own')).entity_id,
-        'idea-a',
+        await stateEventCollisionFromPairs(
+            db, 'ev-own', {
+                entity_id: 'idea-a',
+                state: 'active',
+                member_id: 'memberA',
+                at: AT,
+            },
+        ),
+        'same',
     );
 });
 
@@ -405,9 +422,20 @@ test('WP1: own-org PUT states/:id naming its ORGANIZATION'
         { entity_id: 'A', state: 'active', at: AT },
     ));
     assert.equal(res.status, 200);
+    // Phase Final Task 1(b): row half stripped — pin pair plane
+    // + wire body.
+    const wire = await res.json() as { entity_id: string };
+    assert.equal(wire.entity_id, 'A');
     assert.equal(
-        (await db.states.getById('ev-org-own')).entity_id,
-        'A',
+        await stateEventCollisionFromPairs(
+            db, 'ev-org-own', {
+                entity_id: 'A',
+                state: 'active',
+                member_id: 'memberA',
+                at: AT,
+            },
+        ),
+        'same',
     );
 });
 
@@ -543,11 +571,19 @@ test('retired bare GET states/:id is method-absent 405'
         await tokenFor('memberA', 'A'),
         { entity_id: 'idea-a', state: 'active', at: AT },
     ));
-    // Own event exists in storage; GET arm is gone; PUT
-    // pattern still matches → 405, not fence 404.
+    // Phase Final Task 1(b): own event exists on the pair plane
+    // (row half stripped); GET arm is gone; PUT pattern still
+    // matches → 405, not fence 404.
     assert.equal(
-        (await db.states.getById('ev-own-retire')).id,
-        'ev-own-retire',
+        await stateEventCollisionFromPairs(
+            db, 'ev-own-retire', {
+                entity_id: 'idea-a',
+                state: 'active',
+                member_id: 'memberA',
+                at: AT,
+            },
+        ),
+        'same',
     );
     const res = await handleRequest(db, req(
         'GET', '/states/ev-own-retire',

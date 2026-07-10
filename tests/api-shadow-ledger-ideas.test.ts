@@ -239,8 +239,16 @@ test('each 200 route\'s wire body matches a direct domain '
         },
     ));
     assert.equal(state.status, 200);
-    const stateRow = await db.states.getById('ev-8');
-    assert.deepEqual(await state.json(), stateRow);
+    // Phase Final Task 1(b): states/:id row half stripped —
+    // WRITE_RESPONSE_SPECS successBody forms the 200 wire
+    // body (id + validated fields + actor as member_id).
+    assert.deepEqual(await state.json(), {
+        id: 'ev-8',
+        entity_id: 'idea-8',
+        state: 'active',
+        member_id: 'current',
+        at: '2026-01-01T00:00:02.000000Z',
+    });
 });
 
 test('a DELETE to a pair-wired PUT-only route still 405s '

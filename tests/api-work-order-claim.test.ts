@@ -15,6 +15,10 @@ import { nowUtc } from '../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
+import { workOrderClaimHistoryFor } from
+    '../api/derive-states.ts';
+import { STARK_ORGANIZATION } from
+    '../api/mock-data/seed-constants.ts';
 
 const BASE = 'http://localhost';
 
@@ -76,10 +80,17 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     return db;
 }
 
+// Phase Final Task 1(b): claim_released via bare PUT
+// /states/:id is pair-plane-only. workOrderClaimHistoryFor
+// is the claim gate's own two-source union (op pairs +
+// states/:id), so it still sees releases after the row
+// half was stripped.
 function claimEventsFor(
     db: MemoryDbAdapter,
 ): Promise<{ state: string; member_id: string }[]> {
-    return db.states.getAllFor('wo1');
+    return workOrderClaimHistoryFor(
+        db, STARK_ORGANIZATION, 'wo1',
+    );
 }
 
 // Fresh caller-minted body for tests that don't assert

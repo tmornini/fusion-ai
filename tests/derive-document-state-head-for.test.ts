@@ -110,9 +110,12 @@ test('documentStateHeadFor: a later transition matches the'
     assert.equal(head?.id, id + '-ev2');
 });
 
+// Phase Final Task 1(b): standalone states/:id is pair-plane-
+// only (row half stripped). Drop the row-plane oracle half;
+// pin the head against the live write's own fields.
 test('documentStateHeadFor: a standalone states/:id event'
-+ ' UNIONS in and wins when it is the LATEST — matches the'
-+ ' row-plane oracle', async () => {
++ ' UNIONS in and wins when it is the LATEST — pair-plane pin'
++ ' (row-oracle half dropped at Task 1(b) strip)', async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const id = 'idea-head-standalone';
@@ -133,8 +136,11 @@ test('documentStateHeadFor: a standalone states/:id event'
     assert.equal(standalone.status, 200);
 
     const head = await documentStateHeadFor(db, id);
-    const oracle = await db.states.getCurrentFor(id);
-    assert.deepEqual(head, oracle);
-    assert.equal(head?.id, standaloneEventId);
-    assert.equal(head?.state, 'archived');
+    assert.deepEqual(head, {
+        id: standaloneEventId,
+        entity_id: id,
+        state: 'archived',
+        member_id: 'current',
+        at: standaloneAt,
+    });
 });

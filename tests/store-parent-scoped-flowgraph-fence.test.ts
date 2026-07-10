@@ -269,11 +269,17 @@ test('node deletion event is visible through org A', async () => {
 
 test('node deletion event is hidden from org B', async () => {
     const db = await seed();
-    // Prove the row EXISTS in raw storage — exclusion is
-    // the fence, not an absent row.
-    assert.equal(
-        (await db.states.getById('se-node-del')).id,
-        'se-node-del',
+    // Phase Final Task 1(b): event lives on the pair plane
+    // only (row half stripped). Prove the pair EXISTS —
+    // exclusion is the fence, not an absent write.
+    const nodePairs = await db.responses.getAllWhere(
+        'uri_id', 'se-node-del',
+    );
+    assert.ok(
+        nodePairs.some((r) =>
+            /\/states\/$/.test(r.uri_prefix)
+            && r.status >= 200 && r.status < 300),
+        'se-node-del must exist as a states/:id pair',
     );
     // Grant current admin access to B so the facade opens.
     // B's own organizations/:id document (Phase 13 Task 3's
@@ -311,9 +317,16 @@ test('edge deletion event is visible through org A', async () => {
 
 test('edge deletion event is hidden from org B', async () => {
     const db = await seed();
-    assert.equal(
-        (await db.states.getById('se-edge-del')).id,
-        'se-edge-del',
+    // Phase Final Task 1(b): pair-plane existence pin (row
+    // half stripped).
+    const edgePairs = await db.responses.getAllWhere(
+        'uri_id', 'se-edge-del',
+    );
+    assert.ok(
+        edgePairs.some((r) =>
+            /\/states\/$/.test(r.uri_prefix)
+            && r.status >= 200 && r.status < 300),
+        'se-edge-del must exist as a states/:id pair',
     );
     // B's own organizations/:id document (Phase 13 Task 3's
     // fixture prerequisite; idempotent — a no-op if already

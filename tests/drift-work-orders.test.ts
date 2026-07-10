@@ -38,6 +38,7 @@ import {
 } from '../api/work-order-claims.ts';
 import { deriveFlowWorkOrders } from
     '../api/derive-flow-work-orders.ts';
+import { deriveStatesFor } from '../api/derive-states.ts';
 import { buildWorkOrders } from '../api/mock-data/work-orders.ts';
 import {
     buildLeadToCloseWorkload,
@@ -606,8 +607,13 @@ async () => {
     // The full chain: create(3) + transition1(1) +
     // transition2(2) + entity PUT(0) + fresh claim(1) +
     // repeat-claim(0) + rejected claim(0) + unclaim(1) = 8.
+    // Phase Final Task 1(b): unclaim is pair-plane-only — pin
+    // via deriveStatesFor (row-oracle half dropped).
     assert.equal(
-        (await db.states.getAllFor(workOrderId)).length, 8,
+        (await deriveStatesFor(
+            db, STARK_ORGANIZATION, workOrderId,
+        )).length,
+        8,
     );
 });
 
@@ -1420,8 +1426,15 @@ async () => {
     const replay = await replayWorkOrderStates(
         db, STARK_ORGANIZATION, workOrderId,
     );
-    const oldHistory = await db.states.getAllFor(workOrderId);
-    assert.deepEqual(replay.events, oldHistory);
+    // Phase Final Task 1(b): unclaim (and any bare states/:id
+    // event) is pair-plane-only. Drop the row-plane getAllFor
+    // oracle; pin the test-side pair replay against the live
+    // production derive (deriveStatesFor) — both read the same
+    // two-source composition (op pairs + states/:id pairs).
+    const derivedHistory = await deriveStatesFor(
+        db, STARK_ORGANIZATION, workOrderId,
+    );
+    assert.deepEqual(replay.events, derivedHistory);
     // create(3) + release-transition(2) + reclaim(1) +
     // idempotent(0) + expired-takeover(2) + values-transition(1)
     // + release-transition(2) + unclaim(1) = 12.

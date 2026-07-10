@@ -5719,15 +5719,15 @@ export const routes: Route[] = [
         // over any client-supplied member_id — the ledger
         // records who acted, not who the body claims.
         //
-        // IMMUTABILITY PARITY (Phase 15 Task 6 / gate 7):
-        // pair-plane collision check AND the still-live row
-        // sameEvent check both run; if they disagree on a
-        // present opinion the strangler asserts. Final strips
-        // the row half. 409 bytes stay LedgerImmutabilityError.
+        // Phase Final Task 1(b): ROW HALF STRIPPED. Immutability
+        // is pair-plane only (stateEventCollisionFromPairs);
+        // WRITE_RESPONSE_SPECS successBody forms the wire
+        // bytes. Seed still writes states rows until the
+        // states-trace strip commit.
         put: (db, p, body, actor, pair) => {
             const id = param(p, 0);
             return db.transaction(
-                ['states', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
                     const fields = {
                         ...validateStateBody(
@@ -5739,70 +5739,15 @@ export const routes: Route[] = [
                         await stateEventCollisionFromPairs(
                             view, id, fields,
                         );
-                    let rowCollision:
-                        | 'absent' | 'same' | 'conflict' =
-                        'absent';
-                    try {
-                        const existing =
-                            await view.states.getById(id);
-                        rowCollision =
-                            existing.entity_id
-                                === fields.entity_id
-                            && existing.state === fields.state
-                            && existing.member_id
-                                === fields.member_id
-                            && existing.at === fields.at
-                                ? 'same'
-                                : 'conflict';
-                    } catch (error) {
-                        if (!(
-                            error instanceof EntityNotFoundError
-                        )) {
-                            throw error;
-                        }
-                    }
-                    // Strangler agreement: when both planes
-                    // hold an opinion they must match. Phase
-                    // Final Task 1(b) canary ALSO alarms on
-                    // row-conflict with pair-absent — a
-                    // states row with no matching pair (pre-
-                    // strangler vintage). True for the seed
-                    // pipeline; existing dev origins reseed-
-                    // resolve. Strip of the row half depends
-                    // on this premise.
-                    if (
-                        (
-                            pairCollision !== 'absent'
-                            && rowCollision !== 'absent'
-                            && pairCollision !== rowCollision
-                        )
-                        || (
-                            rowCollision === 'conflict'
-                            && pairCollision === 'absent'
-                        )
-                    ) {
-                        throw new Error(
-                            'state event immutability planes'
-                            + ' disagree for ' + id
-                            + ': pair=' + pairCollision
-                            + ' row=' + rowCollision,
-                        );
-                    }
-                    if (
-                        pairCollision === 'conflict'
-                        || rowCollision === 'conflict'
-                    ) {
+                    if (pairCollision === 'conflict') {
                         throw new LedgerImmutabilityError(
                             'states', id,
                         );
                     }
-                    const written = await view.states.put(
-                        id, fields,
-                    );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
-                    return written;
+                    return { id, ...fields };
                 },
             );
         },

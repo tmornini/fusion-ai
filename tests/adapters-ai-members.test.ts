@@ -21,6 +21,7 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import type { StateEntity } from '../api/types.ts';
 
 function aiDraft(name: string) {
     return {
@@ -102,7 +103,12 @@ test(
         const after =
             await db.aiMembers.getById('ai1');
         assert.deepEqual(after, before);
-        const events = await db.states.getAllFor('ai1');
+        // Phase Final Task 1(b): archive rides pair-plane-only
+        // PUT /states/:id — pin history via the live derived
+        // path, never the retired row half.
+        const events = await ctx.GET<StateEntity[]>(
+            'entity-states/ai1/history',
+        );
         assert.equal(events.length, 2);
         assert.equal(
             events.at(-1)?.state, 'archived',

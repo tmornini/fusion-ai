@@ -541,14 +541,19 @@ test('HYBRID: a seeded-shape work order plus a live claim —'
         'the two readers must never emit overlapping ids',
     );
 
-    const old = await db.states.getAllFor(workOrderId);
+    // Phase Final Task 1(b): genesis rides pair-plane-only
+    // states/:id (row half stripped). Drop the row-plane
+    // getAllFor union oracle; pin the two-source composition
+    // itself (claim + genesis), (at, id) ordered.
+    const union = [...ours, ...fromEventPairs].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+                : a.id < b.id ? -1
+                    : a.id > b.id ? 1
+                        : 0);
     assert.deepEqual(
-        [...ours, ...fromEventPairs].sort((a, b) =>
-            a.at < b.at ? -1
-                : a.at > b.at ? 1
-                    : a.id < b.id ? -1
-                        : a.id > b.id ? 1
-                            : 0),
-        old,
+        union.map((row) => row.id),
+        [workOrderId + '-genesis', workOrderId + '-ce1'],
     );
+    assert.equal(union.length, 2);
 });

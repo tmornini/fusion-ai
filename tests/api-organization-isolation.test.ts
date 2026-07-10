@@ -835,11 +835,21 @@ test('states lists only the bound org events', async () => {
 // STEALTH-WEAKENING trap (Phase 15 Task 7): bare GET
 // states/:id retired — a router 404 would pass for ANY id.
 // Re-point to the surviving collection GET which still
-// fences by ownership (raw seB exists; collection omits it).
+// fences by ownership. Phase Final Task 1(b): seB lives on
+// the pair plane only (row half stripped); pin pair presence
+// then prove the collection omits it.
 test('states collection hides a foreign event id',
 async () => {
     const db = await deepDb();
-    assert.equal((await db.states.getById('seB')).id, 'seB');
+    const pairResponses = await db.responses.getAllWhere(
+        'uri_id', 'seB',
+    );
+    assert.ok(
+        pairResponses.some((r) =>
+            /\/states\/$/.test(r.uri_prefix)
+            && r.status >= 200 && r.status < 300),
+        'seB must exist as a states/:id pair',
+    );
     const res = await facadeGet(db, '/states');
     assert.equal(res.status, 200);
     const ids = new Set(

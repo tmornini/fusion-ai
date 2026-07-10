@@ -761,7 +761,12 @@ async () => {
     await seedHumanMember(db, 'current', 'Demo Test');
     const ctx = createRequestContext(db, await devToken());
     await deleteWorkOrderClaim(ctx, 'wo-release-1');
-    const events = await db.states.getAllFor('wo-release-1');
+    // Phase Final Task 1(b): claim_released is pair-plane-only
+    // (bare PUT /states/:id). Pin via the live derived history
+    // path, never the retired row half.
+    const events = await ctx.GET<StateEntity[]>(
+        'entity-states/wo-release-1/history',
+    );
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'claim_released');
 });

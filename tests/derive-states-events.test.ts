@@ -243,9 +243,13 @@ async function createFlowWithNode(
 
 // ---- 1. the event-pair mapping + H7 id-lex sort -----------------
 
+// Phase Final Task 1(b): live PUT /states/:id is pair-plane-
+// only. Drop the row-plane getById oracle; pin derived events
+// against the 200 wire bodies (WRITE_RESPONSE_SPECS shape).
 test('deriveEventPairStates maps live PUT /states/:id events'
-+ ' byte-equal to the old plane, id-lex sorted regardless of'
-+ ' insertion order (H7)', async () => {
++ ' byte-equal to the wire body, id-lex sorted regardless of'
++ ' insertion order (H7) — row-oracle half dropped at Task'
++ ' 1(b) strip', async () => {
     const db = await seed();
     const token = await organizationToken('adminA', 'A');
     // Deliberately non-lexical insertion order.
@@ -254,11 +258,13 @@ test('deriveEventPairStates maps live PUT /states/:id events'
         { entity_id: 'ghost-1', state: 'active', at: AT },
     ));
     assert.equal(first.status, 200);
+    const firstBody = await first.json();
     const second = await handleRequest(db, req(
         'PUT', '/states/aa-event', token,
         { entity_id: 'ghost-1', state: 'archived', at: AT },
     ));
     assert.equal(second.status, 200);
+    const secondBody = await second.json();
 
     const derived = await deriveEventPairStates(db);
     const oursIds = ['aa-event', 'zz-event'];
@@ -268,9 +274,8 @@ test('deriveEventPairStates maps live PUT /states/:id events'
     assert.deepEqual(
         ours.map((row) => row.id), ['aa-event', 'zz-event'],
     );
-    for (const row of ours) {
-        assert.deepEqual(row, await db.states.getById(row.id));
-    }
+    assert.deepEqual(ours[0], secondBody);
+    assert.deepEqual(ours[1], firstBody);
 });
 
 test('deriveEventPairStates never includes a document family\'s'
