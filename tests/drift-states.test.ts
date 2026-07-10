@@ -1010,9 +1010,7 @@ test('case 6: the state_field_values JOIN — WO01\'s derived'
         + ' the join proof would be vacuous',
     );
     assert.equal(totalFieldValues, 7);
-    assert.equal(
-        (await db.stateFieldValues.getAll()).length, 0,
-    );
+    // Phase Final Stage B: state_field_values table retired.
 });
 
 // ---- case 7: live-write chains re-compared on both planes --------

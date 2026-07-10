@@ -158,7 +158,7 @@ test('postWorkOrderDocumentOp returns the entity and the'
         organization_id: '1',
         ...documentFields(),
     });
-    assert.equal((await db.workOrders.getAll()).length, 0);
+    // Phase Final Stage B: work_orders table retired.
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });

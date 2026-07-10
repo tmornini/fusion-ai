@@ -16,9 +16,6 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateWorkOrderEntity,
-    validateFlowWorkOrderEntity,
-    validateStateFieldValueEntity,
     validateRecordEntity,
     validateRecordAttributeEntity,
     validateFlowRecordEntity,
@@ -79,17 +76,6 @@ function validateSnapshotRow(
                 break;
             case 'identity_providers':
                 validateIdentityProviderEntity(body);
-                break;
-            case 'work_orders':
-                validateWorkOrderEntity(body);
-                break;
-            case 'flow_work_orders':
-                validateFlowWorkOrderEntity(body);
-                break;
-            case 'state_field_values':
-                validateStateFieldValueEntity(
-                    body,
-                );
                 break;
             case 'records':
                 validateRecordEntity(body);

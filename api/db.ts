@@ -14,9 +14,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    WorkOrderEntity,
-    FlowWorkOrderEntity,
-    StateFieldValueEntity,
     RecordEntity,
     RecordAttributeEntity,
     FlowRecordEntity,
@@ -219,15 +216,9 @@ export interface StateStore {
     // Probes (store-parent-scoped.ts), scoped to this ONE store.
     // A wrapper's getById cannot answer this alone: "no such
     // row" and "a row owned by a different organization" both
-    // throw EntityNotFoundError identically, yet
-    // state_field_values' own parent-event visibility rule
-    // treats them oppositely (the former is a visible orphan,
-    // the latter is hidden — db-organization-scoped.ts's
-    // stateFieldValues resolver). Retires alongside the
-    // row-plane state_field_values plane at Phase Final.
-    // Phase 14 Task 7 adjudicated a pair-plane re-point of
-    // this same probe infeasible, for the same reason — see
-    // api/api.ts's Region B NAMED DEVIATION comment.
+    // throw EntityNotFoundError identically. Residual for
+    // pair-plane fence callers until Task 5 retires the
+    // row-plane states store.
     rawHasRow(id: Id): Promise<boolean>;
 }
 
@@ -314,7 +305,7 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 25 stores an adapter exposes, factored out of
+// The 22 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
 // bound to an open tx (A9).
@@ -341,18 +332,6 @@ export interface DbStores {
         EntityStore<ClientEntity>;
     identityProviders:
         EntityStore<IdentityProviderEntity>;
-    workOrders:
-        EntityStore<
-            WorkOrderEntity
-        >;
-    flowWorkOrders:
-        EntityStore<
-            FlowWorkOrderEntity
-        >;
-    stateFieldValues:
-        EntityStore<
-            StateFieldValueEntity
-        >;
     records:
         EntityStore<RecordEntity>;
     recordAttributes:
@@ -469,9 +448,6 @@ export const TABLE_NAMES = [
     'role_grants',
     'clients',
     'identity_providers',
-    'work_orders',
-    'flow_work_orders',
-    'state_field_values',
     'records',
     'record_attributes',
     'flow_records',
@@ -564,10 +540,7 @@ export const TABLE_INDEXES:
     identity_token_revocations: ['identity_id'],
     identity_default_organizations: ['identity_id'],
     role_grants: ['organization_id', 'identity_id'],
-    flow_work_orders: ['flow_id'],
     flow_records: ['flow_id'],
-    work_orders: ['organization_id'],
-    state_field_values: ['attribute_id', 'state_event_id'],
     records: ['organization_id'],
     record_attributes: ['organization_id'],
     objectives: ['organization_id'],

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1808 890" width="1808" height="890">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1504 890" width="1504" height="890">
   <defs>
     <style>
       text { font-family: ui-sans-serif, system-ui,
@@ -19,24 +19,20 @@
         stroke-width: 1.5; }
     </style>
   </defs>
-  <rect x="0" y="0" width="1808" height="890" fill="hsl(217 30% 97%)" />
+  <rect x="0" y="0" width="1504" height="890" fill="hsl(217 30% 97%)" />
   <path class="edge" d="M 648 244 C 590.4 244, 609.6 71, 552 71" />
   <path class="edge" d="M 648 98 C 590.4 98, 609.6 71, 552 71" />
   <path class="edge" d="M 648 381 C 590.4 381, 609.6 208, 552 208" />
   <path class="edge" d="M 952 262 C 894.4 262, 609.6 208, 552 208" />
-  <path class="edge" d="M 952 572 C 894.4 572, 609.6 208, 552 208" />
-  <path class="edge" d="M 1256 217 C 1198.4 217, 1217.6 572, 1160 572" />
-  <path class="edge" d="M 1560 89 C 1502.4 89, 1217.6 426, 1160 426" />
-  <path class="edge" d="M 1560 89 C 1502.4 89, 1521.6 545, 1464 545" />
   <path class="edge" d="M 952 98 C 894.4 98, 609.6 208, 552 208" />
-  <path class="edge" d="M 1256 545 C 1198.4 545, 609.6 208, 552 208" />
-  <path class="edge" d="M 1256 545 C 1198.4 545, 1217.6 98, 1160 98" />
+  <path class="edge" d="M 1256 417 C 1198.4 417, 609.6 208, 552 208" />
+  <path class="edge" d="M 1256 417 C 1198.4 417, 1217.6 98, 1160 98" />
   <path class="edge" d="M 1256 89 C 1198.4 89, 1217.6 98, 1160 98" />
   <path class="edge" d="M 648 637 C 590.4 637, 609.6 208, 552 208" />
   <path class="edge" d="M 648 509 C 590.4 509, 609.6 208, 552 208" />
   <path class="edge" d="M 648 756 C 590.4 756, 609.6 208, 552 208" />
-  <path class="edge" d="M 1256 363 C 1198.4 363, 913.6 756, 856 756" />
-  <path class="edge" d="M 1256 363 C 1198.4 363, 609.6 71, 552 71" />
+  <path class="edge" d="M 1256 235 C 1198.4 235, 913.6 756, 856 756" />
+  <path class="edge" d="M 1256 235 C 1198.4 235, 609.6 71, 552 71" />
   <path class="edge" d="M 952 426 C 894.4 426, 609.6 71, 552 71" />
   <g class="table">
     <rect class="box" x="344" y="40" width="208" height="62" rx="6" />
@@ -196,47 +192,6 @@
     <text class="type" x="238" y="735">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="952" y="514" width="208" height="116" rx="6" />
-    <rect class="head" x="952" y="514" width="208" height="26" rx="6" />
-    <text class="thead" x="962" y="532">work_orders</text>
-    <text class="pk" x="962" y="553">id</text>
-    <text class="type" x="1150" y="553">id</text>
-    <text class="fk" x="962" y="571">organization_id</text>
-    <text class="type" x="1150" y="571">id</text>
-    <text class="col" x="962" y="589">display_id</text>
-    <text class="type" x="1150" y="589">text</text>
-    <text class="col" x="962" y="607">flow_graph</text>
-    <text class="type" x="1150" y="607">json</text>
-    <text class="col" x="962" y="625">position</text>
-    <text class="type" x="1150" y="625">num</text>
-  </g>
-  <g class="table">
-    <rect class="box" x="1256" y="168" width="208" height="98" rx="6" />
-    <rect class="head" x="1256" y="168" width="208" height="26" rx="6" />
-    <text class="thead" x="1266" y="186">flow_work_orders</text>
-    <text class="pk" x="1266" y="207">id</text>
-    <text class="type" x="1454" y="207">id</text>
-    <text class="col" x="1266" y="225">flow_id</text>
-    <text class="type" x="1454" y="225">id</text>
-    <text class="fk" x="1266" y="243">work_order_id</text>
-    <text class="type" x="1454" y="243">id</text>
-    <text class="col" x="1266" y="261">at</text>
-    <text class="type" x="1454" y="261">text</text>
-  </g>
-  <g class="table">
-    <rect class="box" x="1560" y="40" width="208" height="98" rx="6" />
-    <rect class="head" x="1560" y="40" width="208" height="26" rx="6" />
-    <text class="thead" x="1570" y="58">state_field_values</text>
-    <text class="pk" x="1570" y="79">id</text>
-    <text class="type" x="1758" y="79">id</text>
-    <text class="fk" x="1570" y="97">state_event_id</text>
-    <text class="type" x="1758" y="97">id</text>
-    <text class="fk" x="1570" y="115">attribute_id</text>
-    <text class="type" x="1758" y="115">id</text>
-    <text class="col" x="1570" y="133">value</text>
-    <text class="type" x="1758" y="133">text</text>
-  </g>
-  <g class="table">
     <rect class="box" x="952" y="40" width="208" height="116" rx="6" />
     <rect class="head" x="952" y="40" width="208" height="26" rx="6" />
     <text class="thead" x="962" y="58">records</text>
@@ -252,25 +207,25 @@
     <text class="type" x="1150" y="151">num</text>
   </g>
   <g class="table">
-    <rect class="box" x="1256" y="460" width="208" height="170" rx="6" />
-    <rect class="head" x="1256" y="460" width="208" height="26" rx="6" />
-    <text class="thead" x="1266" y="478">record_attributes</text>
-    <text class="pk" x="1266" y="499">id</text>
-    <text class="type" x="1454" y="499">id</text>
-    <text class="fk" x="1266" y="517">organization_id</text>
-    <text class="type" x="1454" y="517">id</text>
-    <text class="fk" x="1266" y="535">record_id</text>
-    <text class="type" x="1454" y="535">id</text>
-    <text class="col" x="1266" y="553">name</text>
-    <text class="type" x="1454" y="553">text</text>
-    <text class="col" x="1266" y="571">attribute_type</text>
-    <text class="type" x="1454" y="571">AttributeType</text>
-    <text class="col" x="1266" y="589">sort_order</text>
-    <text class="type" x="1454" y="589">num</text>
-    <text class="col" x="1266" y="607">options</text>
-    <text class="type" x="1454" y="607">json</text>
-    <text class="col" x="1266" y="625">constraints</text>
-    <text class="type" x="1454" y="625">json</text>
+    <rect class="box" x="1256" y="332" width="208" height="170" rx="6" />
+    <rect class="head" x="1256" y="332" width="208" height="26" rx="6" />
+    <text class="thead" x="1266" y="350">record_attributes</text>
+    <text class="pk" x="1266" y="371">id</text>
+    <text class="type" x="1454" y="371">id</text>
+    <text class="fk" x="1266" y="389">organization_id</text>
+    <text class="type" x="1454" y="389">id</text>
+    <text class="fk" x="1266" y="407">record_id</text>
+    <text class="type" x="1454" y="407">id</text>
+    <text class="col" x="1266" y="425">name</text>
+    <text class="type" x="1454" y="425">text</text>
+    <text class="col" x="1266" y="443">attribute_type</text>
+    <text class="type" x="1454" y="443">AttributeType</text>
+    <text class="col" x="1266" y="461">sort_order</text>
+    <text class="type" x="1454" y="461">num</text>
+    <text class="col" x="1266" y="479">options</text>
+    <text class="type" x="1454" y="479">json</text>
+    <text class="col" x="1266" y="497">constraints</text>
+    <text class="type" x="1454" y="497">json</text>
   </g>
   <g class="table">
     <rect class="box" x="1256" y="40" width="208" height="98" rx="6" />
@@ -342,21 +297,21 @@
     <text class="type" x="846" y="791">num</text>
   </g>
   <g class="table">
-    <rect class="box" x="1256" y="296" width="208" height="134" rx="6" />
-    <rect class="head" x="1256" y="296" width="208" height="26" rx="6" />
-    <text class="thead" x="1266" y="314">objective_revisions</text>
-    <text class="pk" x="1266" y="335">id</text>
-    <text class="type" x="1454" y="335">id</text>
-    <text class="fk" x="1266" y="353">objective_id</text>
-    <text class="type" x="1454" y="353">id</text>
-    <text class="col" x="1266" y="371">name</text>
-    <text class="type" x="1454" y="371">text</text>
-    <text class="col" x="1266" y="389">description</text>
-    <text class="type" x="1454" y="389">text</text>
-    <text class="fk" x="1266" y="407">member_id</text>
-    <text class="type" x="1454" y="407">id</text>
-    <text class="col" x="1266" y="425">at</text>
-    <text class="type" x="1454" y="425">text</text>
+    <rect class="box" x="1256" y="168" width="208" height="134" rx="6" />
+    <rect class="head" x="1256" y="168" width="208" height="26" rx="6" />
+    <text class="thead" x="1266" y="186">objective_revisions</text>
+    <text class="pk" x="1266" y="207">id</text>
+    <text class="type" x="1454" y="207">id</text>
+    <text class="fk" x="1266" y="225">objective_id</text>
+    <text class="type" x="1454" y="225">id</text>
+    <text class="col" x="1266" y="243">name</text>
+    <text class="type" x="1454" y="243">text</text>
+    <text class="col" x="1266" y="261">description</text>
+    <text class="type" x="1454" y="261">text</text>
+    <text class="fk" x="1266" y="279">member_id</text>
+    <text class="type" x="1454" y="279">id</text>
+    <text class="col" x="1266" y="297">at</text>
+    <text class="type" x="1454" y="297">text</text>
   </g>
   <g class="table">
     <rect class="box" x="344" y="314" width="208" height="152" rx="6" />

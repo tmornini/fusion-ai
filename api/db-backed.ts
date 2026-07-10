@@ -29,9 +29,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    WorkOrderEntity,
-    FlowWorkOrderEntity,
-    StateFieldValueEntity,
     RecordEntity,
     RecordAttributeEntity,
     FlowRecordEntity,
@@ -64,9 +61,6 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateWorkOrderEntity,
-    validateFlowWorkOrderEntity,
-    validateStateFieldValueEntity,
     validateStateEntity,
     validateRecordEntity,
     validateRecordAttributeEntity,
@@ -114,11 +108,6 @@ export class BackedDbAdapter
     readonly clients!: GuardedEntityStore<ClientEntity>;
     readonly identityProviders!:
         GuardedEntityStore<IdentityProviderEntity>;
-    readonly workOrders!: GuardedEntityStore<WorkOrderEntity>;
-    readonly flowWorkOrders!:
-        GuardedEntityStore<FlowWorkOrderEntity>;
-    readonly stateFieldValues!:
-        GuardedEntityStore<StateFieldValueEntity>;
     readonly records!:
         GuardedEntityStore<RecordEntity>;
     readonly recordAttributes!:
@@ -379,18 +368,6 @@ export class BackedDbAdapter
             identityProviders: new HistoryEntityStore(
                 'identity_providers', run,
                 validateIdentityProviderEntity,
-            ),
-            workOrders: new EntityStore(
-                'work_orders', run, stateStore,
-                validateWorkOrderEntity,
-            ),
-            flowWorkOrders: new EntityStore(
-                'flow_work_orders', run, stateStore,
-                validateFlowWorkOrderEntity,
-            ),
-            stateFieldValues: new EntityStore(
-                'state_field_values', run, stateStore,
-                validateStateFieldValueEntity,
             ),
             records: new EntityStore(
                 'records', run, stateStore,

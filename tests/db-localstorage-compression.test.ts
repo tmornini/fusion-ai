@@ -4,9 +4,6 @@ import {
     LocalStorageDbAdapter,
 } from '../api/db-localstorage.ts';
 import {
-    jsonObjectField,
-} from '../api/types.ts';
-import {
     SNAPSHOT_SCHEMA_VERSION,
     SNAPSHOT_SCHEMA_VERSION_KEY,
 } from '../api/db.ts';
@@ -29,30 +26,13 @@ function installShim(): Map<string, string> {
     return map;
 }
 
-// Phase Final Stage B: flow_versions retired — pin the
-// localStorage write surface on work_orders (surviving store
-// with a nested JSON field + numeric).
-const baseWorkOrder = {
+// Phase Final Stage B: work_orders retired — pin the
+// localStorage write surface on records (surviving store
+// with a nested text field + numeric).
+const baseRecord = {
     organization_id: '1',
-    display_id: 'WO-1',
-    flow_graph: jsonObjectField({
-        name: 'Test Flow',
-        lockTimeout: 60,
-        nodes: [
-            {
-                id: 'n1',
-                name: 'Start',
-                isCreate: true,
-                isArchive: false,
-                memberIds: [],
-                attributes: [],
-                positionX: 0,
-                positionY: 0,
-                taskInstructions: '',
-            },
-        ],
-        edges: [],
-    }),
+    name: 'Test Record',
+    description: 'd',
     position: 1,
 };
 
@@ -60,16 +40,16 @@ const baseWorkOrder = {
 // retired compression; the gz1: decoder survives for
 // READS of legacy payloads only (pinned below).
 test(
-    'work_orders write stores raw JSON',
+    'records write stores raw JSON',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.workOrders.put(
-            'wo-prefix-test', baseWorkOrder,
+        await adapter.records.put(
+            'rec-prefix-test', baseRecord,
         );
         const stored = map.get(
-            KEY_PREFIX + 'work_orders',
+            KEY_PREFIX + 'records',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -81,22 +61,22 @@ test(
 );
 
 test(
-    'work_orders round-trips through put → getById',
+    'records round-trips through put → getById',
     async () => {
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.workOrders.put(
-            'wo-rt', baseWorkOrder,
+        await adapter.records.put(
+            'rec-rt', baseRecord,
         );
-        const got = await adapter.workOrders.getById(
-            'wo-rt',
+        const got = await adapter.records.getById(
+            'rec-rt',
         );
-        assert.equal(got.id, 'wo-rt');
-        assert.equal(got.display_id, 'WO-1');
+        assert.equal(got.id, 'rec-rt');
+        assert.equal(got.name, 'Test Record');
         assert.equal(
             got.organization_id,
-            baseWorkOrder.organization_id,
+            baseRecord.organization_id,
         );
     },
 );
@@ -107,11 +87,11 @@ test(
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.workOrders.put(
-            'wo-num', baseWorkOrder,
+        await adapter.records.put(
+            'rec-num', baseRecord,
         );
-        const got = await adapter.workOrders.getById(
-            'wo-num',
+        const got = await adapter.records.getById(
+            'rec-num',
         );
         assert.strictEqual(got.position, 1);
         assert.strictEqual(typeof got.position, 'number');
@@ -201,37 +181,37 @@ test(
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.workOrders.put(
-            'wo-export', baseWorkOrder,
+        await adapter.records.put(
+            'rec-export', baseRecord,
         );
         const json = await adapter.getSnapshot();
         const parsed = JSON.parse(json);
         assert.ok(
-            Array.isArray(parsed.work_orders),
-            'work_orders should be an array in snapshot',
+            Array.isArray(parsed.records),
+            'records should be an array in snapshot',
         );
-        assert.equal(parsed.work_orders.length, 1);
+        assert.equal(parsed.records.length, 1);
         assert.equal(
-            parsed.work_orders[0].id, 'wo-export',
+            parsed.records[0].id, 'rec-export',
         );
     },
 );
 
 test(
-    'snapshot import stores work_orders raw',
+    'snapshot import stores records raw',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         const snapshot = JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            work_orders: [
-                { id: 'wo-imp', ...baseWorkOrder },
+            records: [
+                { id: 'rec-imp', ...baseRecord },
             ],
         });
         await adapter.putSnapshot(snapshot);
         const stored = map.get(
-            KEY_PREFIX + 'work_orders',
+            KEY_PREFIX + 'records',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -248,11 +228,11 @@ test(
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        const workOrderRow = {
-            id: 'wo-gz1',
-            ...baseWorkOrder,
+        const recordRow = {
+            id: 'rec-gz1',
+            ...baseRecord,
         };
-        const rawJson = JSON.stringify([workOrderRow]);
+        const rawJson = JSON.stringify([recordRow]);
         const stream = new Blob([rawJson]).stream()
             .pipeThrough(new CompressionStream('gzip'));
         const buffer = await new Response(stream)
@@ -263,11 +243,11 @@ test(
             binary += String.fromCharCode(b);
         }
         map.set(
-            KEY_PREFIX + 'work_orders',
+            KEY_PREFIX + 'records',
             'gz1:' + btoa(binary),
         );
-        const result = await adapter.workOrders.getAll();
+        const result = await adapter.records.getAll();
         assert.equal(result.length, 1);
-        assert.equal(result[0]!.display_id, 'WO-1');
+        assert.equal(result[0]!.name, 'Test Record');
     },
 );

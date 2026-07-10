@@ -251,12 +251,9 @@ test(
         const wo = await getWorkOrder(ctx, woId);
         assert.equal(wo.id, woId);
         assert.equal(wo.position, 1);
-        assert.equal(
-            (await db.workOrders.getAll()).length, 0,
-        );
-        assert.equal(
-            (await db.flowWorkOrders.getAll()).length, 0,
-        );
+        // Phase Final Stage B: work_orders +
+        // flow_work_orders tables retired — pair plane
+        // is residual pin.
 
         const events =
             await deriveStatesFor(db, '1', woId);

@@ -266,17 +266,21 @@ async function seedFieldValueReferrer(
     sfvId: string,
     value: string,
 ): Promise<void> {
-    await db.workOrders.put('wo-restrict-fv', {
-        organization_id: '1',
-        display_id: 'rfv1',
-        flow_graph: jsonObjectField({
-            name: 'Restrict FV',
-            lockTimeout: 0,
-            nodes: [],
-            edges: [],
-        }),
-        position: 1,
-    });
+    // Phase Final Stage B: work_orders table retired — seed
+    // through the live document PUT so the pair plane owns it.
+    await PUT(
+        db, 'work-orders/wo-restrict-fv', {
+            display_id: 'rfv1',
+            flow_graph: jsonObjectField({
+                name: 'Restrict FV',
+                lockTimeout: 0,
+                nodes: [],
+                edges: [],
+            }),
+            position: 1,
+        },
+        DEV_TOKEN,
+    );
     await POST(
         db, 'work-orders/wo-restrict-fv/transition', {
             transitionEventId: 'te-restrict-1',

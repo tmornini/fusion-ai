@@ -192,13 +192,21 @@ async function seed(): Promise<MemoryDbAdapter> {
         },
     ));
     assert.equal(ideaBWrite.status, 200);
-    await db.workOrders.put('wo-a', {
-        organization_id: 'A', display_id: 'WO-1',
-        flow_graph: jsonObjectField({
-            name: 'Flow', lockTimeout: 0, nodes: [], edges: [],
-        }),
-        position: 0,
-    });
+    // Phase Final Stage B: work_orders table retired — seed
+    // through the live document PUT so the pair plane owns it.
+    const woWrite = await handleRequest(db, req(
+        'PUT', '/organizations/A/work-orders/wo-a',
+        await tokenFor('memberA', 'A'),
+        {
+            display_id: 'WO-1',
+            flow_graph: jsonObjectField({
+                name: 'Flow', lockTimeout: 0,
+                nodes: [], edges: [],
+            }),
+            position: 0,
+        },
+    ));
+    assert.equal(woWrite.status, 200);
     await db.objectives.put('obj-a', {
         organization_id: 'A', position: 0,
     });
@@ -631,8 +639,6 @@ test('retired leaf PUT field-values is router 404 (own'
         },
     ));
     assert.equal(res.status, 404);
-    await assert.rejects(
-        () => db.stateFieldValues.getById('fv-x'),
-        EntityNotFoundError,
-    );
+    // Phase Final Stage B: state_field_values table retired —
+    // 404 above is the residual pin (no row store to probe).
 });

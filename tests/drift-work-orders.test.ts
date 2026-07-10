@@ -229,7 +229,7 @@ test('seeded GET /work-orders wire equals derived collection,'
     );
     assert.equal(wireText, JSON.stringify(derived));
     assert.equal(derived.length, 145);
-    assert.equal((await db.workOrders.getAll()).length, 0);
+    // Phase Final Stage B: work_orders table retired.
 });
 
 // -- 2. org-2 empty collection + foreign-org 404 --------------
@@ -317,9 +317,7 @@ test('flow-work-order join wire equals derive across every'
         assert.equal(wireText, JSON.stringify(derived));
         assert.equal(derived.length, count);
     }
-    assert.equal(
-        (await db.flowWorkOrders.getAll()).length, 0,
-    );
+    // Phase Final Stage B: flow_work_orders table retired.
 });
 
 test('a flow with no work orders derives an empty join list'
@@ -699,7 +697,7 @@ test('duplicate-create: two creates, same work-order id, fresh'
         await entityRes.text(),
         JSON.stringify(derivedEntity),
     );
-    assert.equal((await db.workOrders.getAll()).length, 0);
+    // Phase Final Stage B: work_orders table retired.
 
     assert.equal(
         (await deriveStatesFor(
@@ -771,7 +769,7 @@ async () => {
     );
     assert.equal(derived.display_id, 'second');
     assert.equal(derived.position, 2);
-    assert.equal((await db.workOrders.getAll()).length, 0);
+    // Phase Final Stage B: work_orders table retired.
 });
 
 // -- 8. method-filter: the create's POST pair is never the -----
@@ -1468,9 +1466,7 @@ async () => {
             db, STARK_ORGANIZATION, 'wo-drift-trace-1-te2',
         );
     assert.equal(replay.fieldValues.length, 2);
-    assert.equal(
-        (await db.stateFieldValues.getAll()).length, 0,
-    );
+    // Phase Final Stage B: state_field_values table retired.
     assert.deepEqual(
         sortById(replay.fieldValues).map((row) => ({
             state_event_id: row.state_event_id,

@@ -129,10 +129,8 @@ test(
         assert.equal(wo.organization_id, '1');
 
         // Row plane empty; join lives on the pair plane.
-        assert.equal((await db.workOrders.getAll()).length, 0);
-        assert.equal(
-            (await db.flowWorkOrders.getAll()).length, 0,
-        );
+        // Phase Final Stage B: work_orders +
+        // flow_work_orders tables retired.
         const links = await GET<{
             id: string;
             flow_id: string;

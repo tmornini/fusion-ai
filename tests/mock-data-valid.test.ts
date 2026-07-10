@@ -485,9 +485,7 @@ async () => {
         }
     }
     assert.ok(total >= 7, 'expected >=7 SFV, got ' + total);
-    assert.equal(
-        (await db.stateFieldValues.getAll()).length, 0,
-    );
+    // Phase Final Stage B: state_field_values table retired.
 });
 
 // The Workbox inbox resolves every work-order transition's

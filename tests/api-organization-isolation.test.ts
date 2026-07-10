@@ -348,11 +348,20 @@ async function seedChain(
         organization_id: organization, name: 'r',
         description: 'd', position: 0,
     });
-    // Stays raw (NAMED contrast to the flow-work-order join
-    // below): no flipped read in this file ever consumes the
-    // top-level work-orders/:id entity — only the nested
-    // flows/:id/work-orders JOIN is exercised here.
-    await db.workOrders.put('wo' + s, workOrderBody(organization));
+    // Phase Final Stage B: work_orders table retired — seed
+    // through the live document PUT so the pair plane owns it.
+    const {
+        organization_id: _woOrganizationId,
+        ...woFields
+    } = workOrderBody(organization);
+    const woWrite = await handleRequest(db, req(
+        'PUT',
+        '/organizations/' + organization
+            + '/work-orders/wo' + s,
+        await organizationToken(identity, organization),
+        woFields,
+    ));
+    assert.equal(woWrite.status, 200);
     // Phase Final Stage B: flow_versions table retired with
     // flows (no residual seed).
     // NAMED re-pin (Phase 4 Task 8): the flipped GET
@@ -496,10 +505,11 @@ async function seedStateFieldValuePair(
         ),
         headPairId: undefined,
     });
+    // Phase Final Stage B: state_field_values table retired —
+    // seed pair only (WRITE_RESPONSE_SPECS still forms address).
     await db.transaction(
-        ['state_field_values', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            await view.stateFieldValues.put(fvId, body);
             await appendMessagePair(view, pair);
         },
     );
@@ -949,12 +959,20 @@ async () => {
 test('nested states/:id/field-values fence follows the event',
 async () => {
     const db = await deepDb();
-    // Prove the foreign field value EXISTS in storage; the
-    // nested collection (server-filtered to seA, then fenced
-    // through its parent state event's org) returns only A's.
-    assert.equal(
-        (await db.stateFieldValues.getById('sfvB')).id,
-        'sfvB');
+    // Phase Final Stage B: state_field_values table retired —
+    // prove foreign SFV pair exists via B facade, then A's
+    // nested collection returns only A's.
+    const foreign = await handleRequest(db, req(
+        'GET', '/states/seB/field-values',
+        await organizationToken('pb', 'B'),
+    ));
+    assert.equal(foreign.status, 200);
+    const foreignRows =
+        await foreign.json() as { id: string }[];
+    assert.ok(
+        foreignRows.some(r => r.id === 'sfvB'),
+        'foreign SFV pair missing',
+    );
     const res = await facadeGet(
         db, '/states/seA/field-values');
     assert.equal(res.status, 200);

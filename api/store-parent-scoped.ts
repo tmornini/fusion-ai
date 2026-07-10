@@ -193,7 +193,7 @@ export function organizationOwnedProbes(
     db: DbAdapter,
 ): readonly OrganizationOwnedProbe[] {
     return [
-        db.records, db.objectives, db.workOrders,
+        db.records, db.objectives,
         db.invitations,
     ];
 }
@@ -226,7 +226,7 @@ export function rawOrganizationOwnedProbes(
     adapter: RawReader,
 ): readonly OrganizationOwnedProbe[] {
     return [
-        'records', 'objectives', 'work_orders',
+        'records', 'objectives',
         'invitations',
     ].map((table): OrganizationOwnedProbe => ({
         async getById(id: string) {
@@ -271,7 +271,7 @@ export function graphEntityProbe(
 // flow_edges two-hop. A member-lifecycle event names an
 // ORG-LESS member; it resolves via the membership ledger like
 // viaMembership. An id matching nothing is an orphan (null).
-// Used by the `states` and `state_field_values` read fences.
+// Used by the residual states read fence.
 export async function ownerOrganizationOfEntity(
     organizationOwnedStores: readonly OrganizationOwnedProbe[],
     memberships: MembershipReader,

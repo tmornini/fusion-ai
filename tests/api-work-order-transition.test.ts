@@ -121,9 +121,7 @@ test(
         assert.equal(events[0]!.state, 'n-next');
         // Phase Final Task 2: SFV row plane empty; pair-plane
         // two-source union carries the fold.
-        assert.equal(
-            (await db.stateFieldValues.getAll()).length, 0,
-        );
+        // Phase Final Stage B: state_field_values retired.
         const fvs = await stateFieldValuesForStateEvent(
             db, STARK_ORGANIZATION, 'te1',
         );
@@ -246,9 +244,7 @@ test(
         );
         const events = await eventsFor(db);
         assert.equal(events.length, 0);
-        assert.equal(
-            (await db.stateFieldValues.getAll()).length, 0,
-        );
+        // Phase Final Stage B: state_field_values retired.
         const fvs = await stateFieldValuesForStateEvent(
             db, STARK_ORGANIZATION, 'te1',
         );
@@ -329,9 +325,7 @@ test(
         );
         const events = await eventsFor(db);
         assert.equal(events.length, 0);
-        assert.equal(
-            (await db.stateFieldValues.getAll()).length, 0,
-        );
+        // Phase Final Stage B: state_field_values retired.
     },
 );
 

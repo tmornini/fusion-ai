@@ -18,7 +18,7 @@ test('TABLE_NAMES keeps the permanent survivors', () => {
 });
 
 test(
-    'TABLE_NAMES drops ideas, projects, and flows',
+    'TABLE_NAMES drops ideas, projects, flows, work-orders',
     () => {
         for (const name of [
             'ideas',
@@ -33,6 +33,9 @@ test(
             'flow_edges',
             'flow_node_members',
             'flow_node_attributes',
+            'work_orders',
+            'flow_work_orders',
+            'state_field_values',
         ] as const) {
             assert.ok(
                 !TABLE_NAMES.includes(name),

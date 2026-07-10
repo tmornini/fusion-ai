@@ -101,9 +101,7 @@ async () => {
     assert.equal(rows.length, 1);
     assert.equal(rows[0]!.id, 'fv-1');
     assert.equal(rows[0]!.attribute_id, 'attr-1');
-    assert.equal(
-        (await db.stateFieldValues.getAll()).length, 0,
-    );
+    // Phase Final Stage B: state_field_values table retired.
 });
 
 test('GET /states/:id/field-values wire equals'
@@ -140,9 +138,7 @@ async () => {
     assert.equal(wireText, JSON.stringify(derived));
     assert.equal(derived.length, 1);
     assert.equal(derived[0]!.id, 'fv-1');
-    assert.equal(
-        (await db.stateFieldValues.getAll()).length, 0,
-    );
+    // Phase Final Stage B: state_field_values table retired.
 });
 
 // Non-lex field-value ids so collection order is not

@@ -186,7 +186,7 @@ async () => {
     );
     assert.deepEqual(preTx, inTx);
     assert.deepEqual(preTx, wire);
-    assert.equal((await db.workOrders.getAll()).length, 0);
+    // Phase Final Stage B: work_orders table retired.
 
     // Absent id: pair plane returns null (Task 2 maps to the
     // same EntityNotFoundError bytes as workOrders.getById).
@@ -767,7 +767,7 @@ async () => {
         );
         assert.deepEqual(derived, wire, row.id);
     }
-    assert.equal((await db.workOrders.getAll()).length, 0);
+    // Phase Final Stage B: work_orders table retired.
 });
 
 test('residual pin: stateEventVisibilityFor matches the'

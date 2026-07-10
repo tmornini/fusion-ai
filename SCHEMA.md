@@ -376,49 +376,6 @@ index on `flow_id`.
 | record_id | TEXT | FK → records |
 | at | TEXT | RFC-3339 Zulu — moment of the binding |
 
-## Workbox
-
-### work_orders
-
-Org-owned (org-fenced): NOT-NULL `organization_id`, stamped
-on write and filtered on read by the gate.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY (base62 token) |
-| organization_id | TEXT | FK → organizations |
-| display_id | TEXT | 8-char hex SHA-256 |
-| flow_graph | TEXT | JSON (WorkOrderFlowGraph) |
-| position | REAL | Display order, ascending |
-
-The `flow_graph` column stores a snapshot of the flow
-definition at work order creation time. The live `flows.graph`
-blob is retired; this frozen blob is the graph reassembled
-from the four relations AT FREEZE, then inlined immutably (plus
-flow-level metadata `name`, `lockTimeout`). The serialized node
-/ edge shape is identical to `flow_versions.graph`. The flow
-identity lives only in the `flow_work_orders` join row; legacy
-snapshots may still carry a `flowId` key, which the validator
-ignores.
-
-Transitions and claims are NOT separate tables — both
-families of events live in the unified `states` log
-addressed by `entity_id = work_order_id`. The states log
-carries:
-
-- **Transition events**: `state` = a graph node id (base62
-  token). The latest non-claim event names the current
-  node.
-- **Claim events**: `state` ∈ {`'claimed'`,
-  `'claim_released'`, `'claim_expired'`}. The latest
-  claim-state event names the active claim, subject to
-  `lockTimeout` arithmetic for implicit expiration.
-
-The byte-level split between the two families is
-unambiguous: claim strings are snake-cased English, node
-ids are base62 tokens. `adapters/state-events.ts`
-partitions them.
-
 ## Platform
 
 ### organizations
@@ -510,15 +467,6 @@ the SAME atomic commit, in the INVITATION's organization
 
 ## Relationships
 
-### flow_work_orders
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| flow_id | TEXT | References flows |
-| work_order_id | TEXT | References work_orders |
-| at | TEXT | RFC-3339 Zulu |
-
 ### objectives
 
 Org-owned (org-fenced): NOT-NULL `organization_id`.
@@ -604,24 +552,6 @@ State alphabets by entity kind:
 state-event op construction; entity-lifecycle adapters
 compose it into a `ctx.commit` batch with their sibling
 entity-table op.
-
-### state_field_values
-
-Per-attribute values written when a state event records a
-work-order transition. Each row pins the payload to its
-parent event by `state_event_id` — the values live in
-their own table, not as columns on the event row.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| state_event_id | TEXT | References states |
-| attribute_id | TEXT | References record_attributes |
-| value | TEXT | Value as a string |
-
-The `attribute_id` column references `record_attributes.id`,
-not a table named `attributes`; the schema-SVG generator
-carries an explicit FK-target override for it.
 
 ## Messages
 

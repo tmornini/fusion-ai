@@ -1,4 +1,3 @@
-import { EntityNotFoundError } from './db.ts';
 import type {
     DbAdapter,
     GuardedDbAdapter,
@@ -6,10 +5,8 @@ import type {
 } from './db.ts';
 import type {
     Id,
-    FlowWorkOrderEntity,
     FlowRecordEntity,
     ObjectiveRevisionEntity,
-    StateFieldValueEntity,
     IdentityPiiEntity,
     IdentityCredentialEntity,
 } from './types.ts';
@@ -99,28 +96,6 @@ export function organizationScopedAdapter(
         ),
     );
 
-    // state_field_values pin to a parent state event — owned by
-    // whatever owns that event. Phase Final Stage B: flow graph
-    // tables retired; ownership is pair-plane only.
-    const stateFieldValues = parentScope(
-        base.stateFieldValues, 'state_field_values',
-        async (row: StateFieldValueEntity) => {
-            let ev;
-            try {
-                ev = await base.states.getById(
-                    row.state_event_id);
-            } catch (e) {
-                if (e instanceof EntityNotFoundError) {
-                    return null;
-                }
-                throw e;
-            }
-            return resolveOwningOrganization(
-                base, ev.entity_id, organization,
-            );
-        },
-    );
-
     return {
         initialize: () => base.initialize(),
         deleteSchema: () => base.deleteSchema(),
@@ -200,16 +175,8 @@ export function organizationScopedAdapter(
         ),
 
         // Parent-derived leaves still on residual tables until
-        // their own Stage B groups. flow_work_orders /
-        // flow_records resolve the parent flow via the pair
-        // plane (flows table retired this group).
-        flowWorkOrders: parentScope(
-            base.flowWorkOrders, 'flow_work_orders',
-            (r: FlowWorkOrderEntity) =>
-                resolveOwningOrganization(
-                    base, r.flow_id, organization,
-                ),
-        ),
+        // their own Stage B groups. flow_records resolves the
+        // parent flow via the pair plane (flows retired).
         flowRecords: parentScope(
             base.flowRecords, 'flow_records',
             (r: FlowRecordEntity) =>
@@ -226,11 +193,9 @@ export function organizationScopedAdapter(
             ),
         ),
         states,
-        stateFieldValues,
 
         // Organization-owned entities — fenced to `org`.
         roleGrants: scope(base.roleGrants, 'role_grants'),
-        workOrders: scope(base.workOrders, 'work_orders'),
         records: scope(base.records, 'records'),
         recordAttributes: scope(
             base.recordAttributes, 'record_attributes'),
