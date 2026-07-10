@@ -1333,17 +1333,18 @@ export interface IdeaDocumentBody {
 // trio folded in. organization_id is deliberately absent from
 // the expected set (like every other org-owned write, the
 // client never supplies it; the org fence stamps it downstream
-// when view.ideas.put re-validates through validateIdeaEntity)
-// yet rides the `optional` allowance rather than `expected` —
-// a caller-forged organization_id is tolerated-but-ignored, not
-// rejected, because the fence's stamp always overrides whatever
-// key it finds (the forged-body isolation test relies on this).
-// The trio holds to the SAME rules the bare states/:id route
-// applies to an event (assertIdeaState, an RFC-3339 `at`, a
-// non-empty event id), so a folded document and a bare event
-// share one shape. Entity fields are picked directly rather
-// than delegated to validateIdeaEntity — that function REQUIRES
-// organization_id, which this body never carries pre-stamp.
+// when the write path stamps organization_id from the bound
+// org) yet rides the `optional` allowance rather than
+// `expected` — a caller-forged organization_id is
+// tolerated-but-ignored, not rejected, because the bound org
+// always overrides (the forged-body isolation test relies on
+// this). The trio holds to the SAME rules the bare states/:id
+// route applies to an event (assertIdeaState, an RFC-3339
+// `at`, a non-empty event id), so a folded document and a bare
+// event share one shape. Entity fields are picked directly
+// rather than delegated to validateIdeaEntity — that function
+// REQUIRES organization_id, which this body never carries
+// pre-stamp.
 export function validateIdeaDocumentBody(
     body: Record<string, unknown>,
 ): IdeaDocumentBody {

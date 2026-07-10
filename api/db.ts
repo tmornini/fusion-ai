@@ -11,7 +11,6 @@ import type {
     RoleGrantEntity,
     ClientEntity,
     IdentityProviderEntity,
-    IdeaEntity,
     ProjectEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -22,7 +21,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    IdeaSubmissionEntity,
     ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
@@ -326,7 +324,7 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 37 stores an adapter exposes, factored out of
+// The 35 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
 // bound to an open tx (A9).
@@ -353,8 +351,6 @@ export interface DbStores {
         EntityStore<ClientEntity>;
     identityProviders:
         EntityStore<IdentityProviderEntity>;
-    ideas:
-        EntityStore<IdeaEntity>;
     projects:
         EntityStore<ProjectEntity>;
     flows:
@@ -397,10 +393,6 @@ export interface DbStores {
         EntityStore<MembershipEntity>;
     invitations:
         EntityStore<InvitationEntity>;
-    ideaSubmissions:
-        EntityStore<
-            IdeaSubmissionEntity
-        >;
     objectives:
         EntityStore<ObjectiveEntity>;
     objectiveRevisions:
@@ -491,15 +483,16 @@ export interface GuardedDbAdapter
     ): Promise<T | null>;
 }
 
-// Phase 13 Task 9 shrank this list by two (identity_tokens,
-// authorization_codes retired). IndexedDB's own open is
+// Phase Final Stage B shrank this list (ideas +
+// idea_submissions first; remaining doomed families follow
+// in later Task 4 commits). IndexedDB's own open is
 // UNVERSIONED (backend-indexeddb.ts's #openConnection calls
 // indexedDB.open(DB_NAME) with no version argument), so
 // onupgradeneeded — the only place object stores are created —
 // never re-fires for an origin that already has a database: an
-// EXISTING origin keeps the two dropped stores as harmless,
-// unread orphans. deleteSchema (a full database delete) is the
-// only cleanup; nothing else needs to reconcile them.
+// EXISTING origin keeps dropped stores as harmless, unread
+// orphans. deleteSchema (a full database delete) is the only
+// cleanup; nothing else needs to reconcile them.
 export const TABLE_NAMES = [
     'members',
     'human_members',
@@ -512,7 +505,6 @@ export const TABLE_NAMES = [
     'role_grants',
     'clients',
     'identity_providers',
-    'ideas',
     'projects',
     'flows',
     'flow_versions',
@@ -530,7 +522,6 @@ export const TABLE_NAMES = [
     'organizations',
     'memberships',
     'invitations',
-    'idea_submissions',
     'objectives',
     'objective_revisions',
     'project_objective_baseline_scores',
@@ -555,9 +546,9 @@ export const TABLE_NAMES = [
 // mismatched marker rejects the import outright — never a
 // default, never a best-effort import. Bump it whenever
 // TABLE_NAMES (or a family's derivation shape) changes in a
-// way that would strand an older export; Phase 13's TABLE_NAMES
-// shrink (identity_tokens + authorization_codes retire) is the
-// first such bump.
+// way that would strand an older export. Phase 13's TABLE_NAMES
+// shrink (identity_tokens + authorization_codes) bumped 1→2;
+// Phase Final Stage B's doomed-table deletions bump 2→3.
 //
 // THE ASYMMETRY: this closes only "a new build imports an old
 // export." A new build's OWN marked export is silently accepted
@@ -566,7 +557,15 @@ export const TABLE_NAMES = [
 // here (an old build's validator loop never looks at this key
 // at all). Intended and dev-tier-acceptable: the old build has
 // no way to know a marker scheme was ever invented.
-export const SNAPSHOT_SCHEMA_VERSION = 2;
+//
+// MID-SEQUENCE WINDOW (Phase Final Task 4): several commits
+// stamp v3 while TABLE_NAMES shrinks further. parseAndValidate
+// ignores unknown keys, so a mid-sequence v3 export can import
+// into a later v3 build by silently dropping later-deleted
+// tables' keys. Intra-phase exports are NOT a supported
+// contract — do not export/import across deletion commits
+// except in tests that control both ends.
+export const SNAPSHOT_SCHEMA_VERSION = 3;
 export const SNAPSHOT_SCHEMA_VERSION_KEY = '__schema_version__';
 
 // A secondary index is either a plain column name (the
@@ -611,8 +610,6 @@ export const TABLE_INDEXES:
     identity_token_revocations: ['identity_id'],
     identity_default_organizations: ['identity_id'],
     role_grants: ['organization_id', 'identity_id'],
-    ideas: ['organization_id'],
-    idea_submissions: ['idea_id'],
     projects: ['organization_id'],
     project_flows: ['project_id'],
     project_objective_baseline_scores: ['project_id'],

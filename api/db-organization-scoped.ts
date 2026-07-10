@@ -14,7 +14,6 @@ import type {
     ProjectFlowEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
-    IdeaSubmissionEntity,
     ObjectiveRevisionEntity,
     ProjectObjectiveBaselineScoreEntity,
     ProjectObjectiveActualScoreEntity,
@@ -280,12 +279,6 @@ export function organizationScopedAdapter(
                 base.flows,
                 (r: FlowRecordEntity) => r.flow_id),
         ),
-        ideaSubmissions: parentScope(
-            base.ideaSubmissions, 'idea_submissions',
-            viaParent(
-                base.ideas,
-                (r: IdeaSubmissionEntity) => r.idea_id),
-        ),
         objectiveRevisions: parentScope(
             base.objectiveRevisions, 'objective_revisions',
             viaParent(
@@ -313,7 +306,6 @@ export function organizationScopedAdapter(
 
         // Organization-owned entities — fenced to `org`.
         roleGrants: scope(base.roleGrants, 'role_grants'),
-        ideas: scope(base.ideas, 'ideas'),
         projects: scope(base.projects, 'projects'),
         flows: scope(base.flows, 'flows'),
         workOrders: scope(base.workOrders, 'work_orders'),

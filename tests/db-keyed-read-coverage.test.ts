@@ -32,7 +32,6 @@ const KEYED_READS: ReadonlyArray<{
     { table: 'identity_pii', column: 'email' },
     { table: 'state_field_values', column: 'attribute_id' },
     { table: 'state_field_values', column: 'state_event_id' },
-    { table: 'idea_submissions', column: 'idea_id' },
     { table: 'flow_versions', column: 'flow_id' },
     { table: 'project_flows', column: 'project_id' },
     { table: 'flow_nodes', column: 'flow_id' },

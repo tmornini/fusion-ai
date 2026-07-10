@@ -59,7 +59,7 @@ export interface AttributeReferrers {
 export const ATTRIBUTE_RESTRICT_TABLES:
     readonly string[] = [
     'flows', 'work_orders',
-    'states', 'ideas', 'projects', 'records',
+    'states', 'projects', 'records',
     'objectives', 'invitations', 'memberships',
     'flow_node_attributes', 'flow_nodes',
     'requests', 'responses',

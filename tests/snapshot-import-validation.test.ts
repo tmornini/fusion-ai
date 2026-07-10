@@ -197,6 +197,48 @@ test(
     },
 );
 
+// Phase Final Stage B Task 4's version bump (2→3): a genuine
+// PRE-FINAL export — version 2 with REAL pre-Final table
+// content (ideas + idea_submissions rows, not a bare version
+// mismatch) — is rejected by SnapshotVersionMismatchError
+// before any table key is read. Intra-phase mid-sequence v3
+// exports are NOT a supported contract (api/db.ts).
+test(
+    'rejects a genuine pre-Final (v2) export with'
+    + ' SnapshotVersionMismatchError',
+    async () => {
+        installShim();
+        const adapter = new LocalStorageDbAdapter();
+        const json = JSON.stringify({
+            [SNAPSHOT_SCHEMA_VERSION_KEY]: 2,
+            members: [],
+            ideas: [{
+                id: 'i1',
+                organization_id: '1',
+                title: 'pre-Final idea',
+                position: 1,
+                problem_statement: 'p',
+                target_users: 't',
+                proposed_solution: 's',
+                expected_outcome: 'o',
+                success_metrics: 'm',
+            }],
+            idea_submissions: [{
+                id: 'is1',
+                idea_id: 'i1',
+                member_id: 'system',
+                at: '2020-01-01T00:00:00.000000Z',
+            }],
+        });
+        await assert.rejects(
+            () => adapter.putSnapshot(json),
+            (err: unknown) =>
+                err instanceof SnapshotVersionMismatchError
+                && err.found === 2,
+        );
+    },
+);
+
 test(
     'accepts a snapshot carrying the current schema version',
     async () => {

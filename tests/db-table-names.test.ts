@@ -3,6 +3,35 @@ import { strict as assert } from 'node:assert';
 import { TABLE_NAMES } from '../api/db.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 
+// Phase Final Stage B Task 4: TABLE_NAMES shrinks as doomed
+// tables delete. Pin the permanent survivors and the tables
+// this commit just dropped; remaining doomed families pin
+// out in their own deletion commits.
+test('TABLE_NAMES keeps the permanent survivors', () => {
+    for (const name of [
+        'requests', 'responses', 'clients',
+    ] as const) {
+        assert.ok(
+            TABLE_NAMES.includes(name),
+            `TABLE_NAMES missing survivor ${name}`,
+        );
+    }
+});
+
+test(
+    'TABLE_NAMES drops ideas and idea_submissions',
+    () => {
+        assert.ok(
+            !TABLE_NAMES.includes('ideas'),
+            'ideas still in TABLE_NAMES',
+        );
+        assert.ok(
+            !TABLE_NAMES.includes('idea_submissions'),
+            'idea_submissions still in TABLE_NAMES',
+        );
+    },
+);
+
 test('TABLE_NAMES includes the objective tables', () => {
     const expected = [
         'objectives',
@@ -66,11 +95,6 @@ test('MemoryDbAdapter exposes objective stores',
             db.projectObjectiveActualScores.getAll();
         assert.equal(ac.length, 1);
     });
-
-test('TABLE_NAMES includes the message tables', () => {
-    assert.ok(TABLE_NAMES.includes('requests'));
-    assert.ok(TABLE_NAMES.includes('responses'));
-});
 
 test('MemoryDbAdapter exposes message stores', async () => {
     const db = new MemoryDbAdapter();

@@ -119,23 +119,15 @@ test(
     + ' export',
     async () => {
         const { db, ctx } = await setup();
-        await db.ideas.put('i1', {
-            id: 'i1',
-            organization_id: '1',
-            title: 'Seeded idea',
-            position: 1,
-            problem_statement: 'p',
-            target_users: 't',
-            proposed_solution: 's',
-            expected_outcome: 'o',
-            success_metrics: 'm',
+        // Phase Final Stage B: ideas table retired — pin the
+        // export surface on a surviving store (members).
+        await db.members.put('m1', {
+            type: 'human',
         });
         const parsed =
             JSON.parse(await getSnapshot(ctx));
-        assert.equal(parsed.ideas.length, 1);
-        assert.equal(
-            parsed.ideas[0].title, 'Seeded idea',
-        );
+        assert.equal(parsed.members.length, 1);
+        assert.equal(parsed.members[0].type, 'human');
     },
 );
 

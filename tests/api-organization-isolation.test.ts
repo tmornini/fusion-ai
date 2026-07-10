@@ -71,12 +71,11 @@ async function twoOrganizations(): Promise<MemoryDbAdapter> {
         '2020-01-01T00:00:00.000000Z',
     );
     await seedMembershipPair(db, 'm-a', 'A', 'current');
-    // Seeded through the live document PUT (not a raw
-    // db.ideas.put) so a1's message pair exists — the flipped
-    // GET ideas / GET ideas/:id routes (Phase 2 Task 5) derive
-    // from the ledger, not the old ideas table. b1 stays a raw
-    // row: every case below reads it only through org B, which
-    // `current` never fences into, so it is never derived.
+    // Seeded through the live document PUT so a1's message
+    // pair exists — GET ideas / GET ideas/:id derive from the
+    // ledger. No foreign b1 seed: ideas table is retired
+    // (Phase Final Stage B); A-only visibility is proven by
+    // a1 alone (current is never a member of B).
     const { organization_id: _organizationId, ...a1Fields } =
         ideaBody('A', 'mine');
     await handleRequest(db, req(
@@ -89,7 +88,6 @@ async function twoOrganizations(): Promise<MemoryDbAdapter> {
             state_event_id: 'ev-a1',
         },
     ));
-    await db.ideas.put('b1', ideaBody('B', 'theirs'));
     return db;
 }
 
@@ -368,9 +366,17 @@ async function seedChain(
         await organizationToken(identity, organization),
         { flow_id: 'f' + s, record_id: 'r' + s, at: T8_AT },
     ));
-    await db.ideaSubmissions.put('is' + s, {
-        idea_id: 'i' + s, member_id: 'system', at: T8_AT,
-    });
+    // Phase Final Stage B: idea_submissions table retired —
+    // seed through the live nested PUT so the pair plane owns
+    // the leaf (same shape as objective_revisions below).
+    await handleRequest(db, req(
+        'PUT',
+        '/ideas/i' + s + '/submissions/is' + s,
+        await organizationToken(identity, organization),
+        {
+            idea_id: 'i' + s, member_id: 'system', at: T8_AT,
+        },
+    ));
     // NAMED re-pin (Task 7 + Phase Final Task 2): the flipped
     // GET objectives/:id/revisions and GET projects/:id/
     // objective-<kind>-scores routes derive from the message
@@ -685,19 +691,12 @@ async function facadeGet(
 // parent's nested path — the SERVER filters to that parent by its
 // FK — and the org fence rides the facade re-entry, so the
 // foreign leaf bound to the B-org parent stays hidden even when
-// read through the B parent's path. Phase Final Task 2:
-// objective_revisions row half stripped — foreign presence is
-// proven via B-org wire GET. idea_submissions still has a raw
-// seedChain put (and pair re-pin) until Stage B.
+// read through the B parent's path. Phase Final Stage B: both
+// families prove foreign presence via B-org wire GET.
 interface LeafCase {
     name: string;
     aPath: string;
     bPath: string;
-    // When set, prove foreign presence via raw store (row plane
-    // still seeded). When unset, prove via B-org wire GET.
-    store?: (d: MemoryDbAdapter) => {
-        getById(id: string): Promise<{ id: string }>;
-    };
     a: string;
     b: string;
 }
@@ -706,7 +705,7 @@ const LEAF_CASES: LeafCase[] = [
     { name: 'ideas/:id/submissions',
         aPath: '/ideas/iA/submissions',
         bPath: '/ideas/iB/submissions',
-        store: d => d.ideaSubmissions, a: 'isA', b: 'isB' },
+        a: 'isA', b: 'isB' },
     { name: 'objectives/:id/revisions',
         aPath: '/objectives/oA/revisions',
         bPath: '/objectives/oB/revisions',
@@ -717,26 +716,20 @@ for (const c of LEAF_CASES) {
     test('nested ' + c.name + ' lists only the bound parent',
     async () => {
         const db = await deepDb();
-        if (c.store !== undefined) {
-            // Prove the foreign row EXISTS in storage.
-            assert.equal(
-                (await c.store(db).getById(c.b)).id, c.b);
-        } else {
-            // Phase Final Task 2: pair-plane foreign presence.
-            const foreign = await handleRequest(db, req(
-                'GET',
-                '/organizations/B' + c.bPath,
-                await organizationToken('pb', 'B'),
-            ));
-            assert.equal(foreign.status, 200);
-            const foreignRows = await foreign.json() as {
-                id: string;
-            }[];
-            assert.ok(
-                foreignRows.some((r) => r.id === c.b),
-                'foreign ' + c.b + ' missing on B plane',
-            );
-        }
+        // Pair-plane foreign presence.
+        const foreign = await handleRequest(db, req(
+            'GET',
+            '/organizations/B' + c.bPath,
+            await organizationToken('pb', 'B'),
+        ));
+        assert.equal(foreign.status, 200);
+        const foreignRows = await foreign.json() as {
+            id: string;
+        }[];
+        assert.ok(
+            foreignRows.some((r) => r.id === c.b),
+            'foreign ' + c.b + ' missing on B plane',
+        );
         const res = await facadeGet(db, c.aPath);
         assert.equal(res.status, 200);
         const rows = await res.json() as { id: string }[];

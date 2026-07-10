@@ -318,32 +318,6 @@ storage gate.
 | action | TEXT (`linked` \| `unlinked`) |
 | at | TEXT |
 
-### ideas
-
-Org-owned (org-fenced via `db-org-scoped.ts`): carries a
-NOT-NULL `organization_id` the gate stamps on write and
-filters on read.
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| organization_id | TEXT (FK → organizations) |
-| title | TEXT |
-| position | REAL |
-| problem_statement | TEXT |
-| target_users | TEXT |
-| proposed_solution | TEXT |
-| expected_outcome | TEXT |
-| success_metrics | TEXT |
-
-Lifecycle state lives in `states` (alphabet
-`IDEA_STATES`): 7 single-dimension values — `active`,
-`in_review`, `approved`, `promoted`, `sent_back`,
-`archived`, `deleted`. Readiness is derived from the
-required-field set (`title`, `problem_statement`,
-`proposed_solution`, `expected_outcome`) at domain-
-object instantiation, not stored.
-
 ### projects
 
 Org-owned (org-fenced): NOT-NULL `organization_id`,
@@ -698,15 +672,6 @@ the SAME atomic commit, in the INVITATION's organization
 | at | TEXT |
 
 ## Relationships
-
-### idea_submissions
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| idea_id | TEXT (FK → ideas) |
-| member_id | TEXT (FK → members) |
-| at | TEXT |
 
 ### project_flows
 

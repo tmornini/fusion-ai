@@ -102,7 +102,9 @@ test('getProjectStates excludes a same-valued idea',
             state_at: '2026-01-01T00:00:00.000000Z',
             state_event_id: 'ev-p1',
         });
-        await db.ideas.put('i1', ideaBody('I'));
+        // Phase Final Stage B: ideas table retired — a bare
+        // state event on an idea-shaped entity_id is enough
+        // to prove project states do not absorb it.
         await seedStateEvent(
             ctx, 'ev-i1', 'i1', 'approved',
             '2026-01-01T00:00:01.000000Z',
@@ -164,7 +166,8 @@ test('getRecordStateDetails excludes a same-valued idea',
             state_at: '2026-01-01T00:00:00.000000Z',
             state_event_id: 'ev-r1',
         });
-        await db.ideas.put('i1', ideaBody('I'));
+        // Phase Final Stage B: ideas table retired — bare
+        // state event is enough for the exclusion pin.
         await seedStateEvent(
             ctx, 'ev-i1', 'i1', 'archived',
             '2026-01-01T00:00:01.000000Z',
@@ -183,7 +186,6 @@ test('getMemberStates spans kinds and excludes an idea',
         await seedAdminSchema(db);
         await seedHumanMember(db, 'wh', 'Human');
         await seedAIMember(db, 'wa', 'Ai');
-        await db.ideas.put('i1', ideaBody('I'));
         const ctx = createRequestContext(db, await devToken());
         await seedStateEvent(
             ctx, 'ev-i1', 'i1', 'active',

@@ -165,21 +165,21 @@ async function seed(): Promise<MemoryDbAdapter> {
         role: 'member', action: 'granted',
         by_member_id: 'system', at: AT,
     });
-    await db.ideas.put('idea-a', {
-        organization_id: 'A', title: 'Idea A', position: 0,
-        problem_statement: '', target_users: '',
-        proposed_solution: '', expected_outcome: '',
-        success_metrics: '',
-    });
-    // Seeded through the wire (NAMED re-pin: the READ-side
-    // pair-plane fence, api/derive-states.ts's
-    // resolveOwningOrganization, resolves an org-nested entity's
-    // owner ONLY from a genuine response row at its own uri_id —
-    // a raw db.ideas.put leaves none, so 'org B deleting its own
-    // idea...' below would see idea-b's own events resolve as a
-    // visible ORPHAN once GET /states/GET entity-states/:id/
-    // history are flipped). idea-a stays a raw row — no test
-    // here reads it through either flipped route.
+    // Phase Final Stage B: ideas table retired. Seed idea-a
+    // and idea-b through the wire so resolveOwningOrganization
+    // sees genuine response rows at each uri_id.
+    const ideaAWrite = await handleRequest(db, req(
+        'PUT', '/ideas/idea-a', await tokenFor('memberA', 'A'),
+        {
+            title: 'Idea A', position: 0,
+            problem_statement: '', target_users: '',
+            proposed_solution: '', expected_outcome: '',
+            success_metrics: '',
+            state: 'active', state_at: AT,
+            state_event_id: 'idea-a-genesis',
+        },
+    ));
+    assert.equal(ideaAWrite.status, 200);
     const ideaBWrite = await handleRequest(db, req(
         'PUT', '/ideas/idea-b', await tokenFor('memberB', 'B'),
         {

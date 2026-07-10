@@ -26,7 +26,6 @@ import type {
     RoleGrantEntity,
     ClientEntity,
     IdentityProviderEntity,
-    IdeaEntity,
     ProjectEntity,
     FlowEntity,
     FlowVersionEntity,
@@ -37,7 +36,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    IdeaSubmissionEntity,
     ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
@@ -78,7 +76,6 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateIdeaEntity,
     validateProjectEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
@@ -94,7 +91,6 @@ import {
     validateRecordEntity,
     validateRecordAttributeEntity,
     validateFlowRecordEntity,
-    validateIdeaSubmissionEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
     validateOrganizationEntity,
@@ -138,7 +134,6 @@ export class BackedDbAdapter
     readonly clients!: GuardedEntityStore<ClientEntity>;
     readonly identityProviders!:
         GuardedEntityStore<IdentityProviderEntity>;
-    readonly ideas!: GuardedEntityStore<IdeaEntity>;
     readonly projects!: GuardedEntityStore<ProjectEntity>;
     readonly flows!: GuardedEntityStore<FlowEntity>;
     readonly flowVersions!:
@@ -168,8 +163,6 @@ export class BackedDbAdapter
         GuardedEntityStore<MembershipEntity>;
     readonly invitations!:
         GuardedEntityStore<InvitationEntity>;
-    readonly ideaSubmissions!:
-        GuardedEntityStore<IdeaSubmissionEntity>;
     readonly objectives!: GuardedEntityStore<ObjectiveEntity>;
     readonly objectiveRevisions!:
         GuardedEntityStore<ObjectiveRevisionEntity>;
@@ -423,10 +416,6 @@ export class BackedDbAdapter
                 'identity_providers', run,
                 validateIdentityProviderEntity,
             ),
-            ideas: new EntityStore(
-                'ideas', run, stateStore,
-                validateIdeaEntity,
-            ),
             projects: new EntityStore(
                 'projects', run, stateStore,
                 validateProjectEntity,
@@ -482,10 +471,6 @@ export class BackedDbAdapter
             flowRecords: new EntityStore(
                 'flow_records', run, stateStore,
                 validateFlowRecordEntity,
-            ),
-            ideaSubmissions: new EntityStore(
-                'idea_submissions', run, stateStore,
-                validateIdeaSubmissionEntity,
             ),
             objectives: new EntityStore(
                 'objectives', run, stateStore,

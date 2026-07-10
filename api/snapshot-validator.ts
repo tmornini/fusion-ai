@@ -16,7 +16,6 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateIdeaEntity,
     validateProjectEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
@@ -34,7 +33,6 @@ import {
     validateOrganizationEntity,
     validateMembershipEntity,
     validateInvitationEntity,
-    validateIdeaSubmissionEntity,
     validateStateEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
@@ -92,9 +90,6 @@ function validateSnapshotRow(
             case 'identity_providers':
                 validateIdentityProviderEntity(body);
                 break;
-            case 'ideas':
-                validateIdeaEntity(body);
-                break;
             case 'projects':
                 validateProjectEntity(body);
                 break;
@@ -149,9 +144,6 @@ function validateSnapshotRow(
                 break;
             case 'invitations':
                 validateInvitationEntity(body);
-                break;
-            case 'idea_submissions':
-                validateIdeaSubmissionEntity(body);
                 break;
             case 'states':
                 validateStateEntity(body);

@@ -82,6 +82,12 @@ export const RETIRED_KEYS_PER_TABLE:
     ],
 };
 
+// Client-side diagnostics only (scanForRetiredKeys on the
+// file-upload path). The UNIVERSAL server gate is
+// SNAPSHOT_SCHEMA_VERSION equality in parseAndValidateSnapshot
+// — a pre-Final export fails the version check before any
+// table key is read. This list fails fast on known dead keys
+// when a file still carries them alongside a current marker.
 export const RETIRED_TABLES: readonly string[] = [
     'activities',
     'activity_actors',
@@ -89,6 +95,8 @@ export const RETIRED_TABLES: readonly string[] = [
     'organization',
     'identity_tokens',
     'authorization_codes',
+    'ideas',
+    'idea_submissions',
 ];
 
 // State-event values the alphabet has retired. Old
