@@ -7,15 +7,46 @@
 > Regenerate with `./generate-schema-svg` after a schema
 > change.
 
-The tables are listed in `api/db.ts` as `TABLE_NAMES` (the
-authoritative count). Each table is an IndexedDB object store
-(`keyPath: 'id'`) in the `fusion-ai` database; the simulated
-backends key the same tables as `fusion-ai:tableName`. All
-rows have a text `id` primary key. Column types: TEXT
-(string), INTEGER (number), REAL (float), BOOLEAN (see
-below). JSON columns store stringified
-arrays or objects. All columns are NOT NULL — entity
-validation on creation ensures every field is present.
+## Schema of record
+
+Phase Final deleted the entity row plane. The schema of
+record is the **message plane** — the append-only
+`requests` / `responses` pair tables — plus one survivor
+registry row store, `clients`. The tables are listed in
+`api/db.ts` as `TABLE_NAMES` (the authoritative count: three).
+Each table is an IndexedDB object store (`keyPath: 'id'`) in
+the `fusion-ai` database; the simulated backends key the same
+tables as `fusion-ai:tableName`. All rows have a text `id`
+primary key. Column types: TEXT (string), INTEGER (number),
+REAL (float), BOOLEAN (see below). JSON columns store
+stringified arrays or objects. All columns are NOT NULL —
+entity validation on creation ensures every field is present.
+
+Every domain family (ideas, projects, flows, work orders,
+records, objectives, roster, identity spine, organizations,
+states, field values, flow tags, …) is a **derivation** over
+message pairs at a URI address. There is no per-entity table
+and no dual-write half. Reads reassemble documents and
+lifecycle state from the pair plane (`api/derive-*.ts`);
+writes append pairs only (`tx` lists
+`['requests','responses']` on every pair-wired path).
+
+`SNAPSHOT_SCHEMA_VERSION` is **3** (Phase Final Stage B). A
+pre-Final (v2) export is rejected by a post-Final import
+(`SnapshotVersionMismatchError`). Phase 13's 1→2 bump retired
+`identity_tokens` + `authorization_codes`; Phase Final's 2→3
+bump retires every remaining doomed entity table.
+
+**Orphan stores (gate 6).** IndexedDB opens unversioned: a
+pre-Final origin keeps dropped object stores as inert unread
+orphans until `deleteSchema` (full database delete) or a
+fresh reseed. On localStorage, `deleteSchema` iterates only
+the CURRENT `TABLE_NAMES`, so demo-tier orphan keys are never
+reclaimed by reseed. Named residual: pre-Final
+`identity_pii` rows can remain unspliceable after first-time
+erasure of a pre-Final identity until a full reseed
+(IndexedDB) — see the erasure-completeness theorem's named
+disclaimer.
 
 **Timestamp width:** every persisted timestamp is RFC-3339
 zulu at EXACTLY six fraction digits (`…T12:00:00.000000Z`)
@@ -37,63 +68,57 @@ with a null/undefined field throws rather than persisting.
 **Timestamp convention:** TEXT columns storing timestamps
 use RFC-3339 Zulu format (e.g.,
 `2024-01-15T09:30:00.000000Z`). Temporal facts belong in
-event tables — the absence of a row is the absence of the
-event.
+the message plane — the absence of a pair is the absence of
+the event.
 
-**State and deletion:** Entity rows themselves never carry
-state columns (`status`, `readiness`, `deleted_at`,
-`deprecated_at`, etc. are retired) — with one named
-deviation: `clients.status` is a mutable lifecycle column
-on the client registry row (see § clients). Ledger tables'
-`status` columns are event labels on immutable rows, not
-entity state. Every entity
-lifecycle change is recorded as one row in the unified
-`states` event log. The latest event by `at` (a same-`at`
-tie falls to the larger row id — one total order on every
-backend) is the entity's current state. `'deleted'` is a
-state event value, not a separate table.
-`EntityStore.getAll`/`getById` consult
-`StateStore.getDeletedIdsIn(tx)` / `isDeletedIn(tx, id)` — the
-in-transaction variants that ride the SAME tx as the
-entity-row read (two reads, one truth) — to filter
-currently-deleted rows; `EntityStore.delete(id)` is
-retained for hard splice of relationship rows
-(`state_field_values`, etc.) where lifecycle event log
-overkill — the seam is "entity lifecycle = state event;
-relationship dissolution = splice." History tables
-(`flow_versions`) are exempt and hard-delete via row
-removal.
+**State and deletion.** Entity rows themselves never carry
+state columns. Every entity lifecycle change is a message
+pair (document PUT, operation POST, or a `states/:id`
+event-append). Current state is the latest event under the
+`(at, id)` total order on the derived plane
+(`api/derive-states.ts`). `'deleted'` is a state event value
+on that plane, not a table flag. Document families mark
+DELETE as a tombstone pair excluded from the head by
+`deriveDocumentsAt` — there is no row to splice. The sole
+physical hard-delete is PII erasure (`identity_pii` pairs +
+related credentials), which remains a real splice of the
+message plane. History tables and the old `EntityStore` /
+`StateStore` tombstone filter are GONE (Phase Final Task 5).
 
 **The `'system'` member:** `SYSTEM_MEMBER_ID = 'system'`
-in `api/types.ts` is a `members` parent row with
-`type = 'system'` and no detail row, seeded by both
-`postMockDataLoad` and `postBootstrap`. Its
-corresponding `identity` row carries `kind = 'service'`
-— the platform itself as a non-person principal. State
-events with no specific user actor reference it. It is a
-pure event-author: `getMemberMap` resolves it for
-authorship display, but the `getMembers` roster — and
-every list, picker, and detail view — omits it.
+in `api/types.ts` is a derived directory entry with
+`type = 'system'` and no human/AI detail, seeded by both
+`postMockDataLoad` and `postBootstrap`. Its corresponding
+identity carries `kind = 'service'` — the platform itself as
+a non-person principal. State events with no specific user
+actor reference it. It is a pure event-author:
+`getMemberMap` resolves it for authorship display, but the
+`getMembers` roster — and every list, picker, and detail
+view — omits it.
 
-## Core
+## Survivor tables
 
 ### clients
 
-OAuth client registry (`EntityStore`) — the websites
-built by us and others. Mutable config of record:
-redirect URIs change, JWKS rotate, a client is
-disabled. `status` (`active` | `disabled`) is the
-schema's one mutable lifecycle column on an entity
-row — a named deviation from the states-ledger
-discipline (§ State and deletion).
-`grant_types` and `redirect_uris` are
-space-delimited (OAuth convention); `jwks` is the
-client's JSON Web Key Set as a JSON string — JWS
-verification of `private_key_jwt` assertions runs for
-real against it (RS256/ES256, `api/client-assertion.ts`;
-jti replay tracking is the remaining server-tier seam);
-`aud` is the audience the client's assertions must
-claim and the origin a token is minted for.
+OAuth client registry — the websites built by us and others.
+Backed by `HistoryEntityStore` (Phase Final re-pointed it off
+the deleted `EntityStore` class). Mutable config of record:
+redirect URIs change, JWKS rotate, a client is disabled.
+`status` (`active` | `disabled`) is the schema's one mutable
+lifecycle column on a survivor row — a named deviation from
+the pair-plane lifecycle discipline. Zero public `/clients`
+routes today; production reads use
+`rawReadRow('clients', …)` (authentication client-assertion
+path). No seed rows, no pair companion, never soft-deleted.
+
+`grant_types` and `redirect_uris` are space-delimited (OAuth
+convention); `jwks` is the client's JSON Web Key Set as a
+JSON string — JWS verification of `private_key_jwt`
+assertions runs for real against it (RS256/ES256,
+`api/client-assertion.ts`; jti replay tracking is the
+remaining server-tier seam); `aud` is the audience the
+client's assertions must claim and the origin a token is
+minted for.
 
 | Column | Type |
 |--------|------|
@@ -104,40 +129,21 @@ claim and the origin a token is minted for.
 | aud | TEXT |
 | status | TEXT (`active` \| `disabled`) |
 
-## State Event Log
+Follow-on (not this phase): client = kind-`'service'`
+identity + registration facet is a server-tier
+client-registration candidate (would retire the standalone
+clients noun).
 
-Phase Final Stage B retired the residual `states` table.
-Lifecycle events derive from the requests/responses
-message ledger (see `api/derive-states.ts`). State
-alphabets remain the conceptual vocabulary for entity
-lifecycle values on the pair plane.
-- **work orders** — open-ended transitions (state = any
-  graph node id, a base62 token) plus the closed claim
-  alphabet (`'claimed'`, `'claim_released'`,
-  `'claim_expired'`)
-- **flow nodes / flow edges** — the `EntityStore` removal
-  lifecycle (these are the only two stores whose deletion is a
-  states-log event, not a hard splice): `'deleted'` removes a
-  node/edge; `'restored'` revives a tombstoned id on undo/redo,
-  superseding the prior `'deleted'` under the `(at, id)` total
-  order. A fresh node/edge is born live and event-free; the log
-  records only its removal and any revival
+## Messages (schema of record)
 
-`buildStateEventOp(ctx, entityId, state)` in
-`adapters/state-events.ts` is the canonical helper for
-state-event op construction; entity-lifecycle adapters
-compose it into a `ctx.commit` batch with their sibling
-entity-table op.
-
-## Messages
-
-Phase 0 of the message-as-state migration: the append-only
-ledgers every stored HTTP request/response will dual-write
-into starting Phase 1. EMPTY at Phase 0 — mock-data seeding
-and the snapshot plane leave both tables untouched, and
-`tests/mock-data-fingerprint.test.ts` pins that. Global-spine
-(pass-through), NOT org-fenced: tenancy lives IN `uri_prefix`,
-enforced at the route gate.
+The append-only ledgers every pair-wired HTTP write appends
+into. Seeded demo data forms pairs pre-tx (`formSeedPair`);
+`EXPECTED_PAIR_COUNT` 1513 / bootstrap 14 is absolute.
+Global-spine (pass-through), NOT org-fenced at the store:
+tenancy lives IN `uri_prefix`, enforced at the route gate
+and the write-ownership fence
+(`api/write-ownership-fence.ts` via
+`resolveOwningOrganization`).
 
 ### requests
 
@@ -155,7 +161,7 @@ metadata only, not a domain timestamp inside the message.
 | uri_prefix | TEXT | Collection URI, trailing `/` kept |
 | uri_id | TEXT | Resource id, or `''` for a collection |
 | at | TEXT | RFC-3339 Zulu — envelope metadata |
-| requester_identity_id | TEXT | FK → identities |
+| requester_identity_id | TEXT | identity id of the requester |
 | message_hash | TEXT | sha256 hex digest of `message` |
 | message | TEXT | The canonical stored HTTP message |
 
@@ -171,8 +177,8 @@ UUID per pair, never a foreign key of its own). `follows` /
 predecessor — never `null`, never `''`. Absence-of-key IS
 absence-of-event, and IndexedDB skips absent keys when
 indexing, which is the partial-unique-index semantics the
-two-PUT-classes design (Task 5) requires; a `null` value for
-either is rejected by `validateResponseEntity` as invalid.
+two-PUT-classes design requires; a `null` value for either
+is rejected by `validateResponseEntity` as invalid.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -188,10 +194,14 @@ either is rejected by `validateResponseEntity` as invalid.
 | supersedes | TEXT | ABSENT unless this supersedes a pair |
 
 Validator: `validateResponseEntity` (`api/validators.ts`).
-Secondary indexes: `uri_prefix`, `uri_id` (`api/db.ts`
-`TABLE_INDEXES`) — the unique `follows` index arrives in
-Task 5 with the machinery that can express a partial unique
-index.
+Secondary indexes: `uri_prefix`, `uri_id`, and the unique
+`follows` index (`api/db.ts` `TABLE_INDEXES`).
+
+## Derived document families (no table)
+
+Every product family is pair-plane only. The template is
+**flow tags** — the first family that never had a backing
+table:
 
 ### Flow tags (pair-plane only, no table)
 
@@ -208,3 +218,46 @@ DELETE-shaped response pair excluded from the head by
 `deriveDocumentsAt`, exactly like every other document
 family's DELETE — there is no row to splice, since there was
 never a row to begin with.
+
+Post-Phase-Final, ideas, projects, flows (including
+graphDelta/revivals for graph lifecycle), work orders,
+records, objectives, memberships, invitations, identities,
+organizations, role grants, and the rest share this
+no-table posture: each is a URI-addressed pair family with
+a derive module (`api/derive-*.ts`) and no row store.
+
+## State alphabets (derive layer)
+
+Lifecycle vocabularies live on the **derive layer**, not a
+`states` table (retired at Phase Final Stage B). The
+conceptual alphabets remain in `api/types.ts`
+(`MEMBER_STATES`, `IDEA_STATES`, `PROJECT_STATES`, …) and
+are asserted by validators and derive cores. Reads:
+
+- `GET /states` → `deriveStates` (six-source union)
+- `GET /entity-states/:id/history` → `deriveStatesFor`
+- `PUT /states/:id` → pair-only event append, fenced by
+  `resolveOwningOrganization` and immutability via
+  `stateEventCollisionFromPairs` (no row half)
+
+Domain notes (vocabulary, not storage):
+
+- **Members** — `'active' | 'pending' | 'archived'`
+- **Ideas** — `'active' | 'in_review' | 'approved' |
+  'promoted' | 'sent_back' | 'archived' | 'deleted'`
+- **Projects** — the project alphabet in `PROJECT_STATES`
+- **Work orders** — open-ended transitions (state = any
+  graph node id, a base62 token) plus the closed claim
+  alphabet (`'claimed'`, `'claim_released'`,
+  `'claim_expired'`)
+- **Flow graph** — node/edge removal and revival ride
+  graphDelta / revivals in the flow document pair body
+  (`deriveFlowGraphStates`); `'deleted'` removes,
+  `'restored'` revives under the `(at, id)` total order.
+  A fresh node/edge is born live and event-free.
+
+`buildStateEventOp(ctx, entityId, state)` in
+`adapters/state-events.ts` remains the canonical helper for
+state-event op construction on the client; entity-lifecycle
+adapters compose it into a `ctx.commit` batch with sibling
+document ops. All of that lands as pairs only.
