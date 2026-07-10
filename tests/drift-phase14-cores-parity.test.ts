@@ -101,8 +101,10 @@ test('invitationOpStateFor: byte-identical pre-tx (the plain'
     ));
     assert.equal(accept.status, 204);
 
+    // Phase Final Task 2: memberships ROW half stripped from
+    // acceptInvitation's tx list.
     const acceptTxTables = [
-        'memberships', 'states', 'requests', 'responses',
+        'states', 'requests', 'responses',
     ];
     const preTx = await invitationOpStateFor(db, id);
     const inTx = await db.transaction(

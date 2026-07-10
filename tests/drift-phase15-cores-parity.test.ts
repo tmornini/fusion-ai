@@ -922,7 +922,18 @@ async () => {
     const flowsTwo = await deriveFlows(
         db, ORGANIZATION_TWO,
     );
-    const memberships = await db.memberships.getAll();
+    // Phase Final Task 2: memberships ROW half stripped —
+    // load a stark membership from the pair plane.
+    const { deriveMembershipsForIdentity } = await import(
+        '../api/derive-memberships.ts'
+    );
+    const currentMemberships =
+        await deriveMembershipsForIdentity(db, 'current');
+    const memberStark = currentMemberships.find(
+        (m) => m.organization_id === STARK_ORGANIZATION,
+    )!;
+    assert.ok(memberStark, 'current has stark membership');
+    assert.equal((await db.memberships.getAll()).length, 0);
 
     const ideaStark = ideasStark[0]!;
     const ideaTwo = ideasTwo[0]!;
@@ -941,12 +952,13 @@ async () => {
     // A live node id from the pair-plane graph (graphDelta
     // upserts) — seed Customer Onboarding create node.
     const nodeStarkId = 'lzkYvFNCEHARBQmZ4YHAn4';
-    const memberStark = memberships.find(
-        (m) => m.organization_id === STARK_ORGANIZATION,
-    )!;
 
     // Pair-plane ownership for stripped ideas + projects +
-    // flows + records (+ graph node). Row plane empty.
+    // flows + records (+ graph node). Row plane empty for
+    // those families. Memberships stripped too, but
+    // ownership of a membership id is not a pair-plane
+    // resolveOwningOrganization path (identity dual-write
+    // still covers the identity_id below).
     for (const [entityId, owner] of [
         [ideaStark.id, STARK_ORGANIZATION],
         [ideaTwo.id, ORGANIZATION_TWO],
@@ -970,22 +982,27 @@ async () => {
         assert.equal(foreign.row, null);
     }
 
-    // Dual-write agreement across bound orgs (families that
-    // still dual-write their rows).
-    for (const entityId of [
-        memberStark.identity_id,
+    // Phase Final Task 2: identity ownership resolves through
+    // memberships — and memberships ROW half is stripped —
+    // so pair plane returns the bound org when a membership
+    // document exists there; row probe via db.memberships is
+    // null. Identity ROW half itself still dual-writes until
+    // the identity-spine strip.
+    for (const bound of [
+        STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
-        for (const bound of [
-            STARK_ORGANIZATION, ORGANIZATION_TWO,
-        ]) {
-            const { pair, row } =
-                await bothPlanes(entityId, bound);
-            assert.equal(
-                pair, row,
-                'dual-write parity for ' + entityId
-                + ' bound=' + bound,
-            );
-        }
+        const { pair, row } = await bothPlanes(
+            memberStark.identity_id, bound,
+        );
+        assert.equal(
+            pair, bound,
+            'pair-plane owner for ' + memberStark.identity_id
+            + ' bound=' + bound,
+        );
+        assert.equal(
+            row, null,
+            'memberships row probe empty after strip',
+        );
     }
     // Genuine orphan: both null.
     {

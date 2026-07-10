@@ -46,7 +46,11 @@ test(
             'active',
         );
 
-        const row = await db.members.getById('w1');
+        // Phase Final Task 2: members/human_members ROW
+        // halves stripped — parent via pair-plane GET.
+        const row = await ctx.GET<{ id: string; type: string }>(
+            'members/w1',
+        );
         assert.equal(row.type, 'human');
         const pii =
             await db.identityPii.getById('w1');
@@ -54,6 +58,7 @@ test(
         const events = await db.states.getAllFor('w1');
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
+        assert.equal((await db.members.getAll()).length, 0);
     },
 );
 
@@ -64,13 +69,18 @@ test(
         const { db, ctx } = await adminContext();
         await seedCurrentMember(db);
         await seedHumanMember(db, 'w1', 'Original Name');
-        const before = await db.members.getById('w1');
+        // Phase Final Task 2: parent via pair-plane GET.
+        const before = await ctx.GET<{
+            id: string; type: string;
+        }>('members/w1');
 
         await postHumanMemberStateChange(
             ctx, 'w1', 'archived',
         );
 
-        const after = await db.members.getById('w1');
+        const after = await ctx.GET<{
+            id: string; type: string;
+        }>('members/w1');
         assert.deepEqual(after, before);
         // Phase Final Task 1(b): archive rides pair-plane-only
         // PUT /states/:id — pin history via the live derived

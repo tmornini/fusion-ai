@@ -10,7 +10,6 @@ import { deriveIdentityPiiRows } from
     '../api/derive-identity-spine.ts';
 import {
     deriveInvitations,
-    invitationOpStateFor,
 } from '../api/derive-invitations.ts';
 import {
     pendingInvitationFor,
@@ -53,25 +52,9 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     return db;
 }
 
-// Row-plane oracle for pendingInvitationFor's pre-gate-6
-// body: invitations.getAll filter + invitationOpStateFor.
-// Kept here ONLY as the permanent dual-write oracle.
-async function pendingFromRows(
-    db: MemoryDbAdapter,
-    organization: string,
-    identityId: string,
-): Promise<{ id: string; at: string } | null> {
-    const candidates = (await db.invitations.getAll())
-        .filter(inv => inv.organization_id === organization
-            && inv.identity_id === identityId);
-    for (const inv of candidates) {
-        const state = await invitationOpStateFor(db, inv.id);
-        if (state === undefined) {
-            return { id: inv.id, at: inv.at };
-        }
-    }
-    return null;
-}
+// Phase Final Task 2: invitations ROW half stripped — the
+// row-plane oracle is retired. pendingInvitationFor is the
+// sole pending discovery path (pair plane).
 
 test('deriveIdentityPiiRows email match ≡ identityPii.getAll'
 + ' email match (grantInvitation\'s email resolution)',
@@ -99,9 +82,8 @@ async () => {
     );
 });
 
-test('deriveInvitations pending ≡ row pending for'
-+ ' pendingInvitationFor (grant/decline/reinvite)',
-async () => {
+test('pendingInvitationFor lifecycle on the pair plane'
++ ' (grant/decline/reinvite)', async () => {
     const db = await seededDb();
     const admin = await organizationToken(
         'current', ORGANIZATION_TWO);
@@ -109,15 +91,12 @@ async () => {
     const inviteeToken = await organizationToken(
         inviteeId, ORGANIZATION_TWO);
 
-    async function assertPendingParity(): Promise<
+    async function assertPending(): Promise<
         { id: string; at: string } | null
     > {
         const fromFn = await pendingInvitationFor(
             db, ORGANIZATION_TWO, inviteeId);
-        const fromRows = await pendingFromRows(
-            db, ORGANIZATION_TWO, inviteeId);
-        assert.deepEqual(fromFn, fromRows);
-        // Also: deriveInvitations' own state field agrees with
+        // deriveInvitations' own state field agrees with
         // the pending discovery for the matched id.
         if (fromFn !== null) {
             const derived = (await deriveInvitations(db))
@@ -130,7 +109,7 @@ async () => {
         return fromFn;
     }
 
-    assert.equal(await assertPendingParity(), null);
+    assert.equal(await assertPending(), null);
 
     const grant = await handleRequest(db, req(
         'POST', '/invitations', admin, {
@@ -142,7 +121,7 @@ async () => {
     ));
     assert.equal(grant.status, 200);
     assert.equal(
-        (await assertPendingParity())?.id,
+        (await assertPending())?.id,
         'inv-rehome-parity-1',
     );
 
@@ -155,7 +134,7 @@ async () => {
         },
     ));
     assert.equal(decline.status, 204);
-    assert.equal(await assertPendingParity(), null);
+    assert.equal(await assertPending(), null);
 
     // Declined-reinvite: multi-candidate on the same
     // (organization, identity) pair.
@@ -169,14 +148,14 @@ async () => {
     ));
     assert.equal(regrant.status, 200);
     assert.equal(
-        (await assertPendingParity())?.id,
+        (await assertPending())?.id,
         'inv-rehome-parity-2',
     );
+    assert.equal((await db.invitations.getAll()).length, 0);
 });
 
-test('loadInvitation shape: deriveInvitations find-by-id ≡'
-+ ' invitations.getById for a live grant, null for missing',
-async () => {
+test('loadInvitation shape: deriveInvitations find-by-id'
++ ' for a live grant, absent for missing', async () => {
     const db = await seededDb();
     const admin = await organizationToken(
         'current', ORGANIZATION_TWO);
@@ -190,27 +169,21 @@ async () => {
     ));
     assert.equal(grant.status, 200);
 
-    const row = await db.invitations.getById(
-        'inv-rehome-load-1');
+    // Phase Final Task 2: invitations ROW half stripped.
     const derived = (await deriveInvitations(db))
         .find(r => r.id === 'inv-rehome-load-1');
     assert.ok(derived !== undefined);
-    assert.equal(derived.id, row.id);
-    assert.equal(
-        derived.organization_id, row.organization_id);
-    assert.equal(derived.identity_id, row.identity_id);
-    assert.equal(derived.at, row.at);
+    assert.equal(derived.id, 'inv-rehome-load-1');
+    assert.equal(derived.organization_id, ORGANIZATION_TWO);
+    assert.equal(derived.state, 'pending');
 
-    // Missing id: both planes absent.
-    await assert.rejects(
-        () => db.invitations.getById('inv-ghost'),
-        EntityNotFoundError,
-    );
+    // Missing id: pair plane absent.
     assert.equal(
         (await deriveInvitations(db))
             .find(r => r.id === 'inv-ghost'),
         undefined,
     );
+    assert.equal((await db.invitations.getAll()).length, 0);
 });
 
 test('rawReadRow clients ≡ getById for an active client;'

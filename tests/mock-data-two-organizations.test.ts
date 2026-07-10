@@ -41,6 +41,10 @@ import type {
     ObjectiveEntity,
 } from '../api/types.ts';
 import { handleRequest } from '../api/api.ts';
+import { deriveMembershipsForIdentity } from
+    '../api/derive-memberships.ts';
+import { deriveMemberParents } from
+    '../api/derive-members.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
@@ -125,14 +129,44 @@ async function seed() {
     return { db, creds };
 }
 
+// Phase Final Task 2: every membership document on the pair
+// plane (both orgs), keyed by identity.
+async function membershipsByIdentity(
+    db: MemoryDbAdapter,
+): Promise<Map<string, Set<string>>> {
+    const persons = (await db.identities.getAll())
+        .map(i => i.id);
+    // Also cover AI + system identities that hold memberships.
+    const parents = await deriveMemberParents(db);
+    const ids = new Set([
+        ...persons,
+        ...parents.map(m => m.id),
+    ]);
+    const byIdentity = new Map<string, Set<string>>();
+    for (const identityId of ids) {
+        const rows = await deriveMembershipsForIdentity(
+            db, identityId,
+        );
+        if (rows.length === 0) continue;
+        byIdentity.set(
+            identityId,
+            new Set(rows.map(m => m.organization_id)),
+        );
+    }
+    return byIdentity;
+}
+
 test('current is a member of exactly orgs 1 and 2',
 async () => {
     const { db } = await seed();
-    const organizations = (await db.memberships.getAll())
-        .filter(m => m.identity_id === 'current')
+    // Phase Final Task 2: memberships on the pair plane.
+    const organizations = (
+        await deriveMembershipsForIdentity(db, 'current')
+    )
         .map(m => m.organization_id)
         .sort();
     assert.deepEqual(organizations, ['1', '2']);
+    assert.equal((await db.memberships.getAll()).length, 0);
 });
 
 test('current holds admin in both orgs', async () => {
@@ -281,13 +315,7 @@ async () => {
 test('every non-admin seeded human is single-org',
 async () => {
     const { db } = await seed();
-    const byIdentity = new Map<string, Set<string>>();
-    for (const m of await db.memberships.getAll()) {
-        const set = byIdentity.get(m.identity_id)
-            ?? new Set<string>();
-        set.add(m.organization_id);
-        byIdentity.set(m.identity_id, set);
-    }
+    const byIdentity = await membershipsByIdentity(db);
     const persons = (await db.identities.getAll())
         .filter(i => i.kind === 'person')
         .map(i => i.id);
@@ -349,13 +377,8 @@ test('every idea submission names a submitter in its'
             idea.id, assignOrganization(index),
         ]),
     );
-    const memberOrganizations = new Map<string, Set<string>>();
-    for (const m of await db.memberships.getAll()) {
-        const set = memberOrganizations.get(m.identity_id)
-            ?? new Set<string>();
-        set.add(m.organization_id);
-        memberOrganizations.set(m.identity_id, set);
-    }
+    // Phase Final Task 2: memberships on the pair plane.
+    const memberOrganizations = await membershipsByIdentity(db);
     const violations: string[] = [];
     for (const [ideaId, organization] of ideaOrganization) {
         const subs = await deriveIdeaSubmissions(
@@ -405,13 +428,8 @@ test('every project score names an author in its'
             );
         }
     }
-    const memberOrganizations = new Map<string, Set<string>>();
-    for (const m of await db.memberships.getAll()) {
-        const set = memberOrganizations.get(m.identity_id)
-            ?? new Set<string>();
-        set.add(m.organization_id);
-        memberOrganizations.set(m.identity_id, set);
-    }
+    // Phase Final Task 2: memberships on the pair plane.
+    const memberOrganizations = await membershipsByIdentity(db);
     assert.ok(scores.length > 0, 'scores exist');
     const violations: string[] = [];
     for (const s of scores) {

@@ -60,12 +60,14 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 
 // The exact table lists grantInvitation/acceptInvitation/
 // declineInvitation/revokeInvitation open their own write-gate
-// transaction over (api/invitations-domain.ts).
+// transaction over (api/invitations-domain.ts). Phase Final
+// Task 2: invitations + memberships ROW halves stripped;
+// states stays until states-trace.
 const GRANT_TX_TABLES = [
-    'invitations', 'states', 'memberships', 'requests', 'responses',
+    'states', 'requests', 'responses',
 ];
 const ACCEPT_TX_TABLES = [
-    'memberships', 'states', 'requests', 'responses',
+    'states', 'requests', 'responses',
 ];
 const DECLINE_OR_REVOKE_TX_TABLES = [
     'states', 'requests', 'responses',

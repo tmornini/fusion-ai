@@ -256,8 +256,17 @@ test('foreign-id DELETE memberships/:id 404s', async () => {
     assert.equal(
         body.error, 'Not found: memberships/m-other-a',
     );
-    const row = await db.memberships.getById('m-other-a');
+    // Phase Final Task 2: memberships ROW half stripped —
+    // surviving document is on the pair plane under org A.
+    const stillThere = await handleRequest(db, req(
+        'GET', '/memberships/m-other-a', tokenA,
+    ));
+    assert.equal(stillThere.status, 200);
+    const row = await stillThere.json() as {
+        organization_id: string;
+    };
     assert.equal(row.organization_id, ORGANIZATION_A);
+    assert.equal((await db.memberships.getAll()).length, 0);
 });
 
 test('foreign-id PUT role-grants/:id 404s', async () => {

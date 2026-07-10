@@ -8,6 +8,7 @@ import type { DbAdapter } from '../api/db.ts';
 import type { NotificationEvent } from '../api/notifications.ts';
 import {
     validateInvitationEntity,
+    validateMembershipEntity,
 } from '../api/validators.ts';
 import {
     createRequestContext,
@@ -28,8 +29,18 @@ import {
     postRoleGrantDocumentOp,
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
-import { formWritePair } from '../api/message-pair.ts';
+import {
+    formWritePair,
+    canonicalUriPrefix,
+} from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { deriveInvitations } from
+    '../api/derive-invitations.ts';
+import { deriveOrganizations } from
+    '../api/derive-organizations.ts';
+import { deriveDocumentsAt } from
+    '../api/derive-documents.ts';
+import { withoutId } from '../api/document-family.ts';
 
 const AT = '2026-01-01T00:00:00.000000Z';
 
@@ -188,6 +199,37 @@ async function seedPerson(
     });
 }
 
+// Phase Final Task 2: all membership documents (every org).
+async function deriveMembershipsAll(db: DbAdapter) {
+    const organizations = await deriveOrganizations(db);
+    const rows: Array<{
+        id: string;
+        organization_id: string;
+        identity_id: string;
+        at: string;
+    }> = [];
+    for (const organization of organizations) {
+        const prefix = canonicalUriPrefix(
+            organization.id, '/memberships/',
+        );
+        const [requests, responses] = await Promise.all([
+            db.requests.getAllWhere('uri_prefix', prefix),
+            db.responses.getAllWhere('uri_prefix', prefix),
+        ]);
+        for (const document of deriveDocumentsAt(
+            requests, responses, prefix,
+        ).values()) {
+            rows.push({
+                ...validateMembershipEntity(
+                    withoutId(document.body),
+                ),
+                id: document.uriId,
+            });
+        }
+    }
+    return rows;
+}
+
 async function ctxFor(sub: string, organization: string) {
     const db = await seed();
     const ctx = createRequestContext(
@@ -277,12 +319,13 @@ test('grant by email appends a pending invitation', async () => {
     const { db, ctx } = await ctxFor('current', '2');
     assert.equal(
         await postInvitationGrant(ctx, 'sarah@x.com'), 'sent');
-    const rows = await db.invitations.getAll();
+    // Phase Final Task 2: invitations ROW half stripped.
+    const rows = await deriveInvitations(db);
     assert.equal(rows.length, 1);
     assert.equal(rows[0]!.organization_id, '2');
     assert.equal(rows[0]!.identity_id, 'sarah');
-    const state = await db.states.getCurrentFor(rows[0]!.id);
-    assert.equal(state?.state, 'pending');
+    assert.equal(rows[0]!.state, 'pending');
+    assert.equal((await db.invitations.getAll()).length, 0);
 });
 
 test('grant stamps the org from the verified token', async () => {
@@ -290,7 +333,7 @@ test('grant stamps the org from the verified token', async () => {
     // the invitation must land in Wayne, never Stark.
     const { db, ctx } = await ctxFor('current', '2');
     await postInvitationGrant(ctx, 'sarah@x.com');
-    const rows = await db.invitations.getAll();
+    const rows = await deriveInvitations(db);
     assert.equal(rows[0]!.organization_id, '2');
 });
 
@@ -376,10 +419,10 @@ async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     const sarah = await ctxOn(db, 'sarah', '1');
     await postInvitationAcceptance(sarah, inv.id);
-    const memberships = (await db.memberships.getAll())
+    const memberships = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === 'sarah');
     const organizations = memberships.map(m => m.organization_id).sort();
     assert.deepEqual(organizations, ['1', '2']);
@@ -392,7 +435,7 @@ test('accept by a non-invitee is rejected', async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     // Dave tries to accept Sarah's invitation.
     const dave = await ctxOn(db, 'dave', '1');
     await assert.rejects(
@@ -404,7 +447,7 @@ async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'dave@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     // Decline is identity-gated, not org-gated: Dave acts on his
     // own invitation regardless of any active org.
     const dave = await ctxOn(db, 'dave', '1');
@@ -412,7 +455,7 @@ async () => {
     const views = await getInvitations(dave);
     assert.equal(
         views.find(v => v.id === inv.id)?.state, 'declined');
-    const memberships = (await db.memberships.getAll())
+    const memberships = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === 'dave');
     assert.equal(memberships.length, 0);
 });
@@ -421,7 +464,7 @@ test('revoke records revoked (admin only)', async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     await postInvitationRevocation(tony, inv.id);
     const sarah = await ctxOn(db, 'sarah', '1');
     const views = await getInvitations(sarah);
@@ -433,7 +476,7 @@ test('a non-admin cannot revoke', async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     const sarah = await ctxOn(db, 'sarah', '1');
     await assert.rejects(
         postInvitationRevocation(sarah, inv.id));
@@ -443,12 +486,12 @@ test('accept after revoke is rejected, no membership', async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     await postInvitationRevocation(tony, inv.id);
     const sarah = await ctxOn(db, 'sarah', '1');
     await assert.rejects(
         postInvitationAcceptance(sarah, inv.id));
-    const wayne = (await db.memberships.getAll())
+    const wayne = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === 'sarah'
             && m.organization_id === '2');
     assert.equal(wayne.length, 0);
@@ -458,7 +501,7 @@ test('accept after decline is rejected', async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     const sarah = await ctxOn(db, 'sarah', '1');
     await postInvitationDecline(sarah, inv.id);
     await assert.rejects(
@@ -469,7 +512,7 @@ test('decline after accept is rejected', async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     const sarah = await ctxOn(db, 'sarah', '1');
     await postInvitationAcceptance(sarah, inv.id);
     await assert.rejects(
@@ -481,7 +524,7 @@ test('granting the same email twice is idempotent', async () => {
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
     await postInvitationGrant(tony, 'sarah@x.com');
-    assert.equal((await db.invitations.getAll()).length, 1);
+    assert.equal((await deriveInvitations(db)).length, 1);
 });
 
 // The dedup treats only a PENDING invitation as outstanding — a
@@ -494,14 +537,14 @@ async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const first = (await db.invitations.getAll())[0]!;
+    const first = (await deriveInvitations(db))[0]!;
     const sarah = await ctxOn(db, 'sarah', '1');
     await postInvitationDecline(sarah, first.id);
 
     assert.equal(
         await postInvitationGrant(tony, 'sarah@x.com'), 'sent');
 
-    const invs = await db.invitations.getAll();
+    const invs = await deriveInvitations(db);
     assert.equal(invs.length, 2);
     const fresh = invs.find(inv => inv.id !== first.id);
     assert.ok(fresh !== undefined);
@@ -549,7 +592,7 @@ async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const invs = await db.invitations.getAll();
+    const invs = await deriveInvitations(db);
     assert.equal(invs.length, 1);
     // Entity landed with a non-empty id.
     assert.ok(invs[0]!.id !== '');
@@ -566,7 +609,7 @@ async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     const sarah = await ctxOn(db, 'sarah', '1');
     await postInvitationAcceptance(sarah, inv.id);
     // State event landed with a non-empty id + at.
@@ -576,7 +619,7 @@ async () => {
     // Author is server-derived (the invitee's identity id).
     assert.equal(ev?.member_id, 'sarah');
     // Membership landed at a non-empty id.
-    const wayne = (await db.memberships.getAll())
+    const wayne = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === 'sarah'
             && m.organization_id === '2');
     assert.equal(wayne.length, 1);
@@ -587,7 +630,7 @@ test('decline: event author is server-derived', async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'dave@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     const dave = await ctxOn(db, 'dave', '1');
     await postInvitationDecline(dave, inv.id);
     const ev = await db.states.getCurrentFor(inv.id);
@@ -601,7 +644,7 @@ test('revoke: event author is server-derived', async () => {
     const { db } = await ctxFor('current', '2');
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     await postInvitationRevocation(tony, inv.id);
     const ev = await db.states.getCurrentFor(inv.id);
     assert.ok(ev?.id !== '');
@@ -629,7 +672,7 @@ test('a repeated accept posts no notification', async () => {
     const db = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     const sarah = await ctxOn(db, 'sarah', '1');
     await postInvitationAcceptance(sarah, inv.id);
     assert.equal(posted.length, 2);   // grant, accept
@@ -642,7 +685,7 @@ test('a repeated decline posts no notification', async () => {
     const db = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'dave@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     const dave = await ctxOn(db, 'dave', '1');
     await postInvitationDecline(dave, inv.id);
     assert.equal(posted.length, 2);   // grant, decline
@@ -655,7 +698,7 @@ test('a repeated revoke posts no notification', async () => {
     const db = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'current', '2');
     await postInvitationGrant(tony, 'sarah@x.com');
-    const inv = (await db.invitations.getAll())[0]!;
+    const inv = (await deriveInvitations(db))[0]!;
     await postInvitationRevocation(tony, inv.id);
     assert.equal(posted.length, 2);   // grant, revoke
     await postInvitationRevocation(tony, inv.id);

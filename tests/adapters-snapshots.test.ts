@@ -281,15 +281,20 @@ test('deleteSchema clears all table contents', async () => {
 });
 
 test(
-    'postMockDataLoad populates the members table',
+    'postMockDataLoad populates members on the pair plane',
     async () => {
         const { db, ctx } = await setup();
         await postMockDataLoad(ctx);
-        const rows = await db.members.getAll();
+        // Phase Final Task 2: members ROW half stripped —
+        // directory lives on the pair plane.
+        const rows = await ctx.GET<Array<{ id: string }>>(
+            'members',
+        );
         assert.ok(
             rows.length > 0,
             'mock data should seed members',
         );
+        assert.equal((await db.members.getAll()).length, 0);
     },
 );
 

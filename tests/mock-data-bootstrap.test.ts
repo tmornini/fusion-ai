@@ -34,7 +34,12 @@ test(
     'pristine bootstrap seeds required infrastructure',
     async () => {
         const db = await bootstrappedDb();
-        const ids = (await db.members.getAll())
+        // Phase Final Task 2: members ROW half stripped —
+        // parent documents from the pair plane.
+        const { deriveMemberParents } = await import(
+            '../api/derive-members.ts'
+        );
+        const ids = (await deriveMemberParents(db))
             .map(w => w.id);
         assert.ok(
             ids.includes(SYSTEM_MEMBER_ID),
@@ -44,6 +49,7 @@ test(
             ids.includes('current'),
             'current user seeded',
         );
+        assert.equal((await db.members.getAll()).length, 0);
         const organization = await db.organizations.getById(
             '1',
         );

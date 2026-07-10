@@ -2,10 +2,11 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
+import { deriveMembershipsForIdentity } from
+    '../api/derive-memberships.ts';
+import { deriveMemberParents } from
+    '../api/derive-members.ts';
 import {
-    validateMemberEntity,
-    validateHumanMemberEntity,
-    validateAIMemberEntity,
     validateIdeaEntity,
     validateProjectEntity,
     validateFlowEntity,
@@ -84,21 +85,17 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 }
 
 // Each entry: table name, getAll fn, validator.
+// Phase Final Task 2: members/humanMembers/aiMembers seed
+// row halves stripped — non-empty pins retired with the
+// tables; pair-plane coverage lives in drift-roster.
 const TABLES: ReadonlyArray<[
     string,
     (db: MemoryDbAdapter) => Promise<{ id: string }[]>,
     Validator,
 ]> = [
-    ['members', d => d.members.getAll(),
-        validateMemberEntity],
-    ['humanMembers', d => d.humanMembers.getAll(),
-        validateHumanMemberEntity],
-    ['aiMembers', d => d.aiMembers.getAll(),
-        validateAIMemberEntity],
-    // ideas + ideaSubmissions + projects + scores + flows
-    // + workOrders + flowWorkOrders + stateFieldValues
-    // re-homed below (Phase Final Task 2: seed row halves
-    // stripped; derive plane).
+    // ideas + projects + flows + workOrders + records +
+    // objectives + roster row halves re-homed (Phase Final
+    // Task 2). states still dual-writes until states-trace.
     ['states',
         d => d.states.getAll(),
         validateStateEntity],
@@ -476,27 +473,31 @@ test(
             WORK_ORDERS_WIRING,
         )(db, [], 'current', STARK_ORGANIZATION) as
             WorkOrderEntity[];
-        const [
-            states, memberships, members,
-        ] = await Promise.all([
-            db.states.getAll(),
-            db.memberships.getAll(),
-            db.members.getAll(),
-        ]);
+        const states = await db.states.getAll();
+        // Phase Final Task 2: memberships + members from
+        // the pair plane.
         const organizationByWo = new Map(
             workOrders.map(w => [w.id, w.organization_id]),
         );
+        const authorIds = new Set(
+            states
+                .filter(s => organizationByWo.has(s.entity_id))
+                .map(s => s.member_id),
+        );
         const organizationsByMember =
             new Map<string, Set<string>>();
-        for (const m of memberships) {
-            const set = organizationsByMember.get(
-                m.identity_id,
-            ) ?? new Set<string>();
-            set.add(m.organization_id);
-            organizationsByMember.set(m.identity_id, set);
+        for (const identityId of authorIds) {
+            const rows = await deriveMembershipsForIdentity(
+                db, identityId,
+            );
+            organizationsByMember.set(
+                identityId,
+                new Set(rows.map(m => m.organization_id)),
+            );
         }
+        const parents = await deriveMemberParents(db);
         const systemMembers = new Set(
-            members
+            parents
                 .filter(m => m.type === 'system')
                 .map(m => m.id),
         );

@@ -31,9 +31,6 @@ function hashIds(ids: string[]): string {
 type TableFingerprint = { count: number; hash: string };
 
 const EXPECTED: Record<string, TableFingerprint> = {
-    'members': { count: 16, hash: '0c164977' },
-    'human_members': { count: 11, hash: 'd8852be1' },
-    'ai_members': { count: 4, hash: 'dca9e5e0' },
     'identities': { count: 16, hash: '0c164977' },
     'identity_pii': { count: 11, hash: 'd8852be1' },
     'identity_credentials': { count: 12, hash: '4990628d' },
@@ -46,13 +43,14 @@ const EXPECTED: Record<string, TableFingerprint> = {
     // flow_versions + four graph relations + work_orders +
     // flow_work_orders + state_field_values + records +
     // record_attributes + flow_records + objectives +
-    // objective_revisions RETIRED (Phase Final Task 2): seed
-    // row halves stripped; pairs stay at EXPECTED_PAIR_COUNT
-    // 1513. Tables empty until Stage B deletion. SFV seed
-    // leaf pairs SURVIVE (WRS + 7 pairs).
+    // objective_revisions + members + human_members +
+    // ai_members + memberships + invitations RETIRED
+    // (Phase Final Task 2): seed row halves stripped; pairs
+    // stay at EXPECTED_PAIR_COUNT 1513. Tables empty until
+    // Stage B deletion. SFV seed leaf pairs SURVIVE
+    // (WRS + 7 pairs). Identity spine fingerprints hold
+    // until their own strip.
     'organizations': { count: 2, hash: 'e13d8f06' },
-    'memberships': { count: 16, hash: '2e3db33e' },
-    'invitations': { count: 0, hash: '811c9dc5' },
     'states': { count: 911, hash: '679a7541' },
 };
 
@@ -70,9 +68,9 @@ const EXPECTED: Record<string, TableFingerprint> = {
 // marker (Phase 12 Task 6) is excluded too — it is a scalar,
 // not a row array, so `rows.map` below would throw on it.
 // ideas + projects + flows + work-orders + records +
-// objectives families excluded with Phase Final Task 2
-// seed row-half strip (EXPECTED rows retired; tables empty
-// until Stage B deletion; pair-plane pins live in
+// objectives + roster families excluded with Phase Final
+// Task 2 seed row-half strip (EXPECTED rows retired; tables
+// empty until Stage B deletion; pair-plane pins live in
 // mock-data-pairs.test.ts).
 const EXCLUDED_TABLES = new Set([
     'requests', 'responses', SNAPSHOT_SCHEMA_VERSION_KEY,
@@ -86,6 +84,8 @@ const EXCLUDED_TABLES = new Set([
     'work_orders', 'flow_work_orders', 'state_field_values',
     'records', 'record_attributes', 'flow_records',
     'objectives', 'objective_revisions',
+    'members', 'human_members', 'ai_members',
+    'memberships', 'invitations',
 ]);
 
 async function seededFingerprint(): Promise<

@@ -528,11 +528,11 @@ async function grantInvitation(
     // The member/pending checks and the write run in ONE transaction so
     // two concurrent grants cannot both pass the check and each append a
     // pending invitation (Commandment VII).
+    // Phase Final Task 2: invitations ROW half stripped;
+    // stale 'memberships' tx entry dropped with it;
+    // states.postEvent stays until states-trace.
     await ctx.base.transaction(
-        [
-            'invitations', 'states', 'memberships',
-            'requests', 'responses',
-        ],
+        ['states', 'requests', 'responses'],
         async (view) => {
             const outcome = await grantOutcomeFor(
                 view, organization, identityId);
@@ -549,11 +549,6 @@ async function grantInvitation(
                 );
             }
             if (outcome.kind === 'fresh') {
-                await view.invitations.put(invitationId, {
-                    organization_id: organization,
-                    identity_id: identityId,
-                    at: grantAt,
-                });
                 await view.states.postEvent(
                     grantEventId, invitationId,
                     'pending', ctx.principal.id, grantAt);
@@ -739,16 +734,15 @@ async function acceptInvitation(
     // closure — the third memberships writer to join the
     // document plane, after the live PUT route and the seed):
     // PUT-shaped, at the INVITATION's org-nested memberships
-    // address — never the caller's active org, mirroring the
-    // domain write's own organization choice below. Formed
-    // pre-tx (crypto cannot run inside a transaction body) but
-    // appended ONLY inside the `!already` branch, beside the
-    // memberships.put it mirrors — a no-op re-accept or a
-    // conflict writes no membership row, so it appends no
-    // document either. Rides the shared former (Phase 9 Task 2),
-    // which resolves the SAME WRITE_RESPONSE_SPECS
-    // ['memberships/:id'] entry a live PUT /memberships/:id
-    // resolves (documentWriteResponseSpec(MEMBERSHIPS_WIRING)).
+    // address — never the caller's active org. Formed pre-tx
+    // (crypto cannot run inside a transaction body) but
+    // appended ONLY inside the `!already` branch — a no-op
+    // re-accept or a conflict writes no membership document,
+    // so it appends no document either. Phase Final Task 2:
+    // memberships ROW half stripped; the pair IS the write.
+    // Rides the shared former (Phase 9 Task 2), which resolves
+    // the SAME WRITE_RESPONSE_SPECS ['memberships/:id'] entry
+    // a live PUT /memberships/:id resolves.
     const membershipDocumentBody = {
         organization_id: inv.organization_id,
         identity_id: ctx.principal.id,
@@ -765,16 +759,15 @@ async function acceptInvitation(
         },
     );
     // The pending check rides INSIDE the write transaction so a
-    // concurrent revoke/decline cannot slip between the check and the
-    // membership write — a revoke must actually stop access (Commandment
-    // X / II). Mirrors grantAuthorizationCode's in-tx state gate.
+    // concurrent revoke/decline cannot slip between the check
+    // and the membership document write — a revoke must actually
+    // stop access (Commandment X / II).
     let conflict = false;
     let noOp = false;
+    // Phase Final Task 2: memberships ROW half stripped;
+    // states.postEvent stays until states-trace.
     await ctx.base.transaction(
-        [
-            'memberships', 'states',
-            'requests', 'responses',
-        ],
+        ['states', 'requests', 'responses'],
         async (view) => {
             const state = await currentInvitationState(view, id);
             if (state === 'accepted') {
@@ -783,29 +776,15 @@ async function acceptInvitation(
                 return;
             }
             if (state !== 'pending') { conflict = true; return; }
-            // The membership-presence check is FLIPPED (Phase 14
-            // Task 3): re-points onto membershipExistsFor (api/
-            // derive-memberships.ts) — the SAME view.memberships.
-            // getAll().some(...) dispatch it replaces, byte-
-            // identical for member/non-member (tests/drift-
-            // memberships-identity.test.ts leg 5 already proves the
-            // derive via grantOutcomeFor; pin-invitation-write-path-
-            // parity.test.ts adds the accept-tx-table parity leg).
-            // membershipExistsFor is ADAPTER-SHAPED (dbOrView:
-            // DbAdapter) so this in-tx `view` — which already
-            // carries 'requests'/'responses' in its own table list
-            // — calls it directly; no nested transaction. The
-            // 'accepted' no-op short-circuit above still runs FIRST
-            // (KEEP-ATOMIC): a removed member's re-accept never
-            // reaches this check at all.
+            // membershipExistsFor is pair-derived (Phase 14
+            // Task 3) — ADAPTER-SHAPED so this in-tx `view`
+            // (which carries 'requests'/'responses') calls it
+            // directly; no nested transaction. The 'accepted'
+            // no-op short-circuit above still runs FIRST
+            // (KEEP-ATOMIC).
             const already = await membershipExistsFor(
                 view, inv.organization_id, ctx.principal.id);
             if (!already) {
-                await view.memberships.put(membershipId, {
-                    organization_id: inv.organization_id,
-                    identity_id: ctx.principal.id,
-                    at,
-                });
                 await appendMessagePair(view, membershipDocument);
             }
             await view.states.postEvent(

@@ -1805,28 +1805,19 @@ export function humanMemberDetailBodyOf(
     return body.detail as Record<string, unknown>;
 }
 
-// AI-member creation: the parent member row, the
-// ai_members detail row, and the initial state event
-// commit as ONE transaction — a mid-write failure rolls
-// the whole thing back rather than orphaning a half-built
-// member. Each facet store re-validates its own body as
-// the composing puts land. The parent member type is a
-// server-supplied fact the handler pins; members and
-// ai_members are GLOBAL passthrough stores, so the facet
-// puts go straight to their stores. The initial event is
-// authored by the verified caller (actor), never the
-// body. Exported so the seed can drive AI-member creation
-// through the same gate the route uses (Decision 6's
-// below-facade carve-out) — this is also Phase 1's
-// dual-write insertion seam. `pairs` is optional so the
-// seed's below-facade calls (api/mock-data.ts, no gate,
-// no pairs) keep compiling unchanged; the route always
-// supplies the bundle, since 'ai-members' is pair-wired
-// and never bearer-exempt. Task 4: create appends THREE
-// pairs — the operation pair (the gate's own), the
-// synthesized member document pair, and the synthesized
-// detail document pair — in that order, LAST,
-// pairs-or-nothing.
+// AI-member creation: operation + member document + detail
+// document pairs and the initial state event commit as ONE
+// transaction. Phase Final Task 2: members + ai_members ROW
+// halves stripped — pure pair-plane write; states.postEvent
+// stays until the states-trace group. The initial event is
+// authored by the verified caller (actor), never the body.
+// Exported so the seed can drive AI-member creation through
+// the same gate the route uses (Decision 6's below-facade
+// carve-out). `pairs` is optional so the seed's below-facade
+// shape keeps compiling; the route always supplies the
+// bundle, since 'ai-members' is pair-wired and never
+// bearer-exempt. Create appends THREE pairs — operation,
+// member document, detail document — in that order, LAST.
 export async function postAiMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
@@ -1835,19 +1826,10 @@ export async function postAiMemberCreationOp(
 ): Promise<void> {
     const b = validateAIMemberCreateBody(body);
     return db.transaction(
-        [
-            'members', 'ai_members', 'states',
-            'requests', 'responses',
-        ],
+        // Phase Final Task 2: members + ai_members ROW
+        // halves stripped; states stays until states-trace.
+        ['states', 'requests', 'responses'],
         async (view) => {
-            await view.members.put(
-                b.id, { type: 'ai' },
-            );
-            await view.aiMembers.put(
-                b.id,
-                b.detail as unknown as
-                    Omit<AIMemberEntity, 'id'>,
-            );
             await view.states.postEvent(
                 b.initialStateEventId,
                 b.id,
@@ -1868,41 +1850,22 @@ export async function postAiMemberCreationOp(
     );
 }
 
-// Human-member creation: the parent member row, the
-// identity, the detail row, and the initial state event
-// commit as ONE transaction — a mid-write failure rolls
-// the whole thing back rather than orphaning a half-built
-// member. PII no longer lands here (Phase 10 Task 2's
-// intake decomposition): it enters later via the separate
-// PUT identities/:id/pii, so a create can never roll back
-// on a bad PII sub-object — the torn-state acceptance the
-// phase names. Each facet store re-validates its own body
-// as the composing puts land. The parent member type and
-// the identity kind are server-supplied facts the handler
-// pins; members/identities are GLOBAL passthrough stores,
-// so the facet puts go straight to their stores. The
-// initial event is authored by the verified caller
-// (actor), never the body. Exported so the seed can drive
-// human-member creation through the same gate the route
-// uses (Decision 6's below-facade carve-out) — this is
-// also Phase 1's dual-write insertion seam. `pairs` is
-// optional so the seed's below-facade calls (api/mock-
-// data.ts, no gate, no pairs) keep compiling unchanged;
-// the route always supplies the bundle, since
-// 'human-members' is pair-wired and never bearer-exempt.
-// Task 4: create appends THREE pairs — the operation pair
-// (the gate's own), the synthesized member document pair,
-// and the synthesized detail document pair — in that
-// order, LAST, pairs-or-nothing. The PII facet's own
-// document pair (identities/:id/pii) is formed and
-// appended by its OWN, separate write (the client's second
-// hop; the seed's own companion postIdentityPiiDocumentOp
-// call) — never synthesized here. Task 5: a FOURTH pair —
-// the synthesized identities/:id document — appends LAST,
-// after detailDocument, IFF the route supplied one (a human
-// member's own identity row, unlike an AI member — finding
-// 10 — which never carries one, so postAiMemberCreationOp's
-// OWN bundle stays exactly three).
+// Human-member creation: identity row, initial state event,
+// and the document-pair bundle commit as ONE transaction.
+// Phase Final Task 2: members + human_members ROW halves
+// stripped; identities ROW half stays until the identity-
+// spine strip; states.postEvent stays until states-trace.
+// PII no longer lands here (Phase 10 Task 2): it enters via
+// PUT identities/:id/pii. The identity kind is a server-
+// supplied fact the handler pins. The initial event is
+// authored by the verified caller (actor), never the body.
+// Exported so the seed can drive human-member creation
+// through the same gate the route uses. `pairs` is optional
+// so the seed's below-facade shape keeps compiling; the
+// route always supplies the bundle. Create appends THREE
+// pairs (operation, member document, detail document), plus
+// a FOURTH identities/:id document IFF supplied (a human
+// member's own identity — AI create stays at three).
 export async function postHumanMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
@@ -1911,22 +1874,15 @@ export async function postHumanMemberCreationOp(
 ): Promise<void> {
     const b = validateHumanMemberCreateBody(body);
     return db.transaction(
+        // Phase Final Task 2: members + human_members ROW
+        // halves stripped; identities + states stay.
         [
-            'members', 'identities',
-            'human_members', 'states',
+            'identities', 'states',
             'requests', 'responses',
         ],
         async (view) => {
-            await view.members.put(
-                b.id, { type: 'human' },
-            );
             await view.identities.put(
                 b.id, { kind: 'person' },
-            );
-            await view.humanMembers.put(
-                b.id,
-                b.detail as unknown as
-                    Omit<HumanMemberEntity, 'id'>,
             );
             await view.states.postEvent(
                 b.initialStateEventId,
@@ -1953,37 +1909,25 @@ export async function postHumanMemberCreationOp(
     );
 }
 
-// AI-member edit: extracted byte-for-byte from the anonymous
-// POST ai-members/:id closure (Task 4) — the parent member row
-// and the ai_members detail row re-put as ONE transaction; no
-// states interaction (an edit does not move the member's
-// lifecycle — genesis/archive ride PUT states/:id instead).
-// Exported, mirroring the creation ops above, so the route can
-// call it after forming the bundle inline; `pairs` is optional
-// so a below-facade caller with no pairs keeps compiling. Task
-// 4: the FIRST composed-EDIT synthesis — edit now appends THREE
-// pairs, the SAME order as create.
+// AI-member edit: Phase Final Task 2 strips members +
+// ai_members ROW halves — pure pair-plane write (no states
+// interaction; genesis/archive ride PUT states/:id). Exported
+// so the route can call it after forming the bundle inline;
+// `pairs` is optional so a below-facade caller keeps
+// compiling. Edit appends THREE pairs, the SAME order as
+// create.
 export async function postAiMemberEditOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     pairs?: MemberWritePairs,
 ): Promise<void> {
-    const b = validateAIMemberEditBody(body);
+    validateAIMemberEditBody(body);
     return db.transaction(
-        [
-            'members', 'ai_members',
-            'requests', 'responses',
-        ],
+        // Phase Final Task 2: members + ai_members ROW
+        // halves stripped.
+        ['requests', 'responses'],
         async (view) => {
-            await view.members.put(
-                id, { type: 'ai' },
-            );
-            await view.aiMembers.put(
-                id,
-                b.detail as unknown as
-                    Omit<AIMemberEntity, 'id'>,
-            );
             if (pairs !== undefined) {
                 await appendMessagePair(view, pairs.operation);
                 await appendMessagePair(
@@ -1997,44 +1941,28 @@ export async function postAiMemberEditOp(
     );
 }
 
-// Human-member edit: extracted byte-for-byte from the anonymous
-// POST human-members/:id closure (Task 4) — the postAiMemberEditOp
-// precedent, for the sibling facet: the member facets re-put as
-// ONE transaction; no states interaction (an edit does not move
-// the member's lifecycle). PII no longer lands here (Phase 10
-// Task 2's intake decomposition): it changes ONLY via the
-// separate PUT identities/:id/pii, fired by the client IFF its
-// dirty check finds it changed — this op never sees it either
-// way, so a detail-only edit stays exactly this one write. Task
-// 5: a FOURTH pair — the synthesized identities/:id document —
-// appends LAST, IFF the route supplied one; its body
-// ({kind:'person'}) is byte-identical to the create's own, so it
-// FOLDS by message_hash (appendMessagePair's dedup skip) rather
-// than appending a second row.
+// Human-member edit: Phase Final Task 2 strips members +
+// human_members ROW halves; identities ROW half stays until
+// the identity-spine strip. No states interaction (an edit
+// does not move the member's lifecycle). PII changes ONLY via
+// PUT identities/:id/pii. A FOURTH identities/:id document
+// pair appends LAST IFF supplied; its body ({kind:'person'})
+// is byte-identical to create's, so it FOLDS by message_hash
+// rather than appending a second row.
 export async function postHumanMemberEditOp(
     db: DbAdapter,
     id: Id,
     body: Record<string, unknown>,
     pairs?: MemberWritePairs,
 ): Promise<void> {
-    const b = validateHumanMemberEditBody(body);
+    validateHumanMemberEditBody(body);
     return db.transaction(
-        [
-            'members', 'identities',
-            'human_members',
-            'requests', 'responses',
-        ],
+        // Phase Final Task 2: members + human_members ROW
+        // halves stripped; identities stays.
+        ['identities', 'requests', 'responses'],
         async (view) => {
-            await view.members.put(
-                id, { type: 'human' },
-            );
             await view.identities.put(
                 id, { kind: 'person' },
-            );
-            await view.humanMembers.put(
-                id,
-                b.detail as unknown as
-                    Omit<HumanMemberEntity, 'id'>,
             );
             if (pairs !== undefined) {
                 await appendMessagePair(view, pairs.operation);
@@ -2563,139 +2491,109 @@ export async function postActualScoreDocumentOp(
     );
 }
 
-// Membership document write — extracted byte-for-byte from the
-// hand-written memberships/:id PUT closure (the
-// postBaselineScoreDocumentOp precedent above): a membership row
-// and its pair commit as ONE transaction; no states interaction
+// Membership document write — Phase Final Task 2: the
+// memberships ROW half is stripped — pure pair-plane write
+// (postFlowTagDocumentOp shape). No states interaction
 // (memberships never post events). `pair` is optional so a
-// below-facade caller with no pair keeps compiling; the live
-// route always supplies one. `_actor` is unused for the same
-// reason postBaselineScoreDocumentOp's is: there is no state
-// event here to author.
+// below-facade caller keeps compiling; the live route always
+// supplies one. WRITE_RESPONSE_SPECS successBody forms the
+// wire bytes; the reconstructed return is for type parity.
 export async function postMembershipDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<MembershipEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<MembershipEntity, 'id'>;
     return db.transaction(
-        ['memberships', 'requests', 'responses'],
+        // Phase Final Task 2: memberships ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.memberships.put(
-                id,
-                withoutId(body) as unknown as
-                    Omit<MembershipEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
 
-// Member document write — extracted byte-for-byte from the
-// hand-written members/:id PUT closure (the
-// postMembershipDocumentOp precedent above): a members row and
-// its pair commit as ONE transaction; no states interaction (an
-// edit does not move the member's lifecycle — genesis/archive
-// ride PUT states/:id instead). `pair` is optional so a
-// below-facade caller with no pair keeps compiling; the live
-// route always supplies one. `_actor` is unused for the same
-// reason postMembershipDocumentOp's is: there is no state event
-// here to author.
+// Member document write — Phase Final Task 2: the members
+// ROW half is stripped — pure pair-plane write. No states
+// interaction (genesis/archive ride PUT states/:id). `pair`
+// is optional so a below-facade caller keeps compiling; the
+// live route always supplies one.
 export async function postMemberDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<MemberEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<MemberEntity, 'id'>;
     return db.transaction(
-        ['members', 'requests', 'responses'],
+        // Phase Final Task 2: members ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.members.put(
-                id,
-                withoutId(body) as unknown as
-                    Omit<MemberEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
 
-// AI-member document write — extracted byte-for-byte from the
-// hand-written ai-members/:id PUT closure (the
-// postMemberDocumentOp precedent above): a bare ai_members facet
-// row and its pair commit as ONE transaction; no states
-// interaction (an edit does not move the member's lifecycle —
-// genesis/archive ride PUT states/:id instead). This is the
-// SAME PUT the composed POST edit arm at this route sits beside
-// (UNTOUCHED by this extraction — Task 4's own scope); the two
-// verbs stay independent, per-verb dispatches. `pair` is
-// optional so a below-facade caller with no pair keeps
-// compiling; the live route always supplies one. `_actor` is
-// unused for the same reason postMemberDocumentOp's is: there
-// is no state event here to author.
+// AI-member document write — Phase Final Task 2: the
+// ai_members ROW half is stripped — pure pair-plane write.
+// No states interaction. The composed POST edit arm at this
+// route sits beside this PUT; verbs stay independent. `pair`
+// is optional so a below-facade caller keeps compiling.
 export async function postAiMemberDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<AIMemberEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<AIMemberEntity, 'id'>;
     return db.transaction(
-        ['ai_members', 'requests', 'responses'],
+        // Phase Final Task 2: ai_members ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.aiMembers.put(
-                id,
-                withoutId(body) as unknown as
-                    Omit<AIMemberEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
 
-// Human-member document write — authored NEW, mirroring
-// postAiMemberDocumentOp's shape exactly: NO live PUT exists to
-// extract from (human-members/:id carries only {get, post}
-// today, and this task adds no route or verb to it — the
-// first registered family without a live document PUT), so
-// this op exists for a future synthesis/seed caller only. A
-// human_members facet row and its pair would commit as ONE
-// transaction; no states interaction (an edit does not move the
-// member's lifecycle — genesis/archive ride PUT states/:id
-// instead). `pair` is optional so a below-facade caller with no
-// pair keeps compiling; `_actor` is unused for the same reason
-// postAiMemberDocumentOp's is: there is no state event here to
-// author.
+// Human-member document write — Phase Final Task 2: the
+// human_members ROW half is stripped — pure pair-plane
+// write. NO live PUT exists on human-members/:id (get/post
+// only); this op serves synthesis/seed callers. No states
+// interaction. `pair` is optional so a below-facade caller
+// keeps compiling.
 export async function postHumanMemberDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<HumanMemberEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<HumanMemberEntity, 'id'>;
     return db.transaction(
-        ['human_members', 'requests', 'responses'],
+        // Phase Final Task 2: human_members ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.humanMembers.put(
-                id,
-                withoutId(body) as unknown as
-                    Omit<HumanMemberEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
@@ -5098,12 +4996,12 @@ export const routes: Route[] = [
     route('memberships/:id', {
         get: documentGetHandler(MEMBERSHIPS_WIRING),
         put: documentPutHandler(MEMBERSHIPS_WIRING),
-        delete: (db, p, _actor, pair) => {
-            const id = param(p, 0);
+        // Phase Final Task 2: memberships ROW half stripped —
+        // DELETE is a pure pair-plane tombstone append.
+        delete: (db, _p, _actor, pair) => {
             return db.transaction(
-                ['memberships', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
-                    await view.memberships.delete(id);
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
