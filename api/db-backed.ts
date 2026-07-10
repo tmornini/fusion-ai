@@ -45,7 +45,7 @@ import {
 //
 // Phase Final Stage B: states table retired. clients rides
 // HistoryEntityStore (no soft-delete filter against the
-// states log). EntityStore remains in tree for Task 5.
+// states log). EntityStore class retired in Task 5.
 export class BackedDbAdapter
     implements GuardedDbAdapter, LatencySimulation
 {
