@@ -180,23 +180,29 @@ export interface SeededCredentials {
 // ['identity_credentials', 'requests', 'responses'] transaction
 // on the nested-subset guard (api/db-backed.ts's #assertSubset:
 // 'requests'/'responses' not in the outer declared set).
+//
+// Phase Final Task 1(d): recipients are the in-memory
+// person/PII list (buildMembers / bootstrap PII body) — never
+// a post-tx identityPii/identities row scan. Stripping the
+// identity-spine row halves must not drop 1513→1502 /
+// 14→13 or empty SeededCredentials on the wire.
+type CredentialRecipient = {
+    readonly identityId: string;
+    readonly email: string;
+};
+
 async function seedHumanCredentials(
     adapter: DbAdapter,
+    recipients: readonly CredentialRecipient[],
 ): Promise<SeededCredentials> {
-    const piiById = new Map(
-        (await adapter.identityPii.getAll())
-            .map(p => [p.id, p]));
-    const persons = (await adapter.identities.getAll())
-        .filter(i => i.kind === 'person'
-            && piiById.has(i.id));
     const planned = await Promise.all(
-        persons.map(async identity => {
+        recipients.map(async recipient => {
             const password = generateCryptoSafeBase62();
             return {
                 id: 'seed-cred-'
-                    + identity.id + '-password',
-                identityId: identity.id,
-                username: piiById.get(identity.id)!.email,
+                    + recipient.identityId + '-password',
+                identityId: recipient.identityId,
+                username: recipient.email,
                 password,
                 secret: await hashPassword(password),
             };
@@ -293,7 +299,15 @@ export async function postMockDataLoad(
         TABLE_NAMES,
         (view) => postMockDataLoadIn(view, pairs),
     );
-    const creds = await seedHumanCredentials(adapter);
+    // Task 1(d): same buildMembers enumeration that pass 2
+    // used for PII — no row read after strip.
+    const creds = await seedHumanCredentials(
+        adapter,
+        buildMembers().map((member) => ({
+            identityId: member.id,
+            email: member.email,
+        })),
+    );
     await adapter.postSchemaCreation();
     return creds;
 }
@@ -1178,7 +1192,22 @@ export async function postBootstrap(
             defaultOrganizationPair, organizationPair,
         ),
     );
-    const creds = await seedHumanCredentials(adapter);
+    // Task 1(d): bootstrap's lone human is 'current' with
+    // the same PII body pass 2 wrote — no row read.
+    const bootstrapPii = bootstrapCurrentMemberPiiBody();
+    const bootstrapEmail = bootstrapPii['email'];
+    if (typeof bootstrapEmail !== 'string') {
+        throw new Error(
+            'bootstrap PII body lacks email',
+        );
+    }
+    const creds = await seedHumanCredentials(
+        adapter,
+        [{
+            identityId: 'current',
+            email: bootstrapEmail,
+        }],
+    );
     await adapter.postSchemaCreation();
     return creds;
 }

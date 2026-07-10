@@ -55,6 +55,30 @@ async () => {
         true);
 });
 
+// Phase Final Task 1(d): SeededCredentials count is
+// row-independent — 11 human passwords (buildMembers) for
+// mock-data; 1 for bootstrap. System client_secret is not
+// surfaced in the reveal list.
+test('mock-data surfaces exactly eleven human credentials',
+async () => {
+    const db = new MemoryDbAdapter();
+    await db.postSchemaCreation();
+    const creds = await postMockDataLoad(db);
+    assert.equal(creds.identities.length, 11);
+    assert.ok(
+        creds.identities.every((c) => c.password.length >= 16),
+    );
+});
+
+test('bootstrap surfaces exactly one human credential',
+async () => {
+    const db = new MemoryDbAdapter();
+    await db.postSchemaCreation();
+    const creds = await postBootstrap(db);
+    assert.equal(creds.identities.length, 1);
+    assert.equal(creds.identities[0]!.identityId, 'current');
+});
+
 test('each seed run yields a distinct admin password',
 async () => {
     const db1 = new MemoryDbAdapter();
