@@ -1,9 +1,7 @@
 import type {
-    Id,
     ClientEntity,
     RequestEntity,
     ResponseEntity,
-    StateEntity,
 } from './types.ts';
 import type { NotificationPost } from './notifications.ts';
 
@@ -160,49 +158,6 @@ export type EntityValidator<
 > = (
     body: Record<string, unknown>,
 ) => Omit<T, 'id'>;
-
-export interface StateStore {
-    getAll(): Promise<StateEntity[]>;
-    getById(id: Id): Promise<StateEntity>;
-    put(
-        id: Id,
-        fields: Omit<StateEntity, 'id'>,
-    ): Promise<StateEntity>;
-    postEvent(
-        id: Id,
-        entityId: Id,
-        state: string,
-        memberId: Id,
-        at: string,
-    ): Promise<void>;
-    getCurrentFor(
-        entityId: Id,
-    ): Promise<StateEntity | null>;
-    getAllFor(entityId: Id): Promise<StateEntity[]>;
-    getDeletedIds(): Promise<Set<Id>>;
-    isDeleted(id: Id): Promise<boolean>;
-    // The *In twins read the log within an already-open tx,
-    // so a joined reader scans states in the same
-    // transaction that reads the entity row.
-    getCurrentForIn(
-        tx: Tx,
-        entityId: Id,
-    ): Promise<StateEntity | null>;
-    getAllForIn(tx: Tx, entityId: Id): Promise<StateEntity[]>;
-    getDeletedIdsIn(tx: Tx): Promise<Set<Id>>;
-    isDeletedIn(tx: Tx, id: Id): Promise<boolean>;
-    // FENCE MECHANICS (Phase 14 Task 6 fix wave): does a row
-    // with `id` exist AT ALL, ignoring any organization fence a
-    // wrapper applies on top — RAW presence, the same
-    // unfenced-escape shape as rawReadRow/rawOrganizationOwned
-    // Probes (store-parent-scoped.ts), scoped to this ONE store.
-    // A wrapper's getById cannot answer this alone: "no such
-    // row" and "a row owned by a different organization" both
-    // throw EntityNotFoundError identically. Residual for
-    // pair-plane fence callers until Task 5 retires the
-    // row-plane states store.
-    rawHasRow(id: Id): Promise<boolean>;
-}
 
 export type TxMode = 'readonly' | 'readwrite';
 
