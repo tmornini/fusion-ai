@@ -4,9 +4,8 @@ import { TABLE_NAMES } from '../api/db.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 
 // Phase Final Stage B Task 4: TABLE_NAMES shrinks as doomed
-// tables delete. Pin the permanent survivors and the tables
-// this commit just dropped; remaining doomed families pin
-// out in their own deletion commits.
+// tables delete. Pin permanent survivors and tables this
+// commit just dropped.
 test('TABLE_NAMES keeps the permanent survivors', () => {
     for (const name of [
         'requests', 'responses', 'clients',
@@ -19,27 +18,29 @@ test('TABLE_NAMES keeps the permanent survivors', () => {
 });
 
 test(
-    'TABLE_NAMES drops ideas and idea_submissions',
+    'TABLE_NAMES drops ideas and project families',
     () => {
-        assert.ok(
-            !TABLE_NAMES.includes('ideas'),
-            'ideas still in TABLE_NAMES',
-        );
-        assert.ok(
-            !TABLE_NAMES.includes('idea_submissions'),
-            'idea_submissions still in TABLE_NAMES',
-        );
+        for (const name of [
+            'ideas',
+            'idea_submissions',
+            'projects',
+            'project_flows',
+            'project_objective_baseline_scores',
+            'project_objective_actual_scores',
+        ] as const) {
+            assert.ok(
+                !TABLE_NAMES.includes(name),
+                `${name} still in TABLE_NAMES`,
+            );
+        }
     },
 );
 
 test('TABLE_NAMES includes the objective tables', () => {
-    const expected = [
+    for (const name of [
         'objectives',
         'objective_revisions',
-        'project_objective_baseline_scores',
-        'project_objective_actual_scores',
-    ];
-    for (const name of expected) {
+    ] as const) {
         assert.ok(
             TABLE_NAMES.includes(name),
             `TABLE_NAMES missing ${name}`,
@@ -68,32 +69,6 @@ test('MemoryDbAdapter exposes objective stores',
         const revs =
             await db.objectiveRevisions.getAll();
         assert.equal(revs.length, 1);
-
-        await db.projectObjectiveBaselineScores.put(
-            'p1:o1:t1', {
-                project_id: 'p1',
-                objective_id: 'o1',
-                score: 42,
-                member_id: 'w1',
-                at: '2026-05-14T00:00:00.000000Z',
-            },
-        );
-        const bs = await
-            db.projectObjectiveBaselineScores.getAll();
-        assert.equal(bs.length, 1);
-
-        await db.projectObjectiveActualScores.put(
-            'p1:o1:t2', {
-                project_id: 'p1',
-                objective_id: 'o1',
-                score: -10,
-                member_id: 'w1',
-                at: '2026-05-15T00:00:00.000000Z',
-            },
-        );
-        const ac = await
-            db.projectObjectiveActualScores.getAll();
-        assert.equal(ac.length, 1);
     });
 
 test('MemoryDbAdapter exposes message stores', async () => {

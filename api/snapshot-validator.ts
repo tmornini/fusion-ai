@@ -16,14 +16,12 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateProjectEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
     validateFlowNodeEntity,
     validateFlowEdgeEntity,
     validateFlowNodeMemberEntity,
     validateFlowNodeAttributeEntity,
-    validateProjectFlowEntity,
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
     validateStateFieldValueEntity,
@@ -36,8 +34,6 @@ import {
     validateStateEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
-    validateBaselineScoreEntity,
-    validateActualScoreEntity,
     validateRequestEntity,
     validateResponseEntity,
 } from './validators.ts';
@@ -90,9 +86,6 @@ function validateSnapshotRow(
             case 'identity_providers':
                 validateIdentityProviderEntity(body);
                 break;
-            case 'projects':
-                validateProjectEntity(body);
-                break;
             case 'flows':
                 validateFlowEntity(body);
                 break;
@@ -110,9 +103,6 @@ function validateSnapshotRow(
                 break;
             case 'flow_node_attributes':
                 validateFlowNodeAttributeEntity(body);
-                break;
-            case 'project_flows':
-                validateProjectFlowEntity(body);
                 break;
             case 'work_orders':
                 validateWorkOrderEntity(body);
@@ -153,12 +143,6 @@ function validateSnapshotRow(
                 break;
             case 'objective_revisions':
                 validateObjectiveRevisionEntity(body);
-                break;
-            case 'project_objective_baseline_scores':
-                validateBaselineScoreEntity(body);
-                break;
-            case 'project_objective_actual_scores':
-                validateActualScoreEntity(body);
                 break;
             case 'requests':
                 validateRequestEntity(body);

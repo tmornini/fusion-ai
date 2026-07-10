@@ -11,7 +11,6 @@ import type {
     RoleGrantEntity,
     ClientEntity,
     IdentityProviderEntity,
-    ProjectEntity,
     FlowEntity,
     FlowVersionEntity,
     FlowNodeEntity,
@@ -21,7 +20,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     StateFieldValueEntity,
@@ -30,8 +28,6 @@ import type {
     FlowRecordEntity,
     ObjectiveEntity,
     ObjectiveRevisionEntity,
-    ProjectObjectiveBaselineScoreEntity,
-    ProjectObjectiveActualScoreEntity,
     RequestEntity,
     ResponseEntity,
     StateEntity,
@@ -324,7 +320,7 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 35 stores an adapter exposes, factored out of
+// The 31 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
 // bound to an open tx (A9).
@@ -351,8 +347,6 @@ export interface DbStores {
         EntityStore<ClientEntity>;
     identityProviders:
         EntityStore<IdentityProviderEntity>;
-    projects:
-        EntityStore<ProjectEntity>;
     flows:
         EntityStore<FlowEntity>;
     flowVersions:
@@ -365,10 +359,6 @@ export interface DbStores {
         EntityStore<FlowNodeMemberEntity>;
     flowNodeAttributes:
         EntityStore<FlowNodeAttributeEntity>;
-    projectFlows:
-        EntityStore<
-            ProjectFlowEntity
-        >;
     workOrders:
         EntityStore<
             WorkOrderEntity
@@ -397,14 +387,6 @@ export interface DbStores {
         EntityStore<ObjectiveEntity>;
     objectiveRevisions:
         EntityStore<ObjectiveRevisionEntity>;
-    projectObjectiveBaselineScores:
-        EntityStore<
-            ProjectObjectiveBaselineScoreEntity
-        >;
-    projectObjectiveActualScores:
-        EntityStore<
-            ProjectObjectiveActualScoreEntity
-        >;
     requests:
         EntityStore<RequestEntity>;
     responses:
@@ -505,14 +487,12 @@ export const TABLE_NAMES = [
     'role_grants',
     'clients',
     'identity_providers',
-    'projects',
     'flows',
     'flow_versions',
     'flow_nodes',
     'flow_edges',
     'flow_node_members',
     'flow_node_attributes',
-    'project_flows',
     'work_orders',
     'flow_work_orders',
     'state_field_values',
@@ -524,8 +504,6 @@ export const TABLE_NAMES = [
     'invitations',
     'objectives',
     'objective_revisions',
-    'project_objective_baseline_scores',
-    'project_objective_actual_scores',
     'requests',
     'responses',
     'states',
@@ -610,10 +588,6 @@ export const TABLE_INDEXES:
     identity_token_revocations: ['identity_id'],
     identity_default_organizations: ['identity_id'],
     role_grants: ['organization_id', 'identity_id'],
-    projects: ['organization_id'],
-    project_flows: ['project_id'],
-    project_objective_baseline_scores: ['project_id'],
-    project_objective_actual_scores: ['project_id'],
     flows: ['organization_id'],
     flow_versions: ['flow_id'],
     flow_nodes: ['flow_id'],

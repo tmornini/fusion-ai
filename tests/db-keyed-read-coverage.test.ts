@@ -33,7 +33,6 @@ const KEYED_READS: ReadonlyArray<{
     { table: 'state_field_values', column: 'attribute_id' },
     { table: 'state_field_values', column: 'state_event_id' },
     { table: 'flow_versions', column: 'flow_id' },
-    { table: 'project_flows', column: 'project_id' },
     { table: 'flow_nodes', column: 'flow_id' },
     { table: 'flow_edges', column: 'flow_id' },
     { table: 'flow_node_members', column: 'flow_node_id' },
@@ -45,14 +44,6 @@ const KEYED_READS: ReadonlyArray<{
     { table: 'flow_work_orders', column: 'flow_id' },
     { table: 'flow_records', column: 'flow_id' },
     { table: 'objective_revisions', column: 'objective_id' },
-    {
-        table: 'project_objective_baseline_scores',
-        column: 'project_id',
-    },
-    {
-        table: 'project_objective_actual_scores',
-        column: 'project_id',
-    },
     { table: 'requests', column: 'message_hash' },
     { table: 'responses', column: 'uri_id' },
     { table: 'requests', column: 'uri_prefix' },

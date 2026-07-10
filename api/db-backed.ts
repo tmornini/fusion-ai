@@ -26,7 +26,6 @@ import type {
     RoleGrantEntity,
     ClientEntity,
     IdentityProviderEntity,
-    ProjectEntity,
     FlowEntity,
     FlowVersionEntity,
     FlowNodeEntity,
@@ -36,7 +35,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    ProjectFlowEntity,
     WorkOrderEntity,
     FlowWorkOrderEntity,
     StateFieldValueEntity,
@@ -45,8 +43,6 @@ import type {
     FlowRecordEntity,
     ObjectiveEntity,
     ObjectiveRevisionEntity,
-    ProjectObjectiveBaselineScoreEntity,
-    ProjectObjectiveActualScoreEntity,
     RequestEntity,
     ResponseEntity,
 } from './types.ts';
@@ -63,8 +59,6 @@ import {
     parseAndValidateSnapshot,
 } from './snapshot-validator.ts';
 import {
-    validateBaselineScoreEntity,
-    validateActualScoreEntity,
     validateMemberEntity,
     validateHumanMemberEntity,
     validateAIMemberEntity,
@@ -76,14 +70,12 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateProjectEntity,
     validateFlowEntity,
     validateFlowVersionEntity,
     validateFlowNodeEntity,
     validateFlowEdgeEntity,
     validateFlowNodeMemberEntity,
     validateFlowNodeAttributeEntity,
-    validateProjectFlowEntity,
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
     validateStateFieldValueEntity,
@@ -134,7 +126,6 @@ export class BackedDbAdapter
     readonly clients!: GuardedEntityStore<ClientEntity>;
     readonly identityProviders!:
         GuardedEntityStore<IdentityProviderEntity>;
-    readonly projects!: GuardedEntityStore<ProjectEntity>;
     readonly flows!: GuardedEntityStore<FlowEntity>;
     readonly flowVersions!:
         GuardedEntityStore<FlowVersionEntity>;
@@ -144,8 +135,6 @@ export class BackedDbAdapter
         GuardedEntityStore<FlowNodeMemberEntity>;
     readonly flowNodeAttributes!:
         GuardedEntityStore<FlowNodeAttributeEntity>;
-    readonly projectFlows!:
-        GuardedEntityStore<ProjectFlowEntity>;
     readonly workOrders!: GuardedEntityStore<WorkOrderEntity>;
     readonly flowWorkOrders!:
         GuardedEntityStore<FlowWorkOrderEntity>;
@@ -166,10 +155,6 @@ export class BackedDbAdapter
     readonly objectives!: GuardedEntityStore<ObjectiveEntity>;
     readonly objectiveRevisions!:
         GuardedEntityStore<ObjectiveRevisionEntity>;
-    readonly projectObjectiveBaselineScores!:
-        GuardedEntityStore<ProjectObjectiveBaselineScoreEntity>;
-    readonly projectObjectiveActualScores!:
-        GuardedEntityStore<ProjectObjectiveActualScoreEntity>;
     readonly requests!: GuardedEntityStore<RequestEntity>;
     readonly responses!: GuardedEntityStore<ResponseEntity>;
     readonly states!: IStateStore;
@@ -416,10 +401,6 @@ export class BackedDbAdapter
                 'identity_providers', run,
                 validateIdentityProviderEntity,
             ),
-            projects: new EntityStore(
-                'projects', run, stateStore,
-                validateProjectEntity,
-            ),
             flows: new EntityStore(
                 'flows', run, stateStore,
                 validateFlowEntity,
@@ -443,10 +424,6 @@ export class BackedDbAdapter
             flowNodeAttributes: new HistoryEntityStore(
                 'flow_node_attributes', run,
                 validateFlowNodeAttributeEntity,
-            ),
-            projectFlows: new EntityStore(
-                'project_flows', run, stateStore,
-                validateProjectFlowEntity,
             ),
             workOrders: new EntityStore(
                 'work_orders', run, stateStore,
@@ -480,18 +457,6 @@ export class BackedDbAdapter
                 'objective_revisions', run,
                 validateObjectiveRevisionEntity,
             ),
-            projectObjectiveBaselineScores:
-                new HistoryEntityStore(
-                    'project_objective_baseline_scores',
-                    run,
-                    validateBaselineScoreEntity,
-                ),
-            projectObjectiveActualScores:
-                new HistoryEntityStore(
-                    'project_objective_actual_scores',
-                    run,
-                    validateActualScoreEntity,
-                ),
             requests: new HistoryEntityStore(
                 'requests', run, validateRequestEntity,
             ),

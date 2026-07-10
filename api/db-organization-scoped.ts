@@ -11,12 +11,9 @@ import type {
     FlowEdgeEntity,
     FlowNodeMemberEntity,
     FlowNodeAttributeEntity,
-    ProjectFlowEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
     ObjectiveRevisionEntity,
-    ProjectObjectiveBaselineScoreEntity,
-    ProjectObjectiveActualScoreEntity,
     StateFieldValueEntity,
     IdentityPiiEntity,
     IdentityCredentialEntity,
@@ -261,12 +258,6 @@ export function organizationScopedAdapter(
                 (r: FlowNodeAttributeEntity) =>
                     r.flow_node_id),
         ),
-        projectFlows: parentScope(
-            base.projectFlows, 'project_flows',
-            viaParent(
-                base.projects,
-                (r: ProjectFlowEntity) => r.project_id),
-        ),
         flowWorkOrders: parentScope(
             base.flowWorkOrders, 'flow_work_orders',
             viaParent(
@@ -285,28 +276,11 @@ export function organizationScopedAdapter(
                 base.objectives,
                 (r: ObjectiveRevisionEntity) => r.objective_id),
         ),
-        projectObjectiveBaselineScores: parentScope(
-            base.projectObjectiveBaselineScores,
-            'project_objective_baseline_scores',
-            viaParent(
-                base.projects,
-                (r: ProjectObjectiveBaselineScoreEntity) =>
-                    r.project_id),
-        ),
-        projectObjectiveActualScores: parentScope(
-            base.projectObjectiveActualScores,
-            'project_objective_actual_scores',
-            viaParent(
-                base.projects,
-                (r: ProjectObjectiveActualScoreEntity) =>
-                    r.project_id),
-        ),
         states,
         stateFieldValues,
 
         // Organization-owned entities — fenced to `org`.
         roleGrants: scope(base.roleGrants, 'role_grants'),
-        projects: scope(base.projects, 'projects'),
         flows: scope(base.flows, 'flows'),
         workOrders: scope(base.workOrders, 'work_orders'),
         records: scope(base.records, 'records'),

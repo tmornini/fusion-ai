@@ -318,36 +318,6 @@ storage gate.
 | action | TEXT (`linked` \| `unlinked`) |
 | at | TEXT |
 
-### projects
-
-Org-owned (org-fenced): NOT-NULL `organization_id`,
-stamped on write and filtered on read by the gate.
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| organization_id | TEXT (FK → organizations) |
-| title | TEXT |
-| description | TEXT |
-| progress | INTEGER |
-| start_date | TEXT |
-| target_end_date | TEXT |
-| estimated_cost | INTEGER |
-| actual_cost | INTEGER |
-| position | REAL |
-
-`start_date` / `target_end_date` are calendar DATES
-(`YYYY-MM-DD`, gated by `validateCalendarDateField`) —
-zone-neutral day markers, not instants, and the one
-deliberate exception to the RFC-3339-zulu rule: a
-project "starts on June 4" in every timezone; an
-instant would shift the rendered day across zones.
-
-Lifecycle state lives in `states` (alphabet
-`PROJECT_STATES`): `submitted`, `under_review`,
-`sent_back`, `approved`, `declined`, `archived`,
-`deleted`.
-
 ## Tools
 
 ### flows
@@ -673,15 +643,6 @@ the SAME atomic commit, in the INVITATION's organization
 
 ## Relationships
 
-### project_flows
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| project_id | TEXT | References projects |
-| flow_id | TEXT | References flows |
-| at | TEXT | RFC-3339 Zulu |
-
 ### flow_work_orders
 
 | Column | Type | Notes |
@@ -772,28 +733,6 @@ identity whose human-facing text evolves over time.
 
 The latest row per `objective_id` by `at` is the
 current text.
-
-### project_objective_baseline_scores
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| project_id | TEXT | References projects |
-| objective_id | TEXT | References objectives |
-| score | INTEGER | |
-| member_id | TEXT | FK → members (scorer) |
-| at | TEXT | RFC-3339 Zulu |
-
-### project_objective_actual_scores
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| project_id | TEXT | References projects |
-| objective_id | TEXT | References objectives |
-| score | INTEGER | |
-| member_id | TEXT | FK → members (scorer) |
-| at | TEXT | RFC-3339 Zulu |
 
 ## State Event Log
 

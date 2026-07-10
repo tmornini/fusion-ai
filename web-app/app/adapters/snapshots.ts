@@ -97,6 +97,10 @@ export const RETIRED_TABLES: readonly string[] = [
     'authorization_codes',
     'ideas',
     'idea_submissions',
+    'projects',
+    'project_flows',
+    'project_objective_baseline_scores',
+    'project_objective_actual_scores',
 ];
 
 // State-event values the alphabet has retired. Old

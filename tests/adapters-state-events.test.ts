@@ -135,7 +135,9 @@ test('getIdeaStates excludes a same-valued project',
             state_at: '2026-01-01T00:00:00.000000Z',
             state_event_id: 'ev-i1',
         });
-        await db.projects.put('p1', projectBody('P'));
+        // Phase Final Stage B: projects table retired — a bare
+        // state event on a project-shaped entity_id is enough
+        // to prove idea states do not absorb it.
         await seedStateEvent(
             ctx, 'ev-p1', 'p1', 'approved',
             '2026-01-01T00:00:01.000000Z',
