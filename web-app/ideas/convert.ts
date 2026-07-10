@@ -590,11 +590,11 @@ async function performConversion(
     // excess-property checks and 400s at the validator.
     const {
         id: _id,
-        organization_id: _orgId,
+        organization_id: _organizationId,
         ...promotedIdea
     } = ideaEntity;
     void _id;
-    void _orgId;
+    void _organizationId;
     await postIdeaConversion(
         ctx,
         ideaId,
