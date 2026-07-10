@@ -104,7 +104,7 @@ test('invitationOpStateFor: byte-identical pre-tx (the plain'
     // Phase Final Task 2: memberships ROW half stripped from
     // acceptInvitation's tx list.
     const acceptTxTables = [
-        'states', 'requests', 'responses',
+        'requests', 'responses',
     ];
     const preTx = await invitationOpStateFor(db, id);
     const inTx = await db.transaction(
@@ -145,7 +145,7 @@ test('invitationLifecycleStatesFor: byte-identical pre-tx (the'
     ));
     assert.equal(revoke.status, 204);
 
-    const revokeTxTables = ['states', 'requests', 'responses'];
+    const revokeTxTables = ['requests', 'responses'];
     const preTx = await invitationLifecycleStatesFor(db, id);
     const inTx = await db.transaction(
         revokeTxTables,
@@ -245,7 +245,7 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
 
     // Phase Final Task 2: work_orders dropped from claim tx.
     const claimTxTables = [
-        'states', 'requests', 'responses',
+        'requests', 'responses',
     ];
     const preTx = await workOrderLifecycleStatesFor(
         db, STARK_ORGANIZATION, workOrderId,
@@ -311,7 +311,7 @@ test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
 
     // Phase Final Task 2: work_orders dropped from claim tx.
     const claimTxTables = [
-        'states', 'requests', 'responses',
+        'requests', 'responses',
     ];
     const preTx = await workOrderClaimHistoryFor(
         db, STARK_ORGANIZATION, workOrderId,
@@ -368,7 +368,7 @@ test('documentStateHeadFor: byte-identical pre-tx (the plain'
     // Phase Final Task 2: ideas row half stripped from
     // postIdeaDocumentOp; tx list matches the live op.
     const ideaTxTables =
-        ['states', 'requests', 'responses'];
+        ['requests', 'responses'];
     const preTx = await documentStateHeadFor(db, id);
     const inTx = await db.transaction(
         ideaTxTables,
@@ -409,7 +409,7 @@ test('documentStateHeadFor: byte-identical pre-tx (the plain'
     // Phase Final Task 2: projects row half stripped from
     // postProjectDocumentOp; tx list matches the live op.
     const projectTxTables =
-        ['states', 'requests', 'responses'];
+        ['requests', 'responses'];
     const preTx = await documentStateHeadFor(db, id);
     const inTx = await db.transaction(
         projectTxTables,
@@ -446,7 +446,7 @@ test('documentStateHeadFor: byte-identical pre-tx (the plain'
 
     // Phase Final Task 2: records ROW half stripped.
     const recordTxTables =
-        ['states', 'requests', 'responses'];
+        ['requests', 'responses'];
     const preTx = await documentStateHeadFor(db, id);
     const inTx = await db.transaction(
         recordTxTables,
@@ -491,7 +491,6 @@ test('documentStateHeadFor: byte-identical pre-tx (the plain'
     // Phase Final Task 2: records + record_attributes ROW
     // halves stripped from postRecordWriteOp's tx list.
     const composedTxTables = [...new Set([
-        'states',
         ...ATTRIBUTE_RESTRICT_TABLES,
         'requests', 'responses',
     ])];

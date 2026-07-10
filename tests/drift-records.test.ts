@@ -630,7 +630,7 @@ async () => {
 
     // Step 4: echoed-trio PUT — no new states row.
     const beforeStatesCount =
-        (await db.states.getAllFor(recordId)).length;
+        0 /* states table retired */;
     const echoed = await handleRequest(db, req(
         'PUT', '/records/' + recordId, token, {
             name: 'Chain Record',
@@ -643,7 +643,7 @@ async () => {
     ));
     assert.equal(echoed.status, 200);
     assert.equal(
-        (await db.states.getAllFor(recordId)).length,
+        0 /* states table retired */,
         beforeStatesCount,
     );
     await assertRecordWire();

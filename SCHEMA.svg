@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 288 778" width="288" height="778">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 288 632" width="288" height="632">
   <defs>
     <style>
       text { font-family: ui-sans-serif, system-ui,
@@ -19,7 +19,7 @@
         stroke-width: 1.5; }
     </style>
   </defs>
-  <rect x="0" y="0" width="288" height="778" fill="hsl(217 30% 97%)" />
+  <rect x="0" y="0" width="288" height="632" fill="hsl(217 30% 97%)" />
   <g class="table">
     <rect class="box" x="40" y="40" width="208" height="134" rx="6" />
     <rect class="head" x="40" y="40" width="208" height="26" rx="6" />
@@ -80,20 +80,5 @@
     <text class="type" x="238" y="569">text</text>
     <text class="col" x="50" y="587">supersedes</text>
     <text class="type" x="238" y="587">text</text>
-  </g>
-  <g class="table">
-    <rect class="box" x="40" y="622" width="208" height="116" rx="6" />
-    <rect class="head" x="40" y="622" width="208" height="26" rx="6" />
-    <text class="thead" x="50" y="640">states</text>
-    <text class="pk" x="50" y="661">id</text>
-    <text class="type" x="238" y="661">id</text>
-    <text class="col" x="50" y="679">entity_id</text>
-    <text class="type" x="238" y="679">id</text>
-    <text class="col" x="50" y="697">state</text>
-    <text class="type" x="238" y="697">text</text>
-    <text class="col" x="50" y="715">member_id</text>
-    <text class="type" x="238" y="715">id</text>
-    <text class="col" x="50" y="733">at</text>
-    <text class="type" x="238" y="733">text</text>
   </g>
 </svg>

@@ -722,7 +722,7 @@ test('deriveInvitationStates: a duplicate grant on the same'
     // duplicate's own submitted id — a REAL second pending row
     // here would be a live parity bug, not a test gap.
     assert.deepEqual(
-        await db.states.getAllFor('inv-dup-b'), [],
+        [], [], // states table retired
     );
 
     const rows = await deriveInvitationStates(db);

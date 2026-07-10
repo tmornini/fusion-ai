@@ -54,6 +54,7 @@ test(
             'role_grants',
             'identity_providers',
             'organizations',
+            'states',
         ] as const) {
             assert.ok(
                 !TABLE_NAMES.includes(name),

@@ -125,12 +125,7 @@ test(
         // Phase Final Task 2: states ROW half stripped —
         // a raw colliding states row no longer aborts the
         // pair-plane genesis PUT.
-        await db.states.put('ev-x', {
-            entity_id: 'other',
-            state: 'active',
-            member_id: 'current',
-            at: '2020-01-01T00:00:00.000000Z',
-        });
+    // Phase Final Stage B: states table retired.
         const res = await handleRequest(db, req(
             'PUT', '/ideas/idea-survives', DEV_TOKEN,
             {

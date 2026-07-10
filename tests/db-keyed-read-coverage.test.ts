@@ -20,7 +20,6 @@ const KEYED_READS: ReadonlyArray<{
     table: string;
     column: string;
 }> = [
-    { table: 'states', column: 'entity_id' },
     { table: 'requests', column: 'message_hash' },
     { table: 'responses', column: 'uri_id' },
     { table: 'requests', column: 'uri_prefix' },

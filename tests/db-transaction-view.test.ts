@@ -2,13 +2,6 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 
-const aState = {
-    entity_id: 'c1',
-    state: 'active',
-    member_id: 'm1',
-    at: '2026-01-01T00:00:00.000000Z',
-};
-
 const aClient = {
     grant_types: '["password"]',
     redirect_uris: '[]',
@@ -17,22 +10,31 @@ const aClient = {
     status: 'active' as const,
 };
 
+const aRequest = {
+    uri_prefix: '/organizations/1/ideas/',
+    uri_id: '42',
+    at: '2026-01-01T00:00:00.000000Z',
+    requester_identity_id: 'current',
+    message_hash: 'a'.repeat(64),
+    message: '{"kind":"request"}',
+};
+
 test(
     'a view commits writes across stores atomically',
     async () => {
         const db = new MemoryDbAdapter();
         await db.postSchemaCreation();
         await db.transaction(
-            ['clients', 'states'],
+            ['clients', 'requests'],
             async (view) => {
                 await view.clients.put('c1', aClient);
-                await view.states.put('s1', aState);
+                await view.requests.put('r1', aRequest);
             },
         );
         const client = await db.clients.getById('c1');
-        const state = await db.states.getById('s1');
+        const request = await db.requests.getById('r1');
         assert.equal(client.id, 'c1');
-        assert.equal(state.id, 's1');
+        assert.equal(request.id, 'r1');
     },
 );
 
@@ -43,19 +45,19 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.transaction(
-                ['clients', 'states'],
+                ['clients', 'requests'],
                 async (view) => {
                     await view.clients.put('c1', aClient);
-                    await view.states.put('s1', aState);
+                    await view.requests.put('r1', aRequest);
                     throw new Error('boom');
                 },
             ),
             /boom/,
         );
         const clients = await db.clients.getAll();
-        const states = await db.states.getAll();
+        const requests = await db.requests.getAll();
         assert.deepEqual(clients, []);
-        assert.deepEqual(states, []);
+        assert.deepEqual(requests, []);
     },
 );
 
@@ -65,7 +67,7 @@ test(
         const db = new MemoryDbAdapter();
         await db.postSchemaCreation();
         const seen = await db.transaction(
-            ['clients', 'states'],
+            ['clients', 'requests'],
             async (view) => {
                 await view.clients.put('c1', aClient);
                 // Read back inside the same tx — the put is
@@ -84,7 +86,7 @@ test(
         const db = new MemoryDbAdapter();
         await db.postSchemaCreation();
         await db.transaction(
-            ['clients', 'states'],
+            ['clients', 'requests'],
             async (view) => {
                 await view.transaction(
                     ['clients'],
@@ -94,13 +96,13 @@ test(
                         );
                     },
                 );
-                await view.states.put('s1', aState);
+                await view.requests.put('r1', aRequest);
             },
         );
         const client = await db.clients.getById('c1');
-        const state = await db.states.getById('s1');
+        const request = await db.requests.getById('r1');
         assert.equal(client.id, 'c1');
-        assert.equal(state.id, 's1');
+        assert.equal(request.id, 'r1');
     },
 );
 
@@ -111,7 +113,7 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.transaction(
-                ['clients', 'states'],
+                ['clients', 'requests'],
                 async (view) => {
                     await view.transaction(
                         ['clients'],
@@ -142,12 +144,12 @@ test(
                 ['clients'],
                 async (view) => {
                     await view.transaction(
-                        ['states'],
+                        ['requests'],
                         async () => undefined,
                     );
                 },
             ),
-            /states/,
+            /requests/,
         );
     },
 );

@@ -10,7 +10,6 @@ import type {
     GuardedDbStores,
     GuardedEntityStore,
     StorageBackend,
-    StateStore as IStateStore,
     Tx,
     TxRunner,
 } from './db.ts';
@@ -24,16 +23,13 @@ import type {
     NotificationEvent,
     NotificationPost,
 } from './notifications.ts';
-import { EntityStore } from './store-entity.ts';
 import { HistoryEntityStore }
     from './store-history-entity.ts';
-import { StateStore } from './store-state.ts';
 import {
     parseAndValidateSnapshot,
 } from './snapshot-validator.ts';
 import {
     validateClientEntity,
-    validateStateEntity,
     validateRequestEntity,
     validateResponseEntity,
 } from './validators.ts';
@@ -46,6 +42,10 @@ import {
 // an open hook the async tiers (IndexedDB) use to connect
 // before any store op. Schema lifecycle delegates to the
 // backend, which signals "schema exists" its own way.
+//
+// Phase Final Stage B: states table retired. clients rides
+// HistoryEntityStore (no soft-delete filter against the
+// states log). EntityStore remains in tree for Task 5.
 export class BackedDbAdapter
     implements GuardedDbAdapter, LatencySimulation
 {
@@ -57,7 +57,6 @@ export class BackedDbAdapter
     readonly clients!: GuardedEntityStore<ClientEntity>;
     readonly requests!: GuardedEntityStore<RequestEntity>;
     readonly responses!: GuardedEntityStore<ResponseEntity>;
-    readonly states!: IStateStore;
 
     constructor(
         backend: StorageBackend,
@@ -179,14 +178,6 @@ export class BackedDbAdapter
         );
     }
 
-    // An adapter whose stores are bound to the open tx
-    // (ambientRunner joins it), so every op runs in one
-    // transaction. Lifecycle methods delegate to the parent;
-    // a nested transaction RE-ENTERS this same tx — it runs
-    // `fn` against this view after asserting the nested tables
-    // are a subset of the outer declared set, so a composing
-    // POST opens one tx and calls the same single-noun store
-    // ops the per-noun routes use, all committing together.
     #viewForTx(
         tx: Tx,
         declaredTables: readonly string[],
@@ -216,12 +207,6 @@ export class BackedDbAdapter
         return view;
     }
 
-    // The nested-tx guard. IndexedDB locks object stores at
-    // tx-open, so a nested op touching a table the outer did
-    // not declare fails there; the simulated tiers would let
-    // it slip (they buffer any table lazily). This asserts
-    // the subset on every tier — a clear error naming the
-    // table, raised before any row op.
     #assertSubset(
         nestedTables: readonly string[],
         declaredTables: readonly string[],
@@ -237,17 +222,10 @@ export class BackedDbAdapter
         }
     }
 
-    // The store wiring lives here once. The constructor
-    // binds it to the backend; the transaction view rebinds
-    // the same wiring to an open tx via ambientRunner.
     #buildStores(run: TxRunner): GuardedDbStores {
-        const stateStore = new StateStore(
-            run, 'states', validateStateEntity);
         return {
-            states: stateStore,
-            clients: new EntityStore(
-                'clients', run, stateStore,
-                validateClientEntity,
+            clients: new HistoryEntityStore(
+                'clients', run, validateClientEntity,
             ),
             requests: new HistoryEntityStore(
                 'requests', run, validateRequestEntity,

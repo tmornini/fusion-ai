@@ -128,7 +128,7 @@ function workOrderFlowGraph(
 // (postWorkOrderClaimOp, routes.ts). Phase Final Task 2:
 // work_orders dropped (ROW half stripped).
 const CLAIM_TX_TABLES = [
-    'states', 'requests', 'responses',
+    'requests', 'responses',
 ] as const;
 
 const EMPTY_FLOW_ID = 'E2BnBlZyrriqsQYkmS4usb';
@@ -392,7 +392,7 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
     }
     assert.notEqual(foreignEventId, '');
 
-    const txTables = ['requests', 'responses', 'states'];
+    const txTables = ['requests', 'responses'];
 
     // Own → visible (tier i).
     const preOwn = await stateEventVisibilityFor(
@@ -1664,7 +1664,6 @@ async () => {
     const inTx = await db.transaction(
         // Stage B: roster + objectives/records retired.
         [
-            'states',
             'requests', 'responses',
         ],
         (view) => collectAttributeReferrers(
@@ -1806,7 +1805,6 @@ async () => {
     const inTx = await db.transaction(
         // Stage B: roster + records/work_orders retired.
         [
-            'states',
             'requests', 'responses',
         ],
         (view) => collectAttributeReferrers(

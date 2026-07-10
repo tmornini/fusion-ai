@@ -287,10 +287,11 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 4 stores an adapter exposes, factored out of
+// The 3 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
-// bound to an open tx (A9).
+// bound to an open tx (A9). Phase Final Stage B: states
+// table retired; clients rides HistoryEntityStore.
 export interface DbStores {
     clients:
         EntityStore<ClientEntity>;
@@ -298,7 +299,6 @@ export interface DbStores {
         EntityStore<RequestEntity>;
     responses:
         EntityStore<ResponseEntity>;
-    states: StateStore;
 }
 
 // Schema/connection lifecycle plus the snapshot plane — the
@@ -386,7 +386,6 @@ export const TABLE_NAMES = [
     'clients',
     'requests',
     'responses',
-    'states',
 ];
 
 // The snapshot export's ONE reserved top-level key, stamped
@@ -469,5 +468,4 @@ export const TABLE_INDEXES:
         'uri_id',
         { column: 'follows', unique: true },
     ],
-    states: ['entity_id'],
 };

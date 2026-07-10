@@ -128,33 +128,6 @@ test(
     },
 );
 
-test(
-    'states write stores raw JSON',
-    async () => {
-        const map = installShim();
-        const adapter = new LocalStorageDbAdapter();
-        await adapter.postSchemaCreation();
-        await adapter.states.put(
-            'evt-prefix-test',
-            {
-                entity_id: 'wo-1',
-                state: 'n-to',
-                member_id: 'u-1',
-                at:
-                    '2026-01-01T00:00:00.000000Z',
-            },
-        );
-        const stored = map.get(
-            KEY_PREFIX + 'states',
-        );
-        assert.ok(stored, 'expected stored value');
-        assert.ok(
-            stored.startsWith('['),
-            'expected raw JSON array, got '
-            + stored.slice(0, 20),
-        );
-    },
-);
 
 test(
     'clients table is not compressed (raw JSON in storage)',

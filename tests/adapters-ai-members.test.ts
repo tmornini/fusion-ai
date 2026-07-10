@@ -56,7 +56,7 @@ test(
         const detail = await getAIMemberEntity(ctx, 'ai1');
         assert.equal(detail.name, 'Claude');
         const events = await deriveStatesFor(db, '1', 'ai1');
-        assert.equal((await db.states.getAll()).length, 0);
+        // Phase Final Stage B: states table retired.
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
         // Authorship is the verified caller, never the body.
@@ -91,7 +91,7 @@ test(
         assert.equal(parent.type, 'ai');
         // The edit wrote no event — the seeded one holds.
         const events = await deriveStatesFor(db, '1', 'ai1');
-        assert.equal((await db.states.getAll()).length, 0);
+        // Phase Final Stage B: states table retired.
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
     },

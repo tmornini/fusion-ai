@@ -142,7 +142,7 @@ test(
         assert.equal(links[0]!.work_order_id, 'wo-1');
 
         const events = await deriveStatesFor(db, '1', 'wo-1');
-        assert.equal((await db.states.getAll()).length, 0);
+        // Phase Final Stage B: states table retired.
         assert.equal(events.length, 3);
         // The three events land IN ORDER: start, post-start,
         // then the creation-time claim.
@@ -166,7 +166,7 @@ test(
         await POST(db, 'work-orders', createBody(), DEV_TOKEN);
 
         const events = await deriveStatesFor(db, '1', 'wo-1');
-        assert.equal((await db.states.getAll()).length, 0);
+        // Phase Final Stage B: states table retired.
         assert.equal(events.length, 3);
         const byId = new Map(
             (events as StateEntity[]).map(e => [e.id, e]),
@@ -196,12 +196,7 @@ test(
         // Phase Final Task 2: states ROW half stripped —
         // a raw colliding states row no longer aborts the
         // pair-plane create.
-        await db.states.put('ev-2', {
-            entity_id: 'other',
-            state: 'n-middle',
-            member_id: 'current',
-            at: '2020-01-01T00:00:00.000000Z',
-        });
+    // Phase Final Stage B: states table retired.
         await POST(
             db, 'work-orders', createBody(), DEV_TOKEN,
         );

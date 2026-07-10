@@ -61,7 +61,7 @@ test(
         assert.equal(pii.name, 'Alice');
         // Phase Final Stage B: identity spine tables retired.
         const events = await deriveStatesFor(db, '1', 'w1');
-        assert.equal((await db.states.getAll()).length, 0);
+        // Phase Final Stage B: states table retired.
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
         // Phase Final Stage B: roster tables retired.

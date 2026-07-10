@@ -58,7 +58,6 @@ export interface AttributeReferrers {
 // transaction did not name.
 export const ATTRIBUTE_RESTRICT_TABLES:
     readonly string[] = [
-    'states',
     'requests', 'responses',
 ];
 

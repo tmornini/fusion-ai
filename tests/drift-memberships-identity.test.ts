@@ -204,7 +204,7 @@ test('leg 5: membershipExistsFor — member + non-member parity'
     // Phase Final Task 2: invitations + memberships ROW
     // halves stripped from grantInvitation's tx list.
     const grantTxTables = [
-        'states', 'requests', 'responses',
+        'requests', 'responses',
     ];
     const inTxMemberCheck = await db.transaction(
         grantTxTables,

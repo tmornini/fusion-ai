@@ -34,11 +34,7 @@ const AT_FIRST = '2026-05-01T11:00:00.000000Z';
 async function seedSystemMember(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    await db.states.postEvent(
-        'st-system', SYSTEM_MEMBER_ID, 'active',
-        'system',
-        '2026-01-01T00:00:00.000000Z',
-    );
+    // Phase Final Stage B: states table retired.
 }
 
 function buildNode(

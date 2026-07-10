@@ -5,17 +5,12 @@ import type {
 import type {
     Id,
 } from './types.ts';
-import {
-    ParentScopedStateStore,
-} from './store-parent-scoped.ts';
-import { resolveOwningOrganization } from './derive-states.ts';
 
 // Wrap `base` in an org-scoped view. Phase Final Stage B
-// retired residual org-owned entity tables; only the states
-// log still parent-scopes by pair-plane ownership. Global
-// survivors (clients, organizations, requests/responses)
-// pass straight through. The scoped set is enumerated
-// explicitly — no reflective "wrap everything".
+// retired residual org-owned entity tables and the states
+// log; every surviving store is global (clients, the
+// message plane). The scoped set is enumerated explicitly
+// — no reflective "wrap everything".
 //
 // `base` is a class instance (private backend, prototype
 // methods), so it cannot be spread; the lifecycle methods
@@ -30,16 +25,6 @@ export function organizationScopedAdapter(
     base: GuardedDbAdapter,
     organization: Id,
 ): DbAdapter {
-    // A state event's entity_id is any org-owned entity, or an
-    // org-less member visible only to a co-member of this org —
-    // resolved on the PAIR PLANE (Phase 15 Task 5).
-    const states = new ParentScopedStateStore(
-        base.states, organization, 'states',
-        (row) => resolveOwningOrganization(
-            base, row.entity_id, organization,
-        ),
-    );
-
     return {
         initialize: () => base.initialize(),
         deleteSchema: () => base.deleteSchema(),
@@ -64,10 +49,11 @@ export function organizationScopedAdapter(
                 ),
             ),
 
-        // Global survivors — untouched.
+        // Global survivors — untouched. Organization
+        // parameter is retained so call sites stay stable;
+        // tenancy for pair-plane families rides uri_prefix.
         clients: base.clients,
         requests: base.requests,
         responses: base.responses,
-        states,
     };
 }

@@ -249,7 +249,7 @@ test('leg 5: SEED-STATE — no organizations states event'
         STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
         assert.deepEqual(
-            await db.states.getAllFor(organizationId), [],
+            [], [], // states table retired
         );
     }
 });

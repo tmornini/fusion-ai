@@ -106,44 +106,11 @@ claim and the origin a token is minted for.
 
 ## State Event Log
 
-### states
-
-The unified append-only event log for every entity
-lifecycle change in the system. One row, one fact.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY (base62 token) |
-| entity_id | TEXT | Id of the entity this event concerns |
-| state | TEXT | A value from the entity's state alphabet |
-| member_id | TEXT | FK → members (actor) |
-| at | TEXT | RFC-3339 Zulu — moment of the event |
-
-The latest event on `entity_id` by `at` (a same-`at` tie
-falls to the larger row id — a total order identical on
-every backend and row permutation) is the entity's
-current state. Reversal is a *new* event, not an edit of
-the prior row.
-
-State alphabets by entity kind:
-
-- **ideas** — `IDEA_STATES` (7 values, lifecycle only;
-  readiness is derived from required-field presence):
-  `active`, `in_review`, `approved`, `promoted`,
-  `sent_back`, `archived`, `deleted`
-- **projects** — `PROJECT_STATES` (7 values):
-  `submitted`, `under_review`, `sent_back`, `approved`,
-  `declined`, `archived`, `deleted`
-- **members** (all kinds share one alphabet) —
-  `MEMBER_STATES` (3 values): `active`, `pending`,
-  `archived`
-- **records** — `RECORD_STATES` (3 values): `active`,
-  `archived`, `deleted`
-- **objectives** — `OBJECTIVE_STATES` (2 values): `active`,
-  `archived`
-- **invitations** — `INVITATION_STATES` (4 values; no
-  `deleted` — an invitation persists as audit): `pending`,
-  `accepted`, `declined`, `revoked`
+Phase Final Stage B retired the residual `states` table.
+Lifecycle events derive from the requests/responses
+message ledger (see `api/derive-states.ts`). State
+alphabets remain the conceptual vocabulary for entity
+lifecycle values on the pair plane.
 - **work orders** — open-ended transitions (state = any
   graph node id, a base62 token) plus the closed claim
   alphabet (`'claimed'`, `'claim_released'`,

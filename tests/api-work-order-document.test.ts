@@ -424,12 +424,7 @@ test('a work-order create ignores a raw colliding states'
     const flowWorkOrderId = 'wo-c4-survives-fwo';
     // Phase Final Task 2: states ROW half stripped — raw
     // collision no longer aborts the pair-plane create.
-    await db.states.put('ev-2-' + flowWorkOrderId, {
-        entity_id: 'other',
-        state: 'n-finish',
-        member_id: 'current',
-        at: '2020-01-01T00:00:00.000000Z',
-    });
+    // Phase Final Stage B: states table retired.
     const res = await handleRequest(db, req(
         'POST', '/work-orders', DEV_TOKEN,
         workOrderCreateBody(

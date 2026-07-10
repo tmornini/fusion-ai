@@ -125,12 +125,7 @@ test(
         // Phase Final Task 2: states ROW half stripped —
         // a raw colliding states row no longer aborts the
         // pair-plane create.
-        await db.states.put('ev-x', {
-            entity_id: 'other',
-            state: 'active',
-            member_id: 'current',
-            at: '2020-01-01T00:00:00.000000Z',
-        });
+    // Phase Final Stage B: states table retired.
         await POST(db, 'human-members', {
             id: 'survives',
             detail: detail(),
@@ -178,7 +173,7 @@ test(
         assert.equal(facet.title, 'Director');
         // The edit wrote no event — the lone create event holds.
         const events = await deriveStatesFor(db, '1', 'w1');
-        assert.equal((await db.states.getAll()).length, 0);
+        // Phase Final Stage B: states table retired.
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
     },

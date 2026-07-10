@@ -261,7 +261,7 @@ test('case 1: GET /states parity — deriveStates(db, organization)'
     // derive may differ slightly by fence — pin non-empty and
     // absolute pair count lives in mock-data-pairs).
     assert.ok(seenIds.size > 800, 'seeded states thin');
-    assert.equal((await db.states.getAll()).length, 0);
+    // Phase Final Stage B: states table retired.
 });
 
 // ---- case 2: GET /entity-states/:id/history parity, one --------
@@ -1231,10 +1231,8 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
     ));
     assert.equal(injected.status, 404);
 
-    await assert.rejects(
-        () => db.states.getById(injectedEventId),
-        EntityNotFoundError,
-    );
+    // Phase Final Stage B: states table retired —
+    // 404 above is the write-nothing pin.
 
     const eventPairs = await deriveEventPairStates(db);
     assert.equal(
@@ -1250,5 +1248,5 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
             false,
         );
     }
-    assert.equal((await db.states.getAll()).length, 0);
+    // Phase Final Stage B: states table retired.
 });

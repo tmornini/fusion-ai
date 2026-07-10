@@ -2,7 +2,6 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
-import { EntityNotFoundError } from '../api/db.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
 import { jsonObjectField, nowUtc, SYSTEM_MEMBER_ID } from
@@ -232,10 +231,8 @@ test('a member of org A cannot PUT a states event naming an'
         await res.json(),
         { error: 'Not found: /states/ev-cross' },
     );
-    await assert.rejects(
-        () => db.states.getById('ev-cross'),
-        EntityNotFoundError,
-    );
+    // Phase Final Stage B: states table retired —
+    // 404 above is the write-nothing pin.
 });
 
 // ---- 2. own-org write succeeds ----
@@ -339,10 +336,7 @@ async () => {
 test('PUT states/:id naming an ALREADY-DELETED org-B entity'
 + ' is still 404 (the pair plane resolves it)', async () => {
     const db = await seed();
-    await db.states.put('ev-b-del', {
-        entity_id: 'idea-b', state: 'deleted',
-        member_id: 'memberB', at: AT,
-    });
+    // Phase Final Stage B: states table retired.
     const res = await handleRequest(db, req(
         'PUT', '/states/ev-second', await tokenFor('memberA', 'A'),
         { entity_id: 'idea-b', state: 'active', at: AT },
@@ -420,10 +414,8 @@ test('WP1: foreign PUT states/:id naming an ORGANIZATION id'
         await res.json(),
         { error: 'Not found: /states/ev-org-forge' },
     );
-    await assert.rejects(
-        () => db.states.getById('ev-org-forge'),
-        EntityNotFoundError,
-    );
+    // Phase Final Stage B: states table retired —
+    // 404 above is the write-nothing pin.
 });
 
 test('WP1: own-org PUT states/:id naming its ORGANIZATION'
@@ -521,10 +513,8 @@ test('records hard-delete forgery: foreign PUT states/:id'
         await forge.json(),
         { error: 'Not found: /states/ev-rec-forge' },
     );
-    await assert.rejects(
-        () => db.states.getById('ev-rec-forge'),
-        EntityNotFoundError,
-    );
+    // Phase Final Stage B: states table retired —
+    // 404 above is the write-nothing pin.
     // Own org still owns the hard-spliced id on the pair plane.
     const own = await handleRequest(db, req(
         'PUT', '/states/ev-rec-own',

@@ -115,7 +115,7 @@ test(
         assert.equal(links[0]!.flow_id, 'flow-1');
 
         const events = await deriveStatesFor(db, '1', 'flow-1');
-        assert.equal((await db.states.getAll()).length, 0);
+        // Phase Final Stage B: states table retired.
         assert.equal(events.length, 1);
         const ev = events[0]! as StateEntity;
         assert.equal(ev.id, 'ev-1');
@@ -135,12 +135,7 @@ test(
         // a raw colliding states row no longer aborts the
         // pair-plane create (immutability is pair-plane only
         // on states/:id PUT).
-        await db.states.put('ev-1', {
-            entity_id: 'other',
-            state: 'active',
-            member_id: 'current',
-            at: '2020-01-01T00:00:00.000000Z',
-        });
+    // Phase Final Stage B: states table retired.
         await POST(db, 'flows', createBody(), DEV_TOKEN);
         const flow = await GET<{ id: string }>(
             db, 'flows/flow-1', DEV_TOKEN,

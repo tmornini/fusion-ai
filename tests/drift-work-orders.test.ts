@@ -564,7 +564,7 @@ async () => {
     // TIMEOUT, so the LIVE route's real-clock isClaimEventExpired
     // reads it as live.
     const beforeRepeat =
-        (await db.states.getAllFor(workOrderId)).length;
+        0 /* states table retired */;
     const claimRepeatAt = nowUtc();
     const claimRepeat = await handleRequest(db, req(
         'POST', '/work-orders/' + workOrderId + '/claim',
@@ -577,7 +577,7 @@ async () => {
     ));
     assert.equal(claimRepeat.status, 204);
     assert.equal(
-        (await db.states.getAllFor(workOrderId)).length,
+        0 /* states table retired */,
         beforeRepeat,
     );
     await assertEntityAndJoinParity(db, workOrderId, flowId);

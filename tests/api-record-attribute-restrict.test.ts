@@ -525,10 +525,7 @@ test(
         // on the RECORD (not the field-value parent). SFV
         // referrer lands through the transition fold (Phase
         // 15 Task 7) — leaf PUT retires.
-        await db.states.put('ev1', {
-            entity_id: 'r1', state: 'active',
-            member_id: 'current', at: AT,
-        });
+    // Phase Final Stage B: states table retired.
         await seedFieldValueReferrer(
             db, 'attr1', 'sfv1', 'High',
         );

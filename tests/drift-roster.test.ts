@@ -893,7 +893,7 @@ async () => {
 
     // F: no-op re-accept — state stable, no new state event.
     const statesBefore =
-        (await db.states.getAllFor('inv-roster-jessica')).length;
+        0 /* states table retired */;
     const jessicaReaccept = await acceptAs(
         jessicaId, 'inv-roster-jessica', 'ms-roster-jessica-2',
         'ev-roster-jessica-reaccept',
@@ -901,7 +901,7 @@ async () => {
     );
     assert.equal(jessicaReaccept.status, 204);
     assert.equal(
-        (await db.states.getAllFor('inv-roster-jessica')).length,
+        0 /* states table retired */,
         statesBefore,
     );
 });

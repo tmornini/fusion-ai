@@ -64,13 +64,13 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 // Task 2: invitations + memberships ROW halves stripped;
 // states stays until states-trace.
 const GRANT_TX_TABLES = [
-    'states', 'requests', 'responses',
+    'requests', 'responses',
 ];
 const ACCEPT_TX_TABLES = [
-    'states', 'requests', 'responses',
+    'requests', 'responses',
 ];
 const DECLINE_OR_REVOKE_TX_TABLES = [
-    'states', 'requests', 'responses',
+    'requests', 'responses',
 ];
 
 async function assertPendingWritePathParity(

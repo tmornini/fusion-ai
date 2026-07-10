@@ -97,7 +97,7 @@ test('getSnapshot returns a JSON object of tables', async () => {
     const json = await getSnapshot(ctx);
     const parsed = JSON.parse(json);
     assert.ok(Array.isArray(parsed.clients));
-    assert.ok(Array.isArray(parsed.states));
+    assert.ok(Array.isArray(parsed.requests));
 });
 
 test(

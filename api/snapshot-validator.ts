@@ -6,7 +6,6 @@ import {
 import { extractErrorMessage } from '../shared/error-helpers.ts';
 import {
     validateClientEntity,
-    validateStateEntity,
     validateRequestEntity,
     validateResponseEntity,
 } from './validators.ts';
@@ -28,9 +27,6 @@ function validateSnapshotRow(
         switch (table) {
             case 'clients':
                 validateClientEntity(body);
-                break;
-            case 'states':
-                validateStateEntity(body);
                 break;
             case 'requests':
                 validateRequestEntity(body);

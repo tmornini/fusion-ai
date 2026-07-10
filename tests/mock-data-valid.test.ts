@@ -132,7 +132,7 @@ async () => {
             'state ' + row.id,
         );
     }
-    assert.equal((await db.states.getAll()).length, 0);
+    // Phase Final Stage B: states table retired.
 });
 
 for (const [name, getAll, validate] of TABLES) {
@@ -320,7 +320,7 @@ async () => {
             'row ' + row.id + ' in derived states',
         );
     }
-    assert.equal((await db.states.getAll()).length, 0);
+    // Phase Final Stage B: states table retired.
 });
 
 test('mock-data derived score .at is 6-digit zulu',
@@ -506,7 +506,12 @@ test(
             WORK_ORDERS_WIRING,
         )(db, [], 'current', STARK_ORGANIZATION) as
             WorkOrderEntity[];
-        const states = await db.states.getAll();
+        // Phase Final Stage B: states table retired —
+        // lifecycle events from the pair plane.
+        const states = [
+            ...await deriveStates(db, '1'),
+            ...await deriveStates(db, '2'),
+        ];
         // Phase Final Task 2: memberships + members from
         // the pair plane.
         const organizationByWo = new Map(
