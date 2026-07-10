@@ -21,10 +21,10 @@ import {
 } from '../api/store-parent-scoped.ts';
 import {
     stateFieldValuesForStateEvent,
-    deriveStateFieldValueReferrers,
 } from '../api/derive-state-field-values.ts';
 import {
     flowGraphBindingsFromPairs,
+    deriveFlows,
 } from '../api/derive-flows.ts';
 import {
     relationFailClosed,
@@ -670,14 +670,14 @@ function sortById<T extends { id: string }>(
         a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
 }
 
-test('flowGraphBindingsFromPairs: attribute + member ledgers'
-+ ' byte-equal the row plane over seed; nodeFlowIds match'
-+ ' flowNodes.flow_id; pre-tx vs in-tx parity', async () => {
+// Phase Final Task 2: graph relation ROW halves stripped —
+// pair plane (flowGraphBindingsFromPairs) is sole oracle.
+test('flowGraphBindingsFromPairs: seed attribute + member'
++ ' ledgers non-empty; pre-tx vs in-tx parity; nodeFlowIds'
++ ' cover every bound node', async () => {
     const db = await seededDb();
     const txTables = [
         'requests', 'responses',
-        'flow_node_attributes', 'flow_node_members',
-        'flow_nodes',
     ];
     const preTx = await flowGraphBindingsFromPairs(
         db, STARK_ORGANIZATION,
@@ -690,51 +690,47 @@ test('flowGraphBindingsFromPairs: attribute + member ledgers'
     );
     assert.deepEqual(inTx, preTx);
 
-    const rowAttrs = sortById(
-        await db.flowNodeAttributes.getAll(),
+    // Seed is all Stark — non-empty graphDelta events.
+    assert.ok(
+        preTx.attributeEvents.length > 0,
+        'seed attributeEvents empty',
     );
-    const rowMembers = sortById(
-        await db.flowNodeMembers.getAll(),
+    assert.ok(
+        preTx.memberEvents.length > 0,
+        'seed memberEvents empty',
     );
-    // Seed is all Stark — org-two has zero flow graph
-    // bindings.
-    assert.deepEqual(
-        sortById([...preTx.attributeEvents]), rowAttrs,
+    // Row plane stays empty after the flows-family strip.
+    assert.equal(
+        (await db.flowNodeAttributes.getAll()).length, 0,
     );
-    assert.deepEqual(
-        sortById([...preTx.memberEvents]), rowMembers,
+    assert.equal(
+        (await db.flowNodeMembers.getAll()).length, 0,
+    );
+    assert.equal(
+        (await db.flowNodes.getAll()).length, 0,
     );
 
-    // nodeFlowIds parity against flow_nodes.flow_id.
-    const nodes = await db.flowNodes.getAll();
-    for (const node of nodes) {
-        assert.equal(
-            preTx.nodeFlowIds.get(node.id),
-            node.flow_id,
-            'node ' + node.id,
+    // Every attribute/member event's node resolves a flow.
+    for (const event of preTx.attributeEvents) {
+        assert.ok(
+            preTx.nodeFlowIds.has(event.flow_node_id),
+            'attr node ' + event.flow_node_id,
+        );
+    }
+    for (const event of preTx.memberEvents) {
+        assert.ok(
+            preTx.nodeFlowIds.has(event.flow_node_id),
+            'member node ' + event.flow_node_id,
         );
     }
 
-    // latestByKey/fail-closed reduction matches the
-    // row-plane RESTRICT shape (current 'added' bindings).
+    // latestByKey/fail-closed reduction is well-defined.
     const derivedLatest = latestByKey(
         preTx.attributeEvents,
         (r) => r.flow_node_id + '\0' + r.attribute_id,
         relationFailClosed,
     );
-    const rowLatest = latestByKey(
-        rowAttrs,
-        (r) => r.flow_node_id + '\0' + r.attribute_id,
-        relationFailClosed,
-    );
-    assert.deepEqual(
-        [...derivedLatest.entries()].sort(
-            (a, b) => a[0] < b[0] ? -1 : 1,
-        ),
-        [...rowLatest.entries()].sort(
-            (a, b) => a[0] < b[0] ? -1 : 1,
-        ),
-    );
+    assert.ok(derivedLatest.size > 0);
 });
 
 // GraphEdge carries no attributes field and no
@@ -902,8 +898,14 @@ async () => {
         db, ORGANIZATION_TWO,
     );
     const records = await db.records.getAll();
-    const flows = await db.flows.getAll();
-    const nodes = await db.flowNodes.getAll();
+    // Phase Final Task 2: flows(+graph) seed row halves
+    // stripped — load flows from the pair plane.
+    const flowsStark = await deriveFlows(
+        db, STARK_ORGANIZATION,
+    );
+    const flowsTwo = await deriveFlows(
+        db, ORGANIZATION_TWO,
+    );
     const memberships = await db.memberships.getAll();
 
     const ideaStark = ideasStark[0]!;
@@ -917,22 +919,27 @@ async () => {
     const recordStark = records.find(
         (r) => r.organization_id === STARK_ORGANIZATION,
     )!;
-    const flowStark = flows.find(
-        (r) => r.organization_id === STARK_ORGANIZATION,
-    )!;
-    const nodeStark = nodes.find(
-        (n) => n.flow_id === flowStark.id,
-    )!;
+    const flowStark = flowsStark[0]!;
+    const flowTwo = flowsTwo[0]!;
+    assert.ok(flowStark, 'stark flows non-empty');
+    assert.ok(flowTwo, 'org-two flows non-empty');
+    // A live node id from the pair-plane graph (graphDelta
+    // upserts) — seed Customer Onboarding create node.
+    const nodeStarkId = 'lzkYvFNCEHARBQmZ4YHAn4';
     const memberStark = memberships.find(
         (m) => m.organization_id === STARK_ORGANIZATION,
     )!;
 
-    // Pair-plane ownership for stripped ideas + projects.
+    // Pair-plane ownership for stripped ideas + projects +
+    // flows (+ graph node).
     for (const [entityId, owner] of [
         [ideaStark.id, STARK_ORGANIZATION],
         [ideaTwo.id, ORGANIZATION_TWO],
         [projectStark.id, STARK_ORGANIZATION],
         [projectTwo.id, ORGANIZATION_TWO],
+        [flowStark.id, STARK_ORGANIZATION],
+        [flowTwo.id, ORGANIZATION_TWO],
+        [nodeStarkId, STARK_ORGANIZATION],
     ] as const) {
         const own = await bothPlanes(entityId, owner);
         assert.equal(own.pair, owner);
@@ -951,7 +958,6 @@ async () => {
     // still dual-write their rows).
     for (const entityId of [
         recordStark.id,
-        flowStark.id, nodeStark.id,
         memberStark.identity_id,
     ]) {
         for (const bound of [
@@ -1008,9 +1014,11 @@ async () => {
     }
 });
 
+// Phase Final Task 2: graph ROW half stripped — pair plane
+// alone tracks the live attribute add/remove ledger.
 test('residual pin: flowGraphBindingsFromPairs tracks a'
-+ ' live attribute add then remove (fail-closed) against'
-+ ' the row plane', async () => {
++ ' live attribute add then remove (fail-closed) on the'
++ ' pair plane', async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const flowId = 'p15-bind-flow';
@@ -1089,10 +1097,6 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
     assert.equal(
         afterAdd.nodeFlowIds.get(nodeId), flowId,
     );
-    assert.deepEqual(
-        addRow,
-        await db.flowNodeAttributes.getById('p15-fna-add'),
-    );
 
     // Chain a remove off the create's document head.
     const headGet = await handleRequest(
@@ -1159,10 +1163,6 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
     );
     assert.ok(rmRow);
     assert.equal(rmRow!.action, 'removed');
-    assert.deepEqual(
-        rmRow,
-        await db.flowNodeAttributes.getById('p15-fna-rm'),
-    );
 
     const latest = latestByKey(
         afterRm.attributeEvents.filter(
@@ -1176,11 +1176,8 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
 });
 
 // F1 fix pin: soft-deleting a node via graphDelta.deletions
-// must drop it from nodeFlowIds. writeFlowGraphDelta does
-// NOT emit attributeEvents 'removed' for attributes on a
-// fully deleted node — residual 'added' must NOT RESTRICT
-// attribute DELETE (old path: flowNodes.getById →
-// EntityNotFoundError → skip; new path must match).
+// must drop it from nodeFlowIds. Residual 'added' must NOT
+// RESTRICT attribute DELETE (pair-plane path).
 test('residual pin: soft-deleted node drops from'
 + ' nodeFlowIds so residual attribute binding is not a'
 + ' RESTRICT referrer (DELETE → 204)', async () => {
@@ -1316,12 +1313,6 @@ test('residual pin: soft-deleted node drops from'
     );
     const pairPlane = await collectAttributeReferrers(
         scoped, STARK_ORGANIZATION, [attrId],
-    );
-    const rowPlane = await rowPlaneGraphReferrers(
-        scoped, STARK_ORGANIZATION, [attrId],
-    );
-    assertReferrerParity(
-        'soft-deleted node', pairPlane, rowPlane, [attrId],
     );
     assert.deepEqual(
         pairPlane.get(attrId)!.flowIds, [],
@@ -1558,73 +1549,10 @@ async () => {
 
 // -- RESTRICT graph-leg re-anchor (Phase 15 Task 4) ------------
 
-// Row-plane oracle for the three graph legs collectAttribute
-// Referrers used BEFORE Task 4: workOrders.getAll graph walk,
-// flowNodeAttributes.getAllWhere + flowNodes.getById. SFV
-// valueCount is already pair-plane (Phase 14 Task 6 / Task 3);
-// the production collectAttributeReferrers is the pair-plane
-// NEW legs. Parity pin: sorted flowIds / workOrderIds /
-// valueCount byte-equal over seed + live fixtures.
-async function rowPlaneGraphReferrers(
-    view: DbAdapter,
-    boundOrganization: string,
-    attributeIds: readonly string[],
-): Promise<Map<string, AttributeReferrers>> {
-    const workOrders = await view.workOrders.getAll();
-    const workOrderGraphs = workOrders.map((wo) => ({
-        id: wo.id,
-        graph: validateWorkOrderFlowGraphJson(
-            wo.flow_graph, 'work_orders.flow_graph',
-        ),
-    }));
-    // valueCount rides the same pair-plane SFV derive the
-    // production path uses — this pin isolates the GRAPH legs.
-    const fieldValuesByAttribute =
-        await deriveStateFieldValueReferrers(
-            view, boundOrganization, attributeIds,
-        );
-    const referrers = new Map<string, AttributeReferrers>();
-    for (const attributeId of attributeIds) {
-        const values =
-            fieldValuesByAttribute.get(attributeId) ?? [];
-        const attrRows = await view.flowNodeAttributes
-            .getAllWhere('attribute_id', attributeId);
-        const latestPerNode = latestByKey(
-            attrRows,
-            (r) => r.flow_node_id,
-            relationFailClosed,
-        );
-        const flowIds = new Set<string>();
-        for (const [flowNodeId, last] of latestPerNode) {
-            if (last.action !== 'added') continue;
-            try {
-                const node = await view.flowNodes.getById(
-                    flowNodeId,
-                );
-                flowIds.add(node.flow_id);
-            } catch (e) {
-                if (e instanceof EntityNotFoundError) {
-                    continue;
-                }
-                throw e;
-            }
-        }
-        const workOrderIds = workOrderGraphs
-            .filter((wo) => wo.graph.nodes.some((node) =>
-                node.attributes.some(
-                    (a) => a.attributeId === attributeId,
-                ),
-            ))
-            .map((wo) => wo.id);
-        referrers.set(attributeId, {
-            valueCount: values.length,
-            flowIds: [...flowIds],
-            workOrderIds,
-        });
-    }
-    return referrers;
-}
-
+// Phase Final Task 2: flow_node_attributes/flow_nodes ROW
+// halves stripped — collectAttributeReferrers graph flow
+// legs are pair-plane-only. Work-order graph legs still
+// dual-read work_orders.flow_graph (work-orders strip later).
 function sortedReferrerShape(
     refs: AttributeReferrers,
 ): {
@@ -1641,36 +1569,39 @@ function sortedReferrerShape(
 
 function assertReferrerParity(
     label: string,
-    pairPlane: Map<string, AttributeReferrers>,
-    rowPlane: Map<string, AttributeReferrers>,
+    left: Map<string, AttributeReferrers>,
+    right: Map<string, AttributeReferrers>,
     attributeIds: readonly string[],
 ): void {
     for (const attributeId of attributeIds) {
-        const pair = pairPlane.get(attributeId);
-        const row = rowPlane.get(attributeId);
-        assert.ok(pair, label + ' pair ' + attributeId);
-        assert.ok(row, label + ' row ' + attributeId);
+        const a = left.get(attributeId);
+        const b = right.get(attributeId);
+        assert.ok(a, label + ' left ' + attributeId);
+        assert.ok(b, label + ' right ' + attributeId);
         assert.deepEqual(
-            sortedReferrerShape(pair!),
-            sortedReferrerShape(row!),
+            sortedReferrerShape(a!),
+            sortedReferrerShape(b!),
             label + ' ' + attributeId,
         );
     }
 }
 
-test('collectAttributeReferrers graph legs: pair plane'
-+ ' byte-equal the row plane over seed attributes with'
-+ ' any referrer; pre-tx vs in-tx parity', async () => {
+test('collectAttributeReferrers graph legs: seed attributes'
++ ' with any referrer; pre-tx vs in-tx parity (pair plane)',
+async () => {
     const db = await seededDb();
     const scoped = organizationScopedAdapter(
         db, STARK_ORGANIZATION,
     );
-    // Every seeded attribute that appears in a live binding
-    // or a WO graph — union of flow_node_attributes +
-    // attributes named inside work_orders.flow_graph.
+    // Seed attributes from pair-plane graph bindings + WO
+    // frozen graphs.
+    const bindings = await flowGraphBindingsFromPairs(
+        db, STARK_ORGANIZATION,
+    );
     const attrFromRelations = new Set(
-        (await db.flowNodeAttributes.getAll())
-            .map((r) => r.attribute_id),
+        bindings.attributeEvents.map(
+            (r) => r.attribute_id,
+        ),
     );
     const attrFromWorkOrders = new Set<string>();
     for (const wo of await db.workOrders.getAll()) {
@@ -1700,10 +1631,9 @@ test('collectAttributeReferrers graph legs: pair plane'
     );
     const inTx = await db.transaction(
         [
-            'flows', 'work_orders', 'states', 'ideas',
-            'projects', 'records', 'objectives',
+            'work_orders', 'states',
+            'records', 'objectives',
             'invitations', 'memberships',
-            'flow_node_attributes', 'flow_nodes',
             'requests', 'responses',
         ],
         (view) => collectAttributeReferrers(
@@ -1717,17 +1647,16 @@ test('collectAttributeReferrers graph legs: pair plane'
     assertReferrerParity(
         'pre-tx vs in-tx', preTx, inTx, attributeIds,
     );
-
-    const rowOracle = await rowPlaneGraphReferrers(
-        scoped, STARK_ORGANIZATION, attributeIds,
-    );
-    assertReferrerParity(
-        'pair vs row seed', preTx, rowOracle, attributeIds,
-    );
+    // At least one seed attribute names a live flow.
+    let flowBound = 0;
+    for (const id of attributeIds) {
+        flowBound += preTx.get(id)!.flowIds.length;
+    }
+    assert.ok(flowBound > 0, 'seed flow bindings empty');
 });
 
 test('collectAttributeReferrers graph legs: live-minted'
-+ ' flow binding + work-order head stay pair/row equal',
++ ' flow binding + work-order head stay pair-plane stable',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
@@ -1842,11 +1771,24 @@ async () => {
     const pairPlane = await collectAttributeReferrers(
         scoped, STARK_ORGANIZATION, [attrId],
     );
-    const rowPlane = await rowPlaneGraphReferrers(
-        scoped, STARK_ORGANIZATION, [attrId],
+    // Pre-tx vs in-tx parity (pair plane only).
+    const inTx = await db.transaction(
+        [
+            'work_orders', 'states',
+            'records', 'requests', 'responses',
+            'memberships',
+        ],
+        (view) => collectAttributeReferrers(
+            organizationScopedAdapter(
+                view, STARK_ORGANIZATION,
+            ),
+            STARK_ORGANIZATION,
+            [attrId],
+        ),
     );
     assertReferrerParity(
-        'live mint', pairPlane, rowPlane, [attrId],
+        'live mint pre-tx vs in-tx',
+        pairPlane, inTx, [attrId],
     );
     const refs = pairPlane.get(attrId)!;
     assert.ok(refs.flowIds.includes(flowId));

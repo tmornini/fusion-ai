@@ -347,6 +347,10 @@ test('a foreign-org getById 404s identically on both planes,'
     );
 
     // frb01: Customer Onboarding <- Customer Profile (org 1).
+    // Phase Final Task 2: flows row half stripped — the row-
+    // plane parent fence for flow_records (viaParent flows)
+    // no longer resolves ownership until flow_records strip;
+    // pair-plane derive still 404s foreign org correctly.
     const joinId = 'frb01CustOnbCustProfA1';
     const flowId = 'h5mErVBQhwdMKwi1co30jB';
     const expectedJoinMessage =
@@ -355,13 +359,6 @@ test('a foreign-org getById 404s identically on both planes,'
         () => deriveFlowRecord(
             db, ORGANIZATION_TWO, flowId, joinId,
         ),
-        (err: unknown) =>
-            err instanceof EntityNotFoundError
-            && err.message === expectedJoinMessage,
-    );
-    await assert.rejects(
-        () => organizationScopedAdapter(db, ORGANIZATION_TWO)
-            .flowRecords.getById(joinId),
         (err: unknown) =>
             err instanceof EntityNotFoundError
             && err.message === expectedJoinMessage,

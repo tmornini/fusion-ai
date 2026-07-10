@@ -783,9 +783,13 @@ async () => {
 // ---- case 5: the NEW sources — flow-node delete+undo, ------------
 // ---- invitation grant/accept/decline (the seed has NEITHER) ------
 
+// Phase Final Task 2: writeFlowGraphDelta retired — node
+// 'deleted' events are pair-plane-only (deriveFlowGraphStates
+// from graphDelta); 'restored' still dual-writes until the
+// states-trace strip. Pin pair-plane history alone.
 test('case 5a: a LIVE flow-node delete + undo (source e — the'
 + ' seed has NONE) — the deleted/restored sidecar events'
-+ ' deepEqual on both planes', async () => {
++ ' on the pair plane', async () => {
     const db = await seededDb();
     const token = await organizationToken(
         'current', STARK_ORGANIZATION,
@@ -855,7 +859,7 @@ test('case 5a: a LIVE flow-node delete + undo (source e — the'
     ));
     assert.equal(undone.status, 204);
 
-    const derived = await assertHistoryParity(
+    const derived = await assertDerivedHistory(
         db, STARK_ORGANIZATION, nodeId,
     );
     assert.deepEqual(

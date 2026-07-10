@@ -33,6 +33,9 @@ import {
     deriveBaselineScores,
     deriveActualScores,
 } from '../api/derive-project-scores.ts';
+import {
+    deriveFlows,
+} from '../api/derive-flows.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
     '../api/mock-data/seed-constants.ts';
@@ -67,11 +70,9 @@ const TABLES: ReadonlyArray<[
         validateHumanMemberEntity],
     ['aiMembers', d => d.aiMembers.getAll(),
         validateAIMemberEntity],
-    // ideas + ideaSubmissions + projects + projectFlows +
-    // scores re-homed below (Phase Final Task 2: seed row
-    // halves stripped; derive plane).
-    ['flows', d => d.flows.getAll(),
-        validateFlowEntity],
+    // ideas + ideaSubmissions + projects + scores + flows
+    // re-homed below (Phase Final Task 2: seed row halves
+    // stripped; derive plane).
     ['workOrders', d => d.workOrders.getAll(),
         validateWorkOrderEntity],
     ['flowWorkOrders',
@@ -313,30 +314,36 @@ test('mock-data organization row passes the validator', async () => {
     );
 });
 
-// The live flows.graph blob is retired: the stored flow row
-// carries no graph column — the graph lives in the four
-// relation tables and is reassembled on read. Pin that the
-// seed stores no blob. The deep per-node/per-edge shape is
-// pinned by the dual-seed covenant (mock-data-flow-relations).
-
-test(
-    'mock-data stored flow rows carry no graph blob',
-    async () => {
-        const db = await seededDb();
-        const flows = await db.flows.getAll();
+// Phase Final Task 2: flows seed row half stripped — validate
+// the derived plane (pair-plane truth). Graph shape is pinned
+// by mock-data-flow-relations (pair graph equals authored).
+test('mock-data seeds non-empty derived flows per org',
+async () => {
+    const db = await seededDb();
+    for (const organization of ['1', '2']) {
+        const flows = await deriveFlows(db, organization);
         assert.ok(
             flows.length > 0,
-            'precondition: flows seeded',
+            'flows empty in org ' + organization,
         );
         for (const flow of flows) {
+            // FlowWithGraph carries graph + hasUndoHistory —
+            // strip those before validateFlowEntity.
+            const {
+                graph: _g, hasUndoHistory: _h, ...entity
+            } = flow;
+            assert.doesNotThrow(
+                () => validateFlowEntity(withoutId(entity)),
+                'flow ' + flow.id,
+            );
             assert.ok(
-                !('graph' in flow),
-                'flow ' + flow.id
-                    + ' must store no graph blob',
+                typeof flow.graph === 'string'
+                && flow.graph.length > 0,
+                'flow ' + flow.id + ' missing graph',
             );
         }
-    },
-);
+    }
+});
 
 // The Workbox inbox resolves every work-order transition's
 // author through the org-scoped member map (memberName).

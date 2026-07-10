@@ -42,17 +42,12 @@ const EXPECTED: Record<string, TableFingerprint> = {
     'role_grants': { count: 12, hash: '4b2311dd' },
     'clients': { count: 0, hash: '811c9dc5' },
     'identity_providers': { count: 0, hash: '811c9dc5' },
-    // ideas + idea_submissions + projects + project_flows +
-    // project_objective_baseline/actual_scores RETIRED
-    // (Phase Final Task 2): seed row halves stripped; pairs
-    // stay at EXPECTED_PAIR_COUNT 1513. Tables empty until
-    // Stage B deletion.
-    'flows': { count: 5, hash: '96b40589' },
-    'flow_versions': { count: 0, hash: '811c9dc5' },
-    'flow_nodes': { count: 46, hash: '092df8dd' },
-    'flow_edges': { count: 54, hash: '2bde60a6' },
-    'flow_node_members': { count: 11, hash: '24b8b869' },
-    'flow_node_attributes': { count: 16, hash: '5d9c33a6' },
+    // ideas + idea_submissions + projects family + flows +
+    // flow_versions + four graph relations RETIRED (Phase
+    // Final Task 2): seed row halves stripped; pairs stay at
+    // EXPECTED_PAIR_COUNT 1513. Tables empty until Stage B
+    // deletion. flow_versions had no writers (fingerprint
+    // retires here with the flows group).
     'work_orders': { count: 145, hash: 'b57d1e25' },
     'flow_work_orders': { count: 145, hash: 'ffdd07ec' },
     'state_field_values': { count: 7, hash: '95d00f3a' },
@@ -80,16 +75,19 @@ const EXPECTED: Record<string, TableFingerprint> = {
 // tests/mock-data-pairs.test.ts. The reserved schema-version
 // marker (Phase 12 Task 6) is excluded too — it is a scalar,
 // not a row array, so `rows.map` below would throw on it.
-// ideas + idea_submissions + projects family excluded with
-// Phase Final Task 2 seed row-half strip (EXPECTED rows
-// retired; tables empty until Stage B deletion; pair-plane
-// pins live in mock-data-pairs.test.ts).
+// ideas + projects + flows families excluded with Phase
+// Final Task 2 seed row-half strip (EXPECTED rows retired;
+// tables empty until Stage B deletion; pair-plane pins live
+// in mock-data-pairs.test.ts).
 const EXCLUDED_TABLES = new Set([
     'requests', 'responses', SNAPSHOT_SCHEMA_VERSION_KEY,
     'ideas', 'idea_submissions',
     'projects', 'project_flows',
     'project_objective_baseline_scores',
     'project_objective_actual_scores',
+    'flows', 'flow_versions',
+    'flow_nodes', 'flow_edges',
+    'flow_node_members', 'flow_node_attributes',
 ]);
 
 async function seededFingerprint(): Promise<

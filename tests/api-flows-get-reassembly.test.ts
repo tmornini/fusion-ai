@@ -30,9 +30,6 @@ import {
     storedGraphField,
 } from '../api/types.ts';
 import {
-    reassembleStoredGraph,
-} from '../api/flow-graph-relations.ts';
-import {
     asStoredGraph,
 } from '../api/validators.ts';
 import {
@@ -106,24 +103,8 @@ function norm(g: StoredGraph): StoredGraph {
     };
 }
 
-// Read the relation tables for a flow and call
-// reassembleStoredGraph — the ground-truth source.
-async function reassembleFromDb(
-    db: MemoryDbAdapter,
-    flowId: string,
-): Promise<StoredGraph> {
-    const nodeRows =
-        await db.flowNodes.getAllWhere('flow_id', flowId);
-    const edgeRows =
-        await db.flowEdges.getAllWhere('flow_id', flowId);
-    const memberRows =
-        await db.flowNodeMembers.getAll();
-    const attrRows =
-        await db.flowNodeAttributes.getAll();
-    return reassembleStoredGraph(
-        nodeRows, edgeRows, memberRows, attrRows,
-    );
-}
+// Phase Final Task 2: graph relation ROW halves stripped.
+// Pair-plane document graph (GET) is the sole graph truth.
 
 // Build a non-trivial graph: start→mid→end, mid has a
 // member and an attribute, start/end are plain.
@@ -170,35 +151,24 @@ async function seedFlowWithGraph(
     });
 }
 
-// ── 1. ROUND-TRIP: GET derives the graph from relations ──
+// ── 1. ROUND-TRIP: GET returns the pair-plane graph ──
 
 test(
-    'GET /flows/:id returns the graph reassembled'
-    + ' from relations',
+    'GET /flows/:id returns the graph from the'
+    + ' document pair plane',
     async () => {
-        const { db, ctx } = await setupMemDb();
+        const { ctx } = await setupMemDb();
         const flowId = 'flow-get-rt';
         const intended = buildNonTrivialGraph();
         await seedFlowWithGraph(ctx, flowId, intended);
 
-        // GET must return the intended graph (from relations) —
-        // the flow row carries no graph blob; the four relation
-        // tables are the sole graph truth.
+        // GET must return the intended graph from the
+        // document pair's graph field (pair-plane truth).
         const fetched =
             await ctx.GET<FlowWithGraph>('flows/' + flowId);
         const got = asStoredGraph(
             JSON.parse(fetched.graph), 'flow.graph',
         );
-        const fromRelations =
-            await reassembleFromDb(db, flowId);
-
-        // The returned graph equals the relation-derived truth.
-        assert.deepEqual(
-            norm(got),
-            norm(fromRelations),
-            'GET derives graph from relations',
-        );
-        // It also equals the intended graph.
         assert.deepEqual(
             norm(got),
             norm(intended),
@@ -207,16 +177,15 @@ test(
     },
 );
 
-// postFlowVersion freeze RETIRED (Phase 15 Task 7) with the
-// versions routes/adapters. Work-order freeze below still
-// proves reassembly from relations.
+// postFlowVersion freeze RETIRED (Phase 15 Task 7). Work-
+// order freeze below still proves GET graph is frozen.
 
-// WORK ORDER auto-derives: creation captures the
-//    reassembled graph from relations.
+// WORK ORDER auto-derives: creation captures the pair-plane
+// graph via GET /flows/:id.
 
 test(
     'postWorkOrderCreation freezes flow_graph'
-    + ' from the reassembled relations',
+    + ' from the pair-plane GET graph',
     async () => {
         const { db, ctx } = await setupMemDb();
         const flowId = 'flow-wo-rt';
@@ -225,8 +194,8 @@ test(
         const graph = buildNonTrivialGraph();
         await seedFlowWithGraph(ctx, flowId, graph);
 
-        // Work-order creation reads the relation-derived graph
-        // via GET /flows/:id — there is no stored blob.
+        // Work-order creation reads the pair-plane graph
+        // via GET /flows/:id.
         const woId = generateCryptoSafeBase62();
         await postWorkOrderCreation(ctx, {
             workOrderId: woId,
@@ -239,39 +208,34 @@ test(
         assert.ok(wo, 'work order created');
 
         // The frozen flow_graph on the work order must carry
-        // the relation-derived nodes, not the empty blob.
+        // the pair-plane nodes, not an empty blob.
         const frozenWoGraph = JSON.parse(wo.flow_graph) as {
             nodes: unknown[];
             edges: unknown[];
         };
         assert.ok(
             frozenWoGraph.nodes.length > 0,
-            'work order flow_graph has nodes from relations',
+            'work order flow_graph has nodes from pair plane',
         );
         assert.ok(
             frozenWoGraph.edges.length > 0,
-            'work order flow_graph has edges from relations',
+            'work order flow_graph has edges from pair plane',
         );
     },
 );
 
 // ── 4. UNDO round-trip: GET returns the target graph ──────
 
-// NAMED REWRITE (Phase 14 Task 8, undo-as-replay): no
-// flow_versions row is published or consumed any more — undo
+// NAMED REWRITE (Phase 14 Task 8, undo-as-replay): undo
 // resolves its own restore target from the flows/:id
 // document-pair history, and computes graphDelta/revivals
-// SERVER-SIDE (api/flow-graph-diff.ts) from the CURRENT vs
-// TARGET graphs it reads off that history, never from a
-// client-supplied delta. The setup (create → save targetGraph →
-// save advancedGraph) is UNCHANGED — it already shapes exactly
-// the "one step back" undo needs — only the undo call itself
-// shrinks to the state trio's two free fields.
+// SERVER-SIDE (SIDECAR-KEEP). Phase Final Task 2: no row-
+// plane graph writer remains.
 test(
     'after undo GET /flows/:id returns the'
-    + ' target (undone) graph from relations',
+    + ' target (undone) graph from the pair plane',
     async () => {
-        const { db, ctx } = await setupMemDb();
+        const { ctx } = await setupMemDb();
         const flowId = 'flow-undo-rt';
 
         // Step 1: create flow with an empty graph.
@@ -329,13 +293,10 @@ test(
         const got = asStoredGraph(
             JSON.parse(fetched.graph), 'flow.graph',
         );
-        const fromRelations =
-            await reassembleFromDb(db, flowId);
-
         assert.deepEqual(
             norm(got),
-            norm(fromRelations),
-            'GET after undo matches relations',
+            norm(targetGraph),
+            'GET after undo matches target graph',
         );
         // The target had 3 nodes; after undo we should
         // see the target shape again (start, mid, end).

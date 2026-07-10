@@ -164,18 +164,14 @@ function decodeRequestMessage(message: string): {
     };
 }
 
-// --- below-gate op tests (postFlowDocumentOp directly — no
-// route called it until the flip below wired flows/:id onto
-// it) ---
+// --- below-gate op tests (postFlowDocumentOp directly).
+// Phase Final Task 2: flows + graph ROW halves stripped;
+// op returns a reconstructed entity + posts states events.
 
-test('postFlowDocumentOp writes the flow row, exactly one'
-+ ' updated event, the graph-delta rows, and nothing in'
+test('postFlowDocumentOp returns the entity, exactly one'
++ ' updated event, no graph rows, nothing in'
 + ' flow_versions', async () => {
     const db = await freshDb();
-    await db.flows.put('flow-op-1', {
-        organization_id: '1',
-        ...flowFields('Original'),
-    });
     await db.states.postEvent(
         'flow-op-1-create', 'flow-op-1', 'active',
         'current', AT,
@@ -204,17 +200,19 @@ test('postFlowDocumentOp writes the flow row, exactly one'
         'current',
     );
     assert.equal(written.name, 'Renamed');
-    const flow = await db.flows.getById('flow-op-1');
-    assert.equal(flow.name, 'Renamed');
+    assert.equal(written.organization_id, '1');
     const events = await db.states.getAllFor('flow-op-1');
     assert.deepEqual(
         events.map(e => e.state), ['active', 'updated'],
     );
-    const nodes = await db.flowNodes.getAllWhere(
-        'flow_id', 'flow-op-1',
+    // Phase Final Task 2: graph relation tables stay empty
+    // (row half stripped; graphDelta lives on the pair).
+    assert.equal(
+        (await db.flowNodes.getAllWhere(
+            'flow_id', 'flow-op-1',
+        )).length,
+        0,
     );
-    assert.equal(nodes.length, 1);
-    assert.equal(nodes[0]!.id, 'n1');
     const versions = await db.flowVersions.getAll();
     assert.equal(versions.length, 0);
 });
@@ -222,10 +220,6 @@ test('postFlowDocumentOp writes the flow row, exactly one'
 test('postFlowDocumentOp with revivals posts the restored'
 + ' events (the undo decomposition parity case)', async () => {
     const db = await freshDb();
-    await db.flows.put('flow-op-2', {
-        organization_id: '1',
-        ...flowFields('Original'),
-    });
     await db.states.postEvent(
         'flow-op-2-create', 'flow-op-2', 'active',
         'current', AT,
@@ -256,12 +250,8 @@ test('postFlowDocumentOp with revivals posts the restored'
 });
 
 test('the document body carries state/state_at/graph while'
-+ ' the old-plane flow row carries none of them', async () => {
++ ' the reconstructed entity carries none of them', async () => {
     const db = await freshDb();
-    await db.flows.put('flow-op-4', {
-        organization_id: '1',
-        ...flowFields('Original'),
-    });
     await db.states.postEvent(
         'flow-op-4-create', 'flow-op-4', 'active',
         'current', AT,
@@ -273,15 +263,16 @@ test('the document body carries state/state_at/graph while'
     for (const key of ['state', 'state_at', 'graph']) {
         assert.ok(key in body, key + ' missing from wire body');
     }
-    await postFlowDocumentOp(db, 'flow-op-4', body, 'current');
-    const flow = await db.flows.getById('flow-op-4');
+    const flow = await postFlowDocumentOp(
+        db, 'flow-op-4', body, 'current',
+    );
     for (const key of [
         'state', 'state_at', 'state_event_id',
         'graph', 'graphDelta', 'revivals',
     ]) {
         assert.ok(
             !(key in flow),
-            'flows row must not carry ' + key,
+            'reconstructed entity must not carry ' + key,
         );
     }
 });
@@ -822,7 +813,12 @@ async () => {
         'exactly one pair may follow the pre-race head',
     );
 
-    const flow = await db.flows.getById('flow-race-1');
+    // Phase Final Task 2: flow name lives on the pair plane.
+    const got = await handleRequest(
+        db, req('GET', '/flows/flow-race-1', token),
+    );
+    assert.equal(got.status, 200);
+    const flow = await got.json() as { name: string };
     if (flow.name === 'Fresh Flow') {
         // Undo won the race, reverting all the way back to
         // genesis (the only pair before "Before Race"); the

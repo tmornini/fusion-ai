@@ -16,6 +16,7 @@ import {
     deriveBaselineScores,
     deriveActualScores,
 } from '../api/derive-project-scores.ts';
+import { deriveFlows } from '../api/derive-flows.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
     '../api/mock-data/seed-constants.ts';
@@ -65,8 +66,8 @@ async () => {
 test('each org owns at least one of every org-scoped'
     + ' entity', async () => {
     const { db } = await seed();
-    // Phase Final Task 2: ideas + projects derive from the
-    // pair plane (row halves stripped).
+    // Phase Final Task 2: ideas + projects + flows derive
+    // from the pair plane (row halves stripped).
     for (const organization of [
         ORGANIZATION_ONE, ORGANIZATION_TWO,
     ]) {
@@ -82,13 +83,19 @@ test('each org owns at least one of every org-scoped'
             projects.length >= 1,
             `org ${organization} owns no projects`,
         );
+        const flows = await deriveFlows(db, organization);
+        assert.ok(
+            flows.length >= 1,
+            `org ${organization} owns no flows`,
+        );
     }
     const tables = {
-        flows: await db.flows.getAll(),
         records: await db.records.getAll(),
         objectives: await db.objectives.getAll(),
     };
-    for (const organization of [ORGANIZATION_ONE, ORGANIZATION_TWO]) {
+    for (const organization of [
+        ORGANIZATION_ONE, ORGANIZATION_TWO,
+    ]) {
         for (const [name, rows] of Object.entries(tables)) {
             const owned = rows.filter(
                 r => r.organization_id === organization);
@@ -147,9 +154,15 @@ async () => {
 test('every flow_records row joins same-org flow and'
     + ' record', async () => {
     const { db } = await seed();
-    const flowOrganization = new Map(
-        (await db.flows.getAll())
-            .map(f => [f.id, f.organization_id]));
+    // Phase Final Task 2: flows from the pair plane.
+    const flowOrganization = new Map<string, string>();
+    for (const organization of [
+        ORGANIZATION_ONE, ORGANIZATION_TWO,
+    ]) {
+        for (const f of await deriveFlows(db, organization)) {
+            flowOrganization.set(f.id, organization);
+        }
+    }
     const recordOrganization = new Map(
         (await db.records.getAll())
             .map(r => [r.id, r.organization_id]));
