@@ -17,6 +17,14 @@ import {
     validateStateFieldValueEntity,
     validateStateEntity,
 } from '../api/validators.ts';
+import {
+    deriveIdea,
+    deriveIdeas,
+    deriveIdeaSubmissions,
+} from '../api/derive-ideas.ts';
+import { buildIdeas } from '../api/mock-data/ideas.ts';
+import { assignOrganization } from
+    '../api/mock-data/seed-constants.ts';
 
 // Entity validators take Omit<T, 'id'> and reject an extra
 // "id" key, so strip the id before validating each row.
@@ -48,15 +56,12 @@ const TABLES: ReadonlyArray<[
         validateHumanMemberEntity],
     ['aiMembers', d => d.aiMembers.getAll(),
         validateAIMemberEntity],
-    ['ideas', d => d.ideas.getAll(),
-        validateIdeaEntity],
+    // ideas + ideaSubmissions re-homed below (Phase Final
+    // Task 2: seed row halves stripped; derive plane).
     ['projects', d => d.projects.getAll(),
         validateProjectEntity],
     ['flows', d => d.flows.getAll(),
         validateFlowEntity],
-    ['ideaSubmissions',
-        d => d.ideaSubmissions.getAll(),
-        validateIdeaSubmissionEntity],
     ['projectFlows', d => d.projectFlows.getAll(),
         validateProjectFlowEntity],
     ['workOrders', d => d.workOrders.getAll(),
@@ -99,6 +104,53 @@ for (const [name, getAll, validate] of TABLES) {
         },
     );
 }
+
+// Phase Final Task 2: ideas(+idea_submissions) seed row halves
+// stripped — validate the derived plane (pair-plane truth).
+test('mock-data seeds non-empty derived ideas per org',
+async () => {
+    const db = await seededDb();
+    for (const organization of ['1', '2']) {
+        const ideas = await deriveIdeas(db, organization);
+        assert.ok(
+            ideas.length > 0,
+            'ideas empty in org ' + organization,
+        );
+        for (const idea of ideas) {
+            assert.doesNotThrow(
+                () => validateIdeaEntity(withoutId(idea)),
+                'idea ' + idea.id,
+            );
+        }
+    }
+});
+
+test('mock-data derived idea submissions pass validator',
+async () => {
+    const db = await seededDb();
+    const seeds = buildIdeas().map((idea, index) => ({
+        id: idea.id,
+        organization: assignOrganization(index),
+    }));
+    let total = 0;
+    for (const { id, organization } of seeds) {
+        const subs = await deriveIdeaSubmissions(
+            db, organization, id,
+        );
+        total += subs.length;
+        for (const sub of subs) {
+            assert.doesNotThrow(
+                () => validateIdeaSubmissionEntity(
+                    withoutId(sub),
+                ),
+                'submission ' + sub.id,
+            );
+        }
+        // Per-idea deriveIdea also validates single-get path.
+        await deriveIdea(db, organization, id);
+    }
+    assert.ok(total > 0, 'no derived idea submissions');
+});
 
 // The Office of Time: every persisted `at` is 6-digit
 // microsecond zulu (SCHEMA.md). The append-only `states` log is

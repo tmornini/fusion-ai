@@ -249,9 +249,9 @@ export { param, requireOrganization, withoutId };
 // Decision 7 state-in-entity (Phase 2/3): the PUT body is the
 // FULL document — the entity's own fields plus the state trio —
 // validated once at the gate (documentWriteResponseSpec, via
-// validateDocument). The op DECOMPOSES it: the old-plane row and
-// the states event write land separately, in the SAME
-// transaction, so the row stays byte-identical to today. Genesis
+// validateDocument). Phase Final Task 2: the ideas ROW half is
+// stripped; the pair + states.postEvent land in ONE transaction
+// (states row half strips with the states-trace group). Genesis
 // is head-presence-defined — a fresh id's PUT simply finds no
 // head, so it authors like any other transition.
 //
@@ -1184,21 +1184,12 @@ function documentOperationOrganization(
 // edit, and transition — genesis is head-presence-defined (a
 // fresh id's PUT simply finds no head, so the ternary below
 // falls to `actor`, authoring the birth like any other
-// transition). The idea row and its trio's state event commit
-// as ONE transaction — a mid-write failure rolls the whole
-// thing back rather than leaving a half-written document.
-// validateIdeaDocumentBody's typed `entity` never carries
-// organization_id (the org-scoped store stamps it from the
-// verified token for the LIVE, fenced route, overwriting
-// whatever it finds regardless); the seed's below-facade call
-// (api/mock-data.ts, no gate, no scoping wrapper) drives a RAW
-// store that has no such stamp, so it embeds organization_id in
-// the raw body and this op reads it straight back to merge it
-// in — inert for the fenced route (overwritten either way),
-// load-bearing for the seed. Exported so the seed can drive
-// idea creation through the same op the route uses (Decision
-// 6's below-facade carve-out) — this is also Phase 1's
-// dual-write insertion seam. `pair` is optional so the seed's
+// transition). Phase Final Task 2: the ideas ROW half is
+// stripped — the pair + states.postEvent commit as ONE
+// transaction (states row half strips with the states-trace
+// group). WRITE_RESPONSE_SPECS successBody forms the wire
+// bytes; the reconstructed return is for below-facade callers
+// and type parity. `pair` is optional so the seed's
 // below-facade call keeps compiling unchanged; the route always
 // supplies one, since 'ideas/:id' is pair-wired and never
 // bearer-exempt.
@@ -1210,8 +1201,12 @@ export async function postIdeaDocumentOp(
     pair?: MessagePair,
 ): Promise<IdeaEntity> {
     const doc = validateIdeaDocumentBody(withoutId(body));
+    const entity = {
+        ...doc.entity,
+        ...documentOperationOrganization(body),
+    } as unknown as Omit<IdeaEntity, 'id'>;
     return db.transaction(
-        ['ideas', 'states', 'requests', 'responses'],
+        ['states', 'requests', 'responses'],
         async (view) => {
             const head = await documentStateHeadFor(view, id);
             const memberId = (
@@ -1220,13 +1215,6 @@ export async function postIdeaDocumentOp(
                 && head.state === doc.state
                 && head.at === doc.state_at
             ) ? head.member_id : actor;
-            const written = await view.ideas.put(
-                id,
-                {
-                    ...doc.entity,
-                    ...documentOperationOrganization(body),
-                } as unknown as Omit<IdeaEntity, 'id'>,
-            );
             await view.states.postEvent(
                 doc.state_event_id, id, doc.state,
                 memberId, doc.state_at,
@@ -1234,7 +1222,7 @@ export async function postIdeaDocumentOp(
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return { id, ...entity };
         },
     );
 }
@@ -1400,11 +1388,12 @@ export async function postRecordAttributeDocumentOp(
 
 // Idea submission write: a genesis-only document address (an
 // idea is submitted once per sid; no edit/transition case
-// exists for this family) — the idea_submissions row and its
-// message pair commit as ONE transaction. Exported so the seed
-// can drive submission creation through the same op the route
-// uses (Decision 6's below-facade carve-out), exactly as
-// postIdeaDocumentOp does for ideas themselves. `pair` is
+// exists for this family). Phase Final Task 2: the
+// idea_submissions ROW half is stripped — pure pair-plane
+// write (postFlowTagDocumentOp shape). WRITE_RESPONSE_SPECS
+// successBody forms the wire bytes. Exported so the seed can
+// drive submission creation through the same op the route
+// uses (Decision 6's below-facade carve-out). `pair` is
 // optional so a future below-facade caller with no pair keeps
 // compiling; the live route always supplies one, since
 // 'ideas/:id/submissions/:sid' is pair-wired and never
@@ -1415,18 +1404,15 @@ export async function postIdeaSubmissionOp(
     body: Record<string, unknown>,
     pair?: MessagePair,
 ): Promise<IdeaSubmissionEntity> {
+    const entity = withoutId(body) as unknown as
+        Omit<IdeaSubmissionEntity, 'id'>;
     return db.transaction(
-        ['idea_submissions', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.ideaSubmissions.put(
-                sid,
-                withoutId(body) as unknown as
-                    Omit<IdeaSubmissionEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return { id: sid, ...entity };
         },
     );
 }
@@ -3211,16 +3197,15 @@ export async function postIdentityProviderDocumentOp(
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
-// what the transaction actually writes (pinned by
-// tests/api-shadow-ledger-ideas.test.ts: each 200 route's wire
-// body deep-equals a direct domain read taken afterward). A
-// pattern absent here, or present with no successBody, returns
-// 204 with no body. Keyed by route pattern, not verb — but
-// ONLY for the pattern's PUT or POST verb: a DELETE on a wired
-// pattern never consults this map (the gate hardcodes 204 for
-// every DELETE — see api/api.ts), so a pattern that carries
-// both a PUT (200, its written row) and a DELETE (204) needs
-// exactly one entry here, describing the PUT alone.
+// the pair plane's stored response (WRITE_RESPONSE_SPECS +
+// responseFromStored). A pattern absent here, or present with
+// no successBody, returns 204 with no body. Keyed by route
+// pattern, not verb — but ONLY for the pattern's PUT or POST
+// verb: a DELETE on a wired pattern never consults this map
+// (the gate hardcodes 204 for every DELETE — see api/api.ts),
+// so a pattern that carries both a PUT (200, its written row)
+// and a DELETE (204) needs exactly one entry here, describing
+// the PUT alone.
 export interface WriteResponseSpec {
     readonly status: number;
     readonly successBody?: (
@@ -4618,9 +4603,13 @@ export const routes: Route[] = [
                     ));
                 }
             }
+            // Phase Final Task 2: idea ROW half stripped; project
+            // + baseline row halves stay until their family
+            // groups. Idea 'promoted' still posts a states event
+            // until the states-trace strip.
             return db.transaction(
                 [
-                    'projects', 'ideas', 'states',
+                    'projects', 'states',
                     'project_objective_baseline_scores',
                     'requests', 'responses',
                 ],
@@ -4629,11 +4618,6 @@ export const routes: Route[] = [
                         b.projectId,
                         b.project as unknown as
                             Omit<ProjectEntity, 'id'>,
-                    );
-                    await view.ideas.put(
-                        ideaId,
-                        b.idea as unknown as
-                            Omit<IdeaEntity, 'id'>,
                     );
                     await view.states.postEvent(
                         b.ideaStateEventId,

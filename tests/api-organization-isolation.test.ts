@@ -119,8 +119,22 @@ async () => {
             state_event_id: 'ev-a2',
         }));
     assert.equal(res.status, 200);
-    const stored = await db.ideas.getById('a2');
-    assert.equal(stored.organization_id, 'A');
+    // Phase Final Task 2: ideas row half stripped — org stamp
+    // is on the wire/pair plane (WRITE_RESPONSE_SPECS), not a
+    // row. GET re-derives organization_id from the bound org.
+    const wire = await res.json() as {
+        organization_id: string;
+    };
+    assert.equal(wire.organization_id, 'A');
+    const getRes = await handleRequest(db, req(
+        'GET', '/organizations/A/ideas/a2',
+        await devToken('current'),
+    ));
+    assert.equal(getRes.status, 200);
+    const got = await getRes.json() as {
+        organization_id: string;
+    };
+    assert.equal(got.organization_id, 'A');
 });
 
 test('enumerate returns only the caller member orgs',
@@ -899,8 +913,14 @@ async () => {
     assert.equal(mine.status, 200);
     const mineRows = await mine.json() as { id: string }[];
     assert.ok(mineRows.length >= 1);
-    // iB exists, but A does not own it — the history-leak bug.
-    assert.equal((await db.ideas.getById('iB')).id, 'iB');
+    // iB exists on the pair plane (seedChain PUT), but A does
+    // not own it — the history-leak bug. Phase Final Task 2:
+    // no ideas row to assert; B-org GET proves presence.
+    const bOwns = await handleRequest(db, req(
+        'GET', '/organizations/B/ideas/iB',
+        await organizationToken('pb', 'B'),
+    ));
+    assert.equal(bOwns.status, 200);
     const foreign = await facadeGet(
         db, '/entity-states/iB/history');
     assert.equal(foreign.status, 404);

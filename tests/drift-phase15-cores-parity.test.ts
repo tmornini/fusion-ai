@@ -46,6 +46,7 @@ import { organizationScopedAdapter } from
 import {
     validateWorkOrderFlowGraphJson,
 } from '../api/validators.ts';
+import { deriveIdeas } from '../api/derive-ideas.ts';
 import {
     latestClaimEvent,
     isClaimEventExpired,
@@ -882,18 +883,25 @@ async () => {
         };
     }
 
-    const ideas = await db.ideas.getAll();
+    // Phase Final Task 2: ideas seed row half stripped —
+    // load ideas from the pair plane. Dual-write agreement
+    // no longer holds for ideas (row plane empty); pair-plane
+    // ownership still resolves.
+    const ideasStark = await deriveIdeas(
+        db, STARK_ORGANIZATION,
+    );
+    const ideasTwo = await deriveIdeas(
+        db, ORGANIZATION_TWO,
+    );
     const records = await db.records.getAll();
     const flows = await db.flows.getAll();
     const nodes = await db.flowNodes.getAll();
     const memberships = await db.memberships.getAll();
 
-    const ideaStark = ideas.find(
-        (r) => r.organization_id === STARK_ORGANIZATION,
-    )!;
-    const ideaTwo = ideas.find(
-        (r) => r.organization_id === ORGANIZATION_TWO,
-    )!;
+    const ideaStark = ideasStark[0]!;
+    const ideaTwo = ideasTwo[0]!;
+    assert.ok(ideaStark, 'stark ideas non-empty');
+    assert.ok(ideaTwo, 'org-two ideas non-empty');
     const recordStark = records.find(
         (r) => r.organization_id === STARK_ORGANIZATION,
     )!;
@@ -907,9 +915,28 @@ async () => {
         (m) => m.organization_id === STARK_ORGANIZATION,
     )!;
 
-    // Dual-write agreement across bound orgs.
+    // Pair-plane ownership for stripped ideas family.
+    for (const [entityId, owner] of [
+        [ideaStark.id, STARK_ORGANIZATION],
+        [ideaTwo.id, ORGANIZATION_TWO],
+    ] as const) {
+        const own = await bothPlanes(entityId, owner);
+        assert.equal(own.pair, owner);
+        assert.equal(own.row, null);
+        const foreignBound = owner === STARK_ORGANIZATION
+            ? ORGANIZATION_TWO
+            : STARK_ORGANIZATION;
+        const foreign = await bothPlanes(
+            entityId, foreignBound,
+        );
+        assert.equal(foreign.pair, owner);
+        assert.equal(foreign.row, null);
+    }
+
+    // Dual-write agreement across bound orgs (families that
+    // still dual-write their rows).
     for (const entityId of [
-        ideaStark.id, ideaTwo.id, recordStark.id,
+        recordStark.id,
         flowStark.id, nodeStark.id,
         memberStark.identity_id,
     ]) {

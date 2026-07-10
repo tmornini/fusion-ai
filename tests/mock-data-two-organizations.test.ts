@@ -6,6 +6,13 @@ import {
     currentRolesForInOrganization,
 } from '../api/authorization.ts';
 import { verifyPassword } from '../shared/password-hash.ts';
+import {
+    deriveIdeas,
+    deriveIdeaSubmissions,
+} from '../api/derive-ideas.ts';
+import { buildIdeas } from '../api/mock-data/ideas.ts';
+import { assignOrganization } from
+    '../api/mock-data/seed-constants.ts';
 
 const ORGANIZATION_ONE = '1';
 const ORGANIZATION_TWO = '2';
@@ -52,8 +59,18 @@ async () => {
 test('each org owns at least one of every org-scoped'
     + ' entity', async () => {
     const { db } = await seed();
+    // Phase Final Task 2: ideas derive from the pair plane
+    // (row half stripped). Other families still row-plane.
+    for (const organization of [
+        ORGANIZATION_ONE, ORGANIZATION_TWO,
+    ]) {
+        const ideas = await deriveIdeas(db, organization);
+        assert.ok(
+            ideas.length >= 1,
+            `org ${organization} owns no ideas`,
+        );
+    }
     const tables = {
-        ideas: await db.ideas.getAll(),
         projects: await db.projects.getAll(),
         flows: await db.flows.getAll(),
         records: await db.records.getAll(),
@@ -137,9 +154,13 @@ test('every flow_records row joins same-org flow and'
 test('every idea submission names a submitter in its'
     + " idea's org", async () => {
     const { db } = await seed();
+    // Phase Final Task 2: derive ideas + submissions (row
+    // halves stripped).
     const ideaOrganization = new Map(
-        (await db.ideas.getAll())
-            .map(i => [i.id, i.organization_id]));
+        buildIdeas().map((idea, index) => [
+            idea.id, assignOrganization(index),
+        ]),
+    );
     const memberOrganizations = new Map<string, Set<string>>();
     for (const m of await db.memberships.getAll()) {
         const set = memberOrganizations.get(m.identity_id)
@@ -148,14 +169,19 @@ test('every idea submission names a submitter in its'
         memberOrganizations.set(m.identity_id, set);
     }
     const violations: string[] = [];
-    for (const s of await db.ideaSubmissions.getAll()) {
-        const organization = ideaOrganization.get(s.idea_id);
-        const organizations = memberOrganizations.get(s.member_id)
-            ?? new Set<string>();
-        if (organization === undefined || !organizations.has(organization)) {
-            violations.push(
-                s.id + ': ' + s.member_id
-                + ' not in idea org ' + organization);
+    for (const [ideaId, organization] of ideaOrganization) {
+        const subs = await deriveIdeaSubmissions(
+            db, organization, ideaId,
+        );
+        for (const s of subs) {
+            const organizations =
+                memberOrganizations.get(s.member_id)
+                    ?? new Set<string>();
+            if (!organizations.has(organization)) {
+                violations.push(
+                    s.id + ': ' + s.member_id
+                    + ' not in idea org ' + organization);
+            }
         }
     }
     assert.deepEqual(

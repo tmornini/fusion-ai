@@ -183,8 +183,16 @@ async () => {
         ideaDocument('B-new', 'ev-idea-b'),
     ));
     assert.equal(res.status, 200);
-    const row = await db.ideas.getById('idea-b-genesis');
-    assert.equal(row.organization_id, ORGANIZATION_B);
+    // Phase Final Task 2: ideas row half stripped — org stamp
+    // rides WRITE_RESPONSE_SPECS / derive GET, not the row.
+    const getRes = await handleRequest(db, req(
+        'GET', '/ideas/idea-b-genesis', tokenB,
+    ));
+    assert.equal(getRes.status, 200);
+    const wire = await getRes.json() as {
+        organization_id: string;
+    };
+    assert.equal(wire.organization_id, ORGANIZATION_B);
 });
 
 test('foreign-id DELETE records/:id 404s', async () => {

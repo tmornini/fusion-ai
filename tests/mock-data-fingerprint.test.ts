@@ -42,7 +42,9 @@ const EXPECTED: Record<string, TableFingerprint> = {
     'role_grants': { count: 12, hash: '4b2311dd' },
     'clients': { count: 0, hash: '811c9dc5' },
     'identity_providers': { count: 0, hash: '811c9dc5' },
-    'ideas': { count: 11, hash: 'bd305274' },
+    // ideas + idea_submissions RETIRED (Phase Final Task 2):
+    // seed row halves stripped; pairs stay at EXPECTED_PAIR_COUNT
+    // 1513. Tables empty until Stage B deletion.
     'projects': { count: 17, hash: '0a37ad51' },
     'flows': { count: 5, hash: '96b40589' },
     'flow_versions': { count: 0, hash: '811c9dc5' },
@@ -60,7 +62,6 @@ const EXPECTED: Record<string, TableFingerprint> = {
     'organizations': { count: 2, hash: 'e13d8f06' },
     'memberships': { count: 16, hash: '2e3db33e' },
     'invitations': { count: 0, hash: '811c9dc5' },
-    'idea_submissions': { count: 11, hash: '30925c13' },
     'objectives': { count: 5, hash: '67473fdc' },
     'objective_revisions': { count: 5, hash: 'dd09a688' },
     'project_objective_baseline_scores':
@@ -83,8 +84,13 @@ const EXPECTED: Record<string, TableFingerprint> = {
 // tests/mock-data-pairs.test.ts. The reserved schema-version
 // marker (Phase 12 Task 6) is excluded too — it is a scalar,
 // not a row array, so `rows.map` below would throw on it.
+// ideas + idea_submissions excluded with Phase Final Task 2
+// seed row-half strip (EXPECTED rows retired; tables empty
+// until Stage B deletion; pair-plane pins live in
+// mock-data-pairs.test.ts).
 const EXCLUDED_TABLES = new Set([
     'requests', 'responses', SNAPSHOT_SCHEMA_VERSION_KEY,
+    'ideas', 'idea_submissions',
 ]);
 
 async function seededFingerprint(): Promise<
