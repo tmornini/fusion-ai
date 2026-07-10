@@ -243,13 +243,18 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     assert.equal(stateAppend.status, 200);
 
     // A FAILED write: a state ledger conflict (org 1) — must
-    // add nothing to either table.
-    await db.states.put('inv-ev-conflict', {
-        entity_id: 'other',
-        state: 'active',
-        member_id: 'current',
-        at: '2020-01-01T00:00:00.000000Z',
-    });
+    // add nothing to either table. Seed the prior event through
+    // the live PUT so both pair and row planes exist (Phase
+    // Final Task 1(b) canary: row-conflict with pair-absent is
+    // a 500 alarm, not a 409).
+    const prior = await handleRequest(db, req(
+        'PUT', '/states/inv-ev-conflict', org1Token, {
+            entity_id: 'other',
+            state: 'active',
+            at: '2020-01-01T00:00:00.000000Z',
+        },
+    ));
+    assert.equal(prior.status, 200);
     const failed = await handleRequest(db, req(
         'PUT', '/states/inv-ev-conflict', org1Token, {
             entity_id: 'inv-idea-1',

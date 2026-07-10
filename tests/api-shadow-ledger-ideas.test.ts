@@ -283,13 +283,17 @@ async () => {
         },
     ));
     // One failed write in the mix — a state ledger conflict —
-    // must not disturb the invariant.
-    await db.states.put('ev-conflict', {
-        entity_id: 'other',
-        state: 'active',
-        member_id: 'current',
-        at: '2020-01-01T00:00:00.000000Z',
-    });
+    // must not disturb the invariant. Seed the prior event
+    // through the live PUT so both planes exist (Phase Final
+    // Task 1(b) canary: row-conflict with pair-absent alarms).
+    const prior = await handleRequest(db, req(
+        'PUT', '/states/ev-conflict', token, {
+            entity_id: 'other',
+            state: 'active',
+            at: '2020-01-01T00:00:00.000000Z',
+        },
+    ));
+    assert.equal(prior.status, 200);
     const failed = await handleRequest(db, req(
         'PUT', '/states/ev-conflict', token, {
             entity_id: 'idea-7',

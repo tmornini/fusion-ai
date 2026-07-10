@@ -5762,11 +5762,24 @@ export const routes: Route[] = [
                         }
                     }
                     // Strangler agreement: when both planes
-                    // hold an opinion they must match.
+                    // hold an opinion they must match. Phase
+                    // Final Task 1(b) canary ALSO alarms on
+                    // row-conflict with pair-absent — a
+                    // states row with no matching pair (pre-
+                    // strangler vintage). True for the seed
+                    // pipeline; existing dev origins reseed-
+                    // resolve. Strip of the row half depends
+                    // on this premise.
                     if (
-                        pairCollision !== 'absent'
-                        && rowCollision !== 'absent'
-                        && pairCollision !== rowCollision
+                        (
+                            pairCollision !== 'absent'
+                            && rowCollision !== 'absent'
+                            && pairCollision !== rowCollision
+                        )
+                        || (
+                            rowCollision === 'conflict'
+                            && pairCollision === 'absent'
+                        )
                     ) {
                         throw new Error(
                             'state event immutability planes'
