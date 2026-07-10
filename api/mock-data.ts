@@ -113,9 +113,6 @@ import {
     bootstrapMembershipId,
     bootstrapRoleGrantId,
     bootstrapSystemStateEventId,
-    bootstrapDefaultOrganizationEventId,
-    defaultOrganizationSeedEventId,
-    memberPrimaryOrganization,
     humanMemberPiiSeedBody,
     bootstrapCurrentMemberPiiBody,
     roleGrantSeedBody,
@@ -223,12 +220,12 @@ async function seedHumanCredentials(
         { id: systemCredentialId, secret: systemSecret },
         requestAt,
     );
-    // Pass 2: the widened tx — row ops only, each paired with its
-    // pre-formed pass-1 pair via postIdentityCredentialDocumentOp,
-    // the SAME extracted op every live PUT
+    // Pass 2: pair-plane only (Phase Final Task 2 stripped the
+    // identity_credentials ROW half). postIdentityCredential
+    // DocumentOp is the SAME op every live PUT
     // identities/:id/credentials/:cid rides.
     await adapter.transaction(
-        ['identity_credentials', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
             await Promise.all([
                 ...planned.map(cred =>
@@ -236,7 +233,8 @@ async function seedHumanCredentials(
                         view,
                         cred.id,
                         identityCredentialSeedBody(
-                            cred.identityId, 'password', cred.secret,
+                            cred.identityId, 'password',
+                            cred.secret,
                         ),
                         SYSTEM_MEMBER_ID,
                         requirePair(
@@ -349,20 +347,8 @@ async function postMockDataLoadIn(
                             ),
                         ),
                     )),
-                // Task 8 (Phase 11): the row itself STAYS RAW
-                // (Path A) — the SAME direct put as before — but
-                // now forms its OWN message pair beside it,
-                // closing the identity_default_organizations
-                // family's last deferral.
-                adapter.identityDefaultOrganizations.put(
-                    defaultOrganizationSeedEventId(member.id), {
-                        identity_id: member.id,
-                        organization_id:
-                            memberPrimaryOrganization(
-                                member.id, index,
-                            ),
-                        at: MOCK_SEED_TIMESTAMP,
-                    }),
+                // Phase Final Task 2: identity_default_
+                // organizations ROW half stripped — pair only.
                 appendMessagePair(
                     adapter,
                     requirePair(
@@ -1268,16 +1254,8 @@ async function postBootstrapIn(
             SYSTEM_MEMBER_ID,
             membershipPair,
         ),
-        // Task 8 (Phase 11): the row itself STAYS RAW (Path A) —
-        // the SAME direct put as before — but now forms its OWN
-        // message pair beside it, mirroring the mock-data seed's
-        // own per-member sites.
-        adapter.identityDefaultOrganizations.put(
-            bootstrapDefaultOrganizationEventId, {
-                identity_id: 'current',
-                organization_id: STARK_ORGANIZATION,
-                at: MOCK_SEED_TIMESTAMP,
-            }),
+        // Phase Final Task 2: identity_default_organizations
+        // ROW half stripped — pair only.
         appendMessagePair(adapter, defaultOrganizationPair),
         // The 'current' human member row shares its shape
         // with postMockDataLoadIn's human-member seed —

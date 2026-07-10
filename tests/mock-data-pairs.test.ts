@@ -31,6 +31,8 @@ import {
     MOCK_SEED_TIMESTAMP,
 } from '../api/mock-data/seed-constants.ts';
 import { SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { deriveRoleGrant } from
+    '../api/derive-identity-spine.ts';
 
 // Task 4: the seed's pair-wired op-invocations (human-members,
 // ideas, idea-submissions, flows, ai-members, records,
@@ -119,13 +121,12 @@ import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 // system actor's 'active' event — bootstrap forms its OWN mirror
 // of this ONE event separately, counted in the bootstrap pair
 // count below, never here) + 11 identity-default-organization
-// pairs (Phase 11 Task 8: the identity_default_organizations
-// family closes its own LAST "STAYS RAW" deferral — one
-// event-append pair per seeded human member, formed at its own
-// identity-keyed /identities/:id/default-org/ address; Path A —
-// the row itself stays the SAME direct
-// adapter.identityDefaultOrganizations.put, untouched) =
-// 1513. A dropped or reordered invocation changes this count.
+// pairs (Phase 11 Task 8: one event-append pair per seeded
+// human member at its identity-keyed
+// /identities/:id/default-org/ address; Phase Final Task 2
+// strips the identity_default_organizations ROW half — pairs
+// alone remain) = 1513. A dropped or reordered invocation
+// changes this count.
 const EXPECTED_PAIR_COUNT = 1513;
 
 test('a mock-data seed populates balanced pairs',
@@ -884,16 +885,16 @@ test('a seeded credential\'s response body carries the full'
 });
 
 test('a seeded role grant\'s response body organization_id'
-+ ' matches the row it was actually granted for (Phase 10'
-+ ' Task 6 — the org-stamp regression no fingerprint pin'
-+ ' catches, since requests/responses are excluded'
-+ ' tables)', async () => {
++ ' matches the derived grant (Phase 10 Task 6 org-stamp'
++ ' regression; Phase Final Task 2 strips role_grants ROW'
++ ' half — oracle is the pair plane)', async () => {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
     const id = 'seed-role-current-admin-org2';
-    const row = await db.roleGrants.getById(id);
-    assert.ok(row, 'no role grant row for ' + id);
-    assert.equal(row!.organization_id, ORGANIZATION_TWO);
+    // Phase Final Task 2: role_grants empty after strip.
+    assert.equal((await db.roleGrants.getAll()).length, 0);
+    const grant = await deriveRoleGrant(db, id);
+    assert.equal(grant.organization_id, ORGANIZATION_TWO);
     const requests = await db.requests.getAll();
     const requestRow = requests.find(r => r.uri_id === id);
     assert.ok(requestRow, 'no request row for ' + id);
@@ -906,7 +907,7 @@ test('a seeded role grant\'s response body organization_id'
         body: Record<string, unknown>;
     };
     assert.equal(
-        embedded.body.organization_id, row!.organization_id,
+        embedded.body.organization_id, grant.organization_id,
     );
 });
 

@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { adminContext } from './context-fixtures.ts';
+import { deriveIdentityPii } from
+    '../api/derive-identity-spine.ts';
 import {
     postHumanMemberCreation,
     postHumanMemberStateChange,
@@ -52,9 +54,10 @@ test(
             'members/w1',
         );
         assert.equal(row.type, 'human');
-        const pii =
-            await db.identityPii.getById('w1');
+        // Phase Final Task 2: identity_pii ROW half stripped.
+        const pii = await deriveIdentityPii(db, 'w1');
         assert.equal(pii.name, 'Alice');
+        assert.equal((await db.identityPii.getAll()).length, 0);
         const events = await db.states.getAllFor('w1');
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');

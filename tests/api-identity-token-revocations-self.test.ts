@@ -65,10 +65,19 @@ async () => {
     assert.deepEqual(await res.json(), {
         id: 'self-rev-1', identity_id: 'member1', at,
     });
-    const row = await db.identityTokenRevocations.getById(
-        'self-rev-1');
+    // Phase Final Task 2: identity_token_revocations ROW half
+    // stripped — pair plane is the oracle.
+    const { deriveTokenRevocation } = await import(
+        '../api/derive-identity-spine.ts'
+    );
+    const row = await deriveTokenRevocation(
+        db, 'self-rev-1');
     assert.deepEqual(
         row, { id: 'self-rev-1', identity_id: 'member1', at },
+    );
+    assert.equal(
+        (await db.identityTokenRevocations.getAll()).length,
+        0,
     );
     const requests = await db.requests.getAll();
     const own = requests.find(
@@ -133,10 +142,14 @@ test('a member PUT identity-token-revocations/:id naming'
             + ' /identity-token-revocations/foreign-rev-1'
             + ' requires a role this principal lacks',
     });
-    await assert.rejects(
-        () => db.identityTokenRevocations.getById(
-            'foreign-rev-1'),
-        (err: unknown) => err instanceof EntityNotFoundError,
+    // Phase Final Task 2: row half stripped — prove no pair
+    // landed either (row plane is always empty post-strip).
+    const requests = await db.requests.getAll();
+    assert.equal(
+        requests.filter(
+            r => r.uri_id === 'foreign-rev-1',
+        ).length,
+        0,
     );
 });
 

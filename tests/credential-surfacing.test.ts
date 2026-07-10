@@ -7,18 +7,19 @@ import {
     type SeededCredentials,
 } from '../api/mock-data.ts';
 import { verifyPassword } from '../shared/password-hash.ts';
+import { deriveCredentialsFor } from
+    '../api/derive-identity-spine.ts';
 
 function currentReveal(creds: SeededCredentials) {
     return creds.identities.find(
         c => c.identityId === 'current');
 }
 
+// Phase Final Task 2: identity_credentials ROW half stripped —
+// admin credential oracle is the pair plane.
 async function adminCredential(db: MemoryDbAdapter) {
-    const rows = await db.identityCredentials.getAll();
-    return rows.find(
-        r => r.identity_id === 'current'
-            && r.kind === 'password',
-    );
+    const rows = await deriveCredentialsFor(db, 'current');
+    return rows.find(r => r.kind === 'password');
 }
 
 test('bootstrap surfaces an admin password that verifies',
@@ -39,6 +40,9 @@ async () => {
     assert.equal(
         await verifyPassword(reveal.password, cred.secret),
         true);
+    assert.equal(
+        (await db.identityCredentials.getAll()).length, 0,
+    );
 });
 
 test('mock data surfaces a verifying admin password',

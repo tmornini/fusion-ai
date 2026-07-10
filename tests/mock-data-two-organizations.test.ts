@@ -45,6 +45,10 @@ import { deriveMembershipsForIdentity } from
     '../api/derive-memberships.ts';
 import { deriveMemberParents } from
     '../api/derive-members.ts';
+import {
+    deriveRoleGrants,
+    deriveCredentialsFor,
+} from '../api/derive-identity-spine.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
@@ -130,26 +134,20 @@ async function seed() {
 }
 
 // Phase Final Task 2: every membership document on the pair
-// plane (both orgs), keyed by identity.
+// plane (both orgs), keyed by identity. Identities ROW half
+// stripped — parents alone enumerate directory ids.
 async function membershipsByIdentity(
     db: MemoryDbAdapter,
 ): Promise<Map<string, Set<string>>> {
-    const persons = (await db.identities.getAll())
-        .map(i => i.id);
-    // Also cover AI + system identities that hold memberships.
     const parents = await deriveMemberParents(db);
-    const ids = new Set([
-        ...persons,
-        ...parents.map(m => m.id),
-    ]);
     const byIdentity = new Map<string, Set<string>>();
-    for (const identityId of ids) {
+    for (const parent of parents) {
         const rows = await deriveMembershipsForIdentity(
-            db, identityId,
+            db, parent.id,
         );
         if (rows.length === 0) continue;
         byIdentity.set(
-            identityId,
+            parent.id,
             new Set(rows.map(m => m.organization_id)),
         );
     }
@@ -171,13 +169,15 @@ async () => {
 
 test('current holds admin in both orgs', async () => {
     const { db } = await seed();
-    const grants = await db.roleGrants.getAll();
+    // Phase Final Task 2: role_grants ROW half stripped.
+    const grants = await deriveRoleGrants(db);
     assert.ok(
         currentRolesForInOrganization(grants, 'current', ORGANIZATION_ONE)
             .includes('admin'));
     assert.ok(
         currentRolesForInOrganization(grants, 'current', ORGANIZATION_TWO)
             .includes('admin'));
+    assert.equal((await db.roleGrants.getAll()).length, 0);
 });
 
 test('both organizations exist with distinct names',
@@ -316,9 +316,12 @@ test('every non-admin seeded human is single-org',
 async () => {
     const { db } = await seed();
     const byIdentity = await membershipsByIdentity(db);
-    const persons = (await db.identities.getAll())
-        .filter(i => i.kind === 'person')
-        .map(i => i.id);
+    // Phase Final Task 2: identities ROW half stripped —
+    // human parents from the pair plane.
+    const parents = await deriveMemberParents(db);
+    const persons = parents
+        .filter(m => m.type === 'human')
+        .map(m => m.id);
     for (const id of persons) {
         if (id === 'current') continue;
         const organizations = byIdentity.get(id) ?? new Set();
@@ -459,15 +462,20 @@ async () => {
     assert.ok(
         creds.identities.length >= 2,
         'multiple humans seeded');
-    const credRows = await db.identityCredentials.getAll();
+    // Phase Final Task 2: identity_credentials ROW half
+    // stripped — verify against pair-plane secrets.
     for (const c of creds.identities) {
-        const row = credRows.find(
-            r => r.identity_id === c.identityId
-                && r.kind === 'password');
-        assert.ok(row, `no password row for ${c.identityId}`);
+        const rows = await deriveCredentialsFor(
+            db, c.identityId,
+        );
+        const row = rows.find(r => r.kind === 'password');
+        assert.ok(row, `no password for ${c.identityId}`);
         assert.equal(
             await verifyPassword(c.password, row.secret),
             true);
         assert.match(c.username, /@/);
     }
+    assert.equal(
+        (await db.identityCredentials.getAll()).length, 0,
+    );
 });

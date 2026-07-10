@@ -56,25 +56,20 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 // row-plane oracle is retired. pendingInvitationFor is the
 // sole pending discovery path (pair plane).
 
-test('deriveIdentityPiiRows email match ≡ identityPii.getAll'
-+ ' email match (grantInvitation\'s email resolution)',
+test('deriveIdentityPiiRows resolves grantInvitation email'
++ ' (Phase Final Task 2: identity_pii ROW half stripped —'
++ ' pair plane is sole oracle)',
 async () => {
     const db = await seededDb();
     const email = 'sarah.chen@company.com';
-    const fromRows = (await db.identityPii.getAll())
-        .find(p => p.email === email);
     const fromPairs = (await deriveIdentityPiiRows(db))
         .find(p => p.email === email);
-    assert.ok(fromRows !== undefined);
-    assert.deepEqual(fromPairs, fromRows);
+    assert.ok(fromPairs !== undefined);
+    assert.equal(fromPairs!.email, email);
+    assert.equal((await db.identityPii.getAll()).length, 0);
 
-    // Unknown email: both planes miss.
+    // Unknown email: pair plane misses.
     const missing = 'nobody@example.invalid';
-    assert.equal(
-        (await db.identityPii.getAll())
-            .find(p => p.email === missing),
-        undefined,
-    );
     assert.equal(
         (await deriveIdentityPiiRows(db))
             .find(p => p.email === missing),

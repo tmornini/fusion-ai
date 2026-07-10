@@ -84,12 +84,18 @@ test(
         }>(db, 'human-members/w1', DEV_TOKEN);
         assert.equal(facet.title, 'Engineer');
         assert.equal(facet.department, 'Product');
-        // No PII row yet — the create body carries no pii key.
+        // No PII yet — the create body carries no pii key.
+        // Phase Final Task 2: identity_pii ROW half stripped —
+        // oracle is deriveIdentityPii.
+        const { deriveIdentityPii } = await import(
+            '../api/derive-identity-spine.ts'
+        );
         await assert.rejects(
-            () => db.identityPii.getById('w1'));
+            () => deriveIdentityPii(db, 'w1'));
         await PUT(db, 'identities/w1/pii', pii('Alice'), DEV_TOKEN);
-        const piiRow = await db.identityPii.getById('w1');
+        const piiRow = await deriveIdentityPii(db, 'w1');
         assert.equal(piiRow.name, 'Alice');
+        assert.equal((await db.identityPii.getAll()).length, 0);
         // bare entity-states/:id RETIRED (Phase 15 Task 7);
         // post-write check rides surviving /history.
         const history = await GET<{
@@ -159,7 +165,11 @@ test(
         await POST(db, 'human-members/w1', {
             detail: { ...detail(), title: 'Director' },
         }, DEV_TOKEN);
-        const piiRow = await db.identityPii.getById('w1');
+        // Phase Final Task 2: identity_pii ROW half stripped.
+        const { deriveIdentityPii } = await import(
+            '../api/derive-identity-spine.ts'
+        );
+        const piiRow = await deriveIdentityPii(db, 'w1');
         assert.equal(piiRow.name, 'Alice');
         const facet = await GET<{ title: string }>(
             db, 'human-members/w1', DEV_TOKEN);

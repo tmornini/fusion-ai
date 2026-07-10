@@ -31,25 +31,20 @@ function hashIds(ids: string[]): string {
 type TableFingerprint = { count: number; hash: string };
 
 const EXPECTED: Record<string, TableFingerprint> = {
-    'identities': { count: 16, hash: '0c164977' },
-    'identity_pii': { count: 11, hash: 'd8852be1' },
-    'identity_credentials': { count: 12, hash: '4990628d' },
-    'identity_token_revocations': { count: 0, hash: '811c9dc5' },
-    'identity_default_organizations': { count: 11, hash: 'ab3efde4' },
-    'role_grants': { count: 12, hash: '4b2311dd' },
     'clients': { count: 0, hash: '811c9dc5' },
-    'identity_providers': { count: 0, hash: '811c9dc5' },
     // ideas + idea_submissions + projects family + flows +
     // flow_versions + four graph relations + work_orders +
     // flow_work_orders + state_field_values + records +
     // record_attributes + flow_records + objectives +
     // objective_revisions + members + human_members +
-    // ai_members + memberships + invitations RETIRED
-    // (Phase Final Task 2): seed row halves stripped; pairs
-    // stay at EXPECTED_PAIR_COUNT 1513. Tables empty until
-    // Stage B deletion. SFV seed leaf pairs SURVIVE
-    // (WRS + 7 pairs). Identity spine fingerprints hold
-    // until their own strip.
+    // ai_members + memberships + invitations + identities +
+    // identity_pii + identity_credentials +
+    // identity_token_revocations +
+    // identity_default_organizations + role_grants +
+    // identity_providers RETIRED (Phase Final Task 2): seed
+    // row halves stripped; pairs stay at EXPECTED_PAIR_COUNT
+    // 1513. Tables empty until Stage B deletion. SFV seed
+    // leaf pairs SURVIVE (WRS + 7 pairs).
     'organizations': { count: 2, hash: 'e13d8f06' },
     'states': { count: 911, hash: '679a7541' },
 };
@@ -68,10 +63,10 @@ const EXPECTED: Record<string, TableFingerprint> = {
 // marker (Phase 12 Task 6) is excluded too — it is a scalar,
 // not a row array, so `rows.map` below would throw on it.
 // ideas + projects + flows + work-orders + records +
-// objectives + roster families excluded with Phase Final
-// Task 2 seed row-half strip (EXPECTED rows retired; tables
-// empty until Stage B deletion; pair-plane pins live in
-// mock-data-pairs.test.ts).
+// objectives + roster + identity spine families excluded with
+// Phase Final Task 2 seed row-half strip (EXPECTED rows
+// retired; tables empty until Stage B deletion; pair-plane
+// pins live in mock-data-pairs.test.ts).
 const EXCLUDED_TABLES = new Set([
     'requests', 'responses', SNAPSHOT_SCHEMA_VERSION_KEY,
     'ideas', 'idea_submissions',
@@ -86,6 +81,10 @@ const EXCLUDED_TABLES = new Set([
     'objectives', 'objective_revisions',
     'members', 'human_members', 'ai_members',
     'memberships', 'invitations',
+    'identities', 'identity_pii', 'identity_credentials',
+    'identity_token_revocations',
+    'identity_default_organizations',
+    'role_grants', 'identity_providers',
 ]);
 
 async function seededFingerprint(): Promise<

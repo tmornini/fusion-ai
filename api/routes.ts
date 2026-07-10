@@ -1850,22 +1850,18 @@ export async function postAiMemberCreationOp(
     );
 }
 
-// Human-member creation: identity row, initial state event,
-// and the document-pair bundle commit as ONE transaction.
-// Phase Final Task 2: members + human_members ROW halves
-// stripped; identities ROW half stays until the identity-
-// spine strip; states.postEvent stays until states-trace.
-// PII no longer lands here (Phase 10 Task 2): it enters via
-// PUT identities/:id/pii. The identity kind is a server-
-// supplied fact the handler pins. The initial event is
+// Human-member creation: initial state event and the
+// document-pair bundle commit as ONE transaction. Phase Final
+// Task 2: members + human_members + identities ROW halves
+// stripped; states.postEvent stays until states-trace. PII
+// enters via PUT identities/:id/pii. The initial event is
 // authored by the verified caller (actor), never the body.
 // Exported so the seed can drive human-member creation
 // through the same gate the route uses. `pairs` is optional
-// so the seed's below-facade shape keeps compiling; the
-// route always supplies the bundle. Create appends THREE
-// pairs (operation, member document, detail document), plus
-// a FOURTH identities/:id document IFF supplied (a human
-// member's own identity — AI create stays at three).
+// so the seed's below-facade shape keeps compiling; the route
+// always supplies the bundle. Create appends THREE pairs
+// (operation, member document, detail document), plus a
+// FOURTH identities/:id document IFF supplied.
 export async function postHumanMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
@@ -1874,16 +1870,10 @@ export async function postHumanMemberCreationOp(
 ): Promise<void> {
     const b = validateHumanMemberCreateBody(body);
     return db.transaction(
-        // Phase Final Task 2: members + human_members ROW
-        // halves stripped; identities + states stay.
-        [
-            'identities', 'states',
-            'requests', 'responses',
-        ],
+        // Phase Final Task 2: members + human_members +
+        // identities ROW halves stripped; states stays.
+        ['states', 'requests', 'responses'],
         async (view) => {
-            await view.identities.put(
-                b.id, { kind: 'person' },
-            );
             await view.states.postEvent(
                 b.initialStateEventId,
                 b.id,
@@ -1942,28 +1932,23 @@ export async function postAiMemberEditOp(
 }
 
 // Human-member edit: Phase Final Task 2 strips members +
-// human_members ROW halves; identities ROW half stays until
-// the identity-spine strip. No states interaction (an edit
-// does not move the member's lifecycle). PII changes ONLY via
-// PUT identities/:id/pii. A FOURTH identities/:id document
-// pair appends LAST IFF supplied; its body ({kind:'person'})
-// is byte-identical to create's, so it FOLDS by message_hash
-// rather than appending a second row.
+// human_members + identities ROW halves — pure pair-plane
+// write. No states interaction. PII changes ONLY via PUT
+// identities/:id/pii. A FOURTH identities/:id document pair
+// appends LAST IFF supplied; its body ({kind:'person'}) is
+// byte-identical to create's, so it FOLDS by message_hash.
 export async function postHumanMemberEditOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     pairs?: MemberWritePairs,
 ): Promise<void> {
     validateHumanMemberEditBody(body);
     return db.transaction(
-        // Phase Final Task 2: members + human_members ROW
-        // halves stripped; identities stays.
-        ['identities', 'requests', 'responses'],
+        // Phase Final Task 2: members + human_members +
+        // identities ROW halves stripped.
+        ['requests', 'responses'],
         async (view) => {
-            await view.identities.put(
-                id, { kind: 'person' },
-            );
             if (pairs !== undefined) {
                 await appendMessagePair(view, pairs.operation);
                 await appendMessagePair(
@@ -1982,38 +1967,15 @@ export async function postHumanMemberEditOp(
     );
 }
 
-// Identity creation: the identity row alone (person), OR the
-// identity row and its client_secret credential row (service)
-// as ONE transaction — a mid-write failure rolls the service
-// pair back rather than orphaning a kindless identity. A
-// person's PII no longer lands here (Phase 10 Task 2's intake
-// decomposition): it enters later via the separate PUT
-// identities/:id/pii, so a person create can never roll back on
-// a bad PII sub-object — the torn-state acceptance the phase
-// names. The identity kind is the server-supplied fact the
-// handler pins; identities/identity_credentials are GLOBAL/
-// parent-scoped stores (no org stamp), so the facet puts go
-// straight to their stores, each re-validating its own body as
-// the composing put lands. The credential's secret is hashed
-// client-side — the route touches no crypto. NO state event (an
-// identity carries no lifecycle event at creation), so the
-// handler needs no actor. The tx table set branches per mode so
-// each names exactly the tables it writes.
-// The pairs a live POST /identities create forms (Task 5): the
-// gate's own operation pair (the 204 at the identities/:id
-// address — createBodyIdField collapses POST identities and PUT
-// identities/:id onto the SAME address, the ai-members/detail-
-// document create-address-collapse precedent), and the
-// synthesized identities/:id document pair — byte-
-// indistinguishable from a live PUT there ({kind} alone) —
-// sharing that SAME address, appended after the operation pair.
-// A service ALSO forms the credential-document pair
-// (identities/:id/credentials/:cid — its OWN address; the secret
-// already arrives client-hashed), appended last. The
-// discriminated union mirrors IdentityCreatePersonBody/
-// IdentityCreateServiceBody one layer down (validators.ts) rather
-// than an optional credentialDocument field, so a person bundle
-// can never carry a stray credential pair by construction.
+// Identity creation: Phase Final Task 2 strips the
+// identities + identity_credentials ROW halves — pure
+// pair-plane write. A person's PII enters later via PUT
+// identities/:id/pii. NO state event (an identity carries
+// no lifecycle event at creation). The pairs a live POST
+// /identities forms: operation (204 at identities/:id) +
+// identities/:id document ({kind} alone). A service ALSO
+// forms the credential-document pair at
+// identities/:id/credentials/:cid, appended last.
 export type IdentityWritePairs =
     | {
         readonly kind: 'person';
@@ -2028,46 +1990,21 @@ export type IdentityWritePairs =
     };
 
 // Exported so the seed can drive identity creation through
-// the same gate the route uses (Decision 6's below-facade
-// carve-out) — this is also Phase 1's dual-write insertion
-// seam. `pairs` is optional so the seed's below-facade calls
-// (api/mock-data.ts, no gate, no pairs) keep compiling
-// unchanged; the route always supplies the bundle, since
-// 'identities' is pair-wired and never bearer-exempt. Task 5:
-// create appends the operation pair, the synthesized identities
-// document pair (+ the credential document pair for service) —
-// in that order, LAST, bundle-or-nothing.
+// the same gate the route uses. `pairs` is optional so the
+// seed's below-facade shape keeps compiling; the route always
+// supplies the bundle. Create appends operation + identity
+// document (+ credential document for service), LAST.
 export async function postIdentityCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
     pairs?: IdentityWritePairs,
 ): Promise<void> {
-    const b = validateIdentityCreateBody(body);
-    const tables = b.kind === 'person'
-        ? ['identities', 'requests', 'responses']
-        : [
-            'identities', 'identity_credentials',
-            'requests', 'responses',
-        ];
+    validateIdentityCreateBody(body);
     return db.transaction(
-        tables,
+        // Phase Final Task 2: identities + identity_credentials
+        // ROW halves stripped.
+        ['requests', 'responses'],
         async (view) => {
-            await view.identities.put(
-                b.id, { kind: b.kind },
-            );
-            if (b.kind === 'service') {
-                const { id: credId, ...fields } =
-                    b.credential as {
-                        id: string;
-                    } & Record<string, unknown>;
-                await view.identityCredentials.put(
-                    credId,
-                    fields as unknown as
-                        Omit<
-                            IdentityCredentialEntity, 'id'
-                        >,
-                );
-            }
             if (pairs !== undefined) {
                 await appendMessagePair(view, pairs.operation);
                 await appendMessagePair(
@@ -2598,182 +2535,133 @@ export async function postHumanMemberDocumentOp(
     );
 }
 
-// Identity PII document write — extracted byte-for-byte from the
-// hand-written identities/:id/pii PUT closure (the
-// postMembershipDocumentOp precedent above): an identity_pii row
-// and its pair commit as ONE transaction; no states interaction
-// (a PII write does not move the identity's own lifecycle).
-// `pair` is optional so a below-facade caller with no pair keeps
-// compiling; the live route always supplies one. `_actor` is
-// unused for the same reason postMembershipDocumentOp's is:
-// there is no state event here to author. The pair rides
-// `replacePiiSlot` (Phase 10 Task 3), not the generic
-// `appendMessagePair` — /pii is the message plane's sanctioned
-// hard-delete zone (api/pii-hard-delete.ts).
+// Identity PII document write — Phase Final Task 2: the
+// identity_pii ROW half is stripped — pure pair-plane write
+// via replacePiiSlot (hard-delete zone). No states
+// interaction. `pair` is optional so a below-facade caller
+// keeps compiling; the live route always supplies one.
+// WRITE_RESPONSE_SPECS successBody forms the wire bytes.
 export async function postIdentityPiiDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<IdentityPiiEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<IdentityPiiEntity, 'id'>;
     return db.transaction(
-        ['identity_pii', 'requests', 'responses'],
+        // Phase Final Task 2: identity_pii ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.identityPii.put(
-                id,
-                withoutId(body) as unknown as
-                    Omit<IdentityPiiEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await replacePiiSlot(view, pair.uriPrefix, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
 
-// Identity document write — extracted byte-for-byte from the
-// hand-written identities/:id PUT closure (the
-// postIdentityPiiDocumentOp precedent above): an identities row
-// and its pair commit as ONE transaction; no states interaction
-// — an edit does not move the identity's own lifecycle, since
-// the shared id's REAL states events ride the untouched states
-// plane instead (the members-family precedent: MEMBERS_WIRING's
-// shared-log-with-genesis bucket below). `pair` is optional so
-// a below-facade caller with no pair keeps compiling; the live
-// route always supplies one. `_actor` is unused for the same
-// reason postIdentityPiiDocumentOp's is: there is no state
-// event here to author.
+// Identity document write — Phase Final Task 2: the
+// identities ROW half is stripped — pure pair-plane write.
+// No states interaction. `pair` is optional so a below-
+// facade caller keeps compiling; the live route always
+// supplies one.
 export async function postIdentityDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<IdentityEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<IdentityEntity, 'id'>;
     return db.transaction(
-        ['identities', 'requests', 'responses'],
+        // Phase Final Task 2: identities ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.identities.put(
-                id,
-                withoutId(body) as unknown as
-                    Omit<IdentityEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
 
-// Identity credential document write — extracted byte-for-byte
-// from the hand-written identities/:id/credentials/:cid PUT
-// closure (the postIdentityDocumentOp precedent above): an
-// identity_credentials row and its pair commit as ONE
-// transaction; no states interaction (a credential write does
-// not move the identity's own lifecycle). `pair` is optional so
-// a below-facade caller with no pair keeps compiling; the live
-// route always supplies one. `_actor` is unused for the same
-// reason postIdentityDocumentOp's is: there is no state event
-// here to author.
+// Identity credential document write — Phase Final Task 2:
+// the identity_credentials ROW half is stripped — pure
+// pair-plane write. No states interaction. `pair` is
+// optional so a below-facade caller keeps compiling.
 export async function postIdentityCredentialDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<IdentityCredentialEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<IdentityCredentialEntity, 'id'>;
     return db.transaction(
-        ['identity_credentials', 'requests', 'responses'],
+        // Phase Final Task 2: identity_credentials ROW half
+        // stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view
-                .identityCredentials.put(
-                    id,
-                    withoutId(body) as unknown as
-                        Omit<IdentityCredentialEntity, 'id'>,
-                );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
 
-// Role grant document write — extracted byte-for-byte from the
-// hand-written role-grants/:id PUT closure (the
-// postIdentityCredentialDocumentOp precedent above): a
-// role_grants row and its pair commit as ONE transaction; no
-// states interaction (a role grant is its own ledger, not a
-// states event). The written row's organization_id is stamped
-// by the ORG-SCOPED store this transaction's `view` binds to
-// (the role-grants/:id WRITE_RESPONSE_SPECS entry re-derives the
-// SAME stamp from the fence for the wire body, untouched by this
-// extraction — see its own comment in WRITE_RESPONSE_SPECS).
-// `pair` is optional so a below-facade caller with no pair keeps
-// compiling; the live route always supplies one. `_actor` is
-// unused for the same reason postIdentityCredentialDocumentOp's
-// is: there is no state event here to author.
+// Role grant document write — Phase Final Task 2: the
+// role_grants ROW half is stripped — pure pair-plane write.
+// organization_id is stamped by WRITE_RESPONSE_SPECS from the
+// fence (never trusted client echo). `pair` is optional so a
+// below-facade caller keeps compiling.
 export async function postRoleGrantDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<RoleGrantEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<RoleGrantEntity, 'id'>;
     return db.transaction(
-        ['role_grants', 'requests', 'responses'],
+        // Phase Final Task 2: role_grants ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.roleGrants.put(
-                id,
-                withoutId(body) as unknown as
-                    Omit<RoleGrantEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
 
-// Identity provider document write — extracted byte-for-byte
-// from the hand-written identity-providers/:id PUT closure (the
-// postRoleGrantDocumentOp precedent above): an identity_providers
-// row and its pair commit as ONE transaction; no states
-// interaction (a provider link/unlink is its own ledger, not a
-// states event). `pair` is optional so a below-facade caller
-// with no pair keeps compiling; the live route always supplies
-// one. `_actor` is unused for the same reason
-// postRoleGrantDocumentOp's is: there is no state event here to
-// author. Extracted for Phase 10 Task 8 Session B, the
-// controller-sanctioned deviation mirroring Task 4's own
-// extraction: a below-facade fixture (tests/identity-fixtures.ts)
-// needs an exported op to form a pair for a raw-put row that
-// would otherwise go derivation-invisible once GET
-// identity-providers flips.
+// Identity provider document write — Phase Final Task 2: the
+// identity_providers ROW half is stripped (gate 1 DEFAULT:
+// DELETE at Stage B) — pure pair-plane write. Extracted so
+// below-facade fixtures form pairs derivation can see.
 export async function postIdentityProviderDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<IdentityProviderEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<IdentityProviderEntity, 'id'>;
     return db.transaction(
-        ['identity_providers', 'requests', 'responses'],
+        // Phase Final Task 2: identity_providers ROW half
+        // stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view
-                .identityProviders.put(
-                    id,
-                    withoutId(body) as unknown as
-                        Omit<IdentityProviderEntity, 'id'>,
-                );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
@@ -3676,12 +3564,12 @@ export const routes: Route[] = [
             postIdentityPiiDocumentOp(
                 db, param(p, 0), body, actor, pair,
             ),
-        delete: (db, p, _actor, pair) => {
-            const id = param(p, 0);
+        delete: (db, _p, _actor, pair) => {
+            // Phase Final Task 2: identity_pii ROW half
+            // stripped — pair-plane replacePiiSlot only.
             return db.transaction(
-                ['identity_pii', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
-                    await view.identityPii.delete(id);
                     if (pair !== undefined) {
                         await replacePiiSlot(
                             view, pair.uriPrefix, pair,
@@ -3841,27 +3729,19 @@ export const routes: Route[] = [
     route('identity-token-revocations/:id', {
         get: (db, p) =>
             deriveTokenRevocation(db, param(p, 0)),
-        put: (db, p, body, _actor, pair) => {
-            const id = param(p, 0);
+        put: (db, _p, body, _actor, pair) => {
+            // Phase Final Task 2: identity_token_revocations
+            // ROW half stripped — pure pair-plane write.
+            // WRITE_RESPONSE_SPECS successBody forms the wire.
+            const entity = withoutId(body) as unknown as
+                Omit<IdentityTokenRevocationEntity, 'id'>;
             return db.transaction(
-                [
-                    'identity_token_revocations',
-                    'requests', 'responses',
-                ],
+                ['requests', 'responses'],
                 async (view) => {
-                    const written = await view
-                        .identityTokenRevocations.put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<
-                                    IdentityTokenRevocationEntity,
-                                    'id'
-                                >,
-                        );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
-                    return written;
+                    return entity;
                 },
             );
         },

@@ -9,6 +9,10 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import { seedOrganizationMember } from './root-admin-fixture.ts';
+import {
+    deriveIdentityPii,
+    deriveCredentialsFor,
+} from '../api/derive-identity-spine.ts';
 
 const BASE = 'http://localhost';
 const MEMBER = 'walt';
@@ -73,17 +77,18 @@ test(
         const identity = await GET<{ kind: string }>(
             db, 'identities/p1', DEV_TOKEN);
         assert.equal(identity.kind, 'person');
-        // No PII row yet — the create body no longer carries pii.
+        // No PII yet — create body no longer carries pii.
+        // Phase Final Task 2: identity spine ROW halves stripped.
         await assert.rejects(
-            () => db.identityPii.getById('p1'));
+            () => deriveIdentityPii(db, 'p1'));
         await PUT(
             db, 'identities/p1/pii', pii('Alice'), DEV_TOKEN);
-        const piiRow = await db.identityPii.getById('p1');
+        const piiRow = await deriveIdentityPii(db, 'p1');
         assert.equal(piiRow.name, 'Alice');
         // A person carries no credential.
-        const creds = (await db.identityCredentials.getAll())
-            .filter(c => c.identity_id === 'p1');
+        const creds = await deriveCredentialsFor(db, 'p1');
         assert.equal(creds.length, 0);
+        assert.equal((await db.identityPii.getAll()).length, 0);
     },
 );
 
@@ -100,15 +105,16 @@ test(
         const identity = await GET<{ kind: string }>(
             db, 'identities/s1', DEV_TOKEN);
         assert.equal(identity.kind, 'service');
-        const cred = (await db.identityCredentials.getAll())
-            .find(c => c.identity_id === 's1');
-        assert.ok(cred, 'credential row exists');
-        assert.equal(cred.kind, 'client_secret');
+        const creds = await deriveCredentialsFor(db, 's1');
+        const cred = creds.find(c => c.kind === 'client_secret');
+        assert.ok(cred, 'credential exists on pair plane');
         assert.equal(cred.status, 'set');
         // A service carries no PII.
-        const piiRow = (await db.identityPii.getAll())
-            .find(r => r.id === 's1');
-        assert.equal(piiRow, undefined);
+        await assert.rejects(
+            () => deriveIdentityPii(db, 's1'));
+        assert.equal(
+            (await db.identityCredentials.getAll()).length, 0,
+        );
     },
 );
 
@@ -135,7 +141,7 @@ test(
         await assert.rejects(
             () => GET(db, 'identities/doomed', DEV_TOKEN));
         await assert.rejects(
-            () => db.identityPii.getById('doomed'));
+            () => deriveIdentityPii(db, 'doomed'));
     },
 );
 
@@ -161,7 +167,7 @@ test(
             db, 'identities/torn', DEV_TOKEN);
         assert.equal(identity.kind, 'person');
         await assert.rejects(
-            () => db.identityPii.getById('torn'));
+            () => deriveIdentityPii(db, 'torn'));
     },
 );
 
@@ -186,8 +192,7 @@ test(
         );
         await assert.rejects(
             () => GET(db, 'identities/doomed', DEV_TOKEN));
-        const creds = (await db.identityCredentials.getAll())
-            .filter(c => c.identity_id === 'doomed');
+        const creds = await deriveCredentialsFor(db, 'doomed');
         assert.equal(creds.length, 0);
     },
 );

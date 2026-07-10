@@ -26,6 +26,10 @@ import {
     appendMessagePair,
     type MessagePair,
 } from '../api/message-pair.ts';
+import {
+    deriveIdentityPii,
+    deriveCredential,
+} from '../api/derive-identity-spine.ts';
 
 const BASE = 'http://localhost';
 
@@ -988,8 +992,11 @@ test('identity-pii lists only co-members', async () => {
         (await res.json() as { id: string }[]).map(r => r.id));
     assert.ok(ids.has('pa'));   // co-member of A
     assert.ok(!ids.has('pb'));  // member of B only
+    // Phase Final Task 2: row half stripped — pair plane proves
+    // pb's pii still exists while fence hides it from A.
     assert.equal(
-        (await db.identityPii.getById('pb')).id, 'pb');
+        (await deriveIdentityPii(db, 'pb')).id, 'pb');
+    assert.equal((await db.identityPii.getAll()).length, 0);
     // The single-PII read is now self-only (a member reads only
     // its own); a foreign read is a self-scope 403, identity-
     // independent so it still never confirms pb exists.
@@ -1016,9 +1023,14 @@ async () => {
     }
     // pb is a B-only member — its nested collection is fenced
     // empty through the A facade.
+    // Phase Final Task 2: pair plane proves pb's credential
+    // exists while fence empties the collection under A.
     assert.equal(
-        (await db.identityCredentials.getById('cred-pb')).id,
+        (await deriveCredential(db, 'pb', 'cred-pb')).id,
         'cred-pb');
+    assert.equal(
+        (await db.identityCredentials.getAll()).length, 0,
+    );
     const other = await facadeGet(
         db, '/identities/pb/credentials');
     assert.equal(other.status, 200);

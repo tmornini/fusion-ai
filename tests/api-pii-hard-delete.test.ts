@@ -110,8 +110,17 @@ test('PUT-PUT at one address leaves exactly ONE pair (the'
         atAddress[0]!.id, second.headers.get('Response-ID'),
     );
     assert.equal(requests.length, responses.length);
-    const domainRow = await db.identityPii.getById('slot-1');
+    // Phase Final Task 2: identity_pii ROW half stripped —
+    // domain oracle is deriveIdentityPii. Gate 6 residual:
+    // pre-Final orphan identity_pii rows on old origins stay
+    // until Stage B table deletion; completeness is pair-
+    // plane only.
+    const { deriveIdentityPii } = await import(
+        '../api/derive-identity-spine.ts'
+    );
+    const domainRow = await deriveIdentityPii(db, 'slot-1');
     assert.equal(domainRow.name, 'Ann Marie');
+    assert.equal((await db.identityPii.getAll()).length, 0);
 });
 
 // ── 2. PUT-DELETE: exactly ONE bodyless tombstone pair ──
@@ -141,7 +150,10 @@ async () => {
     const messages = await allMessages(db);
     assert.ok(!messages.some(m => m.includes('Bob')));
     assert.ok(!messages.some(m => m.includes('bob@example.com')));
-    await assert.rejects(() => db.identityPii.getById('slot-2'));
+    const { deriveIdentityPii } = await import(
+        '../api/derive-identity-spine.ts'
+    );
+    await assert.rejects(() => deriveIdentityPii(db, 'slot-2'));
 });
 
 // ── 3. DELETE-PUT: the slot re-sets (one PUT pair) ──
@@ -169,7 +181,10 @@ async () => {
     assert.equal(
         atAddress[0]!.id, put.headers.get('Response-ID'),
     );
-    const domainRow = await db.identityPii.getById('slot-3');
+    const { deriveIdentityPii } = await import(
+        '../api/derive-identity-spine.ts'
+    );
+    const domainRow = await deriveIdentityPii(db, 'slot-3');
     assert.equal(domainRow.name, 'Cara');
 });
 
@@ -294,7 +309,10 @@ test('grant -> accept -> human-member create -> edit -> erase'
         'DELETE', '/identities/' + id + '/pii', DEV_TOKEN,
     ));
     assert.equal(erase.status, 204);
-    await assert.rejects(() => db.identityPii.getById(id));
+    const { deriveIdentityPii } = await import(
+        '../api/derive-identity-spine.ts'
+    );
+    await assert.rejects(() => deriveIdentityPii(db, id));
 
     const erasedValues = [
         ERASED_NAME, ERASED_EMAIL, ERASED_PHONE, ERASED_BIO,
@@ -312,6 +330,10 @@ test('grant -> accept -> human-member create -> edit -> erase'
     // localStorage session-credentials JWT name claim, and
     // replay resurrection of a RETAINED pre-erasure PUT request
     // are named residuals OUTSIDE this theorem — see API.md.
+    // Gate 6 residual (Phase Final Task 2): the identity_pii
+    // orphan store may hold pre-Final rows on old origins until
+    // Stage B table deletion; live writes no longer dual-write
+    // rows, so completeness is pair-plane only.
     assert.deepEqual(await db.identityPii.getAll(), []);
 });
 
