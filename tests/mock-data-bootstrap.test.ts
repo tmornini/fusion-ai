@@ -56,8 +56,6 @@ test(
             organization.id.length > 0,
             'organization seeded',
         );
-        assert.equal(
-            (await db.organizations.getAll()).length, 0,
-        );
+        // Phase Final Stage B: organizations table retired.
     },
 );

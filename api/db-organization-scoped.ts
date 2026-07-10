@@ -66,7 +66,6 @@ export function organizationScopedAdapter(
 
         // Global survivors — untouched.
         clients: base.clients,
-        organizations: base.organizations,
         requests: base.requests,
         responses: base.responses,
         states,

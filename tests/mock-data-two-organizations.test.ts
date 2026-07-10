@@ -196,7 +196,7 @@ async () => {
     assert.ok(one, 'org 1 exists');
     assert.ok(two, 'org 2 exists');
     assert.notEqual(one.name, two.name);
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 test('each org owns at least one of every org-scoped'

@@ -169,7 +169,9 @@ async function seed(): Promise<MemoryDbAdapter> {
         organization_id: 'A', identity_id: 'current',
         at: AT,
     });
-    await db.organizations.put('B', organizationRow('Beta'));
+    // Phase Final Stage B: organizations table retired
+    // — B need not derive for membership-filter
+    // exclusion of non-members.
     // Seeded through the wire (NAMED re-pin: the READ-side
     // pair-plane fence, api/derive-states.ts's
     // resolveFlowGraphOwner, resolves a flow-node/edge's owner

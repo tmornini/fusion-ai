@@ -127,6 +127,7 @@ export const RETIRED_TABLES: readonly string[] = [
     'identity_default_organizations',
     'role_grants',
     'identity_providers',
+    'organizations',
 ];
 
 // State-event values the alphabet has retired. Old

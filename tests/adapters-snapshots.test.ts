@@ -42,21 +42,20 @@ import {
     SnapshotIncompatibleError,
 } from '../web-app/app/adapters/snapshots.ts';
 
-// Phase Final Stage B: roster tables retired — pin the
-// snapshot round-trip on organizations (surviving store).
+// Phase Final Stage B: clients retired — pin the
+// snapshot round-trip on clients (surviving store).
 // Snapshot rows carry id; put() bodies omit it.
-function organizationFields() {
+function clientFields() {
     return {
-        name: 'Test Org',
-        domain: 'test.example',
-        next_billing: '2026-01-01T00:00:00.000000Z',
-        seats: 5,
-        projects_limit: 10,
-        ideas_limit: 20,
+        grant_types: 'authorization_code',
+        redirect_uris: 'https://example.com/cb',
+        jwks: '{}',
+        aud: 'aud',
+        status: 'active' as const,
     };
 }
-function buildOrganization(id: string) {
-    return { id, ...organizationFields() };
+function buildClient(id: string) {
+    return { id, ...clientFields() };
 }
 
 async function setup(): Promise<{
@@ -97,7 +96,7 @@ test('getSnapshot returns a JSON object of tables', async () => {
     const { ctx } = await setup();
     const json = await getSnapshot(ctx);
     const parsed = JSON.parse(json);
-    assert.ok(Array.isArray(parsed.organizations));
+    assert.ok(Array.isArray(parsed.clients));
     assert.ok(Array.isArray(parsed.states));
 });
 
@@ -107,16 +106,16 @@ test(
     async () => {
         const { db, ctx } = await setup();
         // Phase Final Stage B: roster retired — pin export
-        // on organizations.
-        await db.organizations.put(
-            'org-snap', organizationFields(),
+        // on clients.
+        await db.clients.put(
+            'cli-snap', clientFields(),
         );
         const parsed =
             JSON.parse(await getSnapshot(ctx));
         assert.ok(
-            parsed.organizations.some(
+            parsed.clients.some(
                 (o: { id: string }) =>
-                    o.id === 'org-snap',
+                    o.id === 'cli-snap',
             ),
         );
     },
@@ -128,11 +127,11 @@ test(
     async () => {
         const { db, ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify(withVersion({
-            organizations: [
-                buildOrganization('u1'),
+            clients: [
+                buildClient('u1'),
             ],
         })));
-        const rows = await db.organizations.getAll();
+        const rows = await db.clients.getAll();
         assert.equal(rows.length, 1);
         assert.equal(rows[0]?.id, 'u1');
     },
@@ -143,15 +142,15 @@ test(
     async () => {
         const { ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify(withAdminRows({
-            organizations: [
-                buildOrganization('u1'),
+            clients: [
+                buildClient('u1'),
             ],
         })));
         const parsed =
             JSON.parse(await getSnapshot(ctx));
-        assert.equal(parsed.organizations.length, 1);
+        assert.equal(parsed.clients.length, 1);
         assert.equal(
-            parsed.organizations[0].id, 'u1',
+            parsed.clients[0].id, 'u1',
         );
     },
 );
@@ -162,20 +161,20 @@ test(
     async () => {
         const { db, ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify(withAdminRows({
-            organizations: [
-                buildOrganization('u1'),
+            clients: [
+                buildClient('u1'),
             ],
         })));
         await putSnapshot(ctx, JSON.stringify(withVersion({
-            organizations: [
-                buildOrganization('u2'),
+            clients: [
+                buildClient('u2'),
             ],
         })));
-        const rows = await db.organizations.getAll();
+        const rows = await db.clients.getAll();
         assert.equal(rows.length, 1);
         assert.equal(rows[0]?.id, 'u2');
         assert.equal(
-            rows[0]?.name, 'Test Org',
+            rows[0]?.status, 'active',
         );
     },
 );
@@ -187,15 +186,15 @@ test(
         const { db, ctx } = await setup();
         const file = new File(
             [JSON.stringify(withVersion({
-                organizations: [
-                    buildOrganization('u1'),
+                clients: [
+                    buildClient('u1'),
                 ],
             }))],
             'snapshot.json',
             { type: 'application/json' },
         );
         await putSnapshotFromFile(ctx, file);
-        const rows = await db.organizations.getAll();
+        const rows = await db.clients.getAll();
         assert.equal(rows.length, 1);
         assert.equal(rows[0]?.id, 'u1');
     },
@@ -242,17 +241,17 @@ test(
 
 test('a snapshot import stamps the schema marker', async () => {
     const { db, ctx } = await setup();
-    await db.organizations.put(
-        'org-marker', organizationFields(),
+    await db.clients.put(
+        'cli-marker', clientFields(),
     );
     const json = await getSnapshot(ctx);
     await db.deleteSchema();
     assert.equal(await db.hasSchema(), false);
     await putSnapshot(ctx, json);
     assert.equal(await db.hasSchema(), true);
-    const rows = await db.organizations.getAll();
+    const rows = await db.clients.getAll();
     assert.ok(
-        rows.some((r) => r.id === 'org-marker'),
+        rows.some((r) => r.id === 'cli-marker'),
     );
 });
 
@@ -376,13 +375,13 @@ test(
     async () => {
         const { db, ctx } = await setup();
         const json = JSON.stringify(
-            withVersion({ organizations: [] }),
+            withVersion({ clients: [] }),
         );
         await putSnapshot(ctx, json);
         // import REPLACES: the seeded admin rows are
         // gone, proving the snapshot actually landed
         assert.deepEqual(
-            await db.organizations.getAll(), [],
+            await db.clients.getAll(), [],
         );
         assert.deepEqual(
             await db.clients.getAll(), [],
@@ -624,7 +623,7 @@ test(
             GET: async (resource: string) => {
                 if (resource === 'snapshots/schema') {
                     throw new MissingTableError(
-                        'organizations',
+                        'clients',
                     );
                 }
                 return null;

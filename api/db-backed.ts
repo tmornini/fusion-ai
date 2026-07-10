@@ -16,7 +16,6 @@ import type {
 } from './db.ts';
 import type {
     ClientEntity,
-    OrganizationEntity,
     RequestEntity,
     ResponseEntity,
 } from './types.ts';
@@ -35,7 +34,6 @@ import {
 import {
     validateClientEntity,
     validateStateEntity,
-    validateOrganizationEntity,
     validateRequestEntity,
     validateResponseEntity,
 } from './validators.ts';
@@ -57,8 +55,6 @@ export class BackedDbAdapter
     readonly #notify: NotificationPost;
 
     readonly clients!: GuardedEntityStore<ClientEntity>;
-    readonly organizations!:
-        GuardedEntityStore<OrganizationEntity>;
     readonly requests!: GuardedEntityStore<RequestEntity>;
     readonly responses!: GuardedEntityStore<ResponseEntity>;
     readonly states!: IStateStore;
@@ -249,10 +245,6 @@ export class BackedDbAdapter
             run, 'states', validateStateEntity);
         return {
             states: stateStore,
-            organizations: new EntityStore(
-                'organizations', run, stateStore,
-                validateOrganizationEntity,
-            ),
             clients: new EntityStore(
                 'clients', run, stateStore,
                 validateClientEntity,

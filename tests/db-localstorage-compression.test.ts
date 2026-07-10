@@ -26,32 +26,31 @@ function installShim(): Map<string, string> {
     return map;
 }
 
-// Phase Final Stage B: objectives retired — pin the
-// localStorage write surface on organizations (surviving
-// store with numeric seats + string fields).
-const baseOrganization = {
-    name: 'Test Org',
-    domain: 'test.example',
-    next_billing: '2026-01-01T00:00:00.000000Z',
-    seats: 5,
-    projects_limit: 10,
-    ideas_limit: 20,
+// Phase Final Stage B: clients retired — pin the
+// localStorage write surface on clients (surviving
+// store with string fields + status enum).
+const baseClient = {
+    grant_types: '["password"]',
+    redirect_uris: '[]',
+    jwks: '{}',
+    aud: 'fusion-ai',
+    status: 'active' as const,
 };
 
 // Writes are plain JSON since the F-080 measurement
 // retired compression; the gz1: decoder survives for
 // READS of legacy payloads only (pinned below).
 test(
-    'organizations write stores raw JSON',
+    'clients write stores raw JSON',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.organizations.put(
-            'org-prefix-test', baseOrganization,
+        await adapter.clients.put(
+            'cli-prefix-test', baseClient,
         );
         const stored = map.get(
-            KEY_PREFIX + 'organizations',
+            KEY_PREFIX + 'clients',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -63,39 +62,39 @@ test(
 );
 
 test(
-    'organizations round-trips through put → getById',
+    'clients round-trips through put → getById',
     async () => {
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.organizations.put(
-            'org-rt', baseOrganization,
+        await adapter.clients.put(
+            'cli-rt', baseClient,
         );
-        const got = await adapter.organizations.getById(
-            'org-rt',
+        const got = await adapter.clients.getById(
+            'cli-rt',
         );
-        assert.equal(got.id, 'org-rt');
+        assert.equal(got.id, 'cli-rt');
         assert.equal(
             got.name,
-            baseOrganization.name,
+            baseClient.name,
         );
     },
 );
 
 test(
-    'numbers round-trip as numbers, not strings',
+    'status enum round-trips as a string',
     async () => {
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.organizations.put(
-            'org-num', baseOrganization,
+        await adapter.clients.put(
+            'cli-status', baseClient,
         );
-        const got = await adapter.organizations.getById(
-            'org-num',
+        const got = await adapter.clients.getById(
+            'cli-status',
         );
-        assert.strictEqual(got.seats, 5);
-        assert.strictEqual(typeof got.seats, 'number');
+        assert.strictEqual(got.status, 'active');
+        assert.strictEqual(typeof got.status, 'string');
     },
 );
 
@@ -107,14 +106,14 @@ test(
         await adapter.postSchemaCreation();
         const ids = Array.from(
             { length: 11 },
-            (_, i) => `org-${i}`,
+            (_, i) => `cli-${i}`,
         );
         await Promise.all(
-            ids.map(id => adapter.organizations.put(
-                id, baseOrganization,
+            ids.map(id => adapter.clients.put(
+                id, baseClient,
             )),
         );
-        const all = await adapter.organizations.getAll();
+        const all = await adapter.clients.getAll();
         assert.equal(
             all.length, 11,
             'all 11 concurrent puts must persist',
@@ -186,37 +185,37 @@ test(
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.organizations.put(
-            'org-export', baseOrganization,
+        await adapter.clients.put(
+            'cli-export', baseClient,
         );
         const json = await adapter.getSnapshot();
         const parsed = JSON.parse(json);
         assert.ok(
-            Array.isArray(parsed.organizations),
-            'organizations should be an array in snapshot',
+            Array.isArray(parsed.clients),
+            'clients should be an array in snapshot',
         );
-        assert.equal(parsed.organizations.length, 1);
+        assert.equal(parsed.clients.length, 1);
         assert.equal(
-            parsed.organizations[0].id, 'org-export',
+            parsed.clients[0].id, 'cli-export',
         );
     },
 );
 
 test(
-    'snapshot import stores organizations raw',
+    'snapshot import stores clients raw',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         const snapshot = JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            organizations: [
-                { id: 'org-imp', ...baseOrganization },
+            clients: [
+                { id: 'cli-imp', ...baseClient },
             ],
         });
         await adapter.putSnapshot(snapshot);
         const stored = map.get(
-            KEY_PREFIX + 'organizations',
+            KEY_PREFIX + 'clients',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -233,11 +232,11 @@ test(
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        const organizationRow = {
-            id: 'org-gz1',
-            ...baseOrganization,
+        const clientRow = {
+            id: 'cli-gz1',
+            ...baseClient,
         };
-        const rawJson = JSON.stringify([organizationRow]);
+        const rawJson = JSON.stringify([clientRow]);
         const stream = new Blob([rawJson]).stream()
             .pipeThrough(new CompressionStream('gzip'));
         const buffer = await new Response(stream)
@@ -248,11 +247,11 @@ test(
             binary += String.fromCharCode(b);
         }
         map.set(
-            KEY_PREFIX + 'organizations',
+            KEY_PREFIX + 'clients',
             'gz1:' + btoa(binary),
         );
-        const result = await adapter.organizations.getAll();
+        const result = await adapter.clients.getAll();
         assert.equal(result.length, 1);
-        assert.equal(result[0]!.seats, 5);
+        assert.equal(result[0]!.status, 'active');
     },
 );

@@ -210,7 +210,7 @@ async () => {
         projects_limit: derived.projects_limit,
         ideas_limit: derived.ideas_limit,
     });
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 test('a seeded human-member create pair sits at the global'

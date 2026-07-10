@@ -37,7 +37,6 @@ function req(
 async function freshDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await seedAdminSchema(db);
-    await db.organizations.put('1', organizationRow('Stark'));
     return db;
 }
 

@@ -128,7 +128,7 @@ async () => {
                 ? 2 : 1;
         assert.equal(wire.length, expectedCount);
     }
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 // ---- leg 2: :id wire equals derive for each seeded org -------
@@ -159,7 +159,7 @@ test('leg 2: the unfiltered collection + :id wire equals'
         );
         assert.equal(wireText, JSON.stringify(derived));
     }
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 // ---- leg 2b: the bootstrap singleton ---------------------------
@@ -175,7 +175,7 @@ test('leg 2b: the bootstrap singleton organization — a'
         db, STARK_ORGANIZATION,
     );
     assert.equal(derived.id, STARK_ORGANIZATION);
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 // ---- leg 3: non-member 404 shapes -----------------------------
@@ -237,7 +237,7 @@ test('leg 4: PUT /organizations/:id then wire + derive agree'
     );
     assert.deepEqual(derived, putBody);
     assert.equal(derived.name, 'Stark Industries Renamed');
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 // ---- leg 5: no organizations states event (precondition) -----

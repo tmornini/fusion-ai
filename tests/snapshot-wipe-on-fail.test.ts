@@ -38,13 +38,12 @@ function installFailingShim(
     return map;
 }
 
-const organizationRow = {
-    name: 'Acme',
-    domain: 'acme.example',
-    next_billing: '2026-01-01T00:00:00.000000Z',
-    seats: 5,
-    projects_limit: 10,
-    ideas_limit: 20,
+const clientRow = {
+    grant_types: 'authorization_code',
+    redirect_uris: 'https://example.com/cb',
+    jwks: '{}',
+    aud: 'aud',
+    status: 'active' as const,
 };
 
 // Wipe-on-fail is retired: the import now runs in one
@@ -62,7 +61,7 @@ test(
         const snapshot = JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            organizations: [],
+            clients: [],
         });
         await assert.rejects(
             () => adapter.putSnapshot(snapshot),
@@ -77,8 +76,8 @@ test(
         await adapter.putSnapshot(JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            organizations: [
-                { id: 'm1', ...organizationRow },
+            clients: [
+                { id: 'm1', ...clientRow },
             ],
         }));
         // An invalid row rejects at the validation gate,
@@ -88,17 +87,17 @@ test(
             () => adapter.putSnapshot(JSON.stringify({
                 [SNAPSHOT_SCHEMA_VERSION_KEY]:
                     SNAPSHOT_SCHEMA_VERSION,
-                organizations: [
+                clients: [
                     {
                         id: 'm2',
-                        name: 'Nope',
+                        status: 'paused',
                     },
                 ],
             })),
         );
-        const organizations =
-            await adapter.organizations.getAll();
-        assert.equal(organizations.length, 1);
-        assert.equal(organizations[0]!.id, 'm1');
+        const clients =
+            await adapter.clients.getAll();
+        assert.equal(clients.length, 1);
+        assert.equal(clients[0]!.id, 'm1');
     },
 );

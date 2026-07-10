@@ -104,36 +104,6 @@ claim and the origin a token is minted for.
 | aud | TEXT |
 | status | TEXT (`active` \| `disabled`) |
 
-## Platform
-
-### organizations
-
-Tenant-root table — one row per organization. The empty
-bootstrap (`postBootstrap`) seeds only the default
-org (`id = '1'`, Stark Industries); the demo mock-data
-seed (`postMockDataLoad`)
-plants TWO orgs — `'1'` Stark Industries and `'2'` Wayne
-Enterprises. Every org-owned entity carries a NOT-NULL
-`organization_id` FK to this table; pure join tables derive
-org from their parent, and the identity/auth spine stays
-global.
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| name | TEXT |
-| domain | TEXT |
-| next_billing | TEXT |
-| seats | INTEGER |
-| projects_limit | INTEGER |
-| ideas_limit | INTEGER |
-
-Seat usage and last activity are NOT columns: both are
-derived from their ledgers at read time (distinct
-identities in the memberships message pairs; max
-`states.at`) — a stored aggregate would be a second
-truth kept in sync by nothing.
-
 ## State Event Log
 
 ### states

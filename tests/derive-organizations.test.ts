@@ -64,7 +64,7 @@ async () => {
     const wire = await res.json();
     const derived = await deriveOrganization(db, 'org-a');
     assert.deepEqual(derived, wire);
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 test('deriveOrganizations mirrors every PUT wire body,'
@@ -87,7 +87,7 @@ test('deriveOrganizations mirrors every PUT wire body,'
     assert.equal(
         derived.find((o) => o.id === 'org-b')!.name, 'Beta',
     );
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 test('deriveOrganization 404s with store-shaped'
@@ -126,7 +126,7 @@ test('a second live PUT supersedes the first; derive sees the'
     assert.equal(
         all.filter((org) => org.id === 'org-c').length, 1,
     );
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 // -- the un-nested address proof ---------------------------------
@@ -166,5 +166,5 @@ test('a PUT whose body echoes id round-trips through'
     assert.deepEqual(
         all.find((org) => org.id === 'org-echo'), wire,
     );
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });

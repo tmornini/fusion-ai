@@ -154,7 +154,9 @@ async () => {
         'PUT', '/organizations/A', await devToken('current'),
         organizationRow('Acme'),
     ));
-    await db.organizations.put('B', organizationRow('Beta'));
+    // Phase Final Stage B: organizations table retired
+    // — B need not derive for membership-filter
+    // exclusion of non-members.
     const res = await handleRequest(db, req(
         'GET', '/organizations', await devToken('current')));
     assert.equal(res.status, 200);
@@ -193,7 +195,9 @@ async function rolelessMemberDb(): Promise<MemoryDbAdapter> {
     ));
     // B stays a raw row: sarah is never a member of B, so the
     // membership filter excludes it whether or not it derives.
-    await db.organizations.put('B', organizationRow('Beta'));
+    // Phase Final Stage B: organizations table retired
+    // — B need not derive for membership-filter
+    // exclusion of non-members.
     await seedMembershipPair(db, 'm-sarah-a', 'A', 'sarah');
     return db;
 }

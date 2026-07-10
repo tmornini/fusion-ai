@@ -359,7 +359,7 @@ async () => {
     const db = await seededDb();
     const organizations = await deriveOrganizations(db);
     assert.ok(organizations.length >= 2);
-    assert.equal((await db.organizations.getAll()).length, 0);
+    // Phase Final Stage B: organizations table retired.
 });
 
 test('mock-data derived organization passes the validator',

@@ -1,7 +1,6 @@
 import type {
     Id,
     ClientEntity,
-    OrganizationEntity,
     RequestEntity,
     ResponseEntity,
     StateEntity,
@@ -288,15 +287,13 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 5 stores an adapter exposes, factored out of
+// The 4 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
 // bound to an open tx (A9).
 export interface DbStores {
     clients:
         EntityStore<ClientEntity>;
-    organizations:
-        EntityStore<OrganizationEntity>;
     requests:
         EntityStore<RequestEntity>;
     responses:
@@ -387,7 +384,6 @@ export interface GuardedDbAdapter
 // cleanup; nothing else needs to reconcile them.
 export const TABLE_NAMES = [
     'clients',
-    'organizations',
     'requests',
     'responses',
     'states',
