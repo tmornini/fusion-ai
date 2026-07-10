@@ -447,44 +447,50 @@ async () => {
     }
 });
 
-// -- 5. project-flows parity, every seeded project -------------
+// -- 5. project-flows wire equals derive (Phase Final Task 2:
+// -- project_flows row half stripped) --------------------------
 
-test('project-flows parity across every seeded project',
-async () => {
+test('project-flows wire equals derive across every'
++ ' seeded project', async () => {
     const db = await seededDb();
+    const token = await organizationToken(
+        'current', STARK_ORGANIZATION,
+    );
     for (const projectId of SEEDED_PROJECT_FLOW_PROJECT_IDS) {
+        const res = await handleRequest(db, req(
+            'GET', '/projects/' + projectId + '/flows', token,
+        ));
+        assert.equal(res.status, 200);
+        const wireText = await res.text();
         const derived = await deriveProjectFlows(
             db, STARK_ORGANIZATION, projectId,
         );
-        const old = sortById(
-            await organizationScopedAdapter(
-                db, STARK_ORGANIZATION,
-            ).projectFlows.getAllWhere(
-                'project_id', projectId,
-            ),
-        );
-        assert.deepEqual(derived, old);
+        assert.equal(wireText, JSON.stringify(derived));
     }
 });
 
 test('the two-flows project orders both join rows'
-+ ' identically on both planes', async () => {
++ ' on wire and derive', async () => {
     const db = await seededDb();
+    const token = await organizationToken(
+        'current', STARK_ORGANIZATION,
+    );
+    const res = await handleRequest(db, req(
+        'GET',
+        '/projects/' + TWO_FLOWS_PROJECT_ID + '/flows',
+        token,
+    ));
+    assert.equal(res.status, 200);
+    const wire = await res.json() as { flow_id: string }[];
     const derived = await deriveProjectFlows(
         db, STARK_ORGANIZATION, TWO_FLOWS_PROJECT_ID,
     );
     assert.equal(derived.length, 2);
-    const old = sortById(
-        await organizationScopedAdapter(
-            db, STARK_ORGANIZATION,
-        ).projectFlows.getAllWhere(
-            'project_id', TWO_FLOWS_PROJECT_ID,
-        ),
-    );
-    assert.deepEqual(derived, old);
+    assert.equal(JSON.stringify(wire), JSON.stringify(derived));
+    // id-lex order is pinned by derive; wire equals derive.
     assert.deepEqual(
+        wire.map((row) => row.flow_id),
         derived.map((row) => row.flow_id),
-        old.map((row) => row.flow_id),
     );
 });
 
@@ -718,49 +724,65 @@ test('live-write chain: create, save, node delete, undo, '
 
 // -- 7. live join-row chain: PUT appears, DELETE vanishes ------
 
-test('live join-row chain: PUT appears on both planes, '
+test('live join-row chain: PUT appears on wire/derive, '
 + 'DELETE removes it from both', async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const projectId = l2cProjectId;
     const pfid = 'pf-drift-join-1';
+    const listPath = '/projects/' + projectId + '/flows';
 
     const putRes = await handleRequest(db, req(
-        'PUT', '/projects/' + projectId + '/flows/' + pfid,
+        'PUT', listPath + '/' + pfid,
         token,
-        { project_id: projectId, flow_id: 'flow-drift-join', at: AT },
+        {
+            project_id: projectId,
+            flow_id: 'flow-drift-join',
+            at: AT,
+        },
     ));
     assert.equal(putRes.status, 200);
 
+    const afterPutRes = await handleRequest(
+        db, req('GET', listPath, token),
+    );
+    assert.equal(afterPutRes.status, 200);
+    const wireAfterPut = await afterPutRes.json() as {
+        id: string;
+    }[];
     const derivedAfterPut = await deriveProjectFlows(
         db, STARK_ORGANIZATION, projectId,
     );
-    const oldAfterPut = await organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    ).projectFlows.getAllWhere('project_id', projectId);
-    assert.ok(derivedAfterPut.some((row) => row.id === pfid));
-    assert.ok(oldAfterPut.some((row) => row.id === pfid));
-    assert.deepEqual(
-        sortById(derivedAfterPut), sortById(oldAfterPut),
+    assert.ok(wireAfterPut.some((row) => row.id === pfid));
+    assert.equal(
+        JSON.stringify(wireAfterPut),
+        JSON.stringify(derivedAfterPut),
     );
 
     const delRes = await handleRequest(db, req(
         'DELETE',
-        '/projects/' + projectId + '/flows/' + pfid, token,
+        listPath + '/' + pfid, token,
     ));
     assert.equal(delRes.status, 204);
 
+    const afterDelRes = await handleRequest(
+        db, req('GET', listPath, token),
+    );
+    const wireAfterDelete = await afterDelRes.json() as {
+        id: string;
+    }[];
     const derivedAfterDelete = await deriveProjectFlows(
         db, STARK_ORGANIZATION, projectId,
     );
-    const oldAfterDelete = await organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    ).projectFlows.getAllWhere('project_id', projectId);
+    assert.equal(
+        wireAfterDelete.some((row) => row.id === pfid), false,
+    );
     assert.equal(
         derivedAfterDelete.some((row) => row.id === pfid), false,
     );
     assert.equal(
-        oldAfterDelete.some((row) => row.id === pfid), false,
+        JSON.stringify(wireAfterDelete),
+        JSON.stringify(derivedAfterDelete),
     );
 });
 
@@ -807,18 +829,24 @@ async () => {
     assert.deepEqual(derivedHistory, oldHistory);
     assert.equal(derivedHistory.length, 2);
 
-    // TWO join rows surfacing identically in deriveProjectFlows
-    // AND the old-plane getAllWhere.
+    // TWO join rows on wire and derive (Phase Final Task 2:
+    // project_flows row half stripped).
+    const joinsRes = await handleRequest(db, req(
+        'GET', '/projects/' + projectId + '/flows', token,
+    ));
+    const wireJoins = (await joinsRes.json() as {
+        id: string;
+    }[]).filter(
+        (row) => row.id === pfidA || row.id === pfidB,
+    );
     const derivedJoins = (await deriveProjectFlows(
         db, STARK_ORGANIZATION, projectId,
     )).filter((row) => row.id === pfidA || row.id === pfidB);
-    const oldJoins = (await organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    ).projectFlows.getAllWhere(
-        'project_id', projectId,
-    )).filter((row) => row.id === pfidA || row.id === pfidB);
-    assert.equal(oldJoins.length, 2);
-    assert.deepEqual(sortById(derivedJoins), sortById(oldJoins));
+    assert.equal(wireJoins.length, 2);
+    assert.equal(derivedJoins.length, 2);
+    assert.deepEqual(
+        sortById(wireJoins), sortById(derivedJoins),
+    );
 });
 
 // -- 9. the create-op POST pair is never the derived head -----

@@ -10,6 +10,12 @@ import {
     deriveIdeas,
     deriveIdeaSubmissions,
 } from '../api/derive-ideas.ts';
+import { deriveProjects } from
+    '../api/derive-projects.ts';
+import {
+    deriveBaselineScores,
+    deriveActualScores,
+} from '../api/derive-project-scores.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
     '../api/mock-data/seed-constants.ts';
@@ -59,8 +65,8 @@ async () => {
 test('each org owns at least one of every org-scoped'
     + ' entity', async () => {
     const { db } = await seed();
-    // Phase Final Task 2: ideas derive from the pair plane
-    // (row half stripped). Other families still row-plane.
+    // Phase Final Task 2: ideas + projects derive from the
+    // pair plane (row halves stripped).
     for (const organization of [
         ORGANIZATION_ONE, ORGANIZATION_TWO,
     ]) {
@@ -69,9 +75,15 @@ test('each org owns at least one of every org-scoped'
             ideas.length >= 1,
             `org ${organization} owns no ideas`,
         );
+        const projects = await deriveProjects(
+            db, organization,
+        );
+        assert.ok(
+            projects.length >= 1,
+            `org ${organization} owns no projects`,
+        );
     }
     const tables = {
-        projects: await db.projects.getAll(),
         flows: await db.flows.getAll(),
         records: await db.records.getAll(),
         objectives: await db.objectives.getAll(),
@@ -192,9 +204,31 @@ test('every idea submission names a submitter in its'
 test('every project score names an author in its'
     + " project's org", async () => {
     const { db } = await seed();
-    const projectOrganization = new Map(
-        (await db.projects.getAll())
-            .map(p => [p.id, p.organization_id]));
+    // Phase Final Task 2: projects + scores from pair plane.
+    const projectOrganization = new Map<string, string>();
+    const scores: {
+        id: string;
+        project_id: string;
+        member_id: string;
+    }[] = [];
+    for (const organization of [
+        ORGANIZATION_ONE, ORGANIZATION_TWO,
+    ]) {
+        const projects = await deriveProjects(
+            db, organization,
+        );
+        for (const p of projects) {
+            projectOrganization.set(p.id, organization);
+            scores.push(
+                ...await deriveBaselineScores(
+                    db, organization, p.id,
+                ),
+                ...await deriveActualScores(
+                    db, organization, p.id,
+                ),
+            );
+        }
+    }
     const memberOrganizations = new Map<string, Set<string>>();
     for (const m of await db.memberships.getAll()) {
         const set = memberOrganizations.get(m.identity_id)
@@ -202,17 +236,19 @@ test('every project score names an author in its'
         set.add(m.organization_id);
         memberOrganizations.set(m.identity_id, set);
     }
-    const scores = [
-        ...await db.projectObjectiveBaselineScores.getAll(),
-        ...await db.projectObjectiveActualScores.getAll(),
-    ];
     assert.ok(scores.length > 0, 'scores exist');
     const violations: string[] = [];
     for (const s of scores) {
-        const organization = projectOrganization.get(s.project_id);
-        const organizations = memberOrganizations.get(s.member_id)
-            ?? new Set<string>();
-        if (organization === undefined || !organizations.has(organization)) {
+        const organization = projectOrganization.get(
+            s.project_id,
+        );
+        const organizations = memberOrganizations.get(
+            s.member_id,
+        ) ?? new Set<string>();
+        if (
+            organization === undefined
+            || !organizations.has(organization)
+        ) {
             violations.push(
                 s.id + ': ' + s.member_id
                 + ' not in project org ' + organization);

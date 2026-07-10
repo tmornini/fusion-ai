@@ -282,7 +282,23 @@ async function seedChain(
             state_event_id: 'i' + s + '-genesis',
         },
     ));
-    await db.projects.put('p' + s, projectBody(organization));
+    // Phase Final Task 2: projects row half stripped — seed
+    // through the live document PUT so the pair plane owns it.
+    const {
+        organization_id: _projectOrganizationId,
+        ...projectFields
+    } = projectBody(organization);
+    await handleRequest(db, req(
+        'PUT',
+        '/organizations/' + organization + '/projects/p' + s,
+        await organizationToken(identity, organization),
+        {
+            ...projectFields,
+            state: 'submitted',
+            state_at: T8_AT,
+            state_event_id: 'p' + s + '-genesis',
+        },
+    ));
     await db.flows.put('f' + s, flowBody(organization));
     // Stays raw (NAMED contrast to the revisions/scores re-pins
     // below, Task 7): no test in this file reads GET
@@ -796,24 +812,19 @@ test('nested flows/:id/tags 404s a foreign-org flow', async () => {
 // row, bound to project pB, is excluded. The org fence still
 // rides the facade re-entry. None exposes a leaf GET /:id (the
 // leaves carry only PUT, or PUT+DELETE for flows), so no
-// foreign-id 404 case applies.
+// foreign-id 404 case applies. Phase Final Task 2: foreign
+// presence is proven via B-org wire GET (row plane empty).
 interface NestedProjectCase {
     seg: string;
-    store: (d: MemoryDbAdapter) => {
-        getById(id: string): Promise<{ id: string }>;
-    };
     a: string;
     b: string;
 }
 
 const NESTED_PROJECT_CASES: NestedProjectCase[] = [
-    { seg: 'flows',
-        store: d => d.projectFlows, a: 'pfA', b: 'pfB' },
+    { seg: 'flows', a: 'pfA', b: 'pfB' },
     { seg: 'objective-baseline-scores',
-        store: d => d.projectObjectiveBaselineScores,
         a: 'bsA', b: 'bsB' },
     { seg: 'objective-actual-scores',
-        store: d => d.projectObjectiveActualScores,
         a: 'asA', b: 'asB' },
 ];
 
@@ -822,10 +833,20 @@ for (const c of NESTED_PROJECT_CASES) {
         + ' lists only the bound project',
     async () => {
         const db = await deepDb();
-        // Prove the foreign row EXISTS in storage, so exclusion
-        // is the fence — the test fails on a regression.
-        assert.equal(
-            (await c.store(db).getById(c.b)).id, c.b);
+        // Foreign join/score exists on B's pair plane.
+        const foreign = await handleRequest(db, req(
+            'GET',
+            '/organizations/B/projects/pB/' + c.seg,
+            await organizationToken('pb', 'B'),
+        ));
+        assert.equal(foreign.status, 200);
+        const foreignRows = await foreign.json() as {
+            id: string;
+        }[];
+        assert.ok(
+            foreignRows.some((r) => r.id === c.b),
+            'foreign ' + c.b + ' missing on B plane',
+        );
         const res = await facadeGet(
             db, '/projects/pA/' + c.seg);
         assert.equal(res.status, 200);

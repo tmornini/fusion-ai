@@ -100,7 +100,13 @@ test(
         // The fence stamped the bound org — never the body.
         assert.equal(flow.organization_id, '1');
 
-        const links = await db.projectFlows.getAll();
+        // Phase Final Task 2: project_flows row half stripped —
+        // join derives from the pair plane.
+        const links = await GET<{
+            id: string;
+            project_id: string;
+            flow_id: string;
+        }[]>(db, 'projects/p1/flows', DEV_TOKEN);
         assert.equal(links.length, 1);
         assert.equal(links[0]!.id, 'pf-1');
         assert.equal(links[0]!.project_id, 'p1');
@@ -138,7 +144,9 @@ test(
         // Not one write survived the aborted transaction.
         await assert.rejects(
             () => GET(db, 'flows/flow-1', DEV_TOKEN));
-        const links = await db.projectFlows.getAll();
+        const links = await GET<unknown[]>(
+            db, 'projects/p1/flows', DEV_TOKEN,
+        );
         assert.equal(links.length, 0);
         // Only the pre-seeded conflicting event remains — the
         // create's own event never landed.

@@ -402,8 +402,10 @@ test('documentStateHeadFor: byte-identical pre-tx (the plain'
     ));
     assert.equal(put.status, 200);
 
+    // Phase Final Task 2: projects row half stripped from
+    // postProjectDocumentOp; tx list matches the live op.
     const projectTxTables =
-        ['projects', 'states', 'requests', 'responses'];
+        ['states', 'requests', 'responses'];
     const preTx = await documentStateHeadFor(db, id);
     const inTx = await db.transaction(
         projectTxTables,

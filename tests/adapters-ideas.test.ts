@@ -278,8 +278,11 @@ test(
             ['obj-1', 'obj-2'],
         );
 
-        const project =
-            await db.projects.getById('p1');
+        // Phase Final Task 2: projects row half stripped —
+        // read via GET /projects/:id.
+        const project = await ctx.GET<{ title: string }>(
+            'projects/p1',
+        );
         assert.equal(project.title, 'P1');
 
         const ideaEvents =

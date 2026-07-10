@@ -352,14 +352,18 @@ test(
             }, DEV_TOKEN),
         );
 
-        // No project row, no project event, no baseline.
+        // No project on the wire, no project event, no
+        // baseline pair (Phase Final Task 2: score rows gone).
         await assert.rejects(
             () => GET(db, 'projects/p1', DEV_TOKEN),
         );
         const projectEvents = await db.states.getAllFor('p1');
         assert.equal(projectEvents.length, 0);
-        const baselines =
-            await db.projectObjectiveBaselineScores.getAll();
+        const baselines = await GET<unknown[]>(
+            db,
+            'projects/p1/objective-baseline-scores',
+            DEV_TOKEN,
+        );
         assert.equal(baselines.length, 0);
 
         // Zero-pair assertion (Phase 7 Task 4): a failed

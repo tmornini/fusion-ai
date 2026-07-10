@@ -16,12 +16,23 @@ import {
     validateFlowWorkOrderEntity,
     validateStateFieldValueEntity,
     validateStateEntity,
+    validateBaselineScoreEntity,
+    validateActualScoreEntity,
 } from '../api/validators.ts';
 import {
     deriveIdea,
     deriveIdeas,
     deriveIdeaSubmissions,
 } from '../api/derive-ideas.ts';
+import {
+    deriveProjects,
+} from '../api/derive-projects.ts';
+import { deriveProjectFlows } from
+    '../api/derive-project-flows.ts';
+import {
+    deriveBaselineScores,
+    deriveActualScores,
+} from '../api/derive-project-scores.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
     '../api/mock-data/seed-constants.ts';
@@ -56,14 +67,11 @@ const TABLES: ReadonlyArray<[
         validateHumanMemberEntity],
     ['aiMembers', d => d.aiMembers.getAll(),
         validateAIMemberEntity],
-    // ideas + ideaSubmissions re-homed below (Phase Final
-    // Task 2: seed row halves stripped; derive plane).
-    ['projects', d => d.projects.getAll(),
-        validateProjectEntity],
+    // ideas + ideaSubmissions + projects + projectFlows +
+    // scores re-homed below (Phase Final Task 2: seed row
+    // halves stripped; derive plane).
     ['flows', d => d.flows.getAll(),
         validateFlowEntity],
-    ['projectFlows', d => d.projectFlows.getAll(),
-        validateProjectFlowEntity],
     ['workOrders', d => d.workOrders.getAll(),
         validateWorkOrderEntity],
     ['flowWorkOrders',
@@ -152,43 +160,142 @@ async () => {
     assert.ok(total > 0, 'no derived idea submissions');
 });
 
+// Phase Final Task 2: projects(+project_flows+scores) seed
+// row halves stripped — validate the derived plane.
+test('mock-data seeds non-empty derived projects per org',
+async () => {
+    const db = await seededDb();
+    for (const organization of ['1', '2']) {
+        const projects = await deriveProjects(
+            db, organization,
+        );
+        assert.ok(
+            projects.length > 0,
+            'projects empty in org ' + organization,
+        );
+        for (const project of projects) {
+            assert.doesNotThrow(
+                () => validateProjectEntity(withoutId(project)),
+                'project ' + project.id,
+            );
+        }
+    }
+});
+
+test('mock-data derived project_flows pass validator',
+async () => {
+    const db = await seededDb();
+    let total = 0;
+    for (const organization of ['1', '2']) {
+        const projects = await deriveProjects(
+            db, organization,
+        );
+        for (const project of projects) {
+            const joins = await deriveProjectFlows(
+                db, organization, project.id,
+            );
+            total += joins.length;
+            for (const join of joins) {
+                assert.doesNotThrow(
+                    () => validateProjectFlowEntity(
+                        withoutId(join),
+                    ),
+                    'project_flow ' + join.id,
+                );
+            }
+        }
+    }
+    assert.ok(total > 0, 'no derived project_flows');
+});
+
+test('mock-data derived baseline/actual scores pass'
++ ' validators', async () => {
+    const db = await seededDb();
+    let baselineTotal = 0;
+    let actualTotal = 0;
+    for (const organization of ['1', '2']) {
+        const projects = await deriveProjects(
+            db, organization,
+        );
+        for (const project of projects) {
+            const baselines = await deriveBaselineScores(
+                db, organization, project.id,
+            );
+            baselineTotal += baselines.length;
+            for (const row of baselines) {
+                assert.doesNotThrow(
+                    () => validateBaselineScoreEntity(
+                        withoutId(row),
+                    ),
+                    'baseline ' + row.id,
+                );
+            }
+            const actuals = await deriveActualScores(
+                db, organization, project.id,
+            );
+            actualTotal += actuals.length;
+            for (const row of actuals) {
+                assert.doesNotThrow(
+                    () => validateActualScoreEntity(
+                        withoutId(row),
+                    ),
+                    'actual ' + row.id,
+                );
+            }
+        }
+    }
+    assert.equal(baselineTotal, 49);
+    assert.equal(actualTotal, 92);
+});
+
 // The Office of Time: every persisted `at` is 6-digit
 // microsecond zulu (SCHEMA.md). The append-only `states` log is
 // seeded AND appended at runtime, so a seed that mints a
 // different width than nowUtc() makes "latest by `at`" sort
-// wrong under lexical compare. Pin the score ledgers — they
-// feed the dashboard Objective sparkline tooltips — and the
-// states log to the canonical width.
+// wrong under lexical compare. Scores re-homed to the derive
+// plane (Phase Final Task 2).
 const ZULU_6 =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 
-const AT_LEDGERS: ReadonlyArray<[
-    string,
-    (db: MemoryDbAdapter) => Promise<{ id: string; at: string }[]>,
-]> = [
-    ['projectObjectiveBaselineScores',
-        d => d.projectObjectiveBaselineScores.getAll()],
-    ['projectObjectiveActualScores',
-        d => d.projectObjectiveActualScores.getAll()],
-    ['states', d => d.states.getAll()],
-];
+test('mock-data states.at is 6-digit zulu', async () => {
+    const db = await seededDb();
+    const rows = await db.states.getAll();
+    assert.ok(rows.length > 0, 'states empty');
+    for (const row of rows) {
+        assert.match(
+            row.at, ZULU_6,
+            'row ' + row.id + ' in states',
+        );
+    }
+});
 
-for (const [name, getAll] of AT_LEDGERS) {
-    test(
-        `mock-data ${name}.at is 6-digit zulu`,
-        async () => {
-            const db = await seededDb();
-            const rows = await getAll(db);
-            assert.ok(rows.length > 0, `${name} empty`);
-            for (const row of rows) {
+test('mock-data derived score .at is 6-digit zulu',
+async () => {
+    const db = await seededDb();
+    let checked = 0;
+    for (const organization of ['1', '2']) {
+        const projects = await deriveProjects(
+            db, organization,
+        );
+        for (const project of projects) {
+            for (const row of [
+                ...await deriveBaselineScores(
+                    db, organization, project.id,
+                ),
+                ...await deriveActualScores(
+                    db, organization, project.id,
+                ),
+            ]) {
                 assert.match(
                     row.at, ZULU_6,
-                    `row ${row.id} in ${name}`,
+                    'score ' + row.id,
                 );
+                checked += 1;
             }
-        },
-    );
-}
+        }
+    }
+    assert.ok(checked > 0, 'no derived scores');
+});
 
 // organizations is now an entity store (the tenant root).
 

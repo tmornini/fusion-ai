@@ -8,6 +8,7 @@ import { adminContext } from './context-fixtures.ts';
 import {
     postProjectBaselineScoring,
     postProjectActualMeasurement,
+    getBaselineScoresForProject,
 } from
     '../web-app/app/adapters/project-scoring.ts';
 import { seedHumanMember } from './member-fixtures.ts';
@@ -207,7 +208,10 @@ test('postProjectBaselineScoring accepts valid scores',
                 objectiveId: `o:${score}`, score,
             })),
         );
-        const rows = await db
-            .projectObjectiveBaselineScores.getAll();
+        // Phase Final Task 2: score row half stripped —
+        // presence is on the pair plane via GET.
+        const rows = await getBaselineScoresForProject(
+            ctx, 'p',
+        );
         assert.equal(rows.length, VALID.length);
     });

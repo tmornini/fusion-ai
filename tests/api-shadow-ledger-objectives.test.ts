@@ -343,9 +343,18 @@ async () => {
     );
     assert.ok(row);
     assert.equal(row!.uri_id, 'bs-1');
-    const domainRow =
-        await db.projectObjectiveBaselineScores.getById('bs-1');
-    assert.deepEqual(await res.json(), domainRow);
+    // Phase Final Task 2: score row half stripped — wire body
+    // is WRITE_RESPONSE_SPECS; GET collection re-derives it.
+    const wire = await res.json();
+    const getRes = await handleRequest(db, req(
+        'GET',
+        '/projects/p-1/objective-baseline-scores',
+        token,
+    ));
+    assert.equal(getRes.status, 200);
+    const list = await getRes.json() as { id: string }[];
+    const derived = list.find((r) => r.id === 'bs-1');
+    assert.deepEqual(derived, wire);
 });
 
 test('PUT an actual score appends its pair at the score'
@@ -365,9 +374,17 @@ async () => {
     );
     assert.ok(row);
     assert.equal(row!.uri_id, 'as-1');
-    const domainRow =
-        await db.projectObjectiveActualScores.getById('as-1');
-    assert.deepEqual(await res.json(), domainRow);
+    // Phase Final Task 2: score row half stripped.
+    const wire = await res.json();
+    const getRes = await handleRequest(db, req(
+        'GET',
+        '/projects/p-2/objective-actual-scores',
+        token,
+    ));
+    assert.equal(getRes.status, 200);
+    const list = await getRes.json() as { id: string }[];
+    const derived = list.find((r) => r.id === 'as-1');
+    assert.deepEqual(derived, wire);
 });
 
 test('a byte-identical PUT resend to a revision returns the'

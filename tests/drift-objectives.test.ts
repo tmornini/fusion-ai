@@ -353,65 +353,73 @@ test('revisions parity per objective (all 5, one seeded'
 // -- 4. score collection parity per project; whole-org totals; --
 // -- foreign-parent parity ----------------------------------------
 
-test('score collection parity per project: an approved project'
-+ ' (full 4-baseline coverage + actuals), a partial-coverage'
-+ ' live-state project, a submitted project (both planes'
-+ ' EMPTY), the org-2 project (empty); whole-org totals (49'
-+ ' baselines / 92 actuals); foreign-parent parity', async () => {
+// Phase Final Task 2: score row halves stripped — re-home to
+// wire GET byte identity with derive, not old-table oracles.
+test('score collection wire equals derive per project: an'
++ ' approved project (full 4-baseline coverage + actuals), a'
++ ' partial-coverage live-state project, a submitted project'
++ ' (EMPTY), the org-2 project (empty); whole-org totals (49'
++ ' baselines / 92 actuals); foreign-parent empty', async () => {
     const db = await seededDb();
+    const tokenStark = await organizationToken(
+        'current', STARK_ORGANIZATION,
+    );
+    const tokenTwo = await organizationToken(
+        'current', ORGANIZATION_TWO,
+    );
 
     // Full coverage, approved: 'AI-Powered Customer
     // Segmentation' — 4 baselines (every seeded objective), 5
-    // actuals (verified by content, buildSeedScoreRows over the
-    // seed's own project/state data).
+    // actuals.
     const fullCoverageProjectId = 'u6YkHhlGc91oDMkr3x0isa';
-    const derivedFullBaselines = sortById(
-        await deriveBaselineScores(
-            db, STARK_ORGANIZATION, fullCoverageProjectId,
-        ),
+    const fullBasePath =
+        '/projects/' + fullCoverageProjectId
+        + '/objective-baseline-scores';
+    const fullActPath =
+        '/projects/' + fullCoverageProjectId
+        + '/objective-actual-scores';
+    const fullBaseRes = await handleRequest(
+        db, req('GET', fullBasePath, tokenStark),
     );
-    const oldFullBaselines = sortById(
-        await organizationScopedAdapter(db, STARK_ORGANIZATION)
-            .projectObjectiveBaselineScores.getAllWhere(
-                'project_id', fullCoverageProjectId,
-            ),
+    assert.equal(fullBaseRes.status, 200);
+    const fullBaseText = await fullBaseRes.text();
+    const derivedFullBaselines = await deriveBaselineScores(
+        db, STARK_ORGANIZATION, fullCoverageProjectId,
     );
+    assert.equal(fullBaseText, JSON.stringify(derivedFullBaselines));
     assert.equal(derivedFullBaselines.length, 4);
-    assert.deepEqual(derivedFullBaselines, oldFullBaselines);
 
-    const derivedFullActuals = sortById(
-        await deriveActualScores(
-            db, STARK_ORGANIZATION, fullCoverageProjectId,
-        ),
+    const fullActRes = await handleRequest(
+        db, req('GET', fullActPath, tokenStark),
     );
-    const oldFullActuals = sortById(
-        await organizationScopedAdapter(db, STARK_ORGANIZATION)
-            .projectObjectiveActualScores.getAllWhere(
-                'project_id', fullCoverageProjectId,
-            ),
+    assert.equal(fullActRes.status, 200);
+    const derivedFullActuals = await deriveActualScores(
+        db, STARK_ORGANIZATION, fullCoverageProjectId,
+    );
+    assert.equal(
+        await fullActRes.text(),
+        JSON.stringify(derivedFullActuals),
     );
     assert.equal(derivedFullActuals.length, 5);
-    assert.deepEqual(derivedFullActuals, oldFullActuals);
 
     // Partial coverage, a live state ('under_review'):
-    // 'Predictive Maintenance System' — 2 baselines (the
-    // deterministic-partial coverage a non-approved/archived
-    // state draws), 0 actuals (actuals require approved/
-    // archived).
+    // 'Predictive Maintenance System' — 2 baselines, 0 actuals.
     const partialProjectId = 'P04PredMa1ntzyXY010203';
-    const derivedPartialBaselines = sortById(
-        await deriveBaselineScores(
-            db, STARK_ORGANIZATION, partialProjectId,
-        ),
+    const partialBaseRes = await handleRequest(db, req(
+        'GET',
+        '/projects/' + partialProjectId
+        + '/objective-baseline-scores',
+        tokenStark,
+    ));
+    assert.equal(partialBaseRes.status, 200);
+    const derivedPartialBaselines = await deriveBaselineScores(
+        db, STARK_ORGANIZATION, partialProjectId,
     );
-    const oldPartialBaselines = sortById(
-        await organizationScopedAdapter(db, STARK_ORGANIZATION)
-            .projectObjectiveBaselineScores.getAllWhere(
-                'project_id', partialProjectId,
-            ),
+    assert.equal(
+        await partialBaseRes.text(),
+        JSON.stringify(derivedPartialBaselines),
     );
     assert.equal(derivedPartialBaselines.length, 2);
-    assert.deepEqual(derivedPartialBaselines, oldPartialBaselines);
     assert.deepEqual(
         await deriveActualScores(
             db, STARK_ORGANIZATION, partialProjectId,
@@ -419,8 +427,8 @@ test('score collection parity per project: an approved project'
         [],
     );
 
-    // A submitted project — both planes EMPTY (the scoring loop
-    // skips 'submitted'/'declined'/'deleted' entirely).
+    // A submitted project — EMPTY (the scoring loop skips
+    // 'submitted'/'declined'/'deleted' entirely).
     const submittedProjectId = 'P16MktSent1mentXY01020';
     assert.deepEqual(
         await deriveBaselineScores(
@@ -435,8 +443,7 @@ test('score collection parity per project: an approved project'
         [],
     );
 
-    // The org-2 project — also 'submitted' (empty), AND in the
-    // other organization.
+    // The org-2 project — also 'submitted' (empty).
     const org2ProjectId = 'seed-project-org2';
     assert.deepEqual(
         await deriveBaselineScores(
@@ -452,11 +459,7 @@ test('score collection parity per project: an approved project'
     );
 
     // Whole-org totals: every Stark project's derived score
-    // reads, summed — 49 baselines / 92 actuals — byte-equal to
-    // the old plane's org-wide getAll() (ParentScopedEntityStore
-    // resolves each row's owning org through its parent
-    // project, so getAll() here is genuinely org-wide, not
-    // per-project).
+    // reads, summed — 49 baselines / 92 actuals.
     const starkProjectIds = buildProjects().map((p) => p.id);
     assert.equal(starkProjectIds.length, 16);
     const derivedBaselineTotal: { id: string }[] = [];
@@ -473,35 +476,22 @@ test('score collection parity per project: an approved project'
             )),
         );
     }
-    const oldBaselineTotal = await organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    ).projectObjectiveBaselineScores.getAll();
-    const oldActualTotal = await organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    ).projectObjectiveActualScores.getAll();
     assert.equal(derivedBaselineTotal.length, 49);
-    assert.equal(oldBaselineTotal.length, 49);
-    assert.deepEqual(
-        sortById(derivedBaselineTotal), sortById(oldBaselineTotal),
-    );
     assert.equal(derivedActualTotal.length, 92);
-    assert.equal(oldActualTotal.length, 92);
-    assert.deepEqual(
-        sortById(derivedActualTotal), sortById(oldActualTotal),
-    );
 
-    // Foreign-parent parity: a Stark project's scores, scoped to
-    // org 2 — 200 [] on both planes.
-    const derivedForeignBaselines = await deriveBaselineScores(
-        db, ORGANIZATION_TWO, fullCoverageProjectId,
+    // Foreign-parent: a Stark project's scores, scoped to
+    // org 2 — empty wire + empty derive.
+    const foreignRes = await handleRequest(db, req(
+        'GET', fullBasePath, tokenTwo,
+    ));
+    assert.equal(foreignRes.status, 200);
+    assert.equal(await foreignRes.text(), '[]');
+    assert.deepEqual(
+        await deriveBaselineScores(
+            db, ORGANIZATION_TWO, fullCoverageProjectId,
+        ),
+        [],
     );
-    const oldForeignBaselines = await organizationScopedAdapter(
-        db, ORGANIZATION_TWO,
-    ).projectObjectiveBaselineScores.getAllWhere(
-        'project_id', fullCoverageProjectId,
-    );
-    assert.deepEqual(derivedForeignBaselines, []);
-    assert.deepEqual(oldForeignBaselines, []);
 });
 
 // -- 5. live-write chain, re-compared on both planes at every ---
@@ -694,24 +684,27 @@ test('live-write chain: create, reposition, revision edit,'
         (await db.requests.getAll()).length,
         beforeConversion + 5,
     );
-    const derivedBaselinesAfterConversion = sortById(
+    // Phase Final Task 2: score rows gone — wire GET equals
+    // derive for conversion-born baselines.
+    const basePath =
+        '/projects/' + projectId
+        + '/objective-baseline-scores';
+    const baseRes = await handleRequest(
+        db, req('GET', basePath, token),
+    );
+    assert.equal(baseRes.status, 200);
+    const derivedBaselinesAfterConversion =
         await deriveBaselineScores(
             db, STARK_ORGANIZATION, projectId,
-        ),
-    );
-    const oldBaselinesAfterConversion = sortById(
-        await organizationScopedAdapter(db, STARK_ORGANIZATION)
-            .projectObjectiveBaselineScores.getAllWhere(
-                'project_id', projectId,
-            ),
+        );
+    assert.equal(
+        await baseRes.text(),
+        JSON.stringify(derivedBaselinesAfterConversion),
     );
     assert.equal(derivedBaselinesAfterConversion.length, 2);
-    assert.deepEqual(
-        derivedBaselinesAfterConversion, oldBaselinesAfterConversion,
-    );
 
     // Step 7: a standalone baseline re-score + one actual PUT —
-    // derived sees both.
+    // wire GET equals derive for both collections.
     const baselineIdC = 'bl-drift-chain-1-c';
     const standaloneBaseline = await handleRequest(db, req(
         'PUT',
@@ -737,33 +730,32 @@ test('live-write chain: create, reposition, revision edit,'
     ));
     assert.equal(standaloneActual.status, 200);
 
-    const derivedBaselinesFinal = sortById(
-        await deriveBaselineScores(
-            db, STARK_ORGANIZATION, projectId,
-        ),
+    const baseFinalRes = await handleRequest(
+        db, req('GET', basePath, token),
     );
-    const oldBaselinesFinal = sortById(
-        await organizationScopedAdapter(db, STARK_ORGANIZATION)
-            .projectObjectiveBaselineScores.getAllWhere(
-                'project_id', projectId,
-            ),
+    const derivedBaselinesFinal = await deriveBaselineScores(
+        db, STARK_ORGANIZATION, projectId,
+    );
+    assert.equal(
+        await baseFinalRes.text(),
+        JSON.stringify(derivedBaselinesFinal),
     );
     assert.equal(derivedBaselinesFinal.length, 3);
-    assert.deepEqual(derivedBaselinesFinal, oldBaselinesFinal);
 
-    const derivedActualsFinal = sortById(
-        await deriveActualScores(
-            db, STARK_ORGANIZATION, projectId,
-        ),
+    const actPath =
+        '/projects/' + projectId
+        + '/objective-actual-scores';
+    const actFinalRes = await handleRequest(
+        db, req('GET', actPath, token),
     );
-    const oldActualsFinal = sortById(
-        await organizationScopedAdapter(db, STARK_ORGANIZATION)
-            .projectObjectiveActualScores.getAllWhere(
-                'project_id', projectId,
-            ),
+    const derivedActualsFinal = await deriveActualScores(
+        db, STARK_ORGANIZATION, projectId,
+    );
+    assert.equal(
+        await actFinalRes.text(),
+        JSON.stringify(derivedActualsFinal),
     );
     assert.equal(derivedActualsFinal.length, 1);
-    assert.deepEqual(derivedActualsFinal, oldActualsFinal);
 
     // Step 8: duplicate objective create — same id, fresh
     // revisionId. ONE row both planes; the new document pair

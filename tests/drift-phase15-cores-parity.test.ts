@@ -47,6 +47,8 @@ import {
     validateWorkOrderFlowGraphJson,
 } from '../api/validators.ts';
 import { deriveIdeas } from '../api/derive-ideas.ts';
+import { deriveProjects } from
+    '../api/derive-projects.ts';
 import {
     latestClaimEvent,
     isClaimEventExpired,
@@ -883,14 +885,20 @@ async () => {
         };
     }
 
-    // Phase Final Task 2: ideas seed row half stripped —
-    // load ideas from the pair plane. Dual-write agreement
-    // no longer holds for ideas (row plane empty); pair-plane
+    // Phase Final Task 2: ideas + projects seed row halves
+    // stripped — load from the pair plane. Dual-write
+    // agreement no longer holds (row plane empty); pair-plane
     // ownership still resolves.
     const ideasStark = await deriveIdeas(
         db, STARK_ORGANIZATION,
     );
     const ideasTwo = await deriveIdeas(
+        db, ORGANIZATION_TWO,
+    );
+    const projectsStark = await deriveProjects(
+        db, STARK_ORGANIZATION,
+    );
+    const projectsTwo = await deriveProjects(
         db, ORGANIZATION_TWO,
     );
     const records = await db.records.getAll();
@@ -902,6 +910,10 @@ async () => {
     const ideaTwo = ideasTwo[0]!;
     assert.ok(ideaStark, 'stark ideas non-empty');
     assert.ok(ideaTwo, 'org-two ideas non-empty');
+    const projectStark = projectsStark[0]!;
+    const projectTwo = projectsTwo[0]!;
+    assert.ok(projectStark, 'stark projects non-empty');
+    assert.ok(projectTwo, 'org-two projects non-empty');
     const recordStark = records.find(
         (r) => r.organization_id === STARK_ORGANIZATION,
     )!;
@@ -915,10 +927,12 @@ async () => {
         (m) => m.organization_id === STARK_ORGANIZATION,
     )!;
 
-    // Pair-plane ownership for stripped ideas family.
+    // Pair-plane ownership for stripped ideas + projects.
     for (const [entityId, owner] of [
         [ideaStark.id, STARK_ORGANIZATION],
         [ideaTwo.id, ORGANIZATION_TWO],
+        [projectStark.id, STARK_ORGANIZATION],
+        [projectTwo.id, ORGANIZATION_TWO],
     ] as const) {
         const own = await bothPlanes(entityId, owner);
         assert.equal(own.pair, owner);

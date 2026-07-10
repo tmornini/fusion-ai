@@ -1231,21 +1231,12 @@ export async function postIdeaDocumentOp(
 // create, edit, and transition — genesis is head-presence-
 // defined (a fresh id's PUT simply finds no head, so the
 // ternary below falls to `actor`, authoring the birth like any
-// other transition). The project row and its trio's state
-// event commit as ONE transaction — a mid-write failure rolls
-// the whole thing back rather than leaving a half-written
-// document. validateProjectDocumentBody's typed `entity` never
-// carries organization_id (the org-scoped store stamps it from
-// the verified token for the LIVE, fenced route, overwriting
-// whatever it finds regardless); the seed's below-facade call
-// (api/mock-data.ts, no gate, no scoping wrapper) drives a RAW
-// store that has no such stamp, so it embeds organization_id in
-// the raw body and this op reads it straight back to merge it
-// in — inert for the fenced route (overwritten either way),
-// load-bearing for the seed. Exported so the seed can drive
-// project creation through the same op the route uses (Decision
-// 6's below-facade carve-out) — this is also Phase 1's
-// dual-write insertion seam. `pair` is optional so the seed's
+// other transition). Phase Final Task 2: the projects ROW half
+// is stripped — the pair + states.postEvent commit as ONE
+// transaction (states row half strips with the states-trace
+// group). WRITE_RESPONSE_SPECS successBody forms the wire
+// bytes; the reconstructed return is for below-facade callers
+// and type parity. `pair` is optional so the seed's
 // below-facade call keeps compiling unchanged; the route always
 // supplies one, since 'projects/:id' is pair-wired and never
 // bearer-exempt.
@@ -1257,8 +1248,14 @@ export async function postProjectDocumentOp(
     pair?: MessagePair,
 ): Promise<ProjectEntity> {
     const doc = validateProjectDocumentBody(withoutId(body));
+    const entity = {
+        ...doc.entity,
+        ...documentOperationOrganization(body),
+    } as unknown as Omit<ProjectEntity, 'id'>;
     return db.transaction(
-        ['projects', 'states', 'requests', 'responses'],
+        // Phase Final Task 2: projects ROW half stripped;
+        // states.postEvent stays until the states-trace group.
+        ['states', 'requests', 'responses'],
         async (view) => {
             const head = await documentStateHeadFor(view, id);
             const memberId = (
@@ -1267,13 +1264,6 @@ export async function postProjectDocumentOp(
                 && head.state === doc.state
                 && head.at === doc.state_at
             ) ? head.member_id : actor;
-            const written = await view.projects.put(
-                id,
-                {
-                    ...doc.entity,
-                    ...documentOperationOrganization(body),
-                } as unknown as Omit<ProjectEntity, 'id'>,
-            );
             await view.states.postEvent(
                 doc.state_event_id, id, doc.state,
                 memberId, doc.state_at,
@@ -1281,7 +1271,7 @@ export async function postProjectDocumentOp(
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return { id, ...entity };
         },
     );
 }
@@ -1470,33 +1460,23 @@ export interface FlowCreationPairs {
     readonly join: MessagePair;
 }
 
-// Flow creation: the flows row, its project_flows join
-// row, the initial 'active' state event, and the four
-// relation table rows from graphDelta commit as ONE
-// transaction — a mid-write failure rolls the whole
-// thing back rather than orphaning a half-built flow.
-// The org-scoped flows store stamps organization_id from
-// the verified token and re-validates through
-// validateFlowEntity, so the flow body OMITS it; the
-// join row is re-validated by the project_flows store.
-// The initial event is authored by the verified caller
-// (actor), never the body. graphDelta is pre-validated
-// at the HTTP gate (validateFlowCreateBody); the route
-// writes its rows through writeFlowGraphDelta — the same
-// helper PUT/undo/redo use. The create delta carries no
-// deletions (a fresh flow tombstones nothing). Exported
-// so the seed can drive flow creation through the same
-// gate the route uses (Decision 6's below-facade
-// carve-out) — this is also Phase 1's dual-write
-// insertion seam. `pairs` is optional so the seed's below-
-// facade call (api/mock-data.ts, no gate, no pairs) keeps
-// compiling unchanged; the route always supplies the
-// triple, since 'flows' is pair-wired and never
-// bearer-exempt. The route (not this op) forms all three
-// pairs pre-tx — see route('flows', ...) below — since
-// forming the document/join pairs needs the fence
-// organization and the flows/:id + projects/:id/flows/:pfid
-// response specs, both route-table concerns.
+// Flow creation: the flows row, the initial 'active'
+// state event, and the four relation table rows from
+// graphDelta commit as ONE transaction — a mid-write
+// failure rolls the whole thing back rather than
+// orphaning a half-built flow. Phase Final Task 2: the
+// project_flows ROW half is stripped (join lives on the
+// pair plane only; flows + graph delta rows strip with
+// the flows family). The org-scoped flows store stamps
+// organization_id from the verified token. The initial
+// event is authored by the verified caller (actor), never
+// the body. graphDelta is pre-validated at the HTTP gate
+// (validateFlowCreateBody); the route writes its rows
+// through writeFlowGraphDelta. Exported so the seed can
+// drive flow creation through the same gate the route uses
+// (Decision 6's below-facade carve-out). `pairs` is optional
+// so the seed's below-facade call keeps compiling; the
+// route always supplies the triple.
 export async function postFlowCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
@@ -1507,7 +1487,7 @@ export async function postFlowCreationOp(
     const delta = b.graphDelta;
     return db.transaction(
         [
-            'flows', 'project_flows', 'states',
+            'flows', 'states',
             'flow_nodes', 'flow_edges',
             'flow_node_members',
             'flow_node_attributes',
@@ -1518,11 +1498,6 @@ export async function postFlowCreationOp(
                 b.id,
                 b.flow as unknown as
                     Omit<FlowEntity, 'id'>,
-            );
-            await view.projectFlows.put(
-                b.projectFlowId,
-                b.projectFlow as unknown as
-                    Omit<ProjectFlowEntity, 'id'>,
             );
             await view.states.postEvent(
                 b.initialStateEventId,
@@ -2794,85 +2769,58 @@ export async function postFlowTagDocumentOp(
     );
 }
 
-// Objective baseline-score document write — extracted byte-for-
-// byte from the hand-written projects/:id/objective-baseline-
-// scores/:sid PUT handler (the postFlowRecordDocumentOp precedent
-// above) so the seed can drive the same write path (Decision 6's
-// below-facade carve-out, closing the scores half of the Phase 0
-// seed deferral, Phase 7 Task 5). A document PUT here is a pure
-// entity edit: the project_objective_baseline_scores row and its
-// pair commit as ONE transaction. `pair` is optional so a
+// Objective baseline-score document write. Phase Final Task 2:
+// the project_objective_baseline_scores ROW half is stripped —
+// pure pair-plane write (postIdeaSubmissionOp shape).
+// WRITE_RESPONSE_SPECS successBody forms the wire bytes.
+// Exported so the seed can drive the same write path (Decision
+// 6's below-facade carve-out). `pair` is optional so a
 // below-facade caller with no pair keeps compiling; the live
-// route always supplies one, since this pattern is pair-wired
-// and never bearer-exempt. The actor parameter is spelled
-// `_actor` for the same reason postFlowRecordDocumentOp spells
-// it that way: there is no state event here to author.
+// route always supplies one. `_actor` is unused: there is no
+// state event here to author.
 export async function postBaselineScoreDocumentOp(
     db: DbAdapter,
     id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
-): Promise<Omit<ProjectObjectiveBaselineScoreEntity, 'id'>> {
+): Promise<
+    ProjectObjectiveBaselineScoreEntity
+> {
+    const entity = withoutId(body) as unknown as
+        Omit<ProjectObjectiveBaselineScoreEntity, 'id'>;
     return db.transaction(
-        [
-            'project_objective_baseline_scores',
-            'requests', 'responses',
-        ],
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view
-                .projectObjectiveBaselineScores.put(
-                    id,
-                    withoutId(body) as unknown as
-                        Omit<
-                            ProjectObjectiveBaselineScoreEntity,
-                            'id'
-                        >,
-                );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return { id, ...entity };
         },
     );
 }
 
-// Objective actual-score document write — extracted byte-for-
-// byte from the hand-written projects/:id/objective-actual-
-// scores/:sid PUT handler, identically to
-// postBaselineScoreDocumentOp above (the postFlowRecordDocumentOp
-// precedent), closing the actuals half of the Phase 0 seed
-// deferral (Phase 7 Task 5). `pair` is optional so a below-facade
-// caller with no pair keeps compiling; the live route always
-// supplies one. `_actor` is unused for the same reason
-// postBaselineScoreDocumentOp's is: there is no state event here
-// to author.
+// Objective actual-score document write. Phase Final Task 2:
+// the project_objective_actual_scores ROW half is stripped —
+// pure pair-plane write, byte-twin of
+// postBaselineScoreDocumentOp. WRITE_RESPONSE_SPECS forms the
+// wire bytes. `_actor` is unused: no state event to author.
 export async function postActualScoreDocumentOp(
     db: DbAdapter,
     id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
-): Promise<Omit<ProjectObjectiveActualScoreEntity, 'id'>> {
+): Promise<ProjectObjectiveActualScoreEntity> {
+    const entity = withoutId(body) as unknown as
+        Omit<ProjectObjectiveActualScoreEntity, 'id'>;
     return db.transaction(
-        [
-            'project_objective_actual_scores',
-            'requests', 'responses',
-        ],
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view
-                .projectObjectiveActualScores.put(
-                    id,
-                    withoutId(body) as unknown as
-                        Omit<
-                            ProjectObjectiveActualScoreEntity,
-                            'id'
-                        >,
-                );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return { id, ...entity };
         },
     );
 }
@@ -4603,22 +4551,13 @@ export const routes: Route[] = [
                     ));
                 }
             }
-            // Phase Final Task 2: idea ROW half stripped; project
-            // + baseline row halves stay until their family
-            // groups. Idea 'promoted' still posts a states event
-            // until the states-trace strip.
+            // Phase Final Task 2: idea + project + baseline ROW
+            // halves stripped; only states events + pairs remain
+            // (states row half strips with the states-trace
+            // group).
             return db.transaction(
-                [
-                    'projects', 'states',
-                    'project_objective_baseline_scores',
-                    'requests', 'responses',
-                ],
+                ['states', 'requests', 'responses'],
                 async (view) => {
-                    await view.projects.put(
-                        b.projectId,
-                        b.project as unknown as
-                            Omit<ProjectEntity, 'id'>,
-                    );
                     await view.states.postEvent(
                         b.ideaStateEventId,
                         ideaId,
@@ -4633,17 +4572,6 @@ export const routes: Route[] = [
                         actor,
                         b.projectStateAt,
                     );
-                    for (const baseline of b.baselines) {
-                        await view.projectObjectiveBaselineScores
-                            .put(
-                                baseline.id,
-                                baseline.fields as unknown as
-                                    Omit<
-                                        ProjectObjectiveBaselineScoreEntity,
-                                        'id'
-                                    >,
-                            );
-                    }
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
@@ -4893,30 +4821,26 @@ export const routes: Route[] = [
             ),
     }),
     route('projects/:id/flows/:pfid', {
+        // Phase Final Task 2: project_flows ROW half stripped —
+        // pure pair-plane write (join derives from the ledger).
         put: (db, p, body, _actor, pair) => {
             const pfid = param(p, 1);
+            const entity = withoutId(body) as unknown as
+                Omit<ProjectFlowEntity, 'id'>;
             return db.transaction(
-                ['project_flows', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
-                    const written = await view.projectFlows
-                        .put(
-                            pfid,
-                            withoutId(body) as unknown as
-                                Omit<ProjectFlowEntity, 'id'>,
-                        );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
-                    return written;
+                    return { id: pfid, ...entity };
                 },
             );
         },
-        delete: (db, p, _actor, pair) => {
-            const pfid = param(p, 1);
+        delete: (db, _p, _actor, pair) => {
             return db.transaction(
-                ['project_flows', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
-                    await view.projectFlows.delete(pfid);
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
