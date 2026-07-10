@@ -653,7 +653,6 @@ async function deepDb(): Promise<MemoryDbAdapter> {
     for (const [id, organization] of [
         ['pa', 'A'], ['pb', 'B'],
     ] as const) {
-        await db.members.put(id, { type: 'human' });
         // Re-pointed onto the SAME exported ops the live
         // identities/:id, identities/:id/pii and identities/:id/
         // credentials/:cid PUT routes use (finding 18's fixture

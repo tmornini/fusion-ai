@@ -49,7 +49,7 @@ test(
             ids.includes('current'),
             'current user seeded',
         );
-        assert.equal((await db.members.getAll()).length, 0);
+        // Phase Final Stage B: roster tables retired.
         // Phase Final Task 2: organizations ROW half stripped.
         const organization = await deriveOrganization(db, '1');
         assert.ok(

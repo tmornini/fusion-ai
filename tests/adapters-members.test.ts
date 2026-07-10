@@ -64,7 +64,7 @@ test(
         assert.equal((await db.states.getAll()).length, 0);
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
-        assert.equal((await db.members.getAll()).length, 0);
+        // Phase Final Stage B: roster tables retired.
     },
 );
 

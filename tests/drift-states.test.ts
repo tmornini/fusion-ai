@@ -140,7 +140,6 @@ function ideaDocument(
 async function person(
     db: MemoryDbAdapter, id: string, name: string, email: string,
 ): Promise<void> {
-    await db.members.put(id, { type: 'human' });
     await db.identities.put(id, { kind: 'person' });
     await seedIdentityPii(db, id, {
         name, email, phone: '', bio: '',

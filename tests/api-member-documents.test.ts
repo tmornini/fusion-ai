@@ -298,7 +298,7 @@ async () => {
         db, 'mem-doc-op-1', body, 'current', pair,
     );
     assert.deepEqual(written, body);
-    assert.equal((await db.members.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });
@@ -326,7 +326,7 @@ async () => {
         db, 'ai-doc-op-1', body, 'current', pair,
     );
     assert.deepEqual(written, body);
-    assert.equal((await db.aiMembers.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });
@@ -354,7 +354,7 @@ test('postHumanMemberDocumentOp writes exactly the pair and'
         db, 'hm-doc-op-1', body, 'current', pair,
     );
     assert.deepEqual(written, body);
-    assert.equal((await db.humanMembers.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });

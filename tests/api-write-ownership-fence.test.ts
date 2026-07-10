@@ -266,7 +266,7 @@ test('foreign-id DELETE memberships/:id 404s', async () => {
         organization_id: string;
     };
     assert.equal(row.organization_id, ORGANIZATION_A);
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 test('foreign-id PUT role-grants/:id 404s', async () => {

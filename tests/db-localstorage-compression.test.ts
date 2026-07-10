@@ -107,14 +107,14 @@ test(
         await adapter.postSchemaCreation();
         const ids = Array.from(
             { length: 11 },
-            (_, i) => `u-${i}`,
+            (_, i) => `org-${i}`,
         );
         await Promise.all(
-            ids.map(id => adapter.members.put(id, {
-                type: 'human',
-            })),
+            ids.map(id => adapter.organizations.put(
+                id, baseOrganization,
+            )),
         );
-        const all = await adapter.members.getAll();
+        const all = await adapter.organizations.getAll();
         assert.equal(
             all.length, 11,
             'all 11 concurrent puts must persist',
@@ -158,16 +158,20 @@ test(
 );
 
 test(
-    'members table is not compressed (raw JSON in storage)',
+    'clients table is not compressed (raw JSON in storage)',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.members.put('u1', {
-            type: 'human',
+        await adapter.clients.put('c1', {
+            grant_types: '["password"]',
+            redirect_uris: '[]',
+            jwks: '{}',
+            aud: 'fusion-ai',
+            status: 'active',
         });
-        const stored = map.get(KEY_PREFIX + 'members');
-        assert.ok(stored, 'expected stored people value');
+        const stored = map.get(KEY_PREFIX + 'clients');
+        assert.ok(stored, 'expected stored clients value');
         assert.ok(
             stored.startsWith('['),
             'expected raw JSON array, got '

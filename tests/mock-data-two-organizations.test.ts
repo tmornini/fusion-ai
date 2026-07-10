@@ -166,7 +166,7 @@ async () => {
         .map(m => m.organization_id)
         .sort();
     assert.deepEqual(organizations, ['1', '2']);
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 test('current holds admin in both orgs', async () => {

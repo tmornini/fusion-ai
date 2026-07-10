@@ -146,7 +146,7 @@ test('pendingInvitationFor lifecycle on the pair plane'
         (await assertPending())?.id,
         'inv-rehome-parity-2',
     );
-    assert.equal((await db.invitations.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 test('loadInvitation shape: deriveInvitations find-by-id'
@@ -178,7 +178,7 @@ test('loadInvitation shape: deriveInvitations find-by-id'
             .find(r => r.id === 'inv-ghost'),
         undefined,
     );
-    assert.equal((await db.invitations.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 test('rawReadRow clients ≡ getById for an active client;'

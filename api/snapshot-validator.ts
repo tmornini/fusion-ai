@@ -5,9 +5,6 @@ import {
 } from './db.ts';
 import { extractErrorMessage } from '../shared/error-helpers.ts';
 import {
-    validateMemberEntity,
-    validateHumanMemberEntity,
-    validateAIMemberEntity,
     validateIdentityEntity,
     validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
@@ -17,8 +14,6 @@ import {
     validateClientEntity,
     validateIdentityProviderEntity,
     validateOrganizationEntity,
-    validateMembershipEntity,
-    validateInvitationEntity,
     validateStateEntity,
     validateRequestEntity,
     validateResponseEntity,
@@ -39,15 +34,6 @@ function validateSnapshotRow(
     const { id: _id, ...body } = row;
     try {
         switch (table) {
-            case 'members':
-                validateMemberEntity(body);
-                break;
-            case 'human_members':
-                validateHumanMemberEntity(body);
-                break;
-            case 'ai_members':
-                validateAIMemberEntity(body);
-                break;
             case 'identities':
                 validateIdentityEntity(body);
                 break;
@@ -74,12 +60,6 @@ function validateSnapshotRow(
                 break;
             case 'organizations':
                 validateOrganizationEntity(body);
-                break;
-            case 'memberships':
-                validateMembershipEntity(body);
-                break;
-            case 'invitations':
-                validateInvitationEntity(body);
                 break;
             case 'states':
                 validateStateEntity(body);

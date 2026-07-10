@@ -15,9 +15,6 @@ import type {
     TxRunner,
 } from './db.ts';
 import type {
-    MemberEntity,
-    HumanMemberEntity,
-    AIMemberEntity,
     IdentityEntity,
     IdentityPiiEntity,
     IdentityCredentialEntity,
@@ -27,8 +24,6 @@ import type {
     ClientEntity,
     IdentityProviderEntity,
     OrganizationEntity,
-    MembershipEntity,
-    InvitationEntity,
     RequestEntity,
     ResponseEntity,
 } from './types.ts';
@@ -45,9 +40,6 @@ import {
     parseAndValidateSnapshot,
 } from './snapshot-validator.ts';
 import {
-    validateMemberEntity,
-    validateHumanMemberEntity,
-    validateAIMemberEntity,
     validateIdentityEntity,
     validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
@@ -58,8 +50,6 @@ import {
     validateIdentityProviderEntity,
     validateStateEntity,
     validateOrganizationEntity,
-    validateMembershipEntity,
-    validateInvitationEntity,
     validateRequestEntity,
     validateResponseEntity,
 } from './validators.ts';
@@ -80,10 +70,6 @@ export class BackedDbAdapter
     readonly #open: () => Promise<void>;
     readonly #notify: NotificationPost;
 
-    readonly members!: GuardedEntityStore<MemberEntity>;
-    readonly humanMembers!:
-        GuardedEntityStore<HumanMemberEntity>;
-    readonly aiMembers!: GuardedEntityStore<AIMemberEntity>;
     readonly identities!:
         GuardedEntityStore<IdentityEntity>;
     readonly identityPii!:
@@ -100,10 +86,6 @@ export class BackedDbAdapter
         GuardedEntityStore<IdentityProviderEntity>;
     readonly organizations!:
         GuardedEntityStore<OrganizationEntity>;
-    readonly memberships!:
-        GuardedEntityStore<MembershipEntity>;
-    readonly invitations!:
-        GuardedEntityStore<InvitationEntity>;
     readonly requests!: GuardedEntityStore<RequestEntity>;
     readonly responses!: GuardedEntityStore<ResponseEntity>;
     readonly states!: IStateStore;
@@ -286,7 +268,7 @@ export class BackedDbAdapter
         }
     }
 
-    // The 39-store wiring lives here once. The constructor
+    // The store wiring lives here once. The constructor
     // binds it to the backend; the transaction view rebinds
     // the same wiring to an open tx via ambientRunner.
     #buildStores(run: TxRunner): GuardedDbStores {
@@ -297,26 +279,6 @@ export class BackedDbAdapter
             organizations: new EntityStore(
                 'organizations', run, stateStore,
                 validateOrganizationEntity,
-            ),
-            memberships: new EntityStore(
-                'memberships', run, stateStore,
-                validateMembershipEntity,
-            ),
-            invitations: new EntityStore(
-                'invitations', run, stateStore,
-                validateInvitationEntity,
-            ),
-            members: new EntityStore(
-                'members', run, stateStore,
-                validateMemberEntity,
-            ),
-            humanMembers: new EntityStore(
-                'human_members', run, stateStore,
-                validateHumanMemberEntity,
-            ),
-            aiMembers: new EntityStore(
-                'ai_members', run, stateStore,
-                validateAIMemberEntity,
             ),
             identities: new EntityStore(
                 'identities', run, stateStore,

@@ -109,7 +109,7 @@ async () => {
         total += derived.length;
     }
     assert.equal(total, 16);
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 // -- leg 2: the multi-org identity --------------------------------
@@ -273,7 +273,7 @@ test('leg 6: LIVE accept — grant + accept an invitation through'
         ),
         true,
     );
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 // -- leg 7: the REMOVAL leg ----------------------------------------
@@ -304,7 +304,7 @@ test('leg 7: REMOVAL — DELETE /memberships/:id derives ABSENT'
         db, jessicaId,
     );
     assert.equal(after.some((m) => m.id === target!.id), false);
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 // -- leg 8: the zero-membership identity ---------------------------
@@ -374,5 +374,5 @@ async () => {
     );
     assert.equal(derived.length, 1);
     assert.equal(derived[0]!.id, existing!.id);
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });

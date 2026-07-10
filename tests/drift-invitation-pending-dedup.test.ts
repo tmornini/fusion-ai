@@ -126,5 +126,5 @@ async () => {
         ),
         null,
     );
-    assert.equal((await db.invitations.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });

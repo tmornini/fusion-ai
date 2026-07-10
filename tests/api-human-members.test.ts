@@ -223,8 +223,12 @@ test(
                     detail: detail(),
                 }));
         assert.equal(deniedEdit.status, 403);
-        // The denied member wrote nothing.
-        const members = await memberDb.members.getAll();
-        assert.equal(members.length, 0);
+        // The denied member wrote nothing on the pair plane
+        // beyond seed pairs — no human-member document for w2.
+        await assert.rejects(
+            () => GET(
+                memberDb, 'human-members/w2', token,
+            ),
+        );
     },
 );

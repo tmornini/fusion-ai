@@ -377,8 +377,8 @@ async () => {
     const THIRD_ORGANIZATION = '3';
     const empty = await derivedMemberships(db, THIRD_ORGANIZATION);
     assert.deepEqual(empty, []);
-    assert.equal((await db.memberships.getAll()).length, 0);
-    assert.equal((await db.invitations.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
+    // Phase Final Stage B: roster tables retired.
 });
 
 // -- 2. per-membership GET wire equals derive; DELETE tombstone
@@ -553,8 +553,8 @@ test('ai-members + human-members wire equals derive (GLOBAL)'
         (await humanMissingRes.json() as { error: string }).error,
         expectedHumanMessage,
     );
-    assert.equal((await db.aiMembers.getAll()).length, 0);
-    assert.equal((await db.humanMembers.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
+    // Phase Final Stage B: roster tables retired.
 });
 
 // -- 4. members wire equals derive; roster counts; 404 -------
@@ -617,7 +617,7 @@ test('members wire equals deriveMemberParents (16 incl.'
             err instanceof EntityNotFoundError
             && err.message === expectedMessage,
     );
-    assert.equal((await db.members.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 // -- 5. live-write chain on the pair plane ---------------------
@@ -650,8 +650,8 @@ async () => {
         db, GLOBAL_PLANE_PLACEHOLDER, aiId,
     );
     assert.equal(derivedAiDetail1.name, 'Chain AI');
-    assert.equal((await db.members.getAll()).length, 0);
-    assert.equal((await db.aiMembers.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
+    // Phase Final Stage B: roster tables retired.
 
     // Step 2: composed edit (POST /ai-members/:id).
     const edited = await handleRequest(db, req(
@@ -697,7 +697,7 @@ async () => {
         db, GLOBAL_PLANE_PLACEHOLDER, humanId,
     );
     assert.equal(derivedHumanDetail1.title, 't');
-    assert.equal((await db.humanMembers.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 
     // Step 5: composed edit (POST /human-members/:id).
     const humanEdited = await handleRequest(db, req(
@@ -726,7 +726,7 @@ async () => {
     assert.equal(
         rosterAfterMembership.some((m) => m.id === humanId), true,
     );
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 
     // Step 7: DELETE memberships/:id — roster loses the member;
     // the parent SURVIVES (membership removal never deletes the
@@ -812,7 +812,7 @@ async () => {
         (row) => row.id === 'inv-roster-sarah',
     )!;
     assert.equal(sarahRow.state, 'pending');
-    assert.equal((await db.invitations.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 
     // B: accept — accepted + the membership on the pair plane.
     const jessicaId = 'zyTbfbjcGEfbpCsNTP0XjX';
@@ -1058,7 +1058,7 @@ test('resend idempotency: a byte-identical ai-members/:id PUT'
         db, GLOBAL_PLANE_PLACEHOLDER, aiId,
     );
     assert.equal(derived.name, 'Resend AI Facet');
-    assert.equal((await db.aiMembers.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 // -- 9. plain PUT-supersession at a membership address (NAMED --
@@ -1118,7 +1118,7 @@ test('plain PUT-supersession at a membership address — a'
         db, STARK_ORGANIZATION, membershipId,
     );
     assert.equal(derived.at, '2020-01-01T00:00:00.000000Z');
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 
     const roster = await deriveMembers(db, STARK_ORGANIZATION);
     assert.equal(roster.some((m) => m.id === identityId), true);
@@ -1173,6 +1173,6 @@ async () => {
             (m) => m.id === membershipId,
         ), true,
     );
-    assert.equal((await db.memberships.getAll()).length, 0);
-    assert.equal((await db.members.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
+    // Phase Final Stage B: roster tables retired.
 });

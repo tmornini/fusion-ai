@@ -34,9 +34,6 @@ const AT_FIRST = '2026-05-01T11:00:00.000000Z';
 async function seedSystemMember(
     db: MemoryDbAdapter,
 ): Promise<void> {
-    await db.members.put(SYSTEM_MEMBER_ID, {
-        type: 'system',
-    });
     await db.states.postEvent(
         'st-system', SYSTEM_MEMBER_ID, 'active',
         'system',

@@ -195,7 +195,6 @@ async function seedPerson(
     name: string,
     email: string,
 ): Promise<void> {
-    await db.members.put(id, { type: 'human' });
     await db.identities.put(id, { kind: 'person' });
     await seedIdentityPii(db, id, {
         name, email, phone: '', bio: '',
@@ -307,16 +306,8 @@ test('validateInvitationEntity rejects a bad timestamp', () => {
         }));
 });
 
-test('the invitations store round-trips a row', async () => {
-    const db = new MemoryDbAdapter();
-    await db.postSchemaCreation();
-    await db.invitations.put('inv1', {
-        organization_id: '2', identity_id: 'sarah', at: AT,
-    });
-    const row = await db.invitations.getById('inv1');
-    assert.equal(row.organization_id, '2');
-    assert.equal(row.identity_id, 'sarah');
-});
+// Phase Final Stage B: invitations table retired — store
+// round-trip pins live on pair-plane document tests.
 
 test('grant by email appends a pending invitation', async () => {
     const { db, ctx } = await ctxFor('current', '2');
@@ -328,7 +319,7 @@ test('grant by email appends a pending invitation', async () => {
     assert.equal(rows[0]!.organization_id, '2');
     assert.equal(rows[0]!.identity_id, 'sarah');
     assert.equal(rows[0]!.state, 'pending');
-    assert.equal((await db.invitations.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 });
 
 test('grant stamps the org from the verified token', async () => {

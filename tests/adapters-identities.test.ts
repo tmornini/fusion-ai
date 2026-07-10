@@ -50,7 +50,6 @@ async () => {
     await seedPersonIdentity(db, 'p1', {
         name: 'P', email: 'p@x.io', phone: '1', bio: 'b',
     });
-    await db.members.put('p1', { type: 'human' });
     await db.states.postEvent(
         'e1', 'someEntity', 'active', 'p1',
         '2026-01-01T00:00:00.000000Z',

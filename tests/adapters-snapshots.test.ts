@@ -42,19 +42,21 @@ import {
     SnapshotIncompatibleError,
 } from '../web-app/app/adapters/snapshots.ts';
 
-// A human_members detail row in the post-normalization
-// shape (no name or contact PII — name lives on the parent
-// members row, contact PII in identity_pii). The snapshot
-// round-trip carries the human_members table, so these
-// import / export tests exercise it directly.
-function buildHumanDetail(id: string) {
+// Phase Final Stage B: roster tables retired — pin the
+// snapshot round-trip on organizations (surviving store).
+// Snapshot rows carry id; put() bodies omit it.
+function organizationFields() {
     return {
-        id,
-        title: 'product_manager',
-        strengths: '[]',
-        team_dimensions: '{}',
-        department: 'Product',
+        name: 'Test Org',
+        domain: 'test.example',
+        next_billing: '2026-01-01T00:00:00.000000Z',
+        seats: 5,
+        projects_limit: 10,
+        ideas_limit: 20,
     };
+}
+function buildOrganization(id: string) {
+    return { id, ...organizationFields() };
 }
 
 async function setup(): Promise<{
@@ -79,20 +81,15 @@ function withVersion(
 }
 
 // Import REPLACES every table — a snapshot that omits the
-// importer's own membership and admin grant locks the session
-// out of the authenticated surfaces. Tests that keep using
-// the ctx after an import carry the admin's rows, exactly as
-// a real exported snapshot would.
+// importer's own admin grant locks the session out of the
+// authenticated surfaces. Tests that keep using the ctx
+// after an import carry the admin's role_grants, exactly as
+// a real exported snapshot would. Memberships live on the
+// pair plane (table retired).
 function withAdminRows(
     tables: Record<string, unknown[]>,
 ): Record<string, unknown> {
     return withVersion({
-        memberships: [{
-            id: 'test-membership-current',
-            organization_id: '1',
-            identity_id: 'current',
-            at: '2020-01-01T00:00:00.000000Z',
-        }],
         role_grants: [{
             id: 'test-role-current-admin',
             organization_id: '1',
@@ -110,7 +107,7 @@ test('getSnapshot returns a JSON object of tables', async () => {
     const { ctx } = await setup();
     const json = await getSnapshot(ctx);
     const parsed = JSON.parse(json);
-    assert.ok(Array.isArray(parsed.members));
+    assert.ok(Array.isArray(parsed.organizations));
     assert.ok(Array.isArray(parsed.states));
 });
 
@@ -119,15 +116,19 @@ test(
     + ' export',
     async () => {
         const { db, ctx } = await setup();
-        // Phase Final Stage B: ideas table retired — pin the
-        // export surface on a surviving store (members).
-        await db.members.put('m1', {
-            type: 'human',
-        });
+        // Phase Final Stage B: roster retired — pin export
+        // on organizations.
+        await db.organizations.put(
+            'org-snap', organizationFields(),
+        );
         const parsed =
             JSON.parse(await getSnapshot(ctx));
-        assert.equal(parsed.members.length, 1);
-        assert.equal(parsed.members[0].type, 'human');
+        assert.ok(
+            parsed.organizations.some(
+                (o: { id: string }) =>
+                    o.id === 'org-snap',
+            ),
+        );
     },
 );
 
@@ -137,11 +138,11 @@ test(
     async () => {
         const { db, ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify(withVersion({
-            human_members: [
-                buildHumanDetail('u1'),
+            organizations: [
+                buildOrganization('u1'),
             ],
         })));
-        const rows = await db.humanMembers.getAll();
+        const rows = await db.organizations.getAll();
         assert.equal(rows.length, 1);
         assert.equal(rows[0]?.id, 'u1');
     },
@@ -152,15 +153,15 @@ test(
     async () => {
         const { ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify(withAdminRows({
-            human_members: [
-                buildHumanDetail('u1'),
+            organizations: [
+                buildOrganization('u1'),
             ],
         })));
         const parsed =
             JSON.parse(await getSnapshot(ctx));
-        assert.equal(parsed.human_members.length, 1);
+        assert.equal(parsed.organizations.length, 1);
         assert.equal(
-            parsed.human_members[0].id, 'u1',
+            parsed.organizations[0].id, 'u1',
         );
     },
 );
@@ -171,20 +172,20 @@ test(
     async () => {
         const { db, ctx } = await setup();
         await putSnapshot(ctx, JSON.stringify(withAdminRows({
-            human_members: [
-                buildHumanDetail('u1'),
+            organizations: [
+                buildOrganization('u1'),
             ],
         })));
         await putSnapshot(ctx, JSON.stringify(withVersion({
-            human_members: [
-                buildHumanDetail('u2'),
+            organizations: [
+                buildOrganization('u2'),
             ],
         })));
-        const rows = await db.humanMembers.getAll();
+        const rows = await db.organizations.getAll();
         assert.equal(rows.length, 1);
         assert.equal(rows[0]?.id, 'u2');
         assert.equal(
-            rows[0]?.title, 'product_manager',
+            rows[0]?.name, 'Test Org',
         );
     },
 );
@@ -196,15 +197,15 @@ test(
         const { db, ctx } = await setup();
         const file = new File(
             [JSON.stringify(withVersion({
-                human_members: [
-                    buildHumanDetail('u1'),
+                organizations: [
+                    buildOrganization('u1'),
                 ],
             }))],
             'snapshot.json',
             { type: 'application/json' },
         );
         await putSnapshotFromFile(ctx, file);
-        const rows = await db.humanMembers.getAll();
+        const rows = await db.organizations.getAll();
         assert.equal(rows.length, 1);
         assert.equal(rows[0]?.id, 'u1');
     },
@@ -251,23 +252,22 @@ test(
 
 test('a snapshot import stamps the schema marker', async () => {
     const { db, ctx } = await setup();
-    await db.members.put('u1', {
-        type: 'human',
-    });
+    await db.organizations.put(
+        'org-marker', organizationFields(),
+    );
     const json = await getSnapshot(ctx);
     await db.deleteSchema();
     assert.equal(await db.hasSchema(), false);
     await putSnapshot(ctx, json);
     assert.equal(await db.hasSchema(), true);
-    const rows = await db.members.getAll();
-    assert.equal(rows.length, 1);
+    const rows = await db.organizations.getAll();
+    assert.ok(
+        rows.some((r) => r.id === 'org-marker'),
+    );
 });
 
 test('deleteSchema clears all table contents', async () => {
     const { db, ctx } = await setup();
-    await db.members.put('u1', {
-        type: 'human',
-    });
     await deleteSchema(ctx);
     assert.equal(await db.hasSchema(), false);
 });
@@ -286,7 +286,7 @@ test(
             rows.length > 0,
             'mock data should seed members',
         );
-        assert.equal((await db.members.getAll()).length, 0);
+        // Phase Final Stage B: roster tables retired.
     },
 );
 
@@ -386,16 +386,16 @@ test(
     async () => {
         const { db, ctx } = await setup();
         const json = JSON.stringify(
-            withVersion({ members: [] }),
+            withVersion({ organizations: [] }),
         );
         await putSnapshot(ctx, json);
         // import REPLACES: the seeded admin rows are
         // gone, proving the snapshot actually landed
         assert.deepEqual(
-            await db.members.getAll(), [],
+            await db.organizations.getAll(), [],
         );
         assert.deepEqual(
-            await db.memberships.getAll(), [],
+            await db.roleGrants.getAll(), [],
         );
     },
 );
@@ -633,7 +633,9 @@ test(
         const ctx = {
             GET: async (resource: string) => {
                 if (resource === 'snapshots/schema') {
-                    throw new MissingTableError('members');
+                    throw new MissingTableError(
+                        'organizations',
+                    );
                 }
                 return null;
             },

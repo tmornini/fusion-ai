@@ -1,8 +1,5 @@
 import type {
     Id,
-    MemberEntity,
-    HumanMemberEntity,
-    AIMemberEntity,
     IdentityEntity,
     IdentityPiiEntity,
     IdentityCredentialEntity,
@@ -12,8 +9,6 @@ import type {
     ClientEntity,
     IdentityProviderEntity,
     OrganizationEntity,
-    MembershipEntity,
-    InvitationEntity,
     RequestEntity,
     ResponseEntity,
     StateEntity,
@@ -300,17 +295,11 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 17 stores an adapter exposes, factored out of
+// The 12 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
 // bound to an open tx (A9).
 export interface DbStores {
-    members:
-        EntityStore<MemberEntity>;
-    humanMembers:
-        EntityStore<HumanMemberEntity>;
-    aiMembers:
-        EntityStore<AIMemberEntity>;
     identities:
         EntityStore<IdentityEntity>;
     identityPii:
@@ -329,10 +318,6 @@ export interface DbStores {
         EntityStore<IdentityProviderEntity>;
     organizations:
         EntityStore<OrganizationEntity>;
-    memberships:
-        EntityStore<MembershipEntity>;
-    invitations:
-        EntityStore<InvitationEntity>;
     requests:
         EntityStore<RequestEntity>;
     responses:
@@ -422,9 +407,6 @@ export interface GuardedDbAdapter
 // orphans. deleteSchema (a full database delete) is the only
 // cleanup; nothing else needs to reconcile them.
 export const TABLE_NAMES = [
-    'members',
-    'human_members',
-    'ai_members',
     'identities',
     'identity_pii',
     'identity_credentials',
@@ -434,8 +416,6 @@ export const TABLE_NAMES = [
     'clients',
     'identity_providers',
     'organizations',
-    'memberships',
-    'invitations',
     'requests',
     'responses',
     'states',
@@ -520,7 +500,6 @@ export const TABLE_INDEXES:
     identity_token_revocations: ['identity_id'],
     identity_default_organizations: ['identity_id'],
     role_grants: ['organization_id', 'identity_id'],
-    memberships: ['organization_id', 'identity_id'],
     requests: ['uri_prefix', 'uri_id', 'message_hash'],
     responses: [
         'uri_prefix',

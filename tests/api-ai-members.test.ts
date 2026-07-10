@@ -188,8 +188,12 @@ test(
                     detail: detail('Bot'),
                 }));
         assert.equal(deniedEdit.status, 403);
-        // The denied member wrote nothing.
-        const members = await memberDb.members.getAll();
-        assert.equal(members.length, 0);
+        // The denied member wrote nothing on the pair plane
+        // beyond seed pairs — no AI-member document for a2.
+        await assert.rejects(
+            () => GET(
+                memberDb, 'ai-members/a2', token,
+            ),
+        );
     },
 );

@@ -47,7 +47,7 @@ test(
             id: string; name: string;
         }>('ai-members/tuJwPxYtBur2KCLquScShB');
         assert.equal(ai.name, 'Claude Opus 4.8');
-        assert.equal((await db.aiMembers.getAll()).length, 0);
+        // Phase Final Stage B: roster tables retired.
     },
 );
 

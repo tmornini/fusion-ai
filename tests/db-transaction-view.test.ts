@@ -3,10 +3,19 @@ import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 
 const aState = {
-    entity_id: 'm1',
+    entity_id: 'org1',
     state: 'active',
     member_id: 'm1',
     at: '2026-01-01T00:00:00.000000Z',
+};
+
+const aOrganization = {
+    name: 'Test Org',
+    domain: 'test.example',
+    next_billing: '2026-01-01T00:00:00.000000Z',
+    seats: 5,
+    projects_limit: 10,
+    ideas_limit: 20,
 };
 
 test(
@@ -15,17 +24,18 @@ test(
         const db = new MemoryDbAdapter();
         await db.postSchemaCreation();
         await db.transaction(
-            ['members', 'states'],
+            ['organizations', 'states'],
             async (view) => {
-                await view.members.put('m1', {
-                    type: 'human',
-                });
+                await view.organizations.put(
+                    'org1', aOrganization,
+                );
                 await view.states.put('s1', aState);
             },
         );
-        const member = await db.members.getById('m1');
+        const organization =
+            await db.organizations.getById('org1');
         const state = await db.states.getById('s1');
-        assert.equal(member.id, 'm1');
+        assert.equal(organization.id, 'org1');
         assert.equal(state.id, 's1');
     },
 );
@@ -37,20 +47,21 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.transaction(
-                ['members', 'states'],
+                ['organizations', 'states'],
                 async (view) => {
-                    await view.members.put('m1', {
-                        type: 'human',
-                    });
+                    await view.organizations.put(
+                        'org1', aOrganization,
+                    );
                     await view.states.put('s1', aState);
                     throw new Error('boom');
                 },
             ),
             /boom/,
         );
-        const members = await db.members.getAll();
+        const organizations =
+            await db.organizations.getAll();
         const states = await db.states.getAll();
-        assert.deepEqual(members, []);
+        assert.deepEqual(organizations, []);
         assert.deepEqual(states, []);
     },
 );
@@ -61,18 +72,18 @@ test(
         const db = new MemoryDbAdapter();
         await db.postSchemaCreation();
         const seen = await db.transaction(
-            ['members', 'states'],
+            ['organizations', 'states'],
             async (view) => {
-                await view.members.put('m1', {
-                    type: 'human',
-                });
+                await view.organizations.put(
+                    'org1', aOrganization,
+                );
                 // Read back inside the same tx — the put is
                 // visible before commit.
-                return view.members.getAll();
+                return view.organizations.getAll();
             },
         );
         assert.equal(seen.length, 1);
-        assert.equal(seen[0]!.id, 'm1');
+        assert.equal(seen[0]!.id, 'org1');
     },
 );
 
@@ -82,22 +93,23 @@ test(
         const db = new MemoryDbAdapter();
         await db.postSchemaCreation();
         await db.transaction(
-            ['members', 'states'],
+            ['organizations', 'states'],
             async (view) => {
                 await view.transaction(
-                    ['members'],
+                    ['organizations'],
                     async (inner) => {
-                        await inner.members.put('m1', {
-                            type: 'human',
-                        });
+                        await inner.organizations.put(
+                            'org1', aOrganization,
+                        );
                     },
                 );
                 await view.states.put('s1', aState);
             },
         );
-        const member = await db.members.getById('m1');
+        const organization =
+            await db.organizations.getById('org1');
         const state = await db.states.getById('s1');
-        assert.equal(member.id, 'm1');
+        assert.equal(organization.id, 'org1');
         assert.equal(state.id, 's1');
     },
 );
@@ -109,14 +121,14 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.transaction(
-                ['members', 'states'],
+                ['organizations', 'states'],
                 async (view) => {
                     await view.transaction(
-                        ['members'],
+                        ['organizations'],
                         async (inner) => {
-                            await inner.members.put('m1', {
-                                type: 'human',
-                            });
+                            await inner.organizations.put(
+                                'org1', aOrganization,
+                            );
                         },
                     );
                     throw new Error('boom');
@@ -124,7 +136,9 @@ test(
             ),
             /boom/,
         );
-        assert.deepEqual(await db.members.getAll(), []);
+        assert.deepEqual(
+            await db.organizations.getAll(), [],
+        );
     },
 );
 
@@ -135,7 +149,7 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.transaction(
-                ['members'],
+                ['organizations'],
                 async (view) => {
                     await view.transaction(
                         ['states'],

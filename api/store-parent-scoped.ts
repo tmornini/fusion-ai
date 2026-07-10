@@ -190,11 +190,11 @@ export function viaMembership<T>(
 // invitation's lifecycle events resolve to the invitation's
 // org and stay out of every other tenant's /states read.
 export function organizationOwnedProbes(
-    db: DbAdapter,
+    _db: DbAdapter,
 ): readonly OrganizationOwnedProbe[] {
-    return [
-        db.invitations,
-    ];
+    // Phase Final Stage B: roster (+ invitations) tables
+    // retired — pair plane owns organization resolution.
+    return [];
 }
 
 // The raw-read adapter the graph-entity probe needs. Both
@@ -222,21 +222,10 @@ interface RawReader {
 // first. organizationOwnedProbes (filtered) stays exported for
 // any non-fence caller; every fence caller uses this one.
 export function rawOrganizationOwnedProbes(
-    adapter: RawReader,
+    _adapter: RawReader,
 ): readonly OrganizationOwnedProbe[] {
-    return [
-        'invitations',
-    ].map((table): OrganizationOwnedProbe => ({
-        async getById(id: string) {
-            const row = await adapter.rawReadRow<
-                { id: string; organization_id: Id }
-            >(table, id);
-            if (row === null) {
-                throw new EntityNotFoundError(table, id);
-            }
-            return { organization_id: row.organization_id };
-        },
-    }));
+    // Phase Final Stage B: residual org-owned tables gone.
+    return [];
 }
 
 // Build the graph-entity probe shared by both ownerOrganizationOfEntity

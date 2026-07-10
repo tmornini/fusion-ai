@@ -77,58 +77,6 @@ every list, picker, and detail view — omits it.
 
 ## Core
 
-### members
-
-The parent member table: one row per member holding the
-shared identity and the `type` discriminant only. The
-display name lives with the kind — `ai_members.name`,
-`identity_pii.name` — or as the `SYSTEM_MEMBER_NAME`
-constant. Kind-specific detail lives in `human_members` /
-`ai_members`, keyed by the same id; a `'system'` member
-is a parent row with no detail row. The terminal
-lifecycle state is `'archived'`, recorded in the `states`
-log.
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| type | TEXT (`human` \| `ai` \| `system`) |
-
-### human_members
-
-Human org-profile detail, keyed by the shared member id.
-Contact PII (name, email, phone, bio) lives in
-`identity_pii`, not here; this row carries only the org
-profile.
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| title | TEXT |
-| department | TEXT |
-| strengths | TEXT (JSON array) |
-| team_dimensions | TEXT (JSON object) |
-
-### ai_members
-
-AI detail, keyed by the shared member id. The AI's
-display `name` lives here, not on the parent. All member
-kinds share the `MEMBER_STATES` alphabet (`active`,
-`pending`, `archived`), recorded in the `states` log.
-
-`model` is a foreign key into the code-resident
-provider-model catalog (`api/provider-models.ts`), not a
-DB table; the gate validates membership. `skill_focus`
-is free text, NOT NULL — empty is `''`, never null.
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| name | TEXT |
-| description | TEXT |
-| skill_focus | TEXT |
-| model | TEXT |
-
 ### identities
 
 One row per principal in the system. The `id` is the
@@ -344,68 +292,9 @@ global.
 
 Seat usage and last activity are NOT columns: both are
 derived from their ledgers at read time (distinct
-identities in `memberships`; max `states.at`) — a stored
-aggregate would be a second truth kept in sync by nothing.
-
-### memberships
-
-The covenant binding an identity to an organization, with
-the moment of union — the source of "which orgs can this
-identity reach". A person in N orgs has N membership rows;
-`member.id === identity.id` stays GLOBAL (one profile, many
-memberships, no `organization_id` column on `members`). The
-members roster is DERIVED from this ledger (the `members`
-route handler filters the global directory by the org-scoped
-memberships); `GET /organizations` enumerates a caller's
-reachable orgs from it; the `token-exchange` membership
-check fences org access against it. Org-fenced
-(`db-org-scoped.ts`).
-
-A membership row is written by an ACCEPTED `invitation` (see
-below) — accepting appends `accepted` to the invitation's
-`states` log AND writes the membership row in the SAME atomic
-commit. The semantics here are UNCHANGED: a row still means
-"accepted member", so roster, reachable-orgs, and
-token-exchange read it exactly as before.
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| organization_id | TEXT (FK → organizations) |
-| identity_id | TEXT (FK → identities) |
-| at | TEXT |
-
-### invitations
-
-An invitation binding an identity (the invitee) to an
-organization, awaiting the holder's answer. Immutable like a
-`memberships` row — all columns NOT NULL — but its lifecycle
-lives in the `states` log (alphabet `INVITATION_STATES`), not
-a `status` column. The current state is the latest event on
-the invitation `id` (the same `(at, id)` tiebreak as every
-entity), derived, never mutated.
-
-Global-spine (pass-through), NOT org-fenced: the invitee must
-read an invitation to an org they are not yet a member of, so
-the org fence cannot apply. The invitation routes fence
-instead by the caller's identity (invitee) or admin role
-(inviter). Validator: `validateInvitationEntity`
-(`api/validators.ts`). No secondary index — read by full
-scan or primary key (`api/db.ts` `TABLE_INDEXES`).
-
-The lifecycle: grant (admin) appends `pending`; accept
-(invitee) appends `accepted` AND writes a `memberships` row in
-the SAME atomic commit, in the INVITATION's organization
-(never the caller's active org); decline (invitee) appends
-`declined`; revoke (admin) appends `revoked`. There is no
-`'deleted'` state — an invitation persists as audit.
-
-| Column | Type |
-|--------|------|
-| id | TEXT |
-| organization_id | TEXT (FK → organizations) |
-| identity_id | TEXT (FK → identities) |
-| at | TEXT |
+identities in the memberships message pairs; max
+`states.at`) — a stored aggregate would be a second
+truth kept in sync by nothing.
 
 ## State Event Log
 

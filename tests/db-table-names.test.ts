@@ -18,7 +18,7 @@ test('TABLE_NAMES keeps the permanent survivors', () => {
 });
 
 test(
-    'TABLE_NAMES drops ideas..records and objectives',
+    'TABLE_NAMES drops ideas..objectives and roster',
     () => {
         for (const name of [
             'ideas',
@@ -41,6 +41,11 @@ test(
             'flow_records',
             'objectives',
             'objective_revisions',
+            'members',
+            'human_members',
+            'ai_members',
+            'memberships',
+            'invitations',
         ] as const) {
             assert.ok(
                 !TABLE_NAMES.includes(name),

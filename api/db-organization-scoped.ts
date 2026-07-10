@@ -118,9 +118,6 @@ export function organizationScopedAdapter(
             ),
 
         // Global identity/auth spine — untouched.
-        members: base.members,
-        humanMembers: base.humanMembers,
-        aiMembers: base.aiMembers,
         identities: base.identities,
         identityTokenRevocations:
             base.identityTokenRevocations,
@@ -133,13 +130,6 @@ export function organizationScopedAdapter(
         // organizations/:id and GET /organizations route guards
         // fence it to the caller's memberships.
         organizations: base.organizations,
-
-        // Invitations are global-spine: the invitee must read an
-        // invitation to an org they are NOT yet in, which an org
-        // fence would hide. The dedicated invitation routes fence
-        // by the caller's identity (invitee) or admin role
-        // (inviter) instead.
-        invitations: base.invitations,
 
         // The message plane (requests/responses) is the global
         // substrate the migration rides on: tenancy lives IN
@@ -177,6 +167,5 @@ export function organizationScopedAdapter(
 
         // Organization-owned entities — fenced to `org`.
         roleGrants: scope(base.roleGrants, 'role_grants'),
-        memberships: scope(base.memberships, 'memberships'),
     };
 }

@@ -128,7 +128,7 @@ async () => {
         db, 'ms-doc-op-1', body, 'current', pair,
     );
     assert.deepEqual(written, documentFields());
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });

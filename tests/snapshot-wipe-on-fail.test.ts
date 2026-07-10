@@ -9,8 +9,6 @@ import {
     SNAPSHOT_SCHEMA_VERSION_KEY,
 } from '../api/db.ts';
 
-const KEY_PREFIX = 'fusion-ai:';
-
 function installFailingShim(
     failOnSetCall: number,
 ): Map<string, string> {
@@ -40,6 +38,15 @@ function installFailingShim(
     return map;
 }
 
+const organizationRow = {
+    name: 'Acme',
+    domain: 'acme.example',
+    next_billing: '2026-01-01T00:00:00.000000Z',
+    seats: 5,
+    projects_limit: 10,
+    ideas_limit: 20,
+};
+
 // Wipe-on-fail is retired: the import now runs in one
 // transaction, so a validation error (at the gate) or a
 // logic error (inside the tx) leaves prior data intact via
@@ -55,9 +62,7 @@ test(
         const snapshot = JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            members: [],
-            ideas: [],
-            projects: [],
+            organizations: [],
         });
         await assert.rejects(
             () => adapter.putSnapshot(snapshot),
@@ -72,7 +77,9 @@ test(
         await adapter.putSnapshot(JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            members: [{ id: 'm1', type: 'human' }],
+            organizations: [
+                { id: 'm1', ...organizationRow },
+            ],
         }));
         // An invalid row rejects at the validation gate,
         // before any storage touch — so the prior import
@@ -81,11 +88,17 @@ test(
             () => adapter.putSnapshot(JSON.stringify({
                 [SNAPSHOT_SCHEMA_VERSION_KEY]:
                     SNAPSHOT_SCHEMA_VERSION,
-                members: [{ id: 'm2', type: 'nope' }],
+                organizations: [
+                    {
+                        id: 'm2',
+                        name: 'Nope',
+                    },
+                ],
             })),
         );
-        const members = await adapter.members.getAll();
-        assert.equal(members.length, 1);
-        assert.equal(members[0]!.id, 'm1');
+        const organizations =
+            await adapter.organizations.getAll();
+        assert.equal(organizations.length, 1);
+        assert.equal(organizations[0]!.id, 'm1');
     },
 );

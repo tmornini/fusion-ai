@@ -61,8 +61,8 @@ test(
         assert.equal(events[0]?.state, 'active');
         // Authorship is the verified caller, never the body.
         assert.equal(events[0]?.member_id, 'current');
-        assert.equal((await db.members.getAll()).length, 0);
-        assert.equal((await db.aiMembers.getAll()).length, 0);
+        // Phase Final Stage B: roster tables retired.
+        // Phase Final Stage B: roster tables retired.
     },
 );
 

@@ -863,7 +863,13 @@ async () => {
                 db, entityId, boundOrganization,
             ),
             row: await ownerOrganizationOfEntity(
-                probes, db.memberships, boundOrganization,
+                probes,
+                // Phase Final Stage B: memberships table
+                // retired — empty row-plane reader.
+                {
+                    getAllWhere: async () => [],
+                },
+                boundOrganization,
                 entityId, graph,
             ),
         };
@@ -916,7 +922,7 @@ async () => {
         (m) => m.organization_id === STARK_ORGANIZATION,
     )!;
     assert.ok(memberStark, 'current has stark membership');
-    assert.equal((await db.memberships.getAll()).length, 0);
+    // Phase Final Stage B: roster tables retired.
 
     const ideaStark = ideasStark[0]!;
     const ideaTwo = ideasTwo[0]!;
@@ -1656,10 +1662,9 @@ async () => {
         scoped, STARK_ORGANIZATION, attributeIds,
     );
     const inTx = await db.transaction(
-        // Stage B: objectives/records/work_orders retired.
+        // Stage B: roster + objectives/records retired.
         [
             'states',
-            'invitations', 'memberships',
             'requests', 'responses',
         ],
         (view) => collectAttributeReferrers(
@@ -1799,11 +1804,10 @@ async () => {
     );
     // Pre-tx vs in-tx parity (pair plane only).
     const inTx = await db.transaction(
-        // Stage B: records/work_orders tables retired.
+        // Stage B: roster + records/work_orders retired.
         [
             'states',
             'requests', 'responses',
-            'memberships',
         ],
         (view) => collectAttributeReferrers(
             organizationScopedAdapter(

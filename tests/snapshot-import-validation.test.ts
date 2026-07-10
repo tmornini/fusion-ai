@@ -243,11 +243,12 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            members: [],
+            organizations: [],
         }));
         await adapter.putSnapshot(json);
-        const members = await adapter.members.getAll();
-        assert.deepStrictEqual(members, []);
+        const organizations =
+            await adapter.organizations.getAll();
+        assert.deepStrictEqual(organizations, []);
     },
 );
 
@@ -258,11 +259,11 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            members: { not: 'an array' },
+            organizations: { not: 'an array' },
         }));
         await assert.rejects(
             () => adapter.putSnapshot(json),
-            /table "members" is not an array/,
+            /table "organizations" is not an array/,
         );
     },
 );
@@ -274,11 +275,11 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            members: ['not an object'],
+            organizations: ['not an object'],
         }));
         await assert.rejects(
             () => adapter.putSnapshot(json),
-            /row 0 in table "members" is not an object/,
+            /row 0 in table "organizations" is not an object/,
         );
     },
 );
@@ -290,11 +291,11 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            members: [null],
+            organizations: [null],
         }));
         await assert.rejects(
             () => adapter.putSnapshot(json),
-            /row 0 in table "members" is not an object/,
+            /row 0 in table "organizations" is not an object/,
         );
     },
 );
@@ -306,11 +307,11 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            members: [['not', 'an', 'object']],
+            organizations: [['not', 'an', 'object']],
         }));
         await assert.rejects(
             () => adapter.putSnapshot(json),
-            /row 0 in table "members" is not an object/,
+            /row 0 in table "organizations" is not an object/,
         );
     },
 );
@@ -322,17 +323,23 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            members: [
+            organizations: [
                 {
                     id: 'u1',
-                    type: 'human',
+                    name: 'Acme',
+                    domain: 'acme.example',
+                    next_billing:
+                        '2026-01-01T00:00:00.000000Z',
+                    seats: 5,
+                    projects_limit: 10,
+                    ideas_limit: 20,
                     rogue_field: 'invalid',
                 },
             ],
         }));
         await assert.rejects(
             () => adapter.putSnapshot(json),
-            /snapshot\.members\[0\]/,
+            /snapshot\.organizations\[0\]/,
         );
     },
 );
@@ -397,21 +404,24 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         const json = JSON.stringify(withVersion({
-            human_members: [
+            organizations: [
                 {
                     id: 'u1',
-                    title: 'product_manager',
-                    strengths: '[]',
-                    team_dimensions: '{}',
-                    department: 'Product',
+                    name: 'Acme',
+                    domain: 'acme.example',
+                    next_billing:
+                        '2026-01-01T00:00:00.000000Z',
+                    seats: 5,
+                    projects_limit: 10,
+                    ideas_limit: 20,
                 },
             ],
         }));
         await adapter.putSnapshot(json);
         const stored = map.get(
-            KEY_PREFIX + 'human_members',
+            KEY_PREFIX + 'organizations',
         );
-        assert.ok(stored, 'humans should persist');
+        assert.ok(stored, 'organizations should persist');
     },
 );
 
@@ -467,17 +477,24 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.members.put('u1', {
-            type: 'human',
+        await adapter.organizations.put('u1', {
+            name: 'Acme',
+            domain: 'acme.example',
+            next_billing:
+                '2026-01-01T00:00:00.000000Z',
+            seats: 5,
+            projects_limit: 10,
+            ideas_limit: 20,
         });
         await adapter.postSchemaCreation();
-        const members = await adapter.members.getAll();
+        const organizations =
+            await adapter.organizations.getAll();
         assert.equal(
-            members.length, 1,
+            organizations.length, 1,
             'second postSchemaCreation preserves data',
         );
         assert.ok(
-            map.get(KEY_PREFIX + 'members'),
+            map.get(KEY_PREFIX + 'organizations'),
         );
     },
 );
@@ -489,15 +506,21 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        // Phase Final Stage B: flow_versions retired — pin
-        // export surface on a surviving store (members).
-        await adapter.members.put('m1', {
-            type: 'human',
+        // Phase Final Stage B: roster retired — pin export
+        // surface on organizations.
+        await adapter.organizations.put('m1', {
+            name: 'Acme',
+            domain: 'acme.example',
+            next_billing:
+                '2026-01-01T00:00:00.000000Z',
+            seats: 5,
+            projects_limit: 10,
+            ideas_limit: 20,
         });
         const json =
             await adapter.getSnapshot();
         const parsed = JSON.parse(json);
-        assert.equal(parsed.members.length, 1);
+        assert.equal(parsed.organizations.length, 1);
         for (const table of TABLE_NAMES) {
             assert.ok(
                 Array.isArray(parsed[table]),

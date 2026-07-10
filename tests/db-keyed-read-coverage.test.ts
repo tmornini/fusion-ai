@@ -21,7 +21,6 @@ const KEYED_READS: ReadonlyArray<{
     column: string;
 }> = [
     { table: 'states', column: 'entity_id' },
-    { table: 'memberships', column: 'identity_id' },
     {
         table: 'identity_default_organizations',
         column: 'identity_id',

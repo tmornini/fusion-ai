@@ -115,6 +115,11 @@ export const RETIRED_TABLES: readonly string[] = [
     'flow_records',
     'objectives',
     'objective_revisions',
+    'members',
+    'human_members',
+    'ai_members',
+    'memberships',
+    'invitations',
 ];
 
 // State-event values the alphabet has retired. Old
