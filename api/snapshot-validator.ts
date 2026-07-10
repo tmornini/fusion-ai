@@ -16,12 +16,6 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateFlowEntity,
-    validateFlowVersionEntity,
-    validateFlowNodeEntity,
-    validateFlowEdgeEntity,
-    validateFlowNodeMemberEntity,
-    validateFlowNodeAttributeEntity,
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
     validateStateFieldValueEntity,
@@ -85,24 +79,6 @@ function validateSnapshotRow(
                 break;
             case 'identity_providers':
                 validateIdentityProviderEntity(body);
-                break;
-            case 'flows':
-                validateFlowEntity(body);
-                break;
-            case 'flow_versions':
-                validateFlowVersionEntity(body);
-                break;
-            case 'flow_nodes':
-                validateFlowNodeEntity(body);
-                break;
-            case 'flow_edges':
-                validateFlowEdgeEntity(body);
-                break;
-            case 'flow_node_members':
-                validateFlowNodeMemberEntity(body);
-                break;
-            case 'flow_node_attributes':
-                validateFlowNodeAttributeEntity(body);
                 break;
             case 'work_orders':
                 validateWorkOrderEntity(body);

@@ -6,11 +6,6 @@ import type {
 } from './db.ts';
 import type {
     Id,
-    FlowVersionEntity,
-    FlowNodeEntity,
-    FlowEdgeEntity,
-    FlowNodeMemberEntity,
-    FlowNodeAttributeEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
     ObjectiveRevisionEntity,
@@ -27,9 +22,6 @@ import {
     ParentScopedStateStore,
     viaParent,
     viaMembership,
-    ownerOrganizationOfEntity,
-    rawOrganizationOwnedProbes,
-    graphEntityProbe,
     type OwningOrganizationResolver,
 } from './store-parent-scoped.ts';
 import { resolveOwningOrganization } from './derive-states.ts';
@@ -65,19 +57,19 @@ export function organizationScopedAdapter(
         inner: GuardedEntityStore<T>,
         table: string,
     ): OrganizationScopedEntityStore<T> =>
-        new OrganizationScopedEntityStore(inner, organization, table);
+        new OrganizationScopedEntityStore(
+            inner, organization, table,
+        );
 
     const parentScope = <T extends { id: string }>(
         inner: GuardedEntityStore<T>,
         table: string,
         resolver: OwningOrganizationResolver<T>,
     ): ParentScopedEntityStore<T> =>
-        new ParentScopedEntityStore(inner, organization, table, resolver);
+        new ParentScopedEntityStore(
+            inner, organization, table, resolver,
+        );
 
-    // Row-plane memberships residual for the state_field_values
-    // parent resolve (Task 7 retires that arm). Identity facets
-    // re-pointed onto deriveMembershipsForIdentity below.
-    const memberships = base.memberships;
     // Pair-plane membership reader for identity facet fences
     // (Phase 15 Task 5): same three-way viaMembership algorithm,
     // sourced from deriveMembershipsForIdentity rather than the
@@ -99,11 +91,7 @@ export function organizationScopedAdapter(
 
     // A state event's entity_id is any org-owned entity, or an
     // org-less member visible only to a co-member of this org —
-    // resolved on the PAIR PLANE (Phase 15 Task 5) so a foreign
-    // owner reports its real org and is hidden even after the
-    // parent row is soft-deleted or hard-spliced.
-    const organizationOwned = rawOrganizationOwnedProbes(base);
-    const graphProbe = graphEntityProbe(base, base.flows);
+    // resolved on the PAIR PLANE (Phase 15 Task 5).
     const states = new ParentScopedStateStore(
         base.states, organization, 'states',
         (row) => resolveOwningOrganization(
@@ -111,11 +99,9 @@ export function organizationScopedAdapter(
         ),
     );
 
-    // state_field_values pin to a parent state event — they are
-    // owned by whatever owns that event (multi-hop). The same
-    // graphProbe resolves flow-graph deletion events here too.
-    // NAMED residual (Phase 15 Task 7 retires the leaf routes
-    // and this row-plane parent resolve together).
+    // state_field_values pin to a parent state event — owned by
+    // whatever owns that event. Phase Final Stage B: flow graph
+    // tables retired; ownership is pair-plane only.
     const stateFieldValues = parentScope(
         base.stateFieldValues, 'state_field_values',
         async (row: StateFieldValueEntity) => {
@@ -124,38 +110,16 @@ export function organizationScopedAdapter(
                 ev = await base.states.getById(
                     row.state_event_id);
             } catch (e) {
-                if (e instanceof EntityNotFoundError) return null;
-                throw e;
-            }
-            return ownerOrganizationOfEntity(
-                organizationOwned, memberships, organization,
-                ev.entity_id, graphProbe,
-            );
-        },
-    );
-
-    // A flow-graph ledger row owns no org of its own, and its
-    // node parent owns none either (flow_nodes is itself fenced
-    // via its flow). So resolve TWO hops: ledger → flow_nodes →
-    // flows.organization_id. An absent node (or flow) is a
-    // visible orphan, like every other parent-derived leaf.
-    const flowOrganizationOfNode = viaParent(
-        base.flows, (n: FlowNodeEntity) => n.flow_id);
-    const viaFlowNode = <T>(
-        flowNodeIdOf: (row: T) => Id,
-    ): OwningOrganizationResolver<T> =>
-        async (row) => {
-            try {
-                const node = await base.flowNodes.getById(
-                    flowNodeIdOf(row));
-                return flowOrganizationOfNode(node);
-            } catch (e) {
                 if (e instanceof EntityNotFoundError) {
                     return null;
                 }
                 throw e;
             }
-        };
+            return resolveOwningOrganization(
+                base, ev.entity_id, organization,
+            );
+        },
+    );
 
     return {
         initialize: () => base.initialize(),
@@ -174,7 +138,11 @@ export function organizationScopedAdapter(
         transaction: (tables, fn) =>
             base.transaction(
                 tables,
-                (view) => fn(organizationScopedAdapter(view, organization)),
+                (view) => fn(
+                    organizationScopedAdapter(
+                        view, organization,
+                    ),
+                ),
             ),
 
         // Global identity/auth spine — untouched.
@@ -184,7 +152,8 @@ export function organizationScopedAdapter(
         identities: base.identities,
         identityTokenRevocations:
             base.identityTokenRevocations,
-        identityDefaultOrganizations: base.identityDefaultOrganizations,
+        identityDefaultOrganizations:
+            base.identityDefaultOrganizations,
         clients: base.clients,
         identityProviders: base.identityProviders,
 
@@ -203,8 +172,8 @@ export function organizationScopedAdapter(
         // The message plane (requests/responses) is the global
         // substrate the migration rides on: tenancy lives IN
         // `uri_prefix`, enforced at the route gate, not by an
-        // organization_id column — so both pass through unwrapped,
-        // like the identity/auth spine above.
+        // organization_id column — so both pass through
+        // unwrapped, like the identity/auth spine above.
         requests: base.requests,
         responses: base.responses,
 
@@ -216,72 +185,51 @@ export function organizationScopedAdapter(
             base.identityPii, 'identity_pii',
             viaMembership(
                 membershipsFromPairPlane,
-                (r: IdentityPiiEntity) => r.id, organization),
+                (r: IdentityPiiEntity) => r.id,
+                organization,
+            ),
         ),
         identityCredentials: parentScope(
             base.identityCredentials, 'identity_credentials',
             viaMembership(
                 membershipsFromPairPlane,
                 (r: IdentityCredentialEntity) =>
-                    r.identity_id, organization),
+                    r.identity_id,
+                organization,
+            ),
         ),
 
-        // Parent-derived leaves — owning org resolved from the
-        // (unfenced) parent at READ time. No organization_id
-        // column was added; this is a server-side join.
-        flowVersions: parentScope(
-            base.flowVersions, 'flow_versions',
-            viaParent(
-                base.flows,
-                (r: FlowVersionEntity) => r.flow_id),
-        ),
-        flowNodes: parentScope(
-            base.flowNodes, 'flow_nodes',
-            viaParent(
-                base.flows,
-                (r: FlowNodeEntity) => r.flow_id),
-        ),
-        flowEdges: parentScope(
-            base.flowEdges, 'flow_edges',
-            viaParent(
-                base.flows,
-                (r: FlowEdgeEntity) => r.flow_id),
-        ),
-        flowNodeMembers: parentScope(
-            base.flowNodeMembers, 'flow_node_members',
-            viaFlowNode(
-                (r: FlowNodeMemberEntity) => r.flow_node_id),
-        ),
-        flowNodeAttributes: parentScope(
-            base.flowNodeAttributes, 'flow_node_attributes',
-            viaFlowNode(
-                (r: FlowNodeAttributeEntity) =>
-                    r.flow_node_id),
-        ),
+        // Parent-derived leaves still on residual tables until
+        // their own Stage B groups. flow_work_orders /
+        // flow_records resolve the parent flow via the pair
+        // plane (flows table retired this group).
         flowWorkOrders: parentScope(
             base.flowWorkOrders, 'flow_work_orders',
-            viaParent(
-                base.flows,
-                (r: FlowWorkOrderEntity) => r.flow_id),
+            (r: FlowWorkOrderEntity) =>
+                resolveOwningOrganization(
+                    base, r.flow_id, organization,
+                ),
         ),
         flowRecords: parentScope(
             base.flowRecords, 'flow_records',
-            viaParent(
-                base.flows,
-                (r: FlowRecordEntity) => r.flow_id),
+            (r: FlowRecordEntity) =>
+                resolveOwningOrganization(
+                    base, r.flow_id, organization,
+                ),
         ),
         objectiveRevisions: parentScope(
             base.objectiveRevisions, 'objective_revisions',
             viaParent(
                 base.objectives,
-                (r: ObjectiveRevisionEntity) => r.objective_id),
+                (r: ObjectiveRevisionEntity) =>
+                    r.objective_id,
+            ),
         ),
         states,
         stateFieldValues,
 
         // Organization-owned entities — fenced to `org`.
         roleGrants: scope(base.roleGrants, 'role_grants'),
-        flows: scope(base.flows, 'flows'),
         workOrders: scope(base.workOrders, 'work_orders'),
         records: scope(base.records, 'records'),
         recordAttributes: scope(

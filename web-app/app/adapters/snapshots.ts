@@ -101,6 +101,12 @@ export const RETIRED_TABLES: readonly string[] = [
     'project_flows',
     'project_objective_baseline_scores',
     'project_objective_actual_scores',
+    'flows',
+    'flow_versions',
+    'flow_nodes',
+    'flow_edges',
+    'flow_node_members',
+    'flow_node_attributes',
 ];
 
 // State-event values the alphabet has retired. Old

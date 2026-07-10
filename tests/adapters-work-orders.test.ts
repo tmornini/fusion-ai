@@ -174,10 +174,14 @@ async function seedFlow(
         nodes: graph.nodes,
         edges: graph.edges,
     };
-    const existing = await db.flows.getAll();
-    if (existing.some(f => f.id === flowId)) {
+    // Phase Final Stage B: flows table retired — probe
+    // existence via GET; create on miss.
+    try {
+        await ctx.GET('flows/' + flowId);
         await putFlow(ctx, flowId, save);
         return;
+    } catch {
+        // missing — create below
     }
     await postFlowCreation(ctx, {
         flowId,

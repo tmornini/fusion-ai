@@ -9,9 +9,6 @@ import {
     SNAPSHOT_SCHEMA_VERSION_KEY,
 } from '../api/db.ts';
 import {
-    jsonObjectField,
-} from '../api/types.ts';
-import {
     SnapshotVersionMismatchError,
 } from '../api/snapshot-validator.ts';
 
@@ -481,21 +478,15 @@ test(
         const adapter =
             new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.flowVersions.put('fv1', {
-            flow_id: 'flow-aaaa',
-            name: 'Flow',
-            is_locked: false,
-            is_auto_layout: true,
-            is_auto_fit: true,
-            lock_timeout: 60,
-            graph: jsonObjectField({
-                nodes: [], edges: [],
-            }),
-            at: '2026-01-01T00:00:00.000000Z',
+        // Phase Final Stage B: flow_versions retired — pin
+        // export surface on a surviving store (members).
+        await adapter.members.put('m1', {
+            type: 'human',
         });
         const json =
             await adapter.getSnapshot();
         const parsed = JSON.parse(json);
+        assert.equal(parsed.members.length, 1);
         for (const table of TABLE_NAMES) {
             assert.ok(
                 Array.isArray(parsed[table]),

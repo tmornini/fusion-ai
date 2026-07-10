@@ -303,7 +303,33 @@ async function seedChain(
             state_event_id: 'p' + s + '-genesis',
         },
     ));
-    await db.flows.put('f' + s, flowBody(organization));
+    // Phase Final Stage B: flows table retired — seed through
+    // the live document PUT so the pair plane owns it.
+    const {
+        organization_id: _flowOrganizationId,
+        ...flowFields
+    } = flowBody(organization);
+    const flowWrite = await handleRequest(db, req(
+        'PUT',
+        '/organizations/' + organization + '/flows/f' + s,
+        await organizationToken(identity, organization),
+        {
+            ...flowFields,
+            state: 'active',
+            state_at: T8_AT,
+            state_event_id: 'f' + s + '-genesis',
+            graph: JSON.stringify({ nodes: [], edges: [] }),
+            revivals: [],
+            graphDelta: {
+                nodes: [],
+                edges: [],
+                deletions: [],
+                memberEvents: [],
+                attributeEvents: [],
+            },
+        },
+    ));
+    assert.equal(flowWrite.status, 200);
     // Phase Final Task 2: objectives row half stripped — seed
     // through the live document PUT so the pair plane owns it
     // (nested revisions/scores re-pins already ride pairs).
@@ -327,13 +353,8 @@ async function seedChain(
     // top-level work-orders/:id entity — only the nested
     // flows/:id/work-orders JOIN is exercised here.
     await db.workOrders.put('wo' + s, workOrderBody(organization));
-    await db.flowVersions.put('fv' + s, {
-        flow_id: 'f' + s, name: 'v', is_locked: false,
-        is_auto_layout: false, is_auto_fit: false,
-        lock_timeout: 0,
-        graph: jsonObjectField({ nodes: [], edges: [] }),
-        at: T8_AT,
-    });
+    // Phase Final Stage B: flow_versions table retired with
+    // flows (no residual seed).
     // NAMED re-pin (Phase 4 Task 8): the flipped GET
     // projects/:id/flows derives from the message ledger, not
     // the raw project_flows table — a raw db.projectFlows.put

@@ -235,13 +235,12 @@ async function persistedGraph(
     return JSON.parse(flow.graph) as StoredGraph;
 }
 
-// versions routes RETIRED (Phase 15 Task 7); count raw table
-// rows to prove live ops still leave flow_versions untouched.
+// Phase Final Stage B: flow_versions table retired with flows.
+// Live ops leave no residual version table; pin always 0.
 async function flowVersionCount(
-    db: MemoryDbAdapter,
+    _db: MemoryDbAdapter,
 ): Promise<number> {
-    const rows = await db.flowVersions.getAll();
-    return rows.length;
+    return 0;
 }
 
 // Save a graph through the real route (putFlow) so the four

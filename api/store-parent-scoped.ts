@@ -193,7 +193,6 @@ export function organizationOwnedProbes(
     db: DbAdapter,
 ): readonly OrganizationOwnedProbe[] {
     return [
-        db.flows,
         db.records, db.objectives, db.workOrders,
         db.invitations,
     ];
@@ -227,7 +226,6 @@ export function rawOrganizationOwnedProbes(
     adapter: RawReader,
 ): readonly OrganizationOwnedProbe[] {
     return [
-        'flows',
         'records', 'objectives', 'work_orders',
         'invitations',
     ].map((table): OrganizationOwnedProbe => ({
@@ -252,38 +250,16 @@ export function rawOrganizationOwnedProbes(
 // OWN try — one call per try, per the no-greedy-catch covenant.
 // Re-throws any non-EntityNotFoundError so unexpected storage
 // failures surface instead of silently resolving to null.
+// Phase Final Stage B: flow_nodes/flow_edges/flows tables
+// retired. Graph-entity ownership resolves on the pair plane
+// via resolveOwningOrganization; this probe remains as a
+// null-returning stub so residual ownerOrganizationOfEntity
+// call sites compile until Task 5 deletes the decorator.
 export function graphEntityProbe(
-    base: RawReader,
-    flows: OrganizationOwnedProbe,
+    _base: RawReader,
+    _flows?: OrganizationOwnedProbe,
 ): (entityId: Id) => Promise<Id | null> {
-    return async (entityId) => {
-        let flowId: Id | null = null;
-        // Try flow_nodes first — raw bypasses deleted filter.
-        const nodeRow = await base.rawReadRow<{
-            id: string; flow_id: Id;
-        }>('flow_nodes', entityId);
-        if (nodeRow !== null) {
-            flowId = nodeRow.flow_id;
-        }
-        // Try flow_edges if not a node.
-        if (flowId === null) {
-            const edgeRow = await base.rawReadRow<{
-                id: string; flow_id: Id;
-            }>('flow_edges', entityId);
-            if (edgeRow !== null) {
-                flowId = edgeRow.flow_id;
-            }
-        }
-        if (flowId === null) return null;
-        // Resolve the flow's org. An absent flow is an orphan.
-        try {
-            const flow = await flows.getById(flowId);
-            return flow.organization_id;
-        } catch (e) {
-            if (e instanceof EntityNotFoundError) return null;
-            throw e;
-        }
-    };
+    return async (_entityId) => null;
 }
 
 // Resolve the org that owns the entity behind a

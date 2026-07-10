@@ -680,16 +680,8 @@ test('flowGraphBindingsFromPairs: seed attribute + member'
         preTx.memberEvents.length > 0,
         'seed memberEvents empty',
     );
-    // Row plane stays empty after the flows-family strip.
-    assert.equal(
-        (await db.flowNodeAttributes.getAll()).length, 0,
-    );
-    assert.equal(
-        (await db.flowNodeMembers.getAll()).length, 0,
-    );
-    assert.equal(
-        (await db.flowNodes.getAll()).length, 0,
-    );
+    // Phase Final Stage B: flow graph tables retired — the
+    // pair-plane bindings above are the residual pin.
 
     // Every attribute/member event's node resolves a flow.
     for (const event of preTx.attributeEvents) {
@@ -856,7 +848,9 @@ test('fence parity: resolveOwningOrganization agrees with'
 async () => {
     const db = await seededDb();
     const probes = rawOrganizationOwnedProbes(db);
-    const graph = graphEntityProbe(db, db.flows);
+    // Phase Final Stage B: flows table retired — graph probe
+    // is a null-returning stub.
+    const graph = graphEntityProbe(db);
     async function bothPlanes(
         entityId: string,
         boundOrganization: string,

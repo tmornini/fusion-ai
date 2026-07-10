@@ -58,10 +58,7 @@ const EXPECTED: Record<string, TableFingerprint> = {
 // mock-data-pairs.test.ts).
 const EXCLUDED_TABLES = new Set([
     'requests', 'responses', SNAPSHOT_SCHEMA_VERSION_KEY,
-    // ideas/submissions + projects/flows/scores deleted
-    'flows', 'flow_versions',
-    'flow_nodes', 'flow_edges',
-    'flow_node_members', 'flow_node_attributes',
+    // ideas/projects/flows families deleted
     'work_orders', 'flow_work_orders', 'state_field_values',
     'records', 'record_attributes', 'flow_records',
     'objectives', 'objective_revisions',

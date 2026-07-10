@@ -219,14 +219,8 @@ test('postFlowDocumentOp returns the entity, exactly one'
     assert.deepEqual(
         events.map(e => e.state), ['active', 'updated'],
     );
-    assert.equal(
-        (await db.flowNodes.getAllWhere(
-            'flow_id', 'flow-op-1',
-        )).length,
-        0,
-    );
-    const versions = await db.flowVersions.getAll();
-    assert.equal(versions.length, 0);
+    // Phase Final Stage B: flow_nodes + flow_versions tables
+    // retired — pair-plane state events are the residual pin.
 });
 
 test('postFlowDocumentOp with revivals posts the restored'

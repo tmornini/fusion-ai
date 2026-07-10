@@ -26,12 +26,6 @@ import type {
     RoleGrantEntity,
     ClientEntity,
     IdentityProviderEntity,
-    FlowEntity,
-    FlowVersionEntity,
-    FlowNodeEntity,
-    FlowEdgeEntity,
-    FlowNodeMemberEntity,
-    FlowNodeAttributeEntity,
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
@@ -70,12 +64,6 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateFlowEntity,
-    validateFlowVersionEntity,
-    validateFlowNodeEntity,
-    validateFlowEdgeEntity,
-    validateFlowNodeMemberEntity,
-    validateFlowNodeAttributeEntity,
     validateWorkOrderEntity,
     validateFlowWorkOrderEntity,
     validateStateFieldValueEntity,
@@ -126,15 +114,6 @@ export class BackedDbAdapter
     readonly clients!: GuardedEntityStore<ClientEntity>;
     readonly identityProviders!:
         GuardedEntityStore<IdentityProviderEntity>;
-    readonly flows!: GuardedEntityStore<FlowEntity>;
-    readonly flowVersions!:
-        GuardedEntityStore<FlowVersionEntity>;
-    readonly flowNodes!: GuardedEntityStore<FlowNodeEntity>;
-    readonly flowEdges!: GuardedEntityStore<FlowEdgeEntity>;
-    readonly flowNodeMembers!:
-        GuardedEntityStore<FlowNodeMemberEntity>;
-    readonly flowNodeAttributes!:
-        GuardedEntityStore<FlowNodeAttributeEntity>;
     readonly workOrders!: GuardedEntityStore<WorkOrderEntity>;
     readonly flowWorkOrders!:
         GuardedEntityStore<FlowWorkOrderEntity>;
@@ -400,30 +379,6 @@ export class BackedDbAdapter
             identityProviders: new HistoryEntityStore(
                 'identity_providers', run,
                 validateIdentityProviderEntity,
-            ),
-            flows: new EntityStore(
-                'flows', run, stateStore,
-                validateFlowEntity,
-            ),
-            flowVersions: new HistoryEntityStore(
-                'flow_versions', run,
-                validateFlowVersionEntity,
-            ),
-            flowNodes: new EntityStore(
-                'flow_nodes', run, stateStore,
-                validateFlowNodeEntity,
-            ),
-            flowEdges: new EntityStore(
-                'flow_edges', run, stateStore,
-                validateFlowEdgeEntity,
-            ),
-            flowNodeMembers: new HistoryEntityStore(
-                'flow_node_members', run,
-                validateFlowNodeMemberEntity,
-            ),
-            flowNodeAttributes: new HistoryEntityStore(
-                'flow_node_attributes', run,
-                validateFlowNodeAttributeEntity,
             ),
             workOrders: new EntityStore(
                 'work_orders', run, stateStore,

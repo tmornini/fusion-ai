@@ -29,14 +29,15 @@ function installShim(): Map<string, string> {
     return map;
 }
 
-const baseVersion = {
-    flow_id: 'flow-aaaaaaaaaaaaaaaaaaaa',
-    name: 'Test Flow',
-    is_locked: false,
-    is_auto_layout: true,
-    is_auto_fit: true,
-    lock_timeout: 60,
-    graph: jsonObjectField({
+// Phase Final Stage B: flow_versions retired — pin the
+// localStorage write surface on work_orders (surviving store
+// with a nested JSON field + numeric).
+const baseWorkOrder = {
+    organization_id: '1',
+    display_id: 'WO-1',
+    flow_graph: jsonObjectField({
+        name: 'Test Flow',
+        lockTimeout: 60,
         nodes: [
             {
                 id: 'n1',
@@ -52,23 +53,23 @@ const baseVersion = {
         ],
         edges: [],
     }),
-    at: '2026-01-01T00:00:00.000000Z',
+    position: 1,
 };
 
 // Writes are plain JSON since the F-080 measurement
 // retired compression; the gz1: decoder survives for
 // READS of legacy payloads only (pinned below).
 test(
-    'flow_versions write stores raw JSON',
+    'work_orders write stores raw JSON',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.flowVersions.put(
-            'fv-prefix-test', baseVersion,
+        await adapter.workOrders.put(
+            'wo-prefix-test', baseWorkOrder,
         );
         const stored = map.get(
-            KEY_PREFIX + 'flow_versions',
+            KEY_PREFIX + 'work_orders',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -80,41 +81,40 @@ test(
 );
 
 test(
-    'flow_versions round-trips through put → getById',
+    'work_orders round-trips through put → getById',
     async () => {
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.flowVersions.put(
-            'fv-rt', baseVersion,
+        await adapter.workOrders.put(
+            'wo-rt', baseWorkOrder,
         );
-        const got = await adapter.flowVersions.getById(
-            'fv-rt',
+        const got = await adapter.workOrders.getById(
+            'wo-rt',
         );
-        assert.equal(got.id, 'fv-rt');
-        assert.equal(got.name, 'Test Flow');
-        assert.equal(got.flow_id, baseVersion.flow_id);
+        assert.equal(got.id, 'wo-rt');
+        assert.equal(got.display_id, 'WO-1');
+        assert.equal(
+            got.organization_id,
+            baseWorkOrder.organization_id,
+        );
     },
 );
 
 test(
-    'booleans round-trip as booleans, not 1|0 numbers',
+    'numbers round-trip as numbers, not strings',
     async () => {
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.flowVersions.put(
-            'fv-bool', baseVersion,
+        await adapter.workOrders.put(
+            'wo-num', baseWorkOrder,
         );
-        const got = await adapter.flowVersions.getById(
-            'fv-bool',
+        const got = await adapter.workOrders.getById(
+            'wo-num',
         );
-        assert.strictEqual(got.is_locked, false);
-        assert.strictEqual(got.is_auto_layout, true);
-        assert.strictEqual(got.is_auto_fit, true);
-        assert.strictEqual(
-            typeof got.is_locked, 'boolean',
-        );
+        assert.strictEqual(got.position, 1);
+        assert.strictEqual(typeof got.position, 'number');
     },
 );
 
@@ -201,37 +201,37 @@ test(
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.flowVersions.put(
-            'fv-export', baseVersion,
+        await adapter.workOrders.put(
+            'wo-export', baseWorkOrder,
         );
         const json = await adapter.getSnapshot();
         const parsed = JSON.parse(json);
         assert.ok(
-            Array.isArray(parsed.flow_versions),
-            'flow_versions should be an array in snapshot',
+            Array.isArray(parsed.work_orders),
+            'work_orders should be an array in snapshot',
         );
-        assert.equal(parsed.flow_versions.length, 1);
+        assert.equal(parsed.work_orders.length, 1);
         assert.equal(
-            parsed.flow_versions[0].id, 'fv-export',
+            parsed.work_orders[0].id, 'wo-export',
         );
     },
 );
 
 test(
-    'snapshot import stores flow_versions raw',
+    'snapshot import stores work_orders raw',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         const snapshot = JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            flow_versions: [
-                { id: 'fv-imp', ...baseVersion },
+            work_orders: [
+                { id: 'wo-imp', ...baseWorkOrder },
             ],
         });
         await adapter.putSnapshot(snapshot);
         const stored = map.get(
-            KEY_PREFIX + 'flow_versions',
+            KEY_PREFIX + 'work_orders',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -248,18 +248,11 @@ test(
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        const flowRow = {
-            id: 'flow-aaaaaaaaaaaaaaaaaaaa',
-            name: 'Test',
-            is_locked: false,
-            is_auto_layout: true,
-            is_auto_fit: true,
-            lock_timeout: 60,
-            graph: jsonObjectField({
-                nodes: [], edges: [],
-            }),
+        const workOrderRow = {
+            id: 'wo-gz1',
+            ...baseWorkOrder,
         };
-        const rawJson = JSON.stringify([flowRow]);
+        const rawJson = JSON.stringify([workOrderRow]);
         const stream = new Blob([rawJson]).stream()
             .pipeThrough(new CompressionStream('gzip'));
         const buffer = await new Response(stream)
@@ -270,11 +263,11 @@ test(
             binary += String.fromCharCode(b);
         }
         map.set(
-            KEY_PREFIX + 'flows',
+            KEY_PREFIX + 'work_orders',
             'gz1:' + btoa(binary),
         );
-        const result = await adapter.flows.getAll();
+        const result = await adapter.workOrders.getAll();
         assert.equal(result.length, 1);
-        assert.equal(result[0]!.name, 'Test');
+        assert.equal(result[0]!.display_id, 'WO-1');
     },
 );
