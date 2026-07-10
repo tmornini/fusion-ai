@@ -318,64 +318,6 @@ storage gate.
 | action | TEXT (`linked` \| `unlinked`) |
 | at | TEXT |
 
-## Records
-
-### records
-
-A Record is a named data shape. Attributes belong to one
-Record; flows bind to a Record via `flow_records`.
-Lifecycle state lives in `states` (alphabet
-`RECORD_STATES`: `active`, `archived`, `deleted`).
-Org-owned (org-fenced): NOT-NULL `organization_id`.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| organization_id | TEXT | FK → organizations |
-| name | TEXT | non-empty |
-| description | TEXT | empty string allowed |
-| position | REAL | Display order, ascending |
-
-### record_attributes
-
-One row per attribute of a Record. The `attribute_id` column
-on `state_field_values` references this `id` once the flow
-the work order belongs to is bound to the parent Record.
-Org-owned (org-fenced): NOT-NULL `organization_id`.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| organization_id | TEXT | FK → organizations |
-| record_id | TEXT | FK → records |
-| name | TEXT | non-empty |
-| attribute_type | TEXT | one of text, number, select, radio, date, checkbox |
-| sort_order | REAL | author-controlled ordering |
-| options | TEXT | JSON string[]; required non-empty for select/radio |
-| constraints | TEXT | JSON Constraint[] |
-
-Constraints discriminator (`Constraint['kind']`):
-`'regex'` (pattern, applies to text), `'range_min'` and
-`'range_max'` (min/max strings, apply to number or date).
-The runner parses per `attribute_type`; date bounds are
-YYYY-MM-DD calendar dates (lexicographic order = chronologic
-order).
-
-### flow_records
-
-Join table binding one flow to one Record. A flow has at
-most one Record; a Record may back many flows. The
-single-binding rule is app-enforced (the flow-detail page
-unbinds before re-binding); the schema declares no UNIQUE
-index on `flow_id`.
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | TEXT | PRIMARY KEY |
-| flow_id | TEXT | FK → flows |
-| record_id | TEXT | FK → records |
-| at | TEXT | RFC-3339 Zulu — moment of the binding |
-
 ## Platform
 
 ### organizations

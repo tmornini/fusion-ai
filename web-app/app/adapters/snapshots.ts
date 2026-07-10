@@ -110,6 +110,9 @@ export const RETIRED_TABLES: readonly string[] = [
     'work_orders',
     'flow_work_orders',
     'state_field_values',
+    'records',
+    'record_attributes',
+    'flow_records',
 ];
 
 // State-event values the alphabet has retired. Old

@@ -16,9 +16,6 @@ import {
     validateRoleGrantEntity,
     validateClientEntity,
     validateIdentityProviderEntity,
-    validateRecordEntity,
-    validateRecordAttributeEntity,
-    validateFlowRecordEntity,
     validateOrganizationEntity,
     validateMembershipEntity,
     validateInvitationEntity,
@@ -76,17 +73,6 @@ function validateSnapshotRow(
                 break;
             case 'identity_providers':
                 validateIdentityProviderEntity(body);
-                break;
-            case 'records':
-                validateRecordEntity(body);
-                break;
-            case 'record_attributes':
-                validateRecordAttributeEntity(
-                    body,
-                );
-                break;
-            case 'flow_records':
-                validateFlowRecordEntity(body);
                 break;
             case 'organizations':
                 validateOrganizationEntity(body);

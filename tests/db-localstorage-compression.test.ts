@@ -26,13 +26,11 @@ function installShim(): Map<string, string> {
     return map;
 }
 
-// Phase Final Stage B: work_orders retired — pin the
-// localStorage write surface on records (surviving store
-// with a nested text field + numeric).
-const baseRecord = {
+// Phase Final Stage B: records retired — pin the
+// localStorage write surface on objectives (surviving
+// store with organization_id + numeric).
+const baseObjective = {
     organization_id: '1',
-    name: 'Test Record',
-    description: 'd',
     position: 1,
 };
 
@@ -40,16 +38,16 @@ const baseRecord = {
 // retired compression; the gz1: decoder survives for
 // READS of legacy payloads only (pinned below).
 test(
-    'records write stores raw JSON',
+    'objectives write stores raw JSON',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.records.put(
-            'rec-prefix-test', baseRecord,
+        await adapter.objectives.put(
+            'obj-prefix-test', baseObjective,
         );
         const stored = map.get(
-            KEY_PREFIX + 'records',
+            KEY_PREFIX + 'objectives',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -61,22 +59,21 @@ test(
 );
 
 test(
-    'records round-trips through put → getById',
+    'objectives round-trips through put → getById',
     async () => {
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.records.put(
-            'rec-rt', baseRecord,
+        await adapter.objectives.put(
+            'obj-rt', baseObjective,
         );
-        const got = await adapter.records.getById(
-            'rec-rt',
+        const got = await adapter.objectives.getById(
+            'obj-rt',
         );
-        assert.equal(got.id, 'rec-rt');
-        assert.equal(got.name, 'Test Record');
+        assert.equal(got.id, 'obj-rt');
         assert.equal(
             got.organization_id,
-            baseRecord.organization_id,
+            baseObjective.organization_id,
         );
     },
 );
@@ -87,11 +84,11 @@ test(
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.records.put(
-            'rec-num', baseRecord,
+        await adapter.objectives.put(
+            'obj-num', baseObjective,
         );
-        const got = await adapter.records.getById(
-            'rec-num',
+        const got = await adapter.objectives.getById(
+            'obj-num',
         );
         assert.strictEqual(got.position, 1);
         assert.strictEqual(typeof got.position, 'number');
@@ -181,37 +178,37 @@ test(
         installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        await adapter.records.put(
-            'rec-export', baseRecord,
+        await adapter.objectives.put(
+            'obj-export', baseObjective,
         );
         const json = await adapter.getSnapshot();
         const parsed = JSON.parse(json);
         assert.ok(
-            Array.isArray(parsed.records),
-            'records should be an array in snapshot',
+            Array.isArray(parsed.objectives),
+            'objectives should be an array in snapshot',
         );
-        assert.equal(parsed.records.length, 1);
+        assert.equal(parsed.objectives.length, 1);
         assert.equal(
-            parsed.records[0].id, 'rec-export',
+            parsed.objectives[0].id, 'obj-export',
         );
     },
 );
 
 test(
-    'snapshot import stores records raw',
+    'snapshot import stores objectives raw',
     async () => {
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         const snapshot = JSON.stringify({
             [SNAPSHOT_SCHEMA_VERSION_KEY]:
                 SNAPSHOT_SCHEMA_VERSION,
-            records: [
-                { id: 'rec-imp', ...baseRecord },
+            objectives: [
+                { id: 'obj-imp', ...baseObjective },
             ],
         });
         await adapter.putSnapshot(snapshot);
         const stored = map.get(
-            KEY_PREFIX + 'records',
+            KEY_PREFIX + 'objectives',
         );
         assert.ok(stored, 'expected stored value');
         assert.ok(
@@ -228,11 +225,11 @@ test(
         const map = installShim();
         const adapter = new LocalStorageDbAdapter();
         await adapter.postSchemaCreation();
-        const recordRow = {
-            id: 'rec-gz1',
-            ...baseRecord,
+        const objectiveRow = {
+            id: 'obj-gz1',
+            ...baseObjective,
         };
-        const rawJson = JSON.stringify([recordRow]);
+        const rawJson = JSON.stringify([objectiveRow]);
         const stream = new Blob([rawJson]).stream()
             .pipeThrough(new CompressionStream('gzip'));
         const buffer = await new Response(stream)
@@ -243,11 +240,11 @@ test(
             binary += String.fromCharCode(b);
         }
         map.set(
-            KEY_PREFIX + 'records',
+            KEY_PREFIX + 'objectives',
             'gz1:' + btoa(binary),
         );
-        const result = await adapter.records.getAll();
+        const result = await adapter.objectives.getAll();
         assert.equal(result.length, 1);
-        assert.equal(result[0]!.name, 'Test Record');
+        assert.equal(result[0]!.position, 1);
     },
 );

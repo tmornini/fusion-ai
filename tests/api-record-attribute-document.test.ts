@@ -132,9 +132,7 @@ test('postRecordAttributeDocumentOp writes exactly the'
         organization_id: '1',
         ...documentFields(),
     });
-    assert.equal(
-        (await db.recordAttributes.getAll()).length, 0,
-    );
+    // Phase Final Stage B: record_attributes table retired.
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });

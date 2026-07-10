@@ -29,9 +29,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    RecordEntity,
-    RecordAttributeEntity,
-    FlowRecordEntity,
     ObjectiveEntity,
     ObjectiveRevisionEntity,
     RequestEntity,
@@ -62,9 +59,6 @@ import {
     validateClientEntity,
     validateIdentityProviderEntity,
     validateStateEntity,
-    validateRecordEntity,
-    validateRecordAttributeEntity,
-    validateFlowRecordEntity,
     validateObjectiveEntity,
     validateObjectiveRevisionEntity,
     validateOrganizationEntity,
@@ -108,12 +102,6 @@ export class BackedDbAdapter
     readonly clients!: GuardedEntityStore<ClientEntity>;
     readonly identityProviders!:
         GuardedEntityStore<IdentityProviderEntity>;
-    readonly records!:
-        GuardedEntityStore<RecordEntity>;
-    readonly recordAttributes!:
-        GuardedEntityStore<RecordAttributeEntity>;
-    readonly flowRecords!:
-        GuardedEntityStore<FlowRecordEntity>;
     readonly organizations!:
         GuardedEntityStore<OrganizationEntity>;
     readonly memberships!:
@@ -368,18 +356,6 @@ export class BackedDbAdapter
             identityProviders: new HistoryEntityStore(
                 'identity_providers', run,
                 validateIdentityProviderEntity,
-            ),
-            records: new EntityStore(
-                'records', run, stateStore,
-                validateRecordEntity,
-            ),
-            recordAttributes: new EntityStore(
-                'record_attributes', run, stateStore,
-                validateRecordAttributeEntity,
-            ),
-            flowRecords: new EntityStore(
-                'flow_records', run, stateStore,
-                validateFlowRecordEntity,
             ),
             objectives: new EntityStore(
                 'objectives', run, stateStore,

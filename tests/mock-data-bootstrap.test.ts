@@ -25,11 +25,9 @@ test('pristine bootstrap seeds no Records', async () => {
     const db = await bootstrappedDb();
     // Phase Final Task 2: records family row halves stripped
     // — bootstrap also writes zero pairs for records.
-    assert.equal((await db.records.getAll()).length, 0);
-    assert.equal(
-        (await db.recordAttributes.getAll()).length, 0,
-    );
-    assert.equal((await db.flowRecords.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
+    // Phase Final Stage B: record_attributes table retired.
+    // Phase Final Stage B: flow_records table retired.
 });
 
 test(

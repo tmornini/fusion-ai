@@ -231,7 +231,7 @@ test('foreign-id DELETE records/:id 404s', async () => {
     assert.equal(still.status, 200);
     const row = await still.json() as { name: string };
     assert.equal(row.name, 'A record');
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
 });
 
 test('foreign-id DELETE memberships/:id 404s', async () => {

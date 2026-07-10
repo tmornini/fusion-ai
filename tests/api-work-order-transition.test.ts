@@ -88,15 +88,19 @@ test(
         const db = await seededDb();
         // The field row references a record attribute; seed one
         // so the foreign target exists for the read paths.
-        await db.recordAttributes.put('attr-1', {
-            organization_id: '1',
-            record_id: 'rec-1',
-            name: 'Severity',
-            attribute_type: 'text',
-            sort_order: 0,
-            options: '[]',
-            constraints: '[]',
-        });
+        // Phase Final Stage B: record_attributes retired.
+        await PUT(
+            db, 'record-attributes/attr-1', {
+                organization_id: '1',
+                record_id: 'rec-1',
+                name: 'Severity',
+                attribute_type: 'text',
+                sort_order: 0,
+                options: '[]',
+                constraints: '[]',
+            },
+            DEV_TOKEN,
+        );
         await POST(
             db, 'work-orders/wo1/transition', {
                 transitionEventId: 'te1',
@@ -285,15 +289,19 @@ test(
     'a field value with a dangling state_event_id is a 400',
     async () => {
         const db = await seededDb();
-        await db.recordAttributes.put('attr-1', {
-            organization_id: '1',
-            record_id: 'rec-1',
-            name: 'Severity',
-            attribute_type: 'text',
-            sort_order: 0,
-            options: '[]',
-            constraints: '[]',
-        });
+        // Phase Final Stage B: record_attributes retired.
+        await PUT(
+            db, 'record-attributes/attr-1', {
+                organization_id: '1',
+                record_id: 'rec-1',
+                name: 'Severity',
+                attribute_type: 'text',
+                sort_order: 0,
+                options: '[]',
+                constraints: '[]',
+            },
+            DEV_TOKEN,
+        );
         await assert.rejects(
             () => POST(
                 db, 'work-orders/wo1/transition', {

@@ -127,7 +127,7 @@ test(
             'expected >=2 records, got '
             + records.length,
         );
-        assert.equal((await db.records.getAll()).length, 0);
+        // Phase Final Stage B: records table retired.
     },
 );
 
@@ -239,9 +239,7 @@ test(
             'expected >=2 bindings for some record,'
             + ' got max=' + max,
         );
-        assert.equal(
-            (await db.flowRecords.getAll()).length, 0,
-        );
+        // Phase Final Stage B: flow_records table retired.
     },
 );
 

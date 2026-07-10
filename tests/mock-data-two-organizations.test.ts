@@ -245,7 +245,7 @@ test('each org owns at least one of every org-scoped'
             `org ${organization} owns no objectives`,
         );
     }
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
     assert.equal((await db.objectives.getAll()).length, 0);
 });
 
@@ -315,9 +315,7 @@ async () => {
             recordOrganization.get(attr.record_id),
             `attribute ${attr.id} org mismatch`);
     }
-    assert.equal(
-        (await db.recordAttributes.getAll()).length, 0,
-    );
+    // Phase Final Stage B: record_attributes table retired.
 });
 
 test('every non-admin seeded human is single-org',
@@ -375,7 +373,7 @@ test('every flow_records join binds same-org flow and'
             recordOrganization.get(b.record_id),
             `binding ${b.id} crosses orgs`);
     }
-    assert.equal((await db.flowRecords.getAll()).length, 0);
+    // Phase Final Stage B: flow_records table retired.
 });
 
 test('every idea submission names a submitter in its'

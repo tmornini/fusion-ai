@@ -1013,7 +1013,7 @@ async () => {
 
     // Hard-delete strengthening: records row half is already
     // stripped — pair plane retains ownership; row null.
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
     {
         const own = await bothPlanes(
             recordStark.id, STARK_ORGANIZATION,
@@ -1383,15 +1383,23 @@ async function transitionWithFieldValue(
     ));
     assert.equal(created.status, 204);
 
-    await db.recordAttributes.put(attributeId, {
-        organization_id: STARK_ORGANIZATION,
-        record_id: 'rec-p15-fv',
-        name: 'Note',
-        attribute_type: 'text',
-        sort_order: 0,
-        options: '[]',
-        constraints: '[]',
-    });
+    // Phase Final Stage B: record_attributes retired.
+    const attrWrite = await handleRequest(db, req(
+        'PUT',
+        '/organizations/' + STARK_ORGANIZATION
+            + '/record-attributes/' + attributeId,
+        token,
+        {
+            organization_id: STARK_ORGANIZATION,
+            record_id: 'rec-p15-fv',
+            name: 'Note',
+            attribute_type: 'text',
+            sort_order: 0,
+            options: '[]',
+            constraints: '[]',
+        },
+    ));
+    assert.equal(attrWrite.status, 200);
 
     const transitioned = await handleRequest(db, req(
         'POST',
@@ -1648,10 +1656,10 @@ async () => {
         scoped, STARK_ORGANIZATION, attributeIds,
     );
     const inTx = await db.transaction(
-        // Phase Final Task 2: work_orders dropped from list.
+        // Stage B: records/work_orders tables retired.
         [
             'states',
-            'records', 'objectives',
+            'objectives',
             'invitations', 'memberships',
             'requests', 'responses',
         ],
@@ -1792,10 +1800,10 @@ async () => {
     );
     // Pre-tx vs in-tx parity (pair plane only).
     const inTx = await db.transaction(
-        // Phase Final Task 2: work_orders dropped.
+        // Stage B: records/work_orders tables retired.
         [
             'states',
-            'records', 'requests', 'responses',
+            'requests', 'responses',
             'memberships',
         ],
         (view) => collectAttributeReferrers(

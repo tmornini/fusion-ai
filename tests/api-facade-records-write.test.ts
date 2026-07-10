@@ -174,7 +174,7 @@ test('a facade records write stamps the bound org'
         organization_id: string;
     };
     assert.equal(stored.organization_id, 'A');
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
 });
 
 test('a facade records write into a non-member org'

@@ -152,7 +152,7 @@ async () => {
     );
     assert.equal(written.name, 'Fresh');
     assert.equal(written.organization_id, '1');
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
     const events = await deriveStatesFor(db, '1', 'rec-1');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'active');
@@ -208,7 +208,7 @@ async () => {
     assert.equal(events.length, 1);
     assert.equal(events[0]!.member_id, 'current');
     assert.equal(second.name, 'Second');
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
 });
 
 test('postRecordDocumentOp with a fresh trio posts a'

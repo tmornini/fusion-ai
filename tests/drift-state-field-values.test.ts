@@ -62,11 +62,15 @@ async function seededDb(): Promise<MemoryDbAdapter> {
         },
         DEV_TOKEN,
     );
-    await db.recordAttributes.put('attr-1', {
-        organization_id: '1', record_id: 'rec-1',
-        name: 'Severity', attribute_type: 'text',
-        sort_order: 0, options: '[]', constraints: '[]',
-    });
+    // Phase Final Stage B: record_attributes retired.
+    await PUT(
+        db, 'record-attributes/attr-1', {
+            organization_id: '1', record_id: 'rec-1',
+            name: 'Severity', attribute_type: 'text',
+            sort_order: 0, options: '[]', constraints: '[]',
+        },
+        DEV_TOKEN,
+    );
     return db;
 }
 

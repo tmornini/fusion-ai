@@ -193,7 +193,7 @@ export function organizationOwnedProbes(
     db: DbAdapter,
 ): readonly OrganizationOwnedProbe[] {
     return [
-        db.records, db.objectives,
+        db.objectives,
         db.invitations,
     ];
 }
@@ -226,7 +226,7 @@ export function rawOrganizationOwnedProbes(
     adapter: RawReader,
 ): readonly OrganizationOwnedProbe[] {
     return [
-        'records', 'objectives',
+        'objectives',
         'invitations',
     ].map((table): OrganizationOwnedProbe => ({
         async getById(id: string) {

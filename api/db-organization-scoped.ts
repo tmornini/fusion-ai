@@ -5,7 +5,6 @@ import type {
 } from './db.ts';
 import type {
     Id,
-    FlowRecordEntity,
     ObjectiveRevisionEntity,
     IdentityPiiEntity,
     IdentityCredentialEntity,
@@ -175,15 +174,7 @@ export function organizationScopedAdapter(
         ),
 
         // Parent-derived leaves still on residual tables until
-        // their own Stage B groups. flow_records resolves the
-        // parent flow via the pair plane (flows retired).
-        flowRecords: parentScope(
-            base.flowRecords, 'flow_records',
-            (r: FlowRecordEntity) =>
-                resolveOwningOrganization(
-                    base, r.flow_id, organization,
-                ),
-        ),
+        // their own Stage B groups.
         objectiveRevisions: parentScope(
             base.objectiveRevisions, 'objective_revisions',
             viaParent(
@@ -196,9 +187,6 @@ export function organizationScopedAdapter(
 
         // Organization-owned entities — fenced to `org`.
         roleGrants: scope(base.roleGrants, 'role_grants'),
-        records: scope(base.records, 'records'),
-        recordAttributes: scope(
-            base.recordAttributes, 'record_attributes'),
         objectives: scope(base.objectives, 'objectives'),
         memberships: scope(base.memberships, 'memberships'),
     };

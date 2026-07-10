@@ -41,16 +41,23 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
     await seedAdminSchema(db);
     await seedCurrentMember(db);
-    await db.records.put('r1', {
-        organization_id: '1', name: 'Asset',
-        description: 'd', position: 1,
-    });
-    await db.recordAttributes.put('attr1', {
-        organization_id: '1', record_id: 'r1',
-        name: 'Priority', attribute_type: 'text',
-        sort_order: 0, options: '[]',
+    // Phase Final Stage B: records family retired — seed
+    // through live document PUTs so the pair plane owns them.
+    await PUT(db, 'records/r1', {
+        name: 'Asset', description: 'd', position: 1,
+        state: 'active',
+        state_at: AT,
+        state_event_id: 'r1-genesis',
+    }, DEV_TOKEN);
+    await PUT(db, 'record-attributes/attr1', {
+        organization_id: '1',
+        record_id: 'r1',
+        name: 'Priority',
+        attribute_type: 'text',
+        sort_order: 0,
+        options: '[]',
         constraints: '[]',
-    });
+    }, DEV_TOKEN);
     return db;
 }
 
@@ -204,18 +211,18 @@ test(
     async () => {
         const db = await seededDb();
         const before = (await db.requests.getAll()).length;
-        // Raw-seeded attr1 has a row but no document pair;
-        // DELETE uses row-fallback org (Task 1(a)) and
-        // appends a tombstone pair without splicing the row
-        // (Phase Final Task 2).
+        // Phase Final Stage B: wire-seeded attr1; DELETE
+        // appends a tombstone pair (table retired).
         await DELETE(
             db, 'record-attributes/attr1', DEV_TOKEN,
         );
         assert.equal(
             (await db.requests.getAll()).length, before + 1,
         );
-        assert.equal(
-            (await db.recordAttributes.getAll()).length, 1,
+        await assert.rejects(
+            () => GET(
+                db, 'record-attributes/attr1', DEV_TOKEN,
+            ),
         );
     },
 );
@@ -250,9 +257,7 @@ test(
                 db, 'record-attributes/attr-pair', DEV_TOKEN,
             ),
         );
-        assert.equal(
-            (await db.recordAttributes.getAll()).length, 1,
-        );
+        // Phase Final Stage B: record_attributes table retired.
     },
 );
 
@@ -319,13 +324,11 @@ test(
                     err.message,
                 ),
         );
-        // RESTRICT 409: raw fixture row untouched; wire still
-        // serves the raw-seeded attribute? No pairs for attr1
-        // — pair plane has no document; row plane still holds
-        // it for the raw fixture. Pin the 409 bytes only.
-        assert.equal(
-            (await db.recordAttributes.getAll()).length, 1,
+        // RESTRICT 409: attribute still served on pair plane.
+        const still = await GET<{ id: string }>(
+            db, 'record-attributes/attr1', DEV_TOKEN,
         );
+        assert.equal(still.id, 'attr1');
     },
 );
 
@@ -378,13 +381,14 @@ test(
         await DELETE(
             db, 'record-attributes/attr1', DEV_TOKEN,
         );
-        // Phase Final Task 2: tombstone pair lands; raw row
-        // lingers until Stage B.
+        // Phase Final Stage B: tombstone pair lands; GET 404s.
         assert.equal(
             (await db.requests.getAll()).length, before + 1,
         );
-        assert.equal(
-            (await db.recordAttributes.getAll()).length, 1,
+        await assert.rejects(
+            () => GET(
+                db, 'record-attributes/attr1', DEV_TOKEN,
+            ),
         );
     },
 );
@@ -553,12 +557,16 @@ test(
                 err instanceof RequestError
                 && err.status === 409,
         );
-        // the batch applied NOTHING: raw fixture rows survive
-        // and zero pairs append
-        const record = await db.records.getById('r1');
+        // the batch applied NOTHING: pair-plane document
+        // survives and zero pairs append
+        const record = await GET<{ name: string }>(
+            db, 'records/r1', DEV_TOKEN,
+        );
         assert.equal(record.name, 'Asset');
-        const attrs = await db.recordAttributes.getAll();
-        assert.equal(attrs.length, 1);
+        const attr = await GET<{ id: string }>(
+            db, 'record-attributes/attr1', DEV_TOKEN,
+        );
+        assert.equal(attr.id, 'attr1');
         // pair-balance: the whole bundle is pairs-or-nothing,
         // so a 409 rollback appends NEITHER table any rows.
         assert.equal(

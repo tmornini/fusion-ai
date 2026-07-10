@@ -269,7 +269,7 @@ test('seeded GET /records wire equals derived collection,'
     assert.equal(org2.length, 1);
     assert.equal(org1[0]!.id, customerProfileRecordId);
     assert.equal(org2[0]!.id, projectBriefRecordId);
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
 });
 
 // -- 2. foreign-org GET 404 on wire + derive ---------------------
@@ -423,9 +423,7 @@ async () => {
     );
     assert.equal(org1Attributes.length, 10);
     assert.equal(org2Attributes.length, 4);
-    assert.equal(
-        (await db.recordAttributes.getAll()).length, 0,
-    );
+    // Phase Final Stage B: record_attributes table retired.
 });
 
 // -- 4. flow_records join wire equals derive ---------------------
@@ -509,7 +507,7 @@ async () => {
         ),
         [],
     );
-    assert.equal((await db.flowRecords.getAll()).length, 0);
+    // Phase Final Stage B: flow_records table retired.
 });
 
 // -- 5. live-write chain on wire + derive ------------------------
@@ -581,7 +579,7 @@ async () => {
     await assertRecordWire();
     await assertAttributeWire(attrA);
     await assertAttributeWire(attrB);
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
 
     // Step 2: edit — add attrC, remove attrA.
     const editStateAt = nowUtc();
@@ -813,7 +811,7 @@ async () => {
     );
     assert.equal(wireText, JSON.stringify(derived));
     assert.equal(derived.name, 'Dup Second');
-    assert.equal((await db.records.getAll()).length, 0);
+    // Phase Final Stage B: records table retired.
 });
 
 // -- 7. method-filter --------------------------------------------

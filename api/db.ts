@@ -14,9 +14,6 @@ import type {
     OrganizationEntity,
     MembershipEntity,
     InvitationEntity,
-    RecordEntity,
-    RecordAttributeEntity,
-    FlowRecordEntity,
     ObjectiveEntity,
     ObjectiveRevisionEntity,
     RequestEntity,
@@ -305,7 +302,7 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 22 stores an adapter exposes, factored out of
+// The 19 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
 // bound to an open tx (A9).
@@ -332,12 +329,6 @@ export interface DbStores {
         EntityStore<ClientEntity>;
     identityProviders:
         EntityStore<IdentityProviderEntity>;
-    records:
-        EntityStore<RecordEntity>;
-    recordAttributes:
-        EntityStore<RecordAttributeEntity>;
-    flowRecords:
-        EntityStore<FlowRecordEntity>;
     organizations:
         EntityStore<OrganizationEntity>;
     memberships:
@@ -448,9 +439,6 @@ export const TABLE_NAMES = [
     'role_grants',
     'clients',
     'identity_providers',
-    'records',
-    'record_attributes',
-    'flow_records',
     'organizations',
     'memberships',
     'invitations',
@@ -540,9 +528,6 @@ export const TABLE_INDEXES:
     identity_token_revocations: ['identity_id'],
     identity_default_organizations: ['identity_id'],
     role_grants: ['organization_id', 'identity_id'],
-    flow_records: ['flow_id'],
-    records: ['organization_id'],
-    record_attributes: ['organization_id'],
     objectives: ['organization_id'],
     objective_revisions: ['objective_id'],
     memberships: ['organization_id', 'identity_id'],

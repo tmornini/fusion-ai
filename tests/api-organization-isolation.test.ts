@@ -340,14 +340,19 @@ async function seedChain(
         await organizationToken(identity, organization),
         { position: 0 },
     ));
-    // Stays raw (NAMED contrast to the flow-record join below):
-    // no flipped read in this file ever consumes the top-level
-    // records/:id entity — only the nested flows/:id/records
-    // JOIN is exercised here.
-    await db.records.put('r' + s, {
-        organization_id: organization, name: 'r',
-        description: 'd', position: 0,
-    });
+    // Phase Final Stage B: records table retired — seed
+    // through the live document PUT so the pair plane owns it.
+    const recWrite = await handleRequest(db, req(
+        'PUT',
+        '/organizations/' + organization + '/records/r' + s,
+        await organizationToken(identity, organization),
+        {
+            name: 'r', description: 'd', position: 0,
+            state: 'active', state_at: T8_AT,
+            state_event_id: 'r' + s + '-genesis',
+        },
+    ));
+    assert.equal(recWrite.status, 200);
     // Phase Final Stage B: work_orders table retired — seed
     // through the live document PUT so the pair plane owns it.
     const {

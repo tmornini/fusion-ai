@@ -4519,12 +4519,11 @@ export const routes: Route[] = [
         // last act after the safe delete succeeds.
         delete: async (db, p, _actor, pair) => {
             const id = param(p, 0);
-            // Phase Final Task 1(a) + Task 2: organization_id
-            // from the attribute's STORED document-pair response
-            // body. Row fallback covers raw-seeded RESTRICT
-            // fixtures until Stage B deletes the table. ROW
-            // splice stripped — RESTRICT 409 bytes stay; the
-            // pair is the only delete side-effect.
+            // Phase Final Stage B: organization_id from the
+            // attribute's STORED document-pair response body
+            // only — record_attributes table retired. RESTRICT
+            // 409 bytes stay; the pair is the only delete
+            // side-effect.
             if (pair === undefined) {
                 throw new Error(
                     'record-attribute DELETE without pair',
@@ -4534,28 +4533,20 @@ export const routes: Route[] = [
                 await recordAttributeOrganizationFromPairs(
                     db, pair.uriPrefix, id,
                 );
+            if (pairOrganizationId === null) {
+                throw new EntityNotFoundError(
+                    'record_attributes', id,
+                );
+            }
             return db.transaction(
                 [...new Set([
-                    // record_attributes stays for the raw-row
-                    // organization fallback only (Stage B).
-                    'record_attributes',
                     ...ATTRIBUTE_RESTRICT_TABLES,
                     'requests', 'responses',
                 ])],
                 async (view) => {
-                    let organizationId: Id;
-                    if (pairOrganizationId !== null) {
-                        organizationId = pairOrganizationId;
-                    } else {
-                        const attribute =
-                            await view.recordAttributes
-                                .getById(id);
-                        organizationId =
-                            attribute.organization_id;
-                    }
                     await deleteRecordAttributeSafe(
                         view,
-                        organizationId,
+                        pairOrganizationId,
                         id,
                     );
                     await appendMessagePair(view, pair);
