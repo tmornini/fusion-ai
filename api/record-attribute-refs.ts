@@ -49,15 +49,13 @@ export interface AttributeReferrers {
 // work-order document heads via the organization-scoped
 // work-orders collection prefix, and live node-attribute
 // bindings via flowGraphBindingsFromPairs (graphDelta
-// attributeEvents + nodeFlowIds). flow_node_attributes /
-// flow_nodes / work_orders remain in this list for dual-write
-// until Final — the write gate still names them even though
-// the RESTRICT scan no longer reads those row stores.
-// 'states' was already required regardless — every EntityStore
-// read here consults it for the soft-delete filter
-// (getDeletedIdsIn). An in-tx caller must declare the whole
-// ring — IndexedDB throws on any store a transaction did not
-// name.
+// attributeEvents + nodeFlowIds). Phase Final Task 2:
+// RESTRICT is pair-plane only (requests + responses via
+// derive helpers). The broader table list stays for tx-list
+// compatibility with residual dual-write callers until
+// Stage B drops the doomed stores. An in-tx caller must
+// declare the whole ring — IndexedDB throws on any store a
+// transaction did not name.
 export const ATTRIBUTE_RESTRICT_TABLES:
     readonly string[] = [
     'flows', 'work_orders',
@@ -180,16 +178,16 @@ export async function collectAttributeReferrers(
     return referrers;
 }
 
-// Delete one record attribute on an ALREADY-OPEN view,
-// RESTRICT-guarded: a referenced attribute 409s (naming its
-// referrers) and nothing is spliced. The standalone DELETE
-// route wraps this in its own transaction; a composing POST
-// calls it on the view it already holds, so the referrer
-// check and the splice share that one transaction.
-// `boundOrganization` is the verified token claim (pair-plane
-// visibility on the SFV leg needs it; DeleteHandler does not
-// carry organization, so the route resolves it from the
-// attribute row's own organization_id before calling).
+// RESTRICT-guard one record attribute on an ALREADY-OPEN
+// view: a referenced attribute 409s (naming its referrers)
+// and nothing is written. Phase Final Task 2: the
+// record_attributes ROW splice is stripped — DELETE is a
+// pair-plane tombstone only (the route appends the pair
+// after this check). The standalone DELETE route wraps this
+// in its own transaction; a composing POST runs the same
+// RESTRICT scan on the view it already holds.
+// `boundOrganization` is the verified token claim (or the
+// pair-plane organization resolve on the DELETE route).
 export async function deleteRecordAttributeSafe(
     view: DbAdapter,
     boundOrganization: string,
@@ -205,7 +203,6 @@ export async function deleteRecordAttributeSafe(
             HTTP_CONFLICT,
         );
     }
-    await view.recordAttributes.delete(id);
 }
 
 export function hasReferrers(

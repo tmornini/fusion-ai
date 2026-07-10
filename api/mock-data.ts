@@ -665,15 +665,14 @@ async function postMockDataLoadIn(
 
     // One state event per seeded Record — the
     // creation moment of each Record on the states
-    // log. Records start at 'active'. DELETE records/:id splices ONLY
-    // the record row; no cascade exists (record_attributes /
-    // state_field_values / flow_records rows orphan silently — a
-    // pre-existing, named gap). Driven through postRecordWriteOp below,
-    // alongside each record's row and attributes.
-    // recordStateEvents is imported from
-    // seed-message-pairs.ts — pass 1 there needs the
-    // SAME array to form each record's pair before
-    // this transaction opens.
+    // log. Records start at 'active'. Phase Final
+    // Task 2: records + record_attributes +
+    // flow_records ROW halves stripped — seed drives
+    // through postRecordWriteOp / postFlowRecordDocumentOp
+    // (pairs + states.postEvent only). recordStateEvents
+    // is imported from seed-message-pairs.ts — pass 1
+    // there needs the SAME array to form each record's
+    // pair before this transaction opens.
     const recordStateEventByRecordId = new Map(
         recordStateEvents.map(e => [e.entity_id, e]),
     );

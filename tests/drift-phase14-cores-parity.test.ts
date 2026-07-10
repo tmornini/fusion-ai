@@ -442,8 +442,9 @@ test('documentStateHeadFor: byte-identical pre-tx (the plain'
     ));
     assert.equal(put.status, 200);
 
+    // Phase Final Task 2: records ROW half stripped.
     const recordTxTables =
-        ['records', 'states', 'requests', 'responses'];
+        ['states', 'requests', 'responses'];
     const preTx = await documentStateHeadFor(db, id);
     const inTx = await db.transaction(
         recordTxTables,
@@ -485,8 +486,10 @@ test('documentStateHeadFor: byte-identical pre-tx (the plain'
     ));
     assert.equal(created.status, 204);
 
+    // Phase Final Task 2: records + record_attributes ROW
+    // halves stripped from postRecordWriteOp's tx list.
     const composedTxTables = [...new Set([
-        'records', 'record_attributes', 'states',
+        'states',
         ...ATTRIBUTE_RESTRICT_TABLES,
         'requests', 'responses',
     ])];

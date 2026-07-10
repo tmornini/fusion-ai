@@ -21,10 +21,13 @@ async function bootstrappedDb(): Promise<MemoryDbAdapter> {
 
 test('pristine bootstrap seeds no Records', async () => {
     const db = await bootstrappedDb();
-    const records = await db.records.getAll();
-    const attributes = await db.recordAttributes.getAll();
-    assert.equal(records.length, 0);
-    assert.equal(attributes.length, 0);
+    // Phase Final Task 2: records family row halves stripped
+    // — bootstrap also writes zero pairs for records.
+    assert.equal((await db.records.getAll()).length, 0);
+    assert.equal(
+        (await db.recordAttributes.getAll()).length, 0,
+    );
+    assert.equal((await db.flowRecords.getAll()).length, 0);
 });
 
 test(

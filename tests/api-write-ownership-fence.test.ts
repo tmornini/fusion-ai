@@ -223,9 +223,15 @@ test('foreign-id DELETE records/:id 404s', async () => {
     assert.equal(foreign.status, 404);
     const body = await foreign.json() as { error: string };
     assert.equal(body.error, 'Not found: records/rec-a');
-    // A-owned row still present — nothing spliced.
-    const row = await db.records.getById('rec-a');
+    // Phase Final Task 2: pair-plane document still present —
+    // nothing tombstoned; A can still GET.
+    const still = await handleRequest(db, req(
+        'GET', '/records/rec-a', tokenA,
+    ));
+    assert.equal(still.status, 200);
+    const row = await still.json() as { name: string };
     assert.equal(row.name, 'A record');
+    assert.equal((await db.records.getAll()).length, 0);
 });
 
 test('foreign-id DELETE memberships/:id 404s', async () => {

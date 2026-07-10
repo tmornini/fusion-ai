@@ -2510,21 +2510,16 @@ export interface RecordDocumentBody {
 // full wire document — the entity's own fields plus the
 // lifecycle trio folded in. organization_id is deliberately
 // absent from the expected set (like every other org-owned
-// write, the client never supplies it; the org fence stamps it
-// downstream when view.records.put re-validates through
-// validateRecordEntity) yet rides the `optional` allowance
+// write, the client never supplies it; the org fence stamps
+// it on the response) yet rides the `optional` allowance
 // rather than `expected` — a caller-forged organization_id is
-// tolerated-but-ignored, not rejected, because the fence's
-// stamp always overrides whatever key it finds. The trio holds
-// to the SAME rules the bare states/:id route applies to an
-// event (assertRecordState, an RFC-3339 `at`, a non-empty
-// event id), so a folded document and a bare event share one
-// shape. Entity fields are picked directly rather than
-// delegated to validateRecordEntity — that function REQUIRES
-// organization_id, which this body never carries pre-stamp
-// (name's own non-empty invariant still lands downstream, at
-// view.records.put's own re-validation — this gate gates the
-// WIRE SHAPE, not the entity's own rules).
+// tolerated-but-ignored, not rejected. The trio holds to the
+// SAME rules the bare states/:id route applies to an event
+// (assertRecordState, an RFC-3339 `at`, a non-empty event
+// id). Phase Final Task 2: records ROW half stripped — this
+// gate is the sole entity-shape check for the document PUT
+// (validateRecordEntity REQUIRES organization_id, which this
+// body never carries pre-stamp). Name non-empty re-homes here.
 export function validateRecordDocumentBody(
     body: Record<string, unknown>,
 ): RecordDocumentBody {
@@ -2532,6 +2527,12 @@ export function validateRecordDocumentBody(
         body, RECORD_DOCUMENT_BODY_KEYS,
         'RecordDocumentBody', ['organization_id'],
     );
+    const name = pickString(body, 'name');
+    if (name === '') {
+        throw new ValidationError(
+            'RecordDocumentBody.name must be non-empty',
+        );
+    }
     const state = assertRecordState(
         pickString(body, 'state'),
         'RecordDocumentBody.state',
@@ -2545,7 +2546,7 @@ export function validateRecordDocumentBody(
     }
     return {
         entity: {
-            name: pickString(body, 'name'),
+            name,
             description: pickString(body, 'description'),
             position: pickNumber(body, 'position'),
         },
@@ -2661,12 +2662,12 @@ export interface RecordAttributeDocumentBody {
 // here is a pure entity edit. organization_id is deliberately
 // absent from the expected set (like every other org-owned
 // write, the client never supplies it; the org fence stamps it
-// downstream when view.recordAttributes.put re-validates
-// through validateRecordAttributeEntity) yet rides the
-// `optional` allowance rather than `expected` — a caller-forged
-// organization_id is tolerated-but-ignored, not rejected,
-// because the fence's stamp always overrides whatever key it
-// finds. REASON this validator exists rather than wiring
+// on the response) yet rides the `optional` allowance rather
+// than `expected` — a caller-forged organization_id is
+// tolerated-but-ignored, not rejected. Phase Final Task 2:
+// record_attributes ROW half stripped — this gate is the sole
+// entity-shape check for the document PUT. REASON this
+// validator exists rather than wiring
 // validateRecordAttributeEntity straight into
 // documentWriteResponseSpec: that generic builder calls
 // validateDocument WITHOUT pre-stamping organization_id (the
@@ -2674,11 +2675,9 @@ export interface RecordAttributeDocumentBody {
 // today's hand-written response spec pre-stamps the key BEFORE
 // calling validateRecordAttributeEntity — wiring the shipped
 // entity validator in directly would 500 any body lacking the
-// key, where today it 200s. Every existing fixture happens to
-// carry the key, so ./validate alone would not catch that
-// regression — this validator closes it by construction. Entity
-// fields are picked directly (the same constraints/options
-// rules validateRecordAttributeEntity enforces) rather than
+// key, where today it 200s. Entity fields are picked directly
+// (the same constraints/options rules
+// validateRecordAttributeEntity enforces) rather than
 // delegated to it — that function REQUIRES organization_id,
 // which this body never carries pre-stamp.
 export function validateRecordAttributeDocumentBody(

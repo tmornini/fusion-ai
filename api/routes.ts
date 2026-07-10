@@ -938,10 +938,8 @@ export function recordAttributeDocumentBodyOf(
 // Phase Final Task 1(a): the attribute's owning organization
 // from its STORED document-pair head response body (the
 // WRITE_RESPONSE_SPECS successBody stamp). Row fallback
-// remains while dual-write lives (raw-seeded RESTRICT
-// fixtures); production always has pairs. When both exist,
-// they must agree (strangler parity, thrown at the call
-// site).
+// remains for raw-seeded RESTRICT fixtures until Stage B
+// deletes the table; production always has pairs.
 async function recordAttributeOrganizationFromPairs(
     db: DbAdapter,
     uriPrefix: string,
@@ -969,13 +967,14 @@ async function recordAttributeOrganizationFromPairs(
 }
 
 // Record creation or edit, discriminated by payload.kind.
-// Exported so the seed can drive record creation through
-// the same gate the route uses (Decision 6's below-facade
-// carve-out) — this is also Phase 1's dual-write insertion
-// seam. `pairs` is optional so the seed's below-facade call
-// (api/mock-data.ts, no gate, no pairs) keeps compiling
-// unchanged; the route always supplies the bundle, since
-// 'records' is pair-wired and never bearer-exempt.
+// Phase Final Task 2: records + record_attributes ROW halves
+// stripped — attributes/record body ride the operation +
+// document + attribute pairs; states.postEvent on create/edit
+// stays until the states-trace group. Removed attributes are
+// RESTRICTED inside the same tx (pair-plane referrers; 409
+// bytes preserved). `pairs` is optional so the seed's below-
+// facade call keeps compiling; the route always supplies the
+// bundle.
 export async function postRecordWriteOp(
     db: DbAdapter,
     payload: Record<string, unknown>,
@@ -989,28 +988,22 @@ export async function postRecordWriteOp(
     organization?: Id,
 ): Promise<void> {
     const body = validateRecordWriteBody(payload);
-    const entries = body.attributes.map(attr => {
-        const { id, ...fields } = attr;
-        return { id, fields };
-    });
     const removedIds =
         body.kind === 'edit'
             ? body.removedAttributeIds
             : [];
-    // The record, its state event, and its attributes commit
-    // as one transaction — a mid-write failure rolls the whole
-    // thing back rather than orphaning the record. Removed
-    // attributes are RESTRICTED inside the same tx: a
-    // referenced attribute 409s and the whole batch rolls back
-    // (api/record-attribute-refs.ts).
+    // State event + RESTRICT + pairs commit as one
+    // transaction. Attribute bodies live only on the pair
+    // plane (attributePuts/attributeDeletes).
     await db.transaction(
         [...new Set([
-            'records', 'record_attributes', 'states',
+            // Phase Final Task 2: records + record_attributes
+            // ROW halves stripped.
+            'states',
             ...ATTRIBUTE_RESTRICT_TABLES,
             'requests', 'responses',
         ])],
         async (view) => {
-            await view.records.put(body.id, body.record);
             if (body.kind === 'create') {
                 // Genesis: exactly ONE state event, authored by
                 // the verified caller (actor), never a client-
@@ -1069,14 +1062,6 @@ export async function postRecordWriteOp(
                         );
                     }
                 }
-            }
-            if (
-                entries.length > 0
-                || removedIds.length > 0
-            ) {
-                await view.recordAttributes.putMany(
-                    entries, removedIds,
-                );
             }
             // The whole bundle or none (Atomicity): the
             // operation pair, the document pair, N attribute-
@@ -1226,16 +1211,17 @@ export async function postProjectDocumentOp(
 // Record document write (Decision 7, the fifth family): ONE
 // shape serves create, edit, and transition — genesis is
 // head-presence-defined, byte-identical to postIdeaDocumentOp/
-// postProjectDocumentOp above (the SAME member_id ternary, the
-// SAME sameEvent MEMBER_ID CAVEAT). UNLIKE those two, a record's
-// genesis normally arrives through the composed create
-// (postRecordWriteOp, POST /records) rather than this PUT — this
-// op's genesis arm exists for a live PUT-first flow, and mirrors
-// ideas/projects exactly rather than special-casing records as
-// PUT-only-for-edits. Not yet wired to any route (the fold
-// commit adds RECORDS_WIRING + the route swap); exported so its
-// below-gate decompose behavior can be pinned ahead of that wire,
-// mirroring postFlowDocumentOp's own Task-2-era convention.
+// postProjectDocumentOp. UNLIKE those two, a record's genesis
+// normally arrives through the composed create
+// (postRecordWriteOp, POST /records) rather than this PUT —
+// this op's genesis arm exists for a live PUT-first flow.
+// Phase Final Task 2: the records ROW half is stripped — the
+// pair + states.postEvent commit as ONE transaction (states
+// row half strips with the states-trace group).
+// WRITE_RESPONSE_SPECS successBody forms the wire bytes; the
+// reconstructed return is for below-facade callers and type
+// parity. `pair` is optional so the seed's below-facade call
+// keeps compiling; the route always supplies one.
 export async function postRecordDocumentOp(
     db: DbAdapter,
     id: Id,
@@ -1244,8 +1230,14 @@ export async function postRecordDocumentOp(
     pair?: MessagePair,
 ): Promise<RecordEntity> {
     const doc = validateRecordDocumentBody(withoutId(body));
+    const entity = {
+        ...doc.entity,
+        ...documentOperationOrganization(body),
+    } as unknown as Omit<RecordEntity, 'id'>;
     return db.transaction(
-        ['records', 'states', 'requests', 'responses'],
+        // Phase Final Task 2: records ROW half stripped;
+        // states.postEvent stays until the states-trace group.
+        ['states', 'requests', 'responses'],
         async (view) => {
             const head = await documentStateHeadFor(view, id);
             const memberId = (
@@ -1254,13 +1246,6 @@ export async function postRecordDocumentOp(
                 && head.state === doc.state
                 && head.at === doc.state_at
             ) ? head.member_id : actor;
-            const written = await view.records.put(
-                id,
-                {
-                    ...doc.entity,
-                    ...documentOperationOrganization(body),
-                } as unknown as Omit<RecordEntity, 'id'>,
-            );
             await view.states.postEvent(
                 doc.state_event_id, id, doc.state,
                 memberId, doc.state_at,
@@ -1268,31 +1253,20 @@ export async function postRecordDocumentOp(
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return { id, ...entity };
         },
     );
 }
 
 // Record attribute document write — the sixth family, and the
-// SECOND 'stateless' one (RECORD_ATTRIBUTES_WIRING's own
-// comment: vacuous BY CONSTRUCTION, not merely in practice, the
-// sharper contrast against work-orders). A document PUT here is
-// a pure entity edit: the record_attributes row and its pair
-// commit as ONE transaction — a mid-write failure rolls the
-// whole thing back rather than leaving a half-written attribute.
-// validateRecordAttributeDocumentBody rejects a body carrying
-// the trio at the gate, so this op never needs to defend against
-// one downstream. documentOperationOrganization's merge mirrors
-// postWorkOrderDocumentOp's own shape for uniformity, though it
-// is DORMANT here: zero client callers exist for this PUT (this
-// task's own premise), and the seed batches attribute creation
-// through postRecordWriteOp instead — never this op — so the
-// merge is inert rather than load-bearing. `pair` is optional so
-// a future below-facade caller keeps compiling; the live route
-// always supplies one, since 'record-attributes/:id' is
-// pair-wired and never bearer-exempt. The actor parameter is
-// spelled `_actor` for the same reason postWorkOrderDocumentOp
-// spells it that way: there is no state event here to author.
+// SECOND 'stateless' one (vacuous BY CONSTRUCTION). Phase Final
+// Task 2: the record_attributes ROW half is stripped — pure
+// pair-plane write (postWorkOrderDocumentOp shape).
+// WRITE_RESPONSE_SPECS successBody forms the wire bytes; the
+// reconstructed return is for below-facade callers and type
+// parity. validateRecordAttributeDocumentBody rejects a body
+// carrying the trio at the gate. `pair` is optional. The actor
+// parameter is spelled `_actor`: no state event here to author.
 export async function postRecordAttributeDocumentOp(
     db: DbAdapter,
     id: Id,
@@ -1303,22 +1277,19 @@ export async function postRecordAttributeDocumentOp(
     const doc = validateRecordAttributeDocumentBody(
         withoutId(body),
     );
+    const entity = {
+        ...doc.entity,
+        ...documentOperationOrganization(body),
+    } as unknown as Omit<RecordAttributeEntity, 'id'>;
     return db.transaction(
-        ['record_attributes', 'requests', 'responses'],
+        // Phase Final Task 2: record_attributes ROW half
+        // stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view
-                .recordAttributes.put(
-                    id,
-                    {
-                        ...doc.entity,
-                        ...documentOperationOrganization(body),
-                    } as unknown as
-                        Omit<RecordAttributeEntity, 'id'>,
-                );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return { id, ...entity };
         },
     );
 }
@@ -2508,40 +2479,30 @@ export async function postFlowWorkOrderDocumentOp(
     );
 }
 
-// Flow record join document write — extracted byte-for-byte
-// from the hand-written flows/:id/records/:frid PUT handler
-// (Phase 1 fix-3 / Phase 4 0a950480's extract-function idiom:
-// bundle the definition with its one call-site re-point, own
-// commit) so the seed can drive the same write path (Decision
-// 6's below-facade carve-out, mirroring
-// postFlowWorkOrderDocumentOp above). A document PUT here is a
-// pure entity edit: the flow_records row and its pair commit
-// as ONE transaction. `pair` is optional so a below-facade
-// caller with no pair keeps compiling; the live route always
-// supplies one, since 'flows/:id/records/:frid' is pair-wired
-// and never bearer-exempt. The actor parameter is spelled
-// `_actor` for the same reason postFlowWorkOrderDocumentOp
-// spells it that way: there is no state event here to author.
+// Flow record join document write. Phase Final Task 2: the
+// flow_records ROW half is stripped — pure pair-plane write
+// (postFlowWorkOrderDocumentOp shape). WRITE_RESPONSE_SPECS
+// successBody forms the wire bytes; the reconstructed return
+// is for below-facade callers and type parity. `pair` is
+// optional. The actor parameter is spelled `_actor`: no state
+// event here to author.
 export async function postFlowRecordDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<FlowRecordEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<FlowRecordEntity, 'id'>;
     return db.transaction(
-        ['flow_records', 'requests', 'responses'],
+        // Phase Final Task 2: flow_records ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.flowRecords
-                .put(
-                    id,
-                    withoutId(body) as unknown as
-                        Omit<FlowRecordEntity, 'id'>,
-                );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
@@ -4907,12 +4868,12 @@ export const routes: Route[] = [
     route('records/:id', {
         get: documentGetHandler(RECORDS_WIRING),
         put: documentPutHandler(RECORDS_WIRING),
-        delete: (db, p, _actor, pair) => {
-            const id = param(p, 0);
+        // Phase Final Task 2: records ROW half stripped —
+        // DELETE is a pure pair-plane tombstone append.
+        delete: (db, _p, _actor, pair) => {
             return db.transaction(
-                ['records', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
-                    await view.records.delete(id);
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
@@ -4966,12 +4927,12 @@ export const routes: Route[] = [
         // last act after the safe delete succeeds.
         delete: async (db, p, _actor, pair) => {
             const id = param(p, 0);
-            // Phase Final Task 1(a): organization_id from the
-            // attribute's STORED document-pair response body
-            // (WRITE_RESPONSE_SPECS stamps it; the request body
-            // deliberately omits it). DeleteHandler carries no
-            // organization; the DELETE pair's uriPrefix is the
-            // same org-nested address as the head.
+            // Phase Final Task 1(a) + Task 2: organization_id
+            // from the attribute's STORED document-pair response
+            // body. Row fallback covers raw-seeded RESTRICT
+            // fixtures until Stage B deletes the table. ROW
+            // splice stripped — RESTRICT 409 bytes stay; the
+            // pair is the only delete side-effect.
             if (pair === undefined) {
                 throw new Error(
                     'record-attribute DELETE without pair',
@@ -4983,33 +4944,23 @@ export const routes: Route[] = [
                 );
             return db.transaction(
                 [...new Set([
+                    // record_attributes stays for the raw-row
+                    // organization fallback only (Stage B).
                     'record_attributes',
                     ...ATTRIBUTE_RESTRICT_TABLES,
                     'requests', 'responses',
                 ])],
                 async (view) => {
-                    // Parity pin while the row lives: when
-                    // both planes name an organization they
-                    // must agree (Task 1(a) strangler). Row
-                    // fallback covers raw-seeded fixtures
-                    // until Stage B deletes the table.
-                    const attribute =
-                        await view.recordAttributes.getById(
-                            id,
-                        );
-                    if (
-                        pairOrganizationId !== null
-                        && attribute.organization_id
-                            !== pairOrganizationId
-                    ) {
-                        throw new Error(
-                            'record-attribute organization'
-                            + ' strangler mismatch: ' + id,
-                        );
+                    let organizationId: Id;
+                    if (pairOrganizationId !== null) {
+                        organizationId = pairOrganizationId;
+                    } else {
+                        const attribute =
+                            await view.recordAttributes
+                                .getById(id);
+                        organizationId =
+                            attribute.organization_id;
                     }
-                    const organizationId =
-                        pairOrganizationId
-                        ?? attribute.organization_id;
                     await deleteRecordAttributeSafe(
                         view,
                         organizationId,
@@ -5047,12 +4998,12 @@ export const routes: Route[] = [
             postFlowRecordDocumentOp(
                 db, param(p, 1), body, actor, pair,
             ),
-        delete: (db, p, _actor, pair) => {
-            const frid = param(p, 1);
+        // Phase Final Task 2: flow_records ROW half stripped —
+        // DELETE is a pure pair-plane tombstone append.
+        delete: (db, _p, _actor, pair) => {
             return db.transaction(
-                ['flow_records', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
-                    await view.flowRecords.delete(frid);
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }

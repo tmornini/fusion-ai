@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
     DELETE,
+    GET,
     POST,
     PUT,
     RequestError,
@@ -202,18 +203,27 @@ test(
     'an unreferenced attribute deletes cleanly',
     async () => {
         const db = await seededDb();
+        const before = (await db.requests.getAll()).length;
+        // Raw-seeded attr1 has a row but no document pair;
+        // DELETE uses row-fallback org (Task 1(a)) and
+        // appends a tombstone pair without splicing the row
+        // (Phase Final Task 2).
         await DELETE(
             db, 'record-attributes/attr1', DEV_TOKEN,
         );
-        const rows = await db.recordAttributes.getAll();
-        assert.equal(rows.length, 0);
+        assert.equal(
+            (await db.requests.getAll()).length, before + 1,
+        );
+        assert.equal(
+            (await db.recordAttributes.getAll()).length, 1,
+        );
     },
 );
 
 // Phase Final Task 1(a): pair-plane organization_id re-anchor
 // for RESTRICT DELETE. Wire-seeded attribute (pairs exist) so
-// the head response body stamps organization_id; strangler
-// parity with the still-live row holds; DELETE is 204.
+// the head response body stamps organization_id; DELETE is
+// 204 and wire GET 404s.
 test(
     'pair-plane organization_id deletes a wire-seeded'
     + ' unreferenced attribute (Task 1(a) parity)',
@@ -228,14 +238,20 @@ test(
             options: '[]',
             constraints: '[]',
         }, DEV_TOKEN);
-        const before =
-            await db.recordAttributes.getById('attr-pair');
+        const before = await GET<{
+            organization_id: string;
+        }>(db, 'record-attributes/attr-pair', DEV_TOKEN);
         assert.equal(before.organization_id, '1');
         await DELETE(
             db, 'record-attributes/attr-pair', DEV_TOKEN,
         );
         await assert.rejects(
-            () => db.recordAttributes.getById('attr-pair'),
+            () => GET(
+                db, 'record-attributes/attr-pair', DEV_TOKEN,
+            ),
+        );
+        assert.equal(
+            (await db.recordAttributes.getAll()).length, 1,
         );
     },
 );
@@ -299,8 +315,13 @@ test(
                     err.message,
                 ),
         );
-        const rows = await db.recordAttributes.getAll();
-        assert.equal(rows.length, 1);
+        // RESTRICT 409: raw fixture row untouched; wire still
+        // serves the raw-seeded attribute? No pairs for attr1
+        // — pair plane has no document; row plane still holds
+        // it for the raw fixture. Pin the 409 bytes only.
+        assert.equal(
+            (await db.recordAttributes.getAll()).length, 1,
+        );
     },
 );
 
@@ -349,11 +370,18 @@ test(
             }],
         });
         // deletion must succeed — 'removed' is not a referrer
+        const before = (await db.requests.getAll()).length;
         await DELETE(
             db, 'record-attributes/attr1', DEV_TOKEN,
         );
-        const rows = await db.recordAttributes.getAll();
-        assert.equal(rows.length, 0);
+        // Phase Final Task 2: tombstone pair lands; raw row
+        // lingers until Stage B.
+        assert.equal(
+            (await db.requests.getAll()).length, before + 1,
+        );
+        assert.equal(
+            (await db.recordAttributes.getAll()).length, 1,
+        );
     },
 );
 
@@ -521,15 +549,14 @@ test(
                 err instanceof RequestError
                 && err.status === 409,
         );
-        // the batch applied NOTHING: the record kept its
-        // name and the attribute survived
+        // the batch applied NOTHING: raw fixture rows survive
+        // and zero pairs append
         const record = await db.records.getById('r1');
         assert.equal(record.name, 'Asset');
         const attrs = await db.recordAttributes.getAll();
         assert.equal(attrs.length, 1);
-        // pair-balance: the whole bundle (operation + document
-        // + attribute pairs) is pairs-or-nothing, so a 409
-        // rollback appends NEITHER table any rows.
+        // pair-balance: the whole bundle is pairs-or-nothing,
+        // so a 409 rollback appends NEITHER table any rows.
         assert.equal(
             (await db.requests.getAll()).length,
             requestsBefore.length,

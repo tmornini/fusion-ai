@@ -491,10 +491,13 @@ test('records hard-delete forgery: foreign PUT states/:id'
         await tokenFor('memberB', 'B'),
     ));
     assert.equal(deleted.status, 204);
-    await assert.rejects(
-        () => db.records.getById('rec-b1'),
-        EntityNotFoundError,
-    );
+    // Phase Final Task 2: records ROW half stripped — wire
+    // GET 404s on the DELETE tombstone (pair plane).
+    const gone = await handleRequest(db, req(
+        'GET', '/records/rec-b1',
+        await tokenFor('memberB', 'B'),
+    ));
+    assert.equal(gone.status, 404);
     const forge = await handleRequest(db, req(
         'PUT', '/states/ev-rec-forge',
         await tokenFor('memberA', 'A'),

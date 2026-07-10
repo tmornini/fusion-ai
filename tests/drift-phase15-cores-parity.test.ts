@@ -902,7 +902,18 @@ async () => {
     const projectsTwo = await deriveProjects(
         db, ORGANIZATION_TWO,
     );
-    const records = await db.records.getAll();
+    // Phase Final Task 2: records seed row halves stripped —
+    // load records from the pair plane via wire GET.
+    const recordToken = await organizationToken(
+        'current', STARK_ORGANIZATION,
+    );
+    const recordsRes = await handleRequest(
+        db, req('GET', '/records', recordToken),
+    );
+    assert.equal(recordsRes.status, 200);
+    const recordsStark = await recordsRes.json() as {
+        id: string;
+    }[];
     // Phase Final Task 2: flows(+graph) seed row halves
     // stripped — load flows from the pair plane.
     const flowsStark = await deriveFlows(
@@ -921,9 +932,8 @@ async () => {
     const projectTwo = projectsTwo[0]!;
     assert.ok(projectStark, 'stark projects non-empty');
     assert.ok(projectTwo, 'org-two projects non-empty');
-    const recordStark = records.find(
-        (r) => r.organization_id === STARK_ORGANIZATION,
-    )!;
+    const recordStark = recordsStark[0]!;
+    assert.ok(recordStark, 'stark records non-empty');
     const flowStark = flowsStark[0]!;
     const flowTwo = flowsTwo[0]!;
     assert.ok(flowStark, 'stark flows non-empty');
@@ -936,7 +946,7 @@ async () => {
     )!;
 
     // Pair-plane ownership for stripped ideas + projects +
-    // flows (+ graph node).
+    // flows + records (+ graph node). Row plane empty.
     for (const [entityId, owner] of [
         [ideaStark.id, STARK_ORGANIZATION],
         [ideaTwo.id, ORGANIZATION_TWO],
@@ -945,6 +955,7 @@ async () => {
         [flowStark.id, STARK_ORGANIZATION],
         [flowTwo.id, ORGANIZATION_TWO],
         [nodeStarkId, STARK_ORGANIZATION],
+        [recordStark.id, STARK_ORGANIZATION],
     ] as const) {
         const own = await bothPlanes(entityId, owner);
         assert.equal(own.pair, owner);
@@ -962,7 +973,6 @@ async () => {
     // Dual-write agreement across bound orgs (families that
     // still dual-write their rows).
     for (const entityId of [
-        recordStark.id,
         memberStark.identity_id,
     ]) {
         for (const bound of [
@@ -1001,10 +1011,9 @@ async () => {
         assert.equal(foreign.row, null);
     }
 
-    // Hard-delete strengthening (finding 1i inverted): pair
-    // plane retains ownership after the row is spliced; row
-    // plane resolves orphan (null).
-    await db.records.delete(recordStark.id);
+    // Hard-delete strengthening: records row half is already
+    // stripped — pair plane retains ownership; row null.
+    assert.equal((await db.records.getAll()).length, 0);
     {
         const own = await bothPlanes(
             recordStark.id, STARK_ORGANIZATION,

@@ -17,11 +17,78 @@ import {
     deriveActualScores,
 } from '../api/derive-project-scores.ts';
 import { deriveFlows } from '../api/derive-flows.ts';
+import {
+    deriveFlowRecords,
+} from '../api/derive-flow-records.ts';
+import {
+    documentCollectionGetHandler,
+    type DocumentFamilyWiring,
+} from '../api/document-family.ts';
+import {
+    validateRecordDocumentBody,
+    validateRecordAttributeDocumentBody,
+} from '../api/validators.ts';
+import {
+    postRecordDocumentOp,
+    postRecordAttributeDocumentOp,
+} from '../api/routes.ts';
+import type {
+    RecordEntity,
+    RecordAttributeEntity,
+} from '../api/types.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
     '../api/mock-data/seed-constants.ts';
+
+const RECORDS_WIRING: DocumentFamilyWiring = {
+    family: 'records',
+    lifecycle: 'trio',
+    notFoundTable: 'records',
+    validateDocument: validateRecordDocumentBody,
+    documentOp: postRecordDocumentOp,
+    entityOf: (document, organization) => ({
+        id: document.uriId,
+        organization_id: organization,
+        name: String(document.body['name'] ?? ''),
+        description: String(
+            document.body['description'] ?? '',
+        ),
+        position: Number(document.body['position'] ?? 0),
+    }),
+};
+
+const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
+    family: 'record-attributes',
+    lifecycle: 'stateless',
+    notFoundTable: 'record_attributes',
+    validateDocument: validateRecordAttributeDocumentBody,
+    documentOp: postRecordAttributeDocumentOp,
+    entityOf: (document, organization) => ({
+        id: document.uriId,
+        organization_id: organization,
+        ...document.body,
+    }),
+};
+
+async function derivedRecords(
+    db: MemoryDbAdapter, organization: string,
+): Promise<RecordEntity[]> {
+    return documentCollectionGetHandler(RECORDS_WIRING)(
+        db, [], 'current', organization,
+    ) as Promise<RecordEntity[]>;
+}
+
+async function derivedRecordAttributes(
+    db: MemoryDbAdapter, organization: string,
+): Promise<RecordAttributeEntity[]> {
+    return documentCollectionGetHandler(
+        RECORD_ATTRIBUTES_WIRING,
+    )(
+        db, [], 'current', organization,
+    ) as Promise<RecordAttributeEntity[]>;
+}
 
 const ORGANIZATION_ONE = '1';
 const ORGANIZATION_TWO = '2';
@@ -91,21 +158,29 @@ test('each org owns at least one of every org-scoped'
             `org ${organization} owns no flows`,
         );
     }
-    const tables = {
-        records: await db.records.getAll(),
-        objectives: await db.objectives.getAll(),
-    };
+    // Phase Final Task 2: records from the pair plane.
     for (const organization of [
         ORGANIZATION_ONE, ORGANIZATION_TWO,
     ]) {
-        for (const [name, rows] of Object.entries(tables)) {
-            const owned = rows.filter(
-                r => r.organization_id === organization);
-            assert.ok(
-                owned.length >= 1,
-                `org ${organization} owns no ${name}`);
-        }
+        const records = await derivedRecords(
+            db, organization,
+        );
+        assert.ok(
+            records.length >= 1,
+            `org ${organization} owns no records`,
+        );
     }
+    const objectives = await db.objectives.getAll();
+    for (const organization of [
+        ORGANIZATION_ONE, ORGANIZATION_TWO,
+    ]) {
+        const owned = objectives.filter(
+            r => r.organization_id === organization);
+        assert.ok(
+            owned.length >= 1,
+            `org ${organization} owns no objectives`);
+    }
+    assert.equal((await db.records.getAll()).length, 0);
 });
 
 test('every work order belongs to org 1', async () => {
@@ -150,15 +225,33 @@ test('every work order belongs to org 1', async () => {
 test('every record attribute matches its parent record org',
 async () => {
     const { db } = await seed();
-    const recordOrganization = new Map(
-        (await db.records.getAll())
-            .map(r => [r.id, r.organization_id]));
-    for (const attr of await db.recordAttributes.getAll()) {
+    // Phase Final Task 2: records + attributes on pair plane.
+    const recordOrganization = new Map<string, string>();
+    const allAttrs: RecordAttributeEntity[] = [];
+    for (const organization of [
+        ORGANIZATION_ONE, ORGANIZATION_TWO,
+    ]) {
+        for (const r of await derivedRecords(
+            db, organization,
+        )) {
+            recordOrganization.set(r.id, organization);
+        }
+        allAttrs.push(
+            ...await derivedRecordAttributes(
+                db, organization,
+            ),
+        );
+    }
+    assert.ok(allAttrs.length > 0, 'attributes exist');
+    for (const attr of allAttrs) {
         assert.equal(
             attr.organization_id,
             recordOrganization.get(attr.record_id),
             `attribute ${attr.id} org mismatch`);
     }
+    assert.equal(
+        (await db.recordAttributes.getAll()).length, 0,
+    );
 });
 
 test('every non-admin seeded human is single-org',
@@ -183,22 +276,35 @@ async () => {
     }
 });
 
-test('every flow_records row joins same-org flow and'
+test('every flow_records join binds same-org flow and'
     + ' record', async () => {
     const { db } = await seed();
-    // Phase Final Task 2: flows from the pair plane.
+    // Phase Final Task 2: flows + records + joins on the
+    // pair plane.
     const flowOrganization = new Map<string, string>();
+    const recordOrganization = new Map<string, string>();
+    const bindings: {
+        id: string;
+        flow_id: string;
+        record_id: string;
+    }[] = [];
     for (const organization of [
         ORGANIZATION_ONE, ORGANIZATION_TWO,
     ]) {
         for (const f of await deriveFlows(db, organization)) {
             flowOrganization.set(f.id, organization);
+            bindings.push(
+                ...await deriveFlowRecords(
+                    db, organization, f.id,
+                ),
+            );
+        }
+        for (const r of await derivedRecords(
+            db, organization,
+        )) {
+            recordOrganization.set(r.id, organization);
         }
     }
-    const recordOrganization = new Map(
-        (await db.records.getAll())
-            .map(r => [r.id, r.organization_id]));
-    const bindings = await db.flowRecords.getAll();
     assert.ok(bindings.length > 0, 'bindings exist');
     for (const b of bindings) {
         assert.equal(
@@ -206,6 +312,7 @@ test('every flow_records row joins same-org flow and'
             recordOrganization.get(b.record_id),
             `binding ${b.id} crosses orgs`);
     }
+    assert.equal((await db.flowRecords.getAll()).length, 0);
 });
 
 test('every idea submission names a submitter in its'

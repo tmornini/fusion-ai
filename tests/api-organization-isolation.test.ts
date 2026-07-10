@@ -733,26 +733,19 @@ for (const c of LEAF_CASES) {
 // filters to the parent flow — and the leaf at
 // flows/fA/<seg>/<id>. The org fence still rides the facade
 // re-entry, so a foreign leaf 404s through its parent flow's org.
-// Phase Final Task 2: work-orders foreign presence is proven
-// via B-org wire GET (row plane empty). flow_records still has
-// a row dual-write half until the records family strip.
+// Phase Final Task 2: work-orders + flow_records foreign
+// presence is proven via B-org wire GET (row plane empty).
 interface NestedFlowCase {
     seg: string;
-    store?: (d: MemoryDbAdapter) => {
-        getById(id: string): Promise<{ id: string }>;
-    };
     a: string;
     b: string;
     hasGetById?: boolean;
-    pairPlaneOnly?: boolean;
 }
 
 // versions row RETIRED (Phase 15 Task 7) with the routes.
 const NESTED_FLOW_CASES: NestedFlowCase[] = [
-    { seg: 'records', hasGetById: true,
-        store: d => d.flowRecords, a: 'frA', b: 'frB' },
-    { seg: 'work-orders', pairPlaneOnly: true,
-        a: 'fwoA', b: 'fwoB' },
+    { seg: 'records', hasGetById: true, a: 'frA', b: 'frB' },
+    { seg: 'work-orders', a: 'fwoA', b: 'fwoB' },
 ];
 
 for (const c of NESTED_FLOW_CASES) {
@@ -760,27 +753,19 @@ for (const c of NESTED_FLOW_CASES) {
         + ' lists only the bound flow',
     async () => {
         const db = await deepDb();
-        if (c.pairPlaneOnly) {
-            const foreign = await handleRequest(db, req(
-                'GET',
-                '/organizations/B/flows/fB/' + c.seg,
-                await organizationToken('pb', 'B'),
-            ));
-            assert.equal(foreign.status, 200);
-            const foreignRows = await foreign.json() as {
-                id: string;
-            }[];
-            assert.ok(
-                foreignRows.some((r) => r.id === c.b),
-                'foreign ' + c.b + ' missing on B plane',
-            );
-        } else {
-            // Prove the foreign row EXISTS in storage, so
-            // exclusion is the fence — the test fails on a
-            // regression.
-            assert.equal(
-                (await c.store!(db).getById(c.b)).id, c.b);
-        }
+        const foreign = await handleRequest(db, req(
+            'GET',
+            '/organizations/B/flows/fB/' + c.seg,
+            await organizationToken('pb', 'B'),
+        ));
+        assert.equal(foreign.status, 200);
+        const foreignRows = await foreign.json() as {
+            id: string;
+        }[];
+        assert.ok(
+            foreignRows.some((r) => r.id === c.b),
+            'foreign ' + c.b + ' missing on B plane',
+        );
         const res = await facadeGet(
             db, '/flows/fA/' + c.seg);
         assert.equal(res.status, 200);
@@ -792,8 +777,14 @@ for (const c of NESTED_FLOW_CASES) {
         test('nested flows/:id/' + c.seg + ' 404s a foreign id',
         async () => {
             const db = await deepDb();
-            assert.equal(
-                (await c.store!(db).getById(c.b)).id, c.b);
+            // Prove foreign join exists on B plane.
+            const foreign = await handleRequest(db, req(
+                'GET',
+                '/organizations/B/flows/fB/' + c.seg
+                + '/' + c.b,
+                await organizationToken('pb', 'B'),
+            ));
+            assert.equal(foreign.status, 200);
             const res = await facadeGet(
                 db, '/flows/fA/' + c.seg + '/' + c.b);
             assert.equal(res.status, 404);

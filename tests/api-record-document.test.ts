@@ -122,8 +122,10 @@ test('validateRecordDocumentBody rejects a trio-less body',
 
 // -- 2. postRecordDocumentOp decomposes the document ---------
 
-test('postRecordDocumentOp genesis (head-absent) writes the'
-+ ' row and exactly one event authored by the actor',
+// Phase Final Task 2: records ROW half stripped — op return
+// + states event are the oracles (row plane empty).
+test('postRecordDocumentOp genesis (head-absent) returns the'
++ ' entity and posts exactly one event authored by the actor',
 async () => {
     const db = await freshDb();
     const written = await postRecordDocumentOp(
@@ -135,8 +137,8 @@ async () => {
         'current',
     );
     assert.equal(written.name, 'Fresh');
-    const row = await db.records.getById('rec-1');
-    assert.equal(row.name, 'Fresh');
+    assert.equal(written.organization_id, '1');
+    assert.equal((await db.records.getAll()).length, 0);
     const events = await db.states.getAllFor('rec-1');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'active');
@@ -158,8 +160,8 @@ async () => {
 // plane read tolerated but the pair-plane one cannot; the
 // pair is formed via formWritePair, the SAME helper
 // document-family.test.ts's below-facade convention test uses.
-test('postRecordDocumentOp with an echoed trio writes the row'
-+ ' and NO new event, replaying the stored head\'s member_id',
+test('postRecordDocumentOp with an echoed trio writes NO new'
++ ' event, replaying the stored head\'s member_id',
 async () => {
     const db = await freshDb();
     const firstBody = {
@@ -180,7 +182,7 @@ async () => {
     await postRecordDocumentOp(
         db, 'rec-2', firstBody, 'current', firstPair,
     );
-    await postRecordDocumentOp(
+    const second = await postRecordDocumentOp(
         db, 'rec-2',
         {
             ...recordDocument('Second', 'active', AT, 'ev-2'),
@@ -191,8 +193,8 @@ async () => {
     const events = await db.states.getAllFor('rec-2');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.member_id, 'current');
-    const row = await db.records.getById('rec-2');
-    assert.equal(row.name, 'Second');
+    assert.equal(second.name, 'Second');
+    assert.equal((await db.records.getAll()).length, 0);
 });
 
 test('postRecordDocumentOp with a fresh trio posts a'
