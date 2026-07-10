@@ -5,14 +5,7 @@ import {
 } from './db.ts';
 import { extractErrorMessage } from '../shared/error-helpers.ts';
 import {
-    validateIdentityEntity,
-    validateIdentityPiiEntity,
-    validateIdentityCredentialEntity,
-    validateIdentityTokenRevocationEntity,
-    validateIdentityDefaultOrganizationEntity,
-    validateRoleGrantEntity,
     validateClientEntity,
-    validateIdentityProviderEntity,
     validateOrganizationEntity,
     validateStateEntity,
     validateRequestEntity,
@@ -34,29 +27,8 @@ function validateSnapshotRow(
     const { id: _id, ...body } = row;
     try {
         switch (table) {
-            case 'identities':
-                validateIdentityEntity(body);
-                break;
-            case 'identity_pii':
-                validateIdentityPiiEntity(body);
-                break;
-            case 'identity_credentials':
-                validateIdentityCredentialEntity(body);
-                break;
-            case 'identity_token_revocations':
-                validateIdentityTokenRevocationEntity(body);
-                break;
-            case 'identity_default_organizations':
-                validateIdentityDefaultOrganizationEntity(body);
-                break;
-            case 'role_grants':
-                validateRoleGrantEntity(body);
-                break;
             case 'clients':
                 validateClientEntity(body);
-                break;
-            case 'identity_providers':
-                validateIdentityProviderEntity(body);
                 break;
             case 'organizations':
                 validateOrganizationEntity(body);

@@ -46,9 +46,7 @@ async () => {
     );
     const events = await deriveCredentialsFor(db, 'p1');
     assert.equal(events.length, 3);   // retained
-    assert.equal(
-        (await db.identityCredentials.getAll()).length, 0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
     const state =
         await getIdentityCredentialState(ctx, 'p1');
     assert.equal(state.active.length, 0); // revoked

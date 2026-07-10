@@ -233,7 +233,6 @@ async function person(
     await postMemberDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
     );
-    await db.identities.put(id, { kind: 'person' });
     await seedIdentityPii(db, id, {
         name, email, phone: '', bio: '',
     });

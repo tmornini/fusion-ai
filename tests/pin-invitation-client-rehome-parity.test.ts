@@ -66,7 +66,7 @@ async () => {
         .find(p => p.email === email);
     assert.ok(fromPairs !== undefined);
     assert.equal(fromPairs!.email, email);
-    assert.equal((await db.identityPii.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 
     // Unknown email: pair plane misses.
     const missing = 'nobody@example.invalid';

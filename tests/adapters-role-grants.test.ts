@@ -72,24 +72,8 @@ test('rejects an unparseable timestamp', () => {
         }));
 });
 
-test('role_grants store retains appended events', async () => {
-    const db = new MemoryDbAdapter();
-    await db.postSchemaCreation();
-    await db.roleGrants.put('g1', {
-        organization_id: '1',
-        identity_id: 'current', role: 'admin',
-        action: 'granted', by_member_id: 'system',
-        at: '2026-01-01T00:00:00.000000Z',
-    });
-    await db.roleGrants.put('g2', {
-        organization_id: '1',
-        identity_id: 'current', role: 'admin',
-        action: 'revoked', by_member_id: 'system',
-        at: '2026-02-01T00:00:00.000000Z',
-    });
-    const rows = await db.roleGrants.getAll();
-    assert.equal(rows.length, 2);   // append-only retained
-});
+// Phase Final Stage B: role_grants table retired — store
+// append pins live on pair-plane document tests.
 
 async function adminCtx() {
     const db = new MemoryDbAdapter();
@@ -149,5 +133,5 @@ test('revocation appends and stamps the actor', async () => {
         r => r.action === 'revoked',
     );
     assert.equal(revoked?.by_member_id, 'current');
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 });

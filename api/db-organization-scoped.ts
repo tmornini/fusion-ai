@@ -1,38 +1,21 @@
 import type {
     DbAdapter,
     GuardedDbAdapter,
-    GuardedEntityStore,
 } from './db.ts';
 import type {
     Id,
-    IdentityPiiEntity,
-    IdentityCredentialEntity,
 } from './types.ts';
 import {
-    OrganizationScopedEntityStore,
-    type OrganizationScoped,
-} from './store-organization-scoped.ts';
-import {
-    ParentScopedEntityStore,
     ParentScopedStateStore,
-    viaMembership,
-    type OwningOrganizationResolver,
 } from './store-parent-scoped.ts';
 import { resolveOwningOrganization } from './derive-states.ts';
-import { deriveMembershipsForIdentity } from
-    './derive-memberships.ts';
 
-// Wrap `base` in an org-scoped view. The org-owned entity
-// stores fence by their stamped organization_id; the
-// parent-derived rows (junctions, ledgers, the states log, the
-// identity PII/credential facets) fence by DERIVING their
-// owning org from a parent / the membership ledger at READ time
-// (`api/store-parent-scoped.ts`); only the global identity/auth
-// spine and the organizations directory pass straight through,
-// with route guards fencing the directory and credential
-// secrets. The scoped set is enumerated explicitly — no
-// reflective "wrap everything" — so it stays reviewable, and a
-// newly added store is global until deliberately fenced.
+// Wrap `base` in an org-scoped view. Phase Final Stage B
+// retired residual org-owned entity tables; only the states
+// log still parent-scopes by pair-plane ownership. Global
+// survivors (clients, organizations, requests/responses)
+// pass straight through. The scoped set is enumerated
+// explicitly — no reflective "wrap everything".
 //
 // `base` is a class instance (private backend, prototype
 // methods), so it cannot be spread; the lifecycle methods
@@ -47,42 +30,6 @@ export function organizationScopedAdapter(
     base: GuardedDbAdapter,
     organization: Id,
 ): DbAdapter {
-    const scope = <T extends OrganizationScoped>(
-        inner: GuardedEntityStore<T>,
-        table: string,
-    ): OrganizationScopedEntityStore<T> =>
-        new OrganizationScopedEntityStore(
-            inner, organization, table,
-        );
-
-    const parentScope = <T extends { id: string }>(
-        inner: GuardedEntityStore<T>,
-        table: string,
-        resolver: OwningOrganizationResolver<T>,
-    ): ParentScopedEntityStore<T> =>
-        new ParentScopedEntityStore(
-            inner, organization, table, resolver,
-        );
-
-    // Pair-plane membership reader for identity facet fences
-    // (Phase 15 Task 5): same three-way viaMembership algorithm,
-    // sourced from deriveMembershipsForIdentity rather than the
-    // row-plane identity_id index.
-    const membershipsFromPairPlane = {
-        getAllWhere: async (
-            column: string,
-            key: string,
-        ) => {
-            if (column !== 'identity_id') {
-                throw new Error(
-                    'membershipsFromPairPlane supports only'
-                    + ' identity_id',
-                );
-            }
-            return deriveMembershipsForIdentity(base, key);
-        },
-    };
-
     // A state event's entity_id is any org-owned entity, or an
     // org-less member visible only to a co-member of this org —
     // resolved on the PAIR PLANE (Phase 15 Task 5).
@@ -117,55 +64,11 @@ export function organizationScopedAdapter(
                 ),
             ),
 
-        // Global identity/auth spine — untouched.
-        identities: base.identities,
-        identityTokenRevocations:
-            base.identityTokenRevocations,
-        identityDefaultOrganizations:
-            base.identityDefaultOrganizations,
+        // Global survivors — untouched.
         clients: base.clients,
-        identityProviders: base.identityProviders,
-
-        // The organizations directory is global; the
-        // organizations/:id and GET /organizations route guards
-        // fence it to the caller's memberships.
         organizations: base.organizations,
-
-        // The message plane (requests/responses) is the global
-        // substrate the migration rides on: tenancy lives IN
-        // `uri_prefix`, enforced at the route gate, not by an
-        // organization_id column — so both pass through
-        // unwrapped, like the identity/auth spine above.
         requests: base.requests,
         responses: base.responses,
-
-        // Identity PII / credential facets — visible to the
-        // caller's org only for co-members (need-to-know),
-        // derived from the membership PAIR plane. Credentials
-        // also get `secret` projected out at the route.
-        identityPii: parentScope(
-            base.identityPii, 'identity_pii',
-            viaMembership(
-                membershipsFromPairPlane,
-                (r: IdentityPiiEntity) => r.id,
-                organization,
-            ),
-        ),
-        identityCredentials: parentScope(
-            base.identityCredentials, 'identity_credentials',
-            viaMembership(
-                membershipsFromPairPlane,
-                (r: IdentityCredentialEntity) =>
-                    r.identity_id,
-                organization,
-            ),
-        ),
-
-        // Parent-derived leaves still on residual tables until
-        // their own Stage B groups.
         states,
-
-        // Organization-owned entities — fenced to `org`.
-        roleGrants: scope(base.roleGrants, 'role_grants'),
     };
 }

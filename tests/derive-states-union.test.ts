@@ -172,7 +172,6 @@ async function seed(): Promise<MemoryDbAdapter> {
 async function person(
     db: MemoryDbAdapter, id: string, name: string, email: string,
 ): Promise<void> {
-    await db.identities.put(id, { kind: 'person' });
     await seedIdentityPii(db, id, {
         name, email, phone: '', bio: '',
     });

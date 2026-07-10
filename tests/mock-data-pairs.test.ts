@@ -900,7 +900,7 @@ test('a seeded role grant\'s response body organization_id'
     await postMockDataLoad(db);
     const id = 'seed-role-current-admin-org2';
     // Phase Final Task 2: role_grants empty after strip.
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
     const grant = await deriveRoleGrant(db, id);
     assert.equal(grant.organization_id, ORGANIZATION_TWO);
     const requests = await db.requests.getAll();

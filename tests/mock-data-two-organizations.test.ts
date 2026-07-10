@@ -179,7 +179,7 @@ test('current holds admin in both orgs', async () => {
     assert.ok(
         currentRolesForInOrganization(grants, 'current', ORGANIZATION_TWO)
             .includes('admin'));
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 test('both organizations exist with distinct names',
@@ -480,7 +480,5 @@ async () => {
             true);
         assert.match(c.username, /@/);
     }
-    assert.equal(
-        (await db.identityCredentials.getAll()).length, 0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
 });

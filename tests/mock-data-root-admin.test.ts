@@ -22,7 +22,7 @@ test('bootstrap seeds current as admin', async () => {
     assert.ok(
         currentRolesForInOrganization(rows, 'current', '1')
             .includes('admin'));
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 test('mock data seeds current as admin', async () => {
@@ -33,5 +33,5 @@ test('mock data seeds current as admin', async () => {
     assert.ok(
         currentRolesForInOrganization(rows, 'current', '1')
             .includes('admin'));
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 });

@@ -195,7 +195,6 @@ async function seedPerson(
     name: string,
     email: string,
 ): Promise<void> {
-    await db.identities.put(id, { kind: 'person' });
     await seedIdentityPii(db, id, {
         name, email, phone: '', bio: '',
     });

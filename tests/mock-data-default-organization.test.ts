@@ -57,9 +57,5 @@ async () => {
     assert.ok(
         defaults.some(d => d.organization_id === '1'),
         "current has no default-org event for org 1");
-    assert.equal(
-        (await db.identityDefaultOrganizations.getAll())
-            .length,
-        0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
 });

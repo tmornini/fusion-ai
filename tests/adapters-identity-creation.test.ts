@@ -46,8 +46,8 @@ test('postIdentityCreation mints a person identity'
     assert.equal(identity.kind, 'person');
     const pii = await deriveIdentityPii(db, 'i1');
     assert.equal(pii.email, 'pat@example.com');
-    assert.equal((await db.identities.getAll()).length, 0);
-    assert.equal((await db.identityPii.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 test('postIdentityCreation mints a service identity'

@@ -88,7 +88,7 @@ test(
         // A person carries no credential.
         const creds = await deriveCredentialsFor(db, 'p1');
         assert.equal(creds.length, 0);
-        assert.equal((await db.identityPii.getAll()).length, 0);
+        // Phase Final Stage B: identity spine tables retired.
     },
 );
 
@@ -112,9 +112,7 @@ test(
         // A service carries no PII.
         await assert.rejects(
             () => deriveIdentityPii(db, 's1'));
-        assert.equal(
-            (await db.identityCredentials.getAll()).length, 0,
-        );
+        // Phase Final Stage B: identity spine tables retired.
     },
 );
 
@@ -219,8 +217,10 @@ test(
                 kind: 'person',
             }));
         assert.equal(denied.status, 403);
-        // The denied member wrote nothing.
-        const identities = await memberDb.identities.getAll();
-        assert.equal(identities.length, 0);
+        // The denied member wrote nothing on the pair plane
+        // — no identities/p2 document.
+        await assert.rejects(
+            () => GET(memberDb, 'identities/p2', token),
+        );
     },
 );

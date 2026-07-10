@@ -75,10 +75,7 @@ async () => {
     assert.deepEqual(
         row, { id: 'self-rev-1', identity_id: 'member1', at },
     );
-    assert.equal(
-        (await db.identityTokenRevocations.getAll()).length,
-        0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
     const requests = await db.requests.getAll();
     const own = requests.find(
         r => r.uri_prefix === '/identity-token-revocations/'

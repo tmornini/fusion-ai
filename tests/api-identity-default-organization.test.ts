@@ -165,11 +165,7 @@ test('PUT the same org twice appends one event', async () => {
         db, 'current',
     );
     assert.equal(rows.length, 1);
-    assert.equal(
-        (await db.identityDefaultOrganizations.getAll())
-            .length,
-        0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 test('GET resolves to the primary membership when unset',

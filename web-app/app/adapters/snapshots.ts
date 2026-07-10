@@ -120,6 +120,13 @@ export const RETIRED_TABLES: readonly string[] = [
     'ai_members',
     'memberships',
     'invitations',
+    'identities',
+    'identity_pii',
+    'identity_credentials',
+    'identity_token_revocations',
+    'identity_default_organizations',
+    'role_grants',
+    'identity_providers',
 ];
 
 // State-event values the alphabet has retired. Old

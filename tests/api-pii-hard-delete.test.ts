@@ -85,7 +85,6 @@ async function allMessages(
 test('PUT-PUT at one address leaves exactly ONE pair (the'
 + ' latest); requests == responses balance holds', async () => {
     const db = await freshDb();
-    await db.identities.put('slot-1', { kind: 'person' });
     const first = await handleRequest(db, req(
         'PUT', '/identities/slot-1/pii', DEV_TOKEN,
         humanPii('Ann'),
@@ -120,7 +119,7 @@ test('PUT-PUT at one address leaves exactly ONE pair (the'
     );
     const domainRow = await deriveIdentityPii(db, 'slot-1');
     assert.equal(domainRow.name, 'Ann Marie');
-    assert.equal((await db.identityPii.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 // ── 2. PUT-DELETE: exactly ONE bodyless tombstone pair ──
@@ -129,7 +128,6 @@ test('PUT-DELETE leaves exactly ONE bodyless DELETE pair (the'
 + ' erasure tombstone; no PII bytes anywhere in the ledger)',
 async () => {
     const db = await freshDb();
-    await db.identities.put('slot-2', { kind: 'person' });
     const put = await handleRequest(db, req(
         'PUT', '/identities/slot-2/pii', DEV_TOKEN,
         humanPii('Bob'),
@@ -161,7 +159,6 @@ async () => {
 test('DELETE-PUT re-sets the slot to exactly one PUT pair',
 async () => {
     const db = await freshDb();
-    await db.identities.put('slot-3', { kind: 'person' });
     const del = await handleRequest(db, req(
         'DELETE', '/identities/slot-3/pii', DEV_TOKEN,
     ));
@@ -193,7 +190,6 @@ async () => {
 test('a byte-identical resend against the LIVE slot replays'
 + ' the stored response and appends nothing', async () => {
     const db = await freshDb();
-    await db.identities.put('slot-4a', { kind: 'person' });
     const first = await handleRequest(db, req(
         'PUT', '/identities/slot-4a/pii', DEV_TOKEN,
         humanPii('Dana'),
@@ -218,7 +214,6 @@ test('a byte-identical resend against the LIVE slot replays'
 test('a byte-identical resend AFTER supersession finds no'
 + ' stored hash and appends fresh', async () => {
     const db = await freshDb();
-    await db.identities.put('slot-4b', { kind: 'person' });
     const first = await handleRequest(db, req(
         'PUT', '/identities/slot-4b/pii', DEV_TOKEN,
         humanPii('Erin'),
@@ -334,7 +329,7 @@ test('grant -> accept -> human-member create -> edit -> erase'
     // orphan store may hold pre-Final rows on old origins until
     // Stage B table deletion; live writes no longer dual-write
     // rows, so completeness is pair-plane only.
-    assert.deepEqual(await db.identityPii.getAll(), []);
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 // ── 6. The zone's confinement: a non-/pii DELETE still APPENDS ──

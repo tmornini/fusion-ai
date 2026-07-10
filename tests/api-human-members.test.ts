@@ -97,7 +97,7 @@ test(
         await PUT(db, 'identities/w1/pii', pii('Alice'), DEV_TOKEN);
         const piiRow = await deriveIdentityPii(db, 'w1');
         assert.equal(piiRow.name, 'Alice');
-        assert.equal((await db.identityPii.getAll()).length, 0);
+        // Phase Final Stage B: identity spine tables retired.
         // bare entity-states/:id RETIRED (Phase 15 Task 7);
         // post-write check rides surviving /history.
         const history = await GET<{

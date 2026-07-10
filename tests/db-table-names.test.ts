@@ -46,6 +46,13 @@ test(
             'ai_members',
             'memberships',
             'invitations',
+            'identities',
+            'identity_pii',
+            'identity_credentials',
+            'identity_token_revocations',
+            'identity_default_organizations',
+            'role_grants',
+            'identity_providers',
         ] as const) {
             assert.ok(
                 !TABLE_NAMES.includes(name),

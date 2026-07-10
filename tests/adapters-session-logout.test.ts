@@ -52,10 +52,7 @@ async () => {
     );
     assert.equal(rows.length, 1);
     assert.equal(rows[0]!.identity_id, 'current');
-    assert.equal(
-        (await db.identityTokenRevocations.getAll()).length,
-        0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
     assert.equal(getSessionCredentials(), null);
 });
 

@@ -303,7 +303,7 @@ async function assertPiiFenceLeg(
 test('identities collection wire equals derive (16 incl. the'
 + ' 4 AI + system) + getById + 404-byte parity', async () => {
     const db = await seededDb();
-    assert.equal((await db.identities.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 
     const derived = sortById(
         await derivedIdentities(db, GLOBAL_PLANE_PLACEHOLDER),
@@ -351,7 +351,7 @@ test('identity-pii collection (11 seeded slots) fenced both'
 + ' visible, FOREIGN-org hidden — orphan visible) + leaf +'
 + ' 404 bytes', async () => {
     const db = await seededDb();
-    assert.equal((await db.identityPii.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 
     // -- unfenced collection (every live slot) --
     const derivedRows = sortById(await deriveIdentityPiiRows(db));
@@ -472,7 +472,7 @@ async () => {
     const db = await seededDb();
     const derivedRows = await deriveIdentityPiiRows(db);
     assert.equal(derivedRows.length, 11);
-    assert.equal((await db.identityPii.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
     for (const row of derivedRows) {
         assert.equal(
             identityByEmail(derivedRows, row.email), row.id,
@@ -490,9 +490,7 @@ async () => {
 test('credentials per identity + per cid (12 seeded) + the'
 + ' withoutSecret projection pin + 404 bytes', async () => {
     const db = await seededDb();
-    assert.equal(
-        (await db.identityCredentials.getAll()).length, 0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
 
     // Collect identity ids from pair plane via parents + current
     // + system — credentials nest under identities.
@@ -616,9 +614,7 @@ test('credentials fence-input fix: a mismatched write (address'
         ).filter((row) => row.identity_id === identityA);
         assert.deepEqual(derivedCollection, []);
     }
-    assert.equal(
-        (await db.identityCredentials.getAll()).length, 0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 // -- 4. role-grants parity (both org fence legs) + getById + ----
@@ -640,7 +636,7 @@ test('role-grants parity (org fence legs both orgs) + getById +'
     // -- seeded role-grants collection + org fence legs --
     const derivedGrants = sortById(await deriveRoleGrants(db));
     assert.equal(derivedGrants.length, 12);
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
     for (const row of derivedGrants) {
         const one = await deriveRoleGrant(db, row.id);
         assert.deepEqual(one, row);
@@ -696,7 +692,7 @@ test('role-grants parity (org fence legs both orgs) + getById +'
     // -- providers + revocations: empty collections seeded,
     // then a live-write each --
     assert.deepEqual(await deriveIdentityProviders(db), []);
-    assert.deepEqual(await db.identityProviders.getAll(), []);
+    // Phase Final Stage B: identity spine tables retired.
 
     const providerId = 'provider-live-1';
     const providerPut = await handleRequest(db, req(
@@ -716,9 +712,7 @@ test('role-grants parity (org fence legs both orgs) + getById +'
         (await deriveIdentityProvider(db, providerId)).id,
         providerId,
     );
-    assert.equal(
-        (await db.identityProviders.getAll()).length, 0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
     const missingProviderId = 'no-such-provider';
     const expectedProviderMessage =
         'Not found: identity_providers/' + missingProviderId;
@@ -762,9 +756,7 @@ test('role-grants parity (org fence legs both orgs) + getById +'
     assert.equal(derivedCredential.secret, 'hash-two');
     assert.equal(derivedCredential.status, 'rotated');
 
-    assert.deepEqual(
-        await db.identityTokenRevocations.getAll(), [],
-    );
+    // Phase Final Stage B: identity spine tables retired.
     const revocationId = 'revocation-live-1';
     const revocationPut = await handleRequest(db, req(
         'PUT', '/identity-token-revocations/' + revocationId,
@@ -822,7 +814,7 @@ test("role-grants hot-path filtered shape: currentRolesFor"
 + " ('current') and a seeded member, per organization",
 async () => {
     const db = await seededDb();
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
     // sarahId: STARK-only seeded member. mikeId: ORGANIZATION_TWO-
     // only seeded member (both from the mock-data member pool;
     // 'current' is seeded admin in BOTH orgs).
@@ -1006,9 +998,9 @@ test('live-write chain: create person identity + pii (bundle 2)'
             .identity_id,
         humanId,
     );
-    assert.equal((await db.identities.getAll()).length, 0);
-    assert.equal((await db.identityPii.getAll()).length, 0);
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
+    // Phase Final Stage B: identity spine tables retired.
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 // -- 6. invitations enrichment JOIN parity (SATISFIED -----------
@@ -1078,7 +1070,7 @@ test('invitations enrichment parity: the personName/'
     }
 
     const derivedRows = await deriveIdentityPiiRows(db);
-    assert.equal((await db.identityPii.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 
     // ABSENT-key pinned: the erased identity carries NO
     // invited_by_name/invitee_email key — never a '' sentinel.
@@ -1187,5 +1179,5 @@ test('method-filter proof: the identities create-op POST pair'
         (await deriveRoleGrant(db, grantId)).identity_id,
         'current',
     );
-    assert.equal((await db.roleGrants.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
 });

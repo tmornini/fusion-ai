@@ -15,14 +15,7 @@ import type {
     TxRunner,
 } from './db.ts';
 import type {
-    IdentityEntity,
-    IdentityPiiEntity,
-    IdentityCredentialEntity,
-    IdentityTokenRevocationEntity,
-    IdentityDefaultOrganizationEntity,
-    RoleGrantEntity,
     ClientEntity,
-    IdentityProviderEntity,
     OrganizationEntity,
     RequestEntity,
     ResponseEntity,
@@ -40,21 +33,14 @@ import {
     parseAndValidateSnapshot,
 } from './snapshot-validator.ts';
 import {
-    validateIdentityEntity,
-    validateIdentityPiiEntity,
-    validateIdentityCredentialEntity,
-    validateIdentityTokenRevocationEntity,
-    validateIdentityDefaultOrganizationEntity,
-    validateRoleGrantEntity,
     validateClientEntity,
-    validateIdentityProviderEntity,
     validateStateEntity,
     validateOrganizationEntity,
     validateRequestEntity,
     validateResponseEntity,
 } from './validators.ts';
 
-// One adapter over any StorageBackend. The 39-store wiring,
+// One adapter over any StorageBackend. The store wiring,
 // the transaction view, and the tx-based snapshot ops live
 // here once (Commandment IX — the third backend, IndexedDB,
 // triggers the abstraction). The per-tier variation rides in
@@ -70,20 +56,7 @@ export class BackedDbAdapter
     readonly #open: () => Promise<void>;
     readonly #notify: NotificationPost;
 
-    readonly identities!:
-        GuardedEntityStore<IdentityEntity>;
-    readonly identityPii!:
-        GuardedEntityStore<IdentityPiiEntity>;
-    readonly identityCredentials!:
-        GuardedEntityStore<IdentityCredentialEntity>;
-    readonly identityTokenRevocations!:
-        GuardedEntityStore<IdentityTokenRevocationEntity>;
-    readonly identityDefaultOrganizations!:
-        GuardedEntityStore<IdentityDefaultOrganizationEntity>;
-    readonly roleGrants!: GuardedEntityStore<RoleGrantEntity>;
     readonly clients!: GuardedEntityStore<ClientEntity>;
-    readonly identityProviders!:
-        GuardedEntityStore<IdentityProviderEntity>;
     readonly organizations!:
         GuardedEntityStore<OrganizationEntity>;
     readonly requests!: GuardedEntityStore<RequestEntity>;
@@ -210,7 +183,7 @@ export class BackedDbAdapter
         );
     }
 
-    // An adapter whose 39 stores are bound to the open tx
+    // An adapter whose stores are bound to the open tx
     // (ambientRunner joins it), so every op runs in one
     // transaction. Lifecycle methods delegate to the parent;
     // a nested transaction RE-ENTERS this same tx — it runs
@@ -280,37 +253,9 @@ export class BackedDbAdapter
                 'organizations', run, stateStore,
                 validateOrganizationEntity,
             ),
-            identities: new EntityStore(
-                'identities', run, stateStore,
-                validateIdentityEntity,
-            ),
-            identityPii: new EntityStore(
-                'identity_pii', run, stateStore,
-                validateIdentityPiiEntity,
-            ),
-            identityCredentials: new HistoryEntityStore(
-                'identity_credentials', run,
-                validateIdentityCredentialEntity,
-            ),
-            identityTokenRevocations: new HistoryEntityStore(
-                'identity_token_revocations', run,
-                validateIdentityTokenRevocationEntity,
-            ),
-            identityDefaultOrganizations: new HistoryEntityStore(
-                'identity_default_organizations', run,
-                validateIdentityDefaultOrganizationEntity,
-            ),
-            roleGrants: new HistoryEntityStore(
-                'role_grants', run,
-                validateRoleGrantEntity,
-            ),
             clients: new EntityStore(
                 'clients', run, stateStore,
                 validateClientEntity,
-            ),
-            identityProviders: new HistoryEntityStore(
-                'identity_providers', run,
-                validateIdentityProviderEntity,
             ),
             requests: new HistoryEntityStore(
                 'requests', run, validateRequestEntity,

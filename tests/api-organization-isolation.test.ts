@@ -1034,7 +1034,7 @@ test('identity-pii lists only co-members', async () => {
     // pb's pii still exists while fence hides it from A.
     assert.equal(
         (await deriveIdentityPii(db, 'pb')).id, 'pb');
-    assert.equal((await db.identityPii.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
     // The single-PII read is now self-only (a member reads only
     // its own); a foreign read is a self-scope 403, identity-
     // independent so it still never confirms pb exists.
@@ -1066,9 +1066,7 @@ async () => {
     assert.equal(
         (await deriveCredential(db, 'pb', 'cred-pb')).id,
         'cred-pb');
-    assert.equal(
-        (await db.identityCredentials.getAll()).length, 0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
     const other = await facadeGet(
         db, '/identities/pb/credentials');
     assert.equal(other.status, 200);

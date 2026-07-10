@@ -1,13 +1,6 @@
 import type {
     Id,
-    IdentityEntity,
-    IdentityPiiEntity,
-    IdentityCredentialEntity,
-    IdentityTokenRevocationEntity,
-    IdentityDefaultOrganizationEntity,
-    RoleGrantEntity,
     ClientEntity,
-    IdentityProviderEntity,
     OrganizationEntity,
     RequestEntity,
     ResponseEntity,
@@ -295,27 +288,13 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 12 stores an adapter exposes, factored out of
+// The 5 stores an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
 // bound to an open tx (A9).
 export interface DbStores {
-    identities:
-        EntityStore<IdentityEntity>;
-    identityPii:
-        EntityStore<IdentityPiiEntity>;
-    identityCredentials:
-        EntityStore<IdentityCredentialEntity>;
-    identityTokenRevocations:
-        EntityStore<IdentityTokenRevocationEntity>;
-    identityDefaultOrganizations:
-        EntityStore<IdentityDefaultOrganizationEntity>;
-    roleGrants:
-        EntityStore<RoleGrantEntity>;
     clients:
         EntityStore<ClientEntity>;
-    identityProviders:
-        EntityStore<IdentityProviderEntity>;
     organizations:
         EntityStore<OrganizationEntity>;
     requests:
@@ -407,14 +386,7 @@ export interface GuardedDbAdapter
 // orphans. deleteSchema (a full database delete) is the only
 // cleanup; nothing else needs to reconcile them.
 export const TABLE_NAMES = [
-    'identities',
-    'identity_pii',
-    'identity_credentials',
-    'identity_token_revocations',
-    'identity_default_organizations',
-    'role_grants',
     'clients',
-    'identity_providers',
     'organizations',
     'requests',
     'responses',
@@ -495,11 +467,6 @@ export function uniqueColumns(
 // collection IS its rows.
 export const TABLE_INDEXES:
     Record<string, readonly TableIndexSpec[]> = {
-    identity_pii: ['email'],
-    identity_credentials: ['identity_id'],
-    identity_token_revocations: ['identity_id'],
-    identity_default_organizations: ['identity_id'],
-    role_grants: ['organization_id', 'identity_id'],
     requests: ['uri_prefix', 'uri_id', 'message_hash'],
     responses: [
         'uri_prefix',

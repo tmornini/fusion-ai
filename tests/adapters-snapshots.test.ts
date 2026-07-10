@@ -83,22 +83,12 @@ function withVersion(
 // Import REPLACES every table — a snapshot that omits the
 // importer's own admin grant locks the session out of the
 // authenticated surfaces. Tests that keep using the ctx
-// after an import carry the admin's role_grants, exactly as
-// a real exported snapshot would. Memberships live on the
-// pair plane (table retired).
+// after an import. Memberships + role grants live on the
+// pair plane (tables retired).
 function withAdminRows(
     tables: Record<string, unknown[]>,
 ): Record<string, unknown> {
     return withVersion({
-        role_grants: [{
-            id: 'test-role-current-admin',
-            organization_id: '1',
-            identity_id: 'current',
-            role: 'admin',
-            action: 'granted',
-            by_member_id: 'system',
-            at: '2020-01-01T00:00:00.000000Z',
-        }],
         ...tables,
     });
 }
@@ -395,7 +385,7 @@ test(
             await db.organizations.getAll(), [],
         );
         assert.deepEqual(
-            await db.roleGrants.getAll(), [],
+            await db.clients.getAll(), [],
         );
     },
 );

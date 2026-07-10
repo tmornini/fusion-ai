@@ -21,14 +21,6 @@ const KEYED_READS: ReadonlyArray<{
     column: string;
 }> = [
     { table: 'states', column: 'entity_id' },
-    {
-        table: 'identity_default_organizations',
-        column: 'identity_id',
-    },
-    { table: 'identity_token_revocations', column: 'identity_id' },
-    { table: 'identity_credentials', column: 'identity_id' },
-    { table: 'role_grants', column: 'identity_id' },
-    { table: 'identity_pii', column: 'email' },
     { table: 'requests', column: 'message_hash' },
     { table: 'responses', column: 'uri_id' },
     { table: 'requests', column: 'uri_prefix' },

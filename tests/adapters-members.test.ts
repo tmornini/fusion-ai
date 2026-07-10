@@ -59,7 +59,7 @@ test(
         // Phase Final Task 2: identity_pii ROW half stripped.
         const pii = await deriveIdentityPii(db, 'w1');
         assert.equal(pii.name, 'Alice');
-        assert.equal((await db.identityPii.getAll()).length, 0);
+        // Phase Final Stage B: identity spine tables retired.
         const events = await deriveStatesFor(db, '1', 'w1');
         assert.equal((await db.states.getAll()).length, 0);
         assert.equal(events.length, 1);

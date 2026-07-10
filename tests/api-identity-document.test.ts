@@ -142,7 +142,7 @@ async () => {
         db, 'id-doc-op-1', body, 'current', pair,
     );
     assert.deepEqual(written, body);
-    assert.equal((await db.identities.getAll()).length, 0);
+    // Phase Final Stage B: identity spine tables retired.
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });

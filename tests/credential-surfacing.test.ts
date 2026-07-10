@@ -40,9 +40,7 @@ async () => {
     assert.equal(
         await verifyPassword(reveal.password, cred.secret),
         true);
-    assert.equal(
-        (await db.identityCredentials.getAll()).length, 0,
-    );
+    // Phase Final Stage B: identity spine tables retired.
 });
 
 test('mock data surfaces a verifying admin password',
