@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import { adminContext } from './context-fixtures.ts';
 import { deriveIdentityPii } from
@@ -58,7 +60,8 @@ test(
         const pii = await deriveIdentityPii(db, 'w1');
         assert.equal(pii.name, 'Alice');
         assert.equal((await db.identityPii.getAll()).length, 0);
-        const events = await db.states.getAllFor('w1');
+        const events = await deriveStatesFor(db, '1', 'w1');
+        assert.equal((await db.states.getAll()).length, 0);
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
         assert.equal((await db.members.getAll()).length, 0);

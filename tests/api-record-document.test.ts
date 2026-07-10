@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
@@ -128,18 +130,30 @@ test('postRecordDocumentOp genesis (head-absent) returns the'
 + ' entity and posts exactly one event authored by the actor',
 async () => {
     const db = await freshDb();
+    // Phase Final Task 2: states ROW half stripped — pair
+    // required for deriveStatesFor to see the genesis trio.
+    const body = {
+        ...recordDocument('Fresh', 'active', AT, 'ev-1'),
+        organization_id: '1',
+    };
+    const pair = await formWritePair({
+        method: 'PUT', pathname: '/records/rec-1',
+        routePattern: 'records/:id',
+        routeSegments: ['records', ':id'],
+        pathSegments: ['records', 'rec-1'],
+        headerFields: [], body,
+        requesterIdentityId: 'current',
+        requestAt: AT, organization: '1',
+        responseStatus: 200, responseBody: undefined,
+        headPairId: undefined,
+    });
     const written = await postRecordDocumentOp(
-        db, 'rec-1',
-        {
-            ...recordDocument('Fresh', 'active', AT, 'ev-1'),
-            organization_id: '1',
-        },
-        'current',
+        db, 'rec-1', body, 'current', pair,
     );
     assert.equal(written.name, 'Fresh');
     assert.equal(written.organization_id, '1');
     assert.equal((await db.records.getAll()).length, 0);
-    const events = await db.states.getAllFor('rec-1');
+    const events = await deriveStatesFor(db, '1', 'rec-1');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'active');
     assert.equal(events[0]!.member_id, 'current');
@@ -190,7 +204,7 @@ async () => {
         },
         'member-b',
     );
-    const events = await db.states.getAllFor('rec-2');
+    const events = await deriveStatesFor(db, '1', 'rec-2');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.member_id, 'current');
     assert.equal(second.name, 'Second');
@@ -200,28 +214,51 @@ async () => {
 test('postRecordDocumentOp with a fresh trio posts a'
 + ' transition authored by the actor', async () => {
     const db = await freshDb();
+    // Phase Final Task 2: both writes carry pairs so the
+    // document lifecycle is pair-plane visible.
+    const firstBody = {
+        ...recordDocument(
+            'First', 'active', AT, 'ev-3a',
+        ),
+        organization_id: '1',
+    };
+    const firstPair = await formWritePair({
+        method: 'PUT', pathname: '/records/rec-3',
+        routePattern: 'records/:id',
+        routeSegments: ['records', ':id'],
+        pathSegments: ['records', 'rec-3'],
+        headerFields: [], body: firstBody,
+        requesterIdentityId: 'current',
+        requestAt: AT, organization: '1',
+        responseStatus: 200, responseBody: undefined,
+        headPairId: undefined,
+    });
     await postRecordDocumentOp(
-        db, 'rec-3',
-        {
-            ...recordDocument(
-                'First', 'active', AT, 'ev-3a',
-            ),
-            organization_id: '1',
-        },
-        'current',
+        db, 'rec-3', firstBody, 'current', firstPair,
     );
+    const secondBody = {
+        ...recordDocument(
+            'First', 'archived',
+            '2026-01-02T00:00:00.000000Z', 'ev-3b',
+        ),
+        organization_id: '1',
+    };
+    const secondPair = await formWritePair({
+        method: 'PUT', pathname: '/records/rec-3',
+        routePattern: 'records/:id',
+        routeSegments: ['records', ':id'],
+        pathSegments: ['records', 'rec-3'],
+        headerFields: [], body: secondBody,
+        requesterIdentityId: 'current',
+        requestAt: '2026-01-02T00:00:00.000000Z',
+        organization: '1',
+        responseStatus: 200, responseBody: undefined,
+        headPairId: firstPair.id,
+    });
     await postRecordDocumentOp(
-        db, 'rec-3',
-        {
-            ...recordDocument(
-                'First', 'archived',
-                '2026-01-02T00:00:00.000000Z', 'ev-3b',
-            ),
-            organization_id: '1',
-        },
-        'current',
+        db, 'rec-3', secondBody, 'current', secondPair,
     );
-    const events = await db.states.getAllFor('rec-3');
+    const events = await deriveStatesFor(db, '1', 'rec-3');
     assert.deepEqual(
         events.map(e => e.state).toSorted(),
         ['active', 'archived'],
@@ -250,7 +287,7 @@ test('a byte-identical resend replays the stored response:'
     await handleRequest(
         db, req('PUT', '/records/rec-resend', token, body),
     );
-    const events = await db.states.getAllFor('rec-resend');
+    const events = await deriveStatesFor(db, '1', 'rec-resend');
     assert.equal(events.length, 1);
     assert.equal((await db.requests.getAll()).length, 4);
     assert.equal((await db.responses.getAll()).length, 4);

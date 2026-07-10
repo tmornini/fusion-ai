@@ -702,7 +702,10 @@ test('duplicate-create: two creates, same work-order id, fresh'
     assert.equal((await db.workOrders.getAll()).length, 0);
 
     assert.equal(
-        (await db.states.getAllFor(workOrderId)).length, 6,
+        (await deriveStatesFor(
+            db, STARK_ORGANIZATION, workOrderId,
+        )).length,
+        6,
     );
 
     const derivedJoins = (await deriveFlowWorkOrders(

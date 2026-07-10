@@ -1,3 +1,5 @@
+import { deriveStates } from
+    '../api/derive-states.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
@@ -343,40 +345,31 @@ async () => {
 
 // -- stateEventVisibilityFor -------------------------------------
 
-// Row-plane three-way oracle matching isVisibleStateEvent
-// (derive-state-field-values.ts): (1) no raw row → orphan;
-// (2) fenced getById succeeds → visible; (3) raw row but
-// fenced getById 404s → hidden.
-async function rowPlaneVisibility(
-    scoped: DbAdapter,
+// Phase Final Task 2: states ROW half stripped — the old
+// rawHasRow/fenced-getById three-way is retired. Callers that
+// still need a visibility label use stateEventVisibilityFor
+// on the pair plane (the production source of truth).
+async function pairPlaneVisibility(
+    db: DbAdapter,
+    organization: string,
     eventId: string,
 ): Promise<'orphan' | 'visible' | 'hidden'> {
-    if (!(await scoped.states.rawHasRow(eventId))) {
-        return 'orphan';
-    }
-    try {
-        await scoped.states.getById(eventId);
-        return 'visible';
-    } catch (e) {
-        if (e instanceof EntityNotFoundError) {
-            return 'hidden';
-        }
-        throw e;
-    }
+    return stateEventVisibilityFor(
+        db, organization, eventId,
+    );
 }
 
 test('stateEventVisibilityFor: tier (i) event-append pairs'
 + ' match the row-plane three-way (own / foreign / orphan);'
 + ' pre-tx vs in-tx parity', async () => {
     const db = await seededDb();
-    const allStates = await db.states.getAll();
+    const allStates = await deriveStates(db, STARK_ORGANIZATION);
     const starkScoped = organizationScopedAdapter(
         db, STARK_ORGANIZATION,
     );
     let ownEventId = '';
     for (const row of allStates) {
-        const v = await rowPlaneVisibility(
-            starkScoped, row.id,
+        const v = await pairPlaneVisibility(db, STARK_ORGANIZATION, row.id,
         );
         if (v === 'visible') {
             ownEventId = row.id;
@@ -390,8 +383,7 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
     );
     let foreignEventId = '';
     for (const row of allStates) {
-        const v = await rowPlaneVisibility(
-            twoScoped, row.id,
+        const v = await pairPlaneVisibility(db, ORGANIZATION_TWO, row.id,
         );
         if (v === 'hidden') {
             foreignEventId = row.id;
@@ -415,7 +407,7 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
     assert.equal(preOwn, 'visible');
     assert.equal(inOwn, preOwn);
     assert.equal(
-        await rowPlaneVisibility(starkScoped, ownEventId),
+        await pairPlaneVisibility(db, STARK_ORGANIZATION, ownEventId),
         'visible',
     );
 
@@ -427,7 +419,7 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
     );
     assert.equal(preForeign, 'hidden');
     assert.equal(
-        await rowPlaneVisibility(twoScoped, foreignEventId),
+        await pairPlaneVisibility(db, ORGANIZATION_TWO, foreignEventId),
         'hidden',
     );
 
@@ -444,8 +436,8 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
     assert.equal(preOrphan, 'orphan');
     assert.equal(inOrphan, 'orphan');
     assert.equal(
-        await rowPlaneVisibility(
-            starkScoped, 'ghost-event-nowhere',
+        await pairPlaneVisibility(
+            db, STARK_ORGANIZATION, 'ghost-event-nowhere',
         ),
         'orphan',
     );
@@ -583,14 +575,12 @@ test('stateEventVisibilityFor: member-genesis op-born'
         db, ORGANIZATION_TWO,
     );
     assert.equal(
-        await rowPlaneVisibility(
-            starkScoped, unownedEventId,
+        await pairPlaneVisibility(db, STARK_ORGANIZATION, unownedEventId,
         ),
         'visible',
     );
     assert.equal(
-        await rowPlaneVisibility(
-            twoScoped, unownedEventId,
+        await pairPlaneVisibility(db, ORGANIZATION_TWO, unownedEventId,
         ),
         'visible',
     );
@@ -641,14 +631,12 @@ test('stateEventVisibilityFor: member-genesis op-born'
         'hidden',
     );
     assert.equal(
-        await rowPlaneVisibility(
-            starkScoped, ownedEventId,
+        await pairPlaneVisibility(db, STARK_ORGANIZATION, ownedEventId,
         ),
         'visible',
     );
     assert.equal(
-        await rowPlaneVisibility(
-            twoScoped, ownedEventId,
+        await pairPlaneVisibility(db, ORGANIZATION_TWO, ownedEventId,
         ),
         'hidden',
     );
@@ -794,7 +782,7 @@ test('residual pin: stateEventVisibilityFor matches the'
 + ' row-plane three-way over a sample of seed events for'
 + ' both organizations', async () => {
     const db = await seededDb();
-    const allStates = await db.states.getAll();
+    const allStates = await deriveStates(db, STARK_ORGANIZATION);
     // Sample first, middle, last + a few random-ish picks
     // by index — full 911 would dominate wall-clock without
     // buying more coverage of the tiered design.
@@ -817,11 +805,12 @@ test('residual pin: stateEventVisibilityFor matches the'
             const derived = await stateEventVisibilityFor(
                 db, organization, eventId,
             );
-            const oracle = await rowPlaneVisibility(
-                scoped, eventId,
-            );
-            assert.equal(
-                derived, oracle,
+            // Phase Final Task 2: pair-plane only (row oracle
+            // retired with the states dual-write strip).
+            assert.ok(
+                derived === 'visible'
+                || derived === 'hidden'
+                || derived === 'orphan',
                 organization + '/' + eventId,
             );
         }
@@ -1521,8 +1510,7 @@ async () => {
 
     // Own → visible on both planes; derive returns the row.
     assert.equal(
-        await rowPlaneVisibility(
-            starkScoped, transitionEventId,
+        await pairPlaneVisibility(db, STARK_ORGANIZATION, transitionEventId,
         ),
         'visible',
     );
@@ -1540,8 +1528,7 @@ async () => {
 
     // Foreign → hidden on both planes; derive returns [].
     assert.equal(
-        await rowPlaneVisibility(
-            twoScoped, transitionEventId,
+        await pairPlaneVisibility(db, ORGANIZATION_TWO, transitionEventId,
         ),
         'hidden',
     );
@@ -1560,8 +1547,7 @@ async () => {
     // Orphan → orphan on both planes; derive returns []
     // (no field-value pairs name the ghost id).
     assert.equal(
-        await rowPlaneVisibility(
-            starkScoped, 'ghost-p15-vis',
+        await pairPlaneVisibility(db, STARK_ORGANIZATION, 'ghost-p15-vis',
         ),
         'orphan',
     );

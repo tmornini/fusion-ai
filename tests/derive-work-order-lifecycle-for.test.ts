@@ -182,9 +182,8 @@ test('workOrderLifecycleStatesFor: birth-claimed create alone'
     );
     assert.equal(scoped.length, 3);
     assert.deepEqual(scoped, await bulkRowsFor(db, workOrderId));
-    assert.deepEqual(
-        scoped, await db.states.getAllFor(workOrderId),
-    );
+    // Phase Final Task 2: states ROW half stripped — no
+    // row-plane oracle.
 });
 
 test('workOrderLifecycleStatesFor: a full chain — birth, a'
@@ -296,9 +295,8 @@ async () => {
     );
     assert.equal(scoped.length, 7);
     assert.deepEqual(scoped, await bulkRowsFor(db, workOrderId));
-    assert.deepEqual(
-        scoped, await db.states.getAllFor(workOrderId),
-    );
+    // Phase Final Task 2: states ROW half stripped — no
+    // row-plane oracle.
 });
 
 // A standalone unclaim (a bare PUT /states/:id, never a claim/

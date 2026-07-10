@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import { GET, POST, PUT, handleRequest } from '../api/api.ts';
 import {
@@ -116,34 +118,34 @@ test(
 );
 
 test(
-    'POST human-members rolls back every facet when its'
-    + ' initial state event conflicts',
+    'POST human-members ignores a raw colliding states row'
+    + ' (states ROW half stripped)',
     async () => {
         const db = await freshDb();
-        // Pre-seed a DIFFERENT event at the create's
-        // initialStateEventId. postEvent re-puts that id with a
-        // conflicting payload mid-tx (LedgerImmutability), so
-        // all four facet writes must roll back with it.
+        // Phase Final Task 2: states ROW half stripped —
+        // a raw colliding states row no longer aborts the
+        // pair-plane create.
         await db.states.put('ev-x', {
             entity_id: 'other',
             state: 'active',
             member_id: 'current',
             at: '2020-01-01T00:00:00.000000Z',
         });
-        await assert.rejects(
-            () => POST(db, 'human-members', {
-                id: 'doomed',
-                detail: detail(),
-                initialState: 'active',
-                initialStateEventId: 'ev-x',
-                initialStateAt: '2099-01-01T00:00:00.000000Z',
-            }, DEV_TOKEN),
+        await POST(db, 'human-members', {
+            id: 'survives',
+            detail: detail(),
+            initialState: 'active',
+            initialStateEventId: 'ev-x',
+            initialStateAt: '2099-01-01T00:00:00.000000Z',
+        }, DEV_TOKEN);
+        const parent = await GET<{ id: string }>(
+            db, 'members/survives', DEV_TOKEN,
         );
-        // Not one facet survived the aborted transaction.
-        await assert.rejects(
-            () => GET(db, 'members/doomed', DEV_TOKEN));
-        await assert.rejects(
-            () => GET(db, 'human-members/doomed', DEV_TOKEN));
+        assert.equal(parent.id, 'survives');
+        const detailRow = await GET<{ id: string }>(
+            db, 'human-members/survives', DEV_TOKEN,
+        );
+        assert.equal(detailRow.id, 'survives');
     },
 );
 
@@ -175,7 +177,8 @@ test(
             db, 'human-members/w1', DEV_TOKEN);
         assert.equal(facet.title, 'Director');
         // The edit wrote no event — the lone create event holds.
-        const events = await db.states.getAllFor('w1');
+        const events = await deriveStatesFor(db, '1', 'w1');
+        assert.equal((await db.states.getAll()).length, 0);
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
     },

@@ -1,3 +1,5 @@
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import {
@@ -54,7 +56,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 function eventsFor(
     db: MemoryDbAdapter,
 ): Promise<{ state: string; member_id: string; at: string }[]> {
-    return db.states.getAllFor('wo1');
+    return deriveStatesFor(db, '1', 'wo1');
 }
 
 test(
@@ -140,12 +142,17 @@ test(
         const db = await seededDb();
         // A live claim exists; the web-app decided to release
         // it and carried the release event in the body.
-        await db.states.put('cl-1', {
-            entity_id: 'wo1',
-            state: 'claimed',
-            member_id: 'current',
-            at: nowUtc(),
-        });
+        // Phase Final Task 2: claim event on pair plane
+        // (states ROW half stripped).
+        const claimAt = nowUtc();
+        await PUT(
+            db, 'states/cl-1', {
+                entity_id: 'wo1',
+                state: 'claimed',
+                at: claimAt,
+            },
+            DEV_TOKEN,
+        );
         // Mint transitionAt before release.at so the
         // at-ordered log matches route post order.
         const transitionAt = nowUtc();
@@ -393,12 +400,17 @@ test(
     'release.at is recorded as the release event at',
     async () => {
         const db = await seededDb();
-        await db.states.put('cl-1', {
-            entity_id: 'wo1',
-            state: 'claimed',
-            member_id: 'current',
-            at: nowUtc(),
-        });
+        // Phase Final Task 2: claim event on pair plane
+        // (states ROW half stripped).
+        const claimAt = nowUtc();
+        await PUT(
+            db, 'states/cl-1', {
+                entity_id: 'wo1',
+                state: 'claimed',
+                at: claimAt,
+            },
+            DEV_TOKEN,
+        );
         // Far-future values to distinguish caller-minted
         // from a server-generated nowUtc().
         const transitionAt = '2099-01-01T00:00:00.000000Z';

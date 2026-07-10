@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import { GET, POST } from '../api/api.ts';
 import {
@@ -112,7 +114,8 @@ test(
         assert.equal(links[0]!.project_id, 'p1');
         assert.equal(links[0]!.flow_id, 'flow-1');
 
-        const events = await db.states.getAllFor('flow-1');
+        const events = await deriveStatesFor(db, '1', 'flow-1');
+        assert.equal((await db.states.getAll()).length, 0);
         assert.equal(events.length, 1);
         const ev = events[0]! as StateEntity;
         assert.equal(ev.id, 'ev-1');
@@ -124,34 +127,30 @@ test(
 );
 
 test(
-    'POST flows rolls back every write when its state event'
-    + ' conflicts',
+    'POST flows ignores a raw colliding states row'
+    + ' (states ROW half stripped)',
     async () => {
         const db = await freshDb();
-        // Pre-seed a DIFFERENT event at the create's event id.
-        // postEvent re-puts that id with a conflicting payload
-        // mid-tx (LedgerImmutability), so the flow and its join
-        // row must roll back.
+        // Phase Final Task 2: states ROW half stripped —
+        // a raw colliding states row no longer aborts the
+        // pair-plane create (immutability is pair-plane only
+        // on states/:id PUT).
         await db.states.put('ev-1', {
             entity_id: 'other',
             state: 'active',
             member_id: 'current',
             at: '2020-01-01T00:00:00.000000Z',
         });
-        await assert.rejects(
-            () => POST(db, 'flows', createBody(), DEV_TOKEN),
+        await POST(db, 'flows', createBody(), DEV_TOKEN);
+        const flow = await GET<{ id: string }>(
+            db, 'flows/flow-1', DEV_TOKEN,
         );
-        // Not one write survived the aborted transaction.
-        await assert.rejects(
-            () => GET(db, 'flows/flow-1', DEV_TOKEN));
-        const links = await GET<unknown[]>(
-            db, 'projects/p1/flows', DEV_TOKEN,
+        assert.equal(flow.id, 'flow-1');
+        const flowEvents = await deriveStatesFor(
+            db, '1', 'flow-1',
         );
-        assert.equal(links.length, 0);
-        // Only the pre-seeded conflicting event remains — the
-        // create's own event never landed.
-        const flowEvents = await db.states.getAllFor('flow-1');
-        assert.equal(flowEvents.length, 0);
+        assert.equal(flowEvents.length, 1);
+        assert.equal(flowEvents[0]!.state, 'active');
     },
 );
 

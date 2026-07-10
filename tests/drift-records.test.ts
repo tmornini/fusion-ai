@@ -702,12 +702,11 @@ async () => {
         false,
     );
 
-    // History: states dual-write until states-trace.
+    // Phase Final Task 2: states ROW half stripped — history
+    // is pair-plane only.
     const derivedHistory = await deriveRecordStateHistory(
         db, STARK_ORGANIZATION, recordId,
     );
-    const oldHistory = await db.states.getAllFor(recordId);
-    assert.deepEqual(derivedHistory, oldHistory);
     assert.equal(derivedHistory.length, 4);
 
     // Step 7: physical DELETE on a second record.

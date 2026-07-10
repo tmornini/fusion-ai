@@ -418,10 +418,12 @@ test('a duplicate work-order create\'s own OPERATION pair'
     );
 });
 
-test('a failed work-order create leaves zero of the three'
-+ ' pairs (whole-tx abort)', async () => {
+test('a work-order create ignores a raw colliding states'
++ ' row (states ROW half stripped)', async () => {
     const db = await freshDb();
-    const flowWorkOrderId = 'wo-c4-doomed-fwo';
+    const flowWorkOrderId = 'wo-c4-survives-fwo';
+    // Phase Final Task 2: states ROW half stripped — raw
+    // collision no longer aborts the pair-plane create.
     await db.states.put('ev-2-' + flowWorkOrderId, {
         entity_id: 'other',
         state: 'n-finish',
@@ -431,10 +433,11 @@ test('a failed work-order create leaves zero of the three'
     const res = await handleRequest(db, req(
         'POST', '/work-orders', DEV_TOKEN,
         workOrderCreateBody(
-            'wo-c4-doomed', flowWorkOrderId, 'flow-c4',
+            'wo-c4-survives', flowWorkOrderId, 'flow-c4',
         ),
     ));
-    assert.equal(res.status, 409);
-    assert.equal((await db.requests.getAll()).length, 3);
-    assert.equal((await db.responses.getAll()).length, 3);
+    assert.equal(res.status, 204);
+    // 3 bootstrap pairs + 3 create pairs (op/document/join).
+    assert.equal((await db.requests.getAll()).length, 6);
+    assert.equal((await db.responses.getAll()).length, 6);
 });

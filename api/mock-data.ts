@@ -110,7 +110,6 @@ import {
     membershipSeedBody,
     bootstrapMembershipId,
     bootstrapRoleGrantId,
-    bootstrapSystemStateEventId,
     humanMemberPiiSeedBody,
     bootstrapCurrentMemberPiiBody,
     roleGrantSeedBody,
@@ -776,30 +775,18 @@ async function postMockDataLoadIn(
         // in this SAME transaction (Path A: appendMessagePair
         // writes ONLY requests/responses, so the row write itself
         // is byte-identical to before).
-        ...mockStateEvents.flatMap(r => [
-            adapter.states.put(r.id, {
-                entity_id: r.entity_id,
-                state: r.state,
-                member_id: r.member_id,
-                at: r.at,
-            }),
+        ...mockStateEvents.map(r =>
             appendMessagePair(
                 adapter,
                 requirePair(pairs, seedPairKey('states/:id', r.id)),
             ),
-        ]),
-        ...memberStateEvents.flatMap(r => [
-            adapter.states.put(r.id, {
-                entity_id: r.entity_id,
-                state: r.state,
-                member_id: r.member_id,
-                at: r.at,
-            }),
+        ),
+        ...memberStateEvents.map(r =>
             appendMessagePair(
                 adapter,
                 requirePair(pairs, seedPairKey('states/:id', r.id)),
             ),
-        ]),
+        ),
         // Phase Final Task 2: state_field_values ROW half
         // stripped — seed still forms leaf pairs at
         // states/:id/field-values/:fvid (WRITE_RESPONSE_SPECS
@@ -910,18 +897,12 @@ async function postMockDataLoadIn(
                 ),
             ),
         ),
-        ...leadToCloseData.stateEvents.flatMap(r => [
-            adapter.states.put(r.id, {
-                entity_id: r.entity_id,
-                state: r.state,
-                member_id: r.member_id,
-                at: r.at,
-            }),
+        ...leadToCloseData.stateEvents.map(r =>
             appendMessagePair(
                 adapter,
                 requirePair(pairs, seedPairKey('states/:id', r.id)),
             ),
-        ]),
+        ),
         ...mockRecords.map((r, i) => {
             const event = recordStateEventByRecordId.get(r.id)!;
             const attributes = mockRecordAttributes.filter(
@@ -1146,7 +1127,6 @@ export async function postBootstrap(
         systemIdentityPair,
         roleGrantPair,
         systemStateEventPair,
-        systemStateEventAt,
         defaultOrganizationPair,
         organizationPair,
     } = await formBootstrapMessagePair(nowUtc());
@@ -1162,7 +1142,7 @@ export async function postBootstrap(
             view, currentMemberBody, currentMemberPairs,
             membershipPair, systemMemberPair, piiPair,
             systemIdentityPair, roleGrantPair,
-            systemStateEventPair, systemStateEventAt,
+            systemStateEventPair,
             defaultOrganizationPair, organizationPair,
         ),
     );
@@ -1196,7 +1176,6 @@ async function postBootstrapIn(
     systemIdentityPair: MessagePair,
     roleGrantPair: MessagePair,
     systemStateEventPair: MessagePair,
-    systemStateEventAt: string,
     defaultOrganizationPair: MessagePair,
     organizationPair: MessagePair,
 ): Promise<void> {
@@ -1268,13 +1247,6 @@ async function postBootstrapIn(
         // pass 1's frozen timestamp (see postBootstrap), never a
         // second nowUtc() call, so it can never drift from what
         // systemStateEventPair was hashed from.
-        adapter.states.postEvent(
-            bootstrapSystemStateEventId,
-            SYSTEM_MEMBER_ID,
-            'active',
-            SYSTEM_MEMBER_ID,
-            systemStateEventAt,
-        ),
         appendMessagePair(adapter, systemStateEventPair),
         // Phase Final Task 2: organizations ROW half stripped
         // — pair-plane only, mirroring postMockDataLoadIn.

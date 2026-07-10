@@ -1,4 +1,7 @@
 import { test } from 'node:test';
+import {
+    invitationLifecycleStatesFor,
+} from '../api/derive-states.ts';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { BackedDbAdapter } from '../api/db-backed.ts';
@@ -597,11 +600,17 @@ async () => {
     // Entity landed with a non-empty id.
     assert.ok(invs[0]!.id !== '');
     // State event exists and carries an at.
-    const ev = await db.states.getCurrentFor(invs[0]!.id);
-    assert.ok(ev !== null);
-    assert.ok(ev?.at !== '');
-    // Author is server-derived (the actor's identity id).
-    assert.equal(ev?.member_id, 'current');
+    const life = await invitationLifecycleStatesFor(
+        db, invs[0]!.id,
+    );
+    const ev = [...life].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+            : a.id < b.id ? -1
+            : a.id > b.id ? 1 : 0,
+    ).at(-1)!;
+    assert.ok(ev.at !== '');
+    assert.equal(ev.member_id, 'current');
 });
 
 test('accept: event author is server-derived, membership lands',
@@ -613,11 +622,18 @@ async () => {
     const sarah = await ctxOn(db, 'sarah', '1');
     await postInvitationAcceptance(sarah, inv.id);
     // State event landed with a non-empty id + at.
-    const ev = await db.states.getCurrentFor(inv.id);
-    assert.ok(ev?.id !== '');
-    assert.ok(ev?.at !== '');
-    // Author is server-derived (the invitee's identity id).
-    assert.equal(ev?.member_id, 'sarah');
+    const life = await invitationLifecycleStatesFor(
+        db, inv.id,
+    );
+    const ev = [...life].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+            : a.id < b.id ? -1
+            : a.id > b.id ? 1 : 0,
+    ).at(-1)!;
+    assert.ok(ev.id !== '');
+    assert.ok(ev.at !== '');
+    assert.equal(ev.member_id, 'sarah');
     // Membership landed at a non-empty id.
     const wayne = (await deriveMembershipsAll(db))
         .filter(m => m.identity_id === 'sarah'
@@ -633,11 +649,18 @@ test('decline: event author is server-derived', async () => {
     const inv = (await deriveInvitations(db))[0]!;
     const dave = await ctxOn(db, 'dave', '1');
     await postInvitationDecline(dave, inv.id);
-    const ev = await db.states.getCurrentFor(inv.id);
-    assert.ok(ev?.id !== '');
-    assert.ok(ev?.at !== '');
-    // Author is server-derived (the invitee's identity id).
-    assert.equal(ev?.member_id, 'dave');
+    const life = await invitationLifecycleStatesFor(
+        db, inv.id,
+    );
+    const ev = [...life].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+            : a.id < b.id ? -1
+            : a.id > b.id ? 1 : 0,
+    ).at(-1)!;
+    assert.ok(ev.id !== '');
+    assert.ok(ev.at !== '');
+    assert.equal(ev.member_id, 'dave');
 });
 
 test('revoke: event author is server-derived', async () => {
@@ -646,11 +669,18 @@ test('revoke: event author is server-derived', async () => {
     await postInvitationGrant(tony, 'sarah@x.com');
     const inv = (await deriveInvitations(db))[0]!;
     await postInvitationRevocation(tony, inv.id);
-    const ev = await db.states.getCurrentFor(inv.id);
-    assert.ok(ev?.id !== '');
-    assert.ok(ev?.at !== '');
-    // Author is server-derived (the admin's identity id).
-    assert.equal(ev?.member_id, 'current');
+    const life = await invitationLifecycleStatesFor(
+        db, inv.id,
+    );
+    const ev = [...life].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+            : a.id < b.id ? -1
+            : a.id > b.id ? 1 : 0,
+    ).at(-1)!;
+    assert.ok(ev.id !== '');
+    assert.ok(ev.at !== '');
+    assert.equal(ev.member_id, 'current');
 });
 
 // A notify fires only after a write commits — an idempotent

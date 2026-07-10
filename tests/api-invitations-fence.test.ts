@@ -1,4 +1,9 @@
 import { test } from 'node:test';
+import {
+    invitationLifecycleStatesFor,
+} from '../api/derive-states.ts';
+import { currentInvitationState } from
+    '../api/invitations-domain.ts';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
@@ -386,12 +391,20 @@ async () => {
     assert.equal(r2.status, 200);
     assert.equal((await deriveInvitations(db)).length, 1);
     assert.equal(
-        (await db.states.getAllFor('inv-idem')).length, 1,
+        (await invitationLifecycleStatesFor(db, 'inv-idem')).length, 1,
     );
     // Event carries the caller-supplied at.
-    const ev = await db.states.getCurrentFor('inv-idem');
-    assert.equal(ev?.at, GRANT_AT);
-    assert.equal(ev?.id, 'ev-g-idem');
+    const life = await invitationLifecycleStatesFor(
+        db, 'inv-idem',
+    );
+    const ev = [...life].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+            : a.id < b.id ? -1
+            : a.id > b.id ? 1 : 0,
+    ).at(-1)!;
+    assert.equal(ev.at, GRANT_AT);
+    assert.equal(ev.id, 'ev-g-idem');
 });
 
 test('accept: replay of fixed body is a no-op (two events total)',
@@ -421,14 +434,21 @@ async () => {
         sTok, accBody));
     assert.equal(a2.status, 204);
     assert.equal(
-        (await db.states.getAllFor('inv-ai')).length, 2,
+        (await invitationLifecycleStatesFor(db, 'inv-ai')).length, 2,
     );
     // Event carries the caller-supplied at.
-    const ev = await db.states.getCurrentFor('inv-ai');
-    assert.equal(ev?.at, ACCEPT_AT);
-    assert.equal(ev?.id, 'ev-a-idem');
-    // Author is server-derived (the invitee's identity id).
-    assert.equal(ev?.member_id, 'sarah');
+    const life = await invitationLifecycleStatesFor(
+        db, 'inv-ai',
+    );
+    const ev = [...life].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+            : a.id < b.id ? -1
+            : a.id > b.id ? 1 : 0,
+    ).at(-1)!;
+    assert.equal(ev.at, ACCEPT_AT);
+    assert.equal(ev.id, 'ev-a-idem');
+    assert.equal(ev.member_id, 'sarah');
 });
 
 test('decline: replay of fixed body is a no-op (two events total)',
@@ -457,12 +477,20 @@ async () => {
         sTok, decBody));
     assert.equal(d2.status, 204);
     assert.equal(
-        (await db.states.getAllFor('inv-di')).length, 2,
+        (await invitationLifecycleStatesFor(db, 'inv-di')).length, 2,
     );
     // Event carries the caller-supplied at.
-    const ev = await db.states.getCurrentFor('inv-di');
-    assert.equal(ev?.at, DECLINE_AT);
-    assert.equal(ev?.id, 'ev-d-idem');
+    const life = await invitationLifecycleStatesFor(
+        db, 'inv-di',
+    );
+    const ev = [...life].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+            : a.id < b.id ? -1
+            : a.id > b.id ? 1 : 0,
+    ).at(-1)!;
+    assert.equal(ev.at, DECLINE_AT);
+    assert.equal(ev.id, 'ev-d-idem');
 });
 
 test('revoke: replay of fixed body is a no-op (two events total)',
@@ -490,14 +518,21 @@ async () => {
         tok, revBody));
     assert.equal(r2.status, 204);
     assert.equal(
-        (await db.states.getAllFor('inv-ri')).length, 2,
+        (await invitationLifecycleStatesFor(db, 'inv-ri')).length, 2,
     );
     // Event carries the caller-supplied at.
-    const ev = await db.states.getCurrentFor('inv-ri');
-    assert.equal(ev?.at, REVOKE_AT);
-    assert.equal(ev?.id, 'ev-r-idem');
-    // Author is server-derived (the admin's identity id).
-    assert.equal(ev?.member_id, 'current');
+    const life = await invitationLifecycleStatesFor(
+        db, 'inv-ri',
+    );
+    const ev = [...life].sort((a, b) =>
+        a.at < b.at ? -1
+            : a.at > b.at ? 1
+            : a.id < b.id ? -1
+            : a.id > b.id ? 1 : 0,
+    ).at(-1)!;
+    assert.equal(ev.at, REVOKE_AT);
+    assert.equal(ev.id, 'ev-r-idem');
+    assert.equal(ev.member_id, 'current');
 });
 
 // Gap-1 gate: empty ids are rejected at the gate (400).
@@ -682,7 +717,7 @@ test('a removed member who re-accepts gets a no-op — not a'
         'DELETE', '/memberships/ms-sarah-removed',
         await organizationToken('current', '2')));
     assert.equal(del.status, 204);
-    const statesBefore = (await db.states.getAllFor(id)).length;
+    const statesBefore = (await invitationLifecycleStatesFor(db, id)).length;
     const reaccept = await handleRequest(db, req(
         'POST', '/invitations/' + id + '/acceptance',
         await organizationToken('sarah', '1'),
@@ -697,7 +732,7 @@ test('a removed member who re-accepts gets a no-op — not a'
             && m.organization_id === '2');
     assert.deepEqual(sarahInWayne, []);
     assert.equal(
-        (await db.states.getAllFor(id)).length, statesBefore,
+        (await invitationLifecycleStatesFor(db, id)).length, statesBefore,
     );
 });
 

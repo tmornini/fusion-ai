@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import {
     MemoryDbAdapter,
@@ -351,7 +353,7 @@ test(
 
         const after = await getProjectEntity(ctx, 'p1');
         assert.deepEqual(after, before);
-        const events = await db.states.getAllFor('p1');
+        const events = await deriveStatesFor(db, '1', 'p1');
         // genesis + transition
         assert.equal(events.length, 2);
         assert.equal(

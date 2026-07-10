@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import {
     MemoryDbAdapter,
@@ -202,7 +204,7 @@ test(
         const row = await getIdeaEntity(ctx, 'i1');
         assert.equal(row.title, 'Fresh');
         const events =
-            await db.states.getAllFor('i1');
+            await deriveStatesFor(db, '1', 'i1');
         assert.equal(events.length, 1);
         assert.equal(
             events[0]?.state,
@@ -229,7 +231,7 @@ test(
         const after = await getIdeaEntity(ctx, 'i1');
         assert.deepEqual(after, before);
         const events =
-            await db.states.getAllFor('i1');
+            await deriveStatesFor(db, '1', 'i1');
         // genesis + transition
         assert.equal(events.length, 2);
         assert.equal(
@@ -286,13 +288,13 @@ test(
         assert.equal(project.title, 'P1');
 
         const ideaEvents =
-            await db.states.getAllFor('i1');
+            await deriveStatesFor(db, '1', 'i1');
         assert.equal(
             ideaEvents.at(-1)?.state, 'promoted',
         );
 
         const projectEvents =
-            await db.states.getAllFor('p1');
+            await deriveStatesFor(db, '1', 'p1');
         assert.equal(projectEvents.length, 1);
         assert.equal(
             projectEvents[0]?.state, 'submitted',

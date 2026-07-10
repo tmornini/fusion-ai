@@ -31,22 +31,12 @@ function hashIds(ids: string[]): string {
 type TableFingerprint = { count: number; hash: string };
 
 const EXPECTED: Record<string, TableFingerprint> = {
+    // All dual-written families RETIRED (Phase Final Task 2):
+    // seed row halves stripped; pairs stay at
+    // EXPECTED_PAIR_COUNT 1513. Tables empty until Stage B
+    // deletion. SFV seed leaf pairs SURVIVE (WRS + 7 pairs).
+    // clients remains empty (no seed dual-write; hash pin).
     'clients': { count: 0, hash: '811c9dc5' },
-    // ideas + idea_submissions + projects family + flows +
-    // flow_versions + four graph relations + work_orders +
-    // flow_work_orders + state_field_values + records +
-    // record_attributes + flow_records + objectives +
-    // objective_revisions + members + human_members +
-    // ai_members + memberships + invitations + identities +
-    // identity_pii + identity_credentials +
-    // identity_token_revocations +
-    // identity_default_organizations + role_grants +
-    // identity_providers + organizations RETIRED
-    // (Phase Final Task 2): seed row halves stripped; pairs
-    // stay at EXPECTED_PAIR_COUNT 1513. Tables empty until
-    // Stage B deletion. SFV seed leaf pairs SURVIVE
-    // (WRS + 7 pairs).
-    'states': { count: 911, hash: '679a7541' },
 };
 
 // requests/responses are EXCLUDED from this fingerprint (Task
@@ -62,11 +52,10 @@ const EXPECTED: Record<string, TableFingerprint> = {
 // tests/mock-data-pairs.test.ts. The reserved schema-version
 // marker (Phase 12 Task 6) is excluded too — it is a scalar,
 // not a row array, so `rows.map` below would throw on it.
-// ideas + projects + flows + work-orders + records +
-// objectives + roster + identity spine + organizations
-// families excluded with Phase Final Task 2 seed row-half
-// strip (EXPECTED rows retired; tables empty until Stage B
-// deletion; pair-plane pins live in mock-data-pairs.test.ts).
+// All dual-written families + states excluded with Phase Final
+// Task 2 seed row-half strip (EXPECTED rows retired; tables
+// empty until Stage B deletion; pair-plane pins live in
+// mock-data-pairs.test.ts).
 const EXCLUDED_TABLES = new Set([
     'requests', 'responses', SNAPSHOT_SCHEMA_VERSION_KEY,
     'ideas', 'idea_submissions',
@@ -85,7 +74,7 @@ const EXCLUDED_TABLES = new Set([
     'identity_token_revocations',
     'identity_default_organizations',
     'role_grants', 'identity_providers',
-    'organizations',
+    'organizations', 'states',
 ]);
 
 async function seededFingerprint(): Promise<

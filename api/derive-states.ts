@@ -1696,6 +1696,14 @@ export async function deriveMemberGenesis(
                 for (const pair of operationPairsAt(
                     requests, responses, prefix,
                 )) {
+                    // Create ops alone carry the genesis trio;
+                    // edit ops at the same collection prefix
+                    // do not (Phase Final Task 2: no dual-write
+                    // to filter them by a states row).
+                    if (typeof pair.body['initialStateEventId']
+                        !== 'string') {
+                        continue;
+                    }
                     rows.push({
                         id: pickString(
                             pair.body, 'initialStateEventId',

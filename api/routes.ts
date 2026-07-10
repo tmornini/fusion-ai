@@ -184,7 +184,6 @@ import {
     deriveStatesFor,
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
-    documentStateHeadFor,
     stateEventCollisionFromPairs,
 } from './derive-states.ts';
 import {
@@ -249,7 +248,7 @@ export { param, requireOrganization, withoutId };
 // validated once at the gate (documentWriteResponseSpec, via
 // validateDocument). Phase Final Task 2: the ideas ROW half is
 // stripped; the pair + states.postEvent land in ONE transaction
-// (states row half strips with the states-trace group). Genesis
+// (states ROW half stripped (pair plane only)). Genesis
 // is head-presence-defined — a fresh id's PUT simply finds no
 // head, so it authors like any other transition.
 //
@@ -978,7 +977,7 @@ async function recordAttributeOrganizationFromPairs(
 export async function postRecordWriteOp(
     db: DbAdapter,
     payload: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pairs?: RecordWritePairs,
     // Verified token organization for the RESTRICT SFV
     // visibility probe (stateEventVisibilityFor). Optional so
@@ -997,51 +996,13 @@ export async function postRecordWriteOp(
     // plane (attributePuts/attributeDeletes).
     await db.transaction(
         [...new Set([
-            // Phase Final Task 2: records + record_attributes
-            // ROW halves stripped.
-            'states',
+            // Phase Final Task 2: states ROW half stripped.
             ...ATTRIBUTE_RESTRICT_TABLES,
             'requests', 'responses',
         ])],
         async (view) => {
-            if (body.kind === 'create') {
-                // Genesis: exactly ONE state event, authored by
-                // the verified caller (actor), never a client-
-                // supplied member.
-                await view.states.postEvent(
-                    body.initialStateEventId,
-                    body.id,
-                    body.initialState,
-                    actor,
-                    body.initialStateAt,
-                );
-            } else {
-                // The SAME sameEvent decompose
-                // postRecordDocumentOp runs: the edit body now
-                // carries the echoed trio, so the synthesized
-                // document pair forms purely from the body. A
-                // byte-identical echo of the stored head
-                // converges to a no-op write (states.put's own
-                // idempotency by id); a genuinely different
-                // trio at the SAME id still 409s via
-                // LedgerImmutabilityError, exactly as before.
-                const head = await documentStateHeadFor(
-                    view, body.id,
-                );
-                const memberId = (
-                    head !== null
-                    && head.id === body.state_event_id
-                    && head.state === body.state
-                    && head.at === body.state_at
-                ) ? head.member_id : actor;
-                await view.states.postEvent(
-                    body.state_event_id,
-                    body.id,
-                    body.state,
-                    memberId,
-                    body.state_at,
-                );
-            }
+            // Phase Final Task 2: states ROW half stripped —
+            // document/attribute pairs alone carry truth.
             if (removedIds.length > 0) {
                 // Prefer the verified token claim; fall back to
                 // the body's stamped organization_id only for
@@ -1088,7 +1049,7 @@ export async function postRecordWriteOp(
 // graph relation tables no longer receive dual-write puts;
 // graphDelta/revivals stay in document-pair bodies
 // (SIDECAR-KEEP) feeding deriveFlowGraphStates. Flow lifecycle
-// states.postEvent remains until the states-trace strip.
+// Phase Final Task 2: states ROW half stripped.
 
 // The organization_id extraction/merge shape every document op
 // below needs: the org-scoped store stamps organization_id from
@@ -1118,8 +1079,8 @@ function documentOperationOrganization(
 // falls to `actor`, authoring the birth like any other
 // transition). Phase Final Task 2: the ideas ROW half is
 // stripped — the pair + states.postEvent commit as ONE
-// transaction (states row half strips with the states-trace
-// group). WRITE_RESPONSE_SPECS successBody forms the wire
+// transaction (states ROW half stripped — pair plane only).
+// WRITE_RESPONSE_SPECS successBody forms the wire
 // bytes; the reconstructed return is for below-facade callers
 // and type parity. `pair` is optional so the seed's
 // below-facade call keeps compiling unchanged; the route always
@@ -1129,7 +1090,7 @@ export async function postIdeaDocumentOp(
     db: DbAdapter,
     id: Id,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pair?: MessagePair,
 ): Promise<IdeaEntity> {
     const doc = validateIdeaDocumentBody(withoutId(body));
@@ -1138,19 +1099,8 @@ export async function postIdeaDocumentOp(
         ...documentOperationOrganization(body),
     } as unknown as Omit<IdeaEntity, 'id'>;
     return db.transaction(
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            const head = await documentStateHeadFor(view, id);
-            const memberId = (
-                head !== null
-                && head.id === doc.state_event_id
-                && head.state === doc.state
-                && head.at === doc.state_at
-            ) ? head.member_id : actor;
-            await view.states.postEvent(
-                doc.state_event_id, id, doc.state,
-                memberId, doc.state_at,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -1165,8 +1115,8 @@ export async function postIdeaDocumentOp(
 // ternary below falls to `actor`, authoring the birth like any
 // other transition). Phase Final Task 2: the projects ROW half
 // is stripped — the pair + states.postEvent commit as ONE
-// transaction (states row half strips with the states-trace
-// group). WRITE_RESPONSE_SPECS successBody forms the wire
+// transaction (states ROW half stripped — pair plane only).
+// WRITE_RESPONSE_SPECS successBody forms the wire
 // bytes; the reconstructed return is for below-facade callers
 // and type parity. `pair` is optional so the seed's
 // below-facade call keeps compiling unchanged; the route always
@@ -1176,7 +1126,7 @@ export async function postProjectDocumentOp(
     db: DbAdapter,
     id: Id,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pair?: MessagePair,
 ): Promise<ProjectEntity> {
     const doc = validateProjectDocumentBody(withoutId(body));
@@ -1186,20 +1136,9 @@ export async function postProjectDocumentOp(
     } as unknown as Omit<ProjectEntity, 'id'>;
     return db.transaction(
         // Phase Final Task 2: projects ROW half stripped;
-        // states.postEvent stays until the states-trace group.
-        ['states', 'requests', 'responses'],
+        // states ROW half stripped (pair plane only).
+        ['requests', 'responses'],
         async (view) => {
-            const head = await documentStateHeadFor(view, id);
-            const memberId = (
-                head !== null
-                && head.id === doc.state_event_id
-                && head.state === doc.state
-                && head.at === doc.state_at
-            ) ? head.member_id : actor;
-            await view.states.postEvent(
-                doc.state_event_id, id, doc.state,
-                memberId, doc.state_at,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -1226,7 +1165,7 @@ export async function postRecordDocumentOp(
     db: DbAdapter,
     id: Id,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pair?: MessagePair,
 ): Promise<RecordEntity> {
     const doc = validateRecordDocumentBody(withoutId(body));
@@ -1236,20 +1175,9 @@ export async function postRecordDocumentOp(
     } as unknown as Omit<RecordEntity, 'id'>;
     return db.transaction(
         // Phase Final Task 2: records ROW half stripped;
-        // states.postEvent stays until the states-trace group.
-        ['states', 'requests', 'responses'],
+        // states ROW half stripped (pair plane only).
+        ['requests', 'responses'],
         async (view) => {
-            const head = await documentStateHeadFor(view, id);
-            const memberId = (
-                head !== null
-                && head.id === doc.state_event_id
-                && head.state === doc.state
-                && head.at === doc.state_at
-            ) ? head.member_id : actor;
-            await view.states.postEvent(
-                doc.state_event_id, id, doc.state,
-                memberId, doc.state_at,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -1391,20 +1319,13 @@ export interface FlowCreationPairs {
 export async function postFlowCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pairs?: FlowCreationPairs,
 ): Promise<void> {
-    const b = validateFlowCreateBody(body);
+    validateFlowCreateBody(body);
     return db.transaction(
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            await view.states.postEvent(
-                b.initialStateEventId,
-                b.id,
-                b.initialState,
-                actor,
-                b.initialStateAt,
-            );
             // Three pairs or none (Atomicity): the operation
             // pair (the gate's own), the synthesized document
             // pair, and the synthesized join pair — appended in
@@ -1437,7 +1358,7 @@ export async function postFlowDocumentOp(
     db: DbAdapter,
     id: Id,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pair?: MessagePair,
 ): Promise<FlowEntity> {
     const doc = validateFlowDocumentBody(withoutId(body));
@@ -1447,22 +1368,12 @@ export async function postFlowDocumentOp(
     } as unknown as Omit<FlowEntity, 'id'>;
     return db.transaction(
         // Phase Final Task 2: flows + graph ROW halves
-        // stripped; states.postEvent stays until states-trace.
-        ['states', 'requests', 'responses'],
+        // stripped; states ROW half stripped (pair plane only).
+        ['requests', 'responses'],
         async (view) => {
-            await view.states.postEvent(
-                doc.state_event_id, id, doc.state,
-                actor, doc.state_at,
-            );
             // Revival states events dual-write until the
             // states-trace strip; pair body also carries
             // revivals for deriveFlowGraphStates (SIDECAR-KEEP).
-            for (const r of doc.revivals) {
-                await view.states.postEvent(
-                    r.eventId, r.entityId,
-                    'restored', actor, r.at,
-                );
-            }
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -1560,18 +1471,8 @@ export async function postFlowUndoOp(
     });
     return db.transaction(
         // Phase Final Task 2: flows + graph ROW halves stripped.
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            await view.states.postEvent(
-                b.eventId, id, 'updated', actor,
-                b.at,
-            );
-            for (const r of revivals) {
-                await view.states.postEvent(
-                    r.eventId, r.entityId,
-                    'restored', actor, r.at,
-                );
-            }
             await appendMessagePair(view, pair);
             await appendMessagePair(view, documentPair);
         },
@@ -1821,22 +1722,15 @@ export function humanMemberDetailBodyOf(
 export async function postAiMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pairs?: MemberWritePairs,
 ): Promise<void> {
-    const b = validateAIMemberCreateBody(body);
+    validateAIMemberCreateBody(body);
     return db.transaction(
         // Phase Final Task 2: members + ai_members ROW
         // halves stripped; states stays until states-trace.
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            await view.states.postEvent(
-                b.initialStateEventId,
-                b.id,
-                b.initialState,
-                actor,
-                b.initialStateAt,
-            );
             if (pairs !== undefined) {
                 await appendMessagePair(view, pairs.operation);
                 await appendMessagePair(
@@ -1853,7 +1747,7 @@ export async function postAiMemberCreationOp(
 // Human-member creation: initial state event and the
 // document-pair bundle commit as ONE transaction. Phase Final
 // Task 2: members + human_members + identities ROW halves
-// stripped; states.postEvent stays until states-trace. PII
+// stripped; states ROW half stripped (pair plane only). PII
 // enters via PUT identities/:id/pii. The initial event is
 // authored by the verified caller (actor), never the body.
 // Exported so the seed can drive human-member creation
@@ -1865,22 +1759,15 @@ export async function postAiMemberCreationOp(
 export async function postHumanMemberCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pairs?: MemberWritePairs,
 ): Promise<void> {
-    const b = validateHumanMemberCreateBody(body);
+    validateHumanMemberCreateBody(body);
     return db.transaction(
         // Phase Final Task 2: members + human_members +
         // identities ROW halves stripped; states stays.
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            await view.states.postEvent(
-                b.initialStateEventId,
-                b.id,
-                b.initialState,
-                actor,
-                b.initialStateAt,
-            );
             if (pairs !== undefined) {
                 await appendMessagePair(view, pairs.operation);
                 await appendMessagePair(
@@ -2070,24 +1957,15 @@ export interface WorkOrderCreationPairs {
 export async function postWorkOrderCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pairs?: WorkOrderCreationPairs,
 ): Promise<void> {
-    const b = validateWorkOrderCreateBody(body);
+    validateWorkOrderCreateBody(body);
     return db.transaction(
         // Phase Final Task 2: work_orders + flow_work_orders
         // ROW halves stripped.
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            for (let i = 0; i < 3; i++) {
-                await view.states.postEvent(
-                    b.stateEventIds[i]!,
-                    b.id,
-                    b.states[i]!,
-                    actor,
-                    b.stateEventAts[i]!,
-                );
-            }
             // Three pairs or none (Atomicity): the operation
             // pair (the gate's own), the synthesized document
             // pair, and the synthesized join pair — appended
@@ -2144,10 +2022,9 @@ export async function postWorkOrderClaimOp(
 ): Promise<void> {
     return db.transaction(
         // Phase Final Task 2: work_orders ROW half stripped.
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            const b =
-                validateWorkOrderClaimBody(body);
+            validateWorkOrderClaimBody(body);
             const wo = await workOrderDocumentHeadFor(
                 view, organization, workOrderId,
             );
@@ -2187,20 +2064,9 @@ export async function postWorkOrderClaimOp(
                     HTTP_CONFLICT,
                 );
             }
-            if (
-                prior !== null
-                && prior.state === 'claimed'
-            ) {
-                await view.states.postEvent(
-                    b.expireEventId, workOrderId,
-                    'claim_expired',
-                    prior.member_id, b.expireAt,
-                );
-            }
-            await view.states.postEvent(
-                b.claimEventId, workOrderId,
-                'claimed', actor, b.claimAt,
-            );
+            // Phase Final Task 2: states ROW half stripped —
+            // claim_expired + claimed live on the op pair body
+            // (workOrderClaimHistoryFor reads them back).
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -2219,33 +2085,20 @@ export async function postWorkOrderClaimOp(
 // the verified caller (actor). `pair` is optional.
 export async function postWorkOrderTransitionOp(
     db: DbAdapter,
-    workOrderId: Id,
+    _workOrderId: Id,
     body: Record<string, unknown>,
-    actor: Id,
+    _actor: Id,
     pair?: MessagePair,
 ): Promise<void> {
-    const b = validateWorkOrderTransitionBody(body);
+    validateWorkOrderTransitionBody(body);
     return db.transaction(
         // Phase Final Task 2: state_field_values ROW half
         // stripped; fieldValues live on the op pair body.
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
-            await view.states.postEvent(
-                b.transitionEventId,
-                workOrderId,
-                b.targetState,
-                actor,
-                b.transitionAt,
-            );
-            if (b.release !== null) {
-                await view.states.postEvent(
-                    b.release.id,
-                    workOrderId,
-                    b.release.state,
-                    actor,
-                    b.release.at,
-                );
-            }
+            // Phase Final Task 2: states ROW half stripped —
+            // transition + optional claim_released live on
+            // the op pair body.
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -4072,22 +3925,8 @@ export const routes: Route[] = [
             // (states row half strips with the states-trace
             // group).
             return db.transaction(
-                ['states', 'requests', 'responses'],
+                ['requests', 'responses'],
                 async (view) => {
-                    await view.states.postEvent(
-                        b.ideaStateEventId,
-                        ideaId,
-                        b.ideaState,
-                        actor,
-                        b.ideaStateAt,
-                    );
-                    await view.states.postEvent(
-                        b.projectStateEventId,
-                        b.projectId,
-                        b.projectState,
-                        actor,
-                        b.projectStateAt,
-                    );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }

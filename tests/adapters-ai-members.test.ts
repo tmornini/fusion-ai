@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import {
     MemoryDbAdapter,
@@ -53,7 +55,8 @@ test(
         assert.equal(parent.type, 'ai');
         const detail = await getAIMemberEntity(ctx, 'ai1');
         assert.equal(detail.name, 'Claude');
-        const events = await db.states.getAllFor('ai1');
+        const events = await deriveStatesFor(db, '1', 'ai1');
+        assert.equal((await db.states.getAll()).length, 0);
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
         // Authorship is the verified caller, never the body.
@@ -87,7 +90,8 @@ test(
         );
         assert.equal(parent.type, 'ai');
         // The edit wrote no event — the seeded one holds.
-        const events = await db.states.getAllFor('ai1');
+        const events = await deriveStatesFor(db, '1', 'ai1');
+        assert.equal((await db.states.getAll()).length, 0);
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
     },

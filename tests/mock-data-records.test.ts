@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { postMockDataLoad } from
@@ -274,7 +276,7 @@ test(
                 'wo.flow_graph',
             );
 
-        const events = await db.states.getAllFor(woId);
+        const events = await deriveStatesFor(db, '1', woId);
         const transitions = events.filter(
             e => e.state !== 'claimed'
                 && e.state !== 'claim_released'

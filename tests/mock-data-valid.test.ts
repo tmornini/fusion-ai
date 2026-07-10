@@ -55,6 +55,10 @@ import { deriveFlowWorkOrders } from
 import {
     stateFieldValuesForStateEvent,
 } from '../api/derive-state-field-values.ts';
+import {
+    deriveStates,
+    deriveStatesFor,
+} from '../api/derive-states.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import {
     assignOrganization,
@@ -97,12 +101,8 @@ const TABLES: ReadonlyArray<[
     (db: MemoryDbAdapter) => Promise<{ id: string }[]>,
     Validator,
 ]> = [
-    // ideas + projects + flows + workOrders + records +
-    // objectives + roster row halves re-homed (Phase Final
-    // Task 2). states still dual-writes until states-trace.
-    ['states',
-        d => d.states.getAll(),
-        validateStateEntity],
+    // states re-homed below (Phase Final Task 2:
+    // states ROW half stripped).
 ];
 
 const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
@@ -117,6 +117,23 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
         ...document.body,
     }),
 };
+
+
+// Phase Final Task 2: states ROW half stripped — validate
+// the derived plane (pair-plane truth).
+test('mock-data seeds non-empty derived states',
+async () => {
+    const db = await seededDb();
+    const rows = await deriveStates(db, '1');
+    assert.ok(rows.length > 0, 'derived states empty');
+    for (const row of rows) {
+        assert.doesNotThrow(
+            () => validateStateEntity(withoutId(row)),
+            'state ' + row.id,
+        );
+    }
+    assert.equal((await db.states.getAll()).length, 0);
+});
 
 for (const [name, getAll, validate] of TABLES) {
     test(
@@ -290,16 +307,20 @@ test('mock-data derived baseline/actual scores pass'
 const ZULU_6 =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 
-test('mock-data states.at is 6-digit zulu', async () => {
+// Phase Final Task 2: states ROW half stripped — pin
+// derived-plane .at (pair plane is truth).
+test('mock-data derived states.at is 6-digit zulu',
+async () => {
     const db = await seededDb();
-    const rows = await db.states.getAll();
-    assert.ok(rows.length > 0, 'states empty');
+    const rows = await deriveStates(db, '1');
+    assert.ok(rows.length > 0, 'derived states empty');
     for (const row of rows) {
         assert.match(
             row.at, ZULU_6,
-            'row ' + row.id + ' in states',
+            'row ' + row.id + ' in derived states',
         );
     }
+    assert.equal((await db.states.getAll()).length, 0);
 });
 
 test('mock-data derived score .at is 6-digit zulu',
@@ -439,9 +460,13 @@ async () => {
         ...buildWorkOrders().map(w => w.id),
         ...buildLeadToCloseWorkload().workOrders.map(w => w.id),
     ];
+    // Phase Final Task 2: states ROW half stripped —
+    // discover events via deriveStatesFor.
     const allEvents = (
         await Promise.all(
-            woIds.map(id => db.states.getAllFor(id)),
+            woIds.map(id =>
+                deriveStatesFor(db, STARK_ORGANIZATION, id),
+            ),
         )
     ).flat();
     let total = 0;

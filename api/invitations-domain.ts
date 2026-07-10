@@ -530,9 +530,9 @@ async function grantInvitation(
     // pending invitation (Commandment VII).
     // Phase Final Task 2: invitations ROW half stripped;
     // stale 'memberships' tx entry dropped with it;
-    // states.postEvent stays until states-trace.
+    // states ROW half stripped (pair plane only).
     await ctx.base.transaction(
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
             const outcome = await grantOutcomeFor(
                 view, organization, identityId);
@@ -547,11 +547,6 @@ async function grantInvitation(
                     + ' and its transaction — retry the'
                     + ' request',
                 );
-            }
-            if (outcome.kind === 'fresh') {
-                await view.states.postEvent(
-                    grantEventId, invitationId,
-                    'pending', ctx.principal.id, grantAt);
             }
             await appendMessagePair(view, pair);
             if (document !== undefined) {
@@ -765,9 +760,9 @@ async function acceptInvitation(
     let conflict = false;
     let noOp = false;
     // Phase Final Task 2: memberships ROW half stripped;
-    // states.postEvent stays until states-trace.
+    // states ROW half stripped (pair plane only).
     await ctx.base.transaction(
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
             const state = await currentInvitationState(view, id);
             if (state === 'accepted') {
@@ -787,8 +782,6 @@ async function acceptInvitation(
             if (!already) {
                 await appendMessagePair(view, membershipDocument);
             }
-            await view.states.postEvent(
-                eventId, id, 'accepted', ctx.principal.id, at);
             await appendMessagePair(view, pair);
         },
     );
@@ -830,10 +823,9 @@ async function declineInvitation(
     }
     const body = parse.body;
     let eventId: string;
-    let at: string;
     try {
         eventId = pickString(body, 'declineEventId');
-        at = validateTimestampField(
+        validateTimestampField(
             body, 'declineAt', 'decline',
         );
     } catch (e) {
@@ -858,7 +850,7 @@ async function declineInvitation(
     let conflict = false;
     let noOp = false;
     await ctx.base.transaction(
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
             const state = await currentInvitationState(view, id);
             if (state === 'declined') {
@@ -867,8 +859,6 @@ async function declineInvitation(
                 return;
             }
             if (state !== 'pending') { conflict = true; return; }
-            await view.states.postEvent(
-                eventId, id, 'declined', ctx.principal.id, at);
             await appendMessagePair(view, pair);
         },
     );
@@ -913,10 +903,9 @@ async function revokeInvitation(
     }
     const body = parse.body;
     let eventId: string;
-    let at: string;
     try {
         eventId = pickString(body, 'revokeEventId');
-        at = validateTimestampField(
+        validateTimestampField(
             body, 'revokeAt', 'revoke',
         );
     } catch (e) {
@@ -941,7 +930,7 @@ async function revokeInvitation(
     let conflict = false;
     let noOp = false;
     await ctx.base.transaction(
-        ['states', 'requests', 'responses'],
+        ['requests', 'responses'],
         async (view) => {
             const state = await currentInvitationState(view, id);
             if (state === 'revoked') {
@@ -950,8 +939,6 @@ async function revokeInvitation(
                 return;
             }
             if (state !== 'pending') { conflict = true; return; }
-            await view.states.postEvent(
-                eventId, id, 'revoked', ctx.principal.id, at);
             await appendMessagePair(view, pair);
         },
     );

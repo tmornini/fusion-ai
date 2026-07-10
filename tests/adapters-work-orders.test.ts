@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStatesFor } from
+    '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import {
     MemoryDbAdapter,
@@ -253,7 +255,7 @@ test(
         );
 
         const events =
-            await db.states.getAllFor(woId);
+            await deriveStatesFor(db, '1', woId);
         // start node, post-start, claimed
         assert.equal(events.length, 3);
         const nonClaim = events.filter(
@@ -576,7 +578,7 @@ test(
         await pause(2);
         await postWorkOrderClaim(ctx, woId);
         const events =
-            await db.states.getAllFor(woId);
+            await deriveStatesFor(db, '1', woId);
         const claimed = events.filter(
             (e: StateEntity) =>
                 e.state === 'claimed',
@@ -788,7 +790,7 @@ test(
         });
 
         const allEvents =
-            await db.states.getAllFor(woId);
+            await deriveStatesFor(db, '1', woId);
         const transitionEvt = allEvents.find(
             (e: StateEntity) =>
                 e.state === 'n-finish',

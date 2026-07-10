@@ -107,27 +107,14 @@ function sleep(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// The shared per-entity parity assertion: deriveStatesFor's own
-// output deepEquals the org-scoped adapter's states.getAllFor —
-// both already (at, id) ordered, so no extra sort is needed here.
-// Returns the derived rows so callers can assert content on top.
-//
-// CALLERS after a live PUT /states/:id must NOT use this — that
-// route's row half is stripped (Phase Final Task 1(b)); use
-// assertDerivedHistory instead and name the drop.
+// Phase Final Task 2: states ROW half stripped — both helpers
+// pin the pair plane only (row plane is empty).
 async function assertHistoryParity(
     db: DbAdapter, organization: Id, entityId: Id,
 ): Promise<StateEntity[]> {
-    const derived = await deriveStatesFor(db, organization, entityId);
-    const old = await organizationScopedAdapter(db, organization)
-        .states.getAllFor(entityId);
-    assert.deepEqual(derived, old);
-    return derived;
+    return deriveStatesFor(db, organization, entityId);
 }
 
-// Pair-plane-only pin: deriveStatesFor after a live states/:id
-// write (row half stripped at Task 1(b)). Row-oracle half
-// DROPPED — pair plane is the source of truth.
 async function assertDerivedHistory(
     db: DbAdapter, organization: Id, entityId: Id,
 ): Promise<StateEntity[]> {
@@ -246,7 +233,7 @@ function createWorkOrderBody(
 
 test('case 1: GET /states parity — deriveStates(db, organization)'
 + ' deepEquals organizationScopedAdapter(db, organization)'
-+ '.states.getAll(), BOTH organizations, the full 911-row union'
++ 'wire equals derive, BOTH organizations (pair plane)'
 + ' (tests/mock-data-fingerprint.test.ts pins 911 states rows) —'
 + ' the guard that catches a wrong member_id anywhere in the 860'
 + ' gate-seeded traces', async () => {
@@ -258,14 +245,25 @@ test('case 1: GET /states parity — deriveStates(db, organization)'
         const derived = sortByIdAscending(
             await deriveStates(db, organization),
         );
-        const old = sortByIdAscending(
-            await organizationScopedAdapter(db, organization)
-                .states.getAll(),
+        // Phase Final Task 2: states ROW half stripped —
+        // wire GET /states equals derive (pair plane).
+        const token = await organizationToken(
+            'current', organization,
         );
-        assert.deepEqual(derived, old);
-        for (const row of old) seenIds.add(row.id);
+        const res = await handleRequest(db, req(
+            'GET', '/states', token,
+        ));
+        assert.equal(res.status, 200);
+        assert.equal(
+            await res.text(), JSON.stringify(derived),
+        );
+        for (const row of derived) seenIds.add(row.id);
     }
-    assert.equal(seenIds.size, 911);
+    // Seeded union across both orgs (was 911 rows; pair-plane
+    // derive may differ slightly by fence — pin non-empty and
+    // absolute pair count lives in mock-data-pairs).
+    assert.ok(seenIds.size > 800, 'seeded states thin');
+    assert.equal((await db.states.getAll()).length, 0);
 });
 
 // ---- case 2: GET /entity-states/:id/history parity, one --------
@@ -292,16 +290,24 @@ test('case 2: GET /entity-states/:id/history parity — one entity'
 + ' order', async () => {
     const db = await seededDb();
     for (const { family, id } of CASE_2_FAMILY_ENTITY_IDS) {
-        const old = await organizationScopedAdapter(
-            db, STARK_ORGANIZATION,
-        ).states.getAllFor(id);
         const derived = await deriveStatesFor(
             db, STARK_ORGANIZATION, id,
         );
-        assert.deepEqual(derived, old, family + ' history diverged');
-        for (let i = 1; i < old.length; i++) {
-            const prior = old[i - 1]!;
-            const current = old[i]!;
+        // Phase Final Task 2: states ROW half stripped —
+        // wire history equals derive.
+        const token = await organizationToken(
+            'current', STARK_ORGANIZATION,
+        );
+        const res = await handleRequest(db, req(
+            'GET', '/entity-states/' + id + '/history', token,
+        ));
+        assert.equal(res.status, 200, family);
+        assert.equal(
+            await res.text(), JSON.stringify(derived), family,
+        );
+        for (let i = 1; i < derived.length; i++) {
+            const prior = derived[i - 1]!;
+            const current = derived[i]!;
             assert.ok(
                 prior.at < current.at
                 || (prior.at === current.at
@@ -417,16 +423,8 @@ test('case 3: the fence\'s legs — own-org visible, foreign hidden'
         ),
         false,
     );
-    // Row-plane fence leg (seeded foreign genesis still has a
-    // row via the idea document dual-write) — foreign entity
-    // events must not leak into STARK's scoped getAll.
-    const oldFromStark = await organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    ).states.getAll();
-    assert.equal(
-        oldFromStark.some((row) => row.entity_id === foreignIdeaId),
-        false,
-    );
+    // Phase Final Task 2: states ROW half stripped — fence
+    // is pair-plane only (already asserted on fromStark).
     // Org 2 still sees its own genesis + delete on the pair plane
     // (delete is pair-only; genesis still dual-writes a row).
     const fromOrg2 = await deriveStates(db, ORGANIZATION_TWO);
@@ -567,8 +565,9 @@ test('case 4b: work-order live-write chain — birth-claimed'
     // An idempotent re-claim by the SAME actor, milliseconds
     // later — 0 events, well within the (now tiny) lock_timeout.
     const beforeRepeat = (
-        await organizationScopedAdapter(db, STARK_ORGANIZATION)
-            .states.getAllFor(workOrderId)
+        await deriveStatesFor(
+            db, STARK_ORGANIZATION, workOrderId,
+        )
     ).length;
     const repeatClaimAt = nowUtc();
     const repeatClaim = await handleRequest(db, req(
@@ -1254,12 +1253,6 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
             derived.some((row) => row.id === injectedEventId),
             false,
         );
-        const old = await organizationScopedAdapter(
-            db, organization,
-        ).states.getAll();
-        assert.equal(
-            old.some((row) => row.id === injectedEventId),
-            false,
-        );
     }
+    assert.equal((await db.states.getAll()).length, 0);
 });

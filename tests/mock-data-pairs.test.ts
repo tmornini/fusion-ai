@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { deriveStates } from
+    '../api/derive-states.ts';
 import assert from 'node:assert/strict';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
 import { postMockDataLoad, postBootstrap } from '../api/mock-data.ts';
@@ -690,7 +692,9 @@ test('a seeded trace pair\'s stored request requester_identity_id'
     const requests = await db.requests.getAll();
     const row = requests.find(r => r.uri_id === firstTrace.id);
     assert.ok(row, 'no request row for the seeded trace event');
-    const written = await db.states.getById(firstTrace.id);
+    const _statesAll = await deriveStates(db, '1');
+    const written = _statesAll.find(s => s.id === firstTrace.id)!;
+    assert.ok(written, 'derived state missing');
     assert.equal(row!.requester_identity_id, written.member_id);
     // Index 0 is its work order's OWN first event, so a
     // regression that sources every trace pair's requester
@@ -709,7 +713,7 @@ test('a seeded trace pair\'s stored request requester_identity_id'
         'no request row for the diverging trace event',
     );
     const divergingWritten =
-        await db.states.getById(divergingTrace.id);
+        (await deriveStates(db, '1')).find(s => s.id === divergingTrace.id)!;
     assert.equal(
         divergingRow!.requester_identity_id,
         divergingWritten.member_id,
