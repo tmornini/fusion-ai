@@ -137,25 +137,26 @@ is HTTP-only.
   `currentRolesForInOrganization`. See [SCHEMA.md](SCHEMA.md) /
   [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Data.** REST-style API (`api/`) over IndexedDB. Adapters
-  in `web-app/app/adapters/` shape rows for pages. The live
-  flow graph is normalized into four relations (`flow_nodes`,
-  `flow_edges`, `flow_node_members`, `flow_node_attributes`)
-  and reassembled at the GET route into `FlowWithGraph`;
-  `flows.graph` is retired live but kept frozen
-  (`flow_versions.graph`, `work_orders.flow_graph`). Flow
+  in `web-app/app/adapters/` shape pages from pair-plane
+  derives. The live flow graph is pair-plane only:
+  `graphDelta` / `revivals` in the flow document body feed
+  `deriveFlowGraphStates`; GET reassemblies
+  `FlowWithGraph`. A work order freezes its own
+  `flow_graph` inside the work-order document pair. Flow
   undo resolves its restore target from the flow's own
   document-pair history (Phase 14 Task 8). Phase 15 retired
   the `flows/:id/versions[...]` routes (and the zero-caller
   `GET states/:id` / `GET entity-states/:id` /
   `PUT|DELETE states/:id/field-values/:fvid` families) —
   bare `GET states/:id` is **405** because PUT survives; the
-  other retirements are router 404. The `flow_versions`
-  table remains until Phase Final. Ownership fences and
-  field-values visibility resolve on the pair plane
-  (`resolveOwningOrganization`,
+  other retirements are router 404. Phase Final DELETED the
+  graph/version tables with the rest of the row plane.
+  Ownership fences and field-values visibility resolve on
+  the pair plane (`resolveOwningOrganization`,
   `stateEventVisibilityFor`). Flow tags
-  (`flows/:id/tags/:name`) are the first document family with
-  no backing table, derived entirely from message pairs.
+  (`flows/:id/tags/:name`) are the first document family that
+  never had a backing table; post-Final every family shares
+  that posture.
 - **Presentation.** Presenters in `web-app/app/presenters/` emit
   `SafeHtml`.
 - **Database.** IndexedDB (`api/backend-indexeddb.ts`): one
