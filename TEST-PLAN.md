@@ -2657,14 +2657,17 @@ write-domain collision.
 - [ ] **R13** From workbox, open the gate-violation work
   order (`#gate0001`). PASS: current node is Data Capture;
   the action screen shows Company Name and Contact Email
-  inputs; the transition to Review is blocked and a
-  violations banner appears below the attributes naming
-  those required fields. (The banner is rendered by
-  `WorkboxDetailPresenter.buildViolations` from the typed
-  `RecordTransitionViolations` error — not a generic
-  toast. Gate checks CURRENT-node required attrs.)
-- [ ] **R14** Fill the required values, transition. PASS:
-  transition succeeds; the work order advances to Review.
+  inputs (fillable path); empty submit is blocked — the
+  page-module empty-required pre-check toasts "Please fill
+  all required attributes" before the POST. The typed
+  gate (`validateRecordTransition` on CURRENT-node refs)
+  is the durable covenant; CLI pins it; constraint
+  failures still surface via
+  `WorkboxDetailPresenter.buildViolations` banner.
+- [ ] **R14** Fill Company Name + Contact Email, click
+  submit. PASS: transition succeeds; work order advances
+  to Review (does NOT demand Reviewer Notes — that is
+  current-node only when leaving Review).
 - [ ] **R14a** When a node references a `radio`-typed Record attribute, the workbox work-order detail renders it as a radio group — one `<input type="radio">` per option, all sharing the attribute name so only one is selectable — rather than a dropdown; selecting an option and transitioning records that value. NOTE: seeded mock data predates `radio`, so add a radio attribute, reference it Editable on a working node, and create a work order to exercise this.
 - [ ] **R15** Archive a Record from its detail page (if a
   control exists in the toy) or via the snapshot wipe.
