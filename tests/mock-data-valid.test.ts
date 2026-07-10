@@ -36,9 +36,34 @@ import {
 import {
     deriveFlows,
 } from '../api/derive-flows.ts';
+import {
+    documentCollectionGetHandler,
+    type DocumentFamilyWiring,
+} from '../api/document-family.ts';
+import {
+    validateWorkOrderDocumentBody,
+} from '../api/validators.ts';
+import { postWorkOrderDocumentOp } from
+    '../api/routes.ts';
+import { deriveFlowWorkOrders } from
+    '../api/derive-flow-work-orders.ts';
+import {
+    stateFieldValuesForStateEvent,
+} from '../api/derive-state-field-values.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
-import { assignOrganization } from
-    '../api/mock-data/seed-constants.ts';
+import {
+    assignOrganization,
+    STARK_ORGANIZATION,
+} from '../api/mock-data/seed-constants.ts';
+import { buildWorkOrders } from
+    '../api/mock-data/work-orders.ts';
+import {
+    buildLeadToCloseWorkload,
+} from '../api/mock-data/lead-to-close-flow.ts';
+import { l2cFlowId } from
+    '../api/mock-data/lead-to-close-flow.ts';
+import type { WorkOrderEntity } from
+    '../api/types.ts';
 
 // Entity validators take Omit<T, 'id'> and reject an extra
 // "id" key, so strip the id before validating each row.
@@ -71,20 +96,26 @@ const TABLES: ReadonlyArray<[
     ['aiMembers', d => d.aiMembers.getAll(),
         validateAIMemberEntity],
     // ideas + ideaSubmissions + projects + scores + flows
+    // + workOrders + flowWorkOrders + stateFieldValues
     // re-homed below (Phase Final Task 2: seed row halves
     // stripped; derive plane).
-    ['workOrders', d => d.workOrders.getAll(),
-        validateWorkOrderEntity],
-    ['flowWorkOrders',
-        d => d.flowWorkOrders.getAll(),
-        validateFlowWorkOrderEntity],
     ['states',
         d => d.states.getAll(),
         validateStateEntity],
-    ['stateFieldValues',
-        d => d.stateFieldValues.getAll(),
-        validateStateFieldValueEntity],
 ];
+
+const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
+    family: 'work-orders',
+    lifecycle: 'stateless',
+    notFoundTable: 'work_orders',
+    validateDocument: validateWorkOrderDocumentBody,
+    documentOp: postWorkOrderDocumentOp,
+    entityOf: (document, organization) => ({
+        id: document.uriId,
+        organization_id: organization,
+        ...document.body,
+    }),
+};
 
 for (const [name, getAll, validate] of TABLES) {
     test(
@@ -345,6 +376,88 @@ async () => {
     }
 });
 
+// Phase Final Task 2: work-orders + joins + SFV from the
+// pair plane (row halves stripped).
+test('mock-data seeds non-empty derived work orders',
+async () => {
+    const db = await seededDb();
+    const derived = await documentCollectionGetHandler(
+        WORK_ORDERS_WIRING,
+    )(db, [], 'current', STARK_ORGANIZATION) as
+        WorkOrderEntity[];
+    assert.ok(derived.length > 0, 'work orders empty');
+    for (const wo of derived) {
+        assert.doesNotThrow(
+            () => validateWorkOrderEntity(withoutId(wo)),
+            'work order ' + wo.id,
+        );
+    }
+});
+
+test('mock-data derived flow-work-order joins pass validator',
+async () => {
+    const db = await seededDb();
+    const flowIds = [
+        'h5mErVBQhwdMKwi1co30jB',
+        '7COt7Kf4OaOBg6AjaNO04s',
+        l2cFlowId,
+    ];
+    let total = 0;
+    for (const flowId of flowIds) {
+        const joins = await deriveFlowWorkOrders(
+            db, STARK_ORGANIZATION, flowId,
+        );
+        total += joins.length;
+        for (const join of joins) {
+            assert.doesNotThrow(
+                () => validateFlowWorkOrderEntity(
+                    withoutId(join),
+                ),
+                'join ' + join.id,
+            );
+        }
+    }
+    assert.ok(total > 0, 'no flow-work-order joins');
+});
+
+test('mock-data derived seed SFV pairs pass validator',
+async () => {
+    const db = await seededDb();
+    // Seven seed leaf pairs at states/:id/field-values/:fvid.
+    // Discover via states that have field values by scanning
+    // known seed work-order transition events is brittle —
+    // instead pin non-empty union over every seeded WO's
+    // state events via the two-source derive.
+    const woIds = [
+        ...buildWorkOrders().map(w => w.id),
+        ...buildLeadToCloseWorkload().workOrders.map(w => w.id),
+    ];
+    const allEvents = (
+        await Promise.all(
+            woIds.map(id => db.states.getAllFor(id)),
+        )
+    ).flat();
+    let total = 0;
+    for (const ev of allEvents) {
+        const fvs = await stateFieldValuesForStateEvent(
+            db, STARK_ORGANIZATION, ev.id,
+        );
+        total += fvs.length;
+        for (const fv of fvs) {
+            assert.doesNotThrow(
+                () => validateStateFieldValueEntity(
+                    withoutId(fv),
+                ),
+                'sfv ' + fv.id,
+            );
+        }
+    }
+    assert.ok(total >= 7, 'expected >=7 SFV, got ' + total);
+    assert.equal(
+        (await db.stateFieldValues.getAll()).length, 0,
+    );
+});
+
 // The Workbox inbox resolves every work-order transition's
 // author through the org-scoped member map (memberName).
 // A transition stamped by a member who is not in the work
@@ -358,10 +471,14 @@ test(
     + ' the work order\'s org',
     async () => {
         const db = await seededDb();
+        // Phase Final Task 2: WO org from pair plane.
+        const workOrders = await documentCollectionGetHandler(
+            WORK_ORDERS_WIRING,
+        )(db, [], 'current', STARK_ORGANIZATION) as
+            WorkOrderEntity[];
         const [
-            workOrders, states, memberships, members,
+            states, memberships, members,
         ] = await Promise.all([
-            db.workOrders.getAll(),
             db.states.getAll(),
             db.memberships.getAll(),
             db.members.getAll(),
@@ -369,10 +486,12 @@ test(
         const organizationByWo = new Map(
             workOrders.map(w => [w.id, w.organization_id]),
         );
-        const organizationsByMember = new Map<string, Set<string>>();
+        const organizationsByMember =
+            new Map<string, Set<string>>();
         for (const m of memberships) {
-            const set = organizationsByMember.get(m.identity_id)
-                ?? new Set<string>();
+            const set = organizationsByMember.get(
+                m.identity_id,
+            ) ?? new Set<string>();
             set.add(m.organization_id);
             organizationsByMember.set(m.identity_id, set);
         }
@@ -383,10 +502,12 @@ test(
         );
         const violations = new Set<string>();
         for (const s of states) {
-            const woOrganization = organizationByWo.get(s.entity_id);
+            const woOrganization =
+                organizationByWo.get(s.entity_id);
             if (woOrganization === undefined) continue;
             if (systemMembers.has(s.member_id)) continue;
-            const organizations = organizationsByMember.get(s.member_id);
+            const organizations =
+                organizationsByMember.get(s.member_id);
             if (
                 organizations === undefined
                 || !organizations.has(woOrganization)

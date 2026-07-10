@@ -43,14 +43,11 @@ const EXPECTED: Record<string, TableFingerprint> = {
     'clients': { count: 0, hash: '811c9dc5' },
     'identity_providers': { count: 0, hash: '811c9dc5' },
     // ideas + idea_submissions + projects family + flows +
-    // flow_versions + four graph relations RETIRED (Phase
+    // flow_versions + four graph relations + work_orders +
+    // flow_work_orders + state_field_values RETIRED (Phase
     // Final Task 2): seed row halves stripped; pairs stay at
     // EXPECTED_PAIR_COUNT 1513. Tables empty until Stage B
-    // deletion. flow_versions had no writers (fingerprint
-    // retires here with the flows group).
-    'work_orders': { count: 145, hash: 'b57d1e25' },
-    'flow_work_orders': { count: 145, hash: 'ffdd07ec' },
-    'state_field_values': { count: 7, hash: '95d00f3a' },
+    // deletion. SFV seed leaf pairs SURVIVE (WRS + 7 pairs).
     'records': { count: 2, hash: '929ffdaa' },
     'record_attributes': { count: 14, hash: 'f3566e11' },
     'flow_records': { count: 3, hash: '1f726d32' },
@@ -75,10 +72,10 @@ const EXPECTED: Record<string, TableFingerprint> = {
 // tests/mock-data-pairs.test.ts. The reserved schema-version
 // marker (Phase 12 Task 6) is excluded too — it is a scalar,
 // not a row array, so `rows.map` below would throw on it.
-// ideas + projects + flows families excluded with Phase
-// Final Task 2 seed row-half strip (EXPECTED rows retired;
-// tables empty until Stage B deletion; pair-plane pins live
-// in mock-data-pairs.test.ts).
+// ideas + projects + flows + work-orders families excluded
+// with Phase Final Task 2 seed row-half strip (EXPECTED rows
+// retired; tables empty until Stage B deletion; pair-plane
+// pins live in mock-data-pairs.test.ts).
 const EXCLUDED_TABLES = new Set([
     'requests', 'responses', SNAPSHOT_SCHEMA_VERSION_KEY,
     'ideas', 'idea_submissions',
@@ -88,6 +85,7 @@ const EXCLUDED_TABLES = new Set([
     'flows', 'flow_versions',
     'flow_nodes', 'flow_edges',
     'flow_node_members', 'flow_node_attributes',
+    'work_orders', 'flow_work_orders', 'state_field_values',
 ]);
 
 async function seededFingerprint(): Promise<

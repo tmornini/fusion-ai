@@ -104,9 +104,13 @@ function createBody() {
     };
 }
 
+// Phase Final Task 2: work_orders + flow_work_orders ROW
+// halves stripped — GET derives the document; join is pair-
+// plane; three state events still dual-write until states-
+// trace.
 test(
-    'POST work-orders writes the work order, its flow link,'
-    + ' and three state events in one operation',
+    'POST work-orders writes three state events and pair-'
+    + 'plane document + join in one operation',
     async () => {
         const db = await freshDb();
         await POST(db, 'work-orders', createBody(), DEV_TOKEN);
@@ -122,7 +126,16 @@ test(
         // The fence stamped the bound org — never the body.
         assert.equal(wo.organization_id, '1');
 
-        const links = await db.flowWorkOrders.getAll();
+        // Row plane empty; join lives on the pair plane.
+        assert.equal((await db.workOrders.getAll()).length, 0);
+        assert.equal(
+            (await db.flowWorkOrders.getAll()).length, 0,
+        );
+        const links = await GET<{
+            id: string;
+            flow_id: string;
+            work_order_id: string;
+        }[]>(db, 'flows/f1/work-orders', DEV_TOKEN);
         assert.equal(links.length, 1);
         assert.equal(links[0]!.id, 'fwo-1');
         assert.equal(links[0]!.flow_id, 'f1');
@@ -196,8 +209,15 @@ test(
         // Not one write survived the aborted transaction.
         await assert.rejects(
             () => GET(db, 'work-orders/wo-1', DEV_TOKEN));
-        const links = await db.flowWorkOrders.getAll();
+        // Phase Final Task 2: join lives on the pair plane —
+        // aborted create leaves zero join pairs.
+        const links = await GET<{ id: string }[]>(
+            db, 'flows/f1/work-orders', DEV_TOKEN,
+        );
         assert.equal(links.length, 0);
+        assert.equal(
+            (await db.flowWorkOrders.getAll()).length, 0,
+        );
         // Only the pre-seeded conflicting event remains — none
         // of the create's own events landed.
         const woEvents = await db.states.getAllFor('wo-1');

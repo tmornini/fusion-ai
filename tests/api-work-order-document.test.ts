@@ -128,8 +128,10 @@ test('validateWorkOrderDocumentBody rejects a trio key at the'
 
 // -- 2. postWorkOrderDocumentOp (below-gate, MemoryDbAdapter) --
 
-test('postWorkOrderDocumentOp writes exactly the work_orders'
-+ ' row and the pair', async () => {
+// Phase Final Task 2: work_orders ROW half stripped — op
+// returns a reconstructed entity + appends the pair only.
+test('postWorkOrderDocumentOp returns the entity and the'
++ ' pair; work_orders row plane stays empty', async () => {
     const db = new MemoryDbAdapter();
     await db.postSchemaCreation();
     const body = {
@@ -149,15 +151,14 @@ test('postWorkOrderDocumentOp writes exactly the work_orders'
         responseStatus: 200, responseBody: undefined,
         headPairId: undefined,
     });
-    await postWorkOrderDocumentOp(
+    const written = await postWorkOrderDocumentOp(
         db, 'wo-doc-op-1', body, 'current', pair,
     );
-    const row = await db.workOrders.getById('wo-doc-op-1');
-    assert.deepEqual(row, {
-        id: 'wo-doc-op-1',
+    assert.deepEqual(written, {
         organization_id: '1',
         ...documentFields(),
     });
+    assert.equal((await db.workOrders.getAll()).length, 0);
     assert.equal((await db.requests.getAll()).length, 1);
     assert.equal((await db.responses.getAll()).length, 1);
 });

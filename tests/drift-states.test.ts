@@ -19,6 +19,9 @@ import {
     deriveWorkOrderLifecycle,
 } from '../api/derive-states.ts';
 import {
+    stateFieldValuesForStateEvent,
+} from '../api/derive-state-field-values.ts';
+import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
 } from '../api/mock-data/seed-constants.ts';
@@ -980,49 +983,37 @@ test('case 5b: a LIVE invitation grant/accept chain, a LIVE'
 
 // ---- case 6: the state_field_values JOIN (lens 6) ---------------
 
+// Phase Final Task 2: SFV row half stripped — join is pair-
+// plane only (stateFieldValuesForStateEvent).
 test('case 6: the state_field_values JOIN — WO01\'s derived'
-+ ' history (via deriveStatesFor, the pre-flip stand-in for the'
-+ ' FLIPPED route) resolves the SAME field-values join'
-+ ' (states/:id/field-values) as the old plane — the'
-+ ' byte-identical event ids ARE the property that makes the'
-+ ' post-flip join work', async () => {
++ ' history resolves field values on the pair plane; seed'
++ ' leaf pairs total 7', async () => {
     const db = await seededDb();
     const workOrderId = buildWorkOrders()[0]!.id;
     const derived = await assertHistoryParity(
         db, STARK_ORGANIZATION, workOrderId,
     );
-    const old = await organizationScopedAdapter(
-        db, STARK_ORGANIZATION,
-    ).states.getAllFor(workOrderId);
 
     let sawFieldValues = false;
-    for (let i = 0; i < derived.length; i++) {
-        const derivedEvent = derived[i]!;
-        const oldEvent = old[i]!;
-        const viaDerivedId = await db.stateFieldValues
-            .getAllWhere('state_event_id', derivedEvent.id);
-        const viaOldId = await db.stateFieldValues
-            .getAllWhere('state_event_id', oldEvent.id);
-        assert.deepEqual(
-            sortByIdAscending(viaDerivedId),
-            sortByIdAscending(viaOldId),
+    let totalFieldValues = 0;
+    for (const derivedEvent of derived) {
+        const fvs = await stateFieldValuesForStateEvent(
+            db, STARK_ORGANIZATION, derivedEvent.id,
         );
-        if (viaDerivedId.length > 0) sawFieldValues = true;
+        if (fvs.length > 0) sawFieldValues = true;
+        totalFieldValues += fvs.length;
     }
     // Non-vacuous: the Review/Complete transition events
-    // genuinely carry field values (the seed's own 7-row set).
+    // genuinely carry field values (the seed's own 7-pair set).
     assert.equal(
         sawFieldValues, true,
-        'no derived event resolved any state_field_values row —'
+        'no derived event resolved any state_field_values —'
         + ' the join proof would be vacuous',
     );
-    const totalFieldValues = (await Promise.all(
-        derived.map((event) =>
-            db.stateFieldValues.getAllWhere(
-                'state_event_id', event.id,
-            )),
-    )).flat();
-    assert.equal(totalFieldValues.length, 7);
+    assert.equal(totalFieldValues, 7);
+    assert.equal(
+        (await db.stateFieldValues.getAll()).length, 0,
+    );
 });
 
 // ---- case 7: live-write chains re-compared on both planes --------

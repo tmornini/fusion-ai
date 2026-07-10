@@ -18,6 +18,10 @@ import {
     postWorkOrderCreation,
 } from
 '../web-app/app/adapters/work-orders-mutations.ts';
+import {
+    getWorkOrder,
+} from
+'../web-app/app/adapters/work-orders-queries.ts';
 import type {
     FlowWithGraph,
     GraphNode,
@@ -203,22 +207,18 @@ test(
             flowId,
         });
 
-        const wos = await db.workOrders.getAll();
-        const wo = wos.find(w => w.id === woId)!;
+        // Phase Final Task 2: frozen graph on pair-plane GET.
+        const wo = await getWorkOrder(ctx, woId);
         assert.ok(wo, 'work order created');
 
         // The frozen flow_graph on the work order must carry
         // the pair-plane nodes, not an empty blob.
-        const frozenWoGraph = JSON.parse(wo.flow_graph) as {
-            nodes: unknown[];
-            edges: unknown[];
-        };
         assert.ok(
-            frozenWoGraph.nodes.length > 0,
+            wo.flowGraph.nodes.length > 0,
             'work order flow_graph has nodes from pair plane',
         );
         assert.ok(
-            frozenWoGraph.edges.length > 0,
+            wo.flowGraph.edges.length > 0,
             'work order flow_graph has edges from pair plane',
         );
     },

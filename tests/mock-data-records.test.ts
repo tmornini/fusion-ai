@@ -12,6 +12,13 @@ import {
 import {
     reassembleStoredGraph,
 } from '../api/flow-graph-relations.ts';
+import { handleRequest } from '../api/api.ts';
+import { organizationToken } from './token-fixtures.ts';
+import {
+    stateFieldValuesForStateEvent,
+} from '../api/derive-state-field-values.ts';
+import { STARK_ORGANIZATION } from
+    '../api/mock-data/seed-constants.ts';
 
 async function seeded(): Promise<MemoryDbAdapter> {
     const db = new MemoryDbAdapter();
@@ -146,9 +153,23 @@ test(
     async () => {
         const db = await seeded();
         const woId = 'gateV101W0rkOrd3rXY0a1';
-        const wo = await db.workOrders.getById(
-            woId,
+        // Phase Final Task 2: WO + SFV on the pair plane.
+        const token = await organizationToken();
+        const woRes = await handleRequest(
+            db,
+            new Request(
+                'http://localhost/work-orders/' + woId,
+                {
+                    headers: {
+                        Authorization: 'Bearer ' + token,
+                    },
+                },
+            ),
         );
+        assert.equal(woRes.status, 200);
+        const wo = await woRes.json() as {
+            flow_graph: string;
+        };
         const flowGraph =
             validateWorkOrderFlowGraphJson(
                 wo.flow_graph,
@@ -191,20 +212,19 @@ test(
             n => targetIds.has(n.id),
         );
 
-        // Stored values seeded on this WO.
-        const values =
-            await db.stateFieldValues.getAll();
-        const eventIds = new Set(
-            transitions.map(t => t.id),
-        );
-        const storedAttrIds = new Set(
-            values
-                .filter(
-                    v => eventIds.has(
-                        v.state_event_id,
+        // Pair-plane field values seeded on this WO.
+        const eventIds = transitions.map(t => t.id);
+        const values = (
+            await Promise.all(
+                eventIds.map(id =>
+                    stateFieldValuesForStateEvent(
+                        db, STARK_ORGANIZATION, id,
                     ),
-                )
-                .map(v => v.attribute_id),
+                ),
+            )
+        ).flat();
+        const storedAttrIds = new Set(
+            values.map(v => v.attribute_id),
         );
 
         // At least one target node must reference a

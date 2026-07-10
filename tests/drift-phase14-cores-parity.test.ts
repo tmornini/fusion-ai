@@ -241,8 +241,9 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
     ));
     assert.equal(created.status, 204);
 
+    // Phase Final Task 2: work_orders dropped from claim tx.
     const claimTxTables = [
-        'work_orders', 'states', 'requests', 'responses',
+        'states', 'requests', 'responses',
     ];
     const preTx = await workOrderLifecycleStatesFor(
         db, STARK_ORGANIZATION, workOrderId,
@@ -306,8 +307,9 @@ test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
     ));
     assert.equal(created.status, 204);
 
+    // Phase Final Task 2: work_orders dropped from claim tx.
     const claimTxTables = [
-        'work_orders', 'states', 'requests', 'responses',
+        'states', 'requests', 'responses',
     ];
     const preTx = await workOrderClaimHistoryFor(
         db, STARK_ORGANIZATION, workOrderId,

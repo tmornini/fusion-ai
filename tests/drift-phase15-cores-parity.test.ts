@@ -123,18 +123,21 @@ function workOrderFlowGraph(
 }
 
 // The claim gate's write-tx table list
-// (postWorkOrderClaimOp, routes.ts).
+// (postWorkOrderClaimOp, routes.ts). Phase Final Task 2:
+// work_orders dropped (ROW half stripped).
 const CLAIM_TX_TABLES = [
-    'work_orders', 'states', 'requests', 'responses',
+    'states', 'requests', 'responses',
 ] as const;
 
 const EMPTY_FLOW_ID = 'E2BnBlZyrriqsQYkmS4usb';
 
 // -- workOrderDocumentHeadFor ------------------------------------
 
-test('workOrderDocumentHeadFor: byte-equal to'
-+ ' workOrders.getById for a live create; null for absent;'
-+ ' pre-tx vs in-tx parity', async () => {
+// Phase Final Task 2: work_orders ROW half stripped — wire +
+// pair-plane head are the oracles (row plane empty).
+test('workOrderDocumentHeadFor: wire GET equals head for a'
++ ' live create; null for absent; pre-tx vs in-tx parity',
+async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const workOrderId = 'wo-p15-doc-head';
@@ -165,8 +168,11 @@ test('workOrderDocumentHeadFor: byte-equal to'
     ));
     assert.equal(created.status, 204);
 
-    const rowOracle = await db.workOrders
-        .getById(workOrderId);
+    const getRes = await handleRequest(
+        db, req('GET', '/work-orders/' + workOrderId, token),
+    );
+    assert.equal(getRes.status, 200);
+    const wire = await getRes.json();
     const preTx = await workOrderDocumentHeadFor(
         db, STARK_ORGANIZATION, workOrderId,
     );
@@ -177,7 +183,8 @@ test('workOrderDocumentHeadFor: byte-equal to'
         ),
     );
     assert.deepEqual(preTx, inTx);
-    assert.deepEqual(preTx, rowOracle);
+    assert.deepEqual(preTx, wire);
+    assert.equal((await db.workOrders.getAll()).length, 0);
 
     // Absent id: pair plane returns null (Task 2 maps to the
     // same EntityNotFoundError bytes as workOrders.getById).
@@ -192,14 +199,15 @@ test('workOrderDocumentHeadFor: byte-equal to'
     );
     assert.equal(preTxMissing, null);
     assert.equal(inTxMissing, null);
-    await assert.rejects(
-        () => db.workOrders.getById('no-such-work-order'),
-        EntityNotFoundError,
+    const missRes = await handleRequest(
+        db,
+        req('GET', '/work-orders/no-such-work-order', token),
     );
+    assert.equal(missRes.status, 404);
 });
 
 test('workOrderDocumentHeadFor: tracks a later document PUT'
-+ ' (head, not create-time body) against the row plane',
++ ' (head, not create-time body) on wire + pair plane',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
@@ -225,30 +233,29 @@ async () => {
     ));
     assert.equal(put2.status, 200);
 
-    const rowOracle = await db.workOrders
-        .getById(workOrderId);
+    const getRes = await handleRequest(
+        db, req('GET', '/work-orders/' + workOrderId, token),
+    );
+    assert.equal(getRes.status, 200);
+    const wire = await getRes.json() as {
+        display_id: string;
+        position: number;
+    };
     const derived = await workOrderDocumentHeadFor(
         db, STARK_ORGANIZATION, workOrderId,
     );
-    assert.deepEqual(derived, rowOracle);
+    assert.deepEqual(derived, wire);
     assert.equal(derived!.display_id, 'after');
     assert.equal(derived!.position, 3);
 });
 
 // -- claim graph parity (Phase 15 Task 2) ------------------------
 
-// The claim gate's LIVE graph source since Task 2's re-anchor.
-// Pin pre-tx vs in-tx parity of flow_graph (the field
-// isClaimEventExpired consumes via lockTimeout) over
-// postWorkOrderClaimOp's REAL table list, residual equality
-// to workOrders.getById, and claim-outcome parity: the
-// priorLive decision computed from the document-head graph
-// matches the decision from the residual row-plane graph.
-// Seed via PUT (document pair + dual-write row, no birth
-// claim) so the live-path claim is a real append, not an
-// idempotent re-claim of a create-time 'claimed' event.
+// Phase Final Task 2: claim graph is pair-plane only.
+// Seed via PUT (document pair, no birth claim) so the live
+// claim is a real append, not an idempotent re-claim.
 test('claim graph: pre-tx vs in-tx flow_graph parity and'
-+ ' claim-outcome parity against the residual row plane',
++ ' claim-outcome on the pair plane',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
@@ -265,8 +272,6 @@ async () => {
     ));
     assert.equal(put.status, 200);
 
-    const rowOracle = await db.workOrders
-        .getById(workOrderId);
     const preTx = await workOrderDocumentHeadFor(
         db, STARK_ORGANIZATION, workOrderId,
     );
@@ -277,23 +282,14 @@ async () => {
         ),
     );
     assert.deepEqual(preTx, inTx);
-    assert.deepEqual(preTx, rowOracle);
-    assert.equal(preTx!.flow_graph, rowOracle.flow_graph);
+    assert.equal(preTx!.flow_graph, graph);
 
     const headGraph = validateWorkOrderFlowGraphJson(
         preTx!.flow_graph, 'work_orders.flow_graph',
     );
-    const rowGraph = validateWorkOrderFlowGraphJson(
-        rowOracle.flow_graph, 'work_orders.flow_graph',
-    );
     assert.equal(headGraph.lockTimeout, lockTimeoutSeconds);
-    assert.equal(
-        headGraph.lockTimeout, rowGraph.lockTimeout,
-    );
 
-    // Claim-outcome parity: priorLive from the document-head
-    // graph equals priorLive from the residual row graph —
-    // isClaimEventExpired + latestClaimEvent stay untouched.
+    // Fresh PUT: no live claim → priorLive is false.
     const history = await workOrderClaimHistoryFor(
         db, STARK_ORGANIZATION, workOrderId,
     );
@@ -303,12 +299,6 @@ async () => {
         && !isClaimEventExpired(
             prior, headGraph.lockTimeout,
         );
-    const priorLiveFromRow = prior !== null
-        && prior.state === 'claimed'
-        && !isClaimEventExpired(
-            prior, rowGraph.lockTimeout,
-        );
-    assert.equal(priorLiveFromHead, priorLiveFromRow);
     assert.equal(priorLiveFromHead, false);
 
     // Live path: claim against the re-anchored gate succeeds.
@@ -324,9 +314,8 @@ async () => {
     ));
     assert.equal(claimResponse.status, 204);
 
-    // Absent id: document head null pre-tx and in-tx; row
-    // plane throws the same EntityNotFoundError bytes the
-    // live gate maps null onto.
+    // Absent id: document head null pre-tx and in-tx; wire
+    // 404 carries the same Not found: work_orders/:id bytes.
     const missingId = 'no-such-claim-graph-wo';
     const preMissing = await workOrderDocumentHeadFor(
         db, STARK_ORGANIZATION, missingId,
@@ -339,12 +328,16 @@ async () => {
     );
     assert.equal(preMissing, null);
     assert.equal(inMissing, null);
-    await assert.rejects(
-        () => db.workOrders.getById(missingId),
-        (err: unknown) =>
-            err instanceof EntityNotFoundError
-            && err.message
-                === 'Not found: work_orders/' + missingId,
+    const missRes = await handleRequest(
+        db, req('GET', '/work-orders/' + missingId, token),
+    );
+    assert.equal(missRes.status, 404);
+    const missBody = await missRes.json() as {
+        error: string;
+    };
+    assert.equal(
+        missBody.error,
+        'Not found: work_orders/' + missingId,
     );
 });
 
@@ -768,21 +761,33 @@ test('prove-impossible: attribute bindings cannot reach'
 
 // -- residual cross-core pins (Phase 15 Task 1 final) ----------
 
-test('residual pin: workOrderDocumentHeadFor matches'
-+ ' workOrders.getById for every seeded Stark work order',
+test('residual pin: workOrderDocumentHeadFor matches wire'
++ ' GET for every seeded Stark work order',
 async () => {
     const db = await seededDb();
-    const rows = await db.workOrders.getAll();
-    const stark = rows.filter(
-        (r) => r.organization_id === STARK_ORGANIZATION,
+    const token = await organizationToken(
+        'current', STARK_ORGANIZATION,
     );
-    assert.ok(stark.length > 0);
-    for (const row of stark) {
+    const listRes = await handleRequest(
+        db, req('GET', '/work-orders', token),
+    );
+    assert.equal(listRes.status, 200);
+    const rows = await listRes.json() as {
+        id: string;
+    }[];
+    assert.ok(rows.length > 0);
+    for (const row of rows) {
+        const getRes = await handleRequest(
+            db, req('GET', '/work-orders/' + row.id, token),
+        );
+        assert.equal(getRes.status, 200);
+        const wire = await getRes.json();
         const derived = await workOrderDocumentHeadFor(
             db, STARK_ORGANIZATION, row.id,
         );
-        assert.deepEqual(derived, row, row.id);
+        assert.deepEqual(derived, wire, row.id);
     }
+    assert.equal((await db.workOrders.getAll()).length, 0);
 });
 
 test('residual pin: stateEventVisibilityFor matches the'
@@ -1549,10 +1554,9 @@ async () => {
 
 // -- RESTRICT graph-leg re-anchor (Phase 15 Task 4) ------------
 
-// Phase Final Task 2: flow_node_attributes/flow_nodes ROW
-// halves stripped — collectAttributeReferrers graph flow
-// legs are pair-plane-only. Work-order graph legs still
-// dual-read work_orders.flow_graph (work-orders strip later).
+// Phase Final Task 2: flow_node_attributes/flow_nodes +
+// work_orders ROW halves stripped — collectAttributeReferrers
+// graph + WO legs are pair-plane-only.
 function sortedReferrerShape(
     refs: AttributeReferrers,
 ): {
@@ -1603,11 +1607,19 @@ async () => {
             (r) => r.attribute_id,
         ),
     );
+    // Phase Final Task 2: WO graphs from the pair plane.
     const attrFromWorkOrders = new Set<string>();
-    for (const wo of await db.workOrders.getAll()) {
-        if (wo.organization_id !== STARK_ORGANIZATION) {
-            continue;
-        }
+    const woToken = await organizationToken(
+        'current', STARK_ORGANIZATION,
+    );
+    const woListRes = await handleRequest(
+        db, req('GET', '/work-orders', woToken),
+    );
+    assert.equal(woListRes.status, 200);
+    const workOrders = await woListRes.json() as {
+        flow_graph: string;
+    }[];
+    for (const wo of workOrders) {
         const graph = validateWorkOrderFlowGraphJson(
             wo.flow_graph, 'work_orders.flow_graph',
         );
@@ -1630,8 +1642,9 @@ async () => {
         scoped, STARK_ORGANIZATION, attributeIds,
     );
     const inTx = await db.transaction(
+        // Phase Final Task 2: work_orders dropped from list.
         [
-            'work_orders', 'states',
+            'states',
             'records', 'objectives',
             'invitations', 'memberships',
             'requests', 'responses',
@@ -1773,8 +1786,9 @@ async () => {
     );
     // Pre-tx vs in-tx parity (pair plane only).
     const inTx = await db.transaction(
+        // Phase Final Task 2: work_orders dropped.
         [
-            'work_orders', 'states',
+            'states',
             'records', 'requests', 'responses',
             'memberships',
         ],

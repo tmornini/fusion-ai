@@ -37,7 +37,6 @@ import type {
     RoleGrantEntity,
     MembershipEntity,
     IdentityProviderEntity,
-    StateFieldValueEntity,
     WorkOrderEntity,
     MemberEntity,
     MemberKind,
@@ -2247,32 +2246,16 @@ export interface WorkOrderCreationPairs {
     readonly join: MessagePair;
 }
 
-// Work-order creation: the work_orders row, its
-// flow_work_orders join row, and THREE initial state
-// events (the start transition, the post-start
-// transition, and the creation-time 'claimed') commit as
-// ONE transaction — a mid-write failure rolls the whole
-// thing back rather than orphaning a half-built work
-// order. The org-scoped work_orders store stamps
-// organization_id from the verified token and re-validates
-// through validateWorkOrderEntity, so the work-order body
-// OMITS it; the join row derives org from its flow and is
-// re-validated by the flow_work_orders store. The three
-// events are applied IN ORDER and authored by the verified
-// caller (actor), never the body. `pairs` stays optional on
-// the signature; today only the live route ever calls this
-// op — since Phase 5 Task 4 the seed (api/mock-data.ts) drives
-// work-order creation through postWorkOrderDocumentOp /
-// postFlowWorkOrderDocumentOp instead, with its
-// states/state_field_values traces staying direct writes,
-// never through this op. The route always supplies the
-// triple, since 'work-orders' is pair-wired and never
-// bearer-exempt. The route (not this op) forms all three
-// pairs pre-tx — see route('work-orders', ...) below — since
-// forming the document/join pairs needs the fence
-// organization and the work-orders/:id +
-// flows/:id/work-orders/:woid response specs, both
-// route-table concerns.
+// Work-order creation. Phase Final Task 2: work_orders +
+// flow_work_orders ROW halves stripped — THREE initial state
+// events (start, post-start, creation-time 'claimed') and
+// the operation/document/join pairs commit as ONE
+// transaction. Events are applied IN ORDER and authored by
+// the verified caller (actor), never the body. Seed drives
+// work-order genesis through postWorkOrderDocumentOp /
+// postFlowWorkOrderDocumentOp instead; states traces stay
+// direct until the states-trace group. The route always
+// supplies the triple and forms all three pairs pre-tx.
 export async function postWorkOrderCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
@@ -2281,21 +2264,10 @@ export async function postWorkOrderCreationOp(
 ): Promise<void> {
     const b = validateWorkOrderCreateBody(body);
     return db.transaction(
-        [
-            'work_orders', 'flow_work_orders', 'states',
-            'requests', 'responses',
-        ],
+        // Phase Final Task 2: work_orders + flow_work_orders
+        // ROW halves stripped.
+        ['states', 'requests', 'responses'],
         async (view) => {
-            await view.workOrders.put(
-                b.id,
-                b.workOrder as unknown as
-                    Omit<WorkOrderEntity, 'id'>,
-            );
-            await view.flowWorkOrders.put(
-                b.flowWorkOrderId,
-                b.flowWorkOrder as unknown as
-                    Omit<FlowWorkOrderEntity, 'id'>,
-            );
             for (let i = 0; i < 3; i++) {
                 await view.states.postEvent(
                     b.stateEventIds[i]!,
@@ -2349,8 +2321,8 @@ export async function postWorkOrderCreationOp(
 // onto workOrderDocumentHeadFor (pair-plane document head)
 // in place of view.workOrders.getById. isClaimEventExpired +
 // 409 bytes + EntityNotFoundError mapping stay byte-identical
-// — ONLY the row source flips. Tx tables keep 'work_orders'
-// until Final (dual-write half still lists it).
+// — ONLY the row source flips. Phase Final Task 2: work_orders
+// dropped from the tx list (no dual-write half remains).
 export async function postWorkOrderClaimOp(
     db: DbAdapter,
     workOrderId: Id,
@@ -2360,7 +2332,8 @@ export async function postWorkOrderClaimOp(
     pair?: MessagePair,
 ): Promise<void> {
     return db.transaction(
-        ['work_orders', 'states', 'requests', 'responses'],
+        // Phase Final Task 2: work_orders ROW half stripped.
+        ['states', 'requests', 'responses'],
         async (view) => {
             const b =
                 validateWorkOrderClaimBody(body);
@@ -2424,23 +2397,15 @@ export async function postWorkOrderClaimOp(
     );
 }
 
-// Transition a work order along an edge. The web-app
-// computes WHAT to write — the target node, the field-value
-// rows, and whether a live claim must be implicitly released
-// — exactly as POST /work-orders keeps its graph derivation
-// client-side. This op writes them ATOMICALLY: the
-// transition state event (entity_id = the work order, state =
-// the target node), then each state_field_values row (the
-// field inputs, re-validated by the store as they land), then
-// the OPTIONAL 'claim_released' event. A mid-write failure
-// rolls the whole thing back. Authorship of the transition
-// event AND the release event is stamped from the verified
-// caller (actor) — the same author the old commit batch
-// produced, where both events flowed through PUT /states/:id.
-// Exported so the seed can drive a work-order transition
-// through the same gate the route uses — this is also
-// Phase 1's dual-write insertion seam. `pair` is optional,
-// mirroring postWorkOrderCreationOp.
+// Transition a work order along an edge. Phase Final Task 2:
+// state_field_values ROW half stripped — field values ride
+// the transition operation pair body only (fieldValues fold
+// → derive-state-field-values two-source union). This op
+// writes ATOMICALLY: the transition state event, then the
+// OPTIONAL 'claim_released' event, then the pair. Gate
+// re-validates each field via validateStateFieldValueEntity
+// (re-homed from the store put). Authorship is stamped from
+// the verified caller (actor). `pair` is optional.
 export async function postWorkOrderTransitionOp(
     db: DbAdapter,
     workOrderId: Id,
@@ -2450,10 +2415,9 @@ export async function postWorkOrderTransitionOp(
 ): Promise<void> {
     const b = validateWorkOrderTransitionBody(body);
     return db.transaction(
-        [
-            'states', 'state_field_values',
-            'requests', 'responses',
-        ],
+        // Phase Final Task 2: state_field_values ROW half
+        // stripped; fieldValues live on the op pair body.
+        ['states', 'requests', 'responses'],
         async (view) => {
             await view.states.postEvent(
                 b.transitionEventId,
@@ -2462,13 +2426,6 @@ export async function postWorkOrderTransitionOp(
                 actor,
                 b.transitionAt,
             );
-            for (const row of b.fieldValues) {
-                await view.stateFieldValues.put(
-                    row.id,
-                    row.fields as unknown as
-                        Omit<StateFieldValueEntity, 'id'>,
-                );
-            }
             if (b.release !== null) {
                 await view.states.postEvent(
                     b.release.id,
@@ -2490,91 +2447,63 @@ export async function postWorkOrderTransitionOp(
 // here): a work order's lifecycle is written ONLY by the
 // create/claim/transition ops above and the states/:id unclaim
 // path, never by a document PUT, so this op posts NO states
-// event of its own — UNLIKE postIdeaDocumentOp/
-// postProjectDocumentOp/postFlowDocumentOp, which each fold a
-// lifecycle trio into the SAME transaction. A document PUT here
-// is a pure entity edit: the work_orders row and its pair
-// commit as ONE transaction — a mid-write failure rolls the
-// whole thing back rather than leaving a half-written document.
+// event of its own. Phase Final Task 2: the work_orders ROW
+// half is stripped — pure pair-plane write
+// (postFlowTagDocumentOp shape). WRITE_RESPONSE_SPECS
+// successBody forms the wire bytes; the reconstructed return
+// is for below-facade callers and type parity.
 // validateWorkOrderDocumentBody rejects a body carrying the
-// trio at the gate (the stateless covenant is validator-
-// enforced, not caller discipline), so this op never needs to
-// defend against one downstream. The org-scoped work_orders
-// store stamps organization_id from the verified token and
-// re-validates through validateWorkOrderEntity, so the entity
-// body OMITS it; the below-facade seed path (no scoping
-// wrapper) embeds it in the raw body and this op reads it
-// straight back to merge it in — inert for the fenced route
-// (overwritten either way), load-bearing for the seed. Exported
-// so the seed can drive a work-order document write through the
-// same op the route uses (Decision 6's below-facade carve-out).
-// `pair` is optional so a below-facade caller with no pair keeps
-// compiling; the live route always supplies one, since
-// 'work-orders/:id' is pair-wired and never bearer-exempt. The
-// actor parameter is spelled `_actor`: it exists for the
-// wiring's documentOp signature uniformity only (every
-// DocumentFamilyWiring.documentOp takes one) — there is no
-// state event here to author, so the pair's own
-// requesterIdentityId is the only authorship this write carries.
+// trio at the gate. Exported so the seed can drive a work-
+// order document write through the same op the route uses.
+// `pair` is optional. The actor parameter is spelled `_actor`:
+// no state event here to author.
 export async function postWorkOrderDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<WorkOrderEntity, 'id'>> {
     const doc = validateWorkOrderDocumentBody(withoutId(body));
+    const entity = {
+        ...doc.entity,
+        ...documentOperationOrganization(body),
+    } as unknown as Omit<WorkOrderEntity, 'id'>;
     return db.transaction(
-        ['work_orders', 'requests', 'responses'],
+        // Phase Final Task 2: work_orders ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.workOrders.put(
-                id,
-                {
-                    ...doc.entity,
-                    ...documentOperationOrganization(body),
-                } as unknown as Omit<WorkOrderEntity, 'id'>,
-            );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }
 
-// Flow work-order join document write — extracted byte-for-
-// byte from the hand-written flows/:id/work-orders/:woid PUT
-// handler (Phase 1 fix-3 / Phase 4 0a950480's extract-function
-// idiom: bundle the definition with its one call-site re-
-// point, own commit) so the seed can drive the same write path
-// (Decision 6's below-facade carve-out). A document PUT here is
-// a pure entity edit: the flow_work_orders row and its pair
-// commit as ONE transaction. `pair` is optional so a below-
-// facade caller with no pair keeps compiling; the live route
-// always supplies one, since 'flows/:id/work-orders/:woid' is
-// pair-wired and never bearer-exempt. The actor parameter is
-// spelled `_actor` for the same reason postWorkOrderDocumentOp
-// spells it that way: there is no state event here to author.
+// Flow work-order join document write. Phase Final Task 2:
+// the flow_work_orders ROW half is stripped — pure pair-plane
+// write. WRITE_RESPONSE_SPECS successBody forms the wire
+// bytes; the reconstructed return is for below-facade
+// callers and type parity. `pair` is optional. The actor
+// parameter is spelled `_actor`: no state event here to author.
 export async function postFlowWorkOrderDocumentOp(
     db: DbAdapter,
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<Omit<FlowWorkOrderEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<FlowWorkOrderEntity, 'id'>;
     return db.transaction(
-        ['flow_work_orders', 'requests', 'responses'],
+        // Phase Final Task 2: flow_work_orders ROW half stripped.
+        ['requests', 'responses'],
         async (view) => {
-            const written = await view.flowWorkOrders
-                .put(
-                    id,
-                    withoutId(body) as unknown as
-                        Omit<FlowWorkOrderEntity, 'id'>,
-                );
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return written;
+            return entity;
         },
     );
 }

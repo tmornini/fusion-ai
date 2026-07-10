@@ -3675,21 +3675,17 @@ const TRANSITION_FIELD_VALUE_KEYS: readonly string[] = [
 ];
 
 // The HTTP-body gate for POST /work-orders/:id/transition: the
-// transition state event (target node), zero or more
-// state_field_values rows, and an OPTIONAL claim-release event,
-// written atomically. The web-app computes WHAT to write — the
-// target node, the field rows, and whether a live claim must be
-// released — exactly as POST /work-orders keeps graph derivation
-// client-side. The field-value `fields` are NOT fully validated
-// here beyond the MANDATORY state_event_id === transitionEventId
-// pin (Phase 15 Task 3, wire delta (4)): the state_field_values
-// store re-validates each row through
-// validateStateFieldValueEntity AFTER the transition event id
-// is woven in. Authorship of the transition event AND the
-// release event is stamped from the verified caller in the
-// route, never the body — matching the old commit batch, where
-// both events flowed through PUT /states/:id and were stamped
-// with the actor.
+// transition state event (target node), zero or more field-
+// value folds, and an OPTIONAL claim-release event. The web-
+// app computes WHAT to write — the target node, the field
+// rows, and whether a live claim must be released. Phase
+// Final Task 2: state_field_values ROW half stripped; each
+// fields object is fully validated here via
+// validateStateFieldValueEntity (re-homed from the store put)
+// AFTER the MANDATORY state_event_id === transitionEventId
+// pin (Phase 15 Task 3, wire delta (4)). Authorship of the
+// transition event AND the release event is stamped from the
+// verified caller in the route, never the body.
 export function validateWorkOrderTransitionBody(
     body: Record<string, unknown>,
 ): WorkOrderTransitionBody {
@@ -3754,6 +3750,9 @@ export function validateWorkOrderTransitionBody(
                 + ' transitionEventId',
             );
         }
+        // Phase Final Task 2: re-home store put validation —
+        // field values ride the op pair body only.
+        validateStateFieldValueEntity(fields);
         return { id, fields };
     });
     const rawRelease = body['release'];

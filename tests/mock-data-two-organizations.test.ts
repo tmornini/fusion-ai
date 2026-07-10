@@ -17,6 +17,8 @@ import {
     deriveActualScores,
 } from '../api/derive-project-scores.ts';
 import { deriveFlows } from '../api/derive-flows.ts';
+import { handleRequest } from '../api/api.ts';
+import { organizationToken } from './token-fixtures.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
     '../api/mock-data/seed-constants.ts';
@@ -108,11 +110,41 @@ test('each org owns at least one of every org-scoped'
 
 test('every work order belongs to org 1', async () => {
     const { db } = await seed();
-    const wos = await db.workOrders.getAll();
+    // Phase Final Task 2: work orders from the pair plane.
+    const token = await organizationToken(
+        'current', ORGANIZATION_ONE,
+    );
+    const res = await handleRequest(
+        db,
+        new Request('http://localhost/work-orders', {
+            headers: {
+                Authorization: 'Bearer ' + token,
+            },
+        }),
+    );
+    assert.equal(res.status, 200);
+    const wos = await res.json() as {
+        id: string;
+        organization_id: string;
+    }[];
     assert.ok(wos.length > 0, 'work orders exist');
     for (const wo of wos) {
         assert.equal(wo.organization_id, ORGANIZATION_ONE);
     }
+    // Org two carries none.
+    const tokenTwo = await organizationToken(
+        'current', ORGANIZATION_TWO,
+    );
+    const empty = await handleRequest(
+        db,
+        new Request('http://localhost/work-orders', {
+            headers: {
+                Authorization: 'Bearer ' + tokenTwo,
+            },
+        }),
+    );
+    assert.equal(empty.status, 200);
+    assert.deepEqual(await empty.json(), []);
 });
 
 test('every record attribute matches its parent record org',

@@ -830,9 +830,11 @@ async function postMockDataLoadIn(
                 requirePair(pairs, seedPairKey('states/:id', r.id)),
             ),
         ]),
-        ...mockStateFieldValues.flatMap(r => [
-            adapter.stateFieldValues
-                .put(r.id, r),
+        // Phase Final Task 2: state_field_values ROW half
+        // stripped — seed still forms leaf pairs at
+        // states/:id/field-values/:fvid (WRITE_RESPONSE_SPECS
+        // survives; two-source union reads them).
+        ...mockStateFieldValues.map(r =>
             appendMessagePair(
                 adapter,
                 requirePair(
@@ -842,7 +844,7 @@ async function postMockDataLoadIn(
                     ),
                 ),
             ),
-        ]),
+        ),
         // AI members start at 'active' on creation — same
         // single-event seeding as humans, driven through
         // postAiMemberCreationOp. POST /ai-members (and so

@@ -241,23 +241,15 @@ test(
                 ctx, 'f1',
             );
 
-        const wos = await db.workOrders
-            .getAll();
-        assert.equal(wos.length, 1);
-        assert.equal(wos[0]!.id, woId);
+        // Phase Final Task 2: WO + join on pair plane.
+        const wo = await getWorkOrder(ctx, woId);
+        assert.equal(wo.id, woId);
+        assert.equal(wo.position, 1);
         assert.equal(
-            wos[0]!.position, 1,
-        );
-
-        const links =
-            await db.flowWorkOrders
-                .getAll();
-        assert.equal(links.length, 1);
-        assert.equal(
-            links[0]!.flow_id, 'f1',
+            (await db.workOrders.getAll()).length, 0,
         );
         assert.equal(
-            links[0]!.work_order_id, woId,
+            (await db.flowWorkOrders.getAll()).length, 0,
         );
 
         const events =
@@ -308,13 +300,11 @@ test(
             position: 7.5,
         });
 
-        await createWorkOrder(ctx, 'f1');
+        const secondId = await createWorkOrder(ctx, 'f1');
 
-        const all = await db.workOrders.getAll();
-        const second = all.find(
-            w => w.id !== firstId,
-        );
-        assert.equal(second!.position, 8.5);
+        // Phase Final Task 2: position from pair-plane GET.
+        const second = await getWorkOrder(ctx, secondId);
+        assert.equal(second.position, 8.5);
     },
 );
 
@@ -390,13 +380,13 @@ test(
     async () => {
         const { db, ctx } = await setupDb();
         await seedFlow(db, 'f1', buildLinearGraph());
-        await createWorkOrder(ctx, 'f1');
-        await createWorkOrder(ctx, 'f1');
-        const wos = await db.workOrders
-            .getAll();
-        const positions = wos
-            .map(w => w.position)
-            .sort();
+        const a = await createWorkOrder(ctx, 'f1');
+        const b = await createWorkOrder(ctx, 'f1');
+        // Phase Final Task 2: positions from pair-plane GET.
+        const positions = [
+            (await getWorkOrder(ctx, a)).position,
+            (await getWorkOrder(ctx, b)).position,
+        ].sort();
         assert.deepEqual(
             positions, [1, 2],
         );
@@ -410,7 +400,7 @@ test(
     async () => {
         const { db, ctx } = await setupDb();
         await seedFlow(db, 'f1', buildLinearGraph());
-        await createWorkOrder(ctx, 'f1');
+        const woId = await createWorkOrder(ctx, 'f1');
 
         // Mutate source flow AFTER the
         // work order captured its
@@ -421,19 +411,15 @@ test(
         mutated.nodes[1]!.name = 'EDITED';
         await seedFlow(db, 'f1', mutated);
 
-        const wo = (
-            await db.workOrders.getAll()
-        )[0]!;
-        const fg = JSON.parse(
-            wo.flow_graph,
-        );
+        // Phase Final Task 2: frozen graph on pair-plane GET.
+        const wo = await getWorkOrder(ctx, woId);
         assert.equal(
-            fg.nodes[1].name, 'Doing work',
+            wo.flowGraph.nodes[1]!.name, 'Doing work',
         );
         assert.notEqual(
-            fg.nodes[1].name, 'EDITED',
+            wo.flowGraph.nodes[1]!.name, 'EDITED',
         );
-        assert.equal('flowId' in fg, false);
+        assert.equal('flowId' in wo.flowGraph, false);
     },
 );
 
