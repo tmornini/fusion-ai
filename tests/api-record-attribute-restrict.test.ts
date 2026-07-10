@@ -3,6 +3,7 @@ import { strict as assert } from 'node:assert';
 import {
     DELETE,
     POST,
+    PUT,
     RequestError,
 } from '../api/api.ts';
 import { MemoryDbAdapter } from '../api/db-memory.ts';
@@ -206,6 +207,36 @@ test(
         );
         const rows = await db.recordAttributes.getAll();
         assert.equal(rows.length, 0);
+    },
+);
+
+// Phase Final Task 1(a): pair-plane organization_id re-anchor
+// for RESTRICT DELETE. Wire-seeded attribute (pairs exist) so
+// the head response body stamps organization_id; strangler
+// parity with the still-live row holds; DELETE is 204.
+test(
+    'pair-plane organization_id deletes a wire-seeded'
+    + ' unreferenced attribute (Task 1(a) parity)',
+    async () => {
+        const db = await seededDb();
+        await PUT(db, 'record-attributes/attr-pair', {
+            organization_id: '1',
+            record_id: 'r1',
+            name: 'PairAttr',
+            attribute_type: 'text',
+            sort_order: 1,
+            options: '[]',
+            constraints: '[]',
+        }, DEV_TOKEN);
+        const before =
+            await db.recordAttributes.getById('attr-pair');
+        assert.equal(before.organization_id, '1');
+        await DELETE(
+            db, 'record-attributes/attr-pair', DEV_TOKEN,
+        );
+        await assert.rejects(
+            () => db.recordAttributes.getById('attr-pair'),
+        );
     },
 );
 

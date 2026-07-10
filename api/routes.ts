@@ -209,6 +209,7 @@ import {
     documentEntityRoute,
     documentGetHandler,
     documentPutHandler,
+    documentHeadPairId,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
@@ -934,6 +935,39 @@ export function recordAttributeDocumentBodyOf(
         id: _id, organization_id: _organizationId, ...rest
     } = row;
     return rest;
+}
+
+// Phase Final Task 1(a): the attribute's owning organization
+// from its STORED document-pair head response body (the
+// WRITE_RESPONSE_SPECS successBody stamp). Row fallback
+// remains while dual-write lives (raw-seeded RESTRICT
+// fixtures); production always has pairs. When both exist,
+// they must agree (strangler parity, thrown at the call
+// site).
+async function recordAttributeOrganizationFromPairs(
+    db: DbAdapter,
+    uriPrefix: string,
+    id: Id,
+): Promise<Id | null> {
+    const headPairId = await documentHeadPairId(
+        db, uriPrefix, id,
+    );
+    if (headPairId === undefined) return null;
+    const headResponse =
+        await db.responses.getById(headPairId);
+    // pairResponseBody only reads responseMessage — form a
+    // minimal carrier so the pure decoder stays one voice.
+    const headBody = pairResponseBody({
+        responseMessage: headResponse.message,
+    } as MessagePair);
+    const organizationId = headBody?.['organization_id'];
+    if (typeof organizationId !== 'string') {
+        throw new Error(
+            'record-attribute head lacks organization_id: '
+            + id,
+        );
+    }
+    return organizationId;
 }
 
 // Record creation or edit, discriminated by payload.kind.
@@ -5255,8 +5289,23 @@ export const routes: Route[] = [
         // writer can slip a new reference between them; the
         // pair appends inside that SAME transaction, as the
         // last act after the safe delete succeeds.
-        delete: (db, p, _actor, pair) => {
+        delete: async (db, p, _actor, pair) => {
             const id = param(p, 0);
+            // Phase Final Task 1(a): organization_id from the
+            // attribute's STORED document-pair response body
+            // (WRITE_RESPONSE_SPECS stamps it; the request body
+            // deliberately omits it). DeleteHandler carries no
+            // organization; the DELETE pair's uriPrefix is the
+            // same org-nested address as the head.
+            if (pair === undefined) {
+                throw new Error(
+                    'record-attribute DELETE without pair',
+                );
+            }
+            const pairOrganizationId =
+                await recordAttributeOrganizationFromPairs(
+                    db, pair.uriPrefix, id,
+                );
             return db.transaction(
                 [...new Set([
                     'record_attributes',
@@ -5264,21 +5313,34 @@ export const routes: Route[] = [
                     'requests', 'responses',
                 ])],
                 async (view) => {
-                    // DeleteHandler carries no organization;
-                    // the fenced attribute row stamps the
-                    // verified claim as organization_id.
+                    // Parity pin while the row lives: when
+                    // both planes name an organization they
+                    // must agree (Task 1(a) strangler). Row
+                    // fallback covers raw-seeded fixtures
+                    // until Stage B deletes the table.
                     const attribute =
                         await view.recordAttributes.getById(
                             id,
                         );
+                    if (
+                        pairOrganizationId !== null
+                        && attribute.organization_id
+                            !== pairOrganizationId
+                    ) {
+                        throw new Error(
+                            'record-attribute organization'
+                            + ' strangler mismatch: ' + id,
+                        );
+                    }
+                    const organizationId =
+                        pairOrganizationId
+                        ?? attribute.organization_id;
                     await deleteRecordAttributeSafe(
                         view,
-                        attribute.organization_id,
+                        organizationId,
                         id,
                     );
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
+                    await appendMessagePair(view, pair);
                 },
             );
         },
