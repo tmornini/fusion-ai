@@ -38,6 +38,10 @@ import {
     deriveFlows,
 } from '../api/derive-flows.ts';
 import {
+    deriveOrganization,
+    deriveOrganizations,
+} from '../api/derive-organizations.ts';
+import {
     documentCollectionGetHandler,
     type DocumentFamilyWiring,
 } from '../api/document-family.ts';
@@ -326,19 +330,25 @@ async () => {
     assert.ok(checked > 0, 'no derived scores');
 });
 
-// organizations is now an entity store (the tenant root).
+// Phase Final Task 2: organizations ROW half stripped —
+// validate the derived plane (pair-plane truth).
 
-test('mock-data seeds the organizations table', async () => {
+test('mock-data seeds non-empty derived organizations',
+async () => {
     const db = await seededDb();
-    const organization = await db.organizations.getById('1');
-    assert.ok(organization.id.length > 0);
+    const organizations = await deriveOrganizations(db);
+    assert.ok(organizations.length >= 2);
+    assert.equal((await db.organizations.getAll()).length, 0);
 });
 
-test('mock-data organization row passes the validator', async () => {
+test('mock-data derived organization passes the validator',
+async () => {
     const db = await seededDb();
-    const organization = await db.organizations.getById('1');
+    const organization = await deriveOrganization(db, '1');
     assert.doesNotThrow(
-        () => validateOrganizationEntity(withoutId(organization)),
+        () => validateOrganizationEntity(
+            withoutId(organization),
+        ),
     );
 });
 

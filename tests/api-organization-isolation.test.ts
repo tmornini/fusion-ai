@@ -30,6 +30,8 @@ import {
     deriveIdentityPii,
     deriveCredential,
 } from '../api/derive-identity-spine.ts';
+import { deriveOrganization } from
+    '../api/derive-organizations.ts';
 
 const BASE = 'http://localhost';
 
@@ -1079,8 +1081,11 @@ test('organizations/:id 404s a non-member org', async () => {
         'GET', '/organizations/A',
         await organizationToken('current', 'A')));
     assert.equal(mine.status, 200);
+    // Phase Final Task 2: organizations ROW half stripped —
+    // B still has a pair (seedOrganizationDocument), so
+    // derive finds it; the membership fence still 404s.
     assert.equal(
-        (await db.organizations.getById('B')).id, 'B');
+        (await deriveOrganization(db, 'B')).id, 'B');
     const foreign = await handleRequest(db, req(
         'GET', '/organizations/B',
         await organizationToken('current', 'A')));

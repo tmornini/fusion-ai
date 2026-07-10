@@ -5,6 +5,8 @@ import { postBootstrap } from '../api/mock-data.ts';
 import {
     SYSTEM_MEMBER_ID,
 } from '../api/types.ts';
+import { deriveOrganization } from
+    '../api/derive-organizations.ts';
 
 // A pristine environment seeds only the infrastructure the
 // app requires to render its shell — the system actor (event
@@ -50,12 +52,14 @@ test(
             'current user seeded',
         );
         assert.equal((await db.members.getAll()).length, 0);
-        const organization = await db.organizations.getById(
-            '1',
-        );
+        // Phase Final Task 2: organizations ROW half stripped.
+        const organization = await deriveOrganization(db, '1');
         assert.ok(
             organization.id.length > 0,
             'organization seeded',
+        );
+        assert.equal(
+            (await db.organizations.getAll()).length, 0,
         );
     },
 );

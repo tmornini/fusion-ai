@@ -41,7 +41,6 @@ import { hashPassword } from '../shared/password-hash.ts';
 import type { MessagePair } from './message-pair.ts';
 import { appendMessagePair } from './message-pair.ts';
 import {
-    daysFromNow,
     humanMemberPoolsByOrganization,
     pickHumanMember,
 } from './mock-data/seed-kit.ts';
@@ -91,7 +90,6 @@ import {
     humanMemberSeedBody,
     ideaSeedBody,
     ideaSubmissionSeedBody,
-    organizationSeedBody,
     projectSeedBody,
     projectOrg2,
     projectOrganizationFor,
@@ -535,38 +533,25 @@ async function postMockDataLoadIn(
                 ),
             );
         }),
-        // Task 3 (Phase 12): the row itself STAYS RAW (Path A) —
-        // the SAME direct adapter.organizations.put as before,
-        // via organizationSeedBody's shared construction (the
-        // SAME one seed-message-pairs.ts used to form each row's
-        // pair, so the two can never drift) — but now forms its
-        // OWN message pair beside it.
-        adapter.organizations.put(
-            STARK_ORGANIZATION,
-            organizationSeedBody(
-                'Stark Industries', 'acmecorp.com',
-                daysFromNow(300, 0, 0),
+        // Phase Final Task 2: organizations ROW half stripped —
+        // pair-plane only (organizationSeedBody still shapes
+        // the pair body in seed-message-pairs.ts).
+        appendMessagePair(
+            adapter,
+            requirePair(
+                pairs,
+                seedPairKey(
+                    'organizations/:id', STARK_ORGANIZATION,
+                ),
             ),
         ),
         appendMessagePair(
             adapter,
             requirePair(
                 pairs,
-                seedPairKey('organizations/:id', STARK_ORGANIZATION),
-            ),
-        ),
-        adapter.organizations.put(
-            ORGANIZATION_TWO,
-            organizationSeedBody(
-                'Wayne Enterprises', 'wayne.example.com',
-                daysFromNow(200, 0, 0),
-            ),
-        ),
-        appendMessagePair(
-            adapter,
-            requirePair(
-                pairs,
-                seedPairKey('organizations/:id', ORGANIZATION_TWO),
+                seedPairKey(
+                    'organizations/:id', ORGANIZATION_TWO,
+                ),
             ),
         ),
     ]);
@@ -1291,18 +1276,8 @@ async function postBootstrapIn(
             systemStateEventAt,
         ),
         appendMessagePair(adapter, systemStateEventPair),
-        // Task 3 (Phase 12): the row itself STAYS RAW (Path A) —
-        // the SAME direct adapter.organizations.put as before,
-        // via organizationSeedBody's shared construction — but
-        // now forms its OWN message pair beside it, mirroring
-        // postMockDataLoadIn's own organizations sites.
-        adapter.organizations.put(
-            STARK_ORGANIZATION,
-            organizationSeedBody(
-                'Stark Industries', 'acmecorp.com',
-                daysFromNow(300, 0, 0),
-            ),
-        ),
+        // Phase Final Task 2: organizations ROW half stripped
+        // — pair-plane only, mirroring postMockDataLoadIn.
         appendMessagePair(adapter, organizationPair),
         // Task 6: bootstrap's own admin role grant — driven
         // through postRoleGrantDocumentOp, the SAME op

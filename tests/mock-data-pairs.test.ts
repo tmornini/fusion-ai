@@ -33,6 +33,8 @@ import {
 import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { deriveRoleGrant } from
     '../api/derive-identity-spine.ts';
+import { deriveOrganization } from
+    '../api/derive-organizations.ts';
 
 // Task 4: the seed's pair-wired op-invocations (human-members,
 // ideas, idea-submissions, flows, ai-members, records,
@@ -57,9 +59,9 @@ import { deriveRoleGrant } from
 // 11 ideas +
 // 2 organizations documents (Phase 12 Task 3: the tenant root's
 // own family onboards — Stark Industries + Wayne Enterprises,
-// each forming its OWN organizations/:id document pair, Path A:
-// the row itself stays the SAME direct adapter.organizations.put,
-// untouched) +
+// each forming its OWN organizations/:id document pair; Phase
+// Final Task 2 strips the organizations ROW half — pairs alone
+// remain) +
 // 11 idea-submissions (Phase 2 Task 4b: one per seeded idea,
 // closing the prior seed-only gap) + 17 projects (16 Stark +
 // seed-project-org2, Phase 3 Task 3) + 13 flow-family pairs
@@ -179,10 +181,9 @@ async () => {
 
 test('a seeded organizations pair sits at the global'
 + ' (non-org-nested) address, its actor is the system member,'
-+ ' and its stored body\'s fields equal the seeded row\'s'
-+ ' fields exactly (Phase 12 Task 3 content spot-check — a'
-+ ' wrong-but-real body value is otherwise fingerprint-'
-+ ' invisible, since the fingerprint hashes ids only)',
++ ' and its stored body\'s fields equal the derived'
++ ' organization exactly (Phase Final Task 2: organizations'
++ ' ROW half stripped — pair-plane truth)',
 async () => {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
@@ -193,18 +194,21 @@ async () => {
     );
     assert.ok(row, 'no request row for the seeded organization');
     assert.equal(row!.requester_identity_id, SYSTEM_MEMBER_ID);
-    const stored = await db.organizations.getById(STARK_ORGANIZATION);
+    const derived = await deriveOrganization(
+        db, STARK_ORGANIZATION,
+    );
     const embedded = JSON.parse(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(embedded.body, {
-        name: stored.name,
-        domain: stored.domain,
-        next_billing: stored.next_billing,
-        seats: stored.seats,
-        projects_limit: stored.projects_limit,
-        ideas_limit: stored.ideas_limit,
+        name: derived.name,
+        domain: derived.domain,
+        next_billing: derived.next_billing,
+        seats: derived.seats,
+        projects_limit: derived.projects_limit,
+        ideas_limit: derived.ideas_limit,
     });
+    assert.equal((await db.organizations.getAll()).length, 0);
 });
 
 test('a seeded human-member create pair sits at the global'
@@ -960,8 +964,9 @@ test('a bootstrap seed populates exactly fourteen balanced,'
     // event ('bootstrap-default-org-current') forms its OWN pair
     // too — 12 + 1 = 13. Phase 12 Task 3 mirrors the mock-data
     // seed's own new organizations family: bootstrap's OWN lone
-    // organizations row (STARK_ORGANIZATION — bootstrap seeds no
-    // second org) forms its OWN pair too — 13 + 1 = 14.
+    // organizations pair (STARK_ORGANIZATION — bootstrap seeds
+    // no second org; Phase Final Task 2 strips the ROW half)
+    // — 13 + 1 = 14.
     assert.equal(requests.length, 14);
     assert.equal(responses.length, 14);
     const atSystemStateEvent = requests.filter(

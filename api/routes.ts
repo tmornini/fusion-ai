@@ -4809,45 +4809,35 @@ export const routes: Route[] = [
     }),
 
     // Hand-written in place of makeIdRoute<OrganizationEntity>
-    // so PUT can append its message pair in the same
-    // transaction as the write — the factory's fixed closures
-    // have no per-family pair selector (see message-pair.ts).
-    // GET reproduces the factory closure byte-equivalently;
-    // verbs stay {get, put}. organizations is a plain
-    // EntityStore (mutable), so this is DOCUMENT-class: a
-    // repeat PUT records Supersedes. GLOBAL plane — no
-    // organization_id stamp (this table IS the tenant root).
-    // GET is FLIPPED (Phase 12 Task 5): dispatches to
-    // deriveOrganization (api/derive-organizations.ts) — wire-
-    // identical to the hand-written db.organizations.getById
-    // read it replaces (tests/drift-organizations.test.ts legs
-    // 2/2b/3a/4/6 pin the parity, including the id-LAST key
-    // order the seven-sibling entityOf convention departs from
-    // on purpose). A bespoke call, not the generic
-    // documentGetHandler(wiring) every other flipped family
-    // rides: that machinery requires a wiring row's documentOp,
-    // and organizations has none — PUT stays hand-written and
-    // unflipped below, so a documentOp built only to satisfy the
-    // type would never be called. PUT: the row write and its
-    // message-pair append still happen in the SAME transaction
-    // as always — only this read moved.
+    // so PUT can append its message pair — the factory's fixed
+    // closures have no per-family pair selector (see
+    // message-pair.ts). GET reproduces the factory closure
+    // byte-equivalently; verbs stay {get, put}. organizations
+    // is DOCUMENT-class: a repeat PUT records Supersedes.
+    // GLOBAL plane — no organization_id stamp (this table IS
+    // the tenant root). GET dispatches to deriveOrganization
+    // (api/derive-organizations.ts). A bespoke call, not the
+    // generic documentGetHandler(wiring): that machinery
+    // requires a wiring row's documentOp, and organizations has
+    // none. Phase Final Task 2: the organizations ROW half is
+    // stripped — pure pair-plane write (postFlowTagDocumentOp
+    // shape). WRITE_RESPONSE_SPECS successBody forms the wire
+    // bytes (and validates via validateOrganizationEntity).
     route('organizations/:id', {
         get: (db, p) => deriveOrganization(db, param(p, 0)),
         put: (db, p, body, _actor, pair) => {
             const id = param(p, 0);
+            const entity = withoutId(body) as unknown as
+                Omit<OrganizationEntity, 'id'>;
             return db.transaction(
-                ['organizations', 'requests', 'responses'],
+                // Phase Final Task 2: organizations ROW half
+                // stripped.
+                ['requests', 'responses'],
                 async (view) => {
-                    const written = await view.organizations
-                        .put(
-                            id,
-                            withoutId(body) as unknown as
-                                Omit<OrganizationEntity, 'id'>,
-                        );
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
-                    return written;
+                    return { id, ...entity };
                 },
             );
         },

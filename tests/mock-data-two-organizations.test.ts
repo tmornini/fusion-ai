@@ -49,6 +49,8 @@ import {
     deriveRoleGrants,
     deriveCredentialsFor,
 } from '../api/derive-identity-spine.ts';
+import { deriveOrganizations } from
+    '../api/derive-organizations.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { assignOrganization } from
@@ -183,12 +185,18 @@ test('current holds admin in both orgs', async () => {
 test('both organizations exist with distinct names',
 async () => {
     const { db } = await seed();
-    const organizations = await db.organizations.getAll();
-    const one = organizations.find(o => o.id === ORGANIZATION_ONE);
-    const two = organizations.find(o => o.id === ORGANIZATION_TWO);
+    // Phase Final Task 2: organizations ROW half stripped.
+    const organizations = await deriveOrganizations(db);
+    const one = organizations.find(
+        o => o.id === ORGANIZATION_ONE,
+    );
+    const two = organizations.find(
+        o => o.id === ORGANIZATION_TWO,
+    );
     assert.ok(one, 'org 1 exists');
     assert.ok(two, 'org 2 exists');
     assert.notEqual(one.name, two.name);
+    assert.equal((await db.organizations.getAll()).length, 0);
 });
 
 test('each org owns at least one of every org-scoped'
