@@ -43,6 +43,10 @@ import {
 } from './notifications.ts';
 import { resolveOwningOrganization } from './derive-states.ts';
 import {
+    writeOwnershipFenceFor,
+    assertWritableInOrganization,
+} from './write-ownership-fence.ts';
+import {
     exchangeBearerForOrganization,
     postToken,
     postAuthorize,
@@ -523,6 +527,34 @@ export async function handleRequest(
             && matched.delete !== undefined);
 
     try {
+        // Phase Final Task 1(e): pre-write ownership gate for
+        // the 9 org-scoped families' existing-id PUT/DELETE.
+        // Pair-plane owner-null → genesis proceeds; foreign →
+        // EntityNotFoundError (today's #assertMine 404 bytes).
+        // Runs BEFORE formWritePair so a forged foreign id
+        // never pays crypto or stores a pair. Row-plane
+        // #assertMine still dual-runs until Stage A strips.
+        if (
+            isWrite
+            && hasWriteHandler
+            && !bearerExempt
+            && organization !== undefined
+        ) {
+            const writeFence = writeOwnershipFenceFor(
+                routePattern, method,
+            );
+            if (writeFence !== undefined) {
+                const entityId = params[writeFence.idParamIndex];
+                if (entityId !== undefined && entityId !== '') {
+                    await assertWritableInOrganization(
+                        effective,
+                        entityId,
+                        organization,
+                        writeFence.table,
+                    );
+                }
+            }
+        }
         // The shadow-ledger pair: formed pre-tx (all crypto and
         // address resolution happen before a transaction opens
         // — see api/message-pair.ts), gated to routes wired in
