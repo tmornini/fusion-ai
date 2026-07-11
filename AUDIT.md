@@ -77,8 +77,9 @@ is the verdict delivered without reading the code.
    merge. CONFIRMED lands. REFUTED drops but stays in the
    ledger. DISPUTED goes to one tie-breaker who must return a
    measurement. A NEW finding tracing to Commandment II needs
-   two refuters, both confirming. Exemplars land unrefuted —
-   credit, not claims.
+   two refuters, both confirming. Every consolidated finding
+   gets a verdict — none ships UNVERIFIED (§ Failure modes).
+   Exemplars land unrefuted — credit, not claims.
 4. **Report (serial).** Write `AUDIT-REPORT.md` once, wrapped
    to pass the root-`.md` lint (CLAUDE.md § Validate
    semantics); snippet lines may be truncated to fit, marked
@@ -223,8 +224,10 @@ and tags each finding `KNOWN` or `NEW` in the schema's
   appended.
 - Context exhaustion: the sampled/truncated bits make it
   visible. Never pre-bound a hunt.
-- Refuter budget strain: refute in severity order; mark the
-  tail UNVERIFIED, never silently drop it.
+- Refuter budget strain: never truncate. Refute EVERY
+  consolidated finding — pipeline the refuters if the fleet is
+  large. A finding without a verdict is a FAILED roster row,
+  not a shipped finding; there is no UNVERIFIED tail.
 - Orchestrator bloat: after Phase 0 the orchestrator reads no
   repo source — it consumes JSON and writes one file.
 
