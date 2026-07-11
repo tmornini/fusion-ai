@@ -81,3 +81,54 @@ async () => {
         process.off('unhandledRejection', onUnhandled);
     }
 });
+
+test('withIdbTimeout invokes onTimeout when timer wins',
+async () => {
+    // Transaction/open paths abort or close via this hook so
+    // the platform cannot commit/adopt after reported failure.
+    let cleaned = 0;
+    const hung = new Promise<void>(() => {});
+    await assert.rejects(
+        () => withIdbTimeout(
+            hung, 'cleanup op', 40, () => { cleaned += 1; },
+        ),
+        (err: unknown) =>
+            err instanceof Error
+            && /cleanup op timed out after 40ms/.test(
+                err.message,
+            ),
+    );
+    assert.equal(cleaned, 1);
+});
+
+test('withIdbTimeout skips onTimeout when op wins',
+async () => {
+    let cleaned = 0;
+    const value = await withIdbTimeout(
+        Promise.resolve('ok'),
+        'fast cleanup',
+        50,
+        () => { cleaned += 1; },
+    );
+    assert.equal(value, 'ok');
+    await new Promise((r) => setTimeout(r, 70));
+    assert.equal(cleaned, 0);
+});
+
+test('withIdbTimeout still rejects when onTimeout throws',
+async () => {
+    const hung = new Promise<void>(() => {});
+    await assert.rejects(
+        () => withIdbTimeout(
+            hung,
+            'noisy cleanup',
+            40,
+            () => { throw new Error('cleanup boom'); },
+        ),
+        (err: unknown) =>
+            err instanceof Error
+            && /noisy cleanup timed out after 40ms/.test(
+                err.message,
+            ),
+    );
+});

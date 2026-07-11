@@ -38,17 +38,27 @@ const SCHEMA_MARKER_ID = 'schema';
 // rejects rather than hanging the app forever (I. Reliability
 // — every I/O call shall have a timeout). Cleared on both
 // settle paths so a fast success does not leave a stray
-// timer that would reject into the void.
+// timer that would reject into the void. Optional
+// onTimeout aborts a live IDBTransaction or closes an
+// orphaned open so the platform does not commit / adopt
+// after the race has already reported failure.
 export const IDB_OP_TIMEOUT_MS = 30_000;
 
 export function withIdbTimeout<T>(
     promise: Promise<T>,
     label: string = 'IndexedDB operation',
     timeoutMs: number = IDB_OP_TIMEOUT_MS,
+    onTimeout?: () => void,
 ): Promise<T> {
     let timer: ReturnType<typeof setTimeout> | undefined;
     return new Promise<T>((resolve, reject) => {
         timer = setTimeout(() => {
+            timer = undefined;
+            try {
+                onTimeout?.();
+            } catch {
+                // Cleanup must not mask the timeout.
+            }
             reject(new Error(
                 `${label} timed out after`
                 + ` ${timeoutMs}ms`,
@@ -58,12 +68,14 @@ export function withIdbTimeout<T>(
             (value) => {
                 if (timer !== undefined) {
                     clearTimeout(timer);
+                    timer = undefined;
                 }
                 resolve(value);
             },
             (error: unknown) => {
                 if (timer !== undefined) {
                     clearTimeout(timer);
+                    timer = undefined;
                 }
                 reject(error);
             },
@@ -268,17 +280,29 @@ export class IndexedDbBackend implements StorageBackend {
     // no schema version (no migrations until Postgres); new
     // indexes are adopted when a store is reborn on reset.
     // Resolves with the opened connection; the caller decides
-    // whether to adopt or heal it.
+    // whether to adopt or heal it. On open timeout, a late
+    // success closes the connection so it is never adopted.
     #openConnection(): Promise<IDBDatabase> {
+        let timedOut = false;
+        let request: IDBOpenDBRequest | undefined;
         return withIdbTimeout(
             new Promise<IDBDatabase>((resolve, reject) => {
-                const request = indexedDB.open(DB_NAME);
+                request = indexedDB.open(DB_NAME);
                 request.onupgradeneeded = () =>
-                    createSchemaStores(request.result);
-                request.onsuccess = () =>
-                    resolve(request.result);
+                    createSchemaStores(request!.result);
+                request.onsuccess = () => {
+                    if (timedOut) {
+                        try {
+                            request!.result.close();
+                        } catch {
+                            // Already closed or unavailable.
+                        }
+                        return;
+                    }
+                    resolve(request!.result);
+                };
                 request.onerror = () =>
-                    reject(request.error);
+                    reject(request!.error);
                 request.onblocked = () => reject(
                     new Error(
                         'IndexedDB open blocked by another'
@@ -287,6 +311,20 @@ export class IndexedDbBackend implements StorageBackend {
                 );
             }),
             'IndexedDB open',
+            IDB_OP_TIMEOUT_MS,
+            () => {
+                timedOut = true;
+                // If the platform already finished, close
+                // immediately; otherwise onsuccess closes.
+                try {
+                    const db = request?.result;
+                    if (db !== undefined) {
+                        db.close();
+                    }
+                } catch {
+                    // Open still pending; onsuccess closes.
+                }
+            },
         );
     }
 
@@ -358,20 +396,24 @@ export class IndexedDbBackend implements StorageBackend {
         fn: (tx: Tx) => Promise<R>,
     ): Promise<R> {
         const db = await this.#connection();
+        // Held where the timeout race can reach it: when the
+        // timer wins we abort so the platform cannot commit
+        // after the outer promise has already rejected.
+        let idbTransaction: IDBTransaction | undefined;
+        let settled = false;
         return withIdbTimeout(
             new Promise<R>((resolve, reject) => {
-                const idbTransaction = openTx(
+                idbTransaction = openTx(
                     db, tables, mode,
                 );
                 let result: R;
-                let settled = false;
                 idbTransaction.oncomplete = () => {
                     resolve(result);
                 };
                 idbTransaction.onabort = () => {
                     if (!settled) {
                         reject(
-                            idbTransaction.error
+                            idbTransaction!.error
                             ?? new Error(
                                 'IndexedDB transaction'
                                 + ' aborted.',
@@ -382,7 +424,7 @@ export class IndexedDbBackend implements StorageBackend {
                 idbTransaction.onerror = () => {
                     if (!settled) {
                         reject(
-                            idbTransaction.error
+                            idbTransaction!.error
                             ?? new Error(
                                 'IndexedDB transaction'
                                 + ' error.',
@@ -399,7 +441,7 @@ export class IndexedDbBackend implements StorageBackend {
                     (error) => {
                         settled = true;
                         try {
-                            idbTransaction.abort();
+                            idbTransaction!.abort();
                         } catch {
                             // The tx may already be aborting
                             // from the same fault; the real
@@ -411,6 +453,19 @@ export class IndexedDbBackend implements StorageBackend {
                 );
             }),
             'IndexedDB transaction',
+            IDB_OP_TIMEOUT_MS,
+            () => {
+                settled = true;
+                if (idbTransaction === undefined) {
+                    return;
+                }
+                try {
+                    idbTransaction.abort();
+                } catch {
+                    // Same as body-error path: may already
+                    // be aborting or completing.
+                }
+            },
         );
     }
 
