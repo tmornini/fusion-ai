@@ -27,6 +27,7 @@ import {
     deleteFlowRecordForFlow,
     postClipboardCopy,
     subscribeResize,
+    subscribeFlowChanges,
     type RequestContext,
 } from '../app/adapters/index.ts';
 import type {
@@ -1619,6 +1620,67 @@ function onFlowLoaded(
             );
             reconcileFitFromDom();
         }
+    });
+
+    // Cross-tab / external graph edits ring the same
+    // flowChanges bell the list page already trusts.
+    // Own putFlow notifies too — re-apply is idempotent
+    // and does NOT re-queue a save (commit only). Full
+    // <a href> navigation is the teardown seam.
+    subscribeFlowChanges(() => {
+        void refreshFlowFromServer(flowId);
+    });
+}
+
+// Re-apply the server graph onto the live snapshot.
+// Skips mid-gesture so a remote notify cannot stomp a
+// drag; clears selection (the selected node may be gone).
+async function refreshFlowFromServer(
+    flowId: string,
+): Promise<void> {
+    if (
+        isGestureActive(
+            pageState.presenter()
+                .interactionState(),
+        )
+    ) {
+        return;
+    }
+    const ctx = sessionContext();
+    let graph: Awaited<
+        ReturnType<typeof getFlowGraph>
+    >;
+    try {
+        graph = await getFlowGraph(ctx, flowId);
+    } catch (err) {
+        log.error(
+            'flow detail refresh failed',
+            'flow-detail',
+            err,
+        );
+        return;
+    }
+    const current =
+        pageState.presenter().snapshot();
+    pageState.setHistory(
+        buildFlowHistorySnapshot(
+            graph.hasUndoHistory,
+        ),
+    );
+    commit({
+        ...current,
+        flowName: graph.name,
+        isLocked: graph.isLocked,
+        isAutoLayout: graph.isAutoLayout,
+        isAutoFit: graph.isAutoFit,
+        lockTimeout: graph.lockTimeout,
+        nodes: graph.nodes,
+        edges: graph.edges,
+        isPanelOpen: false,
+        interaction: {
+            ...current.interaction,
+            selection: { kind: 'none' },
+        },
     });
 }
 
