@@ -1505,16 +1505,25 @@ export interface ObjectiveCreationPairs {
 // (api/mock-data/seed-message-pairs.ts) consume — the
 // recordDocumentBodyOf precedent.
 
-// The wire body a live PUT objectives/:id would carry for this
-// SAME write: organization_id STRIPPED (the live client's PUT
-// body is `{position}` alone; the org rides the address).
+// The wire body a live PUT objectives/:id would carry for
+// this SAME write: the entity field (organization_id
+// STRIPPED — the org rides the address) plus the lifecycle
+// trio mapped from the create body's initialState* — the
+// recordDocumentBodyOf shape, so a synthesized document pair
+// is byte-indistinguishable from what a live PUT would have
+// stored for the identical write.
 export function objectiveDocumentBodyOf(
     createBody: ObjectiveCreateBody,
 ): Record<string, unknown> {
     const {
         organization_id: _organizationId, ...entity
     } = createBody.objective;
-    return entity;
+    return {
+        ...entity,
+        state: createBody.initialState,
+        state_at: createBody.initialStateAt,
+        state_event_id: createBody.initialStateEventId,
+    };
 }
 
 // The wire body a live PUT objectives/:id/revisions/:rid would
@@ -1562,23 +1571,19 @@ export async function postObjectiveCreationOp(
     );
 }
 
-// Objective document write — the seventh family, and the THIRD
-// 'stateless' one (OBJECTIVES_WIRING's own comment: a third
-// distinct rationale, Author gate 3). Phase Final Task 2: the
+// Objective document write — the fifth lifecycle-trio family
+// (states-address retirement). Phase Final Task 2: the
 // objectives ROW half is stripped — pure pair-plane write
 // (postFlowTagDocumentOp shape). WRITE_RESPONSE_SPECS
 // successBody forms the wire bytes; the reconstructed return
 // is for below-facade callers and type parity.
-// validateObjectiveDocumentBody rejects a body carrying the
-// trio at the gate. NEVER a states event (Global Constraints:
-// the states 911 pin is ABSOLUTE) — no genesis, no trio, no
-// lifecycle walk anywhere in this plane. `pair` is optional so
-// a future below-facade caller keeps compiling; the live route
-// always supplies one, since 'objectives/:id' is pair-wired and
-// never bearer-exempt. The actor parameter is spelled `_actor`
-// for the same reason postWorkOrderDocumentOp/
-// postRecordAttributeDocumentOp spell it that way: there is no
-// state event here to author.
+// validateObjectiveDocumentBody admits entity field plus the
+// lifecycle trio; Task 1 widens the gate only — state-event
+// minting lands with later tasks. `pair` is optional so a
+// future below-facade caller keeps compiling; the live route
+// always supplies one, since 'objectives/:id' is pair-wired
+// and never bearer-exempt. The actor parameter is spelled
+// `_actor` while state-event authorship is still pending.
 export async function postObjectiveDocumentOp(
     db: DbAdapter,
     id: Id,

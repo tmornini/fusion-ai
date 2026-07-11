@@ -48,6 +48,7 @@ import type {
     FlowRecordEntity,
     FlowTagEntity,
     ObjectiveEntity,
+    ObjectiveState,
     ObjectiveRevisionEntity,
     ProjectObjectiveBaselineScoreEntity,
     ProjectObjectiveActualScoreEntity,
@@ -61,6 +62,7 @@ import {
     assertFlowState,
     assertIdeaState,
     assertMemberState,
+    assertObjectiveState,
     assertProjectState,
     assertRecordState,
 } from './types.ts';
@@ -2142,45 +2144,46 @@ export function validateObjectiveEntity(
     };
 }
 
+// The HTTP-body gate for PUT /objectives/:id: entity field
+// plus the lifecycle trio — the fifth trio family (states-
+// address retirement). The old absence-as-active covenant
+// (R2) and the genesis dilemma are RETIRED: genesis is an
+// explicit event minted at create, archive/reactivate ride
+// this SAME address, and no states/:id pair ever carries an
+// objective lifecycle again. THE LABEL MANDATE (a NAMED
+// byte-parity-over-convention choice): the assertOnlyKeys
+// label is 'Objective', matching TODAY'S store validator
+// (validateObjectiveEntity) byte-for-byte, NOT the
+// 'ObjectiveDocumentBody' naming convention every other
+// *DocumentBody validator uses — the label appears in the
+// wire 400 body ("unexpected key ... for Objective"), and
+// the convention's label would change those bytes.
+// organization_id is a TOLERATED-BUT-IGNORED optional
+// allowance, never expected: the live client's PUT body
+// carries entity fields plus the trio, but the seed's
+// below-facade create bodies carry organization_id too
+// (documentOperationOrganization's read-back shape in
+// routes.ts, mirrored by every sibling *DocumentBody
+// validator), and the org-scoped store always stamps
+// organization_id downstream regardless of what it finds —
+// so a caller-forged value is tolerated, never rejected.
+// position's own rule (pickNumber) is IDENTICAL to
+// validateObjectiveEntity's — the missing-position 400 is
+// the SAME assertOnlyKeys call with the SAME label, so its
+// message stays byte-identical on both paths.
 const OBJECTIVE_DOCUMENT_BODY_KEYS: readonly string[] = [
     'position',
+    'state', 'state_at', 'state_event_id',
 ];
 
 export interface ObjectiveDocumentBody {
     readonly entity:
         Omit<ObjectiveEntity, 'id' | 'organization_id'>;
+    readonly state: ObjectiveState;
+    readonly state_at: string;
+    readonly state_event_id: string;
 }
 
-// The HTTP-body gate for PUT /objectives/:id: the seventh
-// family, and the THIRD 'stateless' one (work-orders and
-// record-attributes are the first two) — Author gate 3's
-// SECOND named partial amendment to Decision 7. The trio
-// COULD represent the objective alphabet, but is FORBIDDEN
-// three ways: the wire body would have to grow it (the
-// unavoidable zero-delta violation); a minted genesis event
-// would abort the states 911 pin at reseed (the genesis
-// dilemma); and absence-as-active is R2's named covenant. So
-// this validator admits the entity field alone, exactly as
-// the other two 'stateless' document bodies do — no trio, no
-// exceptions. THE LABEL MANDATE (a NAMED byte-parity-over-
-// convention choice): the assertOnlyKeys label is 'Objective',
-// matching TODAY'S store validator (validateObjectiveEntity)
-// byte-for-byte, NOT the 'ObjectiveDocumentBody' naming
-// convention every other *DocumentBody validator uses — the
-// label appears in the wire 400 body ("unexpected key ... for
-// Objective"), and the convention's label would change those
-// bytes. organization_id is a TOLERATED-BUT-IGNORED optional
-// allowance, never expected: the live client's PUT body is
-// `{position}` alone, but the seed's below-facade create
-// bodies carry organization_id too (documentOperationOrganization's
-// read-back shape in routes.ts, mirrored by every sibling
-// *DocumentBody validator), and the org-scoped store always
-// stamps organization_id downstream regardless of what it
-// finds — so a caller-forged value is tolerated, never
-// rejected. position's own rule (pickNumber) is IDENTICAL to
-// validateObjectiveEntity's — the missing-position 400 is the
-// SAME assertOnlyKeys call with the SAME label, so its message
-// stays byte-identical on both paths.
 export function validateObjectiveDocumentBody(
     body: Record<string, unknown>,
 ): ObjectiveDocumentBody {
@@ -2188,10 +2191,26 @@ export function validateObjectiveDocumentBody(
         body, OBJECTIVE_DOCUMENT_BODY_KEYS, 'Objective',
         ['organization_id'],
     );
+    const state = assertObjectiveState(
+        pickString(body, 'state'),
+        'ObjectiveDocumentBody.state',
+    );
+    const stateEventId = pickString(body, 'state_event_id');
+    if (stateEventId === '') {
+        throw new ValidationError(
+            'ObjectiveDocumentBody.state_event_id must be'
+            + ' non-empty',
+        );
+    }
     return {
         entity: {
             position: pickNumber(body, 'position'),
         },
+        state,
+        state_at: validateTimestampField(
+            body, 'state_at', 'ObjectiveDocumentBody.state_at',
+        ),
+        state_event_id: stateEventId,
     };
 }
 
@@ -3146,23 +3165,28 @@ export interface ObjectiveCreateBody {
     readonly objective: Record<string, unknown>;
     readonly revisionId: string;
     readonly revision: Record<string, unknown>;
+    readonly initialState: ObjectiveState;
+    readonly initialStateEventId: string;
+    readonly initialStateAt: string;
 }
 
 const OBJECTIVE_CREATE_KEYS: readonly string[] = [
     'id', 'objective', 'revisionId', 'revision',
+    'initialState', 'initialStateEventId', 'initialStateAt',
 ];
 
 // The HTTP-body gate for POST /objectives: the objective row
-// plus its FIRST revision, written atomically. Objective
-// creation writes NO state event — an objective with no event
-// reads as active, archival is a later event — so the handler
-// needs no actor. The objective fields are NOT fully validated
-// here: the org-scoped store stamps organization_id from the
-// verified token and re-validates through validateObjectiveEntity
-// AFTER the stamp, so the body OMITS it. The revision sub-object
-// is re-validated by the objective_revisions store's own
-// validator; its member_id is a row column (who authored the
-// definition), not state authorship.
+// plus its FIRST revision and the genesis lifecycle trio,
+// written atomically. Genesis is an explicit event minted at
+// create (states-address retirement); the trio folds onto
+// the document pair via objectiveDocumentBodyOf. The
+// objective fields are NOT fully validated here: the org-
+// scoped store stamps organization_id from the verified
+// token and re-validates through validateObjectiveEntity
+// AFTER the stamp, so the body OMITS it. The revision sub-
+// object is re-validated by the objective_revisions store's
+// own validator; its member_id is a row column (who authored
+// the definition), not state authorship.
 export function validateObjectiveCreateBody(
     body: Record<string, unknown>,
 ): ObjectiveCreateBody {
@@ -3187,7 +3211,26 @@ export function validateObjectiveCreateBody(
     const revision = asObject(
         body['revision'], 'ObjectiveCreateBody.revision',
     );
-    return { id, objective, revisionId, revision };
+    const initialState = assertObjectiveState(
+        pickString(body, 'initialState'),
+        'ObjectiveCreateBody.initialState',
+    );
+    const initialStateEventId = pickString(
+        body, 'initialStateEventId',
+    );
+    if (initialStateEventId === '') {
+        throw new ValidationError(
+            'ObjectiveCreateBody.initialStateEventId'
+            + ' must be non-empty',
+        );
+    }
+    const initialStateAt = validateTimestampField(
+        body, 'initialStateAt', 'ObjectiveCreateBody',
+    );
+    return {
+        id, objective, revisionId, revision,
+        initialState, initialStateEventId, initialStateAt,
+    };
 }
 
 export interface FlowCreateBody {

@@ -301,6 +301,19 @@ export function assertMemberState(
     return v;
 }
 
+export function assertObjectiveState(
+    v: string,
+    label: string,
+): ObjectiveState {
+    if (!includes(OBJECTIVE_STATES, v)) {
+        throw new ValidationError(
+            'expected ObjectiveState for '
+                + label + ', got ' + v,
+        );
+    }
+    return v;
+}
+
 // No isFlowState — nothing narrows a bare string against
 // FLOW_STATES at runtime today (unlike ideas/projects/records,
 // which each drive a page-level string-to-enum guard); the
