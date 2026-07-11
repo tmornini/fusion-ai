@@ -114,24 +114,25 @@ import { deriveOrganization } from
 // this file's shared pre-tx pass) + 12 role-grant document pairs
 // (Phase 10 Task 6: the 2 admin grants for `current` plus one
 // member grant per non-admin human, one role-grants/:id pair per
-// row) + 860 work-order historical-trace pairs (Phase 11 Task 3:
-// the migration's LAST carve-out closes — 211 hand-authored + 649
-// generated states/:id events, each event's OWN member_id
-// authoring its OWN pair; Path A — the states row itself stays
-// the SAME direct `adapter.states.put`, untouched) + 7
-// state_field_value pairs (the SAME carve-out's nested captures,
-// states/:id/field-values/:fvid, idParams [stateEventId, fvId],
-// authored by the PARENT event's own member_id) + 11
+// row) + 861 work-order historical-trace transition op pairs
+// (states-address retirement Task 12: 211 hand-authored + 650
+// generated events reshape into work-orders/:id/transition
+// pairs — same count as the bare states/:id traces they
+// replace; each event's OWN member_id authors its OWN pair;
+// field values fold into the parent transition body — no bare
+// states/:id or states/:id/field-values/:fvid pairs) + 11
 // identity-default-organization pairs (Phase 11 Task 8: one
 // event-append pair per seeded human member at its identity-
 // keyed /identities/:id/default-org/ address; Phase Final
 // Task 2 strips the identity_default_organizations ROW half —
 // pairs alone remain) + 1 gate0001 Capture step (R1-FIX-A
-// re-home) = 1513. System-member genesis folds into the
+// re-home) = 1506. System-member genesis folds into the
 // members/:id document trio (states-address retirement Task 8)
 // — no bare states/:id pair. A dropped or reordered invocation
 // changes this count.
-const EXPECTED_PAIR_COUNT = 1513;
+// Accounting: 1513 − 861 bare traces − 7 leaf SFV
+// + 861 transition ops = 1506.
+const EXPECTED_PAIR_COUNT = 1506;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -680,38 +681,72 @@ test('a seeded flow-record join pair sits at its org-nested'
 // (the states / state_field_values rows themselves stay the SAME
 // direct writes mock-data.ts already made).
 
+function transitionRequestForEvent(
+    requests: readonly { message: string; uri_prefix: string;
+        requester_identity_id: string }[],
+    eventId: string,
+): { message: string; uri_prefix: string;
+    requester_identity_id: string } | undefined {
+    return requests.find((r) => {
+        try {
+            const embedded = JSON.parse(r.message) as {
+                body?: { transitionEventId?: string };
+            };
+            return embedded.body?.transitionEventId
+                === eventId;
+        } catch {
+            return false;
+        }
+    });
+}
+
 test('a seeded work-order trace event\'s pair sits at its'
-+ ' org-nested states address, its body carrying the three'
-+ ' state-event keys (no id or member_id key)', async () => {
++ ' org-nested transition address, its body carrying the'
++ ' transition keys (states/:id retired)', async () => {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
     const firstTrace = buildWorkOrderStateEvents()[0]!;
     const requests = await db.requests.getAll();
-    const row = requests.find(r => r.uri_id === firstTrace.id);
-    assert.ok(row, 'no request row for the seeded trace event');
+    const row = transitionRequestForEvent(
+        requests, firstTrace.id,
+    );
+    assert.ok(row, 'no request row for the seeded transition');
     assert.equal(
         row!.uri_prefix,
-        `/organizations/${STARK_ORGANIZATION}/states/`,
+        `/organizations/${STARK_ORGANIZATION}/work-orders/`
+            + `${firstTrace.entity_id}/transition/`,
     );
     const embedded = JSON.parse(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
         Object.keys(embedded.body).sort(),
-        ['at', 'entity_id', 'state'],
+        [
+            'fieldValues', 'release', 'targetState',
+            'transitionAt', 'transitionEventId',
+        ],
+    );
+    assert.equal(
+        embedded.body['transitionEventId'], firstTrace.id,
+    );
+    assert.equal(
+        embedded.body['targetState'], firstTrace.state,
     );
 });
 
-test('a seeded trace pair\'s stored request requester_identity_id'
-+ ' matches its states row\'s member_id (the role-grant'
-+ ' precedent: fingerprints hash ids only, so a wrong-but-real'
-+ ' member_id is otherwise fingerprint-invisible)', async () => {
+test('a seeded transition pair\'s stored request'
++ ' requester_identity_id matches its derived event\'s'
++ ' member_id (the role-grant precedent: fingerprints hash'
++ ' ids only, so a wrong-but-real member_id is otherwise'
++ ' fingerprint-invisible)', async () => {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
     const firstTrace = buildWorkOrderStateEvents()[0]!;
     const requests = await db.requests.getAll();
-    const row = requests.find(r => r.uri_id === firstTrace.id);
-    assert.ok(row, 'no request row for the seeded trace event');
+    const row = transitionRequestForEvent(
+        requests, firstTrace.id,
+    );
+    assert.ok(row, 'no request row for the seeded transition');
     const _statesAll = await deriveStates(db, '1');
     const written = _statesAll.find(s => s.id === firstTrace.id)!;
     assert.ok(written, 'derived state missing');
@@ -720,46 +755,72 @@ test('a seeded trace pair\'s stored request requester_identity_id'
     // regression that sources every trace pair's requester
     // from the work order's first-event member (rather than
     // the event's own) would pass the assertion above
-    // undetected. Index 2 (state woNodeReview, member
-    // woPersonEmily) is the SAME work order's third event, and
-    // its member_id diverges from index 0's (woPersonSarah) —
+    // undetected. Index 2 is the SAME work order's third
+    // event, and its member_id diverges from index 0's —
     // only the per-event implementation matches it.
     const divergingTrace = buildWorkOrderStateEvents()[2]!;
-    const divergingRow = requests.find(
-        r => r.uri_id === divergingTrace.id,
+    const divergingRow = transitionRequestForEvent(
+        requests, divergingTrace.id,
     );
     assert.ok(
         divergingRow,
-        'no request row for the diverging trace event',
+        'no request row for the diverging transition',
     );
     const divergingWritten =
-        (await deriveStates(db, '1')).find(s => s.id === divergingTrace.id)!;
+        (await deriveStates(db, '1')).find(
+            s => s.id === divergingTrace.id,
+        )!;
     assert.equal(
         divergingRow!.requester_identity_id,
         divergingWritten.member_id,
     );
 });
 
-test('a seeded state_field_value pair sits at its nested'
-+ ' states/field-values address, its body carrying the three'
-+ ' field-value keys (no id key)', async () => {
+test('a seeded state_field_value folds into its parent'
++ ' transition body (no bare leaf pair)', async () => {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
     const firstFieldValue = mockStateFieldValues[0]!;
     const requests = await db.requests.getAll();
-    const row = requests.find(r => r.uri_id === firstFieldValue.id);
-    assert.ok(row, 'no request row for the seeded field value');
-    assert.equal(
+    const row = requests.find((r) => {
+        try {
+            const embedded = JSON.parse(r.message) as {
+                body?: {
+                    fieldValues?: readonly { id: string }[];
+                };
+            };
+            return (embedded.body?.fieldValues ?? [])
+                .some(fv => fv.id === firstFieldValue.id);
+        } catch {
+            return false;
+        }
+    });
+    assert.ok(row, 'no transition carries the seeded field value');
+    assert.match(
         row!.uri_prefix,
-        `/organizations/${STARK_ORGANIZATION}/states/`
-            + `${firstFieldValue.state_event_id}/field-values/`,
+        new RegExp(
+            `^/organizations/${STARK_ORGANIZATION}`
+                + '/work-orders/[^/]+/transition/$',
+        ),
     );
     const embedded = JSON.parse(row!.message) as {
-        body: Record<string, unknown>;
+        body: {
+            fieldValues: readonly {
+                id: string;
+                fields: Record<string, unknown>;
+            }[];
+        };
     };
+    const fold = embedded.body.fieldValues.find(
+        fv => fv.id === firstFieldValue.id,
+    )!;
     assert.deepEqual(
-        Object.keys(embedded.body).sort(),
+        Object.keys(fold.fields).sort(),
         ['attribute_id', 'state_event_id', 'value'],
+    );
+    assert.equal(
+        fold.fields['state_event_id'],
+        firstFieldValue.state_event_id,
     );
 });
 

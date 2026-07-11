@@ -67,21 +67,13 @@ import {
 // wiring rows so generic-handler cases exercise the ACTUAL
 // documentCollectionGetHandler/documentGetHandler.
 //
-// THE STATES/:ID ESCAPE HATCH (roster edition, Author gate 12 as
-// RE-GRADED): every EntityStore — members, memberships,
-// ai_members, human_members alike — consults the SAME shared
-// states-log tombstone (EntityStore.getById/getAll/getAllWhere
-// each call StateStore.isDeletedIn/getDeletedIdsIn) before
-// answering. A hand-crafted 'deleted' state event posted through
-// the generic, member-tier-reachable PUT /states/:id route (a
-// pre-existing, cross-family fact — MEMBER_VERBS['/states'] =
-// ['GET', 'PUT'] in api/authorization.ts) would hide such a row
-// on the OLD plane while api/derive-members.ts's own ledger
-// derivation — which consults no states row at all — still shows
-// it. This is a NAMED divergence acceptance, NOT drift-tested
-// here: pinning parity for it would pin a divergence the OLD
-// plane loses, not a property this migration owns. Outside that
-// one escape hatch, the deleted-filter is otherwise VACUOUS for
+// THE STATES/:ID ESCAPE HATCH RETIRED (roster edition): the
+// generic, member-tier-reachable PUT /states/:id route is
+// gone. Member lifecycle archive/reactivate rides PUT
+// members/:id (document trio); work-order unclaim rides POST
+// work-orders/:id/release. EntityStore tombstone scans are
+// retired with the row plane. Outside that retired path, the
+// deleted-filter is otherwise VACUOUS for
 // every roster family across this entire file (finding 15 as
 // corrected) — no shipped route ever posts a 'deleted' state for
 // a member/membership/ai_member/human_member id (MEMBER_STATES is

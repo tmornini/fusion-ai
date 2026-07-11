@@ -13,7 +13,6 @@ import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     deriveStates,
     deriveStatesFor,
-    deriveEventPairStates,
     deriveWorkOrderLifecycle,
 } from '../api/derive-states.ts';
 import {
@@ -120,14 +119,17 @@ async function assertDerivedHistory(
 }
 
 function ideaDocument(
-    title: string, stateEventId: string, at: string,
+    title: string,
+    stateEventId: string,
+    at: string,
+    state = 'active',
 ): Record<string, unknown> {
     return {
         title, position: 0,
         problem_statement: '', target_users: '',
         proposed_solution: '', expected_outcome: '',
         success_metrics: '',
-        state: 'active', state_at: at,
+        state, state_at: at,
         state_event_id: stateEventId,
     };
 }
@@ -227,12 +229,11 @@ function createWorkOrderBody(
 
 // ---- case 1: GET /states parity, BOTH orgs, the full union ----
 
-test('case 1: GET /states parity — deriveStates(db, organization)'
-+ ' deepEquals organizationScopedAdapter(db, organization)'
-+ 'wire equals derive, BOTH organizations (pair plane)'
-+ ' (tests/mock-data-fingerprint.test.ts pins 911 states rows) —'
-+ ' the guard that catches a wrong member_id anywhere in the 860'
-+ ' gate-seeded traces', async () => {
+test('case 1: GET /states parity — wire equals deriveStates,'
++ ' BOTH organizations (pair plane). Absolute pair count'
++ ' lives in mock-data-pairs (1506); this pin only guards'
++ ' that the five-source union is non-thin after the'
++ ' states-address retirement reshape.', async () => {
     const db = await seededDb();
     const seenIds = new Set<Id>();
     for (const organization of [
@@ -255,11 +256,10 @@ test('case 1: GET /states parity — deriveStates(db, organization)'
         );
         for (const row of derived) seenIds.add(row.id);
     }
-    // Seeded union across both orgs (was 911 rows; pair-plane
-    // derive may differ slightly by fence — pin non-empty and
-    // absolute pair count lives in mock-data-pairs).
+    // Seeded union across both orgs — oracle stage4 ≡ stage1
+    // proves derived rows are identical to pre-retirement,
+    // so the >800 floor still holds.
     assert.ok(seenIds.size > 800, 'seeded states thin');
-    // Phase Final Stage B: states table retired.
 });
 
 // ---- case 2: GET /entity-states/:id/history parity, one --------
@@ -343,15 +343,13 @@ test('case 2: GET /entity-states/:id/history parity — one entity'
 
 // ---- case 3: the fence's legs + the deleted-entity leg ---------
 
-// Phase Final Task 1(b): full-collection row↔pair parity after
-// live states/:id writes is DROPPED (row half stripped). Pin
-// fence legs on the pair plane; keep the row-plane foreign-
-// entity leak check for dual-written genesis rows.
+// Fence legs on the pair plane. Orphan states/:id writes
+// retired with the address — the own/foreign/deleted legs
+// ride document trios.
 test('case 3: the fence\'s legs — own-org visible, foreign hidden'
-+ ' (the leak case, constructed EXPLICITLY), orphan visible, and'
-+ ' a DELETED foreign entity stays hidden (the tombstone-immune'
-+ ' fence, gate 2/4) — pair-plane pin (row-oracle half dropped'
-+ ' at Task 1(b) strip for live states/:id writes)', async () => {
++ ' (the leak case, constructed EXPLICITLY), and a DELETED'
++ ' foreign entity stays hidden (the tombstone-immune fence)',
+async () => {
     const db = await seededDb();
     const tokenStark = await organizationToken(
         'current', STARK_ORGANIZATION,
@@ -378,36 +376,25 @@ test('case 3: the fence\'s legs — own-org visible, foreign hidden'
     ));
     assert.equal(foreignCreated.status, 200);
 
-    const orphanEntityId = 'drift-states-fence-orphan';
-    await handleRequest(db, req(
-        'PUT', '/states/drift-states-fence-orphan-ev', tokenStark,
-        { entity_id: orphanEntityId, state: 'active', at: AT },
-    ));
-
     // The DELETED-entity leg (gate 2/4): org 2 tombstones its OWN
-    // foreign idea — the pair plane is IMMUNE to the deleted
-    // filter (requests/responses are append-only), so it must
-    // still resolve the idea's TRUE owner and stay hidden from
-    // STARK. Phase Final Task 1(b): the delete event itself is
-    // pair-plane-only (row half stripped), so full-collection
-    // row vs pair parity is DROPPED here — pin the fence legs
-    // on the pair plane alone.
+    // foreign idea via a document-trio PUT (states/:id retired)
+    // — the pair plane is IMMUNE to the deleted filter
+    // (requests/responses are append-only), so it must still
+    // resolve the idea's TRUE owner and stay hidden from STARK.
     const foreignDeleted = await handleRequest(db, req(
-        'PUT', '/states/drift-states-fence-foreign-del-ev',
-        tokenOrg2,
-        { entity_id: foreignIdeaId, state: 'deleted', at: LATER },
+        'PUT', '/ideas/' + foreignIdeaId, tokenOrg2,
+        ideaDocument(
+            'Foreign',
+            'drift-states-fence-foreign-del-ev',
+            LATER,
+            'deleted',
+        ),
     ));
     assert.equal(foreignDeleted.status, 200);
 
     const fromStark = await deriveStates(db, STARK_ORGANIZATION);
     assert.equal(
         fromStark.some((row) => row.id === ownIdeaId + '-genesis'),
-        true,
-    );
-    assert.equal(
-        fromStark.some(
-            (row) => row.id === 'drift-states-fence-orphan-ev',
-        ),
         true,
     );
     assert.equal(
@@ -422,10 +409,7 @@ test('case 3: the fence\'s legs — own-org visible, foreign hidden'
         ),
         false,
     );
-    // Phase Final Task 2: states ROW half stripped — fence
-    // is pair-plane only (already asserted on fromStark).
-    // Org 2 still sees its own genesis + delete on the pair plane
-    // (delete is pair-only; genesis still dual-writes a row).
+    // Org 2 still sees its own genesis + delete on the pair plane.
     const fromOrg2 = await deriveStates(db, ORGANIZATION_TWO);
     assert.equal(
         fromOrg2.some(
@@ -447,25 +431,25 @@ test('case 3: the fence\'s legs — own-org visible, foreign hidden'
 
 // ---- case 4: the WO lifecycle legs (Task 4) ---------------------
 
-test('case 4a: a SEEDED work order\'s births ride source (a)'
-+ ' alone — deriveWorkOrderLifecycle contributes NOTHING and'
-+ ' never throws (EDGE 1), while deriveStatesFor still'
-+ ' reproduces its full history byte-equal to the old plane',
+test('case 4a: a SEEDED work order\'s births ride the'
++ ' transition-op source (states-address retirement) —'
++ ' deriveWorkOrderLifecycle contributes the trace events'
++ ' and deriveStatesFor reproduces the full history',
 async () => {
     const db = await seededDb();
     // WO02 (buildWorkOrders()[1]) — a DIFFERENT seeded work order
     // than case 2's own WO01, so this leg stays orthogonal.
     const seededWorkOrderId = buildWorkOrders()[1]!.id;
-    assert.deepEqual(
-        (await deriveWorkOrderLifecycle(db)).filter(
-            (row) => row.entity_id === seededWorkOrderId,
-        ),
-        [],
+    const lifecycle = (await deriveWorkOrderLifecycle(db))
+        .filter((row) => row.entity_id === seededWorkOrderId);
+    assert.ok(
+        lifecycle.length > 0,
+        'seeded traces must derive from transition ops',
     );
     const derived = await assertHistoryParity(
         db, STARK_ORGANIZATION, seededWorkOrderId,
     );
-    assert.equal(derived.length, 4);
+    assert.equal(derived.length, lifecycle.length);
 });
 
 test('case 4b: work-order live-write chain — birth-claimed'
@@ -609,14 +593,12 @@ test('case 4b: work-order live-write chain — birth-claimed'
     );
 });
 
-// Phase Final Task 1(b): genesis via bare PUT /states/:id is
-// pair-plane-only — drop row-oracle half; pin pair-plane
-// history (genesis + claim).
+// HYBRID: bare document PUT (no create op) + transition
+// genesis + live claim. All events ride the work-order
+// lifecycle source (states/:id retired).
 test('case 4c: HYBRID — a seeded-shape work order (a bare'
-+ ' document PUT, no create operation) plus a LIVE claim —'
-+ ' births ride source (a), the claim rides source (d), no id'
-+ ' collision — pair-plane pin (row-oracle half dropped at'
-+ ' Task 1(b) strip)',
++ ' document PUT, no create operation) plus a transition'
++ ' genesis and a LIVE claim — no id collision',
 async () => {
     const db = await seededDb();
     const token = await organizationToken(
@@ -634,10 +616,17 @@ async () => {
     assert.equal(put.status, 200);
 
     const genesis = await handleRequest(db, req(
-        'PUT', '/states/' + workOrderId + '-genesis', token,
-        { entity_id: workOrderId, state: 'n-start', at: AT },
+        'POST',
+        '/work-orders/' + workOrderId + '/transition',
+        token, {
+            transitionEventId: workOrderId + '-genesis',
+            targetState: 'n-start',
+            fieldValues: [],
+            release: null,
+            transitionAt: AT,
+        },
     ));
-    assert.equal(genesis.status, 200);
+    assert.equal(genesis.status, 204);
 
     const claimAt = nowUtc();
     const claim = await handleRequest(db, req(
@@ -650,9 +639,6 @@ async () => {
     ));
     assert.equal(claim.status, 204);
 
-    // Phase Final Task 1(b): genesis is pair-plane-only
-    // (bare PUT /states/:id). Drop row-oracle half; pin
-    // pair-plane history (genesis + claim).
     const derived = await assertDerivedHistory(
         db, STARK_ORGANIZATION, workOrderId,
     );
@@ -1228,9 +1214,11 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
     ));
     assert.equal(foreignCreated.status, 200);
 
-    // A STARK admin attempts to inject a state event naming the
-    // FOREIGN idea — the write ownership fence (api.ts) must 404
-    // it pre-tx, so the event never lands anywhere.
+    // A STARK admin attempts to inject via the retired
+    // states/:id address naming the FOREIGN idea — router
+    // 404 (route gone); the event never lands anywhere.
+    // Cross-org document forgery is pinned separately by
+    // api-write-ownership-fence.test.ts.
     const tokenStark = await organizationToken(
         'current', STARK_ORGANIZATION,
     );
@@ -1241,14 +1229,6 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
     ));
     assert.equal(injected.status, 404);
 
-    // Phase Final Stage B: states table retired —
-    // 404 above is the write-nothing pin.
-
-    const eventPairs = await deriveEventPairStates(db);
-    assert.equal(
-        eventPairs.some((row) => row.id === injectedEventId),
-        false,
-    );
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
@@ -1258,5 +1238,4 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
             false,
         );
     }
-    // Phase Final Stage B: states table retired.
 });

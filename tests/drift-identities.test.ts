@@ -81,16 +81,13 @@ import { identityByEmail } from '../api/authentication.ts';
 // insertion order, never by the property it claims to prove.
 //
 // THE DELETED-FILTER DIVERGENCE (case 8, NOT drift-tested):
-// identities and identity_pii are EntityStore-backed, so the SAME
-// states/:id escape hatch tests/drift-roster.test.ts's own header
-// names (a hand-crafted 'deleted' state event posted through the
-// generic, member-tier-reachable PUT /states/:id route would hide
-// a row on the OLD plane while this module's ledger derivation —
-// which consults no states row at all — still shows it) applies
-// here too. Named acceptance, not pinned: no shipped route ever
-// posts a 'deleted' state for an identities/identity_pii id, so
-// old-plane and derived-plane parity holds throughout every case
-// below regardless.
+// identities and identity_pii were EntityStore-backed; the
+// states/:id escape hatch that once hid a row on the OLD
+// plane (a hand-crafted 'deleted' event) is RETIRED with the
+// address. Lifecycle for members rides PUT members/:id; no
+// shipped route posts a 'deleted' state for an identities/
+// identity_pii id, so derived-plane parity holds throughout
+// every case below regardless.
 
 const BASE = 'http://localhost';
 
