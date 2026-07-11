@@ -80,6 +80,15 @@ is the verdict delivered without reading the code.
    two refuters, both confirming. Every consolidated finding
    gets a verdict — none ships UNVERIFIED (§ Failure modes).
    Exemplars land unrefuted — credit, not claims.
+3b. **Challenge kills-by-contract (parallel).** A refuter may
+   kill a finding by citing a contract of record
+   (ARCHITECTURE.md, API.md, CLAUDE.md, SCHEMA.md). Each such
+   REFUTED verdict draws ONE narrow adjudicator asking a single
+   question: does the cited contract address THIS charge, or a
+   neighbor of it? A doc that blesses shape X does not refute a
+   charge about shape Y. The adjudicator returns a measurement;
+   it restores the finding to CONFIRMED or upholds the kill.
+   Triggers only on killed-by-contract verdicts.
 4. **Report (serial).** Write `AUDIT-REPORT.md` once, wrapped
    to pass the root-`.md` lint (CLAUDE.md § Validate
    semantics); snippet lines may be truncated to fit, marked
