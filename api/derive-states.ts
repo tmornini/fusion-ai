@@ -22,6 +22,8 @@ import { deriveIdeaStateHistory } from './derive-ideas.ts';
 import { deriveProjectStateHistory } from './derive-projects.ts';
 import { deriveRecordStateHistory } from './derive-records.ts';
 import { deriveFlowStateHistory } from './derive-flows.ts';
+import { deriveObjectiveStateHistory } from
+    './derive-objectives.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import { latestClaimEvent } from './work-order-claims.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
@@ -36,11 +38,12 @@ import {
 // (Task 5, at the bottom of this file):
 //   (a) deriveEventPairStates — the states/:id event-pair reader
 //       (gate 5a).
-//   (b) the four trio families' OWN embedded lifecycle history —
+//   (b) the FIVE trio families' OWN embedded lifecycle history —
 //       deriveIdeaStateHistory/deriveProjectStateHistory/
-//       deriveRecordStateHistory/deriveFlowStateHistory, IMPORTED
-//       from their own modules (gate 5b) via deriveTrioFamilyStates
-//       below, never rebuilt here.
+//       deriveRecordStateHistory/deriveFlowStateHistory/
+//       deriveObjectiveStateHistory, IMPORTED from their own
+//       modules (gate 5b) via deriveTrioFamilyStates below,
+//       never rebuilt here.
 //   (c) deriveMemberGenesis — the human/AI member create-op
 //       genesis trio (gate 5c).
 //   (d) deriveWorkOrderLifecycle — the work-order op-pair replay
@@ -50,11 +53,11 @@ import {
 //       sidecars (gate 5e).
 //   (f) deriveInvitationStates — the invitation grant + its three
 //       answering ops (gate 5f).
-// Objectives need no seventh source: their archive/reactivate ride
-// states/:id pairs like any other entity's (source (a) already
-// covers them), and a fresh objective has no genesis event at all
-// — absence IS active (api/routes.ts's postObjectiveCreationOp
-// comment) — so there is no genesis row to derive anywhere.
+// Objectives joined the trio families at the states-address
+// retirement: genesis is an explicit event minted at create,
+// archive/reactivate ride PUT objectives/:id — the old
+// absence-as-active covenant (R2) and the genesis dilemma are
+// retired with the address that forced them.
 //
 // The PAIR-PLANE org fence (resolveOwningOrganization /
 // fenceStatesByOwner, gate 4) is applied ONCE, by deriveStates
@@ -2050,18 +2053,19 @@ export async function invitationLifecycleStatesFor(
 // Source (b) of the states-log union. Each trio family's own
 // per-id state-history reader is IMPORTED, never rebuilt — the
 // entity/lifecycle knowledge lives in its OWN module (derive-
-// ideas.ts/derive-projects.ts/derive-records.ts/derive-flows.ts),
-// each already drift-tested against the real states table. This
-// function's own job is narrower: discover EVERY id that ever had
-// a document pair at the family's own prefix — via documentPairsAt,
-// the shared family-agnostic reduction (derive-documents.ts),
-// NEVER the family's own document derivation — so an id whose
-// CURRENT head is a tombstone pair (document DELETE; post-Final
-// every document family is soft-delete on the pair plane; the
-// sole physical hard-delete is PII erasure) is still walked:
-// its earlier trio-embedded transitions belong on the real
-// states log forever (append-only), even after the document
-// itself is gone.
+// ideas.ts/derive-projects.ts/derive-records.ts/derive-flows.ts/
+// derive-objectives.ts), each already drift-tested against the
+// real states table. This function's own job is narrower:
+// discover EVERY id that ever had a document pair at the
+// family's own prefix — via documentPairsAt, the shared
+// family-agnostic reduction (derive-documents.ts), NEVER the
+// family's own document derivation — so an id whose CURRENT
+// head is a tombstone pair (document DELETE; post-Final every
+// document family is soft-delete on the pair plane; the sole
+// physical hard-delete is PII erasure) is still walked: its
+// earlier trio-embedded transitions belong on the real states
+// log forever (append-only), even after the document itself is
+// gone.
 interface TrioFamily {
     readonly prefix: string;
     readonly stateHistory: (
@@ -2086,6 +2090,12 @@ function trioFamiliesFor(organization: Id): readonly TrioFamily[] {
         {
             prefix: canonicalUriPrefix(organization, '/flows/'),
             stateHistory: deriveFlowStateHistory,
+        },
+        {
+            prefix: canonicalUriPrefix(
+                organization, '/objectives/',
+            ),
+            stateHistory: deriveObjectiveStateHistory,
         },
     ];
 }
@@ -2122,11 +2132,9 @@ async function deriveTrioFamilyStates(
 // ---- deriveStates / deriveStatesFor — the SIX-source union ------
 // ---- (Task 5) ------------------------------------------------------
 
-// WHY SIX, NOT SEVEN: objectives need no source of their own — an
-// objective's archive/reactivate are states/:id pairs like any
-// other entity's (source (a) already carries them), and a fresh
-// objective has NO genesis event at all (absence IS active), so
-// there is no genesis row for a seventh source to derive.
+// THE SIX-SOURCE UNION: source (b) carries the five trio
+// families (ideas/projects/records/flows/objectives); the other
+// five sources stand alone. Still six sources, not seven.
 //
 // The union invariant every id in the merged set is checked
 // against: IDENTICAL content across sources is a harmless (never
@@ -2196,7 +2204,7 @@ export async function deriveStates(
 // the filter alone disambiguates — no dedup-assert is needed here
 // (unlike deriveStates above), since no genuine cross-source
 // collision is possible once filtered to one entity. organization
-// is REQUIRED — the four trio derives are org-prefixed and cannot
+// is REQUIRED — the five trio derives are org-prefixed and cannot
 // resolve their own address without it. Never a visibility fence
 // here, unlike deriveStates' own fenceStatesByOwner call — the
 // caller already names both the org AND the entity.
@@ -2215,6 +2223,7 @@ export async function deriveStatesFor(
     const [
         eventPairRows,
         ideaRows, projectRows, recordRows, flowRows,
+        objectiveRows,
         memberGenesisRows, workOrderRows,
         flowGraphRows, invitationRows,
     ] = await Promise.all([
@@ -2223,6 +2232,7 @@ export async function deriveStatesFor(
         deriveProjectStateHistory(db, organization, entityId),
         deriveRecordStateHistory(db, organization, entityId),
         deriveFlowStateHistory(db, organization, entityId),
+        deriveObjectiveStateHistory(db, organization, entityId),
         deriveMemberGenesis(db),
         deriveWorkOrderLifecycle(db),
         deriveFlowGraphStates(db),
@@ -2231,6 +2241,7 @@ export async function deriveStatesFor(
     const rows = [
         ...eventPairRows,
         ...ideaRows, ...projectRows, ...recordRows, ...flowRows,
+        ...objectiveRows,
         ...memberGenesisRows, ...workOrderRows,
         ...flowGraphRows, ...invitationRows,
     ].filter((row) => row.entity_id === entityId);

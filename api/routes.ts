@@ -438,36 +438,22 @@ function objectiveDocumentEntityOf(
         position: pickNumber(document.body, 'position'),
     };
 }
-// The objectives wiring row — the seventh family, and the
-// THIRD 'stateless' one, with a THIRD distinct rationale (Author
-// gate 3 — the SECOND named partial amendment to Decision 7).
-// Work-orders' 'stateless' is vacuous-in-practice (its lifecycle
-// CAN be authored, just never through the document address);
-// record-attributes' is vacuous BY CONSTRUCTION (no lifecycle
-// concept exists at all). Objectives are neither: the trio COULD
-// represent the objective alphabet, but is FORBIDDEN three ways
-// — the wire body would have to grow it (a zero-delta
-// violation), a minted genesis event would abort the states 911
-// pin at reseed (the genesis dilemma), and absence-as-active is
-// R2's named covenant — so objectives' lifecycle keeps riding
-// the SHARED states log (already pair-wired) while this
-// document address carries entity fields only. This THIRD
-// distinct rationale once read as evidence that 'stateless'
-// would need to become a type-level fork (Commandment IX: three
-// is pattern) — a claim this comment made when objectives WAS
-// the third instance. The roster phase (Phase 8) adjudicated
-// it: no fork. Memberships (MEMBERSHIPS_WIRING below) is a
-// FOURTH 'stateless' family with yet another distinct rationale,
-// and MEMBERS_WIRING (below, Phase 8 Task 3) is a fifth —
-// 'stateless' stays ONE type covering every one of them, never
-// split.
+// The objectives wiring row — the seventh family, now the
+// FIFTH 'trio' one (states-address retirement). Its three
+// old 'stateless' rationales are all RETIRED with the
+// states/:id address that anchored them: the wire body DOES
+// grow the trio (the zero-delta covenant died with the
+// address), genesis IS an explicit minted event (the seed
+// re-baselined its pins — no 911 pin survives), and
+// absence-as-active (R2) is retired — a fresh objective now
+// carries a genesis event like every other trio family.
 // notFoundTable is 'objectives' — its storage table name
 // matches its family name, like ideas/projects/flows/records
 // (work-orders/record-attributes are the two whose names
 // diverge).
 const OBJECTIVES_WIRING: DocumentFamilyWiring = {
     family: 'objectives',
-    lifecycle: 'stateless',
+    lifecycle: 'trio',
     notFoundTable: 'objectives',
     validateDocument: validateObjectiveDocumentBody,
     documentOp: postObjectiveDocumentOp,
@@ -1541,16 +1527,16 @@ export function objectiveRevisionBodyOf(
 // Objective creation: operation + document + first-revision
 // pairs commit as ONE transaction. Phase Final Task 2:
 // objectives + objective_revisions ROW halves stripped —
-// pure pair-plane write. No state event is written (a
-// fresh objective reads as active until a later archival
-// event), so the handler needs no actor. Exported so the
-// seed can drive objective creation through the same gate
-// the route uses (Decision 6's below-facade carve-out).
-// `pairs` is optional so the seed's below-facade shape
-// keeps compiling; the route always supplies the bundle,
-// since 'objectives' is pair-wired and never bearer-
-// exempt. Create appends THREE pairs — operation,
-// document, revision — in that order, LAST.
+// pure pair-plane write. The genesis lifecycle trio folds
+// onto the document pair via objectiveDocumentBodyOf
+// (states-address retirement); no separate states/:id event
+// is written. Exported so the seed can drive objective
+// creation through the same gate the route uses (Decision
+// 6's below-facade carve-out). `pairs` is optional so the
+// seed's below-facade shape keeps compiling; the route
+// always supplies the bundle, since 'objectives' is pair-
+// wired and never bearer-exempt. Create appends THREE pairs
+// — operation, document, revision — in that order, LAST.
 export async function postObjectiveCreationOp(
     db: DbAdapter,
     body: Record<string, unknown>,
