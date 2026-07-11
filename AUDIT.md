@@ -55,10 +55,15 @@ is the verdict delivered without reading the code.
    stored list, not even one kept in this file. Record the
    header facts and the KNOWN-list count m (§ Security: KNOWN
    vs NEW). Run `./validate` (sandbox form per CLAUDE.md
-   § Sandbox invocation). RED aborts nothing: this audit is static and
-   builds no bundle — the abort rule is TEST-PLAN's, for the
-   browser. RED is finding #1 under Commandment I, and
-   test-based measurements carry a caveat.
+   § Sandbox invocation) THREE times — and once more under the
+   hunt fan-out's concurrent load, if agents are already
+   dispatched. Report the modal verdict AND any test whose
+   pass/fail varies across runs: a load-sensitive test is a
+   *false prophet* (Office of Verification), finding #1 under
+   Commandment I whether or not HEAD is green today. RED aborts
+   nothing: this audit is static and builds no bundle — the
+   abort rule is TEST-PLAN's, for the browser. Test-based
+   measurements carry a caveat.
 1. **Hunt (parallel, ≈60).** One agent per section, prompt per
    the template below.
 2. **Consolidate (serial).** Dedup BEFORE refutation, or one
