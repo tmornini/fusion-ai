@@ -15,7 +15,8 @@ import {
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
-import { sha256Hex } from '../shared/digest.ts';
+import { sha256Bytes, sha256Hex } from '../shared/digest.ts';
+import { bytesToBase64Url } from '../shared/base64url.ts';
 import {
     nowUtc,
     nowEpochSeconds,
@@ -890,6 +891,11 @@ interface AuthorizeCodeIssuer {
     readonly identityId: Id;
     readonly clientId: Id;
     readonly issuedAt: string;
+    // Present only when authorize request carried
+    // code_challenge (PKCE S256). Absent means the client
+    // never sent one — grant skips verifier check so the
+    // password-loop demo keeps working without PKCE.
+    readonly codeChallenge?: string;
 }
 
 // PRE-TX (i), gate 3: the code -> identity/client point-match
@@ -916,15 +922,25 @@ async function authorizeCodeIssuer(
     );
     if (matched === undefined) return null;
     const request = await adapter.requests.getById(matched.id);
+    const requestBody = decodedBodyOf(request.message);
+    // code_challenge is optional on authorize (PKCE only when
+    // the client sent one). Soft read — pickString would throw
+    // on the password-loop path that omits it.
+    const challenge = requestBody.code_challenge;
+    const codeChallenge =
+        typeof challenge === 'string' && challenge !== ''
+            ? challenge
+            : undefined;
     return {
         identityId: request.requester_identity_id,
-        clientId: pickString(
-            decodedBodyOf(request.message), 'client_id',
-        ),
+        clientId: pickString(requestBody, 'client_id'),
         // Issue instant = the authorize request pair's `at`
         // (RequestEntity.at). Both halves of a pair carry `at`;
         // the request row is already fetched for identity/client.
         issuedAt: request.at,
+        ...(codeChallenge !== undefined
+            ? { codeChallenge }
+            : {}),
     };
 }
 
@@ -997,6 +1013,24 @@ async function grantAuthorizationCode(
             : '';
     if (redeemingClientId !== issuer.clientId) {
         return invalid;
+    }
+    // PKCE S256 (RFC 7636): when authorize stored a
+    // code_challenge, require code_verifier and verify
+    // base64url(sha256(verifier)) === challenge. Missing or
+    // mismatch is the same shared 401. No challenge stored
+    // preserves pre-PKCE redeem (password-loop demo).
+    if (issuer.codeChallenge !== undefined) {
+        const verifier =
+            typeof body.code_verifier === 'string'
+                ? body.code_verifier
+                : '';
+        if (verifier === '') return invalid;
+        const derived = bytesToBase64Url(
+            await sha256Bytes(verifier),
+        );
+        if (derived !== issuer.codeChallenge) {
+            return invalid;
+        }
     }
     if (await authorizationCodeSpent(adapter, derivedId)) {
         return invalid;
