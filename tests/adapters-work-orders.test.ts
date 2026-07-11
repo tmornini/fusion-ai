@@ -743,22 +743,28 @@ test(
     },
 );
 
-test('deleteWorkOrderClaim appends a claim_released event',
-async () => {
-    const db = new MemoryDbAdapter();
-    await seedAdminSchema(db);
-    await seedHumanMember(db, 'current', 'Demo Test');
-    const ctx = createRequestContext(db, await devToken());
-    await deleteWorkOrderClaim(ctx, 'wo-release-1');
-    // Phase Final Task 1(b): claim_released is pair-plane-only
-    // (bare PUT /states/:id). Pin via the live derived history
-    // path, never the retired row half.
-    const events = await ctx.GET<StateEntity[]>(
-        'entity-states/wo-release-1/history',
-    );
-    assert.equal(events.length, 1);
-    assert.equal(events[0]!.state, 'claim_released');
-});
+test(
+    'deleteWorkOrderClaim posts release with releaseEventId'
+    + ' + releaseAt and derives claim_released',
+    async () => {
+        const { db, ctx } = await setupDb();
+        await seedFlow(db, 'f1', buildLinearGraph());
+        // Birth create leaves a live claim; the named release
+        // op ends it. Body shape is {releaseEventId,
+        // releaseAt} — both caller-minted.
+        const woId = await createWorkOrder(ctx, 'f1');
+        await deleteWorkOrderClaim(ctx, woId);
+        const events = await ctx.GET<StateEntity[]>(
+            'entity-states/' + woId + '/history',
+        );
+        const released = events.filter(
+            (e) => e.state === 'claim_released',
+        );
+        assert.equal(released.length, 1);
+        assert.ok(released[0]!.id.length > 0);
+        assert.ok(released[0]!.at.length > 0);
+    },
+);
 
 // Regression: transitionAt must be minted before release.at
 // so the at-ordered ledger puts claim_released last (latest

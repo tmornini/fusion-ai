@@ -663,14 +663,14 @@ async () => {
     );
 });
 
-test('case 4d: claim, release via the STANDALONE PUT'
-+ ' /states/:id address (the deleteWorkOrderClaim shape — a'
-+ ' claim_released event with no claim/transition op pair'
-+ ' beside it), then RE-claim — the replay must see that'
-+ ' states/:id release as the prior claim event (exactly as'
-+ ' postWorkOrderClaimOp\'s own in-tx getAllFor sees it), so'
-+ ' the fresh claim posts a PLAIN \'claimed\' event with no'
-+ ' synthetic \'claim_expired\' — parity holds at every step',
+test('case 4d: claim, release via POST work-orders/:id/'
++ 'release (the deleteWorkOrderClaim shape — a claim_released'
++ ' event with no claim/transition op pair beside it), then'
++ ' RE-claim — the replay must see that release as the prior'
++ ' claim event (exactly as postWorkOrderClaimOp\'s own in-tx'
++ ' read sees it), so the fresh claim posts a PLAIN \'claimed\''
++ ' event with no synthetic \'claim_expired\' — parity holds'
++ ' at every step',
 async () => {
     const db = await seededDb();
     const token = await organizationToken(
@@ -680,7 +680,7 @@ async () => {
     const flowWorkOrderId = workOrderId + '-fwo';
     const flowId = 'drift-states-wo-standalone-release-flow';
     // A large lock_timeout: if the replay wrongly fell back to
-    // the ORIGINAL claim as "prior" (never seeing the standalone
+    // the ORIGINAL claim as "prior" (never seeing the named
     // release), that claim would read as still LIVE at the
     // reclaim below, and the bug (zero events emitted) would
     // reproduce. A tiny lock_timeout would let a correct-by-
@@ -719,23 +719,21 @@ async () => {
     assert.equal(claim.status, 204);
     await assertHistoryParity(db, STARK_ORGANIZATION, workOrderId);
 
-    // The standalone release: web-app/app/adapters/work-orders-
-    // deletions.ts's deleteWorkOrderClaim posts this EXACT shape
-    // via postStateEvent — PUT states/:id with {entity_id, state:
-    // 'claim_released', at} — never a claim/transition op pair.
-    // Phase Final Task 1(b): row half stripped — switch to
-    // pair-plane-only pin from this step on (row-oracle half
-    // DROPPED for live states/:id writes).
+    // The named release: web-app/app/adapters/work-orders-
+    // deletions.ts's deleteWorkOrderClaim posts this EXACT
+    // shape — POST work-orders/:id/release with
+    // {releaseEventId, releaseAt}.
     const releaseEventId = workOrderId + '-release1';
     const releaseAt = nowUtc();
     const released = await handleRequest(db, req(
-        'PUT', '/states/' + releaseEventId, token, {
-            entity_id: workOrderId,
-            state: 'claim_released',
-            at: releaseAt,
+        'POST',
+        '/work-orders/' + workOrderId + '/release',
+        token, {
+            releaseEventId,
+            releaseAt,
         },
     ));
-    assert.equal(released.status, 200);
+    assert.equal(released.status, 204);
     const afterRelease = await assertDerivedHistory(
         db, STARK_ORGANIZATION, workOrderId,
     );
@@ -768,10 +766,10 @@ async () => {
     );
     // The expiry-interaction pin: the fresh claim lands as a
     // PLAIN 'claimed' event, never preceded by a synthetic
-    // 'claim_expired' — a standalone release resets the
-    // prior-claim baseline entirely, so the reclaim is never
-    // treated as an expiry takeover of the (chronologically
-    // superseded) original claim.
+    // 'claim_expired' — a named release resets the prior-claim
+    // baseline entirely, so the reclaim is never treated as an
+    // expiry takeover of the (chronologically superseded)
+    // original claim.
     assert.deepEqual(
         derived.map((row) => row.state),
         [

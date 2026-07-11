@@ -297,10 +297,11 @@ test(
             await setupOneWorkOrder();
         // Hand-stitch a state event on the complete node, dated
         // after the others — posted through the SAME wire-
-        // reachable PUT states/:id the live route serves (Task
-        // 7): the flipped GET /states route, which
-        // getTransitionEventsByWorkOrder reads, derives from the
-        // message ledger, not the raw states table.
+        // reachable PUT states/:id address other non-claim
+        // families still use (work-order unclaim is now
+        // POST work-orders/:id/release). The flipped GET /states
+        // route, which getTransitionEventsByWorkOrder reads,
+        // derives from the message ledger, not a raw table.
         await ctx.PUT('states/extra', {
             entity_id: woId,
             state: 'n-finish',

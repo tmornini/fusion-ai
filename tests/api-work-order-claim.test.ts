@@ -204,23 +204,23 @@ test(
     async () => {
         const db = await seededDb();
         // A live claim by 'other', released via the SAME
-        // standalone PUT states/:id address the live
-        // deleteWorkOrderClaim route uses (workbox's "release
-        // claim" action) — never a raw row poke, so the release
-        // is visible to the flipped gate's own pair-plane read
-        // (workOrderClaimHistoryFor). This is the hazard-closure
-        // scenario itself, driven through postWorkOrderClaimOp
-        // end to end, not just at the derive layer.
+        // POST work-orders/:id/release address the live
+        // deleteWorkOrderClaim adapter uses (workbox's
+        // "release claim" action) — never a raw row poke, so
+        // the release is visible to the flipped gate's own
+        // pair-plane read (workOrderClaimHistoryFor). This is
+        // the hazard-closure scenario itself, driven through
+        // postWorkOrderClaimOp end to end, not just at the
+        // derive layer.
         await seedOrganizationMember(db, 'other');
         await POST(
             db, 'work-orders/wo1/claim',
             freshClaimBody(), await devToken('other'),
         );
-        await PUT(
-            db, 'states/' + generateCryptoSafeBase62(), {
-                entity_id: 'wo1',
-                state: 'claim_released',
-                at: nowUtc(),
+        await POST(
+            db, 'work-orders/wo1/release', {
+                releaseEventId: generateCryptoSafeBase62(),
+                releaseAt: nowUtc(),
             },
             await devToken('other'),
         );
