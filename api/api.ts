@@ -412,7 +412,7 @@ export async function handleRequest(
             }
             // entity-states/:id/history reads derived state
             // the store fence cannot cover; gate on PARENT
-            // ownership — a DIFFERENT org's entity 404s, an
+            // ownership — a DIFFERENT org's entity 403s, an
             // orphan or own entity passes. The history-leak
             // bug gated on entity_id alone. Bare
             // entity-states/:id RETIRED (Phase 15 Task 7).
@@ -427,16 +427,23 @@ export async function handleRequest(
                 // probes. Soft-deleted and hard-spliced parents
                 // still report their true owner via the
                 // append-only pair plane.
+                const entityId = param(fenceParams, 0);
                 const owner = await resolveOwningOrganization(
                     adapter,
-                    param(fenceParams, 0),
+                    entityId,
                     fenced.organization,
                 );
                 if (owner !== null
                     && owner !== fenced.organization) {
                     return Response.json(
-                        { error: 'Not found: ' + pathname },
-                        { status: HTTP_NOT_FOUND },
+                        {
+                            error:
+                                foreignOrganizationMessage(
+                                    'entity_states',
+                                    entityId,
+                                ),
+                        },
+                        { status: HTTP_FORBIDDEN },
                     );
                 }
             }

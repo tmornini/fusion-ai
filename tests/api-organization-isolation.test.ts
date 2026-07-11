@@ -982,7 +982,13 @@ async () => {
     assert.equal(bOwns.status, 200);
     const foreign = await facadeGet(
         db, '/entity-states/iB/history');
-    assert.equal(foreign.status, 404);
+    assert.equal(foreign.status, 403);
+    const body = await foreign.json() as { error: string };
+    assert.equal(
+        body.error,
+        'forbidden: entity_states/iB belongs to a different'
+        + ' organization',
+    );
 });
 
 test('identity-pii lists only co-members', async () => {
