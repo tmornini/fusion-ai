@@ -818,7 +818,7 @@ for (const c of NESTED_FLOW_CASES) {
 // an entirely different '/organizations/A/...' prefix — the
 // same structural fence every org-nested address rides, with no
 // tag-specific code of its own.
-test('nested flows/:id/tags 404s a foreign-org flow', async () => {
+test('nested flows/:id/tags 403s a foreign-org flow', async () => {
     const db = await deepDb();
     const tagged = await handleRequest(db, req(
         'PUT', '/flows/fB/tags/v1',
@@ -831,7 +831,13 @@ test('nested flows/:id/tags 404s a foreign-org flow', async () => {
         'GET', '/flows/fB/tags/v1',
         await organizationToken('current', 'A'),
     ));
-    assert.equal(res.status, 404);
+    assert.equal(res.status, 403);
+    const body = await res.json() as { error: string };
+    assert.equal(
+        body.error,
+        'forbidden: flow_tags/v1 belongs to a different'
+        + ' organization',
+    );
 });
 
 // The three project-subordinate resources nest under
