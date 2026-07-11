@@ -953,17 +953,20 @@ async () => {
     assert.deepEqual(rows.map(r => r.id), ['sfvA']);
 });
 
-test('nested states/:id/field-values hides a foreign event',
+test('nested states/:id/field-values 403s a foreign event',
 async () => {
     const db = await deepDb();
     // seB is a B-org event; its field values, read through the
-    // A facade, are fenced empty (the multi-hop resolver lands
-    // org B for sfvB).
+    // A facade, 403 (honest foreign ownership).
     const res = await facadeGet(
         db, '/states/seB/field-values');
-    assert.equal(res.status, 200);
-    const rows = await res.json() as { id: string }[];
-    assert.deepEqual(rows.map(r => r.id), []);
+    assert.equal(res.status, 403);
+    const body = await res.json() as { error: string };
+    assert.equal(
+        body.error,
+        'forbidden: state_field_values/seB belongs to a'
+        + ' different organization',
+    );
 });
 
 // bare entity-states/:id RETIRED (Phase 15 Task 7); fence
@@ -1034,20 +1037,23 @@ async () => {
     for (const r of rows) {
         assert.equal(r.secret, undefined);
     }
-    // pb is a B-only member — its nested collection is fenced
-    // empty through the A facade.
+    // pb is a B-only member — its nested collection 403s
+    // through the A facade (honest foreign ownership).
     // Phase Final Task 2: pair plane proves pb's credential
-    // exists while fence empties the collection under A.
+    // exists while fence 403s under A.
     assert.equal(
         (await deriveCredential(db, 'pb', 'cred-pb')).id,
         'cred-pb');
     // Phase Final Stage B: identity spine tables retired.
     const other = await facadeGet(
         db, '/identities/pb/credentials');
-    assert.equal(other.status, 200);
-    assert.deepEqual(
-        (await other.json() as { id: string }[]).map(r => r.id),
-        []);
+    assert.equal(other.status, 403);
+    const otherBody = await other.json() as { error: string };
+    assert.equal(
+        otherBody.error,
+        'forbidden: identity_credentials/pb belongs to a'
+        + ' different organization',
+    );
     // a single read projects secret out too
     const one = await facadeGet(
         db, '/identities/pa/credentials/cred-pa');
@@ -1055,10 +1061,17 @@ async () => {
     assert.equal(
         (await one.json() as { secret?: string }).secret,
         undefined);
-    // a non-member credential 404s
+    // a non-member credential 403s
     const foreign = await facadeGet(
         db, '/identities/pb/credentials/cred-pb');
-    assert.equal(foreign.status, 404);
+    assert.equal(foreign.status, 403);
+    const foreignBody =
+        await foreign.json() as { error: string };
+    assert.equal(
+        foreignBody.error,
+        'forbidden: identity_credentials/cred-pb belongs to'
+        + ' a different organization',
+    );
 });
 
 // identity-credentials stays ADMIN-ONLY after nesting: the
