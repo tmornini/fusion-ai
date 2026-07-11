@@ -44,8 +44,10 @@ import {
 //       deriveObjectiveStateHistory, IMPORTED from their own
 //       modules (gate 5b) via deriveTrioFamilyStates below,
 //       never rebuilt here.
-//   (c) deriveMemberGenesis — the human/AI member create-op
-//       genesis trio (gate 5c).
+//   (c) deriveMemberStates — the members/:id document trio
+//       (genesis at create + every later change; the
+//       states-address retirement's replacement for the old
+//       create-op genesis echo).
 //   (d) deriveWorkOrderLifecycle — the work-order op-pair replay
 //       (gate 5d) — see its own section header below for the
 //       work-order-specific edges.
@@ -1031,16 +1033,17 @@ function atIdCompare(
 }
 
 // Every successful (2xx) POST pair at `uriPrefix`, (at, id)
-// ascending. REUSED below by source (c) (deriveMemberGenesis) and
-// source (f) (deriveInvitationStates) — both read a flat, non-
-// work-order collection's own 2xx POST pairs, the exact shape
-// this function already reads generically (Task 4's own report
-// flagged this as the anticipated reuse; Generality: the better
-// way rises to replace every similar site rather than resting
-// beside them). Exported (Phase 14 Task 6): api/derive-state-
-// field-values.ts's transition-fold reader reuses this SAME
-// decode over the work-orders/:id/transition address, rather
-// than re-implementing the POST-only, (at, id)-sorted read.
+// ascending. REUSED below by source (f)
+// (deriveInvitationStates) — a flat, non-work-order
+// collection's own 2xx POST pairs, the exact shape this
+// function already reads generically. Source (c) once shared
+// this scan (deriveMemberGenesis); the states-address
+// retirement moved members onto the document-trio walk, so
+// only invitations remain. Exported (Phase 14 Task 6):
+// api/derive-state-field-values.ts's transition-fold reader
+// reuses this SAME decode over the work-orders/:id/transition
+// address, rather than re-implementing the POST-only,
+// (at, id)-sorted read.
 export function operationPairsAt(
     requests: readonly RequestEntity[],
     responses: readonly ResponseEntity[],
@@ -1657,70 +1660,49 @@ export async function workOrderDocumentHeadFor(
     };
 }
 
-// ---- deriveMemberGenesis — the member create-op reader (gate 5c)
+// ---- deriveMemberStates — the members document-trio reader -
+// ---- (gate 5c) ---------------------------------------------
 
-// Source (c) of the states-log union. A human/AI member's OWN
-// genesis event never rides the states/:id address (source a) nor
-// the member's own document address (members/:id or {ai,human}-
-// members/:id carry no trio — api/routes.ts's
-// memberDocumentEntityOf and the {ai,human}MemberDetailBodyOf
-// sidecars never mention state). It rides the CREATE-OP pair BODY
-// instead — POST /ai-members or POST /human-members, validated by
-// AI_MEMBER_CREATE_KEYS/HUMAN_MEMBER_CREATE_KEYS (api/
-// validators.ts): {id, detail, initialState, initialStateEventId,
-// initialStateAt}. Authorship (member_id) is the pair's OWN
-// requester — "stamped from the verified caller in the route,
-// never the body" (validateHumanMemberCreateBody's own header) —
-// mirroring deriveEventPairStates' identical member_id sourcing
-// above, never a body field. Both families are GLOBAL plane
-// (family-registry.ts: organizationNested: false for both), so
-// their prefixes are flat, like INVITATIONS_PREFIX below. A
-// member's LATER archive/reactivate rides PUT states/:id instead
-// (source a) — this reader covers ONLY the one-time genesis.
-const AI_MEMBERS_PREFIX =
-    canonicalUriPrefix(undefined, '/ai-members/');
-const HUMAN_MEMBERS_PREFIX =
-    canonicalUriPrefix(undefined, '/human-members/');
+// Source (c) of the states-log union. The members-trio
+// derivation (states-address retirement): REPLACES
+// deriveMemberGenesis in the same global-plane union slot.
+// Genesis and every later state change ride the members/:id
+// document trio now — the create op folds initialState* into
+// that document pair, so the op-body echo this replaced reader
+// used to scan is no longer a derive source (it remains on the
+// op body for the op-born visibility scan alone). Global-scoped
+// like the reader it replaces — the per-org trioFamiliesFor
+// machinery is NOT bent to fit (members are
+// organizationNested: false).
+const MEMBERS_DOCUMENT_PREFIX =
+    canonicalUriPrefix(undefined, '/members/');
 
-export async function deriveMemberGenesis(
+export async function deriveMemberStates(
     db: DbAdapter,
 ): Promise<StateEntity[]> {
     return db.transaction(
         ['requests', 'responses'],
         async (view) => {
             const [requests, responses] = await Promise.all([
-                view.requests.getAll(),
-                view.responses.getAll(),
+                view.requests.getAllWhere(
+                    'uri_prefix', MEMBERS_DOCUMENT_PREFIX,
+                ),
+                view.responses.getAllWhere(
+                    'uri_prefix', MEMBERS_DOCUMENT_PREFIX,
+                ),
             ]);
+            const pairs = documentPairsAt(
+                requests, responses, MEMBERS_DOCUMENT_PREFIX,
+            );
+            const byMember = Map.groupBy(
+                pairs, (pair) => pair.uriId,
+            );
             const rows: StateEntity[] = [];
-            for (const prefix of [
-                AI_MEMBERS_PREFIX, HUMAN_MEMBERS_PREFIX,
-            ]) {
-                for (const pair of operationPairsAt(
-                    requests, responses, prefix,
-                )) {
-                    // Create ops alone carry the genesis trio;
-                    // edit ops at the same collection prefix
-                    // do not (Phase Final Task 2: no dual-write
-                    // to filter them by a states row).
-                    if (typeof pair.body['initialStateEventId']
-                        !== 'string') {
-                        continue;
-                    }
-                    rows.push({
-                        id: pickString(
-                            pair.body, 'initialStateEventId',
-                        ),
-                        entity_id: pickString(pair.body, 'id'),
-                        state: pickString(
-                            pair.body, 'initialState',
-                        ),
-                        member_id: pair.requesterIdentityId,
-                        at: pickString(
-                            pair.body, 'initialStateAt',
-                        ),
-                    });
-                }
+            for (const [memberId, memberPairs] of byMember) {
+                rows.push(...stateHistoryFrom(
+                    documentLifecycleEvents(memberPairs),
+                    memberId,
+                ));
             }
             return rows.sort(byIdAscending);
         },
@@ -2184,7 +2166,7 @@ export async function deriveStates(
     const sources = await Promise.all([
         deriveEventPairStates(db),
         deriveTrioFamilyStates(db, boundOrganization),
-        deriveMemberGenesis(db),
+        deriveMemberStates(db),
         deriveWorkOrderLifecycle(db),
         deriveFlowGraphStates(db),
         deriveInvitationStates(db),
@@ -2198,23 +2180,27 @@ export async function deriveStates(
 
 // The entity's OWN subset — no family-classification shortcut
 // exists (resolveOwningOrganization resolves an OWNING
-// ORGANIZATION, never which of the six sources an id belongs to),
-// so every source is queried and the result filtered by entity_id:
-// an id only ever appears in ONE source's own address family, so
-// the filter alone disambiguates — no dedup-assert is needed here
-// (unlike deriveStates above), since no genuine cross-source
-// collision is possible once filtered to one entity. organization
-// is REQUIRED — the five trio derives are org-prefixed and cannot
-// resolve their own address without it. Never a visibility fence
-// here, unlike deriveStates' own fenceStatesByOwner call — the
-// caller already names both the org AND the entity.
+// ORGANIZATION, never which of the six sources an id belongs
+// to), so every source is queried and the result filtered by
+// entity_id. An id ordinarily lives in ONE source's address
+// family; the transitional system-member dual-write (document
+// trio + leftover states/:id seed, folded at the seed stage)
+// can echo the SAME event from two sources, so unionById
+// keeps same-content echoes once and throws on a true
+// collision — the same covenant deriveStates already holds.
+// organization is REQUIRED — the five trio derives are
+// org-prefixed and cannot resolve their own address without
+// it. Never a visibility fence here, unlike deriveStates'
+// own fenceStatesByOwner call — the caller already names
+// both the org AND the entity.
 //
 // PRECONDITION: callers must already have established
-// entityId's visibility to `organization` before calling — the
-// route's own gate (api/api.ts's entity-states/:id/history
-// guard, resolveOwningOrganization) IS the fence. A caller that
-// trusts an unverified (organization, entityId) pairing reads
-// another organization's rows.
+// entityId's visibility to `organization` before calling —
+// the route's own gate (api/api.ts's
+// entity-states/:id/history guard, resolveOwningOrganization)
+// IS the fence. A caller that trusts an unverified
+// (organization, entityId) pairing reads another
+// organization's rows.
 export async function deriveStatesFor(
     db: DbAdapter,
     organization: Id,
@@ -2224,7 +2210,7 @@ export async function deriveStatesFor(
         eventPairRows,
         ideaRows, projectRows, recordRows, flowRows,
         objectiveRows,
-        memberGenesisRows, workOrderRows,
+        memberStateRows, workOrderRows,
         flowGraphRows, invitationRows,
     ] = await Promise.all([
         deriveEventPairStates(db),
@@ -2233,7 +2219,7 @@ export async function deriveStatesFor(
         deriveRecordStateHistory(db, organization, entityId),
         deriveFlowStateHistory(db, organization, entityId),
         deriveObjectiveStateHistory(db, organization, entityId),
-        deriveMemberGenesis(db),
+        deriveMemberStates(db),
         deriveWorkOrderLifecycle(db),
         deriveFlowGraphStates(db),
         deriveInvitationStates(db),
@@ -2242,10 +2228,10 @@ export async function deriveStatesFor(
         ...eventPairRows,
         ...ideaRows, ...projectRows, ...recordRows, ...flowRows,
         ...objectiveRows,
-        ...memberGenesisRows, ...workOrderRows,
+        ...memberStateRows, ...workOrderRows,
         ...flowGraphRows, ...invitationRows,
     ].filter((row) => row.entity_id === entityId);
-    return rows.sort(atIdCompare);
+    return unionById([rows]).sort(atIdCompare);
 }
 
 // ---- documentStateHeadFor — the member_id-echo head helper -----

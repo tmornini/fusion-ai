@@ -1051,11 +1051,11 @@ async () => {
     );
 });
 
-// Phase Final Task 1(b): archive/reactivate via PUT states/:id
-// — row-oracle half dropped after create; pin pair plane.
+// States-address retirement: archive/reactivate ride PUT
+// /members/:id with the lifecycle trio — pair-plane pin.
 test('case 7b: live-write chain — AI member create, archive,'
-+ ' reactivate — pair-plane pin after archive (row-oracle half'
-+ ' dropped at Task 1(b) strip)', async () => {
++ ' reactivate — pair-plane pin via PUT members/:id',
+async () => {
     const db = await seededDb();
     const token = await organizationToken(
         'current', STARK_ORGANIZATION,
@@ -1083,12 +1083,15 @@ test('case 7b: live-write chain — AI member create, archive,'
     assert.equal(membership.status, 200);
     await assertHistoryParity(db, STARK_ORGANIZATION, aiMemberId);
 
-    // Phase Final Task 1(b): archive/reactivate ride pair-plane-
-    // only PUT /states/:id. Drop row-oracle half; pin pair plane.
+    // Archive/reactivate ride PUT /members/:id with the trio.
+    // Derived assertions stay identical to the states-address
+    // form — that is the parity contract.
     const archived = await handleRequest(db, req(
-        'PUT', '/states/' + aiMemberId + '-archive', token, {
-            entity_id: aiMemberId, state: 'archived',
-            at: '2026-04-03T00:00:00.000001Z',
+        'PUT', '/members/' + aiMemberId, token, {
+            type: 'ai',
+            state: 'archived',
+            state_at: '2026-04-03T00:00:00.000001Z',
+            state_event_id: aiMemberId + '-archive',
         },
     ));
     assert.equal(archived.status, 200);
@@ -1101,9 +1104,11 @@ test('case 7b: live-write chain — AI member create, archive,'
     );
 
     const reactivated = await handleRequest(db, req(
-        'PUT', '/states/' + aiMemberId + '-reactivate', token, {
-            entity_id: aiMemberId, state: 'active',
-            at: '2026-04-03T00:00:00.000002Z',
+        'PUT', '/members/' + aiMemberId, token, {
+            type: 'ai',
+            state: 'active',
+            state_at: '2026-04-03T00:00:00.000002Z',
+            state_event_id: aiMemberId + '-reactivate',
         },
     ));
     assert.equal(reactivated.status, 200);
