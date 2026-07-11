@@ -580,7 +580,6 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'ideas/:id',
     'ideas/:id/conversion',
     'ideas/:id/submissions/:sid',
-    'states/:id',
     'projects/:id',
     'projects/:id/flows/:pfid',
     'flows',

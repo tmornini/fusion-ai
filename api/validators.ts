@@ -2477,30 +2477,6 @@ export function validateStateEntity(
     };
 }
 
-// The HTTP-body gate for PUT /states/:id: NO member_id —
-// authorship is stamped from the verified token, never the
-// body. A body that names a member is malformed and 400s.
-const STATE_BODY_KEYS: readonly string[] = [
-    'entity_id', 'state', 'at',
-];
-
-export function validateStateBody(
-    body: Record<string, unknown>,
-): Omit<StateEntity, 'id' | 'member_id'> {
-    assertOnlyKeys(
-        body, STATE_BODY_KEYS, 'StateEvent',
-    );
-    return {
-        entity_id: pickString(
-            body, 'entity_id',
-        ),
-        state: pickString(body, 'state'),
-        at: validateTimestampField(
-            body, 'at', 'StateEvent',
-        ),
-    };
-}
-
 const RECORD_BODY_KEYS: readonly string[] = [
     'organization_id', 'name', 'description', 'position',
 ];

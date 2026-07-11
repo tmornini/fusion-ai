@@ -14,36 +14,14 @@ import {
     assertMemberState,
     msSinceUtc,
     MS_PER_SECOND,
-    nowUtc,
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
-import {
-    generateCryptoSafeBase62,
-} from '../../../shared/crypto-safe-base62.ts';
 import {
     latestByKey,
 } from '../../../shared/ledger-reduction.ts';
 import {
     isClaimState,
 } from '../../../api/work-order-claims.ts';
-
-// A single state transition is one idempotent row — write it
-// straight to PUT /states/:id. The author is stamped server-
-// side from the verified token, so the body carries no
-// member_id; nowUtc stamps the moment. The client mints the
-// event id (retries hit one row).
-export async function postStateEvent(
-    ctx: RequestContext,
-    entityId: Id,
-    state: string,
-): Promise<void> {
-    const eventId = generateCryptoSafeBase62();
-    await ctx.PUT(`states/${eventId}`, {
-        entity_id: entityId,
-        state,
-        at: nowUtc(),
-    });
-}
 
 // The states log is shared across entity types and the
 // alphabets overlap ('active', 'archived', 'approved',

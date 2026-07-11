@@ -1,6 +1,5 @@
 import {
     EntityNotFoundError,
-    LedgerImmutabilityError,
 } from './db.ts';
 import type {
     DbAdapter,
@@ -81,7 +80,6 @@ import {
     validateRecordDocumentBody,
     validateRecordWriteBody,
     validateRoleGrantEntity,
-    validateStateBody,
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
     validateWorkOrderDocumentBody,
@@ -185,7 +183,6 @@ import {
     deriveStatesFor,
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
-    stateEventCollisionFromPairs,
 } from './derive-states.ts';
 import {
     stateFieldValuesForStateEvent,
@@ -2617,14 +2614,6 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
-    'states/:id': {
-        status: 200,
-        successBody: (params, body, actor) => ({
-            id: param(params, 0),
-            ...validateStateBody(withoutId(body ?? {})),
-            member_id: actor,
-        }),
-    },
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
     // entry above for the shared rationale.
@@ -4954,48 +4943,9 @@ export const routes: Route[] = [
         get: (db, _p, _actor, organization) =>
             deriveStates(db, requireOrganization(organization)),
     }),
-    // GET states/:id RETIRED (Phase 15 Task 7): zero product
-    // callers; bare event-by-id read is dead. PUT survives —
-    // members/ai-members/objectives/work-orders unclaim and
-    // the ownership write fence still ride it.
-    route('states/:id', {
-        // The author is the verified caller (actor), stamped
-        // over any client-supplied member_id — the ledger
-        // records who acted, not who the body claims.
-        //
-        // Phase Final Task 1(b): ROW HALF STRIPPED. Immutability
-        // is pair-plane only (stateEventCollisionFromPairs);
-        // WRITE_RESPONSE_SPECS successBody forms the wire
-        // bytes. Seed still writes states rows until the
-        // states-trace strip commit.
-        put: (db, p, body, actor, pair) => {
-            const id = param(p, 0);
-            return db.transaction(
-                ['requests', 'responses'],
-                async (view) => {
-                    const fields = {
-                        ...validateStateBody(
-                            withoutId(body),
-                        ),
-                        member_id: actor,
-                    };
-                    const pairCollision =
-                        await stateEventCollisionFromPairs(
-                            view, id, fields,
-                        );
-                    if (pairCollision === 'conflict') {
-                        throw new LedgerImmutabilityError(
-                            'states', id,
-                        );
-                    }
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                    return { id, ...fields };
-                },
-            );
-        },
-    }),
+    // states/:id RETIRED (states-address retirement Task 13):
+    // every verb on the address is a router 404. Collection
+    // GET /states and GET /states/:id/field-values survive.
     // bare GET entity-states/:id RETIRED (Phase 15 Task 7):
     // zero product callers. History below is the LIVE read.
     // GET is FLIPPED (Phase 14 Task 7): derives via

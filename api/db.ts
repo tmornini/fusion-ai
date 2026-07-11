@@ -32,25 +32,6 @@ export class MissingTableError extends Error {
     }
 }
 
-// A re-put of an existing ledger event with a DIFFERENT
-// payload is an attempt to rewrite history — surfaced as a
-// conflict, never applied. The identical re-put stays
-// silent: that is the idempotent retry the id-keyed PUT
-// exists for.
-export class LedgerImmutabilityError extends Error {
-    readonly table: string;
-    readonly id: string;
-    constructor(table: string, id: string) {
-        super(
-            `Ledger event ${table}/${id} exists with a`
-            + ' different payload; the log is append-only',
-        );
-        this.table = table;
-        this.id = id;
-        this.name = 'LedgerImmutabilityError';
-    }
-}
-
 // A unique-column collision. IndexedDB raises its native
 // ConstraintError from the {unique:true} index; the
 // simulated tiers scan the declared unique columns before
