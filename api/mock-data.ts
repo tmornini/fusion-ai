@@ -7,6 +7,7 @@ import {
     postFlowCreationOp,
     postFlowDocumentOp,
     postWorkOrderDocumentOp,
+    postWorkOrderTransitionOp,
     postFlowWorkOrderDocumentOp,
     postFlowRecordDocumentOp,
     postRecordWriteOp,
@@ -83,7 +84,6 @@ import {
     projectStateEvents,
     flowStateEvents,
     recordStateEvents,
-    mockStateFieldValues,
     mockProjectFlows,
     mockFlowRecords,
     humanMemberSeedBody,
@@ -96,6 +96,7 @@ import {
     flowSeedBody,
     flowOrg2SeedBody,
     workOrderDocumentSeedBody,
+    transitionSeedBody,
     flowWorkOrderJoinSeedBody,
     flowRecordJoinSeedBody,
     aiMemberSeedBody,
@@ -655,11 +656,6 @@ async function postMockDataLoadIn(
 
     const mockStateEvents = buildWorkOrderStateEvents();
 
-    // mockStateFieldValues is imported from seed-message-pairs.ts
-    // — pass 1 there needs the SAME array to form each field
-    // value's own message pair before this transaction opens
-    // (Phase 11 Task 3).
-
     // mockProjectFlows is imported from
     // seed-message-pairs.ts — pass 1 there needs the SAME
     // array to form each flow's pair before this transaction
@@ -771,29 +767,21 @@ async function postMockDataLoadIn(
                 ),
             ),
         ),
-        // Phase 11 Task 3: the historical-trace carve-out closes
-        // — each raw states.put/stateFieldValues.put row below
-        // ALSO gets its own message pair, appended alongside it
-        // in this SAME transaction (Path A: appendMessagePair
-        // writes ONLY requests/responses, so the row write itself
-        // is byte-identical to before).
+        // States-address retirement Task 12: every historical
+        // trace drives through the live transition op — body
+        // validates via validateWorkOrderTransitionBody, field
+        // values fold into the transition pair body (no leaf
+        // field-value pairs).
         ...mockStateEvents.map(r =>
-            appendMessagePair(
+            postWorkOrderTransitionOp(
                 adapter,
-                requirePair(pairs, seedPairKey('states/:id', r.id)),
-            ),
-        ),
-        // Phase Final Task 2: state_field_values ROW half
-        // stripped — seed still forms leaf pairs at
-        // states/:id/field-values/:fvid (WRITE_RESPONSE_SPECS
-        // survives; two-source union reads them).
-        ...mockStateFieldValues.map(r =>
-            appendMessagePair(
-                adapter,
+                r.entity_id,
+                transitionSeedBody(r),
+                r.member_id,
                 requirePair(
                     pairs,
                     seedPairKey(
-                        'states/:id/field-values/:fvid', r.id,
+                        'work-orders/:id/transition', r.id,
                     ),
                 ),
             ),
@@ -894,9 +882,17 @@ async function postMockDataLoadIn(
             ),
         ),
         ...leadToCloseData.stateEvents.map(r =>
-            appendMessagePair(
+            postWorkOrderTransitionOp(
                 adapter,
-                requirePair(pairs, seedPairKey('states/:id', r.id)),
+                r.entity_id,
+                transitionSeedBody(r),
+                r.member_id,
+                requirePair(
+                    pairs,
+                    seedPairKey(
+                        'work-orders/:id/transition', r.id,
+                    ),
+                ),
             ),
         ),
         ...mockRecords.map((r, i) => {

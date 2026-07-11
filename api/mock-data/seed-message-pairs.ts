@@ -89,20 +89,18 @@
 // below) rather than riding buildMockDataInvocations /
 // formBootstrapMessagePair.
 //
-// Phase 11 Task 3 closes the historical-trace carve-out itself
-// (the work-order deferral's last piece, named above): every
-// trace event (211 hand-authored + 649 generated = 860) and
-// every state_field_value (7) now ALSO forms its own message
-// pair, through the SAME formSeedPair pipeline every family
-// above already rides. Path A: the states / state_field_values
-// ROWS themselves stay the SAME direct writes mock-data.ts
-// already made — untouched, since a states-fingerprint re-pin
-// would be a phase abort, never a fix — only requests/responses
-// gain the beside-it pair. The system member's genesis folds
-// into its members/:id document trio (states-address
-// retirement Task 8) — no bare states/:id pair for that event.
-// No carve-out remains: every seed row this file's pass 1 can
-// see now forms one.
+// Phase 11 Task 3 closed the historical-trace carve-out
+// itself (the work-order deferral's last piece, named above):
+// every trace event formed its own message pair through the
+// SAME formSeedPair pipeline every family above already rides.
+// States-address retirement Task 12 reshapes those 861 traces
+// (212 hand-authored + 649 generated) 1:1 into
+// work-orders/:id/transition op-shaped pairs (op: true),
+// folding the 7 mockStateFieldValues into the parent
+// transition bodies' fieldValues — no bare states/:id or
+// states/:id/field-values/:fvid seed pairs remain. The system
+// member's genesis folds into its members/:id document trio
+// (states-address retirement Task 8).
 //
 // Phase 12 Task 3 onboards a NEW family — organizations, the
 // THIRTEENTH and last unflipped in-scope one
@@ -485,11 +483,10 @@ export const recordStateEvents: StateEntity[] = [
 // work order's own trace events — its Review transition's Data
 // Capture intake fields, plus one reviewer note on its Complete
 // transition. Attribute ids are customerProfileRecordId's Data
-// Capture / Review record-attribute ids (records.ts). Phase 11
-// Task 3: the SAME construction both this file's pass 1 (the
-// invocations below) and mock-data.ts's pass 2 (the raw
-// stateFieldValues.put loop) share, so a stored pair can never
-// drift from what was actually written.
+// Capture / Review record-attribute ids (records.ts). States-
+// address retirement Task 12: no longer forms its own leaf
+// pairs — seedFieldValuesFor folds these into the parent
+// transition bodies' fieldValues (WO01 Review 6 + Complete 1).
 const fCompanyName = '5JZ0LeKdPCa4QMtg1RsF1M';
 const fEmail = 'nplTIh0qXNtAyoWSwRaBYe';
 const fPhone = 'kzHpMw9f1thq79VoBYeIX3';
@@ -909,32 +906,37 @@ export function flowWorkOrderJoinSeedBody(
     return { ...fields };
 }
 
-// The genesis case of the document PUT states/:id (Phase 11
-// Task 3): the three columns the live PUT would accept —
-// entity_id, state, at — no id (a route param) and no member_id
-// (the route stamps it from the verified actor, never the body;
-// validateStateBody's STATE_BODY_KEYS excludes it, so a leaked
-// member_id would throw at the gate). Accepts the narrower Pick,
-// not the full StateEntity, so bootstrap's own system-event
-// (which mints its `at` fresh, never from a stored row) can
-// share this SAME construction without fabricating a dummy id/
-// member_id just to satisfy the type.
-export function stateEventSeedBody(
-    event: Pick<StateEntity, 'entity_id' | 'state' | 'at'>,
+// The live POST work-orders/:id/transition body this SAME
+// historical event would have carried: 1:1 field mapping, no
+// invention. fieldValues is empty except WO01's Review (6)
+// and Complete (1) events, which carry the folded old leaf
+// values; release is null — traces never released claims
+// (zero seeded claim events).
+export function transitionSeedBody(
+    event: StateEntity,
 ): Record<string, unknown> {
-    const { entity_id, state, at } = event;
-    return { entity_id, state, at };
+    return {
+        transitionEventId: event.id,
+        targetState: event.state,
+        fieldValues: seedFieldValuesFor(event.id),
+        release: null,
+        transitionAt: event.at,
+    };
 }
 
-// The genesis case of the document PUT
-// states/:id/field-values/:fvid (Phase 11 Task 3): the three
-// columns the live PUT would accept — state_event_id,
-// attribute_id, value — no id (a route param).
-export function stateFieldValueSeedBody(
-    fv: StateFieldValueEntity,
-): Record<string, unknown> {
-    const { state_event_id, attribute_id, value } = fv;
-    return { state_event_id, attribute_id, value };
+function seedFieldValuesFor(
+    stateEventId: Id,
+): Record<string, unknown>[] {
+    return mockStateFieldValues
+        .filter((fv) => fv.state_event_id === stateEventId)
+        .map((fv) => ({
+            id: fv.id,
+            fields: {
+                state_event_id: fv.state_event_id,
+                attribute_id: fv.attribute_id,
+                value: fv.value,
+            },
+        }));
 }
 
 // The genesis case of the document PUT
@@ -1242,7 +1244,8 @@ export function seedPairKey(
 interface MockDataInvocation {
     readonly key: string;
     readonly routePattern: string;
-    // Present only for a document-class genesis PUT: the path
+    // Present for a document-class genesis PUT AND for an
+    // operation-shaped POST at an id-carrying pattern: the path
     // value for each ':'-prefixed route segment, in pattern
     // order — one entry for 'ideas/:id' (Phase 2 Task 3), two
     // for 'ideas/:id/submissions/:sid' (Phase 2 Task 4b: the
@@ -1250,6 +1253,12 @@ interface MockDataInvocation {
     // collection-POST creates, which keep forming a POST at the
     // bare pattern exactly as before.
     readonly idParams?: readonly Id[];
+    // An operation-shaped POST at an id-carrying pattern
+    // (work-orders/:id/transition): idParams fill the :id
+    // slots for the ADDRESS (uriId stays '' — messageAddress
+    // keys on the LAST segment), but the method is POST and
+    // the response is the op's own {status: 204} spec.
+    readonly op?: true;
     readonly organization: Id | undefined;
     readonly requesterIdentityId: Id;
     readonly body: Record<string, unknown>;
@@ -1258,12 +1267,13 @@ interface MockDataInvocation {
 // Dependency-ordered (matches postMockDataLoadIn's write order):
 // memberships + human-members, ideas, organizations (Phase 12
 // Task 3), idea-submissions, projects, flows, work-orders,
-// flow-work-orders, the work-order historical traces +
-// state_field_values + the system member's own genesis event
-// (Phase 11 Task 3), memberships + ai-members, the system
-// member's own document, records, flow-records, objectives. A
-// dropped or reordered invocation here is caught by
-// tests/mock-data-pairs.test.ts's pinned invocation count.
+// flow-work-orders, the work-order historical traces as
+// work-orders/:id/transition ops (states-address retirement
+// Task 12; field values fold into those bodies), memberships
+// + ai-members, the system member's own document, records,
+// flow-records, objectives. A dropped or reordered invocation
+// here is caught by tests/mock-data-pairs.test.ts's pinned
+// invocation count.
 export function buildMockDataInvocations():
     readonly MockDataInvocation[] {
     const members = buildMembers();
@@ -1649,56 +1659,32 @@ export function buildMockDataInvocations():
             body: flowWorkOrderJoinSeedBody(join),
         });
     }
-    // Phase 11 Task 3: the historical-trace carve-out closes —
-    // every trace event (211 hand-authored + 649 generated = 860)
-    // now forms its OWN states/:id pair too. Its id IS the
-    // idParams — byte-identical to the row mock-data.ts's raw
-    // adapter.states.put already writes, so the derived plane's
-    // future ids can never drift. requesterIdentityId is the
-    // EVENT'S OWN member_id — never workOrderFirstEventMemberId
-    // above, which answers a different question (a work-order
-    // DOCUMENT's own authorship, not one of its many trace
-    // events). Every seeded work order is Stark (finding 7,
-    // workOrderDocumentSeedBody's own comment), so every trace
-    // event nests under the SAME organization.
+    // States-address retirement: every trace event (212 hand-
+    // authored + 649 generated = 861) reshapes 1:1 into a
+    // work-orders/:id/transition op-shaped pair — the LIVE op
+    // shape, nothing invented: transitionEventId = the event's
+    // own id, transitionAt = its at, targetState = its node
+    // state, requester = the event's OWN member. NOT creation
+    // ops: the creation gate's exact-3 'claimed'-slot
+    // semantics do not match historical traces (zero seeded
+    // claim events; the in-flight fixtures are 2- and
+    // 3-event). WO01's Review/Complete events carry the folded
+    // field values (mockStateFieldValues below).
     const traceEvents = [
         ...workOrderStateEvents,
         ...leadToCloseWorkload.stateEvents,
     ];
     for (const event of traceEvents) {
         invocations.push({
-            key: seedPairKey('states/:id', event.id),
-            routePattern: 'states/:id',
-            idParams: [event.id],
+            key: seedPairKey(
+                'work-orders/:id/transition', event.id,
+            ),
+            routePattern: 'work-orders/:id/transition',
+            idParams: [event.entity_id],
+            op: true,
             organization: STARK_ORGANIZATION,
             requesterIdentityId: event.member_id,
-            body: stateEventSeedBody(event),
-        });
-    }
-    // The 7 state_field_values rows nest under their OWN parent
-    // trace event: idParams [stateEventId, fvId] — matches the
-    // retired leaf PUT states/:id/field-values/:fvid params
-    // order (WRITE_RESPONSE_SPECS entry SURVIVES for seed
-    // formation, Phase 15 Task 7 / finding 7; reads
-    // param(params, 1) as the leaf id). requesterIdentityId is
-    // the PARENT event's OWN member_id (the same person who
-    // authored that transition), looked up off the SAME
-    // traceEvents list above — never a second, independently-
-    // picked author.
-    const traceEventById = new Map(
-        traceEvents.map(e => [e.id, e]),
-    );
-    for (const fv of mockStateFieldValues) {
-        invocations.push({
-            key: seedPairKey(
-                'states/:id/field-values/:fvid', fv.id,
-            ),
-            routePattern: 'states/:id/field-values/:fvid',
-            idParams: [fv.state_event_id, fv.id],
-            organization: STARK_ORGANIZATION,
-            requesterIdentityId:
-                traceEventById.get(fv.state_event_id)!.member_id,
-            body: stateFieldValueSeedBody(fv),
+            body: transitionSeedBody(event),
         });
     }
     for (const m of aiMembers) {
@@ -1964,17 +1950,18 @@ export function buildMockDataInvocations():
     return invocations;
 }
 
-// Five of the seven families are global/collection-level POSTs
-// (no `:id` segment), so their route/path segments are always
-// the bare pattern — messageAddress derives the empty uriId and
+// Bare collection-POST creates (no `:id` segment) keep the
+// bare pattern — messageAddress derives the empty uriId and
 // createdEntityUriId (message-pair.ts's CREATE_BODY_ID_FIELDS)
-// overrides it to the created entity's own id. Ideas (Phase 2
-// Task 3, R1) and idea-submissions (Phase 2 Task 4b) are the
-// exception: each genesis folds into a document-class PUT
-// (ideas/:id, ideas/:id/submissions/:sid), so its invocation
-// carries idParams and the id-tailed address is built directly
+// overrides it to the created entity's own id. Document-class
+// genesis PUTs (ideas/:id, ideas/:id/submissions/:sid, …)
+// carry idParams and the id-tailed address is built directly
 // — messageAddress derives the real uriId from the path
-// segment itself, no createdEntityUriId override needed.
+// segment itself. Operation-shaped POSTs at id-carrying
+// patterns (work-orders/:id/transition, op: true) also carry
+// idParams for the ADDRESS, but form as POST with {status:
+// 204} — uriId stays '' because messageAddress keys on the
+// LAST segment.
 async function formSeedPair(
     inv: MockDataInvocation, requestAt: string,
 ): Promise<MessagePair> {
@@ -1987,16 +1974,23 @@ async function formSeedPair(
             segment.startsWith(':')
                 ? idParams[paramIndex++]!
                 : segment);
-    const method = idParams === undefined ? 'POST' : 'PUT';
+    const method = inv.op === true || idParams === undefined
+        ? 'POST'
+        : 'PUT';
     // Every bare collection-POST family here is a create route,
     // all {status: 204} in WRITE_RESPONSE_SPECS (routes.ts) — no
-    // successBody. A document-class genesis PUT reads its OWN
-    // spec from the same table (documentSeedResponse) so a
-    // seeded pair's stored response can never drift from what
-    // the live gate would have stored for the identical request.
-    const response = idParams === undefined
-        ? { status: 204, body: undefined }
-        : documentSeedResponse(inv, routeSegments, pathSegments);
+    // successBody. An op-shaped POST at an id-carrying pattern
+    // (op: true) is the same 204/no-body voice. A document-class
+    // genesis PUT reads its OWN spec from the same table
+    // (documentSeedResponse) so a seeded pair's stored response
+    // can never drift from what the live gate would have stored
+    // for the identical request.
+    const response =
+        inv.op === true || idParams === undefined
+            ? { status: 204, body: undefined }
+            : documentSeedResponse(
+                inv, routeSegments, pathSegments,
+            );
     return formWritePair({
         method,
         pathname: '/' + pathSegments.join('/'),
@@ -2028,10 +2022,11 @@ async function formSeedPair(
 // extraction (routes.ts): the path segment at each `:`-prefixed
 // route segment, in order. Every document-class invocation here
 // forms a PUT (formSeedPair's own method === 'PUT' when idParams
-// is defined), so a PerVerbWriteResponseSpec entry (Task 4:
-// ai-members/:id, human-members/:id) resolves through its OWN
-// `put` slot — the writeResponseSpecFor precedent (api/api.ts),
-// narrowed to the one verb this function ever sees.
+// is defined and op is not set), so a PerVerbWriteResponseSpec
+// entry (Task 4: ai-members/:id, human-members/:id) resolves
+// through its OWN `put` slot — the writeResponseSpecFor
+// precedent (api/api.ts), narrowed to the one verb this
+// function ever sees.
 function documentSeedResponse(
     inv: MockDataInvocation,
     routeSegments: readonly string[],

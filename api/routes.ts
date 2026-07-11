@@ -82,7 +82,6 @@ import {
     validateRecordWriteBody,
     validateRoleGrantEntity,
     validateStateBody,
-    validateStateFieldValueEntity,
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
     validateWorkOrderDocumentBody,
@@ -2895,23 +2894,6 @@ export const WRITE_RESPONSE_SPECS:
         successBody: (params, body) => ({
             id: param(params, 0),
             ...validateIdentityProviderEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
-    },
-    // SEED-FORMATION CONSTRAINT (Phase 15 Task 7 / finding 7):
-    // the leaf write routes RETIRE below, but this entry
-    // SURVIVES — formSeedPair re-forms the 7 mock
-    // state_field_values pairs at
-    // states/:id/field-values/:fvid on every reseed
-    // (EXPECTED_PAIR_COUNT 1514 absolute). Live product
-    // writes ride the transition fold only; address-
-    // formation machinery must stay for seed fidelity.
-    'states/:id/field-values/:fvid': {
-        status: 200,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateStateFieldValueEntity(
                 withoutId(body ?? {}),
             ),
         }),
