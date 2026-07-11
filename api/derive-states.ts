@@ -592,6 +592,7 @@ function bodyNamesStateEvent(
     if (body['claimEventId'] === eventId) return true;
     if (body['expireEventId'] === eventId) return true;
     if (body['transitionEventId'] === eventId) return true;
+    if (body['releaseEventId'] === eventId) return true;
     if (body['grantEventId'] === eventId) return true;
     if (body['acceptEventId'] === eventId) return true;
     if (body['declineEventId'] === eventId) return true;
@@ -706,7 +707,9 @@ async function organizationHasOpBornEvent(
         workOrderResponses.map((r) => r.uri_id),
     );
     for (const workOrderId of workOrderIds) {
-        for (const sub of ['claim', 'transition'] as const) {
+        for (const sub of [
+            'claim', 'transition', 'release',
+        ] as const) {
             const prefix = canonicalUriPrefix(
                 organization,
                 '/work-orders/' + workOrderId
@@ -958,13 +961,13 @@ export async function stateEventVisibilityFor(
 const WORK_ORDERS_COLLECTION_PATTERN =
     /^\/organizations\/[^/]+\/work-orders\/$/;
 
-// The claim/transition sub-resource addresses: UNLIKE the
-// collection prefix above, the work-order id rides the PREFIX
-// itself here (routes.ts: 'work-orders/:id/claim' /
-// 'work-orders/:id/transition'), so each distinct match names ONE
-// work order directly — captured, the organization segment is not
-// (a work-order id is globally unique, so it is never needed to
-// disambiguate).
+// The claim/transition/release sub-resource addresses: UNLIKE
+// the collection prefix above, the work-order id rides the
+// PREFIX itself here (routes.ts: 'work-orders/:id/claim' /
+// 'work-orders/:id/transition' / 'work-orders/:id/release'), so
+// each distinct match names ONE work order directly —
+// captured, the organization segment is not (a work-order id
+// is globally unique, so it is never needed to disambiguate).
 const WORK_ORDER_CLAIM_PATTERN =
     /^\/organizations\/[^/]+\/work-orders\/([^/]+)\/claim\/$/;
 // Exported (Phase 14 Task 6): api/derive-state-field-values.ts
@@ -972,6 +975,8 @@ const WORK_ORDER_CLAIM_PATTERN =
 // fieldValues fold, without re-deriving the address pattern.
 export const WORK_ORDER_TRANSITION_PATTERN =
     /^\/organizations\/[^/]+\/work-orders\/([^/]+)\/transition\/$/;
+const WORK_ORDER_RELEASE_PATTERN =
+    /^\/organizations\/[^/]+\/work-orders\/([^/]+)\/release\/$/;
 
 // One decoded 2xx POST pair — an OPERATION address (create/claim/
 // transition are POST-only), the documentPairsAt (derive-
@@ -1249,23 +1254,65 @@ function applyTransitionPair(
     }
 }
 
+// Replays postWorkOrderReleaseOp's own decision from the pair
+// body: a live unexpired claim as of releaseAt → the
+// claim_released event; otherwise zero events (the gate's
+// idempotent no-op — its pair still exists, and derives
+// nothing). Deciding here, not at the gate, keeps gate and
+// derive from ever disagreeing about liveness.
+function applyReleasePair(
+    replayed: StateEntity[],
+    entityPairs: readonly DocumentPair[],
+    statesAddressEvents: readonly StateEntity[],
+    release: OperationPair,
+    workOrderId: Id,
+): void {
+    const releaseEventId = pickString(
+        release.body, 'releaseEventId',
+    );
+    const releaseAt = pickString(release.body, 'releaseAt');
+    const lockTimeout = lockTimeoutAsOf(
+        entityPairs, release.at,
+    );
+    const prior = latestClaimEvent(
+        priorClaimCandidates(
+            replayed, statesAddressEvents, release,
+        ),
+        workOrderId,
+    );
+    const priorLive = prior !== null
+        && prior.state === 'claimed'
+        && !isExpiredAsOf(releaseAt, prior.at, lockTimeout);
+    if (!priorLive) return;
+    replayed.push({
+        id: releaseEventId,
+        entity_id: workOrderId,
+        state: 'claim_released',
+        member_id: release.requesterIdentityId,
+        at: releaseAt,
+    });
+}
+
 type WorkOrderAction =
     | { readonly kind: 'claim'; readonly pair: OperationPair }
+    | { readonly kind: 'release'; readonly pair: OperationPair }
     | { readonly kind: 'transition'; readonly pair: OperationPair };
 
 // One work order's full replay: its births (EDGE 1 — zero or
 // more three-slot arrays, one per create pair found), then its
-// claim/transition actions applied in (at, id) order so each
-// claim's prior-claim lookup only ever sees chronologically
-// earlier events. `statesAddressEvents` is this SAME work
-// order's own states/:id rows (gate 5a) — threaded through so
-// applyClaimPair's prior-claim decision can see a standalone
-// release, exactly as the live route's own full-log read does.
+// claim/release/transition actions applied in (at, id) order so
+// each claim's prior-claim lookup only ever sees
+// chronologically earlier events. `statesAddressEvents` is this
+// SAME work order's own states/:id rows (gate 5a) — threaded
+// through so applyClaimPair's prior-claim decision can see a
+// standalone release, exactly as the live route's own full-log
+// read does.
 function replayWorkOrderOperations(
     createPairs: readonly OperationPair[],
     entityPairs: readonly DocumentPair[],
     statesAddressEvents: readonly StateEntity[],
     claimPairs: readonly OperationPair[],
+    releasePairs: readonly OperationPair[],
     transitionPairs: readonly OperationPair[],
     workOrderId: Id,
 ): StateEntity[] {
@@ -1292,6 +1339,9 @@ function replayWorkOrderOperations(
         ...claimPairs.map((pair) => (
             { kind: 'claim' as const, pair }
         )),
+        ...releasePairs.map((pair) => (
+            { kind: 'release' as const, pair }
+        )),
         ...transitionPairs.map((pair) => (
             { kind: 'transition' as const, pair }
         )),
@@ -1300,6 +1350,11 @@ function replayWorkOrderOperations(
     for (const action of actions) {
         if (action.kind === 'claim') {
             applyClaimPair(
+                events, entityPairs, statesAddressEvents,
+                action.pair, workOrderId,
+            );
+        } else if (action.kind === 'release') {
+            applyReleasePair(
                 events, entityPairs, statesAddressEvents,
                 action.pair, workOrderId,
             );
@@ -1372,6 +1427,8 @@ export async function deriveWorkOrderLifecycle(
             );
 
             const claimPrefixByWorkOrder = new Map<Id, string>();
+            const releasePrefixByWorkOrder =
+                new Map<Id, string>();
             const transitionPrefixByWorkOrder =
                 new Map<Id, string>();
             for (const request of requests) {
@@ -1381,6 +1438,15 @@ export async function deriveWorkOrderLifecycle(
                 if (claimMatch !== null) {
                     claimPrefixByWorkOrder.set(
                         claimMatch[1]!, request.uri_prefix,
+                    );
+                }
+                const releaseMatch =
+                    WORK_ORDER_RELEASE_PATTERN.exec(
+                        request.uri_prefix,
+                    );
+                if (releaseMatch !== null) {
+                    releasePrefixByWorkOrder.set(
+                        releaseMatch[1]!, request.uri_prefix,
                     );
                 }
                 const transitionMatch =
@@ -1397,6 +1463,7 @@ export async function deriveWorkOrderLifecycle(
             const workOrderIds = new Set<Id>([
                 ...createPairsByWorkOrder.keys(),
                 ...claimPrefixByWorkOrder.keys(),
+                ...releasePrefixByWorkOrder.keys(),
                 ...transitionPrefixByWorkOrder.keys(),
             ]);
 
@@ -1404,12 +1471,19 @@ export async function deriveWorkOrderLifecycle(
             for (const workOrderId of workOrderIds) {
                 const claimPrefix =
                     claimPrefixByWorkOrder.get(workOrderId);
+                const releasePrefix =
+                    releasePrefixByWorkOrder.get(workOrderId);
                 const transitionPrefix =
                     transitionPrefixByWorkOrder.get(workOrderId);
                 const claimPairs = claimPrefix === undefined
                     ? []
                     : operationPairsAt(
                         requests, responses, claimPrefix,
+                    );
+                const releasePairs = releasePrefix === undefined
+                    ? []
+                    : operationPairsAt(
+                        requests, responses, releasePrefix,
                     );
                 const transitionPairs =
                     transitionPrefix === undefined
@@ -1422,6 +1496,7 @@ export async function deriveWorkOrderLifecycle(
                     entityPairsByWorkOrder.get(workOrderId) ?? [],
                     statesAddressByWorkOrder.get(workOrderId) ?? [],
                     claimPairs,
+                    releasePairs,
                     transitionPairs,
                     workOrderId,
                 ));
@@ -1515,6 +1590,23 @@ async function workOrderClaimSourcesFor(
         claimRequests, claimResponses, claimPrefix,
     );
 
+    const releasePrefix = canonicalUriPrefix(
+        organization,
+        '/work-orders/' + workOrderId + '/release/',
+    );
+    const [releaseRequests, releaseResponses] =
+        await Promise.all([
+            dbOrView.requests.getAllWhere(
+                'uri_prefix', releasePrefix,
+            ),
+            dbOrView.responses.getAllWhere(
+                'uri_prefix', releasePrefix,
+            ),
+        ]);
+    const releasePairs = operationPairsAt(
+        releaseRequests, releaseResponses, releasePrefix,
+    );
+
     const transitionPrefix = canonicalUriPrefix(
         organization,
         '/work-orders/' + workOrderId + '/transition/',
@@ -1547,7 +1639,8 @@ async function workOrderClaimSourcesFor(
     return {
         replayed: replayWorkOrderOperations(
             createPairs, entityPairs, statesAddressEvents,
-            claimPairs, transitionPairs, workOrderId,
+            claimPairs, releasePairs, transitionPairs,
+            workOrderId,
         ),
         statesAddressEvents,
     };

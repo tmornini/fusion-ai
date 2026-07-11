@@ -104,10 +104,8 @@ function freshReleaseBody(overrides?: {
 
 // POST work-orders/:id/release is a named unclaim op. Gate
 // only guards body validity (400) and work-order existence
-// (404); pair always appends; live-or-not is Task 10's
-// applyReleasePair at derive time. History assertions below
-// may FAIL until Task 10 lands the release derive leg —
-// status 204/400/404 and pair-write-coverage must PASS here.
+// (404); pair always appends; live-or-not is applyReleasePair
+// at derive time.
 
 test(
     'release of a live claim is 204 and the claim history'
@@ -118,28 +116,25 @@ test(
             db, 'work-orders/' + WO_ID + '/claim',
             freshClaimBody(), DEV_TOKEN,
         );
-        // FAILING-TEST-FIRST until Task 10 (applyReleasePair):
-        // after 204, claim history must show claim_released
-        // with id 'rel-ev-1', member_id 'current', and the
-        // caller-minted releaseAt:
-        //   const events = await claimEventsFor(db);
-        //   const released = events.find(
-        //       (ev) => ev.id === 'rel-ev-1',
-        //   );
-        //   assert.ok(released !== undefined);
-        //   assert.equal(released!.state, 'claim_released');
-        //   assert.equal(released!.member_id, 'current');
-        //   assert.equal(released!.at, releaseAt);
+        const releaseAt = nowUtc();
         const res = await handleRequest(db, req(
             'POST',
             '/work-orders/' + WO_ID + '/release',
             DEV_TOKEN,
             {
                 releaseEventId: 'rel-ev-1',
-                releaseAt: nowUtc(),
+                releaseAt,
             },
         ));
         assert.equal(res.status, 204);
+        const events = await claimEventsFor(db);
+        const released = events.find(
+            (ev) => ev.id === 'rel-ev-1',
+        );
+        assert.ok(released !== undefined);
+        assert.equal(released!.state, 'claim_released');
+        assert.equal(released!.member_id, 'current');
+        assert.equal(released!.at, releaseAt);
     },
 );
 
@@ -159,12 +154,8 @@ test(
             },
         ));
         assert.equal(res.status, 204);
-        // Task 10 pins the derive no-op: with no live claim
-        // the pair derives zero events, so history carries
-        // no event with id 'rel-ev-2'. Today (pre-Task 10)
-        // the same absence holds because release is not yet
-        // in the claim-history union — re-assert after Task
-        // 10 so a buggy always-emit release leg fails here.
+        // No live claim → pair derives zero events; history
+        // carries no event with id 'rel-ev-2'.
         const events = await claimEventsFor(db);
         assert.equal(
             events.filter(
@@ -185,27 +176,26 @@ test(
             db, 'work-orders/' + WO_ID + '/claim',
             freshClaimBody(), await devToken('other'),
         );
-        // FAILING-TEST-FIRST until Task 10 (applyReleasePair):
-        // claim_released authored by the releasing actor
-        // (current), not the prior claimant (other):
-        //   const events = await claimEventsFor(db);
-        //   const released = events.find(
-        //       (ev) => ev.id === releaseEventId,
-        //   );
-        //   assert.ok(released !== undefined);
-        //   assert.equal(released!.state, 'claim_released');
-        //   assert.equal(released!.member_id, 'current');
+        const releaseEventId = generateCryptoSafeBase62();
         const res = await handleRequest(db, req(
             'POST',
             '/work-orders/' + WO_ID + '/release',
             DEV_TOKEN,
             {
-                releaseEventId:
-                    generateCryptoSafeBase62(),
+                releaseEventId,
                 releaseAt: nowUtc(),
             },
         ));
         assert.equal(res.status, 204);
+        // claim_released authored by the releasing actor
+        // (current), not the prior claimant (other).
+        const events = await claimEventsFor(db);
+        const released = events.find(
+            (ev) => ev.id === releaseEventId,
+        );
+        assert.ok(released !== undefined);
+        assert.equal(released!.state, 'claim_released');
+        assert.equal(released!.member_id, 'current');
     },
 );
 

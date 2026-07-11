@@ -324,6 +324,100 @@ test('a claim, then a claim past lockTimeout supersedes with'
     );
 });
 
+// -- 3b. claim → release → reclaim; release with no live claim --
+
+test('claim → release → reclaim derives claimed,'
++ ' claim_released, claimed; a release with no live claim'
++ ' derives zero events', async () => {
+    const db = await seed();
+    const token = await organizationToken('adminA', 'A');
+    const workOrderId = 'wo-lifecycle-release-1';
+
+    const put = await handleRequest(db, req(
+        'PUT', '/work-orders/' + workOrderId, token,
+        {
+            display_id: 'releasable',
+            flow_graph: workOrderFlowGraph(8 * 60 * 60),
+            position: 1,
+        },
+    ));
+    assert.equal(put.status, 200);
+
+    // Release with no live claim — pair appends, derives zero.
+    const bareReleaseId = workOrderId + '-rel-bare';
+    const bareRelease = await handleRequest(db, req(
+        'POST',
+        '/work-orders/' + workOrderId + '/release',
+        token, {
+            releaseEventId: bareReleaseId,
+            releaseAt: nowUtc(),
+        },
+    ));
+    assert.equal(bareRelease.status, 204);
+    assert.deepEqual(
+        forWorkOrder(
+            await deriveWorkOrderLifecycle(db), workOrderId,
+        ),
+        [],
+    );
+
+    const claim1At = nowUtc();
+    const claim1 = await handleRequest(db, req(
+        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        {
+            claimEventId: workOrderId + '-ce1',
+            claimAt: claim1At,
+            expireEventId: workOrderId + '-ee1',
+            expireAt: claim1At,
+        },
+    ));
+    assert.equal(claim1.status, 204);
+
+    const releaseEventId = workOrderId + '-rel1';
+    const releaseAt = nowUtc();
+    const release = await handleRequest(db, req(
+        'POST',
+        '/work-orders/' + workOrderId + '/release',
+        token, {
+            releaseEventId,
+            releaseAt,
+        },
+    ));
+    assert.equal(release.status, 204);
+
+    const claim2At = nowUtc();
+    const claim2 = await handleRequest(db, req(
+        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        {
+            claimEventId: workOrderId + '-ce2',
+            claimAt: claim2At,
+            expireEventId: workOrderId + '-ee2',
+            expireAt: claim2At,
+        },
+    ));
+    assert.equal(claim2.status, 204);
+
+    const derived = forWorkOrder(
+        await deriveWorkOrderLifecycle(db), workOrderId,
+    );
+    assert.deepEqual(
+        derived.map((row) => row.state),
+        ['claimed', 'claim_released', 'claimed'],
+    );
+    assert.deepEqual(
+        derived.map((row) => row.id),
+        [
+            workOrderId + '-ce1',
+            releaseEventId,
+            workOrderId + '-ce2',
+        ],
+    );
+    assert.ok(
+        !derived.some((row) => row.id === bareReleaseId),
+        'no-live-claim release must derive zero events',
+    );
+});
+
 // -- 4. a transition, then a transition with release --------------
 
 test('a transition, then a transition with release ends the'
