@@ -3660,11 +3660,9 @@ export const routes: Route[] = [
     // EVENT-APPEND: no head-read, no Supersedes. Verbs stay
     // {get, put}. GET is FLIPPED (Phase 10 Task 8): derived via
     // deriveRoleGrant, then fenced the SAME way the collection
-    // above is — a foreign-org grant 404s BYTE-IDENTICALLY to a
-    // genuinely absent one (EntityNotFoundError('role_grants',
-    // id), the SAME table/id OrganizationScopedEntityStore#getById
-    // throws — Step 0 confirmed this exact byte shape before the
-    // flip).
+    // above is — a foreign-org grant 403s
+    // (ForeignOrganizationError); a genuinely absent one 404s
+    // via deriveRoleGrant's EntityNotFoundError.
     route('role-grants/:id', {
         get: async (db, p, _actor, organization) => {
             const organizationId = requireOrganization(

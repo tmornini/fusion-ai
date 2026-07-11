@@ -555,13 +555,12 @@ export async function handleRequest(
             && matched.delete !== undefined);
 
     try {
-        // Phase Final Task 1(e): pre-write ownership gate for
-        // the 9 org-scoped families' existing-id PUT/DELETE.
-        // Pair-plane owner-null → genesis proceeds; foreign →
-        // EntityNotFoundError (today's #assertMine 404 bytes).
-        // Runs BEFORE formWritePair so a forged foreign id
-        // never pays crypto or stores a pair. Row-plane
-        // #assertMine still dual-runs until Stage A strips.
+        // Pre-write ownership gate for the 9 org-scoped
+        // families' existing-id PUT/DELETE. Pair-plane
+        // owner-null → genesis proceeds; foreign →
+        // ForeignOrganizationError (HTTP 403). Runs BEFORE
+        // formWritePair so a forged foreign id never pays
+        // crypto or stores a pair.
         if (
             isWrite
             && hasWriteHandler
