@@ -682,6 +682,8 @@ export class HumanMember {
     readonly #title: string;
     readonly #department: string;
     readonly #state: MemberState;
+    readonly #stateAt: string;
+    readonly #stateEventId: string;
     readonly #strengths: string;
     readonly #teamDimensions: string;
 
@@ -689,14 +691,17 @@ export class HumanMember {
         parent: MemberEntity,
         detail: HumanMemberEntity,
         pii: MemberPii,
-        state: MemberState,
+        state: MemberStateDetail,
     ) {
         this.#id = parent.id;
         this.#pii = pii;
         this.#title = detail.title;
         this.#department =
             detail.department;
-        this.#state = state;
+        this.#state = state.state;
+        this.#stateAt = state.stateAt;
+        this.#stateEventId =
+            state.stateEventId;
         this.#strengths =
             detail.strengths;
         this.#teamDimensions =
@@ -741,6 +746,14 @@ export class HumanMember {
 
     stateValue(): MemberState {
         return this.#state;
+    }
+
+    stateAtValue(): string {
+        return this.#stateAt;
+    }
+
+    stateEventIdValue(): string {
+        return this.#stateEventId;
     }
 
     parsedStrengths(): string[] {
@@ -797,11 +810,13 @@ export class AIMember {
     readonly #skillFocus: string;
     readonly #model: ModelId;
     readonly #state: MemberState;
+    readonly #stateAt: string;
+    readonly #stateEventId: string;
 
     constructor(
         parent: MemberEntity,
         detail: AIMemberEntity,
-        state: MemberState,
+        state: MemberStateDetail,
     ) {
         this.#id = parent.id;
         this.#name = detail.name;
@@ -810,7 +825,10 @@ export class AIMember {
         this.#skillFocus =
             detail.skill_focus;
         this.#model = detail.model;
-        this.#state = state;
+        this.#state = state.state;
+        this.#stateAt = state.stateAt;
+        this.#stateEventId =
+            state.stateEventId;
     }
 
     idForLink(): string {
@@ -851,6 +869,14 @@ export class AIMember {
 
     stateValue(): MemberState {
         return this.#state;
+    }
+
+    stateAtValue(): string {
+        return this.#stateAt;
+    }
+
+    stateEventIdValue(): string {
+        return this.#stateEventId;
     }
 
     matchesSearch(term: string): boolean {
@@ -1383,6 +1409,18 @@ export interface ProjectFlowEntity {
 // this shape.
 export interface IdeaStateDetail {
     readonly state: IdeaState;
+    readonly stateAt: string;
+    readonly stateEventId: string;
+}
+
+// The lifecycle trio Decision 7 folds into the member
+// document: current state plus its creator-minted `at` and
+// the (transitional — retires with the states log) event id.
+// A bare MemberState alone no longer carries enough to
+// round-trip a document PUT, so every reader that feeds a
+// HumanMember / AIMember gains this shape.
+export interface MemberStateDetail {
+    readonly state: MemberState;
     readonly stateAt: string;
     readonly stateEventId: string;
 }

@@ -10,7 +10,7 @@ import {
     getIdeaStates,
     getProjectStates,
     getRecordStateDetails,
-    getMemberStates,
+    getMemberStateDetails,
 } from '../web-app/app/adapters/state-events.ts';
 import {
     seedAIMember,
@@ -182,7 +182,7 @@ test('getRecordStateDetails excludes a same-valued idea',
         );
     });
 
-test('getMemberStates spans kinds and excludes an idea',
+test('getMemberStateDetails spans kinds and excludes an idea',
     async () => {
         const db = new MemoryDbAdapter();
         await seedAdminSchema(db);
@@ -193,9 +193,9 @@ test('getMemberStates spans kinds and excludes an idea',
             ctx, 'ev-i1', 'i1', 'active',
             '2026-01-01T00:00:00.000000Z',
         );
-        const states = await getMemberStates(ctx);
-        assert.equal(states.get('wh'), 'active');
-        assert.equal(states.get('wa'), 'active');
+        const states = await getMemberStateDetails(ctx);
+        assert.equal(states.get('wh')?.state, 'active');
+        assert.equal(states.get('wa')?.state, 'active');
         assert.ok(
             !states.has('i1'),
             'idea must not leak into member states',

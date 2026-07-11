@@ -3,7 +3,8 @@ import type {
     ObjectiveEntity, ObjectiveStateDetail,
     ProjectEntity, ProjectState, ProjectStateDetail,
     RecordEntity, RecordStateDetail,
-    StateEntity, MemberEntity, MemberState,
+    StateEntity, MemberEntity,
+    MemberStateDetail,
 } from '../../../api/types.ts';
 import {
     assertIdeaState,
@@ -517,19 +518,20 @@ export async function getRecordStateDetails(
     return out;
 }
 
-// Read the current state for one member from the
-// states log. Returns the validated MemberState.
-// Throws when no event has been recorded — every
-// member created through the supported paths gets
-// an initial state event, so absence is a bug,
-// not a missing default. The member id is unique
-// across the human and AI tables — both produce
-// base62 ids from the same generator — so this
-// reader serves both kinds without discrimination.
-export async function getMemberState(
+// Single-member state read, widened to carry the STORED
+// head event's `at`/`id` alongside the state — the trio
+// Decision 7 folds into the member document (state_at,
+// state_event_id). Throws when no event has been recorded
+// — every member created through the supported paths gets
+// an initial state event, so absence is a bug, not a
+// missing default. The member id is unique across the
+// human and AI tables — both produce base62 ids from the
+// same generator — so this reader serves both kinds
+// without discrimination.
+export async function getMemberStateDetail(
     ctx: RequestContext,
     memberId: Id,
-): Promise<MemberState> {
+): Promise<MemberStateDetail> {
     const events = await ctx.GET<StateEntity[]>(
         `entity-states/${memberId}/history`,
     );
@@ -540,21 +542,39 @@ export async function getMemberState(
             'no state event for member ' + memberId,
         );
     }
-    return assertMemberState(
-        latest.state, 'member ' + memberId,
-    );
+    return {
+        state: assertMemberState(
+            latest.state, 'member ' + memberId,
+        ),
+        stateAt: latest.at,
+        stateEventId: latest.id,
+    };
 }
 
-// Bulk variant for the human/ai/system member maps, which
-// call this — so it reads the parent members table
+// Bulk sibling of getMemberStateDetail, widened the same
+// way. Consumed by the human/ai/system member maps so a
+// plain detail edit can echo each row's trio without
+// minting a fresh event. Reads the parent members table
 // directly (covering all three kinds) to avoid recursing.
-export async function getMemberStates(
+export async function getMemberStateDetails(
     ctx: RequestContext,
-): Promise<Map<Id, MemberState>> {
+): Promise<Map<Id, MemberStateDetail>> {
     const [events, rows] = await Promise.all([
         ctx.GET<StateEntity[]>('states'),
         ctx.GET<MemberEntity[]>('members'),
     ]);
     const ids = new Set<Id>(rows.map(r => r.id));
-    return latestStatesForIds<MemberState>(events, ids);
+    const inScope = events.filter(ev => ids.has(ev.entity_id));
+    const latest = latestByKey(inScope, ev => ev.entity_id);
+    const out = new Map<Id, MemberStateDetail>();
+    for (const [id, ev] of latest) {
+        out.set(id, {
+            state: assertMemberState(
+                ev.state, 'member ' + id,
+            ),
+            stateAt: ev.at,
+            stateEventId: ev.id,
+        });
+    }
+    return out;
 }
