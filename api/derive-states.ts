@@ -1,4 +1,8 @@
 import type { DbAdapter } from './db.ts';
+import {
+    EntityNotFoundError,
+    ForeignOrganizationError,
+} from './db.ts';
 import type {
     Id, RequestEntity, ResponseEntity, StateEntity,
     WorkOrderEntity,
@@ -442,6 +446,28 @@ export async function resolveGlobalOwner(
     return resolveOwningOrganization(
         db, entityId, boundOrganization,
     );
+}
+
+// Miss-path 403-vs-404 helper for org-scoped reads. Probe runs
+// ONLY on the org-scoped miss/deny path (never the happy path).
+// owner-null → EntityNotFoundError (404); foreign →
+// ForeignOrganizationError (403). probeId defaults to id; pass
+// a parent id when the miss is on a nested child (e.g. flow
+// records probe the parent flow).
+export async function missedReadError(
+    db: DbAdapter,
+    id: Id,
+    organization: Id,
+    table: string,
+    probeId: Id = id,
+): Promise<EntityNotFoundError | ForeignOrganizationError> {
+    const owner = await resolveGlobalOwner(
+        db, probeId, organization,
+    );
+    if (owner !== null && owner !== organization) {
+        return new ForeignOrganizationError(table, id);
+    }
+    return new EntityNotFoundError(table, id);
 }
 
 // Keep rows whose resolved owner is boundOrganization or null —
