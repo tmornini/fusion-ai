@@ -38,6 +38,7 @@ import { getOrganizations } from './organizations.ts';
 import {
     getIdentityDefaultOrganization,
 } from './identity-default-organization.ts';
+import { log } from '../logger.ts';
 import {
     resolveActiveOrganization,
     postOrganizationSessionExchange,
@@ -238,8 +239,13 @@ async function recoverSession(
     let creds: SessionCredentials | null;
     try {
         creds = getSessionCredentials();
-    } catch {
+    } catch (err) {
         // a corrupt blob is unrecoverable — scrub and bounce
+        log.warn(
+            'corrupt session credential',
+            'shared',
+            err,
+        );
         deleteSessionCredentials();
         redirectToLogin();
         return null;
