@@ -282,7 +282,10 @@ export const TABLE_NAMES = [
 // TABLE_NAMES (or a family's derivation shape) changes in a
 // way that would strand an older export. Phase 13's TABLE_NAMES
 // shrink (identity_tokens + authorization_codes) bumped 1→2;
-// Phase Final Stage B's doomed-table deletions bump 2→3.
+// Phase Final Stage B's doomed-table deletions bump 2→3;
+// states-address retirement bumps 3→4 (pre-retirement v3
+// exports still carry states/:id pairs no derive source
+// reads — blanket version reject).
 //
 // THE ASYMMETRY: this closes only "a new build imports an old
 // export." A new build's OWN marked export is silently accepted
@@ -299,7 +302,7 @@ export const TABLE_NAMES = [
 // tables' keys. Intra-phase exports are NOT a supported
 // contract — do not export/import across deletion commits
 // except in tests that control both ends.
-export const SNAPSHOT_SCHEMA_VERSION = 3;
+export const SNAPSHOT_SCHEMA_VERSION = 4;
 export const SNAPSHOT_SCHEMA_VERSION_KEY = '__schema_version__';
 
 // A secondary index is either a plain column name (the
