@@ -515,19 +515,20 @@ const MEMBERSHIPS_WIRING: DocumentFamilyWiring = {
     entityOf: membershipDocumentEntityOf,
 };
 // The wire body carries the member's own field ({type}) plus
-// the lifecycle trio — entityOf spreads the head body for now
-// (derive-members.ts's memberParentOf picks type alone for the
-// live join view; Task 6+ may thin this). `_organization` stays
-// unused: the members directory is GLOBAL plane (family-
-// registry.ts: organizationNested: false) — the FIRST family on
-// it — so there is no fence value to stamp at all.
+// the lifecycle trio — entityOf picks type alone, matching
+// derive-members.ts's memberParentOf and MemberEntity (the
+// trio is lifecycle history, not the directory row). Same
+// strip posture as objectiveDocumentEntityOf. `_organization`
+// stays unused: the members directory is GLOBAL plane
+// (family-registry.ts: organizationNested: false) — the FIRST
+// family on it — so there is no fence value to stamp at all.
 function memberDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
 ): unknown {
     return {
         id: document.uriId,
-        ...document.body,
+        type: pickString(document.body, 'type'),
     };
 }
 // The members wiring row — the ninth family, a 'trio' one

@@ -913,9 +913,21 @@ test('live-write chain: create person identity + pii (bundle 2)'
     // Step 3: create a human member (bundle 4) — its own
     // derived identity appears too.
     const humanId = 'chain-human-1';
+    const humanGenesisAt = nowUtc();
+    const humanGenesisEventId = humanId + '-genesis';
     const humanCreated = await handleRequest(db, req(
         'POST', '/human-members', adminToken,
-        humanCreateBody(humanId),
+        {
+            id: humanId,
+            detail: {
+                title: 't', department: 'd',
+                strengths: jsonArrayField([]),
+                team_dimensions: jsonObjectField({}),
+            },
+            initialState: 'active',
+            initialStateEventId: humanGenesisEventId,
+            initialStateAt: humanGenesisAt,
+        },
     ));
     assert.equal(humanCreated.status, 204);
     assert.deepEqual(
@@ -925,7 +937,8 @@ test('live-write chain: create person identity + pii (bundle 2)'
         { id: humanId, kind: 'person' },
     );
 
-    // Step 4: composed edit — identity document stable.
+    // Step 4: composed edit — identity document stable; edit
+    // echoes the create trio so the members/:id document folds.
     const humanEdited = await handleRequest(db, req(
         'POST', '/human-members/' + humanId, adminToken,
         {
@@ -934,6 +947,9 @@ test('live-write chain: create person identity + pii (bundle 2)'
                 strengths: jsonArrayField([]),
                 team_dimensions: jsonObjectField({}),
             },
+            state: 'active',
+            stateAt: humanGenesisAt,
+            stateEventId: humanGenesisEventId,
         },
     ));
     assert.equal(humanEdited.status, 204);

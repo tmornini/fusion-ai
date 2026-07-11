@@ -91,18 +91,18 @@
 //
 // Phase 11 Task 3 closes the historical-trace carve-out itself
 // (the work-order deferral's last piece, named above): every
-// trace event (211 hand-authored + 649 generated = 860), every
-// state_field_value (7), and the system member's own genesis
-// event (2 — one here via memberStateEvents, one in
-// formBootstrapMessagePair's own mirror below) now ALSO forms
-// its own message pair, through the SAME formSeedPair pipeline
-// every family above already rides. Path A: the states /
-// state_field_values ROWS themselves stay the SAME direct writes
-// mock-data.ts already made — untouched, since a states-
-// fingerprint re-pin would be a phase abort, never a fix — only
-// requests/responses gain the beside-it pair. No carve-out
-// remains: every seed row this file's pass 1 can see now forms
-// one.
+// trace event (211 hand-authored + 649 generated = 860) and
+// every state_field_value (7) now ALSO forms its own message
+// pair, through the SAME formSeedPair pipeline every family
+// above already rides. Path A: the states / state_field_values
+// ROWS themselves stay the SAME direct writes mock-data.ts
+// already made — untouched, since a states-fingerprint re-pin
+// would be a phase abort, never a fix — only requests/responses
+// gain the beside-it pair. The system member's genesis folds
+// into its members/:id document trio (states-address
+// retirement Task 8) — no bare states/:id pair for that event.
+// No carve-out remains: every seed row this file's pass 1 can
+// see now forms one.
 //
 // Phase 12 Task 3 onboards a NEW family — organizations, the
 // THIRTEENTH and last unflipped in-scope one
@@ -478,26 +478,6 @@ export const recordStateEvents: StateEntity[] = [
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
         at: wfTimestamp,
-    },
-];
-
-// The system member's own initial state event. Every OTHER
-// seeded member — human or AI — gets its own initial event
-// posted by its own create op (postHumanMemberCreationOp /
-// postAiMemberCreationOp) below; the system actor has no create
-// op, so this is its one manually-authored genesis event on the
-// states log. Phase 11 Task 3: this is the mock-data seed's OWN
-// half of the "2 system-member genesis events" the historical-
-// trace carve-out closes — bootstrap's own mirror event
-// ('bootstrap-system-active') is a SEPARATE seed path, formed by
-// formBootstrapMessagePair below, never here.
-export const memberStateEvents: StateEntity[] = [
-    {
-        id: `seed-member-${SYSTEM_MEMBER_ID}-active`,
-        entity_id: SYSTEM_MEMBER_ID,
-        state: 'active',
-        member_id: SYSTEM_MEMBER_ID,
-        at: MOCK_SEED_TIMESTAMP,
     },
 ];
 
@@ -1170,9 +1150,10 @@ export const bootstrapMembershipId = 'bootstrap-membership-current';
 export const bootstrapRoleGrantId = 'bootstrap-role-current-admin';
 
 // Bootstrap's own system-member genesis event id — the SAME
-// bootstrapMembershipId precedent above, for the states/:id event
-// Phase 11 Task 3 gate-seeds (postBootstrapIn's own
-// adapter.states.postEvent call, mock-data.ts).
+// bootstrapMembershipId precedent above. States-address
+// retirement Task 8 folds this id onto the system member's
+// members/:id document trio (state_event_id); the bare
+// states/:id genesis pair is retired.
 export const bootstrapSystemStateEventId = 'bootstrap-system-active';
 
 // Bootstrap's own default-org event id — the SAME
@@ -1720,23 +1701,6 @@ export function buildMockDataInvocations():
             body: stateFieldValueSeedBody(fv),
         });
     }
-    // The mock-data seed's OWN half of the "2 system-member
-    // genesis events" this task closes (bootstrap's own mirror
-    // is a separate seed path, formed by formBootstrapMessagePair
-    // below): the system actor's 'active' event, self-authored.
-    // Organization undefined — the system member is the org-less
-    // global actor, the SAME choice its members/:id and
-    // identities/:id invocations above already make.
-    for (const event of memberStateEvents) {
-        invocations.push({
-            key: seedPairKey('states/:id', event.id),
-            routePattern: 'states/:id',
-            idParams: [event.id],
-            organization: undefined,
-            requesterIdentityId: event.member_id,
-            body: stateEventSeedBody(event),
-        });
-    }
     for (const m of aiMembers) {
         // Task 5: every AI member joins STARK_ORGANIZATION alone
         // (mock-data.ts's own AI-members loop) — ordered before
@@ -2258,15 +2222,11 @@ export async function formSeedCredentialPairs(
 // two raw writes. The credential pairs stay OUTSIDE this
 // function — seedHumanCredentials' own local pass-1/pass-2 split
 // (formSeedCredentialPairs) forms them, for both seed paths.
-// Phase 11 Task 3: ALSO forms bootstrap's OWN system-member
-// genesis event pair (bootstrapSystemStateEventId) — the SAME
-// carve-out closure the mock-data seed's own memberStateEvents
-// invocation closes above, mirrored here since this is a SEPARATE
-// seed path (postBootstrapIn's own adapter.states.postEvent call,
-// mock-data.ts). Its `at` is minted ONCE here (bootstrap has no
-// fixed seed timestamp) and returned alongside the pair so pass 2
-// writes this SAME value — never a second, independently-
-// timestamped nowUtc() call.
+// States-address retirement Task 8: system-member genesis
+// folds into the members/:id document trio — systemStateEventAt
+// is minted ONCE here (bootstrap has no fixed seed timestamp)
+// and rides state_at on that pair; pass 2 reuses the SAME value
+// so the body never drifts from what the pair was hashed from.
 export async function formBootstrapMessagePair(
     requestAt: string,
 ): Promise<{
@@ -2277,7 +2237,6 @@ export async function formBootstrapMessagePair(
     readonly piiPair: MessagePair;
     readonly systemIdentityPair: MessagePair;
     readonly roleGrantPair: MessagePair;
-    readonly systemStateEventPair: MessagePair;
     readonly systemStateEventAt: string;
     readonly defaultOrganizationPair: MessagePair;
     readonly organizationPair: MessagePair;
@@ -2346,6 +2305,9 @@ export async function formBootstrapMessagePair(
         },
         requestAt,
     );
+    // Task 8: system-member genesis rides the members/:id trio.
+    // Mint `at` once ABOVE the pair so pass 2 can echo it.
+    const systemStateEventAt = nowUtc();
     const systemMemberPair = await formSeedPair(
         {
             key: seedPairKey('members/:id', SYSTEM_MEMBER_ID),
@@ -2353,12 +2315,9 @@ export async function formBootstrapMessagePair(
             idParams: [SYSTEM_MEMBER_ID],
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
-            // Temporary trio thread (Task 5 compile); Task 8
-            // folds genesis onto this pair and retires the
-            // bare states/:id genesis pair below.
             body: memberDocumentBodyOf('system', {
                 state: 'active',
-                stateAt: requestAt,
+                stateAt: systemStateEventAt,
                 stateEventId: bootstrapSystemStateEventId,
             }),
         },
@@ -2406,30 +2365,6 @@ export async function formBootstrapMessagePair(
         },
         requestAt,
     );
-    // Task 3 (Phase 11): bootstrap's OWN system-member genesis
-    // event — the mock-data seed's own memberStateEvents
-    // precedent above, mirrored here for bootstrap's separate seed
-    // path. Organization undefined — the system member is the
-    // org-less global actor, the SAME choice its identity/role-
-    // grant pairs above already make.
-    const systemStateEventAt = nowUtc();
-    const systemStateEventPair = await formSeedPair(
-        {
-            key: seedPairKey(
-                'states/:id', bootstrapSystemStateEventId,
-            ),
-            routePattern: 'states/:id',
-            idParams: [bootstrapSystemStateEventId],
-            organization: undefined,
-            requesterIdentityId: SYSTEM_MEMBER_ID,
-            body: stateEventSeedBody({
-                entity_id: SYSTEM_MEMBER_ID,
-                state: 'active',
-                at: systemStateEventAt,
-            }),
-        },
-        requestAt,
-    );
     // Task 8 (Phase 11): bootstrap's own default-org event forms
     // its OWN pair too — the mock-data seed's own per-member
     // precedent above, mirrored here for bootstrap's lone
@@ -2468,7 +2403,6 @@ export async function formBootstrapMessagePair(
         piiPair,
         systemIdentityPair,
         roleGrantPair,
-        systemStateEventPair,
         systemStateEventAt,
         defaultOrganizationPair,
         organizationPair,

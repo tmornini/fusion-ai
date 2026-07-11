@@ -623,9 +623,15 @@ for (const {
         const headAfterFirst = await documentGetHandler(wiring)(
             db, [family + '-chain-1'], 'current', 'ignored',
         );
-        assert.deepEqual(headAfterFirst, {
-            id: family + '-chain-1', ...first,
-        });
+        // members entityOf strips the lifecycle trio (MemberEntity
+        // is id+type only); facet families surface the full body.
+        const expectedFirst = family === 'members'
+            ? {
+                id: family + '-chain-1',
+                type: first['type'],
+            }
+            : { id: family + '-chain-1', ...first };
+        assert.deepEqual(headAfterFirst, expectedFirst);
 
         const second = revise(first);
         const secondId = await putDocumentPair(
@@ -639,9 +645,13 @@ for (const {
         const headAfterSecond = await documentGetHandler(wiring)(
             db, [family + '-chain-1'], 'current', 'ignored',
         );
-        assert.deepEqual(headAfterSecond, {
-            id: family + '-chain-1', ...second,
-        });
+        const expectedSecond = family === 'members'
+            ? {
+                id: family + '-chain-1',
+                type: second['type'],
+            }
+            : { id: family + '-chain-1', ...second };
+        assert.deepEqual(headAfterSecond, expectedSecond);
     });
 
     test('a DELETE-head derives absent through the generic'

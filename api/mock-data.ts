@@ -83,7 +83,6 @@ import {
     projectStateEvents,
     flowStateEvents,
     recordStateEvents,
-    memberStateEvents,
     mockStateFieldValues,
     mockProjectFlows,
     mockFlowRecords,
@@ -110,6 +109,7 @@ import {
     membershipSeedBody,
     bootstrapMembershipId,
     bootstrapRoleGrantId,
+    bootstrapSystemStateEventId,
     humanMemberPiiSeedBody,
     bootstrapCurrentMemberPiiBody,
     roleGrantSeedBody,
@@ -498,14 +498,11 @@ async function postMockDataLoadIn(
         }),
     ]);
 
-    // The system member's initial state event. Every OTHER
-    // seeded member — human or AI — gets its own initial
-    // event posted by its create op (postHumanMemberCreationOp
-    // / postAiMemberCreationOp) below. The states log is the
-    // sole source of member state; the row carries no column.
-    // memberStateEvents is imported from seed-message-pairs.ts —
-    // pass 1 there needs the SAME array to form its own message
-    // pair before this transaction opens (Phase 11 Task 3).
+    // System-member genesis rides the members/:id document
+    // trio above (states-address retirement Task 8) — no bare
+    // states/:id append. Every OTHER seeded member — human or
+    // AI — gets its own initial event folded into its create
+    // op's document trio below.
 
     const ideas = buildIdeas();
 
@@ -781,12 +778,6 @@ async function postMockDataLoadIn(
         // writes ONLY requests/responses, so the row write itself
         // is byte-identical to before).
         ...mockStateEvents.map(r =>
-            appendMessagePair(
-                adapter,
-                requirePair(pairs, seedPairKey('states/:id', r.id)),
-            ),
-        ),
-        ...memberStateEvents.map(r =>
             appendMessagePair(
                 adapter,
                 requirePair(pairs, seedPairKey('states/:id', r.id)),
@@ -1115,14 +1106,15 @@ export async function postBootstrap(
     // closed the SAME way postMockDataLoad's own system-identity/
     // role-grant sites are. The credential pairs are NOT here —
     // seedHumanCredentials forms those itself, below, since their
-    // content is unknown until PBKDF2 resolves. Phase 11 Task 3:
-    // ALSO forms bootstrap's own system-member genesis-event pair
-    // — systemStateEventAt is minted ONCE inside
-    // formBootstrapMessagePair and reused verbatim by pass 2
-    // below, the SAME discipline currentMemberBody's own nowUtc()
-    // already follows. Phase 11 Task 8: ALSO forms bootstrap's own
-    // default-org event pair — the mock-data seed's own per-member
-    // precedent, mirrored here for bootstrap's lone identity.
+    // content is unknown until PBKDF2 resolves. States-address
+    // retirement Task 8: system-member genesis folds into the
+    // members/:id document trio — systemStateEventAt is minted
+    // ONCE inside formBootstrapMessagePair and reused verbatim
+    // by pass 2 below, the SAME discipline currentMemberBody's
+    // own nowUtc() already follows. Phase 11 Task 8: ALSO forms
+    // bootstrap's own default-org event pair — the mock-data
+    // seed's own per-member precedent, mirrored here for
+    // bootstrap's lone identity.
     const {
         body: currentMemberBody,
         pairs: currentMemberPairs,
@@ -1131,7 +1123,7 @@ export async function postBootstrap(
         piiPair,
         systemIdentityPair,
         roleGrantPair,
-        systemStateEventPair,
+        systemStateEventAt,
         defaultOrganizationPair,
         organizationPair,
     } = await formBootstrapMessagePair(nowUtc());
@@ -1147,7 +1139,7 @@ export async function postBootstrap(
             view, currentMemberBody, currentMemberPairs,
             membershipPair, systemMemberPair, piiPair,
             systemIdentityPair, roleGrantPair,
-            systemStateEventPair,
+            systemStateEventAt,
             defaultOrganizationPair, organizationPair,
         ),
     );
@@ -1180,7 +1172,7 @@ async function postBootstrapIn(
     piiPair: MessagePair,
     systemIdentityPair: MessagePair,
     roleGrantPair: MessagePair,
-    systemStateEventPair: MessagePair,
+    systemStateEventAt: string,
     defaultOrganizationPair: MessagePair,
     organizationPair: MessagePair,
 ): Promise<void> {
@@ -1191,19 +1183,18 @@ async function postBootstrapIn(
     // the correct pristine state; sample Records are demo
     // content loaded by postMockDataLoad, not bootstrap.
     await Promise.all([
-        // Task 5: the system member's own members/:id row closes
-        // the last raw members.put site bootstrap held — driven
-        // through postMemberDocumentOp, the SAME op
-        // postMockDataLoadIn's own system-member site now rides.
+        // Task 5/8: the system member's own members/:id row —
+        // genesis trio rides THIS pair (no bare states/:id
+        // append). Driven through postMemberDocumentOp, the
+        // SAME op postMockDataLoadIn's own system-member site
+        // rides. Body is byte-identical to pass 1's formation.
         postMemberDocumentOp(
             adapter,
             SYSTEM_MEMBER_ID,
-            // Temporary trio thread (Task 5 compile); Task 8
-            // folds genesis onto this pair.
             memberDocumentBodyOf('system', {
                 state: 'active',
-                stateAt: systemMemberPair.requestAt,
-                stateEventId: 'bootstrap-system-active',
+                stateAt: systemStateEventAt,
+                stateEventId: bootstrapSystemStateEventId,
             }),
             SYSTEM_MEMBER_ID,
             systemMemberPair,
@@ -1253,12 +1244,6 @@ async function postBootstrapIn(
             adapter, 'current', bootstrapCurrentMemberPiiBody(),
             SYSTEM_MEMBER_ID, piiPair,
         ),
-        // Phase 11 Task 3: bootstrap's own system-member genesis
-        // event forms its OWN pair too — systemStateEventAt is
-        // pass 1's frozen timestamp (see postBootstrap), never a
-        // second nowUtc() call, so it can never drift from what
-        // systemStateEventPair was hashed from.
-        appendMessagePair(adapter, systemStateEventPair),
         // Phase Final Task 2: organizations ROW half stripped
         // — pair-plane only, mirroring postMockDataLoadIn.
         appendMessagePair(adapter, organizationPair),

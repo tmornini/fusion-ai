@@ -125,13 +125,15 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 
 const MEMBERS_TEST_WIRING: DocumentFamilyWiring = {
     family: 'members',
-    lifecycle: 'stateless',
+    lifecycle: 'trio',
     notFoundTable: 'members',
     validateDocument: validateMemberDocumentBody,
     documentOp: postMemberDocumentOp,
+    // Mirror routes.ts memberDocumentEntityOf: type alone —
+    // the lifecycle trio is history, not the directory row.
     entityOf: (document, _organization) => ({
         id: document.uriId,
-        ...document.body,
+        type: document.body['type'],
     }),
 };
 
@@ -284,7 +286,11 @@ function aiMemberCreateBody(
     };
 }
 
-function aiMemberEditBody(name: string): Record<string, unknown> {
+function aiMemberEditBody(
+    name: string,
+    stateEventId: string,
+    stateAt: string,
+): Record<string, unknown> {
     return {
         detail: {
             name,
@@ -292,6 +298,9 @@ function aiMemberEditBody(name: string): Record<string, unknown> {
             skill_focus: 'sf2',
             model: 'mnte677fU2G1V2B9vJp9z7',
         },
+        state: 'active',
+        stateAt,
+        stateEventId,
     };
 }
 
@@ -331,13 +340,19 @@ function humanMemberCreateBody(
 // PII no longer rides the edit body (Phase 10 Task 2's intake
 // decomposition) — it changes ONLY via a separate PUT
 // identities/:id/pii, which this drift chain does not exercise.
-function humanMemberEditBody(): Record<string, unknown> {
+function humanMemberEditBody(
+    stateEventId: string,
+    stateAt: string,
+): Record<string, unknown> {
     return {
         detail: {
             title: 't2', department: 'd2',
             strengths: jsonArrayField([]),
             team_dimensions: jsonObjectField({}),
         },
+        state: 'active',
+        stateAt,
+        stateEventId,
     };
 }
 
@@ -634,10 +649,12 @@ async () => {
     // Step 1: create an AI member — bundle balance 3; the
     // derived parent + detail see it immediately.
     const beforeCreate = (await db.requests.getAll()).length;
+    const aiGenesisAt = nowUtc();
+    const aiGenesisEventId = aiId + '-genesis';
     const created = await handleRequest(db, req(
         'POST', '/ai-members', token,
         aiMemberCreateBody(
-            aiId, 'Chain AI', aiId + '-genesis', nowUtc(),
+            aiId, 'Chain AI', aiGenesisEventId, aiGenesisAt,
         ),
     ));
     assert.equal(created.status, 204);
@@ -653,10 +670,13 @@ async () => {
     // Phase Final Stage B: roster tables retired.
     // Phase Final Stage B: roster tables retired.
 
-    // Step 2: composed edit (POST /ai-members/:id).
+    // Step 2: composed edit (POST /ai-members/:id) — echoes
+    // the create trio so the members/:id document folds.
     const edited = await handleRequest(db, req(
         'POST', '/ai-members/' + aiId, token,
-        aiMemberEditBody('Chain AI Edited'),
+        aiMemberEditBody(
+            'Chain AI Edited', aiGenesisEventId, aiGenesisAt,
+        ),
     ));
     assert.equal(edited.status, 204);
     const derivedAiDetail2 = await derivedAiMember(
@@ -679,11 +699,13 @@ async () => {
     // Step 4: create a human member — bundle balance 4.
     const humanId = 'human-drift-chain-1';
     const beforeHumanCreate = (await db.requests.getAll()).length;
+    const humanGenesisAt = nowUtc();
+    const humanGenesisEventId = humanId + '-genesis';
     const humanCreated = await handleRequest(db, req(
         'POST', '/human-members', token,
         humanMemberCreateBody(
-            humanId, 'Chain Human', humanId + '-genesis',
-            nowUtc(),
+            humanId, 'Chain Human', humanGenesisEventId,
+            humanGenesisAt,
         ),
     ));
     assert.equal(humanCreated.status, 204);
@@ -699,10 +721,13 @@ async () => {
     assert.equal(derivedHumanDetail1.title, 't');
     // Phase Final Stage B: roster tables retired.
 
-    // Step 5: composed edit (POST /human-members/:id).
+    // Step 5: composed edit (POST /human-members/:id) — echoes
+    // the create trio so the members/:id document folds.
     const humanEdited = await handleRequest(db, req(
         'POST', '/human-members/' + humanId, token,
-        humanMemberEditBody(),
+        humanMemberEditBody(
+            humanGenesisEventId, humanGenesisAt,
+        ),
     ));
     assert.equal(humanEdited.status, 204);
     const derivedHumanDetail2 = await derivedHumanMember(

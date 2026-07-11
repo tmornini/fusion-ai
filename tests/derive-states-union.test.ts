@@ -596,23 +596,27 @@ test('deriveStates: a DIVERGENT cross-source id collision crashes'
     });
     await appendMessagePair(db, ideaPair);
 
+    // Member lifecycle derives from members/:id document trio
+    // (states-address retirement Task 6) — not the create-op
+    // body. Seed a members document carrying the SAME event id
+    // as the idea document above so the union collision fires.
     const aiPair = await formWritePair({
-        method: 'POST',
-        pathname: '/ai-members',
-        routePattern: 'ai-members',
-        routeSegments: ['ai-members'],
-        pathSegments: ['ai-members'],
+        method: 'PUT',
+        pathname: '/members/ai-collide',
+        routePattern: 'members/:id',
+        routeSegments: ['members', ':id'],
+        pathSegments: ['members', 'ai-collide'],
         headerFields: [],
         body: {
-            id: 'ai-collide',
-            initialStateEventId: collidingEventId,
-            initialState: 'archived',
-            initialStateAt: '2026-03-03T00:00:00.000001Z',
+            type: 'ai',
+            state: 'archived',
+            state_at: '2026-03-03T00:00:00.000001Z',
+            state_event_id: collidingEventId,
         },
         requesterIdentityId: 'adminA',
         requestAt: '2026-03-03T00:00:00.000001Z',
         organization: undefined,
-        responseStatus: 204,
+        responseStatus: 200,
         responseBody: undefined,
         headPairId: undefined,
     });
