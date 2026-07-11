@@ -261,6 +261,27 @@ NEW like any Commandment II finding.
 - Orchestrator bloat: after Phase 0 the orchestrator reads no
   repo source — it consumes JSON and writes one file.
 
+## Reconciliation (when more than one audit runs)
+
+Two audits of one HEAD are not merged by union, nor is either
+trusted wholesale — independent runs fail in opposite
+directions (one over-includes an unverified tail, the other
+over-refutes via contracts of record; each can miss a security
+class the other caught).
+
+Diff the two findings ledgers. For every delta — a site one
+audit CONFIRMED and the other REFUTED or missed — dispatch ONE
+adversarial adjudicator with a re-measurement mandate: read the
+cited lines THIS run, side with neither auditor, let the number
+rule (§ The Rule of Evidence). The reconciled ledger is the
+verified union: every finding either audit confirmed that
+survives adjudication, minus every one a re-measurement kills.
+
+Cheapest high-value pass available once two audits exist — it
+recovers the findings each run missed alone and catches the
+errors each made independently, including an audit that
+contradicts itself.
+
 ## Remediation (separately invoked)
 
 Report-only is the default; remediation is opt-in after the
