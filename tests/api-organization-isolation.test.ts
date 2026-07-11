@@ -1072,7 +1072,7 @@ async () => {
     assert.equal(asMember.status, 403);
 });
 
-test('organizations/:id 404s a non-member org', async () => {
+test('organizations/:id 403s a non-member org', async () => {
     const db = await deepDb();
     const mine = await handleRequest(db, req(
         'GET', '/organizations/A',
@@ -1080,13 +1080,32 @@ test('organizations/:id 404s a non-member org', async () => {
     assert.equal(mine.status, 200);
     // Phase Final Task 2: organizations ROW half stripped —
     // B still has a pair (seedOrganizationDocument), so
-    // derive finds it; the membership fence still 404s.
+    // derive finds it; the membership fence 403s.
     assert.equal(
         (await deriveOrganization(db, 'B')).id, 'B');
     const foreign = await handleRequest(db, req(
         'GET', '/organizations/B',
         await organizationToken('current', 'A')));
-    assert.equal(foreign.status, 404);
+    assert.equal(foreign.status, 403);
+    const body = await foreign.json() as { error: string };
+    assert.equal(
+        body.error,
+        'forbidden: organizations/B belongs to a different'
+        + ' organization',
+    );
+});
+
+test('organizations/:id 404s a genuinely absent org',
+async () => {
+    const db = await deepDb();
+    const res = await handleRequest(db, req(
+        'GET', '/organizations/no-such-org',
+        await organizationToken('current', 'A')));
+    assert.equal(res.status, 404);
+    const body = await res.json() as { error: string };
+    assert.equal(
+        body.error, 'Not found: /organizations/no-such-org',
+    );
 });
 
 // ---- Orphan visibility (null owner → visible to all orgs) ----

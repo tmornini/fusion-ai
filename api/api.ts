@@ -5,6 +5,7 @@ import type {
 import {
     EntityNotFoundError,
     ForeignOrganizationError,
+    foreignOrganizationMessage,
     MissingTableError,
     UniqueConstraintError,
 } from './db.ts';
@@ -41,7 +42,10 @@ import {
 import {
     identityTargetsFor,
 } from './notifications.ts';
-import { resolveOwningOrganization } from './derive-states.ts';
+import {
+    resolveOwningOrganization,
+    resolveGlobalOwner,
+} from './derive-states.ts';
 import {
     writeOwnershipFenceFor,
     assertWritableInOrganization,
@@ -370,14 +374,37 @@ export async function handleRequest(
                 );
             }
             // organizations/:id is global passthrough; fence
-            // READS to the caller's memberships so a non-member
-            // id 404s like any foreign row. PUT is not gated
+            // READS to the caller's memberships. A real org the
+            // caller is not a member of is 403 (honest); a
+            // genuinely absent id stays 404. PUT is not gated
             // here — a new org is created before its first
             // membership exists.
             if (method === 'GET'
                 && fencePattern === 'organizations/:id'
                 && !fenced.memberOrganizations
                     .has(param(fenceParams, 0))) {
+                const organizationId =
+                    param(fenceParams, 0);
+                // Orgs self-own (resolveGlobalOwner →
+                // resolveOwningOrganization returns the org
+                // id when the document exists).
+                const owner = await resolveGlobalOwner(
+                    adapter,
+                    organizationId,
+                    fenced.organization,
+                );
+                if (owner !== null) {
+                    return Response.json(
+                        {
+                            error:
+                                foreignOrganizationMessage(
+                                    'organizations',
+                                    organizationId,
+                                ),
+                        },
+                        { status: HTTP_FORBIDDEN },
+                    );
+                }
                 return Response.json(
                     { error: 'Not found: ' + pathname },
                     { status: HTTP_NOT_FOUND },
