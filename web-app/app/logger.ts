@@ -26,20 +26,49 @@ function shouldLog(level: Level): boolean {
     );
 }
 
-function formatPrefix(
+// RFC-3339 zulu at emission. Independent of api/types
+// nowUtc — that mint advances the message-plane total
+// order and must not be touched by UI logging.
+function logTimestamp(): string {
+    return new Date().toISOString();
+}
+
+// A plain object of structured fields (not Error, not
+// array). Merged into the log record so call sites can
+// pass { page, delayMs, ... } without concatenating
+// values into the message (Office of Structured
+// Observability).
+function isPlainFields(
+    value: unknown,
+): value is Record<string, unknown> {
+    return (
+        typeof value === 'object'
+        && value !== null
+        && !Array.isArray(value)
+        && !(value instanceof Error)
+    );
+}
+
+function buildFields(
     level: Level,
-    context?: string,
-    requestId?: string,
-): string {
-    const tag = context
-        ? `[fusion-ai:${context}]`
-        : '[fusion-ai]';
-    const reqTag = requestId
-        ? ` [req:${requestId.slice(0, 8)}]`
-        : '';
-    return `${tag}${reqTag} ${
-        level.toUpperCase()
-    }`;
+    context: string | undefined,
+    requestId: string | undefined,
+    extra: Record<string, unknown> | undefined,
+): Record<string, unknown> {
+    const fields: Record<string, unknown> = {
+        ts: logTimestamp(),
+        level,
+    };
+    if (context !== undefined) {
+        fields.context = context;
+    }
+    if (requestId !== undefined) {
+        fields.requestId = requestId;
+    }
+    if (extra !== undefined) {
+        Object.assign(fields, extra);
+    }
+    return fields;
 }
 
 type LogMethod = (
@@ -65,28 +94,34 @@ function makeLogMethod(
         ...data: unknown[]
     ): void {
         if (!shouldLog(level)) return;
-        const prefix = formatPrefix(
-            level, context, requestId,
+        let extra: Record<string, unknown> | undefined;
+        let rest = data;
+        if (isPlainFields(data[0])) {
+            extra = data[0];
+            rest = data.slice(1);
+        }
+        const fields = buildFields(
+            level, context, requestId, extra,
         );
         switch (level) {
             case 'debug':
                 console.debug(
-                    prefix, message, ...data,
+                    message, fields, ...rest,
                 );
                 break;
             case 'info':
                 console.info(
-                    prefix, message, ...data,
+                    message, fields, ...rest,
                 );
                 break;
             case 'warn':
                 console.warn(
-                    prefix, message, ...data,
+                    message, fields, ...rest,
                 );
                 break;
             case 'error':
                 console.error(
-                    prefix, message, ...data,
+                    message, fields, ...rest,
                 );
                 break;
         }
