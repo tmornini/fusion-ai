@@ -1,13 +1,7 @@
 import type { DbAdapter } from './db.ts';
 import { EntityNotFoundError } from './db.ts';
 import type { Id } from './types.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
-import { resolveOwningOrganization } from './derive-states.ts';
-import { HttpMessage } from '../shared/http-message/http-message.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
+import { resolveGlobalOwner } from './derive-states.ts';
 
 // Phase Final Task 1(e): the pre-write ownership gate that
 // preserves today's foreign-id 404 bytes once dual-write row
@@ -24,14 +18,6 @@ import {
 // writeOwnershipFenceFor; assertWritableInOrganization is the
 // single throw site). Cost class matches
 // resolveOwningOrganization (hit ~19µs / miss ~1.9ms).
-
-const ROLE_GRANTS_PREFIX =
-    canonicalUriPrefix(undefined, '/role-grants/');
-
-// Organization-nested document prefixes:
-// /organizations/{id}/...
-const ORGANIZATION_NESTED_PREFIX =
-    /^\/organizations\/([^/]+)\//;
 
 export interface WriteOwnershipFence {
     readonly table: string;
@@ -82,56 +68,13 @@ export function writeOwnershipFenceFor(
     return WRITE_OWNERSHIP_FENCE.get(routePattern);
 }
 
-function responseBodyOf(
-    message: string,
-): Record<string, unknown> {
-    const model = parseJson(message, defaultBodyRegistry());
-    const body = HttpMessage.fromModel(model).body();
-    return body.exists()
-        ? JSON.parse(body.toText()) as Record<string, unknown>
-        : {};
-}
-
-// Resolve the document's owning organization for a write fence.
-// Prefers a direct uri_id hit (covers memberships + record-
-// attributes, which resolveOwningOrganization's states.entity_id
-// alphabet does not list, and role-grants' flat prefix whose org
-// lives in the response body). Falls back to
-// resolveOwningOrganization for the nested document families
-// already in that alphabet (ideas/projects/flows/...).
-export async function resolveWriteOwner(
-    db: DbAdapter,
-    entityId: Id,
-    boundOrganization: Id,
-): Promise<Id | null> {
-    const hits = await db.responses.getAllWhere(
-        'uri_id', entityId,
-    );
-    for (const response of hits) {
-        const nested = ORGANIZATION_NESTED_PREFIX.exec(
-            response.uri_prefix,
-        );
-        if (nested !== null) return nested[1]!;
-        if (response.uri_prefix === ROLE_GRANTS_PREFIX) {
-            const body = responseBodyOf(response.message);
-            const organizationId = body['organization_id'];
-            if (typeof organizationId === 'string') {
-                return organizationId;
-            }
-        }
-    }
-    return resolveOwningOrganization(
-        db, entityId, boundOrganization,
-    );
-}
-
 export async function assertWritableInOrganization(
     db: DbAdapter,
     entityId: Id,
     organization: Id,
     table: string,
 ): Promise<void> {
-    const owner = await resolveWriteOwner(
+    const owner = await resolveGlobalOwner(
         db, entityId, organization,
     );
     if (owner !== null && owner !== organization) {

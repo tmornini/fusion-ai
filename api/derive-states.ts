@@ -385,6 +385,65 @@ export async function resolveOwningOrganization(
     return owner;
 }
 
+// Global-existence probe for the 403-vs-404 ownership
+// covenant. Unfiltered uri_id index hit across every org +
+// resolveOwningOrganization fallback (boundOrganization is a
+// cheap-path hint, not a filter). Covers three families the
+// narrower resolveOwningOrganization allowlist omits:
+// memberships, record-attributes, role-grants. Future 403-vs-
+// 404 decisions route through this, not the narrower resolver
+// alone.
+//
+// Prefers a direct uri_id hit (covers memberships + record-
+// attributes, which resolveOwningOrganization's states.entity_id
+// alphabet does not list, and role-grants' flat prefix whose org
+// lives in the response body). Falls back to
+// resolveOwningOrganization for the nested document families
+// already in that alphabet (ideas/projects/flows/...).
+const ROLE_GRANTS_URI_PREFIX =
+    canonicalUriPrefix(undefined, '/role-grants/');
+
+// Organization-nested document prefixes:
+// /organizations/{id}/...
+const ORGANIZATION_NESTED_URI_PREFIX =
+    /^\/organizations\/([^/]+)\//;
+
+function responseBodyOf(
+    message: string,
+): Record<string, unknown> {
+    const model = parseJson(message, defaultBodyRegistry());
+    const body = HttpMessage.fromModel(model).body();
+    return body.exists()
+        ? JSON.parse(body.toText()) as Record<string, unknown>
+        : {};
+}
+
+export async function resolveGlobalOwner(
+    db: DbAdapter,
+    entityId: Id,
+    boundOrganization: Id,
+): Promise<Id | null> {
+    const hits = await db.responses.getAllWhere(
+        'uri_id', entityId,
+    );
+    for (const response of hits) {
+        const nested = ORGANIZATION_NESTED_URI_PREFIX.exec(
+            response.uri_prefix,
+        );
+        if (nested !== null) return nested[1]!;
+        if (response.uri_prefix === ROLE_GRANTS_URI_PREFIX) {
+            const body = responseBodyOf(response.message);
+            const organizationId = body['organization_id'];
+            if (typeof organizationId === 'string') {
+                return organizationId;
+            }
+        }
+    }
+    return resolveOwningOrganization(
+        db, entityId, boundOrganization,
+    );
+}
+
 // Keep rows whose resolved owner is boundOrganization or null —
 // the isVisible rule (api/store-parent-scoped.ts) reproduced over
 // the pair plane. ONE memo per call, shared across every row, so
