@@ -1,18 +1,15 @@
 import type { DbAdapter } from './db.ts';
-import { EntityNotFoundError } from './db.ts';
+import { ForeignOrganizationError } from './db.ts';
 import type { Id } from './types.ts';
 import { resolveGlobalOwner } from './derive-states.ts';
 
-// Phase Final Task 1(e): the pre-write ownership gate that
-// preserves today's foreign-id 404 bytes once dual-write row
-// halves die. OrganizationScopedEntityStore#assertMine (PUT)
-// and #ownsRow (DELETE) today fence against the ROW keyspace;
-// after strip the pair plane is per-org namespaced, so a
-// naive strip would flip foreign-id PUT from 404 to genesis
-// 2xx in the caller's own namespace. This gate resolves the
-// document's owner on the pair plane BEFORE the handler runs:
-// owner-null → genesis proceeds; foreign → EntityNotFoundError
-// (the same 404 bytes #assertMine throws today).
+// Pre-write ownership gate on the pair plane. Without it, a
+// foreign-id PUT would genesis in the caller's own namespace
+// (pair plane is per-org namespaced). Resolves the document's
+// owner BEFORE the handler runs:
+// owner-null → genesis proceeds; foreign →
+// ForeignOrganizationError (HTTP 403 — the honest covenant;
+// existence of opaque high-entropy ids is accepted).
 //
 // Designed ONCE at the gate/op seam (api.ts consults
 // writeOwnershipFenceFor; assertWritableInOrganization is the
@@ -78,6 +75,6 @@ export async function assertWritableInOrganization(
         db, entityId, organization,
     );
     if (owner !== null && owner !== organization) {
-        throw new EntityNotFoundError(table, entityId);
+        throw new ForeignOrganizationError(table, entityId);
     }
 }

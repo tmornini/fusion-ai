@@ -4,6 +4,7 @@ import type {
 } from './db.ts';
 import {
     EntityNotFoundError,
+    ForeignOrganizationError,
     MissingTableError,
     UniqueConstraintError,
 } from './db.ts';
@@ -1028,6 +1029,14 @@ export async function handleRequest(
             return Response.json(
                 { error: error.message },
                 { status: HTTP_NOT_FOUND },
+            );
+        }
+        if (
+            error instanceof ForeignOrganizationError
+        ) {
+            return Response.json(
+                { error: error.message },
+                { status: HTTP_FORBIDDEN },
             );
         }
         if (
