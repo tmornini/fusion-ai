@@ -114,15 +114,22 @@ function makeRequestContext(
             : make(token);
     }
 
+    // One vessel id for the whole client request: reportFault
+    // logs it, and every wire verb carries it as
+    // REQUEST_ID_HEADER so the server gate reuses it instead
+    // of minting a second, unrelated trace.
+    const requestId = generateCryptoSafeBase62();
     const ctx: RequestContext = {
-        requestId: generateCryptoSafeBase62(),
+        requestId,
         identity,
         GET: <T>(resource: string) =>
-            run<T>(tok => httpGet<T>(adapter, resource, tok)),
+            run<T>(tok => httpGet<T>(
+                adapter, resource, tok, requestId,
+            )),
         GETWithResponseId: <T>(resource: string) =>
             run<{ body: T; responseId: string | undefined }>(
                 tok => httpGetWithResponseId<T>(
-                    adapter, resource, tok,
+                    adapter, resource, tok, requestId,
                 ),
             ),
         PUT: <T>(
@@ -132,16 +139,21 @@ function makeRequestContext(
                 readonly (readonly [string, string])[],
         ) => run<T>(
             tok => httpPut<T>(
-                adapter, resource, body, tok, headerFields,
+                adapter, resource, body, tok,
+                headerFields, requestId,
             )),
         DELETE: (resource: string) =>
             run<void>(
-                tok => httpDelete(adapter, resource, tok)),
+                tok => httpDelete(
+                    adapter, resource, tok, requestId,
+                )),
         POST: <T>(
             resource: string,
             body: Record<string, unknown>,
         ) => run<T>(
-            tok => httpPost<T>(adapter, resource, body, tok)),
+            tok => httpPost<T>(
+                adapter, resource, body, tok, requestId,
+            )),
     };
     return ctx;
 }
