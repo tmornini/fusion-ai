@@ -86,6 +86,7 @@ import {
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
     validateWorkOrderDocumentBody,
+    validateWorkOrderReleaseBody,
     validateWorkOrderTransitionBody,
     validateWorkOrderFlowGraphJson,
     pickString,
@@ -2064,6 +2065,58 @@ export async function postWorkOrderClaimOp(
     );
 }
 
+// Release a work order's claim — the claim op's single-
+// transaction, pair-on-every-exit shape. Unlike claim, no
+// gate decision exists here: release has no 409 branch, and
+// the pair appends whether or not a live claim exists (a
+// wired route must never resolve a pair the transaction
+// never stored), so deciding liveness at the gate would
+// change nothing observable. The decision is made ONCE, at
+// derive time (applyReleasePair): a live unexpired claim as
+// of releaseAt derives the claim_released event; otherwise
+// the pair derives zero events — the idempotent no-op. 204
+// either way. The head read below is the 404 existence and
+// org fence, nothing more. Release stays open to any org
+// member (today's unclaim posture; the UI shows Unclaim only
+// when claimed).
+//
+// NOTE the deliberate shape: unlike claim, release has NO
+// foreign-claim 409 and NO branch that skips the append —
+// the live-or-not decision is REPLAYED at derive time
+// (Task 10's applyReleasePair), deterministically, from the
+// same (at, id)-ordered history the gate would read. The
+// gate itself only guards existence (404) and body validity
+// (400). This keeps the op idempotent (a resend folds by
+// message_hash) and keeps gate and derive from ever
+// disagreeing. The head read stays even though lockTimeout
+// is only consumed at replay: it IS the 404 existence fence.
+export async function postWorkOrderReleaseOp(
+    db: DbAdapter,
+    workOrderId: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    organization: Id,
+    pair?: MessagePair,
+): Promise<void> {
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            validateWorkOrderReleaseBody(body);
+            const wo = await workOrderDocumentHeadFor(
+                view, organization, workOrderId,
+            );
+            if (wo === null) {
+                throw new EntityNotFoundError(
+                    'work_orders', workOrderId,
+                );
+            }
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+        },
+    );
+}
+
 // Transition a work order along an edge. Phase Final Task 2:
 // state_field_values ROW half stripped — field values ride
 // the transition operation pair body only (fieldValues fold
@@ -2603,6 +2656,7 @@ export const WRITE_RESPONSE_SPECS:
     'work-orders/:id':
         documentWriteResponseSpec(WORK_ORDERS_WIRING),
     'work-orders/:id/claim': { status: 204 },
+    'work-orders/:id/release': { status: 204 },
     'work-orders/:id/transition': { status: 204 },
     'flows/:id/work-orders/:woid': {
         status: 200,
@@ -4276,6 +4330,16 @@ export const routes: Route[] = [
     route('work-orders/:id/claim', {
         post: (db, p, body, actor, pair, organization) =>
             postWorkOrderClaimOp(
+                db, param(p, 0), body, actor,
+                requireOrganization(organization), pair,
+            ),
+    }),
+    // Member-tier POST — /work-orders carries POST in
+    // MEMBER_VERBS. See postWorkOrderReleaseOp for the
+    // transaction shape.
+    route('work-orders/:id/release', {
+        post: (db, p, body, actor, pair, organization) =>
+            postWorkOrderReleaseOp(
                 db, param(p, 0), body, actor,
                 requireOrganization(organization), pair,
             ),

@@ -3955,6 +3955,38 @@ export function validateWorkOrderClaimBody(
     return { claimEventId, claimAt, expireEventId, expireAt };
 }
 
+const WORK_ORDER_RELEASE_KEYS: readonly string[] = [
+    'releaseEventId', 'releaseAt',
+];
+
+export interface WorkOrderReleaseBody {
+    readonly releaseEventId: string;
+    readonly releaseAt: string;
+}
+
+// Gate for POST /work-orders/:id/release. The caller mints
+// the event id and timestamp (the claim-body precedent);
+// authorship is server-derived (actor) — never supplied by
+// the caller. A single terminal event, so no expire pair.
+export function validateWorkOrderReleaseBody(
+    body: Record<string, unknown>,
+): WorkOrderReleaseBody {
+    assertOnlyKeys(
+        body, WORK_ORDER_RELEASE_KEYS, 'WorkOrderReleaseBody',
+    );
+    const releaseEventId = pickString(body, 'releaseEventId');
+    if (releaseEventId === '') {
+        throw new ValidationError(
+            'WorkOrderReleaseBody.releaseEventId'
+            + ' must be non-empty',
+        );
+    }
+    const releaseAt = validateTimestampField(
+        body, 'releaseAt', 'WorkOrderReleaseBody',
+    );
+    return { releaseEventId, releaseAt };
+}
+
 export interface AIMemberEditBody {
     readonly detail: Record<string, unknown>;
     readonly state: MemberState;

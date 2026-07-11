@@ -592,6 +592,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'work-orders/:id',
     'work-orders/:id/claim',
     'work-orders/:id/transition',
+    'work-orders/:id/release',
     'flows/:id/work-orders/:woid',
     'records',
     'records/:id',
