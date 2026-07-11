@@ -19,6 +19,8 @@ import { sha256Hex } from '../shared/digest.ts';
 import {
     nowUtc,
     nowEpochSeconds,
+    msSinceUtc,
+    MS_PER_SECOND,
     type Id,
     type IdentityTokenEntity,
     type ClientEntity,
@@ -116,6 +118,7 @@ function failure(status: number, error: string): TokenResult {
 
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
+const AUTHORIZATION_CODE_TTL_SECONDS = 10 * 60;
 
 // A token's display name = the identity's PII name when present,
 // else the id (a presentation transform at the call site — a
@@ -886,6 +889,7 @@ function decodedBodyOf(message: string): Record<string, unknown> {
 interface AuthorizeCodeIssuer {
     readonly identityId: Id;
     readonly clientId: Id;
+    readonly issuedAt: string;
 }
 
 // PRE-TX (i), gate 3: the code -> identity/client point-match
@@ -917,6 +921,10 @@ async function authorizeCodeIssuer(
         clientId: pickString(
             decodedBodyOf(request.message), 'client_id',
         ),
+        // Issue instant = the authorize request pair's `at`
+        // (RequestEntity.at). Both halves of a pair carry `at`;
+        // the request row is already fetched for identity/client.
+        issuedAt: request.at,
     };
 }
 
@@ -973,6 +981,12 @@ async function grantAuthorizationCode(
         adapter, 'sha256:' + derivedId,
     );
     if (issuer === null) return invalid;
+    if (
+        msSinceUtc(issuer.issuedAt)
+        >= AUTHORIZATION_CODE_TTL_SECONDS * MS_PER_SECOND
+    ) {
+        return invalid;
+    }
     if (await authorizationCodeSpent(adapter, derivedId)) {
         return invalid;
     }
