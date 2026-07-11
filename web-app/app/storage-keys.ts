@@ -11,8 +11,8 @@ export const STORAGE_KEY_AUTHORIZATION =
 
 // Persisted active organization id (client vessel). Boot
 // re-exchanges a fresh org-scoped token from this id.
-export const STORAGE_KEY_ACTIVE_ORGANIZATION =
-    'fusion-ai:active-organization';
+export const STORAGE_KEY_ACTIVE_ORGANIZATION_ID =
+    'fusion-ai:active-organization-id';
 
 export const STORAGE_KEY_THEME = 'fusion-ai:theme';
 
