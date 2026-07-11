@@ -226,6 +226,54 @@ test(
 );
 
 test(
+    'reserved field keys ignore extras',
+    () => {
+        const calls = capture(
+            'error',
+            () => log
+                .with('abcdefghijklmnopqrstuv')
+                .error(
+                    'spoof attempt',
+                    'real-ctx',
+                    {
+                        ts: 'not-a-ts',
+                        level: 'debug',
+                        context: 'spoofed',
+                        requestId: 'fake-id',
+                        page: 'dashboard',
+                    },
+                ),
+        );
+        assert.equal(calls.length, 1);
+        const fields = fieldsOf(calls[0]!);
+        assert.equal(
+            fields.level, 'error',
+            'envelope level wins',
+        );
+        assert.equal(
+            fields.context, 'real-ctx',
+            'envelope context wins',
+        );
+        assert.equal(
+            fields.requestId,
+            'abcdefghijklmnopqrstuv',
+            'envelope requestId wins',
+        );
+        assert.ok(
+            typeof fields.ts === 'string'
+            && TS_RE.test(fields.ts as string),
+            `envelope ts wins, got: ${
+                String(fields.ts)
+            }`,
+        );
+        assert.equal(
+            fields.page, 'dashboard',
+            'non-reserved extras still merge',
+        );
+    },
+);
+
+test(
     'Error data is not merged into fields',
     () => {
         const err = new Error('boom');

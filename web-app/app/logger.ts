@@ -55,18 +55,23 @@ function buildFields(
     requestId: string | undefined,
     extra: Record<string, unknown> | undefined,
 ): Record<string, unknown> {
+    // Extras first; envelope keys win so a
+    // caller cannot overwrite ts/level/
+    // context/requestId via the fields bag.
     const fields: Record<string, unknown> = {
+        ...(extra ?? {}),
         ts: logTimestamp(),
         level,
     };
     if (context !== undefined) {
         fields.context = context;
+    } else {
+        delete fields['context'];
     }
     if (requestId !== undefined) {
         fields.requestId = requestId;
-    }
-    if (extra !== undefined) {
-        Object.assign(fields, extra);
+    } else {
+        delete fields['requestId'];
     }
     return fields;
 }
