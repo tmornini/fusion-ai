@@ -775,29 +775,35 @@ export function validateMemberEntity(
 
 const MEMBER_DOCUMENT_BODY_KEYS: readonly string[] = [
     'type',
+    'state', 'state_at', 'state_event_id',
 ];
 
 export interface MemberDocumentBody {
     readonly entity: Omit<MemberEntity, 'id'>;
+    readonly state: MemberState;
+    readonly state_at: string;
+    readonly state_event_id: string;
 }
 
 // The HTTP-body gate for PUT /members/:id: the ninth family,
-// and the FIRST of the roster's shared-log-with-genesis
-// 'stateless' bucket (see MEMBERS_WIRING in routes.ts for the
-// full rationale-contrast). THE LABEL MANDATE (the Phase 7
-// Objective precedent, a NAMED byte-parity-over-convention
-// choice): the assertOnlyKeys label is 'MemberEntity', matching
-// TODAY'S store validator (validateMemberEntity) byte-for-byte,
-// NOT the 'MemberDocumentBody' naming convention every other
-// *DocumentBody validator uses — the label appears in the wire
-// 400 body ("unexpected key ... for MemberEntity"), and the
-// convention's label would change those bytes. `type`'s own
-// rule (validateEnumField over the SAME three-member enum) is
-// IDENTICAL to validateMemberEntity's, so the missing/stray-key
-// 400s stay byte-identical on both paths too. Global plane
-// (family-registry.ts: organizationNested:false) — no
-// organization_id exists on this entity, so nothing is
-// tolerated beyond `type`.
+// now a lifecycle-trio one (states-address retirement). The
+// old FREEZE-at-genesis refutation is RETIRED — its premise
+// (a competing states/:id log) died with the address; the
+// body carries {type} plus the trio. THE LABEL MANDATE (the
+// Phase 7 Objective precedent, a NAMED byte-parity-over-
+// convention choice): the assertOnlyKeys label is
+// 'MemberEntity', matching TODAY'S store validator
+// (validateMemberEntity) byte-for-byte, NOT the
+// 'MemberDocumentBody' naming convention every other
+// *DocumentBody validator uses — the label appears in the
+// wire 400 body ("unexpected key ... for MemberEntity"),
+// and the convention's label would change those bytes.
+// `type`'s own rule (validateEnumField over the SAME three-
+// member enum) is IDENTICAL to validateMemberEntity's, so
+// the missing-type 400 stays byte-identical on both paths.
+// Global plane (family-registry.ts: organizationNested:
+// false) — no organization_id exists on this entity, so
+// nothing is tolerated beyond type + trio.
 export function validateMemberDocumentBody(
     body: Record<string, unknown>,
 ): MemberDocumentBody {
@@ -808,10 +814,25 @@ export function validateMemberDocumentBody(
         body, 'type', ['human', 'ai', 'system'],
         'member type', 'MemberEntity',
     );
+    const state = assertMemberState(
+        pickString(body, 'state'),
+        'MemberEntity.state',
+    );
+    const stateEventId = pickString(body, 'state_event_id');
+    if (stateEventId === '') {
+        throw new ValidationError(
+            'MemberEntity.state_event_id must be non-empty',
+        );
+    }
     return {
         entity: {
             type,
         },
+        state,
+        state_at: validateTimestampField(
+            body, 'state_at', 'MemberEntity.state_at',
+        ),
+        state_event_id: stateEventId,
     };
 }
 
@@ -3936,19 +3957,25 @@ export function validateWorkOrderClaimBody(
 
 export interface AIMemberEditBody {
     readonly detail: Record<string, unknown>;
+    readonly state: MemberState;
+    readonly stateAt: string;
+    readonly stateEventId: string;
 }
 
 const AI_MEMBER_EDIT_KEYS: readonly string[] = [
     'detail',
+    'state', 'stateAt', 'stateEventId',
 ];
 
 // The HTTP-body gate for POST /ai-members/:id: the parent
-// member row plus the ai_members detail row re-put, NO state
-// event (an edit does not move the member's lifecycle), so the
-// handler needs no actor. As with create, the ai_members store
-// re-validates its own body when the composing POST puts it;
-// the id is the route param, the member type is a server-
-// supplied fact.
+// member row plus the ai_members detail row re-put. The edit
+// body ECHOES the current lifecycle trio verbatim; a byte-
+// identical echoed members/:id body folds by message_hash
+// (the memberDocument fold, api/message-pair.ts) so an echo
+// never mints a phantom transition. As with create, the
+// ai_members store re-validates its own body when the
+// composing POST puts it; the id is the route param, the
+// member type is a server-supplied fact.
 export function validateAIMemberEditBody(
     body: Record<string, unknown>,
 ): AIMemberEditBody {
@@ -3958,28 +3985,47 @@ export function validateAIMemberEditBody(
     const detail = asObject(
         body['detail'], 'AIMemberEditBody.detail',
     );
-    return { detail };
+    const state = assertMemberState(
+        pickString(body, 'state'),
+        'AIMemberEditBody.state',
+    );
+    const stateEventId = pickString(body, 'stateEventId');
+    if (stateEventId === '') {
+        throw new ValidationError(
+            'AIMemberEditBody.stateEventId must be non-empty',
+        );
+    }
+    const stateAt = validateTimestampField(
+        body, 'stateAt', 'AIMemberEditBody',
+    );
+    return { detail, state, stateAt, stateEventId };
 }
 
 export interface HumanMemberEditBody {
     readonly detail: Record<string, unknown>;
+    readonly state: MemberState;
+    readonly stateAt: string;
+    readonly stateEventId: string;
 }
 
 const HUMAN_MEMBER_EDIT_KEYS: readonly string[] = [
     'detail',
+    'state', 'stateAt', 'stateEventId',
 ];
 
-// The HTTP-body gate for POST /human-members/:id: the member and
-// identity facets re-pin, the detail facet re-puts, NO state
-// event (an edit does not move the member's lifecycle), so the
-// handler needs no actor. PII no longer rides this body (Phase
-// 10 Task 2's intake decomposition) — it changes ONLY via the
-// separate PUT identities/:id/pii, fired by the client IFF the
-// caller's dirty check finds it changed. As with create, the
-// detail facet is NOT fully validated here — human_members
-// re-validates its own body when the composing POST puts it;
-// the id is the route param, the member type and identity kind
-// are server-supplied facts.
+// The HTTP-body gate for POST /human-members/:id: the member
+// and identity facets re-pin, the detail facet re-puts. The
+// edit body ECHOES the current lifecycle trio verbatim; a
+// byte-identical echoed members/:id body folds by
+// message_hash (the memberDocument fold) so an echo never
+// mints a phantom transition. PII no longer rides this body
+// (Phase 10 Task 2's intake decomposition) — it changes ONLY
+// via the separate PUT identities/:id/pii, fired by the
+// client IFF the caller's dirty check finds it changed. As
+// with create, the detail facet is NOT fully validated here —
+// human_members re-validates its own body when the composing
+// POST puts it; the id is the route param, the member type
+// and identity kind are server-supplied facts.
 export function validateHumanMemberEditBody(
     body: Record<string, unknown>,
 ): HumanMemberEditBody {
@@ -3989,7 +4035,21 @@ export function validateHumanMemberEditBody(
     const detail = asObject(
         body['detail'], 'HumanMemberEditBody.detail',
     );
-    return { detail };
+    const state = assertMemberState(
+        pickString(body, 'state'),
+        'HumanMemberEditBody.state',
+    );
+    const stateEventId = pickString(body, 'stateEventId');
+    if (stateEventId === '') {
+        throw new ValidationError(
+            'HumanMemberEditBody.stateEventId'
+            + ' must be non-empty',
+        );
+    }
+    const stateAt = validateTimestampField(
+        body, 'stateAt', 'HumanMemberEditBody',
+    );
+    return { detail, state, stateAt, stateEventId };
 }
 
 // ── Flow graph delta ─────────────────

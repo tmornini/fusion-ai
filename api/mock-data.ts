@@ -414,7 +414,12 @@ async function postMockDataLoadIn(
         postMemberDocumentOp(
             adapter,
             SYSTEM_MEMBER_ID,
-            memberDocumentBodyOf('system'),
+            memberDocumentBodyOf('system', {
+                state: 'active',
+                stateAt: MOCK_SEED_TIMESTAMP,
+                stateEventId:
+                    `seed-member-${SYSTEM_MEMBER_ID}-active`,
+            }),
             SYSTEM_MEMBER_ID,
             requirePair(
                 pairs, seedPairKey('members/:id', SYSTEM_MEMBER_ID),
@@ -1193,7 +1198,13 @@ async function postBootstrapIn(
         postMemberDocumentOp(
             adapter,
             SYSTEM_MEMBER_ID,
-            memberDocumentBodyOf('system'),
+            // Temporary trio thread (Task 5 compile); Task 8
+            // folds genesis onto this pair.
+            memberDocumentBodyOf('system', {
+                state: 'active',
+                stateAt: systemMemberPair.requestAt,
+                stateEventId: 'bootstrap-system-active',
+            }),
             SYSTEM_MEMBER_ID,
             systemMemberPair,
         ),

@@ -40,6 +40,7 @@ import type {
     WorkOrderEntity,
     MemberEntity,
     MemberKind,
+    MemberState,
     OrganizationEntity,
 } from './types.ts';
 import {
@@ -491,21 +492,20 @@ function membershipDocumentEntityOf(
 // fork" claim as history, not standing doctrine): work-orders'
 // 'stateless' is vacuous-in-practice (family-scoped event pairs
 // post through the create/claim/transition ops, just never the
-// document address); objectives' rides the states log's own
-// absence-as-active covenant (R2); the member families
-// (MEMBERS_WIRING below, Phase 8 Task 3, and its ai-members/
-// human-members siblings) share that SAME log WITH a genesis
-// event; record-attributes and memberships share neither — a
-// membership carries NO lifecycle concept
-// whatsoever, a pure join relation (Codd's own teaching: the
-// identities of the joined, plus the moment of union). GET stays
-// hand-written old-plane until Task 8; only PUT rides the
-// generic machinery this task — memberships/:id's own DELETE
-// stays hand-written too, the records/:id template (no generic
-// DELETE component exists). notFoundTable is 'memberships' — its
-// storage table name matches its family name, like ideas/
-// projects/flows/records/objectives (work-orders/record-
-// attributes are the two whose names diverge).
+// document address); objectives and the members parent document
+// (MEMBERS_WIRING below) both now carry document trios on their
+// own addresses (states-address retirement); record-attributes
+// and memberships share neither — a membership carries NO
+// lifecycle concept whatsoever, a pure join relation (Codd's
+// own teaching: the identities of the joined, plus the moment
+// of union). GET stays hand-written old-plane until Task 8;
+// only PUT rides the generic machinery this task —
+// memberships/:id's own DELETE stays hand-written too, the
+// records/:id template (no generic DELETE component exists).
+// notFoundTable is 'memberships' — its storage table name
+// matches its family name, like ideas/projects/flows/records/
+// objectives (work-orders/record-attributes are the two whose
+// names diverge).
 const MEMBERSHIPS_WIRING: DocumentFamilyWiring = {
     family: 'memberships',
     lifecycle: 'stateless',
@@ -514,14 +514,13 @@ const MEMBERSHIPS_WIRING: DocumentFamilyWiring = {
     documentOp: postMembershipDocumentOp,
     entityOf: membershipDocumentEntityOf,
 };
-// The wire body carries exactly the member's own fields (no
-// organization_id anywhere, no trio) — a spread is safe for the
-// SAME reason membershipDocumentEntityOf's own comment gives: no
-// per-field picking needed, and 'stateless' rejects a trio at
-// the gate. `_organization` stays unused: the members directory
-// is GLOBAL plane (family-registry.ts: organizationNested:
-// false) — the FIRST family on it — so there is no fence value
-// to stamp at all.
+// The wire body carries the member's own field ({type}) plus
+// the lifecycle trio — entityOf spreads the head body for now
+// (derive-members.ts's memberParentOf picks type alone for the
+// live join view; Task 6+ may thin this). `_organization` stays
+// unused: the members directory is GLOBAL plane (family-
+// registry.ts: organizationNested: false) — the FIRST family on
+// it — so there is no fence value to stamp at all.
 function memberDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
@@ -531,37 +530,24 @@ function memberDocumentEntityOf(
         ...document.body,
     };
 }
-// The members wiring row — the ninth family, and the FIFTH
-// 'stateless' one, opening a bucket distinct from all four
-// before it (Author gate 3, verification-corrected — no
-// type-level fork; 'stateless' stays ONE type covering all five
-// rationales). Members, ai-members, and human-members
-// (AI_MEMBERS_WIRING/HUMAN_MEMBERS_WIRING below) share ONE
-// shared-log-WITH-genesis rationale: the shared member id
-// receives REAL states events — a genesis event at create,
-// archive/reactivate via PUT states/:id — so a trio-carrying
-// document plane here would FREEZE every member's state at
-// genesis forever the moment a second states event posted — the
-// decisive refutation, distinct from every prior bucket: NOT
-// work-orders' vacuous-in-practice (family-scoped event pairs
-// post through the create/claim/transition ops, just never the
-// document address, §5.6); NOT objectives' absence-as-active
-// covenant, which rides this SAME shared log but with NO genesis
-// event ever minted (§5.8); NOT record-attributes'/memberships'
-// vacuous-BY-CONSTRUCTION pair, which carry no lifecycle concept
-// whatsoever (§5.9). notFoundTable is 'members' — its storage
-// table name matches its family name, like ideas/projects/flows/
-// records/objectives/memberships (work-orders/record-attributes
-// are the two families whose names diverge). This is also the
-// FIRST 'stateless' row served by a LIVE, wired PUT this SAME
-// commit (documentPutHandler/documentWriteResponseSpec below) —
-// documentWriteResponseSpec's own registration-first consult
-// (document-family.ts, this commit) omits the organization_id
-// stamp for exactly the reason above: no such field exists on
-// this entity at all.
+// The members wiring row — the ninth family, a 'trio' one
+// since the states-address retirement. The old FREEZE-at-
+// genesis refutation is RETIRED: its premise — a competing
+// states/:id log receiving archive/reactivate events the
+// document plane could never see — died with the address.
+// Every lifecycle write now rides THIS document address:
+// create folds initialState* into the members/:id pair, a
+// state change PUTs a fresh trio, a detail edit echoes the
+// current trio byte-identically and FOLDS by message_hash
+// (appendMessagePair's dedup skip) instead of appending;
+// documentLifecycleEvents' first-occurrence-wins dedup by
+// state_event_id resolves any echo that does land. Global
+// plane: no organization stamping (the members directory row
+// carries no organization_id) — see documentWriteResponseSpec's
+// registration-first consult (document-family.ts).
 const MEMBERS_WIRING: DocumentFamilyWiring = {
     family: 'members',
-    lifecycle: 'stateless',
+    lifecycle: 'trio',
     notFoundTable: 'members',
     validateDocument: validateMemberDocumentBody,
     documentOp: postMemberDocumentOp,
@@ -1646,14 +1632,26 @@ export interface MemberWritePairs {
 
 // The wire body a live PUT members/:id would carry for this SAME
 // write: `type` alone — validateMemberDocumentBody's only field.
-// The member kind is a server-supplied fact the caller pins
-// (never read off a request body), so this takes the kind
-// directly rather than re-deriving it from a body shape — the
-// ONE builder both the ai and human create/edit sites share.
+// The wire body a live PUT members/:id would carry for this
+// SAME write: `type` plus the lifecycle trio. The member kind
+// is a server-supplied fact the caller pins; the trio is the
+// caller's own — initialState* mapped on create, the echoed
+// (or freshly minted) trio on edit/state-change. The ONE
+// builder all ai/human create/edit sites share.
 export function memberDocumentBodyOf(
     type: MemberKind,
+    trio: {
+        readonly state: MemberState;
+        readonly stateAt: string;
+        readonly stateEventId: string;
+    },
 ): Record<string, unknown> {
-    return { type };
+    return {
+        type,
+        state: trio.state,
+        state_at: trio.stateAt,
+        state_event_id: trio.stateEventId,
+    };
 }
 
 // The wire body a live PUT identities/:id would carry for this
@@ -3049,7 +3047,11 @@ export const routes: Route[] = [
                 pair !== undefined && organization !== undefined
             ) {
                 const b = validateAIMemberCreateBody(body);
-                const memberBody = memberDocumentBodyOf('ai');
+                const memberBody = memberDocumentBodyOf('ai', {
+                    state: b.initialState,
+                    stateAt: b.initialStateAt,
+                    stateEventId: b.initialStateEventId,
+                });
                 validateMemberDocumentBody(memberBody);
                 const memberDocument = await formDocumentPairFor(
                     db, {
@@ -3111,13 +3113,15 @@ export const routes: Route[] = [
             if (
                 pair !== undefined && organization !== undefined
             ) {
-                // Gate-check only (result discarded): guarantees
-                // body.detail is present and object-shaped before
-                // aiMemberDetailBodyOf reads it below — the SAME
-                // discard-the-result pattern the objectives route
-                // above uses for its OWN synthesized-body checks.
-                validateAIMemberEditBody(body);
-                const memberBody = memberDocumentBodyOf('ai');
+                // Bound (not discarded): detail shape plus the
+                // echoed lifecycle trio, threaded into the
+                // synthesized members/:id document body.
+                const e = validateAIMemberEditBody(body);
+                const memberBody = memberDocumentBodyOf('ai', {
+                    state: e.state,
+                    stateAt: e.stateAt,
+                    stateEventId: e.stateEventId,
+                });
                 validateMemberDocumentBody(memberBody);
                 const memberDocument = await formDocumentPairFor(
                     db, {
@@ -3175,7 +3179,11 @@ export const routes: Route[] = [
                 pair !== undefined && organization !== undefined
             ) {
                 const b = validateHumanMemberCreateBody(body);
-                const memberBody = memberDocumentBodyOf('human');
+                const memberBody = memberDocumentBodyOf('human', {
+                    state: b.initialState,
+                    stateAt: b.initialStateAt,
+                    stateEventId: b.initialStateEventId,
+                });
                 validateMemberDocumentBody(memberBody);
                 const memberDocument = await formDocumentPairFor(
                     db, {
@@ -3252,14 +3260,17 @@ export const routes: Route[] = [
             if (
                 pair !== undefined && organization !== undefined
             ) {
-                // Gate-check only (result discarded): guarantees
-                // body.detail is present and object-shaped before
-                // humanMemberDetailBodyOf reads it below — the
-                // SAME discard-the-result pattern the objectives
-                // route above uses for its OWN synthesized-body
-                // checks.
-                validateHumanMemberEditBody(body);
-                const memberBody = memberDocumentBodyOf('human');
+                // Bound (not discarded): detail shape plus the
+                // echoed lifecycle trio, threaded into the
+                // synthesized members/:id document body.
+                const e = validateHumanMemberEditBody(body);
+                const memberBody = memberDocumentBodyOf(
+                    'human', {
+                        state: e.state,
+                        stateAt: e.stateAt,
+                        stateEventId: e.stateEventId,
+                    },
+                );
                 validateMemberDocumentBody(memberBody);
                 const memberDocument = await formDocumentPairFor(
                     db, {

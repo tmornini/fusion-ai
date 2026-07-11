@@ -1382,7 +1382,12 @@ export function buildMockDataInvocations():
             idParams: [member.id],
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
-            body: memberDocumentBodyOf('human'),
+            body: memberDocumentBodyOf('human', {
+                state: member.state,
+                stateAt: MOCK_SEED_TIMESTAMP,
+                stateEventId:
+                    `seed-member-${member.id}-${member.state}`,
+            }),
         });
         invocations.push({
             key: seedPairKey('human-members/:id', member.id),
@@ -1435,7 +1440,12 @@ export function buildMockDataInvocations():
         idParams: [SYSTEM_MEMBER_ID],
         organization: undefined,
         requesterIdentityId: SYSTEM_MEMBER_ID,
-        body: memberDocumentBodyOf('system'),
+        body: memberDocumentBodyOf('system', {
+            state: 'active',
+            stateAt: MOCK_SEED_TIMESTAMP,
+            stateEventId:
+                `seed-member-${SYSTEM_MEMBER_ID}-active`,
+        }),
     });
     // Task 6: the system identity's OWN identities/:id document
     // pair — the last raw identities.put site the mock-data seed
@@ -1777,7 +1787,11 @@ export function buildMockDataInvocations():
             idParams: [m.id],
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
-            body: memberDocumentBodyOf('ai'),
+            body: memberDocumentBodyOf('ai', {
+                state: 'active',
+                stateAt: MOCK_SEED_TIMESTAMP,
+                stateEventId: `seed-member-${m.id}-active`,
+            }),
         });
         invocations.push({
             key: seedPairKey('ai-members/:id', m.id),
@@ -2286,7 +2300,13 @@ export async function formBootstrapMessagePair(
             idParams: ['current'],
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
-            body: memberDocumentBodyOf('human'),
+            body: memberDocumentBodyOf('human', {
+                state: body.initialState as
+                    'active' | 'pending' | 'archived',
+                stateAt: body.initialStateAt as string,
+                stateEventId:
+                    body.initialStateEventId as string,
+            }),
         },
         requestAt,
     );
@@ -2333,7 +2353,14 @@ export async function formBootstrapMessagePair(
             idParams: [SYSTEM_MEMBER_ID],
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
-            body: memberDocumentBodyOf('system'),
+            // Temporary trio thread (Task 5 compile); Task 8
+            // folds genesis onto this pair and retires the
+            // bare states/:id genesis pair below.
+            body: memberDocumentBodyOf('system', {
+                state: 'active',
+                stateAt: requestAt,
+                stateEventId: bootstrapSystemStateEventId,
+            }),
         },
         requestAt,
     );
