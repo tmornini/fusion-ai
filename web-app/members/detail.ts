@@ -504,16 +504,29 @@ async function saveHumanMember(
                     s.member.stateEventIdValue(),
             }, piiPatch,
         );
-        if (stateChanged) {
-            await postHumanMemberStateChange(
-                ctx, memberId, s.draft.state,
-            );
-        }
     } catch (err) {
         reportFault(
             ctx, 'Failed to save member', err,
         );
         return;
+    }
+    // Detail is now patched. If the lifecycle hop
+    // fails, the entity carries new fields with a
+    // stale state — name the half-state explicitly.
+    if (stateChanged) {
+        try {
+            await postHumanMemberStateChange(
+                ctx, memberId, s.draft.state,
+            );
+        } catch (err) {
+            reportFault(
+                ctx,
+                'Member details saved, but state'
+                + ' change failed',
+                err,
+            );
+            return;
+        }
     }
     showToast('Member saved', 'success');
 }
@@ -559,11 +572,6 @@ async function saveAIMember(
                     s.member.stateEventIdValue(),
             },
         );
-        if (stateChanged) {
-            await postAIMemberStateChange(
-                ctx, memberId, s.draft.state,
-            );
-        }
     } catch (err) {
         reportFault(
             ctx,
@@ -571,6 +579,24 @@ async function saveAIMember(
             err,
         );
         return;
+    }
+    // Detail is now patched. If the lifecycle hop
+    // fails, the entity carries new fields with a
+    // stale state — name the half-state explicitly.
+    if (stateChanged) {
+        try {
+            await postAIMemberStateChange(
+                ctx, memberId, s.draft.state,
+            );
+        } catch (err) {
+            reportFault(
+                ctx,
+                'AI member details saved, but'
+                + ' state change failed',
+                err,
+            );
+            return;
+        }
     }
     showToast(
         'AI member saved', 'success',
