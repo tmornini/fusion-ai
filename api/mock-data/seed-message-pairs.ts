@@ -1115,6 +1115,12 @@ interface ObjectiveSeed {
     readonly description: string;
 }
 
+// The create body for POST /objectives — objective row,
+// first revision, and the genesis lifecycle trio. The trio
+// folds onto the document pair via objectiveDocumentBodyOf
+// (states-address retirement); pair count is unchanged —
+// only body bytes grow. Genesis event id mirrors
+// humanMemberSeedBody's seed-member-${id}-${state} pattern.
 export function objectiveSeedBody(
     seed: ObjectiveSeed,
     organization: Id,
@@ -1134,6 +1140,10 @@ export function objectiveSeedBody(
             member_id: memberId,
             at: MOCK_SEED_TIMESTAMP,
         },
+        initialState: 'active',
+        initialStateEventId:
+            `seed-objective-${seed.id}-active`,
+        initialStateAt: MOCK_SEED_TIMESTAMP,
     };
 }
 

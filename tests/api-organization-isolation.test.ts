@@ -335,14 +335,20 @@ async function seedChain(
     ));
     assert.equal(flowWrite.status, 200);
     // Phase Final Task 2: objectives row half stripped — seed
-    // through the live document PUT so the pair plane owns it
+    // through the live document PUT with the lifecycle trio
+    // (states-address retirement) so the pair plane owns it
     // (nested revisions/scores re-pins already ride pairs).
     await handleRequest(db, req(
         'PUT',
         '/organizations/' + organization
             + '/objectives/o' + s,
         await organizationToken(identity, organization),
-        { position: 0 },
+        {
+            position: 0,
+            state: 'active',
+            state_at: T8_AT,
+            state_event_id: 'o' + s + '-genesis',
+        },
     ));
     // Phase Final Stage B: records table retired — seed
     // through the live document PUT so the pair plane owns it.

@@ -207,11 +207,17 @@ async function seed(): Promise<MemoryDbAdapter> {
     ));
     assert.equal(woWrite.status, 200);
     // Phase Final Stage B: objectives table retired — seed
-    // through the live document PUT so the pair plane owns it.
+    // through the live document PUT with the lifecycle trio
+    // (states-address retirement) so the pair plane owns it.
     const objWrite = await handleRequest(db, req(
         'PUT', '/organizations/A/objectives/obj-a',
         await tokenFor('memberA', 'A'),
-        { position: 0 },
+        {
+            position: 0,
+            state: 'active',
+            state_at: AT,
+            state_event_id: 'obj-a-genesis',
+        },
     ));
     assert.equal(objWrite.status, 200);
     return db;

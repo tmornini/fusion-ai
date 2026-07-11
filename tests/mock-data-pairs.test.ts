@@ -82,7 +82,9 @@ import { deriveOrganization } from
 // closed through postFlowRecordDocumentOp) +
 // 15 objectives-family (5 ops + 5 documents + 5 revisions —
 // Phase 7 Task 3's fixed 1+1+1 bundle synthesis, the flows
-// precedent, over the same 4 STARK + seed-objective-org2 set)
+// precedent, over the same 4 STARK + seed-objective-org2 set;
+// states-address retirement rides the genesis trio on those
+// same create/document bodies — pair COUNT unchanged)
 // + 145 work-order documents + 145 flow-work-order joins
 // (Phase 5 Task 4: the entity/join gap closed, one document
 // pair and one join pair per seeded work order) + 49 baseline
@@ -531,8 +533,8 @@ test('a seeded objective create pair sits at its org-nested'
 });
 
 test('a seeded objective\'s document pair sits at its'
-+ ' entity address, its body carrying no organization_id'
-+ ' key', async () => {
++ ' entity address, body carrying position plus the'
++ ' lifecycle trio and no organization_id key', async () => {
     const db = new MemoryDbAdapter();
     await postMockDataLoad(db);
     const starkSeed = OBJECTIVE_SEEDS[0]!;
@@ -557,7 +559,15 @@ test('a seeded objective\'s document pair sits at its'
     const embedded = JSON.parse(documentRow!.message) as {
         body: Record<string, unknown>;
     };
-    assert.deepEqual(Object.keys(embedded.body), ['position']);
+    assert.deepEqual(
+        Object.keys(embedded.body),
+        ['position', 'state', 'state_at', 'state_event_id'],
+    );
+    assert.equal(embedded.body.state, 'active');
+    assert.equal(
+        embedded.body.state_event_id,
+        'seed-objective-' + starkSeed.id + '-active',
+    );
 });
 
 test('a seeded objective\'s revision pair sits at its own'

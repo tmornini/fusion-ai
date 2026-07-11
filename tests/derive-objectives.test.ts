@@ -14,9 +14,8 @@ import { STARK_ORGANIZATION } from
 // retirement): unit-level trio walk + echo dedup, and the
 // deriveStatesFor union leg that serves GET /entity-states/:id/
 // history. Uses seedAdminSchema (not postMockDataLoad) so the
-// suite stays green mid-stage while objective seed bodies still
-// lack the genesis trio (Task 4 re-baselines the seed). Writes
-// go through the live gate, which already admits the trio.
+// suite stays self-contained; seeded genesis lives in
+// mock-data/drift pins. Writes go through the live gate.
 
 const BASE = 'http://localhost';
 

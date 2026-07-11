@@ -312,18 +312,21 @@ test('case 2: GET /entity-states/:id/history parity — one entity'
             );
         }
     }
-    // The pristine objective carries NO genesis event at all —
-    // absence IS active (api/routes.ts's postObjectiveCreationOp
-    // comment) — so both planes agree on an EMPTY history.
+    // Every seeded objective now carries an explicit genesis
+    // event (states-address retirement) — absence-as-active
+    // is RETIRED. Expect exactly one genesis row per seed.
     const objectiveEntry = CASE_2_FAMILY_ENTITY_IDS.find(
         (e) => e.family === 'objective',
     )!;
-    assert.deepEqual(
-        await deriveStatesFor(
-            db, STARK_ORGANIZATION, objectiveEntry.id,
-        ),
-        [],
+    const objectiveHistory = await deriveStatesFor(
+        db, STARK_ORGANIZATION, objectiveEntry.id,
     );
+    assert.equal(objectiveHistory.length, 1);
+    assert.equal(
+        objectiveHistory[0]!.id,
+        'seed-objective-' + objectiveEntry.id + '-active',
+    );
+    assert.equal(objectiveHistory[0]!.state, 'active');
     // The work order carries its full 4-event hand-authored
     // trace — a non-vacuous, multi-event leg (case 6 below reuses
     // this SAME entity for the field-values join proof).
@@ -1113,25 +1116,28 @@ test('case 7b: live-write chain — AI member create, archive,'
     );
 });
 
-// Phase Final Task 1(b): archive/reactivate via PUT states/:id
-// — row-oracle half dropped; pin pair plane.
+// States-address retirement: archive/reactivate ride PUT
+// /objectives/:id with the lifecycle trio — pair-plane pin.
 test('case 7c: live-write chain — objective archive, reactivate'
-+ ' — pair-plane pin (row-oracle half dropped at Task 1(b)'
-+ ' strip)',
++ ' — pair-plane pin via PUT objectives/:id',
 async () => {
     const db = await seededDb();
     const token = await organizationToken(
         'current', STARK_ORGANIZATION,
     );
-    const objectiveId = OBJECTIVE_SEEDS[0]!.id;
+    const objectiveSeed = OBJECTIVE_SEEDS[0]!;
+    const objectiveId = objectiveSeed.id;
+    const position = objectiveSeed.position;
 
-    // Phase Final Task 1(b): archive/reactivate ride pair-plane-
-    // only PUT /states/:id. Drop row-oracle half; pin pair plane.
-    // Objectives carry no genesis row (absence IS active).
+    // Seeded objective carries genesis 'active'. Archive then
+    // reactivate via the document address — history is
+    // [active, archived, active].
     const archived = await handleRequest(db, req(
-        'PUT', '/states/' + objectiveId + '-drift-archive', token, {
-            entity_id: objectiveId, state: 'archived',
-            at: '2026-04-04T00:00:00.000000Z',
+        'PUT', '/objectives/' + objectiveId, token, {
+            position,
+            state: 'archived',
+            state_at: '2026-04-04T00:00:00.000000Z',
+            state_event_id: objectiveId + '-drift-archive',
         },
     ));
     assert.equal(archived.status, 200);
@@ -1139,14 +1145,16 @@ async () => {
         db, STARK_ORGANIZATION, objectiveId,
     );
     assert.deepEqual(
-        afterArchive.map((row) => row.state), ['archived'],
+        afterArchive.map((row) => row.state),
+        ['active', 'archived'],
     );
 
     const reactivated = await handleRequest(db, req(
-        'PUT', '/states/' + objectiveId + '-drift-reactivate',
-        token, {
-            entity_id: objectiveId, state: 'active',
-            at: '2026-04-04T00:00:00.000001Z',
+        'PUT', '/objectives/' + objectiveId, token, {
+            position,
+            state: 'active',
+            state_at: '2026-04-04T00:00:00.000001Z',
+            state_event_id: objectiveId + '-drift-reactivate',
         },
     ));
     assert.equal(reactivated.status, 200);
@@ -1154,7 +1162,8 @@ async () => {
         db, STARK_ORGANIZATION, objectiveId,
     );
     assert.deepEqual(
-        derived.map((row) => row.state), ['archived', 'active'],
+        derived.map((row) => row.state),
+        ['active', 'archived', 'active'],
     );
 });
 
