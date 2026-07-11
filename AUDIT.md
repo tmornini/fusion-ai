@@ -208,6 +208,21 @@ carries a pointer to that list; it re-confirms every seam flag
 and tags each finding `KNOWN` or `NEW` in the schema's
 `security` field.
 
+Section hunts miss whole vulnerability classes: a single
+Commandment II section hunter greps toward one class and misses
+its neighbors. So run a fixed roster of CLASS hunters IN
+ADDITION to the section hunt, each swept end to end:
+
+- **Injection** — SQL, regex (ReDoS), template, command.
+- **Authn/authz flow** — token lifecycle, OAuth grant
+  completeness (PKCE, TTL, client binding), replay, enumeration.
+- **Secret handling** — logs, error bodies, config defaults.
+- **Untrusted-input DoS** — ReDoS, zip-bomb, unbounded
+  allocation.
+
+Each class hunter returns the findings schema and tags KNOWN or
+NEW like any Commandment II finding.
+
 ## The report
 
 `AUDIT-REPORT.md`, repo root, written once:
