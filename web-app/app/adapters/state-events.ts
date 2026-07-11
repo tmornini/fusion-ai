@@ -1,11 +1,13 @@
 import type {
     Id, IdeaEntity, IdeaState, IdeaStateDetail,
+    ObjectiveEntity, ObjectiveStateDetail,
     ProjectEntity, ProjectState, ProjectStateDetail,
     RecordEntity, RecordStateDetail,
     StateEntity, MemberEntity, MemberState,
 } from '../../../api/types.ts';
 import {
     assertIdeaState,
+    assertObjectiveState,
     assertProjectState,
     assertRecordState,
     assertMemberState,
@@ -332,6 +334,33 @@ export async function getIdeaStateDetails(
     for (const [id, ev] of latest) {
         out.set(id, {
             state: assertIdeaState(ev.state, 'idea ' + id),
+            stateAt: ev.at,
+            stateEventId: ev.id,
+        });
+    }
+    return out;
+}
+
+// Bulk objective trio read — the getIdeaStateDetails shape.
+// Consumed by the organization page so archive/reactivate
+// and drag-reorder can echo each objective's current trio
+// without minting a fresh event.
+export async function getObjectiveStateDetails(
+    ctx: RequestContext,
+): Promise<Map<Id, ObjectiveStateDetail>> {
+    const [events, rows] = await Promise.all([
+        ctx.GET<StateEntity[]>('states'),
+        ctx.GET<ObjectiveEntity[]>('objectives'),
+    ]);
+    const ids = new Set<Id>(rows.map(r => r.id));
+    const inScope = events.filter(ev => ids.has(ev.entity_id));
+    const latest = latestByKey(inScope, ev => ev.entity_id);
+    const out = new Map<Id, ObjectiveStateDetail>();
+    for (const [id, ev] of latest) {
+        out.set(id, {
+            state: assertObjectiveState(
+                ev.state, 'objective ' + id,
+            ),
             stateAt: ev.at,
             stateEventId: ev.id,
         });

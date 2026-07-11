@@ -1387,6 +1387,18 @@ export interface IdeaStateDetail {
     readonly stateEventId: string;
 }
 
+// The lifecycle trio Decision 7 folds into the objective
+// document: current state plus its creator-minted `at` and
+// the (transitional — retires with the states log) event id.
+// A bare ObjectiveState alone no longer carries enough to
+// round-trip a document PUT, so every writer that echoes
+// an objective gains this shape.
+export interface ObjectiveStateDetail {
+    readonly state: ObjectiveState;
+    readonly stateAt: string;
+    readonly stateEventId: string;
+}
+
 export class Idea {
     readonly #id: string;
     readonly #title: string;
