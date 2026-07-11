@@ -72,6 +72,7 @@ async () => {
     assert.ok(code.length > 0);
     const tok = await handleRequest(db, token({
         grant_type: 'authorization_code', code,
+        client_id: 'web',
     }));
     assert.equal(tok.status, 200);
     const body = await tok.json() as { access_token: string };
@@ -98,6 +99,7 @@ test('an expired authorization code is a 401', async () => {
     try {
         const tok = await handleRequest(db, token({
             grant_type: 'authorization_code', code,
+            client_id: 'web',
         }));
         assert.equal(tok.status, 401);
         assert.deepEqual(

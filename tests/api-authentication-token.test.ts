@@ -178,6 +178,36 @@ async () => {
         (await deriveIdentityTokens(db)).length, 0);
 });
 
+// authorization_code client binding: a code issued under
+// client_id A is not redeemable under client_id B. Same shared
+// 401 as unknown/spent/expired — grant-first, no mint.
+// Two codes: mismatch first (codes are single-use), then match.
+test('an authorization code is bound to its issuing client',
+async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+    await seedAuthorizationCodePair(
+        db, 'code-for-a', 'current', 'client-a');
+    await seedAuthorizationCodePair(
+        db, 'code-for-match', 'current', 'client-a');
+    const mismatch = await handleRequest(db, tokenRequest({
+        grant_type: 'authorization_code',
+        code: 'code-for-a',
+        client_id: 'client-b',
+    }));
+    assert.equal(mismatch.status, 401);
+    assert.deepEqual(
+        await mismatch.json(),
+        { error: INVALID_CODE_ERROR },
+    );
+    const match = await handleRequest(db, tokenRequest({
+        grant_type: 'authorization_code',
+        code: 'code-for-match',
+        client_id: 'client-a',
+    }));
+    assert.equal(match.status, 200);
+});
+
 test('authorization_code grant issues a gate-valid token pair',
 async () => {
     const db = await freshDb();
@@ -186,6 +216,7 @@ async () => {
         db, 'the-code', 'current', 'web');
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
+        client_id: 'web',
     }));
     assert.equal(res.status, 200);
     const body = await res.json() as {
@@ -206,11 +237,13 @@ test('replaying a consumed code is a 401 no-op', async () => {
         db, 'the-code', 'current', 'web');
     const first = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
+        client_id: 'web',
     }));
     assert.equal(first.status, 200);
     const before = (await deriveIdentityTokens(db)).length;
     const replay = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
+        client_id: 'web',
     }));
     assert.equal(replay.status, 401);
     // no new token chain minted on the replay
@@ -230,10 +263,12 @@ test(
             handleRequest(db, tokenRequest({
                 grant_type: 'authorization_code',
                 code: 'the-code',
+                client_id: 'web',
             })),
             handleRequest(db, tokenRequest({
                 grant_type: 'authorization_code',
                 code: 'the-code',
+                client_id: 'web',
             })),
         ]);
         assert.deepEqual(
@@ -278,11 +313,13 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
     const first = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code',
         code: 'the-code-spent',
+        client_id: 'web',
     }));
     assert.equal(first.status, 200);
     const spent = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code',
         code: 'the-code-spent',
+        client_id: 'web',
     }));
     assert.equal(spent.status, 401);
     assert.deepEqual(
@@ -294,10 +331,12 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
         handleRequest(db, tokenRequest({
             grant_type: 'authorization_code',
             code: 'the-code-raced',
+            client_id: 'web',
         })),
         handleRequest(db, tokenRequest({
             grant_type: 'authorization_code',
             code: 'the-code-raced',
+            client_id: 'web',
         })),
     ]);
     assert.deepEqual([a.status, b.status].sort(), [200, 401]);
@@ -321,6 +360,7 @@ async function initialPair(
         db, 'the-code', 'current', 'web');
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
+        client_id: 'web',
     }));
     return res.json();
 }

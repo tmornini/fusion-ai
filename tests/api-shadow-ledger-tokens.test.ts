@@ -468,6 +468,7 @@ async () => {
     await seedAuthorizationCodePair(db, 'the-code', 'current', 'web');
     const res = await postToken(db, {
         grant_type: 'authorization_code', code: 'the-code',
+        client_id: 'web',
     });
     assert.equal(res.status, 200);
     await assertRootEventPair(db);

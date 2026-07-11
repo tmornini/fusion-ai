@@ -987,6 +987,17 @@ async function grantAuthorizationCode(
     ) {
         return invalid;
     }
+    // Bind the code to the client that issued it (OAuth 2.1
+    // §4.1.3): redeeming client_id must match authorize's.
+    // Absent or wrong client_id is the same shared 401 as
+    // unknown/spent/expired — grant-first, no mint.
+    const redeemingClientId =
+        typeof body.client_id === 'string'
+            ? body.client_id
+            : '';
+    if (redeemingClientId !== issuer.clientId) {
+        return invalid;
+    }
     if (await authorizationCodeSpent(adapter, derivedId)) {
         return invalid;
     }
