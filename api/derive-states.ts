@@ -33,27 +33,27 @@ import {
 } from '../shared/http-message/media-registry.ts';
 
 // The states-log derivation, Phase 11 (the derive-identity-
-// spine.ts precedent applied to the unified event log). SIX
+// spine.ts precedent applied to the unified event log). FIVE
 // sources feed the union deriveStates/deriveStatesFor assemble
-// (Task 5, at the bottom of this file):
-//   (a) deriveEventPairStates — the states/:id event-pair reader
-//       (gate 5a).
-//   (b) the FIVE trio families' OWN embedded lifecycle history —
+// (Task 5, at the bottom of this file). The states/:id event-
+// append address is RETIRED — nothing recognizes it; every
+// lifecycle event rides one of these five sources:
+//   (a) the FIVE trio families' OWN embedded lifecycle history —
 //       deriveIdeaStateHistory/deriveProjectStateHistory/
 //       deriveRecordStateHistory/deriveFlowStateHistory/
 //       deriveObjectiveStateHistory, IMPORTED from their own
 //       modules (gate 5b) via deriveTrioFamilyStates below,
 //       never rebuilt here.
-//   (c) deriveMemberStates — the members/:id document trio
+//   (b) deriveMemberStates — the members/:id document trio
 //       (genesis at create + every later change; the
 //       states-address retirement's replacement for the old
 //       create-op genesis echo).
-//   (d) deriveWorkOrderLifecycle — the work-order op-pair replay
+//   (c) deriveWorkOrderLifecycle — the work-order op-pair replay
 //       (gate 5d) — see its own section header below for the
 //       work-order-specific edges.
-//   (e) deriveFlowGraphStates — flow-node/edge deleted/restored
+//   (d) deriveFlowGraphStates — flow-node/edge deleted/restored
 //       sidecars (gate 5e).
-//   (f) deriveInvitationStates — the invitation grant + its three
+//   (e) deriveInvitationStates — the invitation grant + its three
 //       answering ops (gate 5f).
 // Objectives joined the trio families at the states-address
 // retirement: genesis is an explicit event minted at create,
@@ -72,7 +72,8 @@ import {
 // deriveStatesFor below — Task 1's row-plane fence
 // (api/store-parent-scoped.ts) no longer serves either read.
 // bare GET /states/:id and GET /entity-states/:id RETIRED
-// (Phase 15 Task 7) — zero product callers.
+// (Phase 15 Task 7) — zero product callers. PUT /states/:id
+// is retired with the states-address itself.
 //
 // THE GATE-15 PRECEDENT (Phase 10, tests/drift-identities.test.ts
 // + api/routes.ts's module-private membershipsAcrossAllOrganiza
@@ -100,165 +101,6 @@ import {
 // pair anywhere names the entity). fenceStatesByOwner below is the
 // exact same three-way rule, applied over resolveOwningOrganization
 // instead of a row-plane probe.
-
-// ---- deriveEventPairStates — the event-pair reader (gate 5a) ---
-
-// states/:id is an EVENT-APPEND address (message-pair.ts): each
-// event id is client-minted fresh per write, and the states table
-// is ledger-immutable (StateStore.put throws
-// LedgerImmutabilityError on a differing re-put of the same id),
-// so a given uriId is visited by at most one distinct-CONTENT
-// pair — a different-envelope resend (fresh x-request-id →
-// different message_hash) may land a SECOND 2xx pair at the same
-// uri_id while the row write no-ops (finding 2; Phase 15 Task 6).
-// documentPairsAt's full pair list IS the event list; no head
-// reduction is needed or appropriate (unionById collapses
-// duplicate-content rows).
-//
-// SEGMENT-BOUNDARY CORRECTNESS (the derive-identity-spine.ts E13
-// precedent): 'states' is organization-nested
-// (message-pair.ts's ORGANIZATION_NESTED_FIRST_SEGMENTS), so a
-// live write's stored uri_prefix is
-// '/organizations/<org>/states/' — there is no single flat prefix
-// to scan. The optional org-segment group below matches that
-// shape without ever confusing it with an unrelated sibling
-// address sharing the '/organizations/<org>/' root.
-const STATES_ADDRESS_PATTERN =
-    /^(?:\/organizations\/([^/]+))?\/states\/$/;
-
-// The pure states/:id pair-decode — factored out of
-// deriveEventPairStates so deriveWorkOrderLifecycle's own claim
-// replay (below) can consult the SAME rows, over requests/
-// responses it has ALREADY fetched inside its own torn-read
-// transaction, rather than re-implementing the address match or
-// opening a second, independently-snapshotted transaction.
-function eventPairStatesFrom(
-    requests: readonly RequestEntity[],
-    responses: readonly ResponseEntity[],
-): StateEntity[] {
-    const prefixes = new Set<string>();
-    for (const request of requests) {
-        if (STATES_ADDRESS_PATTERN.test(request.uri_prefix)) {
-            prefixes.add(request.uri_prefix);
-        }
-    }
-    const rows: StateEntity[] = [];
-    for (const prefix of prefixes) {
-        for (const pair of documentPairsAt(
-            requests, responses, prefix,
-        )) {
-            rows.push({
-                id: pair.uriId,
-                entity_id: pickString(pair.body, 'entity_id'),
-                state: pickString(pair.body, 'state'),
-                // The stored member_id: the pair's own
-                // requester — stamped from the verified
-                // actor at write time (routes.ts's PUT
-                // /states/:id handler), never a body
-                // field (validateStateBody admits no
-                // member_id key at all). No response-body
-                // decode needed here, unlike the identity
-                // spine's gate-16 role-grants deviation.
-                member_id: pair.requesterIdentityId,
-                at: pickString(pair.body, 'at'),
-            });
-        }
-    }
-    return rows;
-}
-
-// Every LIVE event posted through the dedicated PUT /states/:id
-// address, across every organization — an entity family's OWN
-// embedded lifecycle trio (ideas/projects/flows/work-orders) is a
-// DIFFERENT union source, read by a later task, never this one.
-// ONE shared readonly tx over requests+responses (the derive-
-// identity-spine.ts torn-read closure): both reads observe the
-// SAME committed snapshot, so a write landing between two
-// independent reads can never split a pair across them.
-export async function deriveEventPairStates(
-    db: DbAdapter,
-): Promise<StateEntity[]> {
-    return db.transaction(
-        ['requests', 'responses'],
-        async (view) => {
-            const [requests, responses] = await Promise.all([
-                view.requests.getAll(),
-                view.responses.getAll(),
-            ]);
-            return eventPairStatesFrom(requests, responses)
-                .sort(byIdAscending);
-        },
-    );
-}
-
-// ---- stateEventCollisionFromPairs — gate 7 / finding 6 -------
-//
-// Pair-plane twin of StateStore.put's sameEvent row check
-// (store-state.ts). PUT /states/:id runs BOTH (strangler
-// parity); Final strips the row half. REDUCE over ALL pairs
-// at the event-append address — "at most one 2xx pair" is
-// FALSE (finding 2): a different-envelope resend (fresh
-// x-request-id → different message_hash) appends a SECOND
-// pair at the same uri_id while the row write no-ops.
-//
-// Disposition:
-//   absent   — no 2xx states/:id pair names eventId
-//   same     — every such pair matches candidate (sameEvent
-//              fields: entity_id/state/member_id/at)
-//   conflict — any such pair differs from candidate
-
-export type StateEventCollision =
-    | 'absent'
-    | 'same'
-    | 'conflict';
-
-function stateEventFieldsEqual(
-    a: Omit<StateEntity, 'id'>,
-    b: Omit<StateEntity, 'id'>,
-): boolean {
-    return a.entity_id === b.entity_id
-        && a.state === b.state
-        && a.member_id === b.member_id
-        && a.at === b.at;
-}
-
-// In-tx-safe: accepts a view or a standalone adapter. uri_id
-// point-read only (indexed) — never a whole-plane scan.
-export async function stateEventCollisionFromPairs(
-    dbOrView: DbAdapter,
-    eventId: Id,
-    candidate: Omit<StateEntity, 'id'>,
-): Promise<StateEventCollision> {
-    const [byIdRequests, byIdResponses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_id', eventId),
-        dbOrView.responses.getAllWhere('uri_id', eventId),
-    ]);
-    const prefixes = new Set<string>();
-    for (const response of byIdResponses) {
-        if (STATES_ADDRESS_PATTERN.test(response.uri_prefix)) {
-            prefixes.add(response.uri_prefix);
-        }
-    }
-    let sawPair = false;
-    for (const prefix of prefixes) {
-        for (const pair of documentPairsAt(
-            byIdRequests, byIdResponses, prefix,
-        )) {
-            if (pair.uriId !== eventId) continue;
-            sawPair = true;
-            const existing: Omit<StateEntity, 'id'> = {
-                entity_id: pickString(pair.body, 'entity_id'),
-                state: pickString(pair.body, 'state'),
-                member_id: pair.requesterIdentityId,
-                at: pickString(pair.body, 'at'),
-            };
-            if (!stateEventFieldsEqual(existing, candidate)) {
-                return 'conflict';
-            }
-        }
-    }
-    return sawPair ? 'same' : 'absent';
-}
 
 // ---- resolveOwningOrganization — the PAIR-PLANE fence (gate 4) -
 
@@ -652,7 +494,7 @@ function bodyNamesStateEvent(
     return false;
 }
 
-// Tier (ii)/(iii): does any of this organization's op-pair
+// Tier (i)/(ii): does any of this organization's op-pair
 // families name eventId? Indexed prefix reads only (the
 // workOrderClaimSourcesFor shape) — never a whole-plane
 // getAll of requests/responses.
@@ -843,49 +685,19 @@ async function organizationHasOpBornEvent(
 // Tiered pair-plane visibility disposition (successor of the
 // retired isVisibleStateEvent row-plane fence; live callers
 // re-pointed Phase 15 Task 3). Always view-accepting
-// (dbOrView); opens no nested transaction.
-// Cheapest tier first:
-//   (i) uri_id point-read over responses — event-append
-//       pairs (every seeded trace + live PUT states/:id);
-//   (ii) own-org op-pair family scan — op-born claim /
+// (dbOrView); opens no nested transaction. The states/:id
+// event-append tier is RETIRED with the address itself —
+// cheapest remaining first:
+//   (i) own-org op-pair family scan — op-born claim /
 //       transition / document-trio ids;
-//   (iii) widen-on-miss cross-org scan — foreign vs nowhere,
+//   (ii) widen-on-miss cross-org scan — foreign vs nowhere,
 //       only on the rare miss tail.
 export async function stateEventVisibilityFor(
     dbOrView: DbAdapter,
     boundOrganization: Id,
     eventId: Id,
 ): Promise<StateEventVisibility> {
-    // (i) uri_id point-read — a hit is an event-append pair.
-    const [byIdRequests, byIdResponses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_id', eventId),
-        dbOrView.responses.getAllWhere('uri_id', eventId),
-    ]);
-    for (const response of byIdResponses) {
-        if (
-            !STATES_ADDRESS_PATTERN.test(response.uri_prefix)
-        ) {
-            continue;
-        }
-        const pairs = documentPairsAt(
-            byIdRequests, byIdResponses, response.uri_prefix,
-        );
-        const pair = pairs.find((p) => p.uriId === eventId);
-        if (pair === undefined) continue;
-        const entityId = pickString(pair.body, 'entity_id');
-        const owner = await resolveOwningOrganization(
-            dbOrView, entityId, boundOrganization,
-        );
-        if (
-            owner === null
-            || owner === boundOrganization
-        ) {
-            return 'visible';
-        }
-        return 'hidden';
-    }
-
-    // (ii) own-org op-born scan.
+    // (i) own-org op-born scan.
     if (
         await organizationHasOpBornEvent(
             dbOrView, boundOrganization, eventId,
@@ -894,7 +706,7 @@ export async function stateEventVisibilityFor(
         return 'visible';
     }
 
-    // (iii) widen-on-miss: distinguish foreign from nowhere.
+    // (ii) widen-on-miss: distinguish foreign from nowhere.
     for (const organization of await organizationIds(
         dbOrView,
     )) {
@@ -912,30 +724,26 @@ export async function stateEventVisibilityFor(
 
 // ---- deriveWorkOrderLifecycle — the op-pair reader (gate 5d) ---
 
-// Source (d) of the states-log union — the LAST source, and the
-// only one that reads work-order CREATE/CLAIM/TRANSITION
-// operation pairs rather than the states/:id address
-// deriveEventPairStates (source a) already covers. Every SEEDED
-// work order (buildWorkOrders/buildLeadToCloseWorkload) was
-// formed via a bare document PUT — zero operation pairs — so its
-// births and claims ride source (a) alone; this function emits
-// NOTHING for it. Its output materializes ONLY for a work order
-// created, claimed, or transitioned through the LIVE route
+// Source (c) of the states-log union — the only one that reads
+// work-order CREATE/CLAIM/TRANSITION/RELEASE operation pairs.
+// Seeded work orders (buildWorkOrders/buildLeadToCloseWorkload)
+// form via a bare document PUT with ZERO operation pairs, so
+// this function emits NOTHING for them; their births ride the
+// work-order document trio (state_event_id on the document
+// body) once the seed stage embeds them there. Output
+// materializes ONLY for a work order created, claimed,
+// transitioned, or released through the LIVE route
 // (postWorkOrderCreationOp/postWorkOrderClaimOp/
-// postWorkOrderTransitionOp), so a HYBRID work order (a seeded
-// document plus a live claim) draws its births from source (a)
-// and its claim from here — the two addresses are DISJOINT, so no
-// row is ever double-counted across the two readers.
+// postWorkOrderTransitionOp/postWorkOrderReleaseOp).
 //
 // THE CREATE-PAIR RELAXATION (EDGE 1): a work order's create pair
-// is a DOMAIN fact, not a defensive fallback — 100% of seeded work
-// orders lack one (they were never created through this route), so
-// its absence NEVER throws; it simply means this reader
-// contributes no births for that id (its births already exist via
-// source (a)'s own read of the seed's states/:id trace). Only a
-// LIVE creation — and a caller's RETRY of one, each landing its
-// OWN create pair at the same work-order id — contributes birth
-// events, one three-slot array PER create pair found.
+// is a DOMAIN fact, not a defensive fallback — seeded work
+// orders lack one (they were never created through this route),
+// so its absence NEVER throws; it simply means this reader
+// contributes no births for that id. Only a LIVE creation —
+// and a caller's RETRY of one, each landing its OWN create pair
+// at the same work-order id — contributes birth events, one
+// three-slot array PER create pair found.
 //
 // THE REFERENCE-CLOCK RESIDUAL (EDGE 2 — a SERVER-TIER TODO): the
 // live claim route (postWorkOrderClaimOp) decides expiry against
@@ -1136,30 +944,19 @@ function lockTimeoutAsOf(
 }
 
 // Every candidate event a claim pair's prior-claim decision may
-// draw from: the replay's OWN emitted events so far, MERGED with
-// the states/:id event-append rows for this SAME work-order
-// entity (gate 5a's own rows — releasing a claim through the
-// standalone PUT states/:id address, e.g. deleteWorkOrderClaim's
-// 'claim_released', is a REAL product path this replay never
-// otherwise sees, since it lands as an EVENT-APPEND pair, not a
-// claim/transition OP pair). This reproduces the SAME full-log
-// view postWorkOrderClaimOp's own in-tx `view.states.getAllFor
-// (workOrderId)` sees live (routes.ts), as a pure merge over two
-// already-fetched arrays rather than a live table read.
-//
-// The `replayed` half is already bounded to "earlier" by the
-// caller's own (at, id)-ordered processing; the states/:id half
-// is NOT — it is the entity's FULL direct-address history, which
-// can include events chronologically AFTER this claim (a later
-// release, a later unrelated event) — so filtering both halves to
-// strictly-before `claim` is load-bearing here, not a redundant
-// re-check.
+// draw from: the replay's OWN emitted events so far (create
+// births, prior claims/releases/transitions). Releases ride
+// the release op pair now (postWorkOrderReleaseOp) — the
+// retired standalone PUT states/:id path is no longer a
+// candidate source. The `replayed` half is already bounded to
+// "earlier" by the caller's own (at, id)-ordered processing;
+// the strictly-before filter is kept so a future out-of-order
+// merge cannot leak later events into the prior-claim decision.
 function priorClaimCandidates(
     replayed: readonly StateEntity[],
-    statesAddressEvents: readonly StateEntity[],
     claim: OperationPair,
 ): StateEntity[] {
-    return [...replayed, ...statesAddressEvents]
+    return replayed
         .filter((row) => atIdCompare(row, claim) < 0)
         .sort(atIdCompare);
 }
@@ -1172,7 +969,6 @@ function priorClaimCandidates(
 function applyClaimPair(
     replayed: StateEntity[],
     entityPairs: readonly DocumentPair[],
-    statesAddressEvents: readonly StateEntity[],
     claim: OperationPair,
     workOrderId: Id,
 ): void {
@@ -1184,7 +980,7 @@ function applyClaimPair(
     const expireAt = pickString(claim.body, 'expireAt');
     const lockTimeout = lockTimeoutAsOf(entityPairs, claim.at);
     const prior = latestClaimEvent(
-        priorClaimCandidates(replayed, statesAddressEvents, claim),
+        priorClaimCandidates(replayed, claim),
         workOrderId,
     );
     const priorLive = prior !== null
@@ -1263,7 +1059,6 @@ function applyTransitionPair(
 function applyReleasePair(
     replayed: StateEntity[],
     entityPairs: readonly DocumentPair[],
-    statesAddressEvents: readonly StateEntity[],
     release: OperationPair,
     workOrderId: Id,
 ): void {
@@ -1275,9 +1070,7 @@ function applyReleasePair(
         entityPairs, release.at,
     );
     const prior = latestClaimEvent(
-        priorClaimCandidates(
-            replayed, statesAddressEvents, release,
-        ),
+        priorClaimCandidates(replayed, release),
         workOrderId,
     );
     const priorLive = prior !== null
@@ -1302,15 +1095,10 @@ type WorkOrderAction =
 // more three-slot arrays, one per create pair found), then its
 // claim/release/transition actions applied in (at, id) order so
 // each claim's prior-claim lookup only ever sees
-// chronologically earlier events. `statesAddressEvents` is this
-// SAME work order's own states/:id rows (gate 5a) — threaded
-// through so applyClaimPair's prior-claim decision can see a
-// standalone release, exactly as the live route's own full-log
-// read does.
+// chronologically earlier events.
 function replayWorkOrderOperations(
     createPairs: readonly OperationPair[],
     entityPairs: readonly DocumentPair[],
-    statesAddressEvents: readonly StateEntity[],
     claimPairs: readonly OperationPair[],
     releasePairs: readonly OperationPair[],
     transitionPairs: readonly OperationPair[],
@@ -1350,13 +1138,11 @@ function replayWorkOrderOperations(
     for (const action of actions) {
         if (action.kind === 'claim') {
             applyClaimPair(
-                events, entityPairs, statesAddressEvents,
-                action.pair, workOrderId,
+                events, entityPairs, action.pair, workOrderId,
             );
         } else if (action.kind === 'release') {
             applyReleasePair(
-                events, entityPairs, statesAddressEvents,
-                action.pair, workOrderId,
+                events, entityPairs, action.pair, workOrderId,
             );
         } else {
             applyTransitionPair(events, action.pair, workOrderId);
@@ -1367,15 +1153,13 @@ function replayWorkOrderOperations(
 }
 
 // The op-pair reader (gate 5d). ONE shared readonly tx over
-// requests+responses (the deriveEventPairStates torn-read
-// closure) — every grouping and replay step below is pure over
-// the two fetched arrays, no further db reads. (at, id) ascending
-// overall: these rows are SYNTHESIZED (no address of their own to
-// read 1:1, unlike deriveEventPairStates' states/:id rows), so
-// there is no raw-store scan order to reproduce — chronological
-// (at, id) is the meaningful order, and filtering this total order
-// by entity_id preserves it per work order, matching
-// db.states.getAllFor's own (at, id) contract exactly.
+// requests+responses (torn-read closure) — every grouping and
+// replay step below is pure over the two fetched arrays, no
+// further db reads. (at, id) ascending overall: these rows are
+// SYNTHESIZED (no address of their own to read 1:1), so there
+// is no raw-store scan order to reproduce — chronological
+// (at, id) is the meaningful order, and filtering this total
+// order by entity_id preserves it per work order.
 export async function deriveWorkOrderLifecycle(
     db: DbAdapter,
 ): Promise<StateEntity[]> {
@@ -1410,20 +1194,6 @@ export async function deriveWorkOrderLifecycle(
             );
             const entityPairsByWorkOrder = Map.groupBy(
                 entityPairs, (pair) => pair.uriId,
-            );
-
-            // Gate 5a's own rows, reused (not re-read) here: a
-            // claim released through the standalone PUT
-            // states/:id address (deleteWorkOrderClaim) is
-            // invisible to this reader's own claim/transition op
-            // pairs, yet the live route's prior-claim decision
-            // DOES see it (its in-tx getAllFor reads every
-            // address). Grouped by entity_id so each work order's
-            // replay merges only its OWN rows (priorClaimCandidates
-            // above).
-            const statesAddressByWorkOrder = Map.groupBy(
-                eventPairStatesFrom(requests, responses),
-                (row) => row.entity_id,
             );
 
             const claimPrefixByWorkOrder = new Map<Id, string>();
@@ -1494,7 +1264,6 @@ export async function deriveWorkOrderLifecycle(
                 events.push(...replayWorkOrderOperations(
                     createPairsByWorkOrder.get(workOrderId) ?? [],
                     entityPairsByWorkOrder.get(workOrderId) ?? [],
-                    statesAddressByWorkOrder.get(workOrderId) ?? [],
                     claimPairs,
                     releasePairs,
                     transitionPairs,
@@ -1517,42 +1286,25 @@ export async function deriveWorkOrderLifecycle(
 //     work-orders collection address — the SAME finding
 //     drift-work-orders.test.ts case 8 pins), filtered to the
 //     collection prefix;
-//   * claim/transition: uri_prefix at each sub-resource's own
-//     per-id address (WORK_ORDER_CLAIM_PATTERN/
+//   * claim/release/transition: uri_prefix at each sub-
+//     resource's own per-id address (WORK_ORDER_CLAIM_PATTERN/
+//     WORK_ORDER_RELEASE_PATTERN/
 //     WORK_ORDER_TRANSITION_PATTERN's own shape, constructed
-//     directly since the id is already known);
-//   * gate 5a's states/:id rows: uri_prefix at the organization's
-//     OWN states address, filtered locally to this entity —
-//     states/:id carries no per-entity path segment (the
-//     entity_id lives in the body), so the organization prefix is
-//     the tightest available index, the SAME fallback
-//     resolveViaMembershipPairPlane already relies on elsewhere
-//     in this module.
+//     directly since the id is already known).
 // dbOrView-shaped and opens no nested transaction — callable from
 // WITHIN an already-open write-gate transaction. Phase 14 Task 4
-// wires the claim gate to the SIBLING below
-// (workOrderClaimHistoryFor), never to this function directly:
-// this function's OWN contract — its replayed op-pair events
-// ALONE, excluding gate 5a's states/:id rows — is right for the
-// whole-log union (deriveStates/deriveStatesFor already union gate
-// 5a in separately) but WRONG for a claim decision. A standalone
-// release posted through states/:id (deleteWorkOrderClaim, a real
-// wired workbox action) would stay invisible to a caller reading
-// ONLY this function's return, stranding a released work order as
-// falsely still-claimed until natural expiry. See
-// workOrderClaimHistoryFor below, and its own header, for the
-// fix.
+// wires the claim gate to workOrderClaimHistoryFor below; with
+// the states/:id address retired both siblings return the SAME
+// op-pair replay (releases ride the release op, not a standalone
+// event-append).
 interface WorkOrderClaimSources {
     readonly replayed: readonly StateEntity[];
-    readonly statesAddressEvents: readonly StateEntity[];
 }
 
 // The reads + replay shared by workOrderLifecycleStatesFor and
 // workOrderClaimHistoryFor below, factored out so neither
 // duplicates the index reads or the replayWorkOrderOperations
-// call — each composes the SAME two pieces (the op-pair replay,
-// and this entity's own states/:id address rows) differently for
-// its own contract.
+// call.
 async function workOrderClaimSourcesFor(
     dbOrView: DbAdapter,
     organization: Id,
@@ -1625,24 +1377,12 @@ async function workOrderClaimSourcesFor(
         transitionRequests, transitionResponses, transitionPrefix,
     );
 
-    const statesPrefix = canonicalUriPrefix(
-        organization, '/states/',
-    );
-    const [stateRequests, stateResponses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_prefix', statesPrefix),
-        dbOrView.responses.getAllWhere('uri_prefix', statesPrefix),
-    ]);
-    const statesAddressEvents = eventPairStatesFrom(
-        stateRequests, stateResponses,
-    ).filter((row) => row.entity_id === workOrderId);
-
     return {
         replayed: replayWorkOrderOperations(
-            createPairs, entityPairs, statesAddressEvents,
+            createPairs, entityPairs,
             claimPairs, releasePairs, transitionPairs,
             workOrderId,
         ),
-        statesAddressEvents,
     };
 }
 
@@ -1657,42 +1397,25 @@ export async function workOrderLifecycleStatesFor(
     return [...replayed].sort(atIdCompare);
 }
 
-// THE CLAIM GATE'S OWN SOURCE (Phase 14 Task 4, the controller-
-// named standalone-unclaim hazard's resolution): the SAME union
-// deriveStates/deriveStatesFor assemble for the whole-log case —
-// gate 5a's deriveEventPairStates UNIONED with gate 5d's
-// deriveWorkOrderLifecycle — reproduced here over the INDEXED,
-// entity-scoped reads workOrderClaimSourcesFor already performs,
-// rather than deriveStatesFor's own whole-plane getAll (forbidden
-// inside a write-gate transaction — CLAUDE.md's tx-body gotcha:
+// THE CLAIM GATE'S OWN SOURCE (Phase 14 Task 4): the work-
+// order op-pair replay, over INDEXED entity-scoped reads
+// workOrderClaimSourcesFor already performs, rather than
+// deriveStatesFor's own whole-plane getAll (forbidden inside
+// a write-gate transaction — CLAUDE.md's tx-body gotcha:
 // entity-scoped in-tx reads only, never a whole-plane getAll of
-// requests/responses). The two halves are DISJOINT addresses (a
-// work order's op-pair replay never shares an event id with its
-// own states/:id rows — deriveWorkOrderLifecycle's own header),
-// so the union is a plain concatenation, no dedup-assert needed.
-// Byte-identical to db.states.getAllFor(workOrderId) for every
-// reachable event sequence: every LIVE writer of a work order's
-// states rows is one of the four sites api/routes.ts posts
-// through (create/claim/transition op pairs, or the generic
-// states/:id PUT) — the SAME two source families this union
-// reads — and tests/drift-states.test.ts case 4d already proves
-// the whole-log entity union (deriveStatesFor) byte-equal to the
-// row-plane oracle across exactly the scenario the hazard named:
-// create, claim, a STANDALONE release via states/:id
-// (deleteWorkOrderClaim's own shape), then reclaim. This function
-// is that same two-source composition, indexed. postWorkOrderClaimOp
+// requests/responses). With the states/:id address retired this
+// is the sole claim-history source — create/claim/transition/
+// release op pairs cover every live writer. postWorkOrderClaimOp
 // (api/routes.ts) is its only live caller.
 export async function workOrderClaimHistoryFor(
     dbOrView: DbAdapter,
     organization: Id,
     workOrderId: Id,
 ): Promise<StateEntity[]> {
-    const { replayed, statesAddressEvents } =
-        await workOrderClaimSourcesFor(
-            dbOrView, organization, workOrderId,
-        );
-    return [...replayed, ...statesAddressEvents]
-        .sort(atIdCompare);
+    const { replayed } = await workOrderClaimSourcesFor(
+        dbOrView, organization, workOrderId,
+    );
+    return [...replayed].sort(atIdCompare);
 }
 
 // ---- workOrderDocumentHeadFor — the claim-gate graph head -----
@@ -2204,20 +1927,21 @@ async function deriveTrioFamilyStates(
     return perFamily.flat();
 }
 
-// ---- deriveStates / deriveStatesFor — the SIX-source union ------
+// ---- deriveStates / deriveStatesFor — the FIVE-source union -----
 // ---- (Task 5) ------------------------------------------------------
 
-// THE SIX-SOURCE UNION: source (b) carries the five trio
+// THE FIVE-SOURCE UNION: source (a) carries the five trio
 // families (ideas/projects/records/flows/objectives); the other
-// five sources stand alone. Still six sources, not seven.
+// four sources stand alone. The states/:id event-append source
+// is retired with the address itself.
 //
 // The union invariant every id in the merged set is checked
 // against: IDENTICAL content across sources is a harmless (never
 // expected in practice, since every source above reads a DISJOINT
 // address family) double-derivation; DIFFERING content at the SAME
-// id is a bug in one of the six sources and must crash loud — never
-// a silent last-writer-wins pick (Commandment I: Reliability; the
-// Sin of Swallowed Failures).
+// id is a bug in one of the five sources and must crash loud —
+// never a silent last-writer-wins pick (Commandment I:
+// Reliability; the Sin of Swallowed Failures).
 function sameStateEntity(a: StateEntity, b: StateEntity): boolean {
     return a.id === b.id
         && a.entity_id === b.entity_id
@@ -2248,7 +1972,7 @@ function unionById(
     return [...byId.values()];
 }
 
-// The full union (gate 5, all six sources), fenced to
+// The full union (gate 5, all five sources), fenced to
 // boundOrganization and returned in the states table's own
 // id-lex order (byIdAscending) — the order Task 7's route flip
 // will serve.
@@ -2257,7 +1981,6 @@ export async function deriveStates(
     boundOrganization: Id,
 ): Promise<StateEntity[]> {
     const sources = await Promise.all([
-        deriveEventPairStates(db),
         deriveTrioFamilyStates(db, boundOrganization),
         deriveMemberStates(db),
         deriveWorkOrderLifecycle(db),
@@ -2273,15 +1996,12 @@ export async function deriveStates(
 
 // The entity's OWN subset — no family-classification shortcut
 // exists (resolveOwningOrganization resolves an OWNING
-// ORGANIZATION, never which of the six sources an id belongs
+// ORGANIZATION, never which of the five sources an id belongs
 // to), so every source is queried and the result filtered by
 // entity_id. An id ordinarily lives in ONE source's address
-// family; the transitional system-member dual-write (document
-// trio + leftover states/:id seed, folded at the seed stage)
-// can echo the SAME event from two sources, so unionById
-// keeps same-content echoes once and throws on a true
-// collision — the same covenant deriveStates already holds.
-// organization is REQUIRED — the five trio derives are
+// family; unionById keeps same-content echoes once and throws
+// on a true collision — the same covenant deriveStates already
+// holds. organization is REQUIRED — the five trio derives are
 // org-prefixed and cannot resolve their own address without
 // it. Never a visibility fence here, unlike deriveStates'
 // own fenceStatesByOwner call — the caller already names
@@ -2300,13 +2020,11 @@ export async function deriveStatesFor(
     entityId: Id,
 ): Promise<StateEntity[]> {
     const [
-        eventPairRows,
         ideaRows, projectRows, recordRows, flowRows,
         objectiveRows,
         memberStateRows, workOrderRows,
         flowGraphRows, invitationRows,
     ] = await Promise.all([
-        deriveEventPairStates(db),
         deriveIdeaStateHistory(db, organization, entityId),
         deriveProjectStateHistory(db, organization, entityId),
         deriveRecordStateHistory(db, organization, entityId),
@@ -2318,7 +2036,6 @@ export async function deriveStatesFor(
         deriveInvitationStates(db),
     ]);
     const rows = [
-        ...eventPairRows,
         ...ideaRows, ...projectRows, ...recordRows, ...flowRows,
         ...objectiveRows,
         ...memberStateRows, ...workOrderRows,
@@ -2337,13 +2054,11 @@ export async function deriveStatesFor(
 // to decide an ECHO (keep the head's member_id) from a fresh
 // transition (author as actor) — Decision 7's MEMBER_ID CAVEAT.
 // Re-anchored off the row-plane view.states.getCurrentForIn onto
-// this entity's OWN pair-plane trace: its document-address trio
-// history (documentLifecycleEvents/stateHistoryFrom over
-// documentPairsAt) UNIONED with its states/:id event-append pairs
-// (eventPairStatesFrom) — the SAME two-source composition
-// workOrderClaimSourcesFor assembles for its own entity above,
-// reduced to the (at, id) CURRENT row exactly as
-// StateStore.getCurrentForIn's own latestByKey reduction does.
+// this entity's OWN document-address trio history
+// (documentLifecycleEvents/stateHistoryFrom over
+// documentPairsAt), reduced to the (at, id) CURRENT row exactly
+// as StateStore.getCurrentForIn's own latestByKey reduction does.
+// The states/:id event-append arm is RETIRED with the address.
 //
 // ENTITY-SCOPED, NO ORGANIZATION ARGUMENT NEEDED: the document
 // half resolves its own organization via the `uri_id` index (an
@@ -2387,24 +2102,9 @@ export async function documentStateHeadFor(
         id,
     );
 
-    const organization =
-        ORGANIZATION_NESTED_FAMILY_ADDRESS_PATTERN
-            .exec(prefix)![1]!;
-    const statesPrefix = canonicalUriPrefix(
-        organization, '/states/',
-    );
-    const [stateRequests, stateResponses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_prefix', statesPrefix),
-        dbOrView.responses.getAllWhere(
-            'uri_prefix', statesPrefix,
-        ),
-    ]);
-    const statesAddressEvents = eventPairStatesFrom(
-        stateRequests, stateResponses,
-    ).filter((row) => row.entity_id === id);
-
-    const merged = [...documentHistory, ...statesAddressEvents];
-    return merged.length === 0
+    return documentHistory.length === 0
         ? null
-        : latestByKey(merged, () => 'current').get('current')!;
+        : latestByKey(
+            documentHistory, () => 'current',
+        ).get('current')!;
 }
