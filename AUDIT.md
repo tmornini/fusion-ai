@@ -189,6 +189,12 @@ included, and returns:
   `[II] [section] title — file:line`.
 - A doc that misstates fact X violates Clarity (V), not X —
   unless the misstatement conceals a live exposure.
+- **Internal-consistency gate.** Before the report is written,
+  reconcile verdicts across sites: any two findings — or a
+  finding and a refutation — citing the same enclosing-symbol
+  SHAPE in different files must resolve to ONE verdict. A
+  CONFIRMED site and a REFUTED twin of the same defect cannot
+  both ship.
 
 ## Security: KNOWN vs NEW
 
