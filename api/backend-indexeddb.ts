@@ -34,13 +34,55 @@ const DB_NAME = 'fusion-ai';
 const SCHEMA_STORE = '__schema__';
 const SCHEMA_MARKER_ID = 'schema';
 
+// Bounds every IndexedDB promise so a hung platform op
+// rejects rather than hanging the app forever (I. Reliability
+// — every I/O call shall have a timeout). Cleared on both
+// settle paths so a fast success does not leave a stray
+// timer that would reject into the void.
+export const IDB_OP_TIMEOUT_MS = 30_000;
+
+export function withIdbTimeout<T>(
+    promise: Promise<T>,
+    label: string = 'IndexedDB operation',
+    timeoutMs: number = IDB_OP_TIMEOUT_MS,
+): Promise<T> {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    return new Promise<T>((resolve, reject) => {
+        timer = setTimeout(() => {
+            reject(new Error(
+                `${label} timed out after`
+                + ` ${timeoutMs}ms`,
+            ));
+        }, timeoutMs);
+        promise.then(
+            (value) => {
+                if (timer !== undefined) {
+                    clearTimeout(timer);
+                }
+                resolve(value);
+            },
+            (error: unknown) => {
+                if (timer !== undefined) {
+                    clearTimeout(timer);
+                }
+                reject(error);
+            },
+        );
+    });
+}
+
 function requestPromise<T>(
     request: IDBRequest<T>,
 ): Promise<T> {
-    return new Promise((resolve, reject) => {
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
+    return withIdbTimeout(
+        new Promise<T>((resolve, reject) => {
+            request.onsuccess = () =>
+                resolve(request.result);
+            request.onerror = () =>
+                reject(request.error);
+        }),
+        'IndexedDB request',
+    );
 }
 
 // The first of `stores` absent from `available`, or undefined
@@ -228,20 +270,24 @@ export class IndexedDbBackend implements StorageBackend {
     // Resolves with the opened connection; the caller decides
     // whether to adopt or heal it.
     #openConnection(): Promise<IDBDatabase> {
-        return new Promise((resolve, reject) => {
-            const request = indexedDB.open(DB_NAME);
-            request.onupgradeneeded = () =>
-                createSchemaStores(request.result);
-            request.onsuccess = () =>
-                resolve(request.result);
-            request.onerror = () => reject(request.error);
-            request.onblocked = () => reject(
-                new Error(
-                    'IndexedDB open blocked by another'
-                    + ' connection.',
-                ),
-            );
-        });
+        return withIdbTimeout(
+            new Promise<IDBDatabase>((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME);
+                request.onupgradeneeded = () =>
+                    createSchemaStores(request.result);
+                request.onsuccess = () =>
+                    resolve(request.result);
+                request.onerror = () =>
+                    reject(request.error);
+                request.onblocked = () => reject(
+                    new Error(
+                        'IndexedDB open blocked by another'
+                        + ' connection.',
+                    ),
+                );
+            }),
+            'IndexedDB open',
+        );
     }
 
     // Delete the database so the next open re-runs the
@@ -250,18 +296,22 @@ export class IndexedDbBackend implements StorageBackend {
     // multi-tab-during-recovery edge surfaces visibly rather
     // than corrupting silently.
     #deleteConnection(): Promise<void> {
-        return new Promise((resolve, reject) => {
-            const request =
-                indexedDB.deleteDatabase(DB_NAME);
-            request.onsuccess = () => resolve();
-            request.onerror = () => reject(request.error);
-            request.onblocked = () => reject(
-                new Error(
-                    'IndexedDB delete blocked by another'
-                    + ' connection.',
-                ),
-            );
-        });
+        return withIdbTimeout(
+            new Promise<void>((resolve, reject) => {
+                const request =
+                    indexedDB.deleteDatabase(DB_NAME);
+                request.onsuccess = () => resolve();
+                request.onerror = () =>
+                    reject(request.error);
+                request.onblocked = () => reject(
+                    new Error(
+                        'IndexedDB delete blocked by'
+                        + ' another connection.',
+                    ),
+                );
+            }),
+            'IndexedDB delete',
+        );
     }
 
     // Adopt an opened connection: close it on a versionchange
@@ -308,50 +358,60 @@ export class IndexedDbBackend implements StorageBackend {
         fn: (tx: Tx) => Promise<R>,
     ): Promise<R> {
         const db = await this.#connection();
-        return new Promise<R>((resolve, reject) => {
-            const idbTransaction = openTx(
-                db, tables, mode,
-            );
-            let result: R;
-            let settled = false;
-            idbTransaction.oncomplete = () => {
-                resolve(result);
-            };
-            idbTransaction.onabort = () => {
-                if (!settled) {
-                    reject(
-                        idbTransaction.error ?? new Error(
-                            'IndexedDB transaction aborted.',
-                        ),
-                    );
-                }
-            };
-            idbTransaction.onerror = () => {
-                if (!settled) {
-                    reject(
-                        idbTransaction.error ?? new Error(
-                            'IndexedDB transaction error.',
-                        ),
-                    );
-                }
-            };
-            Promise.resolve(
-                fn(indexedDbTx(idbTransaction, mode)),
-            ).then(
-                (value) => { result = value; },
-                (error) => {
-                    settled = true;
-                    try {
-                        idbTransaction.abort();
-                    } catch {
-                        // The tx may already be aborting from
-                        // the same fault; the real error is
-                        // `error`, which we reject with.
+        return withIdbTimeout(
+            new Promise<R>((resolve, reject) => {
+                const idbTransaction = openTx(
+                    db, tables, mode,
+                );
+                let result: R;
+                let settled = false;
+                idbTransaction.oncomplete = () => {
+                    resolve(result);
+                };
+                idbTransaction.onabort = () => {
+                    if (!settled) {
+                        reject(
+                            idbTransaction.error
+                            ?? new Error(
+                                'IndexedDB transaction'
+                                + ' aborted.',
+                            ),
+                        );
                     }
-                    reject(error);
-                },
-            );
-        });
+                };
+                idbTransaction.onerror = () => {
+                    if (!settled) {
+                        reject(
+                            idbTransaction.error
+                            ?? new Error(
+                                'IndexedDB transaction'
+                                + ' error.',
+                            ),
+                        );
+                    }
+                };
+                Promise.resolve(
+                    fn(indexedDbTx(
+                        idbTransaction, mode,
+                    )),
+                ).then(
+                    (value) => { result = value; },
+                    (error) => {
+                        settled = true;
+                        try {
+                            idbTransaction.abort();
+                        } catch {
+                            // The tx may already be aborting
+                            // from the same fault; the real
+                            // error is `error`, which we
+                            // reject with.
+                        }
+                        reject(error);
+                    },
+                );
+            }),
+            'IndexedDB transaction',
+        );
     }
 
     // Object stores are created at upgrade time; ensuring a
@@ -366,30 +426,39 @@ export class IndexedDbBackend implements StorageBackend {
     // can't signal schema — the marker store does.
     async hasSchema(): Promise<boolean> {
         const db = await this.#connection();
-        return new Promise((resolve, reject) => {
-            const tx = openTx(
-                db, [SCHEMA_STORE], 'readonly',
-            );
-            const request = tx.objectStore(SCHEMA_STORE)
-                .get(SCHEMA_MARKER_ID);
-            request.onsuccess = () =>
-                resolve(request.result !== undefined);
-            request.onerror = () => reject(request.error);
-        });
+        return withIdbTimeout(
+            new Promise<boolean>((resolve, reject) => {
+                const tx = openTx(
+                    db, [SCHEMA_STORE], 'readonly',
+                );
+                const request = tx.objectStore(SCHEMA_STORE)
+                    .get(SCHEMA_MARKER_ID);
+                request.onsuccess = () =>
+                    resolve(
+                        request.result !== undefined,
+                    );
+                request.onerror = () =>
+                    reject(request.error);
+            }),
+            'IndexedDB hasSchema',
+        );
     }
 
     async postSchemaCreation(): Promise<void> {
         const db = await this.#connection();
-        return new Promise((resolve, reject) => {
-            const tx = openTx(
-                db, [SCHEMA_STORE], 'readwrite',
-            );
-            tx.oncomplete = () => resolve();
-            tx.onerror = () => reject(tx.error);
-            tx.objectStore(SCHEMA_STORE).put({
-                id: SCHEMA_MARKER_ID,
-            });
-        });
+        return withIdbTimeout(
+            new Promise<void>((resolve, reject) => {
+                const tx = openTx(
+                    db, [SCHEMA_STORE], 'readwrite',
+                );
+                tx.oncomplete = () => resolve();
+                tx.onerror = () => reject(tx.error);
+                tx.objectStore(SCHEMA_STORE).put({
+                    id: SCHEMA_MARKER_ID,
+                });
+            }),
+            'IndexedDB postSchemaCreation',
+        );
     }
 
     // Reset by delete + reopen, not clear: re-firing
