@@ -43,6 +43,11 @@ import {
     type Budgets,
 } from './measure-core.ts';
 import { generateMeasureViz } from './measure-viz.ts';
+import {
+    DEFAULT_PROFILE_PAGES,
+    formatRequestProfileReport,
+    type ApiRequestHit,
+} from './measure-profile-core.ts';
 
 const execFile = promisify(execFileCb);
 
@@ -79,6 +84,8 @@ type Cli = {
     pages: string[] | null;
     runs: number;
     visualize: boolean;
+    /** API request-count profile after each ready. */
+    profile: boolean;
     /** True when --runs was present on argv. */
     runsExplicit: boolean;
 };
@@ -115,6 +122,12 @@ function usageText(): string {
         '                       history (bare = no',
         '                       Chrome; with a run,',
         '                       regenerate after)',
+        '  --profile            Print API request counts',
+        '                       + page-init residual per',
+        '                       ready (default pages:',
+        '                       organization, workbox,',
+        '                       workbox-detail, projects;',
+        '                       default --runs 1)',
         '  --help, -h           Show this help',
         '',
         'Examples:',
@@ -123,6 +136,8 @@ function usageText(): string {
         '  ./measure --check --record --visualize',
         '  ./measure --write-budgets --runs 30',
         '  ./measure --visualize',
+        '  ./measure --profile',
+        '  ./measure --profile --pages ideas,dashboard',
         '',
     ].join('\n');
 }
@@ -135,6 +150,7 @@ function parseArgs(argv: string[]): ParseResult {
     let pages: string[] | null = null;
     let runs = DEFAULT_RUNS;
     let visualize = false;
+    let profile = false;
     let runsExplicit = false;
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i]!;
@@ -155,6 +171,10 @@ function parseArgs(argv: string[]): ParseResult {
         }
         if (a === '--visualize') {
             visualize = true;
+            continue;
+        }
+        if (a === '--profile') {
+            profile = true;
             continue;
         }
         if (a === '--budget-sigmas') {
@@ -226,6 +246,14 @@ function parseArgs(argv: string[]): ParseResult {
                 + ' registry sweep (omit --pages)',
         };
     }
+    // Profile defaults: heaviest page-init pages, one
+    // run (call counts are deterministic for a seed).
+    if (profile && pages === null) {
+        pages = [...DEFAULT_PROFILE_PAGES];
+    }
+    if (profile && !runsExplicit) {
+        runs = 1;
+    }
     return {
         kind: 'ok',
         cli: {
@@ -236,6 +264,7 @@ function parseArgs(argv: string[]): ParseResult {
             pages,
             runs,
             visualize,
+            profile,
             runsExplicit,
         },
     };
@@ -559,10 +588,14 @@ async function waitForSelector(
     );
 }
 
+type ReadyHarvest = PageRun & {
+    apiHits: ApiRequestHit[];
+};
+
 async function harvestReady(
     cdp: CdpClient,
-): Promise<PageRun | null> {
-    return evaluateJson<PageRun | null>(
+): Promise<ReadyHarvest | null> {
+    return evaluateJson<ReadyHarvest | null>(
         cdp,
         `(() => {
             const measures =
@@ -583,9 +616,16 @@ async function harvestReady(
                     phases[e.name] = e.duration;
                 }
             }
+            const g = globalThis;
+            const apiHits =
+                typeof g.__fusionApiRequestHits
+                    === 'function'
+                    ? g.__fusionApiRequestHits()
+                    : [];
             return {
                 readyMs: m.duration,
                 phases,
+                apiHits,
             };
         })()`,
     );
@@ -595,7 +635,7 @@ async function waitPageReady(
     cdp: CdpClient,
     pageLabel: string,
     timeoutMs: number,
-): Promise<PageRun> {
+): Promise<ReadyHarvest> {
     return pollUntil(
         `page:ready on ${pageLabel}`,
         timeoutMs,
@@ -1008,13 +1048,17 @@ function resolvePageUrl(
 
 // ── Sweep ──────
 
+type PageRunWithHits = PageRun & {
+    apiHits: ApiRequestHit[];
+};
+
 async function measurePage(
     cdp: CdpClient,
     key: string,
     url: string,
     runs: number,
-): Promise<PageRun[]> {
-    const out: PageRun[] = [];
+): Promise<PageRunWithHits[]> {
+    const out: PageRunWithHits[] = [];
     for (let i = 1; i <= runs; i++) {
         await pageNavigate(cdp, url);
         const run = await waitPageReady(
@@ -1025,6 +1069,7 @@ async function measurePage(
         out.push({
             readyMs: run.readyMs,
             phases: { ...run.phases },
+            apiHits: run.apiHits.slice(),
         });
     }
     return out;
@@ -1054,6 +1099,7 @@ async function main(): Promise<void> {
         && !cli.check
         && !cli.record
         && !cli.writeBudgets
+        && !cli.profile
         && cli.pages === null
         && !cli.runsExplicit;
 
@@ -1256,6 +1302,15 @@ async function main(): Promise<void> {
         const stats: Record<string, PageStats> = {};
         // Per-page readyMs samples (for --write-budgets).
         const readySamples: Record<string, number[]> = {};
+        // First-run hits for --profile (seed is fixed).
+        const profileHits: Record<
+            string,
+            {
+                readyMs: number;
+                phases: Record<string, number>;
+                apiHits: ApiRequestHit[];
+            }
+        > = {};
         for (const key of pageKeys) {
             const url = resolvePageUrl(
                 baseUrl, key, discovered,
@@ -1270,11 +1325,35 @@ async function main(): Promise<void> {
             readySamples[key] = runs.map(
                 (r) => r.readyMs,
             );
+            if (cli.profile && runs[0] !== undefined) {
+                const first = runs[0];
+                profileHits[key] = {
+                    readyMs: first.readyMs,
+                    phases: { ...first.phases },
+                    apiHits: first.apiHits.slice(),
+                };
+            }
         }
 
         // 8. Report
         const report = formatReport(stats);
         process.stdout.write(report + '\n');
+
+        // 8a. --profile: API route counts + residual
+        if (cli.profile) {
+            for (const key of pageKeys) {
+                const row = profileHits[key];
+                if (row === undefined) continue;
+                process.stdout.write(
+                    formatRequestProfileReport(
+                        key,
+                        row.readyMs,
+                        row.phases,
+                        row.apiHits,
+                    ),
+                );
+            }
+        }
 
         // 8b. --write-budgets (mean + sigmas×sample σ)
         if (cli.writeBudgets) {

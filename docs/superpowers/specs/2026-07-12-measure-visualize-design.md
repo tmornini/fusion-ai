@@ -175,6 +175,10 @@ chart library.
 **Phase rollup:** sum phase milliseconds by name prefix
 `boot:`, `fetch:`, `render:`. Unknown prefixes → an
 `other` bucket (visible, not dropped silently).
+`boot:page-init` is a parent span that nests `fetch:*` and
+`render:*`; rollup contributes only its **residual**
+(`page-init − Σ fetch − Σ render`, floored at 0) to the
+boot bucket so the stacked bar does not double-count.
 
 ### E. Embedded payload (versioned DTO)
 

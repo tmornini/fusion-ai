@@ -517,25 +517,55 @@ function vizClientScript(): string {
     });
     return entries;
   }
+  var MEASURE_BOOT_PAGE_INIT = 'boot:page-init';
   function phaseBucket(name) {
     if (name.indexOf('boot:') === 0) return 'boot';
     if (name.indexOf('fetch:') === 0) return 'fetch';
     if (name.indexOf('render:') === 0) return 'render';
     return 'other';
   }
+  // Residual page-init: wall minus nested fetch/render
+  // so the stacked bar does not double-count.
+  function residualPageInitMs(phases) {
+    var pageInit = phases[MEASURE_BOOT_PAGE_INIT];
+    if (pageInit === undefined) return undefined;
+    var nested = 0;
+    var names = Object.keys(phases || {});
+    for (var i = 0; i < names.length; i++) {
+      var n = names[i];
+      if (
+        n.indexOf('fetch:') === 0
+        || n.indexOf('render:') === 0
+      ) {
+        nested += phases[n];
+      }
+    }
+    return Math.max(0, pageInit - nested);
+  }
   function rollupPhases(phases) {
     var buckets = {
       boot: 0, fetch: 0, render: 0, other: 0,
     };
     var list = [];
+    var residual = residualPageInitMs(phases || {});
     var names = Object.keys(phases || {});
     for (var i = 0; i < names.length; i++) {
       var name = names[i];
-      var ms = phases[name];
+      var raw = phases[name];
       var bucket = phaseBucket(name);
-      buckets[bucket] += ms;
+      if (name === MEASURE_BOOT_PAGE_INIT) {
+        var residMs = residual === undefined
+          ? 0
+          : residual;
+        buckets.boot += residMs;
+        list.push({
+          name: name, ms: residMs, bucket: 'boot',
+        });
+        continue;
+      }
+      buckets[bucket] += raw;
       list.push({
-        name: name, ms: ms, bucket: bucket,
+        name: name, ms: raw, bucket: bucket,
       });
     }
     // Longest duration first; name break for stability.
@@ -833,10 +863,17 @@ function vizClientScript(): string {
       )
       + seg('other', r.buckets.other, 'var(--other)')
       + '</div>';
+    html += '<p class="muted">'
+      + 'boot:page-init is residual wall time after '
+      + 'nested fetch/render (no double-count).</p>';
     html += '<div class="phase-list">';
     for (var i = 0; i < r.phases.length; i++) {
       var ph = r.phases[i];
-      html += '<div><span>' + ph.name
+      var label = ph.name;
+      if (ph.name === MEASURE_BOOT_PAGE_INIT) {
+        label = ph.name + ' (residual)';
+      }
+      html += '<div><span>' + label
         + ' <span class="muted">(' + ph.bucket
         + ')</span></span><span>'
         + formatDurationPerf(ph.ms, false)

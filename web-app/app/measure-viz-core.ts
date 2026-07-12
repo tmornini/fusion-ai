@@ -234,6 +234,10 @@ export function deltaReadyMs(
     return toMs - fromMs;
 }
 
+/** Wire-stable; matches page-performance MEASURE_BOOT_PAGE_INIT. */
+export const MEASURE_BOOT_PAGE_INIT =
+    'boot:page-init';
+
 export function phaseBucketFor(
     name: string,
 ): PhaseBucket {
@@ -243,6 +247,39 @@ export function phaseBucketFor(
     return 'other';
 }
 
+/**
+ * Wall time inside boot:page-init that is not already
+ * accounted for by nested fetch:* / render:* measures.
+ * Undefined when page-init is absent. Nested sums may
+ * exceed page-init when children overlap; residual
+ * floors at 0 (no invented negative).
+ */
+export function residualPageInitMs(
+    phases: Record<string, number>,
+): number | undefined {
+    const pageInit = phases[MEASURE_BOOT_PAGE_INIT];
+    if (pageInit === undefined) {
+        return undefined;
+    }
+    let nested = 0;
+    for (const name of Object.keys(phases)) {
+        if (
+            name.startsWith('fetch:')
+            || name.startsWith('render:')
+        ) {
+            nested += phases[name]!;
+        }
+    }
+    return Math.max(0, pageInit - nested);
+}
+
+/**
+ * Sum phases into boot / fetch / render / other without
+ * double-counting nested work: boot:page-init contributes
+ * only its residual after nested fetch:* and render:*.
+ * The phase list shows residual ms for page-init so it
+ * no longer ranks as a false parent span.
+ */
 export function rollupPhases(
     phases: Record<string, number>,
 ): PhaseRollup {
@@ -252,12 +289,19 @@ export function rollupPhases(
         render: 0,
         other: 0,
     };
+    const residual = residualPageInitMs(phases);
     const list: PhaseRollup['phases'] = [];
     for (const name of Object.keys(phases)) {
-        const ms = phases[name]!;
+        const raw = phases[name]!;
         const bucket = phaseBucketFor(name);
-        buckets[bucket] += ms;
-        list.push({ name, ms, bucket });
+        if (name === MEASURE_BOOT_PAGE_INIT) {
+            const ms = residual ?? 0;
+            buckets.boot += ms;
+            list.push({ name, ms, bucket: 'boot' });
+            continue;
+        }
+        buckets[bucket] += raw;
+        list.push({ name, ms: raw, bucket });
     }
     // Longest duration first; name break for stability.
     list.sort((a, b) => {

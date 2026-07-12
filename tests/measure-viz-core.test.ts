@@ -11,10 +11,12 @@ import {
     budgetRatio,
     deltaReadyMs,
     phaseBucketFor,
+    residualPageInitMs,
     rollupPhases,
     pageKeysUnion,
     rankPages,
     buildPayload,
+    MEASURE_BOOT_PAGE_INIT,
     VIZ_PAYLOAD_VERSION,
 } from '../web-app/app/measure-viz-core.ts';
 
@@ -239,6 +241,59 @@ test('rollupPhases sums buckets; lists present only', () => {
     assert.equal(rollup.phases[0]!.bucket, 'fetch');
     assert.equal(rollup.phases[0]!.ms, 40);
     assert.equal(rollup.phases[3]!.bucket, 'other');
+});
+
+test('residualPageInitMs subtracts nested fetch/render', () => {
+    assert.equal(
+        residualPageInitMs({
+            [MEASURE_BOOT_PAGE_INIT]: 1000,
+            'fetch:a': 400,
+            'fetch:b': 300,
+            'render:a': 50,
+            'boot:sidebar-chrome': 600,
+        }),
+        250,
+    );
+    assert.equal(
+        residualPageInitMs({
+            'boot:db-open': 10,
+        }),
+        undefined,
+    );
+    // Nested sum may exceed page-init → floor 0.
+    assert.equal(
+        residualPageInitMs({
+            [MEASURE_BOOT_PAGE_INIT]: 100,
+            'fetch:a': 80,
+            'fetch:b': 80,
+        }),
+        0,
+    );
+});
+
+test('rollupPhases uses residual page-init (no double-count)', () => {
+    const rollup = rollupPhases({
+        [MEASURE_BOOT_PAGE_INIT]: 1000,
+        'boot:sidebar-chrome': 600,
+        'fetch:list': 700,
+        'render:list': 50,
+    });
+    // boot = sidebar 600 + residual (1000-700-50)=250
+    assert.deepEqual(rollup.buckets, {
+        boot: 850,
+        fetch: 700,
+        render: 50,
+        other: 0,
+    });
+    const pageInit = rollup.phases.find(
+        (p) => p.name === MEASURE_BOOT_PAGE_INIT,
+    );
+    assert.equal(pageInit!.ms, 250);
+    // Residual ranks below nested fetch, not as 1000.
+    assert.equal(
+        rollup.phases[0]!.name,
+        'fetch:list',
+    );
 });
 
 test('rollupPhases ties break by name', () => {

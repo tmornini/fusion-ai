@@ -106,7 +106,16 @@ Bare `./measure --visualize` skips the clean-tree gate and
 Chrome. With a measure run, pass `--visualize` to regenerate
 after success; without `--record`, a note says that this run
 is not in history. Missing history or budgets is a hard fail.
-Not part of `./validate`.
+Not part of `./validate`. Phase rollup treats
+`boot:page-init` as **residual** wall time after nested
+`fetch:*` / `render:*` (no double-count in the stacked bar).
+
+`--profile` prints per-ready API request counts (method +
+resource, id segments collapsed to `:id`) plus page-init
+residual attribution. Default pages:
+organization, workbox, workbox-detail, projects; default
+`--runs 1`. Override with `--pages` / `--runs`. Browser-only
+hit log in `page-request-profile.ts` (no-op under Node).
 
 In-app instrumentation always ships: `page-performance.ts`
 marks boot/fetch/render phases; one `page-performance` info
