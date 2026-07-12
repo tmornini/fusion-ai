@@ -724,7 +724,13 @@ export function ideaSubmissionSeedBody(
 // org, so `organization` is passed straight through rather than
 // derived from an index.
 export function projectSeedBody(
-    project: Omit<ProjectEntity, 'organization_id'>,
+    project: Omit<
+        ProjectEntity,
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    >,
     event: StateEntity,
     organization: Id,
 ): Record<string, unknown> {
@@ -750,9 +756,17 @@ export function projectSeedBody(
 // string rather than each re-typing it.
 export const secondOrganizationProjectId = 'seed-project-org2';
 
+type ProjectSeedFields = Omit<
+    ProjectEntity,
+    | 'organization_id'
+    | 'state'
+    | 'state_at'
+    | 'state_event_id'
+>;
+
 export function projectOrg2(
-    projects: readonly Omit<ProjectEntity, 'organization_id'>[],
-): Omit<ProjectEntity, 'organization_id'> {
+    projects: readonly ProjectSeedFields[],
+): ProjectSeedFields {
     return {
         ...projects[0]!,
         id: secondOrganizationProjectId,
@@ -768,7 +782,7 @@ export function projectOrg2(
 // neither can drift from the other by hand-editing a second
 // ternary.
 export function projectOrganizationFor(
-    project: Omit<ProjectEntity, 'organization_id'>,
+    project: ProjectSeedFields,
 ): Id {
     return project.id === secondOrganizationProjectId
         ? ORGANIZATION_TWO

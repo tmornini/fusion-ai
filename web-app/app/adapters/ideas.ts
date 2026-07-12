@@ -351,7 +351,14 @@ export async function postIdeaConversion(
     ctx: RequestContext,
     ideaId: string,
     projectId: string,
-    project: Omit<ProjectEntity, 'id' | 'organization_id'>,
+    project: Omit<
+        ProjectEntity,
+        | 'id'
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    >,
     projectState: ProjectState,
     promotedIdea: Omit<
         IdeaEntity,

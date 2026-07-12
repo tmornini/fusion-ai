@@ -1454,9 +1454,17 @@ const PROJECT_BODY_KEYS: readonly string[] = [
     'actual_cost', 'position',
 ];
 
+// Entity-field body only — lifecycle trio is GET stamp /
+// document-body, never part of this validator's key set.
+export type ProjectEntityFields = Omit<
+    ProjectEntity,
+    'id' | 'organization_id' | 'state' | 'state_at'
+        | 'state_event_id'
+>;
+
 export function validateProjectEntity(
     body: Record<string, unknown>,
-): Omit<ProjectEntity, 'id'> {
+): ProjectEntityFields & { organization_id: string } {
     assertOnlyKeys(
         body,
         PROJECT_BODY_KEYS,
@@ -1503,8 +1511,7 @@ const PROJECT_DOCUMENT_BODY_KEYS: readonly string[] = [
 ];
 
 export interface ProjectDocumentBody {
-    readonly entity:
-        Omit<ProjectEntity, 'id' | 'organization_id'>;
+    readonly entity: ProjectEntityFields;
     readonly state: ProjectState;
     readonly state_at: string;
     readonly state_event_id: string;

@@ -255,9 +255,18 @@ export async function getProjectEntity(
 // this side of the adapter seam — the IdeaDocumentFields
 // precedent (adapters/ideas.ts). organization_id is EXCLUDED
 // too — the client never supplies it (the org fence stamps it
-// downstream).
+// downstream). GET ProjectEntity also carries snake_case
+// lifecycle stamp fields — omit them here so the PUT body is
+// not double-keyed (snake + camel).
 export type ProjectDocumentFields =
-    Omit<ProjectEntity, 'id' | 'organization_id'> & {
+    Omit<
+        ProjectEntity,
+        | 'id'
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    > & {
         readonly state: ProjectState;
         readonly stateAt: string;
         readonly stateEventId: string;
@@ -282,16 +291,33 @@ export async function putProject(
 
 // The current row's writable fields, read fresh so the
 // domain ops below can overwrite whole-row without the
-// caller ever holding the wire shape.
+// caller ever holding the wire shape. Strip GET-stamped
+// snake_case trio so putProject's camelCase mint is the only
+// lifecycle payload.
 async function projectRowFields(
     ctx: RequestContext,
     id: string,
-): Promise<Omit<ProjectEntity, 'id' | 'organization_id'>> {
+): Promise<
+    Omit<
+        ProjectEntity,
+        | 'id'
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    >
+> {
     const {
         id: _id,
         organization_id: _org,
+        state: _state,
+        state_at: _stateAt,
+        state_event_id: _stateEventId,
         ...fields
     } = await getProjectEntity(ctx, id);
+    void _state;
+    void _stateAt;
+    void _stateEventId;
     return fields;
 }
 
@@ -348,10 +374,19 @@ export async function putProjectPosition(
 // supply the eight fields they already hold FROM RAW SOURCES
 // ONLY — never from ProjectView's display-transformed
 // accessors (see the DATA-CORRUPTION TRAP note on ProjectView).
+// Entity fields only — strip any GET-stamped snake_case trio
+// at the call site before passing here.
 export async function postProjectStateChange(
     ctx: RequestContext,
     id: string,
-    fields: Omit<ProjectEntity, 'id' | 'organization_id'>,
+    fields: Omit<
+        ProjectEntity,
+        | 'id'
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    >,
     state: ProjectState,
 ): Promise<void> {
     await putProject(ctx, id, {

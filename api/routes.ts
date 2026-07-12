@@ -298,7 +298,11 @@ const PROJECTS_WIRING: DocumentFamilyWiring = {
     notFoundTable: 'projects',
     validateDocument: validateProjectDocumentBody,
     documentOp: postProjectDocumentOp,
-    entityOf: projectEntityOf,
+    // projectEntityOf requires the lifecycle-current event;
+    // the generic trio path always supplies it after DELETED
+    // filter.
+    entityOf: (document, organization, current) =>
+        projectEntityOf(document, organization, current!),
 };
 // The flows wiring row — Task 3's flip commit, GET-wired at
 // Task 8. entityOf is derive-flows.ts's OWN flowEntityOf, not a
