@@ -29,6 +29,7 @@ export type {
     IdentityKind,
     IdentityPiiEntity,
     MemberPii,
+    ClientStatus,
 };
 
 // The identity surfaces derive from these stores: roster
