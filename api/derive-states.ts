@@ -1239,6 +1239,146 @@ function replayWorkOrderOperations(
     return events;
 }
 
+// Prefix-filtered pure core of the op-pair reader (gate 5d).
+// When `organization` is set, only that org's work-orders
+// uri_prefix family is considered (collection + claim/release/
+// transition); when undefined, every org — the whole-plane
+// scan deriveWorkOrderLifecycle needs. Returns ASC events and
+// the transition pairs consumed so bulk history can fold
+// field_values without a second plane pass.
+interface WorkOrderLifecyclePlane {
+    readonly events: readonly StateEntity[];
+    readonly transitionPairs: readonly OperationPair[];
+}
+
+function workOrderLifecycleFromPlane(
+    requests: readonly RequestEntity[],
+    responses: readonly ResponseEntity[],
+    organization: Id | undefined,
+): WorkOrderLifecyclePlane {
+    const collectionPrefixes = new Set<string>();
+    if (organization !== undefined) {
+        collectionPrefixes.add(
+            canonicalUriPrefix(organization, '/work-orders/'),
+        );
+    } else {
+        for (const request of requests) {
+            if (WORK_ORDERS_COLLECTION_PATTERN.test(
+                request.uri_prefix,
+            )) {
+                collectionPrefixes.add(request.uri_prefix);
+            }
+        }
+    }
+    const createPairs: OperationPair[] = [];
+    const entityPairs: DocumentPair[] = [];
+    for (const prefix of collectionPrefixes) {
+        createPairs.push(...operationPairsAt(
+            requests, responses, prefix,
+        ));
+        entityPairs.push(...documentPairsAt(
+            requests, responses, prefix,
+        ));
+    }
+    const createPairsByWorkOrder = Map.groupBy(
+        createPairs, (pair) => pair.uriId,
+    );
+    const entityPairsByWorkOrder = Map.groupBy(
+        entityPairs, (pair) => pair.uriId,
+    );
+
+    const organizationRoot = organization === undefined
+        ? null
+        : '/organizations/' + organization + '/work-orders/';
+
+    const claimPrefixByWorkOrder = new Map<Id, string>();
+    const releasePrefixByWorkOrder = new Map<Id, string>();
+    const transitionPrefixByWorkOrder = new Map<Id, string>();
+    for (const request of requests) {
+        if (
+            organizationRoot !== null
+            && !request.uri_prefix.startsWith(
+                organizationRoot,
+            )
+        ) {
+            continue;
+        }
+        const claimMatch = WORK_ORDER_CLAIM_PATTERN.exec(
+            request.uri_prefix,
+        );
+        if (claimMatch !== null) {
+            claimPrefixByWorkOrder.set(
+                claimMatch[1]!, request.uri_prefix,
+            );
+        }
+        const releaseMatch =
+            WORK_ORDER_RELEASE_PATTERN.exec(
+                request.uri_prefix,
+            );
+        if (releaseMatch !== null) {
+            releasePrefixByWorkOrder.set(
+                releaseMatch[1]!, request.uri_prefix,
+            );
+        }
+        const transitionMatch =
+            WORK_ORDER_TRANSITION_PATTERN.exec(
+                request.uri_prefix,
+            );
+        if (transitionMatch !== null) {
+            transitionPrefixByWorkOrder.set(
+                transitionMatch[1]!, request.uri_prefix,
+            );
+        }
+    }
+
+    const workOrderIds = new Set<Id>([
+        ...createPairsByWorkOrder.keys(),
+        ...claimPrefixByWorkOrder.keys(),
+        ...releasePrefixByWorkOrder.keys(),
+        ...transitionPrefixByWorkOrder.keys(),
+    ]);
+
+    const events: StateEntity[] = [];
+    const allTransitionPairs: OperationPair[] = [];
+    for (const workOrderId of workOrderIds) {
+        const claimPrefix =
+            claimPrefixByWorkOrder.get(workOrderId);
+        const releasePrefix =
+            releasePrefixByWorkOrder.get(workOrderId);
+        const transitionPrefix =
+            transitionPrefixByWorkOrder.get(workOrderId);
+        const claimPairs = claimPrefix === undefined
+            ? []
+            : operationPairsAt(
+                requests, responses, claimPrefix,
+            );
+        const releasePairs = releasePrefix === undefined
+            ? []
+            : operationPairsAt(
+                requests, responses, releasePrefix,
+            );
+        const transitionPairs =
+            transitionPrefix === undefined
+                ? []
+                : operationPairsAt(
+                    requests, responses, transitionPrefix,
+                );
+        allTransitionPairs.push(...transitionPairs);
+        events.push(...replayWorkOrderOperations(
+            createPairsByWorkOrder.get(workOrderId) ?? [],
+            entityPairsByWorkOrder.get(workOrderId) ?? [],
+            claimPairs,
+            releasePairs,
+            transitionPairs,
+            workOrderId,
+        ));
+    }
+    return {
+        events: events.sort(atIdCompare),
+        transitionPairs: allTransitionPairs,
+    };
+}
+
 // The op-pair reader (gate 5d). ONE shared readonly tx over
 // requests+responses (torn-read closure) — every grouping and
 // replay step below is pure over the two fetched arrays, no
@@ -1257,107 +1397,38 @@ export async function deriveWorkOrderLifecycle(
                 view.requests.getAll(),
                 view.responses.getAll(),
             ]);
+            return [
+                ...workOrderLifecycleFromPlane(
+                    requests, responses, undefined,
+                ).events,
+            ];
+        },
+    );
+}
 
-            const collectionPrefixes = new Set<string>();
-            for (const request of requests) {
-                if (WORK_ORDERS_COLLECTION_PATTERN.test(
-                    request.uri_prefix,
-                )) {
-                    collectionPrefixes.add(request.uri_prefix);
-                }
-            }
-            const createPairs: OperationPair[] = [];
-            const entityPairs: DocumentPair[] = [];
-            for (const prefix of collectionPrefixes) {
-                createPairs.push(...operationPairsAt(
-                    requests, responses, prefix,
-                ));
-                entityPairs.push(...documentPairsAt(
-                    requests, responses, prefix,
-                ));
-            }
-            const createPairsByWorkOrder = Map.groupBy(
-                createPairs, (pair) => pair.uriId,
-            );
-            const entityPairsByWorkOrder = Map.groupBy(
-                entityPairs, (pair) => pair.uriId,
-            );
-
-            const claimPrefixByWorkOrder = new Map<Id, string>();
-            const releasePrefixByWorkOrder =
-                new Map<Id, string>();
-            const transitionPrefixByWorkOrder =
-                new Map<Id, string>();
-            for (const request of requests) {
-                const claimMatch = WORK_ORDER_CLAIM_PATTERN.exec(
-                    request.uri_prefix,
-                );
-                if (claimMatch !== null) {
-                    claimPrefixByWorkOrder.set(
-                        claimMatch[1]!, request.uri_prefix,
-                    );
-                }
-                const releaseMatch =
-                    WORK_ORDER_RELEASE_PATTERN.exec(
-                        request.uri_prefix,
-                    );
-                if (releaseMatch !== null) {
-                    releasePrefixByWorkOrder.set(
-                        releaseMatch[1]!, request.uri_prefix,
-                    );
-                }
-                const transitionMatch =
-                    WORK_ORDER_TRANSITION_PATTERN.exec(
-                        request.uri_prefix,
-                    );
-                if (transitionMatch !== null) {
-                    transitionPrefixByWorkOrder.set(
-                        transitionMatch[1]!, request.uri_prefix,
-                    );
-                }
-            }
-
-            const workOrderIds = new Set<Id>([
-                ...createPairsByWorkOrder.keys(),
-                ...claimPrefixByWorkOrder.keys(),
-                ...releasePrefixByWorkOrder.keys(),
-                ...transitionPrefixByWorkOrder.keys(),
+// GET work-orders/history (states-URI elimination A2): the
+// org-prefix scoped bulk of workOrderHistoryFor — same
+// WorkOrderHistoryEventEntity shape (field_values folded),
+// (at, id) DESC overall so rows group by entity_id under a
+// shared total order. Always returns an array (empty when the
+// org has no live op-pair lifecycle).
+export async function deriveWorkOrderHistories(
+    db: DbAdapter,
+    organization: Id,
+): Promise<WorkOrderHistoryEventEntity[]> {
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            const [requests, responses] = await Promise.all([
+                view.requests.getAll(),
+                view.responses.getAll(),
             ]);
-
-            const events: StateEntity[] = [];
-            for (const workOrderId of workOrderIds) {
-                const claimPrefix =
-                    claimPrefixByWorkOrder.get(workOrderId);
-                const releasePrefix =
-                    releasePrefixByWorkOrder.get(workOrderId);
-                const transitionPrefix =
-                    transitionPrefixByWorkOrder.get(workOrderId);
-                const claimPairs = claimPrefix === undefined
-                    ? []
-                    : operationPairsAt(
-                        requests, responses, claimPrefix,
-                    );
-                const releasePairs = releasePrefix === undefined
-                    ? []
-                    : operationPairsAt(
-                        requests, responses, releasePrefix,
-                    );
-                const transitionPairs =
-                    transitionPrefix === undefined
-                        ? []
-                        : operationPairsAt(
-                            requests, responses, transitionPrefix,
-                        );
-                events.push(...replayWorkOrderOperations(
-                    createPairsByWorkOrder.get(workOrderId) ?? [],
-                    entityPairsByWorkOrder.get(workOrderId) ?? [],
-                    claimPairs,
-                    releasePairs,
-                    transitionPairs,
-                    workOrderId,
-                ));
-            }
-            return events.sort(atIdCompare);
+            const plane = workOrderLifecycleFromPlane(
+                requests, responses, organization,
+            );
+            return historyEventsWithFieldValues(
+                plane.events, plane.transitionPairs,
+            );
         },
     );
 }
@@ -1484,6 +1555,73 @@ export async function workOrderLifecycleStatesFor(
     return [...replayed].sort(atIdCompare);
 }
 
+// Same fold as transitionFieldValueCandidates +
+// stateFieldValuesFrom: candidates keyed by fv row id,
+// latestByKey head reduction, DELETE heads dropped. Shared by
+// workOrderHistoryFor (A1) and deriveWorkOrderHistories (A2).
+function fieldValuesByTransitionEvent(
+    transitionPairs: readonly OperationPair[],
+): Map<Id, TransitionFieldValueEntity[]> {
+    const candidates: DocumentPair[] = [];
+    for (const transition of transitionPairs) {
+        const fieldValues = transition.body['fieldValues'] as
+            readonly {
+                readonly id: string;
+                readonly fields: Record<string, unknown>;
+            }[];
+        for (const fieldValue of fieldValues) {
+            candidates.push({
+                id: transition.id,
+                at: transition.at,
+                uriId: fieldValue.id,
+                method: 'PUT',
+                body: fieldValue.fields,
+                requesterIdentityId:
+                    transition.requesterIdentityId,
+            });
+        }
+    }
+    const heads = latestByKey(
+        candidates, (pair) => pair.uriId,
+    );
+    const byEvent = new Map<Id, TransitionFieldValueEntity[]>();
+    for (const [uriId, head] of heads) {
+        if (head.method === 'DELETE') continue;
+        const stateEventId = pickString(
+            head.body, 'state_event_id',
+        );
+        const list = byEvent.get(stateEventId) ?? [];
+        list.push({
+            id: uriId,
+            attribute_id: pickString(
+                head.body, 'attribute_id',
+            ),
+            value: pickString(head.body, 'value'),
+        });
+        byEvent.set(stateEventId, list);
+    }
+    for (const list of byEvent.values()) {
+        list.sort(byIdAscending);
+    }
+    return byEvent;
+}
+
+// Attach folded field_values and reverse ASC lifecycle to
+// (at, id) DESC (index 0 = current). Claim/birth/release rows
+// carry field_values: [].
+function historyEventsWithFieldValues(
+    lifecycleAsc: readonly StateEntity[],
+    transitionPairs: readonly OperationPair[],
+): WorkOrderHistoryEventEntity[] {
+    const byEvent = fieldValuesByTransitionEvent(
+        transitionPairs,
+    );
+    return lifecycleAsc.map((event) => ({
+        ...event,
+        field_values: byEvent.get(event.id) ?? [],
+    })).toReversed();
+}
+
 // GET work-orders/:id/history (states-URI elimination A1):
 // workOrderLifecycleStatesFor (ASC) reborn with an inline
 // field-values fold from this work order's OWN transition
@@ -1526,56 +1664,9 @@ export async function workOrderHistoryFor(
         transitionPrefix,
     );
 
-    // Same fold as transitionFieldValueCandidates +
-    // stateFieldValuesFrom: candidates keyed by fv row id,
-    // latestByKey head reduction, DELETE heads dropped.
-    const candidates: DocumentPair[] = [];
-    for (const transition of transitionPairs) {
-        const fieldValues = transition.body['fieldValues'] as
-            readonly {
-                readonly id: string;
-                readonly fields: Record<string, unknown>;
-            }[];
-        for (const fieldValue of fieldValues) {
-            candidates.push({
-                id: transition.id,
-                at: transition.at,
-                uriId: fieldValue.id,
-                method: 'PUT',
-                body: fieldValue.fields,
-                requesterIdentityId:
-                    transition.requesterIdentityId,
-            });
-        }
-    }
-    const heads = latestByKey(
-        candidates, (pair) => pair.uriId,
+    return historyEventsWithFieldValues(
+        lifecycle, transitionPairs,
     );
-    const byEvent = new Map<Id, TransitionFieldValueEntity[]>();
-    for (const [uriId, head] of heads) {
-        if (head.method === 'DELETE') continue;
-        const stateEventId = pickString(
-            head.body, 'state_event_id',
-        );
-        const list = byEvent.get(stateEventId) ?? [];
-        list.push({
-            id: uriId,
-            attribute_id: pickString(
-                head.body, 'attribute_id',
-            ),
-            value: pickString(head.body, 'value'),
-        });
-        byEvent.set(stateEventId, list);
-    }
-    for (const list of byEvent.values()) {
-        list.sort(byIdAscending);
-    }
-
-    // Lifecycle is ASC; reverse for DESC (index 0 = current).
-    return lifecycle.map((event) => ({
-        ...event,
-        field_values: byEvent.get(event.id) ?? [],
-    })).toReversed();
 }
 
 // THE CLAIM GATE'S OWN SOURCE (Phase 14 Task 4): the work-

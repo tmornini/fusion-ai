@@ -189,6 +189,7 @@ import {
 import {
     deriveStates,
     deriveStatesFor,
+    deriveWorkOrderHistories,
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
     workOrderHistoryFor,
@@ -4378,6 +4379,18 @@ export const routes: Route[] = [
                 db, body, actor, pairs,
             );
         },
+    }),
+    // GET work-orders/history (states-URI elimination A2):
+    // org-scoped bulk lifecycle + field_values fold, (at, id)
+    // DESC. Always 200 array. MUST register BEFORE
+    // work-orders/:id so matchRoute's first-match does not
+    // capture the literal segment as `:id`. Member-tier GET
+    // via matchesOnSegmentBoundary on '/work-orders'.
+    route('work-orders/history', {
+        get: (db, _p, _actor, organization) =>
+            deriveWorkOrderHistories(
+                db, requireOrganization(organization),
+            ),
     }),
     // work-orders/:id is the fourth family. GET is FLIPPED
     // (Task 7): absorbed into the generic documentEntityRoute

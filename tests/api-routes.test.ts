@@ -28,6 +28,7 @@ const COLLECTION_ROUTES: readonly string[] = [
     'flows',
     'projects/any-project/flows',
     'work-orders',
+    'work-orders/history',
     'flows/any-flow/work-orders',
     // states/:id/field-values is no longer a 200-[] collection
     // for an absent event — orphan → 404, foreign → 403.
