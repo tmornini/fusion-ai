@@ -1690,8 +1690,6 @@ export interface MemberWritePairs {
 // consume — the objectiveDocumentBodyOf/objectiveRevisionBodyOf
 // precedent.
 
-// The wire body a live PUT members/:id would carry for this SAME
-// write: `type` alone — validateMemberDocumentBody's only field.
 // The wire body a live PUT members/:id would carry for this
 // SAME write: `type` plus the lifecycle trio. The member kind
 // is a server-supplied fact the caller pins; the trio is the
