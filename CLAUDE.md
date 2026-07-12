@@ -22,6 +22,7 @@ when working with code in this repository.
 ./measure --budget-sigmas N  # σ multiplier (default 1.5)
 ./measure --pages a,b  # Subset of PAGE_REGISTRY keys
 ./measure --runs N     # Runs per page (default 5)
+./measure --visualize  # History HTML from disk (no Chrome)
 ```
 
 **Commit before building.** `./build` requires a clean
@@ -92,6 +93,14 @@ History lives in `measurements/history.jsonl` —
 appended only by `--record`. Longitudinal record across
 the Postgres migration.
 
+`--visualize` regenerates `measurements/index.html` from
+committed history + budgets (self-contained HTML, gitignored).
+Bare `./measure --visualize` skips the clean-tree gate and
+Chrome. With a measure run, pass `--visualize` to regenerate
+after success; without `--record`, a note says that this run
+is not in history. Missing history or budgets is a hard fail.
+Not part of `./validate`.
+
 In-app instrumentation always ships: `page-performance.ts`
 marks boot/fetch/render phases; one `page-performance` info
 log fires after ready (default log level `warn` keeps
@@ -103,7 +112,9 @@ binary: `$CHROME`, or the macOS default Google Chrome path.
 
 Design:
 `docs/superpowers/specs/2026-07-12-page-
-performance-measurement-design.md`.
+performance-measurement-design.md`,
+`docs/superpowers/specs/2026-07-12-measure-
+visualize-design.md`.
 
 ## TypeScript
 
