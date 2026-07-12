@@ -234,6 +234,26 @@ test(
     },
 );
 
+// Clients-table elimination (4→5): a genuine pre-elimination
+// export stamped v4 is rejected by the version gate before
+// any table key is read.
+test(
+    'rejects a genuine v4 (pre-clients-elimination) export',
+    async () => {
+        installShim();
+        const adapter = localStorageDbAdapter();
+        const json = JSON.stringify({
+            '__schema_version__': 4,
+            requests: [],
+        });
+        await assert.rejects(
+            () => adapter.putSnapshot(json),
+            (err: Error) =>
+                err instanceof SnapshotVersionMismatchError,
+        );
+    },
+);
+
 test(
     'accepts a snapshot carrying the current schema version',
     async () => {

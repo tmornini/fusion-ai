@@ -499,10 +499,10 @@ export type IdentityCredentialStatus =
 // Revocation is a NEW 'revoked' event, never a splice
 // (contrast identity_pii). The client-assertion crypto is
 // REAL (RFC 7523 JWS, RS256/ES256) and the OAuth spine
-// (clients, identity-tokens, identity_providers) is live;
-// the remaining SP-5 items are the ones access-token.ts
-// names: per-client multi-audience, DPoP cnf binding, jti
-// reuse-detection.
+// (client registrations, identity-tokens,
+// identity_providers) is live; the remaining SP-5 items
+// are the ones access-token.ts names: per-client
+// multi-audience, DPoP cnf binding, jti reuse-detection.
 export interface IdentityCredentialEntity {
     id: Id;
     identity_id: Id;
@@ -581,25 +581,6 @@ export interface IdentityTokenEntity {
 }
 
 export type ClientStatus = 'active' | 'disabled';
-
-// An OAuth client registry row — the "websites built by us and
-// others". Mutable config of record (EntityStore): redirect URIs
-// change, JWKS rotate, a client is disabled. `status` is the
-// schema's one mutable lifecycle column on an entity row — a
-// named deviation from the states ledger (SCHEMA.md § clients).
-// `grant_types` and `redirect_uris` are space-delimited (OAuth
-// convention); `jwks` is the client's JSON Web Key Set as a JSON
-// string — private_key_jwt assertions are verified against it
-// for real (api/client-assertion.ts); `aud` is the origin a
-// token is minted for.
-export interface ClientEntity {
-    id: Id;
-    grant_types: string;
-    redirect_uris: string;
-    jwks: string;
-    aud: string;
-    status: ClientStatus;
-}
 
 // The client-registration facet — the pair-plane document at
 // identities/:id/registration that replaces the clients
