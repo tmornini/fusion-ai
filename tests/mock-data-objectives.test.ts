@@ -16,8 +16,8 @@ import {
     getArchivedObjectiveIds,
     getObjectives,
 } from '../web-app/app/adapters/objectives.ts';
-import { getProjectStates } from
-    '../web-app/app/adapters/state-events.ts';
+import { getProjectEntities } from
+    '../web-app/app/adapters/projects.ts';
 import type { Id, ProjectState } from
     '../api/types.ts';
 import type { RequestContext } from
@@ -49,10 +49,11 @@ async function projectIdsByState(
     ctx: RequestContext,
     wanted: ProjectState,
 ): Promise<Id[]> {
-    const states = await getProjectStates(ctx);
-    return [...states]
-        .filter(([, state]) => state === wanted)
-        .map(([id]) => id);
+    // Lifecycle state rides the project GET row trio.
+    const rows = await getProjectEntities(ctx);
+    return rows
+        .filter(p => p.state === wanted)
+        .map(p => p.id);
 }
 
 test('seeds every objective seed plus the org-2 objective',

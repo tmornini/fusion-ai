@@ -1,5 +1,5 @@
 import type {
-    Id, IdeaEntity, IdeaState, IdeaStateDetail,
+    Id, IdeaEntity, IdeaStateDetail,
     ObjectiveEntity, ObjectiveStateDetail,
     ProjectEntity, ProjectState, ProjectStateDetail,
     RecordEntity, RecordStateDetail,
@@ -251,22 +251,11 @@ export async function getTransitionEventsByWorkOrder(
     return out;
 }
 
-// Bulk variant for getIdeas, which calls this — so it
-// reads the ideas table directly to avoid recursing.
-export async function getIdeaStates(
-    ctx: RequestContext,
-): Promise<Map<Id, IdeaState>> {
-    const [events, rows] = await Promise.all([
-        ctx.GET<StateEntity[]>('states'),
-        ctx.GET<IdeaEntity[]>('ideas'),
-    ]);
-    const ids = new Set<Id>(rows.map(r => r.id));
-    return latestStatesForIds<IdeaState>(events, ids);
-}
-
 // Lifecycle trio (Decision 7): state + head event at/id.
 // Single and bulk readers share one shape across families;
 // named exports keep the Rectification of Names surface.
+// Bare getIdeaStates retired — dashboard/header stats
+// read the idea GET row trio (Phase A stamp) instead.
 type AssertState<S extends string> = (
     v: string,
     label: string,
@@ -350,12 +339,10 @@ export async function getIdeaStateDetail(
     );
 }
 
-// Bulk sibling of getIdeaStates, widened the same way.
-// getIdeas now reads the GET-stamped row trio; this remains
-// until residual callers retire. dashboard.ts still reads
-// the bare getIdeaStates above — unwidened, per its own
-// bare-state need and per tests/adapters-state-events.test.ts,
-// which pins getIdeaStates' return shape.
+// Bulk idea trio read from the states log. getIdeas and
+// dashboard stats now read the GET-stamped row trio; this
+// remains until residual callers retire (B9 dissolves the
+// whole module).
 export async function getIdeaStateDetails(
     ctx: RequestContext,
 ): Promise<Map<Id, IdeaStateDetail>> {
@@ -399,25 +386,13 @@ export async function getProjectState(
     return detail.state;
 }
 
-// Bulk variant for getProjects, which calls this — so it
-// reads the projects table directly to avoid recursing.
-export async function getProjectStates(
-    ctx: RequestContext,
-): Promise<Map<Id, ProjectState>> {
-    const [events, rows] = await Promise.all([
-        ctx.GET<StateEntity[]>('states'),
-        ctx.GET<ProjectEntity[]>('projects'),
-    ]);
-    const ids = new Set<Id>(rows.map(r => r.id));
-    return latestStatesForIds<ProjectState>(events, ids);
-}
-
 // Single-project state read, widened to carry the STORED head
 // event's `at`/`id` alongside the state — the trio Decision 7
 // folds into the project document (state_at, state_event_id).
-// getProject and projects/detail now read the GET-stamped row
-// trio; this remains for any residual caller until the states
-// surface retires (B9).
+// getProject, projects/detail, dashboard, flow-export, and
+// project-scoring now read the GET-stamped row trio; this
+// remains for residual callers until the states surface
+// retires (B9). Bare getProjectStates retired with them.
 export async function getProjectStateDetail(
     ctx: RequestContext,
     projectId: Id,
@@ -427,13 +402,9 @@ export async function getProjectStateDetail(
     );
 }
 
-// Bulk sibling of getProjectStates, widened the same way.
-// getProjects now reads the GET-stamped row trio; this remains
-// until residual callers retire. dashboard.ts, flow-export.ts,
-// and project-scoring.ts keep reading the bare getProjectStates
-// above — unwidened, per their own bare-state need and per
-// tests/adapters-state-events.test.ts, which pins
-// getProjectStates' return shape.
+// Bulk project trio read from the states log. List/detail
+// and dashboard consumers now read the GET-stamped row
+// trio; this remains until residual callers retire (B9).
 export async function getProjectStateDetails(
     ctx: RequestContext,
 ): Promise<Map<Id, ProjectStateDetail>> {
