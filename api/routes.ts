@@ -5043,7 +5043,7 @@ export const routes: Route[] = [
     }),
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger via deriveStates (api/derive-states.ts's
-    // six-source union), not the raw states table — the
+    // five-source union), not the raw states table — the
     // client's own GET consumer (deriveOrganizationFacts and
     // every get*States/get*StateDetails reader in
     // state-events.ts) rides transitively, no web-app change.
