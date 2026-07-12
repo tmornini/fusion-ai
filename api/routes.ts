@@ -63,6 +63,7 @@ import {
     validateIdentityDocumentBody,
     validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
+    validateClientRegistrationEntity,
     validateIdentityProviderEntity,
     validateIdentityTokenEntity,
     validateIdentityTokenRevocationEntity,
@@ -2814,6 +2815,15 @@ export const WRITE_RESPONSE_SPECS:
         successBody: (params, body) => ({
             id: param(params, 1),
             ...validateIdentityCredentialEntity(
+                withoutId(body ?? {}),
+            ),
+        }),
+    },
+    'identities/:id/registration': {
+        status: HTTP_OK,
+        successBody: (params, body) => ({
+            id: param(params, 0),
+            ...validateClientRegistrationEntity(
                 withoutId(body ?? {}),
             ),
         }),

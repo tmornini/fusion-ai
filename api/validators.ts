@@ -16,6 +16,7 @@ import type {
     IdentityDefaultOrganizationEntity,
     IdentityTokenEntity,
     ClientEntity,
+    ClientRegistrationEntity,
     IdentityProviderEntity,
     RoleGrantEntity,
     MemberEntity,
@@ -1085,6 +1086,28 @@ export function validateClientEntity(
     const status = validateEnumField(
         body, 'status', ['active', 'disabled'],
         'client status', 'ClientEntity',
+    );
+    return {
+        grant_types: pickString(body, 'grant_types'),
+        redirect_uris: pickString(body, 'redirect_uris'),
+        jwks: pickString(body, 'jwks'),
+        aud: pickString(body, 'aud'),
+        status,
+    };
+}
+
+// The registration facet's body validator — the SAME five
+// keys as the clients row it replaces (CLIENT_BODY_KEYS is
+// shared; validateClientEntity retires with the table).
+export function validateClientRegistrationEntity(
+    body: Record<string, unknown>,
+): Omit<ClientRegistrationEntity, 'id'> {
+    assertOnlyKeys(
+        body, CLIENT_BODY_KEYS, 'ClientRegistrationEntity',
+    );
+    const status = validateEnumField(
+        body, 'status', ['active', 'disabled'],
+        'registration status', 'ClientRegistrationEntity',
     );
     return {
         grant_types: pickString(body, 'grant_types'),

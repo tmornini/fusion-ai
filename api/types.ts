@@ -601,6 +601,22 @@ export interface ClientEntity {
     status: ClientStatus;
 }
 
+// The client-registration facet — the pair-plane document at
+// identities/:id/registration that replaces the clients
+// table (clients elimination). Same five columns; `id` is
+// the OWNING kind-'service' identity's id. PUT-overwrite via
+// the Supersedes chain; a DELETE tombstone is deregistration.
+// Derived by deriveClientRegistration
+// (api/derive-identity-spine.ts).
+export interface ClientRegistrationEntity {
+    id: Id;
+    grant_types: string;
+    redirect_uris: string;
+    jwks: string;
+    aud: string;
+    status: ClientStatus;
+}
+
 export type IdentityProviderAction = 'linked' | 'unlinked';
 
 // Append-only ledger of external-IdP links for an identity. One
