@@ -462,16 +462,24 @@ const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
 // alongside position, and a spread would let that raw, unstamped
 // key leak into the read path ahead of the fenced `organization`
 // argument — picking only `position` closes that off by
-// construction.
+// construction. Head document → wire ObjectiveEntity. Entity
+// fields come from the head body; the lifecycle trio is stamped
+// from the lifecycle-current StateEntity (never re-copied from
+// the head body — genesis-wins-under-skew). `current` is required
+// on the live trio path (document-family always supplies it
+// after the DELETED filter).
 function objectiveDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
-    _current?: StateEntity,
-): unknown {
+    current: StateEntity,
+): ObjectiveEntity {
     return {
         id: document.uriId,
         organization_id: organization,
         position: pickNumber(document.body, 'position'),
+        state: current.state,
+        state_at: current.at,
+        state_event_id: current.id,
     };
 }
 // The objectives wiring row — the seventh family, now the
@@ -486,14 +494,19 @@ function objectiveDocumentEntityOf(
 // notFoundTable is 'objectives' — its storage table name
 // matches its family name, like ideas/projects/flows/records
 // (work-orders/record-attributes are the two whose names
-// diverge).
+// diverge). objectiveDocumentEntityOf requires the lifecycle-
+// current event; the generic trio path always supplies it
+// after DELETED filter.
 const OBJECTIVES_WIRING: DocumentFamilyWiring = {
     family: 'objectives',
     lifecycle: 'trio',
     notFoundTable: 'objectives',
     validateDocument: validateObjectiveDocumentBody,
     documentOp: postObjectiveDocumentOp,
-    entityOf: objectiveDocumentEntityOf,
+    entityOf: (document, organization, current) =>
+        objectiveDocumentEntityOf(
+            document, organization, current!,
+        ),
 };
 // The generic GET machinery (not yet flipped for memberships —
 // Task 8) this entityOf will serve: the head pair's body already
@@ -5019,16 +5032,13 @@ export const routes: Route[] = [
     }),
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger rather than the old objectives table. Rides
-    // the generic documentCollectionGetHandler — wire-identical
-    // to the hand-written db.objectives.getAll() dispatch it
-    // replaces (OBJECTIVES_WIRING's own entityOf,
-    // objectiveDocumentEntityOf, already picks the exact {id,
-    // organization_id, position} shape, so the list needs no
-    // objectives-special reassembly step). POST stays this
-    // hand-written bundle — objectives' own create forms the
-    // document PLUS its first revision pair in one pass
-    // (postObjectiveCreationOp), mirroring records'/work-orders'
-    // own precedent.
+    // the generic documentCollectionGetHandler —
+    // objectiveDocumentEntityOf stamps entity fields plus the
+    // lifecycle-current trio (A9). POST stays this hand-written
+    // bundle — objectives' own create forms the document PLUS
+    // its first revision pair in one pass
+    // (postObjectiveCreationOp), mirroring records'/work-
+    // orders' own precedent.
     route('objectives', {
         get: documentCollectionGetHandler(OBJECTIVES_WIRING),
         // Forms the document + revision pairs pre-tx (Task 3)
@@ -5085,15 +5095,13 @@ export const routes: Route[] = [
     }),
     // objectives/:id is the seventh family. GET is FLIPPED
     // (Task 7): absorbed into the generic documentEntityRoute —
-    // GET dispatches to documentGetHandler(OBJECTIVES_WIRING),
-    // wire-identical to the hand-written db.objectives.getById
-    // dispatch it replaces (objectiveDocumentEntityOf reproduces
-    // the shape verbatim; the 'stateless' lifecycle skips the
-    // trio walk entirely, so there is no DELETE-head concept to
-    // filter). PUT stays documentPutHandler(OBJECTIVES_WIRING),
-    // unchanged from before this flip (Task 2); objectives/:id
-    // has no DELETE today, mirroring the ideas/projects/
-    // work-orders precedent that already rides this same
+    // GET dispatches to documentGetHandler(OBJECTIVES_WIRING);
+    // objectiveDocumentEntityOf stamps entity fields plus the
+    // lifecycle-current trio (A9). PUT stays
+    // documentPutHandler(OBJECTIVES_WIRING), unchanged from
+    // before this flip (Task 2); objectives/:id has no DELETE
+    // today, mirroring the ideas/projects/work-orders
+    // precedent that already rides this same
     // documentEntityRoute shape.
     documentEntityRoute(OBJECTIVES_WIRING),
     // GET objectives/:id/history (states-URI elimination A3):

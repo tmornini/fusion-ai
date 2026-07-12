@@ -216,6 +216,17 @@ test(
         assert.equal(objectives[0]!.id, 'o1');
         assert.equal(objectives[0]!.position, 1);
         assert.equal(objectives[0]!.organization_id, '1');
+        // GET stamps lifecycle-current genesis trio.
+        assert.equal(objectives[0]!.state, 'active');
+        assert.equal(
+            typeof objectives[0]!.state_at, 'string',
+        );
+        assert.equal(
+            typeof objectives[0]!.state_event_id, 'string',
+        );
+        assert.ok(
+            objectives[0]!.state_event_id.length > 0,
+        );
 
         const revisions =
             await getObjectiveRevisionsByObjective(
@@ -381,6 +392,9 @@ test(
                     id: 'o1',
                     organization_id: '1',
                     position: 3,
+                    state: 'active',
+                    state_at: '2026-01-01T00:00:00.000000Z',
+                    state_event_id: 'ev-o1-prior',
                 };
             },
             PUT: async () => ({}),

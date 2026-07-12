@@ -112,14 +112,17 @@ async function derivedRecordAttributes(
 
 const OBJECTIVES_WIRING: DocumentFamilyWiring = {
     family: 'objectives',
-    lifecycle: 'stateless',
+    lifecycle: 'trio',
     notFoundTable: 'objectives',
     validateDocument: validateObjectiveDocumentBody,
     documentOp: postObjectiveDocumentOp,
-    entityOf: (document, organization) => ({
+    entityOf: (document, organization, current) => ({
         id: document.uriId,
         organization_id: organization,
         position: pickNumber(document.body, 'position'),
+        state: current!.state,
+        state_at: current!.at,
+        state_event_id: current!.id,
     }),
 };
 

@@ -2153,9 +2153,17 @@ const OBJECTIVE_BODY_KEYS: readonly string[] = [
     'organization_id', 'position',
 ];
 
+// Entity-field body only — lifecycle trio is GET stamp /
+// document-body, never part of this validator's key set.
+export type ObjectiveEntityFields = Omit<
+    ObjectiveEntity,
+    'id' | 'organization_id' | 'state' | 'state_at'
+        | 'state_event_id'
+>;
+
 export function validateObjectiveEntity(
     body: Record<string, unknown>,
-): Omit<ObjectiveEntity, 'id'> {
+): ObjectiveEntityFields & { organization_id: string } {
     assertOnlyKeys(
         body, OBJECTIVE_BODY_KEYS, 'Objective',
     );
@@ -2198,8 +2206,7 @@ const OBJECTIVE_DOCUMENT_BODY_KEYS: readonly string[] = [
 ];
 
 export interface ObjectiveDocumentBody {
-    readonly entity:
-        Omit<ObjectiveEntity, 'id' | 'organization_id'>;
+    readonly entity: ObjectiveEntityFields;
     readonly state: ObjectiveState;
     readonly state_at: string;
     readonly state_event_id: string;

@@ -65,7 +65,34 @@ async () => {
     // getObjectives is org-scoped to the token's org (Stark).
     assert.equal(rows.length, OBJECTIVE_SEEDS.length);
     for (const r of rows) {
-        const { id: _id, ...body } = r;
+        // GET stamps lifecycle trio; validateObjectiveEntity
+        // is entity-fields only — strip the stamp before gate.
+        const {
+            id: _id,
+            state: _s,
+            state_at: _at,
+            state_event_id: _ev,
+            ...body
+        } = r;
+        void _s;
+        void _at;
+        void _ev;
+        assert.ok(
+            typeof r.state === 'string'
+            && r.state.length > 0,
+            'objective ' + r.id + ' missing state',
+        );
+        assert.ok(
+            typeof r.state_at === 'string'
+            && r.state_at.length > 0,
+            'objective ' + r.id + ' missing state_at',
+        );
+        assert.ok(
+            typeof r.state_event_id === 'string'
+            && r.state_event_id.length > 0,
+            'objective ' + r.id
+            + ' missing state_event_id',
+        );
         validateObjectiveEntity(body);
     }
     // Org-2 objective via derive from the other plane.
