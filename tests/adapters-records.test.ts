@@ -226,7 +226,8 @@ test(
 
 test(
     'postRecordStateChange records a new event'
-    + ' without touching the entity row',
+    + ' without changing non-lifecycle entity fields'
+    + ' on GET',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
@@ -242,16 +243,31 @@ test(
             attributes: [],
             initialState: 'active',
         });
-        const rec1 = await getRecord(ctx, 'rec-1');
+        const before = await getRecord(ctx, 'rec-1');
         await postRecordStateChange(
-            ctx, rec1, 'archived',
+            ctx, before, 'archived',
         );
-        const stored = await getRecord(ctx, 'rec-1');
-        assert.equal(stored.description, 'orig');
+        const after = await getRecord(ctx, 'rec-1');
+        // Entity content fields unchanged; GET trio advances
+        // to the transition event (lifecycle-current stamp).
+        assert.equal(after.name, before.name);
+        assert.equal(after.description, 'orig');
+        assert.equal(after.position, before.position);
+        assert.equal(after.state, 'archived');
+        assert.notEqual(
+            after.state_event_id, before.state_event_id,
+        );
         const state = await getRecordState(
             ctx, 'rec-1',
         );
         assert.equal(state, 'archived');
+        const events = await deriveStatesFor(db, '1', 'rec-1');
+        assert.equal(
+            after.state_event_id, events.at(-1)?.id,
+        );
+        assert.equal(
+            after.state_at, events.at(-1)?.at,
+        );
     },
 );
 

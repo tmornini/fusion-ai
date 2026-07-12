@@ -51,7 +51,10 @@ function projectBody(
 
 function recordBody(
     name: string,
-): Omit<RecordEntity, 'id'> {
+): Omit<
+    RecordEntity,
+    'id' | 'state' | 'state_at' | 'state_event_id'
+> {
     return {
         organization_id: '1',
         name,

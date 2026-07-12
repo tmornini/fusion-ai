@@ -193,9 +193,19 @@ export async function getRecords(
 // downstream). A state-UNCHANGED save (name/description/
 // position edited, trio echoed back unchanged) converges to a
 // no-op event write at the op; a genuine transition
-// (postRecordStateChange below) mints a fresh trio.
+// (postRecordStateChange below) mints a fresh trio. GET
+// RecordEntity also carries snake_case lifecycle stamp fields
+// — omit them here so the PUT body is not double-keyed
+// (snake + camel).
 export type RecordDocumentFields =
-    Omit<RecordEntity, 'id' | 'organization_id'> & {
+    Omit<
+        RecordEntity,
+        | 'id'
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    > & {
         readonly state: RecordState;
         readonly stateAt: string;
         readonly stateEventId: string;
@@ -220,8 +230,14 @@ export async function putRecord(
 
 export interface RecordChangeCreate {
     readonly kind: 'create';
-    readonly record:
-        Omit<RecordEntity, 'id' | 'organization_id'>;
+    readonly record: Omit<
+        RecordEntity,
+        | 'id'
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    >;
     readonly attributes: readonly Omit<
         RecordAttributeEntity, 'organization_id'
     >[];
@@ -230,8 +246,14 @@ export interface RecordChangeCreate {
 
 export interface RecordChangeEdit {
     readonly kind: 'edit';
-    readonly record:
-        Omit<RecordEntity, 'id' | 'organization_id'>;
+    readonly record: Omit<
+        RecordEntity,
+        | 'id'
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    >;
     readonly attributes: readonly Omit<
         RecordAttributeEntity, 'organization_id'
     >[];
@@ -296,13 +318,23 @@ export async function postRecordChange(
 // (mint-once-reuse — a retry of the SAME transition resends
 // this same pinned pair, converging at the op) over the
 // record's CURRENT entity fields — hop count 1 -> 1 (one
-// ctx.PUT, via putRecord).
+// ctx.PUT, via putRecord). Strip GET-stamped snake_case trio
+// so putRecord's camelCase mint is the only lifecycle payload.
 export async function postRecordStateChange(
     ctx: RequestContext,
     record: RecordEntity,
     state: RecordState,
 ): Promise<void> {
-    const { id, ...entity } = record;
+    const {
+        id,
+        state: _priorState,
+        state_at: _priorAt,
+        state_event_id: _priorEventId,
+        ...entity
+    } = record;
+    void _priorState;
+    void _priorAt;
+    void _priorEventId;
     await putRecord(ctx, id, {
         ...entity,
         state,

@@ -355,20 +355,16 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
     documentOp: postWorkOrderDocumentOp,
     entityOf: workOrderDocumentEntityOf,
 };
-// The generic GET machinery (documentGetHandler/
-// documentCollectionGetHandler) this entityOf serves flips onto
-// records at Task 7 (this commit): GET records/:id and GET
-// records now ride it, exactly as ideaEntityOf/projectEntityOf/
-// flowEntityOf/workOrderDocumentEntityOf each serve their OWN
-// family's GET path. It still picks fields explicitly (never a
-// body spread) rather than standing in as a placeholder, the
-// SAME shape ideaEntityOf/projectEntityOf already use, so the
-// Task 7 flip finds it already correct instead of inheriting a
-// trio-leaking stand-in.
+// Head document → wire RecordEntity. Entity fields come from
+// the head body; the lifecycle trio is stamped from the
+// lifecycle-current StateEntity (never re-copied from the
+// head body — genesis-wins-under-skew). `current` is required
+// on the live trio path (document-family always supplies it
+// after the DELETED filter).
 function recordDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
-    _current?: StateEntity,
+    current: StateEntity,
 ): RecordEntity {
     const body = document.body;
     return {
@@ -377,6 +373,9 @@ function recordDocumentEntityOf(
         name: pickString(body, 'name'),
         description: pickString(body, 'description'),
         position: pickNumber(body, 'position'),
+        state: current.state,
+        state_at: current.at,
+        state_event_id: current.id,
     };
 }
 // The records wiring row — the fifth family, and the first
@@ -385,13 +384,19 @@ function recordDocumentEntityOf(
 // DELETE-method pair — see its own comment in derive-
 // documents.ts). notFoundTable is 'records' (its storage table
 // name matches its family name, like ideas/projects/flows).
+// recordDocumentEntityOf requires the lifecycle-current event;
+// the generic trio path always supplies it after DELETED
+// filter.
 const RECORDS_WIRING: DocumentFamilyWiring = {
     family: 'records',
     lifecycle: 'trio',
     notFoundTable: 'records',
     validateDocument: validateRecordDocumentBody,
     documentOp: postRecordDocumentOp,
-    entityOf: recordDocumentEntityOf,
+    entityOf: (document, organization, current) =>
+        recordDocumentEntityOf(
+            document, organization, current!,
+        ),
 };
 // The generic GET machinery this entityOf serves flips onto
 // record-attributes at Task 7 too (this commit, the SAME

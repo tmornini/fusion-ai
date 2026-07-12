@@ -2481,9 +2481,17 @@ const RECORD_BODY_KEYS: readonly string[] = [
     'organization_id', 'name', 'description', 'position',
 ];
 
+// Entity-field body only — lifecycle trio is GET stamp /
+// document-body, never part of this validator's key set.
+export type RecordEntityFields = Omit<
+    RecordEntity,
+    'id' | 'organization_id' | 'state' | 'state_at'
+        | 'state_event_id'
+>;
+
 export function validateRecordEntity(
     body: Record<string, unknown>,
-): Omit<RecordEntity, 'id'> {
+): RecordEntityFields & { organization_id: string } {
     assertOnlyKeys(
         body, RECORD_BODY_KEYS, 'RecordEntity',
     );
@@ -2516,8 +2524,7 @@ const RECORD_DOCUMENT_BODY_KEYS: readonly string[] = [
 ];
 
 export interface RecordDocumentBody {
-    readonly entity:
-        Omit<RecordEntity, 'id' | 'organization_id'>;
+    readonly entity: RecordEntityFields;
     readonly state: RecordState;
     readonly state_at: string;
     readonly state_event_id: string;
@@ -2841,7 +2848,8 @@ export function validateFlowTagEntity(
 export interface RecordWriteCreateBody {
     readonly kind: 'create';
     readonly id: RecordId;
-    readonly record: Omit<RecordEntity, 'id'>;
+    readonly record:
+        RecordEntityFields & { organization_id: string };
     readonly attributes: readonly RecordAttributeEntity[];
     readonly initialState: RecordState;
     readonly initialStateEventId: string;
@@ -2851,7 +2859,8 @@ export interface RecordWriteCreateBody {
 export interface RecordWriteEditBody {
     readonly kind: 'edit';
     readonly id: RecordId;
-    readonly record: Omit<RecordEntity, 'id'>;
+    readonly record:
+        RecordEntityFields & { organization_id: string };
     readonly attributes: readonly RecordAttributeEntity[];
     // The echoed lifecycle trio (Phase 6 Task 4, the SECOND
     // named wire delta): an edit now carries the SAME

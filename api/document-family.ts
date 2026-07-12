@@ -120,9 +120,10 @@ export interface DocumentFamilyWiring {
     ) => Promise<unknown>;
     // Head-pair body -> wire entity (id + organization_id
     // stamped by the caller). Trio families that embed the
-    // lifecycle-current event (ideas, later A7–A10) receive
-    // `current` after the DELETED filter; other families accept
-    // and ignore the optional third argument.
+    // lifecycle-current event (ideas, projects, records,
+    // later A9–A10) receive `current` after the DELETED
+    // filter; other families accept and ignore the optional
+    // third argument.
     readonly entityOf: (
         document: DerivedDocument,
         organization: Id,

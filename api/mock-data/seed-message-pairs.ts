@@ -1079,7 +1079,13 @@ export function defaultOrganizationSeedBody(
 }
 
 export function recordSeedBody(
-    r: Omit<RecordEntity, 'organization_id'>,
+    r: Omit<
+        RecordEntity,
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    >,
     index: number,
     event: StateEntity,
     attributes: readonly Omit<

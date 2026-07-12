@@ -1319,6 +1319,12 @@ export interface RecordEntity {
     name: string;
     description: string;
     position: number;
+    // Lifecycle-current event trio (GET stamp only — not the
+    // head PUT body's fields). state ← event.state, state_at ←
+    // event.at, state_event_id ← event.id.
+    state: string;
+    state_at: string;
+    state_event_id: string;
 }
 
 export interface RecordAttributeEntity {
