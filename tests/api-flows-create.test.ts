@@ -163,7 +163,7 @@ test(
 
         const events = await GET<StateEntity[]>(
             db,
-            'entity-states/flow-1/history',
+            'flows/flow-1/history',
             DEV_TOKEN,
         );
         assert.equal(events.length, 1);

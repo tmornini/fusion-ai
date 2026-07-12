@@ -41,7 +41,6 @@ import type {
     FlowWithGraph,
     GraphNode,
     GraphEdge,
-    StateEntity,
     StoredGraph,
 } from '../api/types.ts';
 import {
@@ -51,6 +50,9 @@ import {
     asStoredGraph,
 } from '../api/validators.ts';
 import {
+    deriveFlowGraphStates,
+} from '../api/derive-states.ts';
+import {
     seedHumanMember,
 } from './member-fixtures.ts';
 import {
@@ -59,8 +61,9 @@ import {
 
 // Phase Final Task 2: graph relation ROW halves stripped.
 // Undo/redo oracles re-home to pair-plane GET graph and
-// entity-states history (deriveFlowGraphStates from
-// graphDelta/revivals SIDECAR-KEEP).
+// deriveFlowGraphStates (graphDelta/revivals SIDECAR-KEEP).
+// Graph node/edge lifecycle has no family /history route —
+// oracle the sidecar derive directly (not entity-states HTTP).
 
 const FLOW_ID = 'flow-ur';
 
@@ -183,13 +186,26 @@ async function pairGraph(
 }
 
 async function latestStateFor(
-    ctx: RequestContext,
+    db: MemoryDbAdapter,
     entityId: string,
 ): Promise<string> {
-    const events = await ctx.GET<StateEntity[]>(
-        'entity-states/' + entityId + '/history',
+    // deriveFlowGraphStates returns id-lex order; re-sort
+    // (at, id) ASC so last is truly current (matches the
+    // former entity-states deriveStatesFor union order).
+    const events = (await deriveFlowGraphStates(db))
+        .filter((e) => e.entity_id === entityId)
+        .sort((a, b) =>
+            a.at < b.at ? -1
+                : a.at > b.at ? 1
+                    : a.id < b.id ? -1
+                        : a.id > b.id ? 1
+                            : 0);
+    const last = events.at(-1);
+    assert.ok(
+        last !== undefined,
+        'no graph-state events for ' + entityId,
     );
-    return events.at(-1)!.state;
+    return last!.state;
 }
 
 // performUndo gates on hasUndoHistory client-side BEFORE ever
@@ -202,7 +218,7 @@ test(
     + ' edge: pair graph includes them, latest state'
     + " is 'restored'",
     async () => {
-        const { ctx } = await setupMemDb();
+        const { db, ctx } = await setupMemDb();
         const a = buildNode('a', { isCreate: true });
         const x = buildNode('x');
         const xEdge = buildEdge('xe', 'a', 'x');
@@ -221,10 +237,10 @@ test(
             'X is tombstoned after the deleting save',
         );
         assert.equal(
-            await latestStateFor(ctx, 'x'), 'deleted',
+            await latestStateFor(db, 'x'), 'deleted',
         );
         assert.equal(
-            await latestStateFor(ctx, 'xe'), 'deleted',
+            await latestStateFor(db, 'xe'), 'deleted',
         );
 
         // UNDO from the current (X-less) graph back to the
@@ -249,11 +265,11 @@ test(
         // And X's LATEST state event supersedes the
         // tombstone with a non-'deleted' 'restored'.
         assert.equal(
-            await latestStateFor(ctx, 'x'), 'restored',
+            await latestStateFor(db, 'x'), 'restored',
             "revived node's latest state is 'restored'",
         );
         assert.equal(
-            await latestStateFor(ctx, 'xe'), 'restored',
+            await latestStateFor(db, 'xe'), 'restored',
             "revived edge's latest state is 'restored'",
         );
     },
@@ -263,7 +279,7 @@ test(
     'ADD-THEN-UNDO deletes the added node: pair graph'
     + ' omits it (working-not-target is a deletion)',
     async () => {
-        const { ctx } = await setupMemDb();
+        const { db, ctx } = await setupMemDb();
         const a = buildNode('a', { isCreate: true });
         const x = buildNode('x');
 
@@ -289,7 +305,7 @@ test(
             'undo of an add deletes the added node',
         );
         assert.equal(
-            await latestStateFor(ctx, 'x'), 'deleted',
+            await latestStateFor(db, 'x'), 'deleted',
         );
     },
 );
@@ -335,7 +351,7 @@ test(
     'REDO round-trip: redo re-applies the delete after'
     + ' an undo revived it (X tombstoned again)',
     async () => {
-        const { ctx } = await setupMemDb();
+        const { db, ctx } = await setupMemDb();
         const a = buildNode('a', { isCreate: true });
         const x = buildNode('x');
         const xEdge = buildEdge('xe', 'a', 'x');
@@ -367,7 +383,7 @@ test(
             'redo re-applies the delete: X tombstoned again',
         );
         assert.equal(
-            await latestStateFor(ctx, 'x'), 'deleted',
+            await latestStateFor(db, 'x'), 'deleted',
             "redo re-tombstones X (latest state 'deleted')",
         );
     },

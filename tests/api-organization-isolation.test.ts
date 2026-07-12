@@ -972,15 +972,15 @@ async () => {
     );
 });
 
-// bare entity-states/:id RETIRED (Phase 15 Task 7); fence
-// re-points to surviving /history (same Region A ownership
-// guard). STEALTH-WEAKENING trap: do not leave a bare-route
-// foreign-404 that would pass as router miss.
-test('entity-states history gates on parent ownership',
+// Family history route (states-URI elimination C1): fence
+// rides ideas/:id/history. STEALTH-WEAKENING trap: do not
+// leave a bare-route foreign-404 that would pass as router
+// miss — foreign must stay 403 with the family's honest body.
+test('ideas history gates on parent ownership',
 async () => {
     const db = await deepDb();
     const mine = await facadeGet(
-        db, '/entity-states/iA/history');
+        db, '/ideas/iA/history');
     assert.equal(mine.status, 200);
     const mineRows = await mine.json() as { id: string }[];
     assert.ok(mineRows.length >= 1);
@@ -993,12 +993,12 @@ async () => {
     ));
     assert.equal(bOwns.status, 200);
     const foreign = await facadeGet(
-        db, '/entity-states/iB/history');
+        db, '/ideas/iB/history');
     assert.equal(foreign.status, 403);
     const body = await foreign.json() as { error: string };
     assert.equal(
         body.error,
-        'forbidden: entity_states/iB belongs to a different'
+        'forbidden: ideas/iB belongs to a different'
         + ' organization',
     );
 });

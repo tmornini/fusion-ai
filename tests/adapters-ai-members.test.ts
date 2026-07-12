@@ -127,11 +127,12 @@ test(
         // Archive rides PUT members/:id with a fresh trio —
         // pin history via the live derived path.
         const events = await ctx.GET<StateEntity[]>(
-            'entity-states/ai1/history',
+            'members/ai1/history',
         );
         assert.equal(events.length, 2);
+        // Family history is DESC — index 0 is current.
         assert.equal(
-            events.at(-1)?.state, 'archived',
+            events[0]?.state, 'archived',
         );
     },
 );

@@ -102,7 +102,7 @@ test(
             state: string;
             member_id: string;
             at: string;
-        }[]>(db, 'entity-states/w1/history', DEV_TOKEN);
+        }[]>(db, 'members/w1/history', DEV_TOKEN);
         assert.equal(history.length, 1);
         const current = history[0]!;
         assert.equal(current.state, 'active');

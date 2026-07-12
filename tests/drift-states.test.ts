@@ -268,53 +268,110 @@ test('case 1: GET /states parity — wire equals deriveStates,'
     assert.ok(seenIds.size > 800, 'seeded states thin');
 });
 
-// ---- case 2: GET /entity-states/:id/history parity, one --------
-// ---- entity per family --------------------------------------------
+// ---- case 2: GET <family>/:id/history parity, one entity --------
+// ---- per family (states-URI elimination C1) ----------------------
 
 const CASE_2_FAMILY_ENTITY_IDS: readonly {
     readonly family: string;
+    readonly routeFamily: string;
     readonly id: Id;
 }[] = [
-    { family: 'idea', id: buildIdeas()[0]!.id },
-    { family: 'project', id: buildProjects()[0]!.id },
-    { family: 'record', id: customerProfileRecordId },
-    { family: 'flow', id: buildFlows()[0]!.id },
-    { family: 'work-order', id: buildWorkOrders()[0]!.id },
-    { family: 'human member', id: buildMembers()[0]!.id },
-    { family: 'AI member', id: buildAiMembers()[0]!.id },
-    { family: 'system member', id: SYSTEM_MEMBER_ID },
-    { family: 'objective', id: OBJECTIVE_SEEDS[0]!.id },
+    {
+        family: 'idea', routeFamily: 'ideas',
+        id: buildIdeas()[0]!.id,
+    },
+    {
+        family: 'project', routeFamily: 'projects',
+        id: buildProjects()[0]!.id,
+    },
+    {
+        family: 'record', routeFamily: 'records',
+        id: customerProfileRecordId,
+    },
+    {
+        family: 'flow', routeFamily: 'flows',
+        id: buildFlows()[0]!.id,
+    },
+    {
+        family: 'work-order', routeFamily: 'work-orders',
+        id: buildWorkOrders()[0]!.id,
+    },
+    {
+        family: 'human member', routeFamily: 'members',
+        id: buildMembers()[0]!.id,
+    },
+    {
+        family: 'AI member', routeFamily: 'members',
+        id: buildAiMembers()[0]!.id,
+    },
+    {
+        family: 'system member', routeFamily: 'members',
+        id: SYSTEM_MEMBER_ID,
+    },
+    {
+        family: 'objective', routeFamily: 'objectives',
+        id: OBJECTIVE_SEEDS[0]!.id,
+    },
 ];
 
-test('case 2: GET /entity-states/:id/history parity — one entity'
+test('case 2: GET <family>/:id/history parity — one entity'
 + ' per family (idea, project, record, flow, work-order, human'
 + ' member, AI member, system member, objective) + the (at, id)'
-+ ' order', async () => {
++ ' DESC order', async () => {
     const db = await seededDb();
-    for (const { family, id } of CASE_2_FAMILY_ENTITY_IDS) {
+    for (const { family, routeFamily, id }
+        of CASE_2_FAMILY_ENTITY_IDS
+    ) {
         const derived = await deriveStatesFor(
             db, STARK_ORGANIZATION, id,
         );
-        // Phase Final Task 2: states ROW half stripped —
-        // wire history equals derive.
+        // Family routes emit DESC (current first). Work-order
+        // wire widens StateEntity with field_values — parity
+        // is the lifecycle core (id/state/at/member_id), not
+        // full JSON equality with the bare derive.
+        const expected = derived.toReversed();
         const token = await organizationToken(
             'current', STARK_ORGANIZATION,
         );
         const res = await handleRequest(db, req(
-            'GET', '/entity-states/' + id + '/history', token,
+            'GET',
+            '/' + routeFamily + '/' + id + '/history',
+            token,
         ));
         assert.equal(res.status, 200, family);
-        assert.equal(
-            await res.text(), JSON.stringify(derived), family,
-        );
-        for (let i = 1; i < derived.length; i++) {
-            const prior = derived[i - 1]!;
-            const current = derived[i]!;
+        const wire = await res.json() as {
+            id: string;
+            entity_id: string;
+            state: string;
+            member_id: string;
+            at: string;
+        }[];
+        assert.equal(wire.length, expected.length, family);
+        for (let i = 0; i < expected.length; i++) {
+            const e = expected[i]!;
+            const w = wire[i]!;
+            assert.equal(w.id, e.id, family + ' id@' + i);
+            assert.equal(
+                w.entity_id, e.entity_id,
+                family + ' entity_id@' + i,
+            );
+            assert.equal(
+                w.state, e.state, family + ' state@' + i,
+            );
+            assert.equal(
+                w.member_id, e.member_id,
+                family + ' member_id@' + i,
+            );
+            assert.equal(w.at, e.at, family + ' at@' + i);
+        }
+        for (let i = 1; i < wire.length; i++) {
+            const prev = wire[i - 1]!;
+            const cur = wire[i]!;
             assert.ok(
-                prior.at < current.at
-                || (prior.at === current.at
-                    && prior.id < current.id),
-                family + ' history is not (at, id) ascending',
+                prev.at > cur.at
+                || (prev.at === cur.at
+                    && prev.id > cur.id),
+                family + ' history is not (at, id) DESC',
             );
         }
     }

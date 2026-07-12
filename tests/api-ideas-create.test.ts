@@ -94,7 +94,7 @@ test(
         // bare entity-states/:id RETIRED (Phase 15 Task 7);
         // post-write check rides surviving /history.
         const stateRes = await handleRequest(db, req(
-            'GET', '/entity-states/idea-1/history',
+            'GET', '/ideas/idea-1/history',
             DEV_TOKEN,
         ));
         const history = await stateRes.json() as {

@@ -141,9 +141,9 @@ test(
             state: string;
             member_id: string;
             at: string;
-        }[]>(db, 'entity-states/idea-1/history', DEV_TOKEN);
-        const ideaCurrent =
-            ideaHistory[ideaHistory.length - 1]!;
+        }[]>(db, 'ideas/idea-1/history', DEV_TOKEN);
+        // Family history is DESC — index 0 is current.
+        const ideaCurrent = ideaHistory[0]!;
         assert.equal(ideaCurrent.state, 'promoted');
         assert.equal(ideaCurrent.member_id, 'current');
         // The idea event carries the caller-supplied ideaStateAt.
@@ -361,10 +361,10 @@ test(
         );
         assert.equal(project.id, 'p1');
         const ideaHistory = await GET<{ state: string }[]>(
-            db, 'entity-states/idea-1/history', DEV_TOKEN,
+            db, 'ideas/idea-1/history', DEV_TOKEN,
         );
-        const ideaCurrent =
-            ideaHistory[ideaHistory.length - 1]!;
+        // Family history is DESC — index 0 is current.
+        const ideaCurrent = ideaHistory[0]!;
         assert.equal(ideaCurrent.state, 'promoted');
     },
 );

@@ -782,7 +782,7 @@ test(
         const woId = await createWorkOrder(ctx, 'f1');
         await deleteWorkOrderClaim(ctx, woId);
         const events = await ctx.GET<StateEntity[]>(
-            'entity-states/' + woId + '/history',
+            'work-orders/' + woId + '/history',
         );
         const released = events.filter(
             (e) => e.state === 'claim_released',
