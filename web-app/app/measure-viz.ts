@@ -528,7 +528,7 @@ function vizClientScript(): string {
       boot: 0, fetch: 0, render: 0, other: 0,
     };
     var list = [];
-    var names = Object.keys(phases || {}).sort();
+    var names = Object.keys(phases || {});
     for (var i = 0; i < names.length; i++) {
       var name = names[i];
       var ms = phases[name];
@@ -538,6 +538,14 @@ function vizClientScript(): string {
         name: name, ms: ms, bucket: bucket,
       });
     }
+    // Longest duration first; name break for stability.
+    list.sort(function (a, b) {
+      if (a.ms > b.ms) return -1;
+      if (a.ms < b.ms) return 1;
+      if (a.name < b.name) return -1;
+      if (a.name > b.name) return 1;
+      return 0;
+    });
     return { buckets: buckets, phases: list };
   }
   function sweepLabel(i) {

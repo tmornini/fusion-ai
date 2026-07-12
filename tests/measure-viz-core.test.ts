@@ -226,17 +226,31 @@ test('rollupPhases sums buckets; lists present only', () => {
         other: 5,
     });
     assert.equal(rollup.phases.length, 4);
+    // Longest duration first.
     assert.deepEqual(
         rollup.phases.map((p) => p.name),
         [
-            'boot:db-open',
             'fetch:list',
-            'misc:extra',
             'render:paint',
+            'boot:db-open',
+            'misc:extra',
         ],
     );
-    assert.equal(rollup.phases[0]!.bucket, 'boot');
-    assert.equal(rollup.phases[2]!.bucket, 'other');
+    assert.equal(rollup.phases[0]!.bucket, 'fetch');
+    assert.equal(rollup.phases[0]!.ms, 40);
+    assert.equal(rollup.phases[3]!.bucket, 'other');
+});
+
+test('rollupPhases ties break by name', () => {
+    const rollup = rollupPhases({
+        'boot:b': 10,
+        'boot:a': 10,
+        'fetch:x': 20,
+    });
+    assert.deepEqual(
+        rollup.phases.map((p) => p.name),
+        ['fetch:x', 'boot:a', 'boot:b'],
+    );
 });
 
 test('rollupPhases empty phases', () => {

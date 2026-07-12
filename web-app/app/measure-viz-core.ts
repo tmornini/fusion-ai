@@ -253,13 +253,20 @@ export function rollupPhases(
         other: 0,
     };
     const list: PhaseRollup['phases'] = [];
-    const names = Object.keys(phases).sort();
-    for (const name of names) {
+    for (const name of Object.keys(phases)) {
         const ms = phases[name]!;
         const bucket = phaseBucketFor(name);
         buckets[bucket] += ms;
         list.push({ name, ms, bucket });
     }
+    // Longest duration first; name break for stability.
+    list.sort((a, b) => {
+        if (a.ms > b.ms) return -1;
+        if (a.ms < b.ms) return 1;
+        if (a.name < b.name) return -1;
+        if (a.name > b.name) return 1;
+        return 0;
+    });
     return { buckets, phases: list };
 }
 
