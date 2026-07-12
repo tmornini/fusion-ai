@@ -83,57 +83,11 @@ export type TransitionEvent =
     | CreationTransition
     | StepTransition;
 
-// Returns the work order's current node id — the
-// state of the latest non-claim event for
-// entity_id = workOrderId, or null if no
-// transitions have been recorded.
-export async function getWorkOrderCurrentNodeId(
-    ctx: RequestContext,
-    workOrderId: Id,
-): Promise<Id | null> {
-    const events = await ctx.GET<StateEntity[]>(
-        `entity-states/${workOrderId}/history`,
-    );
-    const transitions = events.filter(
-        ev => !isClaimState(ev.state),
-    );
-    const latest = latestByKey(transitions, ev => ev.entity_id)
-        .get(workOrderId);
-    return latest === undefined ? null : latest.state;
-}
-
-// Returns the member holding the active claim and
-// the moment they took it — or null if no claim is
-// live. A 'claimed' event older than lockTimeout is
-// implicitly expired and reads as null even if no
-// 'claim_expired' / 'claim_released' event has yet
-// superseded it. The materialized 'claim_expired'
-// event (written by postWorkOrderClaim when a new
-// claim notices a stale prior) is the durable
-// record of the same condition; the two are
-// consistent.
-export async function getWorkOrderActiveClaim(
-    ctx: RequestContext,
-    workOrderId: Id,
-    lockTimeout: number,
-): Promise<{ memberId: Id; at: string } | null> {
-    const events = await ctx.GET<StateEntity[]>(
-        `entity-states/${workOrderId}/history`,
-    );
-    const claims = events.filter(
-        ev => isClaimState(ev.state),
-    );
-    const latest = latestByKey(claims, ev => ev.entity_id)
-        .get(workOrderId);
-    if (latest === undefined || latest.state !== 'claimed') {
-        return null;
-    }
-    const elapsedMs = msSinceUtc(latest.at);
-    if (elapsedMs >= lockTimeout * MS_PER_SECOND) {
-        return null;
-    }
-    return { memberId: latest.member_id, at: latest.at };
-}
+// Single-WO current-node / active-claim / transition
+// readers re-homed to GET work-orders/:id/history in
+// work-orders-queries.ts (B8). Bulk variants stay here
+// on the states log until B9 moves them to collection
+// history and dissolves this module.
 
 // Bulk variant of getWorkOrderActiveClaim for the
 // workbox inbox, which resolves every work order's
@@ -144,6 +98,7 @@ export async function getWorkOrderActiveClaim(
 // the caller already parses). Replaces an N-per-page
 // re-derivation of the whole ledger with a single read.
 // O(N) on events; Postgres uses an entity_id index.
+// B9 rebuilds this on GET work-orders/history.
 export async function getActiveClaimsByWorkOrder(
     ctx: RequestContext,
     lockTimeoutByWorkOrder: ReadonlyMap<Id, number>,
@@ -208,25 +163,12 @@ function projectTransitions(
     return out;
 }
 
-// Returns the ordered transition history for one work
-// order, in the shape the workbox detail presenter
-// consumes. Read-once per work-order detail page load.
-export async function getWorkOrderTransitionEvents(
-    ctx: RequestContext,
-    workOrderId: Id,
-): Promise<TransitionEvent[]> {
-    const events = await ctx.GET<StateEntity[]>(
-        `entity-states/${workOrderId}/history`,
-    );
-    return projectTransitions(workOrderId, events);
-}
-
 // Bulk variant for flow-stats-aggregate, which needs
 // the transition history for every work order on a
 // flow at once. One GET against /states scans the log,
 // then per-entity grouping + projection happens in JS.
 // O(N) on events; Postgres will use an index on
-// entity_id.
+// entity_id. B9 rebuilds this on GET work-orders/history.
 export async function getTransitionEventsByWorkOrder(
     ctx: RequestContext,
 ): Promise<Map<Id, TransitionEvent[]>> {

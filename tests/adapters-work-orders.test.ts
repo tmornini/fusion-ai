@@ -20,6 +20,9 @@ import {
 '../web-app/app/adapters/work-orders-mutations.ts';
 import {
     getWorkOrder,
+    getWorkOrderActiveClaim,
+    getWorkOrderCurrentNodeId,
+    getWorkOrderTransitionEvents,
 } from
 '../web-app/app/adapters/work-orders-queries.ts';
 import {
@@ -32,10 +35,7 @@ import {
 } from
 '../shared/crypto-safe-base62.ts';
 import {
-    getWorkOrderActiveClaim,
     getActiveClaimsByWorkOrder,
-    getWorkOrderCurrentNodeId,
-    getWorkOrderTransitionEvents,
 } from
 '../web-app/app/adapters/state-events.ts';
 import {
