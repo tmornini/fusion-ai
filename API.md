@@ -412,8 +412,8 @@ runs on the base adapter with explicit guards:
 - `GET /snapshots/schema` — schema existence + full export, else null.
   The export (`getSnapshot`, `api/db-backed.ts`) stamps one reserved
   top-level key, `__schema_version__` (`SNAPSHOT_SCHEMA_VERSION`
-  = 3 post-Phase-Final, `api/db.ts`), beside the survivor
-  `TABLE_NAMES` arrays (`clients`, `requests`, `responses`).
+  = 5 post-clients-elimination, `api/db.ts`), beside the pure
+  message-plane `TABLE_NAMES` arrays (`requests`, `responses`).
 - `DELETE /snapshots/schema` — drop the schema and reopen clean.
 - `POST /snapshots/mock-data` — seed the full demo dataset (§3.26).
 - `POST /snapshots/bootstrap` — seed the pristine minimal state
@@ -807,7 +807,10 @@ redaction the stored pair carries.
     `identity-tokens/` prefix — a hit IS the spend marker,
     KEY-BY-ANCHOR: the issued root's row id equals the code's
     own digest) → `mintPair` → `formAuthPair` →
-    `formTokenEventPair` (the root's own event).
+    `formTokenEventPair` (the root's own event). Mints
+    `act: {sub: clientId}` — the acting client — on the
+    access token (RFC 8693 shape, the token-exchange
+    precedent).
   - tx `[requests, responses]`: re-run `authorizationCodeSpent`
     on the open view — a race loser aborts, appending nothing
     further — then `appendMessagePair` the root's event pair,
@@ -841,7 +844,9 @@ redaction the stored pair carries.
     appending nothing.
 - **`client_credentials`** → `grantClientCredentials`
   (private_key_jwt):
-  - `clients.getById` → status/grant-type checks →
+  - `deriveClientRegistration`
+    (identities/:id/registration facet; absent/tombstoned →
+    401 `unknown client`) → status/grant-type checks →
     `verifyClientAssertion` (JWS, crypto) → `nameFor` →
     `issueTokenPair` (as above, same tx shape).
   - props: the same atomic single-tx shape as token-exchange. Bad

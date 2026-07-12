@@ -150,7 +150,7 @@ time budgets while keeping per-entity mutation domains disjoint:
 #### Entity mutation domain scoping
 
 Phase 2 agents share one IndexedDB database. Post-Phase-
-Final there are only three tables (`clients`, `requests`,
+Final there are only two tables (`requests`,
 `responses`); every product write appends pairs only. Agents
 own **disjoint pair-address families** (URI prefixes), not
 entity tables — the historical table names below name the
@@ -564,7 +564,7 @@ on. Run these in order.
 ### AA1. Create Pristine Environment
 
 - [ ] **AA1** Navigate to `snapshots/`. Click "Create Pristine Environment" and confirm the wipe dialog. PASS: any pre-existing data is wiped and the minimal bootstrap is seeded (verify via AA2/AA3), then the page surfaces a one-time "Save your demo sign-ins" panel (the seeded admin credential, shown once and never stored) gated by an "I have saved it — continue" button. The demo auto-login is retired, so creation no longer redirects straight to the dashboard — sign in with the surfaced credential to reach it.
-- [ ] **AA2** Open DevTools → Application → IndexedDB → `fusion-ai`, verify an object store for every table listed in `TABLE_NAMES` (`api/db.ts` — exactly three: `clients`, `requests`, `responses`) plus the `__schema__` marker. Bootstrap data lives as message pairs in `requests`/`responses` (EXPECTED bootstrap pair count 13; demo seed 1506). Pre-Final origins may also show inert orphan stores from deleted tables — ignore those; they are unread. Verify derived state via the app (or by reading pair fixtures), not a `states` object store.
+- [ ] **AA2** Open DevTools → Application → IndexedDB → `fusion-ai`, verify an object store for every table listed in `TABLE_NAMES` (`api/db.ts` — exactly two: `requests`, `responses`) plus the `__schema__` marker. Bootstrap data lives as message pairs in `requests`/`responses` (EXPECTED bootstrap pair count 13; demo seed 1506). Pre-Final origins may also show inert orphan stores from deleted tables — ignore those; they are unread (now also covers the dead clients store). Verify derived state via the app (or by reading pair fixtures), not a `states` object store.
 - [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), organization "Stark Industries" (domain `acmecorp.com`). `OrganizationEntity` has no plan field — its quota fields are `seats`, `projects_limit`, `ideas_limit`.
 
 ### AA2. Create Members
@@ -2239,15 +2239,14 @@ restored data.)
   **14 message pairs** (absolute) covering System + Tony
   Stark identity/PII/credentials/membership/role-grant/
   organization/state events — derived reads, not entity
-  tables. `clients` is empty (sentinel). NOTE: pristine
-  seeds NO Records. Source of truth: `postBootstrap` in
-  `api/mock-data.ts`. IndexedDB stores each row as an
-  object — no `gz1` compression — and the `__schema__`
-  marker store holds one row. The full table set is
-  `TABLE_NAMES` in `api/db.ts` (three survivors); no
-  object stores outside that list (plus `__schema__`)
-  appear on a post-Final origin (pre-Final orphans may
-  linger inert — gate 6).
+  tables. NOTE: pristine seeds NO Records. Source of
+  truth: `postBootstrap` in `api/mock-data.ts`. IndexedDB
+  stores each row as an object — no `gz1` compression —
+  and the `__schema__` marker store holds one row. The
+  full table set is `TABLE_NAMES` in `api/db.ts` (two
+  survivors); no object stores outside that list (plus
+  `__schema__`) appear on a post-Final origin (pre-Final
+  orphans may linger inert — gate 6).
 - [ ] **G33** Click "Wipe and Load Mock Data", then Confirm the dialog. PASS: a confirm dialog (`#confirm-wipe-dialog`, titled "Confirm Action") appears first warning the wipe cannot be undone — Cancel aborts with no change; on Confirm the page renders the one-time demo-credentials reveal panel (`.credential-reveal`, titled "Save your demo sign-ins") listing EVERY login-capable seeded identity's email + fresh password in the monospace `.credential-reveal-box`, one credential per line, with a "Copy all" button. (Mock data seeds two orgs — `'1'` Stark Industries and `'2'` Wayne Enterprises — so the list spans both orgs' seeded humans; Tony Stark / `current` is the multi-org admin.) The page does NOT navigate until "I have saved it — continue" is clicked; clicking it redirects to `dashboard/index.html`. Navigate to `ideas/` — Stark's 6 ideas are back (the seed plants 11 ideas total, split across both orgs via `assignOrg`; the org fence shows only the active org's).
 - [ ] **G34** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to `dashboard/index.html`. Data matches the snapshot.
 - [ ] **G36 — Sidebar org-switcher (multi-org user)** After "Wipe and Load Mock Data" (G33) seeds two orgs and boot signs in as the multi-org admin Tony Stark (`current`), the SIDEBAR FOOTER (not the top bar) shows an inline native org `<select>` (`.org-switcher`, inside `#sidebar-org-switcher` / `#mobile-sidebar-org-switcher`) next to the member chip — it appears ONLY because the user can reach ≥2 orgs (`shouldShowOrgSwitcher`). PASS: the select lists "Stark Industries" and "Wayne Enterprises" with Stark active; the plain org-name text line in the chip is cleared so the org is not named twice. Note the Members and Ideas lists for Stark. Select "Wayne Enterprises" → the page does a FULL reload and re-scopes: Members shows Wayne's roster and Ideas shows Wayne's ideas (org-fenced — Stark's rows are no longer visible). Reload the page again WITHOUT changing the select → the selection persists (Wayne stays active; the choice is stored under `fusion-ai:active-organization-id` and boot re-exchanges a scoped token from it). A single-org seeded user, by contrast, sees NO `<select>` in the sidebar — just the org name as PLAIN TEXT in the chip. The top bar shows neither the switcher nor a greeting; its only org-aware affordance is the pending-invitations bell (V3). Source of truth: `web-app/app/org-switcher.ts`, `web-app/app/sidebar-member.ts`, `web-app/app/adapters/org-session.ts`, `web-app/app/core.ts::scopeBootToActiveOrg`. (This case requires the two-org mock-data seed, so it runs in Phase 4 alongside G30–G35 — never concurrently with Phase 2 agents.)
@@ -2713,7 +2712,7 @@ Backend: `api/backend-indexeddb.ts`. No Node test (no fake-IDB, zero devDeps) �
 
 Owner: Phase 4 (alone, after Phase 2). L1–L9 reopen, wipe, and reseed the `fusion-ai` database, so they need exclusive DB access alongside G30–G35 — never concurrently with the seven Phase 2 agents.
 
-- [ ] **L1** Boot creates the database. Inspect `indexedDB.databases()` on the dashboard. PASS: `fusion-ai@v1` with 4 object stores (3 tables in `TABLE_NAMES` — `clients`, `requests`, `responses` — plus `__schema__`). Pre-Final origins may also list inert orphan stores.
+- [ ] **L1** Boot creates the database. Inspect `indexedDB.databases()` on the dashboard. PASS: `fusion-ai@v1` with 3 object stores (2 tables in `TABLE_NAMES` — `requests`, `responses` — plus `__schema__`). Pre-Final origins may also list inert orphan stores.
 - [ ] **L2** Missing-schema route. Open the dashboard against an empty database. PASS: it redirects to the Snapshots page.
 - [ ] **L3** Atomic seed. Click "Wipe and Load Mock Data". PASS: the `__schema__` marker and pair rows persist; the dashboard renders the seeded org (1506 pairs absolute).
 - [ ] **L4** Persistence across reload. Reload the dashboard. PASS: it renders the seeded data without re-routing to Snapshots.
@@ -2721,7 +2720,7 @@ Owner: Phase 4 (alone, after Phase 2). L1–L9 reopen, wipe, and reseed the `fus
 - [ ] **L6** Cross-tab refresh. Commit a write in one of two open tabs. PASS: a `BroadcastChannel('fusion-ai:data')` message carrying a scoped notification event (organization/identity ids, or a full-refresh event) reaches the other tab; the poster is not echoed (no self-refresh).
 - [ ] **L7** Atomic import. The clear+put import runs in one `IDBTransaction`. PASS: a rejected import leaves prior data intact (no corruption). A real pre-Final v2 snapshot REJECTS with `SnapshotVersionMismatchError`.
 - [ ] **L8** Quota pre-flight. PASS: an oversize snapshot rejects with `SnapshotTooLargeError` before any write (also `tests/snapshot-quota.test.ts`).
-- [ ] **L9** Bare-DB self-heal. On a 404 path (no app connection), run `indexedDB.deleteDatabase('fusion-ai')` then `indexedDB.open('fusion-ai', 1)` with NO `onupgradeneeded` handler — forging a v1 DB with 0 object stores and no `__schema__` — then load a real page. PASS: `open()` (`api/backend-indexeddb.ts`) sees the missing `__schema__` store, deletes and reopens so the upgrade rebuilds all 4 stores (3 tables + `__schema__`), and the app boots to the graceful empty-state (Snapshots route + working "Wipe and Load Mock Data"), NOT a "Failed to initialize database" dead-end.
+- [ ] **L9** Bare-DB self-heal. On a 404 path (no app connection), run `indexedDB.deleteDatabase('fusion-ai')` then `indexedDB.open('fusion-ai', 1)` with NO `onupgradeneeded` handler — forging a v1 DB with 0 object stores and no `__schema__` — then load a real page. PASS: `open()` (`api/backend-indexeddb.ts`) sees the missing `__schema__` store, deletes and reopens so the upgrade rebuilds all 3 stores (2 tables + `__schema__`), and the app boots to the graceful empty-state (Snapshots route + working "Wipe and Load Mock Data"), NOT a "Failed to initialize database" dead-end.
 
 ## J. Teardown
 
