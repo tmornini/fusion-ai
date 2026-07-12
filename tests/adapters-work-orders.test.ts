@@ -23,6 +23,7 @@ import {
     getWorkOrderActiveClaim,
     getWorkOrderCurrentNodeId,
     getWorkOrderTransitionEvents,
+    getActiveClaimsByWorkOrder,
 } from
 '../web-app/app/adapters/work-orders-queries.ts';
 import {
@@ -34,10 +35,6 @@ import {
     generateCryptoSafeBase62,
 } from
 '../shared/crypto-safe-base62.ts';
-import {
-    getActiveClaimsByWorkOrder,
-} from
-'../web-app/app/adapters/state-events.ts';
 import {
     deleteWorkOrderClaim,
 } from

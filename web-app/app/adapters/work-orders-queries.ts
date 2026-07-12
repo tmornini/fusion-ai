@@ -16,7 +16,6 @@ import {
     isClaimState,
 } from '../../../api/work-order-claims.ts';
 import type { RequestContext } from './shared.ts';
-import type { TransitionEvent } from './state-events.ts';
 
 export type {
     WorkOrderEntity,
@@ -26,15 +25,6 @@ export type {
     GraphEdge,
     NodeAttribute,
 } from '../../../api/types.ts';
-
-export type { TransitionEvent } from './state-events.ts';
-
-// Bulk variants still live on the states log until B9
-// re-homes them to GET work-orders/history.
-export {
-    getActiveClaimsByWorkOrder,
-    getTransitionEventsByWorkOrder,
-} from './state-events.ts';
 
 /* ── Types ───────────────── */
 
@@ -58,6 +48,39 @@ export type ClaimStatus =
         byCurrentMember: boolean;
         at: string;
     };
+
+// A transition event in the shape flow-stats-aggregate
+// and the workbox detail presenter expect. Derived from
+// work-order history: each non-claim event is a transition
+// into state=toNodeId. The first event is the creation
+// transition — it has no prior node, so its union member
+// carries no fromNodeId; every step names the node it left.
+// The id is the underlying state event's id — the foreign-
+// key target for state_field_values. The adapter is the
+// divorce point: the projection exits in camelCase;
+// snake_case stays on the storage rows.
+export interface CreationTransition {
+    kind: 'creation';
+    id: Id;
+    workOrderId: Id;
+    toNodeId: Id;
+    memberId: Id;
+    at: string;
+}
+
+export interface StepTransition {
+    kind: 'step';
+    id: Id;
+    workOrderId: Id;
+    fromNodeId: Id;
+    toNodeId: Id;
+    memberId: Id;
+    at: string;
+}
+
+export type TransitionEvent =
+    | CreationTransition
+    | StepTransition;
 
 /* ── Helpers ─────────────── */
 
@@ -126,6 +149,119 @@ export function fieldValuesByEventFromHistory(
         );
     }
     return byEvent;
+}
+
+/* ── Bulk history ────────── */
+
+// GET work-orders/history — every org-scoped lifecycle
+// event with field_values folded, (at, id) DESC overall.
+// Group by entity_id preserving relative order so each
+// group's list stays DESC (index 0 is current per WO).
+export async function getWorkOrderHistories(
+    ctx: RequestContext,
+): Promise<Map<Id, WorkOrderHistoryEventEntity[]>> {
+    const all = await ctx.GET<
+        WorkOrderHistoryEventEntity[]
+    >('work-orders/history');
+    const byEntity = new Map<
+        Id, WorkOrderHistoryEventEntity[]
+    >();
+    for (const ev of all) {
+        const list = byEntity.get(ev.entity_id);
+        if (list) {
+            list.push(ev);
+        } else {
+            byEntity.set(ev.entity_id, [ev]);
+        }
+    }
+    return byEntity;
+}
+
+// Bulk active claim: one history read, then per-WO
+// activeClaimFromHistory against that order's lockTimeout
+// (passed in — timeout lives in the frozen flow_graph the
+// caller already parses). Orders without a timeout entry
+// are skipped (outside the work-order set).
+export async function getActiveClaimsByWorkOrder(
+    ctx: RequestContext,
+    lockTimeoutByWorkOrder: ReadonlyMap<Id, number>,
+): Promise<Map<Id, { memberId: Id; at: string }>> {
+    const histories = await getWorkOrderHistories(ctx);
+    const out = new Map<
+        Id, { memberId: Id; at: string }
+    >();
+    for (const [entityId, history] of histories) {
+        const lockTimeout =
+            lockTimeoutByWorkOrder.get(entityId);
+        if (lockTimeout === undefined) continue;
+        const claim = activeClaimFromHistory(
+            history, lockTimeout,
+        );
+        if (claim !== null) {
+            out.set(entityId, claim);
+        }
+    }
+    return out;
+}
+
+// Project non-claim history rows into TransitionEvent
+// ASC order for presenters and the transition gate.
+// Creation is first; each later event is a step from
+// the prior node. Consumers that need DESC (or the
+// raw wire) should read getWorkOrderHistory directly.
+export function projectTransitions(
+    workOrderId: Id,
+    events: readonly WorkOrderHistoryEventEntity[],
+): TransitionEvent[] {
+    // ASC by the wire's (at, id) total order — not at alone.
+    // History is DESC; a stable sort on at would reverse
+    // equal-timestamp ties (same second, later id first).
+    const transitions = events
+        .filter(ev => !isClaimState(ev.state))
+        .toSorted((a, b) => {
+            const byAt = a.at.localeCompare(b.at);
+            if (byAt !== 0) return byAt;
+            return a.id.localeCompare(b.id);
+        });
+    const out: TransitionEvent[] = [];
+    let prior: Id | null = null;
+    for (const ev of transitions) {
+        const base = {
+            id: ev.id,
+            workOrderId,
+            toNodeId: ev.state,
+            memberId: ev.member_id,
+            at: ev.at,
+        };
+        out.push(prior === null
+            ? { kind: 'creation', ...base }
+            : {
+                kind: 'step',
+                fromNodeId: prior,
+                ...base,
+            });
+        prior = ev.state;
+    }
+    return out;
+}
+
+// Bulk transitions for flow-stats and the workbox
+// inbox: one history read, then per-entity projection.
+// Groups with only claim events produce no map entry
+// (empty transition list is not useful to callers).
+export async function getTransitionEventsByWorkOrder(
+    ctx: RequestContext,
+): Promise<Map<Id, TransitionEvent[]>> {
+    const histories = await getWorkOrderHistories(ctx);
+    const out = new Map<Id, TransitionEvent[]>();
+    for (const [entityId, history] of histories) {
+        const events = projectTransitions(
+            entityId, history,
+        );
+        if (events.length === 0) continue;
+        out.set(entityId, events);
+    }
+    return out;
 }
 
 /* ── Per-id history ──────── */
@@ -203,40 +339,6 @@ export async function getWorkOrderActiveClaim(
     return activeClaimFromHistory(
         history, lockTimeout,
     );
-}
-
-// Project non-claim history rows into TransitionEvent
-// ASC order for presenters and the transition gate.
-// Creation is first; each later event is a step from
-// the prior node. Consumers that need DESC (or the
-// raw wire) should read getWorkOrderHistory directly.
-function projectTransitions(
-    workOrderId: Id,
-    events: readonly WorkOrderHistoryEventEntity[],
-): TransitionEvent[] {
-    const transitions = events
-        .filter(ev => !isClaimState(ev.state))
-        .toSorted((a, b) => a.at.localeCompare(b.at));
-    const out: TransitionEvent[] = [];
-    let prior: Id | null = null;
-    for (const ev of transitions) {
-        const base = {
-            id: ev.id,
-            workOrderId,
-            toNodeId: ev.state,
-            memberId: ev.member_id,
-            at: ev.at,
-        };
-        out.push(prior === null
-            ? { kind: 'creation', ...base }
-            : {
-                kind: 'step',
-                fromNodeId: prior,
-                ...base,
-            });
-        prior = ev.state;
-    }
-    return out;
 }
 
 export function transitionEventsFromHistory(

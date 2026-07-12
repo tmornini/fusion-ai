@@ -7,6 +7,7 @@ import type {
     StateEntity,
 } from '../../../api/types.ts';
 import {
+    assertObjectiveState,
     nowUtc,
 } from '../../../api/types.ts';
 import {
@@ -46,6 +47,37 @@ export async function getObjective(
     id: ObjectiveId,
 ): Promise<ObjectiveEntity> {
     return ctx.GET<ObjectiveEntity>(`objectives/${id}`);
+}
+
+// Lifecycle-current trio is stamped on the ObjectiveEntity
+// GET row (Phase A). Map snake_case wire → ObjectiveStateDetail;
+// no second hop to the states log / entity-states history.
+export function objectiveStateDetailFromRow(
+    row: ObjectiveEntity,
+): ObjectiveStateDetail {
+    return {
+        state: assertObjectiveState(
+            row.state, 'objective ' + row.id,
+        ),
+        stateAt: row.state_at,
+        stateEventId: row.state_event_id,
+    };
+}
+
+// Bulk objective trio read from GET-stamped rows — drag-
+// reorder and archive/reactivate echo each id's current
+// trio without minting a fresh event.
+export async function getObjectiveStateDetails(
+    ctx: RequestContext,
+): Promise<Map<Id, ObjectiveStateDetail>> {
+    const rows = await getObjectives(ctx);
+    const out = new Map<Id, ObjectiveStateDetail>();
+    for (const row of rows) {
+        out.set(
+            row.id, objectiveStateDetailFromRow(row),
+        );
+    }
+    return out;
 }
 
 // Archived set from the GET-stamped lifecycle trio on

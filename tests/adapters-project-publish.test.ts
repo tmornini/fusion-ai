@@ -12,9 +12,8 @@ import {
 } from '../web-app/app/adapters/project-publish.ts';
 import {
     getProjectState,
-} from '../web-app/app/adapters/state-events.ts';
-import { putProject } from
-    '../web-app/app/adapters/projects.ts';
+    putProject,
+} from '../web-app/app/adapters/projects.ts';
 import {
     seedCurrentMember,
     seedHumanMember,

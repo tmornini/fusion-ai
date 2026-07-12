@@ -282,6 +282,52 @@ test(
     },
 );
 
+// Former adapters-state-events pin: bulk record lifecycle
+// is the GET-stamped row collection — an idea with an
+// overlapping alphabet value must not appear as a record.
+test(
+    'getRecords excludes a same-valued idea',
+    async () => {
+        const db = memoryDbAdapter();
+        await seedAdminSchema(db);
+        await seedCurrentMember(db);
+        const ctx = createRequestContext(
+            db, await organizationToken(),
+        );
+        await postRecordChange(ctx, 'r1', {
+            kind: 'create',
+            record: {
+                name: 'R',
+                description: 'd',
+                position: 1,
+            },
+            attributes: [],
+            initialState: 'active',
+        });
+        await ctx.PUT('ideas/i1', {
+            title: 'I',
+            position: 1,
+            problem_statement: 'p',
+            target_users: 't',
+            proposed_solution: 's',
+            expected_outcome: 'o',
+            success_metrics: 'm',
+            state: 'archived',
+            state_at: '2026-01-01T00:00:01.000000Z',
+            state_event_id: 'ev-i1',
+        });
+        const rows = await getRecords(ctx);
+        const ids = rows.map(
+            r => r.record.idForLink(),
+        );
+        assert.ok(ids.includes('r1'));
+        assert.ok(
+            !ids.includes('i1'),
+            'idea must not leak into records',
+        );
+    },
+);
+
 test(
     'state events for records land in the unified'
     + ' states log',

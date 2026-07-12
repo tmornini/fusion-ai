@@ -17,14 +17,12 @@ import {
     getObjectiveRevisionsByObjective,
     getActiveObjectives,
     getCurrentObjectiveDefinitions,
+    getObjectiveStateDetails,
     postObjectiveCreation,
     postObjectiveArchival,
     postObjectiveReactivation,
     putObjectivePosition,
 } from '../web-app/app/adapters/objectives.ts';
-import {
-    getObjectiveStateDetails,
-} from '../web-app/app/adapters/state-events.ts';
 import {
     computeNewPosition,
 } from '../web-app/app/drag-reorder-positions.ts';
