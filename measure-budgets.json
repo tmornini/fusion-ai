@@ -1,0 +1,89 @@
+{
+    "auth": {
+        "readyMs": 500
+    },
+    "billing": {
+        "readyMs": 1300
+    },
+    "dashboard": {
+        "readyMs": 3200
+    },
+    "design-system": {
+        "readyMs": 1400
+    },
+    "flow-detail": {
+        "readyMs": 2100
+    },
+    "flow-stats": {
+        "readyMs": 2400
+    },
+    "flows": {
+        "readyMs": 1900
+    },
+    "idea-convert": {
+        "readyMs": 3000
+    },
+    "idea-create": {
+        "readyMs": 1400
+    },
+    "idea-detail": {
+        "readyMs": 2200
+    },
+    "ideas": {
+        "readyMs": 2500
+    },
+    "identities": {
+        "readyMs": 1800
+    },
+    "identity-detail": {
+        "readyMs": 2000
+    },
+    "identity-providers": {
+        "readyMs": 1600
+    },
+    "identity-tokens": {
+        "readyMs": 1500
+    },
+    "invitations": {
+        "readyMs": 1700
+    },
+    "landing": {
+        "readyMs": 600
+    },
+    "member-detail": {
+        "readyMs": 1600
+    },
+    "members": {
+        "readyMs": 2100
+    },
+    "not-found": {
+        "readyMs": 600
+    },
+    "organization": {
+        "readyMs": 4700
+    },
+    "project-detail": {
+        "readyMs": 2500
+    },
+    "projects": {
+        "readyMs": 2600
+    },
+    "record-create": {
+        "readyMs": 1500
+    },
+    "record-detail": {
+        "readyMs": 1900
+    },
+    "records": {
+        "readyMs": 2000
+    },
+    "snapshots": {
+        "readyMs": 1700
+    },
+    "workbox": {
+        "readyMs": 4600
+    },
+    "workbox-detail": {
+        "readyMs": 4700
+    }
+}
