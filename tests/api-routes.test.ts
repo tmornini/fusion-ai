@@ -37,6 +37,7 @@ const COLLECTION_ROUTES: readonly string[] = [
     'flows/any-flow/records',
     'ideas/any-idea/submissions',
     'objectives',
+    'objectives/history',
     'objectives/any-objective/revisions',
     'projects/any-project/objective-baseline-scores',
     'projects/any-project/objective-actual-scores',

@@ -173,6 +173,7 @@ import {
 import { deriveRecordStateHistory } from './derive-records.ts';
 import {
     deriveObjectiveStateHistory,
+    deriveObjectiveHistories,
 } from './derive-objectives.ts';
 import {
     deriveBaselineScores,
@@ -5048,6 +5049,18 @@ export const routes: Route[] = [
             }
             return postObjectiveCreationOp(db, body, pairs);
         },
+    }),
+    // GET objectives/history (states-URI elimination A5):
+    // org-scoped bulk lifecycle StateEntity rows, (at, id)
+    // DESC. Always 200 array. MUST register BEFORE
+    // objectives/:id so matchRoute's first-match does not
+    // capture the literal segment as `:id`. Member-tier GET
+    // via matchesOnSegmentBoundary on '/objectives'.
+    route('objectives/history', {
+        get: (db, _p, _actor, organization) =>
+            deriveObjectiveHistories(
+                db, requireOrganization(organization),
+            ),
     }),
     // objectives/:id is the seventh family. GET is FLIPPED
     // (Task 7): absorbed into the generic documentEntityRoute —
