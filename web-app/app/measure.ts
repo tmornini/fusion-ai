@@ -83,7 +83,51 @@ type Cli = {
     runsExplicit: boolean;
 };
 
-function parseArgs(argv: string[]): Cli {
+type ParseResult =
+    | { kind: 'ok'; cli: Cli }
+    | { kind: 'help' }
+    | { kind: 'error'; message: string };
+
+function usageText(): string {
+    return [
+        'Usage: ./measure [options]',
+        '',
+        'Page-load benchmark via headless Chrome + CDP.',
+        'Stats drop the top and bottom 5% of samples',
+        '(floor(n×0.05) per tail; n < 20 keeps all).',
+        '',
+        'Options:',
+        '  --check              Fail if medians exceed',
+        '                       budgets',
+        '  --record             Append a history line',
+        '                       under measurements/',
+        '  --write-budgets      Write mean+kσ budgets',
+        '                       (full registry only)',
+        '  --budget-sigmas N    σ multiplier for',
+        '                       --write-budgets',
+        `                       (default ${DEFAULT_BUDGET_SIGMAS})`,
+        '  --pages a,b,c        Subset of PAGE_REGISTRY',
+        '                       keys',
+        '  --runs N             Runs per page',
+        `                       (default ${DEFAULT_RUNS})`,
+        '  --visualize          Write measurements/',
+        '                       index.html from disk',
+        '                       history (bare = no',
+        '                       Chrome; with a run,',
+        '                       regenerate after)',
+        '  --help, -h           Show this help',
+        '',
+        'Examples:',
+        '  ./measure',
+        '  ./measure --pages dashboard,ideas --runs 30',
+        '  ./measure --check --record --visualize',
+        '  ./measure --write-budgets --runs 30',
+        '  ./measure --visualize',
+        '',
+    ].join('\n');
+}
+
+function parseArgs(argv: string[]): ParseResult {
     let check = false;
     let record = false;
     let writeBudgets = false;
@@ -94,6 +138,9 @@ function parseArgs(argv: string[]): Cli {
     let runsExplicit = false;
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i]!;
+        if (a === '--help' || a === '-h') {
+            return { kind: 'help' };
+        }
         if (a === '--check') {
             check = true;
             continue;
@@ -117,10 +164,12 @@ function parseArgs(argv: string[]): Cli {
                 || !Number.isFinite(Number(v))
                 || Number(v) < 0
             ) {
-                throw new Error(
-                    '--budget-sigmas requires a'
-                    + ' non-negative number',
-                );
+                return {
+                    kind: 'error',
+                    message:
+                        '--budget-sigmas requires a'
+                        + ' non-negative number',
+                };
             }
             budgetSigmas = Number(v);
             continue;
@@ -128,18 +177,22 @@ function parseArgs(argv: string[]): Cli {
         if (a === '--pages') {
             const v = argv[++i];
             if (v === undefined || v.length === 0) {
-                throw new Error(
-                    '--pages requires a comma-separated'
-                    + ' list of registry keys',
-                );
+                return {
+                    kind: 'error',
+                    message:
+                        '--pages requires a'
+                        + ' comma-separated list of'
+                        + ' registry keys',
+                };
             }
             pages = v.split(',')
                 .map((s) => s.trim())
                 .filter((s) => s.length > 0);
             if (pages.length === 0) {
-                throw new Error(
-                    '--pages list is empty',
-                );
+                return {
+                    kind: 'error',
+                    message: '--pages list is empty',
+                };
             }
             continue;
         }
@@ -149,31 +202,42 @@ function parseArgs(argv: string[]): Cli {
                 v === undefined
                 || !/^[1-9]\d*$/.test(v)
             ) {
-                throw new Error(
-                    '--runs requires a positive integer',
-                );
+                return {
+                    kind: 'error',
+                    message:
+                        '--runs requires a positive'
+                        + ' integer',
+                };
             }
             runs = Number(v);
             runsExplicit = true;
             continue;
         }
-        throw new Error(`Unknown flag: ${a}`);
+        return {
+            kind: 'error',
+            message: `Unknown flag: ${a}`,
+        };
     }
     if (writeBudgets && pages !== null) {
-        throw new Error(
-            '--write-budgets requires a full registry'
-            + ' sweep (omit --pages)',
-        );
+        return {
+            kind: 'error',
+            message:
+                '--write-budgets requires a full'
+                + ' registry sweep (omit --pages)',
+        };
     }
     return {
-        check,
-        record,
-        writeBudgets,
-        budgetSigmas,
-        pages,
-        runs,
-        visualize,
-        runsExplicit,
+        kind: 'ok',
+        cli: {
+            check,
+            record,
+            writeBudgets,
+            budgetSigmas,
+            pages,
+            runs,
+            visualize,
+            runsExplicit,
+        },
     };
 }
 
@@ -969,7 +1033,20 @@ async function measurePage(
 // ── Main ──────
 
 async function main(): Promise<void> {
-    const cli = parseArgs(process.argv.slice(2));
+    const parsed = parseArgs(process.argv.slice(2));
+    if (parsed.kind === 'help') {
+        process.stdout.write(usageText());
+        return;
+    }
+    if (parsed.kind === 'error') {
+        process.stderr.write(
+            `measure: ${parsed.message}\n\n`,
+        );
+        process.stderr.write(usageText());
+        process.exitCode = 1;
+        return;
+    }
+    const cli = parsed.cli;
     const repoRoot = process.cwd();
 
     const visualizeOnly =

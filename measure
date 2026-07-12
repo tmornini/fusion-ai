@@ -4,5 +4,6 @@ set -euo pipefail
 # Page-load benchmark via headless Chrome + CDP.
 # Flags: --check, --record, --write-budgets,
 #   --budget-sigmas N, --pages a,b,c, --runs N,
-#   --visualize (history HTML; bare = no Chrome)
+#   --visualize (history HTML; bare = no Chrome),
+#   --help / -h
 node --strip-types web-app/app/measure.ts "$@"
