@@ -79,7 +79,7 @@ Run deliberately: before builds/releases; after adapter,
 derive, or presenter changes; at migration milestones with
 `--record`.
 
-Budgets live in `measurements/measure-budgets.json` — per
+Budgets live in `measurements/budgets.json` — per
 `PAGE_REGISTRY` page `readyMs` ceiling. Calibrate with
 `--write-budgets` (full registry only): each budget is
 `ceil(mean + k×sampleσ)` of that page's run samples
@@ -88,7 +88,7 @@ gates **median** readyMs against those ceilings. Budgets
 are a **per-machine-class local dev gate**, not a CI
 absolute. Use enough `--runs` (e.g. 30) for a stable σ.
 
-History lives in `measurements/measure-history.jsonl` —
+History lives in `measurements/history.jsonl` —
 appended only by `--record`. Longitudinal record across
 the Postgres migration.
 
