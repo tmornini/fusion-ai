@@ -3,7 +3,6 @@ import type {
     ObjectiveEntity,
     ObjectiveId,
     ObjectiveRevisionEntity,
-    ObjectiveState,
     ObjectiveStateDetail,
     StateEntity,
 } from '../../../api/types.ts';
@@ -19,9 +18,6 @@ import {
 import {
     generateCryptoSafeBase62,
 } from '../../../shared/crypto-safe-base62.ts';
-import {
-    latestStatesForIds,
-} from './state-events.ts';
 import {
     getCurrentHumanMember,
 } from './members.ts';
@@ -52,23 +48,26 @@ export async function getObjective(
     return ctx.GET<ObjectiveEntity>(`objectives/${id}`);
 }
 
+// Archived set from the GET-stamped lifecycle trio on
+// each objective row — no hop to the states log.
 export async function getArchivedObjectiveIds(
     ctx: RequestContext,
 ): Promise<Set<ObjectiveId>> {
-    const [events, objectives] = await Promise.all([
-        ctx.GET<StateEntity[]>('states'),
-        getObjectives(ctx),
-    ]);
-    const ids = new Set<Id>(objectives.map(o => o.id));
-    const latest =
-        latestStatesForIds<ObjectiveState>(events, ids);
-    const archived = new Set<ObjectiveId>();
-    for (const [id, state] of latest) {
-        if (state === 'archived') {
-            archived.add(id as ObjectiveId);
-        }
-    }
-    return archived;
+    const objectives = await getObjectives(ctx);
+    return new Set(
+        objectives
+            .filter(o => o.state === 'archived')
+            .map(o => o.id),
+    );
+}
+
+// Org-scoped bulk lifecycle history (GET objectives/history)
+// — StateEntity rows, (at, id) DESC overall. Source for the
+// project score-history archival stream.
+export async function getObjectiveHistories(
+    ctx: RequestContext,
+): Promise<StateEntity[]> {
+    return ctx.GET<StateEntity[]>('objectives/history');
 }
 
 export interface ObjectiveArchivalEvent {
@@ -78,27 +77,18 @@ export interface ObjectiveArchivalEvent {
 }
 
 // Streams every `state='archived'` event from the
-// state log — one event per archival, including
-// re-archivals after reactivation. Consumed by the
-// project score-history presenter which renders each
-// event chronologically alongside scoring rows. The
-// `'archived'` value is shared across entity
-// alphabets, so we restrict to objective ids.
+// objectives history route — one event per archival,
+// including re-archivals after reactivation. Consumed
+// by the project score-history presenter which renders
+// each event chronologically alongside scoring rows.
+// The history route is objectives-only, so no client
+// id filter is required.
 export async function getObjectiveArchivalEvents(
     ctx: RequestContext,
 ): Promise<ObjectiveArchivalEvent[]> {
-    const [rows, objectives] = await Promise.all([
-        ctx.GET<StateEntity[]>('states'),
-        getObjectives(ctx),
-    ]);
-    const objectiveIds = new Set<string>(
-        objectives.map(o => o.id),
-    );
+    const rows = await getObjectiveHistories(ctx);
     return rows
-        .filter(r =>
-            r.state === 'archived'
-            && objectiveIds.has(r.entity_id),
-        )
+        .filter(r => r.state === 'archived')
         .map(r => ({
             objectiveId: r.entity_id as ObjectiveId,
             memberId: r.member_id,
@@ -203,12 +193,9 @@ export async function getCurrentObjectiveDefinitions(
 export async function getActiveObjectives(
     ctx: RequestContext,
 ): Promise<ObjectiveEntity[]> {
-    const [all, archived] = await Promise.all([
-        getObjectives(ctx),
-        getArchivedObjectiveIds(ctx),
-    ]);
+    const all = await getObjectives(ctx);
     return all
-        .filter(o => !archived.has(o.id))
+        .filter(o => o.state === 'active')
         .sort((a, b) => a.position - b.position);
 }
 

@@ -132,7 +132,7 @@ test('postMockDataLoad seeds one revision per objective',
 
 // All five objective seeds mint genesis state 'active' via
 // the create-body trio (states-address retirement) — none
-// are archived. Pair-plane GET /states derives those rows.
+// are archived. GET objectives stamps that trio on rows.
 test('postMockDataLoad seeds zero archived objectives',
     async () => {
         const db = memoryDbAdapter();
