@@ -5,7 +5,9 @@ import {
 } from './db.ts';
 import type {
     Id, RequestEntity, ResponseEntity, StateEntity,
+    TransitionFieldValueEntity,
     WorkOrderEntity,
+    WorkOrderHistoryEventEntity,
 } from './types.ts';
 import { MS_PER_SECOND } from './types.ts';
 import {
@@ -1480,6 +1482,100 @@ export async function workOrderLifecycleStatesFor(
         dbOrView, organization, workOrderId,
     );
     return [...replayed].sort(atIdCompare);
+}
+
+// GET work-orders/:id/history (states-URI elimination A1):
+// workOrderLifecycleStatesFor (ASC) reborn with an inline
+// field-values fold from this work order's OWN transition
+// prefix pairs, returned (at, id) DESC so index 0 is current.
+// Head-reduction per field-value row id matches
+// stateFieldValuesFrom (api/derive-state-field-values.ts);
+// claim/birth/release rows carry field_values: []. Empty
+// lifecycle → missedReadError (403 foreign / 404 absent).
+// Entity-scoped indexed reads only — no whole-plane getAll.
+export async function workOrderHistoryFor(
+    db: DbAdapter,
+    organization: Id,
+    workOrderId: Id,
+): Promise<WorkOrderHistoryEventEntity[]> {
+    const lifecycle = await workOrderLifecycleStatesFor(
+        db, organization, workOrderId,
+    );
+    if (lifecycle.length === 0) {
+        throw await missedReadError(
+            db, workOrderId, organization, 'work_orders',
+        );
+    }
+
+    const transitionPrefix = canonicalUriPrefix(
+        organization,
+        '/work-orders/' + workOrderId + '/transition/',
+    );
+    const [transitionRequests, transitionResponses] =
+        await Promise.all([
+            db.requests.getAllWhere(
+                'uri_prefix', transitionPrefix,
+            ),
+            db.responses.getAllWhere(
+                'uri_prefix', transitionPrefix,
+            ),
+        ]);
+    const transitionPairs = operationPairsAt(
+        transitionRequests,
+        transitionResponses,
+        transitionPrefix,
+    );
+
+    // Same fold as transitionFieldValueCandidates +
+    // stateFieldValuesFrom: candidates keyed by fv row id,
+    // latestByKey head reduction, DELETE heads dropped.
+    const candidates: DocumentPair[] = [];
+    for (const transition of transitionPairs) {
+        const fieldValues = transition.body['fieldValues'] as
+            readonly {
+                readonly id: string;
+                readonly fields: Record<string, unknown>;
+            }[];
+        for (const fieldValue of fieldValues) {
+            candidates.push({
+                id: transition.id,
+                at: transition.at,
+                uriId: fieldValue.id,
+                method: 'PUT',
+                body: fieldValue.fields,
+                requesterIdentityId:
+                    transition.requesterIdentityId,
+            });
+        }
+    }
+    const heads = latestByKey(
+        candidates, (pair) => pair.uriId,
+    );
+    const byEvent = new Map<Id, TransitionFieldValueEntity[]>();
+    for (const [uriId, head] of heads) {
+        if (head.method === 'DELETE') continue;
+        const stateEventId = pickString(
+            head.body, 'state_event_id',
+        );
+        const list = byEvent.get(stateEventId) ?? [];
+        list.push({
+            id: uriId,
+            attribute_id: pickString(
+                head.body, 'attribute_id',
+            ),
+            value: pickString(head.body, 'value'),
+        });
+        byEvent.set(stateEventId, list);
+    }
+    for (const list of byEvent.values()) {
+        list.sort(byIdAscending);
+    }
+
+    // Lifecycle is ASC; reverse for DESC (index 0 = current).
+    return lifecycle.map((event) => ({
+        ...event,
+        field_values: byEvent.get(event.id) ?? [],
+    })).toReversed();
 }
 
 // THE CLAIM GATE'S OWN SOURCE (Phase 14 Task 4): the work-

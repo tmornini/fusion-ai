@@ -191,6 +191,7 @@ import {
     deriveStatesFor,
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
+    workOrderHistoryFor,
 } from './derive-states.ts';
 import {
     stateFieldValuesForStateEvent,
@@ -4431,6 +4432,21 @@ export const routes: Route[] = [
         post: (db, p, body, actor, pair) =>
             postWorkOrderTransitionOp(
                 db, param(p, 0), body, actor, pair,
+            ),
+    }),
+    // GET work-orders/:id/history (states-URI elimination A1):
+    // lifecycle + inline field_values fold, (at, id) DESC.
+    // Miss posture lives inside workOrderHistoryFor (empty →
+    // missedReadError). No api.ts pre-dispatch guard — the
+    // derive reads only this org's uri_prefix addresses.
+    // Member-tier GET via matchesOnSegmentBoundary on
+    // '/work-orders'.
+    route('work-orders/:id/history', {
+        get: (db, p, _actor, organization) =>
+            workOrderHistoryFor(
+                db,
+                requireOrganization(organization),
+                param(p, 0),
             ),
     }),
     // Flow work-order joins nest under their parent flow: the

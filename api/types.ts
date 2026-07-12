@@ -452,6 +452,26 @@ export interface StateEntity {
     at: string;
 }
 
+// Nested field-value shape on work-order history events
+// (GET work-orders/:id/history). Folded from transition pair
+// bodies — no state_event_id on the wire (the parent event
+// already carries id). Distinct from StateFieldValueEntity,
+// which still carries state_event_id for the legacy field-
+// values collection route.
+export interface TransitionFieldValueEntity {
+    id: Id;
+    attribute_id: Id;
+    value: string;
+}
+
+// Work-order history row: a lifecycle StateEntity plus the
+// transition field values whose state_event_id === id. Claim/
+// birth/release rows carry field_values: [].
+export interface WorkOrderHistoryEventEntity
+    extends StateEntity {
+    field_values: TransitionFieldValueEntity[];
+}
+
 export const SYSTEM_MEMBER_ID: Id = 'system';
 
 export const SYSTEM_MEMBER_NAME = 'System';
