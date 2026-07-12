@@ -4,7 +4,7 @@ import type {
     RecordEntity,
     RecordId,
     RecordState,
-    StateEntity,
+    RecordStateDetail,
 } from '../../../api/types.ts';
 import {
     RecordModel,
@@ -14,13 +14,6 @@ import {
     activeOrganization,
     type RequestContext,
 } from './shared.ts';
-import {
-    latestByKey,
-} from '../../../shared/ledger-reduction.ts';
-import {
-    getRecordStateDetail,
-    getRecordStateDetails,
-} from './state-events.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -94,57 +87,48 @@ export async function getRecord(
     );
 }
 
-export async function getRecordState(
-    ctx: RequestContext,
-    id: RecordId,
-): Promise<RecordState> {
-    const events = await ctx.GET<StateEntity[]>(
-        `entity-states/${id}/history`,
-    );
-    const latest = latestByKey(events, ev => ev.entity_id)
-        .get(id);
-    if (latest === undefined) {
-        throw new Error(
-            'no state event for record ' + id,
-        );
-    }
-    return assertRecordState(
-        latest.state, 'record ' + id,
-    );
+// Lifecycle-current trio is stamped on the RecordEntity GET
+// row (Phase A). Map snake_case wire → RecordStateDetail;
+// no second hop to the states log / entity-states history.
+function recordStateDetailFromRow(
+    row: RecordEntity,
+): RecordStateDetail {
+    return {
+        state: assertRecordState(
+            row.state, 'record ' + row.id,
+        ),
+        stateAt: row.state_at,
+        stateEventId: row.state_event_id,
+    };
 }
 
 // The record detail page's read: one domain facet
 // carrying identity, content, and lifecycle state —
 // the raw row and its separate state never cross the
-// seam. Widened to the state DETAIL (Decision 7's trio)
+// seam. Trio is the GET-stamped row fields (Decision 7)
 // so a plain field edit (the detail page's no-attribute-
-// change save) can echo it without minting a fresh event;
-// getRecordState (singular, above) remains for its own
-// test-pinned throws-on-absence covenant even though this
-// caller no longer reaches it.
+// change save) can echo it without minting a fresh event.
 export async function getRecordModel(
     ctx: RequestContext,
     id: RecordId,
 ): Promise<RecordModel> {
-    const [row, detail] = await Promise.all([
-        getRecord(ctx, id),
-        getRecordStateDetail(ctx, id),
-    ]);
-    return new RecordModel(row, detail);
+    const row = await getRecord(ctx, id);
+    return new RecordModel(
+        row, recordStateDetailFromRow(row),
+    );
 }
 
 export async function getRecords(
     ctx: RequestContext,
 ): Promise<RecordWithCounts[]> {
     const [
-        rows, attributes, flowRecords, stateMap,
+        rows, attributes, flowRecords,
     ] = await Promise.all([
         getRecordEntities(ctx),
         ctx.GET<RecordAttributeEntity[]>(
             'record-attributes',
         ),
         getAllFlowRecords(ctx),
-        getRecordStateDetails(ctx),
     ]);
     const attrCountByRecord = new Map<
         string, number
@@ -166,24 +150,17 @@ export async function getRecords(
                 .get(fr.record_id) ?? 0) + 1,
         );
     }
-    return rows.map(row => {
-        const detail = stateMap.get(row.id);
-        if (detail === undefined) {
-            throw new Error(
-                'Record has no state event: '
-                + row.id,
-            );
-        }
-        return {
-            record: new RecordModel(row, detail),
-            attributeCount:
-                attrCountByRecord.get(row.id)
-                ?? 0,
-            boundFlowCount:
-                flowCountByRecord.get(row.id)
-                ?? 0,
-        };
-    });
+    return rows.map(row => ({
+        record: new RecordModel(
+            row, recordStateDetailFromRow(row),
+        ),
+        attributeCount:
+            attrCountByRecord.get(row.id)
+            ?? 0,
+        boundFlowCount:
+            flowCountByRecord.get(row.id)
+            ?? 0,
+    }));
 }
 
 // The wire document PUT /records/:id now takes (Decision 7):

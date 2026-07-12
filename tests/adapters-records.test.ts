@@ -9,21 +9,17 @@ import {
 import { organizationToken } from './token-fixtures.ts';
 import {
     getRecord,
+    getRecordModel,
     getRecords,
     putRecord,
-    getRecordState,
     postRecordChange,
     postRecordStateChange,
 } from '../web-app/app/adapters/records.ts';
-import {
-    getRecordStateDetail,
-} from '../web-app/app/adapters/state-events.ts';
 import {
     jsonArrayField,
 } from '../api/types.ts';
 import {
     seedCurrentMember,
-    seedHumanMember,
 } from './member-fixtures.ts';
 import {
     seedAdminSchema,
@@ -50,10 +46,8 @@ test(
         const stored = await getRecord(ctx, 'rec-1');
         assert.equal(stored.id, 'rec-1');
         assert.equal(stored.name, 'Customer');
-        const state = await getRecordState(
-            ctx, 'rec-1',
-        );
-        assert.equal(state, 'active');
+        // Lifecycle-current trio is stamped on the GET row.
+        assert.equal(stored.state, 'active');
     },
 );
 
@@ -151,9 +145,9 @@ test(
             ],
             initialState: 'active',
         });
-        // Echo the create's own known head — never a fresh
-        // mint (the RecordChangeEdit trio Task 4 added).
-        const head = await getRecordStateDetail(ctx, 'rec-1');
+        // Echo the create's own known head from the GET row
+        // trio — never a fresh mint (RecordChangeEdit).
+        const head = await getRecordModel(ctx, 'rec-1');
         await postRecordChange(ctx, 'rec-1', {
             kind: 'edit',
             record: {
@@ -171,9 +165,9 @@ test(
                     constraints: jsonArrayField([]),
                 },
             ],
-            state: head.state,
-            stateAt: head.stateAt,
-            stateEventId: head.stateEventId,
+            state: head.stateValue(),
+            stateAt: head.stateAtValue(),
+            stateEventId: head.stateEventIdValue(),
             removedAttributeIds: ['a-old'],
         });
         const attrs = await ctx.GET<
@@ -257,10 +251,10 @@ test(
         assert.notEqual(
             after.state_event_id, before.state_event_id,
         );
-        const state = await getRecordState(
+        const model = await getRecordModel(
             ctx, 'rec-1',
         );
-        assert.equal(state, 'archived');
+        assert.equal(model.stateValue(), 'archived');
         const events = await deriveStatesFor(db, '1', 'rec-1');
         assert.equal(
             after.state_event_id, events.at(-1)?.id,
@@ -271,16 +265,19 @@ test(
     },
 );
 
+// getRecordState (the entity-states history reader) is
+// deleted — production-dead. Its throws-on-absence force
+// re-homes onto getRecordModel: a missing record is a GET
+// miss (Not found), not a dual-plane "no state event".
 test(
-    'getRecordState throws when no state event'
-    + ' exists for the record',
+    'getRecordModel rejects a missing record',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         const ctx = createRequestContext(db, await organizationToken());
         await assert.rejects(
-            () => getRecordState(ctx, 'rec-missing'),
-            /no state event/,
+            () => getRecordModel(ctx, 'rec-missing'),
+            /Not found/,
         );
     },
 );
