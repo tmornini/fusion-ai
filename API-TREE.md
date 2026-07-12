@@ -22,7 +22,7 @@ That mechanism will replace the existing ledger's and common states system by mo
 └─|─ /identities/
   |  └── :id                                   • default-organization is an attribute of the identity itself
   |      └─|─ /credentials                     • all of them, single document
-  |      └─|─ /notifications                   • postgres LISTEN/NOTIFY for all changes to identity
+  |      └─|─ /notifications                   • TARGET-STATE: postgres LISTEN/NOTIFY for all changes to identity
   |      └─|─ /pii                             • full physical removal from the DB required, i.e. physical delete, all others: Delete-At: header
   |      └─|─ /registration                    • RECONCILED (clients retirement): client registration facet — single-slot PUT-overwrite document (grant_types, redirect_uris, jwks, aud, status), admin-realm writes, kind-'service' gate; grantClientCredentials derives it pre-token (bearer-exempt precedent); DELETE tombstone = deregistration
   |      └─|─ /role-grants                     • all of them, single document
@@ -40,7 +40,7 @@ That mechanism will replace the existing ledger's and common states system by mo
   |         \- identity authz realm
 └─|─ /organizations/
   |  └─|─ :id
-  |    |  └── /notifications                  • postgres LISTEN/NOTIFY for all changes to organization
+  |    |  └── /notifications                  • TARGET-STATE: postgres LISTEN/NOTIFY for all changes to organization
   |    |  └── /objectives                     • RECONCILED: shipped as per-objective documents at objectives/:id (the seventh registered family, 'simple' + lifecycle 'trio' — genesis at create, archive/reactivate via the document PUT), collection served by the generic document handler over per-entity heads, revision history as per-objective message history at objectives/:id/revisions/, NOT a single org document — see the objectives FLIPPED 2026-07-05 block + states-address retirement, go-to-church-peaceful-castle.md §Phased sequence (Author gates 1/3)
   |    |  └── /flows/
   |    |      └── :id
