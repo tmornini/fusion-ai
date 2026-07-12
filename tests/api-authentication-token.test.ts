@@ -30,6 +30,10 @@ import {
 } from '../api/derive-identity-tokens.ts';
 import { sha256Bytes } from '../shared/digest.ts';
 import { bytesToBase64Url } from '../shared/base64url.ts';
+import {
+    seedClientRegistration,
+    seedClientRegistrationTombstone,
+} from './identity-fixtures.ts';
 
 const BASE = 'http://localhost';
 
@@ -656,7 +660,7 @@ test('client_credentials issues a gate-valid token', async () => {
     });
     const { client, assertion } =
         await signedClientSetup();
-    await db.clients.put('svc-client', client);
+    await seedClientRegistration(db, 'svc-client', client);
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'client_credentials',
         client_id: 'svc-client',
@@ -672,7 +676,7 @@ test('client_credentials refuses an unsigned assertion',
 async () => {
     const db = await freshDb();
     const { client } = await signedClientSetup();
-    await db.clients.put('svc-client', client);
+    await seedClientRegistration(db, 'svc-client', client);
     // Well-formed JWT shape, right claims, NO valid
     // signature from the registered key.
     const impostor = await makeAssertionSigner('ES256');
@@ -695,7 +699,9 @@ async () => {
 test('client_credentials with a malformed assertion is 401',
 async () => {
     const db = await freshDb();
-    await db.clients.put('svc-client', activeClient);
+    await seedClientRegistration(
+        db, 'svc-client', activeClient,
+    );
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'client_credentials',
         client_id: 'svc-client',
@@ -714,15 +720,17 @@ async () => {
     assert.equal(res.status, 401);
 });
 
-test('a clients store fault is a 500, never 401',
+test('a registration-read fault is a 500, never 401',
 async () => {
     const db = await freshDb();
-    // Only a null rawReadRow means 'unknown client'; any other
-    // fault is a bug and must surface, not wear a 401 mask.
-    // Phase 15 gate 6 re-homes the lookup onto rawReadRow.
-    (db as unknown as {
-        rawReadRow: () => Promise<never>;
-    }).rawReadRow = async () => {
+    // Only an EntityNotFoundError means 'unknown client';
+    // any other fault is a bug and must surface, not wear a
+    // 401 mask. The derive's first read is
+    // requests.getAllWhere — the fault-injection point that
+    // replaced the retired rawReadRow stub.
+    (db.requests as unknown as {
+        getAllWhere: () => Promise<never>;
+    }).getAllWhere = async () => {
         throw new Error('store exploded');
     };
     const res = await handleRequest(db, tokenRequest({
@@ -731,4 +739,55 @@ async () => {
         client_assertion: 'a.b.c',
     }));
     assert.equal(res.status, 500);
+});
+
+test('client_credentials for a disabled registration is 401',
+async () => {
+    const db = await freshDb();
+    const { client, assertion } =
+        await signedClientSetup();
+    await seedClientRegistration(db, 'svc-client', {
+        ...client, status: 'disabled',
+    });
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: assertion,
+    }));
+    assert.equal(res.status, 401);
+    const body = await res.json() as { error: string };
+    assert.match(body.error, /client is disabled/);
+});
+
+test('client_credentials without the grant type is 400',
+async () => {
+    const db = await freshDb();
+    const { client, assertion } =
+        await signedClientSetup();
+    await seedClientRegistration(db, 'svc-client', {
+        ...client, grant_types: 'authorization_code',
+    });
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: assertion,
+    }));
+    assert.equal(res.status, 400);
+});
+
+test('client_credentials for a deregistered client is 401',
+async () => {
+    const db = await freshDb();
+    const { client, assertion } =
+        await signedClientSetup();
+    await seedClientRegistration(db, 'svc-client', client);
+    await seedClientRegistrationTombstone(db, 'svc-client');
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: assertion,
+    }));
+    assert.equal(res.status, 401);
+    const body = await res.json() as { error: string };
+    assert.match(body.error, /unknown client/);
 });
