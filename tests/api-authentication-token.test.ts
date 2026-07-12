@@ -316,6 +316,16 @@ async () => {
     assert.equal(body.token_type, 'Bearer');
     assert.ok(body.access_token.length > 0);
     assert.ok(body.refresh_token.length > 0);
+    // act.sub carries the acting client (RFC 8693 shape,
+    // mirroring token-exchange); sub stays the user. The
+    // refresh token never carries act.
+    const claims = decodeAccessToken(body.access_token);
+    assert.equal(claims.sub, 'current');
+    assert.equal(claims.act?.sub, 'web');
+    assert.equal(
+        decodeAccessToken(body.refresh_token).act,
+        undefined,
+    );
     // the minted access token passes the SP-3 gate
     const rows = await GET(db, 'members', body.access_token);
     assert.ok(Array.isArray(rows));

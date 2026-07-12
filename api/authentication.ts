@@ -1059,9 +1059,13 @@ async function grantAuthorizationCode(
     const name = await nameFor(adapter, issuer.identityId);
     const organizations =
         await subjectOrganizations(adapter, issuer.identityId);
+    // act.sub = the acting client (RFC 8693), mirroring
+    // grantTokenExchange's own act:{sub: actor}. sub stays
+    // the user; issuer.clientId is already verified equal to
+    // the redeeming client_id above.
     const response = await mintPair(
         issuer.identityId, name, refreshJti,
-        undefined, { organizations },
+        { sub: issuer.clientId }, { organizations },
     );
     const pair = await formAuthPair(
         seed, body, issuer.identityId, HTTP_OK, response,
