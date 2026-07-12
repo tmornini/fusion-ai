@@ -16,6 +16,7 @@ when working with code in this repository.
 ./build --help         # Show usage
 ./serve [port]         # Build + start HTTP server (default 8080)
 ./measure              # Page-load benchmark (needs Chrome)
+./measure --help       # Show usage
 ./measure --check      # Fail if medians exceed budgets
 ./measure --record     # Append history under measurements/
 ./measure --write-budgets  # mean+1.5σ budgets (full sweep)
@@ -80,14 +81,20 @@ Run deliberately: before builds/releases; after adapter,
 derive, or presenter changes; at migration milestones with
 `--record`.
 
+Stats (median/min/max readyMs, phase medians, and
+`--write-budgets` mean+σ) drop the top and bottom 5% of
+samples (`floor(n×0.05)` per tail). Default `--runs 5`
+is too small to trim; use enough runs (e.g. 30) so the
+tails actually drop and σ stabilizes.
+
 Budgets live in `measurements/budgets.json` — per
 `PAGE_REGISTRY` page `readyMs` ceiling. Calibrate with
 `--write-budgets` (full registry only): each budget is
-`ceil(mean + k×sampleσ)` of that page's run samples
-(`k` defaults to 1.5 via `--budget-sigmas`). `--check`
-gates **median** readyMs against those ceilings. Budgets
-are a **per-machine-class local dev gate**, not a CI
-absolute. Use enough `--runs` (e.g. 30) for a stable σ.
+`ceil(mean + k×sampleσ)` of that page's **trimmed**
+samples (`k` defaults to 1.5 via `--budget-sigmas`).
+`--check` gates **median** readyMs against those
+ceilings. Budgets are a **per-machine-class local dev
+gate**, not a CI absolute.
 
 History lives in `measurements/history.jsonl` —
 appended only by `--record`. Longitudinal record across
