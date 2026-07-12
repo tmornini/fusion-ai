@@ -32,12 +32,26 @@ import {
     seedHumanMember,
 } from './member-fixtures.ts';
 
+// PUT body entity fields only — seed/put supply the lifecycle
+// trio (state/stateAt/stateEventId). GET ProjectEntity carries
+// the stamped trio (Phase A); list/detail read it from the row.
 function buildProject(
     id: string,
     title: string,
-    overrides?: Partial<ProjectEntity>,
-): Omit<ProjectEntity, 'id'> {
-    const base: Omit<ProjectEntity, 'id'> = {
+    overrides?: Partial<
+        Omit<
+            ProjectEntity,
+            | 'id'
+            | 'state'
+            | 'state_at'
+            | 'state_event_id'
+        >
+    >,
+): Omit<
+    ProjectEntity,
+    'id' | 'state' | 'state_at' | 'state_event_id'
+> {
+    return {
         organization_id: '1',
         title,
         description: 'desc for ' + title,
@@ -47,11 +61,8 @@ function buildProject(
         estimated_cost: 50000,
         actual_cost: 12000,
         position: 1,
+        ...overrides,
     };
-    const { id: _drop, ...rest } = {
-        ...base, ...overrides, id,
-    } as ProjectEntity;
-    return rest;
 }
 
 // Seeds a project through the SAME document PUT the live route

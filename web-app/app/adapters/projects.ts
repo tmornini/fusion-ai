@@ -8,16 +8,13 @@ import type {
 import {
     Project,
     projectStateIsNotDeleted,
+    assertProjectState,
     msSinceUtc,
     nowUtc,
     COST_DIVISOR,
     MS_PER_DAY,
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
-import {
-    getProjectStateDetail,
-    getProjectStateDetails,
-} from './state-events.ts';
 import {
     generateCryptoSafeBase62,
 } from '../../../shared/crypto-safe-base62.ts';
@@ -60,26 +57,31 @@ export async function getProjectEntities(
     return ctx.GET<ProjectEntity[]>('projects');
 }
 
+// Lifecycle-current trio is stamped on the ProjectEntity GET
+// row (Phase A). Map snake_case wire → ProjectStateDetail;
+// no second hop to the states log / entity-states history.
+function projectStateDetailFromRow(
+    row: ProjectEntity,
+): ProjectStateDetail {
+    return {
+        state: assertProjectState(
+            row.state, 'project ' + row.id,
+        ),
+        stateAt: row.state_at,
+        stateEventId: row.state_event_id,
+    };
+}
+
 export async function getProjects(
     ctx: RequestContext,
 ): Promise<Project[]> {
-    const [rows, detailMap] = await Promise.all([
-        getProjectEntities(ctx),
-        getProjectStateDetails(ctx),
-    ]);
+    const rows = await getProjectEntities(ctx);
     return rows
-        .filter(row => {
-            const detail = detailMap.get(row.id);
-            if (detail === undefined) {
-                throw new Error(
-                    'Project has no state event: '
-                    + row.id,
-                );
-            }
-            return projectStateIsNotDeleted(detail.state);
-        })
+        .filter(row => projectStateIsNotDeleted(
+            projectStateDetailFromRow(row).state,
+        ))
         .map(row => new Project(
-            row, detailMap.get(row.id)!,
+            row, projectStateDetailFromRow(row),
         ));
 }
 
@@ -87,11 +89,10 @@ export async function getProject(
     ctx: RequestContext,
     id: string,
 ): Promise<Project> {
-    const [row, detail] = await Promise.all([
-        getProjectEntity(ctx, id),
-        getProjectStateDetail(ctx, id),
-    ]);
-    return new Project(row, detail);
+    const row = await getProjectEntity(ctx, id);
+    return new Project(
+        row, projectStateDetailFromRow(row),
+    );
 }
 
 export class ProjectView {

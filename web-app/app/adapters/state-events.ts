@@ -415,8 +415,9 @@ export async function getProjectStates(
 // Single-project state read, widened to carry the STORED head
 // event's `at`/`id` alongside the state — the trio Decision 7
 // folds into the project document (state_at, state_event_id).
-// Consumed by getProject (adapters/projects.ts) to build the
-// Project domain object.
+// getProject now reads the GET-stamped row trio; this remains
+// for residual callers (projects/detail.ts) until the states
+// surface retires (B9).
 export async function getProjectStateDetail(
     ctx: RequestContext,
     projectId: Id,
@@ -427,13 +428,12 @@ export async function getProjectStateDetail(
 }
 
 // Bulk sibling of getProjectStates, widened the same way.
-// Consumed by getProjects (adapters/projects.ts) so the
-// projects LIST page can echo each row's trio on a plain field
-// edit (drag-reorder) without minting a fresh event.
-// dashboard.ts, flow-export.ts, and project-scoring.ts keep
-// reading the bare getProjectStates above — unwidened, per
-// their own bare-state need and per tests/adapters-state-
-// events.test.ts, which pins getProjectStates' return shape.
+// getProjects now reads the GET-stamped row trio; this remains
+// until residual callers retire. dashboard.ts, flow-export.ts,
+// and project-scoring.ts keep reading the bare getProjectStates
+// above — unwidened, per their own bare-state need and per
+// tests/adapters-state-events.test.ts, which pins
+// getProjectStates' return shape.
 export async function getProjectStateDetails(
     ctx: RequestContext,
 ): Promise<Map<Id, ProjectStateDetail>> {
