@@ -1140,14 +1140,52 @@ async function main(): Promise<void> {
                     budgetsFile, 'utf8',
                 ),
             ) as Budgets;
-            const verdict = compareBudgets(
-                stats, budgets,
+            // Budget keys must name registry pages
+            // (stale key drift). Unmeasured pages in a
+            // --pages subset are NOT unknown-page.
+            const registryKeys = new Set(
+                Object.keys(PAGE_REGISTRY),
             );
-            if (!verdict.ok) {
+            const staleBudgetKeys = Object.keys(
+                budgets,
+            ).filter((k) => !registryKeys.has(k));
+            // Full sweep: both-ways against all budgets.
+            // Subset: only gate measured pages (over /
+            // missing-budget); subset is for iteration.
+            const budgetsForCompare: Budgets =
+                cli.pages === null
+                    ? budgets
+                    : Object.fromEntries(
+                        Object.keys(stats)
+                            .filter(
+                                (k) =>
+                                    budgets[k]
+                                        !== undefined,
+                            )
+                            .map((k) => [
+                                k,
+                                budgets[k]!,
+                            ]),
+                    );
+            const verdict = compareBudgets(
+                stats, budgetsForCompare,
+            );
+            const offenders = [
+                ...staleBudgetKeys.map((page) => ({
+                    page,
+                    reason: 'unknown-page' as const,
+                    budgetReadyMs:
+                        budgets[page]!.readyMs,
+                })),
+                ...(verdict.ok
+                    ? []
+                    : verdict.offenders),
+            ];
+            if (offenders.length > 0) {
                 process.stderr.write(
                     'Budget check FAILED:\n',
                 );
-                for (const o of verdict.offenders) {
+                for (const o of offenders) {
                     const bits = [
                         o.page,
                         o.reason,
