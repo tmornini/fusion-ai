@@ -198,6 +198,7 @@ import {
 import {
     deriveStates,
     deriveStatesFor,
+    deriveMemberStates,
     deriveWorkOrderHistories,
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
@@ -4937,6 +4938,32 @@ export const routes: Route[] = [
     route('members/:id', {
         get: documentGetHandler(MEMBERS_WIRING),
         put: documentPutHandler(MEMBERS_WIRING),
+    }),
+    // GET members/:id/history (states-URI elimination A4):
+    // deriveMemberStates filtered to entity_id; empty →
+    // EntityNotFoundError('members', id) — global-family
+    // posture (organizationNested: false), not
+    // missedReadError. Wire StateEntity (at, id) DESC.
+    // Member-tier GET via matchesOnSegmentBoundary on
+    // '/members'.
+    route('members/:id/history', {
+        get: async (db, params) => {
+            const id = param(params, 0);
+            const history = (await deriveMemberStates(db))
+                .filter((e) => e.entity_id === id)
+                .sort((a, b) =>
+                    a.at < b.at ? -1
+                        : a.at > b.at ? 1
+                            : a.id < b.id ? -1
+                                : a.id > b.id ? 1
+                                    : 0);
+            if (history.length === 0) {
+                throw new EntityNotFoundError(
+                    'members', id,
+                );
+            }
+            return history.toReversed();
+        },
     }),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — GET dispatches to the derived
