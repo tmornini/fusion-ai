@@ -43,7 +43,8 @@ import {
 } from '../api/work-order-claims.ts';
 import { deriveFlowWorkOrders } from
     '../api/derive-flow-work-orders.ts';
-import { deriveStatesFor } from '../api/derive-states.ts';
+import { workOrderLifecycleStatesFor } from
+    '../api/derive-states.ts';
 import {
     stateFieldValuesForStateEvent,
 } from '../api/derive-state-field-values.ts';
@@ -626,9 +627,9 @@ async () => {
     // The full chain: create(3) + transition1(1) +
     // transition2(2) + entity PUT(0) + fresh claim(1) +
     // repeat-claim(0) + rejected claim(0) + unclaim(1) = 8.
-    // Release is pair-plane-only — pin via deriveStatesFor.
+    // Release is pair-plane-only — pin via lifecycle derive.
     assert.equal(
-        (await deriveStatesFor(
+        (await workOrderLifecycleStatesFor(
             db, STARK_ORGANIZATION, workOrderId,
         )).length,
         8,
@@ -708,7 +709,7 @@ test('duplicate-create: two creates, same work-order id, fresh'
     // Phase Final Stage B: work_orders table retired.
 
     assert.equal(
-        (await deriveStatesFor(
+        (await workOrderLifecycleStatesFor(
             db, STARK_ORGANIZATION, workOrderId,
         )).length,
         6,
@@ -1475,9 +1476,9 @@ async () => {
         db, STARK_ORGANIZATION, workOrderId,
     );
     // Pin the test-side pair replay against the live
-    // production derive (deriveStatesFor) — both read the same
+    // production derive (lifecycle) — both read the same
     // op-pair composition (create/claim/release/transition).
-    const derivedHistory = await deriveStatesFor(
+    const derivedHistory = await workOrderLifecycleStatesFor(
         db, STARK_ORGANIZATION, workOrderId,
     );
     assert.deepEqual(replay.events, derivedHistory);

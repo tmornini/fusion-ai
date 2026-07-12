@@ -1,6 +1,6 @@
 import { test } from 'node:test';
-import { deriveStatesFor } from
-    '../api/derive-states.ts';
+import { deriveRecordStateHistory } from
+    '../api/derive-records.ts';
 import { strict as assert } from 'node:assert';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
@@ -255,7 +255,7 @@ test(
             ctx, 'rec-1',
         );
         assert.equal(model.stateValue(), 'archived');
-        const events = await deriveStatesFor(db, '1', 'rec-1');
+        const events = await deriveRecordStateHistory(db, '1', 'rec-1');
         assert.equal(
             after.state_event_id, events.at(-1)?.id,
         );
@@ -350,7 +350,7 @@ test(
         await postRecordStateChange(
             ctx, rec1, 'archived',
         );
-        const events = await deriveStatesFor(db, '1',
+        const events = await deriveRecordStateHistory(db, '1',
             'rec-1',
         );
         const values = events

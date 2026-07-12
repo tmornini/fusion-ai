@@ -24,12 +24,6 @@ import {
     type DocumentPair,
 } from './derive-documents.ts';
 import { latestByKey } from '../shared/ledger-reduction.ts';
-import { deriveIdeaStateHistory } from './derive-ideas.ts';
-import { deriveProjectStateHistory } from './derive-projects.ts';
-import { deriveRecordStateHistory } from './derive-records.ts';
-import { deriveFlowStateHistory } from './derive-flows.ts';
-import { deriveObjectiveStateHistory } from
-    './derive-objectives.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import { latestClaimEvent } from './work-order-claims.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
@@ -2265,55 +2259,11 @@ export async function deriveStates(
     return fenced.sort(byIdAscending);
 }
 
-// The entity's OWN subset — no family-classification shortcut
-// exists (resolveOwningOrganization resolves an OWNING
-// ORGANIZATION, never which of the five sources an id belongs
-// to), so every source is queried and the result filtered by
-// entity_id. An id ordinarily lives in ONE source's address
-// family; unionById keeps same-content echoes once and throws
-// on a true collision — the same covenant deriveStates already
-// holds. organization is REQUIRED — the five trio derives are
-// org-prefixed and cannot resolve their own address without
-// it. Never a visibility fence here, unlike deriveStates'
-// own fenceStatesByOwner call — the caller already names
-// both the org AND the entity.
-//
-// PRECONDITION: callers must already have established
-// entityId's visibility to `organization` before calling —
-// the route's own gate (api/api.ts's
-// entity-states/:id/history guard, resolveOwningOrganization)
-// IS the fence. A caller that trusts an unverified
-// (organization, entityId) pairing reads another
-// organization's rows.
-export async function deriveStatesFor(
-    db: DbAdapter,
-    organization: Id,
-    entityId: Id,
-): Promise<StateEntity[]> {
-    const [
-        ideaRows, projectRows, recordRows, flowRows,
-        objectiveRows,
-        memberStateRows, workOrderRows,
-        flowGraphRows, invitationRows,
-    ] = await Promise.all([
-        deriveIdeaStateHistory(db, organization, entityId),
-        deriveProjectStateHistory(db, organization, entityId),
-        deriveRecordStateHistory(db, organization, entityId),
-        deriveFlowStateHistory(db, organization, entityId),
-        deriveObjectiveStateHistory(db, organization, entityId),
-        deriveMemberStates(db),
-        deriveWorkOrderLifecycle(db),
-        deriveFlowGraphStates(db),
-        deriveInvitationStates(db),
-    ]);
-    const rows = [
-        ...ideaRows, ...projectRows, ...recordRows, ...flowRows,
-        ...objectiveRows,
-        ...memberStateRows, ...workOrderRows,
-        ...flowGraphRows, ...invitationRows,
-    ].filter((row) => row.entity_id === entityId);
-    return unionById([rows]).sort(atIdCompare);
-}
+// entity-states/:id/history + deriveStatesFor RETIRED
+// (states-URI elimination C2). Per-entity history lives on
+// GET <family>/:id/history and the family-scoped derives
+// (derive*StateHistory, workOrderLifecycleStatesFor,
+// deriveMemberStates filter, graph/invitation sources).
 
 // ---- documentStateHeadFor — the member_id-echo head helper -----
 // ---- (Phase 14 Task 5) --------------------------------------------

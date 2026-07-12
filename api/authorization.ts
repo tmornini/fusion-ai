@@ -138,7 +138,6 @@ const MEMBER_VERBS: Readonly<
     '/states/:id/field-values': ['GET'],
     '/work-orders': ['GET', 'PUT', 'POST'],
     '/states': ['GET'],
-    '/entity-states': ['GET'],
     '/members': ['GET'],
     '/ai-members': ['GET'],
     '/human-members': ['GET'],

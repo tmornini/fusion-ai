@@ -312,7 +312,7 @@ export function documentEntityRoute(
 // DESC so index 0 is current, and empty → missedReadError
 // (403 foreign / 404 absent) using the family's table name for
 // an honest body. Does NOT change the derive's own ASC for
-// other callers (deriveStatesFor, drift).
+// other callers (drift / family-specific oracles).
 export type DocumentStateHistoryDerive = (
     db: DbAdapter,
     organization: Id,

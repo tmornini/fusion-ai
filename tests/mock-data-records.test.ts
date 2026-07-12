@@ -1,5 +1,5 @@
 import { test } from 'node:test';
-import { deriveStatesFor } from
+import { workOrderLifecycleStatesFor } from
     '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import {
@@ -279,7 +279,7 @@ test(
                 'wo.flow_graph',
             );
 
-        const events = await deriveStatesFor(db, '1', woId);
+        const events = await workOrderLifecycleStatesFor(db, '1', woId);
         const transitions = events.filter(
             e => e.state !== 'claimed'
                 && e.state !== 'claim_released'

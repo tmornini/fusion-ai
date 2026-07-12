@@ -200,7 +200,6 @@ import {
 } from './derive-identity-spine.ts';
 import {
     deriveStates,
-    deriveStatesFor,
     deriveMemberStates,
     deriveWorkOrderHistories,
     workOrderClaimHistoryFor,
@@ -5211,25 +5210,9 @@ export const routes: Route[] = [
     // states/:id RETIRED (states-address retirement Task 13):
     // every verb on the address is a router 404. Collection
     // GET /states and GET /states/:id/field-values survive.
-    // bare GET entity-states/:id RETIRED (Phase 15 Task 7):
-    // zero product callers. History below is the LIVE read.
-    // GET is FLIPPED (Phase 14 Task 7): derives via
-    // deriveStatesFor — the gate ALREADY fences this route
-    // (api/api.ts's entity-states/:id/history guard resolves
-    // the entity's owner via resolveOwningOrganization before
-    // dispatch), so the handler does not re-fence;
-    // deriveStatesFor's own header documents that
-    // precondition. Every client reader that names this
-    // address (getWorkOrderCurrentNodeId, getWorkOrderActive
-    // Claim, getProjectState/getRecordStateDetail/etc.) rides
-    // transitively, no web-app change.
-    route('entity-states/:id/history', {
-        get: (db, p, _actor, organization) =>
-            deriveStatesFor(
-                db, requireOrganization(organization),
-                param(p, 0),
-            ),
-    }),
+    // entity-states/:id and entity-states/:id/history RETIRED
+    // (Phase 15 Task 7 + states-URI elimination C2): history
+    // lives on GET <family>/:id/history.
 
     route('snapshots/schema', {
         get: async (db) =>

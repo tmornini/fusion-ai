@@ -136,10 +136,11 @@ test(
         assert.equal(facet.name, 'Renamed');
         assert.equal(facet.skill_focus, 'qa');
         // The edit wrote no event — the lone create event holds.
-        const { deriveStatesFor } = await import(
+        const { deriveMemberStates } = await import(
             '../api/derive-states.ts'
         );
-        const events = await deriveStatesFor(db, '1', 'a1');
+        const events = (await deriveMemberStates(db))
+            .filter((e) => e.entity_id === 'a1');
         assert.equal(events.length, 1);
         assert.equal(events[0]?.state, 'active');
     },

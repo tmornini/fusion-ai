@@ -191,7 +191,7 @@ async function latestStateFor(
 ): Promise<string> {
     // deriveFlowGraphStates returns id-lex order; re-sort
     // (at, id) ASC so last is truly current (matches the
-    // former entity-states deriveStatesFor union order).
+    // former multi-source union order).
     const events = (await deriveFlowGraphStates(db))
         .filter((e) => e.entity_id === entityId)
         .sort((a, b) =>

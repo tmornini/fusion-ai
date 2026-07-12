@@ -13,9 +13,15 @@ import {
 } from '../api/types.ts';
 import {
     deriveStates,
-    deriveStatesFor,
     deriveInvitationStates,
+    deriveMemberStates,
+    deriveFlowGraphStates,
+    workOrderLifecycleStatesFor,
 } from '../api/derive-states.ts';
+import { deriveIdeaStateHistory } from
+    '../api/derive-ideas.ts';
+import { deriveObjectiveStateHistory } from
+    '../api/derive-objectives.ts';
 import {
     formWritePair, appendMessagePair,
 } from '../api/message-pair.ts';
@@ -26,8 +32,9 @@ import {
 } from '../api/routes.ts';
 import { seedIdentityPii } from './identity-fixtures.ts';
 
-// The five-source union (deriveStates) and its per-entity
-// counterpart (deriveStatesFor). A hand-built multi-family
+// The five-source union (deriveStates) and per-family history
+// derives (states-URI elimination C2). A hand-built multi-
+// family
 // fixture drives ONE representative event through each source
 // — an idea document trio, an objectives document trio, an AI
 // member's document-trio genesis, a work order's create-op
@@ -629,46 +636,59 @@ test('deriveStates: a DIVERGENT cross-source id collision crashes'
     );
 });
 
-// ---- 2. deriveStatesFor: per-family subsets, (at, id) order -----
+// ---- 2. per-family history subsets, (at, id) order (C2) -----
 
-test('deriveStatesFor: each family\'s own entity subset', async () => {
+test('per-family history: each family\'s own entity subset',
+async () => {
     const fx = await buildUnionFixture();
 
     assert.deepEqual(
-        (await deriveStatesFor(fx.db, 'A', fx.ideaId))
+        (await deriveIdeaStateHistory(fx.db, 'A', fx.ideaId))
             .map((row) => row.id),
         [fx.ideaId + '-genesis'],
     );
     assert.deepEqual(
-        (await deriveStatesFor(fx.db, 'A', fx.objectiveId))
-            .map((row) => row.id),
+        (await deriveObjectiveStateHistory(
+            fx.db, 'A', fx.objectiveId,
+        )).map((row) => row.id),
         [fx.objectiveId + '-genesis'],
     );
     assert.deepEqual(
-        (await deriveStatesFor(fx.db, 'A', fx.aiMemberId))
+        (await deriveMemberStates(fx.db))
+            .filter((row) => row.entity_id === fx.aiMemberId)
             .map((row) => row.id),
         [fx.aiMemberId + '-genesis'],
     );
     assert.deepEqual(
-        (await deriveStatesFor(fx.db, 'A', fx.workOrderId))
-            .map((row) => row.id),
+        (await workOrderLifecycleStatesFor(
+            fx.db, 'A', fx.workOrderId,
+        )).map((row) => row.id),
         [
             fx.workOrderId + '-ev1', fx.workOrderId + '-ev2',
             fx.workOrderId + '-ev3',
         ],
     );
+    const graph = await deriveFlowGraphStates(fx.db);
     assert.deepEqual(
-        (await deriveStatesFor(fx.db, 'A', fx.deletedNodeId))
+        graph.filter((row) =>
+            row.entity_id === fx.deletedNodeId)
             .map((row) => row.id),
         ['ev-union-deleted'],
     );
     assert.deepEqual(
-        (await deriveStatesFor(fx.db, 'A', fx.restoredNodeId))
+        graph.filter((row) =>
+            row.entity_id === fx.restoredNodeId)
             .map((row) => row.id),
         ['ev-union-restored'],
     );
     assert.deepEqual(
-        (await deriveStatesFor(fx.db, 'A', fx.invitationId))
+        (await deriveInvitationStates(fx.db))
+            .filter((row) =>
+                row.entity_id === fx.invitationId)
+            .sort((a, b) =>
+                a.at < b.at ? -1 : a.at > b.at ? 1
+                    : a.id < b.id ? -1
+                        : a.id > b.id ? 1 : 0)
             .map((row) => row.id),
         ['ev-union-grant', 'ev-union-accept'],
     );

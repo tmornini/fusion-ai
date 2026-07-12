@@ -1,6 +1,6 @@
 import { test } from 'node:test';
-import { deriveStatesFor } from
-    '../api/derive-states.ts';
+import { deriveIdeaStateHistory } from
+    '../api/derive-ideas.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -97,7 +97,7 @@ test('a document PUT with a new state writes wire entity'
         getWire.state_at, '2026-01-01T00:00:00.000000Z',
     );
     assert.equal(getWire.state_event_id, 'ev-doc-1');
-    const events = await deriveStatesFor(db, '1', 'doc-1');
+    const events = await deriveIdeaStateHistory(db, '1', 'doc-1');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'active');
     assert.equal(events[0]!.member_id, 'current');
@@ -122,7 +122,7 @@ async () => {
         ),
     ));
     assert.equal(edit.status, 200);
-    const events = await deriveStatesFor(db, '1', 'doc-2');
+    const events = await deriveIdeaStateHistory(db, '1', 'doc-2');
     assert.equal(events.length, 1);
     const getRes = await handleRequest(
         db, req('GET', '/ideas/doc-2', token),
@@ -145,7 +145,7 @@ test('a byte-identical resend converges: one event,'
     await handleRequest(
         db, req('PUT', '/ideas/doc-3', token, body),
     );
-    const events = await deriveStatesFor(db, '1', 'doc-3');
+    const events = await deriveIdeaStateHistory(db, '1', 'doc-3');
     assert.equal(events.length, 1);
     assert.equal((await db.requests.getAll()).length, 4);
     assert.equal((await db.responses.getAll()).length, 4);
@@ -228,7 +228,7 @@ test('a same-state edit by a DIFFERENT member never'
     ));
     assert.equal(edited.status, 200);
 
-    const events = await deriveStatesFor(db, '1', 'doc-5');
+    const events = await deriveIdeaStateHistory(db, '1', 'doc-5');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.member_id, 'current');
 

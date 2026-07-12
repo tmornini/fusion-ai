@@ -16,9 +16,22 @@ import {
 import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     deriveStates,
-    deriveStatesFor,
     deriveWorkOrderLifecycle,
+    deriveMemberStates,
+    deriveFlowGraphStates,
+    deriveInvitationStates,
+    workOrderLifecycleStatesFor,
 } from '../api/derive-states.ts';
+import { deriveIdeaStateHistory } from
+    '../api/derive-ideas.ts';
+import { deriveProjectStateHistory } from
+    '../api/derive-projects.ts';
+import { deriveRecordStateHistory } from
+    '../api/derive-records.ts';
+import { deriveFlowStateHistory } from
+    '../api/derive-flows.ts';
+import { deriveObjectiveStateHistory } from
+    '../api/derive-objectives.ts';
 import {
     stateFieldValuesForStateEvent,
 } from '../api/derive-state-field-values.ts';
@@ -57,11 +70,9 @@ import { seedIdentityPii } from './identity-fixtures.ts';
 //
 // H7: `states.getAll()` is INSERTION-ordered on the memory tier
 // (api/store-state.ts's getAll has no sort of its own) while
-// deriveStates/deriveStatesFor are id-lex / (at, id) ordered by
-// construction — every full-collection comparison below
-// explicitly id-lex sorts BOTH sides before deepEqual; every
-// per-entity history comparison relies on getAllFor's own (at,
-// id) sort, which both planes already share.
+// deriveStates is id-lex ordered; per-entity family history
+// derives are (at, id) ordered. Full-collection comparisons
+// below explicitly id-lex sort BOTH sides before deepEqual.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -110,18 +121,55 @@ afterEach(() => {
     resetClock();
 });
 
+// Per-entity history across family sources — production
+// deriveStatesFor retired with entity-states history (C2).
+// Local oracle for mixed-family drift cases only.
+async function entityHistory(
+    db: DbAdapter, organization: Id, entityId: Id,
+): Promise<StateEntity[]> {
+    const [
+        ideaRows, projectRows, recordRows, flowRows,
+        objectiveRows, memberRows, workOrderRows,
+        graphRows, invitationRows,
+    ] = await Promise.all([
+        deriveIdeaStateHistory(db, organization, entityId),
+        deriveProjectStateHistory(db, organization, entityId),
+        deriveRecordStateHistory(db, organization, entityId),
+        deriveFlowStateHistory(db, organization, entityId),
+        deriveObjectiveStateHistory(
+            db, organization, entityId,
+        ),
+        deriveMemberStates(db).then((rows) =>
+            rows.filter((r) => r.entity_id === entityId)),
+        workOrderLifecycleStatesFor(
+            db, organization, entityId,
+        ),
+        deriveFlowGraphStates(db).then((rows) =>
+            rows.filter((r) => r.entity_id === entityId)),
+        deriveInvitationStates(db).then((rows) =>
+            rows.filter((r) => r.entity_id === entityId)),
+    ]);
+    return [
+        ...ideaRows, ...projectRows, ...recordRows,
+        ...flowRows, ...objectiveRows, ...memberRows,
+        ...workOrderRows, ...graphRows, ...invitationRows,
+    ].sort((a, b) =>
+        a.at < b.at ? -1 : a.at > b.at ? 1
+            : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+}
+
 // Phase Final Task 2: states ROW half stripped — both helpers
 // pin the pair plane only (row plane is empty).
 async function assertHistoryParity(
     db: DbAdapter, organization: Id, entityId: Id,
 ): Promise<StateEntity[]> {
-    return deriveStatesFor(db, organization, entityId);
+    return entityHistory(db, organization, entityId);
 }
 
 async function assertDerivedHistory(
     db: DbAdapter, organization: Id, entityId: Id,
 ): Promise<StateEntity[]> {
-    return deriveStatesFor(db, organization, entityId);
+    return entityHistory(db, organization, entityId);
 }
 
 function ideaDocument(
@@ -322,7 +370,7 @@ test('case 2: GET <family>/:id/history parity — one entity'
     for (const { family, routeFamily, id }
         of CASE_2_FAMILY_ENTITY_IDS
     ) {
-        const derived = await deriveStatesFor(
+        const derived = await entityHistory(
             db, STARK_ORGANIZATION, id,
         );
         // Family routes emit DESC (current first). Work-order
@@ -381,7 +429,7 @@ test('case 2: GET <family>/:id/history parity — one entity'
     const objectiveEntry = CASE_2_FAMILY_ENTITY_IDS.find(
         (e) => e.family === 'objective',
     )!;
-    const objectiveHistory = await deriveStatesFor(
+    const objectiveHistory = await deriveObjectiveStateHistory(
         db, STARK_ORGANIZATION, objectiveEntry.id,
     );
     assert.equal(objectiveHistory.length, 1);
@@ -397,7 +445,7 @@ test('case 2: GET <family>/:id/history parity — one entity'
         (e) => e.family === 'work-order',
     )!;
     assert.equal(
-        (await deriveStatesFor(
+        (await workOrderLifecycleStatesFor(
             db, STARK_ORGANIZATION, workOrderEntry.id,
         )).length,
         4,
@@ -497,7 +545,7 @@ async () => {
 test('case 4a: a SEEDED work order\'s births ride the'
 + ' transition-op source (states-address retirement) —'
 + ' deriveWorkOrderLifecycle contributes the trace events'
-+ ' and deriveStatesFor reproduces the full history',
++ ' and workOrderLifecycleStatesFor reproduces history',
 async () => {
     const db = await seededDb();
     // WO02 (buildWorkOrders()[1]) — a DIFFERENT seeded work order
@@ -611,7 +659,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
     // An idempotent re-claim by the SAME actor, milliseconds
     // later — 0 events, well within the (now tiny) lock_timeout.
     const beforeRepeat = (
-        await deriveStatesFor(
+        await workOrderLifecycleStatesFor(
             db, STARK_ORGANIZATION, workOrderId,
         )
     ).length;

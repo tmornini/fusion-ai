@@ -1,6 +1,6 @@
 import { test } from 'node:test';
-import { deriveStatesFor } from
-    '../api/derive-states.ts';
+import { deriveProjectStateHistory } from
+    '../api/derive-projects.ts';
 import { strict as assert } from 'node:assert';
 
 import {
@@ -379,7 +379,7 @@ test(
         assert.notEqual(
             after.state_event_id, before.state_event_id,
         );
-        const events = await deriveStatesFor(db, '1', 'p1');
+        const events = await deriveProjectStateHistory(db, '1', 'p1');
         // genesis + transition
         assert.equal(events.length, 2);
         assert.equal(

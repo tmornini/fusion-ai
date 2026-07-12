@@ -1,6 +1,8 @@
 import { test } from 'node:test';
-import { deriveStatesFor } from
-    '../api/derive-states.ts';
+import { deriveIdeaStateHistory } from
+    '../api/derive-ideas.ts';
+import { deriveProjectStateHistory } from
+    '../api/derive-projects.ts';
 import { strict as assert } from 'node:assert';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
@@ -208,7 +210,7 @@ test(
         const row = await getIdeaEntity(ctx, 'i1');
         assert.equal(row.title, 'Fresh');
         const events =
-            await deriveStatesFor(db, '1', 'i1');
+            await deriveIdeaStateHistory(db, '1', 'i1');
         assert.equal(events.length, 1);
         assert.equal(
             events[0]?.state,
@@ -247,7 +249,7 @@ test(
             after.state_event_id, before.state_event_id,
         );
         const events =
-            await deriveStatesFor(db, '1', 'i1');
+            await deriveIdeaStateHistory(db, '1', 'i1');
         // genesis + transition
         assert.equal(events.length, 2);
         assert.equal(
@@ -310,13 +312,13 @@ test(
         assert.equal(project.title, 'P1');
 
         const ideaEvents =
-            await deriveStatesFor(db, '1', 'i1');
+            await deriveIdeaStateHistory(db, '1', 'i1');
         assert.equal(
             ideaEvents.at(-1)?.state, 'promoted',
         );
 
         const projectEvents =
-            await deriveStatesFor(db, '1', 'p1');
+            await deriveProjectStateHistory(db, '1', 'p1');
         assert.equal(projectEvents.length, 1);
         assert.equal(
             projectEvents[0]?.state, 'submitted',

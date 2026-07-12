@@ -294,23 +294,6 @@ async function getStates(
     return res.json() as Promise<{ id: string }[]>;
 }
 
-// GET /organizations/{org}/entity-states/{entityId}/history
-// status. bare entity-states/:id RETIRED (Phase 15 Task 7);
-// re-pin pass-first onto surviving /history (same Region A
-// ownership guard — 200 own / 404 foreign).
-async function entityStatesHistoryStatus(
-    db: MemoryDbAdapter, organization: string, entityId: string,
-): Promise<number> {
-    const token = await organizationToken('current', organization);
-    const res = await handleRequest(db, req(
-        'GET',
-        '/organizations/' + organization
-            + '/entity-states/' + entityId + '/history',
-        token,
-    ));
-    return res.status;
-}
-
 // ---- Node deletion event fence ----
 
 test('node deletion event is visible through org A', async () => {
@@ -395,40 +378,9 @@ test('edge deletion event is hidden from org B', async () => {
         'org B must NOT see the edge deletion event');
 });
 
-// ---- entity-states history guard (bare route retired) ----
-
-test('entity-states history for a node id is 200 in org A',
-async () => {
-    const db = await seed();
-    const status = await entityStatesHistoryStatus(
-        db, 'A', 'node-a');
-    assert.equal(status, 200);
-});
-
-test('entity-states history for a node id is 403 in org B',
-async () => {
-    const db = await seed();
-    // B's own organizations/:id document (Phase 13 Task 3's
-    // fixture prerequisite; idempotent — a no-op if already
-    // seeded): 'current' becomes a genuine member of B in THIS
-    // case, so the tenancy fence (deriveMembershipsForIdentity's
-    // enumerate-then-probe, via deriveOrganizations) needs B to be
-    // derivable, unlike seed()'s own B-stays-raw precedent above
-    // (which never grants 'current' membership in B).
-    await seedOrganizationDocument(db, 'B', 'Beta');
-    await seedRoleGrantPair(db, 'rg-current-b', {
-        organization_id: 'B', identity_id: 'current',
-        role: 'admin', action: 'granted',
-        by_member_id: 'system', at: AT,
-    });
-    await seedMembershipPair(db, 'm-current-b', {
-        organization_id: 'B', identity_id: 'current',
-        at: AT,
-    });
-    const status = await entityStatesHistoryStatus(
-        db, 'B', 'node-a');
-    assert.equal(status, 403);
-});
+// entity-states/:id/history retired (states-URI elimination
+// C2). Node visibility continues via GET /states collection
+// pins above until C3 retires that route too.
 
 // ---- Orphan path retired with states/:id --------------------
 // A standalone event whose entity_id matched nothing used to

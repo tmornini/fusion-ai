@@ -60,7 +60,7 @@ import {
 } from '../api/derive-state-field-values.ts';
 import {
     deriveStates,
-    deriveStatesFor,
+    workOrderLifecycleStatesFor,
 } from '../api/derive-states.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import {
@@ -527,11 +527,13 @@ async () => {
         ...buildLeadToCloseWorkload().workOrders.map(w => w.id),
     ];
     // Phase Final Task 2: states ROW half stripped —
-    // discover events via deriveStatesFor.
+    // discover events via work-order lifecycle history.
     const allEvents = (
         await Promise.all(
             woIds.map(id =>
-                deriveStatesFor(db, STARK_ORGANIZATION, id),
+                workOrderLifecycleStatesFor(
+                    db, STARK_ORGANIZATION, id,
+                ),
             ),
         )
     ).flat();

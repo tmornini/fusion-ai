@@ -1,4 +1,4 @@
-import { deriveStatesFor } from
+import { workOrderLifecycleStatesFor } from
     '../api/derive-states.ts';
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
@@ -60,7 +60,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 function eventsFor(
     db: MemoryDbAdapter,
 ): Promise<{ state: string; member_id: string; at: string }[]> {
-    return deriveStatesFor(db, '1', 'wo1');
+    return workOrderLifecycleStatesFor(db, '1', 'wo1');
 }
 
 test(

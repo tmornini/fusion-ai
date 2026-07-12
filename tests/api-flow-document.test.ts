@@ -1,6 +1,9 @@
 import { test } from 'node:test';
-import { deriveStatesFor } from
-    '../api/derive-states.ts';
+import {
+    deriveFlowGraphStates,
+} from '../api/derive-states.ts';
+import { deriveFlowStateHistory } from
+    '../api/derive-flows.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -218,7 +221,7 @@ test('postFlowDocumentOp returns the entity, exactly one'
     assert.equal(update.status, 200);
     const wire = await update.json() as { name: string };
     assert.equal(wire.name, 'Renamed');
-    const events = await deriveStatesFor(db, '1', 'flow-op-1');
+    const events = await deriveFlowStateHistory(db, '1', 'flow-op-1');
     assert.deepEqual(
         events.map(e => e.state), ['active', 'updated'],
     );
@@ -280,7 +283,11 @@ test('postFlowDocumentOp with revivals posts the restored'
         { 'If-Response-ID': headId },
     ));
     assert.equal(update.status, 200);
-    const nodeEvents = await deriveStatesFor(db, '1', 'node-x');
+    const nodeEvents = (await deriveFlowGraphStates(db))
+        .filter((e) => e.entity_id === 'node-x')
+        .sort((a, b) =>
+            a.at < b.at ? -1 : a.at > b.at ? 1
+                : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     assert.deepEqual(
         nodeEvents.map(e => e.state),
         ['deleted', 'restored'],
@@ -330,7 +337,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     assert.equal(first.status, 200);
     const firstId = first.headers.get('Response-ID');
     const eventsAfterFirst =
-        await deriveStatesFor(db, '1', 'flow-locked-3');
+        await deriveFlowStateHistory(db, '1', 'flow-locked-3');
     const requestsAfterFirst = await db.requests.getAll();
 
     const second = await handleRequest(db, req(
@@ -339,7 +346,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     assert.equal(second.status, 200);
     assert.equal(second.headers.get('Response-ID'), firstId);
     const eventsAfterSecond =
-        await deriveStatesFor(db, '1', 'flow-locked-3');
+        await deriveFlowStateHistory(db, '1', 'flow-locked-3');
     assert.equal(
         eventsAfterSecond.length, eventsAfterFirst.length,
     );
@@ -468,7 +475,7 @@ async () => {
 
     const requestsBefore = await db.requests.getAll();
     const responsesBefore = await db.responses.getAll();
-    const eventsBefore = await deriveStatesFor(db, '1',
+    const eventsBefore = await deriveFlowStateHistory(db, '1',
         'flow-undo-old-shape',
     );
 
@@ -486,7 +493,7 @@ async () => {
 
     const requestsAfter = await db.requests.getAll();
     const responsesAfter = await db.responses.getAll();
-    const eventsAfter = await deriveStatesFor(db, '1',
+    const eventsAfter = await deriveFlowStateHistory(db, '1',
         'flow-undo-old-shape',
     );
     assert.equal(requestsAfter.length, requestsBefore.length);
@@ -867,7 +874,7 @@ async () => {
         assert.equal(flow.name, 'Saved');
         assert.equal(save.status, 200);
         assert.equal(undo.status, 412);
-        const events = await deriveStatesFor(db, '1', 'flow-race-1');
+        const events = await deriveFlowStateHistory(db, '1', 'flow-race-1');
         assert.ok(
             !events.some(
                 e => e.id === 'flow-race-1-undo-ev',
