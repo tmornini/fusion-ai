@@ -476,13 +476,12 @@ export async function getRecordStateDetails(
 // Single-member state read, widened to carry the STORED
 // head event's `at`/`id` alongside the state — the trio
 // Decision 7 folds into the member document (state_at,
-// state_event_id). Throws when no event has been recorded
-// — every member created through the supported paths gets
-// an initial state event, so absence is a bug, not a
-// missing default. The member id is unique across the
-// human and AI tables — both produce base62 ids from the
-// same generator — so this reader serves both kinds
-// without discrimination.
+// state_event_id). getHumanMember / getAIMember / getMembers
+// now read the GET-stamped row trio; this remains for any
+// residual caller until the states surface retires (B9).
+// The member id is unique across the human and AI tables —
+// both produce base62 ids from the same generator — so this
+// reader serves both kinds without discrimination.
 export async function getMemberStateDetail(
     ctx: RequestContext,
     memberId: Id,
@@ -493,10 +492,10 @@ export async function getMemberStateDetail(
 }
 
 // Bulk sibling of getMemberStateDetail, widened the same
-// way. Consumed by the human/ai/system member maps so a
-// plain detail edit can echo each row's trio without
-// minting a fresh event. Reads the parent members table
-// directly (covering all three kinds) to avoid recursing.
+// way. Member maps now read the GET-stamped row trio; this
+// remains until residual callers retire (B9). Reads the
+// parent members table directly (covering all three kinds)
+// to avoid recursing.
 export async function getMemberStateDetails(
     ctx: RequestContext,
 ): Promise<Map<Id, MemberStateDetail>> {
