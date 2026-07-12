@@ -2,6 +2,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     median,
+    mean,
+    sampleStandardDeviation,
+    budgetReadyMsFromSamples,
     statsForPage,
     compareBudgets,
     shapeHistoryLine,
@@ -36,6 +39,76 @@ test('median does not mutate input', () => {
     const copy = input.slice();
     median(input);
     assert.deepEqual(input, copy);
+});
+
+// --- mean / sample σ / budget ---
+
+test('mean of simple series', () => {
+    assert.equal(mean([1, 2, 3]), 2);
+    assert.equal(mean([10]), 10);
+    assert.equal(mean([2, 4]), 3);
+});
+
+test('mean empty throws', () => {
+    assert.throws(() => mean([]), /empty/i);
+});
+
+test('sampleStandardDeviation known series', () => {
+    // {2,4,4,4,5,5,7,9}: mean=5, Σ(x−μ)²=32
+    // sample σ = √(32/7) ≈ 2.138…
+    const sd = sampleStandardDeviation(
+        [2, 4, 4, 4, 5, 5, 7, 9],
+    );
+    assert.ok(
+        Math.abs(sd - Math.sqrt(32 / 7)) < 1e-12,
+    );
+});
+
+test('sampleStandardDeviation single is 0', () => {
+    assert.equal(sampleStandardDeviation([42]), 0);
+});
+
+test('sampleStandardDeviation empty throws', () => {
+    assert.throws(
+        () => sampleStandardDeviation([]),
+        /empty/i,
+    );
+});
+
+test(
+    'budgetReadyMsFromSamples is mean + sigmas×σ'
+    + ' ceiled',
+    () => {
+        // mean=5, sample σ=√(32/7)
+        // 5 + 1.5×√(32/7) ≈ 8.207 → ceil 9
+        const values = [2, 4, 4, 4, 5, 5, 7, 9];
+        assert.equal(
+            budgetReadyMsFromSamples(values, 1.5),
+            9,
+        );
+        // mean of [1,2]=1.5, σ=√0.5
+        // 1.5 + 1.5×√0.5 ≈ 2.5607 → 3
+        assert.equal(
+            budgetReadyMsFromSamples([1, 2], 1.5),
+            3,
+        );
+        // Zero sigmas → ceil(mean)
+        assert.equal(
+            budgetReadyMsFromSamples([1.1, 1.1], 0),
+            2,
+        );
+    },
+);
+
+test('budgetReadyMsFromSamples rejects bad sigmas', () => {
+    assert.throws(
+        () => budgetReadyMsFromSamples([1], -1),
+        /sigmas/i,
+    );
+    assert.throws(
+        () => budgetReadyMsFromSamples([1], NaN),
+        /sigmas/i,
+    );
 });
 
 // --- statsForPage ---

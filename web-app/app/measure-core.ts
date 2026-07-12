@@ -61,6 +61,73 @@ export function median(values: number[]): number {
 }
 
 /**
+ * Arithmetic mean. Empty → throws.
+ */
+export function mean(values: number[]): number {
+    if (values.length === 0) {
+        throw new Error('mean: empty values');
+    }
+    let sum = 0;
+    for (const v of values) {
+        sum += v;
+    }
+    return sum / values.length;
+}
+
+/**
+ * Sample standard deviation (Bessel's correction, n−1).
+ * Empty → throws. Single value → 0 (no dispersion).
+ */
+export function sampleStandardDeviation(
+    values: number[],
+): number {
+    if (values.length === 0) {
+        throw new Error(
+            'sampleStandardDeviation: empty values',
+        );
+    }
+    if (values.length === 1) {
+        return 0;
+    }
+    const m = mean(values);
+    let sumSq = 0;
+    for (const v of values) {
+        const d = v - m;
+        sumSq += d * d;
+    }
+    return Math.sqrt(sumSq / (values.length - 1));
+}
+
+/**
+ * Upper budget for readyMs: mean + sigmas × sample σ,
+ * ceiled to a whole millisecond. Empty → throws.
+ * sigmas must be finite and ≥ 0.
+ */
+export function budgetReadyMsFromSamples(
+    values: number[],
+    sigmas: number,
+): number {
+    if (values.length === 0) {
+        throw new Error(
+            'budgetReadyMsFromSamples: empty values',
+        );
+    }
+    if (
+        !Number.isFinite(sigmas)
+        || sigmas < 0
+    ) {
+        throw new Error(
+            'budgetReadyMsFromSamples: sigmas must'
+            + ' be a finite number ≥ 0',
+        );
+    }
+    const upper =
+        mean(values)
+        + sigmas * sampleStandardDeviation(values);
+    return Math.ceil(upper);
+}
+
+/**
  * Aggregate min/median/max readyMs and per-phase medians
  * across runs. Empty runs → throws.
  */

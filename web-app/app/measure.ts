@@ -12,6 +12,7 @@ import {
     mkdtempSync,
     readFileSync,
     rmSync,
+    writeFileSync,
 } from 'node:fs';
 import {
     spawn,
@@ -34,6 +35,7 @@ import {
     compareBudgets,
     shapeHistoryLine,
     formatReport,
+    budgetReadyMsFromSamples,
     type PageRun,
     type PageStats,
     type Budgets,
@@ -43,6 +45,7 @@ const execFile = promisify(execFileCb);
 
 const DEMO_EMAIL = 'demo@example.com';
 const DEFAULT_RUNS = 5;
+const DEFAULT_BUDGET_SIGMAS = 1.5;
 const CHROME_READY_MS = 15_000;
 const SEED_TIMEOUT_MS = 120_000;
 const LOGIN_TIMEOUT_MS = 60_000;
@@ -68,6 +71,8 @@ const DETAIL_FROM_LIST: Record<string, string> = {
 type Cli = {
     check: boolean;
     record: boolean;
+    writeBudgets: boolean;
+    budgetSigmas: number;
     pages: string[] | null;
     runs: number;
 };
@@ -75,6 +80,8 @@ type Cli = {
 function parseArgs(argv: string[]): Cli {
     let check = false;
     let record = false;
+    let writeBudgets = false;
+    let budgetSigmas = DEFAULT_BUDGET_SIGMAS;
     let pages: string[] | null = null;
     let runs = DEFAULT_RUNS;
     for (let i = 0; i < argv.length; i++) {
@@ -85,6 +92,25 @@ function parseArgs(argv: string[]): Cli {
         }
         if (a === '--record') {
             record = true;
+            continue;
+        }
+        if (a === '--write-budgets') {
+            writeBudgets = true;
+            continue;
+        }
+        if (a === '--budget-sigmas') {
+            const v = argv[++i];
+            if (
+                v === undefined
+                || !Number.isFinite(Number(v))
+                || Number(v) < 0
+            ) {
+                throw new Error(
+                    '--budget-sigmas requires a'
+                    + ' non-negative number',
+                );
+            }
+            budgetSigmas = Number(v);
             continue;
         }
         if (a === '--pages') {
@@ -120,7 +146,20 @@ function parseArgs(argv: string[]): Cli {
         }
         throw new Error(`Unknown flag: ${a}`);
     }
-    return { check, record, pages, runs };
+    if (writeBudgets && pages !== null) {
+        throw new Error(
+            '--write-budgets requires a full registry'
+            + ' sweep (omit --pages)',
+        );
+    }
+    return {
+        check,
+        record,
+        writeBudgets,
+        budgetSigmas,
+        pages,
+        runs,
+    };
 }
 
 // ── Small utils ──────
@@ -1107,6 +1146,8 @@ async function main(): Promise<void> {
             + ` × ${cli.runs} run(s) …\n`,
         );
         const stats: Record<string, PageStats> = {};
+        // Per-page readyMs samples (for --write-budgets).
+        const readySamples: Record<string, number[]> = {};
         for (const key of pageKeys) {
             const url = resolvePageUrl(
                 baseUrl, key, discovered,
@@ -1118,11 +1159,43 @@ async function main(): Promise<void> {
                 cdp, key, url, cli.runs,
             );
             stats[key] = statsForPage(runs);
+            readySamples[key] = runs.map(
+                (r) => r.readyMs,
+            );
         }
 
         // 8. Report
         const report = formatReport(stats);
         process.stdout.write(report + '\n');
+
+        // 8b. --write-budgets (mean + sigmas×sample σ)
+        if (cli.writeBudgets) {
+            const budgets: Budgets = {};
+            for (const key of Object.keys(stats)
+                .sort()
+            ) {
+                const samples = readySamples[key]!;
+                budgets[key] = {
+                    readyMs: budgetReadyMsFromSamples(
+                        samples,
+                        cli.budgetSigmas,
+                    ),
+                };
+            }
+            const budgetsFile = join(
+                repoRoot, BUDGETS_PATH,
+            );
+            writeFileSync(
+                budgetsFile,
+                JSON.stringify(budgets, null, 4)
+                    + '\n',
+                'utf8',
+            );
+            process.stderr.write(
+                `Wrote budgets → ${budgetsFile}`
+                + ` (mean + ${cli.budgetSigmas}σ)\n`,
+            );
+        }
 
         // 9. --check
         if (cli.check) {

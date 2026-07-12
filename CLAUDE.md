@@ -18,6 +18,8 @@ when working with code in this repository.
 ./measure              # Page-load benchmark (needs Chrome)
 ./measure --check      # Fail if medians exceed budgets
 ./measure --record     # Append one line to measure-history.jsonl
+./measure --write-budgets  # mean+1.5σ budgets (full sweep)
+./measure --budget-sigmas N  # σ multiplier (default 1.5)
 ./measure --pages a,b  # Subset of PAGE_REGISTRY keys
 ./measure --runs N     # Runs per page (default 5)
 ```
@@ -77,9 +79,14 @@ Run deliberately: before builds/releases; after adapter,
 derive, or presenter changes; at migration milestones with
 `--record`.
 
-Budgets live in `measure-budgets.json` (repo root) — median
-`readyMs` per `PAGE_REGISTRY` page. They are a
-**per-machine-class local dev gate**, not a CI absolute.
+Budgets live in `measure-budgets.json` (repo root) — per
+`PAGE_REGISTRY` page `readyMs` ceiling. Calibrate with
+`--write-budgets` (full registry only): each budget is
+`ceil(mean + k×sampleσ)` of that page's run samples
+(`k` defaults to 1.5 via `--budget-sigmas`). `--check`
+gates **median** readyMs against those ceilings. Budgets
+are a **per-machine-class local dev gate**, not a CI
+absolute. Use enough `--runs` (e.g. 30) for a stable σ.
 
 History lives in `measure-history.jsonl` — appended only by
 `--record`. Longitudinal record across the Postgres

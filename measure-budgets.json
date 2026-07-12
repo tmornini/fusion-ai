@@ -1,89 +1,89 @@
 {
     "auth": {
-        "readyMs": 500
+        "readyMs": 319
     },
     "billing": {
-        "readyMs": 1300
+        "readyMs": 756
     },
     "dashboard": {
-        "readyMs": 3200
+        "readyMs": 1765
     },
     "design-system": {
-        "readyMs": 1400
+        "readyMs": 755
     },
     "flow-detail": {
-        "readyMs": 2100
+        "readyMs": 1271
     },
     "flow-stats": {
-        "readyMs": 2400
+        "readyMs": 1457
     },
     "flows": {
-        "readyMs": 1900
+        "readyMs": 1185
     },
     "idea-convert": {
-        "readyMs": 3000
+        "readyMs": 1779
     },
     "idea-create": {
-        "readyMs": 1400
+        "readyMs": 969
     },
     "idea-detail": {
-        "readyMs": 2200
+        "readyMs": 1476
     },
     "ideas": {
-        "readyMs": 2500
+        "readyMs": 1711
     },
     "identities": {
-        "readyMs": 1800
+        "readyMs": 1094
     },
     "identity-detail": {
-        "readyMs": 2000
+        "readyMs": 1454
     },
     "identity-providers": {
-        "readyMs": 1600
+        "readyMs": 1124
     },
     "identity-tokens": {
-        "readyMs": 1500
+        "readyMs": 1142
     },
     "invitations": {
-        "readyMs": 1700
+        "readyMs": 1129
     },
     "landing": {
-        "readyMs": 600
+        "readyMs": 372
     },
     "member-detail": {
-        "readyMs": 1600
+        "readyMs": 1280
     },
     "members": {
-        "readyMs": 2100
+        "readyMs": 1486
     },
     "not-found": {
-        "readyMs": 600
+        "readyMs": 394
     },
     "organization": {
-        "readyMs": 4700
+        "readyMs": 3401
     },
     "project-detail": {
-        "readyMs": 2500
+        "readyMs": 1923
     },
     "projects": {
-        "readyMs": 2600
+        "readyMs": 2177
     },
     "record-create": {
-        "readyMs": 1500
+        "readyMs": 1145
     },
     "record-detail": {
-        "readyMs": 1900
+        "readyMs": 1678
     },
     "records": {
-        "readyMs": 2000
+        "readyMs": 1640
     },
     "snapshots": {
-        "readyMs": 1700
+        "readyMs": 1381
     },
     "workbox": {
-        "readyMs": 4600
+        "readyMs": 3532
     },
     "workbox-detail": {
-        "readyMs": 4700
+        "readyMs": 3945
     }
 }
