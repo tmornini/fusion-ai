@@ -682,7 +682,13 @@ export function humanMemberPiiSeedBody(
 // here since the seed drives postIdeaDocumentOp below the org
 // fence (no scoping wrapper to stamp it).
 export function ideaSeedBody(
-    idea: Omit<IdeaEntity, 'organization_id'>,
+    idea: Omit<
+        IdeaEntity,
+        | 'organization_id'
+        | 'state'
+        | 'state_at'
+        | 'state_event_id'
+    >,
     event: StateEntity,
     index: number,
 ): Record<string, unknown> {

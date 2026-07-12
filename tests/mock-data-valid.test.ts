@@ -177,8 +177,38 @@ async () => {
             'ideas empty in org ' + organization,
         );
         for (const idea of ideas) {
+            // GET stamps lifecycle trio; validateIdeaEntity is
+            // entity-fields only — strip the stamp before gate.
+            const {
+                state: _s,
+                state_at: _at,
+                state_event_id: _ev,
+                ...entity
+            } = withoutId(idea) as Record<string, unknown> & {
+                state: string;
+                state_at: string;
+                state_event_id: string;
+            };
+            void _s;
+            void _at;
+            void _ev;
+            assert.ok(
+                typeof idea.state === 'string'
+                && idea.state.length > 0,
+                'idea ' + idea.id + ' missing state',
+            );
+            assert.ok(
+                typeof idea.state_at === 'string'
+                && idea.state_at.length > 0,
+                'idea ' + idea.id + ' missing state_at',
+            );
+            assert.ok(
+                typeof idea.state_event_id === 'string'
+                && idea.state_event_id.length > 0,
+                'idea ' + idea.id + ' missing state_event_id',
+            );
             assert.doesNotThrow(
-                () => validateIdeaEntity(withoutId(idea)),
+                () => validateIdeaEntity(entity),
                 'idea ' + idea.id,
             );
         }

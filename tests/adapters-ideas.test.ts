@@ -213,7 +213,8 @@ test(
 
 test(
     'postIdeaStateChange records a state event'
-    + ' without changing entity fields on GET',
+    + ' without changing non-lifecycle entity fields'
+    + ' on GET',
     async () => {
         const { db, ctx } = await adminContext();
         await seedHumanMember(
@@ -227,13 +228,30 @@ test(
         );
 
         const after = await getIdeaEntity(ctx, 'i1');
-        assert.deepEqual(after, before);
+        // Entity content fields unchanged; GET trio advances
+        // to the transition event (lifecycle-current stamp).
+        assert.equal(after.title, before.title);
+        assert.equal(after.position, before.position);
+        assert.equal(
+            after.problem_statement,
+            before.problem_statement,
+        );
+        assert.equal(after.state, 'approved');
+        assert.notEqual(
+            after.state_event_id, before.state_event_id,
+        );
         const events =
             await deriveStatesFor(db, '1', 'i1');
         // genesis + transition
         assert.equal(events.length, 2);
         assert.equal(
             events.at(-1)?.state, 'approved',
+        );
+        assert.equal(
+            after.state_event_id, events.at(-1)?.id,
+        );
+        assert.equal(
+            after.state_at, events.at(-1)?.at,
         );
     },
 );

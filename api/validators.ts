@@ -1332,9 +1332,17 @@ const IDEA_BODY_KEYS: readonly string[] = [
     'success_metrics',
 ];
 
+// Entity-field body only — lifecycle trio is GET stamp /
+// document-body, never part of this validator's key set.
+export type IdeaEntityFields = Omit<
+    IdeaEntity,
+    'id' | 'organization_id' | 'state' | 'state_at'
+        | 'state_event_id'
+>;
+
 export function validateIdeaEntity(
     body: Record<string, unknown>,
-): Omit<IdeaEntity, 'id'> {
+): IdeaEntityFields & { organization_id: string } {
     assertOnlyKeys(
         body, IDEA_BODY_KEYS, 'IdeaEntity',
     );
@@ -1376,7 +1384,7 @@ const IDEA_DOCUMENT_BODY_KEYS: readonly string[] = [
 ];
 
 export interface IdeaDocumentBody {
-    readonly entity: Omit<IdeaEntity, 'id' | 'organization_id'>;
+    readonly entity: IdeaEntityFields;
     readonly state: IdeaState;
     readonly state_at: string;
     readonly state_event_id: string;

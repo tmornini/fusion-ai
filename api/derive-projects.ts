@@ -43,6 +43,7 @@ function projectsUriPrefix(organization: Id): string {
 export function projectEntityOf(
     document: DerivedDocument,
     organization: Id,
+    _current?: StateEntity,
 ): ProjectEntity {
     const body = document.body;
     return {

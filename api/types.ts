@@ -985,6 +985,12 @@ export interface IdeaEntity {
     proposed_solution: string;
     expected_outcome: string;
     success_metrics: string;
+    // Lifecycle-current event trio (GET stamp only — not the
+    // head PUT body's fields). state ← event.state, state_at ←
+    // event.at, state_event_id ← event.id.
+    state: string;
+    state_at: string;
+    state_event_id: string;
 }
 
 export type ObjectiveId = Id;

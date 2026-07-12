@@ -28,6 +28,7 @@ import type {
     IdentityTokenRevocationEntity,
     IdeaEntity,
     IdeaSubmissionEntity,
+    StateEntity,
     ObjectiveEntity,
     ObjectiveRevisionEntity,
     ProjectEntity,
@@ -286,7 +287,10 @@ const IDEAS_WIRING: DocumentFamilyWiring = {
     notFoundTable: 'ideas',
     validateDocument: validateIdeaDocumentBody,
     documentOp: postIdeaDocumentOp,
-    entityOf: ideaEntityOf,
+    // ideaEntityOf requires the lifecycle-current event; the
+    // generic trio path always supplies it after DELETED filter.
+    entityOf: (document, organization, current) =>
+        ideaEntityOf(document, organization, current!),
 };
 const PROJECTS_WIRING: DocumentFamilyWiring = {
     family: 'projects',
@@ -299,21 +303,20 @@ const PROJECTS_WIRING: DocumentFamilyWiring = {
 // The flows wiring row — Task 3's flip commit, GET-wired at
 // Task 8. entityOf is derive-flows.ts's OWN flowEntityOf, not a
 // routes.ts-local mapper: it returns FlowWithGraph (the entity
-// plus the document's own `graph` field), the shape both
-// documentGetHandler (flows/:id) and documentCollectionRoute
-// (flows) now serve verbatim — no flows-special branch inside
-// either generic constructor. ideas/projects' own entityOf
-// mappers return their bare entity shape (no such extra field),
-// so this is the ONE per-family divergence document-family.ts's
-// `entityOf: (document, organization) => unknown` slot already
-// tolerates by design, not a widened interface.
+// plus the document's own `graph` field). Live flows GET is
+// hand-written (deriveFlow/deriveFlows) so this slot is unused
+// for reads; the wrapper ignores `current` and omits pairCount
+// (hasUndoHistory false) — same as the prior 2-arg assignability
+// shim. flowEntityOf's third param is pairCount (number), not
+// StateEntity, so it cannot sit in the entityOf slot directly.
 const FLOWS_WIRING: DocumentFamilyWiring = {
     family: 'flows',
     lifecycle: 'trio',
     notFoundTable: 'flows',
     validateDocument: validateFlowDocumentBody,
     documentOp: postFlowDocumentOp,
-    entityOf: flowEntityOf,
+    entityOf: (document, organization, _current?) =>
+        flowEntityOf(document, organization),
 };
 // The work-orders wiring row — the fourth family, and the
 // FIRST 'stateless' one (Decision 7's lifecycle trio does not
@@ -332,6 +335,7 @@ const FLOWS_WIRING: DocumentFamilyWiring = {
 function workOrderDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
+    _current?: StateEntity,
 ): unknown {
     return {
         id: document.uriId,
@@ -360,6 +364,7 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
 function recordDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
+    _current?: StateEntity,
 ): RecordEntity {
     const body = document.body;
     return {
@@ -399,6 +404,7 @@ const RECORDS_WIRING: DocumentFamilyWiring = {
 function recordAttributeDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
+    _current?: StateEntity,
 ): unknown {
     return {
         id: document.uriId,
@@ -451,6 +457,7 @@ const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
 function objectiveDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
+    _current?: StateEntity,
 ): unknown {
     return {
         id: document.uriId,
@@ -495,6 +502,7 @@ const OBJECTIVES_WIRING: DocumentFamilyWiring = {
 function membershipDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
+    _current?: StateEntity,
 ): unknown {
     return {
         id: document.uriId,
@@ -544,6 +552,7 @@ const MEMBERSHIPS_WIRING: DocumentFamilyWiring = {
 function memberDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
+    _current?: StateEntity,
 ): unknown {
     return {
         id: document.uriId,
@@ -580,6 +589,7 @@ const MEMBERS_WIRING: DocumentFamilyWiring = {
 function aiMemberDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
+    _current?: StateEntity,
 ): unknown {
     return {
         id: document.uriId,
@@ -610,6 +620,7 @@ const AI_MEMBERS_WIRING: DocumentFamilyWiring = {
 function humanMemberDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
+    _current?: StateEntity,
 ): unknown {
     return {
         id: document.uriId,
@@ -644,6 +655,7 @@ const HUMAN_MEMBERS_WIRING: DocumentFamilyWiring = {
 function identityDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
+    _current?: StateEntity,
 ): unknown {
     return {
         id: document.uriId,

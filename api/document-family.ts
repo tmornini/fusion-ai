@@ -11,6 +11,7 @@ import {
     documentLifecycleEvents,
     stateHistoryFrom,
     currentDocumentState,
+    currentLifecycleEvent,
     byIdAscending,
     DELETED_STATE,
     type DerivedDocument,
@@ -118,9 +119,14 @@ export interface DocumentFamilyWiring {
         pair?: MessagePair,
     ) => Promise<unknown>;
     // Head-pair body -> wire entity (id + organization_id
-    // stamped by the caller).
+    // stamped by the caller). Trio families that embed the
+    // lifecycle-current event (ideas, later A7–A10) receive
+    // `current` after the DELETED filter; other families accept
+    // and ignore the optional third argument.
     readonly entityOf: (
-        document: DerivedDocument, organization: Id,
+        document: DerivedDocument,
+        organization: Id,
+        current?: StateEntity,
     ) => unknown;
 }
 
@@ -228,6 +234,12 @@ async function derivedDocumentEntity(
                 wiring, db, organization, id,
             );
         }
+        // After DELETED filter history is non-empty for every
+        // live trio document (genesis always mints an event).
+        const current = currentLifecycleEvent(history)!;
+        return wiring.entityOf(
+            document, organization, current,
+        );
     }
     return wiring.entityOf(document, organization);
 }
@@ -378,6 +390,14 @@ export function documentCollectionGetHandler(
                     currentDocumentState(history)
                         === DELETED_STATE
                 ) continue;
+                const current =
+                    currentLifecycleEvent(history)!;
+                rows.push(
+                    wiring.entityOf(
+                        document, organizationId, current,
+                    ) as { id: Id },
+                );
+                continue;
             }
             rows.push(
                 wiring.entityOf(

@@ -97,6 +97,9 @@ test('a created idea derives', async () => {
         proposed_solution: 's',
         expected_outcome: 'o',
         success_metrics: 'm',
+        state: 'active',
+        state_at: '2026-02-01T00:00:00.000000Z',
+        state_event_id: 'ev-drv-created',
     });
 });
 
