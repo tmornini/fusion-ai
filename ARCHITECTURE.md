@@ -730,7 +730,7 @@ tombstones; hard splice only where a path still needs it —
 PII erasure on the message plane); backends own persistence
 and encoding. `BackedDbAdapter` (`api/db-backed.ts`)
 composes one backend into the full `DbStores` bundle
-(three stores).
+(two stores).
 
 Three backends implement the seam:
 
