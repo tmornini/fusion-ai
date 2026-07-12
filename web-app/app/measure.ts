@@ -2,9 +2,11 @@
 // Run via ./measure from the repo root (see that wrapper).
 // Excluded from browser tsc; uses Node APIs + global WebSocket.
 //
-// Flow: clean-tree gate → build → serve → Chrome → seed →
-// login → detail-URL discovery → N-run sweep → report
-// → optional --check / --record. Cleanup always in finally.
+// Flow: optional bare --visualize (disk only) → clean-tree
+// gate → build → serve → Chrome → seed → login →
+// detail-URL discovery → N-run sweep → report → optional
+// --check / --record / --visualize. Cleanup always in
+// finally.
 
 import {
     appendFileSync,
@@ -40,6 +42,7 @@ import {
     type PageStats,
     type Budgets,
 } from './measure-core.ts';
+import { generateMeasureViz } from './measure-viz.ts';
 
 const execFile = promisify(execFileCb);
 
@@ -75,6 +78,9 @@ type Cli = {
     budgetSigmas: number;
     pages: string[] | null;
     runs: number;
+    visualize: boolean;
+    /** True when --runs was present on argv. */
+    runsExplicit: boolean;
 };
 
 function parseArgs(argv: string[]): Cli {
@@ -84,6 +90,8 @@ function parseArgs(argv: string[]): Cli {
     let budgetSigmas = DEFAULT_BUDGET_SIGMAS;
     let pages: string[] | null = null;
     let runs = DEFAULT_RUNS;
+    let visualize = false;
+    let runsExplicit = false;
     for (let i = 0; i < argv.length; i++) {
         const a = argv[i]!;
         if (a === '--check') {
@@ -96,6 +104,10 @@ function parseArgs(argv: string[]): Cli {
         }
         if (a === '--write-budgets') {
             writeBudgets = true;
+            continue;
+        }
+        if (a === '--visualize') {
+            visualize = true;
             continue;
         }
         if (a === '--budget-sigmas') {
@@ -142,6 +154,7 @@ function parseArgs(argv: string[]): Cli {
                 );
             }
             runs = Number(v);
+            runsExplicit = true;
             continue;
         }
         throw new Error(`Unknown flag: ${a}`);
@@ -159,6 +172,8 @@ function parseArgs(argv: string[]): Cli {
         budgetSigmas,
         pages,
         runs,
+        visualize,
+        runsExplicit,
     };
 }
 
@@ -957,6 +972,22 @@ async function main(): Promise<void> {
     const cli = parseArgs(process.argv.slice(2));
     const repoRoot = process.cwd();
 
+    const visualizeOnly =
+        cli.visualize
+        && !cli.check
+        && !cli.record
+        && !cli.writeBudgets
+        && cli.pages === null
+        && !cli.runsExplicit;
+
+    if (visualizeOnly) {
+        const out = generateMeasureViz(repoRoot);
+        process.stderr.write(
+            `Wrote visualizer → ${out}\n`,
+        );
+        return;
+    }
+
     // Clean tree: measure committed bytes only.
     {
         const { stdout } = await execFile(
@@ -1328,6 +1359,21 @@ async function main(): Promise<void> {
             );
             process.stderr.write(
                 `Recorded history → ${historyFile}\n`,
+            );
+        }
+
+        // 11. --visualize (always from disk after run)
+        if (cli.visualize) {
+            if (!cli.record) {
+                process.stderr.write(
+                    'Note: this run is not in history; '
+                    + 'visualizer regenerated from disk '
+                    + 'only.\n',
+                );
+            }
+            const out = generateMeasureViz(repoRoot);
+            process.stderr.write(
+                `Wrote visualizer → ${out}\n`,
             );
         }
     } finally {
