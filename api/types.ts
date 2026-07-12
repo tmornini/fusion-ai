@@ -1115,18 +1115,6 @@ export type FlowWithGraph = FlowEntity & {
     hasUndoHistory: boolean;
 };
 
-export interface FlowVersionEntity {
-    id: Id;
-    flow_id: Id;
-    name: string;
-    is_locked: boolean;
-    is_auto_layout: boolean;
-    is_auto_fit: boolean;
-    lock_timeout: number;
-    graph: JsonObjectField;
-    at: string;
-}
-
 export type FlowNodeId = Id;
 export type FlowEdgeId = Id;
 

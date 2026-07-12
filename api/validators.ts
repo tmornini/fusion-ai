@@ -28,7 +28,6 @@ import type {
     ProjectState,
     FlowEntity,
     FlowState,
-    FlowVersionEntity,
     FlowNodeEntity,
     FlowEdgeEntity,
     FlowNodeMemberEntity,
@@ -1699,52 +1698,6 @@ export function validateFlowDocumentBody(
     };
 }
 
-const FLOW_VERSION_BODY_KEYS:
-    readonly string[] = [
-    'flow_id', 'name',
-    'is_locked', 'is_auto_layout',
-    'is_auto_fit', 'lock_timeout',
-    'graph', 'at',
-];
-
-export function validateFlowVersionEntity(
-    body: Record<string, unknown>,
-): Omit<FlowVersionEntity, 'id'> {
-    assertOnlyKeys(
-        body,
-        FLOW_VERSION_BODY_KEYS,
-        'FlowVersionEntity',
-    );
-    const graph = pickJsonObjectField(body, 'graph');
-    validateStoredGraphJson(
-        graph, 'FlowVersionEntity.graph',
-    );
-    return {
-        flow_id: pickString(
-            body, 'flow_id',
-        ),
-        name: pickString(
-            body, 'name',
-        ),
-        is_locked: pickBoolean(
-            body, 'is_locked',
-        ),
-        is_auto_layout: pickBoolean(
-            body, 'is_auto_layout',
-        ),
-        is_auto_fit: pickBoolean(
-            body, 'is_auto_fit',
-        ),
-        lock_timeout: pickNumber(
-            body, 'lock_timeout',
-        ),
-        graph,
-        at: validateTimestampField(
-            body, 'at', 'FlowVersionEntity',
-        ),
-    };
-}
-
 const FLOW_NODE_BODY_KEYS: readonly string[] = [
     'flow_id', 'name', 'position_x', 'position_y',
     'is_create', 'is_archive', 'task_instructions', 'at',
@@ -3347,59 +3300,6 @@ export function validateFlowCreateBody(
         initialState, initialStateEventId,
         initialStateAt, graphDelta,
     };
-}
-
-export interface FlowVersionPublishBody {
-    readonly id: string;
-    readonly version: Record<string, unknown>;
-    readonly trimIds: readonly string[];
-}
-
-const FLOW_VERSION_PUBLISH_KEYS: readonly string[] = [
-    'id', 'version', 'trimIds',
-];
-
-// The HTTP-body gate for POST /flows/:id/versions: the version
-// snapshot row plus the ids of the over-cap versions to trim,
-// written atomically. The version fields are NOT fully validated
-// here — the flow_versions store re-validates the snapshot
-// through validateFlowVersionEntity when the composing POST puts
-// it. The web-app computes WHICH versions to trim (its own
-// cap-retention derivation), so trimIds is carried as a list of
-// non-empty version ids. No state event is written, so no actor
-// is involved.
-export function validateFlowVersionPublishBody(
-    body: Record<string, unknown>,
-): FlowVersionPublishBody {
-    assertOnlyKeys(
-        body, FLOW_VERSION_PUBLISH_KEYS,
-        'FlowVersionPublishBody',
-    );
-    const id = pickString(body, 'id');
-    if (id === '') {
-        throw new ValidationError(
-            'FlowVersionPublishBody.id must be non-empty',
-        );
-    }
-    const version = asObject(
-        body['version'], 'FlowVersionPublishBody.version',
-    );
-    const trimRaw = asArray(
-        body['trimIds'], 'FlowVersionPublishBody.trimIds',
-    );
-    const trimIds = trimRaw.map((t, i) => {
-        const value = asString(
-            t, 'FlowVersionPublishBody.trimIds[' + i + ']',
-        );
-        if (value === '') {
-            throw new ValidationError(
-                'FlowVersionPublishBody.trimIds[' + i + ']'
-                + ' must be non-empty',
-            );
-        }
-        return value;
-    });
-    return { id, version, trimIds };
 }
 
 // Undo-as-replay (Phase 14 Task 8): the body shrinks to the
