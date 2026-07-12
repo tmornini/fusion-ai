@@ -69,7 +69,7 @@ flow-edit business logic and the connection-validation rules
 `performRedo`, including no-edge-to-a-start-node, none-from-an-
 end-node, no-duplicate-edge, start-node-single-outgoing, and the
 lock/noop/commit-error branches); the flow version and query
-adapters (`tests/adapters-flow-versions.test.ts`,
+adapters (`tests/adapters-flow-publish.test.ts`,
 `tests/adapters-flow-queries.test.ts`); the workbox inbox
 aggregation (`tests/workbox-inbox.test.ts`); the mermaid round-trip
 (`tests/mermaid.test.ts`); the in-browser ZIP (`tests/zip-guards.test.ts`);
@@ -484,17 +484,17 @@ last (they wipe the database). See `CLAUDE.md` section
 | C. Core: Dashboard | 7 |
 | D. Core: Ideas Workflow | 38 |
 | E. Core: Projects | 12 |
-| F. Tools | 75 |
+| F. Tools | 77 |
 | F2. Workbox | 26 |
 | FS. Flow Statistics | 9 |
-| G. Admin Pages | 44 |
+| G. Admin Pages | 45 |
 | H. Reference & System | 2 |
 | I. Cross-Cutting Concerns | 30 |
 | J. Teardown | 3 |
 | K. Objectives & Scoring | 30 |
 | R. Records | 19 |
 | L. IndexedDB Persistence Tier | 9 |
-| **Total** | **390** |
+| **Total** | **393** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -503,14 +503,14 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |     2658 |
-| Browser regression     |      390 |
-| **Combined TOTAL**     | **3048** |
+| CLI automated tests    |     2656 |
+| Browser regression     |      393 |
+| **Combined TOTAL**     | **3049** |
 
 CLI count = most recent `./validate` (AT2) report — the main
 `tests/*.test.ts` suite plus the `tests/tz/*.test.ts` timezone
-suite (2650 main + 8 tz at SHA of the residual run); the
-number grows as tests land in either glob. Browser count =
+suite (2648 main + 8 tz after flow-version residue delete);
+the number grows as tests land in either glob. Browser count =
 the per-section table above. Update both numbers when either
 side changes.
 
@@ -2132,7 +2132,8 @@ the claude-in-chrome MCP.
   membership). Only after Accept (V4) does the membership
   appear and the org become reachable. PASS: pending ⇒ not in
   roster, not reachable; accepted ⇒ both. Source: the org
-  fence (`db-org-scoped`/`store-org-scoped`), `acceptInvitation`.
+  fence (`resolveOwningOrganization` via
+  `writeOwnershipFenceFor`), `acceptInvitation`.
 - [ ] **V7 — Authz: non-admin grant/revoke rejected; invitee
   may still read & accept** Sign in as a NON-admin member of
   an org (a seeded human with no admin role). PASS: any
@@ -2249,7 +2250,7 @@ restored data.)
   Dashboard renders with zeroed-out metrics (empty
   database except for the required bootstrap seed). Empty
   bootstrap seeds only org `'1'` (Stark Industries) as
-  **14 message pairs** (absolute) covering System + Tony
+  **13 message pairs** (absolute) covering System + Tony
   Stark identity/PII/credentials/membership/role-grant/
   organization/state events — derived reads, not entity
   tables. NOTE: pristine seeds NO Records. Source of
@@ -2262,7 +2263,7 @@ restored data.)
   orphans may linger inert — gate 6).
 - [ ] **G33** Click "Wipe and Load Mock Data", then Confirm the dialog. PASS: a confirm dialog (`#confirm-wipe-dialog`, titled "Confirm Action") appears first warning the wipe cannot be undone — Cancel aborts with no change; on Confirm the page renders the one-time demo-credentials reveal panel (`.credential-reveal`, titled "Save your demo sign-ins") listing EVERY login-capable seeded identity's email + fresh password in the monospace `.credential-reveal-box`, one credential per line, with a "Copy all" button. (Mock data seeds two orgs — `'1'` Stark Industries and `'2'` Wayne Enterprises — so the list spans both orgs' seeded humans; Tony Stark / `current` is the multi-org admin.) The page does NOT navigate until "I have saved it — continue" is clicked; clicking it redirects to `dashboard/index.html`. Navigate to `ideas/` — Stark's 6 ideas are back (the seed plants 11 ideas total, split across both orgs via `assignOrg`; the org fence shows only the active org's).
 - [ ] **G34** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to `dashboard/index.html`. Data matches the snapshot.
-- [ ] **G36 — Sidebar org-switcher (multi-org user)** After "Wipe and Load Mock Data" (G33) seeds two orgs and boot signs in as the multi-org admin Tony Stark (`current`), the SIDEBAR FOOTER (not the top bar) shows an inline native org `<select>` (`.org-switcher`, inside `#sidebar-org-switcher` / `#mobile-sidebar-org-switcher`) next to the member chip — it appears ONLY because the user can reach ≥2 orgs (`shouldShowOrgSwitcher`). PASS: the select lists "Stark Industries" and "Wayne Enterprises" with Stark active; the plain org-name text line in the chip is cleared so the org is not named twice. Note the Members and Ideas lists for Stark. Select "Wayne Enterprises" → the page does a FULL reload and re-scopes: Members shows Wayne's roster and Ideas shows Wayne's ideas (org-fenced — Stark's rows are no longer visible). Reload the page again WITHOUT changing the select → the selection persists (Wayne stays active; the choice is stored under `fusion-ai:active-organization-id` and boot re-exchanges a scoped token from it). A single-org seeded user, by contrast, sees NO `<select>` in the sidebar — just the org name as PLAIN TEXT in the chip. The top bar shows neither the switcher nor a greeting; its only org-aware affordance is the pending-invitations bell (V3). Source of truth: `web-app/app/org-switcher.ts`, `web-app/app/sidebar-member.ts`, `web-app/app/adapters/org-session.ts`, `web-app/app/core.ts::scopeBootToActiveOrg`. (This case requires the two-org mock-data seed, so it runs in Phase 4 alongside G30–G35 — never concurrently with Phase 2 agents.)
+- [ ] **G36 — Sidebar org-switcher (multi-org user)** After "Wipe and Load Mock Data" (G33) seeds two orgs and boot signs in as the multi-org admin Tony Stark (`current`), the SIDEBAR FOOTER (not the top bar) shows an inline native org `<select>` (`.org-switcher`, inside `#sidebar-org-switcher` / `#mobile-sidebar-org-switcher`) next to the member chip — it appears ONLY because the user can reach ≥2 orgs (`shouldShowOrgSwitcher`). PASS: the select lists "Stark Industries" and "Wayne Enterprises" with Stark active; the plain org-name text line in the chip is cleared so the org is not named twice. Note the Members and Ideas lists for Stark. Select "Wayne Enterprises" → the page does a FULL reload and re-scopes: Members shows Wayne's roster and Ideas shows Wayne's ideas (org-fenced — Stark's rows are no longer visible). Reload the page again WITHOUT changing the select → the selection persists (Wayne stays active; the choice is stored under `fusion-ai:active-organization-id` and boot re-exchanges a scoped token from it). A single-org seeded user, by contrast, sees NO `<select>` in the sidebar — just the org name as PLAIN TEXT in the chip. The top bar shows neither the switcher nor a greeting; its only org-aware affordance is the pending-invitations bell (V3). Source of truth: `web-app/app/organization-switcher.ts`, `web-app/app/sidebar-member.ts`, `web-app/app/adapters/organization-session.ts`, `web-app/app/core.ts::scopeBootToActiveOrganization`. (This case requires the two-org mock-data seed, so it runs in Phase 4 alongside G30–G35 — never concurrently with Phase 2 agents.)
 
 ### Snapshot & User Lifecycle — Error/Edge Cases
 
@@ -2331,12 +2332,15 @@ feature is implemented.
   "Organization saved" fires at top-center,
   card returns to read mode showing the new
   values. Reload the page. PASS: new values
-  persist (round-tripped through `PUT
-  /api/organizations/<id>`). Inspect the `organizations`
-  store (IndexedDB): the org row has the updated
-  `name` and `domain` fields alongside the unchanged
-  `seats`, `projects_limit`, `ideas_limit`, and
-  `next_billing` fields.
+  persist (round-tripped through
+  `PUT /organizations/<id>`). Inspect the
+  `organizations/:id` document pairs on the message
+  plane (`requests`/`responses`): the latest head
+  body carries the updated `name` and `domain`
+  alongside the unchanged `seats`,
+  `projects_limit`, `ideas_limit`, and
+  `next_billing` fields (no `organizations` entity
+  store remains after Phase Final).
 
 ---
 
@@ -2423,9 +2427,10 @@ Owner agents: Agent-G (K1–K6 in Phase 2, K8 in Phase 4),
 Agent-E (K7, K9–K23, K30), Agent-CH (K27–K29). Mutation
 domain delta:
 
-- Agent-G adds: `objectives`, `objective_revisions`
-  (archive/reactivate append a `state` event to the shared
-  `states` log — no separate `archived` table)
+- Agent-G adds: `objectives/:id` document-trio PUTs
+  (archive/reactivate ride the document body lifecycle
+  trio — no shared `states` log; revision history is
+  message-plane pairs at `objectives/:id/revisions/`)
 - Agent-E adds: `project_objective_baseline_scores`,
   `project_objective_actual_scores`
 - Agent-CH stays read-only
@@ -2629,14 +2634,15 @@ PASS if:
   collapsed)
 
 **K7.** After K30 has run AND Agent-G's K3 has executed
-(verify the `objective_revisions` store in IndexedDB holds
-≥1 row with a `name` change, confirming K3 ran), reopen the
-project's history modal. PASS if events that predate the
-K3 edit display the OLD objective name, not the new one
-(temporal name resolution). If after 10 minutes
-`objective_revisions` shows no rename, mark K7 BLOCKED
-with reason "no K3 rename to verify against — Agent-G did
-not produce the prerequisite in time".
+(verify via `objectives/:id/revisions/` document pairs on
+the message plane — or the history UI — that ≥1 revision
+with a `name` change exists, confirming K3 ran), reopen
+the project's history modal. PASS if events that predate
+the K3 edit display the OLD objective name, not the new
+one (temporal name resolution). If after 10 minutes no
+rename revision appears, mark K7 BLOCKED with reason
+"no K3 rename to verify against — Agent-G did not produce
+the prerequisite in time".
 
 ---
 
@@ -2770,8 +2776,8 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Agent-B       | B1–B29 (less B23–B24) | 27 |       0 |    0 |
 | Agent-CH      | C1–C7 + H1–H2     |    9 |       0 |    0 |
 | Agent-D       | D1–D37            |    X |       Y |    Z |
-| Agent-E       | E1–E11            |   11 |       0 |    0 |
-| Agent-F       | F1–F75 + FS1–FS9  |    X |       Y |    Z |
+| Agent-E       | E1–E11 + E10a     |   12 |       0 |    0 |
+| Agent-F       | F1–F77 + FS1–FS9  |    X |       Y |    Z |
 | Agent-F2      | WB1–WB22 + subs, R1–R15 | X |    0 |    0 |
 | Agent-G       | G9–14,19–26,36–46 |    X |       0 |    0 |
 | Phase-3       | I1–I30            |    X |       Y |    Z |
