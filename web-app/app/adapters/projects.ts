@@ -60,7 +60,7 @@ export async function getProjectEntities(
 // Lifecycle-current trio is stamped on the ProjectEntity GET
 // row (Phase A). Map snake_case wire → ProjectStateDetail;
 // no second hop to the states log / entity-states history.
-function projectStateDetailFromRow(
+export function projectStateDetailFromRow(
     row: ProjectEntity,
 ): ProjectStateDetail {
     return {

@@ -415,8 +415,8 @@ export async function getProjectStates(
 // Single-project state read, widened to carry the STORED head
 // event's `at`/`id` alongside the state — the trio Decision 7
 // folds into the project document (state_at, state_event_id).
-// getProject now reads the GET-stamped row trio; this remains
-// for residual callers (projects/detail.ts) until the states
+// getProject and projects/detail now read the GET-stamped row
+// trio; this remains for any residual caller until the states
 // surface retires (B9).
 export async function getProjectStateDetail(
     ctx: RequestContext,
@@ -447,8 +447,9 @@ export async function getProjectStateDetails(
 // Single-record state read, widened to carry the STORED head
 // event's `at`/`id` alongside the state — the trio Decision 7
 // folds into the record document (state_at, state_event_id).
-// Consumed by getRecordModel (adapters/records.ts) to build the
-// RecordModel domain object.
+// getRecordModel now reads the GET-stamped row trio; this
+// remains for residual callers until the states surface
+// retires (B9).
 export async function getRecordStateDetail(
     ctx: RequestContext,
     recordId: Id,
@@ -459,9 +460,9 @@ export async function getRecordStateDetail(
 }
 
 // Bulk sibling of getRecordStateDetail, widened the same way.
-// Consumed by getRecords (adapters/records.ts) so the records
-// LIST page can echo each row's trio on a plain field edit
-// (drag-reorder) without minting a fresh event.
+// getRecords now reads the GET-stamped row trio; this remains
+// until residual callers retire (adapters-state-events pins
+// its shape).
 export async function getRecordStateDetails(
     ctx: RequestContext,
 ): Promise<Map<Id, RecordStateDetail>> {
