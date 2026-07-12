@@ -503,15 +503,16 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |     1660 |
+| CLI automated tests    |     2658 |
 | Browser regression     |      390 |
-| **Combined TOTAL**     | **2050** |
+| **Combined TOTAL**     | **3048** |
 
 CLI count = most recent `./validate` (AT2) report — the main
 `tests/*.test.ts` suite plus the `tests/tz/*.test.ts` timezone
-suite; the number grows as tests land in either glob. Browser
-count = the per-section table above. Update both numbers when
-either side changes.
+suite (2650 main + 8 tz at SHA of the residual run); the
+number grows as tests land in either glob. Browser count =
+the per-section table above. Update both numbers when either
+side changes.
 
 Outcome categories used by run summaries (see `## Summary
 Format` at the bottom of this file):
@@ -526,8 +527,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 2050, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (2050).
+`PASS = 3048, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (3048).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -550,7 +551,7 @@ run before A1's build. The single canonical invocation is
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-ai-<sha>.zip`.
 - [ ] **A2** Run `./build --no-zip /tmp/fusion-test/`. PASS: `/tmp/fusion-test/` contains `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 18 page directories (`auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `identities`, `identity-providers`, `identity-tokens`, `invitations`, `landing`, `members`, `not-found`, `organization`, `projects`, `records`, `snapshots`, `workbox`) with 29 HTML page files (including `flows/stats.html`, `records/detail.html`, `identities/index.html`, `identities/detail.html`, `identity-providers/index.html`, `identity-tokens/index.html`, and `invitations/index.html`), plus root `index.html`.
 - [ ] **A3** Start an HTTP server from the build directory (`cd /tmp/fusion-test/ && python3 -m http.server 8080`). PASS: server starts without errors.
-- [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: redirects to `snapshots/index.html` when no data exists, or `landing/index.html` (which auto-redirects to `dashboard/index.html` after ~2 seconds) when data has been loaded.
+- [ ] **A4** Open `http://localhost:8080/` in the test browser. PASS: root `index.html` runs `root-redirect.ts` — redirects to `snapshots/index.html` when no schema/data exists (first run or post-wipe), or `auth/index.html` when a schema is present (signed-in sessions reach gated pages from auth; landing is a separate public marketing page, not the root target).
 - [ ] **A5** Open DevTools Console and confirm no JavaScript errors on initial load. PASS: console is clean (warnings from browser extensions are acceptable).
 
 ---
@@ -1028,7 +1029,7 @@ on. Run these in order.
 
 - [ ] **D22** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 4 required fields: Project Name, Time (days), Cost, Success Criteria (it maps to the project description). There is no Impact field. A Scores box renders one required baseline slider per active objective. Sticky sidebar shows the idea summary (Title, Problem Statement, Target Users, Proposed Solution, Expected Outcome, Success Metrics). Source of truth: `REQUIRED_FIELDS` in `web-app/app/presenters/idea-conversion.ts`.
 - [ ] **D23** With required fields empty, "Create Project" is disabled and the progress bar shows 0/N where N = 4 + one per active objective (e.g. 0/8 with 4 objectives). Fill fields and drag baseline sliders one at a time. PASS: the bar increments with each required field AND each baseline, checkmarks appear next to completed items, and the button enables only when all required fields AND all baselines are set. Success Criteria is required — filling it advances the bar.
-- [ ] **D24** Fill every required field and baseline (the progress bar reaches its max, e.g. 8/8), click "Create Project". PASS: navigates to project detail page for the newly created project.
+- [ ] **D24** Fill every required field and baseline (the progress bar reaches its max, e.g. 8/8), click "Create Project". PASS: navigates to project detail page for the newly created project. The source idea's lifecycle state becomes `promoted` (list badge label **Promoted**, not "Approved") — convert is a promotion, not a re-approve.
 
 ### Idea Status Filtering (`ideas/index.html`)
 
@@ -1122,11 +1123,10 @@ on. Run these in order.
 - [ ] **F1** Navigate to `flows/`. PASS: page shows
   flow cards with name, project name badge, and
   state/transition counts.
-- [ ] **F2** Type in the flow-list search input. PASS:
-  filters flow cards by name in real-time. NOTE:
-  `flows/index.html` currently renders no flow-list filter
-  input — this case is vacuously satisfied (N/A) until one
-  is added.
+- [ ] **F2** Flow-list search. RETIRED / N/A: `flows/` has
+  no search input (never shipped on the list page). Do not
+  assert a filter control. PASS vacuously; re-open only if
+  a flow-list search UI is added later.
 - [ ] **F3** Click a flow card. PASS: navigates
   to `flows/detail.html?flowId=<id>`.
 
@@ -1140,7 +1140,7 @@ opens and renders.)
 
 - [ ] **F4** Click "Import Flow" button on the flows list page. PASS: import dialog opens with a project selector dropdown and a "Choose File" button (the file input is hidden and triggered by that button).
 - [ ] **F5** Choose a project from the dropdown, click "Choose File", and select a `.mmd` file — selecting the file imports it directly (no separate confirm button). PASS: flow is created, toast confirms import, and browser navigates to the flow designer for the imported flow.
-- [ ] **F6** Repeat with a `.zip` file exported from a previous flow. PASS: imported flow renders with nodes, edges, and attributes visible (round-trip fidelity is covered by `tests/mermaid.test.ts` + `tests/zip-guards.test.ts`).
+- [ ] **F6** Repeat with a `.zip` file exported from a previous flow. PASS: imported flow renders with nodes, edges, and attributes visible (round-trip fidelity is covered by `tests/mermaid.test.ts` + `tests/zip-guards.test.ts`). NOTE: export ZIP carries graph + positions (`flow.mmd` / `flow.json` / `sidecar.json`) only — it does **not** rebind `flow_records`. After import the designer Record control may show **(none)** until the operator rebinds a record; that is scope, not a failed import.
 
 ### Flow Designer (`flows/detail.html?flowId=...`)
 
@@ -1974,6 +1974,19 @@ the claude-in-chrome MCP.
 
 ### Members list (`members/index.html`)
 
+> **Session role.** G11–G14 and V* Invite cases run as an
+> **org admin** (Tony Stark after mock seed). The roster
+> adapter (`getMembers`) always `GET`s `identity-pii`, and
+> that collection is admin-tier (`MEMBER_VERBS` omits it;
+> `tests/api-member-tier.test.ts` pins member 403). A
+> non-admin (e.g. Emily) therefore fails the Members list
+> load with `forbidden` on `identity-pii` while still
+> holding member-tier GETs on `/members` /
+> `/human-members`. Invite **grant** is also admin-gated
+> in `grantInvitation`. Known authz posture, not a
+> residual FAIL — do not re-litigate as product drift
+> without an intentional member-tier roster design.
+
 - [ ] **G11** Navigate to `members/index.html` (reachable
   via the "Members" sidebar entry). PASS: page header reads
   "Members" with a static subtitle "Manage humans and AIs
@@ -2714,7 +2727,7 @@ Owner: Phase 4 (alone, after Phase 2). L1–L9 reopen, wipe, and reseed the `fus
 
 - [ ] **L1** Boot creates the database. Inspect `indexedDB.databases()` on the dashboard. PASS: `fusion-ai@v1` with 3 object stores (2 tables in `TABLE_NAMES` — `requests`, `responses` — plus `__schema__`). Pre-Final origins may also list inert orphan stores.
 - [ ] **L2** Missing-schema route. Open the dashboard against an empty database. PASS: it redirects to the Snapshots page.
-- [ ] **L3** Atomic seed. Click "Wipe and Load Mock Data". PASS: the `__schema__` marker and pair rows persist; the dashboard renders the seeded org (1506 pairs absolute).
+- [ ] **L3** Atomic seed. Click "Wipe and Load Mock Data". PASS: the `__schema__` marker and pair rows persist; the dashboard renders the seeded org. Absolute pair pin is **1506** balanced request/response pairs — single source of truth `EXPECTED_PAIR_COUNT` in `tests/mock-data-pairs.test.ts` (count `requests` length after seed; do not confuse with historical intermediate accounting notes that mention 1513).
 - [ ] **L4** Persistence across reload. Reload the dashboard. PASS: it renders the seeded data without re-routing to Snapshots.
 - [ ] **L5** Cross-tab append survives (lost-update fix). From two connections (two tabs), append distinct pairs concurrently (e.g. two lifecycle state changes). PASS: both pairs survive (count grows by 2) — the old localStorage clobber is gone.
 - [ ] **L6** Cross-tab refresh. Commit a write in one of two open tabs. PASS: a `BroadcastChannel('fusion-ai:data')` message carrying a scoped notification event (organization/identity ids, or a full-refresh event) reaches the other tab; the poster is not echoed (no self-refresh).
