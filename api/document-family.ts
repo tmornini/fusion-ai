@@ -1,6 +1,6 @@
 import type { DbAdapter } from './db.ts';
 import { EntityNotFoundError } from './db.ts';
-import type { Id } from './types.ts';
+import type { Id, StateEntity } from './types.ts';
 import type { MessagePair } from './message-pair.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
 import { familyRegistration } from './family-registry.ts';
@@ -291,6 +291,35 @@ export function documentEntityRoute(
         segments: [wiring.family, ':id'],
         get: documentGetHandler(wiring),
         put: documentPutHandler(wiring),
+    };
+}
+
+// GET <family>/:id/history (states-URI elimination A3): wrap a
+// family derive*StateHistory (ASC StateEntity[]) with (at, id)
+// DESC so index 0 is current, and empty → missedReadError
+// (403 foreign / 404 absent) using the family's table name for
+// an honest body. Does NOT change the derive's own ASC for
+// other callers (deriveStatesFor, drift).
+export type DocumentStateHistoryDerive = (
+    db: DbAdapter,
+    organization: Id,
+    entityId: Id,
+) => Promise<StateEntity[]>;
+
+export function documentStateHistoryHandler(
+    deriveFn: DocumentStateHistoryDerive,
+    tableName: string,
+): GetHandler {
+    return async (db, params, _actor, organization) => {
+        const org = requireOrganization(organization);
+        const id = param(params, 0);
+        const history = await deriveFn(db, org, id);
+        if (history.length === 0) {
+            throw await missedReadError(
+                db, id, org, tableName,
+            );
+        }
+        return history.toReversed();
     };
 }
 

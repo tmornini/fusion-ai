@@ -139,13 +139,18 @@ import {
 } from './types.ts';
 import {
     deriveIdeaSubmissions,
+    deriveIdeaStateHistory,
     ideaEntityOf,
 } from './derive-ideas.ts';
-import { projectEntityOf } from './derive-projects.ts';
+import {
+    deriveProjectStateHistory,
+    projectEntityOf,
+} from './derive-projects.ts';
 import {
     flowEntityOf,
     deriveFlow,
     deriveFlows,
+    deriveFlowStateHistory,
     resolveFlowUndoTarget,
     type FlowUndoResolution,
 } from './derive-flows.ts';
@@ -165,6 +170,10 @@ import { deriveFlowTag } from './derive-flow-tags.ts';
 import {
     deriveObjectiveRevisions,
 } from './derive-objective-revisions.ts';
+import { deriveRecordStateHistory } from './derive-records.ts';
+import {
+    deriveObjectiveStateHistory,
+} from './derive-objectives.ts';
 import {
     deriveBaselineScores,
     deriveActualScores,
@@ -214,6 +223,7 @@ import {
     documentEntityRoute,
     documentGetHandler,
     documentPutHandler,
+    documentStateHistoryHandler,
     documentHeadPairId,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
@@ -4219,6 +4229,16 @@ export const routes: Route[] = [
             ),
         put: documentPutHandler(FLOWS_WIRING),
     },
+    // GET flows/:id/history (states-URI elimination A3):
+    // deriveFlowStateHistory ASC → DESC; empty →
+    // missedReadError('flows'). Segment count 3 vs 2 so no
+    // collision with flows/:id. Member-tier GET via
+    // matchesOnSegmentBoundary on '/flows'.
+    route('flows/:id/history', {
+        get: documentStateHistoryHandler(
+            deriveFlowStateHistory, 'flows',
+        ),
+    }),
     // Undo-as-replay (Phase 14 Task 8). Phase Final Task 2:
     // flows + graph ROW halves stripped; restore writes the
     // 'updated' state event, revival states events, and the
@@ -4648,6 +4668,15 @@ export const routes: Route[] = [
             );
         },
     }),
+    // GET records/:id/history (states-URI elimination A3):
+    // deriveRecordStateHistory ASC → DESC; empty →
+    // missedReadError('records'). Member-tier GET via
+    // matchesOnSegmentBoundary on '/records'.
+    route('records/:id/history', {
+        get: documentStateHistoryHandler(
+            deriveRecordStateHistory, 'records',
+        ),
+    }),
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger rather than the old record_attributes
     // table. Rides the generic documentCollectionGetHandler —
@@ -4916,11 +4945,29 @@ export const routes: Route[] = [
     // MEMBER_ID-CAVEAT prose that lived here moved to the
     // IDEAS_WIRING block above.
     documentEntityRoute(IDEAS_WIRING),
+    // GET ideas/:id/history (states-URI elimination A3):
+    // deriveIdeaStateHistory ASC → DESC; empty →
+    // missedReadError('ideas'). Member-tier GET via
+    // matchesOnSegmentBoundary on '/ideas'.
+    route('ideas/:id/history', {
+        get: documentStateHistoryHandler(
+            deriveIdeaStateHistory, 'ideas',
+        ),
+    }),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — see the ideas/:id entry above for
     // the shared rationale; the Decision-7/MEMBER_ID-CAVEAT
     // prose moved to the PROJECTS_WIRING block above.
     documentEntityRoute(PROJECTS_WIRING),
+    // GET projects/:id/history (states-URI elimination A3):
+    // deriveProjectStateHistory ASC → DESC; empty →
+    // missedReadError('projects'). Member-tier GET via
+    // matchesOnSegmentBoundary on '/projects'.
+    route('projects/:id/history', {
+        get: documentStateHistoryHandler(
+            deriveProjectStateHistory, 'projects',
+        ),
+    }),
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger rather than the old objectives table. Rides
     // the generic documentCollectionGetHandler — wire-identical
@@ -4988,6 +5035,15 @@ export const routes: Route[] = [
     // work-orders precedent that already rides this same
     // documentEntityRoute shape.
     documentEntityRoute(OBJECTIVES_WIRING),
+    // GET objectives/:id/history (states-URI elimination A3):
+    // deriveObjectiveStateHistory ASC → DESC; empty →
+    // missedReadError('objectives'). Member-tier GET via
+    // matchesOnSegmentBoundary on '/objectives'.
+    route('objectives/:id/history', {
+        get: documentStateHistoryHandler(
+            deriveObjectiveStateHistory, 'objectives',
+        ),
+    }),
     // Objective revisions nest under their parent objective: the
     // objective id is param 0, so the SERVER filters the
     // collection to that objective (the org fence still rides the
