@@ -1,0 +1,6 @@
+#!/bin/bash
+set -euo pipefail
+
+# Page-load benchmark via headless Chrome + CDP.
+# Flags: --check, --record, --pages a,b,c, --runs N
+node --strip-types web-app/app/measure.ts "$@"
