@@ -256,8 +256,9 @@ export function stateHistoryFrom(
 // StateStore.getCurrentForIn's own (at, id) reduction over the
 // real states table exactly (shared/ledger-reduction.ts's
 // default compare). Families that stamp the lifecycle trio on
-// GET rows (ideas, then A7–A10) read the whole event; others
-// only need `.state` via currentDocumentState.
+// GET rows (ideas, projects, records, objectives, members)
+// read the whole event; others only need `.state` via
+// currentDocumentState.
 export function currentLifecycleEvent(
     history: readonly StateEntity[],
 ): StateEntity | undefined {

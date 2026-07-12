@@ -680,9 +680,15 @@ export class Identity {
 // SYSTEM_MEMBER_NAME constant. Kind-specific detail lives in
 // human_members / ai_members keyed by the same id. A
 // 'system' member is a parent row with no detail row.
+// Lifecycle-current event trio is a GET stamp only — not the
+// head PUT body's fields. state ← event.state, state_at ←
+// event.at, state_event_id ← event.id.
 export interface MemberEntity {
     id: MemberId;
     type: MemberKind;
+    state: string;
+    state_at: string;
+    state_event_id: string;
 }
 
 // human_members detail row, keyed by the shared member id.

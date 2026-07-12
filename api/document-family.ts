@@ -121,7 +121,7 @@ export interface DocumentFamilyWiring {
     // Head-pair body -> wire entity (id + organization_id
     // stamped by the caller). Trio families that embed the
     // lifecycle-current event (ideas, projects, records,
-    // objectives, later A10) receive `current` after the
+    // objectives, members) receive `current` after the
     // DELETED filter; other families accept and ignore the
     // optional third argument.
     readonly entityOf: (

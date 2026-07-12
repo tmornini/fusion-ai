@@ -183,6 +183,7 @@ import {
 import {
     deriveMembers,
     deriveMemberParent,
+    memberParentOf,
 } from './derive-members.ts';
 import {
     deriveIdentityPiiRows,
@@ -563,23 +564,22 @@ const MEMBERSHIPS_WIRING: DocumentFamilyWiring = {
     documentOp: postMembershipDocumentOp,
     entityOf: membershipDocumentEntityOf,
 };
-// The wire body carries the member's own field ({type}) plus
-// the lifecycle trio — entityOf picks type alone, matching
-// derive-members.ts's memberParentOf and MemberEntity (the
-// trio is lifecycle history, not the directory row). Same
-// strip posture as objectiveDocumentEntityOf. `_organization`
-// stays unused: the members directory is GLOBAL plane
-// (family-registry.ts: organizationNested: false) — the FIRST
-// family on it — so there is no fence value to stamp at all.
+// Head document → wire MemberEntity. Entity field (`type`)
+// from the head body; the lifecycle trio is stamped from the
+// lifecycle-current StateEntity via derive-members.ts's
+// memberParentOf (never re-copied from the head body —
+// genesis-wins-under-skew). `current` is required on the live
+// trio path (document-family always supplies it after the
+// DELETED filter). `_organization` stays unused: the members
+// directory is GLOBAL plane (family-registry.ts:
+// organizationNested: false) — the FIRST family on it — so
+// there is no fence value to stamp at all.
 function memberDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
-    _current?: StateEntity,
-): unknown {
-    return {
-        id: document.uriId,
-        type: pickString(document.body, 'type'),
-    };
+    current: StateEntity,
+): MemberEntity {
+    return memberParentOf(document, current);
 }
 // The members wiring row — the ninth family, a 'trio' one
 // since the states-address retirement. The old FREEZE-at-
@@ -596,13 +596,19 @@ function memberDocumentEntityOf(
 // plane: no organization stamping (the members directory row
 // carries no organization_id) — see documentWriteResponseSpec's
 // registration-first consult (document-family.ts).
+// memberDocumentEntityOf requires the lifecycle-current
+// event; the generic trio path always supplies it after
+// DELETED filter.
 const MEMBERS_WIRING: DocumentFamilyWiring = {
     family: 'members',
     lifecycle: 'trio',
     notFoundTable: 'members',
     validateDocument: validateMemberDocumentBody,
     documentOp: postMemberDocumentOp,
-    entityOf: memberDocumentEntityOf,
+    entityOf: (document, organization, current) =>
+        memberDocumentEntityOf(
+            document, organization, current!,
+        ),
 };
 // The bare ai_members facet row spreads safely (no
 // organization_id, no trio — the SAME reason memberDocumentEntityOf's
@@ -4960,14 +4966,13 @@ export const routes: Route[] = [
 
     // GET is FLIPPED (Task 8): absorbed into the generic
     // documentGetHandler(MEMBERS_WIRING) — the SAME wiring row
-    // PUT already rides — wire-identical to the hand-written
-    // db.members.getById dispatch it replaces. PUT rides the
-    // generic documentPutHandler(MEMBERS_WIRING) (prior commit)
-    // — wire-identical to postMemberDocumentOp's own direct
-    // dispatch it replaces. Verbs stay {get, put} — members/:id
-    // has no DELETE today, mirroring the identities/:id
-    // precedent. Global plane: no organization stamping (the
-    // members directory row carries no organization_id) — see
+    // PUT already rides; memberDocumentEntityOf stamps entity
+    // fields plus the lifecycle-current trio (A10). PUT rides
+    // the generic documentPutHandler(MEMBERS_WIRING) (prior
+    // commit). Verbs stay {get, put} — members/:id has no
+    // DELETE today, mirroring the identities/:id precedent.
+    // Global plane: no organization stamping (the members
+    // directory row carries no organization_id) — see
     // documentWriteResponseSpec's own registration-first consult
     // (document-family.ts).
     route('members/:id', {

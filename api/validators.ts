@@ -783,9 +783,16 @@ const MEMBER_BODY_KEYS: readonly string[] = [
     'type',
 ];
 
+// Entity-field body only — lifecycle trio is GET stamp /
+// document-body, never part of this validator's key set.
+export type MemberEntityFields = Omit<
+    MemberEntity,
+    'id' | 'state' | 'state_at' | 'state_event_id'
+>;
+
 export function validateMemberEntity(
     body: Record<string, unknown>,
-): Omit<MemberEntity, 'id'> {
+): MemberEntityFields {
     assertOnlyKeys(
         body, MEMBER_BODY_KEYS, 'MemberEntity',
     );
@@ -804,7 +811,7 @@ const MEMBER_DOCUMENT_BODY_KEYS: readonly string[] = [
 ];
 
 export interface MemberDocumentBody {
-    readonly entity: Omit<MemberEntity, 'id'>;
+    readonly entity: MemberEntityFields;
     readonly state: MemberState;
     readonly state_at: string;
     readonly state_event_id: string;
