@@ -29,9 +29,15 @@ import {
     seedHumanMember,
 } from './member-fixtures.ts';
 
+// PUT/create body: no lifecycle trio — postIdeaCreation mints
+// state/stateAt/stateEventId. GET IdeaEntity carries the
+// stamped trio (Phase A); list/detail read it from the row.
 function buildIdea(
     id: string, title: string,
-): Omit<IdeaEntity, 'id'> {
+): Omit<
+    IdeaEntity,
+    'id' | 'state' | 'state_at' | 'state_event_id'
+> {
     return {
         organization_id: '1',
         title,

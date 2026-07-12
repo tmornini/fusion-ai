@@ -9,7 +9,9 @@ import type {
 import {
     Idea, nowUtc,
     ideaIsVisible,
+    assertIdeaState,
 } from '../../../api/types.ts';
+import type { IdeaStateDetail } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
     getCurrentHumanMember,
@@ -27,10 +29,6 @@ import {
 import {
     generateCryptoSafeBase62,
 } from '../../../shared/crypto-safe-base62.ts';
-import {
-    getIdeaStateDetail,
-    getIdeaStateDetails,
-} from './state-events.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -120,33 +118,40 @@ export interface IdeaWithSubmitter {
     readonly submittedAt: string;
 }
 
+// Lifecycle-current trio is stamped on the IdeaEntity GET
+// row (Phase A). Map snake_case wire → IdeaStateDetail;
+// no second hop to the states log / entity-states history.
+function ideaStateDetailFromRow(
+    row: IdeaEntity,
+): IdeaStateDetail {
+    return {
+        state: assertIdeaState(
+            row.state, 'idea ' + row.id,
+        ),
+        stateAt: row.state_at,
+        stateEventId: row.state_event_id,
+    };
+}
+
 export async function getIdeas(
     ctx: RequestContext,
 ): Promise<IdeaWithSubmitter[]> {
     const rows = await getIdeaEntities(ctx);
     const [
-        memberMap, submissions, stateMap,
+        memberMap, submissions,
     ] = await Promise.all([
         getMemberMap(ctx),
         getIdeaSubmissionEntities(
             ctx, rows.map(r => r.id),
         ),
-        getIdeaStateDetails(ctx),
     ]);
     const submissionMap = new Map(
         submissions.map(s => [s.idea_id, s]),
     );
     return rows
-        .filter(row => {
-            const detail = stateMap.get(row.id);
-            if (detail === undefined) {
-                throw new Error(
-                    'Idea has no state event: '
-                    + row.id,
-                );
-            }
-            return ideaIsVisible(detail.state);
-        })
+        .filter(row => ideaIsVisible(
+            ideaStateDetailFromRow(row).state,
+        ))
         .map(row => {
             const submission =
                 submissionMap.get(row.id);
@@ -156,9 +161,11 @@ export async function getIdeas(
                     + row.id,
                 );
             }
-            const detail = stateMap.get(row.id)!;
             return {
-                idea: new Idea(row, detail),
+                idea: new Idea(
+                    row,
+                    ideaStateDetailFromRow(row),
+                ),
                 entity: row,
                 submitterName: memberName(
                     memberMap,
@@ -175,15 +182,16 @@ export async function getIdea(
     ideaId: string,
 ): Promise<IdeaWithSubmitter> {
     const [
-        row, submission, memberMap, detail,
+        row, submission, memberMap,
     ] = await Promise.all([
         getIdeaEntity(ctx, ideaId),
         getIdeaSubmissionEntity(ctx, ideaId),
         getMemberMap(ctx),
-        getIdeaStateDetail(ctx, ideaId),
     ]);
     return {
-        idea: new Idea(row, detail),
+        idea: new Idea(
+            row, ideaStateDetailFromRow(row),
+        ),
         entity: row,
         submitterName: memberName(
             memberMap, submission.member_id,

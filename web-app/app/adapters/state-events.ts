@@ -339,8 +339,8 @@ async function getEntityStateDetails<
 // Single-idea state read, widened to carry the STORED head
 // event's `at`/`id` alongside the state — the trio Decision 7
 // folds into the idea document (state_at, state_event_id).
-// Consumed by getIdea (adapters/ideas.ts) to build the Idea
-// domain object.
+// getIdea now reads the GET-stamped row trio; this remains for
+// any residual caller until the states surface retires (B9).
 export async function getIdeaStateDetail(
     ctx: RequestContext,
     ideaId: Id,
@@ -351,12 +351,11 @@ export async function getIdeaStateDetail(
 }
 
 // Bulk sibling of getIdeaStates, widened the same way.
-// Consumed by getIdeas (adapters/ideas.ts) so the ideas LIST
-// page can echo each row's trio on a plain field edit
-// (drag-reorder) without minting a fresh event. dashboard.ts
-// keeps reading the bare getIdeaStates above — unwidened, per
-// its own bare-state need and per tests/adapters-state-
-// events.test.ts, which pins getIdeaStates' return shape.
+// getIdeas now reads the GET-stamped row trio; this remains
+// until residual callers retire. dashboard.ts still reads
+// the bare getIdeaStates above — unwidened, per its own
+// bare-state need and per tests/adapters-state-events.test.ts,
+// which pins getIdeaStates' return shape.
 export async function getIdeaStateDetails(
     ctx: RequestContext,
 ): Promise<Map<Id, IdeaStateDetail>> {
