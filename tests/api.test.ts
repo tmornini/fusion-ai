@@ -11,6 +11,7 @@ import {
     seedAIMember,
 } from './member-fixtures.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
+import { captureConsole } from './console-capture.ts';
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
@@ -269,21 +270,31 @@ test(
             }
             return original(column, key);
         };
-        const response = await handleRequest(
-            db,
-            new Request('http://localhost/ideas', {
-                headers: {
-                    'Authorization':
-                        'Bearer ' + DEV_TOKEN,
-                },
-            }),
-        );
+        const { result: response, calls } =
+            await captureConsole(
+                'error',
+                () => handleRequest(
+                    db,
+                    new Request('http://localhost/ideas', {
+                        headers: {
+                            'Authorization':
+                                'Bearer ' + DEV_TOKEN,
+                        },
+                    }),
+                ),
+            );
         assert.equal(response.status, 500);
         const { error } =
             (await response.json()) as {
                 error: string;
             };
         assert.equal(error, 'internal error');
+        assert.ok(
+            calls.some(args =>
+                args.includes('request failed')),
+            'the domain-boundary catch must keep'
+            + ' console evidence',
+        );
     },
 );
 
