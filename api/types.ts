@@ -456,8 +456,8 @@ export interface StateEntity {
 // (GET work-orders/:id/history). Folded from transition pair
 // bodies — no state_event_id on the wire (the parent event
 // already carries id). Distinct from StateFieldValueEntity,
-// which still carries state_event_id for the legacy field-
-// values collection route.
+// which still carries state_event_id for the RESTRICT
+// referrer derive (deriveStateFieldValueReferrers).
 export interface TransitionFieldValueEntity {
     id: Id;
     attribute_id: Id;

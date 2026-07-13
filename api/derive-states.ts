@@ -52,8 +52,8 @@ import {
 //   (e) deriveInvitationStates / invitationLifecycleStatesFor —
 //       invitation grant + three answering ops (gate 5f).
 // bare GET /states/:id, GET /entity-states/*, GET /states bulk,
-// and the five-source union (deriveStates) are RETIRED. GET
-// /states/:id/field-values survives until C4.
+// the five-source union (deriveStates), and GET
+// /states/:id/field-values are RETIRED (C3/C4).
 //
 // THE GATE-15 PRECEDENT (Phase 10): an org fence can be
 // reproduced from the MEMBERSHIP PAIR PLANE. This module's

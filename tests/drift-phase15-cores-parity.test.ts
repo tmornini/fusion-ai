@@ -16,15 +16,13 @@ import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     workOrderDocumentHeadFor,
     workOrderClaimHistoryFor,
+    workOrderHistoryFor,
     stateEventVisibilityFor,
     resolveOwningOrganization,
     deriveWorkOrderLifecycle,
     deriveMemberStates,
 } from '../api/derive-states.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
-import {
-    stateFieldValuesForStateEvent,
-} from '../api/derive-state-field-values.ts';
 import {
     flowGraphBindingsFromPairs,
     deriveFlows,
@@ -1378,12 +1376,13 @@ async function transitionWithFieldValue(
     assert.equal(transitioned.status, 204);
 }
 
-// Wire-shape pin: GET states/:id/field-values is 200 / 403 /
-// 404 by visibility (own → rows; foreign → 403; nowhere →
-// 404). Pair-plane visibility successor
-// (stateEventVisibilityFor) drives the three statuses.
-test('field-values GET: 200/403/404 three-way for'
-+ ' own / foreign / orphan parent events', async () => {
+// Wire-shape pin (C4): GET work-orders/:id/history is
+// 200 / 403 / 404 by ownership (own → rows with
+// field_values; foreign → 403; absent → 404). Field values
+// fold inline; the retired GET states/:id/field-values
+// three-way force lives here.
+test('work-order history GET: 200/403/404 three-way for'
++ ' own / foreign / absent work orders', async () => {
     const db = await seededDb();
     const starkToken = await organizationToken(
         'current', STARK_ORGANIZATION,
@@ -1399,27 +1398,34 @@ test('field-values GET: 200/403/404 three-way for'
         fieldValueId, workOrderId + '-attr',
     );
 
-    // (own) Stark sees the folded row.
+    // (own) Stark sees the folded row on history.
     const own = await handleRequest(
         db,
         req(
             'GET',
-            '/states/' + transitionEventId + '/field-values',
+            '/work-orders/' + workOrderId + '/history',
             starkToken,
         ),
     );
     assert.equal(own.status, 200);
-    const ownRows = await own.json() as { id: string }[];
+    const ownRows = await own.json() as {
+        id: string;
+        field_values: { id: string }[];
+    }[];
+    const ownTe = ownRows.find(
+        (r) => r.id === transitionEventId,
+    );
+    assert.ok(ownTe !== undefined);
     assert.deepEqual(
-        ownRows.map((r) => r.id), [fieldValueId],
+        ownTe!.field_values.map((r) => r.id), [fieldValueId],
     );
 
-    // (foreign) Org two 403s with the forbidden body.
+    // (foreign) Org two 403s with the work_orders body.
     const foreign = await handleRequest(
         db,
         req(
             'GET',
-            '/states/' + transitionEventId + '/field-values',
+            '/work-orders/' + workOrderId + '/history',
             twoToken,
         ),
     );
@@ -1428,16 +1434,16 @@ test('field-values GET: 200/403/404 three-way for'
         await foreign.json() as { error: string };
     assert.equal(
         foreignBody.error,
-        'forbidden: state_field_values/' + transitionEventId
+        'forbidden: work_orders/' + workOrderId
         + ' belongs to a different organization',
     );
 
-    // (orphan / nowhere) Ghost event id → 404.
+    // (absent) Ghost work-order id → 404.
     const orphan = await handleRequest(
         db,
         req(
             'GET',
-            '/states/ghost-p15-nowhere/field-values',
+            '/work-orders/ghost-p15-nowhere/history',
             starkToken,
         ),
     );
@@ -1446,14 +1452,15 @@ test('field-values GET: 200/403/404 three-way for'
         await orphan.json() as { error: string };
     assert.equal(
         orphanBody.error,
-        'Not found: state_field_values/ghost-p15-nowhere',
+        'Not found: work_orders/ghost-p15-nowhere',
     );
 });
 
-// Derive-path: stateFieldValuesForStateEvent throws on
-// foreign (403) and orphan (404); own still returns rows.
-test('stateFieldValuesForStateEvent visibility: own rows,'
-+ ' foreign rejects, orphan rejects',
+// Derive-path (C4): workOrderHistoryFor throws on foreign
+// (403) and absent (404); own still returns folded rows.
+// stateEventVisibilityFor still drives RESTRICT visibility.
+test('workOrderHistoryFor visibility: own field_values,'
++ ' foreign rejects, absent rejects',
 async () => {
     const db = await seededDb();
     const workOrderId = 'wo-p15-fv-derive';
@@ -1464,9 +1471,10 @@ async () => {
         fieldValueId, workOrderId + '-attr',
     );
 
-    // Own → visible on the pair plane; derive returns the row.
+    // Own → history returns the transition fold.
     assert.equal(
-        await pairPlaneVisibility(db, STARK_ORGANIZATION, transitionEventId,
+        await pairPlaneVisibility(
+            db, STARK_ORGANIZATION, transitionEventId,
         ),
         'visible',
     );
@@ -1476,15 +1484,20 @@ async () => {
         ),
         'visible',
     );
-    const ownDerived = await stateFieldValuesForStateEvent(
-        db, STARK_ORGANIZATION, transitionEventId,
+    const ownHistory = await workOrderHistoryFor(
+        db, STARK_ORGANIZATION, workOrderId,
     );
-    assert.equal(ownDerived.length, 1);
-    assert.equal(ownDerived[0]!.id, fieldValueId);
+    const ownTe = ownHistory.find(
+        (row) => row.id === transitionEventId,
+    );
+    assert.ok(ownTe !== undefined);
+    assert.equal(ownTe!.field_values.length, 1);
+    assert.equal(ownTe!.field_values[0]!.id, fieldValueId);
 
-    // Foreign → hidden; derive rejects ForeignOrganizationError.
+    // Foreign → work-order ownership rejects.
     assert.equal(
-        await pairPlaneVisibility(db, ORGANIZATION_TWO, transitionEventId,
+        await pairPlaneVisibility(
+            db, ORGANIZATION_TWO, transitionEventId,
         ),
         'hidden',
     );
@@ -1495,15 +1508,16 @@ async () => {
         'hidden',
     );
     await assert.rejects(
-        () => stateFieldValuesForStateEvent(
-            db, ORGANIZATION_TWO, transitionEventId,
+        () => workOrderHistoryFor(
+            db, ORGANIZATION_TWO, workOrderId,
         ),
         ForeignOrganizationError,
     );
 
-    // Orphan → orphan; derive rejects EntityNotFoundError.
+    // Absent work order → EntityNotFoundError.
     assert.equal(
-        await pairPlaneVisibility(db, STARK_ORGANIZATION, 'ghost-p15-vis',
+        await pairPlaneVisibility(
+            db, STARK_ORGANIZATION, 'ghost-p15-vis',
         ),
         'orphan',
     );
@@ -1514,7 +1528,7 @@ async () => {
         'orphan',
     );
     await assert.rejects(
-        () => stateFieldValuesForStateEvent(
+        () => workOrderHistoryFor(
             db, STARK_ORGANIZATION, 'ghost-p15-vis',
         ),
         EntityNotFoundError,

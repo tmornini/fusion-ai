@@ -894,45 +894,61 @@ for (const c of NESTED_PROJECT_CASES) {
 
 // GET /states RETIRED (states-URI elimination C3). Org
 // isolation force lives in work-orders/history and
-// objectives/history collection legs (A2/A5). Field-values
-// and family history still pin per-event ownership below.
+// objectives/history collection legs (A2/A5). GET
+// states/:id/field-values retired (C4) — field values fold
+// on work-order history; family history pins ownership
+// below.
 
-test('nested states/:id/field-values fence follows the event',
+// C4: field-values fence re-homes onto work-order history
+// (inline field_values on transition rows).
+test('work-orders/:id/history fold carries own field_values',
 async () => {
     const db = await deepDb();
     // Phase Final Stage B: state_field_values table retired —
-    // prove foreign SFV pair exists via B facade, then A's
-    // nested collection returns only A's.
+    // prove foreign transition fold via B history, then A's
+    // history carries only A's fold.
     const foreign = await handleRequest(db, req(
-        'GET', '/states/seB/field-values',
+        'GET', '/work-orders/woB/history',
         await organizationToken('pb', 'B'),
     ));
     assert.equal(foreign.status, 200);
-    const foreignRows =
-        await foreign.json() as { id: string }[];
+    const foreignRows = await foreign.json() as {
+        id: string;
+        field_values: { id: string }[];
+    }[];
+    const foreignTe = foreignRows.find(r => r.id === 'seB');
+    assert.ok(foreignTe !== undefined, 'seB missing on B');
     assert.ok(
-        foreignRows.some(r => r.id === 'sfvB'),
-        'foreign SFV pair missing',
+        foreignTe!.field_values.some(r => r.id === 'sfvB'),
+        'foreign SFV fold missing',
     );
     const res = await facadeGet(
-        db, '/states/seA/field-values');
+        db, '/work-orders/woA/history');
     assert.equal(res.status, 200);
-    const rows = await res.json() as { id: string }[];
-    assert.deepEqual(rows.map(r => r.id), ['sfvA']);
+    const rows = await res.json() as {
+        id: string;
+        field_values: { id: string }[];
+    }[];
+    const ownTe = rows.find(r => r.id === 'seA');
+    assert.ok(ownTe !== undefined, 'seA missing on A');
+    assert.deepEqual(
+        ownTe!.field_values.map(r => r.id),
+        ['sfvA'],
+    );
 });
 
-test('nested states/:id/field-values 403s a foreign event',
+test('work-orders/:id/history 403s a foreign work order',
 async () => {
     const db = await deepDb();
-    // seB is a B-org event; its field values, read through the
-    // A facade, 403 (honest foreign ownership).
+    // woB is B-org; read through the A facade 403s with
+    // the family's honest body.
     const res = await facadeGet(
-        db, '/states/seB/field-values');
+        db, '/work-orders/woB/history');
     assert.equal(res.status, 403);
     const body = await res.json() as { error: string };
     assert.equal(
         body.error,
-        'forbidden: state_field_values/seB belongs to a'
+        'forbidden: work_orders/woB belongs to a'
         + ' different organization',
     );
 });

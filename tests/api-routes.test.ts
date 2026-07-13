@@ -30,8 +30,8 @@ const COLLECTION_ROUTES: readonly string[] = [
     'work-orders',
     'work-orders/history',
     'flows/any-flow/work-orders',
-    // states/:id/field-values is no longer a 200-[] collection
-    // for an absent event — orphan → 404, foreign → 403.
+    // GET states/:id/field-values RETIRED (C4); field values
+    // fold on work-orders/:id/history.
     'records',
     'record-attributes',
     'flows/any-flow/records',

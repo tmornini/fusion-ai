@@ -1,6 +1,8 @@
 import { test } from 'node:test';
-import { workOrderLifecycleStatesFor } from
-    '../api/derive-states.ts';
+import {
+    workOrderLifecycleStatesFor,
+    workOrderHistoryFor,
+} from '../api/derive-states.ts';
 import { strict as assert } from 'node:assert';
 import {
     memoryDbAdapter,
@@ -16,9 +18,6 @@ import {
 } from '../api/validators.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
-import {
-    stateFieldValuesForStateEvent,
-} from '../api/derive-state-field-values.ts';
 import {
     documentCollectionGetHandler,
     type DocumentFamilyWiring,
@@ -315,16 +314,12 @@ test(
             + ' edges so the gate is reachable',
         );
 
-        const eventIds = transitions.map(t => t.id);
-        const values = (
-            await Promise.all(
-                eventIds.map(id =>
-                    stateFieldValuesForStateEvent(
-                        db, STARK_ORGANIZATION, id,
-                    ),
-                ),
-            )
-        ).flat();
+        const history = await workOrderHistoryFor(
+            db, STARK_ORGANIZATION, woId,
+        );
+        const values = history.flatMap(
+            (row) => row.field_values,
+        );
         const storedAttrIds = new Set(
             values.map(v => v.attribute_id),
         );

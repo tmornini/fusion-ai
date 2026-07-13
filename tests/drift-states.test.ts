@@ -19,6 +19,7 @@ import {
     deriveMemberStates,
     deriveInvitationStates,
     workOrderLifecycleStatesFor,
+    workOrderHistoryFor,
     resolveOwningOrganization,
 } from '../api/derive-states.ts';
 import {
@@ -37,9 +38,6 @@ import { deriveFlowStateHistory } from
     '../api/derive-flows.ts';
 import { deriveObjectiveStateHistory } from
     '../api/derive-objectives.ts';
-import {
-    stateFieldValuesForStateEvent,
-} from '../api/derive-state-field-values.ts';
 import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
@@ -1121,24 +1119,26 @@ test('case 5b: a LIVE invitation grant/accept chain, a LIVE'
 // ---- case 6: the state_field_values JOIN (lens 6) ---------------
 
 // Phase Final Task 2: SFV row half stripped — join is pair-
-// plane only (stateFieldValuesForStateEvent).
+// plane only (work-order history inline fold; C4).
 test('case 6: the state_field_values JOIN — WO01\'s derived'
 + ' history resolves field values on the pair plane; seed'
 + ' leaf pairs total 7', async () => {
     const db = await seededDb();
     const workOrderId = buildWorkOrders()[0]!.id;
-    const derived = await assertHistoryParity(
+    await assertHistoryParity(
         db, STARK_ORGANIZATION, workOrderId,
     );
 
+    const history = await workOrderHistoryFor(
+        db, STARK_ORGANIZATION, workOrderId,
+    );
     let sawFieldValues = false;
     let totalFieldValues = 0;
-    for (const derivedEvent of derived) {
-        const fvs = await stateFieldValuesForStateEvent(
-            db, STARK_ORGANIZATION, derivedEvent.id,
-        );
-        if (fvs.length > 0) sawFieldValues = true;
-        totalFieldValues += fvs.length;
+    for (const row of history) {
+        if (row.field_values.length > 0) {
+            sawFieldValues = true;
+        }
+        totalFieldValues += row.field_values.length;
     }
     // Non-vacuous: the Review/Complete transition events
     // genuinely carry field values (the seed's own 7-pair set).

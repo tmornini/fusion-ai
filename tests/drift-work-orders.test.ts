@@ -43,11 +43,10 @@ import {
 } from '../api/work-order-claims.ts';
 import { deriveFlowWorkOrders } from
     '../api/derive-flow-work-orders.ts';
-import { workOrderLifecycleStatesFor } from
-    '../api/derive-states.ts';
 import {
-    stateFieldValuesForStateEvent,
-} from '../api/derive-state-field-values.ts';
+    workOrderLifecycleStatesFor,
+    workOrderHistoryFor,
+} from '../api/derive-states.ts';
 import { buildWorkOrders } from '../api/mock-data/work-orders.ts';
 import {
     buildLeadToCloseWorkload,
@@ -1488,11 +1487,18 @@ async () => {
     assert.equal(replay.events.length, 11);
 
     // Phase Final Task 2: SFV row plane empty; pair-plane
-    // two-source union carries the transition fold.
-    const derivedFieldValues =
-        await stateFieldValuesForStateEvent(
-            db, STARK_ORGANIZATION, 'wo-drift-trace-1-te2',
-        );
+    // transition fold rides work-order history (C4).
+    const history = await workOrderHistoryFor(
+        db, STARK_ORGANIZATION, workOrderId,
+    );
+    const derivedFieldValues = history.flatMap((row) =>
+        row.field_values.map((fv) => ({
+            id: fv.id,
+            state_event_id: row.id,
+            attribute_id: fv.attribute_id,
+            value: fv.value,
+        })),
+    );
     assert.equal(replay.fieldValues.length, 2);
     // Phase Final Stage B: state_field_values table retired.
     assert.deepEqual(

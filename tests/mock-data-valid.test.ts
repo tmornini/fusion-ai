@@ -56,13 +56,10 @@ import { postWorkOrderDocumentOp } from
 import { deriveFlowWorkOrders } from
     '../api/derive-flow-work-orders.ts';
 import {
-    stateFieldValuesForStateEvent,
-} from '../api/derive-state-field-values.ts';
-import {
     deriveWorkOrderLifecycle,
     deriveMemberStates,
     deriveInvitationStates,
-    workOrderLifecycleStatesFor,
+    workOrderHistoryFor,
 } from '../api/derive-states.ts';
 import { deriveIdeaStateHistory } from
     '../api/derive-ideas.ts';
@@ -529,39 +526,37 @@ async () => {
 test('mock-data derived seed SFV pairs pass validator',
 async () => {
     const db = await seededDb();
-    // Seven seed leaf pairs at states/:id/field-values/:fvid.
-    // Discover via states that have field values by scanning
-    // known seed work-order transition events is brittle —
-    // instead pin non-empty union over every seeded WO's
-    // state events via the two-source derive.
+    // Seed field values ride transition folds; product reads
+    // fold them on work-order history (C4). Pin non-empty
+    // union over every seeded WO's history.
     const woIds = [
         ...buildWorkOrders().map(w => w.id),
         ...buildLeadToCloseWorkload().workOrders.map(w => w.id),
     ];
-    // Phase Final Task 2: states ROW half stripped —
-    // discover events via work-order lifecycle history.
-    const allEvents = (
-        await Promise.all(
-            woIds.map(id =>
-                workOrderLifecycleStatesFor(
-                    db, STARK_ORGANIZATION, id,
-                ),
-            ),
-        )
-    ).flat();
     let total = 0;
-    for (const ev of allEvents) {
-        const fvs = await stateFieldValuesForStateEvent(
-            db, STARK_ORGANIZATION, ev.id,
-        );
-        total += fvs.length;
-        for (const fv of fvs) {
-            assert.doesNotThrow(
-                () => validateStateFieldValueEntity(
-                    withoutId(fv),
-                ),
-                'sfv ' + fv.id,
+    for (const id of woIds) {
+        // Seeded WOs with no lifecycle throw missedRead;
+        // only those with history contribute folds.
+        let history;
+        try {
+            history = await workOrderHistoryFor(
+                db, STARK_ORGANIZATION, id,
             );
+        } catch {
+            continue;
+        }
+        for (const ev of history) {
+            total += ev.field_values.length;
+            for (const fv of ev.field_values) {
+                assert.doesNotThrow(
+                    () => validateStateFieldValueEntity({
+                        state_event_id: ev.id,
+                        attribute_id: fv.attribute_id,
+                        value: fv.value,
+                    }),
+                    'sfv ' + fv.id,
+                );
+            }
         }
     }
     assert.ok(total >= 7, 'expected >=7 SFV, got ' + total);

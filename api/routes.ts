@@ -206,9 +206,6 @@ import {
     workOrderHistoryFor,
 } from './derive-states.ts';
 import {
-    stateFieldValuesForStateEvent,
-} from './derive-state-field-values.ts';
-import {
     deriveOrganization,
     deriveOrganizations,
 } from './derive-organizations.ts';
@@ -4544,36 +4541,18 @@ export const routes: Route[] = [
                 db, param(p, 1), body, actor, pair,
             ),
     }),
-    // Field values nest under their parent STATE EVENT: the
-    // state event id is param 0. GET is FLIPPED by DEFAULT
-    // (Phase 14 Task 6): stateFieldValuesForStateEvent (api/
-    // derive-state-field-values.ts) derives the collection from
-    // the pair plane's two-source union (a transition's folded
-    // fieldValues ∪ historical leaf-address pairs from seed
-    // and pre-retirement writes) rather than the
-    // state_field_values table — visibility re-anchored onto
-    // stateEventVisibilityFor (Phase 15 Task 3) with the
-    // verified token organization, never the path. Wire shape
-    // held: ALWAYS 200; three-way filtered array (orphan/own →
-    // rows; foreign → []). Leaf PUT/DELETE retired Phase 15
-    // Task 7; collection GET survives.
-    route('states/:id/field-values', {
-        get: (db, p, _actor, organization) =>
-            stateFieldValuesForStateEvent(
-                db,
-                requireOrganization(organization),
-                param(p, 0),
-            ),
-    }),
+    // GET states/:id/field-values RETIRED (states-URI
+    // elimination C4): field values fold inline on
+    // GET work-orders/:id/history (and bulk history).
     // PUT/DELETE states/:id/field-values/:fvid RETIRED
-    // (Phase 15 Task 7): zero product callers; live writes
-    // ride the transition fold only. WRITE_RESPONSE_SPECS
-    // entry + seed address formation SURVIVE (finding 7).
-    // GET is FLIPPED (Task 7): the collection derives from the
-    // message ledger rather than the old records table. Rides
-    // the generic documentCollectionGetHandler — wire-identical
-    // to the hand-written db.records.getAll() dispatch it
-    // replaces (RECORDS_WIRING's own entityOf,
+    // (Phase 15 Task 7): live writes ride the transition
+    // fold only. WRITE_RESPONSE_SPECS entry + seed address
+    // formation SURVIVE (finding 7).
+    // GET records is FLIPPED (Task 7): the collection derives
+    // from the message ledger rather than the old records
+    // table. Rides the generic documentCollectionGetHandler
+    // — wire-identical to the hand-written db.records.getAll()
+    // dispatch it replaces (RECORDS_WIRING's own entityOf,
     // recordDocumentEntityOf, already picks the exact {id,
     // organization_id, name, description, position} shape, so
     // the list needs no records-special reassembly step). POST
@@ -5201,9 +5180,10 @@ export const routes: Route[] = [
     // on GET <family>/:id/history; work-order and objective
     // bulk history live on GET work-orders/history and
     // GET objectives/history. GET /states/:id/field-values
-    // survives until C4. bare states/:id is already a router
-    // 404 (states-address retirement Task 13). entity-states
-    // history retired with C2.
+    // retired with C4 (inline fold on WO history). bare
+    // states/:id is already a router 404 (states-address
+    // retirement Task 13). entity-states history retired
+    // with C2.
 
     route('snapshots/schema', {
         get: async (db) =>
