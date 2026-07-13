@@ -200,21 +200,30 @@ Post-Phase-Final + states-address retirement: every
 lifecycle-backed surface (workbox inbox, flow-stats,
 dashboard, members roster, idea/project/record/objective
 state badges + history views) reads family-scoped and
-collection history from the message ledger (per-entity
-`GET <family>/:id/history`, work-orders/history,
-objectives/history). There is no `states` table and no
+collection history from the message ledger. Nine GET
+registrations, wire `(at, id)` DESC (index 0 = current):
+per-entity `GET ideas|projects|records|flows|objectives|
+members|work-orders/:id/history`, plus bulk
+`GET work-orders/history` and `GET objectives/history`
+(bulk always 200 arrays). Work-order history folds
+`field_values` inline on each transition event; claim/
+birth/release rows carry `[]`. Ideas / projects / records
+/ objectives / members GET rows embed the lifecycle trio
+(`state`, `state_at`, `state_event_id`) — no separate
+state-detail fetch. There is no `states` table and no
 shared event-append write address. Lifecycle writes are
 document-trio PUTs
 (ideas/projects/records/flows/objectives/members) and named
 ops (work-order create/claim/transition/release,
 invitations). The ownership fence
 (`resolveOwningOrganization`) makes a foreign org's
-`entity_id` 403 on per-entity family history. Also
-closed: WP1 and the records hard-delete forgery channel.
-Write-ownership fence returns foreign-id PUT/DELETE 403
-on org-scoped families. Unauthenticated callers to any
-non-bearer-exempt path (including retired/unknown routes)
-get 401 before a topology 404.
+`entity_id` 403 on per-entity family history (members
+global miss is 404). Also closed: WP1 and the records
+hard-delete forgery channel. Write-ownership fence returns
+foreign-id PUT/DELETE 403 on org-scoped families.
+Unauthenticated callers to any non-bearer-exempt path
+(including retired/unknown routes) get 401 before a
+topology 404.
 
 **Retired routes — no browser cases.** These addresses have
 zero product callers; a manual pass need not open them.
@@ -225,8 +234,10 @@ unauthenticated 401):
   case is gone)
 - per-entity current-state alias → router 404
 - nested field-values write address → router 404
-  (field values fold on work-order transition history;
-  live writes ride the transition fold only)
+  (and the retired field-values GET; product reads fold
+  values on `GET work-orders/:id/history` /
+  `GET work-orders/history`; live writes ride the
+  transition fold only)
 - `GET|POST|PUT|DELETE /flows/:id/versions[...]` → router 404
   (table DELETED at Phase Final; F66 is MOOT — see F66)
 
@@ -1763,21 +1774,21 @@ designer "tag current" action lands.)
 
 - [ ] **WB16** After creating and transitioning
   a work order, inspect `requests`/`responses` (or
-  derived `GET work-orders/:id/history` and the
-  transition-fold field values). PASS: the work-
-  order document pair head carries `display_id` and
-  `flow_graph` JSON; each transition is a
+  derived `GET work-orders/:id/history`). PASS: the
+  work-order document pair head carries `display_id`
+  and `flow_graph` JSON; each transition is a
   `work-orders/:id/transition` operation pair whose
   body names the target node (base62) and folds
   per-field values into `fieldValues: [{id,
   fields}]` — no `states` or `state_field_values`
-  tables, and no leaf pairs. Derived history shows
-  one non-claim event per transition with
+  tables, and no leaf pairs. Derived history is
+  `(at, id)` DESC (index 0 = current) and shows one
+  non-claim event per transition with
   `entity_id` = work-order id, `state` = target
   node id, `member_id` = the actor, `at` =
-  RFC-3339 Zulu; field-values derive from the
-  transition fold only
-  (`stateFieldValuesForStateEvent`).
+  RFC-3339 Zulu, plus inline
+  `field_values: [{id, attribute_id, value}]` on
+  transition rows (`[]` on claim/birth/release).
 - [ ] **WB17** Navigate away from the action
   screen and return. PASS: all data persists
   correctly across page navigation.
@@ -1792,18 +1803,21 @@ designer "tag current" action lands.)
   `entity_id` under the `(at, id)` reduction (a stale prior claim
   is superseded by a `'claim_expired'` event, never overwritten
   in place). Inspect via `requests`/`responses` or derived
-  `GET work-orders/:id/history`.
+  `GET work-orders/:id/history` (DESC; claim rows carry
+  `field_values: []`).
 - [ ] **WB19** After transitioning a work order through at
   least two states, read the derived history
   (`GET work-orders/:id/history` or the matching pairs in
-  `requests`/`responses`) for this work order's id. PASS: each
+  `requests`/`responses`) for this work order's id. PASS:
+  rows are `(at, id)` DESC (index 0 = current); each
   non-claim event has the immutable shape `{id, entity_id,
-  state, member_id, at}`, with `state` carrying the target
-  node's base62 id — field values derive from the
-  transition-fold only (`stateFieldValuesForStateEvent`),
-  referencing the parent event by `state_event_id`. Verify no
-  app code path mutates an existing pair — the message plane is
-  append-only.
+  state, member_id, at, field_values}`, with `state`
+  carrying the target node's base62 id and
+  `field_values` the transition fold
+  (`{id, attribute_id, value}` — no `state_event_id` on
+  the wire; the parent event already carries `id`).
+  Verify no app code path mutates an existing pair — the
+  message plane is append-only.
 
 ### Workbox — All-See-All Visibility
 
@@ -2294,13 +2308,16 @@ restored data.)
   Commandment III (Uniformity). The write is a
   `members/:id` document-trio PUT (not a shared
   event-append). Verify via
-  `GET members/:id/history` or the matching
-  `members/:id` document pairs in `requests`/`responses`:
-  an event with `entity_id` = the member's id,
+  `GET members/:id/history` (DESC; index 0 = current)
+  or the matching `members/:id` document pairs in
+  `requests`/`responses`: an event with
+  `entity_id` = the member's id,
   `state` = the chosen value, `member_id` = the actor
-  appears — lifecycle is not a column on a member row.
-  After reload the member's badge text and styling
-  reflect the persisted state.
+  appears — and the member GET row itself embeds the
+  lifecycle trio (`state`, `state_at`,
+  `state_event_id`) for head state. After reload the
+  member's badge text and styling reflect the
+  persisted state.
 - [ ] **G37 — Boot recovery from a missing schema** With the app loaded, open DevTools → Application → IndexedDB and delete the `fusion-ai` database (or clear the `__schema__` store). Reload a schema-requiring page (e.g. `dashboard/index.html`). PASS: boot reopens a fresh empty database, `hasSchema()` is false, and `core.ts` REDIRECTS to `snapshots/index.html` with the "Your database is empty." banner and the four recovery cards (Download Snapshot / Upload Snapshot / Wipe and Load Mock Data / Create Pristine) — never the terminal "Failed to initialize database" dead-end. Afterward, Wipe and Load Mock Data to restore a healthy DB before continuing. (Unlike the old localStorage tier, IndexedDB object stores always exist post-upgrade, so a hand-corrupted "partial table" shape is no longer reproducible; a genuinely missing store arises only on a schema version bump, where boot throws `MissingTableError` and `redirectIfMissingTable` routes to `snapshots/index.html?missing-table=<name>` with the matching "The schema is missing the \"<name>\" table" banner.) Source: `web-app/app/core.ts` (`redirectIfMissingTable` + the `initDatabase()` catch), `web-app/app/adapters/snapshots.ts` (`getHasAnyHumanMembers`), `web-app/snapshots/index.ts` (`mutateMissingTableBanner`).
 
 ### Billing (`billing/`) — STUB

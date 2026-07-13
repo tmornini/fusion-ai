@@ -55,11 +55,14 @@ four-relation row plane (`flow_nodes`, `flow_edges`,
 rides the flow document pair body: `graphDelta` (node/edge
 upserts by stable id, node/edge `'deleted'` events,
 member/attribute `'added'`/`'removed'` ledger events) and
-`revivals` (undo restore). `deriveFlowGraphStates` is the
-permanent consumer of those sidecars (SIDECAR-KEEP). A
-work order freezes its own `flow_graph` blob inside the
-work-order document pair at creation — a frozen value, not
-a live relationship.
+`revivals` (undo restore). Live GET reassembles
+`FlowWithGraph.graph` from the document body's `graph`
+field; `graphDelta` / `revivals` remain write-side
+sidecars (SIDECAR-KEEP) for undo restore and RESTRICT
+bindings (`flowGraphBindingsFromPairs`). A work order
+freezes its own `flow_graph` blob inside the work-order
+document pair at creation — a frozen value, not a live
+relationship.
 
 The **route is the single divorce point**. `GET flows/:id`
 AND `GET flows` (list) reassemble `FlowWithGraph` from the
@@ -102,14 +105,14 @@ The property-test gate at work-order transitions:
 `validateRecordTransition(ctx, workOrderId, pendingValues)`
 resolves the work order's CURRENT node from the ledger,
 walks that node's attribute refs → Record attributes,
-gathers stored values from the pair-plane field-values
-derive (`stateFieldValuesForStateEvent` and kin), overlays
-pending values from the form, and runs requiredness +
-`validateAttributeValue`. The gate matches the workbox
-action screen (current-node fields only) — target-node
-required attrs are checked when the operator leaves that
-node later. Returns aggregated `ConstraintViolation[]`.
-`postWorkOrderTransition` throws
+gathers stored values from the work-order history fold
+(`getWorkOrderHistory` → inline `field_values` on each
+transition event), overlays pending values from the form,
+and runs requiredness + `validateAttributeValue`. The gate
+matches the workbox action screen (current-node fields
+only) — target-node required attrs are checked when the
+operator leaves that node later. Returns aggregated
+`ConstraintViolation[]`. `postWorkOrderTransition` throws
 `RecordTransitionViolations` on non-empty results; the
 workbox page module catches the typed error and surfaces
 the violations banner.
@@ -220,10 +223,11 @@ seed-only before). `invitations` (id, organization_id,
 identity_id, at) is GLOBAL spine, pass-through, NOT
 org-fenced: the invitee must read an invitation to an org it
 is not yet in, so the row cannot hide behind the org fence.
-Its lifecycle is event-sourced in the append-only `states`
-log under the alphabet {pending, accepted, declined,
-revoked}, keyed to the invitation id; current status is the
-LATEST event, derived and never mutated — the row itself
+Its lifecycle is event-sourced on the pair plane under the
+alphabet {pending, accepted, declined, revoked}, keyed to
+the invitation id (op-pair presence at grant / accept /
+decline / revoke addresses); current status is the LATEST
+event, derived and never mutated — the invitation document
 persists as audit through every transition.
 
 Grant (admin) appends `pending`. Accept (invitee) appends
@@ -453,25 +457,42 @@ session token. Tests pass `createRequestContext` a
 `MemoryDbAdapter`.
 
 `api/routes.ts` covers the surviving lifecycle-history
-surface: per-entity `GET <family>/:id/history`, bulk
-`GET work-orders/history` and `GET objectives/history`,
-and field values folded from work-order transition
-history. All reads derive from the message ledger:
-family history → family-scoped derives (ownership fence
-via `resolveOwningOrganization`), collection legs →
-work-order / objective history derives, and field values
-→ `stateFieldValuesForStateEvent` (transition-fold
-single-source; visibility via `stateEventVisibilityFor`
-is honest: visible → 200 rows, foreign → 403, orphan →
-404). Every verb on the retired shared event-append
-address is router 404. Phase 15 Task 7 also retired the
-per-entity current-state alias, nested field-values
-writes, and `GET|POST|PUT|DELETE flows/:id/versions[...]`
-— all router 404. Lifecycle writes ride document-trio
-PUTs and named ops (work-order create/claim/transition/
-release, invitations), not a shared event-append
-address. When no schema exists, non-entry pages
-redirect to snapshots.
+surface — **nine GET registrations**, wire `(at, id)`
+**DESC** (index 0 = current):
+
+1. `GET ideas/:id/history`
+2. `GET projects/:id/history`
+3. `GET records/:id/history`
+4. `GET flows/:id/history`
+5. `GET objectives/:id/history`
+6. `GET members/:id/history` (global; absent → 404)
+7. `GET work-orders/:id/history` (inline `field_values`)
+8. `GET work-orders/history` (bulk; always 200)
+9. `GET objectives/history` (bulk; always 200)
+
+All reads derive from the message ledger. Trio-family
+and members per-id handlers wrap family
+`derive*StateHistory` (or `deriveMemberStates`) and
+reverse to DESC; org-nested empty → `missedReadError`
+(foreign **403** / absent **404** via
+`resolveOwningOrganization`). Work-order per-id and
+bulk emit `WorkOrderHistoryEventEntity` with transition
+`field_values` folded inline (`{id, attribute_id,
+value}`; claim/birth/release carry `[]`) — there is no
+successor field-values GET. Bulk legs always return an
+array. Ideas / projects / records / objectives / members
+GET entity rows also embed the lifecycle trio (`state`,
+`state_at`, `state_event_id`) from the lifecycle-current
+event. `stateEventVisibilityFor` remains the RESTRICT /
+ownership 3-tier probe. Every verb on the retired shared
+event-append address is router 404. Phase 15 Task 7 also
+retired the per-entity current-state alias, nested
+field-values writes, and
+`GET|POST|PUT|DELETE flows/:id/versions[...]` — all
+router 404. Lifecycle writes ride document-trio PUTs and
+named ops (work-order create/claim/transition/release,
+invitations), not a shared event-append address. When no
+schema exists, non-entry pages redirect to snapshots.
 
 ## Write-path derives (Phase 14)
 
@@ -511,16 +532,17 @@ whole-ledger `invitationOpStates`/`deriveStatesFor`, wired
 into `pendingInvitationFor`/`currentInvitationState`);
 `workOrderClaimHistoryFor` (`derive-states.ts`, pair-plane
 claim history — op pairs only: create/claim/transition/
-release; the `states/:id` event-append arm is retired with
-the address); `documentStateHeadFor` (`derive-states.ts`,
-the one helper behind all four member_id-echo head-reads —
-document-history only); and `stateFieldValuesFrom` /
-`deriveStateFieldValueReferrers` /
-`stateFieldValuesForStateEvent` (`derive-state-field-
-values.ts`, SINGLE-SOURCE — transition-pair-folded field
-values only, head-reduced by the shared `(at, id)` order —
-backing both the `record-attributes` RESTRICT gate and
-`GET states/:id/field-values`).
+release; the shared event-append arm is retired with the
+address); and `stateFieldValuesFrom` /
+`deriveStateFieldValueReferrers`
+(`derive-state-field-values.ts`, SINGLE-SOURCE —
+transition-pair-folded field values only, head-reduced by
+the shared `(at, id)` order — backing the
+`record-attributes` RESTRICT gate). Product field-value
+reads fold inline on `GET work-orders/:id/history` and
+`GET work-orders/history` (`workOrderHistoryFor` /
+`deriveWorkOrderHistories`); the standalone field-values
+GET and `stateFieldValuesForStateEvent` are GONE.
 
 ### Nested-transaction re-entry
 
@@ -564,8 +586,8 @@ than oscillating back into it. The cursor correlates by the
 STORED REQUEST `at` (never the response `at`, independently
 minted per pair) against the undo address's own
 operation-pair `at` values. `graphDelta`/`revivals` still
-land in the restore's own document-pair body feeding
-`deriveFlowGraphStates`, exactly like an ordinary save's —
+land in the restore's own document-pair body as write-side
+sidecars, exactly like an ordinary save's —
 SIDECAR-KEEP names this MECHANISM persisting even though the
 VALUES are now SERVER-computed rather than client-supplied
 (the client cannot diff against a target it is never told;
@@ -592,10 +614,12 @@ than silently reaching for a workaround:
    Stands post-Final (pair-only RESTRICT).
 2. **Region B / leaf SFV routes** (Task 7). Phase 15 RETIRED
    the leaf PUT/DELETE routes (and their Region B fence
-   arm); the surviving GET field-values collection re-anchors
-   visibility onto `stateEventVisibilityFor` (3-tier; see
-   Phase 15 / Phase Final as-built below). Dual-write SFV
-   writers are GONE with Final; the derive is single-source
+   arm); states-address retirement also retired the GET
+   field-values collection — product reads fold values on
+   work-order history. `stateEventVisibilityFor` (3-tier)
+   remains for RESTRICT / ownership probes (see Phase 15 /
+   Phase Final as-built below). Dual-write SFV writers are
+   GONE with Final; the derive is single-source
    (transition fold only).
 3. **Server-computed undo sidecars** (Task 8). "Client-owned
    graphDelta/revivals," read literally, is impossible under
@@ -682,13 +706,20 @@ All view-accepting (`dbOrView`), entity-scoped where the
 address family allows, opening no nested transaction:
 
 - `workOrderDocumentHeadFor` — claim-gate `flow_graph` head
-- `stateEventVisibilityFor` — 3-tier field-values fence
-  (orphan | visible | hidden); consumers throw 403/404
-  rather than folding to empty
+- `workOrderHistoryFor` /
+  `deriveWorkOrderHistories` — per-id and bulk work-order
+  history with inline `field_values`
+- `deriveObjectiveHistories` — bulk objective history
+- `documentStateHistoryHandler` — shared DESC wrapper for
+  trio-family per-id history
+- `stateEventVisibilityFor` — 3-tier ownership probe
+  (orphan | visible | hidden) for RESTRICT / related
+  fences; consumers throw 403/404 rather than folding to
+  empty
 - `resolveGlobalOwner` — global-existence probe for
   403-vs-404 decisions (write fence + read miss paths)
-- `resolveOwningOrganization` — pre-dispatch ownership for
-  per-entity family history (narrower allowlist)
+- `resolveOwningOrganization` — ownership for per-entity
+  family history misses (narrower allowlist)
 - `flowGraphBindingsFromPairs` — RESTRICT graph legs from
   graphDelta
 
