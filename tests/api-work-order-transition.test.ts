@@ -99,8 +99,8 @@ test(
                 name: 'Severity',
                 attribute_type: 'text',
                 sort_order: 0,
-                options: '[]',
-                constraints: '[]',
+                options: [],
+                constraints: [],
             },
             DEV_TOKEN,
         );
@@ -308,8 +308,8 @@ test(
                 name: 'Severity',
                 attribute_type: 'text',
                 sort_order: 0,
-                options: '[]',
-                constraints: '[]',
+                options: [],
+                constraints: [],
             },
             DEV_TOKEN,
         );

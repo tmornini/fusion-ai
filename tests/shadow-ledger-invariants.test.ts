@@ -17,7 +17,6 @@ import {
 import { organizationToken } from './token-fixtures.ts';
 import {
     storedWorkOrderFlowGraphField,
-    jsonArrayField,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 
@@ -263,8 +262,8 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
                 name: 'Field',
                 attribute_type: 'text',
                 sort_order: 0,
-                options: jsonArrayField([]),
-                constraints: jsonArrayField([]),
+                options: [],
+                constraints: [],
             }],
         ),
     ));

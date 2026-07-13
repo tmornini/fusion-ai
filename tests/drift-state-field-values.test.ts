@@ -72,7 +72,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
         db, 'record-attributes/attr-1', {
             organization_id: '1', record_id: 'rec-1',
             name: 'Severity', attribute_type: 'text',
-            sort_order: 0, options: '[]', constraints: '[]',
+            sort_order: 0, options: [], constraints: [],
         },
         DEV_TOKEN,
     );

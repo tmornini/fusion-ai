@@ -11,9 +11,6 @@ import {
 import { postMockDataLoad } from
     '../api/mock-data.ts';
 import {
-    parseOrThrow,
-} from '../api/validators.ts';
-import {
     validateWorkOrderFlowGraphJson,
 } from '../api/validators.ts';
 import { handleRequest } from '../api/api.ts';
@@ -181,23 +178,8 @@ test(
         const attrs = await allAttributes(db);
         const allKinds = new Set<string>();
         for (const attr of attrs) {
-            const parsed = parseOrThrow(
-                attr.constraints,
-                'attr.constraints',
-            );
-            if (!Array.isArray(parsed)) continue;
-            for (const c of parsed) {
-                if (
-                    typeof c === 'object'
-                    && c !== null
-                    && 'kind' in c
-                    && typeof (c as { kind: unknown })
-                        .kind === 'string'
-                ) {
-                    allKinds.add(
-                        (c as { kind: string }).kind,
-                    );
-                }
+            for (const c of attr.constraints) {
+                allKinds.add(c.kind);
             }
         }
         assert.ok(

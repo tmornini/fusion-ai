@@ -152,21 +152,9 @@ export type InvitationState =
 
 export type StoredBoolean = 0 | 1;
 
-export type JsonArrayField = string & {
-    readonly __brand: 'JsonArrayField';
-};
-
 export type JsonObjectField = string & {
     readonly __brand: 'JsonObjectField';
 };
-
-export function jsonArrayField(
-    value: unknown[],
-): JsonArrayField {
-    return JSON.stringify(
-        value,
-    ) as JsonArrayField;
-}
 
 export function jsonObjectField(
     value: Record<string, unknown>,
@@ -1334,8 +1322,8 @@ export interface RecordAttributeEntity {
     name: string;
     attribute_type: AttributeType;
     sort_order: number;
-    options: JsonArrayField;
-    constraints: JsonArrayField;
+    options: string[];
+    constraints: Constraint[];
 }
 
 export interface FlowRecordEntity {

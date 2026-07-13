@@ -922,8 +922,8 @@ const validSelectAttribute = {
     name: 'Priority',
     attribute_type: 'select',
     sort_order: 0,
-    options: '["High","Low"]',
-    constraints: '[]',
+    options: ['High', 'Low'],
+    constraints: [] as const,
 };
 
 test(
@@ -933,7 +933,7 @@ test(
     assert.throws(
         () => validateRecordAttributeEntity({
             ...validSelectAttribute,
-            options: '[]',
+            options: [],
         }),
         /at least one option/,
     );
@@ -958,7 +958,7 @@ test(
         () => validateRecordAttributeEntity({
             ...validSelectAttribute,
             attribute_type: 'radio',
-            options: '[]',
+            options: [],
         }),
         /at least one option/,
     );
@@ -972,9 +972,9 @@ test(
         () => validateRecordAttributeEntity({
             ...validSelectAttribute,
             attribute_type: 'text',
-            options: '[3]',
+            options: [3],
         }),
-        /RecordAttributeEntity.options\[0\]/,
+        /expected string for options\[0\]/,
     );
 });
 
@@ -986,9 +986,10 @@ test(
         () => validateRecordAttributeEntity({
             ...validSelectAttribute,
             attribute_type: 'number',
-            options: '[]',
-            constraints:
-                '[{"kind":"regex","pattern":"^\\\\d+$"}]',
+            options: [],
+            constraints: [
+                { kind: 'regex', pattern: '^\\d+$' },
+            ],
         }),
         /regex/,
     );
@@ -1002,9 +1003,10 @@ test(
         () => validateRecordAttributeEntity({
             ...validSelectAttribute,
             attribute_type: 'text',
-            options: '[]',
-            constraints:
-                '[{"kind":"range_min","min":"0"}]',
+            options: [],
+            constraints: [
+                { kind: 'range_min', min: '0' },
+            ],
         }),
     );
 });
@@ -1016,9 +1018,13 @@ test(
     const result = validateRecordAttributeEntity({
         ...validSelectAttribute,
         attribute_type: 'date',
-        options: '[]',
-        constraints:
-            '[{"kind":"range_min","min":"2000-01-01"}]',
+        options: [],
+        constraints: [
+            {
+                kind: 'range_min',
+                min: '2000-01-01',
+            },
+        ],
     });
     assert.equal(result.attribute_type, 'date');
 });
@@ -1030,10 +1036,13 @@ test(
     const result = validateRecordAttributeEntity({
         ...validSelectAttribute,
         attribute_type: 'text',
-        options: '[]',
-        constraints:
-            '[{"kind":"regex",'
-            + '"pattern":"^[^@]+@[^@]+\\\\.[^@]+$"}]',
+        options: [],
+        constraints: [
+            {
+                kind: 'regex',
+                pattern: '^[^@]+@[^@]+\\.[^@]+$',
+            },
+        ],
     });
     assert.equal(result.name, 'Priority');
 });

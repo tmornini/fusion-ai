@@ -58,8 +58,8 @@ async function seededDb(): Promise<MemoryDbAdapter> {
         name: 'Priority',
         attribute_type: 'text',
         sort_order: 0,
-        options: '[]',
-        constraints: '[]',
+        options: [],
+        constraints: [],
     }, DEV_TOKEN);
     return db;
 }
@@ -245,8 +245,8 @@ test(
             name: 'PairAttr',
             attribute_type: 'text',
             sort_order: 1,
-            options: '[]',
-            constraints: '[]',
+            options: [],
+            constraints: [],
         }, DEV_TOKEN);
         const before = await GET<{
             organization_id: string;

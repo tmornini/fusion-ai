@@ -15,7 +15,7 @@ import type {
     RecordEntity,
     RecordAttributeEntity,
 } from '../api/types.ts';
-import { jsonArrayField, jsonObjectField, nowUtc } from
+import { jsonObjectField, nowUtc } from
     '../api/types.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
 import { canonicalUriPrefix } from '../api/message-pair.ts';
@@ -179,8 +179,8 @@ function attributeBody(
         name,
         attribute_type: 'text',
         sort_order: 1,
-        options: jsonArrayField([]),
-        constraints: jsonArrayField([]),
+        options: [],
+        constraints: [],
     };
 }
 

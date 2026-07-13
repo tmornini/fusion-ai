@@ -1007,8 +1007,8 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
             name: 'P15 Bind',
             attribute_type: 'text',
             sort_order: 99,
-            options: '[]',
-            constraints: '[]',
+            options: [],
+            constraints: [],
         },
     ));
     assert.equal(attrPut.status, 200);
@@ -1168,8 +1168,8 @@ test('residual pin: soft-deleted node drops from'
             name: 'P15 SoftDel',
             attribute_type: 'text',
             sort_order: 99,
-            options: '[]',
-            constraints: '[]',
+            options: [],
+            constraints: [],
         },
     ));
     assert.equal(attrPut.status, 200);
@@ -1350,8 +1350,8 @@ async function transitionWithFieldValue(
             name: 'Note',
             attribute_type: 'text',
             sort_order: 0,
-            options: '[]',
-            constraints: '[]',
+            options: [],
+            constraints: [],
         },
     ));
     assert.equal(attrWrite.status, 200);
@@ -1663,8 +1663,8 @@ async () => {
             name: 'P15 Restrict',
             attribute_type: 'text',
             sort_order: 99,
-            options: '[]',
-            constraints: '[]',
+            options: [],
+            constraints: [],
         },
     ));
     assert.equal(attrPut.status, 200);

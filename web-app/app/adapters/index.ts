@@ -1,5 +1,4 @@
 export {
-    jsonArrayField,
     jsonObjectField,
     nowUtc,
     SECONDS_PER_DAY,

@@ -7,7 +7,6 @@ import type {
     AttributeType,
     Constraint,
     MemberId,
-    JsonArrayField,
     JsonObjectField,
     IdentityEntity,
     IdentityPiiEntity,
@@ -202,34 +201,6 @@ function typeName(value: unknown): string {
     if (value === null) return 'null';
     if (Array.isArray(value)) return 'array';
     return typeof value;
-}
-
-export function validateStringArrayJson(
-    raw: string,
-    label: string,
-): string[] {
-    const parsed = parseOrThrow(raw, label);
-    const arr = asArray(parsed, label);
-    return arr.map((item, i) =>
-        asString(
-            item,
-            label + '[' + i + ']',
-        ),
-    );
-}
-
-export function validateConstraintArrayJson(
-    raw: string,
-    label: string,
-): Constraint[] {
-    const parsed = parseOrThrow(raw, label);
-    const arr = asArray(parsed, label);
-    return arr.map((item, i) =>
-        asConstraint(
-            item,
-            label + '[' + i + ']',
-        ),
-    );
 }
 
 const NODE_ATTRIBUTE_MODES:
@@ -526,16 +497,6 @@ validateWorkOrderFlowGraphJson(
 
 // ── JSON field helpers ────────────────
 
-function asJsonArrayField(
-    value: unknown,
-    label: string,
-): JsonArrayField {
-    const raw = asString(value, label);
-    const parsed = parseOrThrow(raw, label);
-    asArray(parsed, label);
-    return raw as JsonArrayField;
-}
-
 function asJsonObjectField(
     value: unknown,
     label: string,
@@ -597,13 +558,6 @@ export function pickStringNumberRecord(
         out[k] = asNumber(v, key + '.' + k);
     }
     return out;
-}
-
-export function pickJsonArrayField(
-    body: Record<string, unknown>,
-    key: string,
-): JsonArrayField {
-    return asJsonArrayField(body[key], key);
 }
 
 export function pickJsonObjectField(
@@ -739,17 +693,14 @@ export function validateEnumField<E extends string>(
 // ("trust within the walls" doctrine).
 //
 // Follow-on: extend this same discipline
-// into JSON-encoded fields (graph,
-// flow_graph, values, strengths,
-// team_dimensions, etc.) — each
-// JSON column's inner schema needs its own
+// into remaining JSON-encoded fields
+// (graph, flow_graph, values, etc.) —
+// each column's inner schema needs its own
 // enumerated key list. That is the
 // "recursive check" that closes the
 // remaining edges. Intentionally deferred
 // here because each column's shape must be
-// enumerated case-by-case. Bringing those
-// columns under key-count discipline is
-// the next iteration.
+// enumerated case-by-case.
 
 // `optional` names keys that MAY appear but need not — the
 // follows/supersedes shape (absent is the only valid "none",
@@ -2612,44 +2563,30 @@ export function validateRecordAttributeEntity(
         body['attribute_type'],
         'RecordAttributeEntity.attribute_type',
     );
-    const constraintsField =
-        pickJsonArrayField(
-            body, 'constraints',
-        );
-    const parsedConstraints = parseOrThrow(
-        constraintsField,
-        'RecordAttributeEntity.constraints',
-    );
     const constraintsArr = asArray(
-        parsedConstraints,
-        'RecordAttributeEntity.constraints',
+        body['constraints'], 'constraints',
     );
-    for (let i = 0; i < constraintsArr.length; i++) {
-        const constraint = asConstraint(
-            constraintsArr[i],
-            'RecordAttributeEntity.constraints['
-            + i + ']',
-        );
-        assertConstraintAppliesTo(
-            constraint.kind,
-            attributeType,
-            'RecordAttributeEntity.constraints['
-            + i + ']',
-        );
-    }
-    const optionsField = pickJsonArrayField(
+    const constraints = constraintsArr.map(
+        (item, i) => {
+            const constraint = asConstraint(
+                item,
+                'constraints[' + i + ']',
+            );
+            assertConstraintAppliesTo(
+                constraint.kind,
+                attributeType,
+                'constraints[' + i + ']',
+            );
+            return constraint;
+        },
+    );
+    const options = pickStringArray(
         body, 'options',
-    );
-    // Options are a string array for EVERY attribute type —
-    // the same shape the read adapter derives downstream.
-    const parsedOptions = validateStringArrayJson(
-        optionsField,
-        'RecordAttributeEntity.options',
     );
     if (
         (attributeType === 'select'
             || attributeType === 'radio')
-        && parsedOptions.length === 0
+        && options.length === 0
     ) {
         throw new ValidationError(
             'RecordAttributeEntity.options'
@@ -2668,8 +2605,8 @@ export function validateRecordAttributeEntity(
         sort_order: pickNumber(
             body, 'sort_order',
         ),
-        options: optionsField,
-        constraints: constraintsField,
+        options,
+        constraints,
     };
 }
 
@@ -2726,40 +2663,30 @@ export function validateRecordAttributeDocumentBody(
         body['attribute_type'],
         'RecordAttributeDocumentBody.attribute_type',
     );
-    const constraintsField =
-        pickJsonArrayField(body, 'constraints');
-    const parsedConstraints = parseOrThrow(
-        constraintsField,
-        'RecordAttributeDocumentBody.constraints',
-    );
     const constraintsArr = asArray(
-        parsedConstraints,
-        'RecordAttributeDocumentBody.constraints',
+        body['constraints'], 'constraints',
     );
-    for (let i = 0; i < constraintsArr.length; i++) {
-        const constraint = asConstraint(
-            constraintsArr[i],
-            'RecordAttributeDocumentBody.constraints['
-            + i + ']',
-        );
-        assertConstraintAppliesTo(
-            constraint.kind,
-            attributeType,
-            'RecordAttributeDocumentBody.constraints['
-            + i + ']',
-        );
-    }
-    const optionsField = pickJsonArrayField(
+    const constraints = constraintsArr.map(
+        (item, i) => {
+            const constraint = asConstraint(
+                item,
+                'constraints[' + i + ']',
+            );
+            assertConstraintAppliesTo(
+                constraint.kind,
+                attributeType,
+                'constraints[' + i + ']',
+            );
+            return constraint;
+        },
+    );
+    const options = pickStringArray(
         body, 'options',
-    );
-    const parsedOptions = validateStringArrayJson(
-        optionsField,
-        'RecordAttributeDocumentBody.options',
     );
     if (
         (attributeType === 'select'
             || attributeType === 'radio')
-        && parsedOptions.length === 0
+        && options.length === 0
     ) {
         throw new ValidationError(
             'RecordAttributeDocumentBody.options'
@@ -2774,8 +2701,8 @@ export function validateRecordAttributeDocumentBody(
             name,
             attribute_type: attributeType,
             sort_order: pickNumber(body, 'sort_order'),
-            options: optionsField,
-            constraints: constraintsField,
+            options,
+            constraints,
         },
     };
 }
