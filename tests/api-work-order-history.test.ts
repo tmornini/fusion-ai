@@ -50,7 +50,7 @@ function req(
     });
 }
 
-function flowGraph(): string {
+function flowGraph(): Record<string, unknown> {
     const graph: WorkOrderFlowGraph = {
         name: 'History fixture flow',
         lockTimeout: DEFAULT_LOCK_TIMEOUT,

@@ -7,7 +7,6 @@ import type {
     AttributeType,
     Constraint,
     MemberId,
-    JsonObjectField,
     IdentityEntity,
     IdentityPiiEntity,
     IdentityCredentialEntity,
@@ -485,18 +484,6 @@ export function asWorkOrderFlowGraph(
 }
 
 
-// ── JSON field helpers ────────────────
-
-function asJsonObjectField(
-    value: unknown,
-    label: string,
-): JsonObjectField {
-    const raw = asString(value, label);
-    const parsed = parseOrThrow(raw, label);
-    asObject(parsed, label);
-    return raw as JsonObjectField;
-}
-
 // ── Pick-from-body helpers ───────────
 //
 // pick*(body, key) is the no-stutter form
@@ -548,13 +535,6 @@ export function pickStringNumberRecord(
         out[k] = asNumber(v, key + '.' + k);
     }
     return out;
-}
-
-export function pickJsonObjectField(
-    body: Record<string, unknown>,
-    key: string,
-): JsonObjectField {
-    return asJsonObjectField(body[key], key);
 }
 
 // A string field that may be ABSENT from the body — never

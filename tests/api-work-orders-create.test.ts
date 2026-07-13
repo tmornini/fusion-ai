@@ -24,9 +24,9 @@ async function freshDb() {
 }
 
 // The frozen flow graph a work order captures at creation. A
-// linear start → middle → finish, stored as the raw JSON string
-// the work_orders.flow_graph column holds.
-function flowGraph(): string {
+// linear start → middle → finish, stored as a native object on
+// the work_orders.flow_graph document field.
+function flowGraph(): Record<string, unknown> {
     const graph: WorkOrderFlowGraph = {
         name: 'Test flow',
         lockTimeout: DEFAULT_LOCK_TIMEOUT,

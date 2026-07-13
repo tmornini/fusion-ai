@@ -152,18 +152,6 @@ export type InvitationState =
 
 export type StoredBoolean = 0 | 1;
 
-export type JsonObjectField = string & {
-    readonly __brand: 'JsonObjectField';
-};
-
-export function jsonObjectField(
-    value: Record<string, unknown>,
-): JsonObjectField {
-    return JSON.stringify(
-        value,
-    ) as JsonObjectField;
-}
-
 function includes<T extends string>(
     values: readonly T[],
     v: string,

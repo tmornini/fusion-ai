@@ -42,11 +42,11 @@ async function freshDb() {
     return db;
 }
 
-// The frozen flow graph a work order carries, stored as the raw
-// JSON string the work_orders.flow_graph column holds — the
-// SAME fixture shape as api-work-orders-create.test.ts's own
-// flowGraph() (each test file is an isolated world).
-function flowGraph(): string {
+// The frozen flow graph a work order carries, stored as a
+// native object on work_orders.flow_graph — the SAME fixture
+// shape as api-work-orders-create.test.ts's own flowGraph()
+// (each test file is an isolated world).
+function flowGraph(): Record<string, unknown> {
     const graph: WorkOrderFlowGraph = {
         name: 'Test flow',
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
