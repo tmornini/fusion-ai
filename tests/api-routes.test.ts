@@ -41,7 +41,7 @@ const COLLECTION_ROUTES: readonly string[] = [
     'objectives/any-objective/revisions',
     'projects/any-project/objective-baseline-scores',
     'projects/any-project/objective-actual-scores',
-    'states',
+    // GET /states RETIRED (states-URI elimination C3).
 ];
 
 for (const route of COLLECTION_ROUTES) {

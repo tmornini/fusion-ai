@@ -178,18 +178,10 @@ for (const method of ['GET', 'PUT', 'POST', 'DELETE'] as
     });
 }
 
-test('GET /states is 200', async () => {
-    const { db, token } = await seed();
-    const res = await handleRequest(
-        db, req('GET', '/states', token),
-    );
-    assert.equal(res.status, 200);
-    const rows = await res.json() as { id: string }[];
-    assert.ok(
-        rows.some(r => r.id === 'idea-a-genesis'),
-        'own-org genesis surfaces on the collection',
-    );
-});
+// GET /states RETIRED (states-URI elimination C3). Own-org
+// genesis force lives on GET ideas/:id/history below and
+// collection history isolation on work-orders/history +
+// objectives/history.
 
 test('GET /states/:id/field-values is 200', async () => {
     const { db, token } = await seed();

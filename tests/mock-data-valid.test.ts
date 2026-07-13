@@ -59,9 +59,13 @@ import {
     stateFieldValuesForStateEvent,
 } from '../api/derive-state-field-values.ts';
 import {
-    deriveStates,
+    deriveWorkOrderLifecycle,
+    deriveMemberStates,
+    deriveInvitationStates,
     workOrderLifecycleStatesFor,
 } from '../api/derive-states.ts';
+import { deriveIdeaStateHistory } from
+    '../api/derive-ideas.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import {
     assignOrganization,
@@ -121,20 +125,26 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
     }),
 };
 
-// Phase Final Task 2: states ROW half stripped — validate
-// the derived plane (pair-plane truth).
-test('mock-data seeds non-empty derived states',
+// Phase Final Task 2 / C3: bulk deriveStates retired —
+// validate surviving family lifecycle derives.
+test('mock-data seeds non-empty derived lifecycle states',
 async () => {
     const db = await seededDb();
-    const rows = await deriveStates(db, '1');
-    assert.ok(rows.length > 0, 'derived states empty');
+    const rows = [
+        ...await deriveWorkOrderLifecycle(db),
+        ...await deriveMemberStates(db),
+        ...await deriveInvitationStates(db),
+        ...await deriveIdeaStateHistory(
+            db, STARK_ORGANIZATION, buildIdeas()[0]!.id,
+        ),
+    ];
+    assert.ok(rows.length > 0, 'derived lifecycle empty');
     for (const row of rows) {
         assert.doesNotThrow(
             () => validateStateEntity(withoutId(row)),
             'state ' + row.id,
         );
     }
-    // Phase Final Stage B: states table retired.
 });
 
 for (const [name, getAll, validate] of TABLES) {
@@ -373,20 +383,22 @@ test('mock-data derived baseline/actual scores pass'
 const ZULU_6 =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
 
-// Phase Final Task 2: states ROW half stripped — pin
-// derived-plane .at (pair plane is truth).
-test('mock-data derived states.at is 6-digit zulu',
+// Phase Final Task 2 / C3: pin derived-plane .at via
+// surviving lifecycle derives (pair plane is truth).
+test('mock-data derived lifecycle .at is 6-digit zulu',
 async () => {
     const db = await seededDb();
-    const rows = await deriveStates(db, '1');
-    assert.ok(rows.length > 0, 'derived states empty');
+    const rows = [
+        ...await deriveWorkOrderLifecycle(db),
+        ...await deriveMemberStates(db),
+    ];
+    assert.ok(rows.length > 0, 'derived lifecycle empty');
     for (const row of rows) {
         assert.match(
             row.at, ZULU_6,
-            'row ' + row.id + ' in derived states',
+            'row ' + row.id + ' in derived lifecycle',
         );
     }
-    // Phase Final Stage B: states table retired.
 });
 
 test('mock-data derived score .at is 6-digit zulu',
@@ -574,12 +586,9 @@ test(
             WORK_ORDERS_WIRING,
         )(db, [], 'current', STARK_ORGANIZATION) as
             WorkOrderEntity[];
-        // Phase Final Stage B: states table retired —
-        // lifecycle events from the pair plane.
-        const states = [
-            ...await deriveStates(db, '1'),
-            ...await deriveStates(db, '2'),
-        ];
+        // C3: bulk deriveStates retired — WO lifecycle
+        // from the pair-plane work-order derive.
+        const states = await deriveWorkOrderLifecycle(db);
         // Phase Final Task 2: memberships + members from
         // the pair plane.
         const organizationByWo = new Map(

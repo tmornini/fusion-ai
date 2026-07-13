@@ -137,7 +137,7 @@ const MEMBER_VERBS: Readonly<
     // GET survives.
     '/states/:id/field-values': ['GET'],
     '/work-orders': ['GET', 'PUT', 'POST'],
-    '/states': ['GET'],
+    // GET /states RETIRED (states-URI elimination C3).
     '/members': ['GET'],
     '/ai-members': ['GET'],
     '/human-members': ['GET'],

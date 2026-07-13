@@ -1,9 +1,9 @@
 import { test } from 'node:test';
-import {
-    deriveFlowGraphStates,
-} from '../api/derive-states.ts';
 import { deriveFlowStateHistory } from
     '../api/derive-flows.ts';
+import {
+    documentPairsAt,
+} from '../api/derive-documents.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -283,15 +283,54 @@ test('postFlowDocumentOp with revivals posts the restored'
         { 'If-Response-ID': headId },
     ));
     assert.equal(update.status, 200);
-    const nodeEvents = (await deriveFlowGraphStates(db))
-        .filter((e) => e.entity_id === 'node-x')
-        .sort((a, b) =>
-            a.at < b.at ? -1 : a.at > b.at ? 1
-                : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-    assert.deepEqual(
-        nodeEvents.map(e => e.state),
-        ['deleted', 'restored'],
-    );
+    // SIDECAR-KEEP (C3): pin graphDelta.deletions / revivals
+    // on the flow document pairs — no bulk states derive.
+    const prefix = canonicalUriPrefix('1', '/flows/');
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_prefix', prefix),
+        db.responses.getAllWhere('uri_prefix', prefix),
+    ]);
+    const pairs = documentPairsAt(
+        requests, responses, prefix,
+    ).filter((p) => p.uriId === 'flow-op-2');
+    const states: string[] = [];
+    for (const pair of pairs) {
+        const delta = pair.body['graphDelta'];
+        const deletions =
+            typeof delta === 'object' && delta !== null
+                ? (delta as Record<string, unknown>)[
+                    'deletions'
+                ]
+                : undefined;
+        if (Array.isArray(deletions)) {
+            for (const entry of deletions) {
+                if (
+                    typeof entry === 'object'
+                    && entry !== null
+                    && (entry as Record<string, unknown>)[
+                        'entityId'
+                    ] === 'node-x'
+                ) {
+                    states.push('deleted');
+                }
+            }
+        }
+        const revivals = pair.body['revivals'];
+        if (Array.isArray(revivals)) {
+            for (const entry of revivals) {
+                if (
+                    typeof entry === 'object'
+                    && entry !== null
+                    && (entry as Record<string, unknown>)[
+                        'entityId'
+                    ] === 'node-x'
+                ) {
+                    states.push('restored');
+                }
+            }
+        }
+    }
+    assert.deepEqual(states, ['deleted', 'restored']);
 });
 
 test('the document body carries state/state_at/graph while'

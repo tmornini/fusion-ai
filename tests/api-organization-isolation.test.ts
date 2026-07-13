@@ -892,45 +892,10 @@ for (const c of NESTED_PROJECT_CASES) {
     });
 }
 
-test('states lists only the bound org events', async () => {
-    const db = await deepDb();
-    const res = await facadeGet(db, '/states');
-    assert.equal(res.status, 200);
-    const ids = new Set(
-        (await res.json() as { id: string }[]).map(r => r.id));
-    assert.ok(ids.has('seA'));        // A's idea event
-    assert.ok(ids.has('seMem-pa'));   // A co-member event
-    assert.ok(!ids.has('seB'));       // B's idea event hidden
-    assert.ok(!ids.has('seMem-pb'));  // B-only member hidden
-});
-
-// STEALTH-WEAKENING trap: bare GET states/:id is a router
-// 404 for ANY id. Re-point to the surviving collection GET
-// which still fences by ownership. seB derives from B's
-// work-order transition op — pin that B can see it, then
-// prove A's collection omits it.
-test('states collection hides a foreign event id',
-async () => {
-    const db = await deepDb();
-    const foreign = await handleRequest(db, req(
-        'GET', '/states',
-        await organizationToken('pb', 'B'),
-    ));
-    assert.equal(foreign.status, 200);
-    const foreignIds = new Set(
-        (await foreign.json() as { id: string }[])
-            .map(r => r.id));
-    assert.ok(
-        foreignIds.has('seB'),
-        'seB must derive from B\'s transition op',
-    );
-    const res = await facadeGet(db, '/states');
-    assert.equal(res.status, 200);
-    const ids = new Set(
-        (await res.json() as { id: string }[])
-            .map(r => r.id));
-    assert.ok(!ids.has('seB'));
-});
+// GET /states RETIRED (states-URI elimination C3). Org
+// isolation force lives in work-orders/history and
+// objectives/history collection legs (A2/A5). Field-values
+// and family history still pin per-event ownership below.
 
 test('nested states/:id/field-values fence follows the event',
 async () => {
@@ -1181,10 +1146,9 @@ async () => {
 });
 
 // Orphan states/:id writes retired with the address. Pin
-// that a ghost body is a router 404 and that the collection
-// still hides foreign events (no orphan injection path).
-test('states/:id orphan write is router 404; foreign still'
-+ ' hidden', async () => {
+// that a ghost body is a router 404 (no injection path).
+// Collection isolation force lives on A2/A5 history legs.
+test('states/:id orphan write is router 404', async () => {
     const db = await deepDb();
     const ghost = await handleRequest(db, req(
         'PUT', '/states/seGhost',
@@ -1192,10 +1156,4 @@ test('states/:id orphan write is router 404; foreign still'
         { entity_id: 'ghost', state: 'active', at: T8_AT },
     ));
     assert.equal(ghost.status, 404);
-    const res = await facadeGet(db, '/states');
-    assert.equal(res.status, 200);
-    const ids = new Set(
-        (await res.json() as { id: string }[]).map(r => r.id));
-    assert.ok(!ids.has('seGhost'));
-    assert.ok(!ids.has('seB'));
 });

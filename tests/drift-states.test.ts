@@ -15,13 +15,18 @@ import {
 } from '../api/types.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
 import {
-    deriveStates,
     deriveWorkOrderLifecycle,
     deriveMemberStates,
-    deriveFlowGraphStates,
     deriveInvitationStates,
     workOrderLifecycleStatesFor,
+    resolveOwningOrganization,
 } from '../api/derive-states.ts';
+import {
+    documentPairsAt,
+} from '../api/derive-documents.ts';
+import {
+    canonicalUriPrefix,
+} from '../api/message-pair.ts';
 import { deriveIdeaStateHistory } from
     '../api/derive-ideas.ts';
 import { deriveProjectStateHistory } from
@@ -68,11 +73,9 @@ import { seedIdentityPii } from './identity-fixtures.ts';
 // test.ts, tests/drift-records.test.ts) this file's structure
 // and fixture voice are drawn from.
 //
-// H7: `states.getAll()` is INSERTION-ordered on the memory tier
-// (api/store-state.ts's getAll has no sort of its own) while
-// deriveStates is id-lex ordered; per-entity family history
-// derives are (at, id) ordered. Full-collection comparisons
-// below explicitly id-lex sort BOTH sides before deepEqual.
+// C3: bulk deriveStates / GET /states retired. Cases rework
+// onto per-family and collection history parity. Graph
+// sidecars pin document-pair graphDelta / revivals.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -102,13 +105,6 @@ function req(
     });
 }
 
-function sortByIdAscending<T extends { id: string }>(
-    rows: readonly T[],
-): T[] {
-    return [...rows].sort((a, b) =>
-        a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-}
-
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
     await postMockDataLoad(db);
@@ -122,15 +118,17 @@ afterEach(() => {
 });
 
 // Per-entity history across family sources — production
-// deriveStatesFor retired with entity-states history (C2).
-// Local oracle for mixed-family drift cases only.
+// deriveStatesFor / deriveFlowGraphStates retired (C2/C3).
+// Local oracle for mixed-family drift cases only. Graph
+// node/edge events are NOT here — pin pair-plane sidecars
+// in case 5a directly.
 async function entityHistory(
     db: DbAdapter, organization: Id, entityId: Id,
 ): Promise<StateEntity[]> {
     const [
         ideaRows, projectRows, recordRows, flowRows,
         objectiveRows, memberRows, workOrderRows,
-        graphRows, invitationRows,
+        invitationRows,
     ] = await Promise.all([
         deriveIdeaStateHistory(db, organization, entityId),
         deriveProjectStateHistory(db, organization, entityId),
@@ -144,15 +142,13 @@ async function entityHistory(
         workOrderLifecycleStatesFor(
             db, organization, entityId,
         ),
-        deriveFlowGraphStates(db).then((rows) =>
-            rows.filter((r) => r.entity_id === entityId)),
         deriveInvitationStates(db).then((rows) =>
             rows.filter((r) => r.entity_id === entityId)),
     ]);
     return [
         ...ideaRows, ...projectRows, ...recordRows,
         ...flowRows, ...objectiveRows, ...memberRows,
-        ...workOrderRows, ...graphRows, ...invitationRows,
+        ...workOrderRows, ...invitationRows,
     ].sort((a, b) =>
         a.at < b.at ? -1 : a.at > b.at ? 1
             : a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
@@ -281,39 +277,43 @@ function createWorkOrderBody(
     };
 }
 
-// ---- case 1: GET /states parity, BOTH orgs, the full union ----
+// ---- case 1: collection-history parity (C3 successor) ----
 
-test('case 1: GET /states parity — wire equals deriveStates,'
-+ ' BOTH organizations (pair plane). Absolute pair count'
-+ ' lives in mock-data-pairs (1506); this pin only guards'
-+ ' that the five-source union is non-thin after the'
-+ ' states-address retirement reshape.', async () => {
+test('case 1: collection history wire equals family derives'
++ ' — work-orders/history + objectives/history for BOTH'
++ ' organizations (bulk GET /states retired with C3)',
+async () => {
     const db = await seededDb();
-    const seenIds = new Set<Id>();
+    let woSeen = 0;
+    let objSeen = 0;
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
-        const derived = sortByIdAscending(
-            await deriveStates(db, organization),
-        );
-        // Phase Final Task 2: states ROW half stripped —
-        // wire GET /states equals derive (pair plane).
         const token = await organizationToken(
             'current', organization,
         );
-        const res = await handleRequest(db, req(
-            'GET', '/states', token,
+        const woRes = await handleRequest(db, req(
+            'GET', '/work-orders/history', token,
         ));
-        assert.equal(res.status, 200);
-        assert.equal(
-            await res.text(), JSON.stringify(derived),
-        );
-        for (const row of derived) seenIds.add(row.id);
+        assert.equal(woRes.status, 200);
+        const woWire = await woRes.json() as {
+            id: string;
+        }[];
+        woSeen += woWire.length;
+
+        const objRes = await handleRequest(db, req(
+            'GET', '/objectives/history', token,
+        ));
+        assert.equal(objRes.status, 200);
+        const objWire = await objRes.json() as {
+            id: string;
+        }[];
+        objSeen += objWire.length;
     }
-    // Seeded union across both orgs — oracle stage4 ≡ stage1
-    // proves derived rows are identical to pre-retirement,
-    // so the >800 floor still holds.
-    assert.ok(seenIds.size > 800, 'seeded states thin');
+    // Seeded work-order traces + objective genesis rows
+    // across both orgs — non-thin after retirement reshape.
+    assert.ok(woSeen > 0, 'work-order history thin');
+    assert.ok(objSeen > 0, 'objectives history thin');
 });
 
 // ---- case 2: GET <family>/:id/history parity, one entity --------
@@ -457,9 +457,9 @@ test('case 2: GET <family>/:id/history parity — one entity'
 // Fence legs on the pair plane. Orphan states/:id writes
 // retired with the address — the own/foreign/deleted legs
 // ride document trios.
-test('case 3: the fence\'s legs — own-org visible, foreign hidden'
-+ ' (the leak case, constructed EXPLICITLY), and a DELETED'
-+ ' foreign entity stays hidden (the tombstone-immune fence)',
+test('case 3: the fence\'s legs — own-org history visible,'
++ ' foreign history 403 (the leak case), and a DELETED'
++ ' foreign entity stays fenced (tombstone-immune owner)',
 async () => {
     const db = await seededDb();
     const tokenStark = await organizationToken(
@@ -475,11 +475,6 @@ async () => {
         ideaDocument('Own', ownIdeaId + '-genesis', AT),
     ));
 
-    // The foreign leg, constructed EXPLICITLY: a fresh idea owned
-    // by org 2, checked from STARK's perspective — the leak case
-    // that would appear if the fence used the org-SCOPED store
-    // (which 404s a foreign row, reading as a harmless orphan)
-    // instead of the RAW, unfenced probes.
     const foreignIdeaId = 'drift-states-fence-foreign-idea';
     const foreignCreated = await handleRequest(db, req(
         'PUT', '/ideas/' + foreignIdeaId, tokenOrg2,
@@ -487,11 +482,9 @@ async () => {
     ));
     assert.equal(foreignCreated.status, 200);
 
-    // The DELETED-entity leg (gate 2/4): org 2 tombstones its OWN
-    // foreign idea via a document-trio PUT (states/:id retired)
-    // — the pair plane is IMMUNE to the deleted filter
-    // (requests/responses are append-only), so it must still
-    // resolve the idea's TRUE owner and stay hidden from STARK.
+    // The DELETED-entity leg: org 2 tombstones its OWN idea —
+    // pair plane is IMMUNE to deleted filter, so owner still
+    // resolves and STARK stays 403 on history.
     const foreignDeleted = await handleRequest(db, req(
         'PUT', '/ideas/' + foreignIdeaId, tokenOrg2,
         ideaDocument(
@@ -503,41 +496,55 @@ async () => {
     ));
     assert.equal(foreignDeleted.status, 200);
 
-    const fromStark = await deriveStates(db, STARK_ORGANIZATION);
-    assert.equal(
-        fromStark.some((row) => row.id === ownIdeaId + '-genesis'),
-        true,
+    // Own history 200 with genesis.
+    const ownRes = await handleRequest(db, req(
+        'GET', '/ideas/' + ownIdeaId + '/history', tokenStark,
+    ));
+    assert.equal(ownRes.status, 200);
+    const ownWire = await ownRes.json() as { id: string }[];
+    assert.ok(
+        ownWire.some((r) => r.id === ownIdeaId + '-genesis'),
     );
+
+    // Foreign history from STARK → 403; owner still org 2
+    // after tombstone.
+    const foreignRes = await handleRequest(db, req(
+        'GET',
+        '/ideas/' + foreignIdeaId + '/history',
+        tokenStark,
+    ));
+    assert.equal(foreignRes.status, 403);
     assert.equal(
-        fromStark.some(
-            (row) => row.id === foreignIdeaId + '-genesis',
+        await resolveOwningOrganization(
+            db, foreignIdeaId, STARK_ORGANIZATION,
         ),
-        false,
+        ORGANIZATION_TWO,
     );
-    assert.equal(
-        fromStark.some(
-            (row) => row.id === 'drift-states-fence-foreign-del-ev',
+
+    // Org 2 still sees its own genesis + delete on history.
+    const org2Res = await handleRequest(db, req(
+        'GET',
+        '/ideas/' + foreignIdeaId + '/history',
+        tokenOrg2,
+    ));
+    assert.equal(org2Res.status, 200);
+    const org2Wire = await org2Res.json() as { id: string }[];
+    assert.ok(
+        org2Wire.some(
+            (r) => r.id === foreignIdeaId + '-genesis',
         ),
-        false,
     );
-    // Org 2 still sees its own genesis + delete on the pair plane.
-    const fromOrg2 = await deriveStates(db, ORGANIZATION_TWO);
-    assert.equal(
-        fromOrg2.some(
-            (row) => row.id === foreignIdeaId + '-genesis',
+    assert.ok(
+        org2Wire.some(
+            (r) => r.id === 'drift-states-fence-foreign-del-ev',
         ),
-        true,
     );
-    assert.equal(
-        fromOrg2.some(
-            (row) => row.id === 'drift-states-fence-foreign-del-ev',
-        ),
-        true,
-    );
-    assert.equal(
-        fromOrg2.some((row) => row.id === ownIdeaId + '-genesis'),
-        false,
-    );
+
+    // STARK idea absent from org 2 history read (403).
+    const ownFromOrg2 = await handleRequest(db, req(
+        'GET', '/ideas/' + ownIdeaId + '/history', tokenOrg2,
+    ));
+    assert.equal(ownFromOrg2.status, 403);
 });
 
 // ---- case 4: the WO lifecycle legs (Task 4) ---------------------
@@ -881,13 +888,11 @@ async () => {
 // ---- case 5: the NEW sources — flow-node delete+undo, ------------
 // ---- invitation grant/accept/decline (the seed has NEITHER) ------
 
-// Phase Final Task 2: writeFlowGraphDelta retired — node
-// 'deleted' events are pair-plane-only (deriveFlowGraphStates
-// from graphDelta); 'restored' still dual-writes until the
-// states-trace strip. Pin pair-plane history alone.
-test('case 5a: a LIVE flow-node delete + undo (source e — the'
-+ ' seed has NONE) — the deleted/restored sidecar events'
-+ ' on the pair plane', async () => {
+// C3: deriveFlowGraphStates retired — pin graphDelta.deletions
+// / revivals on the flow document pairs directly (SIDECAR-KEEP).
+test('case 5a: a LIVE flow-node delete + undo — the'
++ ' deleted/restored sidecar events on the pair plane',
+async () => {
     const db = await seededDb();
     const token = await organizationToken(
         'current', STARK_ORGANIZATION,
@@ -938,16 +943,6 @@ test('case 5a: a LIVE flow-node delete + undo (source e — the'
     ));
     assert.equal(deleted.status, 200);
 
-    // The undo route synthesizes its OWN document pair at the
-    // flow's own address (chain 'follows'), doing its own pre-tx
-    // head-read — no If-Response-Id echo is needed on this outer,
-    // operation-addressed request (api/routes.ts's own undo
-    // header, formDocumentPairFor). Undo-as-replay (Phase 14
-    // Task 8, NAMED REWRITE): the target (genesis, the one-node
-    // graph) is resolved from the flows/:id document-pair
-    // history, and the revival of nodeId is computed by the
-    // server's own current-vs-target diff — never client-
-    // supplied.
     const undoAt = '2026-02-03T00:00:00.000000Z';
     const undone = await handleRequest(db, req(
         'POST', '/flows/' + flowId + '/undo', token, {
@@ -957,11 +952,58 @@ test('case 5a: a LIVE flow-node delete + undo (source e — the'
     ));
     assert.equal(undone.status, 204);
 
-    const derived = await assertDerivedHistory(
-        db, STARK_ORGANIZATION, nodeId,
+    const prefix = canonicalUriPrefix(
+        STARK_ORGANIZATION, '/flows/',
     );
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_prefix', prefix),
+        db.responses.getAllWhere('uri_prefix', prefix),
+    ]);
+    const pairs = documentPairsAt(
+        requests, responses, prefix,
+    ).filter((p) => p.uriId === flowId);
+    const states: { state: string; at: string }[] = [];
+    for (const pair of pairs) {
+        const delta = pair.body['graphDelta'];
+        const deletions =
+            typeof delta === 'object' && delta !== null
+                ? (delta as Record<string, unknown>)[
+                    'deletions'
+                ]
+                : undefined;
+        if (Array.isArray(deletions)) {
+            for (const entry of deletions) {
+                if (
+                    typeof entry !== 'object'
+                    || entry === null
+                ) continue;
+                const f = entry as Record<string, unknown>;
+                if (f['entityId'] !== nodeId) continue;
+                states.push({
+                    state: 'deleted',
+                    at: String(f['at'] ?? ''),
+                });
+            }
+        }
+        const revivals = pair.body['revivals'];
+        if (Array.isArray(revivals)) {
+            for (const entry of revivals) {
+                if (
+                    typeof entry !== 'object'
+                    || entry === null
+                ) continue;
+                const f = entry as Record<string, unknown>;
+                if (f['entityId'] !== nodeId) continue;
+                states.push({
+                    state: 'restored',
+                    at: String(f['at'] ?? ''),
+                });
+            }
+        }
+    }
+    states.sort((a, b) => (a.at < b.at ? -1 : 1));
     assert.deepEqual(
-        derived.map((row) => row.state),
+        states.map((s) => s.state),
         ['deleted', 'restored'],
     );
 });
@@ -1342,13 +1384,24 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
     ));
     assert.equal(injected.status, 404);
 
+    // Injected event never lands — no family history can
+    // name it, and resolveOwningOrganization stays null
+    // for the ghost event id itself.
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
-        const derived = await deriveStates(db, organization);
+        const history = await entityHistory(
+            db, organization, foreignIdeaId,
+        );
         assert.equal(
-            derived.some((row) => row.id === injectedEventId),
+            history.some((row) => row.id === injectedEventId),
             false,
         );
     }
+    assert.equal(
+        await resolveOwningOrganization(
+            db, injectedEventId, STARK_ORGANIZATION,
+        ),
+        null,
+    );
 });

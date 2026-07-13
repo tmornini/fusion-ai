@@ -1,5 +1,3 @@
-import { deriveStates } from
-    '../api/derive-states.ts';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
@@ -20,7 +18,10 @@ import {
     workOrderClaimHistoryFor,
     stateEventVisibilityFor,
     resolveOwningOrganization,
+    deriveWorkOrderLifecycle,
+    deriveMemberStates,
 } from '../api/derive-states.ts';
+import { buildIdeas } from '../api/mock-data/ideas.ts';
 import {
     stateFieldValuesForStateEvent,
 } from '../api/derive-state-field-values.ts';
@@ -46,7 +47,10 @@ import { organizationToken } from './token-fixtures.ts';
 import {
     validateWorkOrderFlowGraphJson,
 } from '../api/validators.ts';
-import { deriveIdeas } from '../api/derive-ideas.ts';
+import {
+    deriveIdeas,
+    deriveIdeaStateHistory,
+} from '../api/derive-ideas.ts';
 import { deriveProjects } from
     '../api/derive-projects.ts';
 import {
@@ -361,10 +365,19 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
 + ' match the row-plane three-way (own / foreign / orphan);'
 + ' pre-tx vs in-tx parity', async () => {
     const db = await seededDb();
-    const allStates = await deriveStates(db, STARK_ORGANIZATION);
+    // C3: bulk deriveStates retired — sample event ids from
+    // surviving family lifecycle derives.
+    const sampleRows = [
+        ...await deriveWorkOrderLifecycle(db),
+        ...await deriveMemberStates(db),
+        ...await deriveIdeaStateHistory(
+            db, STARK_ORGANIZATION, buildIdeas()[0]!.id,
+        ),
+    ];
     let ownEventId = '';
-    for (const row of allStates) {
-        const v = await pairPlaneVisibility(db, STARK_ORGANIZATION, row.id,
+    for (const row of sampleRows) {
+        const v = await pairPlaneVisibility(
+            db, STARK_ORGANIZATION, row.id,
         );
         if (v === 'visible') {
             ownEventId = row.id;
@@ -374,8 +387,9 @@ test('stateEventVisibilityFor: tier (i) event-append pairs'
     assert.notEqual(ownEventId, '');
 
     let foreignEventId = '';
-    for (const row of allStates) {
-        const v = await pairPlaneVisibility(db, ORGANIZATION_TWO, row.id,
+    for (const row of sampleRows) {
+        const v = await pairPlaneVisibility(
+            db, ORGANIZATION_TWO, row.id,
         );
         if (v === 'hidden') {
             foreignEventId = row.id;
@@ -760,18 +774,21 @@ test('residual pin: stateEventVisibilityFor matches the'
 + ' row-plane three-way over a sample of seed events for'
 + ' both organizations', async () => {
     const db = await seededDb();
-    const allStates = await deriveStates(db, STARK_ORGANIZATION);
-    // Sample first, middle, last + a few random-ish picks
-    // by index — full 911 would dominate wall-clock without
-    // buying more coverage of the tiered design.
+    // C3: sample from surviving lifecycle derives (bulk
+    // deriveStates retired).
+    const allStates = await deriveWorkOrderLifecycle(db);
+    assert.ok(
+        allStates.length >= 7,
+        'need enough WO lifecycle rows for sampling',
+    );
     const sampleIds = [
         allStates[0]!.id,
         allStates[Math.floor(allStates.length / 2)]!.id,
         allStates[allStates.length - 1]!.id,
-        allStates[10]!.id,
-        allStates[100]!.id,
-        allStates[400]!.id,
-        allStates[800]!.id,
+        allStates[1]!.id,
+        allStates[2]!.id,
+        allStates[3]!.id,
+        allStates[4]!.id,
     ];
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,

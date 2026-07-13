@@ -199,7 +199,6 @@ import {
     deriveTokenRevocation,
 } from './derive-identity-spine.ts';
 import {
-    deriveStates,
     deriveMemberStates,
     deriveWorkOrderHistories,
     workOrderClaimHistoryFor,
@@ -5197,22 +5196,14 @@ export const routes: Route[] = [
                 db, param(p, 1), body, actor, pair,
             ),
     }),
-    // GET is FLIPPED (Task 7): the collection derives from the
-    // message ledger via deriveStates (api/derive-states.ts's
-    // five-source union), not the raw states table — the
-    // client's own GET consumer (deriveOrganizationFacts and
-    // every get*States/get*StateDetails reader in
-    // state-events.ts) rides transitively, no web-app change.
-    route('states', {
-        get: (db, _p, _actor, organization) =>
-            deriveStates(db, requireOrganization(organization)),
-    }),
-    // states/:id RETIRED (states-address retirement Task 13):
-    // every verb on the address is a router 404. Collection
-    // GET /states and GET /states/:id/field-values survive.
-    // entity-states/:id and entity-states/:id/history RETIRED
-    // (Phase 15 Task 7 + states-URI elimination C2): history
-    // lives on GET <family>/:id/history.
+    // GET /states RETIRED (states-URI elimination C3): the
+    // bulk five-source union is gone. Per-entity history lives
+    // on GET <family>/:id/history; work-order and objective
+    // bulk history live on GET work-orders/history and
+    // GET objectives/history. GET /states/:id/field-values
+    // survives until C4. bare states/:id is already a router
+    // 404 (states-address retirement Task 13). entity-states
+    // history retired with C2.
 
     route('snapshots/schema', {
         get: async (db) =>
