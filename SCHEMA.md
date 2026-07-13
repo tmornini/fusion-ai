@@ -18,9 +18,13 @@ two). Each table is an IndexedDB object store
 backends key the same tables as `fusion-ai:tableName`. All
 rows have a text `id` primary key. Column types: TEXT
 (string), INTEGER (number), REAL (float), BOOLEAN (see
-below). JSON columns store stringified arrays or objects.
-All columns are NOT NULL — entity validation on creation
-ensures every field is present.
+below). Document-body composites (arrays and objects —
+`strengths`, `team_dimensions`, `options`, `constraints`,
+`graph`, `graphDelta`, `revivals`, `flow_graph`) store as
+native nested JSON on the wire and in the pair body, never
+as JSON-encoded strings. All columns are NOT NULL —
+entity validation on creation ensures every field is
+present.
 
 Every domain family (ideas, projects, flows, work orders,
 records, objectives, roster, identity spine, organizations,
@@ -284,10 +288,15 @@ Domain notes (vocabulary, not storage):
   claim alphabet (`'claimed'`, `'claim_released'`,
   `'claim_expired'`)
 - **Flow graph** — live graph rides the flow document
-  body's `graph` field; `graphDelta` / `revivals` are
-  write-side sidecars (RESTRICT bindings via
-  `flowGraphBindingsFromPairs`). A fresh node/edge is
-  born live on the next document head.
+  body's `graph` field as a native nested object
+  (nodes/edges in the stored tongue: `positionX`,
+  `fromNodeId`, `attribute_id`, `isRequired`, …);
+  `graphDelta` / `revivals` are native write-side
+  sidecars (RESTRICT bindings via
+  `flowGraphBindingsFromPairs`). A work order freezes
+  `flow_graph` as the same native shape plus
+  `name` / `lockTimeout`. A fresh node/edge is born
+  live on the next document head.
 
 Client history reads live in
 `adapters/work-orders-queries.ts`

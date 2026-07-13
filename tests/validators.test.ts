@@ -399,12 +399,9 @@ test(
 
 // --- FlowEntity ---
 
-// The graph is NOT a flow column — flows.graph is retired. The
-// stored flow row carries only its scalar fields; the graph
-// lives in the four relation tables and the relation validators
-// (validateFlowEdgeEntity et al.) own the node-id alphabet
-// fence. So validateFlowEntity neither requires nor accepts a
-// graph key.
+// The graph is NOT a FlowEntity key — it rides the flow
+// document body as native nested JSON (validateFlowDocumentBody
+// / asStoredGraph). validateFlowEntity accepts only scalars.
 const validFlow = {
     organization_id: '1',
     name: 'Flow A',

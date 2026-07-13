@@ -636,9 +636,11 @@ later write; the detail document shares the operation pair's own
 address and becomes THAT address's new head, appended after it;
 the identities document (human-only) sits at its OWN address and
 becomes THAT address's new head, appended last. A mid-write
-failure (an invalid AI model id or a malformed human `strengths`
-JSON string, caught by the pre-tx document-body check or by the
-op's own re-validating store put) leaves zero of the bundle,
+failure (an invalid AI model id or a malformed human
+`strengths` array / `team_dimensions` object — composites
+are native nested JSON, never JSON-encoded strings —
+caught by the pre-tx document-body check or by the op's
+own re-validating store put) leaves zero of the bundle,
 exactly like every other atomic write in this catalog.
 
 **The PII facet is NEVER synthesized.** `identity_pii` stays

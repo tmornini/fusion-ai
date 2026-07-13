@@ -1494,11 +1494,10 @@ export function validateProjectDocumentBody(
     };
 }
 
-// The graph is NOT a flow column — it lives in the four
-// relation tables. The storage row carries only the flow's own
-// scalar fields; the relation rows are validated by their own
-// entity validators (validateFlowNodeEntity et al.) as the
-// graph delta lands.
+// The graph is NOT a FlowEntity key — it rides the flow
+// document body as a native nested object (`graph`, plus
+// write-side `graphDelta` / `revivals`). validateFlowEntity
+// accepts only the flow's own scalar fields.
 const FLOW_BODY_KEYS: readonly string[] = [
     'organization_id', 'name', 'is_locked',
     'is_auto_layout', 'is_auto_fit',
@@ -3161,24 +3160,24 @@ const FLOW_CREATE_KEYS: readonly string[] = [
     'initialStateAt', 'graphDelta',
 ];
 
-// The HTTP-body gate for POST /flows: the flow row, its
-// project_flows join row, the initial state event, and the
-// initial graph delta (seeding the four relation tables),
-// written atomically. The facet fields are NOT fully
-// validated here — the org-scoped flows store stamps
-// organization_id from the verified token and re-validates
-// through validateFlowEntity AFTER the stamp (so the body
-// OMITS organization_id), and the project_flows store
-// re-validates the join through validateProjectFlowEntity
-// when the composing POST puts it. Authorship of the
-// initial event is stamped from the verified caller in the
-// route, never the body; initialState is carried for
-// symmetry with the other create endpoints (the flow
-// creation paths pin it to 'active') and validated
-// non-empty. graphDelta is the pre-built relation delta for
-// the default graph (2 nodes, 0 edges, 0 member/attribute
-// events) — validated here at the HTTP gate via
-// validateFlowGraphDelta; the route writes the rows.
+// The HTTP-body gate for POST /flows: the flow scalars, its
+// project_flows join, the initial state event, and the
+// initial graphDelta (native write-side sidecar for the
+// default graph), written atomically as message pairs. The
+// facet fields are NOT fully validated here — the org-
+// scoped flows path stamps organization_id from the
+// verified token and re-validates through
+// validateFlowEntity AFTER the stamp (so the body OMITS
+// organization_id), and the project_flows path re-validates
+// the join through validateProjectFlowEntity when the
+// composing POST puts it. Authorship of the initial event
+// is stamped from the verified caller in the route, never
+// the body; initialState is carried for symmetry with the
+// other create endpoints (the flow creation paths pin it to
+// 'active') and validated non-empty. graphDelta is the
+// pre-built native delta for the default graph (2 nodes, 0
+// edges, 0 member/attribute events) — validated here at the
+// HTTP gate via validateFlowGraphDelta.
 export function validateFlowCreateBody(
     body: Record<string, unknown>,
 ): FlowCreateBody {

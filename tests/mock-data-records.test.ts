@@ -335,8 +335,8 @@ test(
     + ' (no fields[]) via pair-plane derive',
     async () => {
         const db = await seeded();
-        // Wire GET /flows/:id carries graph as a JSON string
-        // (flow_graph relation reassembly on the pair plane).
+        // Wire GET /flows carries graph as native nested
+        // JSON on each FlowWithGraph row (pair-plane head).
         async function assertGraphShape(
             token: string,
         ): Promise<void> {

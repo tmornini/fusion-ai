@@ -1090,11 +1090,11 @@ export const DEFAULT_NODE_MEMBER_IDS:
     readonly MemberId[] = [];
 export const DEFAULT_NODE_TASK_INSTRUCTIONS = '';
 
-// The stored flow row. The graph is NOT a column: it lives in
-// the four relation tables (flow_nodes, flow_edges,
-// flow_node_members, flow_node_attributes) and the GET handlers
-// reassemble it on read. The frozen plane (flow_versions.graph,
-// work_orders.flow_graph) keeps its own blob.
+// The stored flow scalars. The live graph is NOT on this
+// type: it rides the flow document body's `graph` field as
+// native nested JSON (FlowWithGraph / FlowDocumentBody). The
+// frozen plane (`work_orders.flow_graph`) keeps its own
+// native copy (same shape plus name / lockTimeout).
 export interface FlowEntity {
     id: Id;
     organization_id: Id;

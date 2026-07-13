@@ -52,15 +52,18 @@ The live flow graph is **pair-plane only**. The retired
 four-relation row plane (`flow_nodes`, `flow_edges`,
 `flow_node_members`, `flow_node_attributes`) and the
 `flow_versions` table are GONE (Phase Final). Graph truth
-rides the flow document pair body: `graphDelta` (node/edge
-upserts by stable id, node/edge `'deleted'` events,
+rides the flow document pair body as native nested JSON:
+the head `graph` object (nodes/edges in the stored
+tongue), plus write-side `graphDelta` (node/edge upserts
+by stable id, node/edge `'deleted'` events,
 member/attribute `'added'`/`'removed'` ledger events) and
-`revivals` (undo restore). Live GET reassembles
+`revivals` (undo restore). Live GET serves
 `FlowWithGraph.graph` from the document body's `graph`
 field; `graphDelta` / `revivals` remain write-side
 sidecars (SIDECAR-KEEP) for undo restore and RESTRICT
 bindings (`flowGraphBindingsFromPairs`). A work order
-freezes its own `flow_graph` blob inside the work-order
+freezes its own `flow_graph` as the same native shape
+plus `name` / `lockTimeout` inside the work-order
 document pair at creation — a frozen value, not a live
 relationship.
 
