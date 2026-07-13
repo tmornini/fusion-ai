@@ -72,27 +72,6 @@ export function projectStateDetailFromRow(
     };
 }
 
-// Single-project state from the GET-stamped row trio —
-// residual callers (publish tests) that only need the
-// ProjectState enum.
-export async function getProjectState(
-    ctx: RequestContext,
-    projectId: string,
-): Promise<ProjectState> {
-    const detail = await getProjectStateDetail(
-        ctx, projectId,
-    );
-    return detail.state;
-}
-
-export async function getProjectStateDetail(
-    ctx: RequestContext,
-    projectId: string,
-): Promise<ProjectStateDetail> {
-    const row = await getProjectEntity(ctx, projectId);
-    return projectStateDetailFromRow(row);
-}
-
 export async function getProjects(
     ctx: RequestContext,
 ): Promise<Project[]> {

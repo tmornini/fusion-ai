@@ -39,8 +39,8 @@ import {
 // GET objectives/history. Surviving derives in this module:
 //   (a) trio families — per-id derive*StateHistory readers live
 //       in their own family modules (ideas/projects/records/
-//       flows/objectives); documentStateHeadFor below is the
-//       shared member_id-echo head helper for write paths.
+//       flows/objectives); write paths use family
+//       currentDocumentState / row-stamped trios.
 //   (b) deriveMemberStates — members/:id document trio history.
 //   (c) deriveWorkOrderLifecycle / workOrderLifecycleStatesFor /
 //       workOrderHistoryFor / deriveWorkOrderHistories — the
@@ -1960,74 +1960,10 @@ export async function invitationLifecycleStatesFor(
 
 // deriveTrioFamilyStates / deriveStates / fenceStatesByOwner /
 // unionById / sameStateEntity RETIRED with GET /states
-// (states-URI elimination C3). Per-entity history lives on
-// GET <family>/:id/history and family-scoped derives
-// (derive*StateHistory, workOrderLifecycleStatesFor,
-// deriveMemberStates filter, invitation sources). Bulk
-// work-order and objective history: GET work-orders/history
-// and GET objectives/history.
-
-// ---- documentStateHeadFor — the member_id-echo head helper -----
-// ---- (Phase 14 Task 5) --------------------------------------------
-
-// THE FOUR WRITE-PATH DECISION READS THIS SERVES (api/routes.ts:
-// postIdeaDocumentOp, postProjectDocumentOp, postRecordDocumentOp,
-// postRecordWriteOp's edit arm): each compares an incoming write's
-// trio (state_event_id, state, state_at) against the STORED head
-// to decide an ECHO (keep the head's member_id) from a fresh
-// transition (author as actor) — Decision 7's MEMBER_ID CAVEAT.
-// Re-anchored off the row-plane view.states.getCurrentForIn onto
-// this entity's OWN document-address trio history
-// (documentLifecycleEvents/stateHistoryFrom over
-// documentPairsAt), reduced to the (at, id) CURRENT row exactly
-// as StateStore.getCurrentForIn's own latestByKey reduction does.
-// The states/:id event-append arm is RETIRED with the address.
-//
-// ENTITY-SCOPED, NO ORGANIZATION ARGUMENT NEEDED: the document
-// half resolves its own organization via the `uri_id` index (an
-// id is globally unique — computeOwningOrganization's own
-// technique above), reading it straight off the MATCHED document
-// pair's own stored uri_prefix rather than a caller-supplied
-// value. Deliberate, not an oversight: PutHandler (api/routes.ts)
-// carries no organization argument at all (only PostHandler
-// does), so a caller-supplied organization would force every
-// 'trio' family's DocumentFamilyWiring to grow one — widening
-// eleven registrations to serve four callers. A genuinely fresh
-// id carries no document pair yet (the genesis case), so this
-// returns null before an organization is ever needed, mirroring
-// getCurrentForIn's own null-for-absent contract.
-export async function documentStateHeadFor(
-    dbOrView: DbAdapter,
-    id: Id,
-): Promise<StateEntity | null> {
-    const [byIdRequests, byIdResponses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_id', id),
-        dbOrView.responses.getAllWhere('uri_id', id),
-    ]);
-    const documentResponse = byIdResponses.find((response) =>
-        ORGANIZATION_NESTED_FAMILY_ADDRESS_PATTERN.test(
-            response.uri_prefix,
-        ));
-    if (documentResponse === undefined) return null;
-    const prefix = documentResponse.uri_prefix;
-    const documentRequests = byIdRequests.filter(
-        (r) => r.uri_prefix === prefix,
-    );
-    const documentResponses = byIdResponses.filter(
-        (r) => r.uri_prefix === prefix,
-    );
-    const documentHistory = stateHistoryFrom(
-        documentLifecycleEvents(
-            documentPairsAt(
-                documentRequests, documentResponses, prefix,
-            ),
-        ),
-        id,
-    );
-
-    return documentHistory.length === 0
-        ? null
-        : latestByKey(
-            documentHistory, () => 'current',
-        ).get('current')!;
-}
+// (states-URI elimination C3). documentStateHeadFor RETIRED
+// with C5 (write paths use family currentDocumentState).
+// Per-entity history lives on GET <family>/:id/history and
+// family-scoped derives (derive*StateHistory,
+// workOrderLifecycleStatesFor, deriveMemberStates filter,
+// invitation sources). Bulk work-order and objective history:
+// GET work-orders/history and GET objectives/history.
