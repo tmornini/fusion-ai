@@ -48,12 +48,12 @@ const woPersonEmily =
 const woPersonMarcus =
     'WxQn4LVWb76YkmqK5B0EPp';
 const woPersonCurrent = 'current';
-// Parsed once so every seeded WO snapshot
-// matches the live flow_graph shape without
-// 36 redundant JSON.parse calls.
-const woGraphParsed = JSON.parse(
-    woFlowGraph,
-) as { nodes: unknown; edges: unknown };
+// Read once so every seeded WO snapshot matches
+// the live flow_graph shape without redundant
+// walks of the native flow graph object.
+const woGraphParsed = woFlowGraph as {
+    nodes: unknown; edges: unknown;
+};
 function woGraph(): JsonObjectField {
     return jsonObjectField({
         name:
@@ -65,13 +65,13 @@ function woGraph(): JsonObjectField {
     });
 }
 
-// Parsed once so all prc WO snapshots
-// match the live flow_graph shape.
+// Read once so all prc WO snapshots match the
+// live flow_graph shape.
 const prcFlowGraph =
     mockFlows[2]!.graph;
-const prcGraphParsed = JSON.parse(
-    prcFlowGraph,
-) as { nodes: unknown; edges: unknown };
+const prcGraphParsed = prcFlowGraph as {
+    nodes: unknown; edges: unknown;
+};
 function prcGraph(): JsonObjectField {
     return jsonObjectField({
         name:
@@ -114,12 +114,8 @@ export function buildWorkOrders():
                     'Customer Onboarding',
                 lockTimeout:
                     DEFAULT_LOCK_TIMEOUT,
-                nodes: JSON.parse(
-                    woFlowGraph,
-                ).nodes,
-                edges: JSON.parse(
-                    woFlowGraph,
-                ).edges,
+                nodes: woGraphParsed.nodes,
+                edges: woGraphParsed.edges,
             }),
             position: 1,
         },

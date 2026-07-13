@@ -115,7 +115,7 @@ function flowDocumentBody(name: string, stateEventId: string) {
         state: 'active',
         state_at: AT,
         state_event_id: stateEventId,
-        graph: JSON.stringify({ nodes: [], edges: [] }),
+        graph: { nodes: [], edges: [] },
         graphDelta: {
             nodes: [], edges: [], deletions: [],
             memberEvents: [], attributeEvents: [],

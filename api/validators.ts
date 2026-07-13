@@ -446,14 +446,6 @@ export function asStoredGraph(
     };
 }
 
-export function validateStoredGraphJson(
-    raw: string,
-    label: string,
-): StoredGraph {
-    const parsed = parseOrThrow(raw, label);
-    return asStoredGraph(parsed, label);
-}
-
 export function
 validateWorkOrderFlowGraphJson(
     raw: string,
@@ -1579,12 +1571,11 @@ export interface FlowDocumentBody {
     readonly state_at: string;
     readonly state_event_id: string;
     // The FULL reduced graph in EXACTLY the wire form GET
-    // /flows/:id emits today (JsonObjectField is a branded
-    // JSON-ENCODED STRING — the same covenant
-    // flow_versions.graph already carries); validated via
-    // validateStoredGraphJson but stored as the SAME encoded
-    // string — the op never re-serializes it.
-    readonly graph: JsonObjectField;
+    // /flows/:id emits — a NATIVE nested object (the stored
+    // tongue: storedGraph()'s shape); validated via
+    // asStoredGraph and carried verbatim — the op never
+    // re-serializes it.
+    readonly graph: Record<string, unknown>;
     // SIDECAR-KEEP: graphDelta/revivals stay on the document
     // pair body permanently — deriveFlowGraphStates is the
     // sole ledger source of flow-node/edge deleted/restored
@@ -1631,8 +1622,10 @@ export function validateFlowDocumentBody(
             + ' non-empty',
         );
     }
-    const graph = pickJsonObjectField(body, 'graph');
-    validateStoredGraphJson(graph, 'FlowDocumentBody.graph');
+    const graph = asObject(
+        body['graph'], 'FlowDocumentBody.graph',
+    );
+    asStoredGraph(graph, 'FlowDocumentBody.graph');
     const graphDelta = validateFlowGraphDelta(
         asObject(
             body['graphDelta'], 'FlowDocumentBody.graphDelta',

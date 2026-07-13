@@ -368,16 +368,16 @@ test(
                 );
                 assert.equal(detail.status, 200);
                 const body = await detail.json() as {
-                    graph: string;
+                    graph: {
+                        nodes: {
+                            id: string;
+                            attributes?: unknown;
+                            fields?: unknown;
+                        }[];
+                    };
                 };
-                assert.equal(typeof body.graph, 'string');
-                const graph = JSON.parse(body.graph) as {
-                    nodes: {
-                        id: string;
-                        attributes?: unknown;
-                        fields?: unknown;
-                    }[];
-                };
+                assert.equal(typeof body.graph, 'object');
+                const graph = body.graph;
                 for (const node of graph.nodes) {
                     assert.ok(
                         Array.isArray(node.attributes),

@@ -9,7 +9,7 @@ import {
     storedWorkOrderFlowGraphField,
 } from '../../../api/types.ts';
 import {
-    validateStoredGraphJson,
+    asStoredGraph,
 } from '../../../api/validators.ts';
 import {
     latestClaimEvent,
@@ -95,7 +95,7 @@ export async function postWorkOrderCreation(
         );
     }
     const graph: StoredGraph =
-        validateStoredGraphJson(
+        asStoredGraph(
             flow.graph, 'flow.graph',
         );
 

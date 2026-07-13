@@ -13,6 +13,7 @@ import {
     validateIdeaSubmissionEntity,
     validateProjectFlowEntity,
     validateRecordAttributeEntity,
+    validateFlowDocumentBody,
     asStoredGraph,
     asConstraint,
 } from '../api/validators.ts';
@@ -1075,3 +1076,60 @@ test('asConstraint accepts a safe pattern', () => {
         'regex',
     );
 });
+
+test(
+    'validateFlowDocumentBody accepts a native'
+    + ' graph object',
+    () => {
+        const body = validateFlowDocumentBody({
+            name: 'Onboarding',
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout: 28800,
+            state: 'active',
+            state_at: '2026-07-12T00:00:00.000000Z',
+            state_event_id: 'evt-1',
+            graph: { nodes: [], edges: [] },
+            graphDelta: {
+                nodes: [], edges: [],
+                deletions: [],
+                memberEvents: [],
+                attributeEvents: [],
+            },
+            revivals: [],
+        });
+        assert.deepEqual(
+            body.graph, { nodes: [], edges: [] },
+        );
+    },
+);
+
+test(
+    'validateFlowDocumentBody rejects a'
+    + ' JSON-encoded graph string',
+    () => {
+        assert.throws(
+            () => validateFlowDocumentBody({
+                name: 'Onboarding',
+                is_locked: false,
+                is_auto_layout: true,
+                is_auto_fit: true,
+                lock_timeout: 28800,
+                state: 'active',
+                state_at:
+                    '2026-07-12T00:00:00.000000Z',
+                state_event_id: 'evt-1',
+                graph: '{"nodes":[],"edges":[]}',
+                graphDelta: {
+                    nodes: [], edges: [],
+                    deletions: [],
+                    memberEvents: [],
+                    attributeEvents: [],
+                },
+                revivals: [],
+            }),
+            /expected object for FlowDocumentBody\.graph/,
+        );
+    },
+);

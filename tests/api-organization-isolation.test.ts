@@ -326,7 +326,7 @@ async function seedChain(
             state: 'active',
             state_at: T8_AT,
             state_event_id: 'f' + s + '-genesis',
-            graph: JSON.stringify({ nodes: [], edges: [] }),
+            graph: { nodes: [], edges: [] },
             revivals: [],
             graphDelta: {
                 nodes: [],

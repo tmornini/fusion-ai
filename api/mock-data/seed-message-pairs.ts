@@ -131,7 +131,6 @@ import type {
     OrganizationEntity,
 } from '../types.ts';
 import {
-    jsonObjectField,
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
     SYSTEM_MEMBER_ID,
@@ -883,7 +882,7 @@ export function flowOrg2SeedBody(): Record<string, unknown> {
         state: 'active',
         state_at: MOCK_SEED_TIMESTAMP,
         state_event_id: 'seed-state-flow-org2',
-        graph: jsonObjectField({ nodes: [], edges: [] }),
+        graph: { nodes: [], edges: [] },
         graphDelta: {
             nodes: [],
             edges: [],

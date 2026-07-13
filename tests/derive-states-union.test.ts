@@ -235,8 +235,8 @@ function nodeRowBody(id: string, flowId: string) {
     };
 }
 
-function emptyGraph(): string {
-    return JSON.stringify({ nodes: [], edges: [] });
+function emptyGraph() {
+    return { nodes: [], edges: [] };
 }
 
 async function createFlowWithNodes(

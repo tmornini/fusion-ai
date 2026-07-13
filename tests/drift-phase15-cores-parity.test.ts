@@ -1089,7 +1089,7 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
             state: 'active',
             state_at: at2,
             state_event_id: flowId + '-ev-rm',
-            graph: jsonObjectField({
+            graph: {
                 nodes: [{
                     id: nodeId, name: 'Bind',
                     positionX: 0, positionY: 0,
@@ -1099,7 +1099,7 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
                     taskInstructions: '',
                 }],
                 edges: [],
-            }),
+            },
             graphDelta: {
                 nodes: [{
                     id: nodeId, flow_id: flowId,
@@ -1245,10 +1245,10 @@ test('residual pin: soft-deleted node drops from'
             state: 'active',
             state_at: at2,
             state_event_id: flowId + '-ev-del',
-            graph: jsonObjectField({
+            graph: {
                 nodes: [],
                 edges: [],
-            }),
+            },
             graphDelta: {
                 nodes: [],
                 edges: [],

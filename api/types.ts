@@ -1118,20 +1118,22 @@ export interface FlowEntity {
 }
 
 // The GET-response shape for a flow: the stored row plus the
-// `graph` field (the head document pair's OWN `graph` field,
-// carried verbatim — api/derive-flows.ts's flowEntityOf; single
-// GET /flows/:id and the list GET /flows both serve this
-// shape). `hasUndoHistory` (Phase 14 Task 8) is a CHEAP,
-// approximate signal — this flow's own flows/:id document-pair
-// count exceeds 1 (i.e. it has been edited past genesis) —
-// reusing whatever GET already fetched the flow (page load,
-// the post-undo refresh) rather than a new wire read; a rare
-// false positive (undo has already reached genesis, but a
-// save/undo cycle since kept the pair count above 1) degrades
-// to a silent server-side no-op on the next undo, never a
-// crash or wrong restore.
+// `graph` field (the head document pair's OWN `graph` field as
+// native nested JSON — api/derive-flows.ts's flowEntityOf;
+// single GET /flows/:id and the list GET /flows both serve this
+// shape). The live graph rides the flow document body; the
+// frozen plane (`work_orders.flow_graph`) keeps its own copy.
+// `hasUndoHistory` (Phase 14 Task 8) is a CHEAP, approximate
+// signal — this flow's own flows/:id document-pair count exceeds
+// 1 (i.e. it has been edited past genesis) — reusing whatever
+// GET already fetched the flow (page load, the post-undo
+// refresh) rather than a new wire read; a rare false positive
+// (undo has already reached genesis, but a save/undo cycle
+// since kept the pair count above 1) degrades to a silent
+// server-side no-op on the next undo, never a crash or wrong
+// restore.
 export type FlowWithGraph = FlowEntity & {
-    graph: JsonObjectField;
+    graph: Record<string, unknown>;
     hasUndoHistory: boolean;
 };
 
@@ -1212,16 +1214,15 @@ export interface WorkOrderFlowGraph {
     edges: GraphEdge[];
 }
 
-// The graph storage seam, serialize half — the parse half
-// is asStoredGraph in validators.ts. The live flows.graph blob
-// is retired; this seam now serves the frozen plane
-// (flow_versions.graph, work_orders.flow_graph) plus the
-// GET-derived read DTO (the graph the GET handlers reassemble
-// from relations and return as FlowWithGraph.graph). The stored
-// JSON shape is a pinned contract (SCHEMA.md documents it; old
-// rows and exported backups carry it), so domain graphs cross
-// into rows ONLY through these mappers — a domain-type change
-// cannot silently rewrite storage.
+// The graph storage seam, serialize half — the parse half is
+// asStoredGraph in validators.ts. The live flow document body's
+// `graph` field carries this native nested object; the frozen
+// plane (`work_orders.flow_graph`) keeps its own branded copy
+// until that family flips. The stored JSON shape is a pinned
+// contract (SCHEMA.md documents it; old rows and exported
+// backups carry it), so domain graphs cross into rows ONLY
+// through these mappers — a domain-type change cannot silently
+// rewrite storage.
 function storedNodeAttribute(
     ref: NodeAttribute,
 ): Record<string, unknown> {
@@ -1267,12 +1268,6 @@ export function storedGraph(
         nodes: graph.nodes.map(storedGraphNode),
         edges: graph.edges.map(storedGraphEdge),
     };
-}
-
-export function storedGraphField(
-    graph: StoredGraph,
-): JsonObjectField {
-    return jsonObjectField(storedGraph(graph));
 }
 
 export function storedWorkOrderFlowGraphField(
