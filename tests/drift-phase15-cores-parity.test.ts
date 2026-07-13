@@ -536,8 +536,8 @@ test('stateEventVisibilityFor: member-genesis op-born'
             detail: {
                 title: 'Engineer',
                 department: 'Product',
-                strengths: '[]',
-                team_dimensions: '{}',
+                strengths: [],
+                team_dimensions: {},
             },
             initialState: 'active',
             initialStateEventId: unownedEventId,
@@ -594,8 +594,8 @@ test('stateEventVisibilityFor: member-genesis op-born'
             detail: {
                 title: 'Engineer',
                 department: 'Product',
-                strengths: '[]',
-                team_dimensions: '{}',
+                strengths: [],
+                team_dimensions: {},
             },
             initialState: 'active',
             initialStateEventId: ownedEventId,

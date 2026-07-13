@@ -131,7 +131,6 @@ import type {
     OrganizationEntity,
 } from '../types.ts';
 import {
-    jsonArrayField,
     jsonObjectField,
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
@@ -650,9 +649,8 @@ export function humanMemberSeedBody(
         id: member.id,
         detail: {
             ...detail,
-            strengths: jsonArrayField(strengths),
-            team_dimensions:
-                jsonObjectField(team_dimensions),
+            strengths,
+            team_dimensions,
         },
         initialState: state,
         initialStateEventId:
@@ -1225,17 +1223,17 @@ export function bootstrapCurrentMemberBody(
         detail: {
             title: 'Admin',
             department: 'Product',
-            strengths: jsonArrayField([
+            strengths: [
                 'Strategic Planning',
                 'Data Analysis',
                 'Stakeholder Management',
-            ]),
-            team_dimensions: jsonObjectField({
+            ],
+            team_dimensions: {
                 driver: 80,
                 analytical: 80,
                 expressive: 80,
                 amiable: 80,
-            }),
+            },
         },
         initialState: 'active',
         initialStateEventId: 'bootstrap-current-active',

@@ -1,8 +1,3 @@
-import {
-    validateStringArrayJson,
-    validateStringNumberRecordJson,
-} from './validators.ts';
-
 export type Id = string;
 
 export type MemberId = Id;
@@ -698,8 +693,8 @@ export interface HumanMemberEntity {
     id: MemberId;
     title: string;
     department: string;
-    strengths: JsonArrayField;
-    team_dimensions: JsonObjectField;
+    strengths: string[];
+    team_dimensions: Record<string, number>;
 }
 
 export class HumanMember {
@@ -711,8 +706,9 @@ export class HumanMember {
     readonly #state: MemberState;
     readonly #stateAt: string;
     readonly #stateEventId: string;
-    readonly #strengths: string;
-    readonly #teamDimensions: string;
+    readonly #strengths: readonly string[];
+    readonly #teamDimensions:
+        Readonly<Record<string, number>>;
 
     constructor(
         parent: MemberEntity,
@@ -783,21 +779,13 @@ export class HumanMember {
         return this.#stateEventId;
     }
 
-    parsedStrengths(): string[] {
-        return validateStringArrayJson(
-            this.#strengths,
-            'humanMember.strengths',
-        );
+    strengths(): readonly string[] {
+        return this.#strengths;
     }
 
-    parsedTeamDimensions():
-        Record<string, number> {
-        return (
-            validateStringNumberRecordJson(
-                this.#teamDimensions,
-                'humanMember.teamDimensions',
-            )
-        );
+    teamDimensions():
+        Readonly<Record<string, number>> {
+        return this.#teamDimensions;
     }
 
     matchesSearch(term: string): boolean {

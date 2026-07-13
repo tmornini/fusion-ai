@@ -232,24 +232,6 @@ export function validateConstraintArrayJson(
     );
 }
 
-export function
-validateStringNumberRecordJson(
-    raw: string,
-    label: string,
-): Record<string, number> {
-    const parsed = parseOrThrow(raw, label);
-    const obj = asObject(parsed, label);
-    const out: Record<string, number> = {};
-    for (
-        const [k, v] of Object.entries(obj)
-    ) {
-        out[k] = asNumber(
-            v, label + '.' + k,
-        );
-    }
-    return out;
-}
-
 const NODE_ATTRIBUTE_MODES:
     readonly ('editable' | 'readonly')[]
     = ['editable', 'readonly'];
@@ -591,6 +573,30 @@ export function pickBoolean(
     key: string,
 ): boolean {
     return asBoolean(body[key], key);
+}
+
+export function pickStringArray(
+    body: Record<string, unknown>,
+    key: string,
+): string[] {
+    const arr = asArray(body[key], key);
+    return arr.map((item, i) =>
+        asString(item, key + '[' + i + ']'),
+    );
+}
+
+export function pickStringNumberRecord(
+    body: Record<string, unknown>,
+    key: string,
+): Record<string, number> {
+    const obj = asObject(body[key], key);
+    const out: Record<string, number> = {};
+    for (
+        const [k, v] of Object.entries(obj)
+    ) {
+        out[k] = asNumber(v, key + '.' + k);
+    }
+    return out;
 }
 
 export function pickJsonArrayField(
@@ -1150,23 +1156,13 @@ export function validateHumanMemberEntity(
         HUMAN_MEMBER_BODY_KEYS,
         'HumanMemberEntity',
     );
-    // Structural gate: the columns store raw JSON strings,
-    // but their shapes are enforced at instantiation — the
-    // same validators the domain accessors run downstream
-    // as their transform.
-    const strengths = pickJsonArrayField(
+    const strengths = pickStringArray(
         body, 'strengths',
     );
-    validateStringArrayJson(
-        strengths, 'HumanMemberEntity.strengths',
-    );
-    const teamDimensions = pickJsonObjectField(
-        body, 'team_dimensions',
-    );
-    validateStringNumberRecordJson(
-        teamDimensions,
-        'HumanMemberEntity.team_dimensions',
-    );
+    const teamDimensions =
+        pickStringNumberRecord(
+            body, 'team_dimensions',
+        );
     return {
         title: pickString(
             body, 'title',
@@ -1201,8 +1197,8 @@ export interface HumanMemberDocumentBody {
 // matching TODAY'S store validator (validateHumanMemberEntity)
 // byte-for-byte, NOT the 'HumanMemberDocumentBody' naming
 // convention every other *DocumentBody validator uses. The
-// strengths/team_dimensions structural gates (validateStringArrayJson/
-// validateStringNumberRecordJson) are the SAME calls
+// strengths/team_dimensions structural gates (pickStringArray/
+// pickStringNumberRecord) are the SAME calls
 // validateHumanMemberEntity makes, so every 400 this validator
 // can raise stays byte-identical to its store counterpart. Global
 // plane (family-registry.ts: organizationNested:false) — no
@@ -1216,19 +1212,13 @@ export function validateHumanMemberDocumentBody(
         HUMAN_MEMBER_DOCUMENT_BODY_KEYS,
         'HumanMemberEntity',
     );
-    const strengths = pickJsonArrayField(
+    const strengths = pickStringArray(
         body, 'strengths',
     );
-    validateStringArrayJson(
-        strengths, 'HumanMemberEntity.strengths',
-    );
-    const teamDimensions = pickJsonObjectField(
-        body, 'team_dimensions',
-    );
-    validateStringNumberRecordJson(
-        teamDimensions,
-        'HumanMemberEntity.team_dimensions',
-    );
+    const teamDimensions =
+        pickStringNumberRecord(
+            body, 'team_dimensions',
+        );
     return {
         entity: {
             title: pickString(

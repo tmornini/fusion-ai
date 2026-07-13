@@ -28,8 +28,8 @@ import {
 const validHumanMember = {
     title: 'Engineer',
     department: 'R&D',
-    strengths: '["analytical"]',
-    team_dimensions: '{"driver":0.5}',
+    strengths: ['analytical'],
+    team_dimensions: { driver: 0.5 },
 };
 
 test(
@@ -105,9 +105,9 @@ test(
         assert.throws(
             () => validateHumanMemberEntity({
                 ...validHumanMember,
-                strengths: '[1, 2]',
+                strengths: [1, 2],
             }),
-            /HumanMemberEntity.strengths\[0\]/,
+            /expected string for strengths\[0\]/,
         );
     },
 );
@@ -119,9 +119,62 @@ test(
         assert.throws(
             () => validateHumanMemberEntity({
                 ...validHumanMember,
-                team_dimensions: '{"driver":"high"}',
+                team_dimensions: { driver: 'high' },
             }),
-            /HumanMemberEntity.team_dimensions/,
+            /expected finite number for team_dimensions\.driver/,
+        );
+    },
+);
+
+test(
+    'validateHumanMemberEntity accepts native'
+    + ' strengths and team_dimensions',
+    () => {
+        const entity = validateHumanMemberEntity({
+            title: 'Engineer',
+            department: 'R&D',
+            strengths: ['systems', 'mentoring'],
+            team_dimensions: { driver: 60, amiable: 40 },
+        });
+        assert.deepEqual(
+            entity.strengths,
+            ['systems', 'mentoring'],
+        );
+        assert.deepEqual(
+            entity.team_dimensions,
+            { driver: 60, amiable: 40 },
+        );
+    },
+);
+
+test(
+    'validateHumanMemberEntity rejects a'
+    + ' JSON-encoded strengths string',
+    () => {
+        assert.throws(
+            () => validateHumanMemberEntity({
+                title: 'Engineer',
+                department: 'R&D',
+                strengths: '["systems"]',
+                team_dimensions: { driver: 60 },
+            }),
+            /expected array for strengths/,
+        );
+    },
+);
+
+test(
+    'validateHumanMemberEntity rejects a'
+    + ' JSON-encoded team_dimensions string',
+    () => {
+        assert.throws(
+            () => validateHumanMemberEntity({
+                title: 'Engineer',
+                department: 'R&D',
+                strengths: [],
+                team_dimensions: '{"driver":60}',
+            }),
+            /expected object for team_dimensions/,
         );
     },
 );
