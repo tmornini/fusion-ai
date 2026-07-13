@@ -121,7 +121,7 @@ function workOrderFlowGraph(
 function createWorkOrderBody(
     id: string,
     flowWorkOrderId: string,
-    graph: string,
+    graph: Record<string, unknown>,
     events: {
         readonly ids: readonly [string, string, string];
         readonly ats: readonly [string, string, string];
