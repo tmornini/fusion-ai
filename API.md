@@ -302,8 +302,9 @@ Legend for classification:
 Lifecycle is pair-plane only. The `states` table and every
 verb on the shared event-append address are RETIRED
 (states-address retirement + Phase Final). Nine GET
-registrations replace the retired bulk / entity-states /
-field-values read surface. Wire order is `(at, id)`
+registrations replace the retired bulk collection,
+per-entity history alias, and field-values read surface.
+Wire order is `(at, id)`
 **DESC** on every registration (index 0 = current). No
 new authorization entries —
 `matchesOnSegmentBoundary` extends existing family GET
