@@ -297,38 +297,37 @@ Legend for classification:
 - `GET /objectives/:id/revisions` ·
   `PUT /objectives/:id/revisions/:rid` — nested.
 
-### 2.10 States — the derived event log
+### 2.10 Lifecycle history — the derived event log
 
 Lifecycle is pair-plane only. The `states` table and every
-verb on `/states/:id` are RETIRED (states-address
-retirement + Phase Final). Surviving surface:
+verb on the shared event-append address are RETIRED
+(states-address retirement + Phase Final). Surviving
+surface:
 
-- `GET /states` — primitive, DERIVED: the collection reads
-  `deriveStates(db, organization)` (`api/derive-states.ts`
-  `deriveStates`), a **five-source** union over the message
-  ledger reduced by `(at, id)`, returned `byIdAscending`.
-  The five sources: trio document families, members,
-  work-order lifecycle, flow graph, invitations.
-- Every verb on `/states/:id` — router **404** for
-  authenticated callers (unauthenticated → **401** first;
-  never a 405 method-absent gap). No PUT append surface;
-  immutability collision helpers for that address are gone.
-- `GET /entity-states/:id` — retired (Phase 15 Task 7):
-  router 404 (no pattern match).
-- `GET /entity-states/:id/history` — full event history for
-  an entity, DERIVED via `deriveStatesFor` in `(at, id)`
+- `GET <family>/:id/history` — full event history for an
+  entity, DERIVED via family-scoped readers in `(at, id)`
   order. The GATE fences parent ownership via
   `resolveOwningOrganization`; foreign → 403; orphan/own
   pass. The derived handler does NOT re-fence.
-- `GET /states/:id/field-values` — nested collection,
-  DERIVED: `stateFieldValuesForStateEvent` (transition-fold
+- `GET work-orders/history` · `GET objectives/history` —
+  bulk collection legs for those families.
+- Field values — fold from work-order transition history
+  via `stateFieldValuesForStateEvent` (transition-fold
   single-source). Visibility via `stateEventVisibilityFor`
   (3-tier): own → 200 rows; foreign → 403; orphan → 404.
-- `PUT|DELETE /states/:id/field-values/:fvid` — retired
-  (Phase 15 Task 7): router 404. Live field-value writes
-  ride the work-order transition fold only. No
+- Every verb on the shared event-append address — router
+  **404** for authenticated callers (unauthenticated →
+  **401** first; never a 405 method-absent gap). No PUT
+  append surface; immutability collision helpers for that
+  address are gone.
+- Per-entity current-state alias — retired (Phase 15
+  Task 7): router 404 (no pattern match).
+- Nested field-values write address — retired (Phase 15
+  Task 7): router 404. Live field-value writes ride the
+  work-order transition fold only. No
   `WRITE_RESPONSE_SPECS` leaf entry; seed no longer forms
   bare leaf pairs at that address (§5.16).
+- Bulk five-source lifecycle collection — retired (C3).
 
 Lifecycle **writes** ride document-trio PUTs
 (ideas / projects / records / flows / objectives /
@@ -344,8 +343,8 @@ still 404s (or genesis on PUT). Surviving stores are
 global (`requests` / `responses`); tenancy rides
 `uri_prefix`. There is no org-scoped adapter.
 
-The intra-org `/states/:id` escape hatch is RETIRED with
-the address itself (see `tests/drift-roster.test.ts`
+The intra-org shared event-append escape hatch is RETIRED
+with the address itself (see `tests/drift-roster.test.ts`
 "THE STATES/:ID ESCAPE HATCH RETIRED").
 
 ### 2.11 Organizations & memberships
@@ -445,7 +444,7 @@ Notation in the doctrinal lines: `put_x` ≈ the document
 pair a live `PUT /x/:id` would form; `post_op` ≈ the
 operation pair at the POST address; `delete_x` ≈ a
 marked tombstone pair at `DELETE /x/:id`. The retired
-`post_state_event` ≈ `PUT /states/:id` mapping is GONE
+`post_state_event` ≈ shared event-append mapping is GONE
 with the address.
 
 ### 3.1 `POST /ai-members` — create AI member
@@ -1621,7 +1620,7 @@ lifecycle trio (`state`, `state_at`, `state_event_id`). Genesis
 is head-presence-defined — the first PUT at an id IS the birth.
 `postProjectStateChange` (the adapter's transition op) now
 mints a fresh trio and fires this SAME document PUT;
-`/states/:id` is retired (§2.10).
+the shared event-append address is retired (§2.10).
 
 - tx: `['requests','responses']`
 - actual: `appendMessagePair(pair)` — entity fields plus
@@ -1645,7 +1644,8 @@ PUT-first flow and mirrors ideas/projects exactly rather than
 special-casing records as PUT-only-for-edits.
 `postRecordStateChange` (the adapter's transition op) now mints
 a fresh trio and fires this SAME document PUT;
-`/states/:id` is retired (§2.10). `GET /records/:id` rides
+the shared event-append address is retired (§2.10).
+`GET /records/:id` rides
 `documentGetHandler`; `DELETE /records/:id` stays hand-written
 (pair-plane tombstone).
 
@@ -2808,9 +2808,9 @@ rather than the shadow-ledger suite.
 
 **Contract.** The synthesized identities document is
 byte-indistinguishable from a live `PUT /identities/:id` pair's
-shape at the same address; old-plane rows/states are untouched
-(fingerprints + the states-911 pin hold); the wire is unchanged
-— the bundles are storage-only.
+shape at the same address; old-plane row and lifecycle
+surfaces are untouched (fingerprints + the states-911 pin
+hold); the wire is unchanged — the bundles are storage-only.
 
 ### 5.15 Gate-seeding the remaining spine slices: AI/system
 identities, credentials, role grants (Phase 10 Task 6)
@@ -2974,8 +2974,9 @@ system-genesis pair is counted in the bootstrap total below, a
 SEPARATE seed path with its OWN test) + the breakdown prose; the
 bootstrap count 11 → 12; THREE new address/body-shape spot-checks
 (a trace event, a field value, the mock-data seed's OWN
-system-genesis pair at the GLOBAL, non-org-nested `/states/`
-address) + the member_id content spot-check above.
+system-genesis pair at the GLOBAL, non-org-nested shared
+event-append address) + the member_id content spot-check
+above.
 `tests/mock-data-fingerprint.test.ts` later RETIRED with
 the entity-table / clients era (file absent).
 
@@ -3193,13 +3194,15 @@ ALL-orgs) stays exactly as this task left it.
 ### 5.19 Phase 15 route retirements and seed-address survival
 
 Phase 15 Task 7 retired zero-caller route families; states-
-address retirement made **every verb** on `/states/:id` a
-router **404** (unauthenticated → 401 first). Product
-callers were already zero. Surviving live surfaces:
+address retirement made **every verb** on the shared
+event-append address a router **404** (unauthenticated →
+401 first). Product callers were already zero. Surviving
+live surfaces:
 
-- `GET /states` (five-source derived union)
-- `GET /entity-states/:id/history` (derived + pair-plane fence)
-- `GET /states/:id/field-values` (derived; 200/403/404)
+- `GET <family>/:id/history` (derived + pair-plane fence)
+- `GET work-orders/history` · `GET objectives/history`
+- field values folded from work-order transition history
+  (derived; 200/403/404 via `stateEventVisibilityFor`)
 
 `flow_versions` routes and table are GONE (Phase 15
 retired routes; Phase Final deleted the table).

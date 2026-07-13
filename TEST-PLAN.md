@@ -197,17 +197,19 @@ appends from sibling tabs both survive (CLAUDE.md § Gotchas —
 timing rather than asserting exact pair counts.
 
 Post-Phase-Final + states-address retirement: every
-states-backed surface (workbox inbox, flow-stats, dashboard,
-members roster, idea/project/record/objective state badges +
-history views) reads the five-source union from the message
-ledger (`deriveStates` / `deriveStatesFor`). There is no
-`states` table and no `/states/:id` write address. Lifecycle
-writes are document-trio PUTs
+lifecycle-backed surface (workbox inbox, flow-stats,
+dashboard, members roster, idea/project/record/objective
+state badges + history views) reads family-scoped and
+collection history from the message ledger (per-entity
+`GET <family>/:id/history`, work-orders/history,
+objectives/history). There is no `states` table and no
+shared event-append write address. Lifecycle writes are
+document-trio PUTs
 (ideas/projects/records/flows/objectives/members) and named
 ops (work-order create/claim/transition/release,
 invitations). The ownership fence
 (`resolveOwningOrganization`) makes a foreign org's
-`entity_id` 403 on `GET /entity-states/:id/history`. Also
+`entity_id` 403 on per-entity family history. Also
 closed: WP1 and the records hard-delete forgery channel.
 Write-ownership fence returns foreign-id PUT/DELETE 403
 on org-scoped families. Unauthenticated callers to any
@@ -218,13 +220,13 @@ get 401 before a topology 404.
 zero product callers; a manual pass need not open them.
 Automated pins cover the status bytes (authenticated 404;
 unauthenticated 401):
-- every verb on `/states/:id` → router 404 (address deleted;
-  the old 405-because-PUT-survives case is gone)
-- `GET /entity-states/:id` (current) → router 404
-- `PUT|DELETE /states/:id/field-values/:fvid` → router 404
-  (collection `GET /states/:id/field-values` SURVIVES,
-  derived single-source transition fold; live writes ride
-  the transition fold only)
+- every verb on the shared event-append address → router
+  404 (address deleted; the old 405-because-PUT-survives
+  case is gone)
+- per-entity current-state alias → router 404
+- nested field-values write address → router 404
+  (field values fold on work-order transition history;
+  live writes ride the transition fold only)
 - `GET|POST|PUT|DELETE /flows/:id/versions[...]` → router 404
   (table DELETED at Phase Final; F66 is MOOT — see F66)
 
@@ -1742,8 +1744,8 @@ designer "tag current" action lands.)
   `claimed` → `claim_released` → `claimed` under
   the `(at, id)` order for this work order's
   `entity_id` (inspect via
-  `GET /entity-states/:id/history` or the matching
-  op pairs). No `/states/:id` write is involved.
+  `GET work-orders/:id/history` or the matching
+  op pairs). No shared event-append write is involved.
 
 ### Workbox — Completion
 
@@ -1761,8 +1763,8 @@ designer "tag current" action lands.)
 
 - [ ] **WB16** After creating and transitioning
   a work order, inspect `requests`/`responses` (or
-  derived `GET /entity-states/:id/history` and
-  `GET /states/:id/field-values`). PASS: the work-
+  derived `GET work-orders/:id/history` and the
+  transition-fold field values). PASS: the work-
   order document pair head carries `display_id` and
   `flow_graph` JSON; each transition is a
   `work-orders/:id/transition` operation pair whose
@@ -1790,10 +1792,10 @@ designer "tag current" action lands.)
   `entity_id` under the `(at, id)` reduction (a stale prior claim
   is superseded by a `'claim_expired'` event, never overwritten
   in place). Inspect via `requests`/`responses` or derived
-  `GET /entity-states/:id/history`.
+  `GET work-orders/:id/history`.
 - [ ] **WB19** After transitioning a work order through at
   least two states, read the derived history
-  (`GET /entity-states/:id/history` or the matching pairs in
+  (`GET work-orders/:id/history` or the matching pairs in
   `requests`/`responses`) for this work order's id. PASS: each
   non-claim event has the immutable shape `{id, entity_id,
   state, member_id, at}`, with `state` carrying the target
@@ -2290,9 +2292,9 @@ restored data.)
   `postAIMemberStateChange` — both kinds expose the same
   State select and share the 3-value vocabulary per
   Commandment III (Uniformity). The write is a
-  `members/:id` document-trio PUT (not a `/states/:id`
+  `members/:id` document-trio PUT (not a shared
   event-append). Verify via
-  `GET /entity-states/:id/history` or the matching
+  `GET members/:id/history` or the matching
   `members/:id` document pairs in `requests`/`responses`:
   an event with `entity_id` = the member's id,
   `state` = the chosen value, `member_id` = the actor

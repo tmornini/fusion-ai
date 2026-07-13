@@ -228,16 +228,19 @@ conceptual alphabets remain in `api/types.ts`
 (`MEMBER_STATES`, `IDEA_STATES`, `PROJECT_STATES`, …) and
 are asserted by validators and derive cores. Reads:
 
-- `GET /states` → `deriveStates` (five-source union:
-  trio families, members, work-order lifecycle, flow
-  graph, invitations)
-- `GET /entity-states/:id/history` → `deriveStatesFor`
-- `GET /states/:id/field-values` →
-  `stateFieldValuesForStateEvent` (transition-fold
-  single-source)
+- Per-entity history → `GET <family>/:id/history`
+  (family-scoped derives; ownership fence via
+  `resolveOwningOrganization`)
+- Work-order / objective bulk history →
+  `GET work-orders/history`, `GET objectives/history`
+- Field values → fold on work-order transition history
+  (`stateFieldValuesForStateEvent`); visibility via
+  `stateEventVisibilityFor`
 
-Every verb on `/states/:id` is router 404. Lifecycle
-writes ride document-trio PUTs
+The bulk lifecycle collection, bare states/:id, the
+per-entity history alias, and nested field-values
+collection are RETIRED (router 404). Lifecycle writes
+ride document-trio PUTs
 (ideas/projects/records/flows/objectives/members) and
 named ops (work-order create/claim/transition/release,
 invitations).

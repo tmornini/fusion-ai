@@ -232,9 +232,9 @@ is HTTP-only.
   undo resolves its restore target from the flow's own
   document-pair history (Phase 14 Task 8). Phase 15 retired
   the `flows/:id/versions[...]` routes (and the zero-caller
-  `GET states/:id` / `GET entity-states/:id` /
-  `PUT|DELETE states/:id/field-values/:fvid` families) —
-  all states retirements are router 404. Phase Final DELETED
+  bare states/:id, per-entity current-state alias, and
+  nested field-values write families) — all lifecycle-
+  address retirements are router 404. Phase Final DELETED
   the graph/version tables with the rest of the row plane.
   Ownership fences and field-values visibility resolve on
   the pair plane (`resolveOwningOrganization`,
@@ -533,15 +533,17 @@ apply to it (RED is the audit's first finding).
   entity's current state is the latest derived event on its
   `entity_id` under the `(at, id)` total order. Reversal is
   a *new* event with the new state, not an edit of a prior
-  pair. Surviving HTTP surface (reads only): `GET /states`
-  (five-source derived union),
-  `GET /entity-states/:id/history` (derived + pair-plane
-  ownership fence), `GET /states/:id/field-values` (derived
-  collection, transition-fold single-source). Lifecycle
-  writes are document-trio PUTs
+  pair. Surviving HTTP surface (reads only): per-entity
+  `GET <family>/:id/history` (derived + pair-plane
+  ownership fence), `GET work-orders/history` and
+  `GET objectives/history` (bulk collection legs), and
+  field values folded from work-order transition history
+  (`stateFieldValuesForStateEvent`). Lifecycle writes are
+  document-trio PUTs
   (ideas/projects/records/flows/objectives/members) and
   named ops (work-order create/claim/transition/release,
-  invitations) — every verb on `/states/:id` is router 404;
+  invitations) — every verb on the retired shared event-
+  append address is router 404;
   `stateEventCollisionFromPairs` is gone. The `states`
   table, `StateStore`, and `EntityStore` are DELETED
   (Phase Final). Document DELETE is a marked tombstone

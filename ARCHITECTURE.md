@@ -245,10 +245,10 @@ guard is what lets a non-admin invitee accept. The
 identity-scoped read (`GET /invitations`) returns the
 caller's own invitations plus latest state; the admin read
 (`GET /invitations/sent`) returns the active org's pending
-invitations. `invitations` joins the states owner-resolver
-probe, so an invitation's lifecycle events resolve to the
-invitation's org and stay out of every other tenant's
-`/states` read.
+invitations. `invitations` joins the lifecycle owner-
+resolver probe, so an invitation's lifecycle events
+resolve to the invitation's org and stay out of every
+other tenant's history reads.
 
 `memberships` semantics are UNCHANGED: a row still means an
 accepted member, and the roster, reachable-orgs enumeration,
@@ -452,24 +452,23 @@ convenience that defaults to the singleton adapter and
 session token. Tests pass `createRequestContext` a
 `MemoryDbAdapter`.
 
-`api/routes.ts` covers the surviving state-route surface:
-`GET states`, `GET entity-states/:id/history`, and
-`GET states/:id/field-values`. All reads derive from the
-message ledger: `GET states` →
-`deriveStates(db, organization)` (five-source union),
-`GET entity-states/:id/history` →
-`deriveStatesFor(db, organization, entityId)`, and
-`GET states/:id/field-values` →
-`stateFieldValuesForStateEvent` (transition-fold
+`api/routes.ts` covers the surviving lifecycle-history
+surface: per-entity `GET <family>/:id/history`, bulk
+`GET work-orders/history` and `GET objectives/history`,
+and field values folded from work-order transition
+history. All reads derive from the message ledger:
+family history → family-scoped derives (ownership fence
+via `resolveOwningOrganization`), collection legs →
+work-order / objective history derives, and field values
+→ `stateFieldValuesForStateEvent` (transition-fold
 single-source; visibility via `stateEventVisibilityFor`
 is honest: visible → 200 rows, foreign → 403, orphan →
-404). Every verb on `/states/:id` is router 404 (the
-address itself is retired). Phase 15 Task 7 also retired
-`GET entity-states/:id` (current),
-`PUT|DELETE states/:id/field-values/:fvid`, and
-`GET|POST|PUT|DELETE flows/:id/versions[...]` — all
-router 404. Lifecycle writes ride document-trio PUTs
-and named ops (work-order create/claim/transition/
+404). Every verb on the retired shared event-append
+address is router 404. Phase 15 Task 7 also retired the
+per-entity current-state alias, nested field-values
+writes, and `GET|POST|PUT|DELETE flows/:id/versions[...]`
+— all router 404. Lifecycle writes ride document-trio
+PUTs and named ops (work-order create/claim/transition/
 release, invitations), not a shared event-append
 address. When no schema exists, non-entry pages
 redirect to snapshots.
@@ -548,9 +547,10 @@ HTTP 412 by `handleRequest`, and the caller retries with a
 fresh basis. The old STATE-plane 409
 (`stateEventCollisionFromPairs` →
 `LedgerImmutabilityError` on a re-put of an existing
-event id) retired with the `/states/:id` address itself;
-identical resends of a document PUT still converge via
-the follows index, not a separate immutability class.
+event id) retired with the shared event-append address
+itself; identical resends of a document PUT still
+converge via the follows index, not a separate
+immutability class.
 
 ### SIDECAR-KEEP and undo-as-replay
 
@@ -637,7 +637,8 @@ halves stripped (Stage A); doomed tables +
 decorators deleted (Stage B); `clients` re-pointed to
 `HistoryEntityStore`; `SNAPSHOT_SCHEMA_VERSION` 2→3;
 states-address retirement bumps 3→4 and deletes every
-verb on `/states/:id`; the clients elimination re-homes
+verb on the shared event-append address; the clients
+elimination re-homes
 client config to the identities/:id/registration pair
 facet, deletes the last entity table, retires rawReadRow,
 and bumps 4→5; seed absolute at EXPECTED_PAIR_COUNT 1506 /
@@ -663,8 +664,8 @@ bootstrap 13; `simulateLatency` 4.
 ### Wire covenant (Phase 15 deltas still hold)
 
 1. **Route retirements** → router 404 (including every
-   verb on `/states/:id`; the old 405 exception is gone
-   with the address).
+   verb on the shared event-append address; the old 405
+   exception is gone with the address).
 2. **Fence strengthenings** (foreign → 403 via
    `ForeignOrganizationError`; absent → 404): (2a) WP1
    organizations self-as-owner; (2b) records hard-delete
@@ -687,7 +688,7 @@ address family allows, opening no nested transaction:
 - `resolveGlobalOwner` — global-existence probe for
   403-vs-404 decisions (write fence + read miss paths)
 - `resolveOwningOrganization` — pre-dispatch ownership for
-  `GET entity-states/:id/history` (narrower allowlist)
+  per-entity family history (narrower allowlist)
 - `flowGraphBindingsFromPairs` — RESTRICT graph legs from
   graphDelta
 
