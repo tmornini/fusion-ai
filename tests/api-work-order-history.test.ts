@@ -10,7 +10,6 @@ import { DEV_TOKEN, organizationToken } from
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedCurrentMember } from './member-fixtures.ts';
 import {
-    jsonObjectField,
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
     type WorkOrderFlowGraph,
@@ -89,9 +88,7 @@ function flowGraph(): string {
             },
         ],
     };
-    return jsonObjectField(
-        graph as unknown as Record<string, unknown>,
-    );
+    return graph as unknown as Record<string, unknown>;
 }
 
 function createBody() {

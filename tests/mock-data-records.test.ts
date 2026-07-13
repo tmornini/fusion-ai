@@ -11,7 +11,7 @@ import {
 import { postMockDataLoad } from
     '../api/mock-data.ts';
 import {
-    validateWorkOrderFlowGraphJson,
+    asWorkOrderFlowGraph,
 } from '../api/validators.ts';
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
@@ -252,10 +252,10 @@ test(
         );
         assert.equal(woRes.status, 200);
         const wo = await woRes.json() as {
-            flow_graph: string;
+            flow_graph: Record<string, unknown>;
         };
         const flowGraph =
-            validateWorkOrderFlowGraphJson(
+            asWorkOrderFlowGraph(
                 wo.flow_graph,
                 'wo.flow_graph',
             );

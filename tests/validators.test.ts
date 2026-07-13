@@ -460,12 +460,12 @@ test(
 
 // --- WorkOrderEntity ---
 
-const minimalWoGraph = JSON.stringify({
+const minimalWoGraph = {
     name: 'WO Flow',
     lockTimeout: DEFAULT_LOCK_TIMEOUT,
     nodes: [],
     edges: [],
-});
+};
 
 const validWorkOrder = {
     organization_id: '1',
@@ -501,12 +501,12 @@ test(
     () => {
     const result = validateWorkOrderEntity({
         ...validWorkOrder,
-        flow_graph: JSON.stringify({
+        flow_graph: {
             flowId: 'f-legacy',
             name: 'WO Flow',
             lockTimeout: DEFAULT_LOCK_TIMEOUT,
             nodes: [], edges: [],
-        }),
+        },
     });
     assert.equal(result.display_id, 'WO-001');
 });
@@ -1130,6 +1130,51 @@ test(
                 revivals: [],
             }),
             /expected object for FlowDocumentBody\.graph/,
+        );
+    },
+);
+
+test(
+    'validateWorkOrderEntity accepts a native'
+    + ' flow_graph object',
+    () => {
+        const entity = validateWorkOrderEntity({
+            organization_id: 'org-1',
+            display_id: 'a7c3e1f9',
+            flow_graph: {
+                name: 'Onboarding',
+                lockTimeout: 28800,
+                nodes: [],
+                edges: [],
+            },
+            position: 1,
+        });
+        assert.deepEqual(
+            entity.flow_graph,
+            {
+                name: 'Onboarding',
+                lockTimeout: 28800,
+                nodes: [],
+                edges: [],
+            },
+        );
+    },
+);
+
+test(
+    'validateWorkOrderEntity rejects a'
+    + ' JSON-encoded flow_graph string',
+    () => {
+        assert.throws(
+            () => validateWorkOrderEntity({
+                organization_id: 'org-1',
+                display_id: 'a7c3e1f9',
+                flow_graph:
+                    '{"name":"x","lockTimeout":1,'
+                    + '"nodes":[],"edges":[]}',
+                position: 1,
+            }),
+            /expected object for flow_graph/,
         );
     },
 );

@@ -8,7 +8,6 @@ import {
 import { DEV_TOKEN } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import {
-    jsonObjectField,
     DEFAULT_LOCK_TIMEOUT,
     nowUtc,
 } from '../api/types.ts';
@@ -74,9 +73,7 @@ function flowGraph(): string {
             },
         ],
     };
-    return jsonObjectField(
-        graph as unknown as Record<string, unknown>,
-    );
+    return graph as unknown as Record<string, unknown>;
 }
 
 function documentFields() {

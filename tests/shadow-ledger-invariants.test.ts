@@ -16,7 +16,7 @@ import {
 } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
 import {
-    storedWorkOrderFlowGraphField,
+    storedWorkOrderFlowGraph,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 
@@ -128,7 +128,7 @@ function workOrderFields(displayId: string, organization: string) {
     return {
         organization_id: organization,
         display_id: displayId,
-        flow_graph: storedWorkOrderFlowGraphField({
+        flow_graph: storedWorkOrderFlowGraph({
             name: 'Invariant Flow',
             lockTimeout: DEFAULT_LOCK_TIMEOUT,
             nodes: [],

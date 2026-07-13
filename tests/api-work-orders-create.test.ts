@@ -9,7 +9,6 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import {
-    jsonObjectField,
     nowUtc,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
@@ -65,9 +64,7 @@ function flowGraph(): string {
             },
         ],
     };
-    return jsonObjectField(
-        graph as unknown as Record<string, unknown>,
-    );
+    return graph as unknown as Record<string, unknown>;
 }
 
 // The work-order body OMITS organization_id — the org fence

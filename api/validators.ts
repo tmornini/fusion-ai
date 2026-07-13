@@ -446,13 +446,11 @@ export function asStoredGraph(
     };
 }
 
-export function
-validateWorkOrderFlowGraphJson(
-    raw: string,
+export function asWorkOrderFlowGraph(
+    value: unknown,
     label: string,
 ): WorkOrderFlowGraph {
-    const parsed = parseOrThrow(raw, label);
-    const obj = asObject(parsed, label);
+    const obj = asObject(value, label);
     const nodesArr = asArray(
         obj['nodes'],
         label + '.nodes',
@@ -685,13 +683,13 @@ export function validateEnumField<E extends string>(
 // ("trust within the walls" doctrine).
 //
 // Follow-on: extend this same discipline
-// into remaining JSON-encoded fields
-// (graph, flow_graph, values, etc.) —
-// each column's inner schema needs its own
+// into remaining nested object fields
+// that still lack full key-set gates —
+// each shape's inner schema needs its own
 // enumerated key list. That is the
 // "recursive check" that closes the
 // remaining edges. Intentionally deferred
-// here because each column's shape must be
+// here because each shape must be
 // enumerated case-by-case.
 
 // `optional` names keys that MAY appear but need not — the
@@ -1789,9 +1787,10 @@ export function validateWorkOrderEntity(
         WORK_ORDER_BODY_KEYS,
         'WorkOrderEntity',
     );
-    const flowGraph =
-        pickJsonObjectField(body, 'flow_graph');
-    validateWorkOrderFlowGraphJson(
+    const flowGraph = asObject(
+        body['flow_graph'], 'flow_graph',
+    );
+    asWorkOrderFlowGraph(
         flowGraph, 'WorkOrderEntity.flow_graph',
     );
     return {
@@ -1841,8 +1840,10 @@ export function validateWorkOrderDocumentBody(
         body, WORK_ORDER_DOCUMENT_BODY_KEYS,
         'WorkOrderDocumentBody', ['organization_id'],
     );
-    const flowGraph = pickJsonObjectField(body, 'flow_graph');
-    validateWorkOrderFlowGraphJson(
+    const flowGraph = asObject(
+        body['flow_graph'], 'flow_graph',
+    );
+    asWorkOrderFlowGraph(
         flowGraph, 'WorkOrderDocumentBody.flow_graph',
     );
     return {

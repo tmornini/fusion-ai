@@ -1217,8 +1217,8 @@ export interface WorkOrderFlowGraph {
 // The graph storage seam, serialize half — the parse half is
 // asStoredGraph in validators.ts. The live flow document body's
 // `graph` field carries this native nested object; the frozen
-// plane (`work_orders.flow_graph`) keeps its own branded copy
-// until that family flips. The stored JSON shape is a pinned
+// plane (`work_orders.flow_graph`) keeps its own native copy.
+// The stored JSON shape is a pinned
 // contract (SCHEMA.md documents it; old rows and exported
 // backups carry it), so domain graphs cross into rows ONLY
 // through these mappers — a domain-type change cannot silently
@@ -1270,22 +1270,22 @@ export function storedGraph(
     };
 }
 
-export function storedWorkOrderFlowGraphField(
+export function storedWorkOrderFlowGraph(
     graph: WorkOrderFlowGraph,
-): JsonObjectField {
-    return jsonObjectField({
+): Record<string, unknown> {
+    return {
         name: graph.name,
         lockTimeout: graph.lockTimeout,
         nodes: graph.nodes.map(storedGraphNode),
         edges: graph.edges.map(storedGraphEdge),
-    });
+    };
 }
 
 export interface WorkOrderEntity {
     id: Id;
     organization_id: Id;
     display_id: string;
-    flow_graph: JsonObjectField;
+    flow_graph: Record<string, unknown>;
     position: number;
 }
 

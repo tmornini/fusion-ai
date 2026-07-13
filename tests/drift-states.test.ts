@@ -10,7 +10,7 @@ import type { DbAdapter } from '../api/db.ts';
 import type { Id, StateEntity } from '../api/types.ts';
 import {
     nowUtc, DEFAULT_LOCK_TIMEOUT, MS_PER_SECOND,
-    jsonObjectField, SYSTEM_MEMBER_ID,
+    SYSTEM_MEMBER_ID,
     setClockForTest, resetClock,
 } from '../api/types.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
@@ -238,12 +238,14 @@ async function headResponseId(
     return id!;
 }
 
-function workOrderFlowGraph(lockTimeoutSeconds: number): string {
-    return jsonObjectField({
+function workOrderFlowGraph(
+    lockTimeoutSeconds: number,
+): Record<string, unknown> {
+    return {
         name: 'Drift States Fixture Flow',
         lockTimeout: lockTimeoutSeconds,
         nodes: [], edges: [],
-    });
+    };
 }
 
 function createWorkOrderBody(

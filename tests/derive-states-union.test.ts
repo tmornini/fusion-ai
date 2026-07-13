@@ -317,11 +317,11 @@ function workOrderBody(
         id,
         workOrder: {
             display_id: 'union-' + id,
-            flow_graph: JSON.stringify({
+            flow_graph: {
                 name: 'Union Fixture Flow',
                 lockTimeout: 8 * 60 * 60,
                 nodes: [], edges: [],
-            }),
+            },
             position: 1,
         },
         flowWorkOrderId,

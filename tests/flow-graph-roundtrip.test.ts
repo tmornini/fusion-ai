@@ -3,12 +3,12 @@ import { strict as assert } from 'node:assert';
 
 import {
     storedGraph,
-    storedWorkOrderFlowGraphField,
+    storedWorkOrderFlowGraph,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 import {
     asStoredGraph,
-    validateWorkOrderFlowGraphJson,
+    asWorkOrderFlowGraph,
 } from '../api/validators.ts';
 
 // The graph storage seam, pinned: stored JSON that crosses
@@ -64,11 +64,11 @@ const STORED_FLOW_GRAPH = {
     ],
 };
 
-const STORED_WO_GRAPH = JSON.stringify({
+const STORED_WO_GRAPH = {
     name: 'Flow',
     lockTimeout: DEFAULT_LOCK_TIMEOUT,
     ...STORED_FLOW_GRAPH,
-});
+};
 
 test(
     'stored flow graph survives parse then serialize',
@@ -117,14 +117,10 @@ test(
     + ' serialize',
     () => {
         const parsed =
-            validateWorkOrderFlowGraphJson(
+            asWorkOrderFlowGraph(
                 STORED_WO_GRAPH, 'flow_graph',
             );
-        const out = JSON.parse(
-            storedWorkOrderFlowGraphField(parsed),
-        );
-        assert.deepEqual(
-            out, JSON.parse(STORED_WO_GRAPH),
-        );
+        const out = storedWorkOrderFlowGraph(parsed);
+        assert.deepEqual(out, STORED_WO_GRAPH);
     },
 );

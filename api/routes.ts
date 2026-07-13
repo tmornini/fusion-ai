@@ -90,7 +90,7 @@ import {
     validateWorkOrderDocumentBody,
     validateWorkOrderReleaseBody,
     validateWorkOrderTransitionBody,
-    validateWorkOrderFlowGraphJson,
+    asWorkOrderFlowGraph,
     pickString,
     pickBoolean,
     pickNumber,
@@ -1967,7 +1967,9 @@ function workOrderCreateDocumentBody(
 ): Record<string, unknown> {
     return {
         display_id: pickString(b.workOrder, 'display_id'),
-        flow_graph: pickString(b.workOrder, 'flow_graph'),
+        flow_graph: asObject(
+            b.workOrder['flow_graph'], 'flow_graph',
+        ),
         position: pickNumber(b.workOrder, 'position'),
     };
 }
@@ -2080,7 +2082,7 @@ export async function postWorkOrderClaimOp(
                 );
             }
             const graph =
-                validateWorkOrderFlowGraphJson(
+                asWorkOrderFlowGraph(
                     wo.flow_graph,
                     'work_orders.flow_graph',
                 );

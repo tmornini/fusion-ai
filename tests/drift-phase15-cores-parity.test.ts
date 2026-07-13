@@ -11,7 +11,7 @@ import {
     type DbAdapter,
     TABLE_NAMES,
 } from '../api/db.ts';
-import { jsonObjectField, nowUtc } from '../api/types.ts';
+import { nowUtc } from '../api/types.ts';
 import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     workOrderDocumentHeadFor,
@@ -43,7 +43,7 @@ import {
 } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
 import {
-    validateWorkOrderFlowGraphJson,
+    asWorkOrderFlowGraph,
 } from '../api/validators.ts';
 import {
     deriveIdeas,
@@ -94,8 +94,8 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 
 function workOrderFlowGraph(
     lockTimeoutSeconds: number,
-): string {
-    return jsonObjectField({
+): Record<string, unknown> {
+    return {
         name: 'Phase15 Head Fixture Flow',
         lockTimeout: lockTimeoutSeconds,
         nodes: [
@@ -121,7 +121,7 @@ function workOrderFlowGraph(
                 toNodeId: 'n-finish',
             },
         ],
-    });
+    };
 }
 
 // The claim gate's write-tx table list
@@ -284,9 +284,9 @@ async () => {
         ),
     );
     assert.deepEqual(preTx, inTx);
-    assert.equal(preTx!.flow_graph, graph);
+    assert.deepEqual(preTx!.flow_graph, graph);
 
-    const headGraph = validateWorkOrderFlowGraphJson(
+    const headGraph = asWorkOrderFlowGraph(
         preTx!.flow_graph, 'work_orders.flow_graph',
     );
     assert.equal(headGraph.lockTimeout, lockTimeoutSeconds);
@@ -1599,10 +1599,10 @@ async () => {
     );
     assert.equal(woListRes.status, 200);
     const workOrders = await woListRes.json() as {
-        flow_graph: string;
+        flow_graph: Record<string, unknown>;
     }[];
     for (const wo of workOrders) {
-        const graph = validateWorkOrderFlowGraphJson(
+        const graph = asWorkOrderFlowGraph(
             wo.flow_graph, 'work_orders.flow_graph',
         );
         for (const node of graph.nodes) {
@@ -1713,7 +1713,7 @@ async () => {
     ));
     assert.equal(created.status, 204);
 
-    const woGraph = jsonObjectField({
+    const woGraph = {
         name: 'P15 Restrict WO',
         lockTimeout: 8 * 60 * 60,
         nodes: [{
@@ -1729,7 +1729,7 @@ async () => {
             taskInstructions: '',
         }],
         edges: [],
-    });
+    };
     const woCreated = await handleRequest(db, req(
         'POST', '/work-orders', token, {
             id: woId,

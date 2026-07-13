@@ -46,12 +46,12 @@ function req(
     });
 }
 
-function graphJson(): string {
-    return JSON.stringify({
+function graphJson(): Record<string, unknown> {
+    return {
         name: 'Flow One',
         lockTimeout: LOCK_TIMEOUT_SECONDS,
         nodes: [], edges: [],
-    });
+    };
 }
 
 // Seed via REAL PUT so the WO carries a document pair.
