@@ -416,9 +416,9 @@ Phase 14 cores: `drift-phase14-cores-parity.test.ts`,
 `pin-invitation-write-path-parity.test.ts`,
 `flow-undo-cursor.test.ts`, `api-flow-tags.test.ts`.
 Phase 15 cores: `drift-phase15-cores-parity.test.ts`,
-`api-states-ownership-fence.test.ts` (re-scoped to
-retirement pins; every verb on `/states/:id` is a router
-404 for authenticated callers). Phase Final adds the
+`api-history-ownership-fence.test.ts` (family-history
+ownership fence; own-org 200 / foreign 403). Phase Final
+adds the
 write-ownership fence pin
 (`api-write-ownership-fence.test.ts`); store/decorator unit
 tests and dual-write shadow-ledger row oracles retired with
