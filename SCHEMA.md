@@ -31,17 +31,6 @@ lifecycle state from the pair plane (`api/derive-*.ts`);
 writes append pairs only (`tx` lists
 `['requests','responses']` on every pair-wired path).
 
-`SNAPSHOT_SCHEMA_VERSION` is **5** (clients elimination). A
-pre-retirement (v3) export is rejected by a post-retirement
-import (`SnapshotVersionMismatchError`). Phase 13's 1→2 bump
-retired `identity_tokens` + `authorization_codes`; Phase
-Final's 2→3 bump retires every remaining doomed entity table;
-the 3→4 bump retires the `states/:id` address (not a
-`TABLE_NAMES` shrink — pre-retirement v3 exports still carry
-pairs no derive source reads); the clients elimination
-deletes the last entity table and bumps 4→5 — a v4 export is
-rejected by a v5 import.
-
 **Orphan stores (gate 6) — CANONICAL residual statement.**
 Author gate 6 elected leave-inert (no sweep). IndexedDB opens
 unversioned: a pre-Final origin keeps dropped object stores

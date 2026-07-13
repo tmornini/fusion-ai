@@ -659,14 +659,13 @@ route families (DELETE NOTHING held through Phase 15).
 halves stripped (Stage A); doomed tables +
 `EntityStore` / `StateStore` + the three scoping
 decorators deleted (Stage B); `clients` re-pointed to
-`HistoryEntityStore`; `SNAPSHOT_SCHEMA_VERSION` 2→3;
-states-address retirement bumps 3→4 and deletes every
-verb on the shared event-append address; the clients
-elimination re-homes
-client config to the identities/:id/registration pair
-facet, deletes the last entity table, retires rawReadRow,
-and bumps 4→5; seed absolute at EXPECTED_PAIR_COUNT 1506 /
-bootstrap 13; `simulateLatency` 4.
+`HistoryEntityStore`; states-address retirement deletes
+every verb on the shared event-append address; the
+clients elimination re-homes client config to the
+identities/:id/registration pair facet, deletes the last
+entity table, and retires rawReadRow; seed absolute at
+EXPECTED_PAIR_COUNT 1506 / bootstrap 13;
+`simulateLatency` 4.
 
 ### Two claims (never collapse)
 
@@ -679,11 +678,11 @@ bootstrap 13; `simulateLatency` 4.
    fact over HTTP, not an additional violation. The two
    seed routes' `SeededCredentials` bodies stay shape- and
    count-stable.
-2. **Snapshot file-format contract** —
-   `SNAPSHOT_SCHEMA_VERSION` 4→5 plus the table-key set
-   shrinking to `requests` + `responses`. A pre-clients-
-   elimination (v4) export is rejected by a post-elimination
-   import (`SnapshotVersionMismatchError`).
+2. **Snapshot file-format contract** — the table-key set
+   shrinks to `requests` + `responses`. A snapshot is the
+   table-keyed row export with no version marker; an
+   incompatible body shape fails at use (derive/read),
+   never at an import-time version check.
 
 ### Wire covenant (Phase 15 deltas still hold)
 
