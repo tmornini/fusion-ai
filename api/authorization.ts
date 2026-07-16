@@ -112,7 +112,7 @@ export function matchesOnSegmentBoundary(
 // analogously: a member may revoke its OWN token chain — a real
 // logout-everywhere, not merely rotation/revocation of a single
 // session. This route-policy entry only clears the coarse
-// content-prefix check; api/api.ts's Region B ownership fence
+// content-prefix check; api/api.ts's Region B write authorizer
 // keeps the write self-only — naming another identity still
 // requires admin. GET stays admin-only, untouched.
 const MEMBER_VERBS: Readonly<

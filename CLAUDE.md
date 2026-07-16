@@ -206,8 +206,8 @@ is HTTP-only.
   every request (`callerOrganizationIds` →
   `deriveMembershipsForIdentity`; `deriveRoleGrants`), so a
   revoked grant loses access on the very next request.
-  Org-scoped PUT/DELETE hit the write-ownership fence
-  (`writeOwnershipFenceFor` → `resolveGlobalOwner`) so a
+  Org-scoped PUT/DELETE hit the write authorizer
+  (`writeAuthorizerFor` → `resolveGlobalOwner`) so a
   foreign id 403s rather than genesis-ing in the caller's
   namespace; genuine absence still 404s (or genesis on
   PUT). Authentication runs before the no-match 404 —
@@ -429,8 +429,8 @@ elimination pins: `api-work-order-history.test.ts` (per-id
 `api-entity-history-routes.test.ts` (trio-family per-id),
 `api-members-history.test.ts`,
 `api-objective-history.test.ts` (bulk). Phase Final adds
-the write-ownership fence pin
-(`api-write-ownership-fence.test.ts`); store/decorator
+the write authorizer pin
+(`api-write-authorizer.test.ts`); store/decorator
 unit tests and dual-write shadow-ledger row oracles
 retired with their subjects. Honest HTTP status covenant
 pins: `api-unauthenticated-route-ordering.test.ts` (401

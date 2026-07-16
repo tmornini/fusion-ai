@@ -1213,7 +1213,7 @@ async () => {
         },
     ));
     assert.equal(created.status, 204);
-    // A membership so the write fence resolves this org-less
+    // A membership so the write authorizer resolves this org-less
     // identity to STARK, not an orphan.
     const membership = await handleRequest(db, req(
         'PUT', '/memberships/ms-' + aiMemberId, token, {
@@ -1377,7 +1377,7 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
     // Path is built without a contiguous slash-states token
     // so the vocabulary gate stays clean. Cross-org document
     // forgery is pinned separately by
-    // api-write-ownership-fence.test.ts.
+    // api-write-authorizer.test.ts.
     const tokenStark = await organizationToken(
         'current', STARK_ORGANIZATION,
     );

@@ -22,7 +22,7 @@ import {
 import { SYSTEM_MEMBER_ID, nowUtc } from '../api/types.ts';
 
 // Phase Final Task 1(e): pass-first pins for the pre-write
-// ownership gate. Foreign-id PUT 404 per family class;
+// ownership authorizer. Foreign-id PUT 404 per family class;
 // foreign-id DELETE 404 (records/:id, memberships/:id);
 // genesis (owner-null) unaffected. Wire body is the same
 // EntityNotFoundError shape OrganizationScopedEntityStore

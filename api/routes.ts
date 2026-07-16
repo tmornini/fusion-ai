@@ -3722,7 +3722,7 @@ export const routes: Route[] = [
     // serve 2-segment family/:id patterns. ADMIN-ONLY via
     // deny-by-default (/identities has no MEMBER_VERBS
     // entry); GLOBAL plane (no org nesting, no
-    // write-ownership fence). DELETE is a marked tombstone =
+    // write authorizer). DELETE is a marked tombstone =
     // deregistration; the gate forms the 204 pair, the
     // handler appends it — idempotent by construction.
     route('identities/:id/registration', {

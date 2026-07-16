@@ -19,7 +19,7 @@ import { formWritePair } from '../api/message-pair.ts';
 // the document-trio genesis; foreign ownership is 403 with an
 // honest body. Full per-family fence coverage lives in
 // api-entity-history-routes.test.ts. Per-family write-
-// ownership fence pins live in api-write-ownership-fence.
+// write authorizer pins live in api-write-authorizer.
 // Unknown-route 404 (writes-nothing) lives in api.test.ts.
 
 const BASE = 'http://localhost';

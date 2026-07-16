@@ -26,7 +26,7 @@ import {
 
 // New foreign-op 403 pins (HTTP status covenant): work-order
 // claim/release and flow undo were untested for foreign-org
-// callers. The write fence never covers these POSTs; the miss
+// callers. The write authorizer never covers these POSTs; the miss
 // path probe is the only guard.
 
 const BASE = 'http://localhost';

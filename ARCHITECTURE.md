@@ -83,7 +83,7 @@ document pair with SERVER-computed `graphDelta`/`revivals`.
 
 Cross-tenant fencing of graph history walks the pair plane
 (`resolveOwningOrganization` flow-graph leg + the
-write-ownership fence for org-scoped PUT/DELETE).
+write authorizer for org-scoped PUT/DELETE).
 
 ## Records
 
@@ -178,13 +178,13 @@ the vessel stays loggable), and route handlers keep their
 chosen boundary where the vessel hands the base adapter to
 the handler, keeping handlers transport-free.
 
-**Write-time cross-tenant fence.** Pair addresses are
+**Write-time cross-tenant authorizer.** Pair addresses are
 per-org namespaced (`canonicalUriPrefix` from the VERIFIED
 claim). A foreign-id PUT/DELETE on an org-scoped family
 must 403 (never invent a genesis in the caller's own
-namespace). `writeOwnershipFenceFor` /
+namespace). `writeAuthorizerFor` /
 `assertWritableInOrganization`
-(`api/write-ownership-fence.ts`) resolve ownership via
+(`api/write-authorizer.ts`) resolve ownership via
 `resolveGlobalOwner` before the handler runs: owner-null →
 genesis proceeds; foreign → `ForeignOrganizationError`
 (HTTP 403). Read isolation is derivation plus a miss-path
@@ -202,8 +202,8 @@ wrapped org-owned stores; `ParentScopedEntityStore` /
 `ParentScopedStateStore` (`store-parent-scoped.ts`) resolved
 leaf ownership through already-fenced parents. Phase Final
 Stage B deleted those three decorator modules with
-`EntityStore` and `StateStore`. The pair plane + write-
-ownership fence is the as-built successor.
+`EntityStore` and `StateStore`. The pair plane + write
+authorizer is the as-built successor.
 
 ### Multitenancy model
 
@@ -719,7 +719,7 @@ address family allows, opening no nested transaction:
   fences; consumers throw 403/404 rather than folding to
   empty
 - `resolveGlobalOwner` — global-existence probe for
-  403-vs-404 decisions (write fence + read miss paths)
+  403-vs-404 decisions (write authorizer + read miss paths)
 - `resolveOwningOrganization` — ownership for per-entity
   family history misses (narrower allowlist)
 - `flowGraphBindingsFromPairs` — RESTRICT graph legs from
