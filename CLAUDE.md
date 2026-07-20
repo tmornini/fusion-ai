@@ -202,10 +202,12 @@ is HTTP-only.
   `identityDefaultOrganization`: the identity's SET default
   org (`identity_default_organizations` ledger, latest
   wins), else its PRIMARY membership org, else a 403 — there
-  is no global default. Membership and roles derive fresh
-  every request (`callerOrganizationIds` →
-  `deriveMembershipsForIdentity`; `deriveRoleGrants`), so a
-  revoked grant loses access on the very next request.
+  is no global default. Membership and roles come from
+  access-token claims (baked at mint from membership
+  `type`; gate projects for the fenced org). NAMED
+  COVENANT: de-membership / demotion / revocation bite at
+  next mint/refresh/exchange or access TTL (≤ 15 min), not
+  the very next request. Ownership fences stay pair-plane.
   Org-scoped PUT/DELETE hit the write authorizer
   (`writeAuthorizerFor` → `resolveGlobalOwner`) so a
   foreign id 403s rather than genesis-ing in the caller's
@@ -411,7 +413,7 @@ round-trip, in-browser ZIP, snapshot import-validation /
 quota / atomic-import, the
 memory + localStorage transaction backends, the tx runners
 and view, the commit batch route, api routing, navigation,
-mock-data validity (pair count 1506 / bootstrap 13 absolute;
+mock-data validity (pair count 1494 / bootstrap 12 absolute;
 the mock-data fingerprint file retired with the clients
 table), client registration facet + derive, the two-tier
 hazard predicate (`flow-graph-hazard.test.ts`), presenter

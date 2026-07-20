@@ -164,14 +164,19 @@ resolves via `identityDefaultOrganization`: the identity's
 SET default org (`identity_default_organizations` ledger,
 latest wins), else its PRIMARY membership org, else a 403 —
 there is no global default to fall back on. Both
-`memberOrganizations` (`callerOrganizationIds` →
-`deriveMembershipsForIdentity`, Phase 13 Task 3) and `roles`
-(`callerRolesInOrganization` → `deriveRoleGrants`, same
-phase) derive FRESH from the pair plane on EVERY fenced
-request — never a snapshot the token claim carries — so a
-revoked membership or role stops access on the identity's
-very next request, not when the token expires. Two covenants
-bound the vessel: it never carries the bearer token
+`memberOrganizations` and `roles` come from access-token
+claims (organizations set + `{type}:{organization_id}`
+roles baked at every mint/refresh/exchange from membership
+`type`). The gate projects claim roles for the FENCED org
+and checks membership against the claim set — no identity-
+spine reads (memberships / roles / revocation) on the
+per-request path. Ownership fences still read the pair
+plane. NAMED COVENANT: de-membership, demotion, and
+logout-everywhere bite at the next mint/refresh/exchange
+or access-token expiry (≤ `ACCESS_TTL_SECONDS`, 15 min),
+not on the very next request. Revocation ledger checks
+remain on mint/refresh/exchange only. Two covenants bound
+the vessel: it never carries the bearer token
 (authentication reads the header from the raw Request, so
 the vessel stays loggable), and route handlers keep their
 `(adapter, params, body)` contract — the route table is the
@@ -208,15 +213,16 @@ authorizer is the as-built successor.
 ### Multitenancy model
 
 `organizations` is the tenant root (pair-plane document
-family); `memberships` is the identity↔org join (also
-pair-plane). The members roster is DERIVED in the `members`
-route handler — it filters the global members directory to
-ids present in the caller's membership derivation (the
-system member rides along unconditionally). Per-org roles
-resolve via `currentRolesForInOrganization`
-(`api/authorization.ts`): the latest action per
-`(organization_id, identity_id, role)`, fenced to the
-request's org, over `deriveRoleGrants`.
+family); `memberships` is the identity↔org relationship
+(also pair-plane) carrying `type`: `"admin"` | `"member"`.
+The members roster is DERIVED in the `members` route
+handler — it filters the global members directory to ids
+present in the caller's membership derivation (the system
+member rides along unconditionally). Per-org roles exist
+only as access-token claims (`admin:O` / `member:O`) baked
+from membership `type` at mint; the gate projects them for
+the fenced org via `projectClaimRolesForOrganization`.
+There is no role-grants HTTP family.
 
 ### Invitation lifecycle and acceptance
 
@@ -667,7 +673,7 @@ every verb on the shared event-append address; the
 clients elimination re-homes client config to the
 identities/:id/registration pair facet, deletes the last
 entity table, and retires rawReadRow; seed absolute at
-EXPECTED_PAIR_COUNT 1506 / bootstrap 13;
+EXPECTED_PAIR_COUNT 1494 / bootstrap 12;
 `simulateLatency` 4.
 
 ### Two claims (never collapse)

@@ -50,9 +50,6 @@ const WRITE_AUTHORIZERS:
         ['memberships/:id', {
             table: 'memberships', idParamIndex: 0,
         }],
-        ['role-grants/:id', {
-            table: 'role_grants', idParamIndex: 0,
-        }],
     ]);
 
 export function writeAuthorizerFor(

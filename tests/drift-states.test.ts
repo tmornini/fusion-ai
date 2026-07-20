@@ -1218,7 +1218,8 @@ async () => {
     const membership = await handleRequest(db, req(
         'PUT', '/memberships/ms-' + aiMemberId, token, {
             organization_id: STARK_ORGANIZATION,
-            identity_id: aiMemberId, at: AT,
+            identity_id: aiMemberId,
+        type: 'member', at: AT,
         },
     ));
     assert.equal(membership.status, 200);
