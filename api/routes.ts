@@ -184,7 +184,7 @@ import { deriveFlowTag } from './derive-flow-tags.ts';
 import {
     deriveObjectiveRevisions,
 } from './derive-objective-revisions.ts';
-import { deriveRecordStateHistory } from './derive-records.ts';
+import { deriveRecordStateHistory } from './derive-record-types.ts';
 import {
     deriveObjectiveStateHistory,
     deriveObjectiveHistories,

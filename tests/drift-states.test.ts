@@ -33,7 +33,7 @@ import { deriveIdeaStateHistory } from
 import { deriveProjectStateHistory } from
     '../api/derive-projects.ts';
 import { deriveRecordStateHistory } from
-    '../api/derive-records.ts';
+    '../api/derive-record-types.ts';
 import { deriveFlowStateHistory } from
     '../api/derive-flows.ts';
 import { deriveObjectiveStateHistory } from

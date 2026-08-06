@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import { deriveRecordStateHistory } from
-    '../api/derive-records.ts';
+    '../api/derive-record-types.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,

@@ -39,7 +39,7 @@ import {
     deriveFlowRecords,
     deriveFlowRecord,
 } from '../api/derive-flow-records.ts';
-import { deriveRecordStateHistory } from '../api/derive-records.ts';
+import { deriveRecordStateHistory } from '../api/derive-record-types.ts';
 import {
     customerProfileRecordId,
     projectBriefRecordId,
