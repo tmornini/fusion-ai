@@ -1000,6 +1000,91 @@ export function recordAttributeDocumentBodyOf(
     };
 }
 
+// Shared composed-write pair bundle for flat POST /records
+// and nested POST .../record-types (Task 9). Document address
+// is route-specific (flat records/:id vs nested detail);
+// attributes always form at ATTRIBUTE_DETAIL_PATTERN.
+async function formRecordWritePairs(
+    db: DbAdapter,
+    b: RecordWriteBody,
+    actor: Id,
+    pair: MessagePair,
+    organization: Id,
+    documentRoutePattern: string,
+    documentParams: readonly string[],
+): Promise<RecordWritePairs> {
+    const documentBody = recordDocumentBodyOf(b);
+    // Belt-and-suspenders (the flows precedent): a create's
+    // initialStateEventId carries no non-empty check of its
+    // own (R2's byte-pinned birth names), so an empty value
+    // must still 400 here — at the document trio's own gate —
+    // rather than silently minting an invalid synthesized
+    // pair.
+    validateRecordDocumentBody(documentBody);
+    const document = await formDocumentPairFor(db, {
+        routePattern: documentRoutePattern,
+        params: [...documentParams],
+        body: documentBody,
+        requesterIdentityId: actor,
+        requestAt: pair.requestAt,
+        organization,
+    });
+    // Attribute pairs form at nested ATTRIBUTE_DETAIL_
+    // PATTERN addresses (type id = top-level body id);
+    // bodies rectified (no record_id, ACL stamped).
+    const attributePuts = await Promise.all(
+        b.attributes.map(async (attr) => {
+            const attributeBody =
+                recordAttributeDocumentBodyOf(
+                    attr as unknown as
+                        Record<string, unknown>,
+                );
+            return formDocumentPairFor(db, {
+                routePattern: ATTRIBUTE_DETAIL_PATTERN,
+                params: [
+                    organization, b.id, attr.id,
+                ],
+                body: attributeBody,
+                requesterIdentityId: actor,
+                requestAt: pair.requestAt,
+                organization,
+            });
+        }),
+    );
+    const removedIds = b.kind === 'edit'
+        ? b.removedAttributeIds : [];
+    const attributeDeletes = await Promise.all(
+        removedIds.map(async (id) => {
+            // DELETE responses are UNIVERSALLY 204 with no
+            // body (message-pair.ts resolution, mirrored
+            // here for the synthesized removal pair) —
+            // SPEC-LESS, so an explicit response override
+            // skips WRITE_RESPONSE_SPECS entirely.
+            return formDocumentPairFor(db, {
+                routePattern: ATTRIBUTE_DETAIL_PATTERN,
+                params: [
+                    organization, b.id, id,
+                ],
+                body: undefined,
+                requesterIdentityId: actor,
+                requestAt: pair.requestAt,
+                organization,
+                method: 'DELETE',
+                response: {
+                    status: HTTP_NO_CONTENT,
+                    body: undefined,
+                },
+            });
+        }),
+    );
+    return {
+        operation: pair,
+        document,
+        attributePuts,
+        attributeDeletes,
+    };
+}
+
 // Phase Final Task 1(a): the attribute's owning organization
 // from its STORED document-pair head response body (the
 // WRITE_RESPONSE_SPECS successBody stamp). Row fallback
@@ -2945,6 +3030,12 @@ export const WRITE_RESPONSE_SPECS:
         }),
     },
     'records': { status: HTTP_NO_CONTENT },
+    // Nested composed POST (Task 9): same 204 op response as
+    // flat POST /records; document + attribute pairs form at
+    // nested addresses inside formRecordWritePairs.
+    [RECORD_TYPES_COLLECTION_PATTERN]: {
+        status: HTTP_NO_CONTENT,
+    },
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
     // entry above for the shared rationale. records/:id emits the
@@ -4740,88 +4831,18 @@ export const routes: Route[] = [
         // verbatim); a below-facade caller (api/mock-data.ts, no
         // gate) skips all pairs, preserving dual-write
         // discipline. See postRecordWriteOp for the transaction
-        // shape.
+        // shape. Bundle formation is shared with nested
+        // POST .../record-types via formRecordWritePairs.
         post: async (
             db, _p, body, actor, pair, organization,
         ) => {
             let pairs: RecordWritePairs | undefined;
             if (pair !== undefined && organization !== undefined) {
                 const b = validateRecordWriteBody(body);
-                const documentBody = recordDocumentBodyOf(b);
-                // Belt-and-suspenders (the flows precedent): a
-                // create's initialStateEventId carries no
-                // non-empty check of its own (R2's byte-pinned
-                // birth names), so an empty value must still
-                // 400 here — at the document trio's own gate —
-                // rather than silently minting an invalid
-                // synthesized pair.
-                validateRecordDocumentBody(documentBody);
-                const document = await formDocumentPairFor(db, {
-                    routePattern: 'records/:id',
-                    params: [b.id],
-                    body: documentBody,
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization,
-                });
-                // Task 8: attribute pairs form at nested
-                // ATTRIBUTE_DETAIL_PATTERN addresses (type id
-                // = top-level body id); bodies rectified (no
-                // record_id, ACL stamped).
-                const attributePuts = await Promise.all(
-                    b.attributes.map(async (attr) => {
-                        const attributeBody =
-                            recordAttributeDocumentBodyOf(
-                                attr as unknown as
-                                    Record<string, unknown>,
-                            );
-                        return formDocumentPairFor(db, {
-                            routePattern:
-                                ATTRIBUTE_DETAIL_PATTERN,
-                            params: [
-                                organization, b.id, attr.id,
-                            ],
-                            body: attributeBody,
-                            requesterIdentityId: actor,
-                            requestAt: pair.requestAt,
-                            organization,
-                        });
-                    }),
+                pairs = await formRecordWritePairs(
+                    db, b, actor, pair, organization,
+                    'records/:id', [b.id],
                 );
-                const removedIds = b.kind === 'edit'
-                    ? b.removedAttributeIds : [];
-                const attributeDeletes = await Promise.all(
-                    removedIds.map(async (id) => {
-                        // DELETE responses are UNIVERSALLY 204
-                        // with no body (message-pair.ts
-                        // resolution, mirrored here for the
-                        // synthesized removal pair) — SPEC-LESS,
-                        // so an explicit response override skips
-                        // WRITE_RESPONSE_SPECS entirely.
-                        return formDocumentPairFor(db, {
-                            routePattern:
-                                ATTRIBUTE_DETAIL_PATTERN,
-                            params: [
-                                organization, b.id, id,
-                            ],
-                            body: undefined,
-                            requesterIdentityId: actor,
-                            requestAt: pair.requestAt,
-                            organization,
-                            method: 'DELETE',
-                            response: {
-                                status: HTTP_NO_CONTENT,
-                                body: undefined,
-                            },
-                        });
-                    }),
-                );
-                pairs = {
-                    operation: pair,
-                    document,
-                    attributePuts,
-                    attributeDeletes,
-                };
             }
             return postRecordWriteOp(
                 db, body, actor, pairs, organization,
@@ -4870,19 +4891,45 @@ export const routes: Route[] = [
         ),
     }),
     // Nested record-types surface (Task 2 READ + Task 3
-    // WRITE). Org-nested primary addresses; member GET via
-    // MEMBER_VERBS '/organizations/:id/record-types';
-    // mutations stay admin by absence. Handlers are inline
-    // (param index 1 is :record-type-id) rather than the flat
-    // document-family factories — documentPutHandler always
-    // takes param 0 as id. PUT reuses postRecordDocumentOp
-    // (same trio body / pair append). DELETE is inline
-    // records/:id posture plus type RESTRICT.
+    // WRITE + Task 9 composed POST). Org-nested primary
+    // addresses; member GET via MEMBER_VERBS
+    // '/organizations/:id/record-types'; mutations stay admin
+    // by absence. Handlers are inline (param index 1 is
+    // :record-type-id) rather than the flat document-family
+    // factories — documentPutHandler always takes param 0 as
+    // id. PUT reuses postRecordDocumentOp (same trio body /
+    // pair append). POST reuses formRecordWritePairs +
+    // postRecordWriteOp with nested document addresses.
+    // DELETE is inline records/:id posture plus type RESTRICT.
     route(RECORD_TYPES_COLLECTION_PATTERN, {
         get: (db, _p, _actor, organization) =>
             deriveRecordTypeCollection(
                 db, requireOrganization(organization),
             ),
+        // Admin-only composed create/edit (MEMBER_VERBS has
+        // GET only). Same transaction / RESTRICT discipline
+        // as flat POST /records; document pair at the nested
+        // detail address, attributes at ATTRIBUTE_DETAIL_
+        // PATTERN.
+        post: async (
+            db, _p, body, actor, pair, organization,
+        ) => {
+            let pairs: RecordWritePairs | undefined;
+            if (
+                pair !== undefined
+                && organization !== undefined
+            ) {
+                const b = validateRecordWriteBody(body);
+                pairs = await formRecordWritePairs(
+                    db, b, actor, pair, organization,
+                    RECORD_TYPE_DETAIL_PATTERN,
+                    [organization, b.id],
+                );
+            }
+            return postRecordWriteOp(
+                db, body, actor, pairs, organization,
+            );
+        },
     }),
     route(RECORD_TYPE_DETAIL_PATTERN, {
         get: (db, p, _actor, organization) =>

@@ -32,6 +32,7 @@ import { REQUEST_ID_HEADER } from './request-context.ts';
 import {
     familyRegistration,
     wireFamilyStorageName,
+    RECORD_TYPES_COLLECTION_PATTERN,
     RECORD_TYPE_DETAIL_PATTERN,
     ATTRIBUTE_DETAIL_PATTERN,
 } from './family-registry.ts';
@@ -548,6 +549,11 @@ const CREATE_BODY_ID_FIELDS: Record<string, string> = {
     // this SAME override table so createdEntityUriId serves both
     // callers with one voice.
     'invitations': 'invitationId',
+    // Nested composed POST (Task 9): pattern is not a bare
+    // family name, so the registry consult never fires — body
+    // `id` collapses the operation pair onto the type's uri_id
+    // (same supersession collapse flat POST /records uses).
+    [RECORD_TYPES_COLLECTION_PATTERN]: 'id',
 };
 
 export function createdEntityUriId(
@@ -647,8 +653,9 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'identity-tokens/:jti/revocation',
     'organizations/:id',
     'identity-providers/:id',
-    // Nested record-types detail (Task 3): admin PUT/DELETE.
-    // Collection POST is Task 9.
+    // Nested record-types collection POST (Task 9) + detail
+    // PUT/DELETE (Task 3).
+    RECORD_TYPES_COLLECTION_PATTERN,
     RECORD_TYPE_DETAIL_PATTERN,
     // Nested attributes detail (Task 7): admin PUT/DELETE.
     ATTRIBUTE_DETAIL_PATTERN,
@@ -736,6 +743,10 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'identities/:id/registration',
         'memberships/:id',
         'organizations/:id',
+        // Nested record-types collection POST (Task 9): same
+        // head-read class as flat `records` so op + document
+        // share the supersession chain at the type uri_id.
+        RECORD_TYPES_COLLECTION_PATTERN,
         // Nested record-types detail (Task 3): simple class —
         // gate stamps supersedes for non-locked PUTs; no
         // If-Match required on types.
