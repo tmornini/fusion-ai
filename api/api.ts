@@ -1543,11 +1543,12 @@ function facadeHeaders(
     return headers;
 }
 
-// The ONE await site for a GET-shaped facade call — GET and
-// GETWithResponseId are both thin wrappers over this, so the
-// simulateLatency literal-count pin (pair-write-coverage.test.ts)
-// stays at exactly 4 no matter how many GET-shaped verbs read
-// from it (delegation, not a copy-pasted fifth await site).
+// The ONE await site for a GET-shaped facade call — GET,
+// GETWithResponseId, and GETWithEtag are thin wrappers over
+// this, so the simulateLatency literal-count pin
+// (pair-write-coverage.test.ts) stays at exactly 4 no matter
+// how many GET-shaped verbs read from it (delegation, not a
+// copy-pasted fifth await site).
 async function getResponse(
     adapter: ClientFacadeAdapter,
     resource: string,
@@ -1566,6 +1567,56 @@ async function getResponse(
             },
         ),
     );
+}
+
+// The ONE await site for a body-write facade call — PUT,
+// PUTWithEtag, PATCH, and PATCHWithEtag all share it so the
+// latency pin stays 4 (R3: never a fifth bare
+// await adapter.simulateLatency()).
+async function bodyWriteResponse(
+    adapter: ClientFacadeAdapter,
+    method: 'PUT' | 'PATCH',
+    resource: string,
+    payload: Record<string, unknown>,
+    token: string,
+    headerFields?: readonly (readonly [string, string])[],
+    requestId?: string,
+): Promise<Response> {
+    await adapter.simulateLatency();
+    const headers = facadeHeaders(token, requestId, true);
+    for (const [name, value] of headerFields ?? []) {
+        headers[name] = value;
+    }
+    return handleRequest(
+        adapter,
+        new Request(
+            `${BASE_URL}/${resource}`,
+            {
+                method,
+                headers,
+                body: JSON.stringify(payload),
+            },
+        ),
+    );
+}
+
+// Strong ETag header → opaque pair id (strip surrounding
+// quotes when present). Absent / empty → undefined.
+function etagFromHeader(
+    response: Response,
+): string | undefined {
+    const raw = response.headers.get('ETag');
+    if (raw === null || raw === '') {
+        return undefined;
+    }
+    if (
+        raw.length >= 2
+        && raw[0] === '"'
+        && raw[raw.length - 1] === '"'
+    ) {
+        return raw.slice(1, -1);
+    }
+    return raw;
 }
 
 export async function GET<T>(
@@ -1603,6 +1654,24 @@ export async function GETWithResponseId<T>(
     };
 }
 
+// Instance / concurrency sibling of GET: body plus the strong
+// ETag (quotes stripped) for If-Match on a later PATCH.
+export async function GETWithEtag<T>(
+    adapter: ClientFacadeAdapter,
+    resource: string,
+    token: string,
+    requestId?: string,
+): Promise<{ body: T; etag: string | undefined }> {
+    const response = await getResponse(
+        adapter, resource, token, requestId,
+    );
+    const body = await unwrapResponse<T>(response);
+    return {
+        body,
+        etag: etagFromHeader(response),
+    };
+}
+
 export async function PUT<T>(
     adapter: ClientFacadeAdapter,
     resource: string,
@@ -1611,24 +1680,66 @@ export async function PUT<T>(
     headerFields?: readonly (readonly [string, string])[],
     requestId?: string,
 ): Promise<T> {
-    await adapter.simulateLatency();
-    const headers = facadeHeaders(token, requestId, true);
-    for (const [name, value] of headerFields ?? []) {
-        headers[name] = value;
-    }
     return unwrapResponse<T>(
-        await handleRequest(
-            adapter,
-            new Request(
-                `${BASE_URL}/${resource}`,
-                {
-                    method: 'PUT',
-                    headers,
-                    body: JSON.stringify(payload),
-                },
-            ),
+        await bodyWriteResponse(
+            adapter, 'PUT', resource, payload, token,
+            headerFields, requestId,
         ),
     );
+}
+
+export async function PUTWithEtag<T>(
+    adapter: ClientFacadeAdapter,
+    resource: string,
+    payload: Record<string, unknown>,
+    token: string,
+    headerFields?: readonly (readonly [string, string])[],
+    requestId?: string,
+): Promise<{ body: T; etag: string | undefined }> {
+    const response = await bodyWriteResponse(
+        adapter, 'PUT', resource, payload, token,
+        headerFields, requestId,
+    );
+    const body = await unwrapResponse<T>(response);
+    return {
+        body,
+        etag: etagFromHeader(response),
+    };
+}
+
+export async function PATCH<T>(
+    adapter: ClientFacadeAdapter,
+    resource: string,
+    payload: Record<string, unknown>,
+    token: string,
+    headerFields?: readonly (readonly [string, string])[],
+    requestId?: string,
+): Promise<T> {
+    return unwrapResponse<T>(
+        await bodyWriteResponse(
+            adapter, 'PATCH', resource, payload, token,
+            headerFields, requestId,
+        ),
+    );
+}
+
+export async function PATCHWithEtag<T>(
+    adapter: ClientFacadeAdapter,
+    resource: string,
+    payload: Record<string, unknown>,
+    token: string,
+    headerFields?: readonly (readonly [string, string])[],
+    requestId?: string,
+): Promise<{ body: T; etag: string | undefined }> {
+    const response = await bodyWriteResponse(
+        adapter, 'PATCH', resource, payload, token,
+        headerFields, requestId,
+    );
+    const body = await unwrapResponse<T>(response);
+    return {
+        body,
+        etag: etagFromHeader(response),
+    };
 }
 
 export async function DELETE(
