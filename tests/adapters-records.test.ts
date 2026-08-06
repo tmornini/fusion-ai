@@ -78,7 +78,10 @@ test(
         });
         const attrs = await ctx.GET<
             { id: string; name: string }[]
-        >('record-attributes');
+        >(
+            'organizations/1/record-types/rec-1'
+            + '/attributes',
+        );
         assert.equal(attrs.length, 1);
         assert.equal(attrs[0]!.name, 'Fee');
     },
@@ -169,7 +172,10 @@ test(
         });
         const attrs = await ctx.GET<
             { id: string }[]
-        >('record-attributes');
+        >(
+            'organizations/1/record-types/rec-1'
+            + '/attributes',
+        );
         assert.equal(attrs.length, 1);
         assert.equal(attrs[0]!.id, 'a-new');
     },
