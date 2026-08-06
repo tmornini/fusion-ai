@@ -3597,6 +3597,78 @@ export async function formDocumentPairFor(
     });
 }
 
+// Instance DELETE tombstone append (Task 18 / R4 / R9).
+// Spent address = any prior response at the instance
+// uri_id (live head OR existing tombstone). Virgin
+// address → missedReadError (R2). Spent → append the
+// gate-formed DELETE pair in one tx (R4 tombstone-wins
+// is ledger-complete — every non-replay DELETE appends,
+// including over an already-tombstoned head). In-tx
+// re-probe (R9) closes a concurrent un-spend race:
+// never treat a virgin address as tombstonable. No
+// attribute ACL — path-tier only (existence, not values).
+// If-Match on DELETE is not a dialect (gate ignores it).
+export async function postInstanceDeleteOp(
+    db: DbAdapter,
+    p: string[],
+    _actor: Id,
+    pair: MessagePair | undefined,
+    organization: Id | undefined,
+    _roles: readonly string[],
+): Promise<void> {
+    const org = requireOrganization(organization);
+    const typeId = param(p, 1);
+    const instanceId = param(p, 2);
+    await requireRecordTypeExists(db, org, typeId);
+    if (pair === undefined) {
+        throw new Error(
+            'instance DELETE requires a formed pair',
+        );
+    }
+    const prefix = instancesUriPrefix(org, typeId);
+    const spentPre = await instanceAddressSpent(
+        db, prefix, instanceId,
+    );
+    if (!spentPre) {
+        throw await missedReadError(
+            db, instanceId, org, 'record_instances',
+        );
+    }
+    await db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            // R9: re-probe spent inside the append tx so a
+            // concurrent writer cannot leave us appending a
+            // tombstone onto a virgin address, and so a
+            // concurrent tombstone still lets us append
+            // (tombstone-wins / ledger-complete).
+            const spent = await instanceAddressSpent(
+                view, prefix, instanceId,
+            );
+            if (!spent) {
+                throw await missedReadError(
+                    view, instanceId, org,
+                    'record_instances',
+                );
+            }
+            await appendMessagePair(view, pair);
+        },
+    );
+}
+
+async function instanceAddressSpent(
+    db: DbAdapter,
+    prefix: string,
+    instanceId: Id,
+): Promise<boolean> {
+    const responses = await db.responses.getAllWhere(
+        'uri_prefix', prefix,
+    );
+    return responses.some(
+        (response) => response.uri_id === instanceId,
+    );
+}
+
 // Instance PATCH two-pair append (Task 17 / R5 / R9).
 // ifMatchTarget is the CLIENT's gate-verified If-Match pair
 // id recovered from the formed wire pair — never a live
@@ -5415,14 +5487,19 @@ export const routes: Route[] = [
     }),
     // Nested instance detail (Task 15 PUT create-only;
     // Task 16 GET projection + missedReadError R2;
-    // Task 17 PATCH If-Match + full-state revision).
+    // Task 17 PATCH If-Match + full-state revision;
+    // Task 18 DELETE tombstone-wins R4/R9).
     // Ladder PUT: parent type 404 → body 400 → write-ACL
     // 403 → value 400 → in-tx spent-address check (R9) +
     // append. Ladder PATCH: shape → unknown attr → ACL on
     // set∪clear → value on set → two-pair tx (R5/R9).
-    // No WRITE_AUTHORIZERS (deep sub-family). Not in
-    // DOCUMENT_CLASS (R10). GET/write ETag attaches in
-    // api.ts.
+    // Ladder DELETE: parent type 404 → address spent
+    // (any pair, including tombstone) else missedReadError;
+    // in-tx re-probe + append tombstone (R4 ledger-
+    // complete). No WRITE_AUTHORIZERS (deep sub-family).
+    // Not in DOCUMENT_CLASS (R10). GET/write ETag attaches
+    // in api.ts. DELETE is out of WRITE_RESPONSE_SPECS
+    // (gate hardcodes 204).
     route(INSTANCE_DETAIL_PATTERN, {
         get: async (
             db, p, _actor, organization, roles,
@@ -5514,6 +5591,10 @@ export const routes: Route[] = [
             roles,
         ) => postInstancePatchOp(
             db, p, body, actor, pair, organization, roles,
+        ),
+        delete: (db, p, actor, pair, organization, roles,
+        ) => postInstanceDeleteOp(
+            db, p, actor, pair, organization, roles,
         ),
     }),
     // Flat alias window (Task 8): wire path stays
