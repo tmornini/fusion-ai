@@ -89,6 +89,7 @@ import {
     validateAttributeDocumentCreate,
     validateAttributeDocumentReplace,
     validateInstancePutBody,
+    validateInstancePatchBody,
     validateRecordDocumentBody,
     validateRecordWriteBody,
     validateWorkOrderClaimBody,
@@ -142,6 +143,7 @@ import {
     HTTP_NO_CONTENT,
     HTTP_BAD_REQUEST,
     HTTP_CONFLICT,
+    HTTP_PRECONDITION_FAILED,
 } from './http-errors.ts';
 import {
     reduceCreateGraphDelta,
@@ -181,6 +183,7 @@ import {
     instancesUriPrefix,
     deriveInstanceHead,
     deriveInstanceCollection,
+    mergeInstanceValues,
 } from './derive-record-instances.ts';
 import {
     assertWritableAttributeIds,
@@ -3197,9 +3200,9 @@ export const WRITE_RESPONSE_SPECS:
             },
         },
     },
-    // Nested instances detail (Task 15): create-only PUT.
-    // Wire body echoes the request delta ({set}), never the
-    // head. patch lands in Task 17.
+    // Nested instances detail (Task 15 PUT create-only;
+    // Task 17 PATCH delta). Wire success body echoes the
+    // request delta only — never the merged head.
     [INSTANCE_DETAIL_PATTERN]: {
         put: {
             status: HTTP_OK,
@@ -3212,6 +3215,22 @@ export const WRITE_RESPONSE_SPECS:
                     organization_id: param(params, 0),
                     record_type_id: param(params, 1),
                     set: validated.set,
+                };
+            },
+        },
+        patch: {
+            status: HTTP_OK,
+            successBody: (params, body) => {
+                const validated =
+                    validateInstancePatchBody(
+                        body ?? {},
+                    );
+                return {
+                    id: param(params, 2),
+                    organization_id: param(params, 0),
+                    record_type_id: param(params, 1),
+                    set: validated.set,
+                    clear: validated.clear,
                 };
             },
         },
@@ -5280,11 +5299,15 @@ export const routes: Route[] = [
         },
     }),
     // Nested instance detail (Task 15 PUT create-only;
-    // Task 16 GET projection + missedReadError R2). Ladder
-    // PUT: parent type 404 → body 400 → write-ACL 403 →
-    // value 400 → in-tx spent-address check (R9) + append.
+    // Task 16 GET projection + missedReadError R2;
+    // Task 17 PATCH If-Match + full-state revision).
+    // Ladder PUT: parent type 404 → body 400 → write-ACL
+    // 403 → value 400 → in-tx spent-address check (R9) +
+    // append. Ladder PATCH: shape → unknown attr → ACL on
+    // set∪clear → value on set → two-pair tx (R5/R9).
     // No WRITE_AUTHORIZERS (deep sub-family). Not in
-    // DOCUMENT_CLASS (R10). GET ETag attaches in api.ts.
+    // DOCUMENT_CLASS (R10). GET/write ETag attaches in
+    // api.ts.
     route(INSTANCE_DETAIL_PATTERN, {
         get: async (
             db, p, _actor, organization, roles,
@@ -5369,6 +5392,112 @@ export const routes: Route[] = [
                             view, pair,
                         );
                     }
+                },
+            );
+        },
+        patch: async (
+            db, p, body, actor, pair, organization,
+            roles,
+        ) => {
+            const org = requireOrganization(organization);
+            const typeId = param(p, 1);
+            const instanceId = param(p, 2);
+            // Gate already verified live head + If-Match;
+            // re-derive pre-tx for merge inputs (R9 re-check
+            // lives inside the tx).
+            const head = await deriveInstanceHead(
+                db, org, typeId, instanceId,
+            );
+            if (head === undefined) {
+                throw await missedReadError(
+                    db, instanceId, org,
+                    'record_instances',
+                );
+            }
+            const validated =
+                validateInstancePatchBody(body);
+            const attributesById =
+                await loadAttributeSchemaById(
+                    db, org, typeId,
+                );
+            const aclIds = [
+                ...validated.set.map(
+                    (entry) => entry.attribute_id,
+                ),
+                ...validated.clear,
+            ];
+            assertWritableAttributeIds(
+                aclIds, attributesById, roles,
+            );
+            validateInstanceValues(
+                validated.set, attributesById,
+            );
+            const mergedValues = mergeInstanceValues(
+                head.values, {
+                    set: validated.set,
+                    clear: validated.clear,
+                },
+            );
+            if (pair === undefined) {
+                throw new Error(
+                    'instance PATCH requires a formed pair',
+                );
+            }
+            // Revision pair: EXPLICIT follows = gate-
+            // verified head (never re-read). Wire pair is
+            // operation-plane (no follows); UNIQUE on
+            // revision.follows serializes concurrent writers
+            // (decision 15). Ghost-replay closed:
+            // headerFields: [] on synthetic revision.
+            const revisionPair =
+                await formDocumentPairFor(db, {
+                    routePattern:
+                        INSTANCE_DETAIL_PATTERN,
+                    params: [
+                        org, typeId, instanceId,
+                    ],
+                    method: 'PUT',
+                    body: { values: mergedValues },
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    organization: org,
+                    chain: 'follows',
+                    follows: head.pairId,
+                    response: {
+                        status: HTTP_OK,
+                        body: {},
+                    },
+                });
+            await db.transaction(
+                ['requests', 'responses'],
+                async (view) => {
+                    // R9 in-tx verify: head must still be
+                    // the If-Match target (gate-verified
+                    // head.pairId).
+                    const live =
+                        await deriveInstanceHead(
+                            view, org, typeId,
+                            instanceId,
+                        );
+                    if (
+                        live === undefined
+                        || live.pairId !== head.pairId
+                    ) {
+                        throw new ApiError(
+                            'If-Match does not match the '
+                                + 'current instance at '
+                                + '/organizations/' + org
+                                + '/record-types/'
+                                + typeId
+                                + '/instances/'
+                                + instanceId,
+                            HTTP_PRECONDITION_FAILED,
+                        );
+                    }
+                    await appendMessagePair(view, pair);
+                    await appendMessagePair(
+                        view, revisionPair,
+                    );
                 },
             );
         },

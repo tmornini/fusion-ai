@@ -26,6 +26,7 @@ import {
     responseFromStored,
     wireHeadersFor,
     attachEtag,
+    parseIfMatch,
     PAIR_WIRED_ROUTE_PATTERNS,
     DOCUMENT_CLASS_ROUTE_PATTERNS,
     REPLAY_EXEMPT_ROUTE_PATTERNS,
@@ -45,6 +46,7 @@ import {
 } from './document-family.ts';
 import {
     instancesUriPrefix,
+    deriveInstanceHead,
 } from './derive-record-instances.ts';
 import {
     ANONYMOUS_ID,
@@ -55,6 +57,7 @@ import {
 } from './notifications.ts';
 import {
     resolveGlobalOwner,
+    missedReadError,
 } from './derive-states.ts';
 import {
     writeAuthorizerFor,
@@ -77,6 +80,7 @@ import {
     HTTP_UNAUTHORIZED,
     HTTP_FORBIDDEN,
     HTTP_PRECONDITION_FAILED,
+    HTTP_PRECONDITION_REQUIRED,
 } from './http-errors.ts';
 import {
     AUTHENTICATION_ROUTES,
@@ -240,6 +244,20 @@ function writeResponseSpecFor(
     if (method === 'PUT') return entry.put;
     if (method === 'PATCH') return entry.patch;
     return entry.post;
+}
+
+// Instance PATCH ETag (R8): the REVISION pair's response
+// id (new head), not the wire PATCH pair. Recovery is one
+// UNIQUE follows lookup on the If-Match-verified head the
+// wire operation raced — synthesis Mechanism (Task 17).
+async function revisionEtagForInstancePatch(
+    db: DbAdapter,
+    ifMatchPairId: string,
+): Promise<string | undefined> {
+    const rows = await db.responses.getAllWhere(
+        'follows', ifMatchPairId,
+    );
+    return rows[0]?.id;
 }
 
 // The one catch shared by both pre-dispatch ownership regions
@@ -844,6 +862,30 @@ export async function handleRequest(
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
                     ) {
+                        // PUT create: ETag = wire pair id.
+                        // PATCH: ETag = revision that followed
+                        // the If-Match head (R8 original).
+                        if (method === 'PATCH') {
+                            const raw = request.headers
+                                .get(IF_MATCH_HEADER);
+                            const ifMatch = raw === null
+                                ? undefined
+                                : parseIfMatch(raw);
+                            if (ifMatch !== undefined) {
+                                const revisionId =
+                                    await revisionEtagForInstancePatch(
+                                        effective, ifMatch,
+                                    );
+                                if (
+                                    revisionId !== undefined
+                                ) {
+                                    return attachEtag(
+                                        response,
+                                        revisionId,
+                                    );
+                                }
+                            }
+                        }
                         return attachEtag(
                             response, replay.id,
                         );
@@ -878,6 +920,74 @@ export async function handleRequest(
                                 + 'at ' + pathname,
                         },
                         { status: HTTP_PRECONDITION_FAILED },
+                    );
+                }
+            }
+            // Instance PATCH If-Match ladder (Task 17 / R5):
+            // AFTER replay (load-bearing). Tombstone == absent.
+            // Wire pair is operation-plane; revision pair
+            // carries follows = verified head (UNIQUE
+            // backstop).
+            if (
+                method === 'PATCH'
+                && routePattern
+                    === INSTANCE_DETAIL_PATTERN
+            ) {
+                const pathOrganization = param(params, 0);
+                const typeId = param(params, 1);
+                const instanceId = param(params, 2);
+                const head = await deriveInstanceHead(
+                    effective,
+                    pathOrganization,
+                    typeId,
+                    instanceId,
+                );
+                if (head === undefined) {
+                    throw await missedReadError(
+                        effective,
+                        instanceId,
+                        organization
+                            ?? pathOrganization,
+                        'record_instances',
+                    );
+                }
+                const raw = request.headers
+                    .get(IF_MATCH_HEADER);
+                if (raw === null) {
+                    return Response.json(
+                        {
+                            error: 'If-Match is required '
+                                + 'to PATCH ' + pathname,
+                        },
+                        {
+                            status:
+                                HTTP_PRECONDITION_REQUIRED,
+                        },
+                    );
+                }
+                const ifMatch = parseIfMatch(raw);
+                if (ifMatch === undefined) {
+                    return Response.json(
+                        {
+                            error: 'If-Match must carry '
+                                + 'exactly one strong '
+                                + 'validator',
+                        },
+                        { status: HTTP_BAD_REQUEST },
+                    );
+                }
+                if (ifMatch !== head.pairId) {
+                    return Response.json(
+                        {
+                            error: 'If-Match does not '
+                                + 'match the current '
+                                + 'instance at '
+                                + pathname,
+                        },
+                        {
+                            status:
+                                HTTP_PRECONDITION_FAILED,
+                        },
                     );
                 }
             }
@@ -1034,10 +1144,9 @@ export async function handleRequest(
                 return Response.json(result);
             }
             case 'PATCH': {
-                // Task 10: verb alphabet only — no route
-                // carries a patch handler yet. Mirror PUT's
-                // shape so instance routes (Task 15+) wire
-                // without another gate change.
+                // Task 10/17: instance PATCH wires through
+                // the same gate shape as PUT (pair + replay
+                // + ETag). Ladder ran pre-dispatch above.
                 if (!matched.patch) {
                     return Response.json(
                         {
@@ -1079,6 +1188,27 @@ export async function handleRequest(
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
                     ) {
+                        // R8: ETag = revision head, not the
+                        // wire PATCH operation pair.
+                        const raw = request.headers
+                            .get(IF_MATCH_HEADER);
+                        const ifMatch = raw === null
+                            ? undefined
+                            : parseIfMatch(raw);
+                        if (ifMatch !== undefined) {
+                            const revisionId =
+                                await revisionEtagForInstancePatch(
+                                    effective, ifMatch,
+                                );
+                            if (
+                                revisionId !== undefined
+                            ) {
+                                return attachEtag(
+                                    response,
+                                    revisionId,
+                                );
+                            }
+                        }
                         return attachEtag(
                             response, stored.id,
                         );

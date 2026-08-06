@@ -2546,6 +2546,122 @@ export function validateInstancePutBody(
     return { set };
 }
 
+// Instance PATCH body (Task 17): keys ⊆ {set, clear};
+// both optional; effective emptiness → 400. set∩clear
+// overlap → 400; duplicate id within set → 400; '' in
+// set → 400 (G9). Value type/constraint conformance is
+// validateInstanceValues after ACL (set only).
+export interface InstancePatchBody {
+    readonly set: {
+        readonly attribute_id: string;
+        readonly value: string;
+    }[];
+    readonly clear: string[];
+}
+
+export function validateInstancePatchBody(
+    body: Record<string, unknown>,
+): InstancePatchBody {
+    assertOnlyKeys(
+        body, [], 'InstancePatchBody',
+        ['set', 'clear'],
+    );
+    const set: {
+        attribute_id: string;
+        value: string;
+    }[] = [];
+    const setSeen = new Set<string>();
+    if ('set' in body) {
+        const raw = asArray(
+            body['set'], 'InstancePatchBody.set',
+        );
+        for (let i = 0; i < raw.length; i++) {
+            const label =
+                'InstancePatchBody.set[' + i + ']';
+            const entry = asObject(raw[i], label);
+            assertOnlyKeys(
+                entry,
+                ['attribute_id', 'value'],
+                label,
+            );
+            const attributeId = pickString(
+                entry, 'attribute_id',
+            );
+            if (attributeId === '') {
+                throw new ValidationError(
+                    label
+                        + '.attribute_id must be '
+                        + 'non-empty',
+                );
+            }
+            if (setSeen.has(attributeId)) {
+                throw new ValidationError(
+                    'duplicate attribute_id "'
+                        + attributeId
+                        + '" in InstancePatchBody.set',
+                );
+            }
+            setSeen.add(attributeId);
+            const value = pickString(entry, 'value');
+            if (value === '') {
+                throw new ValidationError(
+                    label + '.value must not be empty',
+                );
+            }
+            set.push({
+                attribute_id: attributeId,
+                value,
+            });
+        }
+    }
+    const clear: string[] = [];
+    const clearSeen = new Set<string>();
+    if ('clear' in body) {
+        const raw = asArray(
+            body['clear'], 'InstancePatchBody.clear',
+        );
+        for (let i = 0; i < raw.length; i++) {
+            const label =
+                'InstancePatchBody.clear[' + i + ']';
+            const attributeId = raw[i];
+            if (
+                typeof attributeId !== 'string'
+                || attributeId === ''
+            ) {
+                throw new ValidationError(
+                    label
+                        + ' must be a non-empty string',
+                );
+            }
+            if (clearSeen.has(attributeId)) {
+                throw new ValidationError(
+                    'duplicate attribute_id "'
+                        + attributeId
+                        + '" in InstancePatchBody.clear',
+                );
+            }
+            clearSeen.add(attributeId);
+            clear.push(attributeId);
+        }
+    }
+    if (set.length + clear.length === 0) {
+        throw new ValidationError(
+            'InstancePatchBody requires a non-empty '
+                + 'set or clear',
+        );
+    }
+    for (const attributeId of clear) {
+        if (setSeen.has(attributeId)) {
+            throw new ValidationError(
+                'attribute_id "'
+                    + attributeId
+                    + '" appears in both set and clear',
+            );
+        }
+    }
+    return { set, clear };
+}
+
 export function validateRecordDocumentBody(
     body: Record<string, unknown>,
 ): RecordDocumentBody {
