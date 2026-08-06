@@ -23,9 +23,11 @@ export interface WriteAuthorizer {
     readonly idParamIndex: number;
 }
 
-// The 9 org-scoped families' existing-id PUT/DELETE addresses.
-// Collection POSTs (genesis of a new id) are intentionally
-// absent — owner-null is the happy path for those.
+// The 9 org-scoped families' existing-id PUT/DELETE/PATCH
+// addresses. Collection POSTs (genesis of a new id) are
+// intentionally absent — owner-null is the happy path for
+// those. PATCH must share this map so a future flat PATCH
+// cannot bypass the ownership fence (Task 10 / Security).
 const WRITE_AUTHORIZERS:
     ReadonlyMap<string, WriteAuthorizer> = new Map([
         ['ideas/:id', {
@@ -63,7 +65,11 @@ export function writeAuthorizerFor(
     routePattern: string,
     method: string,
 ): WriteAuthorizer | undefined {
-    if (method !== 'PUT' && method !== 'DELETE') {
+    if (
+        method !== 'PUT'
+        && method !== 'DELETE'
+        && method !== 'PATCH'
+    ) {
         return undefined;
     }
     return WRITE_AUTHORIZERS.get(routePattern);

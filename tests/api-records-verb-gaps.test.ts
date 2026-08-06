@@ -152,3 +152,24 @@ test('POST flows/:id/records/:frid 405s (no post handler'
     ));
     assert.equal(res.status, 405);
 });
+
+// Task 10: PATCH alphabet — no records-family patch yet.
+test('PATCH records/:id 405s (no patch handler wired)',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(db, req(
+        'PATCH', '/records/rec1', token, {},
+    ));
+    assert.equal(res.status, 405);
+});
+
+test('PATCH record-attributes/:id 405s (no patch'
++ ' handler wired)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(db, req(
+        'PATCH', '/record-attributes/attr1', token, {},
+    ));
+    assert.equal(res.status, 405);
+});

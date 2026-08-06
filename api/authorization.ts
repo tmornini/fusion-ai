@@ -140,14 +140,18 @@ const MEMBER_TIER: readonly PolicyEntry[] =
     );
 
 // Deny-by-default policy. `admin` is allowed on every verb at
-// the root prefix `/` — "admin everywhere" in four honest
-// lines, no implicit-superuser special case. The member tier
-// widens the content surfaces to the `member` role.
+// the root prefix `/` — "admin everywhere" in five honest
+// lines (Task 10 adds PATCH), no implicit-superuser special
+// case. The member tier widens the content surfaces to the
+// `member` role. Admin PATCH on handler-less routes answers
+// 405 (known verb, no handler); members still 403 by absence
+// of member PATCH rows outside future instance surfaces.
 export const ROUTE_POLICY: readonly PolicyEntry[] = [
     { verb: 'GET', pathPrefix: '/', roles: ['admin'] },
     { verb: 'PUT', pathPrefix: '/', roles: ['admin'] },
     { verb: 'POST', pathPrefix: '/', roles: ['admin'] },
     { verb: 'DELETE', pathPrefix: '/', roles: ['admin'] },
+    { verb: 'PATCH', pathPrefix: '/', roles: ['admin'] },
     ...MEMBER_TIER,
 ];
 

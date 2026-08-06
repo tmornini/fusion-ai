@@ -763,28 +763,49 @@ registerDocumentFamilyWiring(IDENTITIES_WIRING);
 // declare their return types with the SAME handler vocabulary
 // routes.ts itself uses, rather than a structurally-duplicated
 // alias.
+// GetHandler trails organization + roles (the fenced claim
+// projection). Existing handlers may ignore trailing args —
+// fewer-parameter closures are assignable.
 export type GetHandler = (
     adapter: DbAdapter,
     params: string[],
     actor: Id,
     organization: Id | undefined,
+    roles: readonly string[],
 ) => Promise<unknown>;
 
-// PutHandler, PostHandler, and DeleteHandler carry a trailing
-// pair: it is undefined for bearer-exempt and not-yet-wired
-// writes (TypeScript cannot prove bearerExempt was false inside
-// the gate's one shared dispatch switch), and defined for a
-// route named in message-pair.ts's PAIR_WIRED_ROUTE_PATTERNS.
-// A wired handler's LAST in-tx act is appending it (absence
-// there is a wiring bug — crash loud); an unwired handler
-// ignores the extra argument (TypeScript permits a closure
-// with fewer declared parameters than its assigned type).
+// PutHandler, PatchHandler, PostHandler, and DeleteHandler
+// carry a trailing pair: it is undefined for bearer-exempt and
+// not-yet-wired writes (TypeScript cannot prove bearerExempt
+// was false inside the gate's one shared dispatch switch), and
+// defined for a route named in message-pair.ts's
+// PAIR_WIRED_ROUTE_PATTERNS. A wired handler's LAST in-tx act
+// is appending it (absence there is a wiring bug — crash
+// loud); an unwired handler ignores the extra argument
+// (TypeScript permits a closure with fewer declared
+// parameters than its assigned type). Organization + roles
+// trail every write verb (reconciliation 5 / Task 10).
 export type PutHandler = (
     adapter: DbAdapter,
     params: string[],
     payload: Record<string, unknown>,
     actor: Id,
     pair: MessagePair | undefined,
+    organization: Id | undefined,
+    roles: readonly string[],
+) => Promise<unknown>;
+
+// Task 10: PATCH joins the verb alphabet. No route carries a
+// patch handler yet — the type + Route slot land so later
+// instance routes can wire without another alphabet widen.
+export type PatchHandler = (
+    adapter: DbAdapter,
+    params: string[],
+    payload: Record<string, unknown>,
+    actor: Id,
+    pair: MessagePair | undefined,
+    organization: Id | undefined,
+    roles: readonly string[],
 ) => Promise<unknown>;
 
 type DeleteHandler = (
@@ -792,16 +813,18 @@ type DeleteHandler = (
     params: string[],
     actor: Id,
     pair: MessagePair | undefined,
+    organization: Id | undefined,
+    roles: readonly string[],
 ) => Promise<void>;
 
-// PostHandler alone also carries a trailing fence
-// organization, mirroring GetHandler's rationale above: the
-// verified token claim the gate resolved, never the path.
-// Undefined for a bearer-exempt or global route. Only the
-// conversion handler consults it today (to form the created
+// PostHandler also carries fence organization + roles,
+// mirroring GetHandler's rationale: the verified token claim
+// the gate resolved, never the path. Undefined organization
+// for a bearer-exempt or global route. Only the conversion
+// handler consults organization today (to form the created
 // project's OWN document-address pair beside the operation
 // pair above); every other POST handler ignores the extra
-// trailing arg, the same fewer-parameter-closure precedent
+// trailing args, the same fewer-parameter-closure precedent
 // `pair` already established.
 type PostHandler = (
     adapter: DbAdapter,
@@ -810,12 +833,14 @@ type PostHandler = (
     actor: Id,
     pair: MessagePair | undefined,
     organization: Id | undefined,
+    roles: readonly string[],
 ) => Promise<unknown>;
 
 export interface Route {
     segments: string[];
     get?: GetHandler;
     put?: PutHandler;
+    patch?: PatchHandler;
     delete?: DeleteHandler;
     post?: PostHandler;
 }
@@ -825,6 +850,7 @@ export function route(
     handlers: {
         get?: GetHandler;
         put?: PutHandler;
+        patch?: PatchHandler;
         delete?: DeleteHandler;
         post?: PostHandler;
     },
@@ -875,8 +901,10 @@ async function membershipsAcrossAllOrganizations(
     const organizations = await deriveOrganizations(db);
     const perOrganization = await Promise.all(
         organizations.map((organization) =>
+            // Empty roles: internal pair-plane scan, not a
+            // user-facing dispatch (Task 10 GetHandler arity).
             documentCollectionGetHandler(MEMBERSHIPS_WIRING)(
-                db, [], actor, organization.id,
+                db, [], actor, organization.id, [],
             ) as Promise<MembershipEntity[]>,
         ),
     );
@@ -2965,6 +2993,7 @@ export interface WriteResponseSpec {
 // level (see isPerVerbWriteResponseSpec in api.ts).
 export interface PerVerbWriteResponseSpec {
     readonly put?: WriteResponseSpec;
+    readonly patch?: WriteResponseSpec;
     readonly post?: WriteResponseSpec;
 }
 

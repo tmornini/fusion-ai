@@ -162,7 +162,8 @@ async function facadeRequest(
     // outer vessel's id across the re-entry.
     headers.set(REQUEST_ID_HEADER, ctx.requestId);
     const hasBody = ctx.method === 'PUT'
-        || ctx.method === 'POST';
+        || ctx.method === 'POST'
+        || ctx.method === 'PATCH';
     const flatRequest = new Request(flatUrl.toString(), {
         method: ctx.method,
         headers,
@@ -218,7 +219,9 @@ function postWriteNotification(
 // PUT alongside its composed-edit POST, and 'human-members/:id'
 // joins it (Phase 8 Task 4) for a DIFFERENT reason — its `put`
 // slot serves no live route at all, only the synthesized
-// detail-document bundle and the seed (see routes.ts).
+// detail-document bundle and the seed (see routes.ts). Task 10:
+// resolve put / patch / else post EXPLICITLY — never let PATCH
+// silently fall into the post branch.
 function writeResponseSpecFor(
     routePattern: string,
     method: string,
@@ -227,7 +230,9 @@ function writeResponseSpecFor(
     if (entry === undefined || 'status' in entry) {
         return entry;
     }
-    return method === 'PUT' ? entry.put : entry.post;
+    if (method === 'PUT') return entry.put;
+    if (method === 'PATCH') return entry.patch;
+    return entry.post;
 }
 
 // The one catch shared by both pre-dispatch ownership regions
@@ -342,6 +347,10 @@ export async function handleRequest(
     // exempt route (no fence ran, so no role to hold) — the
     // guard below only ever runs on an authenticated route.
     let callerIsAdmin = false;
+    // Fenced claim roles for the active organization —
+    // threaded to every handler (Task 10 reconciliation 5).
+    // Empty for bearer-exempt routes (no fence ran).
+    let roles: readonly string[] = [];
     // BOOTSTRAP_ROUTES: the accepted dev-tier auth-free
     // snapshot plane (removed at the Postgres server tier) —
     // see api/request-auth.ts. An unmatched path can never be
@@ -461,6 +470,7 @@ export async function handleRequest(
             }
             actor = fenced.principal.id;
             organization = fenced.organization;
+            roles = fenced.roles;
             callerIsAdmin = fenced.roles.includes('admin');
         } catch (error) {
             return redactedFenceFailure(ctx, error);
@@ -488,7 +498,11 @@ export async function handleRequest(
     // server fault — it must not flow into the
     // domain-boundary try below.
     let body: Record<string, unknown> | undefined;
-    if (method === 'PUT' || method === 'POST') {
+    if (
+        method === 'PUT'
+        || method === 'POST'
+        || method === 'PATCH'
+    ) {
         const parse = await parseObjectBody(request);
         if (!parse.ok) {
             return Response.json(
@@ -553,7 +567,7 @@ export async function handleRequest(
     }
 
     const isWrite = method === 'PUT' || method === 'POST'
-        || method === 'DELETE';
+        || method === 'DELETE' || method === 'PATCH';
     // A route pattern can be pair-wired for one verb (PUT,
     // say) while exposing no handler for another (DELETE) —
     // ideas/:id is exactly this today. Requiring the matched
@@ -561,9 +575,12 @@ export async function handleRequest(
     // exactly as it did before pairs existed, rather than
     // running the pair machinery (and its successBody
     // validation) against a request no handler will ever see.
+    // Task 10: PATCH joins the write alphabet the same way.
     const hasWriteHandler =
         (method === 'PUT' && matched.put !== undefined)
         || (method === 'POST' && matched.post !== undefined)
+        || (method === 'PATCH'
+            && matched.patch !== undefined)
         || (method === 'DELETE'
             && matched.delete !== undefined);
 
@@ -841,6 +858,7 @@ export async function handleRequest(
                     params,
                     actor,
                     organization,
+                    roles,
                 );
                 // Response-ID attach (spec §The two PUT
                 // classes): a locked-family document GET
@@ -909,6 +927,61 @@ export async function handleRequest(
                         body!,
                         actor,
                         pair,
+                        organization,
+                        roles,
+                    );
+                if (pair !== undefined) {
+                    const stored = await storedResponseFor(
+                        effective, pair.requestHash,
+                    );
+                    if (stored === undefined) {
+                        throw new Error(
+                            'wired write stored no pair: '
+                            + routePattern,
+                        );
+                    }
+                    postWriteNotification(
+                        adapter, routePattern, params,
+                        body, organization, actor,
+                    );
+                    return responseFromStored(stored);
+                }
+                postWriteNotification(
+                    adapter, routePattern, params,
+                    body, organization, actor,
+                );
+                if (result === undefined) {
+                    return new Response(null, {
+                        status: HTTP_NO_CONTENT,
+                    });
+                }
+                return Response.json(result);
+            }
+            case 'PATCH': {
+                // Task 10: verb alphabet only — no route
+                // carries a patch handler yet. Mirror PUT's
+                // shape so instance routes (Task 15+) wire
+                // without another gate change.
+                if (!matched.patch) {
+                    return Response.json(
+                        {
+                            error:
+                                'Method PATCH not'
+                                + ' allowed on '
+                                + pathname,
+                        },
+                        { status: HTTP_METHOD_NOT_ALLOWED },
+                    );
+                }
+                const result =
+                    await matched.patch(
+                        effective,
+                        params,
+                        body!,
+                        actor,
+                        pair,
+                        organization,
+                        roles,
                     );
                 if (pair !== undefined) {
                     const stored = await storedResponseFor(
@@ -955,6 +1028,8 @@ export async function handleRequest(
                     params,
                     actor,
                     pair,
+                    organization,
+                    roles,
                 );
                 if (pair !== undefined) {
                     const stored = await storedResponseFor(
@@ -1072,6 +1147,7 @@ export async function handleRequest(
                         actor,
                         pair,
                         organization,
+                        roles,
                     );
                 }
                 if (pair !== undefined) {

@@ -386,6 +386,12 @@ export function httpDateOf(at: string): string {
 // reads the SAME header name the hash covers.
 export const IF_RESPONSE_ID_HEADER = 'if-response-id';
 
+// PATCH concurrency dialect (Task 10/11): If-Match carries
+// the strong ETag (head document-pair response id). Not a
+// credential — stored verbatim so two PATCHes differing only
+// in If-Match are different messages for replay identity.
+export const IF_MATCH_HEADER = 'if-match';
+
 // The header fields worth storing in a pair's request message:
 // enumerated explicitly (never hoisted blindly). `authorization`
 // is redacted downstream (message-redaction.ts); the rest are
@@ -393,6 +399,7 @@ export const IF_RESPONSE_ID_HEADER = 'if-response-id';
 const HOISTED_HEADER_NAMES: readonly string[] = [
     'authorization', 'content-type', 'idempotency-key',
     REQUEST_ID_HEADER, IF_RESPONSE_ID_HEADER,
+    IF_MATCH_HEADER,
 ];
 
 export function hoistedHeaderFields(request: Request): FieldLine[] {
