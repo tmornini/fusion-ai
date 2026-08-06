@@ -267,15 +267,6 @@ export async function handleRequest(
     const pathSegments = pathname
         .split('/')
         .filter(Boolean);
-    // Facade: /organizations/:org/:entity[/:id] — exchange the
-    // caller's bearer for an org-scoped token and re-enter the
-    // gate against the flat resource path, so the existing
-    // handler is fenced automatically. Organization rides the one
-    // verified token, never the path.
-    if (pathSegments[0] === 'organizations'
-        && pathSegments.length >= 3) {
-        return facadeRequest(ctx, request, pathSegments);
-    }
     if (pathSegments[0] === 'identities'
         && pathSegments.length === 3
         && pathSegments[2] === 'default-org') {
@@ -303,7 +294,22 @@ export async function handleRequest(
     // Match first (pure, no I/O). Authentication runs before
     // the no-match 404 so an unauthenticated caller never maps
     // route topology (unknown path and real route both 401).
+    // In-table organizations/... patterns win over the facade
+    // when registered; the facade swallows only unmatched
+    // nested org paths (length ≥ 3).
     const match = matchRoute(routeTable, pathSegments);
+    // Facade: /organizations/:org/:entity[/:id] — exchange the
+    // caller's bearer for an org-scoped token and re-enter the
+    // gate against the flat resource path, so the existing
+    // handler is fenced automatically. Organization rides the
+    // one verified token, never the path.
+    if (
+        match === null
+        && pathSegments[0] === 'organizations'
+        && pathSegments.length >= 3
+    ) {
+        return facadeRequest(ctx, request, pathSegments);
+    }
     const matchedRoutePattern = match !== null
         ? match.route.segments.join('/')
         : undefined;
