@@ -6,6 +6,9 @@ import type {
     RecordId,
 } from '../../../api/types.ts';
 import {
+    DEFAULT_ATTRIBUTE_ACL_ROLES,
+} from '../../../api/types.ts';
+import {
     activeOrganization,
     type RequestContext,
 } from './shared.ts';
@@ -19,6 +22,7 @@ export type {
 // options/constraints arrive native from the gate. Nested
 // wire echoes record_type_id; the domain keeps recordId as
 // the parent type id (one name, one voice for callers).
+// ACL arrays mirror storage stamps (Task 22 instance UI).
 export interface RecordAttribute {
     id: RecordAttributeId;
     organizationId: Id;
@@ -28,6 +32,8 @@ export interface RecordAttribute {
     sortOrder: number;
     options: string[];
     constraints: Constraint[];
+    readRoles: readonly string[];
+    writeRoles: readonly string[];
 }
 
 // Nested attribute wire (Task 7 / Task 21): parentage is
@@ -43,6 +49,8 @@ interface AttributeWire {
     readonly sort_order: number;
     readonly options: string[];
     readonly constraints: Constraint[];
+    readonly read_roles?: readonly string[];
+    readonly write_roles?: readonly string[];
 }
 
 function toRecordAttribute(
@@ -65,6 +73,10 @@ function toRecordAttribute(
         sortOrder: entity.sort_order,
         options: entity.options,
         constraints: entity.constraints,
+        readRoles: entity.read_roles
+            ?? [...DEFAULT_ATTRIBUTE_ACL_ROLES],
+        writeRoles: entity.write_roles
+            ?? [...DEFAULT_ATTRIBUTE_ACL_ROLES],
     };
 }
 

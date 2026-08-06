@@ -67,6 +67,8 @@ function makeAttribute(
         sortOrder: 0,
         options: [],
         constraints: [],
+        readRoles: ['member', 'admin'],
+        writeRoles: ['member', 'admin'],
         ...overrides,
     };
 }

@@ -85,6 +85,8 @@ test(
             sortOrder: 3,
             options: [],
             constraints: [],
+            readRoles: ['member', 'admin'],
+            writeRoles: ['member', 'admin'],
         });
     },
 );
