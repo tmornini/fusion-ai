@@ -414,6 +414,23 @@ export function parseIfMatch(
     return inner;
 }
 
+// Recover the client's If-Match target from a formed wire
+// pair's request message (hoisted into the hash). This is
+// the gate-verified anchor for R9 / revision.follows — never
+// re-derive a live head and treat it as the client's echo.
+export function ifMatchFromPair(
+    pair: MessagePair,
+): string | undefined {
+    const model = parseJson(
+        pair.requestMessage, defaultBodyRegistry(),
+    );
+    const field = model.fields.find(
+        (line) => line.name === IF_MATCH_HEADER,
+    );
+    if (field === undefined) return undefined;
+    return parseIfMatch(field.value);
+}
+
 // Strong wire ETag for a document-pair response id.
 // Distinct from `responses.etag` (body sha256 column).
 export function strongEtagOf(pairId: string): string {

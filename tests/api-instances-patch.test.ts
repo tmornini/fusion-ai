@@ -14,6 +14,7 @@ import {
 } from './test-fixtures.ts';
 import {
     postMembershipDocumentOp,
+    postInstancePatchOp,
     WRITE_RESPONSE_SPECS,
     formDocumentPairFor,
 } from '../api/routes.ts';
@@ -24,6 +25,10 @@ import {
     strongEtagOf,
     parseIfMatch,
 } from '../api/message-pair.ts';
+import {
+    ApiError,
+    HTTP_PRECONDITION_FAILED,
+} from '../api/http-errors.ts';
 import {
     INSTANCE_DETAIL_PATTERN,
 } from '../api/family-registry.ts';
@@ -870,6 +875,119 @@ async () => {
         [a.status, b.status].sort(),
         [200, 412],
     );
+});
+
+// R9 pin: a wire pair formed against If-Match = H0 must
+// 412 when the head advanced AFTER that pair was formed —
+// never silently re-derive onto R1 and rebase values.
+// Promise.all alone is not enough (timing can hide rebase).
+test('R9: stale formed pair after head advance → 412 '
++ '(no silent rebase onto newer head)',
+async () => {
+    const { db, adminToken, memberToken } =
+        await adminDb();
+    await putLiveType(db, adminToken);
+    await seedWritableTextAttr(db, adminToken);
+    const put = await putInstance(db, memberToken, [
+        { attribute_id: ATTR_ID, value: 'H0' },
+    ]);
+    const h0 = parseIfMatch(put.headers.get('ETag')!)!;
+    const staleBody = {
+        set: [
+            {
+                attribute_id: ATTR_ID,
+                value: 'stale-writer',
+            },
+        ],
+    };
+    // Form the wire pair as the gate would, with If-Match
+    // still targeting H0 (gate-equivalent check already
+    // "passed" for this pair).
+    const stalePair = await formWritePair({
+        method: 'PATCH',
+        pathname: INSTANCE_DETAIL,
+        routePattern: INSTANCE_DETAIL_PATTERN,
+        routeSegments:
+            INSTANCE_DETAIL_PATTERN.split('/'),
+        pathSegments: [
+            'organizations', ORGANIZATION,
+            'record-types', TYPE_ID,
+            'instances', INSTANCE_ID,
+        ],
+        headerFields: [
+            {
+                name: IF_MATCH_HEADER,
+                value: strongEtagOf(h0),
+            },
+        ],
+        body: staleBody,
+        requesterIdentityId: 'member1',
+        requestAt: nowUtc(),
+        organization: ORGANIZATION,
+        responseStatus: 200,
+        responseBody: {
+            id: INSTANCE_ID,
+            organization_id: ORGANIZATION,
+            record_type_id: TYPE_ID,
+            set: staleBody.set,
+            clear: [],
+        },
+        headPairId: undefined,
+    });
+    // Advance the real head past H0.
+    const advance = await handleRequest(db, req(
+        'PATCH', INSTANCE_DETAIL, memberToken,
+        {
+            set: [
+                {
+                    attribute_id: ATTR_ID,
+                    value: 'advanced',
+                },
+            ],
+        },
+        { [IF_MATCH_HEADER]: strongEtagOf(h0) },
+    ));
+    assert.equal(advance.status, 200);
+    const live = await deriveInstanceHead(
+        db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
+    );
+    assert.ok(live !== undefined);
+    assert.notEqual(live.pairId, h0);
+    assert.deepEqual(live.values, [
+        { attribute_id: ATTR_ID, value: 'advanced' },
+    ]);
+    // Stale writer must 412 on ifMatchTarget (= H0), not
+    // merge against live and 200.
+    await assert.rejects(
+        () => postInstancePatchOp(
+            db,
+            [ORGANIZATION, TYPE_ID, INSTANCE_ID],
+            staleBody,
+            'member1',
+            stalePair,
+            ORGANIZATION,
+            ['member'],
+        ),
+        (error: unknown) => {
+            assert.ok(error instanceof ApiError);
+            assert.equal(
+                error.status,
+                HTTP_PRECONDITION_FAILED,
+            );
+            assert.match(
+                error.message,
+                /If-Match does not match/,
+            );
+            return true;
+        },
+    );
+    const after = await deriveInstanceHead(
+        db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
+    );
+    assert.deepEqual(after?.values, [
+        { attribute_id: ATTR_ID, value: 'advanced' },
+    ]);
+    assert.equal(after?.pairId, live.pairId);
 });
 
 test('explicit-follows race pin: formDocumentPairFor never '

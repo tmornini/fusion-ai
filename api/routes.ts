@@ -110,6 +110,7 @@ import {
     formWritePair,
     headPairIdAt,
     pairResponseBody,
+    ifMatchFromPair,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
 import { replacePiiSlot } from './pii-hard-delete.ts';
@@ -3596,6 +3597,120 @@ export async function formDocumentPairFor(
     });
 }
 
+// Instance PATCH two-pair append (Task 17 / R5 / R9).
+// ifMatchTarget is the CLIENT's gate-verified If-Match pair
+// id recovered from the formed wire pair — never a live
+// re-derived head. Merge values read the current head only
+// when it still equals ifMatchTarget; revision.follows and
+// the in-tx check both anchor on ifMatchTarget so a concurrent
+// advance cannot silently rebase.
+export async function postInstancePatchOp(
+    db: DbAdapter,
+    p: string[],
+    body: Record<string, unknown>,
+    actor: Id,
+    pair: MessagePair | undefined,
+    organization: Id | undefined,
+    roles: readonly string[],
+): Promise<void> {
+    const org = requireOrganization(organization);
+    const typeId = param(p, 1);
+    const instanceId = param(p, 2);
+    const pathname = '/organizations/' + org
+        + '/record-types/' + typeId
+        + '/instances/' + instanceId;
+    if (pair === undefined) {
+        throw new Error(
+            'instance PATCH requires a formed pair',
+        );
+    }
+    const ifMatchTarget = ifMatchFromPair(pair);
+    if (ifMatchTarget === undefined) {
+        // Gate requires If-Match; a pair without it is a
+        // wiring bug, never a normal path.
+        throw new Error(
+            'instance PATCH pair lacks If-Match',
+        );
+    }
+    // Values only — head must still equal the client's
+    // If-Match target or we 412 (no silent rebase).
+    const head = await deriveInstanceHead(
+        db, org, typeId, instanceId,
+    );
+    if (
+        head === undefined
+        || head.pairId !== ifMatchTarget
+    ) {
+        throw new ApiError(
+            'If-Match does not match the current '
+                + 'instance at ' + pathname,
+            HTTP_PRECONDITION_FAILED,
+        );
+    }
+    const validated = validateInstancePatchBody(body);
+    const attributesById = await loadAttributeSchemaById(
+        db, org, typeId,
+    );
+    const aclIds = [
+        ...validated.set.map(
+            (entry) => entry.attribute_id,
+        ),
+        ...validated.clear,
+    ];
+    assertWritableAttributeIds(
+        aclIds, attributesById, roles,
+    );
+    validateInstanceValues(
+        validated.set, attributesById,
+    );
+    const mergedValues = mergeInstanceValues(
+        head.values, {
+            set: validated.set,
+            clear: validated.clear,
+        },
+    );
+    // Revision: EXPLICIT follows = ifMatchTarget (never a
+    // newer live head). Wire is operation-plane (no
+    // follows); UNIQUE on revision.follows serializes
+    // concurrent writers. Ghost-replay closed via
+    // headerFields: [] on the synthetic revision.
+    const revisionPair = await formDocumentPairFor(db, {
+        routePattern: INSTANCE_DETAIL_PATTERN,
+        params: [org, typeId, instanceId],
+        method: 'PUT',
+        body: { values: mergedValues },
+        requesterIdentityId: actor,
+        requestAt: pair.requestAt,
+        organization: org,
+        chain: 'follows',
+        follows: ifMatchTarget,
+        response: { status: HTTP_OK, body: {} },
+    });
+    await db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            // R9: live head must still be the client's
+            // If-Match target, not merely "unchanged since
+            // our re-derive".
+            const live = await deriveInstanceHead(
+                view, org, typeId, instanceId,
+            );
+            if (
+                live === undefined
+                || live.pairId !== ifMatchTarget
+            ) {
+                throw new ApiError(
+                    'If-Match does not match the current '
+                        + 'instance at ' + pathname,
+                    HTTP_PRECONDITION_FAILED,
+                );
+            }
+            await appendMessagePair(view, pair);
+            await appendMessagePair(view, revisionPair);
+        },
+    );
+}
+
 export const routes: Route[] = [
     route('members', {
         // GET is FLIPPED (Task 8): derived via deriveMembers —
@@ -5395,112 +5510,11 @@ export const routes: Route[] = [
                 },
             );
         },
-        patch: async (
-            db, p, body, actor, pair, organization,
+        patch: (db, p, body, actor, pair, organization,
             roles,
-        ) => {
-            const org = requireOrganization(organization);
-            const typeId = param(p, 1);
-            const instanceId = param(p, 2);
-            // Gate already verified live head + If-Match;
-            // re-derive pre-tx for merge inputs (R9 re-check
-            // lives inside the tx).
-            const head = await deriveInstanceHead(
-                db, org, typeId, instanceId,
-            );
-            if (head === undefined) {
-                throw await missedReadError(
-                    db, instanceId, org,
-                    'record_instances',
-                );
-            }
-            const validated =
-                validateInstancePatchBody(body);
-            const attributesById =
-                await loadAttributeSchemaById(
-                    db, org, typeId,
-                );
-            const aclIds = [
-                ...validated.set.map(
-                    (entry) => entry.attribute_id,
-                ),
-                ...validated.clear,
-            ];
-            assertWritableAttributeIds(
-                aclIds, attributesById, roles,
-            );
-            validateInstanceValues(
-                validated.set, attributesById,
-            );
-            const mergedValues = mergeInstanceValues(
-                head.values, {
-                    set: validated.set,
-                    clear: validated.clear,
-                },
-            );
-            if (pair === undefined) {
-                throw new Error(
-                    'instance PATCH requires a formed pair',
-                );
-            }
-            // Revision pair: EXPLICIT follows = gate-
-            // verified head (never re-read). Wire pair is
-            // operation-plane (no follows); UNIQUE on
-            // revision.follows serializes concurrent writers
-            // (decision 15). Ghost-replay closed:
-            // headerFields: [] on synthetic revision.
-            const revisionPair =
-                await formDocumentPairFor(db, {
-                    routePattern:
-                        INSTANCE_DETAIL_PATTERN,
-                    params: [
-                        org, typeId, instanceId,
-                    ],
-                    method: 'PUT',
-                    body: { values: mergedValues },
-                    requesterIdentityId: actor,
-                    requestAt: pair.requestAt,
-                    organization: org,
-                    chain: 'follows',
-                    follows: head.pairId,
-                    response: {
-                        status: HTTP_OK,
-                        body: {},
-                    },
-                });
-            await db.transaction(
-                ['requests', 'responses'],
-                async (view) => {
-                    // R9 in-tx verify: head must still be
-                    // the If-Match target (gate-verified
-                    // head.pairId).
-                    const live =
-                        await deriveInstanceHead(
-                            view, org, typeId,
-                            instanceId,
-                        );
-                    if (
-                        live === undefined
-                        || live.pairId !== head.pairId
-                    ) {
-                        throw new ApiError(
-                            'If-Match does not match the '
-                                + 'current instance at '
-                                + '/organizations/' + org
-                                + '/record-types/'
-                                + typeId
-                                + '/instances/'
-                                + instanceId,
-                            HTTP_PRECONDITION_FAILED,
-                        );
-                    }
-                    await appendMessagePair(view, pair);
-                    await appendMessagePair(
-                        view, revisionPair,
-                    );
-                },
-            );
-        },
+        ) => postInstancePatchOp(
+            db, p, body, actor, pair, organization, roles,
+        ),
     }),
     // Flat alias window (Task 8): wire path stays
     // /record-attributes; storage is nested under each type's
