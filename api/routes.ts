@@ -120,6 +120,11 @@ import {
     deleteRecordAttributeSafe,
 } from './record-attribute-refs.ts';
 import {
+    collectRecordTypeReferrers,
+    hasTypeReferrers,
+    describeTypeReferrers,
+} from './record-type-refs.ts';
+import {
     rotateRefreshJti,
     revokeTokenChain,
 } from './authentication.ts';
@@ -2757,6 +2762,26 @@ export const WRITE_RESPONSE_SPECS:
     // entity/trio separation guarantees doc.entity never carries
     // the trio, byte-identical to today's hand-built body.
     'records/:id': documentWriteResponseSpec(RECORDS_WIRING),
+    // Nested record-types detail (Task 3): put-only per-verb
+    // entry. Id is param 1 (:record-type-id); organization_id
+    // is param 0 (path org, already org-matched at the gate).
+    // Trio discarded — same house document-spec shape as
+    // documentWriteResponseSpec for records/:id.
+    [RECORD_TYPE_DETAIL_PATTERN]: {
+        put: {
+            status: HTTP_OK,
+            successBody: (params, body) => {
+                const doc = validateRecordDocumentBody(
+                    withoutId(body ?? {}),
+                );
+                return {
+                    id: param(params, 1),
+                    organization_id: param(params, 0),
+                    ...doc.entity,
+                };
+            },
+        },
+    },
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
     // entry above for the shared rationale. record-attributes/:id
@@ -4614,13 +4639,15 @@ export const routes: Route[] = [
             deriveRecordStateHistory, 'records',
         ),
     }),
-    // Nested record-types READ surface (Task 2). Org-nested
-    // primary addresses; member GET via MEMBER_VERBS
-    // '/organizations/:id/record-types'. Handlers are inline
+    // Nested record-types surface (Task 2 READ + Task 3
+    // WRITE). Org-nested primary addresses; member GET via
+    // MEMBER_VERBS '/organizations/:id/record-types';
+    // mutations stay admin by absence. Handlers are inline
     // (param index 1 is :record-type-id) rather than the flat
-    // document-family factories. History mirrors
-    // documentStateHistoryHandler: ASC derive → empty miss /
-    // DESC wire. Writes land in Task 3.
+    // document-family factories — documentPutHandler always
+    // takes param 0 as id. PUT reuses postRecordDocumentOp
+    // (same trio body / pair append). DELETE is inline
+    // records/:id posture plus type RESTRICT.
     route(RECORD_TYPES_COLLECTION_PATTERN, {
         get: (db, _p, _actor, organization) =>
             deriveRecordTypeCollection(
@@ -4633,6 +4660,39 @@ export const routes: Route[] = [
                 db, requireOrganization(organization),
                 param(p, 1),
             ),
+        put: (db, p, body, actor, pair) =>
+            postRecordDocumentOp(
+                db, param(p, 1), body, actor, pair,
+            ),
+        // Admin DELETE with NET-NEW type RESTRICT. RESTRICT
+        // check and tombstone append share one tx; referrer
+        // scan awaits only row ops on the view (auto-commit
+        // discipline). Path org is already gate-matched to
+        // the token org; DeleteHandler has no fence arg.
+        delete: async (db, params, _actor, pair) => {
+            const organization = requireOrganization(
+                param(params, 0),
+            );
+            const id = param(params, 1);
+            await db.transaction(
+                ['requests', 'responses'],
+                async (view) => {
+                    const refs =
+                        await collectRecordTypeReferrers(
+                            view, organization, id,
+                        );
+                    if (hasTypeReferrers(refs)) {
+                        throw new ApiError(
+                            describeTypeReferrers(id, refs),
+                            HTTP_CONFLICT,
+                        );
+                    }
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
     }),
     route(RECORD_TYPE_HISTORY_PATTERN, {
         get: async (db, p, _actor, organization) => {

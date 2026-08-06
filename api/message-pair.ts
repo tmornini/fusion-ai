@@ -29,7 +29,10 @@ import {
     defaultBodyRegistry,
 } from '../shared/http-message/media-registry.ts';
 import { REQUEST_ID_HEADER } from './request-context.ts';
-import { familyRegistration } from './family-registry.ts';
+import {
+    familyRegistration,
+    RECORD_TYPE_DETAIL_PATTERN,
+} from './family-registry.ts';
 import { HTTP_OK } from './http-errors.ts';
 
 // The shadow-ledger message pair: one row in `requests`, one
@@ -614,6 +617,9 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'identity-tokens/:jti/revocation',
     'organizations/:id',
     'identity-providers/:id',
+    // Nested record-types detail (Task 3): admin PUT/DELETE.
+    // Collection POST is Task 9.
+    RECORD_TYPE_DETAIL_PATTERN,
     // states/:id/field-values/:fvid RETIRED from live wire
     // (Phase 15 Task 7); seed still forms pairs at that
     // address via formSeedPair + WRITE_RESPONSE_SPECS.
@@ -698,6 +704,10 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'identities/:id/registration',
         'memberships/:id',
         'organizations/:id',
+        // Nested record-types detail (Task 3): simple class —
+        // gate stamps supersedes for non-locked PUTs; no
+        // If-Match required on types.
+        RECORD_TYPE_DETAIL_PATTERN,
         // states/:id/field-values/:fvid RETIRED from live wire
         // (Phase 15 Task 7); seed still forms pairs at that
         // address via formSeedPair + WRITE_RESPONSE_SPECS.

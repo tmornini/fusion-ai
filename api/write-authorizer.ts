@@ -2,6 +2,8 @@ import type { DbAdapter } from './db.ts';
 import { ForeignOrganizationError } from './db.ts';
 import type { Id } from './types.ts';
 import { resolveGlobalOwner } from './derive-states.ts';
+import { RECORD_TYPE_DETAIL_PATTERN } from
+    './family-registry.ts';
 
 // Pre-write ownership authorizer on the pair plane. Without
 // it, a foreign-id PUT would genesis in the caller's own
@@ -49,6 +51,11 @@ const WRITE_AUTHORIZERS:
         }],
         ['memberships/:id', {
             table: 'memberships', idParamIndex: 0,
+        }],
+        // Nested record-types detail (Task 3): id is param
+        // index 1 (:record-type-id).
+        [RECORD_TYPE_DETAIL_PATTERN, {
+            table: 'record_types', idParamIndex: 1,
         }],
     ]);
 
