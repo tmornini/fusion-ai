@@ -175,6 +175,7 @@ import {
     ATTRIBUTE_DETAIL_PATTERN,
     INSTANCES_COLLECTION_PATTERN,
     INSTANCE_DETAIL_PATTERN,
+    INSTANCE_HISTORY_PATTERN,
 } from './family-registry.ts';
 import {
     deriveDocumentsAt,
@@ -184,6 +185,7 @@ import {
     instancesUriPrefix,
     deriveInstanceHead,
     deriveInstanceCollection,
+    deriveInstanceRevisions,
     mergeInstanceValues,
 } from './derive-record-instances.ts';
 import {
@@ -5482,6 +5484,46 @@ export const routes: Route[] = [
                     head.values, attributesById, roles,
                 ),
                 etag: head.pairId,
+            }));
+        },
+    }),
+    // Nested instance value-revision history (Task 19).
+    // NOT a lifecycle-trio clone: each entry is full state
+    // from a revision (or genesis) PUT pair (R5 — no fold),
+    // projected by the caller's CURRENT read ACL. Wire
+    // (at, id) DESC so index 0 is the live head. Empty →
+    // missedReadError('record_instances') (R2: foreign 403
+    // / absent-or-tombstoned 404). Parent type miss first.
+    // Segment count > detail so first-match is safe either
+    // order; registered before detail for literal-history
+    // house order (work-orders/history precedent).
+    route(INSTANCE_HISTORY_PATTERN, {
+        get: async (
+            db, p, _actor, organization, roles,
+        ) => {
+            const org = requireOrganization(organization);
+            const typeId = param(p, 1);
+            const instanceId = param(p, 2);
+            await requireRecordTypeExists(db, org, typeId);
+            const revisions = await deriveInstanceRevisions(
+                db, org, typeId, instanceId,
+            );
+            if (revisions.length === 0) {
+                throw await missedReadError(
+                    db, instanceId, org,
+                    'record_instances',
+                );
+            }
+            const attributesById =
+                await loadAttributeSchemaById(
+                    db, org, typeId,
+                );
+            return revisions.toReversed().map((rev) => ({
+                at: rev.at,
+                etag: rev.pairId,
+                values: projectReadableValues(
+                    rev.values, attributesById, roles,
+                ),
             }));
         },
     }),

@@ -278,28 +278,16 @@ async () => {
             + INSTANCE_ID,
     });
 
-    // History is Task 19; pin missedReadError only when the
-    // route is registered (else skip — do not fail Task 18).
+    // History GET (Task 19): tombstone → 404 R2, same body
+    // as detail miss (never a live revision chain).
     const history = await handleRequest(db, req(
         'GET', INSTANCE_HISTORY, memberToken,
     ));
-    if (history.status !== 404
-        && history.status !== 405
-        && history.status !== 400
-    ) {
-        // Unexpected success would mean a live history after
-        // tombstone — that must not happen.
-        assert.notEqual(history.status, 200);
-    } else if (history.status === 404) {
-        const histBody = await history.json() as {
-            error: string;
-        };
-        // Router miss vs missedReadError both 404; accept
-        // either until Task 19 wires the history GET.
-        assert.ok(
-            typeof histBody.error === 'string',
-        );
-    }
+    assert.equal(history.status, 404);
+    assert.deepEqual(await history.json(), {
+        error: 'Not found: record_instances/'
+            + INSTANCE_ID,
+    });
 
     const patch = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
