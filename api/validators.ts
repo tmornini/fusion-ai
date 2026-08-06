@@ -62,6 +62,7 @@ import {
     assertObjectiveState,
     assertProjectState,
     assertRecordState,
+    DEFAULT_ATTRIBUTE_ACL_ROLES,
 } from './types.ts';
 import {
     isProviderModelId,
@@ -2685,6 +2686,150 @@ export function validateRecordAttributeDocumentBody(
             constraints,
         },
     };
+}
+
+// Nested attribute document under a record-type address
+// (Task 6). No record_id — parentage is the URI. Create
+// stamps DEFAULT_ATTRIBUTE_ACL_ROLES when ACL keys are
+// omitted; replace requires both keys (no silent drift
+// back to defaults). Role strings are free non-empty
+// strings; [] is legal (admins only via bypass).
+export const NESTED_ATTRIBUTE_DOCUMENT_BODY_KEYS = [
+    'name', 'attribute_type', 'sort_order',
+    'options', 'constraints',
+    'read_roles', 'write_roles',
+] as const;
+
+const NESTED_ATTRIBUTE_CORE_KEYS = [
+    'name', 'attribute_type', 'sort_order',
+    'options', 'constraints',
+] as const;
+
+const NESTED_ATTRIBUTE_ACL_KEYS = [
+    'read_roles', 'write_roles',
+] as const;
+
+export interface AttributeDocument {
+    name: string;
+    attribute_type: AttributeType;
+    sort_order: number;
+    options: string[];
+    constraints: Constraint[];
+    read_roles: string[];
+    write_roles: string[];
+}
+
+function pickNonEmptyStringArray(
+    body: Record<string, unknown>,
+    key: string,
+    entityLabel: string,
+): string[] {
+    const arr = asArray(body[key], key);
+    return arr.map((item, i) => {
+        const s = asString(item, key + '[' + i + ']');
+        if (s === '') {
+            throw new ValidationError(
+                entityLabel + '.' + key + '['
+                + i + '] must be non-empty',
+            );
+        }
+        return s;
+    });
+}
+
+function validateAttributeDocument(
+    body: Record<string, unknown>,
+    mode: 'create' | 'replace',
+): AttributeDocument {
+    const label = 'AttributeDocumentBody';
+    if (mode === 'create') {
+        assertOnlyKeys(
+            body,
+            NESTED_ATTRIBUTE_CORE_KEYS,
+            label,
+            NESTED_ATTRIBUTE_ACL_KEYS,
+        );
+    } else {
+        assertOnlyKeys(
+            body,
+            NESTED_ATTRIBUTE_DOCUMENT_BODY_KEYS,
+            label,
+        );
+    }
+    const name = pickString(body, 'name');
+    if (name === '') {
+        throw new ValidationError(
+            label + '.name must be non-empty',
+        );
+    }
+    const attributeType = asAttributeType(
+        body['attribute_type'],
+        label + '.attribute_type',
+    );
+    const constraintsArr = asArray(
+        body['constraints'], 'constraints',
+    );
+    const constraints = constraintsArr.map(
+        (item, i) => {
+            const constraint = asConstraint(
+                item,
+                'constraints[' + i + ']',
+            );
+            assertConstraintAppliesTo(
+                constraint.kind,
+                attributeType,
+                'constraints[' + i + ']',
+            );
+            return constraint;
+        },
+    );
+    const options = pickStringArray(body, 'options');
+    if (
+        (attributeType === 'select'
+            || attributeType === 'radio')
+        && options.length === 0
+    ) {
+        throw new ValidationError(
+            label + '.options'
+            + ' must list at least one option'
+            + " for attribute_type '"
+            + attributeType + "'",
+        );
+    }
+    const defaultRoles: string[] = [
+        ...DEFAULT_ATTRIBUTE_ACL_ROLES,
+    ];
+    const readRoles = 'read_roles' in body
+        ? pickNonEmptyStringArray(
+            body, 'read_roles', label,
+        )
+        : [...defaultRoles];
+    const writeRoles = 'write_roles' in body
+        ? pickNonEmptyStringArray(
+            body, 'write_roles', label,
+        )
+        : [...defaultRoles];
+    return {
+        name,
+        attribute_type: attributeType,
+        sort_order: pickNumber(body, 'sort_order'),
+        options,
+        constraints,
+        read_roles: readRoles,
+        write_roles: writeRoles,
+    };
+}
+
+export function validateAttributeDocumentCreate(
+    body: Record<string, unknown>,
+): AttributeDocument {
+    return validateAttributeDocument(body, 'create');
+}
+
+export function validateAttributeDocumentReplace(
+    body: Record<string, unknown>,
+): AttributeDocument {
+    return validateAttributeDocument(body, 'replace');
 }
 
 const FLOW_RECORD_BODY_KEYS: readonly string[] = [
