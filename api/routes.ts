@@ -395,8 +395,10 @@ function recordDocumentEntityOf(
 // the generic trio path always supplies it after DELETED
 // filter.
 const RECORDS_WIRING: DocumentFamilyWiring = {
-    family: 'records',
+    // Storage family (wire still /records until Task 23).
+    family: 'record-types',
     lifecycle: 'trio',
+    // Flat-window voice on the 404 body (reconciliation 8).
     notFoundTable: 'records',
     validateDocument: validateRecordDocumentBody,
     documentOp: postRecordDocumentOp,

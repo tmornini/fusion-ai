@@ -438,7 +438,11 @@ test('a seeded record create pair sits at its org-nested'
         r => r.uri_id === customerProfileRecordId,
     );
     assert.ok(row, 'no request row for the seeded record');
-    assert.equal(row!.uri_prefix, '/organizations/1/records/');
+    // Task 4: wire family `records` stores at record-types.
+    assert.equal(
+        row!.uri_prefix,
+        '/organizations/1/record-types/',
+    );
 });
 
 test('a seeded record\'s document pair sits at its'
@@ -456,7 +460,8 @@ test('a seeded record\'s document pair sits at its'
     // operation pair's being 204.
     const documentRow = requests.find(
         r => r.uri_id === customerProfileRecordId
-            && r.uri_prefix === '/organizations/1/records/'
+            && r.uri_prefix
+                === '/organizations/1/record-types/'
             && responseById.get(r.id)?.status === 200,
     );
     assert.ok(

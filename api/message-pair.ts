@@ -31,6 +31,7 @@ import {
 import { REQUEST_ID_HEADER } from './request-context.ts';
 import {
     familyRegistration,
+    wireFamilyStorageName,
     RECORD_TYPE_DETAIL_PATTERN,
 } from './family-registry.ts';
 import { HTTP_OK } from './http-errors.ts';
@@ -144,15 +145,21 @@ export function canonicalUriPrefix(
     flatPrefix: string,
 ): string {
     const first = flatPrefix.split('/')[1] ?? '';
-    const registered = familyRegistration(first);
+    const canonical = wireFamilyStorageName(first);
+    const rewritten = canonical === first
+        ? flatPrefix
+        : '/' + canonical
+            + flatPrefix.slice(first.length + 1);
+    const registered = familyRegistration(canonical);
     const nested = registered !== undefined
         ? registered.organizationNested
-        : ORGANIZATION_NESTED_FIRST_SEGMENTS.has(first);
+        : ORGANIZATION_NESTED_FIRST_SEGMENTS
+            .has(canonical);
     if (organization !== undefined && nested) {
         return '/organizations/' + organization
-            + flatPrefix;
+            + rewritten;
     }
-    return flatPrefix;
+    return rewritten;
 }
 
 export async function formWritePair(
@@ -556,7 +563,9 @@ export function createdEntityUriId(
     // answered from the registry instead, so the coincidence now
     // fires for FOUR live routes. Falls back to the literal table
     // for every not-yet-registered pattern.
-    const registered = familyRegistration(routePattern);
+    const registered = familyRegistration(
+        wireFamilyStorageName(routePattern),
+    );
     const field = registered !== undefined
         ? registered.createBodyIdField
         : CREATE_BODY_ID_FIELDS[routePattern];

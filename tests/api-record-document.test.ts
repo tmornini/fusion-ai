@@ -359,7 +359,7 @@ async function storedPairAt(
 test('documentLifecycleEvents skips a DELETE-method pair,'
 + ' yielding the two PUT trios across a delete-then-recreate'
 + ' history', async () => {
-    const prefix = '/organizations/1/records/';
+    const prefix = '/organizations/1/record-types/';
     const first = await storedPairAt(
         'PUT', 'rec-x', '2026-01-01T00:00:00.000000Z',
         recordDocument('First', 'active', AT, 'ev-x1'),

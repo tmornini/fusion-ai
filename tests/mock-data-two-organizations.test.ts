@@ -56,7 +56,7 @@ import { assignOrganization } from
     '../api/mock-data/seed-constants.ts';
 
 const RECORDS_WIRING: DocumentFamilyWiring = {
-    family: 'records',
+    family: 'record-types',
     lifecycle: 'trio',
     notFoundTable: 'records',
     validateDocument: validateRecordDocumentBody,

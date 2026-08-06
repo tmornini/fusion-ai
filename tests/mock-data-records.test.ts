@@ -51,7 +51,7 @@ async function seeded(): Promise<MemoryDbAdapter> {
 }
 
 const RECORDS_WIRING: DocumentFamilyWiring = {
-    family: 'records',
+    family: 'record-types',
     lifecycle: 'trio',
     notFoundTable: 'records',
     validateDocument: validateRecordDocumentBody,

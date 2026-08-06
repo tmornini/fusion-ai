@@ -93,7 +93,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 // -- test-side wiring mirrors (routes.ts's private rows) --------
 
 const RECORDS_TEST_WIRING: DocumentFamilyWiring = {
-    family: 'records',
+    family: 'record-types',
     lifecycle: 'trio',
     notFoundTable: 'records',
     validateDocument: validateRecordDocumentBody,

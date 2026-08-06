@@ -66,6 +66,23 @@ async () => {
     );
 });
 
+test('wire records stores at the record-types prefix',
+async () => {
+    // Task 4 alias: flat first segment `records` rewrites
+    // to storage name `record-types` before nesting.
+    const pair = await formWritePair({
+        ...INPUT,
+        pathname: '/records/r1',
+        routePattern: 'records/:id',
+        routeSegments: ['records', ':id'],
+        pathSegments: ['records', 'r1'],
+    });
+    assert.equal(
+        pair.uriPrefix,
+        '/organizations/1/record-types/',
+    );
+});
+
 test('a formed pair binds request and response by one id',
 async () => {
     const pair = await formWritePair({ ...INPUT });
