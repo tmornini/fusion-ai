@@ -167,3 +167,8 @@ export const RECORD_TYPE_DETAIL_PATTERN =
     RECORD_TYPES_COLLECTION_PATTERN + '/:record-type-id';
 export const RECORD_TYPE_HISTORY_PATTERN =
     RECORD_TYPE_DETAIL_PATTERN + '/history';
+// Nested attributes under a record type (Task 7).
+export const ATTRIBUTES_COLLECTION_PATTERN =
+    RECORD_TYPE_DETAIL_PATTERN + '/attributes';
+export const ATTRIBUTE_DETAIL_PATTERN =
+    ATTRIBUTES_COLLECTION_PATTERN + '/:attribute-id';

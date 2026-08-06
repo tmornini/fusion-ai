@@ -34,6 +34,10 @@ export interface AttributeReferrers {
     readonly valueCount: number;
     readonly flowIds: readonly string[];
     readonly workOrderIds: readonly string[];
+    // Live instance heads under the parent type whose
+    // materialised values name this attribute (Task 7
+    // fourth leg; empty until Task 14 writes instances).
+    readonly instanceIds: readonly string[];
 }
 
 // Every table the referrer scan touches. The state-field-value
@@ -79,26 +83,74 @@ function graphBindsAttribute(
     );
 }
 
+function instancesUriPrefix(
+    organization: string,
+    recordTypeId: string,
+): string {
+    return '/organizations/' + organization
+        + '/record-types/' + recordTypeId
+        + '/instances/';
+}
+
+// Head-pair value normaliser (Task 7 inline twin of Task 14's
+// revisionValuesOf): genesis wire uses {set}; revision pairs
+// use {values}. ONE head read — no PATCH delta fold.
+function revisionValuesOf(
+    body: Record<string, unknown>,
+): readonly { attribute_id: string; value: string }[] {
+    const raw = body['values'] ?? body['set'];
+    if (!Array.isArray(raw)) return [];
+    const out: { attribute_id: string; value: string }[] =
+        [];
+    for (const entry of raw) {
+        if (
+            entry === null
+            || typeof entry !== 'object'
+            || Array.isArray(entry)
+        ) {
+            continue;
+        }
+        const row = entry as Record<string, unknown>;
+        const attributeId = row['attribute_id'];
+        const value = row['value'];
+        if (
+            typeof attributeId === 'string'
+            && typeof value === 'string'
+        ) {
+            out.push({
+                attribute_id: attributeId,
+                value,
+            });
+        }
+    }
+    return out;
+}
+
 // Referrers for each of `attributeIds`. `view` is the
 // organization-fenced transaction view; `boundOrganization`
 // is the verified token claim that fence was bound to (the
 // pair-plane visibility probe and the organization-scoped
-// pair prefixes need it explicitly). Live-flow referrers
-// REPLAY the flow document pair history's graphDelta
-// attributeEvents with the same latestByKey/fail-closed
-// reduction the row plane used (flowGraphBindingsFromPairs —
-// Phase 15 Task 1); node→flow naming rides nodeFlowIds from
-// the same binding result, NEVER client-authored flow
-// document graph snapshots. Frozen work-order referrers walk
-// WO document heads from the organization-scoped collection
-// prefix (deriveDocumentsAt — NEVER whole-plane getAll of
+// pair prefixes need it explicitly). `recordTypeId` is the
+// parent type id (nested path) or the flat body's
+// `record_id` — scopes the fourth-leg instance scan.
+// Live-flow referrers REPLAY the flow document pair
+// history's graphDelta attributeEvents with the same
+// latestByKey/fail-closed reduction the row plane used
+// (flowGraphBindingsFromPairs — Phase 15 Task 1);
+// node→flow naming rides nodeFlowIds from the same binding
+// result, NEVER client-authored flow document graph
+// snapshots. Frozen work-order referrers walk WO document
+// heads from the organization-scoped collection prefix
+// (deriveDocumentsAt — NEVER whole-plane getAll of
 // requests/responses). Field-value referrers are pair-plane
-// derived (Phase 14 Task 6) — ONE deriveStateFieldValueReferrers
-// pass ahead of the loop, keyed by attribute_id.
+// derived (Phase 14 Task 6) — ONE
+// deriveStateFieldValueReferrers pass ahead of the loop,
+// keyed by attribute_id.
 export async function collectAttributeReferrers(
     view: DbAdapter,
     boundOrganization: string,
     attributeIds: readonly string[],
+    recordTypeId: string,
 ): Promise<Map<string, AttributeReferrers>> {
     // Organization-scoped WO document heads — the pair-plane
     // successor of view.workOrders.getAll() for the frozen
@@ -135,6 +187,25 @@ export async function collectAttributeReferrers(
         await deriveStateFieldValueReferrers(
             view, boundOrganization, attributeIds,
         );
+    // Fourth leg: live instance heads under the parent type
+    // whose head values name the attribute. Empty until
+    // Task 14 writes instances; Task 14 re-points at
+    // deriveInstanceCollection / head values.
+    const instancesPrefix = instancesUriPrefix(
+        boundOrganization, recordTypeId,
+    );
+    const [instRequests, instResponses] =
+        await Promise.all([
+            view.requests.getAllWhere(
+                'uri_prefix', instancesPrefix,
+            ),
+            view.responses.getAllWhere(
+                'uri_prefix', instancesPrefix,
+            ),
+        ]);
+    const instanceHeads = deriveDocumentsAt(
+        instRequests, instResponses, instancesPrefix,
+    );
     const referrers = new Map<string, AttributeReferrers>();
     for (const attributeId of attributeIds) {
         const values =
@@ -158,6 +229,16 @@ export async function collectAttributeReferrers(
             if (flowId === undefined) continue;
             flowIds.add(flowId);
         }
+        const instanceIds: string[] = [];
+        for (const [instanceId, doc] of instanceHeads) {
+            const headValues = revisionValuesOf(doc.body);
+            if (headValues.some(
+                (v) => v.attribute_id === attributeId,
+            )) {
+                instanceIds.push(instanceId);
+            }
+        }
+        instanceIds.sort();
         referrers.set(attributeId, {
             valueCount: values.length,
             flowIds: [...flowIds],
@@ -166,6 +247,7 @@ export async function collectAttributeReferrers(
                     wo.graph, attributeId,
                 ))
                 .map(wo => wo.id),
+            instanceIds,
         });
     }
     return referrers;
@@ -181,13 +263,15 @@ export async function collectAttributeReferrers(
 // RESTRICT scan on the view it already holds.
 // `boundOrganization` is the verified token claim (or the
 // pair-plane organization resolve on the DELETE route).
+// `recordTypeId` scopes the fourth-leg instance scan.
 export async function deleteRecordAttributeSafe(
     view: DbAdapter,
     boundOrganization: string,
     id: string,
+    recordTypeId: string,
 ): Promise<void> {
     const referrers = await collectAttributeReferrers(
-        view, boundOrganization, [id],
+        view, boundOrganization, [id], recordTypeId,
     );
     const refs = referrers.get(id)!;
     if (hasReferrers(refs)) {
@@ -203,11 +287,13 @@ export function hasReferrers(
 ): boolean {
     return refs.valueCount > 0
         || refs.flowIds.length > 0
-        || refs.workOrderIds.length > 0;
+        || refs.workOrderIds.length > 0
+        || refs.instanceIds.length > 0;
 }
 
 // The 409 body: name what stands in the way so the caller
-// can dissolve the covenants first.
+// can dissolve the covenants first. Order: values; flows;
+// work orders; instance(s).
 export function describeReferrers(
     attributeId: string,
     refs: AttributeReferrers,
@@ -225,6 +311,12 @@ export function describeReferrers(
         parts.push(
             'work order(s) '
             + refs.workOrderIds.join(', '),
+        );
+    }
+    if (refs.instanceIds.length > 0) {
+        parts.push(
+            'instance(s) '
+            + refs.instanceIds.join(', '),
         );
     }
     return 'record attribute ' + attributeId

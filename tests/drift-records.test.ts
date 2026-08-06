@@ -1231,8 +1231,11 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
         assert.equal(flagshipScan.get(attributeId), 1);
     }
 
+    // recordTypeId scopes the Task 7 instance leg (empty
+    // until Task 14 writes instances).
     const flagshipReferrers = await collectAttributeReferrers(
         db, STARK_ORGANIZATION, flagshipAttributeIds,
+        'seed-type',
     );
     let flagshipTotal = 0;
     for (const attributeId of flagshipAttributeIds) {
@@ -1309,6 +1312,7 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     const liveReferrers = await collectAttributeReferrers(
         db, STARK_ORGANIZATION,
         [liveAttributeX, liveAttributeY],
+        'seed-type',
     );
     assert.equal(liveScan.get(liveAttributeX), 1);
     assert.equal(liveScan.get(liveAttributeY), 1);

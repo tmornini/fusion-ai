@@ -180,13 +180,21 @@ test(
         );
 
         // AttributeReferrers is the RESTRICT wire shape —
-        // no edgeIds / edge referrer slot exists.
+        // no edgeIds / edge referrer slot exists. Task 7
+        // adds instanceIds (fourth leg under the parent
+        // type); still no edges leg.
         type ReferrerKeys = keyof AttributeReferrers;
         type OnlyKnownReferrerKeys =
             ReferrerKeys extends
-                'valueCount' | 'flowIds' | 'workOrderIds'
+                | 'valueCount'
+                | 'flowIds'
+                | 'workOrderIds'
+                | 'instanceIds'
                 ? (
-                    'valueCount' | 'flowIds' | 'workOrderIds'
+                    | 'valueCount'
+                    | 'flowIds'
+                    | 'workOrderIds'
+                    | 'instanceIds'
                 ) extends ReferrerKeys
                     ? true
                     : never
@@ -198,10 +206,16 @@ test(
             valueCount: 0,
             flowIds: [],
             workOrderIds: [],
+            instanceIds: [],
         };
         assert.deepEqual(
             Object.keys(sample).sort(),
-            ['flowIds', 'valueCount', 'workOrderIds'],
+            [
+                'flowIds',
+                'instanceIds',
+                'valueCount',
+                'workOrderIds',
+            ],
         );
     },
 );

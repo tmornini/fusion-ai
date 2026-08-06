@@ -81,6 +81,8 @@ import {
     validateFlowTagEntity,
     validateFlowTagName,
     validateRecordAttributeDocumentBody,
+    validateAttributeDocumentCreate,
+    validateAttributeDocumentReplace,
     validateRecordDocumentBody,
     validateRecordWriteBody,
     validateWorkOrderClaimBody,
@@ -154,12 +156,19 @@ import {
     deriveRecordTypeCollection,
     deriveRecordTypeEntity,
     deriveRecordTypeStateHistory,
+    requireRecordTypeExists,
 } from './derive-record-types.ts';
 import {
     RECORD_TYPES_COLLECTION_PATTERN,
     RECORD_TYPE_DETAIL_PATTERN,
     RECORD_TYPE_HISTORY_PATTERN,
+    ATTRIBUTES_COLLECTION_PATTERN,
+    ATTRIBUTE_DETAIL_PATTERN,
 } from './family-registry.ts';
+import {
+    deriveDocumentsAt,
+    byIdAscending,
+} from './derive-documents.ts';
 import {
     flowEntityOf,
     deriveFlow,
@@ -1005,6 +1014,72 @@ async function recordAttributeOrganizationFromPairs(
     return organizationId;
 }
 
+// Flat attribute head's record_id (parent type id) from the
+// request body — scopes the fourth RESTRICT leg. Nested
+// deletes pass the path type id directly instead.
+async function recordAttributeRecordIdFromPairs(
+    db: DbAdapter,
+    uriPrefix: string,
+    id: Id,
+): Promise<Id | null> {
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_prefix', uriPrefix),
+        db.responses.getAllWhere('uri_prefix', uriPrefix),
+    ]);
+    const head = deriveDocumentsAt(
+        requests, responses, uriPrefix,
+    ).get(id);
+    if (head === undefined) return null;
+    const recordId = head.body['record_id'];
+    if (typeof recordId !== 'string' || recordId === '') {
+        throw new Error(
+            'record-attribute head lacks record_id: ' + id,
+        );
+    }
+    return recordId;
+}
+
+// Nested attributes URI prefix under a live type.
+function attributesUriPrefix(
+    organization: Id,
+    recordTypeId: Id,
+): string {
+    return '/organizations/' + organization
+        + '/record-types/' + recordTypeId
+        + '/attributes/';
+}
+
+// Wire row for a nested attribute head. Prefers the stored
+// response body (WRITE_RESPONSE_SPECS stamp carries create-
+// time ACL defaults when the client omitted them); falls
+// back to the request body + address echoes. Storage always
+// carries both ACL arrays after a successful create.
+async function nestedAttributeWireOf(
+    db: DbAdapter,
+    organization: Id,
+    recordTypeId: Id,
+    attributeId: Id,
+    pairId: string,
+    requestBody: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+    const headResponse = await db.responses.getById(pairId);
+    const responseBody = pairResponseBody({
+        responseMessage: headResponse.message,
+    } as MessagePair);
+    if (
+        responseBody !== undefined
+        && typeof responseBody['name'] === 'string'
+    ) {
+        return responseBody;
+    }
+    return {
+        id: attributeId,
+        organization_id: organization,
+        record_type_id: recordTypeId,
+        ...requestBody,
+    };
+}
+
 // Record creation or edit, discriminated by payload.kind.
 // Phase Final Task 2: records + record_attributes ROW halves
 // stripped — attributes/record body ride the operation +
@@ -1051,9 +1126,14 @@ export async function postRecordWriteOp(
                 const boundOrganization = requireOrganization(
                     organization ?? body.record.organization_id,
                 );
+                // Flat window: body.id is the record (type)
+                // id; fourth-leg instance scan scopes there.
                 const referrers =
                     await collectAttributeReferrers(
-                        view, boundOrganization, removedIds,
+                        view,
+                        boundOrganization,
+                        removedIds,
+                        body.id,
                     );
                 for (const [id, refs] of referrers) {
                     if (hasReferrers(refs)) {
@@ -2780,6 +2860,35 @@ export const WRITE_RESPONSE_SPECS:
                     id: param(params, 1),
                     organization_id: param(params, 0),
                     ...doc.entity,
+                };
+            },
+        },
+    },
+    // Nested attributes detail (Task 7): put-only. Params:
+    // 0=org, 1=type, 2=attribute. Address-derived echoes for
+    // organization_id / record_type_id. Create stamps ACL
+    // defaults when keys omitted; replace requires both —
+    // successBody picks by key presence for the response
+    // shape; the handler re-checks against head presence.
+    [ATTRIBUTE_DETAIL_PATTERN]: {
+        put: {
+            status: HTTP_OK,
+            successBody: (params, body) => {
+                const raw = withoutId(body ?? {});
+                const entity =
+                    'read_roles' in raw
+                    && 'write_roles' in raw
+                        ? validateAttributeDocumentReplace(
+                            raw,
+                        )
+                        : validateAttributeDocumentCreate(
+                            raw,
+                        );
+                return {
+                    id: param(params, 2),
+                    organization_id: param(params, 0),
+                    record_type_id: param(params, 1),
+                    ...entity,
                 };
             },
         },
@@ -4712,6 +4821,146 @@ export const routes: Route[] = [
             return history.toReversed();
         },
     }),
+    // Nested attributes collection (Task 7): member GET under
+    // a live type. Parent probe first (record_types 404);
+    // heads at .../attributes/, id-lex. No POST (parity with
+    // the flat family — composed op + PUT are the creators).
+    route(ATTRIBUTES_COLLECTION_PATTERN, {
+        get: async (db, p, _actor, organization) => {
+            const org = requireOrganization(organization);
+            const typeId = param(p, 1);
+            await requireRecordTypeExists(db, org, typeId);
+            const prefix = attributesUriPrefix(org, typeId);
+            const [requests, responses] =
+                await Promise.all([
+                    db.requests.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                    db.responses.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                ]);
+            const documents = deriveDocumentsAt(
+                requests, responses, prefix,
+            );
+            const rows: { id: string }[] = [];
+            for (const [id, document] of documents) {
+                const wire = await nestedAttributeWireOf(
+                    db, org, typeId, id,
+                    document.pairId, document.body,
+                );
+                rows.push(wire as { id: string });
+            }
+            return rows.sort(byIdAscending);
+        },
+    }),
+    // Nested attribute detail (Task 7): member GET, admin
+    // PUT (create vs replace by head presence), admin DELETE
+    // with four-leg RESTRICT. No WRITE_AUTHORIZERS (deep
+    // sub-family — parent type 404 + path org gate).
+    route(ATTRIBUTE_DETAIL_PATTERN, {
+        get: async (db, p, _actor, organization) => {
+            const org = requireOrganization(organization);
+            const typeId = param(p, 1);
+            const attrId = param(p, 2);
+            await requireRecordTypeExists(db, org, typeId);
+            const prefix = attributesUriPrefix(org, typeId);
+            const [requests, responses] =
+                await Promise.all([
+                    db.requests.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                    db.responses.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                ]);
+            const document = deriveDocumentsAt(
+                requests, responses, prefix,
+            ).get(attrId);
+            if (document === undefined) {
+                throw await missedReadError(
+                    db, attrId, org, 'record_attributes',
+                );
+            }
+            return nestedAttributeWireOf(
+                db, org, typeId, attrId,
+                document.pairId, document.body,
+            );
+        },
+        put: async (db, p, body, _actor, pair) => {
+            const org = param(p, 0);
+            const typeId = param(p, 1);
+            const attrId = param(p, 2);
+            await requireRecordTypeExists(db, org, typeId);
+            const prefix = attributesUriPrefix(org, typeId);
+            const [requests, responses] =
+                await Promise.all([
+                    db.requests.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                    db.responses.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                ]);
+            const hasHead = deriveDocumentsAt(
+                requests, responses, prefix,
+            ).has(attrId);
+            const raw = withoutId(body);
+            if (hasHead) {
+                validateAttributeDocumentReplace(raw);
+            } else {
+                validateAttributeDocumentCreate(raw);
+            }
+            return db.transaction(
+                ['requests', 'responses'],
+                async (view) => {
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
+        delete: async (db, p, _actor, pair) => {
+            const org = param(p, 0);
+            const typeId = param(p, 1);
+            const attrId = param(p, 2);
+            await requireRecordTypeExists(db, org, typeId);
+            if (pair === undefined) {
+                throw new Error(
+                    'nested attribute DELETE without pair',
+                );
+            }
+            const prefix = attributesUriPrefix(org, typeId);
+            const [requests, responses] =
+                await Promise.all([
+                    db.requests.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                    db.responses.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                ]);
+            if (!deriveDocumentsAt(
+                requests, responses, prefix,
+            ).has(attrId)) {
+                throw await missedReadError(
+                    db, attrId, org, 'record_attributes',
+                );
+            }
+            return db.transaction(
+                [...new Set([
+                    ...ATTRIBUTE_RESTRICT_TABLES,
+                    'requests', 'responses',
+                ])],
+                async (view) => {
+                    await deleteRecordAttributeSafe(
+                        view, org, attrId, typeId,
+                    );
+                    await appendMessagePair(view, pair);
+                },
+            );
+        },
+    }),
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger rather than the old record_attributes
     // table. Rides the generic documentCollectionGetHandler —
@@ -4777,6 +5026,18 @@ export const routes: Route[] = [
                     'record_attributes', id,
                 );
             }
+            // Flat window: parent type id is body
+            // record_id on the head pair (fourth RESTRICT
+            // leg scopes instance scan under that type).
+            const recordTypeId =
+                await recordAttributeRecordIdFromPairs(
+                    db, pair.uriPrefix, id,
+                );
+            if (recordTypeId === null) {
+                throw new EntityNotFoundError(
+                    'record_attributes', id,
+                );
+            }
             return db.transaction(
                 [...new Set([
                     ...ATTRIBUTE_RESTRICT_TABLES,
@@ -4787,6 +5048,7 @@ export const routes: Route[] = [
                         view,
                         pairOrganizationId,
                         id,
+                        recordTypeId,
                     );
                     await appendMessagePair(view, pair);
                 },

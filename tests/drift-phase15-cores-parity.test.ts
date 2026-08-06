@@ -1281,8 +1281,10 @@ test('residual pin: soft-deleted node drops from'
     assert.ok(residual);
     assert.equal(residual!.action, 'added');
 
+    // recordTypeId scopes the Task 7 instance leg (empty
+    // until Task 14 writes instances).
     const pairPlane = await collectAttributeReferrers(
-        db, STARK_ORGANIZATION, [attrId],
+        db, STARK_ORGANIZATION, [attrId], 'r1',
     );
     assert.deepEqual(
         pairPlane.get(attrId)!.flowIds, [],
@@ -1549,11 +1551,13 @@ function sortedReferrerShape(
     valueCount: number;
     flowIds: string[];
     workOrderIds: string[];
+    instanceIds: string[];
 } {
     return {
         valueCount: refs.valueCount,
         flowIds: [...refs.flowIds].sort(),
         workOrderIds: [...refs.workOrderIds].sort(),
+        instanceIds: [...refs.instanceIds].sort(),
     };
 }
 
@@ -1621,8 +1625,10 @@ async () => {
         'seed must name at least one bound attribute',
     );
 
+    // recordTypeId scopes the Task 7 instance leg (empty
+    // until Task 14 writes instances).
     const preTx = await collectAttributeReferrers(
-        db, STARK_ORGANIZATION, attributeIds,
+        db, STARK_ORGANIZATION, attributeIds, 'seed-type',
     );
     const inTx = await db.transaction(
         // Stage B: roster + objectives/records retired.
@@ -1633,6 +1639,7 @@ async () => {
             view,
             STARK_ORGANIZATION,
             attributeIds,
+            'seed-type',
         ),
     );
     assertReferrerParity(
@@ -1756,8 +1763,10 @@ async () => {
     ));
     assert.equal(woCreated.status, 204);
 
+    // recordTypeId scopes the Task 7 instance leg (empty
+    // until Task 14 writes instances).
     const pairPlane = await collectAttributeReferrers(
-        db, STARK_ORGANIZATION, [attrId],
+        db, STARK_ORGANIZATION, [attrId], 'r1',
     );
     // Pre-tx vs in-tx parity (pair plane only).
     const inTx = await db.transaction(
@@ -1769,6 +1778,7 @@ async () => {
             view,
             STARK_ORGANIZATION,
             [attrId],
+            'r1',
         ),
     );
     assertReferrerParity(

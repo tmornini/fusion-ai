@@ -33,6 +33,7 @@ import {
     familyRegistration,
     wireFamilyStorageName,
     RECORD_TYPE_DETAIL_PATTERN,
+    ATTRIBUTE_DETAIL_PATTERN,
 } from './family-registry.ts';
 import { HTTP_OK } from './http-errors.ts';
 
@@ -629,6 +630,8 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     // Nested record-types detail (Task 3): admin PUT/DELETE.
     // Collection POST is Task 9.
     RECORD_TYPE_DETAIL_PATTERN,
+    // Nested attributes detail (Task 7): admin PUT/DELETE.
+    ATTRIBUTE_DETAIL_PATTERN,
     // states/:id/field-values/:fvid RETIRED from live wire
     // (Phase 15 Task 7); seed still forms pairs at that
     // address via formSeedPair + WRITE_RESPONSE_SPECS.
@@ -717,6 +720,9 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         // gate stamps supersedes for non-locked PUTs; no
         // If-Match required on types.
         RECORD_TYPE_DETAIL_PATTERN,
+        // Nested attributes detail (Task 7): simple class —
+        // attributes never join the If-Match dialect.
+        ATTRIBUTE_DETAIL_PATTERN,
         // states/:id/field-values/:fvid RETIRED from live wire
         // (Phase 15 Task 7); seed still forms pairs at that
         // address via formSeedPair + WRITE_RESPONSE_SPECS.

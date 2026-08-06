@@ -99,3 +99,50 @@ test('DELETE .../record-types/:id/history 405s (no '
     );
     assert.equal(res.status, 405);
 });
+
+// Nested attributes verb gaps (Task 7): no collection POST;
+// PUT/DELETE detail are live (create is PUT). PATCH pins
+// wait for Task 10's verb alphabet widen.
+
+const ATTRS = DETAIL + '/attributes';
+const ATTR_DETAIL = ATTRS + '/attr-1';
+
+test('POST .../attributes 405s (no create verb — '
++ 'parity with flat family)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(db, req(
+        'POST', ATTRS, token, {},
+    ));
+    assert.equal(res.status, 405);
+});
+
+test('PUT .../attributes 405s (no collection put)',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(db, req(
+        'PUT', ATTRS, token, {},
+    ));
+    assert.equal(res.status, 405);
+});
+
+test('DELETE .../attributes 405s (no collection '
++ 'delete)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(
+        db, req('DELETE', ATTRS, token),
+    );
+    assert.equal(res.status, 405);
+});
+
+test('POST .../attributes/:id 405s (no post on '
++ 'detail)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(db, req(
+        'POST', ATTR_DETAIL, token, {},
+    ));
+    assert.equal(res.status, 405);
+});
