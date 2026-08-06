@@ -7,11 +7,13 @@ import {
 } from './validators.ts';
 
 // Anchored retired message-plane uri_prefix patterns.
-// Task 8 adds the record-attributes predicate. Anchored
-// so the live flows/:id/records join family is accepted.
+// Task 5: flat records. Task 8: flat record-attributes.
+// Anchored so the live flows/:id/records join family is
+// accepted (never a substring match).
 const RETIRED_URI_PREFIX_PATTERNS:
     readonly RegExp[] = [
     /^\/organizations\/[^/]+\/records\//,
+    /^\/organizations\/[^/]+\/record-attributes\//,
 ];
 
 // Map table name → entity validator. Stored rows

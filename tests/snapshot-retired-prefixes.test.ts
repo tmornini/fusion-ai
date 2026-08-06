@@ -26,6 +26,8 @@ import { postMockDataLoad } from '../api/mock-data.ts';
 
 const LEGACY_RECORDS_PREFIX =
     '/organizations/1/records/';
+const LEGACY_RECORD_ATTRIBUTES_PREFIX =
+    '/organizations/1/record-attributes/';
 const LIVE_FLOW_RECORDS_PREFIX =
     '/organizations/1/flows/f1/records/';
 
@@ -125,6 +127,46 @@ test(
     },
 );
 
+test(
+    'parseAndValidateSnapshot rejects requests row with'
+    + ' retired flat record-attributes uri_prefix via'
+    + ' ValidationError',
+    () => {
+        const json = snapshotJson(
+            'requests', LEGACY_RECORD_ATTRIBUTES_PREFIX,
+        );
+        assert.throws(
+            () => parseAndValidateSnapshot(json),
+            (err: unknown) =>
+                err instanceof ValidationError
+                && err.message.includes(
+                    LEGACY_RECORD_ATTRIBUTES_PREFIX,
+                )
+                && err.message.includes('retired'),
+        );
+    },
+);
+
+test(
+    'parseAndValidateSnapshot rejects responses row with'
+    + ' retired flat record-attributes uri_prefix via'
+    + ' ValidationError',
+    () => {
+        const json = snapshotJson(
+            'responses', LEGACY_RECORD_ATTRIBUTES_PREFIX,
+        );
+        assert.throws(
+            () => parseAndValidateSnapshot(json),
+            (err: unknown) =>
+                err instanceof ValidationError
+                && err.message.includes(
+                    LEGACY_RECORD_ATTRIBUTES_PREFIX,
+                )
+                && err.message.includes('retired'),
+        );
+    },
+);
+
 // -- Wire: ValidationError → 400 (not bare Error → 500)
 
 test(
@@ -198,6 +240,26 @@ test(
             ],
         });
         assert.deepEqual(findings, []);
+    },
+);
+
+test(
+    'scanForRetiredKeys lists legacy record-attributes'
+    + ' uri_prefix on requests',
+    () => {
+        const findings = scanForRetiredKeys({
+            requests: [
+                requestRow(
+                    LEGACY_RECORD_ATTRIBUTES_PREFIX,
+                ),
+            ],
+        });
+        assert.ok(
+            findings.includes(
+                'requests[].uri_prefix='
+                + LEGACY_RECORD_ATTRIBUTES_PREFIX,
+            ),
+        );
     },
 );
 
