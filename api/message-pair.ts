@@ -392,6 +392,41 @@ export const IF_RESPONSE_ID_HEADER = 'if-response-id';
 // in If-Match are different messages for replay identity.
 export const IF_MATCH_HEADER = 'if-match';
 
+// Parse a wire If-Match value into the opaque pair id.
+// Accepts exactly one strong etag (`"id"`). Anything else —
+// `*`, weak (`W/"…"`), lists, unquoted — yields undefined;
+// the caller answers 400 (malformed precondition).
+export function parseIfMatch(
+    header: string,
+): string | undefined {
+    if (
+        header.length < 2
+        || header[0] !== '"'
+        || header[header.length - 1] !== '"'
+    ) {
+        return undefined;
+    }
+    const inner = header.slice(1, -1);
+    if (inner.length === 0 || inner.includes('"')) {
+        return undefined;
+    }
+    return inner;
+}
+
+// Strong wire ETag for a document-pair response id.
+// Distinct from `responses.etag` (body sha256 column).
+export function strongEtagOf(pairId: string): string {
+    return '"' + pairId + '"';
+}
+
+// Attach the strong ETag header; returns the same Response.
+export function attachEtag(
+    response: Response, pairId: string,
+): Response {
+    response.headers.set('ETag', strongEtagOf(pairId));
+    return response;
+}
+
 // The header fields worth storing in a pair's request message:
 // enumerated explicitly (never hoisted blindly). `authorization`
 // is redacted downstream (message-redaction.ts); the rest are
