@@ -18,6 +18,9 @@ import {
 } from './derive-flows.ts';
 import { deriveDocumentsAt } from './derive-documents.ts';
 import { canonicalUriPrefix } from './message-pair.ts';
+import {
+    deriveInstanceCollection,
+} from './derive-record-instances.ts';
 
 // Destroying a record attribute must not orphan its
 // covenants: state_field_values rows name the attribute in
@@ -35,8 +38,8 @@ export interface AttributeReferrers {
     readonly flowIds: readonly string[];
     readonly workOrderIds: readonly string[];
     // Live instance heads under the parent type whose
-    // materialised values name this attribute (Task 7
-    // fourth leg; empty until Task 14 writes instances).
+    // materialised values name this attribute (fourth
+    // RESTRICT leg via deriveInstanceCollection).
     readonly instanceIds: readonly string[];
 }
 
@@ -81,49 +84,6 @@ function graphBindsAttribute(
             attr => attr.attributeId === attributeId,
         ),
     );
-}
-
-function instancesUriPrefix(
-    organization: string,
-    recordTypeId: string,
-): string {
-    return '/organizations/' + organization
-        + '/record-types/' + recordTypeId
-        + '/instances/';
-}
-
-// Head-pair value normaliser (Task 7 inline twin of Task 14's
-// revisionValuesOf): genesis wire uses {set}; revision pairs
-// use {values}. ONE head read — no PATCH delta fold.
-function revisionValuesOf(
-    body: Record<string, unknown>,
-): readonly { attribute_id: string; value: string }[] {
-    const raw = body['values'] ?? body['set'];
-    if (!Array.isArray(raw)) return [];
-    const out: { attribute_id: string; value: string }[] =
-        [];
-    for (const entry of raw) {
-        if (
-            entry === null
-            || typeof entry !== 'object'
-            || Array.isArray(entry)
-        ) {
-            continue;
-        }
-        const row = entry as Record<string, unknown>;
-        const attributeId = row['attribute_id'];
-        const value = row['value'];
-        if (
-            typeof attributeId === 'string'
-            && typeof value === 'string'
-        ) {
-            out.push({
-                attribute_id: attributeId,
-                value,
-            });
-        }
-    }
-    return out;
 }
 
 // Referrers for each of `attributeIds`. `view` is the
@@ -188,23 +148,10 @@ export async function collectAttributeReferrers(
             view, boundOrganization, attributeIds,
         );
     // Fourth leg: live instance heads under the parent type
-    // whose head values name the attribute. Empty until
-    // Task 14 writes instances; Task 14 re-points at
-    // deriveInstanceCollection / head values.
-    const instancesPrefix = instancesUriPrefix(
-        boundOrganization, recordTypeId,
-    );
-    const [instRequests, instResponses] =
-        await Promise.all([
-            view.requests.getAllWhere(
-                'uri_prefix', instancesPrefix,
-            ),
-            view.responses.getAllWhere(
-                'uri_prefix', instancesPrefix,
-            ),
-        ]);
-    const instanceHeads = deriveDocumentsAt(
-        instRequests, instResponses, instancesPrefix,
+    // whose head values name the attribute (derive module
+    // owns prefix + revisionValuesOf — one voice).
+    const instanceHeads = await deriveInstanceCollection(
+        view, boundOrganization, recordTypeId,
     );
     const referrers = new Map<string, AttributeReferrers>();
     for (const attributeId of attributeIds) {
@@ -230,15 +177,13 @@ export async function collectAttributeReferrers(
             flowIds.add(flowId);
         }
         const instanceIds: string[] = [];
-        for (const [instanceId, doc] of instanceHeads) {
-            const headValues = revisionValuesOf(doc.body);
-            if (headValues.some(
+        for (const head of instanceHeads) {
+            if (head.values.some(
                 (v) => v.attribute_id === attributeId,
             )) {
-                instanceIds.push(instanceId);
+                instanceIds.push(head.id);
             }
         }
-        instanceIds.sort();
         referrers.set(attributeId, {
             valueCount: values.length,
             flowIds: [...flowIds],

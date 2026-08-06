@@ -172,3 +172,11 @@ export const ATTRIBUTES_COLLECTION_PATTERN =
     RECORD_TYPE_DETAIL_PATTERN + '/attributes';
 export const ATTRIBUTE_DETAIL_PATTERN =
     ATTRIBUTES_COLLECTION_PATTERN + '/:attribute-id';
+// Nested instances under a record type (Task 14 patterns;
+// routes land in Tasks 15–19).
+export const INSTANCES_COLLECTION_PATTERN =
+    RECORD_TYPE_DETAIL_PATTERN + '/instances';
+export const INSTANCE_DETAIL_PATTERN =
+    INSTANCES_COLLECTION_PATTERN + '/:instance-id';
+export const INSTANCE_HISTORY_PATTERN =
+    INSTANCE_DETAIL_PATTERN + '/history';
