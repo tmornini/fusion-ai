@@ -24,7 +24,7 @@ import type {
 } from '../web-app/app/adapters/record-attributes.ts';
 import type {
     ConstraintViolation,
-} from '../web-app/app/record-constraints.ts';
+} from '../api/record-constraints.ts';
 import {
     WorkboxDetailPresenter,
     buildAttributeInputHtml,

@@ -1,10 +1,10 @@
 import type {
     AttributeType,
     RecordAttributeId,
-} from '../../api/types.ts';
+} from './types.ts';
 import type {
     RecordAttribute,
-} from './adapters/record-attributes.ts';
+} from '../web-app/app/adapters/record-attributes.ts';
 
 export type ConstraintViolation =
     | {
