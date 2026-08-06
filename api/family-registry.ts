@@ -140,3 +140,13 @@ export function familyRegistration(
         (entry) => entry.family === family,
     );
 }
+
+// Org-nested record-types wire addresses (Task 2). Nested-
+// primary; the path org is never authorization alone — the
+// gate's org-match arm compares it to the fenced token org.
+export const RECORD_TYPES_COLLECTION_PATTERN =
+    'organizations/:organization-id/record-types';
+export const RECORD_TYPE_DETAIL_PATTERN =
+    RECORD_TYPES_COLLECTION_PATTERN + '/:record-type-id';
+export const RECORD_TYPE_HISTORY_PATTERN =
+    RECORD_TYPE_DETAIL_PATTERN + '/history';

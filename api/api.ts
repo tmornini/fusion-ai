@@ -384,6 +384,30 @@ export async function handleRequest(
                 );
             }
             const fenced = fence.ctx;
+            // Nested org path fence: after fenceRequest and
+            // before authorizeRequest. Path org never authorizes
+            // alone — mismatch (incl. nonexistent path org)
+            // is 403 with a fixed body. No auto-exchange.
+            // Bare organizations/:id keeps its own membership
+            // fence below; every other organizations/... match
+            // takes this arm.
+            if (
+                match !== null
+                && match.route.segments[0]
+                    === 'organizations'
+                && fencePattern !== 'organizations/:id'
+                && fenceParams[0]
+                    !== fenced.organization
+            ) {
+                return Response.json(
+                    {
+                        error: 'forbidden: path organization'
+                            + ' does not match the token'
+                            + ' organization',
+                    },
+                    { status: HTTP_FORBIDDEN },
+                );
+            }
             const authzFailure =
                 fencePattern === 'identities/:id/pii'
                     ? authorizeIdentityPii(

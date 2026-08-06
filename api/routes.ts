@@ -146,6 +146,16 @@ import {
     projectEntityOf,
 } from './derive-projects.ts';
 import {
+    deriveRecordTypeCollection,
+    deriveRecordTypeEntity,
+    deriveRecordTypeStateHistory,
+} from './derive-record-types.ts';
+import {
+    RECORD_TYPES_COLLECTION_PATTERN,
+    RECORD_TYPE_DETAIL_PATTERN,
+    RECORD_TYPE_HISTORY_PATTERN,
+} from './family-registry.ts';
+import {
     flowEntityOf,
     deriveFlow,
     deriveFlows,
@@ -4603,6 +4613,42 @@ export const routes: Route[] = [
         get: documentStateHistoryHandler(
             deriveRecordStateHistory, 'records',
         ),
+    }),
+    // Nested record-types READ surface (Task 2). Org-nested
+    // primary addresses; member GET via MEMBER_VERBS
+    // '/organizations/:id/record-types'. Handlers are inline
+    // (param index 1 is :record-type-id) rather than the flat
+    // document-family factories. History mirrors
+    // documentStateHistoryHandler: ASC derive → empty miss /
+    // DESC wire. Writes land in Task 3.
+    route(RECORD_TYPES_COLLECTION_PATTERN, {
+        get: (db, _p, _actor, organization) =>
+            deriveRecordTypeCollection(
+                db, requireOrganization(organization),
+            ),
+    }),
+    route(RECORD_TYPE_DETAIL_PATTERN, {
+        get: (db, p, _actor, organization) =>
+            deriveRecordTypeEntity(
+                db, requireOrganization(organization),
+                param(p, 1),
+            ),
+    }),
+    route(RECORD_TYPE_HISTORY_PATTERN, {
+        get: async (db, p, _actor, organization) => {
+            const org = requireOrganization(organization);
+            const id = param(p, 1);
+            const history =
+                await deriveRecordTypeStateHistory(
+                    db, org, id,
+                );
+            if (history.length === 0) {
+                throw await missedReadError(
+                    db, id, org, 'record_types',
+                );
+            }
+            return history.toReversed();
+        },
     }),
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger rather than the old record_attributes

@@ -113,6 +113,11 @@ const MEMBER_VERBS: Readonly<
     '/flows/:id/tags': ['GET', 'PUT', 'DELETE'],
     '/records': ['GET', 'PUT', 'DELETE', 'POST'],
     '/record-attributes': ['GET', 'PUT', 'DELETE'],
+    // Nested record-types schema READ (decision 16): one
+    // MEMBER_VERBS row covers the whole subtree's GETs via
+    // matchesOnSegmentBoundary (`:id` is a one-segment
+    // wildcard). Mutations stay admin by absence here.
+    '/organizations/:id/record-types': ['GET'],
     // Nested field-values collection RETIRED (states-URI
     // elimination C4); field values fold on WO history.
     '/work-orders': ['GET', 'PUT', 'POST'],
