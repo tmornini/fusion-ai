@@ -114,6 +114,9 @@ import {
     identityCredentialSeedBody,
 } from './mock-data/seed-message-pairs.ts';
 import { buildSeedScoreRows } from './mock-data/scores.ts';
+import {
+    ATTRIBUTE_DETAIL_PATTERN,
+} from './family-registry.ts';
 
 // A missing pair here is a pass-1/pass-2 wiring bug (a dropped
 // or mis-keyed invocation), never an expected condition — crash
@@ -871,7 +874,7 @@ async function postMockDataLoadIn(
                     requirePair(
                         pairs,
                         seedPairKey(
-                            'record-attributes/:id', a.id,
+                            ATTRIBUTE_DETAIL_PATTERN, a.id,
                         ),
                     ),
                 ),

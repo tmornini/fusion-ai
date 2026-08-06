@@ -31,7 +31,10 @@ import {
     IF_RESPONSE_ID_HEADER,
 } from './message-pair.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
-import { familyRegistration } from './family-registry.ts';
+import {
+    familyRegistration,
+    ATTRIBUTE_DETAIL_PATTERN,
+} from './family-registry.ts';
 import {
     documentFamilyWiring,
     documentHeadPairId,
@@ -605,8 +608,69 @@ export async function handleRequest(
         let pair: MessagePair | undefined;
         if (isWrite && hasWriteHandler && !bearerExempt
             && PAIR_WIRED_ROUTE_PATTERNS.has(routePattern)) {
+            // Task 8 flat alias window: wire path stays
+            // record-attributes/:id; pair storage is nested
+            // under .../record-types/{typeId}/attributes/.
+            // PUT type from body.record_id; DELETE probes
+            // responses by uri_id.
+            let pairRouteSegments = matched.segments;
+            let pairPathSegments = pathSegments;
+            if (
+                routePattern === 'record-attributes/:id'
+                && organization !== undefined
+            ) {
+                const attrId = params[0] ?? '';
+                let typeId: string | undefined;
+                if (
+                    method === 'PUT'
+                    && body !== undefined
+                    && typeof body['record_id'] === 'string'
+                    && body['record_id'] !== ''
+                ) {
+                    typeId = body['record_id'];
+                } else if (
+                    method === 'DELETE' && attrId !== ''
+                ) {
+                    const hits =
+                        await effective.responses.getAllWhere(
+                            'uri_id', attrId,
+                        );
+                    const needle = '/organizations/'
+                        + organization
+                        + '/record-types/';
+                    for (const hit of hits) {
+                        if (
+                            hit.uri_prefix.startsWith(needle)
+                            && hit.uri_prefix.endsWith(
+                                '/attributes/',
+                            )
+                        ) {
+                            const parts =
+                                hit.uri_prefix.split('/');
+                            // ['', 'organizations', org,
+                            //  'record-types', typeId,
+                            //  'attributes', '']
+                            typeId = parts[4];
+                            break;
+                        }
+                    }
+                }
+                if (
+                    typeId !== undefined
+                    && typeId !== ''
+                    && attrId !== ''
+                ) {
+                    pairRouteSegments =
+                        ATTRIBUTE_DETAIL_PATTERN.split('/');
+                    pairPathSegments = [
+                        'organizations', organization,
+                        'record-types', typeId,
+                        'attributes', attrId,
+                    ];
+                }
+            }
             const address = messageAddress(
-                matched.segments, pathSegments,
+                pairRouteSegments, pairPathSegments,
             );
             const canonicalPrefix = canonicalUriPrefix(
                 organization, address.uriPrefix,
@@ -689,8 +753,8 @@ export async function handleRequest(
             }
             pair = await formWritePair({
                 method, pathname, routePattern,
-                routeSegments: matched.segments,
-                pathSegments,
+                routeSegments: pairRouteSegments,
+                pathSegments: pairPathSegments,
                 headerFields: hoistedHeaderFields(request),
                 body,
                 requesterIdentityId: actor,

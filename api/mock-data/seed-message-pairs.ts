@@ -159,6 +159,9 @@ import {
     validateObjectiveCreateBody,
 } from '../validators.ts';
 import {
+    ATTRIBUTE_DETAIL_PATTERN,
+} from '../family-registry.ts';
+import {
     MOCK_SEED_TIMESTAMP,
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
@@ -1785,10 +1788,14 @@ export function buildMockDataInvocations():
             body: recordDocumentBodyOf(b),
         });
         for (const a of attributes) {
+            // Task 8: attributes store under their type
+            // prefix; bodies drop record_id and stamp ACL.
             invocations.push({
-                key: seedPairKey('record-attributes/:id', a.id),
-                routePattern: 'record-attributes/:id',
-                idParams: [a.id],
+                key: seedPairKey(
+                    ATTRIBUTE_DETAIL_PATTERN, a.id,
+                ),
+                routePattern: ATTRIBUTE_DETAIL_PATTERN,
+                idParams: [organization, r.id, a.id],
                 organization,
                 requesterIdentityId: event.member_id,
                 body: recordAttributeDocumentBodyOf(

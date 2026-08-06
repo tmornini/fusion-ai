@@ -2597,9 +2597,25 @@ const RECORD_ATTRIBUTE_DOCUMENT_BODY_KEYS:
     'sort_order', 'options', 'constraints',
 ];
 
+// Optional on the flat wire (Task 8 alias window): omitted
+// keys stamp DEFAULT_ATTRIBUTE_ACL_ROLES so storage never
+// drifts from the nested create-stamp voice.
+const RECORD_ATTRIBUTE_DOCUMENT_OPTIONAL_KEYS:
+    readonly string[] = [
+    'organization_id', 'read_roles', 'write_roles',
+];
+
 export interface RecordAttributeDocumentBody {
-    readonly entity:
-        Omit<RecordAttributeEntity, 'id' | 'organization_id'>;
+    readonly entity: {
+        record_id: string;
+        name: string;
+        attribute_type: AttributeType;
+        sort_order: number;
+        options: string[];
+        constraints: Constraint[];
+        read_roles: string[];
+        write_roles: string[];
+    };
 }
 
 // The HTTP-body gate for PUT /record-attributes/:id: the
@@ -2610,28 +2626,19 @@ export interface RecordAttributeDocumentBody {
 // write, the client never supplies it; the org fence stamps it
 // on the response) yet rides the `optional` allowance rather
 // than `expected` — a caller-forged organization_id is
-// tolerated-but-ignored, not rejected. Phase Final Task 2:
-// record_attributes ROW half stripped — this gate is the sole
-// entity-shape check for the document PUT. REASON this
-// validator exists rather than wiring
-// validateRecordAttributeEntity straight into
-// documentWriteResponseSpec: that generic builder calls
-// validateDocument WITHOUT pre-stamping organization_id (the
-// stamp lands only in the RESPONSE, after validation), while
-// today's hand-written response spec pre-stamps the key BEFORE
-// calling validateRecordAttributeEntity — wiring the shipped
-// entity validator in directly would 500 any body lacking the
-// key, where today it 200s. Entity fields are picked directly
-// (the same constraints/options rules
-// validateRecordAttributeEntity enforces) rather than
-// delegated to it — that function REQUIRES organization_id,
-// which this body never carries pre-stamp.
+// tolerated-but-ignored, not rejected. Task 8: flat wire keeps
+// record_id for the alias window; ACL defaults stamp on both
+// create and replace so nothing drifts from nested storage.
+// Phase Final Task 2: record_attributes ROW half stripped —
+// this gate is the sole entity-shape check for the document
+// PUT.
 export function validateRecordAttributeDocumentBody(
     body: Record<string, unknown>,
 ): RecordAttributeDocumentBody {
     assertOnlyKeys(
         body, RECORD_ATTRIBUTE_DOCUMENT_BODY_KEYS,
-        'RecordAttributeDocumentBody', ['organization_id'],
+        'RecordAttributeDocumentBody',
+        RECORD_ATTRIBUTE_DOCUMENT_OPTIONAL_KEYS,
     );
     const name = pickString(body, 'name');
     if (name === '') {
@@ -2676,6 +2683,20 @@ export function validateRecordAttributeDocumentBody(
             + attributeType + "'",
         );
     }
+    const defaultRoles: string[] = [
+        ...DEFAULT_ATTRIBUTE_ACL_ROLES,
+    ];
+    const label = 'RecordAttributeDocumentBody';
+    const readRoles = 'read_roles' in body
+        ? pickNonEmptyStringArray(
+            body, 'read_roles', label,
+        )
+        : [...defaultRoles];
+    const writeRoles = 'write_roles' in body
+        ? pickNonEmptyStringArray(
+            body, 'write_roles', label,
+        )
+        : [...defaultRoles];
     return {
         entity: {
             record_id: pickString(body, 'record_id'),
@@ -2684,6 +2705,8 @@ export function validateRecordAttributeDocumentBody(
             sort_order: pickNumber(body, 'sort_order'),
             options,
             constraints,
+            read_roles: readRoles,
+            write_roles: writeRoles,
         },
     };
 }

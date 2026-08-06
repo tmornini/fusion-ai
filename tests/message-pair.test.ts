@@ -48,21 +48,29 @@ async () => {
     );
 });
 
-test('record-attributes nests under the organization',
+test('flat record-attributes stores under type attributes',
 async () => {
-    // The multi-word segment diverges from its table-name
-    // root ('records') but is org-owned — pinned here so
-    // the tier set can never silently drop it.
+    // Task 8 alias window: wire path is flat; storage is
+    // nested under the body's record_id type segment.
     const pair = await formWritePair({
         ...INPUT,
         pathname: '/record-attributes/ra1',
         routePattern: 'record-attributes/:id',
         routeSegments: ['record-attributes', ':id'],
         pathSegments: ['record-attributes', 'ra1'],
+        body: {
+            record_id: 'rec01CustProfRec0rdAB1',
+            name: 'Contact Email',
+            attribute_type: 'text',
+            sort_order: 2,
+            options: [],
+            constraints: [],
+        },
     });
     assert.equal(
         pair.uriPrefix,
-        '/organizations/1/record-attributes/',
+        '/organizations/1/record-types/'
+        + 'rec01CustProfRec0rdAB1/attributes/',
     );
 });
 

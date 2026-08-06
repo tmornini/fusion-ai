@@ -46,6 +46,9 @@ import type {
     OrganizationEntity,
 } from './types.ts';
 import {
+    DEFAULT_ATTRIBUTE_ACL_ROLES,
+} from './types.ts';
+import {
     validateAIMemberCreateBody,
     validateAIMemberEditBody,
     validateAiMemberDocumentBody,
@@ -968,19 +971,33 @@ export function recordDocumentBodyOf(
         };
 }
 
-// The id-strip destructure precedent (Task 3's Step 0 finding):
-// a live PUT record-attributes/:id's stored body is the entity
-// fields minus `id` and `organization_id` — reproduced here
-// rather than re-derived, so a synthesized attribute pair's
-// body can never drift from what the live route would have
-// stored for the identical row.
+// Nested attribute storage body (Task 8): strip id /
+// organization_id / record_id (parentage is the URI under
+// the type) and stamp DEFAULT_ATTRIBUTE_ACL_ROLES so seed
+// and composed-op pairs always carry both ACL arrays.
 export function recordAttributeDocumentBodyOf(
     row: Record<string, unknown>,
 ): Record<string, unknown> {
     const {
-        id: _id, organization_id: _organizationId, ...rest
+        id: _id,
+        organization_id: _organizationId,
+        record_id: _recordId,
+        ...rest
     } = row;
-    return rest;
+    const defaultRoles: string[] = [
+        ...DEFAULT_ATTRIBUTE_ACL_ROLES,
+    ];
+    return {
+        ...rest,
+        read_roles:
+            Array.isArray(rest['read_roles'])
+                ? rest['read_roles']
+                : [...defaultRoles],
+        write_roles:
+            Array.isArray(rest['write_roles'])
+                ? rest['write_roles']
+                : [...defaultRoles],
+    };
 }
 
 // Phase Final Task 1(a): the attribute's owning organization
@@ -1014,14 +1031,32 @@ async function recordAttributeOrganizationFromPairs(
     return organizationId;
 }
 
-// Flat attribute head's record_id (parent type id) from the
-// request body — scopes the fourth RESTRICT leg. Nested
-// deletes pass the path type id directly instead.
+// Parent type id from a nested attributes uri_prefix
+// (/organizations/{org}/record-types/{typeId}/attributes/).
+// Task 8 storage is address-parented; body no longer carries
+// record_id.
+function recordTypeIdFromAttributesPrefix(
+    uriPrefix: string,
+): Id | null {
+    const match = new RegExp(
+        '^/organizations/[^/]+/record-types/'
+        + '([^/]+)/attributes/$',
+    ).exec(uriPrefix);
+    return match?.[1] ?? null;
+}
+
+// Flat attribute's owning type id — from the nested storage
+// address (Task 8). Falls back to a body record_id only for
+// residual flat-address fixtures. Scopes the fourth RESTRICT
+// leg; nested deletes pass the path type id directly.
 async function recordAttributeRecordIdFromPairs(
     db: DbAdapter,
     uriPrefix: string,
     id: Id,
 ): Promise<Id | null> {
+    const fromPrefix =
+        recordTypeIdFromAttributesPrefix(uriPrefix);
+    if (fromPrefix !== null) return fromPrefix;
     const [requests, responses] = await Promise.all([
         db.requests.getAllWhere('uri_prefix', uriPrefix),
         db.responses.getAllWhere('uri_prefix', uriPrefix),
@@ -1033,7 +1068,8 @@ async function recordAttributeRecordIdFromPairs(
     const recordId = head.body['record_id'];
     if (typeof recordId !== 'string' || recordId === '') {
         throw new Error(
-            'record-attribute head lacks record_id: ' + id,
+            'record-attribute head lacks type parent: '
+            + id,
         );
     }
     return recordId;
@@ -1047,6 +1083,79 @@ function attributesUriPrefix(
     return '/organizations/' + organization
         + '/record-types/' + recordTypeId
         + '/attributes/';
+}
+
+// Resolve an attribute id to its type id via uri_id probe
+// (resolveGlobalOwner posture): scan responses for a nested
+// attributes prefix under the fenced org.
+async function resolveAttributeTypeId(
+    db: DbAdapter,
+    organization: Id,
+    attributeId: Id,
+): Promise<Id | null> {
+    const hits = await db.responses.getAllWhere(
+        'uri_id', attributeId,
+    );
+    const organizationNeedle =
+        '/organizations/' + organization
+        + '/record-types/';
+    for (const hit of hits) {
+        if (!hit.uri_prefix.startsWith(
+            organizationNeedle,
+        )) {
+            continue;
+        }
+        if (!hit.uri_prefix.endsWith('/attributes/')) {
+            continue;
+        }
+        const typeId =
+            recordTypeIdFromAttributesPrefix(
+                hit.uri_prefix,
+            );
+        if (typeId !== null) return typeId;
+    }
+    return null;
+}
+
+// Flat wire row for an attribute head stored nested under a
+// type: re-attach record_id from the address type segment so
+// the alias window's clients keep their shape.
+async function flatAttributeWireOf(
+    db: DbAdapter,
+    organization: Id,
+    recordTypeId: Id,
+    attributeId: Id,
+    pairId: string,
+    requestBody: Record<string, unknown>,
+): Promise<Record<string, unknown>> {
+    const headResponse = await db.responses.getById(pairId);
+    const responseBody = pairResponseBody({
+        responseMessage: headResponse.message,
+    } as MessagePair);
+    if (
+        responseBody !== undefined
+        && typeof responseBody['name'] === 'string'
+    ) {
+        // Nested successBody stamps record_type_id; flat
+        // clients want record_id. Prefer response bytes but
+        // normalize the parent key for the window.
+        const {
+            record_type_id: _rt,
+            ...rest
+        } = responseBody;
+        return {
+            ...rest,
+            id: attributeId,
+            organization_id: organization,
+            record_id: recordTypeId,
+        };
+    }
+    return {
+        id: attributeId,
+        organization_id: organization,
+        record_id: recordTypeId,
+        ...requestBody,
+    };
 }
 
 // Wire row for a nested attribute head. Prefers the stored
@@ -4655,6 +4764,10 @@ export const routes: Route[] = [
                     requestAt: pair.requestAt,
                     organization,
                 });
+                // Task 8: attribute pairs form at nested
+                // ATTRIBUTE_DETAIL_PATTERN addresses (type id
+                // = top-level body id); bodies rectified (no
+                // record_id, ACL stamped).
                 const attributePuts = await Promise.all(
                     b.attributes.map(async (attr) => {
                         const attributeBody =
@@ -4663,8 +4776,11 @@ export const routes: Route[] = [
                                     Record<string, unknown>,
                             );
                         return formDocumentPairFor(db, {
-                            routePattern: 'record-attributes/:id',
-                            params: [attr.id],
+                            routePattern:
+                                ATTRIBUTE_DETAIL_PATTERN,
+                            params: [
+                                organization, b.id, attr.id,
+                            ],
                             body: attributeBody,
                             requesterIdentityId: actor,
                             requestAt: pair.requestAt,
@@ -4683,8 +4799,11 @@ export const routes: Route[] = [
                         // so an explicit response override skips
                         // WRITE_RESPONSE_SPECS entirely.
                         return formDocumentPairFor(db, {
-                            routePattern: 'record-attributes/:id',
-                            params: [id],
+                            routePattern:
+                                ATTRIBUTE_DETAIL_PATTERN,
+                            params: [
+                                organization, b.id, id,
+                            ],
                             body: undefined,
                             requesterIdentityId: actor,
                             requestAt: pair.requestAt,
@@ -4961,40 +5080,111 @@ export const routes: Route[] = [
             );
         },
     }),
-    // GET is FLIPPED (Task 7): the collection derives from the
-    // message ledger rather than the old record_attributes
-    // table. Rides the generic documentCollectionGetHandler —
-    // wire-identical to the hand-written
-    // db.recordAttributes.getAll() dispatch it replaces
-    // (RECORD_ATTRIBUTES_WIRING's own entityOf,
-    // recordAttributeDocumentEntityOf, already spreads the head
-    // pair's body verbatim, so the list needs no
-    // record-attributes-special reassembly step). No POST here —
-    // record-attributes carries no create verb of its own,
-    // unchanged from before this flip.
+    // Flat alias window (Task 8): wire path stays
+    // /record-attributes; storage is nested under each type's
+    // attributes prefix. Discover type ids from attribute
+    // pair prefixes under the org (type heads alone would
+    // miss attribute-only fixtures and deleted types that
+    // still hold attributes), then per-type derive, concat,
+    // id-lex, RE-ATTACH record_id from the address type
+    // segment.
     route('record-attributes', {
-        get: documentCollectionGetHandler(
-            RECORD_ATTRIBUTES_WIRING,
-        ),
+        get: async (db, _p, _actor, organization) => {
+            const organizationId = requireOrganization(
+                organization,
+            );
+            const organizationNeedle =
+                '/organizations/' + organizationId
+                + '/record-types/';
+            const responses = await db.responses.getAll();
+            const typeIds = new Set<string>();
+            for (const response of responses) {
+                if (
+                    !response.uri_prefix.startsWith(
+                        organizationNeedle,
+                    )
+                ) {
+                    continue;
+                }
+                const typeId =
+                    recordTypeIdFromAttributesPrefix(
+                        response.uri_prefix,
+                    );
+                if (typeId !== null) typeIds.add(typeId);
+            }
+            const rows: { id: string }[] = [];
+            for (const typeId of typeIds) {
+                const prefix = attributesUriPrefix(
+                    organizationId, typeId,
+                );
+                const [requests, typeResponses] =
+                    await Promise.all([
+                        db.requests.getAllWhere(
+                            'uri_prefix', prefix,
+                        ),
+                        db.responses.getAllWhere(
+                            'uri_prefix', prefix,
+                        ),
+                    ]);
+                const documents = deriveDocumentsAt(
+                    requests, typeResponses, prefix,
+                );
+                for (const [id, document] of documents) {
+                    const wire = await flatAttributeWireOf(
+                        db, organizationId, typeId, id,
+                        document.pairId, document.body,
+                    );
+                    rows.push(wire as { id: string });
+                }
+            }
+            return rows.sort(byIdAscending);
+        },
     }),
-    // record-attributes/:id is the sixth family. GET is FLIPPED
-    // (Task 7): absorbed into the generic
-    // documentGetHandler(RECORD_ATTRIBUTES_WIRING) — the SAME
-    // wiring row PUT already rides — wire-identical to the
-    // hand-written db.recordAttributes.getById dispatch it
-    // replaces (recordAttributeDocumentEntityOf reproduces the
-    // shape verbatim; the 'stateless' lifecycle skips the trio
-    // walk entirely, so a DELETE head is the only tombstone
-    // signal, already 404-absent via deriveDocumentsAt). PUT
-    // stays documentPutHandler(RECORD_ATTRIBUTES_WIRING),
-    // unchanged from before this flip. DELETE stays
-    // hand-written — the RESTRICT check and the pair append ride
-    // the SAME transaction, exactly as before (the factory's
-    // fixed closures have no per-family pair selector; see
-    // message-pair.ts) — a splice route is not a document
-    // verb-class member (Task 9 covers the DELETE pattern).
+    // Flat alias window detail (Task 8): GET/DELETE resolve
+    // the owning type by uri_id prefix probe; PUT addresses
+    // from body.record_id (formWritePair rewrite + flat
+    // validator). Wire shape keeps record_id.
     route('record-attributes/:id', {
-        get: documentGetHandler(RECORD_ATTRIBUTES_WIRING),
+        get: async (db, p, _actor, organization) => {
+            const organizationId = requireOrganization(
+                organization,
+            );
+            const attrId = param(p, 0);
+            const typeId = await resolveAttributeTypeId(
+                db, organizationId, attrId,
+            );
+            if (typeId === null) {
+                throw await missedReadError(
+                    db, attrId, organizationId,
+                    'record_attributes',
+                );
+            }
+            const prefix = attributesUriPrefix(
+                organizationId, typeId,
+            );
+            const [requests, responses] =
+                await Promise.all([
+                    db.requests.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                    db.responses.getAllWhere(
+                        'uri_prefix', prefix,
+                    ),
+                ]);
+            const document = deriveDocumentsAt(
+                requests, responses, prefix,
+            ).get(attrId);
+            if (document === undefined) {
+                throw await missedReadError(
+                    db, attrId, organizationId,
+                    'record_attributes',
+                );
+            }
+            return flatAttributeWireOf(
+                db, organizationId, typeId, attrId,
+                document.pairId, document.body,
+            );
+        },
         put: documentPutHandler(RECORD_ATTRIBUTES_WIRING),
         // DELETE is RESTRICT, not cascade: an attribute
         // still named by state_field_values rows or bound
@@ -5017,22 +5207,52 @@ export const routes: Route[] = [
                     'record-attribute DELETE without pair',
                 );
             }
-            const pairOrganizationId =
+            // Flat window DELETE: pair.uriPrefix may still be
+            // the legacy flat prefix when the gate has not yet
+            // rewritten (no body record_id). Probe nested
+            // storage by uri_id when prefix is not nested.
+            let pairOrganizationId =
                 await recordAttributeOrganizationFromPairs(
                     db, pair.uriPrefix, id,
                 );
+            let recordTypeId =
+                await recordAttributeRecordIdFromPairs(
+                    db, pair.uriPrefix, id,
+                );
+            if (
+                pairOrganizationId === null
+                || recordTypeId === null
+            ) {
+                const organizationFromPair =
+                    pair.uriPrefix.startsWith(
+                        '/organizations/',
+                    )
+                        ? pair.uriPrefix.split('/')[2]
+                        : undefined;
+                if (organizationFromPair !== undefined) {
+                    const typeId =
+                        await resolveAttributeTypeId(
+                            db, organizationFromPair, id,
+                        );
+                    if (typeId !== null) {
+                        const nestedPrefix =
+                            attributesUriPrefix(
+                                organizationFromPair,
+                                typeId,
+                            );
+                        pairOrganizationId =
+                            await recordAttributeOrganizationFromPairs(
+                                db, nestedPrefix, id,
+                            );
+                        recordTypeId = typeId;
+                    }
+                }
+            }
             if (pairOrganizationId === null) {
                 throw new EntityNotFoundError(
                     'record_attributes', id,
                 );
             }
-            // Flat window: parent type id is body
-            // record_id on the head pair (fourth RESTRICT
-            // leg scopes instance scan under that type).
-            const recordTypeId =
-                await recordAttributeRecordIdFromPairs(
-                    db, pair.uriPrefix, id,
-                );
             if (recordTypeId === null) {
                 throw new EntityNotFoundError(
                     'record_attributes', id,

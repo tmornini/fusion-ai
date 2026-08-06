@@ -484,8 +484,9 @@ test('a seeded record\'s document pair sits at its'
 });
 
 test('a seeded record attribute\'s document pair sits at'
-+ ' its own entity address, its body carrying no id or'
-+ ' organization_id key', async () => {
++ ' its nested type-attributes address, its body carrying'
++ ' no id, organization_id, or record_id key and both ACL'
++ ' arrays', async () => {
     const db = memoryDbAdapter();
     await postMockDataLoad(db);
     const firstAttribute = buildRecordAttributes()[0]!;
@@ -498,7 +499,8 @@ test('a seeded record attribute\'s document pair sits at'
     );
     assert.equal(
         row!.uri_prefix,
-        '/organizations/1/record-attributes/',
+        '/organizations/1/record-types/'
+        + 'rec01CustProfRec0rdAB1/attributes/',
     );
     const embedded = JSON.parse(row!.message) as {
         body: Record<string, unknown>;
@@ -507,7 +509,8 @@ test('a seeded record attribute\'s document pair sits at'
         Object.keys(embedded.body).sort(),
         [
             'attribute_type', 'constraints', 'name',
-            'options', 'record_id', 'sort_order',
+            'options', 'read_roles', 'sort_order',
+            'write_roles',
         ],
     );
 });

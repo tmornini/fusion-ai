@@ -170,13 +170,33 @@ export async function formWritePair(
     const address = messageAddress(
         input.routeSegments, input.pathSegments,
     );
-    const uriPrefix = canonicalUriPrefix(
+    let uriPrefix = canonicalUriPrefix(
         input.organization, address.uriPrefix,
     );
     const createdId = createdEntityUriId(
         input.routePattern, input.body,
     );
     const uriId = createdId ?? address.uriId;
+    // Task 8 flat alias window: wire path stays
+    // /record-attributes/:id; storage is under the type's
+    // attributes prefix when the body carries record_id
+    // (PUT create/replace). DELETE rewrite lives at the
+    // gate (needs a uri_id probe). Nested pathSegments
+    // already produce the nested prefix via messageAddress.
+    if (
+        input.routePattern === 'record-attributes/:id'
+        && input.organization !== undefined
+        && input.body !== undefined
+        && input.body !== null
+    ) {
+        const typeId = input.body['record_id'];
+        if (typeof typeId === 'string' && typeId !== '') {
+            uriPrefix = '/organizations/'
+                + input.organization
+                + '/record-types/' + typeId
+                + '/attributes/';
+        }
+    }
     const requestModel =
         await stripPiiRequest(
             input.routePattern,
