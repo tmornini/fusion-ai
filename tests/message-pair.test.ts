@@ -48,18 +48,27 @@ async () => {
     );
 });
 
-test('flat record-attributes stores under type attributes',
+test('nested attribute pattern stores under type attributes',
 async () => {
-    // Task 8 alias window: wire path is flat; storage is
-    // nested under the body's record_id type segment.
+    const typeId = 'rec01CustProfRec0rdAB1';
     const pair = await formWritePair({
         ...INPUT,
-        pathname: '/record-attributes/ra1',
-        routePattern: 'record-attributes/:id',
-        routeSegments: ['record-attributes', ':id'],
-        pathSegments: ['record-attributes', 'ra1'],
+        pathname: '/organizations/1/record-types/'
+            + typeId + '/attributes/ra1',
+        routePattern:
+            'organizations/:organization-id/record-types/'
+            + ':record-type-id/attributes/:attribute-id',
+        routeSegments: [
+            'organizations', ':organization-id',
+            'record-types', ':record-type-id',
+            'attributes', ':attribute-id',
+        ],
+        pathSegments: [
+            'organizations', '1',
+            'record-types', typeId,
+            'attributes', 'ra1',
+        ],
         body: {
-            record_id: 'rec01CustProfRec0rdAB1',
             name: 'Contact Email',
             attribute_type: 'text',
             sort_order: 2,
@@ -70,20 +79,26 @@ async () => {
     assert.equal(
         pair.uriPrefix,
         '/organizations/1/record-types/'
-        + 'rec01CustProfRec0rdAB1/attributes/',
+        + typeId + '/attributes/',
     );
 });
 
-test('wire records stores at the record-types prefix',
+test('nested record-type detail stores at type prefix',
 async () => {
-    // Task 4 alias: flat first segment `records` rewrites
-    // to storage name `record-types` before nesting.
     const pair = await formWritePair({
         ...INPUT,
-        pathname: '/records/r1',
-        routePattern: 'records/:id',
-        routeSegments: ['records', ':id'],
-        pathSegments: ['records', 'r1'],
+        pathname: '/organizations/1/record-types/r1',
+        routePattern:
+            'organizations/:organization-id/record-types/'
+            + ':record-type-id',
+        routeSegments: [
+            'organizations', ':organization-id',
+            'record-types', ':record-type-id',
+        ],
+        pathSegments: [
+            'organizations', '1',
+            'record-types', 'r1',
+        ],
     });
     assert.equal(
         pair.uriPrefix,

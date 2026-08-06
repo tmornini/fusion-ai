@@ -220,7 +220,6 @@ import { deriveFlowTag } from './derive-flow-tags.ts';
 import {
     deriveObjectiveRevisions,
 } from './derive-objective-revisions.ts';
-import { deriveRecordStateHistory } from './derive-record-types.ts';
 import {
     deriveObjectiveStateHistory,
     deriveObjectiveHistories,
@@ -270,7 +269,6 @@ import {
     documentGetHandler,
     documentPutHandler,
     documentStateHistoryHandler,
-    documentHeadPairId,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
@@ -398,121 +396,28 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
     documentOp: postWorkOrderDocumentOp,
     entityOf: workOrderDocumentEntityOf,
 };
-// Head document → wire RecordEntity. Entity fields come from
-// the head body; the lifecycle trio is stamped from the
-// lifecycle-current StateEntity (never re-copied from the
-// head body — genesis-wins-under-skew). `current` is required
-// on the live trio path (document-family always supplies it
-// after the DELETED filter).
-function recordDocumentEntityOf(
-    document: DerivedDocument,
-    organization: Id,
-    current: StateEntity,
-): RecordEntity {
-    const body = document.body;
-    return {
-        id: document.uriId,
-        organization_id: organization,
-        name: pickString(body, 'name'),
-        description: pickString(body, 'description'),
-        position: pickNumber(body, 'position'),
-        state: current.state,
-        state_at: current.at,
-        state_event_id: current.id,
-    };
-}
-// The records wiring row — the fifth family, and the first
-// 'trio' family whose :id address also carries a live DELETE
-// route (Author gate 9: documentLifecycleEvents now skips a
-// DELETE-method pair — see its own comment in derive-
-// documents.ts). notFoundTable is 'records' (its storage table
-// name matches its family name, like ideas/projects/flows).
-// recordDocumentEntityOf requires the lifecycle-current event;
-// the generic trio path always supplies it after DELETED
-// filter.
-const RECORDS_WIRING: DocumentFamilyWiring = {
-    // Storage family (wire still /records until Task 23).
-    family: 'record-types',
-    lifecycle: 'trio',
-    // Flat-window voice on the 404 body (reconciliation 8).
-    notFoundTable: 'records',
-    validateDocument: validateRecordDocumentBody,
-    documentOp: postRecordDocumentOp,
-    entityOf: (document, organization, current) =>
-        recordDocumentEntityOf(
-            document, organization, current!,
-        ),
-};
-// The generic GET machinery this entityOf serves flips onto
-// record-attributes at Task 7 too (this commit, the SAME
-// commit as RECORDS_WIRING's own flip above): GET
-// record-attributes/:id and GET record-attributes now ride it.
-// A body spread is safe here exactly as
-// workOrderDocumentEntityOf's own comment argues: the head
-// pair's body, stamped with id and organization_id, already
-// carries exactly the {record_id, name, attribute_type,
-// sort_order, options, constraints} keys
-// validateRecordAttributeDocumentBody's gate admits — no
-// per-field picking needed, and (UNLIKE a 'trio' family) there
-// is no trio to leak, since 'stateless' rejects one at the gate.
-function recordAttributeDocumentEntityOf(
-    document: DerivedDocument,
-    organization: Id,
-    _current?: StateEntity,
-): unknown {
-    return {
-        id: document.uriId,
-        organization_id: organization,
-        ...document.body,
-    };
-}
-// The record-attributes wiring row — the sixth family, and the
-// SECOND 'stateless' one (work-orders is the first). Sharper
-// evidence than work-orders': a work order's lifecycle CAN be
-// (and is) authored — just never through the document address —
-// so ITS 'stateless' classification is vacuous-in-PRACTICE
-// (WORK_ORDERS_WIRING's own comment). A record attribute carries
-// no lifecycle concept AT ALL: no RecordAttributeState alphabet
-// exists anywhere in types.ts, and no call site posts a states
-// event keyed to an attribute id (grep-proven at research) — its
-// 'stateless' classification is vacuous BY CONSTRUCTION —
-// memberships (MEMBERSHIPS_WIRING below, Phase 8) joins this
-// SAME bucket as its actual sibling, not "the stronger of the
-// two" this comment once claimed when record-attributes stood
-// alone against work-orders' vacuous-in-practice one.
-// notFoundTable is 'record_attributes' — the SECOND family
-// whose storage table name (db-backed.ts's EntityStore key)
-// differs from its hyphenated family/route name (work-orders/
-// work_orders was the first).
-const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
-    family: 'record-attributes',
-    lifecycle: 'stateless',
-    notFoundTable: 'record_attributes',
-    validateDocument: validateRecordAttributeDocumentBody,
-    documentOp: postRecordAttributeDocumentOp,
-    entityOf: recordAttributeDocumentEntityOf,
-};
+// Objectives wiring follows; record-types and nested
+// attributes use inline handlers (Task 23 retired flat
+// RECORDS_WIRING / RECORD_ATTRIBUTES_WIRING).
+//
 // The generic GET machinery (documentGetHandler/
-// documentCollectionGetHandler) this entityOf serves flips onto
-// objectives at Task 7 (this commit): GET objectives/:id and GET
-// objectives now ride it, exactly as recordDocumentEntityOf/
-// recordAttributeDocumentEntityOf each served their OWN family's
-// GET path at the prior flip. The wire row is constructed ID
-// FIRST — {id, organization_id, position} — the SAME seven-
-// sibling convention every shipped entityOf follows; picked
-// explicitly (pickNumber) rather than a body spread, mirroring
-// recordDocumentEntityOf's own choice (NOT
-// workOrderDocumentEntityOf's/recordAttributeDocumentEntityOf's
-// spread): the wire body tolerates an organization_id key
-// alongside position, and a spread would let that raw, unstamped
-// key leak into the read path ahead of the fenced `organization`
-// argument — picking only `position` closes that off by
-// construction. Head document → wire ObjectiveEntity. Entity
-// fields come from the head body; the lifecycle trio is stamped
-// from the lifecycle-current StateEntity (never re-copied from
-// the head body — genesis-wins-under-skew). `current` is required
-// on the live trio path (document-family always supplies it
-// after the DELETED filter).
+// documentCollectionGetHandler) this entityOf serves
+// flips onto objectives: GET objectives/:id and GET
+// objectives ride it. The wire row is constructed ID
+// FIRST — {id, organization_id, position} — the SAME
+// seven-sibling convention every shipped entityOf
+// follows; picked explicitly (pickNumber) rather than a
+// body spread: the wire body tolerates an organization_id
+// key alongside position, and a spread would let that raw,
+// unstamped key leak into the read path ahead of the
+// fenced `organization` argument — picking only
+// `position` closes that off by construction. Head
+// document → wire ObjectiveEntity. Entity fields come
+// from the head body; the lifecycle trio is stamped from
+// the lifecycle-current StateEntity (never re-copied from
+// the head body — genesis-wins-under-skew). `current` is
+// required on the live trio path (document-family always
+// supplies it after the DELETED filter).
 function objectiveDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
@@ -557,10 +462,9 @@ const OBJECTIVES_WIRING: DocumentFamilyWiring = {
 // Task 8) this entityOf will serve: the head pair's body already
 // carries exactly {organization_id, identity_id, at} —
 // memberships' wire PUT body includes its OWN organization_id
-// (UNLIKE work-orders'/record-attributes' tolerated-but-optional
-// stamp), so a spread is safe here for the same reason
-// recordAttributeDocumentEntityOf's own comment gives: no
-// per-field picking needed, and there is no trio to leak.
+// (UNLIKE work-orders' tolerated-but-optional stamp), so a
+// spread is safe here: no per-field picking needed, and
+// there is no trio to leak.
 // `_organization` stays unused: this entityOf reads
 // organization_id off the body itself, never the fence argument
 // — the org-scoped store already stamps organization_id at
@@ -577,10 +481,9 @@ function membershipDocumentEntityOf(
     };
 }
 // The memberships wiring row — the eighth family, and the
-// FOURTH 'stateless' one, joining RECORD_ATTRIBUTES_WIRING's
-// vacuous-BY-CONSTRUCTION bucket as its actual sibling (that
-// row's own comment above now admits memberships rather than
-// standing alone). This is the CORRECTED stateless-fork
+// FOURTH 'stateless' one (record-attributes shared the same
+// vacuous-BY-CONSTRUCTION bucket before Task 23 retired its
+// flat wiring row). This is the CORRECTED stateless-fork
 // contrast (Author gate 3, adjudicated at the roster phase —
 // OBJECTIVES_WIRING's own comment above re-reads its "type-level
 // fork" claim as history, not standing doctrine): work-orders'
@@ -763,8 +666,6 @@ registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
 registerDocumentFamilyWiring(WORK_ORDERS_WIRING);
-registerDocumentFamilyWiring(RECORDS_WIRING);
-registerDocumentFamilyWiring(RECORD_ATTRIBUTES_WIRING);
 registerDocumentFamilyWiring(OBJECTIVES_WIRING);
 registerDocumentFamilyWiring(MEMBERSHIPS_WIRING);
 registerDocumentFamilyWiring(MEMBERS_WIRING);
@@ -986,7 +887,7 @@ export interface RecordWritePairs {
 
 // The shared BODY builders — the ONE-voice seam: pure functions
 // consumed by BOTH the live route-inline formation
-// (route('records', ...) below) and the seed's invocation
+// (nested POST .../record-types) and the seed's invocation
 // construction (api/mock-data/seed-message-pairs.ts). NOT a
 // shared pair-FORMER (Premature Generalization, verification-
 // corrected against an earlier draft): the route needs the
@@ -994,7 +895,8 @@ export interface RecordWritePairs {
 // seed needs neither. Pair formation stays two pipelines,
 // sharing only these bodies.
 
-// The wire body a live PUT records/:id would carry for this
+// The wire body a live PUT .../record-types/:id would carry
+// for this
 // SAME write: the entity fields (organization_id excluded, like
 // every genuine client PUT — validateRecordDocumentBody's own
 // comment) plus the lifecycle trio. Create maps the trio from
@@ -1052,10 +954,10 @@ export function recordAttributeDocumentBodyOf(
     };
 }
 
-// Shared composed-write pair bundle for flat POST /records
-// and nested POST .../record-types (Task 9). Document address
-// is route-specific (flat records/:id vs nested detail);
-// attributes always form at ATTRIBUTE_DETAIL_PATTERN.
+// Shared composed-write pair bundle for nested POST
+// .../record-types (Task 9 / Task 23). Document address is
+// RECORD_TYPE_DETAIL_PATTERN; attributes form at
+// ATTRIBUTE_DETAIL_PATTERN.
 async function formRecordWritePairs(
     db: DbAdapter,
     b: RecordWriteBody,
@@ -1137,81 +1039,6 @@ async function formRecordWritePairs(
     };
 }
 
-// Phase Final Task 1(a): the attribute's owning organization
-// from its STORED document-pair head response body (the
-// WRITE_RESPONSE_SPECS successBody stamp). Row fallback
-// remains for raw-seeded RESTRICT fixtures until Stage B
-// deletes the table; production always has pairs.
-async function recordAttributeOrganizationFromPairs(
-    db: DbAdapter,
-    uriPrefix: string,
-    id: Id,
-): Promise<Id | null> {
-    const headPairId = await documentHeadPairId(
-        db, uriPrefix, id,
-    );
-    if (headPairId === undefined) return null;
-    const headResponse =
-        await db.responses.getById(headPairId);
-    // pairResponseBody only reads responseMessage — form a
-    // minimal carrier so the pure decoder stays one voice.
-    const headBody = pairResponseBody({
-        responseMessage: headResponse.message,
-    } as MessagePair);
-    const organizationId = headBody?.['organization_id'];
-    if (typeof organizationId !== 'string') {
-        throw new Error(
-            'record-attribute head lacks organization_id: '
-            + id,
-        );
-    }
-    return organizationId;
-}
-
-// Parent type id from a nested attributes uri_prefix
-// (/organizations/{org}/record-types/{typeId}/attributes/).
-// Task 8 storage is address-parented; body no longer carries
-// record_id.
-function recordTypeIdFromAttributesPrefix(
-    uriPrefix: string,
-): Id | null {
-    const match = new RegExp(
-        '^/organizations/[^/]+/record-types/'
-        + '([^/]+)/attributes/$',
-    ).exec(uriPrefix);
-    return match?.[1] ?? null;
-}
-
-// Flat attribute's owning type id — from the nested storage
-// address (Task 8). Falls back to a body record_id only for
-// residual flat-address fixtures. Scopes the fourth RESTRICT
-// leg; nested deletes pass the path type id directly.
-async function recordAttributeRecordIdFromPairs(
-    db: DbAdapter,
-    uriPrefix: string,
-    id: Id,
-): Promise<Id | null> {
-    const fromPrefix =
-        recordTypeIdFromAttributesPrefix(uriPrefix);
-    if (fromPrefix !== null) return fromPrefix;
-    const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', uriPrefix),
-        db.responses.getAllWhere('uri_prefix', uriPrefix),
-    ]);
-    const head = deriveDocumentsAt(
-        requests, responses, uriPrefix,
-    ).get(id);
-    if (head === undefined) return null;
-    const recordId = head.body['record_id'];
-    if (typeof recordId !== 'string' || recordId === '') {
-        throw new Error(
-            'record-attribute head lacks type parent: '
-            + id,
-        );
-    }
-    return recordId;
-}
-
 // Nested attributes URI prefix under a live type.
 function attributesUriPrefix(
     organization: Id,
@@ -1277,79 +1104,6 @@ async function loadAttributeSchemaById(
         );
     }
     return map;
-}
-
-// Resolve an attribute id to its type id via uri_id probe
-// (resolveGlobalOwner posture): scan responses for a nested
-// attributes prefix under the fenced org.
-async function resolveAttributeTypeId(
-    db: DbAdapter,
-    organization: Id,
-    attributeId: Id,
-): Promise<Id | null> {
-    const hits = await db.responses.getAllWhere(
-        'uri_id', attributeId,
-    );
-    const organizationNeedle =
-        '/organizations/' + organization
-        + '/record-types/';
-    for (const hit of hits) {
-        if (!hit.uri_prefix.startsWith(
-            organizationNeedle,
-        )) {
-            continue;
-        }
-        if (!hit.uri_prefix.endsWith('/attributes/')) {
-            continue;
-        }
-        const typeId =
-            recordTypeIdFromAttributesPrefix(
-                hit.uri_prefix,
-            );
-        if (typeId !== null) return typeId;
-    }
-    return null;
-}
-
-// Flat wire row for an attribute head stored nested under a
-// type: re-attach record_id from the address type segment so
-// the alias window's clients keep their shape.
-async function flatAttributeWireOf(
-    db: DbAdapter,
-    organization: Id,
-    recordTypeId: Id,
-    attributeId: Id,
-    pairId: string,
-    requestBody: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-    const headResponse = await db.responses.getById(pairId);
-    const responseBody = pairResponseBody({
-        responseMessage: headResponse.message,
-    } as MessagePair);
-    if (
-        responseBody !== undefined
-        && typeof responseBody['name'] === 'string'
-    ) {
-        // Nested successBody stamps record_type_id; flat
-        // clients want record_id. Prefer response bytes but
-        // normalize the parent key for the window.
-        const {
-            record_type_id: _rt,
-            ...rest
-        } = responseBody;
-        return {
-            ...rest,
-            id: attributeId,
-            organization_id: organization,
-            record_id: recordTypeId,
-        };
-    }
-    return {
-        id: attributeId,
-        organization_id: organization,
-        record_id: recordTypeId,
-        ...requestBody,
-    };
 }
 
 // Wire row for a nested attribute head. Prefers the stored
@@ -1575,7 +1329,8 @@ export async function postProjectDocumentOp(
 // head-presence-defined, byte-identical to postIdeaDocumentOp/
 // postProjectDocumentOp. UNLIKE those two, a record's genesis
 // normally arrives through the composed create
-// (postRecordWriteOp, POST /records) rather than this PUT —
+// (postRecordWriteOp, POST .../record-types) rather than
+// this PUT —
 // this op's genesis arm exists for a live PUT-first flow.
 // Phase Final Task 2: the records ROW half is stripped — the
 // pair + states.postEvent commit as ONE transaction (states
@@ -3139,26 +2894,14 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
-    'records': { status: HTTP_NO_CONTENT },
-    // Nested composed POST (Task 9): same 204 op response as
-    // flat POST /records; document + attribute pairs form at
-    // nested addresses inside formRecordWritePairs.
+    // Nested composed POST (Task 9 / Task 23): 204 op response;
+    // document + attribute pairs form at nested addresses.
     [RECORD_TYPES_COLLECTION_PATTERN]: {
         status: HTTP_NO_CONTENT,
     },
-    // The generic document-form builder (api/document-family.ts)
-    // absorbs the hand-written successBody — see the ideas/:id
-    // entry above for the shared rationale. records/:id emits the
-    // SAME bytes as before ({id, organization_id, name,
-    // description, position}): validateRecordDocumentBody's
-    // entity/trio separation guarantees doc.entity never carries
-    // the trio, byte-identical to today's hand-built body.
-    'records/:id': documentWriteResponseSpec(RECORDS_WIRING),
     // Nested record-types detail (Task 3): put-only per-verb
     // entry. Id is param 1 (:record-type-id); organization_id
     // is param 0 (path org, already org-matched at the gate).
-    // Trio discarded — same house document-spec shape as
-    // documentWriteResponseSpec for records/:id.
     [RECORD_TYPE_DETAIL_PATTERN]: {
         put: {
             status: HTTP_OK,
@@ -3246,17 +2989,6 @@ export const WRITE_RESPONSE_SPECS:
             },
         },
     },
-    // The generic document-form builder (api/document-family.ts)
-    // absorbs the hand-written successBody — see the ideas/:id
-    // entry above for the shared rationale. record-attributes/:id
-    // emits the SAME bytes as before ({id, organization_id,
-    // record_id, name, attribute_type, sort_order, options,
-    // constraints}): validateRecordAttributeDocumentBody's
-    // entity/organization_id separation guarantees doc.entity
-    // never carries the key, byte-identical to today's
-    // hand-built body.
-    'record-attributes/:id':
-        documentWriteResponseSpec(RECORD_ATTRIBUTES_WIRING),
     'flows/:id/records/:frid': {
         status: HTTP_OK,
         successBody: (params, body) => ({
@@ -5143,92 +4875,6 @@ export const routes: Route[] = [
     // (Phase 15 Task 7): live writes ride the transition
     // fold only. WRITE_RESPONSE_SPECS entry + seed address
     // formation SURVIVE (finding 7).
-    // GET records is FLIPPED (Task 7): the collection derives
-    // from the message ledger rather than the old records
-    // table. Rides the generic documentCollectionGetHandler
-    // — wire-identical to the hand-written db.records.getAll()
-    // dispatch it replaces (RECORDS_WIRING's own entityOf,
-    // recordDocumentEntityOf, already picks the exact {id,
-    // organization_id, name, description, position} shape, so
-    // the list needs no records-special reassembly step). POST
-    // stays this hand-written bundle — records' own create forms
-    // the document PLUS N attribute pairs in one pass
-    // (postRecordWriteOp), unlike ideas/projects' bare genesis
-    // fold, so a separate create verb remains here, mirroring
-    // work-orders' and flows' own precedent.
-    route('records', {
-        get: documentCollectionGetHandler(RECORDS_WIRING),
-        // Member-tier POST — /records carries POST in
-        // MEMBER_VERBS. Forms the document pair, one
-        // attribute-PUT pair per attributes[] entry, and one
-        // attribute-DELETE pair per removedAttributeIds entry
-        // (edit only) pre-tx, beside the gate's own operation
-        // pair — the SAME shape a live PUT records/:id and N/M
-        // live PUT/DELETE record-attributes/:id requests would
-        // each carry — ONLY when the gate supplied both a pair
-        // and a fence organization (the route('flows') condition
-        // verbatim); a below-facade caller (api/mock-data.ts, no
-        // gate) skips all pairs, preserving dual-write
-        // discipline. See postRecordWriteOp for the transaction
-        // shape. Bundle formation is shared with nested
-        // POST .../record-types via formRecordWritePairs.
-        post: async (
-            db, _p, body, actor, pair, organization,
-        ) => {
-            let pairs: RecordWritePairs | undefined;
-            if (pair !== undefined && organization !== undefined) {
-                const b = validateRecordWriteBody(body);
-                pairs = await formRecordWritePairs(
-                    db, b, actor, pair, organization,
-                    'records/:id', [b.id],
-                );
-            }
-            return postRecordWriteOp(
-                db, body, actor, pairs, organization,
-            );
-        },
-    }),
-    // records/:id is the fifth family, and the FIRST whose own
-    // :id address also carries a live DELETE (RECORDS_WIRING's
-    // own comment names why). GET is FLIPPED (Task 7): absorbed
-    // into the generic documentGetHandler(RECORDS_WIRING) — the
-    // SAME wiring row PUT already rides — wire-identical to the
-    // hand-written db.records.getById dispatch it replaces
-    // (recordDocumentEntityOf reproduces the shape verbatim, and
-    // the 'trio' lifecycle walk 404s a lifecycle-deleted record
-    // exactly as the old physical-delete plane did). PUT stays
-    // documentPutHandler(RECORDS_WIRING) — the Decision 7 trio
-    // fold, unchanged from before this flip. DELETE stays
-    // hand-written — a splice + pair append in the same
-    // transaction, exactly as before (the factory's fixed
-    // closures have no per-family pair selector; see
-    // message-pair.ts) — a splice route is not a document
-    // verb-class member (Task 9 covers the DELETE pattern).
-    route('records/:id', {
-        get: documentGetHandler(RECORDS_WIRING),
-        put: documentPutHandler(RECORDS_WIRING),
-        // Phase Final Task 2: records ROW half stripped —
-        // DELETE is a pure pair-plane tombstone append.
-        delete: (db, _p, _actor, pair) => {
-            return db.transaction(
-                ['requests', 'responses'],
-                async (view) => {
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                },
-            );
-        },
-    }),
-    // GET records/:id/history (states-URI elimination A3):
-    // deriveRecordStateHistory ASC → DESC; empty →
-    // missedReadError('records'). Member-tier GET via
-    // matchesOnSegmentBoundary on '/records'.
-    route('records/:id/history', {
-        get: documentStateHistoryHandler(
-            deriveRecordStateHistory, 'records',
-        ),
-    }),
     // Nested record-types surface (Task 2 READ + Task 3
     // WRITE + Task 9 composed POST). Org-nested primary
     // addresses; member GET via MEMBER_VERBS
@@ -5646,201 +5292,6 @@ export const routes: Route[] = [
         ) => postInstanceDeleteOp(
             db, p, actor, pair, organization, roles,
         ),
-    }),
-    // Flat alias window (Task 8): wire path stays
-    // /record-attributes; storage is nested under each type's
-    // attributes prefix. Discover type ids from attribute
-    // pair prefixes under the org (type heads alone would
-    // miss attribute-only fixtures and deleted types that
-    // still hold attributes), then per-type derive, concat,
-    // id-lex, RE-ATTACH record_id from the address type
-    // segment.
-    route('record-attributes', {
-        get: async (db, _p, _actor, organization) => {
-            const organizationId = requireOrganization(
-                organization,
-            );
-            const organizationNeedle =
-                '/organizations/' + organizationId
-                + '/record-types/';
-            const responses = await db.responses.getAll();
-            const typeIds = new Set<string>();
-            for (const response of responses) {
-                if (
-                    !response.uri_prefix.startsWith(
-                        organizationNeedle,
-                    )
-                ) {
-                    continue;
-                }
-                const typeId =
-                    recordTypeIdFromAttributesPrefix(
-                        response.uri_prefix,
-                    );
-                if (typeId !== null) typeIds.add(typeId);
-            }
-            const rows: { id: string }[] = [];
-            for (const typeId of typeIds) {
-                const prefix = attributesUriPrefix(
-                    organizationId, typeId,
-                );
-                const [requests, typeResponses] =
-                    await Promise.all([
-                        db.requests.getAllWhere(
-                            'uri_prefix', prefix,
-                        ),
-                        db.responses.getAllWhere(
-                            'uri_prefix', prefix,
-                        ),
-                    ]);
-                const documents = deriveDocumentsAt(
-                    requests, typeResponses, prefix,
-                );
-                for (const [id, document] of documents) {
-                    const wire = await flatAttributeWireOf(
-                        db, organizationId, typeId, id,
-                        document.pairId, document.body,
-                    );
-                    rows.push(wire as { id: string });
-                }
-            }
-            return rows.sort(byIdAscending);
-        },
-    }),
-    // Flat alias window detail (Task 8): GET/DELETE resolve
-    // the owning type by uri_id prefix probe; PUT addresses
-    // from body.record_id (formWritePair rewrite + flat
-    // validator). Wire shape keeps record_id.
-    route('record-attributes/:id', {
-        get: async (db, p, _actor, organization) => {
-            const organizationId = requireOrganization(
-                organization,
-            );
-            const attrId = param(p, 0);
-            const typeId = await resolveAttributeTypeId(
-                db, organizationId, attrId,
-            );
-            if (typeId === null) {
-                throw await missedReadError(
-                    db, attrId, organizationId,
-                    'record_attributes',
-                );
-            }
-            const prefix = attributesUriPrefix(
-                organizationId, typeId,
-            );
-            const [requests, responses] =
-                await Promise.all([
-                    db.requests.getAllWhere(
-                        'uri_prefix', prefix,
-                    ),
-                    db.responses.getAllWhere(
-                        'uri_prefix', prefix,
-                    ),
-                ]);
-            const document = deriveDocumentsAt(
-                requests, responses, prefix,
-            ).get(attrId);
-            if (document === undefined) {
-                throw await missedReadError(
-                    db, attrId, organizationId,
-                    'record_attributes',
-                );
-            }
-            return flatAttributeWireOf(
-                db, organizationId, typeId, attrId,
-                document.pairId, document.body,
-            );
-        },
-        put: documentPutHandler(RECORD_ATTRIBUTES_WIRING),
-        // DELETE is RESTRICT, not cascade: an attribute
-        // still named by state_field_values rows or bound
-        // in a flow / work-order graph refuses to die (409
-        // naming the referrers) — destroying it would
-        // orphan immutable event payloads. The referrer
-        // check and the splice ride ONE transaction, so no
-        // writer can slip a new reference between them; the
-        // pair appends inside that SAME transaction, as the
-        // last act after the safe delete succeeds.
-        delete: async (db, p, _actor, pair) => {
-            const id = param(p, 0);
-            // Phase Final Stage B: organization_id from the
-            // attribute's STORED document-pair response body
-            // only — record_attributes table retired. RESTRICT
-            // 409 bytes stay; the pair is the only delete
-            // side-effect.
-            if (pair === undefined) {
-                throw new Error(
-                    'record-attribute DELETE without pair',
-                );
-            }
-            // Flat window DELETE: pair.uriPrefix may still be
-            // the legacy flat prefix when the gate has not yet
-            // rewritten (no body record_id). Probe nested
-            // storage by uri_id when prefix is not nested.
-            let pairOrganizationId =
-                await recordAttributeOrganizationFromPairs(
-                    db, pair.uriPrefix, id,
-                );
-            let recordTypeId =
-                await recordAttributeRecordIdFromPairs(
-                    db, pair.uriPrefix, id,
-                );
-            if (
-                pairOrganizationId === null
-                || recordTypeId === null
-            ) {
-                const organizationFromPair =
-                    pair.uriPrefix.startsWith(
-                        '/organizations/',
-                    )
-                        ? pair.uriPrefix.split('/')[2]
-                        : undefined;
-                if (organizationFromPair !== undefined) {
-                    const typeId =
-                        await resolveAttributeTypeId(
-                            db, organizationFromPair, id,
-                        );
-                    if (typeId !== null) {
-                        const nestedPrefix =
-                            attributesUriPrefix(
-                                organizationFromPair,
-                                typeId,
-                            );
-                        pairOrganizationId =
-                            await recordAttributeOrganizationFromPairs(
-                                db, nestedPrefix, id,
-                            );
-                        recordTypeId = typeId;
-                    }
-                }
-            }
-            if (pairOrganizationId === null) {
-                throw new EntityNotFoundError(
-                    'record_attributes', id,
-                );
-            }
-            if (recordTypeId === null) {
-                throw new EntityNotFoundError(
-                    'record_attributes', id,
-                );
-            }
-            return db.transaction(
-                [...new Set([
-                    ...ATTRIBUTE_RESTRICT_TABLES,
-                    'requests', 'responses',
-                ])],
-                async (view) => {
-                    await deleteRecordAttributeSafe(
-                        view,
-                        pairOrganizationId,
-                        id,
-                        recordTypeId,
-                    );
-                    await appendMessagePair(view, pair);
-                },
-            );
-        },
     }),
     // Flow↔record bindings nest under their parent flow: the flow
     // id is param 0, so the SERVER filters the collection to that

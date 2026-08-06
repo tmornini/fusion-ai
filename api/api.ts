@@ -36,7 +36,6 @@ import {
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import {
     familyRegistration,
-    ATTRIBUTE_DETAIL_PATTERN,
     INSTANCE_DETAIL_PATTERN,
     CREATE_ONLY_PUT_ROUTE_PATTERNS,
 } from './family-registry.ts';
@@ -670,69 +669,11 @@ export async function handleRequest(
         let pair: MessagePair | undefined;
         if (isWrite && hasWriteHandler && !bearerExempt
             && PAIR_WIRED_ROUTE_PATTERNS.has(routePattern)) {
-            // Task 8 flat alias window: wire path stays
-            // record-attributes/:id; pair storage is nested
-            // under .../record-types/{typeId}/attributes/.
-            // PUT type from body.record_id; DELETE probes
-            // responses by uri_id.
-            let pairRouteSegments = matched.segments;
-            let pairPathSegments = pathSegments;
-            if (
-                routePattern === 'record-attributes/:id'
-                && organization !== undefined
-            ) {
-                const attrId = params[0] ?? '';
-                let typeId: string | undefined;
-                if (
-                    method === 'PUT'
-                    && body !== undefined
-                    && typeof body['record_id'] === 'string'
-                    && body['record_id'] !== ''
-                ) {
-                    typeId = body['record_id'];
-                } else if (
-                    method === 'DELETE' && attrId !== ''
-                ) {
-                    const hits =
-                        await effective.responses.getAllWhere(
-                            'uri_id', attrId,
-                        );
-                    const needle = '/organizations/'
-                        + organization
-                        + '/record-types/';
-                    for (const hit of hits) {
-                        if (
-                            hit.uri_prefix.startsWith(needle)
-                            && hit.uri_prefix.endsWith(
-                                '/attributes/',
-                            )
-                        ) {
-                            const parts =
-                                hit.uri_prefix.split('/');
-                            // ['', 'organizations', org,
-                            //  'record-types', typeId,
-                            //  'attributes', '']
-                            typeId = parts[4];
-                            break;
-                        }
-                    }
-                }
-                if (
-                    typeId !== undefined
-                    && typeId !== ''
-                    && attrId !== ''
-                ) {
-                    pairRouteSegments =
-                        ATTRIBUTE_DETAIL_PATTERN.split('/');
-                    pairPathSegments = [
-                        'organizations', organization,
-                        'record-types', typeId,
-                        'attributes', attrId,
-                    ];
-                }
-            }
+            // Nested attribute paths store under the type
+            // attributes prefix directly (flat rewrite retired
+            // Task 23).
             const address = messageAddress(
-                pairRouteSegments, pairPathSegments,
+                matched.segments, pathSegments,
             );
             const canonicalPrefix = canonicalUriPrefix(
                 organization, address.uriPrefix,
@@ -820,8 +761,8 @@ export async function handleRequest(
             }
             pair = await formWritePair({
                 method, pathname, routePattern,
-                routeSegments: pairRouteSegments,
-                pathSegments: pairPathSegments,
+                routeSegments: matched.segments,
+                pathSegments,
                 headerFields: hoistedHeaderFields(request),
                 body,
                 requesterIdentityId: actor,

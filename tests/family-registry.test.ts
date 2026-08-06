@@ -45,8 +45,7 @@ test('work-orders is the fourth registered family,'
 });
 
 test('record-types is the fifth registered family, simple'
-+ ' like ideas, projects, and work-orders (wire records'
-+ ' stores here)', () => {
++ ' like ideas, projects, and work-orders', () => {
     assert.deepEqual(familyRegistration('record-types'), {
         family: 'record-types',
         organizationNested: true,

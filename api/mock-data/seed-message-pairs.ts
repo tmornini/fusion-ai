@@ -160,6 +160,8 @@ import {
 } from '../validators.ts';
 import {
     ATTRIBUTE_DETAIL_PATTERN,
+    RECORD_TYPES_COLLECTION_PATTERN,
+    RECORD_TYPE_DETAIL_PATTERN,
 } from '../family-registry.ts';
 import {
     MOCK_SEED_TIMESTAMP,
@@ -1761,16 +1763,23 @@ export function buildMockDataInvocations():
         const createBody = recordSeedBody(
             r, i, event, attributes,
         );
+        // Task 23: record document/op invocations ride the
+        // nested record-types patterns (same storage addresses
+        // as the retired flat alias window; counts unchanged).
         invocations.push({
-            key: seedPairKey('records', r.id),
-            routePattern: 'records',
+            key: seedPairKey(
+                RECORD_TYPES_COLLECTION_PATTERN, r.id,
+            ),
+            routePattern: RECORD_TYPES_COLLECTION_PATTERN,
+            idParams: [organization],
+            op: true,
             organization,
             requesterIdentityId: event.member_id,
             body: createBody,
         });
         // Phase 6 Task 4: create appends the document pair (at
-        // the record's own address) and one attribute-PUT pair
-        // per seeded attribute, each keyed by its OWN
+        // the type's own nested address) and one attribute-PUT
+        // pair per seeded attribute, each keyed by its OWN
         // deterministic invocation entry — the flows document +
         // join precedent above, generalized from fixed
         // cardinality to 1+1+N. Bodies via the shared BODY
@@ -1780,9 +1789,11 @@ export function buildMockDataInvocations():
         // never removes an attribute it just created).
         const b = validateRecordWriteBody(createBody);
         invocations.push({
-            key: seedPairKey('records/:id', r.id),
-            routePattern: 'records/:id',
-            idParams: [r.id],
+            key: seedPairKey(
+                RECORD_TYPE_DETAIL_PATTERN, r.id,
+            ),
+            routePattern: RECORD_TYPE_DETAIL_PATTERN,
+            idParams: [organization, r.id],
             organization,
             requesterIdentityId: event.member_id,
             body: recordDocumentBodyOf(b),

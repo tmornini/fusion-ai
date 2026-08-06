@@ -86,8 +86,7 @@ async function allRecords(
     return out;
 }
 
-// Task 8: flat alias window re-points attributes to nested
-// storage — read through the live GET.
+// Task 23: nested attributes — collect per type under each org.
 async function allAttributes(
     db: MemoryDbAdapter,
 ): Promise<RecordAttributeEntity[]> {
@@ -98,10 +97,11 @@ async function allAttributes(
         const token = await organizationToken(
             'current', organization,
         );
-        const res = await handleRequest(
+        const typesRes = await handleRequest(
             db,
             new Request(
-                'http://localhost/record-attributes',
+                'http://localhost/organizations/'
+                + organization + '/record-types',
                 {
                     headers: {
                         Authorization: 'Bearer ' + token,
@@ -109,10 +109,27 @@ async function allAttributes(
                 },
             ),
         );
-        assert.equal(res.status, 200);
-        out.push(
-            ...await res.json() as RecordAttributeEntity[],
-        );
+        assert.equal(typesRes.status, 200);
+        const types = await typesRes.json() as { id: string }[];
+        for (const type of types) {
+            const res = await handleRequest(
+                db,
+                new Request(
+                    'http://localhost/organizations/'
+                    + organization + '/record-types/'
+                    + type.id + '/attributes',
+                    {
+                        headers: {
+                            Authorization: 'Bearer ' + token,
+                        },
+                    },
+                ),
+            );
+            assert.equal(res.status, 200);
+            out.push(
+                ...await res.json() as RecordAttributeEntity[],
+            );
+        }
     }
     return out;
 }
@@ -140,7 +157,9 @@ test(
         const attrs = await allAttributes(db);
         for (const rec of records) {
             const own = attrs.filter(
-                a => a.record_id === rec.id,
+                a => (a as { record_type_id?: string }).record_type_id
+                    === rec.id
+                || a.record_id === rec.id,
             );
             assert.ok(
                 own.length >= 3,

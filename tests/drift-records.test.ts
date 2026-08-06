@@ -38,6 +38,7 @@ import {
     deriveFlowRecord,
 } from '../api/derive-flow-records.ts';
 import { deriveRecordStateHistory } from '../api/derive-record-types.ts';
+import { resolveGlobalOwner } from '../api/derive-states.ts';
 import {
     customerProfileRecordId,
     projectBriefRecordId,
@@ -93,7 +94,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 const RECORDS_TEST_WIRING: DocumentFamilyWiring = {
     family: 'record-types',
     lifecycle: 'trio',
-    notFoundTable: 'records',
+    notFoundTable: 'record_types',
     validateDocument: validateRecordDocumentBody,
     documentOp: postRecordDocumentOp,
     // Mirror routes.ts recordDocumentEntityOf: stamp trio
@@ -131,25 +132,79 @@ async function derivedRecord(
     ) as Promise<RecordEntity>;
 }
 
-// Task 8: attribute storage is nested under type prefixes.
-// Drift helpers re-point through the live flat wire handlers
-// (alias window) so wire and derive share one truth.
+// Task 23: nested attributes under each type.
 async function derivedRecordAttributes(
     db: DbAdapter, organization: Id,
 ): Promise<RecordAttributeEntity[]> {
     const token = await organizationToken(
         'current', organization,
     );
-    const res = await handleRequest(
-        db, req('GET', '/record-attributes', token),
+    const typesRes = await handleRequest(
+        db,
+        req(
+            'GET',
+            '/organizations/' + organization
+                + '/record-types',
+            token,
+        ),
     );
-    if (res.status !== 200) {
+    if (typesRes.status !== 200) {
         throw new Error(
-            'derivedRecordAttributes: GET '
-            + res.status,
+            'derivedRecordAttributes: types GET '
+            + typesRes.status,
         );
     }
-    return await res.json() as RecordAttributeEntity[];
+    const types =
+        await typesRes.json() as { id: string }[];
+    const out: RecordAttributeEntity[] = [];
+    for (const type of types) {
+        const res = await handleRequest(
+            db,
+            req(
+                'GET',
+                '/organizations/' + organization
+                    + '/record-types/' + type.id
+                    + '/attributes',
+                token,
+            ),
+        );
+        if (res.status !== 200) {
+            throw new Error(
+                'derivedRecordAttributes: GET '
+                + res.status,
+            );
+        }
+        out.push(
+            ...await res.json() as RecordAttributeEntity[],
+        );
+    }
+    return out;
+}
+
+async function resolveAttributePath(
+    db: DbAdapter, organization: Id, id: Id,
+): Promise<string | null> {
+    const hits = await db.responses.getAllWhere(
+        'uri_id', id,
+    );
+    const needle = '/organizations/' + organization
+        + '/record-types/';
+    for (const hit of hits) {
+        if (
+            hit.uri_prefix.startsWith(needle)
+            && hit.uri_prefix.endsWith('/attributes/')
+        ) {
+            const typeId = hit.uri_prefix
+                .slice(needle.length)
+                .split('/')[0];
+            if (typeId !== undefined && typeId !== '') {
+                return '/organizations/' + organization
+                    + '/record-types/' + typeId
+                    + '/attributes/' + id;
+            }
+        }
+    }
+    return null;
 }
 
 async function derivedRecordAttribute(
@@ -158,9 +213,27 @@ async function derivedRecordAttribute(
     const token = await organizationToken(
         'current', organization,
     );
+    const path = await resolveAttributePath(
+        db, organization, id,
+    );
+    if (path === null) {
+        // Attribute head is not under this org's nested
+        // prefixes — ownership fence (same 403/404 as the
+        // retired flat by-id GET).
+        const owner = await resolveGlobalOwner(
+            db, id, organization,
+        );
+        if (owner !== null && owner !== organization) {
+            throw new ForeignOrganizationError(
+                'record_attributes', id,
+            );
+        }
+        throw new EntityNotFoundError(
+            'record_attributes', id,
+        );
+    }
     const res = await handleRequest(
-        db,
-        req('GET', '/record-attributes/' + id, token),
+        db, req('GET', path, token),
     );
     if (res.status === 404) {
         throw new EntityNotFoundError(
@@ -273,8 +346,8 @@ function decodeRequestMessage(message: string): {
 
 // -- 1. records collection wire equals derive --------------------
 
-test('seeded GET /records wire equals derived collection,'
-+ ' both orgs (the 1/1 split)', async () => {
+test('seeded GET nested record-types wire equals derived'
++ ' collection, both orgs (the 1/1 split)', async () => {
     const db = await seededDb();
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
@@ -283,7 +356,12 @@ test('seeded GET /records wire equals derived collection,'
             'current', organization,
         );
         const res = await handleRequest(
-            db, req('GET', '/records', token),
+            db, req(
+                'GET',
+                '/organizations/' + organization
+                    + '/record-types',
+                token,
+            ),
         );
         assert.equal(res.status, 200);
         const wireText = await res.text();
@@ -309,14 +387,19 @@ async () => {
         'current', ORGANIZATION_TWO,
     );
 
+    // Nested path org = token org (TWO); foreign id is
+    // STARK-owned — ownership fence 403, not path mismatch.
     const expectedRecordMessage =
-        'forbidden: records/' + customerProfileRecordId
+        'forbidden: record_types/'
+        + customerProfileRecordId
         + ' belongs to a different organization';
     const recRes = await handleRequest(
         db,
         req(
             'GET',
-            '/records/' + customerProfileRecordId,
+            '/organizations/' + ORGANIZATION_TWO
+                + '/record-types/'
+                + customerProfileRecordId,
             tokenTwo,
         ),
     );
@@ -333,20 +416,29 @@ async () => {
     );
 
     const attributeId = '5JZ0LeKdPCa4QMtg1RsF1M';
-    const expectedAttributeMessage =
-        'forbidden: record_attributes/' + attributeId
+    // Nested GET probes the parent type first — foreign type
+    // under own path org → record_types ownership 403.
+    const expectedTypeMessage =
+        'forbidden: record_types/'
+        + customerProfileRecordId
         + ' belongs to a different organization';
     const attrRes = await handleRequest(
         db,
         req(
             'GET',
-            '/record-attributes/' + attributeId,
+            '/organizations/' + ORGANIZATION_TWO
+                + '/record-types/'
+                + customerProfileRecordId
+                + '/attributes/' + attributeId,
             tokenTwo,
         ),
     );
     assert.equal(attrRes.status, 403);
     const attrBody = await attrRes.json() as { error: string };
-    assert.equal(attrBody.error, expectedAttributeMessage);
+    assert.equal(attrBody.error, expectedTypeMessage);
+    const expectedAttributeMessage =
+        'forbidden: record_attributes/' + attributeId
+        + ' belongs to a different organization';
     await assert.rejects(
         () => derivedRecordAttribute(
             db, ORGANIZATION_TWO, attributeId,
@@ -403,7 +495,12 @@ async () => {
             'current', organization,
         );
         const res = await handleRequest(
-            db, req('GET', '/records/' + id, token),
+            db, req(
+                'GET',
+                '/organizations/' + organization
+                    + '/record-types/' + id,
+                token,
+            ),
         );
         assert.equal(res.status, 200);
         const wireText = await res.text();
@@ -432,7 +529,10 @@ async () => {
             db,
             req(
                 'GET',
-                '/record-attributes/' + attribute.id,
+                '/organizations/' + organization
+                    + '/record-types/'
+                    + attribute.record_id
+                    + '/attributes/' + attribute.id,
                 token,
             ),
         );
@@ -554,7 +654,8 @@ async () => {
 
     async function assertRecordWire(): Promise<void> {
         const res = await handleRequest(
-            db, req('GET', '/records/' + recordId, token),
+            db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token),
         );
         assert.equal(res.status, 200);
         const wireText = await res.text();
@@ -566,7 +667,9 @@ async () => {
 
     async function assertAttributeWire(id: string): Promise<void> {
         const res = await handleRequest(
-            db, req('GET', '/record-attributes/' + id, token),
+            db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId
+                + '/attributes/' + id, token),
         );
         assert.equal(res.status, 200);
         const wireText = await res.text();
@@ -578,7 +681,9 @@ async () => {
 
     async function assertAttributeAbsent(id: string): Promise<void> {
         const res = await handleRequest(
-            db, req('GET', '/record-attributes/' + id, token),
+            db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId
+                + '/attributes/' + id, token),
         );
         assert.equal(res.status, 404);
         await assert.rejects(
@@ -591,7 +696,8 @@ async () => {
 
     // Step 1: create, 2 attributes.
     const created = await handleRequest(db, req(
-        'POST', '/records', token,
+        'POST', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types', token,
         createRecordBody(
             recordId, STARK_ORGANIZATION, 'Chain Record',
             [
@@ -615,7 +721,8 @@ async () => {
     const editStateAt = nowUtc();
     const editStateEventId = 'rec-drift-chain-1-edit';
     const edited = await handleRequest(db, req(
-        'POST', '/records', token,
+        'POST', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types', token,
         editRecordBody(
             recordId, STARK_ORGANIZATION, 'Chain Record',
             [
@@ -640,7 +747,8 @@ async () => {
         await derivedRecordAttributes(db, STARK_ORGANIZATION)
     ).length;
     const rejected = await handleRequest(db, req(
-        'POST', '/records', token,
+        'POST', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types', token,
         editRecordBody(
             recordId, STARK_ORGANIZATION, 'Chain Record',
             [], ['5JZ0LeKdPCa4QMtg1RsF1M'],
@@ -662,7 +770,8 @@ async () => {
     const beforeStatesCount =
         0 /* states table retired */;
     const echoed = await handleRequest(db, req(
-        'PUT', '/records/' + recordId, token, {
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token, {
             name: 'Chain Record',
             description: 'echoed-trio description',
             position: 1,
@@ -684,7 +793,8 @@ async () => {
 
     // Step 5: archived — still visible.
     const archived = await handleRequest(db, req(
-        'PUT', '/records/' + recordId, token, {
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token, {
             name: 'Chain Record',
             description: 'echoed-trio description',
             position: 1,
@@ -704,7 +814,8 @@ async () => {
 
     // Step 6: deleted lifecycle — wire + derive 404.
     const deletedTransition = await handleRequest(db, req(
-        'PUT', '/records/' + recordId, token, {
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token, {
             name: 'Chain Record',
             description: 'echoed-trio description',
             position: 1,
@@ -715,7 +826,8 @@ async () => {
     ));
     assert.equal(deletedTransition.status, 200);
     const deletedGet = await handleRequest(
-        db, req('GET', '/records/' + recordId, token),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token),
     );
     assert.equal(deletedGet.status, 404);
     await assert.rejects(
@@ -740,7 +852,8 @@ async () => {
     // Step 7: physical DELETE on a second record.
     const secondRecordId = 'rec-drift-chain-2';
     const secondCreated = await handleRequest(db, req(
-        'POST', '/records', token,
+        'POST', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types', token,
         createRecordBody(
             secondRecordId, STARK_ORGANIZATION, 'Second Record',
             [], 'rec-drift-chain-2-genesis', nowUtc(),
@@ -748,11 +861,13 @@ async () => {
     ));
     assert.equal(secondCreated.status, 204);
     const secondDeleted = await handleRequest(db, req(
-        'DELETE', '/records/' + secondRecordId, token,
+        'DELETE', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + secondRecordId, token,
     ));
     assert.equal(secondDeleted.status, 204);
     const secondGet = await handleRequest(
-        db, req('GET', '/records/' + secondRecordId, token),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + secondRecordId, token),
     );
     assert.equal(secondGet.status, 404);
     await assert.rejects(
@@ -772,11 +887,12 @@ async () => {
     const token = await organizationToken();
     const recordId = 'rec-drift-dup-1';
     const prefix = canonicalUriPrefix(
-        STARK_ORGANIZATION, '/records/',
+        STARK_ORGANIZATION, '/record-types/',
     );
 
     const first = await handleRequest(db, req(
-        'POST', '/records', token,
+        'POST', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types', token,
         createRecordBody(
             recordId, STARK_ORGANIZATION, 'Dup First',
             [
@@ -800,7 +916,8 @@ async () => {
     const firstDocumentPairId = firstDocumentPairs[0]!.id;
 
     const second = await handleRequest(db, req(
-        'POST', '/records', token,
+        'POST', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types', token,
         createRecordBody(
             recordId, STARK_ORGANIZATION, 'Dup Second',
             [
@@ -832,7 +949,8 @@ async () => {
     );
 
     const res = await handleRequest(
-        db, req('GET', '/records/' + recordId, token),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token),
     );
     assert.equal(res.status, 200);
     const wireText = await res.text();
@@ -855,7 +973,8 @@ async () => {
     const attributeId = 'rec-drift-method-filter-1-attr';
 
     const created = await handleRequest(db, req(
-        'POST', '/records', token,
+        'POST', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types', token,
         createRecordBody(
             recordId, STARK_ORGANIZATION, 'Method Filter Record',
             [
@@ -871,7 +990,7 @@ async () => {
     assert.equal(created.status, 204);
 
     const recordsPrefix = canonicalUriPrefix(
-        STARK_ORGANIZATION, '/records/',
+        STARK_ORGANIZATION, '/record-types/',
     );
     const [recordRequests, recordResponses] = await Promise.all([
         db.requests.getAllWhere('uri_prefix', recordsPrefix),
@@ -944,7 +1063,8 @@ test('GET record trio is lifecycle-current under clock skew'
     const skewedEv = 'rec-drift-skew-1-skewed';
 
     const genesis = await handleRequest(db, req(
-        'PUT', '/records/' + recordId, token, {
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token, {
             name: 'Genesis Title', description: 'd', position: 1,
             state: 'active',
             state_at: genesisAt,
@@ -957,7 +1077,8 @@ test('GET record trio is lifecycle-current under clock skew'
     // 'deleted' would hide the row if it won as current —
     // genesis-wins keeps the record live and active.
     const skewed = await handleRequest(db, req(
-        'PUT', '/records/' + recordId, token, {
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token, {
             name: 'Skewed Title', description: 'd', position: 1,
             state: 'deleted',
             state_at: skewedAt,
@@ -978,7 +1099,8 @@ test('GET record trio is lifecycle-current under clock skew'
     };
 
     const res = await handleRequest(
-        db, req('GET', '/records/' + recordId, token),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token),
     );
     assert.equal(res.status, 200);
     assert.equal(await res.text(), JSON.stringify(expected));
@@ -1054,7 +1176,8 @@ async () => {
     ];
     for (const f of fixtures) {
         const put = await handleRequest(db, req(
-            'PUT', '/records/' + f.id, token, {
+            'PUT', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + f.id, token, {
                 name: f.name,
                 description: 'd',
                 position: 1,
@@ -1070,7 +1193,8 @@ async () => {
         'rec-drift-a', 'rec-drift-m', 'rec-drift-z',
     ];
     const res = await handleRequest(
-        db, req('GET', '/records', token),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types', token),
     );
     assert.equal(res.status, 200);
     const list = await res.json() as { id: string }[];
@@ -1095,7 +1219,8 @@ async () => {
     const recordId = 'rec-drift-recreate-1';
 
     const genesis = await handleRequest(db, req(
-        'PUT', '/records/' + recordId, token, {
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token, {
             name: 'First Life', description: 'd', position: 1,
             state: 'active',
             state_at: '2026-04-01T00:00:00.000000Z',
@@ -1105,14 +1230,16 @@ async () => {
     assert.equal(genesis.status, 200);
 
     const deleted = await handleRequest(db, req(
-        'DELETE', '/records/' + recordId, token,
+        'DELETE', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token,
     ));
     assert.equal(deleted.status, 204);
     const deleteResponseId = deleted.headers.get('Response-ID');
     assert.ok(deleteResponseId);
 
     const miss = await handleRequest(
-        db, req('GET', '/records/' + recordId, token),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token),
     );
     assert.equal(miss.status, 404);
     await assert.rejects(
@@ -1121,7 +1248,8 @@ async () => {
     );
 
     const recreated = await handleRequest(db, req(
-        'PUT', '/records/' + recordId, token, {
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token, {
             name: 'Second Life', description: 'd', position: 1,
             state: 'active',
             state_at: '2026-04-02T00:00:00.000000Z',
@@ -1134,7 +1262,8 @@ async () => {
     );
 
     const res = await handleRequest(
-        db, req('GET', '/records/' + recordId, token),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/' + recordId, token),
     );
     assert.equal(res.status, 200);
     const wireText = await res.text();
@@ -1145,7 +1274,8 @@ async () => {
     assert.equal(derived.name, 'Second Life');
 
     const listRes = await handleRequest(
-        db, req('GET', '/records', token),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+                + '/record-types', token),
     );
     assert.equal(listRes.status, 200);
     const list = await listRes.json() as { id: string }[];

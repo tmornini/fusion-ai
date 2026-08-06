@@ -53,15 +53,15 @@ export const FAMILY_REGISTRY: readonly FamilyRegistration[] = [
         createBodyIdField: 'id',
     },
     {
-        // Storage name (wire `records` aliases here —
-        // wireFamilyStorageName). Flat wire surface stays
-        // until Task 23 retires it.
         family: 'record-types',
         organizationNested: true,
         concurrency: 'simple',
         createBodyIdField: 'id',
     },
     {
+        // Nested attributes under a type share storage under
+        // the type prefix; this row remains for registry
+        // completeness (stateless sub-family).
         family: 'record-attributes',
         organizationNested: true,
         concurrency: 'simple',
@@ -143,20 +143,6 @@ export function familyRegistration(
     return FAMILY_REGISTRY.find(
         (entry) => entry.family === family,
     );
-}
-
-// Wire→storage family alias window (Task 4 → Task 23). Flat
-// wire still says `records`; the pair plane stores under
-// `record-types`. One map, one helper — no dual writers.
-const WIRE_FAMILY_STORAGE_ALIASES:
-    Readonly<Record<string, string>> = {
-    'records': 'record-types',
-};
-
-export function wireFamilyStorageName(
-    family: string,
-): string {
-    return WIRE_FAMILY_STORAGE_ALIASES[family] ?? family;
 }
 
 // Org-nested record-types wire addresses (Task 2). Nested-

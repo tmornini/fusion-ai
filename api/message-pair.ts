@@ -31,7 +31,6 @@ import {
 import { REQUEST_ID_HEADER } from './request-context.ts';
 import {
     familyRegistration,
-    wireFamilyStorageName,
     RECORD_TYPES_COLLECTION_PATTERN,
     RECORD_TYPE_DETAIL_PATTERN,
     ATTRIBUTE_DETAIL_PATTERN,
@@ -148,21 +147,16 @@ export function canonicalUriPrefix(
     flatPrefix: string,
 ): string {
     const first = flatPrefix.split('/')[1] ?? '';
-    const canonical = wireFamilyStorageName(first);
-    const rewritten = canonical === first
-        ? flatPrefix
-        : '/' + canonical
-            + flatPrefix.slice(first.length + 1);
-    const registered = familyRegistration(canonical);
+    const registered = familyRegistration(first);
     const nested = registered !== undefined
         ? registered.organizationNested
         : ORGANIZATION_NESTED_FIRST_SEGMENTS
-            .has(canonical);
+            .has(first);
     if (organization !== undefined && nested) {
         return '/organizations/' + organization
-            + rewritten;
+            + flatPrefix;
     }
-    return rewritten;
+    return flatPrefix;
 }
 
 export async function formWritePair(
@@ -172,33 +166,13 @@ export async function formWritePair(
     const address = messageAddress(
         input.routeSegments, input.pathSegments,
     );
-    let uriPrefix = canonicalUriPrefix(
+    const uriPrefix = canonicalUriPrefix(
         input.organization, address.uriPrefix,
     );
     const createdId = createdEntityUriId(
         input.routePattern, input.body,
     );
     const uriId = createdId ?? address.uriId;
-    // Task 8 flat alias window: wire path stays
-    // /record-attributes/:id; storage is under the type's
-    // attributes prefix when the body carries record_id
-    // (PUT create/replace). DELETE rewrite lives at the
-    // gate (needs a uri_id probe). Nested pathSegments
-    // already produce the nested prefix via messageAddress.
-    if (
-        input.routePattern === 'record-attributes/:id'
-        && input.organization !== undefined
-        && input.body !== undefined
-        && input.body !== null
-    ) {
-        const typeId = input.body['record_id'];
-        if (typeof typeId === 'string' && typeId !== '') {
-            uriPrefix = '/organizations/'
-                + input.organization
-                + '/record-types/' + typeId
-                + '/attributes/';
-        }
-    }
     const requestModel =
         await stripPiiRequest(
             input.routePattern,
@@ -612,7 +586,8 @@ const CREATE_BODY_ID_FIELDS: Record<string, string> = {
     // Nested composed POST (Task 9): pattern is not a bare
     // family name, so the registry consult never fires — body
     // `id` collapses the operation pair onto the type's uri_id
-    // (same supersession collapse flat POST /records uses).
+    // (same supersession collapse the retired flat POST
+    // /records used).
     [RECORD_TYPES_COLLECTION_PATTERN]: 'id',
 };
 
@@ -639,20 +614,16 @@ export function createdEntityUriId(
     // family, Phase 5 Task 1) is the second: POST work-orders is
     // also a live bare collection-POST create route whose
     // pattern is literally 'work-orders', so the coincidence now
-    // fires for TWO live routes. Records (fifth family, Phase 6
-    // Task 1) is the third: POST records is also a live bare
+    // fires for TWO live routes. Flat POST records retired
+    // (Task 23); nested collection POST rides
+    // CREATE_BODY_ID_FIELDS above. Identities (twelfth
+    // family, Phase 10 Task 4) is the third live bare
     // collection-POST create route whose pattern is literally
-    // 'records', so the coincidence now fires for THREE live
-    // routes. Identities (twelfth family, Phase 10 Task 4) is the
-    // fourth: POST identities is also a live bare collection-POST
-    // create route whose pattern is literally 'identities' — the
-    // SAME slot the literal table above used to answer, now
-    // answered from the registry instead, so the coincidence now
-    // fires for FOUR live routes. Falls back to the literal table
-    // for every not-yet-registered pattern.
-    const registered = familyRegistration(
-        wireFamilyStorageName(routePattern),
-    );
+    // 'identities' — the SAME slot the literal table above used
+    // to answer, now answered from the registry instead.
+    // Falls back to the literal table for every not-yet-
+    // registered pattern.
+    const registered = familyRegistration(routePattern);
     const field = registered !== undefined
         ? registered.createBodyIdField
         : CREATE_BODY_ID_FIELDS[routePattern];
@@ -688,9 +659,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'work-orders/:id/transition',
     'work-orders/:id/release',
     'flows/:id/work-orders/:woid',
-    'records',
-    'records/:id',
-    'record-attributes/:id',
+    // Flat records + record-attributes retired (Task 23).
     'flows/:id/records/:frid',
     'objectives',
     'objectives/:id',
@@ -787,9 +756,7 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'work-orders',
         'work-orders/:id',
         'flows/:id/work-orders/:woid',
-        'records',
-        'records/:id',
-        'record-attributes/:id',
+        // Flat records + record-attributes retired (Task 23).
         'flows/:id/records/:frid',
         'objectives',
         'objectives/:id',

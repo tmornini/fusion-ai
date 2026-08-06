@@ -111,12 +111,11 @@ const MEMBER_VERBS: Readonly<
     '/flows/:id/work-orders': ['GET', 'PUT'],
     '/flows/:id/records': ['GET', 'PUT', 'DELETE'],
     '/flows/:id/tags': ['GET', 'PUT', 'DELETE'],
-    '/records': ['GET', 'PUT', 'DELETE', 'POST'],
-    '/record-attributes': ['GET', 'PUT', 'DELETE'],
     // Nested record-types schema READ (decision 16): one
     // MEMBER_VERBS row covers the whole subtree's GETs via
     // matchesOnSegmentBoundary (`:id` is a one-segment
-    // wildcard). Schema mutations stay admin by absence.
+    // wildcard). Schema mutations stay admin by absence —
+    // flat /records and /record-attributes retired (Task 23).
     '/organizations/:id/record-types': ['GET'],
     // Nested instances (Task 15): member create/patch/
     // delete + GET. Path-tier only — field ACL is the

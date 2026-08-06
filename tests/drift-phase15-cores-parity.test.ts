@@ -872,7 +872,8 @@ async () => {
         'current', STARK_ORGANIZATION,
     );
     const recordsRes = await handleRequest(
-        db, req('GET', '/records', recordToken),
+        db, req('GET', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types', recordToken),
     );
     assert.equal(recordsRes.status, 200);
     const recordsStark = await recordsRes.json() as {
@@ -1003,8 +1004,9 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
     const projectId = 'u6YkHhlGc91oDMkr3x0isa';
 
     const attrPut = await handleRequest(db, req(
-        'PUT', '/record-attributes/' + attrId, token, {
-            record_id: 'rec01CustProfRec0rdAB1',
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types/' + 'rec01CustProfRec0rdAB1'
+            + '/attributes/' + attrId, token, {
             name: 'P15 Bind',
             attribute_type: 'text',
             sort_order: 99,
@@ -1164,8 +1166,9 @@ test('residual pin: soft-deleted node drops from'
     const projectId = 'u6YkHhlGc91oDMkr3x0isa';
 
     const attrPut = await handleRequest(db, req(
-        'PUT', '/record-attributes/' + attrId, token, {
-            record_id: 'rec01CustProfRec0rdAB1',
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types/' + 'rec01CustProfRec0rdAB1'
+            + '/attributes/' + attrId, token, {
             name: 'P15 SoftDel',
             attribute_type: 'text',
             sort_order: 99,
@@ -1295,7 +1298,9 @@ test('residual pin: soft-deleted node drops from'
     // node is NOT a RESTRICT referrer → DELETE 204.
     const deleted = await handleRequest(db, req(
         'DELETE',
-        '/record-attributes/' + attrId,
+        '/organizations/' + STARK_ORGANIZATION
+            + '/record-types/' + 'rec01CustProfRec0rdAB1'
+            + '/attributes/' + attrId,
         token,
     ));
     assert.equal(deleted.status, 204);
@@ -1342,14 +1347,27 @@ async function transitionWithFieldValue(
     assert.equal(created.status, 204);
 
     // Phase Final Stage B: record_attributes retired.
+    const typePut = await handleRequest(db, req(
+        'PUT',
+        '/organizations/' + STARK_ORGANIZATION
+            + '/record-types/rec-p15-fv',
+        token,
+        {
+            name: 'P15 FV Parent', description: '',
+            position: 0,
+            state: 'active',
+            state_at: nowUtc(),
+            state_event_id: 'rec-p15-fv-genesis',
+        },
+    ));
+    assert.equal(typePut.status, 200);
     const attrWrite = await handleRequest(db, req(
         'PUT',
         '/organizations/' + STARK_ORGANIZATION
-            + '/record-attributes/' + attributeId,
+            + '/record-types/rec-p15-fv'
+            + '/attributes/' + attributeId,
         token,
         {
-            organization_id: STARK_ORGANIZATION,
-            record_id: 'rec-p15-fv',
             name: 'Note',
             attribute_type: 'text',
             sort_order: 0,
@@ -1666,8 +1684,9 @@ async () => {
     const projectId = 'u6YkHhlGc91oDMkr3x0isa';
 
     const attrPut = await handleRequest(db, req(
-        'PUT', '/record-attributes/' + attrId, token, {
-            record_id: 'rec01CustProfRec0rdAB1',
+        'PUT', '/organizations/' + STARK_ORGANIZATION
+            + '/record-types/' + 'rec01CustProfRec0rdAB1'
+            + '/attributes/' + attrId, token, {
             name: 'P15 Restrict',
             attribute_type: 'text',
             sort_order: 99,

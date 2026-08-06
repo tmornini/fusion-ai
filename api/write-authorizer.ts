@@ -42,12 +42,10 @@ const WRITE_AUTHORIZERS:
         ['work-orders/:id', {
             table: 'work_orders', idParamIndex: 0,
         }],
-        ['records/:id', {
-            table: 'records', idParamIndex: 0,
-        }],
-        ['record-attributes/:id', {
-            table: 'record_attributes', idParamIndex: 0,
-        }],
+        // Flat records/:id + record-attributes/:id retired
+        // (Task 23). Nested types use RECORD_TYPE_DETAIL_
+        // PATTERN below; nested attributes have no row
+        // (parent type 404 + path org gate).
         ['objectives/:id', {
             table: 'objectives', idParamIndex: 0,
         }],

@@ -34,6 +34,11 @@ import { seedCurrentMember } from './member-fixtures.ts';
 // work-order referrers must land through the SAME wire-
 // reachable writers the live routes serve.
 
+const TYPE_PATH =
+    'organizations/1/record-types/r1';
+const ATTR1_PATH = TYPE_PATH + '/attributes/attr1';
+const ATTR_PAIR_PATH =
+    TYPE_PATH + '/attributes/attr-pair';
 const AT = '2026-06-01T00:00:00.000000Z';
 const AT2 = '2026-06-02T00:00:00.000000Z';
 
@@ -43,15 +48,13 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     await seedCurrentMember(db);
     // Phase Final Stage B: records family retired — seed
     // through live document PUTs so the pair plane owns them.
-    await PUT(db, 'records/r1', {
+    await PUT(db, TYPE_PATH, {
         name: 'Asset', description: 'd', position: 1,
         state: 'active',
         state_at: AT,
         state_event_id: 'r1-genesis',
     }, DEV_TOKEN);
-    await PUT(db, 'record-attributes/attr1', {
-        organization_id: '1',
-        record_id: 'r1',
+    await PUT(db, ATTR1_PATH, {
         name: 'Priority',
         attribute_type: 'text',
         sort_order: 0,
@@ -228,14 +231,14 @@ test(
         // Phase Final Stage B: wire-seeded attr1; DELETE
         // appends a tombstone pair (table retired).
         await DELETE(
-            db, 'record-attributes/attr1', DEV_TOKEN,
+            db, ATTR1_PATH, DEV_TOKEN,
         );
         assert.equal(
             (await db.requests.getAll()).length, before + 1,
         );
         await assert.rejects(
             () => GET(
-                db, 'record-attributes/attr1', DEV_TOKEN,
+                db, ATTR1_PATH, DEV_TOKEN,
             ),
         );
     },
@@ -250,9 +253,7 @@ test(
     + ' unreferenced attribute (Task 1(a) parity)',
     async () => {
         const db = await seededDb();
-        await PUT(db, 'record-attributes/attr-pair', {
-            organization_id: '1',
-            record_id: 'r1',
+        await PUT(db, ATTR_PAIR_PATH, {
             name: 'PairAttr',
             attribute_type: 'text',
             sort_order: 1,
@@ -261,14 +262,14 @@ test(
         }, DEV_TOKEN);
         const before = await GET<{
             organization_id: string;
-        }>(db, 'record-attributes/attr-pair', DEV_TOKEN);
+        }>(db, ATTR_PAIR_PATH, DEV_TOKEN);
         assert.equal(before.organization_id, '1');
         await DELETE(
-            db, 'record-attributes/attr-pair', DEV_TOKEN,
+            db, ATTR_PAIR_PATH, DEV_TOKEN,
         );
         await assert.rejects(
             () => GET(
-                db, 'record-attributes/attr-pair', DEV_TOKEN,
+                db, ATTR_PAIR_PATH, DEV_TOKEN,
             ),
         );
         // Phase Final Stage B: record_attributes table retired.
@@ -328,7 +329,7 @@ test(
         );
         await assert.rejects(
             () => DELETE(
-                db, 'record-attributes/attr1',
+                db, ATTR1_PATH,
                 DEV_TOKEN,
             ),
             (err: unknown) =>
@@ -340,7 +341,7 @@ test(
         );
         // RESTRICT 409: attribute still served on pair plane.
         const still = await GET<{ id: string }>(
-            db, 'record-attributes/attr1', DEV_TOKEN,
+            db, ATTR1_PATH, DEV_TOKEN,
         );
         assert.equal(still.id, 'attr1');
     },
@@ -357,7 +358,7 @@ test(
         });
         await assert.rejects(
             () => DELETE(
-                db, 'record-attributes/attr1',
+                db, ATTR1_PATH,
                 DEV_TOKEN,
             ),
             (err: unknown) =>
@@ -393,7 +394,7 @@ test(
         // deletion must succeed — 'removed' is not a referrer
         const before = (await db.requests.getAll()).length;
         await DELETE(
-            db, 'record-attributes/attr1', DEV_TOKEN,
+            db, ATTR1_PATH, DEV_TOKEN,
         );
         // Phase Final Stage B: tombstone pair lands; GET 404s.
         assert.equal(
@@ -401,7 +402,7 @@ test(
         );
         await assert.rejects(
             () => GET(
-                db, 'record-attributes/attr1', DEV_TOKEN,
+                db, ATTR1_PATH, DEV_TOKEN,
             ),
         );
     },
@@ -434,7 +435,7 @@ test(
         });
         await assert.rejects(
             () => DELETE(
-                db, 'record-attributes/attr1',
+                db, ATTR1_PATH,
                 DEV_TOKEN,
             ),
             (err: unknown) => {
@@ -517,7 +518,7 @@ test(
         }, DEV_TOKEN);
         await assert.rejects(
             () => DELETE(
-                db, 'record-attributes/attr1',
+                db, ATTR1_PATH,
                 DEV_TOKEN,
             ),
             (err: unknown) =>
@@ -546,7 +547,7 @@ test(
         const requestsBefore = await db.requests.getAll();
         const responsesBefore = await db.responses.getAll();
         await assert.rejects(
-            () => POST(db, 'records', {
+            () => POST(db, 'organizations/1/record-types', {
                 kind: 'edit',
                 id: 'r1',
                 record: {
@@ -571,11 +572,11 @@ test(
         // the batch applied NOTHING: pair-plane document
         // survives and zero pairs append
         const record = await GET<{ name: string }>(
-            db, 'records/r1', DEV_TOKEN,
+            db, TYPE_PATH, DEV_TOKEN,
         );
         assert.equal(record.name, 'Asset');
         const attr = await GET<{ id: string }>(
-            db, 'record-attributes/attr1', DEV_TOKEN,
+            db, ATTR1_PATH, DEV_TOKEN,
         );
         assert.equal(attr.id, 'attr1');
         // pair-balance: the whole bundle is pairs-or-nothing,

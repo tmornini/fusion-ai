@@ -17,6 +17,10 @@ import {
     appendMessagePair,
 } from '../api/message-pair.ts';
 import {
+    ATTRIBUTE_DETAIL_PATTERN,
+    RECORD_TYPE_DETAIL_PATTERN,
+} from '../api/family-registry.ts';
+import {
     deriveDocumentsAt,
 } from '../api/derive-documents.ts';
 
@@ -121,10 +125,15 @@ test('postRecordAttributeDocumentOp writes exactly the'
     };
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/record-attributes/ra-doc-op-1',
-        routePattern: 'record-attributes/:id',
-        routeSegments: ['record-attributes', ':id'],
-        pathSegments: ['record-attributes', 'ra-doc-op-1'],
+        pathname: '/organizations/1/record-types/'
+            + 'rec-fixture-1/attributes/ra-doc-op-1',
+        routePattern: ATTRIBUTE_DETAIL_PATTERN,
+        routeSegments: ATTRIBUTE_DETAIL_PATTERN.split('/'),
+        pathSegments: [
+            'organizations', '1', 'record-types',
+            'rec-fixture-1', 'attributes',
+            'ra-doc-op-1',
+        ],
         headerFields: [], body,
         requesterIdentityId: 'current',
         requestAt: '2026-01-01T00:00:00.000000Z',
@@ -155,21 +164,37 @@ test('postRecordAttributeDocumentOp writes exactly the'
 // agnostic to which op serves the route, so this pin holds
 // unchanged straight through the absorption). ------------------
 
-test('a byte-identical PUT resend to record-attributes/:id'
+test('a byte-identical PUT resend to nested attributes/:id'
 + ' converges to one stored request/response pair',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const body = documentFields();
+    // Parent type must exist for nested attribute PUT.
+    await PUT(db, 'organizations/1/record-types/rec-fixture-1', {
+        name: 'Fixture', description: '', position: 1,
+        state: 'active',
+        state_at: '2026-01-01T00:00:00.000000Z',
+        state_event_id: 'rec-fixture-1-g',
+    }, DEV_TOKEN);
+    const body = {
+        name: 'Priority',
+        attribute_type: 'text',
+        sort_order: 1,
+        options: [],
+        constraints: [],
+    };
     const first = await PUT(
-        db, 'record-attributes/ra-resend-1', body, DEV_TOKEN,
+        db, 'organizations/1/record-types/rec-fixture-1'
+        + '/attributes/ra-resend-1', body, DEV_TOKEN,
     );
     const second = await PUT(
-        db, 'record-attributes/ra-resend-1', body, DEV_TOKEN,
+        db, 'organizations/1/record-types/rec-fixture-1'
+        + '/attributes/ra-resend-1', body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
-    assert.equal((await db.requests.getAll()).length, 3);
-    assert.equal((await db.responses.getAll()).length, 3);
+    // seedAdminSchema + parent type + 2 attribute PUTs
+    assert.equal((await db.requests.getAll()).length, 4);
+    assert.equal((await db.responses.getAll()).length, 4);
 });
 
 // -- 4. the DELETE-head derives absent — below-route via the

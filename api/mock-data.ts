@@ -116,6 +116,8 @@ import {
 import { buildSeedScoreRows } from './mock-data/scores.ts';
 import {
     ATTRIBUTE_DETAIL_PATTERN,
+    RECORD_TYPES_COLLECTION_PATTERN,
+    RECORD_TYPE_DETAIL_PATTERN,
 } from './family-registry.ts';
 
 // A missing pair here is a pass-1/pass-2 wiring bug (a dropped
@@ -865,10 +867,17 @@ async function postMockDataLoadIn(
             // an attribute it just created).
             const recordPairs: RecordWritePairs = {
                 operation: requirePair(
-                    pairs, seedPairKey('records', r.id),
+                    pairs,
+                    seedPairKey(
+                        RECORD_TYPES_COLLECTION_PATTERN,
+                        r.id,
+                    ),
                 ),
                 document: requirePair(
-                    pairs, seedPairKey('records/:id', r.id),
+                    pairs,
+                    seedPairKey(
+                        RECORD_TYPE_DETAIL_PATTERN, r.id,
+                    ),
                 ),
                 attributePuts: attributes.map(a =>
                     requirePair(
