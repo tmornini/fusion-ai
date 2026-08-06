@@ -21,11 +21,9 @@ import {
 } from '../api/document-family.ts';
 import {
     validateRecordDocumentBody,
-    validateRecordAttributeDocumentBody,
 } from '../api/validators.ts';
 import {
     postRecordDocumentOp,
-    postRecordAttributeDocumentOp,
 } from '../api/routes.ts';
 import {
     deriveFlowRecords,
@@ -70,19 +68,6 @@ const RECORDS_WIRING: DocumentFamilyWiring = {
     }),
 };
 
-const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
-    family: 'record-attributes',
-    lifecycle: 'stateless',
-    notFoundTable: 'record_attributes',
-    validateDocument: validateRecordAttributeDocumentBody,
-    documentOp: postRecordAttributeDocumentOp,
-    entityOf: (document, organization) => ({
-        id: document.uriId,
-        organization_id: organization,
-        ...document.body,
-    }),
-};
-
 async function allRecords(
     db: MemoryDbAdapter,
 ): Promise<RecordEntity[]> {
@@ -101,6 +86,8 @@ async function allRecords(
     return out;
 }
 
+// Task 8: flat alias window re-points attributes to nested
+// storage — read through the live GET.
 async function allAttributes(
     db: MemoryDbAdapter,
 ): Promise<RecordAttributeEntity[]> {
@@ -108,12 +95,23 @@ async function allAttributes(
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
+        const token = await organizationToken(
+            'current', organization,
+        );
+        const res = await handleRequest(
+            db,
+            new Request(
+                'http://localhost/record-attributes',
+                {
+                    headers: {
+                        Authorization: 'Bearer ' + token,
+                    },
+                },
+            ),
+        );
+        assert.equal(res.status, 200);
         out.push(
-            ...await documentCollectionGetHandler(
-                RECORD_ATTRIBUTES_WIRING,
-            )(
-                db, [], 'current', organization,
-            ) as RecordAttributeEntity[],
+            ...await res.json() as RecordAttributeEntity[],
         );
     }
     return out;

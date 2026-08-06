@@ -29,11 +29,9 @@ import {
     pickString,
     pickNumber,
     validateRecordDocumentBody,
-    validateRecordAttributeDocumentBody,
 } from '../api/validators.ts';
 import {
     postRecordDocumentOp,
-    postRecordAttributeDocumentOp,
 } from '../api/routes.ts';
 import {
     deriveFlowRecords,
@@ -115,19 +113,6 @@ const RECORDS_TEST_WIRING: DocumentFamilyWiring = {
     },
 };
 
-const RECORD_ATTRIBUTES_TEST_WIRING: DocumentFamilyWiring = {
-    family: 'record-attributes',
-    lifecycle: 'stateless',
-    notFoundTable: 'record_attributes',
-    validateDocument: validateRecordAttributeDocumentBody,
-    documentOp: postRecordAttributeDocumentOp,
-    entityOf: (document, organization) => ({
-        id: document.uriId,
-        organization_id: organization,
-        ...document.body,
-    }),
-};
-
 const READER_ACTOR: Id = 'drift-reader';
 
 async function derivedRecords(
@@ -146,22 +131,53 @@ async function derivedRecord(
     ) as Promise<RecordEntity>;
 }
 
+// Task 8: attribute storage is nested under type prefixes.
+// Drift helpers re-point through the live flat wire handlers
+// (alias window) so wire and derive share one truth.
 async function derivedRecordAttributes(
     db: DbAdapter, organization: Id,
 ): Promise<RecordAttributeEntity[]> {
-    return documentCollectionGetHandler(
-        RECORD_ATTRIBUTES_TEST_WIRING,
-    )(
-        db, [], READER_ACTOR, organization,
-    ) as Promise<RecordAttributeEntity[]>;
+    const token = await organizationToken(
+        'current', organization,
+    );
+    const res = await handleRequest(
+        db, req('GET', '/record-attributes', token),
+    );
+    if (res.status !== 200) {
+        throw new Error(
+            'derivedRecordAttributes: GET '
+            + res.status,
+        );
+    }
+    return await res.json() as RecordAttributeEntity[];
 }
 
 async function derivedRecordAttribute(
     db: DbAdapter, organization: Id, id: Id,
 ): Promise<RecordAttributeEntity> {
-    return documentGetHandler(RECORD_ATTRIBUTES_TEST_WIRING)(
-        db, [id], READER_ACTOR, organization,
-    ) as Promise<RecordAttributeEntity>;
+    const token = await organizationToken(
+        'current', organization,
+    );
+    const res = await handleRequest(
+        db,
+        req('GET', '/record-attributes/' + id, token),
+    );
+    if (res.status === 404) {
+        throw new EntityNotFoundError(
+            'record_attributes', id,
+        );
+    }
+    if (res.status === 403) {
+        throw new ForeignOrganizationError(
+            'record_attributes', id,
+        );
+    }
+    if (res.status !== 200) {
+        throw new Error(
+            'derivedRecordAttribute: GET ' + res.status,
+        );
+    }
+    return await res.json() as RecordAttributeEntity;
 }
 
 // -- shared live-write body builders -----------------------------
@@ -887,18 +903,23 @@ async () => {
     );
     assert.deepEqual(overlap, []);
 
-    const attributesPrefix = canonicalUriPrefix(
-        STARK_ORGANIZATION, '/record-attributes/',
-    );
+    // Task 8: attribute pairs store under the type's
+    // nested attributes prefix.
+    const attributesPrefix =
+        '/organizations/' + STARK_ORGANIZATION
+        + '/record-types/' + recordId + '/attributes/';
     const [attributeRequests, attributeResponses] =
         await Promise.all([
-            db.requests.getAllWhere('uri_prefix', attributesPrefix),
+            db.requests.getAllWhere(
+                'uri_prefix', attributesPrefix,
+            ),
             db.responses.getAllWhere(
                 'uri_prefix', attributesPrefix,
             ),
         ]);
     const attributeDocumentPairs = documentPairsAt(
-        attributeRequests, attributeResponses, attributesPrefix,
+        attributeRequests, attributeResponses,
+        attributesPrefix,
     ).filter((pair) => pair.uriId === attributeId);
     assert.equal(attributeDocumentPairs.length, 1);
     assert.equal(attributeDocumentPairs[0]!.method, 'PUT');

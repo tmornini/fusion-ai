@@ -26,13 +26,11 @@ import {
 } from '../api/document-family.ts';
 import {
     validateRecordDocumentBody,
-    validateRecordAttributeDocumentBody,
     validateObjectiveDocumentBody,
     pickNumber,
 } from '../api/validators.ts';
 import {
     postRecordDocumentOp,
-    postRecordAttributeDocumentOp,
     postObjectiveDocumentOp,
 } from '../api/routes.ts';
 import type {
@@ -75,19 +73,6 @@ const RECORDS_WIRING: DocumentFamilyWiring = {
     }),
 };
 
-const RECORD_ATTRIBUTES_WIRING: DocumentFamilyWiring = {
-    family: 'record-attributes',
-    lifecycle: 'stateless',
-    notFoundTable: 'record_attributes',
-    validateDocument: validateRecordAttributeDocumentBody,
-    documentOp: postRecordAttributeDocumentOp,
-    entityOf: (document, organization) => ({
-        id: document.uriId,
-        organization_id: organization,
-        ...document.body,
-    }),
-};
-
 async function derivedRecords(
     db: MemoryDbAdapter, organization: string,
 ): Promise<RecordEntity[]> {
@@ -96,14 +81,32 @@ async function derivedRecords(
     ) as Promise<RecordEntity[]>;
 }
 
+// Task 8: flat alias window re-points attributes to nested
+// storage — read through the live GET.
 async function derivedRecordAttributes(
     db: MemoryDbAdapter, organization: string,
 ): Promise<RecordAttributeEntity[]> {
-    return documentCollectionGetHandler(
-        RECORD_ATTRIBUTES_WIRING,
-    )(
-        db, [], 'current', organization,
-    ) as Promise<RecordAttributeEntity[]>;
+    const token = await organizationToken(
+        'current', organization,
+    );
+    const res = await handleRequest(
+        db,
+        new Request(
+            'http://localhost/record-attributes',
+            {
+                headers: {
+                    Authorization: 'Bearer ' + token,
+                },
+            },
+        ),
+    );
+    if (res.status !== 200) {
+        throw new Error(
+            'derivedRecordAttributes: GET '
+            + res.status,
+        );
+    }
+    return await res.json() as RecordAttributeEntity[];
 }
 
 const OBJECTIVES_WIRING: DocumentFamilyWiring = {

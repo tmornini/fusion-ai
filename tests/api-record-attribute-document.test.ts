@@ -8,7 +8,6 @@ import {
 import { DEV_TOKEN } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { ValidationError } from '../api/types.ts';
-import { EntityNotFoundError } from '../api/db.ts';
 import {
     validateRecordAttributeDocumentBody,
 } from '../api/validators.ts';
@@ -18,9 +17,8 @@ import {
     appendMessagePair,
 } from '../api/message-pair.ts';
 import {
-    documentFamilyWiring,
-    documentGetHandler,
-} from '../api/document-family.ts';
+    deriveDocumentsAt,
+} from '../api/derive-documents.ts';
 
 // Phase 6 Task 3 (sixth family, 'stateless' evidence #2): PUT
 // /record-attributes/:id takes the entity's OWN fields only —
@@ -45,20 +43,30 @@ function documentFields() {
 // -- 1. validateRecordAttributeDocumentBody -----------------
 
 test('validateRecordAttributeDocumentBody accepts the entity'
-+ ' fields plus an optional organization_id', () => {
++ ' fields plus an optional organization_id and stamps ACL'
++ ' defaults', () => {
     const doc = validateRecordAttributeDocumentBody({
         ...documentFields(),
         organization_id: '1',
     });
-    assert.deepEqual(doc.entity, documentFields());
+    assert.deepEqual(doc.entity, {
+        ...documentFields(),
+        read_roles: ['member', 'admin'],
+        write_roles: ['member', 'admin'],
+    });
 });
 
 test('validateRecordAttributeDocumentBody accepts the entity'
-+ ' fields with organization_id absent', () => {
++ ' fields with organization_id absent and stamps ACL'
++ ' defaults', () => {
     const doc = validateRecordAttributeDocumentBody(
         documentFields(),
     );
-    assert.deepEqual(doc.entity, documentFields());
+    assert.deepEqual(doc.entity, {
+        ...documentFields(),
+        read_roles: ['member', 'admin'],
+        write_roles: ['member', 'admin'],
+    });
 });
 
 test('validateRecordAttributeDocumentBody rejects a trio key'
@@ -133,6 +141,8 @@ test('postRecordAttributeDocumentOp writes exactly the'
         id: 'ra-doc-op-1',
         organization_id: '1',
         ...documentFields(),
+        read_roles: ['member', 'admin'],
+        write_roles: ['member', 'admin'],
     });
     // Phase Final Stage B: record_attributes table retired.
     assert.equal((await db.requests.getAll()).length, 1);
@@ -174,12 +184,26 @@ async function putDocumentPair(
     id: string,
     body: Record<string, unknown>,
 ): Promise<void> {
+    // Nested storage under type (Task 8); type id from
+    // body.record_id.
+    const typeId = body['record_id'] as string;
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/record-attributes/' + id,
-        routePattern: 'record-attributes/:id',
-        routeSegments: ['record-attributes', ':id'],
-        pathSegments: ['record-attributes', id],
+        pathname: '/organizations/1/record-types/'
+            + typeId + '/attributes/' + id,
+        routePattern:
+            'organizations/:organization-id/record-types/'
+            + ':record-type-id/attributes/:attribute-id',
+        routeSegments: [
+            'organizations', ':organization-id',
+            'record-types', ':record-type-id',
+            'attributes', ':attribute-id',
+        ],
+        pathSegments: [
+            'organizations', '1',
+            'record-types', typeId,
+            'attributes', id,
+        ],
         headerFields: [], body,
         requesterIdentityId: 'current',
         requestAt: '2026-01-01T00:00:00.000000Z',
@@ -196,13 +220,25 @@ async function putDocumentPair(
 async function deleteDocumentPair(
     db: MemoryDbAdapter,
     id: string,
+    typeId: string,
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'DELETE',
-        pathname: '/record-attributes/' + id,
-        routePattern: 'record-attributes/:id',
-        routeSegments: ['record-attributes', ':id'],
-        pathSegments: ['record-attributes', id],
+        pathname: '/organizations/1/record-types/'
+            + typeId + '/attributes/' + id,
+        routePattern:
+            'organizations/:organization-id/record-types/'
+            + ':record-type-id/attributes/:attribute-id',
+        routeSegments: [
+            'organizations', ':organization-id',
+            'record-types', ':record-type-id',
+            'attributes', ':attribute-id',
+        ],
+        pathSegments: [
+            'organizations', '1',
+            'record-types', typeId,
+            'attributes', id,
+        ],
         headerFields: [], body: {},
         requesterIdentityId: 'current',
         requestAt: '2026-01-02T00:00:00.000000Z',
@@ -216,25 +252,24 @@ async function deleteDocumentPair(
     );
 }
 
-test('a DELETE-head derives absent through the generic'
-+ ' document handlers, carrying notFoundTable, never the'
-+ ' family', async () => {
+test('a DELETE-head derives absent on the nested attributes'
++ ' prefix (Task 8 storage)', async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
+    const typeId = documentFields().record_id;
     await putDocumentPair(db, 'ra-del-1', documentFields());
-    await deleteDocumentPair(db, 'ra-del-1');
-    const wiring = documentFamilyWiring('record-attributes')!;
-    await assert.rejects(
-        documentGetHandler(wiring)(
-            db, ['ra-del-1'], 'current', '1',
-        ),
-        (error: unknown) => {
-            assert.ok(error instanceof EntityNotFoundError);
-            assert.equal(
-                (error as EntityNotFoundError).table,
-                'record_attributes',
-            );
-            return true;
-        },
+    await deleteDocumentPair(db, 'ra-del-1', typeId);
+    const prefix = '/organizations/1/record-types/'
+        + typeId + '/attributes/';
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_prefix', prefix),
+        db.responses.getAllWhere('uri_prefix', prefix),
+    ]);
+    const head = deriveDocumentsAt(
+        requests, responses, prefix,
+    ).get('ra-del-1');
+    assert.equal(
+        head, undefined,
+        'DELETE head must exclude the attribute',
     );
 });
