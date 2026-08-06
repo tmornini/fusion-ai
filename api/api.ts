@@ -25,15 +25,19 @@ import {
     hoistedHeaderFields,
     responseFromStored,
     wireHeadersFor,
+    attachEtag,
     PAIR_WIRED_ROUTE_PATTERNS,
     DOCUMENT_CLASS_ROUTE_PATTERNS,
     REPLAY_EXEMPT_ROUTE_PATTERNS,
     IF_RESPONSE_ID_HEADER,
+    IF_MATCH_HEADER,
 } from './message-pair.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import {
     familyRegistration,
     ATTRIBUTE_DETAIL_PATTERN,
+    INSTANCE_DETAIL_PATTERN,
+    CREATE_ONLY_PUT_ROUTE_PATTERNS,
 } from './family-registry.ts';
 import {
     documentFamilyWiring,
@@ -613,6 +617,26 @@ export async function handleRequest(
                 }
             }
         }
+        // Create-only PUT (Task 15): If-Match is rejected
+        // before pair formation — create is unconditional
+        // and the in-tx spent-address check owns the race.
+        const isCreateOnlyWrite = method === 'PUT'
+            && CREATE_ONLY_PUT_ROUTE_PATTERNS
+                .has(routePattern);
+        if (
+            isCreateOnlyWrite
+            && request.headers.get(IF_MATCH_HEADER)
+                !== null
+        ) {
+            return Response.json(
+                {
+                    error: 'If-Match is not accepted on PUT: '
+                        + 'create is unconditional at '
+                        + pathname,
+                },
+                { status: HTTP_BAD_REQUEST },
+            );
+        }
         // The shadow-ledger pair: formed pre-tx (all crypto and
         // address resolution happen before a transaction opens
         // — see api/message-pair.ts), gated to routes wired in
@@ -698,9 +722,14 @@ export async function handleRequest(
             // The head-read class is encoded PER ROUTE PATTERN,
             // never inferred from uriId — an event-append
             // address (states/:id) has a non-empty uriId yet
-            // must never chain (message-pair.ts).
+            // must never chain (message-pair.ts). Create-only
+            // (R10) forces undefined so genesis carries neither
+            // supersedes nor follows — the in-tx spent check
+            // owns the race.
             const headPairId =
-                DOCUMENT_CLASS_ROUTE_PATTERNS.has(routePattern)
+                !isCreateOnlyWrite
+                && DOCUMENT_CLASS_ROUTE_PATTERNS
+                    .has(routePattern)
                     ? await headPairIdAt(
                         effective, canonicalPrefix, uriId,
                     )
@@ -806,7 +835,17 @@ export async function handleRequest(
                     effective, pair.requestHash,
                 );
                 if (replay !== undefined) {
-                    return responseFromStored(replay);
+                    const response =
+                        responseFromStored(replay);
+                    if (
+                        routePattern
+                            === INSTANCE_DETAIL_PATTERN
+                    ) {
+                        return attachEtag(
+                            response, replay.id,
+                        );
+                    }
+                    return response;
                 }
             }
             // The locked four-outcome table (spec §The two PUT
@@ -944,7 +983,17 @@ export async function handleRequest(
                         adapter, routePattern, params,
                         body, organization, actor,
                     );
-                    return responseFromStored(stored);
+                    const response =
+                        responseFromStored(stored);
+                    if (
+                        routePattern
+                            === INSTANCE_DETAIL_PATTERN
+                    ) {
+                        return attachEtag(
+                            response, stored.id,
+                        );
+                    }
+                    return response;
                 }
                 postWriteNotification(
                     adapter, routePattern, params,
@@ -997,7 +1046,17 @@ export async function handleRequest(
                         adapter, routePattern, params,
                         body, organization, actor,
                     );
-                    return responseFromStored(stored);
+                    const response =
+                        responseFromStored(stored);
+                    if (
+                        routePattern
+                            === INSTANCE_DETAIL_PATTERN
+                    ) {
+                        return attachEtag(
+                            response, stored.id,
+                        );
+                    }
+                    return response;
                 }
                 postWriteNotification(
                     adapter, routePattern, params,

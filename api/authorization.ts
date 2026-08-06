@@ -116,8 +116,13 @@ const MEMBER_VERBS: Readonly<
     // Nested record-types schema READ (decision 16): one
     // MEMBER_VERBS row covers the whole subtree's GETs via
     // matchesOnSegmentBoundary (`:id` is a one-segment
-    // wildcard). Mutations stay admin by absence here.
+    // wildcard). Schema mutations stay admin by absence.
     '/organizations/:id/record-types': ['GET'],
+    // Nested instances (Task 15): member create/patch/
+    // delete + GET. Path-tier only — field ACL is the
+    // write authorizer for set/clear contents.
+    '/organizations/:id/record-types/:tid/instances':
+        ['GET', 'PUT', 'PATCH', 'DELETE'],
     // Nested field-values collection RETIRED (states-URI
     // elimination C4); field values fold on WO history.
     '/work-orders': ['GET', 'PUT', 'POST'],

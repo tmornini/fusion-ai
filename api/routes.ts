@@ -44,6 +44,8 @@ import type {
     MemberKind,
     MemberState,
     OrganizationEntity,
+    AttributeType,
+    Constraint,
 } from './types.ts';
 import {
     DEFAULT_ATTRIBUTE_ACL_ROLES,
@@ -86,6 +88,7 @@ import {
     validateRecordAttributeDocumentBody,
     validateAttributeDocumentCreate,
     validateAttributeDocumentReplace,
+    validateInstancePutBody,
     validateRecordDocumentBody,
     validateRecordWriteBody,
     validateWorkOrderClaimBody,
@@ -167,11 +170,22 @@ import {
     RECORD_TYPE_HISTORY_PATTERN,
     ATTRIBUTES_COLLECTION_PATTERN,
     ATTRIBUTE_DETAIL_PATTERN,
+    INSTANCE_DETAIL_PATTERN,
 } from './family-registry.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
 } from './derive-documents.ts';
+import {
+    instancesUriPrefix,
+} from './derive-record-instances.ts';
+import {
+    assertWritableAttributeIds,
+} from './attribute-acl.ts';
+import {
+    validateInstanceValues,
+    type AttributeSchemaRow,
+} from './record-constraints.ts';
 import {
     flowEntityOf,
     deriveFlow,
@@ -1196,6 +1210,63 @@ function attributesUriPrefix(
     return '/organizations/' + organization
         + '/record-types/' + recordTypeId
         + '/attributes/';
+}
+
+// Live attribute heads → AttributeSchemaRow map for
+// instance ACL + value gates (Tasks 15/17). Roles and
+// type fields ride the stored nested document body.
+function attributeSchemaOf(
+    id: string,
+    body: Record<string, unknown>,
+): AttributeSchemaRow {
+    const optionsRaw = body['options'];
+    const constraintsRaw = body['constraints'];
+    const readRolesRaw = body['read_roles'];
+    const writeRolesRaw = body['write_roles'];
+    return {
+        id,
+        name: pickString(body, 'name'),
+        attributeType: pickString(
+            body, 'attribute_type',
+        ) as AttributeType,
+        options: Array.isArray(optionsRaw)
+            ? optionsRaw as string[]
+            : [],
+        constraints: Array.isArray(constraintsRaw)
+            ? constraintsRaw as Constraint[]
+            : [],
+        readRoles: Array.isArray(readRolesRaw)
+            ? readRolesRaw as string[]
+            : [],
+        writeRoles: Array.isArray(writeRolesRaw)
+            ? writeRolesRaw as string[]
+            : [],
+    };
+}
+
+async function loadAttributeSchemaById(
+    db: DbAdapter,
+    organization: Id,
+    recordTypeId: Id,
+): Promise<Map<string, AttributeSchemaRow>> {
+    const prefix = attributesUriPrefix(
+        organization, recordTypeId,
+    );
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_prefix', prefix),
+        db.responses.getAllWhere('uri_prefix', prefix),
+    ]);
+    const documents = deriveDocumentsAt(
+        requests, responses, prefix,
+    );
+    const map = new Map<string, AttributeSchemaRow>();
+    for (const [id, document] of documents) {
+        map.set(
+            id,
+            attributeSchemaOf(id, document.body),
+        );
+    }
+    return map;
 }
 
 // Resolve an attribute id to its type id via uri_id probe
@@ -3118,6 +3189,25 @@ export const WRITE_RESPONSE_SPECS:
                     organization_id: param(params, 0),
                     record_type_id: param(params, 1),
                     ...entity,
+                };
+            },
+        },
+    },
+    // Nested instances detail (Task 15): create-only PUT.
+    // Wire body echoes the request delta ({set}), never the
+    // head. patch lands in Task 17.
+    [INSTANCE_DETAIL_PATTERN]: {
+        put: {
+            status: HTTP_OK,
+            successBody: (params, body) => {
+                const validated = validateInstancePutBody(
+                    body ?? {},
+                );
+                return {
+                    id: param(params, 2),
+                    organization_id: param(params, 0),
+                    record_type_id: param(params, 1),
+                    set: validated.set,
                 };
             },
         },
@@ -5152,6 +5242,71 @@ export const routes: Route[] = [
                         view, org, attrId, typeId,
                     );
                     await appendMessagePair(view, pair);
+                },
+            );
+        },
+    }),
+    // Nested instance detail PUT (Task 15): create-only.
+    // Ladder: parent type 404 → body shape 400 → write-ACL
+    // 403 → value 400 → in-tx spent-address check (R9) +
+    // append. Any prior response row (incl. tombstone)
+    // spends the address. No WRITE_AUTHORIZERS (deep
+    // sub-family). Not in DOCUMENT_CLASS (R10).
+    route(INSTANCE_DETAIL_PATTERN, {
+        put: async (
+            db, p, body, _actor, pair, _organization,
+            roles,
+        ) => {
+            const org = param(p, 0);
+            const typeId = param(p, 1);
+            const instanceId = param(p, 2);
+            const pathname = '/organizations/' + org
+                + '/record-types/' + typeId
+                + '/instances/' + instanceId;
+            await requireRecordTypeExists(
+                db, org, typeId,
+            );
+            const validated =
+                validateInstancePutBody(body);
+            const attributesById =
+                await loadAttributeSchemaById(
+                    db, org, typeId,
+                );
+            const attributeIds = validated.set.map(
+                (entry) => entry.attribute_id,
+            );
+            assertWritableAttributeIds(
+                attributeIds, attributesById, roles,
+            );
+            validateInstanceValues(
+                validated.set, attributesById,
+            );
+            const prefix = instancesUriPrefix(
+                org, typeId,
+            );
+            await db.transaction(
+                ['requests', 'responses'],
+                async (view) => {
+                    const responses =
+                        await view.responses
+                            .getAllWhere(
+                                'uri_prefix', prefix,
+                            );
+                    const spent = responses.some(
+                        (r) => r.uri_id === instanceId,
+                    );
+                    if (spent) {
+                        throw new ApiError(
+                            'instance already exists at '
+                                + pathname,
+                            HTTP_CONFLICT,
+                        );
+                    }
+                    if (pair !== undefined) {
+                        await appendMessagePair(
+                            view, pair,
+                        );
+                    }
                 },
             );
         },

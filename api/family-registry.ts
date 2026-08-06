@@ -15,7 +15,8 @@
 // among others) wait for their own demand before a slot, a
 // registration, or a helper is added on their behalf.
 
-export type ConcurrencyClass = 'simple' | 'locked';
+export type ConcurrencyClass =
+    'simple' | 'locked' | 'create-only';
 
 export interface FamilyRegistration {
     readonly family: string;        // first path segment
@@ -180,3 +181,12 @@ export const INSTANCE_DETAIL_PATTERN =
     INSTANCES_COLLECTION_PATTERN + '/:instance-id';
 export const INSTANCE_HISTORY_PATTERN =
     INSTANCE_DETAIL_PATTERN + '/history';
+
+// Create-only PUT addresses (Task 15): If-Match rejected;
+// in-tx spent-address check owns the race. NOT registered
+// in DOCUMENT_CLASS_ROUTE_PATTERNS (R10) — headPairId stays
+// undefined so genesis carries neither supersedes nor
+// follows.
+export const CREATE_ONLY_PUT_ROUTE_PATTERNS:
+    ReadonlySet<string> =
+    new Set([INSTANCE_DETAIL_PATTERN]);

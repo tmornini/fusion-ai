@@ -2480,6 +2480,72 @@ export interface RecordDocumentBody {
 // gate is the sole entity-shape check for the document PUT
 // (validateRecordEntity REQUIRES organization_id, which this
 // body never carries pre-stamp). Name non-empty re-homes here.
+// Instance PUT genesis body (Task 15 create-only). Wire
+// carries exactly {set}; clear is PATCH-only (Task 17).
+// Empty string values rejected at the body gate (G9);
+// type/constraint conformance is validateInstanceValues
+// after ACL.
+export interface InstancePutBody {
+    readonly set: {
+        readonly attribute_id: string;
+        readonly value: string;
+    }[];
+}
+
+export function validateInstancePutBody(
+    body: Record<string, unknown>,
+): InstancePutBody {
+    assertOnlyKeys(
+        body, ['set'], 'InstancePutBody',
+    );
+    const raw = asArray(
+        body['set'], 'InstancePutBody.set',
+    );
+    const set: {
+        attribute_id: string;
+        value: string;
+    }[] = [];
+    const seen = new Set<string>();
+    for (let i = 0; i < raw.length; i++) {
+        const label =
+            'InstancePutBody.set[' + i + ']';
+        const entry = asObject(raw[i], label);
+        assertOnlyKeys(
+            entry,
+            ['attribute_id', 'value'],
+            label,
+        );
+        const attributeId = pickString(
+            entry, 'attribute_id',
+        );
+        if (attributeId === '') {
+            throw new ValidationError(
+                label
+                    + '.attribute_id must be non-empty',
+            );
+        }
+        if (seen.has(attributeId)) {
+            throw new ValidationError(
+                'duplicate attribute_id "'
+                    + attributeId
+                    + '" in InstancePutBody.set',
+            );
+        }
+        seen.add(attributeId);
+        const value = pickString(entry, 'value');
+        if (value === '') {
+            throw new ValidationError(
+                label + '.value must not be empty',
+            );
+        }
+        set.push({
+            attribute_id: attributeId,
+            value,
+        });
+    }
+    return { set };
+}
+
 export function validateRecordDocumentBody(
     body: Record<string, unknown>,
 ): RecordDocumentBody {

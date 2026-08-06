@@ -35,6 +35,7 @@ import {
     RECORD_TYPES_COLLECTION_PATTERN,
     RECORD_TYPE_DETAIL_PATTERN,
     ATTRIBUTE_DETAIL_PATTERN,
+    INSTANCE_DETAIL_PATTERN,
 } from './family-registry.ts';
 import { HTTP_OK } from './http-errors.ts';
 
@@ -701,6 +702,9 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     RECORD_TYPE_DETAIL_PATTERN,
     // Nested attributes detail (Task 7): admin PUT/DELETE.
     ATTRIBUTE_DETAIL_PATTERN,
+    // Nested instances detail (Task 15): create-only PUT
+    // (PAIR_WIRED only — R10 keeps DOCUMENT_CLASS clear).
+    INSTANCE_DETAIL_PATTERN,
     // states/:id/field-values/:fvid RETIRED from live wire
     // (Phase 15 Task 7); seed still forms pairs at that
     // address via formSeedPair + WRITE_RESPONSE_SPECS.
