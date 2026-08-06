@@ -170,6 +170,7 @@ import {
     RECORD_TYPE_HISTORY_PATTERN,
     ATTRIBUTES_COLLECTION_PATTERN,
     ATTRIBUTE_DETAIL_PATTERN,
+    INSTANCES_COLLECTION_PATTERN,
     INSTANCE_DETAIL_PATTERN,
 } from './family-registry.ts';
 import {
@@ -178,9 +179,12 @@ import {
 } from './derive-documents.ts';
 import {
     instancesUriPrefix,
+    deriveInstanceHead,
+    deriveInstanceCollection,
 } from './derive-record-instances.ts';
 import {
     assertWritableAttributeIds,
+    projectReadableValues,
 } from './attribute-acl.ts';
 import {
     validateInstanceValues,
@@ -5246,13 +5250,71 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Nested instance detail PUT (Task 15): create-only.
-    // Ladder: parent type 404 → body shape 400 → write-ACL
-    // 403 → value 400 → in-tx spent-address check (R9) +
-    // append. Any prior response row (incl. tombstone)
-    // spends the address. No WRITE_AUTHORIZERS (deep
-    // sub-family). Not in DOCUMENT_CLASS (R10).
+    // Nested instances collection (Task 16): member GET
+    // under a live type. Parent probe first; heads via
+    // deriveInstanceCollection; each row projects values
+    // by attribute ACL and embeds etag (pair id, no quotes).
+    route(INSTANCES_COLLECTION_PATTERN, {
+        get: async (
+            db, p, _actor, organization, roles,
+        ) => {
+            const org = requireOrganization(organization);
+            const typeId = param(p, 1);
+            await requireRecordTypeExists(db, org, typeId);
+            const attributesById =
+                await loadAttributeSchemaById(
+                    db, org, typeId,
+                );
+            const heads = await deriveInstanceCollection(
+                db, org, typeId,
+            );
+            return heads.map((head) => ({
+                id: head.id,
+                organization_id: org,
+                record_type_id: typeId,
+                values: projectReadableValues(
+                    head.values, attributesById, roles,
+                ),
+                etag: head.pairId,
+            }));
+        },
+    }),
+    // Nested instance detail (Task 15 PUT create-only;
+    // Task 16 GET projection + missedReadError R2). Ladder
+    // PUT: parent type 404 → body 400 → write-ACL 403 →
+    // value 400 → in-tx spent-address check (R9) + append.
+    // No WRITE_AUTHORIZERS (deep sub-family). Not in
+    // DOCUMENT_CLASS (R10). GET ETag attaches in api.ts.
     route(INSTANCE_DETAIL_PATTERN, {
+        get: async (
+            db, p, _actor, organization, roles,
+        ) => {
+            const org = requireOrganization(organization);
+            const typeId = param(p, 1);
+            const instanceId = param(p, 2);
+            await requireRecordTypeExists(db, org, typeId);
+            const head = await deriveInstanceHead(
+                db, org, typeId, instanceId,
+            );
+            if (head === undefined) {
+                throw await missedReadError(
+                    db, instanceId, org,
+                    'record_instances',
+                );
+            }
+            const attributesById =
+                await loadAttributeSchemaById(
+                    db, org, typeId,
+                );
+            return {
+                id: head.id,
+                organization_id: org,
+                record_type_id: typeId,
+                values: projectReadableValues(
+                    head.values, attributesById, roles,
+                ),
+            };
+        },
         put: async (
             db, p, body, _actor, pair, _organization,
             roles,

@@ -44,6 +44,9 @@ import {
     documentHeadPairId,
 } from './document-family.ts';
 import {
+    instancesUriPrefix,
+} from './derive-record-instances.ts';
+import {
     ANONYMOUS_ID,
     decodeAccessToken,
 } from './access-token.ts';
@@ -943,6 +946,30 @@ export async function handleRequest(
                                 'Response-ID': headPairId,
                             },
                         });
+                    }
+                }
+                // Instance detail ETag (Task 16 / R8): strong
+                // validator from the head document-pair id
+                // (PUT|DELETE only — never a PATCH wire pair).
+                // Distinct from responses.etag (body sha).
+                if (
+                    routePattern
+                        === INSTANCE_DETAIL_PATTERN
+                ) {
+                    const headPairId =
+                        await documentHeadPairId(
+                            effective,
+                            instancesUriPrefix(
+                                param(params, 0),
+                                param(params, 1),
+                            ),
+                            param(params, 2),
+                        );
+                    if (headPairId !== undefined) {
+                        return attachEtag(
+                            Response.json(result),
+                            headPairId,
+                        );
                     }
                 }
                 return Response.json(result);
