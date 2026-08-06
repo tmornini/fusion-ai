@@ -15,7 +15,10 @@ import {
     postMembershipDocumentOp,
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
-import { formWritePair } from '../api/message-pair.ts';
+import {
+    formWritePair,
+    IF_MATCH_HEADER,
+} from '../api/message-pair.ts';
 import {
     nowUtc,
     SYSTEM_MEMBER_ID,
@@ -26,19 +29,25 @@ import {
 // member GET (ACL arrays visible), admin PUT create/replace,
 // admin DELETE with RESTRICT. Parent type probe 404s with
 // record_types vocabulary; attribute miss uses
-// record_attributes.
+// record_attributes. Task 20 activates the instance
+// fourth leg and composed-op edit RESTRICT.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const ORGANIZATION = '1';
 const TYPE_ID = 'rt-attr-1';
 const ATTR_ID = 'attr-nested-1';
+const INSTANCE_ID = 'inst-attr-restrict-1';
 
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
     + '/record-types/' + TYPE_ID;
 const ATTRS = TYPE_DETAIL + '/attributes';
 const ATTR_DETAIL = ATTRS + '/' + ATTR_ID;
+const COLLECTION =
+    '/organizations/' + ORGANIZATION + '/record-types';
+const INSTANCES = TYPE_DETAIL + '/instances';
+const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
 
 interface AttributeWireRow {
     id: string;
@@ -58,12 +67,14 @@ function req(
     path: string,
     token: string,
     body?: unknown,
+    extraHeaders?: Record<string, string>,
 ): Request {
     return new Request(`${BASE}${path}`, {
         method,
         headers: {
             'Content-Type': 'application/json',
             Authorization: 'Bearer ' + token,
+            ...(extraHeaders ?? {}),
         },
         ...(body !== undefined
             ? { body: JSON.stringify(body) }
@@ -406,4 +417,162 @@ async () => {
         'GET', ATTR_DETAIL, adminToken,
     ));
     assert.equal(still.status, 200);
+});
+
+test('DELETE while an instance head carries the value '
++ '→ 409 fourth leg names instance(s)',
+async () => {
+    const { db, adminToken, memberToken } =
+        await adminDb();
+    await putLiveType(db, adminToken);
+    await handleRequest(db, req(
+        'PUT', ATTR_DETAIL, adminToken, attrCore({
+            read_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
+            write_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
+        }),
+    ));
+    const putInst = await handleRequest(db, req(
+        'PUT', INSTANCE_DETAIL, memberToken, {
+            set: [
+                {
+                    attribute_id: ATTR_ID,
+                    value: 'held',
+                },
+            ],
+        },
+    ));
+    assert.equal(putInst.status, 200);
+    const del = await handleRequest(db, req(
+        'DELETE', ATTR_DETAIL, adminToken,
+    ));
+    assert.equal(del.status, 409);
+    const body = await del.json() as { error: string };
+    assert.match(
+        body.error,
+        new RegExp(
+            'record attribute ' + ATTR_ID
+            + ' is referenced by',
+        ),
+    );
+    assert.match(
+        body.error,
+        new RegExp(
+            'instance\\(s\\) ' + INSTANCE_ID,
+        ),
+    );
+    const still = await handleRequest(db, req(
+        'GET', ATTR_DETAIL, adminToken,
+    ));
+    assert.equal(still.status, 200);
+});
+
+test('DELETE after PATCH clears the value → 204',
+async () => {
+    const { db, adminToken, memberToken } =
+        await adminDb();
+    await putLiveType(db, adminToken);
+    await handleRequest(db, req(
+        'PUT', ATTR_DETAIL, adminToken, attrCore({
+            read_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
+            write_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
+        }),
+    ));
+    const putInst = await handleRequest(db, req(
+        'PUT', INSTANCE_DETAIL, memberToken, {
+            set: [
+                {
+                    attribute_id: ATTR_ID,
+                    value: 'held',
+                },
+            ],
+        },
+    ));
+    assert.equal(putInst.status, 200);
+    const etag = putInst.headers.get('ETag')!;
+    const clear = await handleRequest(db, req(
+        'PATCH', INSTANCE_DETAIL, memberToken,
+        { clear: [ATTR_ID] },
+        { [IF_MATCH_HEADER]: etag },
+    ));
+    assert.equal(clear.status, 200);
+    const del = await handleRequest(db, req(
+        'DELETE', ATTR_DETAIL, adminToken,
+    ));
+    assert.equal(del.status, 204);
+    const gone = await handleRequest(db, req(
+        'GET', ATTR_DETAIL, adminToken,
+    ));
+    assert.equal(gone.status, 404);
+});
+
+test('composed-op edit removedAttributeIds with a valued '
++ 'instance → 409; whole batch rolls back',
+async () => {
+    const { db, adminToken, memberToken } =
+        await adminDb();
+    await putLiveType(db, adminToken);
+    await handleRequest(db, req(
+        'PUT', ATTR_DETAIL, adminToken, attrCore({
+            read_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
+            write_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
+        }),
+    ));
+    const putInst = await handleRequest(db, req(
+        'PUT', INSTANCE_DETAIL, memberToken, {
+            set: [
+                {
+                    attribute_id: ATTR_ID,
+                    value: 'held',
+                },
+            ],
+        },
+    ));
+    assert.equal(putInst.status, 200);
+    const requestsBefore = await db.requests.getAll();
+    const responsesBefore = await db.responses.getAll();
+    const edit = await handleRequest(db, req(
+        'POST', COLLECTION, adminToken, {
+            kind: 'edit',
+            id: TYPE_ID,
+            record: {
+                organization_id: ORGANIZATION,
+                name: 'Renamed',
+                description: 'd',
+                position: 1,
+            },
+            attributes: [],
+            state: 'active',
+            state_at: AT,
+            state_event_id: TYPE_ID + '-genesis',
+            removedAttributeIds: [ATTR_ID],
+        },
+    ));
+    assert.equal(edit.status, 409);
+    const err = await edit.json() as { error: string };
+    assert.match(
+        err.error,
+        new RegExp(
+            'instance\\(s\\) ' + INSTANCE_ID,
+        ),
+    );
+    const typeGet = await handleRequest(db, req(
+        'GET', TYPE_DETAIL, adminToken,
+    ));
+    assert.equal(typeGet.status, 200);
+    const typeRow = await typeGet.json() as {
+        name: string;
+    };
+    assert.equal(typeRow.name, 'Rental');
+    const attrGet = await handleRequest(db, req(
+        'GET', ATTR_DETAIL, adminToken,
+    ));
+    assert.equal(attrGet.status, 200);
+    assert.equal(
+        (await db.requests.getAll()).length,
+        requestsBefore.length,
+    );
+    assert.equal(
+        (await db.responses.getAll()).length,
+        responsesBefore.length,
+    );
 });

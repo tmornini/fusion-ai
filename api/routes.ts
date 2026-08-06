@@ -3221,19 +3221,27 @@ export const WRITE_RESPONSE_SPECS:
                 };
             },
         },
+        // PATCH successBody must NOT validate the delta.
+        // Pair formation runs before the gate's If-Match
+        // ladder (replay needs the hash first); body shape
+        // 400 is the handler's job so 428/412 answer first
+        // (Task 20 ladder steps 6–7). On the 200 path the
+        // body is already valid, so the echo matches the
+        // handler's re-validated set/clear.
         patch: {
             status: HTTP_OK,
             successBody: (params, body) => {
-                const validated =
-                    validateInstancePatchBody(
-                        body ?? {},
-                    );
+                const raw = body ?? {};
                 return {
                     id: param(params, 2),
                     organization_id: param(params, 0),
                     record_type_id: param(params, 1),
-                    set: validated.set,
-                    clear: validated.clear,
+                    set: Array.isArray(raw['set'])
+                        ? raw['set']
+                        : [],
+                    clear: Array.isArray(raw['clear'])
+                        ? raw['clear']
+                        : [],
                 };
             },
         },
