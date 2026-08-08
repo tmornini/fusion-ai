@@ -42,6 +42,7 @@ import { deriveFlowWorkOrders } from
 import {
     workOrderLifecycleStatesFor,
     workOrderHistoryFor,
+    workOrderBindingFor,
 } from '../api/derive-states.ts';
 import { buildWorkOrders } from '../api/mock-data/work-orders.ts';
 import {
@@ -177,20 +178,62 @@ const WORK_ORDERS_TEST_WIRING: DocumentFamilyWiring = {
 // `actor` argument entirely.
 const READER_ACTOR: Id = 'drift-reader';
 
+// Mirror the live list/detail GET attach (routes.ts): bind
+// keys ride the wire when present and stay ABSENT when not.
+async function withBindingEmbed(
+    db: DbAdapter,
+    organization: Id,
+    row: WorkOrderEntity,
+): Promise<WorkOrderEntity & {
+    instance_id?: string;
+    record_type_id?: string;
+}> {
+    const bind = await workOrderBindingFor(
+        db, organization, row.id,
+    );
+    if (bind === null) return row;
+    return {
+        ...row,
+        instance_id: bind.instanceId,
+        record_type_id: bind.recordTypeId,
+    };
+}
+
 async function derivedWorkOrders(
     db: DbAdapter, organization: Id,
-): Promise<WorkOrderEntity[]> {
-    return documentCollectionGetHandler(WORK_ORDERS_TEST_WIRING)(
+): Promise<(WorkOrderEntity & {
+    instance_id?: string;
+    record_type_id?: string;
+})[]> {
+    const rows = await documentCollectionGetHandler(
+        WORK_ORDERS_TEST_WIRING,
+    )(
         db, [], READER_ACTOR, organization,
-    ) as Promise<WorkOrderEntity[]>;
+    ) as WorkOrderEntity[];
+    const out: (WorkOrderEntity & {
+        instance_id?: string;
+        record_type_id?: string;
+    })[] = [];
+    for (const row of rows) {
+        out.push(
+            await withBindingEmbed(db, organization, row),
+        );
+    }
+    return out;
 }
 
 async function derivedWorkOrder(
     db: DbAdapter, organization: Id, id: Id,
-): Promise<WorkOrderEntity> {
-    return documentGetHandler(WORK_ORDERS_TEST_WIRING)(
+): Promise<WorkOrderEntity & {
+    instance_id?: string;
+    record_type_id?: string;
+}> {
+    const row = await documentGetHandler(
+        WORK_ORDERS_TEST_WIRING,
+    )(
         db, [id], READER_ACTOR, organization,
-    ) as Promise<WorkOrderEntity>;
+    ) as WorkOrderEntity;
+    return withBindingEmbed(db, organization, row);
 }
 
 // Every seeded work order's own id: the 45 hand-authored rows

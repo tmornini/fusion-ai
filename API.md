@@ -1704,13 +1704,13 @@ membership write.
 and — as a `BOOTSTRAP_ROUTES` member — below the shadow ledger
 entirely: this call forms and appends no pair for ITSELF (none of
 §5.1's headers appear on its own response). What it seeds, though,
-includes **1494** of its OWN pre-formed message pairs
+includes **1498** of its OWN pre-formed message pairs
 (EXPECTED_PAIR_COUNT) — see §5.3.
 
 - **Three sequential steps, not one atomic op:**
   1. `ensureTables(TABLE_NAMES)`
   2. `transaction(TABLE_NAMES, postMockDataLoadIn)` — builds the whole
-     dataset, including the 1494 seed pairs, in one tx (a mid-seed
+     dataset, including the 1498 seed pairs, in one tx (a mid-seed
      failure leaves no half-populated schema).
   3. `seedHumanCredentials(adapter)` — its **own** tx over
      `['requests','responses']`; the PBKDF2 hashing runs outside the tx
@@ -2060,7 +2060,7 @@ two, so they stand outside the FIFTEEN
 so the seed forms each family's pair the SAME way a live request
 would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **1494** message pairs — one pair per seeded
+- The mock-data seed pre-forms **1498** message pairs — one pair per seeded
   row for most families, but each seeded human/AI member folds in an
   operation/member-document/detail-document triple (11 human-members +
   4 ai-members, each × 3 = 45 member-family pairs: 15 ops + 15 member
@@ -2124,7 +2124,7 @@ would, then writes it alongside the seeded row:
   Phase Final deleted every entity table). The bootstrap seed
   forms exactly **twelve** such pairs (absolute; see
   `tests/mock-data-pairs.test.ts`). Total mock seed:
-  **EXPECTED_PAIR_COUNT = 1494**.
+  **EXPECTED_PAIR_COUNT = 1498**.
 - The scores deferral now closes WHOLE — baselines AND actuals, the
   SAME `buildSeedScoreRows` output (`api/mock-data/scores.ts`) driving
   both the pair formation above and the seeded row writes.
@@ -3302,7 +3302,7 @@ above.
 the entity-table / clients era (file absent).
 
 **Contract (as of Phase Final).** Absolute pair count is
-`EXPECTED_PAIR_COUNT = 1494` with bootstrap 12. Historical
+`EXPECTED_PAIR_COUNT = 1498` with bootstrap 12. Historical
 Path A dual-write (`appendMessagePair` beside row puts) is
 gone — only `requests`/`responses` remain; formerly
 this task touches. Reseed marginal cost measured ~125 ms for the
@@ -3448,7 +3448,7 @@ does not flip a read by itself.
 Industries, Wayne Enterprises) form their OWN
 `organizations/:id` document pairs on the message plane.
 Phase Final deleted the organizations row store; the live
-absolute is **EXPECTED_PAIR_COUNT = 1494** with bootstrap
+absolute is **EXPECTED_PAIR_COUNT = 1498** with bootstrap
 **12** (see `tests/mock-data-pairs.test.ts`). The retired
 `tests/mock-data-fingerprint.test.ts` file is gone with the
 clients / entity-table era.
@@ -3565,7 +3565,7 @@ nested field-values leaf seed pairs remain. No
 `WRITE_RESPONSE_SPECS` leaf entry for the retired field-
 values write address. `flows/:id/versions*` specs and
 handlers are gone with the routes. Mock seed absolute:
-**EXPECTED_PAIR_COUNT = 1494** / bootstrap 12.
+**EXPECTED_PAIR_COUNT = 1498** / bootstrap 12.
 
 **§5 chronological gap (named) — DEFERRED.** Tasks 1–6 of
 Phase 14, the Phase 15 re-anchors, and the Phase Final

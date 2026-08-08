@@ -417,7 +417,7 @@ round-trip, in-browser ZIP, snapshot import-validation /
 quota / atomic-import, the
 memory + localStorage transaction backends, the tx runners
 and view, the commit batch route, api routing, navigation,
-mock-data validity (pair count 1494 / bootstrap 12 absolute;
+mock-data validity (pair count 1498 / bootstrap 12 absolute;
 the mock-data fingerprint file retired with the clients
 table), client registration facet + derive, the two-tier
 hazard predicate (`flow-graph-hazard.test.ts`), presenter

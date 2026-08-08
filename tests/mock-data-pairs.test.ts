@@ -113,24 +113,25 @@ import { deriveOrganization } from
 // secret is unknown until PBKDF2 resolves and so can never join
 // this file's shared pre-tx pass) + 0 role-grant document pairs
 // (retired: membership type carries privilege; mint bakes
-// claims) + 861 work-order historical-trace transition op pairs
-// (states-address retirement Task 12: 211 hand-authored + 650
-// generated events reshape into work-orders/:id/transition
-// pairs — same count as the bare states/:id traces they
-// replace; each event's OWN member_id authors its OWN pair;
-// field values fold into the parent transition body — no bare
-// states/:id or states/:id/field-values/:fvid pairs) + 11
-// identity-default-organization pairs (Phase 11 Task 8: one
-// event-append pair per seeded human member at its identity-
-// keyed /identities/:id/default-org/ address; Phase Final
-// Task 2 strips the identity_default_organizations ROW half —
-// pairs alone remain) + 1 gate0001 Capture step (R1-FIX-A
-// re-home) = 1494 after role-grant retirement (was 1506 − 12
-// role-grant pairs). System-member genesis folds into the
-// members/:id document trio (states-address retirement Task 8)
-// — no bare states/:id pair. A dropped or reordered invocation
-// changes this count. Bootstrap absolute is 12 (was 13).
-const EXPECTED_PAIR_COUNT = 1494;
+// claims) + 859 legacy work-order historical-trace transition
+// op pairs (states-address retirement Task 12: 861 traces
+// minus WO01's two value-bearing events, which migrate to the
+// instance chain) + 6 WO-instance SoT chain pairs (Task 6:
+// instance genesis + binding + Review/Complete new-shape ops
+// each with a revision — net +4 vs 1494) + 11 identity-default-
+// organization pairs (Phase 11 Task 8: one event-append pair
+// per seeded human member at its identity-keyed
+// /identities/:id/default-org/ address; Phase Final Task 2
+// strips the identity_default_organizations ROW half — pairs
+// alone remain) + 1 gate0001 Capture step (R1-FIX-A re-home)
+// = 1498 after WO-instance SoT seed (+4: instance genesis +
+// binding + 2 revisions — WO-instance SoT stack; the two new-
+// shape ops replace the two dropped legacy transitions).
+// System-member genesis folds into the members/:id document
+// trio (states-address retirement Task 8) — no bare states/:id
+// pair. A dropped or reordered invocation changes this count.
+// Bootstrap absolute is 12 (was 13).
+const EXPECTED_PAIR_COUNT = 1498;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
@@ -766,15 +767,25 @@ test('a seeded state_field_value folds into its parent'
     const db = await sharedMockDb();
     const firstFieldValue = mockStateFieldValues[0]!;
     const requests = await db.requests.getAll();
+    // WO-instance SoT Task 6: value-bearing seed transitions
+    // ride new-shape set[] (attribute_id ids); legacy bags
+    // gone on WO01.
     const row = requests.find((r) => {
         try {
             const embedded = JSON.parse(r.message) as {
                 body?: {
-                    fieldValues?: readonly { id: string }[];
+                    set?: readonly {
+                        attribute_id: string;
+                        value: string;
+                    }[];
                 };
             };
-            return (embedded.body?.fieldValues ?? [])
-                .some(fv => fv.id === firstFieldValue.id);
+            return (embedded.body?.set ?? []).some(
+                (entry) =>
+                    entry.attribute_id
+                        === firstFieldValue.attribute_id
+                    && entry.value === firstFieldValue.value,
+            );
         } catch {
             return false;
         }
@@ -789,22 +800,25 @@ test('a seeded state_field_value folds into its parent'
     );
     const embedded = JSON.parse(row!.message) as {
         body: {
-            fieldValues: readonly {
-                id: string;
-                fields: Record<string, unknown>;
+            set: readonly {
+                attribute_id: string;
+                value: string;
             }[];
+            instance_id: string;
+            record_type_id: string;
         };
     };
-    const fold = embedded.body.fieldValues.find(
-        fv => fv.id === firstFieldValue.id,
+    const fold = embedded.body.set.find(
+        (entry) =>
+            entry.attribute_id
+                === firstFieldValue.attribute_id,
     )!;
-    assert.deepEqual(
-        Object.keys(fold.fields).sort(),
-        ['attribute_id', 'state_event_id', 'value'],
+    assert.equal(fold.value, firstFieldValue.value);
+    assert.equal(
+        typeof embedded.body.instance_id, 'string',
     );
     assert.equal(
-        fold.fields['state_event_id'],
-        firstFieldValue.state_event_id,
+        typeof embedded.body.record_type_id, 'string',
     );
 });
 

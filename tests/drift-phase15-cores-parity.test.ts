@@ -757,11 +757,21 @@ async () => {
             db, req('GET', '/work-orders/' + row.id, token),
         );
         assert.equal(getRes.status, 200);
-        const wire = await getRes.json();
+        // Wire GET attaches bind embeds (instance_id /
+        // record_type_id); document-head derive is bind-
+        // free — strip embeds before comparing heads.
+        const wire = await getRes.json() as Record<
+            string, unknown
+        >;
+        const {
+            instance_id: _i,
+            record_type_id: _r,
+            ...wireHead
+        } = wire;
         const derived = await workOrderDocumentHeadFor(
             db, STARK_ORGANIZATION, row.id,
         );
-        assert.deepEqual(derived, wire, row.id);
+        assert.deepEqual(derived, wireHead, row.id);
     }
     // Phase Final Stage B: work_orders table retired.
 });

@@ -717,7 +717,7 @@ every verb on the shared event-append address; the
 clients elimination re-homes client config to the
 identities/:id/registration pair facet, deletes the last
 entity table, and retires rawReadRow; seed absolute at
-EXPECTED_PAIR_COUNT 1494 / bootstrap 12;
+EXPECTED_PAIR_COUNT 1498 / bootstrap 12;
 `simulateLatency` 4.
 
 ### Two claims (never collapse)
