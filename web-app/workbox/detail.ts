@@ -220,7 +220,9 @@ async function recoverFrom412(
     try {
         conflictNotice = INSTANCE_CONFLICT_NOTICE;
         const detail = await loadPresenter(
-            workOrderId, memberId, ctx,
+            workOrderId,
+            Promise.resolve(memberId),
+            ctx,
         );
         renderDetail(
             container, detail, workOrderId, memberId,
@@ -336,18 +338,26 @@ function initBindPicker(
 
 async function loadPresenter(
     workOrderId: string,
-    currentMemberId: string,
+    currentMemberIdPromise: Promise<string>,
     ctx: RequestContext,
 ): Promise<WorkboxDetailPresenter> {
-    const workOrder =
-        await getWorkOrder(ctx, workOrderId);
+    // Wave 1: five independent reads (member id is a
+    // settled or in-flight promise from init).
+    const [
+        workOrder, history, memberMap, recordId,
+        currentMemberId,
+    ] = await Promise.all([
+        getWorkOrder(ctx, workOrderId),
+        getWorkOrderHistory(ctx, workOrderId),
+        getMemberMap(ctx),
+        getRecordForWorkOrder(ctx, workOrderId),
+        currentMemberIdPromise,
+    ]);
     // One per-id history read supplies transitions,
     // historical field values, and the active claim
     // (DESC wire; transitionEventsFromHistory sorts
     // ASC). Live form values come from the instance
     // head when bound.
-    const history =
-        await getWorkOrderHistory(ctx, workOrderId);
     const transitions = transitionEventsFromHistory(
         workOrderId, history,
     );
@@ -355,22 +365,6 @@ async function loadPresenter(
         fieldValuesByEventFromHistory(history);
     const activeClaim = activeClaimFromHistory(
         history, workOrder.flowGraph.lockTimeout,
-    );
-    const [memberMap, recordId] =
-        await Promise.all([
-            getMemberMap(ctx),
-            getRecordForWorkOrder(ctx, workOrderId),
-        ]);
-    const attributes: RecordAttribute[] =
-        recordId === null
-            ? []
-            : await getRecordAttributesByRecord(
-                ctx, recordId,
-            );
-    const attributeMap = new Map(
-        attributes.map(
-            a => [a.id, a] as const,
-        ),
     );
 
     const bound =
@@ -383,37 +377,75 @@ async function loadPresenter(
             }
             : null;
 
-    let instanceValues:
-        ReadonlyMap<string, string> | null = null;
-    let pickerItems: readonly {
-        readonly id: string;
-        readonly fields: readonly {
-            readonly name: string;
-            readonly value: string;
-        }[];
-    }[] = [];
+    // Wave 2: attributes ∥ instance head (or picker list).
+    const attributesPromise: Promise<
+        RecordAttribute[]
+    > = recordId === null
+        ? Promise.resolve([])
+        : getRecordAttributesByRecord(ctx, recordId);
 
-    heldRecordTypeId = recordId;
-    if (bound !== null) {
-        // ONE GET for {values, etag} — the measured cost.
-        // Adapter re-GETs head on submit for If-Match;
-        // page recovery reloads via loadPresenter.
-        const instance = await getRecordInstance(
-            ctx,
-            bound.recordTypeId,
-            bound.instanceId,
-        );
-        instanceValues = instance.values;
-        heldRecordTypeId = bound.recordTypeId;
-    } else if (recordId !== null) {
-        const instances =
-            await getRecordInstances(
-                ctx, recordId,
-            );
-        pickerItems = instanceListItems(
-            instances, attributes,
-        );
-    }
+    type InstanceWave = {
+        instanceValues:
+            ReadonlyMap<string, string> | null;
+        pickerItems: readonly {
+            readonly id: string;
+            readonly fields: readonly {
+                readonly name: string;
+                readonly value: string;
+            }[];
+        }[];
+        heldTypeId: string | null;
+    };
+
+    const instanceWavePromise: Promise<InstanceWave> =
+        (async (): Promise<InstanceWave> => {
+            if (bound !== null) {
+                // ONE GET for {values, etag}.
+                const instance =
+                    await getRecordInstance(
+                        ctx,
+                        bound.recordTypeId,
+                        bound.instanceId,
+                    );
+                return {
+                    instanceValues: instance.values,
+                    pickerItems: [],
+                    heldTypeId: bound.recordTypeId,
+                };
+            }
+            if (recordId !== null) {
+                const attributes =
+                    await attributesPromise;
+                const instances =
+                    await getRecordInstances(
+                        ctx, recordId,
+                    );
+                return {
+                    instanceValues: null,
+                    pickerItems: instanceListItems(
+                        instances, attributes,
+                    ),
+                    heldTypeId: recordId,
+                };
+            }
+            return {
+                instanceValues: null,
+                pickerItems: [],
+                heldTypeId: recordId,
+            };
+        })();
+
+    const [attributes, instanceWave] =
+        await Promise.all([
+            attributesPromise,
+            instanceWavePromise,
+        ]);
+    const attributeMap = new Map(
+        attributes.map(
+            a => [a.id, a] as const,
+        ),
+    );
+    heldRecordTypeId = instanceWave.heldTypeId;
 
     return new WorkboxDetailPresenter(
         workOrder,
@@ -423,9 +455,9 @@ async function loadPresenter(
         memberMap,
         currentMemberId,
         attributeMap,
-        instanceValues,
+        instanceWave.instanceValues,
         bound,
-        pickerItems,
+        instanceWave.pickerItems,
         conflictNotice,
     );
 }
@@ -481,7 +513,9 @@ async function refreshDetail(
     let detail: WorkboxDetailPresenter;
     try {
         detail = await loadPresenter(
-            workOrderId, memberId, ctx,
+            workOrderId,
+            Promise.resolve(memberId),
+            ctx,
         );
     } catch (err) {
         reportFault(
@@ -513,9 +547,11 @@ export async function init(
     if (!container) return;
 
     const ctx = sessionContext();
-    const memberRow =
-        await getCurrentHumanMember(ctx);
-    const memberId = memberRow.id;
+    // Start the member-id read immediately so wave 1
+    // of loadPresenter can join it (no unhandled-
+    // rejection window — consumed synchronously below).
+    const currentMemberIdPromise =
+        getCurrentHumanMember(ctx).then(m => m.id);
     conflictNotice = null;
 
     await loadInto({
@@ -525,7 +561,7 @@ export async function init(
             let presenter =
                 await loadPresenter(
                     id,
-                    memberId,
+                    currentMemberIdPromise,
                     ctx,
                 );
             const claim =
@@ -539,17 +575,20 @@ export async function init(
                     ctx,
                     id,
                 );
+                // Reuse the settled member-id promise.
                 presenter =
                     await loadPresenter(
                         id,
-                        memberId,
+                        currentMemberIdPromise,
                         ctx,
                     );
             }
             return presenter;
         },
         retry: () => init(params),
-        onData: detail => {
+        onData: async detail => {
+            const memberId =
+                await currentMemberIdPromise;
             renderDetail(
                 container, detail, id, memberId,
             );
