@@ -1633,6 +1633,46 @@ export async function workOrderClaimHistoryFor(
     return [...replayed].sort(atIdCompare);
 }
 
+// The CURRENT bind: latest binding op pair wins under
+// (at, id) — the claim derive's mechanism at the
+// /binding sub-address. Entity-scoped indexed reads;
+// in-tx safe (dbOrView).
+export async function workOrderBindingFor(
+    dbOrView: DbAdapter,
+    organization: Id,
+    workOrderId: Id,
+): Promise<
+    { instanceId: Id; recordTypeId: Id } | null
+> {
+    const prefix = canonicalUriPrefix(
+        organization,
+        '/work-orders/' + workOrderId + '/binding/',
+    );
+    const [requests, responses] = await Promise.all([
+        dbOrView.requests.getAllWhere(
+            'uri_prefix', prefix,
+        ),
+        dbOrView.responses.getAllWhere(
+            'uri_prefix', prefix,
+        ),
+    ]);
+    const pairs = operationPairsAt(
+        requests, responses, prefix,
+    );
+    const latest = pairs[pairs.length - 1];
+    if (latest === undefined) {
+        return null;
+    }
+    return {
+        instanceId: pickString(
+            latest.body, 'instance_id',
+        ),
+        recordTypeId: pickString(
+            latest.body, 'record_type_id',
+        ),
+    };
+}
+
 // ---- workOrderDocumentHeadFor — the claim-gate graph head -----
 // ---- (Phase 15 Task 1, Author gate 4) --------------------------
 

@@ -49,6 +49,7 @@ import type {
 } from './types.ts';
 import {
     DEFAULT_ATTRIBUTE_ACL_ROLES,
+    ValidationError,
 } from './types.ts';
 import {
     validateAIMemberCreateBody,
@@ -92,6 +93,7 @@ import {
     validateInstancePatchBody,
     validateRecordDocumentBody,
     validateRecordWriteBody,
+    validateWorkOrderBindingBody,
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
     validateWorkOrderDocumentBody,
@@ -215,6 +217,7 @@ import {
 import {
     deriveFlowRecords,
     deriveFlowRecord,
+    recordTypeIdsForWorkOrder,
 } from './derive-flow-records.ts';
 import { deriveFlowTag } from './derive-flow-tags.ts';
 import {
@@ -247,6 +250,7 @@ import {
 import {
     deriveMemberStates,
     deriveWorkOrderHistories,
+    workOrderBindingFor,
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
     workOrderHistoryFor,
@@ -2358,6 +2362,88 @@ export async function postWorkOrderTransitionOp(
     );
 }
 
+// Bind a work order to one org-owned instance of one
+// record type (spec W1). Member tier rides the
+// /work-orders MEMBER_VERBS segment prefix — no policy
+// edit (the /claim precedent). Claim-AGNOSTIC (A7).
+// Rebind is forbidden in v1: a prior binding pair
+// naming a different (instance, type) → 409 in-tx;
+// a byte-identical resend replays via message_hash.
+// Covenant ladder: fence → body → instance → join →
+// in-tx 409 (NOT claim's body-first order).
+export async function postWorkOrderBindingOp(
+    db: DbAdapter,
+    workOrderId: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    organization: Id,
+    pair?: MessagePair,
+): Promise<void> {
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            const wo = await workOrderDocumentHeadFor(
+                view, organization, workOrderId,
+            );
+            if (wo === null) {
+                throw await missedReadError(
+                    view, workOrderId, organization,
+                    'work_orders',
+                );
+            }
+            const bind =
+                validateWorkOrderBindingBody(body);
+            // Instance miss is EntityNotFoundError (404)
+            // — never missedReadError (would 403 foreign
+            // and create an existence oracle; W1 / W7).
+            const head = await deriveInstanceHead(
+                view, organization,
+                bind.recordTypeId, bind.instanceId,
+            );
+            if (head === undefined) {
+                throw new EntityNotFoundError(
+                    'record_instances',
+                    bind.instanceId,
+                );
+            }
+            const chain =
+                await recordTypeIdsForWorkOrder(
+                    view, organization, workOrderId,
+                );
+            if (
+                chain === null
+                || !chain.recordTypeIds.includes(
+                    bind.recordTypeId,
+                )
+            ) {
+                throw new ValidationError(
+                    'record_type_id is not joined to'
+                    + ' the work order\'s flow',
+                );
+            }
+            const prior = await workOrderBindingFor(
+                view, organization, workOrderId,
+            );
+            if (
+                prior !== null
+                && (prior.instanceId
+                        !== bind.instanceId
+                    || prior.recordTypeId
+                        !== bind.recordTypeId)
+            ) {
+                throw new ApiError(
+                    'work order is already bound to'
+                    + ' a different instance',
+                    HTTP_CONFLICT,
+                );
+            }
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+        },
+    );
+}
+
 // Work-order document write — the fourth family's evidence for
 // the 'stateless' lifecycle class (Decision 7 does NOT apply
 // here): a work order's lifecycle is written ONLY by the
@@ -2885,6 +2971,7 @@ export const WRITE_RESPONSE_SPECS:
     'work-orders/:id/claim': { status: HTTP_NO_CONTENT },
     'work-orders/:id/release': { status: HTTP_NO_CONTENT },
     'work-orders/:id/transition': { status: HTTP_NO_CONTENT },
+    'work-orders/:id/binding': { status: HTTP_NO_CONTENT },
     'flows/:id/work-orders/:woid': {
         status: HTTP_OK,
         successBody: (params, body) => ({
@@ -4687,20 +4774,41 @@ export const routes: Route[] = [
             );
         },
     }),
-    // GET is FLIPPED (Task 7): the list derives from the
-    // message ledger rather than the old work_orders table.
-    // Rides the generic documentCollectionGetHandler —
-    // wire-identical to the hand-written
-    // db.workOrders.getAll() dispatch it replaces
-    // (WORK_ORDERS_WIRING's own entityOf,
-    // workOrderDocumentEntityOf, already carries the bare
-    // entity shape, so the list needs no work-orders-special
-    // reassembly step). POST stays this hand-written create —
-    // unlike ideas/projects, work-orders never folded genesis
-    // into the document PUT (Decision 6), mirroring flows'
-    // own precedent, so a separate create verb remains here.
+    // GET list: generic documentCollectionGetHandler rows
+    // plus a per-row workOrderBindingFor attach (instance_id
+    // + record_type_id when bound; keys ABSENT when unbound
+    // so unbound wire bytes stay unchanged). Browser-tier N
+    // on a read-only route — Task 7 measure is the evidence
+    // gate. POST stays this hand-written create — unlike
+    // ideas/projects, work-orders never folded genesis into
+    // the document PUT (Decision 6), mirroring flows' own
+    // precedent, so a separate create verb remains here.
     route('work-orders', {
-        get: documentCollectionGetHandler(WORK_ORDERS_WIRING),
+        get: async (db, p, actor, organization, roles) => {
+            const org = requireOrganization(organization);
+            const rows = await documentCollectionGetHandler(
+                WORK_ORDERS_WIRING,
+            )(db, p, actor, organization, roles) as {
+                id: string;
+            }[];
+            const out: unknown[] = [];
+            for (const row of rows) {
+                const bind = await workOrderBindingFor(
+                    db, org, row.id,
+                );
+                out.push({
+                    ...row,
+                    ...(bind === null
+                        ? {}
+                        : {
+                            instance_id: bind.instanceId,
+                            record_type_id:
+                                bind.recordTypeId,
+                        }),
+                });
+            }
+            return out;
+        },
         // Member-tier POST — /work-orders carries POST in
         // MEMBER_VERBS (the claim sub-route is also a member
         // POST). Forms the document + join pairs pre-tx
@@ -4774,32 +4882,38 @@ export const routes: Route[] = [
                 db, requireOrganization(organization),
             ),
     }),
-    // work-orders/:id is the fourth family. GET is FLIPPED
-    // (Task 7): absorbed into the generic documentEntityRoute
-    // — the SAME wiring row PUT already rides (Task 3), so
-    // this replaces the hand-written db.workOrders.getById
-    // dispatch with documentGetHandler(WORK_ORDERS_WIRING),
-    // wire-identical to it (workOrderDocumentEntityOf
-    // reproduces the head pair's stamped {id, organization_id,
-    // ...body} shape verbatim, so no work-orders-special
-    // branch lives inside documentGetHandler itself — the
-    // 'stateless' lifecycle also skips the trio walk
-    // derivedDocumentEntity runs for ideas/projects/flows).
-    // After this commit NO hand-written document-family route
-    // object remains for ANY registered family (ideas,
-    // projects, flows, work-orders) — the fourth-family
-    // obligation's discharge, and the LAST: every registered
-    // family now rides the generic documentEntityRoute /
-    // documentCollectionRoute pair. work-orders/:id is
-    // 'simple' concurrency (Decision 7's lifecycle trio does
-    // not apply to a stateless document), so documentPutHandler
-    // dispatches straight through with no concurrency branch,
-    // matching the projects/:id precedent. Verbs stay {get,
-    // put} — work-orders/:id has no DELETE, mirroring
-    // documentEntityRoute's shape (no change from before this
-    // flip). Member-tier PUT — MEMBER_VERBS['/work-orders']
-    // includes 'PUT'.
-    documentEntityRoute(WORK_ORDERS_WIRING),
+    // work-orders/:id is the fourth family. GET exits the
+    // generic documentEntityRoute path deliberately: the
+    // derivedDocumentEntity shape (via documentGetHandler)
+    // plus ONE workOrderBindingFor read that embeds
+    // instance_id + record_type_id when bound (keys ABSENT
+    // when unbound — unbound wire bytes unchanged). PUT
+    // still rides documentPutHandler(WORK_ORDERS_WIRING)
+    // — 'simple' concurrency, member-tier via
+    // MEMBER_VERBS['/work-orders']. Verbs stay {get, put}
+    // — no DELETE.
+    route('work-orders/:id', {
+        get: async (db, p, actor, organization, roles) => {
+            const org = requireOrganization(organization);
+            const id = param(p, 0);
+            const entity = await documentGetHandler(
+                WORK_ORDERS_WIRING,
+            )(db, p, actor, organization, roles);
+            const bind = await workOrderBindingFor(
+                db, org, id,
+            );
+            return {
+                ...(entity as object),
+                ...(bind === null
+                    ? {}
+                    : {
+                        instance_id: bind.instanceId,
+                        record_type_id: bind.recordTypeId,
+                    }),
+            };
+        },
+        put: documentPutHandler(WORK_ORDERS_WIRING),
+    }),
     // See postWorkOrderClaimOp for the transaction shape.
     route('work-orders/:id/claim', {
         post: (db, p, body, actor, pair, organization) =>
@@ -4827,6 +4941,16 @@ export const routes: Route[] = [
         post: (db, p, body, actor, pair) =>
             postWorkOrderTransitionOp(
                 db, param(p, 0), body, actor, pair,
+            ),
+    }),
+    // Member-tier POST — /work-orders carries POST in
+    // MEMBER_VERBS (claim/transition precedent). See
+    // postWorkOrderBindingOp for the transaction shape.
+    route('work-orders/:id/binding', {
+        post: (db, p, body, actor, pair, organization) =>
+            postWorkOrderBindingOp(
+                db, param(p, 0), body, actor,
+                requireOrganization(organization), pair,
             ),
     }),
     // GET work-orders/:id/history (states-URI elimination A1):

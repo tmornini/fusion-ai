@@ -4180,6 +4180,44 @@ export function validateWorkOrderReleaseBody(
     return { releaseEventId, releaseAt };
 }
 
+const WORK_ORDER_BINDING_KEYS: readonly string[] = [
+    'instance_id', 'record_type_id',
+];
+
+export interface WorkOrderBindingBody {
+    readonly instanceId: string;
+    readonly recordTypeId: string;
+}
+
+// Gate for POST /work-orders/:id/binding. Two opaque ids only —
+// no timestamps, no event ids. The CURRENT bind derives from
+// the op-pair prefix (workOrderBindingFor); rebind is 409.
+export function validateWorkOrderBindingBody(
+    body: Record<string, unknown>,
+): WorkOrderBindingBody {
+    assertOnlyKeys(
+        body, WORK_ORDER_BINDING_KEYS,
+        'WorkOrderBindingBody',
+    );
+    const instanceId = pickString(body, 'instance_id');
+    if (instanceId === '') {
+        throw new ValidationError(
+            'WorkOrderBindingBody.instance_id'
+            + ' must be non-empty',
+        );
+    }
+    const recordTypeId = pickString(
+        body, 'record_type_id',
+    );
+    if (recordTypeId === '') {
+        throw new ValidationError(
+            'WorkOrderBindingBody.record_type_id'
+            + ' must be non-empty',
+        );
+    }
+    return { instanceId, recordTypeId };
+}
+
 export interface AIMemberEditBody {
     readonly detail: Record<string, unknown>;
     readonly state: MemberState;

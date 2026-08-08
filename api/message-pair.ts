@@ -658,6 +658,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'work-orders/:id/claim',
     'work-orders/:id/transition',
     'work-orders/:id/release',
+    'work-orders/:id/binding',
     'flows/:id/work-orders/:woid',
     // Flat records + record-attributes retired (Task 23).
     'flows/:id/records/:frid',
