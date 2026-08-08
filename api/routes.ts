@@ -40,6 +40,7 @@ import type {
     MembershipEntity,
     IdentityProviderEntity,
     WorkOrderEntity,
+    WorkOrderFlowGraph,
     MemberEntity,
     MemberKind,
     MemberState,
@@ -193,6 +194,7 @@ import {
     deriveInstanceCollection,
     deriveInstanceRevisions,
     mergeInstanceValues,
+    type InstanceValue,
 } from './derive-record-instances.ts';
 import {
     assertWritableAttributeIds,
@@ -2335,6 +2337,128 @@ export async function postWorkOrderReleaseOp(
     );
 }
 
+// Current node id from lifecycle ASC + frozen graph.
+// Latest non-claim event's state; none → isCreate node;
+// undefined when neither exists (empty graph residual).
+function currentNodeIdFor(
+    lifecycle: readonly StateEntity[],
+    graph: WorkOrderFlowGraph,
+): string | undefined {
+    for (let i = lifecycle.length - 1; i >= 0; i--) {
+        const event = lifecycle[i]!;
+        if (!isClaimState(event.state)) {
+            return event.state;
+        }
+    }
+    const create = graph.nodes.find(
+        (node) => node.isCreate,
+    );
+    return create?.id;
+}
+
+// W10 required-at-exit: every gate-tier leave of a node
+// with isRequired refs validates MERGED state (head +
+// this delta). Unbound → 400 naming the bind (A3).
+// Preloaded head/bind/schema reuse the value-bearing
+// path's already-read rows (ONE head read).
+async function assertRequiredAttributesAtExit(
+    db: DbAdapter,
+    organization: Id,
+    workOrderId: Id,
+    flowGraph: Record<string, unknown>,
+    delta: {
+        readonly set: readonly {
+            readonly attribute_id: string;
+            readonly value: string;
+        }[];
+        readonly clear: readonly string[];
+    },
+    preloaded?: {
+        bind: { instanceId: Id; recordTypeId: Id };
+        headValues: readonly InstanceValue[];
+        attributesById: ReadonlyMap<
+            string, AttributeSchemaRow
+        >;
+    },
+): Promise<void> {
+    const graph = asWorkOrderFlowGraph(
+        flowGraph, 'work_orders.flow_graph',
+    );
+    const lifecycle = await workOrderLifecycleStatesFor(
+        db, organization, workOrderId,
+    );
+    const nodeId = currentNodeIdFor(lifecycle, graph);
+    if (nodeId === undefined) {
+        return;
+    }
+    const node = graph.nodes.find(
+        (candidate) => candidate.id === nodeId,
+    );
+    if (node === undefined) {
+        return;
+    }
+    const required = node.attributes.filter(
+        (ref) => ref.isRequired,
+    );
+    if (required.length === 0) {
+        return;
+    }
+    const bind = preloaded !== undefined
+        ? preloaded.bind
+        : await workOrderBindingFor(
+            db, organization, workOrderId,
+        );
+    if (bind === null) {
+        throw new ValidationError(
+            'work order has no instance binding',
+        );
+    }
+    let headValues = preloaded?.headValues;
+    let attributesById = preloaded?.attributesById;
+    if (headValues === undefined) {
+        const head = await deriveInstanceHead(
+            db, organization,
+            bind.recordTypeId, bind.instanceId,
+        );
+        headValues = head?.values ?? [];
+    }
+    if (attributesById === undefined) {
+        attributesById = await loadAttributeSchemaById(
+            db, organization, bind.recordTypeId,
+        );
+    }
+    const merged = mergeInstanceValues(
+        headValues, {
+            set: delta.set,
+            clear: delta.clear,
+        },
+    );
+    const present = new Map<string, string>();
+    for (const entry of merged) {
+        present.set(entry.attribute_id, entry.value);
+    }
+    const missing: string[] = [];
+    for (const ref of required) {
+        const value = present.get(ref.attributeId);
+        if (value === undefined || value === '') {
+            const row = attributesById.get(
+                ref.attributeId,
+            );
+            missing.push(
+                row !== undefined
+                    ? row.name
+                    : ref.attributeId,
+            );
+        }
+    }
+    if (missing.length > 0) {
+        throw new ValidationError(
+            'required attribute(s) missing at exit: '
+            + missing.join(', '),
+        );
+    }
+}
+
 // Transition a work order along an edge. Dual-tolerant
 // below the facade (seed tier + stored-data fidelity):
 // legacy pure-append OR instance set/clear against the
@@ -2343,8 +2467,9 @@ export async function postWorkOrderReleaseOp(
 // live gate rejects the legacy key in the dispatch arrow
 // (Task 8 CUT). Gate tier fences the WO (404/403); value-
 // bearing instance shape adds bind assert + If-Match
-// ladder + one tx of op + revision. Authorship is stamped
-// from the verified caller (actor). `pair` is optional.
+// ladder + ACL/constraints + W10 required-at-exit + one
+// tx of op + revision. Authorship is stamped from the
+// verified caller (actor). `pair` is optional.
 export async function postWorkOrderTransitionOp(
     db: DbAdapter,
     workOrderId: Id,
@@ -2359,6 +2484,7 @@ export async function postWorkOrderTransitionOp(
     if (organization === undefined) {
         // Below-facade tier (seed): no gate, no fence —
         // validate + append, the WO-create precedent.
+        // Historical seed moves are not re-gated (W10).
         return db.transaction(
             ['requests', 'responses'],
             async (view) => {
@@ -2374,32 +2500,36 @@ export async function postWorkOrderTransitionOp(
             + validated.clear.length > 0);
     if (!valueBearing) {
         // Pure move: legacy kind OR instance-kind empty
-        // delta. One tx — WO fence, then one-dialect
-        // If-Match reject for instance-kind, then append.
+        // delta. Pre-tx fence + W10 required-at-exit;
+        // one-dialect If-Match reject; then append.
+        const wo = await workOrderDocumentHeadFor(
+            db, organization, workOrderId,
+        );
+        if (wo === null) {
+            throw await missedReadError(
+                db, workOrderId, organization,
+                'work_orders',
+            );
+        }
+        if (
+            validated.kind === 'instance'
+            && pair !== undefined
+            && rawIfMatchFromPair(pair)
+                !== undefined
+        ) {
+            throw new ValidationError(
+                'If-Match is forbidden on a'
+                + ' pure-move transition',
+            );
+        }
+        await assertRequiredAttributesAtExit(
+            db, organization, workOrderId,
+            wo.flow_graph,
+            { set: [], clear: [] },
+        );
         return db.transaction(
             ['requests', 'responses'],
             async (view) => {
-                const wo =
-                    await workOrderDocumentHeadFor(
-                        view, organization, workOrderId,
-                    );
-                if (wo === null) {
-                    throw await missedReadError(
-                        view, workOrderId, organization,
-                        'work_orders',
-                    );
-                }
-                if (
-                    validated.kind === 'instance'
-                    && pair !== undefined
-                    && rawIfMatchFromPair(pair)
-                        !== undefined
-                ) {
-                    throw new ValidationError(
-                        'If-Match is forbidden on a'
-                        + ' pure-move transition',
-                    );
-                }
                 if (pair !== undefined) {
                     await appendMessagePair(view, pair);
                 }
@@ -2500,6 +2630,21 @@ export async function postWorkOrderTransitionOp(
     );
     validateInstanceValues(
         validated.set, attributesById,
+    );
+    // W10 required-at-exit AFTER ACL 403 + constraints
+    // 400 (ladder pin 7). Reuse head — ONE read.
+    await assertRequiredAttributesAtExit(
+        db, organization, workOrderId,
+        wo.flow_graph,
+        {
+            set: validated.set,
+            clear: validated.clear,
+        },
+        {
+            bind,
+            headValues: head.values,
+            attributesById,
+        },
     );
     const mergedValues = mergeInstanceValues(
         head.values, {
@@ -3744,29 +3889,11 @@ async function inFlightPlacementBlockersFor(
             await workOrderLifecycleStatesFor(
                 view, organization, woId,
             );
-        // ASC (at, id): walk reverse for latest
-        // non-claim event — its state is the node id.
-        let nodeId: string | undefined;
-        for (
-            let i = lifecycle.length - 1;
-            i >= 0;
-            i--
-        ) {
-            const event = lifecycle[i]!;
-            if (!isClaimState(event.state)) {
-                nodeId = event.state;
-                break;
-            }
-        }
+        const nodeId = currentNodeIdFor(
+            lifecycle, graph,
+        );
         if (nodeId === undefined) {
-            // No transition yet → isCreate node.
-            const create = graph.nodes.find(
-                (node) => node.isCreate,
-            );
-            if (create === undefined) {
-                continue;
-            }
-            nodeId = create.id;
+            continue;
         }
         const inFlight = graph.edges.some(
             (edge) => edge.fromNodeId === nodeId,
