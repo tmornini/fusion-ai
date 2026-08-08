@@ -39,12 +39,18 @@ import {
     nextPosition,
 } from '../drag-reorder-positions.ts';
 import {
-    validateRecordTransition,
+    recordTransitionViolationsFrom,
     RecordTransitionViolations,
 } from './record-transitions.ts';
 import {
     getRecordInstance,
 } from './record-instances.ts';
+import {
+    getRecordAttributesByRecord,
+} from './record-attributes.ts';
+import {
+    getRecordForWorkOrder,
+} from './flow-records.ts';
 
 const workOrderChanges =
     createSubscriptionChannel();
@@ -237,9 +243,17 @@ export async function postWorkOrderTransition(
     input: WorkOrderTransitionInput,
 ): Promise<void> {
     const { workOrderId, edgeId, values } = input;
-    const wo = await ctx.GET<WorkOrderEntity>(
-        `work-orders/${workOrderId}`,
-    );
+    // Wave 1: wo + history + record binding (all keyed
+    // by workOrderId). Pass history down so claim-release
+    // never re-fetches.
+    const [wo, history, recordId] =
+        await Promise.all([
+            ctx.GET<WorkOrderEntity>(
+                `work-orders/${workOrderId}`,
+            ),
+            getWorkOrderHistory(ctx, workOrderId),
+            getRecordForWorkOrder(ctx, workOrderId),
+        ]);
     const fg = validateWorkOrderFlowGraph(
         wo.flow_graph,
     );
@@ -257,31 +271,44 @@ export async function postWorkOrderTransition(
     // Unbound → null storedValues (A3 gate mirror).
     const boundInstanceId = wo.instance_id;
     const boundRecordTypeId = wo.record_type_id;
-    let storedValues:
-        ReadonlyMap<string, string> | null = null;
-    let etag: string | undefined;
-    if (
+    const needsInstance =
         boundInstanceId !== undefined
-        && boundRecordTypeId !== undefined
-    ) {
-        const instance = await getRecordInstance(
-            ctx,
-            boundRecordTypeId,
-            boundInstanceId,
-        );
-        storedValues = instance.values;
-        etag = instance.etag;
-    }
+        && boundRecordTypeId !== undefined;
+    // Wave 2: instance head (if bound) ∥ attributes
+    // (if a record is bound to the flow).
+    const [instance, attributes] =
+        await Promise.all([
+            needsInstance
+                ? getRecordInstance(
+                    ctx,
+                    boundRecordTypeId!,
+                    boundInstanceId!,
+                )
+                : Promise.resolve(null),
+            recordId === null
+                ? Promise.resolve([])
+                : getRecordAttributesByRecord(
+                    ctx, recordId,
+                ),
+        ]);
+    const storedValues = instance === null
+        ? null
+        : instance.values;
+    const etag = instance === null
+        ? undefined
+        : instance.etag;
 
     const pendingValues = new Map(
         Object.entries(values),
     );
     // Current-node gate: form fields + requiredness
     // match the node the operator is leaving.
-    const violations = await
-        validateRecordTransition(
-            ctx,
+    const violations =
+        recordTransitionViolationsFrom(
             workOrderId,
+            fg,
+            history,
+            attributes,
             pendingValues,
             storedValues,
         );
@@ -307,11 +334,7 @@ export async function postWorkOrderTransition(
     // 'claim_released' event the named POST writes
     // atomically alongside the transition. The release
     // event is authored server-side by the verified
-    // caller (actor). One per-id history read supplies
-    // the claim ledger.
-    const history = await getWorkOrderHistory(
-        ctx, workOrderId,
-    );
+    // caller (actor). History was fetched in wave 1.
     const latestClaim = latestClaimEvent(
         history, workOrderId,
     );
@@ -324,6 +347,7 @@ export async function postWorkOrderTransition(
     // transition event before the release event, so
     // transitionAt < release.at must hold in the
     // at-ordered ledger (latest at = current state).
+    // Both mints stay await-free before POST.
     const transitionAt = nowUtc();
     const release = hasLiveClaim
         ? {
