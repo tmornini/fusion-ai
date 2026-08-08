@@ -4,7 +4,8 @@ import {
 } from '../api/derive-states.ts';
 import assert from 'node:assert/strict';
 import { memoryDbAdapter } from '../api/db-memory.ts';
-import { postMockDataLoad, postBootstrap } from '../api/mock-data.ts';
+import { postBootstrap } from '../api/mock-data.ts';
+import { sharedMockDb } from './mock-seed.ts';
 import { sha256Hex } from '../shared/digest.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { buildAiMembers } from '../api/mock-data/ai-members.ts';
@@ -133,8 +134,7 @@ const EXPECTED_PAIR_COUNT = 1494;
 
 test('a mock-data seed populates balanced pairs',
 async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
@@ -143,8 +143,7 @@ async () => {
 
 test('the mock-data seed forms exactly the traced'
 + ' op-invocation count', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     assert.equal(requests.length, EXPECTED_PAIR_COUNT);
     assert.equal(
@@ -155,8 +154,7 @@ test('the mock-data seed forms exactly the traced'
 
 test('every seed op body carries a unique entity id, so no'
 + ' two request hashes collide', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const distinctHashes = new Set(
         requests.map(r => r.message_hash),
@@ -168,8 +166,7 @@ test('every seed op body carries a unique entity id, so no'
 
 test('a seeded idea create pair sits at its entity address',
 async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstIdea = buildIdeas()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
@@ -185,8 +182,7 @@ test('a seeded organizations pair sits at the global'
 + ' organization exactly (Phase Final Task 2: organizations'
 + ' ROW half stripped — pair-plane truth)',
 async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const row = requests.find(
         r => r.uri_prefix === '/organizations/'
@@ -213,8 +209,7 @@ async () => {
 
 test('a seeded human-member create pair sits at the global'
 + ' (non-org-nested) address', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const row = requests.find(r => r.uri_id === 'current');
     assert.ok(row, 'no request row for the current member');
@@ -224,8 +219,7 @@ test('a seeded human-member create pair sits at the global'
 test('a seeded human member\'s PII intake pair sits at its own'
 + ' identities/:id/pii address, its body carrying the four PII'
 + ' keys (Phase 10 Task 2\'s intake decomposition)', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
@@ -246,8 +240,7 @@ test('a seeded human member\'s PII intake pair sits at its own'
 test('a seeded human member\'s identities-document pair sits at'
 + ' the shared identities/:id address, its body carrying `kind`'
 + ' alone (Phase 10 Task 5)', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
@@ -265,8 +258,7 @@ test('a seeded human member\'s identities-document pair sits at'
 
 test('a seeded flow create pair sits at its org-nested'
 + ' entity address', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const row = requests.find(
         r => r.uri_id === 'h5mErVBQhwdMKwi1co30jB',
@@ -277,8 +269,7 @@ test('a seeded flow create pair sits at its org-nested'
 
 test('a seeded ai-member create pair sits at the global'
 + ' (non-org-nested) address', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstAiMember = buildAiMembers()[0]!;
     const requests = await db.requests.getAll();
     const responseById = new Map(
@@ -301,8 +292,7 @@ test('a seeded ai-member create pair sits at the global'
 test('a seeded ai-member\'s member-document pair sits at the'
 + ' shared members/:id address, its body carrying type plus'
 + ' the lifecycle trio', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstAiMember = buildAiMembers()[0]!;
     const requests = await db.requests.getAll();
     const memberRow = requests.find(
@@ -328,8 +318,7 @@ test('a seeded ai-member\'s member-document pair sits at the'
 test('a seeded ai-member\'s detail-document pair sits at its'
 + ' entity address, its body carrying the four AI detail'
 + ' keys', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstAiMember = buildAiMembers()[0]!;
     const requests = await db.requests.getAll();
     const responseById = new Map(
@@ -360,8 +349,7 @@ test('a seeded ai-member\'s detail-document pair sits at its'
 test('a seeded system member\'s member-document pair sits at'
 + ' the shared members/:id address, its body carrying type'
 + ' plus the lifecycle trio (genesis folded in)', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const memberRow = requests.find(
         r => r.uri_id === SYSTEM_MEMBER_ID
@@ -386,8 +374,7 @@ test('a seeded system member\'s member-document pair sits at'
 test('a seeded membership document pair sits at its org-nested'
 + ' entity address, its body carrying the four membership'
 + ' keys', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstAiMember = buildAiMembers()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
@@ -410,8 +397,7 @@ test('a seeded membership document pair sits at its org-nested'
 test('a seeded default-org pair sits at its identity-keyed'
 + ' address, its body carrying the three default-org keys',
 async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
@@ -431,8 +417,7 @@ async () => {
 
 test('a seeded record create pair sits at its org-nested'
 + ' entity address', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const row = requests.find(
         r => r.uri_id === customerProfileRecordId,
@@ -448,8 +433,7 @@ test('a seeded record create pair sits at its org-nested'
 test('a seeded record\'s document pair sits at its'
 + ' entity address, its body carrying the entity plus the'
 + ' state trio (no id or organization_id key)', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const responseById = new Map(
         (await db.responses.getAll()).map(r => [r.id, r]),
@@ -487,8 +471,7 @@ test('a seeded record attribute\'s document pair sits at'
 + ' its nested type-attributes address, its body carrying'
 + ' no id, organization_id, or record_id key and both ACL'
 + ' arrays', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstAttribute = buildRecordAttributes()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
@@ -517,8 +500,7 @@ test('a seeded record attribute\'s document pair sits at'
 
 test('a seeded objective create pair sits at its org-nested'
 + ' entity address, per org', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
     // The document pair now shares this address with the
@@ -550,8 +532,7 @@ test('a seeded objective create pair sits at its org-nested'
 test('a seeded objective\'s document pair sits at its'
 + ' entity address, body carrying position plus the'
 + ' lifecycle trio and no organization_id key', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
     const requests = await db.requests.getAll();
     const responseById = new Map(
@@ -588,8 +569,7 @@ test('a seeded objective\'s document pair sits at its'
 test('a seeded objective\'s revision pair sits at its own'
 + ' entity address, its body carrying the five revision'
 + ' keys', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
     const revisionId = `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`;
     const requests = await db.requests.getAll();
@@ -613,8 +593,7 @@ test('a seeded objective\'s revision pair sits at its own'
 
 test('a seeded work-order document pair sits at its org-nested'
 + ' entity address, its body carrying no id key', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstWorkOrder = buildWorkOrders()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
@@ -638,8 +617,7 @@ test('a seeded work-order document pair sits at its org-nested'
 test('a seeded flow-work-order join pair sits at its'
 + ' org-nested join address, its body carrying no id key',
 async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstJoin = buildFlowWorkOrderJoins()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(r => r.uri_id === firstJoin.id);
@@ -660,8 +638,7 @@ async () => {
 
 test('a seeded flow-record join pair sits at its org-nested'
 + ' join address, its body carrying no id key', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstJoin = mockFlowRecords[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(r => r.uri_id === firstJoin.id);
@@ -708,8 +685,7 @@ function transitionRequestForEvent(
 test('a seeded work-order trace event\'s pair sits at its'
 + ' org-nested transition address, its body carrying the'
 + ' transition keys (states/:id retired)', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstTrace = buildWorkOrderStateEvents()[0]!;
     const requests = await db.requests.getAll();
     const row = transitionRequestForEvent(
@@ -744,8 +720,7 @@ test('a seeded transition pair\'s stored request'
 + ' member_id (the role-grant precedent: fingerprints hash'
 + ' ids only, so a wrong-but-real member_id is otherwise'
 + ' fingerprint-invisible)', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstTrace = buildWorkOrderStateEvents()[0]!;
     const requests = await db.requests.getAll();
     const row = transitionRequestForEvent(
@@ -788,8 +763,7 @@ test('a seeded transition pair\'s stored request'
 
 test('a seeded state_field_value folds into its parent'
 + ' transition body (no bare leaf pair)', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstFieldValue = mockStateFieldValues[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find((r) => {
@@ -837,8 +811,7 @@ test('a seeded state_field_value folds into its parent'
 test('the mock-data seed\'s system-member genesis rides the'
 + ' members/:id document trio',
 async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const eventId =
         `seed-member-${SYSTEM_MEMBER_ID}-active`;
     const requests = await db.requests.getAll();
@@ -869,8 +842,7 @@ const scoreRows = buildSeedScoreRows(
 
 test('a seeded baseline-score pair sits at its org-nested'
 + ' entity address, its body carrying no id key', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstBaseline = scoreRows.baselines[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(r => r.uri_id === firstBaseline.id);
@@ -892,8 +864,7 @@ test('a seeded baseline-score pair sits at its org-nested'
 
 test('a seeded actual-score pair sits at its org-nested'
 + ' entity address, its body carrying no id key', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const firstActual = scoreRows.actuals[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(r => r.uri_id === firstActual.id);
@@ -924,8 +895,7 @@ async () => {
     // human occupies. Phase Final Task 2: objective_revisions
     // ROW half stripped — compare create-op embedded revision
     // author against the revision document pair body.
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const responseById = new Map(
         (await db.responses.getAll()).map(r => [r.id, r]),
@@ -969,8 +939,7 @@ test('a seeded credential\'s response body carries the full'
 + ' credential key set (Phase 10 Task 6 — content is'
 + ' nondeterministic per reseed, finding 13, so only the'
 + ' key set is falsifiable here)', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const id = 'seed-cred-system-client-secret';
     const requests = await db.requests.getAll();
     const requestRow = requests.find(r => r.uri_id === id);
@@ -991,8 +960,7 @@ test('a seeded credential\'s response body carries the full'
 
 test('seeded memberships carry type and no role-grant'
 + ' pairs remain', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     assert.equal(
         requests.filter(r =>
@@ -1015,8 +983,7 @@ test('seeded memberships carry type and no role-grant'
 });
 
 test('seed pairs verify against their hashes', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await sharedMockDb();
     for (const row of await db.requests.getAll()) {
         assert.equal(
             await sha256Hex(row.message), row.message_hash,
