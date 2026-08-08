@@ -3,10 +3,8 @@ import { deriveIdeaStateHistory } from
     '../api/derive-ideas.ts';
 import assert from 'node:assert/strict';
 import {
-    memoryDbAdapter,
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
-import { postMockDataLoad } from '../api/mock-data.ts';
 import { handleRequest } from '../api/api.ts';
 import { sha256Hex } from '../shared/digest.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
@@ -19,6 +17,7 @@ import {
     storedWorkOrderFlowGraph,
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
+import { seededMockDb } from './mock-seed.ts';
 
 // Standing shadow-ledger invariants (Task 5): properties every
 // requests/responses pair must hold REGARDLESS of which family
@@ -211,8 +210,7 @@ function createRecordBody(
 // additive) — five families beyond the seed's own, spanning
 // both seeded orgs.
 async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await seededMockDb();
     const org1Token = await organizationToken(
         'current', STARK_ORGANIZATION);
     const org2Token = await organizationToken(
@@ -456,8 +454,7 @@ test('every pair\'s envelope timestamps are RFC-3339 zulu'
 // present but semantically faithful to what was really written.
 test('a seeded idea\'s create-pair request reproduces its'
 + ' actual genesis row in states', async () => {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
+    const db = await seededMockDb();
     const idea = buildIdeas()[0]!;
     const requests = await db.requests.getAll();
     const createRow = requests.find(
