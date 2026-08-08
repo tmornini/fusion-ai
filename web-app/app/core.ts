@@ -158,13 +158,22 @@ function redirectIfMissingTable(
 // anonymous when the page is auth-exempt).
 async function scopeBootToActiveOrganization(): Promise<boolean> {
     const ctx = sessionContext();
-    const reachable =
-        (await getOrganizations(ctx)).map(o => o.id);
+    // getIdentityDefaultOrganization returns null when no
+    // default is set (never throws on absence) — both reads
+    // are independent and join before the empty-reachable
+    // guard and the exchange.
+    const [
+        organizations, defaultOrganization,
+    ] = await Promise.all([
+        getOrganizations(ctx),
+        getIdentityDefaultOrganization(ctx),
+    ]);
+    const reachable = organizations.map(o => o.id);
     if (reachable.length === 0) return false;
     const active = resolveActiveOrganization(
         reachable,
         getPreference(ACTIVE_ORGANIZATION_ID),
-        await getIdentityDefaultOrganization(ctx),
+        defaultOrganization,
     );
     putSessionToken(
         await postOrganizationSessionExchange(
