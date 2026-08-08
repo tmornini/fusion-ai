@@ -46,13 +46,17 @@ export class RecordTransitionViolations
 // the workbox action screen paints. Required attrs and
 // constraint checks run against that node's refs only;
 // the target node's fields are collected after arrival.
-// One GET work-orders/:id/history supplies current node
-// and every prior field value (folded on each row).
+// storedValues is the bound instance head (null when
+// unbound — A3 mirror: every required ref reports).
+// Constraints run on pending values only; requiredness
+// overlays pending on stored (or reports when unbound).
 export async function validateRecordTransition(
     ctx: RequestContext,
     workOrderId: Id,
     pendingValues:
         ReadonlyMap<RecordAttributeId, string>,
+    storedValues:
+        ReadonlyMap<RecordAttributeId, string> | null,
 ): Promise<ConstraintViolation[]> {
     const wo = await ctx.GET<WorkOrderEntity>(
         `work-orders/${workOrderId}`,
@@ -84,32 +88,14 @@ export async function validateRecordTransition(
     const recordId = await getRecordForWorkOrder(
         ctx, workOrderId,
     );
-    if (recordId === null) {
-        return [];
-    }
-    const attributes =
-        await getRecordAttributesByRecord(
+    const attributes = recordId === null
+        ? []
+        : await getRecordAttributesByRecord(
             ctx, recordId,
         );
     const attributeById = new Map(
         attributes.map(a => [a.id, a]),
     );
-
-    // History is DESC: first-wins per attribute is the
-    // latest written value (same as ASC overwrite).
-    const storedValueByAttr = new Map<
-        RecordAttributeId, string
-    >();
-    for (const row of history) {
-        for (const fv of row.field_values) {
-            if (storedValueByAttr.has(fv.attribute_id)) {
-                continue;
-            }
-            storedValueByAttr.set(
-                fv.attribute_id, fv.value,
-            );
-        }
-    }
 
     const out: ConstraintViolation[] = [];
     for (const ref of currentNode.attributes) {
@@ -127,9 +113,9 @@ export async function validateRecordTransition(
         const pending = pendingValues.get(
             attribute.id,
         );
-        const stored = storedValueByAttr.get(
-            attribute.id,
-        );
+        const stored = storedValues === null
+            ? undefined
+            : storedValues.get(attribute.id);
         const value = pending
             ?? stored ?? null;
         const isEmpty = value === null
@@ -142,9 +128,14 @@ export async function validateRecordTransition(
             });
             continue;
         }
-        if (!isEmpty) {
+        // Constraints on pending only — stored head
+        // is already validated at the instance write.
+        if (
+            pending !== undefined
+            && pending !== ''
+        ) {
             for (const v of validateAttributeValue(
-                attribute, value,
+                attribute, pending,
             )) {
                 out.push(v);
             }

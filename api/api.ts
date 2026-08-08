@@ -1712,8 +1712,15 @@ export async function POST<T>(
     payload: Record<string, unknown>,
     token: string,
     requestId?: string,
+    headerFields?: readonly (readonly [string, string])[],
 ): Promise<T> {
     await adapter.simulateLatency();
+    const headers = facadeHeaders(
+        token, requestId, true,
+    );
+    for (const [name, value] of headerFields ?? []) {
+        headers[name] = value;
+    }
     return unwrapResponse<T>(
         await handleRequest(
             adapter,
@@ -1721,9 +1728,7 @@ export async function POST<T>(
                 `${BASE_URL}/${resource}`,
                 {
                     method: 'POST',
-                    headers: facadeHeaders(
-                        token, requestId, true,
-                    ),
+                    headers,
                     body: JSON.stringify(payload),
                 },
             ),

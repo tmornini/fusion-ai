@@ -102,6 +102,15 @@ export interface RequestContext {
         resource: string,
         body: Record<string, unknown>,
     ): Promise<T>;
+    // Sibling of POST that carries extra headers
+    // (If-Match on value-bearing transitions). Existing
+    // POST callers stay header-free.
+    POSTWithHeaders<T>(
+        resource: string,
+        body: Record<string, unknown>,
+        headerFields:
+            readonly (readonly [string, string])[],
+    ): Promise<T>;
 }
 
 // The recovery-free context: each verb runs directly on its
@@ -252,6 +261,19 @@ function makeRequestContext(
                 tok => httpPost<T>(
                     adapter, resource, body, tok,
                     requestId,
+                ));
+        },
+        POSTWithHeaders: <T>(
+            resource: string,
+            body: Record<string, unknown>,
+            headerFields:
+                readonly (readonly [string, string])[],
+        ) => {
+            recordApiRequest('POST', resource);
+            return run<T>(
+                tok => httpPost<T>(
+                    adapter, resource, body, tok,
+                    requestId, headerFields,
                 ));
         },
     };

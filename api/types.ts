@@ -1288,6 +1288,9 @@ export interface WorkOrderEntity {
     display_id: string;
     flow_graph: Record<string, unknown>;
     position: number;
+    // GET embed when bound (absent when unbound).
+    instance_id?: Id;
+    record_type_id?: Id;
 }
 
 export interface FlowWorkOrderEntity {
