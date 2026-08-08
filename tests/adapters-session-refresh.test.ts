@@ -16,7 +16,7 @@ import {
 import { seedAdminSchema } from './test-fixtures.ts';
 import { devToken } from './token-fixtures.ts';
 import {
-    appendMessagePair, formAuthPair,
+    putMessagePair, formAuthPair,
 } from '../api/message-pair.ts';
 import type { AuthPairSeed } from '../api/message-pair.ts';
 import { nowUtc } from '../api/types.ts';
@@ -56,7 +56,7 @@ async function seedAuthorizationCodePair(
     const pair = await formAuthPair(
         seed, requestBody, 'current', 200, { code },
     );
-    await appendMessagePair(db, pair);
+    await putMessagePair(db, pair);
 }
 
 // Drive the real authorization_code grant to mint a genuine

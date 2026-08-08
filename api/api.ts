@@ -1261,22 +1261,17 @@ export async function handleRequest(
                     // postAuthorize (exchangeBearerForOrganization,
                     // the other grantTokenExchange caller, never
                     // reaches here — it is an internal facade
-                    // hop, not a route dispatch).
-                    if (dispatched.requestHash === undefined) {
+                    // hop, not a route dispatch). Auth pairs are
+                    // keyed by id (putMessagePair), not hash —
+                    // two identical logins each land a row.
+                    if (dispatched.pairId === undefined) {
                         throw new Error(
                             'authentication grant stored no'
                             + ' pair: ' + routePattern,
                         );
                     }
-                    const stored = await storedResponseFor(
-                        effective, dispatched.requestHash,
-                    );
-                    if (stored === undefined) {
-                        throw new Error(
-                            'wired write stored no pair: '
-                            + routePattern,
-                        );
-                    }
+                    const stored = await effective.responses
+                        .getById(dispatched.pairId);
                     // The ONE named exception where the wire
                     // body (live tokens) differs from the stored
                     // (redacted) body — the headers still derive

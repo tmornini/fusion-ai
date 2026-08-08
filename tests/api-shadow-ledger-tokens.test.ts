@@ -11,7 +11,7 @@ import { seedAdminSchema } from './test-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import { latestActionForJti } from '../api/identity-tokens.ts';
 import {
-    appendMessagePair, formAuthPair, responseFromStored,
+    putMessagePair, formAuthPair, responseFromStored,
 } from '../api/message-pair.ts';
 import type { AuthPairSeed } from '../api/message-pair.ts';
 import {
@@ -464,7 +464,7 @@ async function seedAuthorizationCodePair(
     const pair = await formAuthPair(
         seed, requestBody, identityId, 200, { code },
     );
-    await appendMessagePair(db, pair);
+    await putMessagePair(db, pair);
 }
 
 test('an authorization_code grant appends its root\'s own'

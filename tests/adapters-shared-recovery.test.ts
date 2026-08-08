@@ -70,7 +70,7 @@ import {
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import {
-    appendMessagePair, formAuthPair, formWritePair,
+    putMessagePair, formAuthPair, formWritePair,
 } from '../api/message-pair.ts';
 import type { AuthPairSeed } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
@@ -113,7 +113,7 @@ async function seedAuthorizationCodePair(
     const pair = await formAuthPair(
         seed, requestBody, 'current', 200, { code },
     );
-    await appendMessagePair(db, pair);
+    await putMessagePair(db, pair);
 }
 
 async function issuePair(db: MemoryDbAdapter): Promise<{

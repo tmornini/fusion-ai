@@ -536,23 +536,22 @@ export async function storedPairResponse(
     return responseFromStored(stored);
 }
 
-// In-tx append (row ops only, no crypto): skips silently if a
-// request with the same hash is already stored (the concurrent
-// -retry guard); otherwise puts both rows. The view parameter
-// is DbAdapter, NOT GuardedDbAdapter: route handlers receive
-// DbAdapter and their transaction callbacks are typed
-// (view: DbAdapter) — the fence spends the guard before
-// handlers run. The append needs only EntityStore
-// getAllWhere/put, both on the plain contract; GuardedDbAdapter
-// widens cleanly to DbAdapter, so the invitations/auth call
-// sites (which hold ctx.base) work unchanged.
-export async function appendMessagePair(
+// In-tx put by pair id (row ops only, no crypto): writes both
+// rows keyed by pair.id. Idempotent by id — a second put of the
+// same pair overwrites the same slots. Auth grant pairs use this
+// path so two byte-identical logins each land (their ids differ);
+// hash-keyed appendMessagePair would drop the second.
+// The view parameter is DbAdapter, NOT GuardedDbAdapter: route
+// handlers receive DbAdapter and their transaction callbacks are
+// typed (view: DbAdapter) — the fence spends the guard before
+// handlers run. The put needs only EntityStore put, on the plain
+// contract; GuardedDbAdapter widens cleanly to DbAdapter, so the
+// invitations/auth call sites (which hold ctx.base) work
+// unchanged.
+export async function putMessagePair(
     view: DbAdapter,
     pair: MessagePair,
 ): Promise<void> {
-    const replay = await view.requests
-        .getAllWhere('message_hash', pair.requestHash);
-    if (replay.length > 0) return;
     await view.requests.put(pair.id, {
         uri_prefix: pair.uriPrefix,
         uri_id: pair.uriId,
@@ -579,6 +578,19 @@ export async function appendMessagePair(
         ...(pair.follows === undefined
             ? {} : { follows: pair.follows }),
     });
+}
+
+// In-tx append (row ops only, no crypto): skips silently if a
+// request with the same hash is already stored (the concurrent
+// -retry guard); otherwise puts both rows via putMessagePair.
+export async function appendMessagePair(
+    view: DbAdapter,
+    pair: MessagePair,
+): Promise<void> {
+    const replay = await view.requests
+        .getAllWhere('message_hash', pair.requestHash);
+    if (replay.length > 0) return;
+    await putMessagePair(view, pair);
 }
 
 // The create-address override table: which body field names

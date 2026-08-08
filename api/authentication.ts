@@ -59,6 +59,7 @@ import {
 } from '../shared/ledger-reduction.ts';
 import {
     appendMessagePair,
+    putMessagePair,
     canonicalUriPrefix,
     formAuthPair,
     formTokenEventPair,
@@ -104,16 +105,15 @@ export type TokenResult =
     | {
         readonly ok: true;
         readonly response: TokenResponse;
-        // The just-appended AUTH pair's request hash — undefined
-        // only for exchangeBearerForOrganization's internal,
-        // seedless hop (never a real /authentication/token
-        // request, so it forms no AUTH pair; its issued root's
-        // OWN event pair still lands, Phase 13 Task 5, but this
-        // field tracks the auth-pair hash specifically). The
-        // dedicated gate arm (api.ts) always supplies a seed, so
-        // a result it sees always carries one — see
-        // storedPairResponse's sibling crash-loud idiom.
-        readonly requestHash: string | undefined;
+        // The just-stored AUTH pair's id — undefined only for
+        // exchangeBearerForOrganization's internal, seedless hop
+        // (never a real /authentication/token request, so it
+        // forms no AUTH pair; its issued root's OWN event pair
+        // still lands, Phase 13 Task 5, but this field tracks
+        // the auth-pair id specifically). The dedicated gate
+        // arm (api.ts) always supplies a seed, so a result it
+        // sees always carries one — resolved by getById.
+        readonly pairId: string | undefined;
     }
     | {
         readonly ok: false;
@@ -296,7 +296,7 @@ async function issueTokenPair(
     organization?: Id,
 ): Promise<{
     readonly response: TokenResponse;
-    readonly requestHash: string | undefined;
+    readonly pairId: string | undefined;
 }> {
     const refreshJti = generateCryptoSafeBase62();
     const rootId = generateCryptoSafeBase62();
@@ -322,11 +322,11 @@ async function issueTokenPair(
         async (view) => {
             await appendMessagePair(view, eventPair);
             if (pair !== undefined) {
-                await appendMessagePair(view, pair);
+                await putMessagePair(view, pair);
             }
         },
     );
-    return { response, requestHash: pair?.requestHash };
+    return { response, pairId: pair?.id };
 }
 
 // Both revocation controls the gate enforces, in ONE place so
@@ -552,7 +552,7 @@ export async function rotateRefreshJti(
                     }
                     if (provisional.plan.kind === 'rotate') {
                         if (pair !== undefined) {
-                            await appendMessagePair(view, pair);
+                            await putMessagePair(view, pair);
                         }
                         return {
                             kind: 'rotate' as const,
@@ -712,7 +712,7 @@ async function grantRefresh(
         adapter, verified.claims.jti, newJti, pair,
     );
     if (outcome.kind === 'rotate') {
-        return { ok: true, response, requestHash: pair.requestHash };
+        return { ok: true, response, pairId: pair.id };
     }
     return failure(HTTP_UNAUTHORIZED, 'refresh token reuse or unknown');
 }
@@ -796,7 +796,7 @@ async function grantTokenExchange(
     return {
         ok: true,
         response: issued.response,
-        requestHash: issued.requestHash,
+        pairId: issued.pairId,
     };
 }
 
@@ -884,7 +884,7 @@ async function grantClientCredentials(
     return {
         ok: true,
         response: issued.response,
-        requestHash: issued.requestHash,
+        pairId: issued.pairId,
     };
 }
 
@@ -1114,12 +1114,12 @@ async function grantAuthorizationCode(
                 return false;
             }
             await appendMessagePair(view, eventPair);
-            await appendMessagePair(view, pair);
+            await putMessagePair(view, pair);
             return true;
         },
     );
     return consumed
-        ? { ok: true, response, requestHash: pair.requestHash }
+        ? { ok: true, response, pairId: pair.id }
         : invalid;
 }
 
@@ -1159,7 +1159,7 @@ export type AuthorizeResult =
     | {
         readonly ok: true;
         readonly response: AuthorizeResponse;
-        readonly requestHash: string;
+        readonly pairId: string;
     }
     | {
         readonly ok: false;
@@ -1279,10 +1279,10 @@ async function authorizePassword(
     await adapter.transaction(
         ['requests', 'responses'],
         async (view) => {
-            await appendMessagePair(view, pair);
+            await putMessagePair(view, pair);
         },
     );
-    return { ok: true, response, requestHash: pair.requestHash };
+    return { ok: true, response, pairId: pair.id };
 }
 
 // Interactive front door. The password loop is real; passkey,
