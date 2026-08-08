@@ -1726,6 +1726,25 @@ designer "tag current" action lands.)
 - [ ] **WB10** A collapsible History section
   shows all transitions with from/to state
   names, user name, and relative timestamp.
+- [ ] **WB10a — Bind picker on an unbound WO.**
+  Open an unbound work order on a flow that has
+  a record-type join and at least one instance.
+  PASS: header shows an Unbound badge; a "Bind
+  instance" button is visible; clicking it opens
+  the bind-instance dialog listing instances for
+  the flow's record type (rows use
+  `data-instance-pick`, never `data-attribute-id`);
+  picking an instance POSTs
+  `work-orders/:id/binding` (204), the dialog
+  closes, and the screen re-presents with a bound
+  Instance badge and pre-filled values from the
+  instance head.
+- [ ] **WB10b — Disabled fields + bind prompt.**
+  On an unbound work order with current-node
+  attribute refs. PASS: every attribute input is
+  disabled/readonly with title "Bind an instance
+  before editing values"; the bind button from
+  WB10a is the path to enable editing.
 
 ### Workbox — Transitions
 
@@ -1772,23 +1791,29 @@ designer "tag current" action lands.)
 
 ### Workbox — Data Integrity
 
-- [ ] **WB16** After creating and transitioning
-  a work order, inspect `requests`/`responses` (or
-  derived `GET work-orders/:id/history`). PASS: the
-  work-order document pair head carries `display_id`
-  and `flow_graph` JSON; each transition is a
-  `work-orders/:id/transition` operation pair whose
-  body names the target node (base62) and folds
-  per-field values into `fieldValues: [{id,
-  fields}]` — no `states` or `state_field_values`
-  tables, and no leaf pairs. Derived history is
-  `(at, id)` DESC (index 0 = current) and shows one
-  non-claim event per transition with
-  `entity_id` = work-order id, `state` = target
-  node id, `member_id` = the actor, `at` =
-  RFC-3339 Zulu, plus inline
-  `field_values: [{id, attribute_id, value}]` on
-  transition rows (`[]` on claim/birth/release).
+- [ ] **WB16** After binding an instance and
+  transitioning with value changes, inspect
+  `requests`/`responses` (or derived
+  `GET work-orders/:id/history` and the instance
+  head). PASS: the work-order document pair head
+  carries `display_id` and `flow_graph` JSON; the
+  binding op is at `work-orders/:id/binding` with
+  `{instance_id, record_type_id}`; value-bearing
+  transitions are `work-orders/:id/transition` op
+  pairs whose body is the **instance shape**
+  (`targetState`, `instance_id`, `record_type_id`,
+  `set`/`clear` delta, `release`, `transitionAt` —
+  no `fieldValues` bag) and carry strong If-Match
+  against the instance etag; pure moves omit
+  `set`/`clear`/`instance_id`/`record_type_id` and
+  send no If-Match; a sibling instance revision
+  pair advances the head when the transition was
+  value-bearing. Derived WO history is `(at, id)`
+  DESC (index 0 = current) with one non-claim event
+  per transition (`entity_id` = work-order id,
+  `state` = target node id, `member_id` = actor,
+  `at` = RFC-3339 Zulu). Live form values come from
+  the instance head, not a history fold.
 - [ ] **WB17** Navigate away from the action
   screen and return. PASS: all data persists
   correctly across page navigation.
@@ -1812,12 +1837,32 @@ designer "tag current" action lands.)
   rows are `(at, id)` DESC (index 0 = current); each
   non-claim event has the immutable shape `{id, entity_id,
   state, member_id, at, field_values}`, with `state`
-  carrying the target node's base62 id and
-  `field_values` the transition fold
-  (`{id, attribute_id, value}` — no `state_event_id` on
-  the wire; the parent event already carries `id`).
-  Verify no app code path mutates an existing pair — the
-  message plane is append-only.
+  carrying the target node's base62 id. Live values live
+  on the instance head; history `field_values` may be
+  empty for new-shape transitions. Verify no app code
+  path mutates an existing pair — the message plane is
+  append-only.
+- [ ] **WB19a — Two-tab 412 on the action screen.**
+  Bind a work order to an instance. Open the action
+  screen in two tabs. In tab 2, change an instance
+  value via the records detail instance editor (or a
+  second transition) so the head etag advances. In
+  tab 1, edit a value and transition. PASS: tab 1
+  receives 412, re-GETs the instance, re-presents the
+  action screen with a conflict notice and a warning
+  toast ("This instance changed underneath you…"),
+  and does **not** auto-retry the transition.
+- [ ] **WB19b — Direct instance PATCH vs transition
+  412 convergence.** With a bound WO open on the
+  action screen, PATCH the same instance from the
+  record detail UI (save) so the head advances; then
+  attempt a value-bearing transition on the stale
+  action screen. PASS: same 412 recovery shape as
+  WB19a (re-present + warning toast). Conversely,
+  after a successful value-bearing transition, a
+  stale instance edit on record detail also 412s and
+  recovers — both writers share the instance etag
+  covenant.
 
 ### Workbox — All-See-All Visibility
 
