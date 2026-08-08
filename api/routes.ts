@@ -125,6 +125,7 @@ import {
 import {
     latestClaimEvent,
     isClaimEventExpired,
+    isClaimState,
 } from './work-order-claims.ts';
 import {
     ATTRIBUTE_RESTRICT_TABLES,
@@ -257,6 +258,7 @@ import {
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
     workOrderHistoryFor,
+    workOrderLifecycleStatesFor,
 } from './derive-states.ts';
 import {
     deriveOrganization,
@@ -3623,9 +3625,13 @@ export async function formDocumentPairFor(
 // is ledger-complete — every non-replay DELETE appends,
 // including over an already-tombstoned head). In-tx
 // re-probe (R9) closes a concurrent un-spend race:
-// never treat a virgin address as tombstonable. No
-// attribute ACL — path-tier only (existence, not values).
-// If-Match on DELETE is not a dialect (gate ignores it).
+// never treat a virgin address as tombstonable. W5
+// placement RESTRICT: any org WO whose CURRENT bind
+// names this instance AND whose current node is
+// non-terminal in its OWN frozen flow_graph → 409.
+// No attribute ACL — path-tier only (existence, not
+// values). If-Match on DELETE is not a dialect (gate
+// ignores it).
 export async function postInstanceDeleteOp(
     db: DbAdapter,
     p: string[],
@@ -3669,9 +3675,106 @@ export async function postInstanceDeleteOp(
                     'record_instances',
                 );
             }
+            // W5: RESTRICT while any bind is in-flight
+            // (non-terminal current node on that WO's
+            // frozen graph). Terminal + unbound free.
+            const blockers =
+                await inFlightPlacementBlockersFor(
+                    view, org, instanceId,
+                );
+            if (blockers.length > 0) {
+                throw new ApiError(
+                    'record instance ' + instanceId
+                    + ' is placed in-flight on work'
+                    + ' order(s) '
+                    + blockers.join(', '),
+                    HTTP_CONFLICT,
+                );
+            }
             await appendMessagePair(view, pair);
         },
     );
+}
+
+// Org WOs whose CURRENT bind names `instanceId` AND
+// whose current node is non-terminal in that WO's own
+// frozen flow_graph. Cost-ordered, entity-scoped in-tx
+// reads only (collectAttributeReferrers shape): ONE
+// collection-prefix WO-heads read; binding/lifecycle
+// only for candidates that still bind this instance.
+// Current node = latest non-claim lifecycle state's
+// `state`; a WO with no transition yet sits at its
+// graph's isCreate node. Terminal = no outgoing edge.
+async function inFlightPlacementBlockersFor(
+    view: DbAdapter,
+    organization: Id,
+    instanceId: Id,
+): Promise<string[]> {
+    const workOrdersPrefix = canonicalUriPrefix(
+        organization, '/work-orders/',
+    );
+    const [woRequests, woResponses] = await Promise.all([
+        view.requests.getAllWhere(
+            'uri_prefix', workOrdersPrefix,
+        ),
+        view.responses.getAllWhere(
+            'uri_prefix', workOrdersPrefix,
+        ),
+    ]);
+    const woHeads = deriveDocumentsAt(
+        woRequests, woResponses, workOrdersPrefix,
+    );
+    const blockers: string[] = [];
+    for (const [woId, doc] of woHeads) {
+        const bind = await workOrderBindingFor(
+            view, organization, woId,
+        );
+        if (
+            bind === null
+            || bind.instanceId !== instanceId
+        ) {
+            continue;
+        }
+        const graph = asWorkOrderFlowGraph(
+            doc.body['flow_graph'],
+            'work_orders.flow_graph',
+        );
+        const lifecycle =
+            await workOrderLifecycleStatesFor(
+                view, organization, woId,
+            );
+        // ASC (at, id): walk reverse for latest
+        // non-claim event — its state is the node id.
+        let nodeId: string | undefined;
+        for (
+            let i = lifecycle.length - 1;
+            i >= 0;
+            i--
+        ) {
+            const event = lifecycle[i]!;
+            if (!isClaimState(event.state)) {
+                nodeId = event.state;
+                break;
+            }
+        }
+        if (nodeId === undefined) {
+            // No transition yet → isCreate node.
+            const create = graph.nodes.find(
+                (node) => node.isCreate,
+            );
+            if (create === undefined) {
+                continue;
+            }
+            nodeId = create.id;
+        }
+        const inFlight = graph.edges.some(
+            (edge) => edge.fromNodeId === nodeId,
+        );
+        if (inFlight) {
+            blockers.push(woId);
+        }
+    }
+    return blockers;
 }
 
 async function instanceAddressSpent(
