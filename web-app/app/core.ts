@@ -33,6 +33,9 @@ import {
 import {
     getOrganizations,
 } from './adapters/organizations.ts';
+import type {
+    OrganizationEntity,
+} from '../../api/types.ts';
 import {
     resolveActiveOrganization,
     postOrganizationSessionExchange,
@@ -148,15 +151,15 @@ function redirectIfMissingTable(
     return true;
 }
 
-// Scope the session to an active org and report whether it
-// could: enumerate the member's reachable orgs, resolve the
-// active one (the persisted choice, else the identity's default,
-// else the first reachable), and install an org-scoped token
-// BEFORE first render so every read is fenced to one tenant.
-// Returns false when the identity reaches no org — the caller
-// decides what that means (bounce when auth-gated, degrade to
-// anonymous when the page is auth-exempt).
-async function scopeBootToActiveOrganization(): Promise<boolean> {
+// Scope the session to an active org: enumerate the member's
+// reachable orgs, resolve the active one (the persisted choice,
+// else the identity's default, else the first reachable), and
+// install an org-scoped token BEFORE first render so every read
+// is fenced to one tenant. Returns the fetched organization
+// rows (empty = unscoped). Callers that need a bounce decision
+// treat empty as fail; auth-exempt pages degrade anonymously.
+async function scopeBootToActiveOrganization(
+): Promise<readonly OrganizationEntity[]> {
     const ctx = sessionContext();
     // getIdentityDefaultOrganization returns null when no
     // default is set (never throws on absence) — both reads
@@ -169,7 +172,7 @@ async function scopeBootToActiveOrganization(): Promise<boolean> {
         getIdentityDefaultOrganization(ctx),
     ]);
     const reachable = organizations.map(o => o.id);
-    if (reachable.length === 0) return false;
+    if (reachable.length === 0) return [];
     const active = resolveActiveOrganization(
         reachable,
         getPreference(ACTIVE_ORGANIZATION_ID),
@@ -179,7 +182,9 @@ async function scopeBootToActiveOrganization(): Promise<boolean> {
         await postOrganizationSessionExchange(
             ctx, getSessionToken(), active));
     putPreference(ACTIVE_ORGANIZATION_ID, active);
-    return true;
+    // Pre/post-exchange rows equal: getOrganizations is
+    // identity-scoped (membership filter), not org-fenced.
+    return organizations;
 }
 
 // Best-effort scoping for an auth-EXEMPT page that still renders the
@@ -192,19 +197,20 @@ async function scopeBootToActiveOrganization(): Promise<boolean> {
 // org-bound reads gate on sessionIsOrganizationScoped(). Never bounces and
 // never scrubs (the page is reachable without auth); a dead or failed
 // refresh degrades to the unscoped state rather than aborting boot.
-async function scopeBootIfCredentialed(): Promise<void> {
+async function scopeBootIfCredentialed(
+): Promise<readonly OrganizationEntity[]> {
     let creds: SessionCredentials | null;
     try {
         creds = getSessionCredentials();
     } catch (err) {
         // a corrupt blob here just stays anonymous
         log.warn('corrupt session credential', 'core', err);
-        return;
+        return [];
     }
     const now = nowEpochSeconds();
     const decision = resolveCredentialDecision(creds, now);
     if (decision.kind === 'login') {
-        return;   // nothing usable — keep the anonymous seed
+        return [];   // nothing usable — keep the anonymous seed
     }
     try {
         if (decision.kind === 'install') {
@@ -212,11 +218,12 @@ async function scopeBootIfCredentialed(): Promise<void> {
         } else if (
             !(await refreshAndInstall(decision.refreshToken))
         ) {
-            return;   // dead refresh — stay anonymous, no scrub
+            return [];   // dead refresh — stay anonymous, no scrub
         }
-        await scopeBootToActiveOrganization();
+        return await scopeBootToActiveOrganization();
     } catch (err) {
         log.warn('opportunistic org scope failed', 'core', err);
+        return [];
     }
 }
 
@@ -253,9 +260,13 @@ async function bootAuthGate(): Promise<boolean> {
 // Sibling to bootAuthGate: returns false once it has redirected,
 // so the caller stops booting. Accepting an invitation grants the
 // first membership and unblocks every org-scoped route.
-async function bootOrganizationGate(): Promise<boolean> {
-    if (await scopeBootToActiveOrganization()) return true;
-    return !bounceTo('invitations');
+async function bootOrganizationGate(
+): Promise<readonly OrganizationEntity[] | null> {
+    const organizations =
+        await scopeBootToActiveOrganization();
+    if (organizations.length > 0) return organizations;
+    bounceTo('invitations');
+    return null;
 }
 
 // Refresh a dead-access / live-refresh session and install the new
@@ -340,6 +351,8 @@ document.addEventListener(
             return;
         }
 
+        let bootOrganizations:
+            readonly OrganizationEntity[] = [];
         if (hasSchema) {
             if (
                 PAGE_REGISTRY[pageName]?.requiresAuth
@@ -354,19 +367,21 @@ document.addEventListener(
                 markStart(
                     MEASURE_BOOT_ORGANIZATION_SCOPE,
                 );
-                const organizationOk =
+                const scoped =
                     await bootOrganizationGate();
                 markEnd(
                     MEASURE_BOOT_ORGANIZATION_SCOPE,
                 );
-                if (!organizationOk) {
+                if (scoped === null) {
                     return;   // bounced to invitations
                 }
+                bootOrganizations = scoped;
             } else {
                 markStart(
                     MEASURE_BOOT_ORGANIZATION_SCOPE,
                 );
-                await scopeBootIfCredentialed();
+                bootOrganizations =
+                    await scopeBootIfCredentialed();
                 markEnd(
                     MEASURE_BOOT_ORGANIZATION_SCOPE,
                 );
@@ -381,6 +396,7 @@ document.addEventListener(
             try {
                 await initSidebarLayout(
                     hasSchema,
+                    bootOrganizations,
                 );
                 markEnd(MEASURE_BOOT_SIDEBAR_CHROME);
             } catch (err) {
