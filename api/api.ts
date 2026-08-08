@@ -24,7 +24,6 @@ import {
     canonicalUriPrefix,
     hoistedHeaderFields,
     responseFromStored,
-    wireHeadersFor,
     attachEtag,
     parseIfMatch,
     PAIR_WIRED_ROUTE_PATTERNS,
@@ -1228,8 +1227,6 @@ export async function handleRequest(
                 // token's subject) — so the grant forms its OWN
                 // pair, pre-tx, and appends it as the last act of
                 // its own domain transaction (authentication.ts).
-                let authWireHeaders: HeadersInit | undefined;
-                let result: unknown;
                 if (
                     routePattern === 'authentication/token'
                     || routePattern === 'authentication/authorize'
@@ -1269,38 +1266,53 @@ export async function handleRequest(
                             + ' pair: ' + routePattern,
                         );
                     }
-                    const stored = await effective.responses
+                    const authStored = await effective.responses
                         .getById(dispatched.pairId);
-                    // The ONE named exception where the wire
-                    // body (live tokens) differs from the stored
-                    // (redacted) body — the headers still derive
-                    // from the SAME stored row every other wired
-                    // write reads.
-                    result = dispatched.response;
-                    authWireHeaders = wireHeadersFor(stored);
-                } else {
-                    if (!matched.post) {
-                        return Response.json(
-                            {
-                                error:
-                                    'Method POST'
-                                    + ' not allowed'
-                                    + ' on '
-                                    + pathname,
-                            },
-                            { status: HTTP_METHOD_NOT_ALLOWED },
+                    // authentication/authorize mints an
+                    // authorization code, not a session — no UI
+                    // subscribes to it, so it posts nothing.
+                    // authentication/token mints the session
+                    // itself: decode the live response claims so
+                    // the identity-tokens page refreshes
+                    // cross-tab. Wire body comes from the stored
+                    // row (stored == wire under verbatim storage).
+                    if (routePattern === 'authentication/token') {
+                        const claims = decodeAccessToken(
+                            (dispatched.response as {
+                                access_token: string;
+                            }).access_token,
                         );
+                        adapter.postNotification({
+                            kind: 'scoped',
+                            identityIds: [claims.sub],
+                            organizationIds: [
+                                ...(claims.organizations ?? []),
+                            ],
+                        });
                     }
-                    result = await matched.post(
-                        effective,
-                        params,
-                        body!,
-                        actor,
-                        pair,
-                        organization,
-                        roles,
+                    return responseFromStored(authStored);
+                }
+                if (!matched.post) {
+                    return Response.json(
+                        {
+                            error:
+                                'Method POST'
+                                + ' not allowed'
+                                + ' on '
+                                + pathname,
+                        },
+                        { status: HTTP_METHOD_NOT_ALLOWED },
                     );
                 }
+                const result = await matched.post(
+                    effective,
+                    params,
+                    body!,
+                    actor,
+                    pair,
+                    organization,
+                    roles,
+                );
                 if (pair !== undefined) {
                     const stored = await storedResponseFor(
                         effective, pair.requestHash,
@@ -1317,44 +1329,16 @@ export async function handleRequest(
                     );
                     return responseFromStored(stored);
                 }
-                // authentication/authorize mints an
-                // authorization code, not a session — no UI
-                // subscribes to it, so it posts nothing.
-                // authentication/token mints the session
-                // itself: decode the freshly minted access
-                // token so the identity-tokens page refreshes
-                // cross-tab, the same case every other write
-                // reaches via the fenced organization.
-                if (routePattern === 'authentication/token') {
-                    const claims = decodeAccessToken(
-                        (result as { access_token: string })
-                            .access_token,
-                    );
-                    adapter.postNotification({
-                        kind: 'scoped',
-                        identityIds: [claims.sub],
-                        organizationIds: [
-                            ...(claims.organizations ?? []),
-                        ],
-                    });
-                } else if (
-                    routePattern !== 'authentication/authorize'
-                ) {
-                    postWriteNotification(
-                        adapter, routePattern, params,
-                        body, organization, actor,
-                    );
-                }
+                postWriteNotification(
+                    adapter, routePattern, params,
+                    body, organization, actor,
+                );
                 if (result === undefined) {
                     return new Response(null, {
                         status: HTTP_NO_CONTENT,
                     });
                 }
-                return authWireHeaders === undefined
-                    ? Response.json(result)
-                    : Response.json(
-                        result, { headers: authWireHeaders },
-                    );
+                return Response.json(result);
             }
             default:
                 return Response.json(
