@@ -1499,29 +1499,75 @@ export async function workOrderLifecycleStatesFor(
 }
 
 // Same fold as transitionFieldValueCandidates +
-// stateFieldValuesFrom: candidates keyed by fv row id,
-// latestByKey head reduction, DELETE heads dropped. Shared by
-// workOrderHistoryFor (A1) and deriveWorkOrderHistories (A2).
+// stateFieldValuesFrom for LEGACY bags: candidates keyed by
+// fv row id, latestByKey head reduction, DELETE heads dropped.
+// New-shape pairs (no fieldValues key) render per-event from
+// set/clear — shape-disjoint; they never enter latestByKey.
+// Shared by workOrderHistoryFor (A1) and
+// deriveWorkOrderHistories (A2).
 function fieldValuesByTransitionEvent(
     transitionPairs: readonly OperationPair[],
 ): Map<Id, TransitionFieldValueEntity[]> {
     const candidates: DocumentPair[] = [];
+    const newShapeRows =
+        new Map<Id, TransitionFieldValueEntity[]>();
     for (const transition of transitionPairs) {
-        const fieldValues = transition.body['fieldValues'] as
-            readonly {
-                readonly id: string;
-                readonly fields: Record<string, unknown>;
-            }[];
-        for (const fieldValue of fieldValues) {
-            candidates.push({
-                id: transition.id,
-                at: transition.at,
-                uriId: fieldValue.id,
-                method: 'PUT',
-                body: fieldValue.fields,
-                requesterIdentityId:
-                    transition.requesterIdentityId,
-            });
+        const raw = transition.body['fieldValues'];
+        if (raw !== undefined) {
+            // Legacy shape: pool candidates for head-reduce.
+            const fieldValues = raw as
+                readonly {
+                    readonly id: string;
+                    readonly fields: Record<string, unknown>;
+                }[];
+            for (const fieldValue of fieldValues) {
+                candidates.push({
+                    id: transition.id,
+                    at: transition.at,
+                    uriId: fieldValue.id,
+                    method: 'PUT',
+                    body: fieldValue.fields,
+                    requesterIdentityId:
+                        transition.requesterIdentityId,
+                });
+            }
+            continue;
+        }
+        // New-shape: set/clear → rows for THIS event only.
+        const eventId = pickString(
+            transition.body, 'transitionEventId',
+        );
+        const rows: TransitionFieldValueEntity[] = [];
+        const set = transition.body['set'];
+        if (Array.isArray(set)) {
+            for (const entry of set) {
+                const row = entry as
+                    Record<string, unknown>;
+                const attributeId = pickString(
+                    row, 'attribute_id',
+                );
+                rows.push({
+                    id: attributeId,
+                    attribute_id: attributeId,
+                    value: pickString(row, 'value'),
+                });
+            }
+        }
+        const clear = transition.body['clear'];
+        if (Array.isArray(clear)) {
+            for (const attributeId of clear) {
+                // No value key on the wire; cast covers the
+                // type's required value used by legacy set rows.
+                rows.push({
+                    id: String(attributeId),
+                    attribute_id: String(attributeId),
+                    cleared: true,
+                } as TransitionFieldValueEntity);
+            }
+        }
+        if (rows.length > 0) {
+            rows.sort(byIdAscending);
+            newShapeRows.set(eventId, rows);
         }
     }
     const heads = latestByKey(
@@ -1545,6 +1591,12 @@ function fieldValuesByTransitionEvent(
     }
     for (const list of byEvent.values()) {
         list.sort(byIdAscending);
+    }
+    // Merge new-shape AFTER legacy reduction (disjoint event
+    // ids by construction — a new-shape event never minted
+    // legacy candidates).
+    for (const [eventId, rows] of newShapeRows) {
+        byEvent.set(eventId, rows);
     }
     return byEvent;
 }
