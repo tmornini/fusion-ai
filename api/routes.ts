@@ -6272,8 +6272,10 @@ export const routes: Route[] = [
     }),
     // DEMO-ONLY: these seed routes return SeededCredentials —
     // freshly-minted plaintext sign-ins surfaced in-band, once.
-    // Only PBKDF2 hashes are stored; the in-band plaintext
-    // return is deleted at the server tier.
+    // Domain credentials store PBKDF2 hashes; the message plane
+    // holds login traffic verbatim after first use (API.md
+    // §5.2). The in-band plaintext return is deleted at the
+    // server tier.
     route('snapshots/mock-data', {
         post: async (db) => {
             const { postMockDataLoad } =
