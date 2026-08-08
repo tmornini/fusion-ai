@@ -113,6 +113,8 @@ import {
     headPairIdAt,
     pairResponseBody,
     ifMatchFromPair,
+    rawIfMatchFromPair,
+    parseIfMatch,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
 import { replacePiiSlot } from './pii-hard-delete.ts';
@@ -147,6 +149,7 @@ import {
     HTTP_BAD_REQUEST,
     HTTP_CONFLICT,
     HTTP_PRECONDITION_FAILED,
+    HTTP_PRECONDITION_REQUIRED,
 } from './http-errors.ts';
 import {
     reduceCreateGraphDelta,
@@ -2330,34 +2333,220 @@ export async function postWorkOrderReleaseOp(
     );
 }
 
-// Transition a work order along an edge. Phase Final Task 2:
-// state_field_values ROW half stripped — field values ride
-// the transition operation pair body only (fieldValues fold
-// → derive-state-field-values two-source union). This op
-// writes ATOMICALLY: the transition state event, then the
-// OPTIONAL 'claim_released' event, then the pair. Gate
-// re-validates each field via validateStateFieldValueEntity
-// (re-homed from the store put). Authorship is stamped from
-// the verified caller (actor). `pair` is optional.
+// Transition a work order along an edge. Dual-accept window
+// (Task 4): legacy fieldValues pure-append OR instance
+// set/clear composing the instance-PATCH pipeline against
+// the bound instance head. organization === undefined is the
+// below-facade seed tier (validate + append only). Gate tier
+// fences the WO (404/403) for both shapes; value-bearing
+// instance shape adds bind assert + If-Match ladder + one
+// tx of op + revision. Authorship is stamped from the
+// verified caller (actor). `pair` is optional.
 export async function postWorkOrderTransitionOp(
     db: DbAdapter,
-    _workOrderId: Id,
+    workOrderId: Id,
     body: Record<string, unknown>,
-    _actor: Id,
+    actor: Id,
+    organization: Id | undefined,
+    roles: readonly string[],
     pair?: MessagePair,
 ): Promise<void> {
-    validateWorkOrderTransitionBody(body);
-    return db.transaction(
-        // Phase Final Task 2: state_field_values ROW half
-        // stripped; fieldValues live on the op pair body.
+    const validated =
+        validateWorkOrderTransitionBody(body);
+    if (organization === undefined) {
+        // Below-facade tier (seed): no gate, no fence —
+        // validate + append, the WO-create precedent.
+        return db.transaction(
+            ['requests', 'responses'],
+            async (view) => {
+                if (pair !== undefined) {
+                    await appendMessagePair(view, pair);
+                }
+            },
+        );
+    }
+    const valueBearing =
+        validated.kind === 'instance'
+        && (validated.set.length
+            + validated.clear.length > 0);
+    if (!valueBearing) {
+        // Pure move: legacy kind OR instance-kind empty
+        // delta. One tx — WO fence, then one-dialect
+        // If-Match reject for instance-kind, then append.
+        return db.transaction(
+            ['requests', 'responses'],
+            async (view) => {
+                const wo =
+                    await workOrderDocumentHeadFor(
+                        view, organization, workOrderId,
+                    );
+                if (wo === null) {
+                    throw await missedReadError(
+                        view, workOrderId, organization,
+                        'work_orders',
+                    );
+                }
+                if (
+                    validated.kind === 'instance'
+                    && pair !== undefined
+                    && rawIfMatchFromPair(pair)
+                        !== undefined
+                ) {
+                    throw new ValidationError(
+                        'If-Match is forbidden on a'
+                        + ' pure-move transition',
+                    );
+                }
+                if (pair !== undefined) {
+                    await appendMessagePair(view, pair);
+                }
+            },
+        );
+    }
+    // Value-bearing instance-kind. PRE-TX after fence
+    // (instance-PATCH shape: tx wraps only the appends).
+    const wo = await workOrderDocumentHeadFor(
+        db, organization, workOrderId,
+    );
+    if (wo === null) {
+        throw await missedReadError(
+            db, workOrderId, organization,
+            'work_orders',
+        );
+    }
+    if (validated.kind !== 'instance') {
+        // Exhaustiveness: valueBearing implies instance.
+        throw new Error(
+            'value-bearing transition is not instance',
+        );
+    }
+    const bind = await workOrderBindingFor(
+        db, organization, workOrderId,
+    );
+    if (bind === null) {
+        throw new ValidationError(
+            'work order has no instance binding',
+        );
+    }
+    if (
+        bind.instanceId !== validated.instanceId
+        || bind.recordTypeId !== validated.recordTypeId
+    ) {
+        throw new ValidationError(
+            'instance_id/record_type_id do not match'
+            + ' the work order\'s binding',
+        );
+    }
+    if (pair === undefined) {
+        throw new Error(
+            'value-bearing transition requires a'
+            + ' formed pair',
+        );
+    }
+    const transitionPath =
+        '/work-orders/' + workOrderId + '/transition';
+    const rawIfMatch = rawIfMatchFromPair(pair);
+    if (rawIfMatch === undefined) {
+        throw new ApiError(
+            'If-Match is required to transition with'
+            + ' set/clear at ' + transitionPath,
+            HTTP_PRECONDITION_REQUIRED,
+        );
+    }
+    const ifMatchTarget = parseIfMatch(rawIfMatch);
+    if (ifMatchTarget === undefined) {
+        throw new ValidationError(
+            'If-Match must carry exactly one strong'
+            + ' validator',
+        );
+    }
+    // Compose postInstancePatchOp pipeline against the
+    // bound instance (org, bind.recordTypeId,
+    // bind.instanceId). COPY head-assert blocks inline
+    // (A5 — do not extract).
+    const org = organization;
+    const typeId = bind.recordTypeId;
+    const instanceId = bind.instanceId;
+    const pathname = '/organizations/' + org
+        + '/record-types/' + typeId
+        + '/instances/' + instanceId;
+    const head = await deriveInstanceHead(
+        db, org, typeId, instanceId,
+    );
+    if (
+        head === undefined
+        || head.pairId !== ifMatchTarget
+    ) {
+        throw new ApiError(
+            'If-Match does not match the current '
+                + 'instance at ' + pathname,
+            HTTP_PRECONDITION_FAILED,
+        );
+    }
+    const attributesById = await loadAttributeSchemaById(
+        db, org, typeId,
+    );
+    const aclIds = [
+        ...validated.set.map(
+            (entry) => entry.attribute_id,
+        ),
+        ...validated.clear,
+    ];
+    assertWritableAttributeIds(
+        aclIds, attributesById, roles,
+    );
+    validateInstanceValues(
+        validated.set, attributesById,
+    );
+    const mergedValues = mergeInstanceValues(
+        head.values, {
+            set: validated.set,
+            clear: validated.clear,
+        },
+    );
+    const revisionPair = await formDocumentPairFor(db, {
+        routePattern: INSTANCE_DETAIL_PATTERN,
+        params: [org, typeId, instanceId],
+        method: 'PUT',
+        body: { values: mergedValues },
+        requesterIdentityId: actor,
+        requestAt: pair.requestAt,
+        organization: org,
+        chain: 'follows',
+        follows: ifMatchTarget,
+        response: { status: HTTP_OK, body: {} },
+    });
+    await db.transaction(
         ['requests', 'responses'],
         async (view) => {
-            // Phase Final Task 2: states ROW half stripped —
-            // transition + optional claim_released live on
-            // the op pair body.
-            if (pair !== undefined) {
-                await appendMessagePair(view, pair);
+            const liveWo =
+                await workOrderDocumentHeadFor(
+                    view, organization, workOrderId,
+                );
+            if (liveWo === null) {
+                throw await missedReadError(
+                    view, workOrderId, organization,
+                    'work_orders',
+                );
             }
+            // R9: live head must still be the client's
+            // If-Match target, not merely "unchanged since
+            // our re-derive".
+            const live = await deriveInstanceHead(
+                view, org, typeId, instanceId,
+            );
+            if (
+                live === undefined
+                || live.pairId !== ifMatchTarget
+            ) {
+                throw new ApiError(
+                    'If-Match does not match the current '
+                        + 'instance at ' + pathname,
+                    HTTP_PRECONDITION_FAILED,
+                );
+            }
+            await appendMessagePair(view, pair);
+            await appendMessagePair(view, revisionPair);
         },
     );
 }
@@ -4936,11 +5125,17 @@ export const routes: Route[] = [
     // MEMBER_VERBS, and isPermitted matches on the segment
     // prefix, so the sub-route is member-permitted like
     // /claim. See postWorkOrderTransitionOp for the
-    // transaction shape.
+    // transaction shape. organization is NOT
+    // requireOrganization — the op discriminates the
+    // below-facade seed tier (undefined) from the gate.
     route('work-orders/:id/transition', {
-        post: (db, p, body, actor, pair) =>
+        post: (
+            db, p, body, actor, pair,
+            organization, roles,
+        ) =>
             postWorkOrderTransitionOp(
-                db, param(p, 0), body, actor, pair,
+                db, param(p, 0), body, actor,
+                organization, roles, pair,
             ),
     }),
     // Member-tier POST — /work-orders carries POST in

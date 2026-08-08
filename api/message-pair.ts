@@ -405,6 +405,23 @@ export function ifMatchFromPair(
     return parseIfMatch(field.value);
 }
 
+// Raw If-Match header value from a formed pair —
+// undefined means ABSENT. Callers that must speak the
+// 428-vs-400 ladder themselves (transition op) need
+// absent distinguished from malformed;
+// ifMatchFromPair conflates them.
+export function rawIfMatchFromPair(
+    pair: MessagePair,
+): string | undefined {
+    const model = parseJson(
+        pair.requestMessage, defaultBodyRegistry(),
+    );
+    const field = model.fields.find(
+        (line) => line.name === IF_MATCH_HEADER,
+    );
+    return field?.value;
+}
+
 // Strong wire ETag for a document-pair response id.
 // Distinct from `responses.etag` (body sha256 column).
 export function strongEtagOf(pairId: string): string {
