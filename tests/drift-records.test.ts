@@ -30,6 +30,9 @@ import {
     postRecordDocumentOp,
 } from '../api/routes.ts';
 import {
+    appendLegacyTransition,
+} from './legacy-transition-fixture.ts';
+import {
     deriveFlowRecords,
     deriveFlowRecord,
 } from '../api/derive-flow-records.ts';
@@ -1474,9 +1477,10 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     ));
     assert.equal(created.status, 204);
 
-    const transition = await handleRequest(db, req(
-        'POST', '/work-orders/' + liveWorkOrderId + '/transition',
-        token, {
+    // Task 8 CUT: legacy fieldValues below the gate
+    // (live leg still seeds STORED SFV fold shape).
+    await appendLegacyTransition(
+        db, STARK_ORGANIZATION, liveWorkOrderId, {
             transitionEventId: liveWorkOrderId + '-te1',
             targetState: 'n-middle',
             fieldValues: [
@@ -1500,8 +1504,7 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
             release: null,
             transitionAt: nowUtc(),
         },
-    ));
-    assert.equal(transition.status, 204);
+    );
 
     const liveScan = await transitionFieldValueCounts(
         db, STARK_ORGANIZATION, liveWorkOrderId,

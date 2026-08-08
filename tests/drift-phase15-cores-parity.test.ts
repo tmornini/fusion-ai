@@ -18,6 +18,9 @@ import {
     deriveWorkOrderLifecycle,
     deriveMemberStates,
 } from '../api/derive-states.ts';
+import {
+    appendLegacyTransition,
+} from './legacy-transition-fixture.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import {
     flowGraphBindingsFromPairs,
@@ -483,7 +486,6 @@ test('stateEventVisibilityFor: tier (ii) op-born transition'
         {
             transitionEventId,
             targetState: 'n-finish',
-            fieldValues: [],
             release: null,
             transitionAt: nowUtc(),
         },
@@ -1382,11 +1384,9 @@ async function transitionWithFieldValue(
     ));
     assert.equal(attrWrite.status, 200);
 
-    const transitioned = await handleRequest(db, req(
-        'POST',
-        '/work-orders/' + workOrderId + '/transition',
-        token,
-        {
+    // Task 8 CUT: legacy fieldValues below the gate.
+    await appendLegacyTransition(
+        db, STARK_ORGANIZATION, workOrderId, {
             transitionEventId,
             targetState: 'n-finish',
             fieldValues: [{
@@ -1400,8 +1400,7 @@ async function transitionWithFieldValue(
             release: null,
             transitionAt: nowUtc(),
         },
-    ));
-    assert.equal(transitioned.status, 204);
+    );
 }
 
 // Wire-shape pin (C4): GET work-orders/:id/history is

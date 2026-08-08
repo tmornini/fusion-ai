@@ -3931,9 +3931,11 @@ export interface WorkOrderTransitionRelease {
     readonly at: string;
 }
 
-// Dual-accept window (Task 4): wire accepts BOTH the
-// legacy fieldValues shape and the instance set/clear
-// shape until Task 8 hard-cuts at the gate. Discriminated
+// Dual-tolerant body shapes (Task 4 dual-accept; Task 8
+// gate cut): the LIVE gate rejects the fieldValues key in
+// the dispatch arrow. This validator still accepts BOTH
+// shapes for the below-facade / stored-data tier (seed
+// pure-moves, history fold of stored pairs). Discriminated
 // on the presence of the `fieldValues` key.
 export interface WorkOrderLegacyTransitionBody {
     readonly kind: 'legacy';
@@ -4015,9 +4017,10 @@ function parseTransitionRelease(
     return { id, state, at };
 }
 
-// Legacy fieldValues branch — today's code verbatim plus
-// kind:'legacy'. Every wire-valid legacy body carries the
-// fieldValues key; hybrids 400 in assertOnlyKeys.
+// Legacy fieldValues branch — stored-data / below-facade
+// tier only (Task 8 cut the live gate). kind:'legacy'.
+// Every valid legacy body carries the fieldValues key;
+// hybrids 400 in assertOnlyKeys.
 function validateWorkOrderLegacyTransitionBody(
     body: Record<string, unknown>,
 ): WorkOrderLegacyTransitionBody {
@@ -4193,8 +4196,10 @@ function validateWorkOrderInstanceTransitionBody(
     };
 }
 
-// The HTTP-body gate for POST /work-orders/:id/transition.
-// Dual-accept: `fieldValues` key → legacy; else instance.
+// Body gate for POST /work-orders/:id/transition (and the
+// below-facade seed tier). Dual-tolerant: `fieldValues`
+// key → legacy; else instance. The LIVE route dispatch
+// rejects fieldValues before this runs (Task 8 CUT).
 // Authorship of the transition event AND the release event
 // is stamped from the verified caller in the route, never
 // the body.

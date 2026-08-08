@@ -34,10 +34,11 @@ import {
     deriveInstanceHead,
 } from '../api/derive-record-instances.ts';
 
-// POST work-orders/:id/transition — instance-head dual-
-// accept window (Task 4). Value-bearing set/clear dialect
-// + If-Match ladder against the bound instance head;
-// pure moves remain one-pair; legacy fieldValues stays.
+// POST work-orders/:id/transition — instance-head shape
+// (Task 4 dual-accept; Task 8 gate cut). Value-bearing
+// set/clear dialect + If-Match ladder against the bound
+// instance head; pure moves remain one-pair; legacy
+// fieldValues is rejected at the gate.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';

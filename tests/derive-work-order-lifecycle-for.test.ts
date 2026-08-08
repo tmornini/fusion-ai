@@ -15,6 +15,9 @@ import { organizationToken } from './token-fixtures.ts';
 import { generateCryptoSafeBase62 } from
     '../shared/crypto-safe-base62.ts';
 import { seededMockDb } from './mock-seed.ts';
+import {
+    appendLegacyTransition,
+} from './legacy-transition-fixture.ts';
 
 // The Phase 14 Task 1 core: workOrderLifecycleStatesFor is the
 // ENTITY-SCOPED sibling of deriveWorkOrderLifecycle — it reuses
@@ -216,9 +219,10 @@ async () => {
     ));
     assert.equal(created.status, 204);
 
-    const transition1 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/transition',
-        token, {
+    // Task 8 CUT: legacy fieldValues below the gate
+    // (stored-data fold; live wire rejects the key).
+    await appendLegacyTransition(
+        db, STARK_ORGANIZATION, workOrderId, {
             transitionEventId: workOrderId + '-te1',
             targetState: 'n-middle',
             fieldValues: [
@@ -234,8 +238,7 @@ async () => {
             release: null,
             transitionAt: nowUtc(),
         },
-    ));
-    assert.equal(transition1.status, 204);
+    );
 
     const transition2At = nowUtc();
     const transition2ReleaseAt = nowUtc();
@@ -244,7 +247,6 @@ async () => {
         token, {
             transitionEventId: workOrderId + '-te2',
             targetState: 'n-finish',
-            fieldValues: [],
             release: {
                 id: workOrderId + '-rel1',
                 state: 'claim_released',
@@ -504,10 +506,10 @@ async () => {
     ));
     assert.equal(created.status, 204);
 
+    // Task 8 CUT: legacy fieldValues below the gate.
     const transitionAt = nowUtc();
-    const transition = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/transition',
-        token, {
+    await appendLegacyTransition(
+        db, STARK_ORGANIZATION, workOrderId, {
             transitionEventId: workOrderId + '-te1',
             targetState: 'n-middle',
             fieldValues: [
@@ -531,8 +533,7 @@ async () => {
             release: null,
             transitionAt,
         },
-    ));
-    assert.equal(transition.status, 204);
+    );
 
     const releaseEventId = generateCryptoSafeBase62();
     const releaseAt = nowUtc();

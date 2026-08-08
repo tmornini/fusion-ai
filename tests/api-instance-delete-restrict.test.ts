@@ -273,7 +273,6 @@ async function transitionTo(
         {
             transitionEventId: eventId,
             targetState,
-            fieldValues: [],
             release: null,
             transitionAt: nowUtc(),
         },

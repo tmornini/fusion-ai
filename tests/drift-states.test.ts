@@ -607,7 +607,6 @@ test('case 4b: work-order live-write chain — birth-claimed'
         token, {
             transitionEventId: workOrderId + '-te1',
             targetState: 'n-middle',
-            fieldValues: [],
             release: null,
             transitionAt: nowUtc(),
         },
@@ -622,7 +621,6 @@ test('case 4b: work-order live-write chain — birth-claimed'
         token, {
             transitionEventId: workOrderId + '-te2',
             targetState: 'n-finish',
-            fieldValues: [],
             release: {
                 id: workOrderId + '-rel1',
                 state: 'claim_released',
@@ -738,7 +736,6 @@ async () => {
         token, {
             transitionEventId: workOrderId + '-genesis',
             targetState: 'n-start',
-            fieldValues: [],
             release: null,
             transitionAt: AT,
         },

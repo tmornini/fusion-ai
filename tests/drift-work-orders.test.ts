@@ -37,6 +37,9 @@ import { postWorkOrderDocumentOp } from '../api/routes.ts';
 import {
     latestClaimEvent,
 } from '../api/work-order-claims.ts';
+import {
+    appendLegacyTransition,
+} from './legacy-transition-fixture.ts';
 import { deriveFlowWorkOrders } from
     '../api/derive-flow-work-orders.ts';
 import {
@@ -507,9 +510,9 @@ async () => {
     await assertEntityAndJoinParity(db, workOrderId, flowId);
 
     // Transition with 2+ field values, no release.
-    const transition1 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/transition',
-        tokenA, {
+    // Task 8 CUT: legacy fieldValues below the gate.
+    await appendLegacyTransition(
+        db, STARK_ORGANIZATION, workOrderId, {
             transitionEventId: 'wo-drift-chain-1-te1',
             targetState: 'n-middle',
             fieldValues: [
@@ -533,8 +536,7 @@ async () => {
             release: null,
             transitionAt: nowUtc(),
         },
-    ));
-    assert.equal(transition1.status, 204);
+    );
     await assertEntityAndJoinParity(db, workOrderId, flowId);
 
     // Transition WITH release — ends A's birth claim. Mint
@@ -548,7 +550,6 @@ async () => {
         tokenA, {
             transitionEventId: 'wo-drift-chain-1-te2',
             targetState: 'n-finish',
-            fieldValues: [],
             release: {
                 id: 'wo-drift-chain-1-rel1',
                 state: 'claim_released',
@@ -1111,19 +1112,26 @@ function applyTransitionPair(
         at: transitionAt,
     });
 
-    const fieldValues = transition.body['fieldValues'] as
-        readonly { id: string; fields: Record<string, unknown> }[];
-    for (const row of fieldValues) {
-        replayedFieldValues.push({
-            id: row.id,
-            state_event_id: pickString(
-                row.fields, 'state_event_id',
-            ),
-            attribute_id: pickString(
-                row.fields, 'attribute_id',
-            ),
-            value: pickString(row.fields, 'value'),
-        });
+    // Task 8 / Task 3: new-shape pure-moves omit fieldValues;
+    // only legacy bags contribute fold rows (A4 shape-disjoint).
+    const rawFieldValues = transition.body['fieldValues'];
+    if (Array.isArray(rawFieldValues)) {
+        const fieldValues = rawFieldValues as readonly {
+            id: string;
+            fields: Record<string, unknown>;
+        }[];
+        for (const row of fieldValues) {
+            replayedFieldValues.push({
+                id: row.id,
+                state_event_id: pickString(
+                    row.fields, 'state_event_id',
+                ),
+                attribute_id: pickString(
+                    row.fields, 'attribute_id',
+                ),
+                value: pickString(row.fields, 'value'),
+            });
+        }
     }
 
     const release = transition.body['release'];
@@ -1358,7 +1366,6 @@ async () => {
         tokenA, {
             transitionEventId: 'wo-drift-trace-1-te1',
             targetState: 'n-middle',
-            fieldValues: [],
             release: {
                 id: 'wo-drift-trace-1-rel1',
                 state: 'claim_released',
@@ -1453,10 +1460,10 @@ async () => {
     assert.equal(takeover.status, 204);
 
     // Leg 6: transition with values, by B.
+    // Task 8 CUT: legacy fieldValues below the gate.
     const withValuesAt = nowUtc();
-    const withValues = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/transition',
-        tokenB, {
+    await appendLegacyTransition(
+        db, STARK_ORGANIZATION, workOrderId, {
             transitionEventId: 'wo-drift-trace-1-te2',
             targetState: 'n-middle',
             fieldValues: [
@@ -1480,8 +1487,8 @@ async () => {
             release: null,
             transitionAt: withValuesAt,
         },
-    ));
-    assert.equal(withValues.status, 204);
+        { actor: 'current', requestAt: withValuesAt },
+    );
 
     // Leg 7: transition to finish by B — claim stays live so
     // Leg 8's named release op has a live claim to end
@@ -1492,7 +1499,6 @@ async () => {
         tokenB, {
             transitionEventId: 'wo-drift-trace-1-te3',
             targetState: 'n-finish',
-            fieldValues: [],
             release: null,
             transitionAt: finishTransitionAt,
         },

@@ -2335,15 +2335,16 @@ export async function postWorkOrderReleaseOp(
     );
 }
 
-// Transition a work order along an edge. Dual-accept window
-// (Task 4): legacy fieldValues pure-append OR instance
-// set/clear composing the instance-PATCH pipeline against
-// the bound instance head. organization === undefined is the
-// below-facade seed tier (validate + append only). Gate tier
-// fences the WO (404/403) for both shapes; value-bearing
-// instance shape adds bind assert + If-Match ladder + one
-// tx of op + revision. Authorship is stamped from the
-// verified caller (actor). `pair` is optional.
+// Transition a work order along an edge. Dual-tolerant
+// below the facade (seed tier + stored-data fidelity):
+// legacy pure-append OR instance set/clear against the
+// bound instance head. organization === undefined is the
+// below-facade seed tier (validate + append only). The
+// live gate rejects the legacy key in the dispatch arrow
+// (Task 8 CUT). Gate tier fences the WO (404/403); value-
+// bearing instance shape adds bind assert + If-Match
+// ladder + one tx of op + revision. Authorship is stamped
+// from the verified caller (actor). `pair` is optional.
 export async function postWorkOrderTransitionOp(
     db: DbAdapter,
     workOrderId: Id,
@@ -5231,15 +5232,25 @@ export const routes: Route[] = [
     // transaction shape. organization is NOT
     // requireOrganization — the op discriminates the
     // below-facade seed tier (undefined) from the gate.
+    // Task 8 CUT: gate rejects the legacy fieldValues key
+    // here only; the op stays dual-tolerant for seed.
     route('work-orders/:id/transition', {
         post: (
             db, p, body, actor, pair,
             organization, roles,
-        ) =>
-            postWorkOrderTransitionOp(
+        ) => {
+            if ('fieldValues' in body) {
+                throw new ValidationError(
+                    'WorkOrderTransitionBody.fieldValues'
+                    + ' is retired: send set/clear against'
+                    + ' the bound instance',
+                );
+            }
+            return postWorkOrderTransitionOp(
                 db, param(p, 0), body, actor,
                 organization, roles, pair,
-            ),
+            );
+        },
     }),
     // Member-tier POST — /work-orders carries POST in
     // MEMBER_VERBS (claim/transition precedent). See
