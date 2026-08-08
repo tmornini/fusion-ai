@@ -111,8 +111,7 @@ Longitudinal record across the Postgres migration.
 
 `--visualize` regenerates
 `measurements/page-load-times-broken-in-ichat.html` from
-committed history + budgets (self-contained HTML,
-gitignored). Bare `./measure --visualize` skips the
+committed history + budgets (self-contained HTML). Bare `./measure --visualize` skips the
 clean-tree gate and Chrome. Bare `./measure` (ceremony)
 regenerates viz after record. With an explicit measure
 run, pass `--visualize` to regenerate after success;
