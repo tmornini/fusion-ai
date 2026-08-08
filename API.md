@@ -13,8 +13,8 @@ This document answers three questions:
    shown both as the *actual* store-operation sequence and as the
    *doctrinal* single-noun-primitive decomposition (§3).
 3. **What does the shadow ledger add to the wire?** — the pair
-   formation step every write runs through, the response headers and
-   redaction it produces, and the seed's own pre-formed pairs (§5).
+   formation step every write runs through, the response headers
+   it produces, and the seed's own pre-formed pairs (§5).
 
 The single most important fact: **POST endpoints here do not issue
 internal HTTP sub-requests.** They compose store-level primitives
@@ -26,9 +26,8 @@ The source of record is `api/routes.ts` (the route table),
 gate), `api/authentication.ts` (the OAuth grants),
 `api/invitations-domain.ts` (the invitation sub-router),
 `api/organization-requests.ts` (the org/default-org
-sub-routers), and `api/message-pair.ts` /
-`api/message-redaction.ts` (shadow-ledger pair formation and
-redaction — §5). This file summarizes them; on any
+sub-routers), and `api/message-pair.ts` (shadow-ledger pair
+formation — §5). This file summarizes them; on any
 disagreement, the code wins.
 
 ---
@@ -70,14 +69,14 @@ resolves a request in this order:
 5. **Shadow-ledger pair formation + idempotency point-read**, for a
    write verb whose route pattern is in `PAIR_WIRED_ROUTE_PATTERNS`
    (skipped for bearer-exempt routes and for a verb the matched route
-   has no handler for): `formWritePair` builds the canonical,
-   redacted request/response message pair pre-tx — address
-   resolution, a pre-tx head-read (`headPairIdAt`) for a
-   document-class route (simple class: `Supersedes` chain;
-   locked class / flows: `follows` / `If-Response-ID` four-
-   outcome table), and the hashing that feeds idempotency,
-   all before any transaction opens. Unless the route pattern
-   is in `REPLAY_EXEMPT_ROUTE_PATTERNS`, a byte-identical
+   has no handler for): `formWritePair` builds the canonical
+   request/response message pair pre-tx — address resolution, a
+   pre-tx head-read (`headPairIdAt`) for a document-class route
+   (simple class: `Supersedes` chain; locked class / flows:
+   `follows` / `If-Response-ID` four-outcome table), and the
+   hashing that feeds idempotency, all before any transaction
+   opens. Unless the route pattern is in
+   `REPLAY_EXEMPT_ROUTE_PATTERNS`, a byte-identical
    resend is served straight from the STORED response
    (`storedResponseFor`) here — the handler never runs twice for the
    same request. See §5 for what this step produces on the wire.
@@ -905,15 +904,16 @@ the presented grant before any side effect, so a failed grant
 appends nothing and mints nothing. `mintPair` is pure crypto (no
 DB). Every SUCCESSFUL grant also forms its own message pair
 pre-tx (`formAuthPair`, from the `AuthPairSeed` the dedicated
-arm seeds in `api/api.ts`) and appends it as the tx's LAST row
-op — see §5.1 for the headers this produces and §5.2 for the
-redaction the stored pair carries.
+arm seeds in `api/api.ts`) and stores it as the tx's LAST row
+op via `putMessagePair` (keyed by pair id, so two identical
+logins each land) — see §5.1 for the headers this produces and
+§5.2 for the verbatim-storage contract.
 
 - **`authorization_code`** → `grantAuthorizationCode`:
   - PRE-TX: `deriveAuthorizationCodeId` (`sha256Hex(code)`) →
     `authorizeCodeIssuer` (scans the
-    `/authentication/authorize/` response family for the
-    fingerprint match) → `authorizationCodeSpent` fast-fail
+    `/authentication/authorize/` response family for a raw
+    `code` match) → `authorizationCodeSpent` fast-fail
     (`requests.getAllWhere('uri_id', derivedId)` filtered to the
     `identity-tokens/` prefix — a hit IS the spend marker,
     KEY-BY-ANCHOR: the issued root's row id equals the code's
@@ -925,7 +925,7 @@ redaction the stored pair carries.
   - tx `[requests, responses]`: re-run `authorizationCodeSpent`
     on the open view — a race loser aborts, appending nothing
     further — then `appendMessagePair` the root's event pair,
-    then the auth pair.
+    then `putMessagePair` the auth pair.
   - props: the spend re-check + chain-root issue + pair append
     are atomic (no double-spend on replay); a used/unknown code
     → 401, appending nothing.
@@ -948,7 +948,8 @@ redaction the stored pair carries.
   - `issueTokenPair` = `mintPair` + `formAuthPair` (both pre-tx),
     plus the root's own `formTokenEventPair` (also pre-tx), then
     tx `[requests, responses]`: `appendMessagePair` the root's
-    event pair, then the auth pair (when seeded).
+    event pair, then `putMessagePair` the auth pair (when
+    seeded).
   - props: the issue + pair append ride ONE minimal transaction
     — a mid-write fault can never leave an issued chain root
     with no matching ledger pair. Cross-party exchange → 403,
@@ -973,18 +974,17 @@ redaction the stored pair carries.
     `identityByEmail` → `deriveCredentialsFor` (identity-keyed)
     → `currentPasswordSecret` → `verifyPassword` (PBKDF2) → on
     success `formAuthPair` (pre-tx) → tx `[requests, responses]`:
-    `appendMessagePair(pair)`.
+    `putMessagePair(pair)`.
   - doctrinal: verify credentials, then `post_authorization_code`.
   - props: every failure returns the **same** 401 and appends nothing
     (no user enumeration); unknown-user / missing-secret paths run
     `equalizeFailureTiming` to close the timing channel; the STORED
-    pair carries the PBKDF2-fingerprinted password and the
-    sha256-fingerprinted code (§5.2), never the live values;
-    PAIR-ONLY (Phase 13 Task 9 retired the `authorization_codes`
-    row write — the issued code lives only as its own message
-    pair; `authorizationCodeSpent` in the `authorization_code`
-    grant arm above replaces the retired `codeState`-driven
-    re-read as the spend check).
+    pair holds the request and response **verbatim** — password,
+    code, and all (§5.2); PAIR-ONLY (Phase 13 Task 9 retired the
+    `authorization_codes` row write — the issued code lives only
+    as its own message pair; `authorizationCodeSpent` in the
+    `authorization_code` grant arm above replaces the retired
+    `codeState`-driven re-read as the spend check).
 - **`passkey` / `provider` / `oidc`** → 501 seam; no pair is formed
   (only the successful password branch calls `formAuthPair`).
 - default → 400, appending nothing.
@@ -2007,39 +2007,40 @@ is read — the mechanism is a deliberate, documented precondition
 header, not an accidental leak of transport detail into the
 domain layer.
 
-### 5.2 The redaction contract
+### 5.2 The verbatim-storage contract
 
-Only the two `/authentication` routes carry live secrets, and only
-their stored pair is redacted (`api/message-redaction.ts`) — every
-other route's stored message is the request/response verbatim.
-**Redact-always:** a PRESENT field in the redacted set is ALWAYS
-transformed, regardless of its type — never a pass-through, and (bar
-one case) never a throw:
+Every wired write stores its request and response messages
+**verbatim** — the same canonical JSON the wire carries (body
+key order is canonical-sorted; no OTHER header or the body's
+key order is read by the client). There is no masking step on
+the write path: `formWritePair` builds request/response models
+from the caller's fields and body, hashes them, and stores
+them.
 
-- **Headers** — `authorization` and `cookie`, when present, become
-  `sha256:<hex>` unconditionally.
-- **Request body, high-entropy fields** — `refresh_token`,
-  `subject_token`, `actor_token`, `client_assertion`, `code`: a
-  string value fingerprints directly (`sha256:<hex>`); a non-string
-  value fingerprints over its **canonical serialization**
-  (`JSON.stringify(sortJsonKeys(value))`, with any embedded number
-  beyond `2^53` carried through verbatim rather than rounded) — so
-  the fingerprint stays deterministic across byte-identical resends,
-  which `message_hash` and the idempotency fast-path both depend on.
-- **Request body, `password`** — hashed with the SAME PBKDF2 scheme
-  as a stored credential (`hashPassword`, a self-describing
-  `$pbkdf2-sha256$...` string), never the faster bare `sha256:`
-  fingerprint used elsewhere — a string value hashes directly, a
-  non-string value hashes over its canonical serialization.
-- **Response body, high-entropy fields** — `access_token`,
-  `refresh_token`, `code`: fingerprinted exactly like the
-  request-side fields above.
-- **The one throw** — a body that fails to parse as JSON on a
-  redacted route raises `HttpMessageError`: a structurally malformed
-  message is never silently passed through with a live secret still
-  inside it. A bodyless message, or a body that decodes to something
-  other than a plain object, passes through unchanged (redaction
-  never invents or reshapes fields).
+**Auth pairs hold live credentials.** The two
+`/authentication/*` grant routes store passwords, usernames,
+authorization codes, access/refresh tokens, `client_assertion`
+values, and bearer `Authorization` headers as they arrived /
+were issued. This is an accepted **dev-tier** cost — the
+message plane is a plaintext credential ledger until the server
+tier re-gates (or re-masks) it. Named as a deploy blocker in
+[ARCHITECTURE.md](ARCHITECTURE.md) § Server-tier deploy
+blockers.
+
+**Why auth routes stay replay-exempt.** Serving a stored auth
+response would re-hand a single-use code or stale/revoked
+tokens and would bypass the domain guards (code double-spend,
+refresh reuse detection) that only fire when the handler
+re-runs. Auth pairs are also keyed by id (`putMessagePair`),
+not hash: two byte-identical logins each land a row, so
+`message_hash` is not a per-call identity on these routes.
+
+**The one remaining stored ≠ wire site** is invitations:
+`grantInvitation` substitutes the resolved `identity_id` for
+the wire `email` in the stored request body so the invitations
+derive can read `identity_id` from the document body and so
+two different invitees stay hash-distinct. Wire body is
+untouched.
 
 ### 5.3 Seed pair formation (below the gate)
 
@@ -2752,11 +2753,10 @@ yet (revertible in isolation).
 
 **The gate-resolve settlement needs zero code change.** Today's
 grant already resolves the invitee's `email` to `identity_id`
-at the HTTP gate (the `identityPii.getAll` find, before either
-pair forms) and stores only the reference — so the document
-body's email-free shape is not a NEW redaction this task adds;
-it is what the gate already produced, now simply persisted.
-A reader expecting a diff here finds none.
+at the HTTP gate (before either pair forms) and stores only
+the reference — so the document body's email-free shape is the
+identity_id substitution the gate already performed, now simply
+persisted. A reader expecting a diff here finds none.
 
 `tests/api-invitation-document.test.ts` (fresh/duplicate/failed
 grant; fresh/no-op accept; `deriveInvitations` round-tripping
