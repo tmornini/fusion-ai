@@ -477,15 +477,23 @@ async function rescopeToActiveOrganization(
     requestOrganization: Id | undefined,
 ): Promise<void> {
     const ctx = createRequestContext(adapter, flatToken);
-    const reachable =
-        (await getOrganizations(ctx)).map(o => o.id);
+    // Overlap independent rescope reads. Named delta: the
+    // default-org read now fires (and can surface errors)
+    // on the empty-membership corner path too.
+    const [
+        organizations, defaultOrganization,
+    ] = await Promise.all([
+        getOrganizations(ctx),
+        getIdentityDefaultOrganization(ctx),
+    ]);
+    const reachable = organizations.map(o => o.id);
     if (reachable.length === 0) {
         return;
     }
     const active = resolveActiveOrganization(
         reachable,
         requestOrganization ?? null,
-        await getIdentityDefaultOrganization(ctx),
+        defaultOrganization,
     );
     putSessionToken(
         await postOrganizationSessionExchange(ctx, flatToken, active));
