@@ -91,9 +91,15 @@ export async function postWorkOrderCreation(
     ctx: RequestContext,
     input: WorkOrderCreationInput,
 ): Promise<void> {
-    const flow = await ctx.GET<FlowWithGraph>(
-        `flows/${input.flowId}`,
-    );
+    // Wave 1: flow + display id + existing list.
+    const [flow, displayId, existing] =
+        await Promise.all([
+            ctx.GET<FlowWithGraph>(
+                `flows/${input.flowId}`,
+            ),
+            generateDisplayId(input.workOrderId),
+            ctx.GET<WorkOrderEntity[]>('work-orders'),
+        ]);
     const readiness = validateFlowForCreation(flow);
     if (!readiness.ready) {
         throw new Error(
@@ -134,10 +140,6 @@ export async function postWorkOrderCreation(
     const postStartNodeId =
         postStartEdge.toNodeId;
 
-    const displayId =
-        await generateDisplayId(input.workOrderId);
-    const existing =
-        await ctx.GET<WorkOrderEntity[]>('work-orders');
     const position = nextPosition(
         existing.map(w => w.position),
     );
