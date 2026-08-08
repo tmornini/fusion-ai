@@ -2,6 +2,8 @@ import type {
     Id,
     RecordAttributeId,
     WorkOrderEntity,
+    WorkOrderFlowGraph,
+    WorkOrderHistoryEventEntity,
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
@@ -14,6 +16,7 @@ import {
 } from './flow-records.ts';
 import {
     getRecordAttributesByRecord,
+    type RecordAttribute,
 } from './record-attributes.ts';
 import {
     validateAttributeValue,
@@ -42,6 +45,9 @@ export class RecordTransitionViolations
     }
 }
 
+// Pure gate over already-fetched rows. Error bytes and
+// violation list match the former inlined body byte-for-
+// byte (pinned by adapters-record-transitions tests).
 // Gate the leave of the CURRENT node — the same node
 // the workbox action screen paints. Required attrs and
 // constraint checks run against that node's refs only;
@@ -50,23 +56,16 @@ export class RecordTransitionViolations
 // unbound — A3 mirror: every required ref reports).
 // Constraints run on pending values only; requiredness
 // overlays pending on stored (or reports when unbound).
-export async function validateRecordTransition(
-    ctx: RequestContext,
+export function recordTransitionViolationsFrom(
     workOrderId: Id,
+    flowGraph: WorkOrderFlowGraph,
+    history: readonly WorkOrderHistoryEventEntity[],
+    attributes: readonly RecordAttribute[],
     pendingValues:
         ReadonlyMap<RecordAttributeId, string>,
     storedValues:
         ReadonlyMap<RecordAttributeId, string> | null,
-): Promise<ConstraintViolation[]> {
-    const wo = await ctx.GET<WorkOrderEntity>(
-        `work-orders/${workOrderId}`,
-    );
-    const fg = validateWorkOrderFlowGraph(
-        wo.flow_graph,
-    );
-    const history = await getWorkOrderHistory(
-        ctx, workOrderId,
-    );
+): ConstraintViolation[] {
     const currentNodeId =
         currentNodeIdFromHistory(history);
     if (currentNodeId === null) {
@@ -75,7 +74,7 @@ export async function validateRecordTransition(
             + workOrderId,
         );
     }
-    const currentNode = fg.nodes.find(
+    const currentNode = flowGraph.nodes.find(
         n => n.id === currentNodeId,
     );
     if (!currentNode) {
@@ -85,14 +84,6 @@ export async function validateRecordTransition(
             + currentNodeId,
         );
     }
-    const recordId = await getRecordForWorkOrder(
-        ctx, workOrderId,
-    );
-    const attributes = recordId === null
-        ? []
-        : await getRecordAttributesByRecord(
-            ctx, recordId,
-        );
     const attributeById = new Map(
         attributes.map(a => [a.id, a]),
     );
@@ -142,4 +133,36 @@ export async function validateRecordTransition(
         }
     }
     return out;
+}
+
+export async function validateRecordTransition(
+    ctx: RequestContext,
+    workOrderId: Id,
+    pendingValues:
+        ReadonlyMap<RecordAttributeId, string>,
+    storedValues:
+        ReadonlyMap<RecordAttributeId, string> | null,
+): Promise<ConstraintViolation[]> {
+    // Wave 1: all keyed by workOrderId.
+    const [wo, history, recordId] =
+        await Promise.all([
+            ctx.GET<WorkOrderEntity>(
+                `work-orders/${workOrderId}`,
+            ),
+            getWorkOrderHistory(ctx, workOrderId),
+            getRecordForWorkOrder(ctx, workOrderId),
+        ]);
+    const fg = validateWorkOrderFlowGraph(
+        wo.flow_graph,
+    );
+    // Wave 2: attributes only when a record is bound.
+    const attributes = recordId === null
+        ? []
+        : await getRecordAttributesByRecord(
+            ctx, recordId,
+        );
+    return recordTransitionViolationsFrom(
+        workOrderId, fg, history, attributes,
+        pendingValues, storedValues,
+    );
 }
