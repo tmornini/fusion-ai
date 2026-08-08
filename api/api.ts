@@ -783,8 +783,7 @@ export async function handleRequest(
             // identical resend never reaches the handler and
             // posts no notification — nothing was written.
             // Skipped for REPLAY_EXEMPT_ROUTE_PATTERNS: those
-            // routes' own domain guard (or, from Task 3, their
-            // redacted stored body) makes serving the cached
+            // routes' own domain guard makes serving the cached
             // response wrong rather than merely redundant — see
             // message-pair.ts. ORDERING IS LOAD-BEARING: this
             // fast path runs BEFORE the locked four-outcome table

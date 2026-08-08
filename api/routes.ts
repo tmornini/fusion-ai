@@ -4784,10 +4784,10 @@ export const routes: Route[] = [
     }),
     // The grant closures retire into api.ts's dedicated
     // authentication POST arm (Task 3, C1 discharge): both
-    // routes are bearerExempt and now form their own redacted
-    // pair deep inside postToken/postAuthorize, pre-tx, since
-    // only the grant can resolve the requester identity. The
-    // bare registration survives so matchRoute still 404s an
+    // routes are bearerExempt and form their own pair deep
+    // inside postToken/postAuthorize, pre-tx, since only the
+    // grant can resolve the requester identity. The bare
+    // registration survives so matchRoute still 404s an
     // unknown path and 405s a non-POST verb on either pattern.
     route('authentication/token', {}),
     route('authentication/authorize', {}),
