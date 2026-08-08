@@ -891,16 +891,21 @@ async function handleSaveObjectives(
         }
     });
     const ctx = sessionContext();
-    if (baselineMoves.length > 0) {
-        await postProjectBaselineScoring(
-            ctx, projectId, baselineMoves,
-        );
-    }
-    if (actualMoves.length > 0) {
-        await postProjectActualMeasurement(
-            ctx, projectId, actualMoves,
-        );
-    }
+    // Disjoint payloads; Promise.all keeps baselineAt <
+    // actualAt via the same-ms sequence counter when both
+    // fire in the same tick.
+    await Promise.all([
+        baselineMoves.length > 0
+            ? postProjectBaselineScoring(
+                ctx, projectId, baselineMoves,
+            )
+            : Promise.resolve(),
+        actualMoves.length > 0
+            ? postProjectActualMeasurement(
+                ctx, projectId, actualMoves,
+            )
+            : Promise.resolve(),
+    ]);
 }
 
 function openApproveConfirmation(): void {
