@@ -388,54 +388,90 @@ document.addEventListener(
             }
         }
 
+        // Three self-contained branches — sidebar chrome,
+        // palette, and module-import + page-init — each keeps
+        // its own marks and error handler. Joined by bare
+        // Promise.all before recordPageReady so readyMs still
+        // covers chrome (Commandment I). NOT fire-and-forget.
+        // Gated pageReady && !bounced so aborted boots never
+        // record ready. Boot spans may overlap (see
+        // page-performance.ts); readyMs is the summable truth.
+        let bounced = false;
+        let pageReady = false;
+        const branches: Array<Promise<void>> = [];
+
         if (
             PAGE_REGISTRY[pageName]?.layout
                 === 'sidebar'
         ) {
-            markStart(MEASURE_BOOT_SIDEBAR_CHROME);
+            branches.push((async () => {
+                markStart(MEASURE_BOOT_SIDEBAR_CHROME);
+                try {
+                    await initSidebarLayout(
+                        hasSchema,
+                        bootOrganizations,
+                    );
+                    markEnd(
+                        MEASURE_BOOT_SIDEBAR_CHROME,
+                    );
+                } catch (err) {
+                    if (
+                        redirectIfMissingTable(err)
+                    ) {
+                        bounced = true;
+                        return;
+                    }
+                    log.warn(
+                        'sidebar layout init failed',
+                        'core',
+                        err,
+                    );
+                }
+            })());
+        }
+
+        branches.push((async () => {
+            markStart(MEASURE_BOOT_COMMAND_PALETTE);
             try {
-                await initSidebarLayout(
-                    hasSchema,
-                    bootOrganizations,
+                await loadAndInitCommandPalette();
+                markEnd(
+                    MEASURE_BOOT_COMMAND_PALETTE,
                 );
-                markEnd(MEASURE_BOOT_SIDEBAR_CHROME);
             } catch (err) {
                 if (
                     redirectIfMissingTable(err)
-                ) return;
+                ) {
+                    bounced = true;
+                    return;
+                }
                 log.warn(
-                    'sidebar layout init failed',
+                    'command palette init failed',
                     'core',
                     err,
                 );
             }
-        }
+        })());
 
-        markStart(MEASURE_BOOT_COMMAND_PALETTE);
-        try {
-            await loadAndInitCommandPalette();
-            markEnd(MEASURE_BOOT_COMMAND_PALETTE);
-        } catch (err) {
-            if (
-                redirectIfMissingTable(err)
-            ) return;
-            log.warn(
-                'command palette init failed',
-                'core',
-                err,
-            );
-        }
+        branches.push((async () => {
+            try {
+                await initPageModule(pageName);
+                pageReady = true;
+            } catch (err) {
+                if (
+                    redirectIfMissingTable(err)
+                ) {
+                    bounced = true;
+                    return;
+                }
+                handlePageLoadError(
+                    pageName, err,
+                );
+            }
+        })());
 
-        try {
-            await initPageModule(pageName);
+        await Promise.all(branches);
+        if (pageReady && !bounced) {
             recordPageReady(pageName);
-        } catch (err) {
-            if (
-                redirectIfMissingTable(err)
-            ) return;
-            handlePageLoadError(
-                pageName, err,
-            );
         }
     },
 );
