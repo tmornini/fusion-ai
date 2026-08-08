@@ -14,13 +14,13 @@ import {
     DEFAULT_LOCK_TIMEOUT,
     type WorkOrderFlowGraph,
 } from '../api/types.ts';
-import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     ORGANIZATION_TWO,
     STARK_ORGANIZATION,
 } from '../api/mock-data/seed-constants.ts';
 import { buildWorkOrders } from
     '../api/mock-data/work-orders.ts';
+import { seededMockDb } from './mock-seed.ts';
 
 // GET work-orders/:id/history — Phase A1 of states-URI
 // elimination. Lifecycle events DESC (index 0 = current),
@@ -267,8 +267,7 @@ test(
 test(
     'foreign work order history → 403 honest body',
     async () => {
-        const db = memoryDbAdapter();
-        await postMockDataLoad(db);
+        const db = await seededMockDb();
         const foreignId = buildWorkOrders()[0]!.id;
         const tokenTwo = await organizationToken(
             'current', ORGANIZATION_TWO,
@@ -404,8 +403,7 @@ test(
 test(
     'GET work-orders/history org isolation: org B rows absent',
     async () => {
-        const db = memoryDbAdapter();
-        await postMockDataLoad(db);
+        const db = await seededMockDb();
 
         const starkId = 'wo-coll-hist-stark';
         const twoId = 'wo-coll-hist-two';

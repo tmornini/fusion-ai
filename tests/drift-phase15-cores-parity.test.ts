@@ -1,9 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-    memoryDbAdapter,
-    type MemoryDbAdapter,
-} from '../api/db-memory.ts';
+import type { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import {
     EntityNotFoundError,
@@ -12,7 +9,6 @@ import {
     TABLE_NAMES,
 } from '../api/db.ts';
 import { nowUtc } from '../api/types.ts';
-import { postMockDataLoad } from '../api/mock-data.ts';
 import {
     workOrderDocumentHeadFor,
     workOrderClaimHistoryFor,
@@ -58,6 +54,7 @@ import {
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
+import { seededMockDb } from './mock-seed.ts';
 
 // Phase 15: view-safe derive cores (Task 1) + claim-gate
 // graph re-anchor pins (Task 2) + field-values visibility
@@ -87,9 +84,7 @@ function req(
 }
 
 async function seededDb(): Promise<MemoryDbAdapter> {
-    const db = memoryDbAdapter();
-    await postMockDataLoad(db);
-    return db;
+    return seededMockDb();
 }
 
 function workOrderFlowGraph(
