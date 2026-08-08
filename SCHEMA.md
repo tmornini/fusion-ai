@@ -192,6 +192,21 @@ DELETE-shaped response pair excluded from the head by
 family's DELETE — there is no row to splice, since there was
 never a row to begin with.
 
+### Work-order instance binding (pair-plane only, no table)
+
+`work-orders/:id/binding` is a named operation family with
+no backing table: `POST` appends a binding op pair at
+`/work-orders/:id/binding/`. The CURRENT bind derives from
+the WO's own binding op-pair prefix — latest `(at, id)`
+wins (claim-op derive precedent). WO GET embeds
+`instance_id` + `record_type_id` at read time (never a
+document field). Transition-driven value writes append
+instance **revision** pairs at the instance's own
+canonical address
+(`organizations/:org/record-types/:type/instances/:id`) —
+the bind itself writes no instance revision. See
+API.md §3.34 / §3.19.
+
 Post-Phase-Final, ideas, projects, flows (including
 graphDelta/revivals for graph lifecycle), work orders,
 record-types / attributes / instances, objectives,

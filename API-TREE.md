@@ -13,8 +13,9 @@ That mechanism will replace the existing ledger's and common states system by mo
 └─|─ work-orders/ • derived view over org-nested canonical storage
   |  └── :id/
   |      └── claim                            • RECONCILED: claim graph head from workOrderDocumentHeadFor (Phase 15 Task 2); contention 409 + nonexistent-WO 404 + foreign-WO 403 held — see Phase 15 FLIPPED + honest HTTP status covenant
-  |      └── transition                       • RECONCILED: dangling state_event_id on a field value → 400 at the gate (Phase 15 Task 3, wire delta 4; forged clients only)
+  |      └── transition                       • TARGET-STATE (this stack): post-Phase-2 body (instance_id + record_type_id + set/clear); If-Match preconditions bound instance head (named RFC 9110 §13.1.1 deviation); op + revision one-tx; legacy fieldValues key → 400 at the gate; pure moves carry neither If-Match nor asserts — see API.md §3.19
   |      └── release                          • RECONCILED: POST work-orders/:id/release — named unclaim op, 204, read-decide-append, replayed at derive; foreign-WO 403; nonexistent-WO 404
+  |      └── binding                          • TARGET-STATE (this stack): named bind op — member-tier POST; current bind derived from op pairs (claim precedent); rebind 409; WO GET embeds instance_id + record_type_id — see API.md §3.34
 └─|─ /identities/
   |  └── :id                                   • default-organization is an attribute of the identity itself
   |      └─|─ /credentials                     • all of them, single document
@@ -56,7 +57,7 @@ That mechanism will replace the existing ledger's and common states system by mo
   |    |          └── /attributes/
   |    |              └── :attribute-id       • RECONCILED: nested attributes (was flat record-attributes); 'stateless' SIMPLE PUT class; admin mutation; RESTRICT DELETE (WO frozen graph + live flow-graph + state field values + live instance heads carrying a value); body drops record_id (type id rides the uri prefix); ACL arrays read_roles/write_roles on the document
   |    |          └── /instances/
-  |    |              └── :instance-id        • RECONCILED: first-class data rows; member path-tier + per-attribute ACL; PUT create-only (409 if address spent, including tombstone); PATCH If-Match required (428 missing / 412 stale); DELETE tombstone-wins; GET projects by read ACL + strong ETag header (list rows embed etag field); full-state revision heads store {values}; wire PATCH is operation-plane set/clear — see API.md §5.20
+  |    |              └── :instance-id        • RECONCILED: first-class data rows; member path-tier + per-attribute ACL; PUT create-only (409 if address spent, including tombstone); PATCH If-Match required (428 missing / 412 stale); DELETE tombstone-wins + placement RESTRICT (non-terminal bound WO → 409 describeReferrers voice; W5 no-abandon residual); GET projects by read ACL + strong ETag header (list rows embed etag field); full-state revision heads store {values}; wire PATCH is operation-plane set/clear — see API.md §5.20
   |    |                  └── /history        • value-revision chain (NOT a tenth lifecycle clone): {at, etag, values} DESC, projected by caller's CURRENT read ACL — the one value-history registration beside the nine lifecycle GETs
   |    |  └── /work-orders/                   • canonical storage
   \    \

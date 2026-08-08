@@ -262,6 +262,7 @@ Legend for classification:
 - `POST /work-orders` — operation (§3.17). Member-tier.
 - `POST /work-orders/:id/claim` — operation (§3.18).
 - `POST /work-orders/:id/transition` — operation (§3.19).
+- `POST /work-orders/:id/binding` — operation (§3.34).
 - `POST /work-orders/:id/release` — operation (named
   unclaim; 204; foreign-WO 403; nonexistent-WO 404).
 
@@ -426,7 +427,7 @@ from the lifecycle-current event (genesis-wins-under-
 skew), never the head PUT body alone. Flows skip the
 embed (no consumer). Work-orders stay `'stateless'` —
 lifecycle lives only on create / claim / transition /
-release ops and the history routes above. Instances
+release / binding ops and the history routes above. Instances
 carry `values` (full-state head), not the lifecycle
 trio.
 
@@ -559,7 +560,8 @@ and appends message pairs — there is no entity-table put
 and no `states.postEvent`. Lifecycle rides document-pair
 bodies (trio families fold `state` / `state_at` /
 `state_event_id` into the document body) or named-op pairs
-(work-order claim / transition / release, invitations).
+(work-order claim / transition / release / binding,
+invitations).
 
 Notation in the doctrinal lines: `put_x` ≈ the document
 pair a live `PUT /x/:id` would form; `post_op` ≈ the
@@ -1365,21 +1367,84 @@ like every other atomic write in this catalog.
 
 ### 3.19 `POST /work-orders/:id/transition` — transition along an edge
 
+Post-Phase-2 shape. Value-bearing transitions couple to the
+bound instance head; pure node moves append the op only.
+
+```http
+POST .../work-orders/{work-order-id}/transition
+If-Match: "<instance-head-etag>"
+{
+  "transitionEventId": "...",
+  "targetState": "<node-id>",
+  "instance_id": "...",
+  "record_type_id": "...",
+  "set": [ { "attribute_id": "...", "value": "..." } ],
+  "clear": [ "attribute_id" ],
+  "release": null,
+  "transitionAt": "..."
+}
+```
+
 - tx: `['requests','responses']`
-- actual: `appendMessagePair(pair)` for the transition op —
-  target state, field values, and optional claim release all
-  ride the op body (transition-fold); no separate states or
-  state_field_values row writes.
-- doctrinal: transition op pair (field values folded;
-  optional claim release) as `post_transition_work_order`.
-- props: atomic; the web-app computes the target node, field values,
-  and whether a claim release is needed; member-tier;
+- actual: one tx appends the transition **operation** pair
+  (targetState, delta, optional release) and — when
+  `set`/`clear` present — the instance **revision** pair
+  (server-formed full-state document via
+  `formDocumentPairFor`). Pure moves append the op pair
+  only. No separate states or state_field_values row
+  writes.
+- doctrinal: transition op pair (+ instance revision when
+  value-bearing; optional claim release) as
+  `post_transition_work_order`.
+- props: atomic (op + revision both-or-neither);
+  member-tier; claim-agnostic server-side;
   `validateWorkOrderTransitionBody`.
-- **Dangling `state_event_id` (Phase 15 Task 3, wire delta 4).**
-  A field value whose `state_event_id` names no event of THIS
-  transaction 400s at the gate. Observable ONLY to forged
-  clients — the shipped UI always sends the transaction's
-  own id. Pins: `tests/api-work-order-transition.test.ts`.
+
+**If-Match preconditions the BOUND INSTANCE head** — the
+op's one mutable participant — not the request-URI
+resource. Named RFC 9110 §13.1.1 deviation (A6): same
+header, same hoist (already hash-covered), same 428/412
+voice as direct instance PATCH (§5.4.1 / §5.20).
+Vocabulary per the sibling's D3 register: missing → 428,
+stale/race → 412, malformed → 400, spent identity /
+conflict → 409.
+
+**Presence rule (one-dialect-per-shape; A2).** When
+`set`/`clear` are present: If-Match, `instance_id`, and
+`record_type_id` are REQUIRED (assert equality with the
+CURRENT bind). Pure moves (`set`/`clear` absent) carry
+NEITHER If-Match NOR the bind-assert fields (400 if sent
+either way). The server derives the bind itself wherever
+a gate needs it.
+
+**Legacy `fieldValues` key → 400 at the gate path.**
+Hard cut (W2). Below-facade seed (`api/mock-data.ts`) may
+still form historical legacy-shape transition pairs
+carrying `fieldValues` bags — those bytes stay on the
+ledger for history-fold audit; the live route rejects the
+key.
+
+**Status ladder (spec §HTTP status covenant items 1–11),
+in order:**
+
+1. 401 / 403 / 404 as today (WO fence + existence)
+2. 400 body shape (incl. legacy `fieldValues` key;
+   set/clear rules; If-Match on a pure move; assert
+   fields on a pure move / missing with values — A2)
+3. 400 bind assert mismatch, values on an unbound WO,
+   or a required-ref exit on an unbound WO (A3)
+4. 428 missing If-Match with values present
+5. 400 malformed If-Match
+6. 412 stale If-Match (pre-tx)
+7. 403 attribute write ACL (all-or-nothing)
+8. 400 value type / constraint violations
+9. 400 required-at-exit violations (W10)
+10. In-tx: UNIQUE `follows` race → 412; nothing stored
+11. 204 success (today's transition status; op +
+    revision committed together)
+
+Error bodies: house `{ "error": "<string>" }` only.
+Pins: `tests/api-work-order-transition.test.ts`.
 
 ### 3.20 `POST .../record-types` — record-type write (create or edit)
 
@@ -1639,13 +1704,13 @@ membership write.
 and — as a `BOOTSTRAP_ROUTES` member — below the shadow ledger
 entirely: this call forms and appends no pair for ITSELF (none of
 §5.1's headers appear on its own response). What it seeds, though,
-includes **1506** of its OWN pre-formed message pairs
+includes **1494** of its OWN pre-formed message pairs
 (EXPECTED_PAIR_COUNT) — see §5.3.
 
 - **Three sequential steps, not one atomic op:**
   1. `ensureTables(TABLE_NAMES)`
   2. `transaction(TABLE_NAMES, postMockDataLoadIn)` — builds the whole
-     dataset, including the 1506 seed pairs, in one tx (a mid-seed
+     dataset, including the 1494 seed pairs, in one tx (a mid-seed
      failure leaves no half-populated schema).
   3. `seedHumanCredentials(adapter)` — its **own** tx over
      `['requests','responses']`; the PBKDF2 hashing runs outside the tx
@@ -1797,6 +1862,51 @@ the RESTRICT tombstone (§5.7). **Admin-tier** mutation
   MEMBER_ID CAVEAT — a state-unchanged edit replays the
   STORED head event's `member_id`, never the editing
   actor.
+
+### 3.34 `POST /work-orders/:id/binding` — bind an instance
+
+Binds a work order to one org-owned instance of one
+record-type. Body:
+
+```json
+{ "instance_id": "...", "record_type_id": "..." }
+```
+
+→ **204**. One binding op pair, one tx — no document
+write, no instance revision. The CURRENT bind derives
+from the WO's own binding op-pair prefix (latest
+`(at, id)` wins) — claim-op derive precedent. WO entity
+GET (detail and list rows) EMBEDS the derived bind as
+`instance_id` + `record_type_id` wire fields
+(derive-at-read; never a document field; the
+`hasUndoHistory` embed precedent).
+
+- tx: `['requests','responses']`
+- actual: derive current bind (op-pair prefix) → if a
+  prior pair names a DIFFERENT
+  `(instance_id, record_type_id)` → 409; else
+  `appendMessagePair(pair)` for the binding op.
+- doctrinal: binding op pair as `post_bind_work_order`.
+- props: atomic; **TOCTOU-safe** (in-tx rebind check);
+  **claim-agnostic** member-tier (A7 — parity with the
+  transition op's shipped posture; workbox UX may still
+  gate its own flows on the active claim);
+  `validateWorkOrderBindingBody`.
+
+**Status ladder (spec §HTTP status covenant), in order:**
+
+1. 401 unauthenticated
+2. 403 org fence / 404 absent WO (`missedReadError`)
+3. 400 body shape
+4. 404 instance or type absent under the fenced org
+   (tombstone = absent; foreign = absent)
+5. 400 `record_type_id` not among the flow's live
+   joins
+6. 409 already bound to a different pair (in-tx)
+7. 204 success (op voice — claim / transition /
+   release parity); byte-identical resend replays
+
+Pins: `tests/api-work-order-binding.test.ts`.
 
 ---
 
@@ -1950,7 +2060,7 @@ two, so they stand outside the FIFTEEN
 so the seed forms each family's pair the SAME way a live request
 would, then writes it alongside the seeded row:
 
-- The mock-data seed pre-forms **1506** message pairs — one pair per seeded
+- The mock-data seed pre-forms **1494** message pairs — one pair per seeded
   row for most families, but each seeded human/AI member folds in an
   operation/member-document/detail-document triple (11 human-members +
   4 ai-members, each × 3 = 45 member-family pairs: 15 ops + 15 member
@@ -2012,9 +2122,9 @@ would, then writes it alongside the seeded row:
   one); a second pass then appends each pre-formed pair in one
   `['requests','responses']` transaction (pair-plane only —
   Phase Final deleted every entity table). The bootstrap seed
-  forms exactly **thirteen** such pairs (absolute; see
+  forms exactly **twelve** such pairs (absolute; see
   `tests/mock-data-pairs.test.ts`). Total mock seed:
-  **EXPECTED_PAIR_COUNT = 1506**.
+  **EXPECTED_PAIR_COUNT = 1494**.
 - The scores deferral now closes WHOLE — baselines AND actuals, the
   SAME `buildSeedScoreRows` output (`api/mock-data/scores.ts`) driving
   both the pair formation above and the seeded row writes.
@@ -2142,6 +2252,9 @@ ride `documentPutHandler`. They introduce platform-wide
   tombstone-wins (replay → 204).
 
 Full outcome / projection / history tables: §5.20.
+The transition op (§3.19) is the second If-Match
+consumer — same dialect, preconditioning the bound
+instance head (named RFC 9110 §13.1.1 deviation).
 
 ### 5.5 ideas/projects/flows: generic components
 
@@ -2180,7 +2293,8 @@ now declares:
   too. `work-orders` is the FIRST `'stateless'` family: a work
   order's lifecycle is written ONLY by `POST /work-orders`
   (§3.17), `POST /work-orders/:id/claim` (§3.18), `POST
-  /work-orders/:id/transition` (§3.19), and `POST
+  /work-orders/:id/transition` (§3.19), `POST
+  /work-orders/:id/binding` (§3.34), and `POST
   /work-orders/:id/release` (named unclaim) — never by a
   document PUT — so `validateWorkOrderDocumentBody` 400s a
   body carrying any trio key (the stateless covenant is
@@ -2216,11 +2330,12 @@ hand-written route — the untouched existing suite (including
 `tests/api-work-order-document.test.ts`'s below-gate op pin and
 byte-identical-resend case are the absorption's proof;
 `tests/api-work-orders-verb-gaps.test.ts` additionally pins
-every deliberate verb gap the family still carries (PUT/DELETE
-`work-orders`; POST/DELETE `work-orders/:id`; every verb on
-`/claim` and `/transition` but their own POST; POST/PUT/DELETE
-`flows/:id/work-orders`; GET/POST `flows/:id/work-orders/:woid`
-— its DELETE already pinned in `api-flows-verb-gaps.test.ts`).
+the **18** deliberate verb gaps the family still carries
+(PUT/DELETE `work-orders`; POST/DELETE `work-orders/:id`;
+every verb on `/claim`, `/transition`, and `/binding` but
+their own POST; POST/PUT/DELETE `flows/:id/work-orders`;
+GET/POST `flows/:id/work-orders/:woid` — its DELETE already
+pinned in `api-flows-verb-gaps.test.ts`).
 
 ### 5.7 The fifth family: record-types (nested) and the DELETE-pair filter
 
@@ -3187,7 +3302,7 @@ above.
 the entity-table / clients era (file absent).
 
 **Contract (as of Phase Final).** Absolute pair count is
-`EXPECTED_PAIR_COUNT = 1506` with bootstrap 13. Historical
+`EXPECTED_PAIR_COUNT = 1494` with bootstrap 12. Historical
 Path A dual-write (`appendMessagePair` beside row puts) is
 gone — only `requests`/`responses` remain; formerly
 this task touches. Reseed marginal cost measured ~125 ms for the
@@ -3333,8 +3448,8 @@ does not flip a read by itself.
 Industries, Wayne Enterprises) form their OWN
 `organizations/:id` document pairs on the message plane.
 Phase Final deleted the organizations row store; the live
-absolute is **EXPECTED_PAIR_COUNT = 1506** with bootstrap
-**13** (see `tests/mock-data-pairs.test.ts`). The retired
+absolute is **EXPECTED_PAIR_COUNT = 1494** with bootstrap
+**12** (see `tests/mock-data-pairs.test.ts`). The retired
 `tests/mock-data-fingerprint.test.ts` file is gone with the
 clients / entity-table era.
 
@@ -3450,7 +3565,7 @@ nested field-values leaf seed pairs remain. No
 `WRITE_RESPONSE_SPECS` leaf entry for the retired field-
 values write address. `flows/:id/versions*` specs and
 handlers are gone with the routes. Mock seed absolute:
-**EXPECTED_PAIR_COUNT = 1506** / bootstrap 13.
+**EXPECTED_PAIR_COUNT = 1494** / bootstrap 12.
 
 **§5 chronological gap (named) — DEFERRED.** Tasks 1–6 of
 Phase 14, the Phase 15 re-anchors, and the Phase Final
@@ -3536,10 +3651,18 @@ Lost-update on a live head → **412**. See §5.4.1 and
 spec decision 13 (post-ship If-Match unification with
 flows).
 
-**DELETE.** Unconditional tombstone (phase 1; placement
-RESTRICT is phase 2). Tombstone-wins: a DELETE after
-an interleaved PATCH still leaves the address spent;
-PUT never revives. Replay → **204**.
+**DELETE.** Tombstone-wins (replay → **204**). Placement
+RESTRICT: any org WO whose CURRENT bind (§3.34 derive)
+names this instance AND whose current node is
+NON-TERMINAL (outgoing edges exist in that WO's own
+frozen `flow_graph`) → **409** naming the blocker WO
+ids (`describeReferrers` voice). Terminal-node and
+unbound instances DELETE as before (unconditional
+tombstone). A DELETE after an interleaved PATCH still
+leaves the address spent; PUT never revives. Named
+residual (W5): no WO abandon/delete op exists — a WO
+parked mid-flow blocks its instance's deletion until
+transitioned to a terminal node.
 
 **GET projection.** Return only read-permitted
 attributes. Sparse PATCH is required for correctness
@@ -3573,8 +3696,13 @@ strong validator. The stored `responses.etag` column
 through `missedReadError` (foreign 403 / absent 404
 honest family body `record_instances`).
 
-**Phase 2 residual (G6 — not this wave).** Work-order
-transitions still carry inline `field_values`; instance
-binding (`instance_id` + asserted `record_type_id`),
-placement UNIQUE, and SoT flip are a separate future
-stack. `flows/:id/records` join family is UNTOUCHED.
+**Phase 2 resolution (G6).** Work-order ↔ instance SoT
+coupling is the doctrine of record: bind op
+`POST /work-orders/:id/binding` (§3.34), transition
+value writes through the instance head with If-Match
+(§3.19), placement UNIQUE by construction. Design:
+`docs/superpowers/specs/2026-08-05-work-order-instance-
+sot-coupling-design.md` (amendments merged 2026-08-07 —
+`2026-08-07-work-order-instance-sot-coupling-amendments-
+design.md`). `flows/:id/records` join family is
+UNTOUCHED.
