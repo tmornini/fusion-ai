@@ -1333,7 +1333,7 @@ function workOrderLifecycleFromPlane(
 export async function deriveWorkOrderLifecycle(
     db: DbAdapter,
 ): Promise<StateEntity[]> {
-    return db.transaction(
+    return db.readTransaction(
         ['requests', 'responses'],
         async (view) => {
             const [requests, responses] = await Promise.all([
@@ -1359,7 +1359,7 @@ export async function deriveWorkOrderHistories(
     db: DbAdapter,
     organization: Id,
 ): Promise<WorkOrderHistoryEventEntity[]> {
-    return db.transaction(
+    return db.readTransaction(
         ['requests', 'responses'],
         async (view) => {
             const [requests, responses] = await Promise.all([
@@ -1803,7 +1803,7 @@ const MEMBERS_DOCUMENT_PREFIX =
 export async function deriveMemberStates(
     db: DbAdapter,
 ): Promise<StateEntity[]> {
-    return db.transaction(
+    return db.readTransaction(
         ['requests', 'responses'],
         async (view) => {
             const [requests, responses] = await Promise.all([
@@ -1911,7 +1911,7 @@ const INVITATION_OP_FIELDS: Readonly<
 export async function deriveInvitationStates(
     db: DbAdapter,
 ): Promise<StateEntity[]> {
-    return db.transaction(
+    return db.readTransaction(
         ['requests', 'responses'],
         async (view) => {
             const [requests, responses] = await Promise.all([
