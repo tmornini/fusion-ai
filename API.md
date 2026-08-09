@@ -1707,7 +1707,7 @@ entirely: this call forms and appends no pair for ITSELF (none of
 includes **1498** of its OWN pre-formed message pairs
 (EXPECTED_PAIR_COUNT) — see §5.3.
 
-- **Three sequential steps, not one atomic op:**
+- **Four sequential steps, not one atomic op:**
   1. `ensureTables(TABLE_NAMES)`
   2. `transaction(TABLE_NAMES, postMockDataLoadIn)` — builds the whole
      dataset, including the 1498 seed pairs, in one tx (a mid-seed
@@ -2047,16 +2047,15 @@ untouched.
 `POST /snapshots/mock-data` and `POST /snapshots/bootstrap` are
 `BOOTSTRAP_ROUTES` — bearer-exempt and below the ledger for their OWN
 request (§3.26–§3.28). What they seed, though, is itself the output of
-FIFTEEN pair-capable write families, in dependency order:
+SIXTEEN pair-capable write families, in dependency order:
 `human-members`, `ideas`, `idea-submissions`, `projects`, `flows`,
 `work-orders`, `flow-work-orders`, `ai-members`, `records`,
-`objectives`, `memberships`, `members`, `identities`,
-`identity-credentials`, and `role-grants` (the last three, Phase 10
-Task 6, §5.15), PLUS the historical-trace carve-out's own bare
-`states` / `state_field_values` writes (Phase 11 Task 3, §5.16) AND
-the `identity_default_organizations` family's own bare writes
-(Phase 11 Task 8, §5.17) — no dedicated op wraps either of these
-two, so they stand outside the FIFTEEN
+`objectives`, `memberships`, `members`, `organizations`,
+`identities`, `identity-credentials`, and `role-grants` (the last
+three, Phase 10 Task 6, §5.15; organizations, Phase 12 Task 3,
+§5.18), PLUS the `identity_default_organizations` family's own
+writes (Phase 11 Task 8, §5.17) — no dedicated op wraps that
+family, so it stands outside the SIXTEEN
 (`buildMockDataInvocations`, `api/mock-data/seed-message-pairs.ts`),
 so the seed forms each family's pair the SAME way a live request
 would, then writes it alongside the seeded row:
@@ -2907,8 +2906,9 @@ family inert-`createBodyIdField` precedent, `POST /identities` IS
 a live bare collection-POST create route whose pattern is
 literally `'identities'` — the registry consult in
 `createdEntityUriId` (`message-pair.ts`) now fires for real, the
-FOURTH live-firing registered family after flows, work-orders,
-and records. `'identities'` retires from `CREATE_BODY_ID_FIELDS`
+third live bare collection-POST create route after flows and
+work-orders (flat POST records retired). `'identities'` retires
+from `CREATE_BODY_ID_FIELDS`
 (the same literal table) — the registered family answers ONLY
 from its own registration now. `'invitations'` is the ONE entry
 that literal table keeps PERMANENTLY: the invitations side
@@ -2969,8 +2969,8 @@ re-confirmed key-set/value equality before the swap landed). GET
 stays hand-written, old-plane, until Task 8 (§5.10's same
 deferral).
 
-**The verb-gap pins (finding 20), COUNT AT EXECUTION: 41
-combos across three regimes**
+**The verb-gap pins (finding 20), COUNT AT EXECUTION: 42
+combos across four regimes**
 (`tests/api-identity-spine-verb-gaps.test.ts`, own commit BEFORE
 the wiring landed):
 
@@ -2978,7 +2978,8 @@ the wiring landed):
    identity-spine `route()` patterns (`identities` through
    `identity-providers/:id`): a matched pattern with no handler
    for the request's verb 405s via `handleRequest`'s own
-   per-method branch.
+   per-method branch; role-grants / role-grants/:id patterns are
+   retired and assert 404 (not matchRoute 405).
 2. The `identities/:id/default-org` side channel regime — 2
    combos: this side channel never calls `matchRoute` — a POST or
    DELETE falls through its own if-chain to ITS OWN inline 405
@@ -2991,6 +2992,10 @@ the wiring landed):
    `'/identity-tokens'` entry (POST), so a member-tier token
    clears authz and reaches the route handler's own domain terms
    (409 reuse; 204 idempotent no-op) instead of 403.
+4. The identity-token-revocations authz-tier regime — 1 combo:
+   `PUT /identity-token-revocations/:id` matches `MEMBER_VERBS`
+   (member clears authz; self-target 2xx). GET stays admin-only.
+   (36 + 2 + 3 + 1 = 42.)
 
 `tests/family-registry.test.ts` gains the twelfth case
 (`identities`, global-plane like `members`) and swaps its
@@ -3143,9 +3148,9 @@ the system client secret). The 12 role-grant raw `roleGrants.put`
 sites re-point onto `postRoleGrantDocumentOp` (+12 — the 2 admin
 grants for `current` plus one member grant per non-admin human).
 Bootstrap mirrors its own system identity, 2 credentials, and 1
-role grant (+4, 7 → 11). `identity_default_organizations` STAYS
-RAW — see §5.3's own boundary note; a later gate defers that
-family whole.
+role grant (+4, 7 → 11). `identity_default_organizations` was
+still deferred WHOLE here — §5.17 forms its pairs; Phase Final
+strips the ROW half (pair-only seed/read; absolute 1498 / 12).
 
 **The tx-widening trap (a verification finding).**
 `seedHumanCredentials` opened its OWN
@@ -3360,11 +3365,11 @@ set), so the fallback read fires only for a flat, un-exchanged
 token, once per boot.
 
 **The gate-seed (+11).** The `identity_default_organizations`
-family's own row writes STAY RAW (Path A — both seed paths' bare
-`adapter.identityDefaultOrganizations.put` calls are untouched),
-closing the LAST family Phase 10 Task 6 (§5.15) deferred WHOLE:
-each ALSO forms its own message pair now, through a dedicated
-former (`formDefaultOrganizationSeedPair`,
+family is pair-only as of Phase Final Task 2 (ROW half stripped —
+no `adapter.identityDefaultOrganizations.put`; `TABLE_NAMES` is
+`requests`/`responses` only), closing the LAST family Phase 10
+Task 6 (§5.15) deferred WHOLE: each forms its own message pair
+through a dedicated former (`formDefaultOrganizationSeedPair`,
 `api/mock-data/seed-message-pairs.ts`) that mirrors the live PUT's
 `formWritePair` call byte-for-byte rather than riding the generic
 `formSeedPair`/`WRITE_RESPONSE_SPECS` pipeline every other family
@@ -3374,18 +3379,19 @@ the SAME reason the invitations side channel forms its own pairs
 directly. 11 mock-data pairs (one per seeded human member, actor =
 the member's OWN id — the route's self-authorship rule, never
 `SYSTEM_MEMBER_ID`) + bootstrap's OWN mirror pair (actor =
-`'current'`) — `EXPECTED_PAIR_COUNT` 1500 → 1506; the bootstrap
-count 12 → 13.
+`'current'`). Task-time intermediate re-pins were 1500 → 1506 /
+bootstrap 12 → 13; standing absolute pins are
+`EXPECTED_PAIR_COUNT = 1498` / bootstrap 12.
 
 **The re-pins (`tests/mock-data-pairs.test.ts`).**
-`EXPECTED_PAIR_COUNT` 1500 → 1506 (+11) + the breakdown prose; the
-bootstrap count 12 → 13 + a new assertion for its default-org pair
+Task-time: `EXPECTED_PAIR_COUNT` 1500 → 1506 (+11) + breakdown;
+bootstrap 12 → 13 + a new assertion for its default-org pair
 address; ONE new address/body-shape spot-check (a seeded default-
 org pair's identity-keyed address, its body carrying the three
-`{organization_id, eventId, at}` keys).
-`tests/mock-data-fingerprint.test.ts` later RETIRED (file absent);
-`identity_default_organizations` 11/`ab3efde4` HOLDS, along with
-every other pin.
+`{organization_id, eventId, at}` keys). Standing absolute pins
+are 1498 / bootstrap 12. Fingerprint test later RETIRED (file
+absent); no standing `identity_default_organizations` row
+fingerprint HOLD.
 
 **The adapter/fence suites (plumbing only).** Three suites seeded
 a SET default via a raw `identityDefaultOrganizations.put` and then

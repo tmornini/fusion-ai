@@ -131,7 +131,8 @@ time budgets while keeping per-entity mutation domains disjoint:
    - Agent-F — Flows (includes hazard severity, flow-publish
      gate)
    - Agent-F2 — Workbox (includes Create-Work-Order picker
-     READY / NOT READY split) + Records (section R)
+     READY / NOT READY split) + Records (section R) + Flow
+     Statistics (FS1–FS9, read-only)
    - Agent-G — Admin (Members page, Member detail (human + AI),
      Identities (list + detail + providers + tokens),
      Organization, Snapshots, Billing). The retired Teams /
@@ -498,7 +499,7 @@ last (they wipe the database). See `CLAUDE.md` section
 | D. Core: Ideas Workflow | 38 |
 | E. Core: Projects | 12 |
 | F. Tools | 77 |
-| F2. Workbox | 26 |
+| F2. Workbox | 31 |
 | FS. Flow Statistics | 9 |
 | G. Admin Pages | 45 |
 | H. Reference & System | 2 |
@@ -507,7 +508,7 @@ last (they wipe the database). See `CLAUDE.md` section
 | K. Objectives & Scoring | 30 |
 | R. Records | 25 |
 | L. IndexedDB Persistence Tier | 9 |
-| **Total** | **399** |
+| **Total** | **404** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -516,13 +517,13 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |     2656 |
-| Browser regression     |      399 |
-| **Combined TOTAL**     | **3055** |
+| CLI automated tests    |     2974 |
+| Browser regression     |      404 |
+| **Combined TOTAL**     | **3378** |
 
 CLI count = most recent `./validate` (AT2) report — the main
 `tests/*.test.ts` suite plus the `tests/tz/*.test.ts` timezone
-suite (2648 main + 8 tz after flow-version residue delete);
+suite (2966 main + 8 tz);
 the number grows as tests land in either glob. Browser count =
 the per-section table above. Update both numbers when either
 side changes.
@@ -540,8 +541,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 3048, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (3048).
+`PASS = 3378, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (3378).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -2311,7 +2312,7 @@ restored data.)
   Dashboard renders with zeroed-out metrics (empty
   database except for the required bootstrap seed). Empty
   bootstrap seeds only org `'1'` (Stark Industries) as
-  **13 message pairs** (absolute) covering System + Tony
+  **12 message pairs** (absolute) covering System + Tony
   Stark identity/PII/credentials/membership/role-grant/
   organization/state events — derived reads, not entity
   tables. NOTE: pristine seeds NO Records. Source of
@@ -2872,8 +2873,8 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Agent-CH      | C1–C7 + H1–H2     |    9 |       0 |    0 |
 | Agent-D       | D1–D37            |    X |       Y |    Z |
 | Agent-E       | E1–E11 + E10a     |   12 |       0 |    0 |
-| Agent-F       | F1–F77 + FS1–FS9  |    X |       Y |    Z |
-| Agent-F2      | WB1–WB22 + subs, R1–R21 | X |    0 |    0 |
+| Agent-F       | F1–F77            |    X |       Y |    Z |
+| Agent-F2      | WB1–WB22 + subs, FS1–FS9, R1–R21 | X |    0 |    0 |
 | Agent-G       | G9–14,19–26,36–46 |    X |       0 |    0 |
 | Phase-3       | I1–I30            |    X |       Y |    Z |
 | Phase-4       | G30–G35 + L1–L9   |    X |       0 |    0 |
