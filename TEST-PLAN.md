@@ -36,7 +36,7 @@ serial agent, all seven Phase 2 agents, the Phase 3
 cross-cutting agent, and the Phase 4 snapshot-lifecycle
 agent — MUST begin its turn by invoking the
 `church-of-code:church-of-code` skill via the Skill tool
-and reading `CHURCH-OF-CODE-small-context.md` in full.
+and reading `CHURCH-OF-CODE-medium-context.md` in full.
 Subagents inherit no scripture and read no CLAUDE.md by
 default (see CLAUDE.md § Subagents). The orchestrator's
 dispatch prompt MUST embed this requirement as the first
