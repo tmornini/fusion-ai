@@ -157,8 +157,9 @@ dashboard-design.md`.
 
 Target: **ES2024** · Strict mode with
 `noUncheckedIndexedAccess`. Config at
-`web-app/app/tsconfig.json`. The `compose.ts` and
-`generate-schema-svg.ts` build scripts are excluded from
+`web-app/app/tsconfig.json`. The `compose.ts`,
+`generate-schema-svg.ts`, `measure.ts`, and
+`measure-viz.ts` Node entrypoints are excluded from
 type checking (they run in Node).
 
 ## Architecture
@@ -174,8 +175,9 @@ is HTTP-only.
 ### Key Layers
 
 - **HTML Composition.** `web-app/app/compose.ts` assembles
-  `components-layout.html` + `component-*.html` + each page's
-  `index.html` into composed standalones in a temp build dir.
+  `components-layout.html` + `component-*.html` + each
+  registry page's `{sourceDir}/{sourceFile}.html` into
+  composed standalones in a temp build dir.
   Standalone pages skip the layout wrap but still have their
   `{{PAGE_CSS_LINKS}}` placeholder filled from `cssBundles`
   before they are written.
@@ -243,7 +245,7 @@ is HTTP-only.
   `web-app/app/adapters/invitations.ts` + the `invitations`
   facade) — accept stamps the INVITATION's org, not the
   caller's active org. Per-org roles via
-  `currentRolesForInOrganization`. See
+  `projectClaimRolesForOrganization`. See
   [SCHEMA.md](SCHEMA.md) / [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Data.** REST-style API (`api/`) over IndexedDB. Adapters
   in `web-app/app/adapters/` shape pages from pair-plane
@@ -391,7 +393,8 @@ memberships stores.
 by both `api/` and `web-app/`: the HTTP wire schema
 (`http-message/`, with its own `types.ts`) plus pure cross-chasm
 utilities (`base64url.ts`, `crypto-safe-base62.ts`,
-`password-hash.ts`, `ledger-reduction.ts`, `error-helpers.ts`).
+`digest.ts`, `password-hash.ts`, `ledger-reduction.ts`,
+`error-helpers.ts`).
 The dependency is one-way: `shared/` NEVER imports `api/`.
 `web-app/app/` — all source (TypeScript + CSS), with
 subdirectories `adapters/` (data-access + platform shims, both

@@ -316,15 +316,15 @@ keeps facade behavior; regression surface is
 
 ### Boot + org-switcher
 
-`core.ts::scopeBootToActiveOrg` always scopes the session
-before first render: enumerate reachable orgs →
-`resolveActiveOrg` (the persisted
-`fusion-ai:active-organization-id`, else
-the identity's default org if reachable, else the first
-reachable) → `postOrgSessionExchange` → install the scoped
-token. The
-sidebar org-switcher (`web-app/app/org-switcher.ts`) renders
-its `<select>` only at ≥2 reachable orgs and re-scopes via a
+`core.ts::scopeBootToActiveOrganization` always scopes the
+session before first render: enumerate reachable orgs →
+`resolveActiveOrganization` (the persisted
+`fusion-ai:active-organization-id`, else the identity's
+default org if reachable, else the first reachable) →
+`postOrganizationSessionExchange` → install the scoped
+token. The sidebar org-switcher
+(`web-app/app/organization-switcher.ts`) renders its
+`<select>` only at ≥2 reachable orgs and re-scopes via a
 FULL reload (boot re-exchanges from the persisted id, so no
 mixed-org view survives the switch).
 
@@ -935,10 +935,12 @@ import { navigateTo, openDialog, closeDialog } from '../app/core.ts';
 from `'../app/core'`. The `adapters/` directory retains
 its barrel re-export (`adapters/index.ts`).
 
-**Page modules never import from `api/api.ts`** — all data
-access (reads and writes) goes through the adapter layer
-(`adapters/`). Only adapter modules import from the API
-layer directly.
+**Page modules never call transport verbs from
+`api/api.ts`** — all data access (reads and writes) goes
+through the adapter layer (`adapters/`). Pages may import
+error/status symbols (`RequestError`, `HTTP_*`) and other
+non-I/O types from the API layer; only adapters invoke the
+verbs.
 
 ## Naming Conventions
 
@@ -947,10 +949,11 @@ layer directly.
 - `toneFor*` / `levelFor*` — return string enums consumed as
   `data-tone` / `data-level` attribute values (replaces older
   `styleFor*` inline-style pattern)
-- `assert*` — validators in `api/types.ts` and
-  `api/validators.ts` that take a raw value and return a typed
-  value or throw. The `is*` type-guards remain for legitimate
-  type-narrowing call sites.
+- `assert*` — validators at the gate that take a raw value
+  and return a typed value or throw: `api/types.ts`,
+  `api/validators.ts`, `api/attribute-acl.ts`, and
+  `api/write-authorizer.ts`. The `is*` type-guards remain for
+  legitimate type-narrowing call sites.
 - Adapter reads are two-tier, named by what they return:
   the **domain noun** read returns the domain object
   (`getProject` → `Project`); where a raw stored-shape read
@@ -981,11 +984,12 @@ layer directly.
   `DISPLAY_ABSENT`. Do not use magic strings like `'Unknown'`.
 - **`RequestContext` is the only I/O surface.** Every data-
   access adapter takes `ctx: RequestContext` first and uses
-  `ctx.GET/PUT/PATCH/DELETE/POST/commit`. The standalone
-  verb exports in `api/api.ts` are the transport `ctx`
-  delegates to — adapters never import them directly.
-  `ctx.PATCH` is platform-wide (instances are the first
-  live consumer; `*WithEtag` variants return the strong
+  `ctx.GET/PUT/PATCH/DELETE/POST` (plus `*WithEtag` /
+  `POSTWithHeaders` where callers need the ETag or headers).
+  The standalone verb exports in `api/api.ts` are the
+  transport `ctx` delegates to — adapters never import them
+  directly. `ctx.PATCH` is platform-wide (instances are the
+  first live consumer; `*WithEtag` variants return the strong
   ETag for If-Match). Each verb dispatches its own request
   with its own per-op transactions: two awaited reads on
   one ctx are NOT a snapshot — a write (same tab or
@@ -1002,14 +1006,20 @@ layer directly.
   the canvas viewBox from real laid-out coordinates —
   `getFlowGraph` runs `computeLayout` for `is_auto_layout`
   or degenerate flows.
-- **Mutation adapters return `Promise<void>`.**
+- **Mutation adapters return `Promise<void>` by default.**
   Change-awareness flows through notification channels (e.g.,
   `ideaChanges.notify()`), never through return values —
   callers tell the channel rather than branch on a result.
-  Instance mutations that must round-trip an ETag are the
-  named exception (`putRecordInstance` /
-  `patchRecordInstance` return `RecordInstance` with
-  `etag`).
+  Named non-void exceptions: `putRecordInstance` /
+  `patchRecordInstance` return `{ etag: string }`;
+  `postInvitationGrant` → `InvitationGrantOutcome`;
+  `postMockDataLoad` / `postBootstrap` → `SeededCredentials`;
+  `postSessionRefresh` / `postPasswordLogin` →
+  `SessionCredentials` (login may be `null`);
+  `postOrganizationSessionExchange` → `string`;
+  `postFlowFromBackup` → `string`;
+  `postFlowFromMermaid` / `postFlowFromZip` →
+  `{ flowId, warnings }`.
 - **Records adapters.** `adapters/records.ts` owns record-
   type lifecycle over nested
   `organizations/:org/record-types[...]` (CRUD +

@@ -73,9 +73,10 @@ adapters (`tests/adapters-flow-publish.test.ts`,
 `tests/adapters-flow-queries.test.ts`); the workbox inbox
 aggregation (`tests/workbox-inbox.test.ts`); the mermaid round-trip
 (`tests/mermaid.test.ts`); the in-browser ZIP (`tests/zip-guards.test.ts`);
-snapshot import-validation, quota pre-flight, and wipe-on-fail
-(`tests/snapshot-import-validation.test.ts`,
-`tests/snapshot-quota.test.ts`, `tests/snapshot-wipe-on-fail.test.ts`,
+snapshot import-validation, quota pre-flight, and atomic
+import/rollback (`tests/snapshot-import-validation.test.ts`,
+`tests/snapshot-quota.test.ts`, `tests/snapshot-wipe-on-fail.test.ts`
+(filename legacy; now atomic-rollback),
 `tests/db-localstorage-compression.test.ts`); every data adapter
 (`tests/adapters-*.test.ts`); navigation
 (`tests/navigation.test.ts`); mock-data validity
@@ -1088,7 +1089,7 @@ on. Run these in order.
 - [ ] **E2** Click a status filter badge (e.g. "Approved"). PASS: project list filters to show only projects with that status. Click the same badge again. PASS: full list returns.
 - [ ] **E3** Click a project row. PASS: navigates to `projects/detail.html?projectId=<id>`.
 
-### Project Detail (`projects/detail.html?projectId=1`)
+### Project Detail (`projects/detail.html?projectId=<id>`)
 
 - [ ] **E4** Page loads with project summary
   card (description, dates, progress bar) and
@@ -2172,7 +2173,8 @@ the claude-in-chrome MCP.
   org and Stark. Accept is idempotent — a re-accept is a 204
   no-op, no duplicate membership. Source:
   `postInvitationAcceptance`, `acceptInvitation` (atomic
-  `memberships.put` + `states.postEvent` 'accepted' event).
+  memberships/:id document pair + invitations/:id/acceptance
+  op pair via `appendMessagePair`).
 - [ ] **V5 — Decline appends declined, writes no membership**
   As an invitee with a fresh pending invitation, on
   `invitations/` click Decline. PASS: an "Invitation declined"
@@ -2323,9 +2325,9 @@ restored data.)
   survivors); no object stores outside that list (plus
   `__schema__`) appear on a post-Final origin (pre-Final
   orphans may linger inert — gate 6).
-- [ ] **G33** Click "Wipe and Load Mock Data", then Confirm the dialog. PASS: a confirm dialog (`#confirm-wipe-dialog`, titled "Confirm Action") appears first warning the wipe cannot be undone — Cancel aborts with no change; on Confirm the page renders the one-time demo-credentials reveal panel (`.credential-reveal`, titled "Save your demo sign-ins") listing EVERY login-capable seeded identity's email + fresh password in the monospace `.credential-reveal-box`, one credential per line, with a "Copy all" button. (Mock data seeds two orgs — `'1'` Stark Industries and `'2'` Wayne Enterprises — so the list spans both orgs' seeded humans; Tony Stark / `current` is the multi-org admin.) The page does NOT navigate until "I have saved it — continue" is clicked; clicking it redirects to `dashboard/index.html`. Navigate to `ideas/` — Stark's 6 ideas are back (the seed plants 11 ideas total, split across both orgs via `assignOrg`; the org fence shows only the active org's).
+- [ ] **G33** Click "Wipe and Load Mock Data", then Confirm the dialog. PASS: a confirm dialog (`#confirm-wipe-dialog`, titled "Confirm Action") appears first warning the wipe cannot be undone — Cancel aborts with no change; on Confirm the page renders the one-time demo-credentials reveal panel (`.credential-reveal`, titled "Save your demo sign-ins") listing EVERY login-capable seeded identity's email + fresh password in the monospace `.credential-reveal-box`, one credential per line, with a "Copy all" button. (Mock data seeds two orgs — `'1'` Stark Industries and `'2'` Wayne Enterprises — so the list spans both orgs' seeded humans; Tony Stark / `current` is the multi-org admin.) The page does NOT navigate until "I have saved it — continue" is clicked; clicking it redirects to `dashboard/index.html`. Navigate to `ideas/` — Stark's 6 ideas are back (the seed plants 11 ideas total, split across both orgs via `assignOrganization`; the org fence shows only the active org's).
 - [ ] **G34** Return to `snapshots/`, wipe data, then use "Upload Snapshot" file input and select the previously downloaded JSON file. PASS: redirects to `dashboard/index.html`. Data matches the snapshot.
-- [ ] **G36 — Sidebar org-switcher (multi-org user)** After "Wipe and Load Mock Data" (G33) seeds two orgs and boot signs in as the multi-org admin Tony Stark (`current`), the SIDEBAR FOOTER (not the top bar) shows an inline native org `<select>` (`.org-switcher`, inside `#sidebar-org-switcher` / `#mobile-sidebar-org-switcher`) next to the member chip — it appears ONLY because the user can reach ≥2 orgs (`shouldShowOrgSwitcher`). PASS: the select lists "Stark Industries" and "Wayne Enterprises" with Stark active; the plain org-name text line in the chip is cleared so the org is not named twice. Note the Members and Ideas lists for Stark. Select "Wayne Enterprises" → the page does a FULL reload and re-scopes: Members shows Wayne's roster and Ideas shows Wayne's ideas (org-fenced — Stark's rows are no longer visible). Reload the page again WITHOUT changing the select → the selection persists (Wayne stays active; the choice is stored under `fusion-ai:active-organization-id` and boot re-exchanges a scoped token from it). A single-org seeded user, by contrast, sees NO `<select>` in the sidebar — just the org name as PLAIN TEXT in the chip. The top bar shows neither the switcher nor a greeting; its only org-aware affordance is the pending-invitations bell (V3). Source of truth: `web-app/app/organization-switcher.ts`, `web-app/app/sidebar-member.ts`, `web-app/app/adapters/organization-session.ts`, `web-app/app/core.ts::scopeBootToActiveOrganization`. (This case requires the two-org mock-data seed, so it runs in Phase 4 alongside G30–G35 — never concurrently with Phase 2 agents.)
+- [ ] **G36 — Sidebar org-switcher (multi-org user)** After "Wipe and Load Mock Data" (G33) seeds two orgs and boot signs in as the multi-org admin Tony Stark (`current`), the SIDEBAR FOOTER (not the top bar) shows an inline native org `<select>` (`.org-switcher`, inside `#sidebar-org-switcher` / `#mobile-sidebar-org-switcher`) next to the member chip — it appears ONLY because the user can reach ≥2 orgs (`shouldShowOrganizationSwitcher`). PASS: the select lists "Stark Industries" and "Wayne Enterprises" with Stark active; the plain org-name text line in the chip is cleared so the org is not named twice. Note the Members and Ideas lists for Stark. Select "Wayne Enterprises" → the page does a FULL reload and re-scopes: Members shows Wayne's roster and Ideas shows Wayne's ideas (org-fenced — Stark's rows are no longer visible). Reload the page again WITHOUT changing the select → the selection persists (Wayne stays active; the choice is stored under `fusion-ai:active-organization-id` and boot re-exchanges a scoped token from it). A single-org seeded user, by contrast, sees NO `<select>` in the sidebar — just the org name as PLAIN TEXT in the chip. The top bar shows neither the switcher nor a greeting; its only org-aware affordance is the pending-invitations bell (V3). Source of truth: `web-app/app/organization-switcher.ts`, `web-app/app/sidebar-member.ts`, `web-app/app/adapters/organization-session.ts`, `web-app/app/core.ts::scopeBootToActiveOrganization`. (This case requires the two-org mock-data seed, so it runs in Phase 4 alongside G30–G35 — never concurrently with Phase 2 agents.)
 
 ### Snapshot & User Lifecycle — Error/Edge Cases
 
@@ -2676,7 +2678,7 @@ box (full-width row below).
 
 **K29.** From another tab, log a measurement on an approved
 project. PASS if the Aggregate Objectives box updates within
-~1 second (BroadcastChannel + scoreChanges propagation); the
+~1 second (BroadcastChannel `fusion-ai:data` + `subscribeProjectScoreChanges`); the
 three arc-gauge cards refresh only on full page load.
 
 ### K30 + K7 — Project history modal & temporal name resolution (Agent-E)

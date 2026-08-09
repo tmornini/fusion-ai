@@ -60,9 +60,10 @@ recorded as that node's id (a base62 token), distinct in
 shape from the closed claim alphabet
 (`'claimed'`, `'claim_released'`, `'claim_expired'`) on
 the same `entity_id`. The states log carries both families;
-`adapters/state-events.ts` partitions them with
+`adapters/work-orders-queries.ts` partitions them with
 `isClaimState` (a closed-set test over the claim alphabet,
-defined in `api/work-order-claims.ts`). The
+defined in `api/work-order-claims.ts`) and exports the
+`TransitionEvent` shape. The
 mermaid parser does not translate either: a legacy `.mmd`
 file that names its special nodes `[Start]` / `[End]`
 imports with those literal names, surfacing the staleness
@@ -132,10 +133,10 @@ dropdown. The picker renders two sections: READY
 (clickable, carries `data-flow-id`) and NOT READY
 (disabled, no-entry icon, "N nodes need attention"
 subtitle, no `data-flow-id` so the click handler ignores
-it). `postWorkOrderCreation` re-runs
-`validateFlowForCreation` server-side and throws if the
+it). The client adapter `postWorkOrderCreation` re-runs
+`validateFlowForCreation` and throws before POST if the
 picker was somehow bypassed — defense in depth at the
-boundary.
+client boundary.
 
 The workbox shows every active and archived work order
 to every user; there is no per-user visibility filter.
@@ -202,6 +203,7 @@ widget ("Most-traveled paths") — tying control to canvas. The
 aggregate logic lives in the pure module
 `flow-stats-aggregate.ts` (`buildFlowStats(input) → model`);
 it consumes the universal `TransitionEvent[]` shape exported
-from `adapters/state-events.ts` — derived from the states
-log, not from any retired event table. The I/O wrapper is
-`adapters/flow-stats.ts`'s `getFlowStats(ctx, flowId)`.
+from `adapters/work-orders-queries.ts` — derived from the
+states log, not from any retired event table. The I/O
+wrapper is `adapters/flow-stats.ts`'s
+`getFlowStats(ctx, flowId)`.

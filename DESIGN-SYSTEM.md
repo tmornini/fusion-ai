@@ -87,8 +87,9 @@ Components apply semantic variants through `data-*` attributes
 on a base class rather than distinct class names. Presenters
 emit the attribute value; the attribute selectors in the
 `components-*.css` files bind it to the matching token set.
-The TypeScript enum returned by `toneFor*()` / `levelFor*()`
-helpers and the CSS selectors share a single source of truth.
+Helpers such as `toneForScore()` / `levelForUsage()` return
+tone and level strings aligned by convention with the CSS
+selectors — not a shared TypeScript enum or generated SSOT.
 
 ```html
 <div class="icon-box" data-tone="success">…</div>
@@ -457,7 +458,8 @@ mode. Toggle is persisted to `localStorage` and respects
 
 ### Icon Sizing
 Sizes are a named tier scale — `ICON_SIZE` in `icons.ts` —
-sharing the tier names of the `--text-*` typography tokens.
+extending the `--text-*` typography tier names (adds
+`5xl` / `6xl` beyond `--text-4xl`).
 The `IconFn` size argument is typed `IconSize`, so a call
 passing an off-scale pixel value fails the type-check.
 

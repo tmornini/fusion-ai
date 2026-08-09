@@ -458,9 +458,9 @@ genesis / PATCH If-Match / DELETE tombstone (§5.20) —
 not lifecycle-trio PUTs.
 
 Org-scoped document PUT/DELETE hit the write authorizer
-(`api/write-authorizer.ts` →
-`resolveOwningOrganization`) so a foreign id 403s
-rather than genesis-ing in the caller's namespace;
+(`api/write-authorizer.ts` → `resolveGlobalOwner` →
+`resolveOwningOrganization` fallback) so a foreign id
+403s rather than genesis-ing in the caller's namespace;
 genuine absence still 404s (or genesis on PUT).
 Surviving stores are global (`requests` /
 `responses`); tenancy rides `uri_prefix`. There is no
@@ -865,7 +865,7 @@ Delegates to `rotateRefreshJti` (`api/authentication.ts`).
   chain, re-`planRotation`, compare the fresh jti set against
   the pre-formed writes' — diverged → abort and retry (3
   attempts); equal → `appendMessagePair` each pre-formed write,
-  then, rotate only, `appendMessagePair(pair)`.
+  then, rotate only, `putMessagePair(pair)`.
 - doctrinal: read the token ledger + `post_token_event`(s) as
   `post_rotate_refresh_token`.
 - props: atomic; TOCTOU-safe (verify-or-retry inside the tx, so two
@@ -1126,13 +1126,13 @@ One shape serves genesis (below-facade only — see §5.4) and
 every save (Decision 7): the body is the entity's own fields
 plus the lifecycle trio (`state`, `state_at`, `state_event_id`),
 the client-authored post-save `graph` (byte-identical to the GET
-wire form, no transform), and two TRANSITIONAL decomposition
-sidecars (`graphDelta`, `revivals` — consumed by the old-plane
-relation writer below AND by the live graph fold
-(`api/derive-states.ts`), the sole ledger source of flow-node/
-edge deleted/restored history; retirement at Phase Final is now
-GATED on that lifecycle source being re-anchored elsewhere
-first). UNLIKE `PUT /ideas/:id` / `PUT /projects/:id`, this op
+wire form, no transform — GET reassembles from body.graph via
+`flowEntityOf`), and two write-side SIDECAR-KEEP fields
+(`graphDelta`, `revivals` — pair-plane RESTRICT/bindings via
+`flowGraphBindingsFromPairs` in `api/derive-flows.ts`; the
+old-plane relation writer `writeFlowGraphDelta` and
+`deriveFlowGraphStates` are RETIRED). UNLIKE
+`PUT /ideas/:id` / `PUT /projects/:id`, this op
 mints NO `member_id` ternary — every attempt (including a
 client retry) mints a fresh trio, so nothing here ever resends
 a STORED trio verbatim.
@@ -1627,10 +1627,13 @@ three, exactly like every other atomic write in this catalog.
 
 `grantInvitation` (`api/invitations-domain.ts`).
 
-- before tx (base-adapter reads): `callerActiveOrg` → `callerIsOrgAdmin`
-  (`roleGrants.getAllWhere`) → parse `email` → `identityPii.getAll`
-  find the matching identity (404 if none) → `formWritePair` (a
-  pre-tx head-read via `headPairIdAt` feeds the `Supersedes` chain)
+- before tx (base-adapter reads):
+  `callerActiveOrganization` →
+  `callerIsOrganizationAdmin` (claim roles via
+  `projectClaimRolesForOrganization`) → parse `email` →
+  `deriveIdentityPiiRows` find the matching identity
+  (404 if none) → `formWritePair` (a pre-tx head-read via
+  `headPairIdAt` feeds the `Supersedes` chain)
   → the pre-tx idempotency point-read (`storedResponseFor`).
 - tx: `['requests','responses']`
 - actual: pair-plane guards (already-member; pending
@@ -1651,7 +1654,8 @@ three, exactly like every other atomic write in this catalog.
 `acceptInvitation` (`api/invitations-domain.ts`). The only live
 membership write.
 
-- before tx: `loadInvitation` (`invitations.getById`; 404 if absent);
+- before tx: `loadInvitation` (`deriveInvitations` find-by-id;
+  404 if absent);
   assert `identity_id === caller` (else 403); `formInvitationOpPair`
   (operation-addressed, no head-read) → the pre-tx idempotency
   point-read.
@@ -1934,8 +1938,8 @@ This is forced, not stylistic:
 re-enters `handleRequest`. For `/organizations/:org/:entity/...` it:
 
 1. takes the caller's Bearer token,
-2. calls `exchangeBearerForOrg` (a self-delegation token exchange; a
-   non-member is 403 — the tenant fence),
+2. calls `exchangeBearerForOrganization` (a self-delegation
+   token exchange; a non-member is 403 — the tenant fence),
 3. rewrites the path to the flat `/:entity/...`, swaps in the
    org-scoped access token, preserves the request id, and
 4. **re-enters `handleRequest`** with the flat request.
@@ -2670,10 +2674,11 @@ Phase 8 Task 6 gives the invitations side channel
 document pairs and derivation, WITHOUT joining the route
 table — Author gate 2 is permanent: no `route()` entry, no
 `DocumentFamilyWiring` registration, no `WRITE_RESPONSE_SPECS`
-entry for `invitations/:id` exists or ever will. Both
-synthesized pairs are storage-only today; nothing reads them
-yet (Task 8 flips `invitationsForInvitee`/`sentInvitations`
-onto `deriveInvitations`, `api/derive-invitations.ts`).
+entry for `invitations/:id` exists or ever will. Task 8
+flipped `invitationsForInvitee` / `sentInvitations` onto
+`deriveInvitations` (`api/derive-invitations.ts`); the pairs
+are the live invitation read source. Author gate 2 still
+holds (no `route()` / wiring).
 
 **Grant: 2 pairs on a fresh outcome, 1 on a duplicate echo.**
 `grantInvitation` forms its existing operation pair (POST,
@@ -2747,8 +2752,8 @@ the three terminal states is the domain gate's OWN covenant
 (accept/decline/revoke each require 'pending' to succeed; a
 409 conflict appends nothing), never re-derived in this
 module — an id accumulates repeat pairs of only ONE op kind.
-Reads `db.requests`/`db.responses` ONLY; nothing routes to it
-yet (revertible in isolation).
+Reads `db.requests`/`db.responses` ONLY; domain readers call
+it (Task 8 done). Author gate 2 still holds (no `route()`).
 
 **The gate-resolve settlement needs zero code change.** Today's
 grant already resolves the invitee's `email` to `identity_id`
@@ -2918,44 +2923,45 @@ family-registry waypoint, only a standing exception.
 
 **The three extractions (own commit each, behavior-identical).**
 `postIdentityDocumentOp`, `postIdentityCredentialDocumentOp`,
-and `postRoleGrantDocumentOp` are lifted byte-for-byte out of
+and `postRoleGrantDocumentOp` were lifted byte-for-byte out of
 their hand-written PUT closures (`identities/:id`,
 `identities/:id/credentials/:cid`, `role-grants/:id`), mirroring
-the `postIdentityPiiDocumentOp` precedent (§5.12). All three are
-EXPORTED — Task 6 seeds through them, and Task 7's drift-mirror
-wiring imports them to compile — alongside
-`validateIdentityDocumentBody`, also exported for the same
-reason. Only `postIdentityDocumentOp` joins a
-`DocumentFamilyWiring` row; the other two stay directly
-dispatched from their own route closures, per the non-
-registration rationale below.
+the `postIdentityPiiDocumentOp` precedent (§5.12). At Task time
+all three were EXPORTED — Task 6 seeded through them, and
+Task 7's drift-mirror wiring imported them to compile —
+alongside `validateIdentityDocumentBody`. Only
+`postIdentityDocumentOp` joins a `DocumentFamilyWiring` row;
+credentials stayed directly dispatched from its route closure.
+**As of later retirement:** `postRoleGrantDocumentOp`, the
+role-grants HTTP family, and its seed pairs are RETIRED —
+roles ride membership `type` / claim projection; routes 404
+(`tests/api-authz-gate.test.ts`); zero live implementation
+(stale seed comment only).
 
-**Why credentials and role-grants do NOT get their own
-family-registry row.** `family-registry.ts` answers exactly
+**Why credentials (and retired role-grants) do NOT get their
+own family-registry row.** `family-registry.ts` answers exactly
 three axes a document-class, per-id family needs: organization-
 nesting tier, PUT concurrency class, and create-address body
 field. Neither plane is such a family:
 
 - `identities/:id/credentials/:cid` is a NESTED facet of the
-  identity subtree (the identity id is param 0; the credential id
-  is param 1) — it has no address of its own independent of the
-  identity it hangs off, so it never needs an organization-
+  identity subtree (the identity id is param 0; the credential
+  id is param 1) — it has no address of its own independent of
+  the identity it hangs off, so it never needs an organization-
   nesting or create-address answer separate from `identities`'
   own.
-- `role-grants/:id` is an EVENT-APPEND ledger row
+- `role-grants/:id` WAS an EVENT-APPEND ledger row
   (`HistoryEntityStore`, latest-wins per `(organization_id,
   identity_id, role)`) — a grant/revoke history, not a document
-  address with a genesis-then-edit lifecycle a family-registry
-  row exists to describe.
+  address; **RETIRED** with the role-grants HTTP family
+  (membership type / claim roles; no live store or routes).
 
-Both extractions leave their own `WRITE_RESPONSE_SPECS` entries
-untouched: `'identities/:id/credentials/:cid'` still reconstructs
-the full entity (including `secret`, a deliberate zero-change
-carry-over); `'role-grants/:id'` still re-stamps
-`organization_id` from the fence — the ONE org-stamped spine
-spec, since `role_grants` rides the ORG-SCOPED store (unlike its
-global-plane siblings) and the wire body omits the field the
-scoped store auto-stamps.
+Credentials extraction leaves its `WRITE_RESPONSE_SPECS` entry:
+`'identities/:id/credentials/:cid'` still reconstructs the full
+entity (including `secret`, a deliberate zero-change carry-
+over). The role-grants `'role-grants/:id'` org-stamp spec and
+ORG-SCOPED `role_grants` store prose are **RETIRED** with that
+family (no live WRITE_RESPONSE_SPECS entry).
 
 **PUT /identities/:id** now dispatches through
 `documentPutHandler(IDENTITIES_WIRING)`, and
@@ -2998,13 +3004,12 @@ the wiring landed):
    (36 + 2 + 3 + 1 = 42.)
 
 `tests/family-registry.test.ts` gains the twelfth case
-(`identities`, global-plane like `members`) and swaps its
-unregistered-family control exemplar from `'identities'` (now
-registered) to `'organizations'` — a NAMED re-pin: organizations
-stays unregistered by design (family-registry.ts answers
-document-class per-id families, and `organizations/:id` rides its
-own hand-written PUT with no genesis-address concept the registry
-needs to describe).
+(`identities`, global-plane like `members`). **As of Phase 12:**
+`organizations` is the thirteenth registered family (global-
+plane, `concurrency: 'simple'`, inert `createBodyIdField:
+'id'`); the unregistered-family control is a non-family string
+(`'not-a-family'` → `familyRegistration` undefined), not
+`organizations`.
 
 `tests/api-identity-document.test.ts` (new) is the wiring's
 proof, mirroring `tests/api-member-documents.test.ts` (§5.10) for
@@ -3126,16 +3131,16 @@ hold); the wire is unchanged — the bundles are storage-only.
 identities, credentials, role grants (Phase 10 Task 6)
 
 Path A throughout: the THREE ops §5.13 extracted and exported
-(`postIdentityDocumentOp`, `postIdentityCredentialDocumentOp`,
-`postRoleGrantDocumentOp`) + per-row invocations through the
-UNTOUCHED `formSeedPair` pipeline — no logic change to
-`formSeedPair` itself, only new callers. `formSeedPair` carries
-no `chain` argument at all, so `headPairId` is undefined for
-EVERY seed pair by construction (always-genesis); the live-path
-`chain: 'none'` vocabulary (`formDocumentPairFor`, api/routes.ts)
-does not apply here. Row ids/ats/content stay byte-identical —
-only `EXPECTED_PAIR_COUNT` (§5.3, 603 → 632) and the bootstrap
-count (7 → 11) move.
+at Task time (`postIdentityDocumentOp`,
+`postIdentityCredentialDocumentOp`, `postRoleGrantDocumentOp`) +
+per-row invocations through the UNTOUCHED `formSeedPair`
+pipeline — no logic change to `formSeedPair` itself, only new
+callers. `formSeedPair` carries no `chain` argument at all, so
+`headPairId` is undefined for EVERY seed pair by construction
+(always-genesis); the live-path `chain: 'none'` vocabulary
+(`formDocumentPairFor`, api/routes.ts) does not apply here. Row
+ids/ats/content stay byte-identical — only `EXPECTED_PAIR_COUNT`
+(§5.3, 603 → 632) and the bootstrap count (7 → 11) move.
 
 **The three slices (+29).** The 4 AI + 1 system identities' raw
 `identities.put` sites re-point onto `postIdentityDocumentOp`
@@ -3144,11 +3149,15 @@ nor the system-member write ever carried an `identityDocument`
 slot the way the human-member bundle does, §5.14). The 12
 credential writes in `seedHumanCredentials` re-point onto
 `postIdentityCredentialDocumentOp` (+12 — 11 human passwords +
-the system client secret). The 12 role-grant raw `roleGrants.put`
-sites re-point onto `postRoleGrantDocumentOp` (+12 — the 2 admin
-grants for `current` plus one member grant per non-admin human).
-Bootstrap mirrors its own system identity, 2 credentials, and 1
-role grant (+4, 7 → 11). `identity_default_organizations` was
+the system client secret). At Task time the 12 role-grant raw
+`roleGrants.put` sites re-pointed onto
+`postRoleGrantDocumentOp` (+12 — the 2 admin grants for
+`current` plus one member grant per non-admin human); bootstrap
+mirrored system identity, 2 credentials, and 1 role grant (+4,
+7 → 11). **Later RETIRED:** role-grant seed pairs,
+`postRoleGrantDocumentOp`, and the role-grants HTTP family are
+gone (roles from membership type / claims; mock asserts zero
+`/role-grants/` pairs). `identity_default_organizations` was
 still deferred WHOLE here — §5.17 forms its pairs; Phase Final
 strips the ROW half (pair-only seed/read; absolute 1498 / 12).
 
@@ -3174,18 +3183,22 @@ than joining `formMockDataMessagePairs` / `formBootstrapMessagePair`
 `tests/credential-surfacing.test.ts` is the Task 2 ordering
 canary — it re-ran green (12 credentials still surface).
 
-**The org-stamp trap (a verification finding).**
-`role-grants/:id`'s `successBody` re-stamps `organization_id`
-from the invocation's `organization` argument (§5.3's
-`documentSeedResponse`, `api/mock-data/seed-message-pairs.ts`,
-threads `inv.organization` straight into it) — so each of the 12
-role-grant seed invocations MUST carry its OWN grant's
+**The org-stamp trap (a verification finding; Task-time).**
+At Task time `role-grants/:id`'s `successBody` re-stamped
+`organization_id` from the invocation's `organization` argument
+(§5.3's `documentSeedResponse`,
+`api/mock-data/seed-message-pairs.ts`, threads
+`inv.organization` straight into it) — so each of the 12
+role-grant seed invocations had to carry its OWN grant's
 `organization_id` (`STARK_ORGANIZATION`/`ORGANIZATION_TWO` per
 the write body, `assignOrganization(index)` for members), never
-undefined. A wrong/undefined value silently corrupts the STORED
-RESPONSE body with no fingerprint pin catching it —
-`requests`/`responses` are excluded tables (`tests/mock-data-
-fingerprint.test.ts`). Only the spot-check below catches it.
+undefined. A wrong/undefined value silently corrupted the
+STORED RESPONSE body with no fingerprint pin catching it —
+`requests`/`responses` were excluded tables
+(`tests/mock-data-fingerprint.test.ts`, later RETIRED). Only
+the Task-time spot-check below caught it. **As of role-grants
+retirement:** no live `'role-grants/:id'` WRITE_RESPONSE_SPECS
+org-stamp path remains.
 
 **The re-pins (`tests/mock-data-pairs.test.ts`).**
 `EXPECTED_PAIR_COUNT` 603 → 632 + the breakdown prose; ONE
@@ -3205,14 +3218,19 @@ SAME technique the ai-member detail-document test already uses
 (the H7/arrival-order hazard class) — the assertion itself is
 unchanged.
 
-**Contract.** Every fingerprint pin holds — `identities` 16/
-`0c164977`, `identity_credentials` 12/`4990628d`, `role_grants`
-12/`4b2311dd`, the full table (`tests/mock-data-fingerprint.
-test.ts`) — because the three ops write the SAME row content the
-raw puts did; only the message plane (excluded from that
-fingerprint) grew. Reseed marginal cost measured ~2 ms for the
-+29 pairs (order-of-magnitude consistent with the ~0.144 ms/pair
-baseline; within this harness's run-to-run noise floor).
+**Contract (Task-time).** Fingerprint pins held then —
+`identities` 16/`0c164977`, `identity_credentials` 12/
+`4990628d`, `role_grants` 12/`4b2311dd` via
+`tests/mock-data-fingerprint.test.ts` — because the three ops
+wrote the SAME row content the raw puts did; only the message
+plane (excluded from that fingerprint) grew. **As of Phase
+Final:** that fingerprint oracle is RETIRED (file absent);
+standing absolutes are `EXPECTED_PAIR_COUNT = 1498` /
+bootstrap 12 (`tests/mock-data-pairs.test.ts`); pair-plane
+spot-checks only. Reseed marginal cost measured ~2 ms for the
++29 pairs (order-of-magnitude consistent with the ~0.144
+ms/pair baseline; within this harness's run-to-run noise
+floor).
 
 ### 5.16 Gate-seeding the historical-trace carve-out (Phase 11
 Task 3; reshaped at states-address retirement)
@@ -3290,8 +3308,9 @@ gate-seeded pair would be fingerprint-INVISIBLE — the SAME class
 of gap §5.15's role-grant org-stamp spot-check closed. A NEW
 assertion (`tests/mock-data-pairs.test.ts`) reads BOTH a seeded
 trace pair's stored request `requester_identity_id` and the
-ACTUALLY-WRITTEN `states` row's `member_id` for the SAME event id
-and asserts they agree.
+pair-derived lifecycle state's `member_id`
+(`workOrderLifecycleStatesFor`) for the SAME event id and
+asserts they agree.
 
 **The re-pins (`tests/mock-data-pairs.test.ts`).**
 `EXPECTED_PAIR_COUNT` 632 → 1500 (+860 trace +7 field-value +1
