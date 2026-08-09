@@ -522,13 +522,13 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |     2974 |
+| CLI automated tests    |     3014 |
 | Browser regression     |      404 |
-| **Combined TOTAL**     | **3378** |
+| **Combined TOTAL**     | **3418** |
 
 CLI count = most recent `./validate` (AT2) report — the main
 `tests/*.test.ts` suite plus the `tests/tz/*.test.ts` timezone
-suite (2966 main + 8 tz);
+suite (3006 main + 8 tz);
 the number grows as tests land in either glob. Browser count =
 the per-section table above. Update both numbers when either
 side changes.
@@ -546,8 +546,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 3378, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (3378).
+`PASS = 3418, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (3418).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -2891,14 +2891,14 @@ Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 | Preflight     | A1–A5             |    5 |       0 |    0 |
 | Phase-1       | AA1–AA43+subs     |    X |       Y |    Z |
 | Agent-B       | B1–B29 (less B23–B24) | 27 |       0 |    0 |
-| Agent-CH      | C1–C7 + H1–H2     |    9 |       0 |    0 |
+| Agent-CH      | C1–C7 + H1–H2 + K27–K29 | 12 |       0 |    0 |
 | Agent-D       | D1–D37            |    X |       Y |    Z |
-| Agent-E       | E1–E11 + E10a     |   12 |       0 |    0 |
+| Agent-E       | E1–E11 + E10a + K7,K9–K26,K30 | 32 | 0 | 0 |
 | Agent-F       | F1–F77            |    X |       Y |    Z |
 | Agent-F2      | WB1–WB22 + subs, FS1–FS9, R1–R21 | X |    0 |    0 |
-| Agent-G       | G9–14,19–26,36–46 |    X |       0 |    0 |
+| Agent-G       | G9–14,19–26,36–46 + K1–K6 | X | 0 | 0 |
 | Phase-3       | I1–I30            |    X |       Y |    Z |
-| Phase-4       | G30–G35 + L1–L9   |    X |       0 |    0 |
+| Phase-4       | G30–G35 + L1–L9 + K8 | X |       0 |    0 |
 | Teardown      | J1–J3             |    3 |       0 |    0 |
 
 ## BLOCKED detail (known MCP limitations — NOT failures)

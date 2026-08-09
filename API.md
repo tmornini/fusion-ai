@@ -1731,12 +1731,15 @@ includes **1498** of its OWN pre-formed message pairs
 
 - **Four sequential steps, not one atomic op:**
   1. `ensureTables(TABLE_NAMES)`
-  2. `transaction(TABLE_NAMES, postMockDataLoadIn)` — builds the whole
-     dataset, including the 1498 seed pairs, in one tx (a mid-seed
-     failure leaves no half-populated schema).
+  2. `transaction(TABLE_NAMES, postMockDataLoadIn)` — builds the
+     dataset and writes the non-credential seed pairs in one tx (a
+     mid-seed failure leaves no half-populated schema).
   3. `seedHumanCredentials(adapter)` — its **own** tx over
-     `['requests','responses']`; the PBKDF2 hashing runs outside the tx
-     (async crypto cannot run inside an IDB transaction).
+     `['requests','responses']` appends the 12 identity-credential
+     pairs (part of the 1498 total); the PBKDF2 hashing runs outside
+     the tx (async crypto cannot run inside an IDB transaction).
+     Final absolute remains `EXPECTED_PAIR_COUNT = 1498` after both
+     txs.
   4. `postSchemaCreation()` — the schema marker stamps **last**, so a
      failed seed reads as empty and retries cleanly.
 - returns `SeededCredentials` — plaintext sign-ins surfaced in-band,
@@ -1747,8 +1750,12 @@ includes **1498** of its OWN pre-formed message pairs
 `postBootstrap` (`api/mock-data.ts`). Same four-step shape as
 §3.26 — no pair for itself, below the ledger — with `postBootstrapIn`
 planting only the shell essentials (system actor, current user, the
-singleton org — no Records) and its own single pre-formed pair for
-the current-user create (§5.3). Returns `SeededCredentials`.
+singleton org — no Records) and its multi-pair bootstrap set: the
+current-user human-member create bundle (operation + member + detail
++ identity documents), membership, system member, PII, system
+identity, default-org, and organization, plus credentials via
+`seedHumanCredentials` — bootstrap absolute **12** (§5.3;
+`tests/mock-data-pairs.test.ts`). Returns `SeededCredentials`.
 
 ### 3.28 `PUT /snapshots/import` — restore a snapshot (not a POST)
 
@@ -2095,15 +2102,15 @@ untouched.
 `POST /snapshots/mock-data` and `POST /snapshots/bootstrap` are
 `BOOTSTRAP_ROUTES` — bearer-exempt and below the ledger for their OWN
 request (§3.26–§3.28). What they seed, though, is itself the output of
-SIXTEEN pair-capable write families, in dependency order:
+FIFTEEN pair-capable write families, in dependency order:
 `human-members`, `ideas`, `idea-submissions`, `projects`, `flows`,
 `work-orders`, `flow-work-orders`, `ai-members`, `records`,
 `objectives`, `memberships`, `members`, `organizations`,
-`identities`, `identity-credentials`, and `role-grants` (the last
-three, Phase 10 Task 6, §5.15; organizations, Phase 12 Task 3,
-§5.18), PLUS the `identity_default_organizations` family's own
-writes (Phase 11 Task 8, §5.17) — no dedicated op wraps that
-family, so it stands outside the SIXTEEN
+`identities`, and `identity-credentials` (the last two, Phase 10
+Task 6, §5.15; organizations, Phase 12 Task 3, §5.18), PLUS the
+`identity_default_organizations` family's own writes (Phase 11
+Task 8, §5.17) — no dedicated op wraps that family, so it stands
+outside the FIFTEEN
 (`buildMockDataInvocations`, `api/mock-data/seed-message-pairs.ts`),
 so the seed forms each family's pair the SAME way a live
 request would, then appends it on the pair plane only
@@ -2156,16 +2163,18 @@ table; no dual-write beside a seeded row):
   11 human passwords + the system client secret, formed by
   `seedHumanCredentials`' OWN local pass-1/pass-2 split since a
   credential's hashed secret is unknown until PBKDF2 resolves),
-  PLUS every seeded role grant folds in its OWN `role-grants/:id`
-  document pair (12 more — the 2 admin grants for `current` plus
-  one member grant per non-admin human), PLUS every work-order
-  historical trace reseeds as a `work-orders/:id/transition`
-  op-shaped pair (**861** — states-address retirement reshape;
+  PLUS 0 role-grant pairs (retired: membership `type` carries
+  privilege; mint bakes claims), PLUS 859 legacy work-order
+  historical-trace `work-orders/:id/transition` op-shaped pairs
+  (states-address retirement: 861 traces minus WO01's two
+  value-bearing events, which migrate to the instance chain;
   field values fold into those transition bodies; no bare
-  `states/:id` or field-values leaf seed pairs remain), PLUS
-  every seeded human member's OWN default-org event forms its
-  OWN identity-keyed `identities/:id/default-org/` pair (11
-  more) —
+  `states/:id` or field-values leaf seed pairs remain) + 6
+  WO-instance SoT chain pairs (instance genesis + binding +
+  Review/Complete new-shape ops each with a revision) + 1
+  gate0001 Capture step, PLUS every seeded human member's OWN
+  default-org event forms its OWN identity-keyed
+  `identities/:id/default-org/` pair (11 more) —
   in a first pass, BEFORE the seed's own big transaction opens
   (`formWritePair`'s hashing is async crypto, which would
   auto-commit an IndexedDB transaction early if awaited inside
@@ -3156,11 +3165,15 @@ human-member create balance 3 → 4 alongside — the SAME fact
 named above, exercised a second time through the live route
 rather than the shadow-ledger suite.
 
-**Contract.** The synthesized identities document is
+**Contract (Task-time).** The synthesized identities document is
 byte-indistinguishable from a live `PUT /identities/:id` pair's
-shape at the same address; old-plane row and lifecycle
-surfaces are untouched (fingerprints + the states-911 pin
-hold); the wire is unchanged — the bundles are storage-only.
+shape at the same address; old-plane row and lifecycle surfaces
+were then untouched (fingerprints + the states-911 pin held);
+the wire was unchanged — the bundles are storage-only. **As of
+Phase Final:** that fingerprint oracle and the states-911 pin
+are RETIRED; standing absolutes are
+`EXPECTED_PAIR_COUNT = 1498` / bootstrap 12
+(`tests/mock-data-pairs.test.ts`); pair-plane spot-checks only.
 
 ### 5.15 Gate-seeding the remaining spine slices: AI/system
 identities, credentials, role grants (Phase 10 Task 6)
@@ -3271,8 +3284,8 @@ floor).
 Task 3; reshaped at states-address retirement)
 
 **Historical dual-write era (Phase 11).** Path A throughout,
-the migration's most FINGERPRINT-CRITICAL task: the 860
-work-order historical trace events (211 hand-authored + 649
+the migration's most FINGERPRINT-CRITICAL task: the 861
+work-order historical trace events (212 hand-authored + 649
 generated), the 7 `state_field_values` rows, and the system
 member's OWN genesis event (2 — one per seed path) ALSO formed
 their own message pairs beside rows that stayed the SAME
@@ -3299,7 +3312,7 @@ and seed reshape pin.
 **The three slices as they stood at Phase 11 (+869).** Every
 work-order trace event
 (`buildWorkOrderStateEvents()` +
-`leadToCloseWorkloadStateEvents`, 860) formed its OWN
+`leadToCloseWorkloadStateEvents`, 861) formed its OWN
 event-append pair — idParams `[event.id]`, byte-identical to
 the id the dual-write row already carried, so the derived
 plane's future ids could never drift. `requesterIdentityId`
