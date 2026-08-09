@@ -1,4 +1,4 @@
-URI tree of the HTTP surface; source of record is api/routes.ts.
+URI tree of the HTTP surface; source of record is api/routes.ts (the route table), api/api.ts (handleRequest pre-match + facades), api/invitations-domain.ts (the invitation sub-router), and api/organization-requests.ts (the org/default-org sub-routers).
 
 └─|─ /invitations/ • RECONCILED: derived view, but NOT a registered family — the permanent side channel (Author gate 2); grant/accept synthesize PUT-shaped document pairs off the route table, rows derive from PUT-method document heads at /invitations/ and state from op-address pair presence (accepted/declined/revoked/pending), the facade's 404-only verb regime preserved — Phase 15 gate 6 re-homes grant email onto deriveIdentityPiiRows and pendingInvitationFor/loadInvitation onto deriveInvitations (no live invitations-table decision read) — see the roster seam FLIPPED 2026-07-06 block + Phase 15 FLIPPED
   |  └── :id

@@ -119,6 +119,7 @@ Global-spine (pass-through), NOT org-fenced at the store:
 tenancy lives IN `uri_prefix`, enforced at the route gate
 and the write authorizer
 (`api/write-authorizer.ts` via
+`resolveGlobalOwner`, which may fall back to
 `resolveOwningOrganization`).
 
 ### requests

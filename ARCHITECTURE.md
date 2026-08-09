@@ -227,9 +227,11 @@ org on writes, and 404'd foreign ids;
 wrapped org-owned stores; `ParentScopedEntityStore` /
 `ParentScopedStateStore` (`store-parent-scoped.ts`) resolved
 leaf ownership through already-fenced parents. Phase Final
-Stage B deleted those three decorator modules with
-`EntityStore` and `StateStore`. The pair plane + write
-authorizer is the as-built successor.
+Stage B deleted those three decorator modules and the
+`StateStore` class; `EntityStore` remains as the store
+interface implemented by `HistoryEntityStore` on the
+message plane (`requests`/`responses` only). The pair
+plane + write authorizer is the as-built successor.
 
 ### Multitenancy model
 
@@ -466,9 +468,10 @@ handlers, currently running in-browser. Code that crosses the
 client/server chasm lives one level out in `shared/` (a sibling
 of `api/` and `web-app/`): the HTTP wire schema (`http-message/`,
 its own `types.ts`) plus pure cross-chasm utilities
-(`base64url.ts`, `crypto-safe-base62.ts`, `password-hash.ts`,
-`ledger-reduction.ts`, `error-helpers.ts`). Both `api/` and
-`web-app/` import `shared/`; `shared/` NEVER imports `api/`.
+(`base64url.ts`, `crypto-safe-base62.ts`, `digest.ts`,
+`password-hash.ts`, `ledger-reduction.ts`,
+`error-helpers.ts`). Both `api/` and `web-app/` import
+`shared/`; `shared/` NEVER imports `api/`.
 
 `api/types.ts` (domain types + shared aliases — `MemberId`,
 `MemberEntity` parent + `Member` union (`HumanMember` /
@@ -496,13 +499,15 @@ document families plus the surviving state routes),
 The `DbAdapter` interface is the migration seam to Postgres.
 
 Phase Final deleted every entity table and the dual-write
-row halves. `EntityStore`, `StateStore`, and the three
-scoping decorators are GONE. IndexedDB's own open is
-UNVERSIONED, so an origin that already has a database never
-re-runs `onupgradeneeded`: an EXISTING pre-Final origin keeps
-dropped stores as harmless, unread orphans (gate 6 residual
-— see SCHEMA.md § Orphan stores); only `deleteSchema` (a
-full database delete) clears them on IndexedDB.
+row halves. `StateStore` and the three scoping decorators
+are GONE; `EntityStore` remains as the store interface
+implemented by `HistoryEntityStore`. IndexedDB's own open
+is UNVERSIONED, so an origin that already has a database
+never re-runs `onupgradeneeded`: an EXISTING pre-Final
+origin keeps dropped stores as harmless, unread orphans
+(gate 6 residual — see SCHEMA.md § Orphan stores); only
+`deleteSchema` (a full database delete) clears them on
+IndexedDB.
 
 `web-app/app/adapters/init.ts` wires the production IndexedDB
 adapter singleton (`initAdapter()` / `getDbAdapter()`); the
@@ -595,8 +600,9 @@ by drift/parity tests.
 New Phase 14 cores riding this shape: `invitationOpStateFor`
 + `invitationLifecycleStatesFor` (`derive-invitations.ts` /
 `derive-states.ts`, entity-scoped siblings of the
-whole-ledger `invitationOpStates`/`deriveStatesFor`, wired
-into `pendingInvitationFor`/`currentInvitationState`);
+whole-ledger `invitationOpStates` /
+`deriveInvitationStates`, wired into
+`pendingInvitationFor`/`currentInvitationState`);
 `workOrderClaimHistoryFor` (`derive-states.ts`, pair-plane
 claim history — op pairs only: create/claim/transition/
 release; the shared event-append arm is retired with the
@@ -723,9 +729,9 @@ Phase 15 re-anchored every remaining production decision
 read onto the pair plane and retired four zero-caller
 route families (DELETE NOTHING held through Phase 15).
 **Phase Final DELETED the residual.** Dual-write row
-halves stripped (Stage A); doomed tables +
-`EntityStore` / `StateStore` + the three scoping
-decorators deleted (Stage B); `clients` re-pointed to
+halves stripped (Stage A); doomed tables + `StateStore`
++ the three scoping decorators deleted (Stage B);
+`EntityStore` remains as the interface on
 `HistoryEntityStore`; states-address retirement deletes
 every verb on the shared event-append address; the
 clients elimination re-homes client config to the
@@ -768,26 +774,33 @@ EXPECTED_PAIR_COUNT 1498 / bootstrap 12;
 
 ### Successor derives (as-built)
 
-All view-accepting (`dbOrView`), entity-scoped where the
-address family allows, opening no nested transaction:
+Mixed shapes — not every successor is `dbOrView`-safe or
+free of nested transactions:
 
-- `workOrderDocumentHeadFor` — claim-gate `flow_graph` head
-- `workOrderHistoryFor` /
-  `deriveWorkOrderHistories` — per-id and bulk work-order
-  history with inline `field_values`
+- `workOrderDocumentHeadFor` — claim-gate `flow_graph`
+  head (`dbOrView`, no nested tx)
+- `workOrderHistoryFor` — per-id work-order history with
+  inline `field_values` (takes plain `db`; no nested tx
+  of its own)
+- `deriveWorkOrderHistories` — bulk work-order history
+  with inline `field_values` (takes plain `db`; opens
+  `readTransaction`)
 - `deriveObjectiveHistories` — bulk objective history
-- `documentStateHistoryHandler` — shared DESC wrapper for
-  trio-family per-id history
+  (takes plain `db`)
+- `documentStateHistoryHandler` — shared DESC GetHandler
+  factory for trio-family per-id history
 - `stateEventVisibilityFor` — 3-tier ownership probe
   (orphan | visible | hidden) for RESTRICT / related
-  fences; consumers throw 403/404 rather than folding to
-  empty
+  fences (`dbOrView`); consumers throw 403/404 rather
+  than folding to empty
 - `resolveGlobalOwner` — global-existence probe for
-  403-vs-404 decisions (write authorizer + read miss paths)
+  403-vs-404 decisions (write authorizer + read miss
+  paths; takes plain `db`)
 - `resolveOwningOrganization` — ownership for per-entity
-  family history misses (narrower allowlist)
-- `flowGraphBindingsFromPairs` — RESTRICT graph legs from
-  graphDelta
+  family history misses (narrower allowlist; takes plain
+  `db`)
+- `flowGraphBindingsFromPairs` — RESTRICT graph legs
+  from graphDelta (`dbOrView`)
 
 ### Gate 6 re-homes + survivors
 
@@ -899,9 +912,12 @@ AIs (the AI edit presenter renders a provider-grouped model
 pulldown and a skill-focus textarea; no token field).
 
 `presenters/index.ts` is the barrel; page modules import from
-`'../app/presenters/index.ts'`. `WorkboxDetailPresenter` uses a public
-`buildPage()` orchestrating private `#build*` helpers; the rest
-expose `build*` directly.
+`'../app/presenters/index.ts'`. Public `buildPage()`
+orchestrators: `WorkboxDetailPresenter` (private `#build*`
+helpers), `OrganizationPresenter` /
+`OrganizationEditPresenter`, and `RecordDetailPresenter` /
+`RecordDetailEditPresenter`. Other presenters expose
+`build*` helpers directly.
 
 `FlowStatsPresenter` (`web-app/app/presenters/flow-stats.ts`) is
 the read-only counterpart to `FlowDesignerPresenter`. It exposes
@@ -1038,8 +1054,10 @@ verbs.
   seam (`getRecordForFlow`, `getFlowSummariesForRecord`,
   `getWorkOrdersForRecord`) — wire still
   `flows/:id/records`.
-  `adapters/record-transitions.ts` orchestrates the
-  property-test gate via `validateRecordTransition`;
+  `adapters/record-transitions.ts` exposes the shared pure
+  gate `recordTransitionViolationsFrom` plus the adapter
+  fetch+gate helper `validateRecordTransition`.
   `postWorkOrderTransition`
-  (`adapters/work-orders-mutations.ts`) runs that gate and
-  throws `RecordTransitionViolations` on a non-empty result.
+  (`adapters/work-orders-mutations.ts`) calls
+  `recordTransitionViolationsFrom` and throws
+  `RecordTransitionViolations` on a non-empty result.

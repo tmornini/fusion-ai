@@ -173,10 +173,11 @@ icons). Node positions, though, do *not* come from the
 renderer:
 `getFlowGraph` runs `flow-graph-layout.ts`'s
 `withRenderableLayout`, which lays a flow out
-(`computeLayout`) whenever it is `is_auto_layout` or its
-stored positions are degenerate — so the stats renderer
-and the designer both start from real coordinates, not
-the persisted (0,0) placeholders. `runFlowLayout` /
+(`computeLayout`) whenever domain `isAutoLayout` is set
+(wire `is_auto_layout` on FlowWithGraph) or its stored
+positions are degenerate — so the stats renderer and the
+designer both start from real coordinates, not the
+persisted (0,0) placeholders. `runFlowLayout` /
 `runLayoutFromInputs` is the one `computeLayout` wrapper,
 shared by `getFlowGraph`, the designer's `applyAutoLayout`,
 and `flow-export`'s mermaid-import path.
@@ -209,4 +210,4 @@ it consumes the universal `TransitionEvent[]` shape exported
 from `adapters/work-orders-queries.ts` — derived from the
 states log, not from any retired event table. The I/O
 wrapper is `adapters/flow-stats.ts`'s
-`getFlowStats(ctx, flowId)`.
+`getFlowStats(ctx, flowId, nowMs)`.

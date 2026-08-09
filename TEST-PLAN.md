@@ -68,7 +68,7 @@ flow-edit business logic and the connection-validation rules
 `performAddAttributeRef` / `performRemoveAttributeRef` / `performUndo` /
 `performRedo`, including no-edge-to-a-start-node, none-from-an-
 end-node, no-duplicate-edge, start-node-single-outgoing, and the
-lock/noop/commit-error branches); the flow version and query
+lock/noop/commit-error branches); the flow publish/readiness and query
 adapters (`tests/adapters-flow-publish.test.ts`,
 `tests/adapters-flow-queries.test.ts`); the workbox inbox
 aggregation (`tests/workbox-inbox.test.ts`); the mermaid round-trip
@@ -1013,7 +1013,7 @@ on. Run these in order.
 
 ### Idea Create Form (`ideas/create.html`)
 
-- [ ] **D5** Page loads showing a single-page form with six conversationally-labeled fields: "Give your idea a clear title" (Title), "What problem does this solve?" (Problem Statement), "Who will benefit from this?" (Target Users), "How would you solve this?" (Proposed Solution), "What outcome do you expect?" (Expected Outcome), "How would you measure success?" (Success Metrics). The parenthetical identity is the field id; the prompt is the visible label. PASS: all six fields visible.
+- [ ] **D5** Page loads showing a single-page form with six conversationally-labeled fields: "Give your idea a clear title" (Title), "What problem does this solve?" (Problem Statement), "Who will benefit from this?" (Target Users), "How would you solve this?" (Proposed Solution), "What outcome do you expect?" (Expected Outcome), "How would you measure success?" (Success Metrics). Parentheticals are conceptual field names (draft keys: title, problemStatement, targetUsers, proposedSolution, expectedOutcome, successMetrics), not DOM field ids; the prompt is the visible label. DOM ids for selectors: `idea-create-field-title|problem|target|solution|outcome|metrics`. PASS: all six fields visible.
 - [ ] **D6** "Submit Idea" button is disabled when any required field is empty. PASS: button is visually disabled and not clickable.
 - [ ] **D7** Fill in all required fields (Title,
   Problem Statement, Proposed Solution,
@@ -2584,10 +2584,13 @@ unscored→score→approve path you need a project created
 WITHOUT baselines (converted when no objectives existed, or
 seeded directly).
 
-**K9.** Open a `submitted` project; confirm the action bar
-shows Edit plus the review actions (Approve / Decline / Send
-back) and no View history (it appears only once approved or
-archived), and the objective rows' baseline sliders are
+**K9.** Open a `submitted` project; confirm the header
+actions slot shows Edit (`#project-edit-btn` in
+`.project-actions-slot`) and the review action bar
+(`#project-review-actions` / `.action-bar`) shows Approve /
+Decline / Send back and no View history (View history
+appears only once approved or archived in the lifecycle
+action bar), and the objective rows' baseline sliders are
 editable inline (baseline editing is open across the
 pre-approval states submitted/under_review/sent_back).
 
@@ -2869,7 +2872,7 @@ Owner: Phase 4 (alone, after Phase 2). L1–L9 reopen, wipe, and reseed the `fus
 ## Summary Format
 
 The run produces a single conversational summary in the
-following format. This is the contract `## How to invoke`
+following format. This is the contract `### How to invoke`
 references. The doc itself is NOT mutated by the run.
 
 ```

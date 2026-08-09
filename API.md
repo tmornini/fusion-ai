@@ -2449,14 +2449,17 @@ tombstone: any live (non-tombstoned) instance under the
 type, OR any live `flows/:id/records` join naming the
 type → **409** naming the blockers.
 
-**PUT .../record-types/:id** dispatches through
-`documentPutHandler` on the nested wiring — the SAME
-`'simple'` concurrency class ideas/projects/work-orders
-ride (§5.4). Schema races are last-writer-wins
-(admin-only mutation volume; no If-Match this wave).
-`GET` rides the same generic document machinery
-(collection + entity). Composed create/edit is
-`POST .../record-types` (§3.20), admin-gated.
+**PUT .../record-types/:id** is inline (param index 1 is
+`:record-type-id`), reusing `postRecordDocumentOp` — not
+`documentPutHandler` (that factory always takes param 0 as
+id). Task 23 retired flat `RECORDS_WIRING` /
+`RECORD_ATTRIBUTES_WIRING`; no nested
+`DocumentFamilyWiring` row exists for record-types.
+Family-registry concurrency stays `'simple'` (§5.4) —
+last-writer-wins (admin-only mutation volume; no If-Match
+this wave). Collection/entity `GET` are likewise inline
+derives. Composed create/edit is `POST .../record-types`
+(§3.20), admin-gated.
 
 Adapters (`web-app/app/adapters/records.ts`) speak the
 nested path; `putRecord` / `postRecordStateChange`
@@ -2929,9 +2932,13 @@ the ONLY re-pins this task authorizes.
 ### 5.13 The twelfth family: identities
 
 Phase 10 Task 4 registers `identities` as the TWELFTH
-`DocumentFamilyWiring` row (`IDENTITIES_WIRING` in
-`api/routes.ts`) and the family-registry row it consults
-(`api/family-registry.ts`): `organizationNested: false`
+`FAMILY_REGISTRY` family (`api/family-registry.ts`;
+global-plane) and the TENTH `DocumentFamilyWiring`
+registration (`IDENTITIES_WIRING` in `api/routes.ts`).
+Record-types / record-attributes are registry rows with
+inline handlers (Task 23 retired their flat wiring);
+organizations is registry-only (no wiring row). The
+identities registry row sets `organizationNested: false`
 ("global-plane"), `concurrency: 'simple'`, `createBodyIdField:
 'id'`. It joins `MEMBERS_WIRING`'s shared-log-with-genesis
 `'stateless'` bucket as the FOURTH member (§5.10): the shared id
