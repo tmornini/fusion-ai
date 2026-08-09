@@ -1,6 +1,6 @@
 # Fusion AI — Test Plan
 
-> **Encoding:** `- [ ]` = pending, `- [ ]` = PASS, `- [FAIL]` = failure (add note)
+> **Encoding:** `- [ ]` = pending (not yet executed). Run outcomes are recorded as words in the Summary (PASS / FAIL / BLOCKED / DEFERRED / DRIFT), not by flipping the checkbox. Optional inline annotation: `- [FAIL]` with a note for a failed case.
 
 ### How to invoke
 
@@ -561,7 +561,7 @@ run before A1's build. The single canonical invocation is
 
 - [ ] **AT1** Run `npx tsc --noEmit -p web-app/app/tsconfig.json`. PASS: exits 0; no diagnostics emitted.
 - [ ] **AT2** Run `./test` (delegates to `TZ=UTC node --test --strip-types tests/*.test.ts` for the main suite, then `TZ=Pacific/Honolulu node --test --strip-types tests/tz/*.test.ts` for the timezone suite). PASS: exits 0; the runner's final summary reports `pass N` with `fail 0` for both suites.
-- [ ] **AT3** Run `./validate`. PASS: exits 0 (composes AT1+AT2 plus the 78-char awk lint over `api/`, `web-app/`, `tests/`, `shared/`, the root `.md` files, and the build scripts, then the `generate-schema-svg --check` SCHEMA.svg-drift gate). Any long-line violation prints `FILE:LINE: N chars` to stderr and fails the script.
+- [ ] **AT3** Run `./validate`. PASS: exits 0 (composes AT1+AT2 plus the 78-char awk lint over `api/`, `web-app/`, `tests/`, `shared/`, the root `.md` files, and the build scripts; the org-abbreviation identifier lint over `api/`, `web-app/`, `tests/`, `shared/` `*.ts|html|css` with `compose.ts` exempt — reject `org` camel/Pascal/ORG_ identifier forms in favor of `organization`; then the `generate-schema-svg --check` SCHEMA.svg-drift gate). Any long-line violation prints `FILE:LINE: N chars` to stderr and fails the script; any org-abbreviation hit prints `FILE:LINE:` and fails.
 
 ---
 
@@ -606,10 +606,10 @@ on. Run these in order.
   Member creates an IDENTITY + member detail row but no
   membership/org binding — that binding now arrives only
   via the invitation flow (V1/V4). So a freshly Added
-  human is NOT yet in the org roster derived from
-  `memberships`; the Members-list grouping you see here
-  is the page's own member listing, not the membership
-  roster. New-identity auto-membership on creation is
+  human does NOT appear on the Members list, which is
+  membership-joined via `deriveMembers` (a parent row
+  shows only when its identity holds a membership for
+  this org). New-identity auto-membership on creation is
   DEFERRED, so this gap is EXPECTED, not a failure.
 - [ ] **AA6** Repeat for all 10 humans: Sarah Chen, Mike
   Thompson, Jessica Park, David Martinez, Emily Rodriguez
@@ -718,15 +718,17 @@ on. Run these in order.
   badge "Approve to add flows" instead of
   the button, and empty state reads "Flow
   creation limited to approved projects only".
-- [ ] **AA26** Click "New Flow". PASS: navigates
-  to the flow designer page. The SVG canvas
-  shows two nodes: "Create" (start, top-left with
-  green border) and "Archive" (end, bottom-right
-  with red 3-px border) connected by no edges.
-  Toolbar shows Undo, Redo, Zoom −/+, Copy Mermaid,
-  Export ZIP, and Delete (trash icon); the header above
-  the canvas hosts the Locked, Auto Layout, and Auto
-  Fit switches. Changes auto-save
+- [ ] **AA26** Click "New Flow". PASS: a "New Flow"
+  dialog opens with a Flow Name input and Create/
+  Cancel buttons. Enter a name and click Create.
+  PASS: navigates to the flow designer page. The SVG
+  canvas shows two nodes: "Create" (start, top-left
+  with green border) and "Archive" (end,
+  bottom-right with red 3-px border) connected by
+  no edges. Toolbar shows Undo, Redo, Zoom −/+,
+  Copy Mermaid, Export ZIP, and Delete (trash icon);
+  the header above the canvas hosts the Locked, Auto
+  Layout, and Auto Fit switches. Changes auto-save
   (no explicit Save button).
 - [ ] **AA27** Drag the port circle on the start
   node into empty canvas past 20 pixels. PASS:
@@ -897,7 +899,7 @@ on. Run these in order.
 - [ ] **B8** Enter `test@example.com`, password `123`. PASS: "Password must be at least 6 characters" error on password.
 - [ ] **B9** Enter the seeded admin credentials (`demo@example.com` + the password revealed at seed time), click "Sign in". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`. Auto-login is retired, so an unseeded credential is rejected with "Invalid email or password.".
 - [ ] **B10** Click the "Sign up" button (positioned next to the static "Don't have an account?" label — the label is not itself the toggle; the adjacent button is). PASS: switches to Sign Up mode — title changes to "Get started", "Company name (optional)" field appears, submit reads "Create account" with an SVG arrow icon (not a literal "→" character).
-- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click "Create account →". PASS: toast "Sign-up is coming soon — sign in with a seeded account." appears, the form flips to **Sign In** mode (title "Welcome back"), and NO navigation occurs — the demo no longer mock-establishes a session (real sign-up is SP-6; minting a bare mock with no refresh token would bounce on reload and could admit anyone to the seeded admin's data).
+- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click the "Create account" submit control (SVG arrow icon, not a literal "→"). PASS: toast "Sign-up is coming soon — sign in with a seeded account." appears, the form flips to **Sign In** mode (title "Welcome back"), and NO navigation occurs — the demo no longer mock-establishes a session (real sign-up is SP-6; minting a bare mock with no refresh token would bounce on reload and could admit anyone to the seeded admin's data).
 
 ### Auth Validation Edge Cases
 
@@ -955,9 +957,11 @@ on. Run these in order.
   linked to it has been removed); humans and AIs
   both live on the Members page.)
 - [ ] **C3** Header shows search bar, company
-  stats ("Stark Industries · N Ideas ·
-  M Projects · K Flows" — the counts track the
-  current working data and change as you create
+  stats as structured tiles (org name as a
+  `header-stat-label`, then per-stat value +
+  Ideas / Projects / Flows labels separated by
+  `header-stat-divider` dividers — the counts track
+  the current working data and change as you create
   or convert, so don't assert exact numbers),
   and theme toggle. PASS: elements visible and
   styled. The old "Good {morning/afternoon/
@@ -970,17 +974,18 @@ on. Run these in order.
   visually-equivalent arc-gauge cards (Time and Cost are
   ratio arc-gauges — a single ratio-filled semicircle; Impact
   is a bipolar arc — left/right split from a center apex; all
-  three share the same card chrome) and a full-width Aggregate
-  Objectives box below. PASS: all 4 render with baseline and
-  current values; the Time and Cost cards each show a ratio
-  arc and the Impact card shows a bipolar arc; the Objectives
-  box shows one row per objective, each with a small bipolar
-  arc gauge and a sparkline trendline.
+  three share the same card chrome) and a full-width
+  Objectives box below (card title "Objectives"). PASS: all 4
+  render with baseline and current values; the Time and Cost
+  cards each show a ratio arc and the Impact card shows a
+  bipolar arc; the Objectives box shows one row per objective,
+  each with a small bipolar arc gauge and a sparkline
+  trendline.
 - [ ] **C5** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
 - [ ] **C6** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
 - [ ] **C7** Check that seed data populates all 4 dashboard
-  surfaces (three arc-gauge cards + Aggregate Objectives
-  box). PASS: no "No data" empty states on a fresh
+  surfaces (three arc-gauge cards + Objectives box). PASS:
+  no "No data" empty states on a fresh
   mock-data load against the Phase 1 baseline. NOTE: the
   mock seed now spans TWO orgs (Stark Industries + Wayne
   Enterprises; the demo admin belongs to both) and the
@@ -1349,8 +1354,10 @@ opens and renders.)
 - [ ] **F28** Select an edge, click the Delete
   (trash) button in toolbar. PASS: edge is
   removed from the canvas.
-- [ ] **F29** Click "Zoom +" and "Zoom -" in
-  toolbar. PASS: canvas zooms in and out smoothly.
+- [ ] **F29** Click the Zoom in and Zoom out
+  toolbar controls (icon-only buttons;
+  `title` / `aria-label` "Zoom in" / "Zoom out").
+  PASS: canvas zooms in and out smoothly.
   Toggle the Auto Fit header switch on. PASS:
   canvas adjusts to show all nodes.
 - [ ] **F30** Edit a node name via the properties
@@ -1460,12 +1467,14 @@ canvas re-renders after each step.)
   source), `flow.json` (graph with node positions), `sidecar.json`,
   and a human-readable `flow.txt`. (ZIP read/write correctness is covered
   by `tests/zip-guards.test.ts`.)
-- [ ] **F43** On `flows/index.html` click "Import Flow", select a
-  `.mmd` file previously exported from a known flow, choose a
-  project, and submit. PASS: the imported flow opens in the designer
-  and renders nodes, edges, and attributes. (Structural fidelity of the
-  mermaid round-trip is covered by `tests/mermaid.test.ts`; this
-  case verifies the import dialog and that the designer opens on the
+- [ ] **F43** On `flows/index.html` click "Import Flow", choose a
+  project, click "Choose File", and select a `.mmd` file previously
+  exported from a known flow — selecting the file imports it
+  directly (no separate submit/confirm button; same shape as F5).
+  PASS: the imported flow opens in the designer and renders nodes,
+  edges, and attributes. (Structural fidelity of the mermaid
+  round-trip is covered by `tests/mermaid.test.ts`; this case
+  verifies the import dialog and that the designer opens on the
   imported flow.)
 - [ ] **F44** Repeat F43 with a `.zip` archive. PASS: the imported
   flow renders with node positions preserved (not auto-laid-out).
@@ -1665,7 +1674,8 @@ designer "tag current" action lands.)
 - [ ] **WB1** Navigate to `workbox/`. PASS:
   page shows "Workbox" title, subtitle "Your
   work order inbox", Active/Archive tabs, and
-  a "+ Create Work Order" button.
+  a "Create Work Order" button (plus icon +
+  label; mobile short label "Create").
 - [ ] **WB2** With no work orders, the Active
   tab shows an empty state with mail icon and
   "No Active Work Orders Yet" message. The mock
@@ -1881,11 +1891,12 @@ per-user visibility filter.
 
 - [ ] **WB20** As the demo user, navigate to `workbox/`.
   Active tab. PASS: every active (non-completed,
-  non-claimed-by-other) work order is listed regardless
-  of its current node's `memberIds` — including nodes
-  assigned only to AI members and nodes with zero
-  members (which carry the danger badge in the designer
-  but are still visible in the inbox).
+  unclaimed — any claimer hides the row, including the
+  current user's own claim) work order is listed
+  regardless of its current node's `memberIds` —
+  including nodes assigned only to AI members and nodes
+  with zero members (which carry the danger badge in the
+  designer but are still visible in the inbox).
 - [ ] **WB21** Switch to the Archive tab. PASS: every
   completed work order is listed regardless of which
   member(s) the final transition referenced.
@@ -1933,7 +1944,7 @@ the claude-in-chrome MCP.
   a value like `8.5m` / `2.1d` on regular nodes.
 - [ ] **FS4** Hover a node → a read-only stat card pops near
   it with: % of flow time, avg/median/p90 durations, visits /
-  distinct WOs / WIP, ~N/wk throughput, loop-back rate, clan
+  distinct WOs / Here now, ~N/wk throughput, loop-back rate, clan
   size + active producers, top producer (name + % of clan avg
   + % of node's work, with "(not in current clan)" iff
   applicable). For a branch node, `next` shows the per-edge
@@ -2672,8 +2683,8 @@ ranked by impact" workflow we designed.
 
 **K27.** Open dashboard; PASS if four surfaces render: three
 arc-gauge cards sharing one card shell (Time and Cost are ratio
-arc-gauges; Impact is a bipolar arc) and an Aggregate Objectives
-box (full-width row below).
+arc-gauges; Impact is a bipolar arc) and an Objectives box
+(full-width row below; card title "Objectives").
 
 **K28.** Inspect the Impact gauge. PASS if:
 - The arc has muted background visible at all values
@@ -2685,7 +2696,7 @@ box (full-width row below).
   area (thinner / different opacity)
 
 **K29.** From another tab, log a measurement on an approved
-project. PASS if the Aggregate Objectives box updates within
+project. PASS if the Objectives box updates within
 ~1 second (BroadcastChannel `fusion-ai:data` + `subscribeProjectScoreChanges`); the
 three arc-gauge cards refresh only on full page load.
 

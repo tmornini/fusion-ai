@@ -198,10 +198,11 @@ not on the very next request. Revocation ledger checks
 remain on mint/refresh/exchange only. Two covenants bound
 the vessel: it never carries the bearer token
 (authentication reads the header from the raw Request, so
-the vessel stays loggable), and route handlers keep their
-`(adapter, params, body)` contract — the route table is the
-chosen boundary where the vessel hands the base adapter to
-the handler, keeping handlers transport-free.
+the vessel stays loggable), and route handlers stay
+transport-free — the route table is the boundary where the
+vessel hands `ctx.base` plus fenced claim projection into
+live handler arities (`GetHandler`: adapter, params, actor,
+organization, roles; write handlers add payload + pair).
 
 **Write-time cross-tenant authorizer.** Pair addresses are
 per-org namespaced (`canonicalUriPrefix` from the VERIFIED
@@ -451,14 +452,12 @@ re-verified by the automated suite:
   (`web-app/app/core.ts`).
 - **Route policy tiers** (`ROUTE_POLICY`,
   `api/authorization.ts`): `admin` everywhere plus a real
-  `member` tier on the content surfaces; identity, credential,
-  membership, and snapshot surfaces stay admin-only,
-  deny-by-default.
-- **De-membership latency** (`fenceRequest`,
-  `api/request-auth.ts`): every fenced request re-derives
-  membership from the ledger, so revoking a membership stops
-  access on the NEXT request — the token's 15-minute org
-  claim no longer rides out its TTL.
+  `member` tier on the content surfaces; identities,
+  credentials, providers, memberships, and snapshots stay
+  admin-only (deny-by-default). Member-tier carve-outs:
+  `identity-tokens` POST (rotation/revocation) and
+  `identity-token-revocations` PUT (self logout-everywhere;
+  write authorizer keeps the write self-only).
 
 ## API Layer (`/api`)
 

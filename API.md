@@ -57,14 +57,17 @@ resolves a request in this order:
    win over the facade when registered. Match failure is not
    yet a response: authentication runs first (step 3).
 3. **The gate** (skipped for bearer-exempt routes):
-   `authenticateRequest` (verify the Bearer JWT, reject
-   anonymous/revoked) → on auth failure, **401** even for
-   unknown paths (never a route-topology oracle) →
-   `fenceRequest` (resolve the org once, derive live
-   memberships + roles onto the request vessel; the base
-   adapter is unchanged — tenancy rides `uri_prefix`, not an
-   org-scoped decorator) → `authorizeRequest` (per-org role
-   check). After a successful auth, no route match is **404**.
+   `authenticateRequest` (verify the Bearer JWT; reject
+   missing, invalid, or anonymous — per-request revocation
+   is retired; a revoked access token works until `exp`,
+   ≤ `ACCESS_TTL_SECONDS`) → on auth failure, **401** even
+   for unknown paths (never a route-topology oracle) →
+   `fenceRequest` (resolve the org once; memberships and
+   roles ride token claims — NAMED ≤15-min covenant, not
+   live ledger reads; the base adapter is unchanged —
+   tenancy rides `uri_prefix`, not an org-scoped decorator)
+   → `authorizeRequest` (per-org role check). After a
+   successful auth, no route match is **404**.
 4. **Body parse** (`PUT`/`POST`/`PATCH`): `parseObjectBody` —
    a malformed or non-object JSON body is a `400` here, before
    either the pair or the handler ever sees it.
@@ -481,7 +484,9 @@ RETIRED with the address itself (see
   `deriveOrganizations` (`api/derive-organizations.ts`, §5.18); the
   membership filter is ALSO derived now (Phase 13 Task 3):
   `callerOrganizationIds` (`api/request-auth.ts`) reads
-  `deriveMembershipsForIdentity`, never `memberships.getAllWhere`.
+  token claims via `callerOrganizationIdsFromClaims` (the
+  adapter arg is unused), never a live memberships ledger
+  or `memberships.getAllWhere`.
 - `GET|PUT /organizations/:id` — primitive (global passthrough; reads
   fence to the caller's memberships). `GET` is FLIPPED too (Phase 12
   Task 5): a bespoke `deriveOrganization` call in the route closure
@@ -919,7 +924,12 @@ logins each land) — see §5.1 for the headers this produces and
   - PRE-TX: `deriveAuthorizationCodeId` (`sha256Hex(code)`) →
     `authorizeCodeIssuer` (scans the
     `/authentication/authorize/` response family for a raw
-    `code` match) → `authorizationCodeSpent` fast-fail
+    `code` match) → TTL check → redeeming `client_id` must
+    equal authorize's issuer (shared 401 on miss/wrong) →
+    optional PKCE S256 when issuer stored `code_challenge`
+    (`code_verifier` → base64url(sha256) must match; absent
+    challenge keeps pre-PKCE redeem) →
+    `authorizationCodeSpent` fast-fail
     (`requests.getAllWhere('uri_id', derivedId)` filtered to the
     `identity-tokens/` prefix — a hit IS the spend marker,
     KEY-BY-ANCHOR: the issued root's row id equals the code's
@@ -2936,11 +2946,15 @@ third live bare collection-POST create route after flows and
 work-orders (flat POST records retired). `'identities'` retires
 from `CREATE_BODY_ID_FIELDS`
 (the same literal table) — the registered family answers ONLY
-from its own registration now. `'invitations'` is the ONE entry
-that literal table keeps PERMANENTLY: the invitations side
-channel has no organization-nesting tier, no concurrency class,
-and no document address of its own to register, so it is never a
-family-registry waypoint, only a standing exception.
+from its own registration now. The literal table keeps two
+residual entries: `'invitations'` → `'invitationId'`
+(permanent — the invitations side channel has no
+organization-nesting tier, no concurrency class, and no
+document address of its own to register, so it is never a
+family-registry waypoint) and
+`RECORD_TYPES_COLLECTION_PATTERN` → `'id'` (nested
+composed POST; the pattern is not a bare family name, so the
+registry consult never fires).
 
 **The three extractions (own commit each, behavior-identical).**
 `postIdentityDocumentOp`, `postIdentityCredentialDocumentOp`,

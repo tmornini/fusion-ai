@@ -85,8 +85,9 @@ relative luminance); every pair clears the 4.5:1 AA floor.
 
 Components apply semantic variants through `data-*` attributes
 on a base class rather than distinct class names. Presenters
-emit the attribute value; the attribute selectors in the
-`components-*.css` files bind it to the matching token set.
+emit the attribute value; attribute selectors in
+`components-*.css` and some `pages-*.css` files bind it to
+the matching token set.
 Helpers such as `toneForScore()` / `levelForUsage()` return
 tone and level strings aligned by convention with the CSS
 selectors — not a shared TypeScript enum or generated SSOT.
@@ -101,8 +102,12 @@ selectors — not a shared TypeScript enum or generated SSOT.
 `error`, `info`, `muted`.
 Applied to: `.pill`, `.icon-box`, `.icon-box-lg`,
 `.legend-dot`, `.btn-outline`, `.gauge-card`, `.ds-soft-btn`,
-`.ds-soft-row`, `.spark-tip-change`, and
-`.score-history-table td` (score cells, via `toneForScore`).
+`.ds-soft-row`, `.spark-tip-change`,
+`.score-history-table td` (score cells, via `toneForScore`),
+`.work-order-conflict`, and `.record-instance-conflict`.
+Not every class binds every tone — e.g. `.pill` is only
+`success|warning|error`; conflict classes bind `warning`
+only; `.icon-box` / `.icon-box-lg` take the full set.
 
 **`[data-level]` values**: `normal`, `warning`, `danger`.
 Applied to: `.progress-bar` fill regions.
@@ -155,6 +160,12 @@ inline-style strings.
 | `ghost` | Minimal UI, icons | Icon buttons |
 | `destructive` | Dangerous actions | "Delete" |
 | `success` | Positive actions | "Approve" |
+| `accent` | Gradient accent (`btn-accent`) | Landing CTA |
+| `hero` | Gradient hero (`btn-hero`) | Ideas/records CTA |
+| `outline-hero` | Hero outline (`btn-outline-hero`) | Landing secondary |
+| `outline-light` | Light outline (`btn-outline-light`) | On dark chrome |
+| `outline-error` | Error outline (`btn-outline-error`) | Destructive alt |
+| `link` | Inline link button (`.link`) | Text navigation |
 
 #### Sizes
 | Size | Height | Usage |
@@ -436,6 +447,10 @@ mode. Toggle is persisted to `localStorage` and respects
 | `fast` | 150ms | Hover, focus |
 | `normal` | 200ms | Transitions |
 | `slow` | 300ms | Modals, drawers |
+| `progress` | 300ms | Progress bar width |
+| `shimmer` | 1.5s | Loading shimmer |
+| `pulse` | 2s | Gauge draw pulse |
+| `spin-slow` | 3s | Slow spinner |
 
 ### Easing
 - **Default**: `cubic-bezier(0.4, 0, 0.2, 1)` - Most transitions

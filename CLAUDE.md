@@ -56,15 +56,23 @@ tools can drive the page normally.
 ### Validate semantics
 
 `./validate` runs `tsc --noEmit` (type checking), then
-`./test` (automated tests against pure modules and the
-`api/`, `adapters/`, and `presenters/` layers, via `node
---test --strip-types tests/*.test.ts`), then enforces a
+`./test` (two passes: `TZ=UTC` on `tests/*.test.ts`, then
+`TZ=Pacific/Honolulu` on `tests/tz/*.test.ts`; the main
+glob is non-recursive so it excludes `tests/tz/`; covers
+pure modules and the `api/`, `adapters/`, and `presenters/`
+layers via `node --test --strip-types`), then enforces a
 78-character maximum line length on all `.ts`, `.html`, and
-`.css` files (excluding `compose.ts`) and on every `.md`
-file at the repo root except [TEST-PLAN.md](TEST-PLAN.md)
-and [API-TREE.md](API-TREE.md) — both exempted because their
-entries are meant to scan as one self-contained line. Finally
-it runs the
+`.css` files (excluding `compose.ts`), on every `.md` file
+at the repo root except [TEST-PLAN.md](TEST-PLAN.md) and
+[API-TREE.md](API-TREE.md) — both exempted because their
+entries are meant to scan as one self-contained line — and
+on the root scripts `build`, `serve`, `test`, `validate`,
+and `generate-schema-svg`. It then rejects the `org`
+abbreviation in identifiers under `api/`, `web-app/`,
+`tests/`, and `shared/` (`.ts`/`.html`/`.css`; `compose.ts`
+exempt) — forms matching `org[A-Z]`, `…Org…`, `Orgs…`,
+`_ORG`/`ORG…` fail; prose, URLs, and CSS class names may
+keep the short form. Finally it runs the
 `generate-schema-svg --check` gate, which fails on
 `SCHEMA.svg` drift from the schema of record (`api/db.ts` +
 `api/types.ts`).
@@ -282,7 +290,8 @@ is HTTP-only.
   `SafeHtml`.
 - **Database.** IndexedDB (`api/backend-indexeddb.ts`): one
   object store per table (`keyPath: 'id'`) plus a `__schema__`
-  marker store, at version 1. `TABLE_NAMES` is two:
+  marker store, created on first open via unversioned
+  `indexedDB.open(DB_NAME)`. `TABLE_NAMES` is two:
   `requests`, `responses` — the pure message plane, both on
   `HistoryEntityStore`. Every store op crosses the
   `StorageBackend` transaction seam (`api/db.ts`) — a real
@@ -461,10 +470,13 @@ elimination pins: `api-work-order-history.test.ts` (per-id
 `api-members-history.test.ts`,
 `api-objective-history.test.ts` (bulk). Phase Final adds
 the write authorizer pin
-(`api-write-authorizer.test.ts`); store/decorator
-unit tests and dual-write shadow-ledger row oracles
-retired with their subjects. Honest HTTP status covenant
-pins: `api-unauthenticated-route-ordering.test.ts` (401
+(`api-write-authorizer.test.ts`); organization-scoped
+store/decorator tests and dual-write shadow-ledger row
+oracles retired with their subjects; HistoryEntityStore
+validation tests remain
+(`tests/store-entity-validation.test.ts`). Honest HTTP
+status covenant pins:
+`api-unauthenticated-route-ordering.test.ts` (401
 before 404), foreign-org 403 body pins across
 fence/isolation/drift suites, work-order history
 foreign/absent miss postures. See `tests/` for the
