@@ -53,7 +53,9 @@ This plan covers **UI behavior** — anything that requires a browser
 DOM, CSS, gestures, or visual rendering. Pure transitions,
 adapter behavior, and HTTP-style API routing are now covered by
 the **automated test suite** (`./validate` runs them; the suite
-also runs standalone via `node --test --strip-types tests/*.test.ts`).
+also runs standalone via `./test`, which pins `TZ=UTC` on
+`tests/*.test.ts` then `TZ=Pacific/Honolulu` on
+`tests/tz/*.test.ts`).
 See `CLAUDE.md` section `## Testing` for the inventory of
 automated test files and what each covers.
 
@@ -98,8 +100,10 @@ one of two modes:
   `cd /tmp/fusion-test/ && python3 -m http.server 8080`. Run
   sections in document order.
 - **Parallel (Claude Code agents)**:
-  `TMPDIR=/tmp/claude ./build --no-zip ~/Desktop/fusion-test/`
-  then `cd ~/Desktop/fusion-test/ && python3 -m http.server 8080`.
+  `TMPDIR=/tmp/claude ./build --no-zip /tmp/claude/fusion-test/`
+  once, then one static server per agent on its own port, all
+  serving that dir: `python3 -m http.server <port> --directory
+  /tmp/claude/fusion-test` (see the validated operational recipe).
 
 #### Six-phase parallel protocol
 
@@ -561,7 +565,7 @@ run before A1's build. The single canonical invocation is
 
 - [ ] **AT1** Run `npx tsc --noEmit -p web-app/app/tsconfig.json`. PASS: exits 0; no diagnostics emitted.
 - [ ] **AT2** Run `./test` (delegates to `TZ=UTC node --test --strip-types tests/*.test.ts` for the main suite, then `TZ=Pacific/Honolulu node --test --strip-types tests/tz/*.test.ts` for the timezone suite). PASS: exits 0; the runner's final summary reports `pass N` with `fail 0` for both suites.
-- [ ] **AT3** Run `./validate`. PASS: exits 0 (composes AT1+AT2 plus the 78-char awk lint over `api/`, `web-app/`, `tests/`, `shared/`, the root `.md` files, and the build scripts; the org-abbreviation identifier lint over `api/`, `web-app/`, `tests/`, `shared/` `*.ts|html|css` with `compose.ts` exempt — reject `org` camel/Pascal/ORG_ identifier forms in favor of `organization`; then the `generate-schema-svg --check` SCHEMA.svg-drift gate). Any long-line violation prints `FILE:LINE: N chars` to stderr and fails the script; any org-abbreviation hit prints `FILE:LINE:` and fails.
+- [ ] **AT3** Run `./validate`. PASS: exits 0 (composes AT1+AT2 plus the 78-char awk lint over `api/`, `web-app/`, `tests/`, `shared/`, the root `.md` files except `TEST-PLAN.md` and `API-TREE.md`, and the root scripts `build`, `serve`, `test`, `validate`, and `generate-schema-svg`; the org-abbreviation identifier lint over `api/`, `web-app/`, `tests/`, `shared/` `*.ts|html|css` with `compose.ts` exempt — reject `org` camel/Pascal/ORG_ identifier forms in favor of `organization`; then the `generate-schema-svg --check` SCHEMA.svg-drift gate). Any long-line violation prints `FILE:LINE: N chars` to stderr and fails the script; any org-abbreviation hit prints `FILE:LINE:` and fails.
 
 ---
 

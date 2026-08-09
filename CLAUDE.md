@@ -24,11 +24,13 @@ when working with code in this repository.
 ./measure --pages a,b  # Subset of PAGE_REGISTRY keys
 ./measure --runs N     # Runs per page (default 25)
 ./measure --visualize  # History HTML from disk (no Chrome)
+./measure --profile    # API counts + residual (default 4 pages, 1 run)
 ```
 
-**Commit before building.** `./build` requires a clean
-working directory. Run `./validate` to catch type errors
-and lint issues; commit; then build.
+**Commit before building.** `./build` and `./serve`
+(which runs `./build`) require a clean working directory.
+Run `./validate` to catch type errors and lint issues;
+commit; then build or serve.
 
 For local test-as-you-go:
 
@@ -70,9 +72,11 @@ on the root scripts `build`, `serve`, `test`, `validate`,
 and `generate-schema-svg`. It then rejects the `org`
 abbreviation in identifiers under `api/`, `web-app/`,
 `tests/`, and `shared/` (`.ts`/`.html`/`.css`; `compose.ts`
-exempt) — forms matching `org[A-Z]`, `…Org…`, `Orgs…`,
-`_ORG`/`ORG…` fail; prose, URLs, and CSS class names may
-keep the short form. Finally it runs the
+exempt) — forms matching `org[A-Z]`, camel/Pascal
+`…Org…`/`Org…`/`…Orgs…`/`Orgs…`, `_ORG` (word-end or
+`_`/`digit` after), and `ORG_`/`ORG`+digit fail; prose,
+URLs, and CSS class names may keep the short form. Finally
+it runs the
 `generate-schema-svg --check` gate, which fails on
 `SCHEMA.svg` drift from the schema of record (`api/db.ts` +
 `api/types.ts`).
@@ -214,13 +218,15 @@ is HTTP-only.
   only as message-pair events now — `identity_tokens` and
   `authorization_codes` are RETIRED tables (Phase 13 Task 9);
   the `identity_token_revocations` ledger and PBKDF2 password
-  hashing back the gate too. Every per-request check —
-  revocation, the tenancy fence, roles — derives fresh from
-  the pair plane, never a snapshot the token claim itself
-  carries. The HMAC key is client-shipped, so isolation is
-  demo-grade until the server tier. The snapshot plane
-  (`BOOTSTRAP_ROUTES`) is intentionally auth-free dev-tier —
-  removed or re-gated when the Postgres server tier lands; see
+  hashing back the gate too. Membership, roles, and
+  revocation ride claim snapshots (NAMED COVENANT: bite
+  at next mint/refresh/exchange or access TTL ≤ 15 min),
+  not live pair-plane re-reads. Ownership and default-org
+  fences stay pair-plane. The HMAC key is client-shipped,
+  so isolation is demo-grade until the server tier. The
+  snapshot plane (`BOOTSTRAP_ROUTES`) is intentionally
+  auth-free dev-tier — removed or re-gated when the
+  Postgres server tier lands; see
   [ARCHITECTURE.md](ARCHITECTURE.md) § Server-tier deploy
   blockers.
 - **Tenancy.** Every authenticated request runs org-scoped
@@ -329,6 +335,9 @@ All styling lives in `web-app/app/styles/`. Do not use inline
 2. **Bootstrap fallbacks.** `database-init.ts` uses these
    for error UI before CSS may have loaded; marked with a
    file-header comment.
+3. **Measure-viz HTML.** `measure-viz.ts` writes the self-
+   contained history dashboard with inline bar widths and
+   swatch backgrounds (no app CSS cascade).
 
 The variant pattern is `data-tone` / `data-level` attributes on
 a base class. The TS enum and the CSS attribute selector share

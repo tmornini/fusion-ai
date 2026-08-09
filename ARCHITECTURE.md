@@ -206,9 +206,9 @@ organization, roles; write handlers add payload + pair).
 
 **Write-time cross-tenant authorizer.** Pair addresses are
 per-org namespaced (`canonicalUriPrefix` from the VERIFIED
-claim). A foreign-id PUT/DELETE on an org-scoped family
-must 403 (never invent a genesis in the caller's own
-namespace). `writeAuthorizerFor` /
+claim). A foreign-id PUT/DELETE/PATCH on an org-scoped
+family must 403 (never invent a genesis in the caller's
+own namespace). `writeAuthorizerFor` /
 `assertWritableInOrganization`
 (`api/write-authorizer.ts`) resolve ownership via
 `resolveGlobalOwner` before the handler runs: owner-null →

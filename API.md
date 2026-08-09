@@ -69,26 +69,46 @@ resolves a request in this order:
    roles ride token claims — NAMED ≤15-min covenant, not
    live ledger reads; the base adapter is unchanged —
    tenancy rides `uri_prefix`, not an org-scoped decorator)
-   → `authorizeRequest` (per-org role check). After a
+   → **nested path-org fence** (after fence, before
+   authorize: for `organizations/...` other than bare
+   `organizations/:id`, path org must equal the fenced
+   token org — mismatch including a nonexistent path org
+   is **403** with a fixed body; path org never authorizes
+   alone) → `authorizeRequest` (per-org role check). After a
    successful auth, no route match is **404**.
 4. **Body parse** (`PUT`/`POST`/`PATCH`): `parseObjectBody` —
    a malformed or non-object JSON body is a `400` here, before
    either the pair or the handler ever sees it.
-5. **Shadow-ledger pair formation + idempotency point-read**, for a
-   write verb whose route pattern is in `PAIR_WIRED_ROUTE_PATTERNS`
-   (skipped for bearer-exempt routes and for a verb the matched route
-   has no handler for): `formWritePair` builds the canonical
-   request/response message pair pre-tx — address resolution, a
-   pre-tx head-read (`headPairIdAt`) for a document-class route
-   (simple class: `Supersedes` chain; locked class / flows:
-   `follows` / `If-Response-ID` four-outcome table), and the
-   hashing that feeds idempotency, all before any transaction
-   opens. Unless the route pattern is in
-   `REPLAY_EXEMPT_ROUTE_PATTERNS`, a byte-identical
-   resend is served straight from the STORED response
-   (`storedResponseFor`) here — the handler never runs twice for the
-   same request. See §5 for what this step produces on the wire.
-6. Only then does the matched handler run, receiving the base
+5. **Region B + pre-pair write guards** (after body parse):
+   the self-only identity-token-revocation target guard
+   (`PUT identity-token-revocations/:id` — body
+   `identity_id` must be the actor unless admin) runs for
+   that route. Then, for a write with a handler on a non-
+   exempt route: `writeAuthorizerFor` (foreign id → **403**
+   before pair formation) and, on create-only PUT patterns,
+   reject any `If-Match` with **400** (create is
+   unconditional).
+6. **Shadow-ledger pair formation + idempotency + post-
+   replay gates**, for a write verb whose route pattern is
+   in `PAIR_WIRED_ROUTE_PATTERNS` (skipped for bearer-exempt
+   routes and for a verb the matched route has no handler
+   for): `formWritePair` builds the canonical
+   request/response message pair pre-tx — address
+   resolution, a pre-tx head-read (`headPairIdAt`) for a
+   document-class route (simple class: `Supersedes` chain;
+   locked class / flows: may precompute `follows` when the
+   echo matches the head), and the hashing that feeds
+   idempotency, all before any transaction opens. Unless
+   the route pattern is in `REPLAY_EXEMPT_ROUTE_PATTERNS`, a
+   byte-identical resend is served straight from the STORED
+   response (`storedResponseFor`) here — the handler never
+   runs twice for the same request. **After** a replay miss:
+   the locked `If-Response-ID` four-outcome table may
+   **412** (head present + echo absent, or echo ≠ head);
+   instance PATCH applies its If-Match ladder (absent →
+   **428**, malformed → **400**, stale → **412**). See §5
+   for what pair formation produces on the wire.
+7. Only then does the matched handler run, receiving the base
    adapter (`effective` / `ctx.base`), the verified `actor`
    id, the fenced organization, and — for a pair-wired write —
    the formed pair, appended as the LAST act of the handler's own
