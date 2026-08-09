@@ -256,11 +256,13 @@ identity_id, at) is GLOBAL spine, pass-through, NOT
 org-fenced: the invitee must read an invitation to an org it
 is not yet in, so the row cannot hide behind the org fence.
 Its lifecycle is event-sourced on the pair plane under the
-alphabet {pending, accepted, declined, revoked}, keyed to
-the invitation id (op-pair presence at grant / accept /
-decline / revoke addresses); current status is the LATEST
-event, derived and never mutated — the invitation document
-persists as audit through every transition.
+alphabet {pending, accepted, declined, revoked}. State is
+pending when the invitation document head exists and no
+terminal op-pair is present; terminal ops are pair-plane
+addresses invitations/:id/{acceptance,decline,revocation}/
+mapping to accepted|declined|revoked. Current status is the
+LATEST event, derived and never mutated — the invitation
+document persists as audit through every transition.
 
 Grant (admin) appends `pending`. Accept (invitee) appends
 `accepted` AND writes the real `memberships` row in the SAME

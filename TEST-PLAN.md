@@ -2517,8 +2517,10 @@ domain delta:
   (archive/reactivate ride the document body lifecycle
   trio — no shared `states` log; revision history is
   message-plane pairs at `objectives/:id/revisions/`)
-- Agent-E adds: `project_objective_baseline_scores`,
-  `project_objective_actual_scores`
+- Agent-E adds: `projects/:id/objective-baseline-scores`
+  and `projects/:id/objective-actual-scores` (pair-plane;
+  adapters `postProjectBaselineScoring` /
+  `postProjectActualMeasurement`)
 - Agent-CH stays read-only
 
 ### K1–K6 — Organization Objectives box (Agent-G, Phase 2)
@@ -2743,9 +2745,10 @@ panel, and the property-test gate.
 
 Owner agent: Agent-F2 (Phase 2). The property-test gate
 (R13–R14a) rides Agent-F2's own work orders, and the record
-CRUD adds `records`, `record_attributes`, `flow_records` to
-its mutation domain — disjoint from every other agent, so no
-write-domain collision.
+CRUD mutates pair-plane document/join families —
+`record-types` (+ nested attributes), `flows/:id/records`
+bindings, and `record-types/:id/instances` — disjoint from
+every other agent, so no write-domain collision.
 
 - [ ] **R1** Sidebar shows a Records entry; click navigates
   to `records/`. PASS: under the active org (Stark, org 1)

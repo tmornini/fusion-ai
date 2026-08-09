@@ -220,10 +220,12 @@ API.md §3.34 / §3.19.
 Post-Phase-Final, ideas, projects, flows (including
 graphDelta/revivals for graph lifecycle), work orders,
 record-types / attributes / instances, objectives,
-memberships, invitations, identities, organizations, role
-grants, and the rest share this no-table posture: each is
-a URI-addressed pair family with a derive module
-(`api/derive-*.ts`) and no row store.
+memberships, invitations, identities, organizations, and
+the rest share this no-table posture: each is a
+URI-addressed pair family with a derive module
+(`api/derive-*.ts`) and no row store. Roles bake from
+membership `type` at mint; the role-grants family is
+RETIRED (no live pair family and no route).
 
 ### Record types, attributes & instances (pair-plane only)
 

@@ -54,8 +54,11 @@ resolves a request in this order:
    nested paths (`/organizations/:org/:entity[/:id]`, ≥3
    segments) fall through to `facadeRequest` (the org-scoping
    facade; see §4) — in-table `organizations/...` patterns
-   win over the facade when registered. Match failure is not
-   yet a response: authentication runs first (step 3).
+   win over the facade when registered. Unmatched org-nested
+   paths return from `facadeRequest` before the main gate
+   (re-enter on the flat resource). Only non-facade match
+   failures continue: authentication runs first (step 3),
+   then 404 for an unmatched authenticated path.
 3. **The gate** (skipped for bearer-exempt routes):
    `authenticateRequest` (verify the Bearer JWT; reject
    missing, invalid, or anonymous — per-request revocation
@@ -115,8 +118,10 @@ unauthenticated — it is a single audited surface.
 
 ### 1.3 The client facade
 
-The exported `GET`/`PUT`/`POST`/`DELETE` functions in `api/api.ts` are
-the client-side facade the web-app adapters call. Each awaits a
+The exported client facade in `api/api.ts` is the set of
+one-`handleRequest` shims the web-app adapters call: `GET`,
+`GETWithResponseId`, `GETWithEtag`, `PUT`, `PUTWithEtag`,
+`PATCH`, `PATCHWithEtag`, `DELETE`, and `POST`. Each awaits a
 `simulateLatency()` shim, then issues exactly **one** outer
 `handleRequest` call. All fan-out happens server-side inside the
 handler — the client makes one call per adapter method.
@@ -1023,10 +1028,10 @@ genesis write.
 - doctrinal: `put_idea_document` (lifecycle on the body;
   no separate states append).
 - props: atomic; member-tier; `validateIdeaDocumentBody`;
-  idempotent; MEMBER_ID CAVEAT — a state-unchanged edit
-  (the resent trio matches the current head byte-for-byte)
-  replays the STORED head event's `member_id`, never the
-  editing actor.
+  idempotent; MEMBER_ID CAVEAT — a state-unchanged edit must
+  echo the same `state_event_id` (and trio); the lifecycle
+  author is the first-seen pair's `requesterIdentityId` for
+  that event id (body has no `member_id` field).
 
 ### 3.11 `POST /ideas/:id/conversion` — promote idea → project
 
@@ -2104,8 +2109,9 @@ untouched.
 request (§3.26–§3.28). What they seed, though, is itself the output of
 FIFTEEN pair-capable write families, in dependency order:
 `human-members`, `ideas`, `idea-submissions`, `projects`, `flows`,
-`work-orders`, `flow-work-orders`, `ai-members`, `records`,
-`objectives`, `memberships`, `members`, `organizations`,
+`work-orders`, `flow-work-orders`, `ai-members`,
+`record-types` (nested; + attributes), `objectives`,
+`memberships`, `members`, `organizations`,
 `identities`, and `identity-credentials` (the last two, Phase 10
 Task 6, §5.15; organizations, Phase 12 Task 3, §5.18), PLUS the
 `identity_default_organizations` family's own writes (Phase 11
@@ -2378,26 +2384,29 @@ now declares:
 - **`notFoundTable`: the identifier the wire 404 body speaks**
   (`EntityNotFoundError`'s table, rendered `Not found:
   <table>/<id>`). Family name for ideas/projects/flows;
-  `'work_orders'` for work-orders — the FIRST family whose
-  storage table name (the `EntityStore` key in `db-backed.ts`)
-  differs from its family name (`work-orders`, the URI segment).
+  `'work_orders'` for work-orders — a 404 label only (Phase
+  Final deleted domain entity tables; surviving
+  `EntityStore` keys are `requests`/`responses` only).
 
 **PUT /work-orders/:id** now dispatches through
 `documentPutHandler(WORK_ORDERS_WIRING)` — the SAME `'simple'`
 concurrency class ideas/projects ride (§5.4) — and
 `WRITE_RESPONSE_SPECS['work-orders/:id']` is
-`documentWriteResponseSpec(WORK_ORDERS_WIRING)`. **GET /work-orders/:id**
-rides the SAME wiring row through `documentGetHandler` (Task 7, Phase 5) —
-the flip that retired the last hand-written document-family route object;
-`entityOf` is now a live reader for both verbs, not merely future-proofing.
+`documentWriteResponseSpec(WORK_ORDERS_WIRING)`. **GET
+/work-orders/:id** is a binding wrapper around
+`documentGetHandler(WORK_ORDERS_WIRING)`: after the document
+entity, one `workOrderBindingFor` may add optional
+`instance_id` / `record_type_id` when bound (keys ABSENT when
+unbound — unbound wire bytes match the five entity keys).
 
-**The wire is unchanged.** The response's `{id, organization_id,
-display_id, flow_graph, position}` keys and the 404 body
-(`Not found: work_orders/<id>`) are byte-identical to the prior
-hand-written route — the untouched existing suite (including
-`tests/api-work-orders-create.test.ts`) plus
-`tests/api-work-order-document.test.ts`'s below-gate op pin and
-byte-identical-resend case are the absorption's proof;
+**Unbound GET wire keys.** The response's `{id,
+organization_id, display_id, flow_graph, position}` and the
+404 body (`Not found: work_orders/<id>`) match the prior
+hand-written unbound shape; when bound, GET also embeds
+`instance_id` / `record_type_id`. The suite
+(`tests/api-work-orders-create.test.ts`) plus
+`tests/api-work-order-document.test.ts`'s below-gate op pin
+and byte-identical-resend case are the absorption's proof;
 `tests/api-work-orders-verb-gaps.test.ts` additionally pins
 the **18** deliberate verb gaps the family still carries
 (PUT/DELETE `work-orders`; POST/DELETE `work-orders/:id`;
@@ -2583,12 +2592,14 @@ concurrency class every other document family but flows rides
 shapes, response key sets + values, statuses, headers, and hop
 counts. UNLIKE objectives' fence-stamped-only `{position}` body,
 memberships' entity carries its OWN `organization_id` on the
-wire — all three keys (`organization_id`, `identity_id`, `at`)
-REQUIRED, none tolerated-but-optional; the org-scoped store
-still stamps `organization_id` from the fence at write time
-regardless (the same fence-stamp the store applies to every
-org-owned entity), so the wire acceptance and the stored value
-agree whenever a client's own organization_id is honest. THE
+wire — all four keys (`organization_id`, `identity_id`,
+`type`, `at`) REQUIRED (`type` is `admin`|`member`; the
+accept path stamps `type: 'member'` the same way); none
+tolerated-but-optional; the org-scoped store still stamps
+`organization_id` from the fence at write time regardless
+(the same fence-stamp the store applies to every org-owned
+entity), so the wire acceptance and the stored value agree
+whenever a client's own organization_id is honest. THE
 LABEL MANDATE: the stray-key 400 body stays byte-identical
 (`unexpected key "..." for MembershipEntity` — matching
 `validateMembershipEntity`'s OWN label, NOT the
@@ -2862,9 +2873,10 @@ nor Follows. A stored provenance pointer at a physically removed
 pair would be a stored lie, so the absence is asserted
 EXPLICITLY (`Supersedes === null`) at both re-pinned chain
 cases, never merely the old assertion deleted. This is the ONLY
-wire delta this task ships — GET behavior is unchanged (reads
-stay old-plane until Task 8) and every PUT/DELETE status and
-body is unchanged.
+wire delta this task ships — GET is pair-derived via
+`deriveIdentityPii` (Phase 10 Task 8; historical Task-time
+deferral closed) and every PUT/DELETE status and body is
+unchanged.
 
 **The zone's confinement.** Every OTHER document-class address
 still chains exactly as before — a memberships DELETE still
