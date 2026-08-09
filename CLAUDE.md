@@ -617,8 +617,8 @@ apply to it (RED is the audit's first finding).
   IndexedDB gives each tab its own connection to one shared
   database, and a pair append is an O(1) `objectStore.put`
   per row on `requests`/`responses` — concurrent tabs both
-  survive (verified in-browser; H8 app-wide write queue is
-  the accepted single-user cost). A successful write posts a
+  survive (verified in-browser; no app-wide write queue —
+  per-flow `enqueueFlowSave` only). A successful write posts a
   scoped `NotificationEvent` (organization/identity ids, or
   a full-refresh event) over a `BroadcastChannel`
   (`adapters/broadcast-channel.ts`); a subscriber refreshes

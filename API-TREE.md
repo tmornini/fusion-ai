@@ -25,7 +25,7 @@ URI tree of the HTTP surface; source of record is api/routes.ts (the route table
   |      └─|─ /credentials                     • RECONCILED: collection GET returns rows[]; not a singleton document
   |      |  └── :cid                           • GET|PUT per-credential document at identities/:id/credentials/:cid
   |      └─|─ /notifications                   • TARGET-STATE: postgres LISTEN/NOTIFY for all changes to identity
-  |      └─|─ /pii                             • GET|PUT|DELETE nested document; full physical removal from the DB required, i.e. physical delete, all others: Delete-At: header
+  |      └─|─ /pii                             • GET|PUT|DELETE nested document; full physical removal from the DB required, i.e. physical delete (sole hard-delete zone; no Delete-At header)
   |      └─|─ /registration                    • RECONCILED (clients retirement): client registration facet — single-slot PUT-overwrite document (grant_types, redirect_uris, jwks, aud, status), admin-realm writes, kind-'service' gate; grantClientCredentials derives it pre-token (bearer-exempt precedent); DELETE tombstone = deregistration
   |      └─|─ /role-grants                     • RETIRED (membership type + claim roles)
   |      └─|─ /third-party-identity-providers  • RECONCILED: shipped FLAT as GET identity-providers + GET|PUT identity-providers/:id (GLOBAL multi-document event ledger); not nested under identities/:id and not a singleton — name third-party-* retired

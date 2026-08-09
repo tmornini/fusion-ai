@@ -14,9 +14,11 @@ record is the **message plane** — the append-only
 `requests` / `responses` pair tables. The tables are listed
 in `api/db.ts` as `TABLE_NAMES` (the authoritative count:
 two). Each table is an IndexedDB object store
-(`keyPath: 'id'`) in the `fusion-ai` database; the simulated
-backends key the same tables as `fusion-ai:tableName`. All
-rows have a text `id` primary key. Column types match
+(`keyPath: 'id'`) in the `fusion-ai` database; the
+localStorage simulated backend keys the same tables as
+`fusion-ai:tableName`; memory uses an in-process Map of
+bare table names. All rows have a text `id` primary key.
+Column types match
 `RequestEntity` / `ResponseEntity`: TEXT (string) and
 INTEGER (`status`). Document-body composites (arrays and
 objects — `strengths`, `team_dimensions`, `options`,

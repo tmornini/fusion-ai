@@ -207,7 +207,8 @@ widget ("Most-traveled paths") — tying control to canvas. The
 aggregate logic lives in the pure module
 `flow-stats-aggregate.ts` (`buildFlowStats(input) → model`);
 it consumes the universal `TransitionEvent[]` shape exported
-from `adapters/work-orders-queries.ts` — derived from the
-states log, not from any retired event table. The I/O
-wrapper is `adapters/flow-stats.ts`'s
+from `adapters/work-orders-queries.ts` — derived from
+work-order history (`GET work-orders/history` and per-id
+history on the pair-plane lifecycle), not from any retired
+event table. The I/O wrapper is `adapters/flow-stats.ts`'s
 `getFlowStats(ctx, flowId, nowMs)`.

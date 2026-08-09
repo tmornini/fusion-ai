@@ -2565,17 +2565,19 @@ GET/POST/DELETE `objectives/:id/revisions/:rid`; POST/PUT/DELETE
 
 Task 2 (Phase 8) registers `memberships` as the eighth
 `DocumentFamilyWiring` row (`MEMBERSHIPS_WIRING`, beside
-ideas/projects/flows/work-orders/records/record-attributes/
-objectives in `api/routes.ts`) — the FOURTH `'stateless'`
-family, with yet another distinct rationale from the other
-three. Work-orders' `'stateless'` is vacuous-in-practice (its
-lifecycle CAN be authored, just never through the document
-address, §5.6); objectives' rides the `states` log's own
-absence-as-active covenant (§5.8); memberships carries NO
-lifecycle concept WHATSOEVER — a pure join relation (Codd's own
-teaching: the identities of the joined, plus the moment of
-union) — joining record-attributes' vacuous-BY-CONSTRUCTION
-bucket as its actual sibling, not standing alone against
+ideas/projects/flows/work-orders/objectives in
+`api/routes.ts` — sixth live registration after Task 23
+retired flat `RECORDS_WIRING` / `RECORD_ATTRIBUTES_WIRING`)
+— the FOURTH `'stateless'` family, with yet another distinct
+rationale from the other three. Work-orders' `'stateless'` is
+vacuous-in-practice (its lifecycle CAN be authored, just never
+through the document address, §5.6); objectives' rides the
+`states` log's own absence-as-active covenant (§5.8);
+memberships carries NO lifecycle concept WHATSOEVER — a pure
+join relation (Codd's own teaching: the identities of the
+joined, plus the moment of union) — joining record-attributes'
+vacuous-BY-CONSTRUCTION bucket as its historical sibling
+(Task 23 retired that flat wiring), not standing alone against
 work-orders' as record-attributes' own comment once implied.
 
 **The no-fork adjudication (Author gate 3).** §5.8 named a
@@ -2615,11 +2617,11 @@ memberships' entity carries its OWN `organization_id` on the
 wire — all four keys (`organization_id`, `identity_id`,
 `type`, `at`) REQUIRED (`type` is `admin`|`member`; the
 accept path stamps `type: 'member'` the same way); none
-tolerated-but-optional; the org-scoped store still stamps
-`organization_id` from the fence at write time regardless
-(the same fence-stamp the store applies to every org-owned
-entity), so the wire acceptance and the stored value agree
-whenever a client's own organization_id is honest. THE
+tolerated-but-optional; `organization_id` rides the document
+body and the write-response spec's fence organization
+(pair-plane only — no org-scoped EntityStore stamp), so the
+wire acceptance and the stored pair body agree whenever a
+client's own organization_id is honest. THE
 LABEL MANDATE: the stray-key 400 body stays byte-identical
 (`unexpected key "..." for MembershipEntity` — matching
 `validateMembershipEntity`'s OWN label, NOT the
@@ -2787,14 +2789,15 @@ the row, response via `WRITE_RESPONSE_SPECS['memberships/:id']`
 §5.9) a live `PUT /memberships/:id` resolves, since THIS pair
 DOES have a live twin. Formed pre-tx (crypto cannot run inside
 a transaction body) but appended ONLY inside the `!already`
-branch, beside the `memberships.put` it mirrors: a re-accept
-that finds a membership already present, or a 409 conflict,
-writes no row and so appends no document either. Before this
+branch (Phase Final: pure pair-plane — the memberships ROW
+half is stripped; the pair IS the write): a re-accept that
+finds a membership already present, or a 409 conflict,
+appends no membership document either. Before this
 task, memberships had exactly two document writers: the live
 `PUT /memberships/:id` route and the mock-data seed (Phase 8
 Task 5, `postMembershipDocumentOp`); a live accepted invitation
 is the third — and, before Task 8 flips the readers, the ONLY
-writer whose row a derived (not old-plane) membership read
+writer whose pair a derived (not old-plane) membership read
 would otherwise miss entirely, since the accepted membership
 was never seeded and never PUT directly.
 

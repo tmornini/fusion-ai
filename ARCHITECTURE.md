@@ -905,7 +905,8 @@ Editable detail views split into two presenters: a read presenter
 shape). The page module owns a `PageState` discriminated union
 (`{kind: 'reading'} | {kind: 'editing', draft}`) and constructs
 the appropriate one per render. This pattern applies to `Idea`,
-`HumanMember`, `AIMember`, and `ProjectDetail`. The
+`HumanMember`, `AIMember`, `ProjectDetail`, `Organization`,
+and `RecordDetail`. The
 `member-detail` page module reads `member.kind` and dispatches
 to the right pair: `HumanMemberDetailPresenter` /
 `HumanMemberDetailEditPresenter` for humans,
@@ -1004,13 +1005,14 @@ verbs.
   `ctx.GET/PUT/PATCH/DELETE/POST` (plus `*WithEtag` /
   `POSTWithHeaders` where callers need the ETag or headers).
   The standalone verb exports in `api/api.ts` are the
-  transport `ctx` delegates to — adapters never import them
-  directly. `ctx.PATCH` is platform-wide (instances are the
-  first live consumer; `*WithEtag` variants return the strong
-  ETag for If-Match). Each verb dispatches its own request
-  with its own per-op transactions: two awaited reads on
-  one ctx are NOT a snapshot — a write (same tab or
-  cross-tab) can land between them.
+  transport `ctx` delegates to — only `adapters/shared.ts`
+  (RequestContext factory) imports them; other adapters
+  use `ctx.*` only. `ctx.PATCH` is platform-wide (instances
+  are the first live consumer; `*WithEtag` variants return
+  the strong ETag for If-Match). Each verb dispatches its
+  own request with its own per-op transactions: two awaited
+  reads on one ctx are NOT a snapshot — a write (same tab
+  or cross-tab) can land between them.
 - **Platform-shim vs data-access adapters share `adapters/`.**
   Data-access adapters (`ideas.ts`, `flow-queries.ts`, etc.)
   fetch entity data through `ctx`. Platform shims

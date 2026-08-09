@@ -6,16 +6,18 @@
 
 When the user says "run the test plan", the agent:
 
-1. Reads this document's `### Protocol` section (six-phase
-   protocol, mutation domains, MCP limitations) — required
-   context, not optional reference.
+1. Reads this document's `### Protocol` section — required
+   context, not optional reference. Default parallel path
+   is **Per-origin parallel run — validated operational
+   recipe** (below). The six-phase subsection is a
+   SUPERSEDED historical appendix only.
 2. Executes section **AT** as a fail-fast gate; any AT
    failure aborts the run before A1's build.
 3. Executes A1–A5 preflight; on success spawns the
-   six-phase parallel protocol (Phase 1 serial data setup,
-   Phase 2 seven concurrent agents, Phase 3 cross-cutting
-   alone, Phase 4 snapshot lifecycle alone, Phase 5
-   teardown). Or runs serially if `--serial` is requested.
+   **per-origin** parallel recipe (one origin/port per
+   agent; each agent self-seeds; fan-out by section —
+   see "Per-origin parallel run — validated operational
+   recipe"). Or runs serially if `--serial` is requested.
 4. Emits the run summary in the canonical format
    documented at the bottom of this file (`## Summary
    Format`). The summary is the conversational artifact;
@@ -702,8 +704,8 @@ on. Run these in order.
 - [ ] **AA18** On Ideas list, filter by "In Review". Click idea #1. PASS: navigates to idea detail with Send Back / Approve buttons in the header next to Edit.
 - [ ] **AA19** Click "Approve". PASS: idea status changes to approved, confirmation shown.
 - [ ] **AA20** Approve idea #4 as well (it was submitted for review in AA16). Leave others in their current status. PASS: statuses match mock data (2 approved, rest in_review/active).
-- [ ] **AA21** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 4 required fields (Project Name, Time (days), Cost, Success Criteria) — there is no Impact field — plus a Scores box holding one required baseline slider per active objective.
-- [ ] **AA22** Fill the 4 required fields (Project Name, Time (days), Cost, Success Criteria) and drag every objective baseline slider in the Scores box. PASS: Create Project stays disabled until all required fields AND all baselines are set, then enables; clicking it navigates to project detail for the new project (the baselines commit atomically with project creation).
+- [ ] **AA21** Navigate to approved idea #1. Click "Convert". PASS: conversion form loads with 4 required fields (Project Name, Time with a "days" input suffix, Cost, Success Criteria) — there is no Impact field — plus a Scores box holding one required baseline slider per active objective.
+- [ ] **AA22** Fill the 4 required fields (Project Name, Time with a "days" input suffix, Cost, Success Criteria) and drag every objective baseline slider in the Scores box. PASS: Create Project stays disabled until all required fields AND all baselines are set, then enables; clicking it navigates to project detail for the new project (the baselines commit atomically with project creation).
 - [ ] **AA22a** On the Convert form before scoring, every baseline slider in the Scores box reads as pending, not zero: the slider is dimmed (~50% opacity) and its value shows an em-dash "—" in muted text (unscored is genuine absence — no score row is written — not a measured 0). PASS: dragging a slider clears only that row's pending styling (full opacity, a signed value such as "+51", a green check by the label) while untouched rows stay dimmed, and Create Project stays disabled until all four objectives are scored.
 - [ ] **AA23** On project detail, click "Edit". Set fields (title, description, status, start date, end date, cost baseline) to match mock data. Save. PASS: project data persists. (Impact is no longer a directly-editable field — it is derived read-only from the objective baseline scores.)
 - [ ] **AA24** Approve remaining ideas (7, 8, 9, 10) from Ideas list (filter by "In Review"), then convert all 6 approved ideas to projects. PASS: Projects list shows all 6 with correct status and progress.
@@ -976,15 +978,16 @@ on. Run these in order.
   bell may appear at the top bar — see V3.)
 - [ ] **C4** Dashboard renders 4 surfaces in order: three
   visually-equivalent arc-gauge cards (Time and Cost are
-  ratio arc-gauges — a single ratio-filled semicircle; Impact
-  is a bipolar arc — left/right split from a center apex; all
-  three share the same card chrome) and a full-width
-  Objectives box below (card title "Objectives"). PASS: all 4
-  render with baseline and current values; the Time and Cost
-  cards each show a ratio arc and the Impact card shows a
-  bipolar arc; the Objectives box shows one row per objective,
-  each with a small bipolar arc gauge and a sparkline
-  trendline.
+  ratio arc-gauges — dual concentric semicircles: outer
+  baseline track + inner actual fill; Impact is a bipolar
+  arc — left/right split from a center apex; all three
+  share the same card chrome) and a full-width Objectives
+  box below (card title "Objectives"). PASS: all 4 render
+  with baseline and current values; the Time and Cost cards
+  each show dual concentric ratio arcs and the Impact card
+  shows a bipolar arc; the Objectives box shows one row per
+  objective, each with a small bipolar arc gauge and a
+  sparkline trendline.
 - [ ] **C5** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
 - [ ] **C6** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
 - [ ] **C7** Check that seed data populates all 4 dashboard
@@ -1056,14 +1059,14 @@ on. Run these in order.
 
 ### Idea Convert (`ideas/convert.html`)
 
-- [ ] **D22** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 4 required fields: Project Name, Time (days), Cost, Success Criteria (it maps to the project description). There is no Impact field. A Scores box renders one required baseline slider per active objective. Sticky sidebar shows the idea summary (Title, Problem Statement, Target Users, Proposed Solution, Expected Outcome, Success Metrics). Source of truth: `REQUIRED_FIELDS` in `web-app/app/presenters/idea-conversion.ts`.
+- [ ] **D22** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 4 required fields: Project Name, Time (label "Time", unit "days" as the input suffix; field key `time-days`), Cost, Success Criteria (it maps to the project description). There is no Impact field. A Scores box renders one required baseline slider per active objective. Sticky sidebar shows the idea summary (Title, Problem Statement, Target Users, Proposed Solution, Expected Outcome, Success Metrics). Source of truth: `REQUIRED_FIELDS` in `web-app/app/presenters/idea-conversion.ts`.
 - [ ] **D23** With required fields empty, "Create Project" is disabled and the progress bar shows 0/N where N = 4 + one per active objective (e.g. 0/8 with 4 objectives). Fill fields and drag baseline sliders one at a time. PASS: the bar increments with each required field AND each baseline, checkmarks appear next to completed items, and the button enables only when all required fields AND all baselines are set. Success Criteria is required — filling it advances the bar.
 - [ ] **D24** Fill every required field and baseline (the progress bar reaches its max, e.g. 8/8), click "Create Project". PASS: navigates to project detail page for the newly created project. The source idea's lifecycle state becomes `promoted` (list badge label **Promoted**, not "Approved") — convert is a promotion, not a re-approve.
 
 ### Idea Status Filtering (`ideas/index.html`)
 
 - [ ] **D25** Navigate to `ideas/index.html`. PASS: status badges appear showing each status present in the data (e.g., Active, In Review, Approved).
-- [ ] **D26** Click a status badge. PASS: list filters to show only ideas with that status, badge is highlighted, others are dimmed, count updates.
+- [ ] **D26** Click a status badge. PASS: list filters to show only ideas with that status, badge is highlighted (`aria-pressed="true"`), others are dimmed (`data-dimmed="true"`); badges carry label + icon only (no per-badge count).
 - [ ] **D27** Click the same badge again. PASS: filter clears, all ideas shown, all badges at full opacity.
 - [ ] **D28** Click a different badge. PASS: filter switches to the new status.
 
@@ -1873,7 +1876,8 @@ designer "tag current" action lands.)
   tab 1, edit a value and transition. PASS: tab 1
   receives 412, re-GETs the instance, re-presents the
   action screen with a conflict notice and a warning
-  toast ("This instance changed underneath you…"),
+  toast ("This instance changed underneath you —
+  values refreshed; re-apply your edit"),
   and does **not** auto-retry the transition.
 - [ ] **WB19b — Direct instance PATCH vs transition
   412 convergence.** With a bound WO open on the
@@ -2093,11 +2097,12 @@ the claude-in-chrome MCP.
   member chip is now the only "click → profile"
   affordance. Source: `web-app/app/sidebar-member.ts`.)
 - [ ] **G13** Type in the search input. PASS: filters the
-  list by name (and description) in real-time; AI
-  members no longer match on provider/model (accepted
-  regression). Click the Humans filter chip. PASS: only the
-  HUMANS group is visible. Click AIs. PASS: only the AIs
-  group is visible. Click All. PASS: both groups return.
+  list in real-time — human members match on name, email,
+  title, or department; AI members match on name or
+  description (not provider/model). Click the Humans
+  filter chip. PASS: only the HUMANS group is visible.
+  Click AIs. PASS: only the AIs group is visible. Click
+  All. PASS: both groups return.
 - [ ] **G14** Click `+ Add Member`. PASS: dialog opens with
   the Kind toggle defaulting to Human, the Human form
   visible, and the AI form hidden. Switch the toggle to
@@ -2281,10 +2286,10 @@ the claude-in-chrome MCP.
 - [ ] **G24a** Click Edit. PASS: identity fields become
   inputs (Name text, Model pulldown grouped by provider
   with the current model pre-selected, Description
-  textarea, Skill Focus textarea); there is no Auth Token
-  field. Change Description and Skill Focus, click Save.
-  PASS: toast "AI member saved"; on reopen the edits
-  persist.
+  textarea, State select `#ai-state` over MEMBER_STATES,
+  Skill Focus textarea); there is no Auth Token field.
+  Change Description and Skill Focus, click Save. PASS:
+  toast "AI member saved"; on reopen the edits persist.
 - [ ] **G24b** Click Edit again, pick a different Model
   from the pulldown, click Save. PASS: toast "AI member
   saved"; on reopen the read view shows the new model as
@@ -2300,8 +2305,8 @@ the claude-in-chrome MCP.
 
 ### Identity tokens & providers (`identity-tokens/`, `identity-providers/`)
 
-- [ ] **G25** Navigate to `identity-tokens/index.html?identityId=current` (or open an identity from `identities/` and click its "Tokens" link). PASS: the "Tokens — Refresh-token chains for this identity" page renders one card per chain, each showing the chain id, the event jti, `parent: —` for a root event (or the parent jti for a rotated one), an `issued`/`rotated`/`revoked` badge, and a LOCAL-time stamp; an identity with no tokens shows "No tokens." The presenter consumes the adapter's camelCase `TokenEvent` domain shape (`jti`, `parentJti`, `action`, `at`) — a snake_case storage leak would render `parent: undefined` instead of `parent: —`. Source: `web-app/app/adapters/identity-tokens.ts` (`TokenEvent`), `web-app/app/presenters/identity-tokens.ts`.
-- [ ] **G26** Navigate to `identity-providers/index.html?identityId=current` (or the identity's "Providers" link). PASS: the "Identity Providers — External sign-in links for this identity" page renders one card per link/unlink event (provider name + the `providerSubject` + a `linked`/`unlinked` badge + local-time stamp), or "No linked providers." for an identity with none (the seeded `current` logs in by password, so its providers list is empty). The presenter consumes the adapter's camelCase `ProviderEvent` shape (`provider`, `providerSubject`, `action`, `at`). Source: `web-app/app/adapters/identity-providers.ts` (`ProviderEvent`), `web-app/app/presenters/identity-providers.ts`.
+- [ ] **G25** Navigate to `identity-tokens/index.html?identityId=current` (or open an identity from `identities/` and click its "Tokens" link). PASS: the page title is "Tokens" with muted subtitle "Refresh-token chains for this identity"; the page renders one card per chain, each showing the chain id, the event jti, `parent: —` for a root event (or the parent jti for a rotated one), an `issued`/`rotated`/`revoked` badge, and a LOCAL-time stamp; an identity with no tokens shows "No tokens." The presenter consumes the adapter's camelCase `TokenEvent` domain shape (`jti`, `parentJti`, `action`, `at`) — a snake_case storage leak would render `parent: undefined` instead of `parent: —`. Source: `web-app/app/adapters/identity-tokens.ts` (`TokenEvent`), `web-app/app/presenters/identity-tokens.ts`.
+- [ ] **G26** Navigate to `identity-providers/index.html?identityId=current` (or the identity's "Providers" link). PASS: the page title is "Identity Providers" with muted subtitle "External sign-in links for this identity"; the page renders one card per link/unlink event (provider name + the `providerSubject` + a `linked`/`unlinked` badge + local-time stamp), or "No linked providers." for an identity with none (the seeded `current` logs in by password, so its providers list is empty). The presenter consumes the adapter's camelCase `ProviderEvent` shape (`provider`, `providerSubject`, `action`, `at`). Source: `web-app/app/adapters/identity-providers.ts` (`ProviderEvent`), `web-app/app/presenters/identity-providers.ts`.
 
 ### Snapshots (`snapshots/`) — Phase 4 (Run These Last)
 
@@ -2756,11 +2761,12 @@ every other agent, so no write-domain collision.
 
 - [ ] **R1** Sidebar shows a Records entry; click navigates
   to `records/`. PASS: under the active org (Stark, org 1)
-  the list renders the Customer Profile Record; Project
-  Brief is seeded under org 2 and is correctly hidden here.
-- [ ] **R2** Click "+ Add Record" → navigates to a create
-  page (`records/create.html`) with Name and Description
-  fields (not a dialog). Type values, click Create.
+  the list renders Customer Profile; Project Brief is
+  seeded under org 2 and is correctly hidden here.
+- [ ] **R2** Click "Add Record" (desktop) / "New Record"
+  (mobile) → navigates to a create page
+  (`records/create.html`) with Name and Description
+  fields (not a dialog). Type values, click "Create Record".
   PASS: new Record appears at the bottom of the list and the
   app navigates to its detail page.
 - [ ] **R3** Open Customer Profile detail. PASS: read mode
