@@ -13,17 +13,17 @@ That mechanism will replace the existing ledger's and common states system by mo
 └─|─ work-orders/ • derived view over org-nested canonical storage
   |  └── :id/
   |      └── claim                            • RECONCILED: claim graph head from workOrderDocumentHeadFor (Phase 15 Task 2); contention 409 + nonexistent-WO 404 + foreign-WO 403 held — see Phase 15 FLIPPED + honest HTTP status covenant
-  |      └── transition                       • TARGET-STATE (this stack): post-Phase-2 body (instance_id + record_type_id + set/clear); If-Match preconditions bound instance head (named RFC 9110 §13.1.1 deviation); op + revision one-tx; legacy fieldValues key → 400 at the gate; pure moves carry neither If-Match nor asserts — see API.md §3.19
+  |      └── transition                       • RECONCILED: POST work-orders/:id/transition — post-Phase-2 body (instance_id + record_type_id + set/clear); If-Match preconditions bound instance head (named RFC 9110 §13.1.1 deviation); op + revision one-tx; legacy fieldValues key → 400 at the gate; pure moves carry neither If-Match nor asserts — see API.md §3.19
   |      └── release                          • RECONCILED: POST work-orders/:id/release — named unclaim op, 204, read-decide-append, replayed at derive; foreign-WO 403; nonexistent-WO 404
-  |      └── binding                          • TARGET-STATE (this stack): named bind op — member-tier POST; current bind derived from op pairs (claim precedent); rebind 409; WO GET embeds instance_id + record_type_id — see API.md §3.34
+  |      └── binding                          • RECONCILED: POST work-orders/:id/binding — named bind op, member-tier POST; current bind derived from op pairs (claim precedent); rebind 409; WO GET embeds instance_id + record_type_id — see API.md §3.34
 └─|─ /identities/
   |  └── :id                                   • default-organization is an attribute of the identity itself
-  |      └─|─ /credentials                     • all of them, single document
+  |      └─|─ /credentials                     • RECONCILED: collection GET returns rows[]; per-credential document at identities/:id/credentials/:cid (GET|PUT) — not a singleton document
   |      └─|─ /notifications                   • TARGET-STATE: postgres LISTEN/NOTIFY for all changes to identity
   |      └─|─ /pii                             • full physical removal from the DB required, i.e. physical delete, all others: Delete-At: header
   |      └─|─ /registration                    • RECONCILED (clients retirement): client registration facet — single-slot PUT-overwrite document (grant_types, redirect_uris, jwks, aud, status), admin-realm writes, kind-'service' gate; grantClientCredentials derives it pre-token (bearer-exempt precedent); DELETE tombstone = deregistration
   |      └─|─ /role-grants                     • RETIRED (membership type + claim roles)
-  |      └─|─ /third-party-identity-providers  • all of them, single document
+  |      └─|─ /third-party-identity-providers  • RECONCILED: shipped FLAT as GET identity-providers + GET|PUT identity-providers/:id (GLOBAL multi-document event ledger); not nested under identities/:id and not a singleton — name third-party-* retired
   |      └─|─ /token-revocations               • RECONCILED: shipped FLAT, not nested here — GET|PUT /identity-token-revocations/:id (GLOBAL-plane, no organization_id), the answer WAS "PUT/GET"; GET stays admin-only, PUT widened to member-tier SELF-target only at WP8 (Phase 13 Task 8) — a member may revoke its own chain, naming another identity still requires admin — see the Auth RECONCILED 2026-07-06 block, go-to-church-peaceful-castle.md §Phases 3…N
   |      └─|─ /memberships/                    • /memberships/ with forced and/or filtered identity
   |      └─|─ /organizations/                  • /organizations/ with forced and/or filtered identity

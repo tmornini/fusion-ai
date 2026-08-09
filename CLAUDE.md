@@ -223,9 +223,9 @@ is HTTP-only.
   Surviving stores are global; tenancy rides `uri_prefix`.
   A flat (un-exchanged) token resolves its org via
   `identityDefaultOrganization`: the identity's SET default
-  org (`identity_default_organizations` ledger, latest
-  wins), else its PRIMARY membership org, else a 403 — there
-  is no global default. Membership and roles come from
+  org (pair-plane `/identities/:id/default-org/` ledger,
+  latest wins), else its PRIMARY membership org, else a
+  403 — there is no global default. Membership and roles come from
   access-token claims (baked at mint from membership
   `type`; gate projects for the fenced org). NAMED
   COVENANT: de-membership / demotion / revocation bite at
@@ -241,10 +241,11 @@ is HTTP-only.
   topology oracle. `organizations` is the tenant root;
   `memberships` joins identity↔org; the members roster is
   derived. A membership pair is created when an invitee
-  ACCEPTS an invitation (the only live membership write;
+  ACCEPTS an invitation (the product path;
   `web-app/app/adapters/invitations.ts` + the `invitations`
   facade) — accept stamps the INVITATION's org, not the
-  caller's active org. Per-org roles via
+  caller's active org. Live PUT/DELETE `memberships/:id`
+  also remain on the pair plane. Per-org roles via
   `projectClaimRolesForOrganization`. See
   [SCHEMA.md](SCHEMA.md) / [ARCHITECTURE.md](ARCHITECTURE.md).
 - **Data.** REST-style API (`api/`) over IndexedDB. Adapters
@@ -584,10 +585,11 @@ apply to it (RED is the audit's first finding).
   verb on the retired shared event-append address and
   flat `/records` / `/record-attributes` is router 404;
   `stateEventCollisionFromPairs` is gone. The `states`
-  table, `StateStore`, and `EntityStore` are DELETED
-  (Phase Final). Document DELETE is a marked tombstone
-  pair; the sole physical hard-delete is PII erasure on
-  the message plane.
+  table and `StateStore` class are DELETED (Phase Final);
+  `EntityStore` remains as the store interface implemented
+  by `HistoryEntityStore` on the message plane. Document
+  DELETE is a marked tombstone pair; the sole physical
+  hard-delete is PII erasure on the message plane.
 - **Cross-tab writes are safe (lost-update hazard closed).**
   IndexedDB gives each tab its own connection to one shared
   database, and a pair append is an O(1) `objectStore.put`

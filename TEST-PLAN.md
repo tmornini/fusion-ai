@@ -200,24 +200,27 @@ timing rather than asserting exact pair counts.
 
 Post-Phase-Final + states-address retirement: every
 lifecycle-backed surface (workbox inbox, flow-stats,
-dashboard, members roster, idea/project/record/objective
-state badges + history views) reads family-scoped and
-collection history from the message ledger. Nine GET
-registrations, wire `(at, id)` DESC (index 0 = current):
-per-entity `GET ideas|projects|records|flows|objectives|
+dashboard, members roster, idea/project/record-type/
+objective state badges + history views) reads family-
+scoped and collection history from the message ledger.
+Nine lifecycle GET registrations + one value-history,
+wire `(at, id)` DESC (index 0 = current): per-entity
+`GET ideas|projects|record-types|flows|objectives|
 members|work-orders/:id/history`, plus bulk
 `GET work-orders/history` and `GET objectives/history`
-(bulk always 200 arrays). Work-order history folds
-`field_values` inline on each transition event; claim/
-birth/release rows carry `[]`. Ideas / projects / records
-/ objectives / members GET rows embed the lifecycle trio
-(`state`, `state_at`, `state_event_id`) — no separate
-state-detail fetch. There is no `states` table and no
-shared event-append write address. Lifecycle writes are
-document-trio PUTs
-(ideas/projects/records/flows/objectives/members) and named
-ops (work-order create/claim/transition/release,
-invitations). The ownership authorizer
+(bulk always 200 arrays), plus instance value-history at
+`GET .../record-types/:type/instances/:id/history`.
+Work-order history folds `field_values` inline on each
+transition event; claim/birth/release rows carry `[]`.
+Ideas / projects / record-types / objectives / members
+GET rows embed the lifecycle trio (`state`, `state_at`,
+`state_event_id`) — no separate state-detail fetch.
+There is no `states` table and no shared event-append
+write address. Lifecycle writes are document-trio PUTs
+(ideas/projects/record-types/flows/objectives/members)
+and named ops (work-order create/claim/transition/release,
+invitations); instance values ride PUT genesis / PATCH
+If-Match / DELETE tombstone. The ownership authorizer
 (`resolveOwningOrganization`) makes a foreign org's
 `entity_id` 403 on per-entity family history (members
 global miss is 404). Also closed: WP1 and the records
@@ -451,12 +454,13 @@ lockups — seven sections fanned out at once, none wedged.
   Click by the coordinates seen in a screenshot, never by
   `getBoundingClientRect` (its larger CSS-px values miss).
 - **List pages populate slowly (5–14s)**: org-scoped list
-  reads re-derive each entity's lifecycle from the full
-  `states` log, so cards can take 5–14s to paint (Flows is
-  slowest). Wait ≥14s and assert the container's
-  `childCount` / `data-*-card` count — never an early
-  screenshot, which shows a skeleton or blank mid-render and
-  reads as a false "empty list".
+  reads re-derive each entity's lifecycle from the
+  message-plane pair ledger (`requests`/`responses`), so
+  cards can take 5–14s to paint (Flows is slowest). Wait
+  ≥14s and assert the container's `childCount` /
+  `data-*-card` count — never an early screenshot, which
+  shows a skeleton or blank mid-render and reads as a
+  false "empty list".
 - **First post-reload mouse click often only focuses**: a
   page's `init()` wires button handlers asynchronously, so a
   click landing before init merely focuses the control with
@@ -627,9 +631,10 @@ on. Run these in order.
   form appears. Fill Name, pick a Model, fill
   Description and Skill Focus. PASS: Create is blocked
   until a Model is chosen; once chosen, click Create →
-  toast confirms and the AI is written to `ai_members`;
-  like a freshly Added human it binds no membership, so it
-  does NOT appear in the roster.
+  toast confirms and the AI is written as a pair-plane
+  AI member document (POST `ai-members`); like a freshly
+  Added human it binds no membership, so it does NOT
+  appear in the roster.
   Repeat for 4 AIs matching mock data (Claude Opus 4.8,
   Claude Sonnet 4.6, GPT-5.5, Grok 4.3).
 
@@ -998,7 +1003,7 @@ on. Run these in order.
 
 - [ ] **D1** Navigate to `ideas/`. PASS: list shows the active org's ideas as cards (≈6 for Stark on the mock seed — the list is org-scoped, so this is a tolerant lower bound, not the global 11; note the org-scoped reads can take 5–8s to paint, so wait for the cards before asserting empty), each with a drag-handle grip, title, status badge, and (for approved ideas) a Convert button. Ideas represent the problem-and-proposed-solution shape and do not carry time/cost/impact estimates; those fields live on projects created by conversion.
 - [ ] **D2** Each idea row shows a lifecycle status badge (Active, In Review, Approved, Promoted, Sent Back, or Archived); an active idea missing a required field also shows a single "Incomplete" readiness pill (warning tone) derived from required-field presence — ready ideas and non-active ideas show no pill. PASS: the status badge always renders, and the Incomplete pill appears only on active, not-ready ideas.
-- [ ] **D3** Click an idea row/title. PASS: navigates to the idea's detail or scoring page with the correct `ideaId` parameter.
+- [ ] **D3** Click an idea row/title. PASS: navigates to `ideas/detail.html?ideaId=<id>` (idea-detail) with the correct `ideaId` parameter.
 - [ ] **D4** "New Idea" or "Create Idea" button is visible. PASS: clicking it navigates to `ideas/create.html`.
 
 ### Idea Create Form (`ideas/create.html`)
@@ -1369,12 +1374,12 @@ algorithm, redo's in-memory stack, exhaustion as a graceful
 no-op, and the 412-retry-then-fresh-resolve on a save racing
 an undo are covered by `tests/flow-undo-cursor.test.ts` and
 `tests/flow-operations.test.ts` (`performUndo` /
-`performRedo`). `flow_versions` no longer receives any write
-on this path — Phase 15 Task 7 RETIRED the versions routes
-(router 404); the table remains until Phase Final. The cases
-below verify the toolbar buttons, the keyboard shortcuts,
-the disabled states, and that the canvas re-renders after
-each step.)
+`performRedo`). `flow_versions` routes were RETIRED
+(Phase 15 Task 7; router 404) and the table is DELETED
+(Phase Final); undo walks the flow's own document-pair
+history only. The cases below verify the toolbar buttons,
+the keyboard shortcuts, the disabled states, and that the
+canvas re-renders after each step.)
 
 - [ ] **F32** After adding a state, click the Undo
   toolbar button. PASS: the state and its
@@ -1588,8 +1593,10 @@ designer "tag current" action lands.)
   to open the properties panel. In the "Attributes"
   fieldset, click the "+ Add Attribute…" dropdown. PASS:
   the picker lists available record attributes
-  pre-defined in the bound Record (the picker is
-  populated from `record_attributes`).
+  pre-defined on the bound record-type (loaded via
+  `getRecordAttributesByRecord` from the nested
+  `record-types/:id/attributes` collection on the pair
+  plane).
   (Regression for the captured-presenter bug in the
   attribute-picker handler: this exact click used to do
   nothing because the handler closed over a presenter
@@ -2094,7 +2101,8 @@ the claude-in-chrome MCP.
   pulldown on its placeholder and click Create. PASS: a
   toast "Model is required" fires and no POST happens.
   Pick a Model, fill the other AI fields, click Create.
-  PASS: toast confirms and the AI is written to `ai_members`;
+  PASS: toast confirms and the AI is written as a
+  pair-plane AI member document (POST `ai-members`);
   it does NOT appear in the roster, as auto-membership is
   deferred (same as G14).
 
@@ -2615,8 +2623,8 @@ View history (once approved) shows the negative score.
 
 **K18.** "No-payload" save: with no slider moved off its
 `data-initial-value`, the `Save` button stays disabled and
-no new rows are written to the
-`project_objective_baseline_scores` store (count
+no new baseline-score pairs are written under
+`projects/.../objective-baseline-scores` (pair count
 unchanged via console).
 
 ### K19–K23 — Inline actual measurement + Archive (Agent-E)

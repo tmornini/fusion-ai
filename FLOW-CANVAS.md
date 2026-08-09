@@ -98,11 +98,14 @@ pair-plane only — see [ARCHITECTURE.md](ARCHITECTURE.md)
 write semantics. `getFlowGraph` reads through `ctx.GET` and
 parses the returned graph into the domain `FlowGraph`.
 `flow-mutations.ts` builds a client-minted save delta
-(node/edge upserts, `'deleted'` removals, member/attribute
-ledger events). Undo resolves its restore target from the
-flow's own document-pair history (server-side); reviving a
-previously removed node/edge id posts a `'restored'` event
-so the tombstoned id reappears.
+(node/edge upserts, `deletions: GraphDeletion[]`
+(eventId/entityId/at), member/attribute `'added'`|
+`'removed'` ledger events). Lifecycle `'deleted'`/
+`'restored'` are derived from deletions/revivals, not
+delta action tokens. Undo resolves its restore target from
+the flow's own document-pair history (server-side); reviving
+a previously removed node/edge id posts a `'restored'`
+event so the tombstoned id reappears.
 
 Hazards are two-tier and shared across the designer +
 stats canvases via the pure predicate

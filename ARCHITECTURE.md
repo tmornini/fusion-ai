@@ -69,7 +69,8 @@ relationship.
 
 The **route is the single divorce point**. `GET flows/:id`
 AND `GET flows` (list) reassemble `FlowWithGraph` from the
-pair plane (`= FlowEntity & { graph }` — the read DTO).
+pair plane (`= FlowEntity & { graph; hasUndoHistory }`
+— the read DTO).
 Freeze, work-order creation, stats, the member-hazard
 reader, and export all derive for free because they read
 through `ctx.GET`; the client `getFlowGraph` adapter is
@@ -123,23 +124,21 @@ create-only (409 if address spent); PATCH If-Match
 (428 / 412); DELETE tombstone-wins. See API.md §2.8 /
 §5.4.1 / §5.20.
 
-The property-test gate at work-order transitions
-(phase 1 — dual-model window still live):
-`validateRecordTransition(ctx, workOrderId, pendingValues)`
-resolves the work order's CURRENT node from the ledger,
-walks that node's attribute refs → type attributes,
-gathers stored values from the work-order history fold
-(`getWorkOrderHistory` → inline `field_values` on each
-transition event), overlays pending values from the form,
-and runs requiredness + `validateAttributeValue`. The gate
-matches the workbox action screen (current-node fields
-only). Returns aggregated `ConstraintViolation[]`.
+The property-test gate at work-order transitions:
+`validateRecordTransition(ctx, workOrderId, pendingValues,
+storedValues)` resolves the work order's CURRENT node from
+the history fold (`getWorkOrderHistory` →
+`currentNodeIdFromHistory`), walks that node's attribute
+refs → type attributes, takes stored values from the bound
+instance head (`instance.values`, or `null` when unbound),
+overlays pending values from the form, and runs
+requiredness + `validateAttributeValue`. The gate matches
+the workbox action screen (current-node fields only).
+Returns aggregated `ConstraintViolation[]`.
 `postWorkOrderTransition` throws
 `RecordTransitionViolations` on non-empty results; the
 workbox page module catches the typed error and surfaces
-the violations banner. Phase 2 (separate stack) flips
-SoT to the bound instance and places UNIQUE on
-`(work_order_id, instance_id)`.
+the violations banner.
 
 The pure constraint runner is `record-constraints.ts`
 (`validateAttributeValue`, `formatViolation`) — the gate
@@ -963,12 +962,13 @@ verbs.
 
 ## Adapter Conventions
 
-- **Member domain split.** Members are one parent table
-  (`members`: id, type) plus per-kind detail tables
-  sharing the id (`human_members`, `ai_members`).
-  `adapters/members.ts` composes humans (parent +
-  `human_members` detail); `adapters/ai-members.ts`
-  composes AIs (parent + `ai_members` detail).
+- **Member domain split.** Members are one parent
+  document family (`members`: id, type) plus per-kind
+  detail families sharing the id (`human-members`,
+  `ai-members`) on the pair plane — wire resources, not
+  storage tables. `adapters/members.ts` composes humans
+  (parent + `human-members` detail); `adapters/ai-members.ts`
+  composes AIs (parent + `ai-members` detail).
   `adapters/members-union.ts` is the
   union seam: `getMembers` is the roster (humans + AIs,
   never `'system'`); `getMemberMap` additionally resolves
@@ -1000,9 +1000,10 @@ verbs.
   (`clipboard.ts`, `viewport.ts`, `location.ts`, etc.)
   wrap browser primitives behind adapters the app owns.
 - **`getFlowStats(ctx, flowId)`.** Resolves the work-order
-  set via the `flow_work_orders` join table (its `flow_id`
-  column), since the frozen `flow_graph` carries no flow id
-  of its own. Returns `{ model, graph }` so the page derives
+  set via GET `flows/:id/work-orders` (pair-plane join
+  documents with derived `flow_id` / `work_order_id`),
+  since the frozen `flow_graph` carries no flow id of its
+  own. Returns `{ model, graph }` so the page derives
   the canvas viewBox from real laid-out coordinates —
   `getFlowGraph` runs `computeLayout` for `is_auto_layout`
   or degenerate flows.

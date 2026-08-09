@@ -39,9 +39,7 @@ disagreement, the code wins.
 `handleRequest(adapter, request)` (`api/api.ts` `handleRequest`)
 resolves a request in this order:
 
-1. **Four pre-table special routes**, matched before the table:
-   - `/organizations/:org/:entity[/:id]` (≥3 segments) →
-     `facadeRequest` (the org-scoping facade; see §4).
+1. **Three pre-match special routes**, before `matchRoute`:
    - `/identities/:id/default-org` (3 segments) →
      `identityDefaultOrganizationRequest`.
    - `/invitations/...` (first segment `invitations`) →
@@ -52,7 +50,11 @@ resolves a request in this order:
    `matchRoute`) — a linear scan over the flat `routes[]`
    array. A route matches when segment counts are equal and
    every literal segment matches; a `:` segment captures a
-   positional param. First match wins. Match failure is not
+   positional param. First match wins. **Unmatched** org-
+   nested paths (`/organizations/:org/:entity[/:id]`, ≥3
+   segments) fall through to `facadeRequest` (the org-scoping
+   facade; see §4) — in-table `organizations/...` patterns
+   win over the facade when registered. Match failure is not
    yet a response: authentication runs first (step 3).
 3. **The gate** (skipped for bearer-exempt routes):
    `authenticateRequest` (verify the Bearer JWT, reject
@@ -63,9 +65,9 @@ resolves a request in this order:
    adapter is unchanged — tenancy rides `uri_prefix`, not an
    org-scoped decorator) → `authorizeRequest` (per-org role
    check). After a successful auth, no route match is **404**.
-4. **Body parse** (`PUT`/`POST` only): `parseObjectBody` — a
-   malformed or non-object JSON body is a `400` here, before either
-   the pair or the handler ever sees it.
+4. **Body parse** (`PUT`/`POST`/`PATCH`): `parseObjectBody` —
+   a malformed or non-object JSON body is a `400` here, before
+   either the pair or the handler ever sees it.
 5. **Shadow-ledger pair formation + idempotency point-read**, for a
    write verb whose route pattern is in `PAIR_WIRED_ROUTE_PATTERNS`
    (skipped for bearer-exempt routes and for a verb the matched route
@@ -185,12 +187,10 @@ Legend for classification:
   identity still requires admin.
 - `GET /identity-providers` · `GET|PUT /identity-providers/:id` —
   primitive.
-- `GET /role-grants` · `GET|PUT /role-grants/:id` — primitive.
-  `PUT`'s closure is extracted to `postRoleGrantDocumentOp`
-  (§5.13) but stays hand-dispatched, never family-registered
-  (§5.13's event-plane rationale); its `WRITE_RESPONSE_SPECS`
-  entry keeps re-stamping `organization_id` from the fence,
-  untouched by the extraction.
+- `GET /role-grants` · `GET|PUT /role-grants/:id` — RETIRED
+  (router 404). Roles derive from membership `type` / claims;
+  `postRoleGrantDocumentOp` and the role-grants seed pairs are
+  gone (§5.13 / §5.15).
 - `POST /authentication/token` — grant dispatch (§3.8). Bearer-exempt.
 - `POST /authentication/authorize` — interactive front door (§3.9).
   Bearer-exempt.
@@ -262,8 +262,9 @@ Legend for classification:
 - `POST /work-orders/:id/claim` — operation (§3.18).
 - `POST /work-orders/:id/transition` — operation (§3.19).
 - `POST /work-orders/:id/binding` — operation (§3.34).
-- `POST /work-orders/:id/release` — operation (named
-  unclaim; 204; foreign-WO 403; nonexistent-WO 404).
+- `POST /work-orders/:id/release` — operation (§3.35).
+  Named unclaim; 204 either way; foreign-WO 403;
+  nonexistent-WO 404.
 
 ### 2.8 Record types, attributes & instances
 
@@ -276,8 +277,9 @@ Nested under `:record-type-id`:
 `/history`, `/attributes[/:attribute-id]`,
 `/instances[/:instance-id[/history]]`.
 
-In-table nested routes match **before** the org facade
-(dispatch inversion — ARCHITECTURE.md § Facade). Path
+In-table nested routes match via `matchRoute` **before** the
+org facade swallows unmatched org-nested paths (dispatch
+inversion — ARCHITECTURE.md § Facade). Path
 `:organization-id` must equal the fenced claim org else
 **403** (no auto-exchange; nonexistent path org is also
 403 — no route-topology oracle). Flat
@@ -652,12 +654,13 @@ like every prior bundle.**
   were already pair-wired there.
 - **The member document pair** — PUT-shaped, at the ONE shared
   `members/:id` address every member kind writes through
-  regardless of family, body `memberDocumentBodyOf(type)` →
-  `{type}` alone — the exact live `PUT /members/:id` wire body —
-  validated through `validateMemberDocumentBody`. The member kind
-  is a server-supplied fact (never read off the request body), so
-  this body is IDENTICAL for a create and every later edit of the
-  SAME member — see the fold note below.
+  regardless of family, body `memberDocumentBodyOf(type,
+  trio)` → `{type, state, state_at, state_event_id}` — the
+  exact live `PUT /members/:id` wire body — validated through
+  `validateMemberDocumentBody`. The member kind is a
+  server-supplied fact (never read off the request body); the
+  lifecycle trio is the create's initial trio or the edit's
+  echoed head trio — see the fold note below.
 - **The detail document pair** — PUT-shaped, at the family's own
   `ai-members/:id` or `human-members/:id` address (the SAME
   address the operation pair uses), body `aiMemberDetailBodyOf` /
@@ -723,7 +726,8 @@ prospectively: the person branch of `POST /identities` (§3.5)
 narrows to `{id, kind}`; `POST /human-members` (§3.3) narrows to
 `{id, detail, initialState, initialStateEventId,
 initialStateAt}`; `POST /human-members/:id` (§3.4) narrows to
-`{detail}` alone. PII enters ONLY through `PUT
+`{detail, state, stateAt, stateEventId}` (detail + echoed
+lifecycle trio; `pii` retired only). PII enters ONLY through `PUT
 identities/:id/pii` (§2.2, §5.1) — the client adapters
 (`web-app/app/adapters/identities.ts`'s `postIdentityCreation`,
 `web-app/app/adapters/members.ts`'s `postHumanMemberCreation` and
@@ -736,7 +740,8 @@ create/edit succeeds and BEFORE the change notification fires:
   then `PUT identities/:id/pii`, then `notify()` — this hop is
   UNCONDITIONAL, since a freshly created member always supplies
   its initial contact facet.
-- `putHumanMember`: `POST /human-members/:id` (detail alone),
+- `putHumanMember`: `POST /human-members/:id` (detail +
+  echoed lifecycle trio),
   then `PUT identities/:id/pii` IFF the caller supplies a `pii`
   argument — the ONLY conditional hop of the three, decided by
   the dirty check below.
@@ -795,14 +800,15 @@ stay byte-identical too — the op path writes the SAME
 of folded into the first.
 
 **The member-document fold (the E6 note, made concrete).** A
-member's `type` is a server-pinned fact that never changes across
-an edit, so `memberDocumentBodyOf`'s body — `{type}` — is
-byte-identical, at the SAME address, on every write to the SAME
-member from its genesis onward. `appendMessagePair`'s global
-by-hash fold therefore skips the member-document pair on every
-edit following the first write to that member — a genuinely
-PERMANENT fold, not a fixture accident: the address needs no
-second write since its one field never varies. The identities
+member's `type` is a server-pinned fact, and an edit that does
+not move lifecycle **echoes** the current
+`state`/`state_at`/`state_event_id` byte-for-byte, so
+`memberDocumentBodyOf(type, trio)`'s body —
+`{type, state, state_at, state_event_id}` — is byte-identical
+to the head when the edit is a no-op transition.
+`appendMessagePair`'s global by-hash fold therefore skips the
+member-document pair on every such edit — a genuine fold when
+the echoed trio matches, not type alone. The identities
 document (Phase 10 Task 5) folds the SAME way, for the SAME
 reason: a human member's identity `kind` is ALSO a server-pinned
 fact ('person', always), so `identityDocumentBodyOf('person')`'s
@@ -1147,11 +1153,11 @@ baseline, fresh delta, fresh trio) before resubmitting; any other
 error, or a third 412, propagates to the caller. version-publish
 is no longer an option embedded in this PUT (Decision 3), nor is
 it a client-side prerequisite of this PUT any more (Phase 14
-Task 8, undo-as-replay): `POST /flows/:id/versions` (§3.16)
-still exists as a standalone route but has NO live caller —
-undo now resolves its own restore target from THIS route's own
-document-pair history (§3.14), so nothing archives a snapshot
-before a save any more.
+Task 8, undo-as-replay): `POST /flows/:id/versions` is
+RETIRED (Phase 15 Task 7, §3.16 — router 404 / no pattern
+match). Undo resolves its restore target from THIS route's
+own document-pair history (§3.14); nothing archives a
+versions snapshot before a save.
 
 - tx: `['requests','responses']`
   — NO `flow_versions`.
@@ -1582,8 +1588,10 @@ below-facade caller (`api/mock-data.ts`) skips all three:
   verbs chain against one address.
 - **The document pair** — PUT-shaped, at `objectives/:id`'s own
   address, body `objectiveDocumentBodyOf(b)` (the create body's
-  `objective` sub-object with `organization_id` stripped — the
-  live `PUT /objectives/:id` wire body is `{position}` alone),
+  `objective` sub-object with `organization_id` stripped, plus
+  the genesis lifecycle trio — the live `PUT /objectives/:id`
+  wire body is `{position}` plus `state`/`state_at`/
+  `state_event_id`),
   validated through `validateObjectiveDocumentBody` —
   byte-indistinguishable from a live genesis
   `PUT /objectives/:id`.
@@ -1755,16 +1763,14 @@ adapter, not the api layer.
 
 ### 3.29 `PUT /objectives/:id` — objective document write (not a POST)
 
-The seventh family, and the THIRD `'stateless'` one (§5.8) —
-Author gate 3's second Decision 7 amendment. `PUT` now dispatches
-through `documentPutHandler(OBJECTIVES_WIRING)`, replacing the
-hand-written stand-in this section used to describe (in place of
-the earlier-retired `makeIdRoute` factory) — the wire is
-UNCHANGED: the body stays `{ position }` (today's only caller
-remains the web-app's `putObjectivePosition`, drag-reorder), never
-a lifecycle trio. The trio COULD represent the objective alphabet,
-but objectives are a **trio** family on the document body
-(`OBJECTIVES_WIRING`); there is no shared `states` log
+The seventh family, a **trio** family on the document body
+(`OBJECTIVES_WIRING.lifecycle: 'trio'`, §5.8 — states-address
+retirement). `PUT` dispatches through
+`documentPutHandler(OBJECTIVES_WIRING)`. The live wire body is
+`{ position }` plus the lifecycle trio (`state` / `state_at` /
+`state_event_id`); today's only web-app caller
+(`putObjectivePosition`, drag-reorder) echoes the head trio with
+the new position. There is no shared `states` log
 (§2.10 / §5.8).
 
 - tx: `['requests','responses']`
@@ -1911,6 +1917,34 @@ GET (detail and list rows) EMBEDS the derived bind as
    release parity); byte-identical resend replays
 
 Pins: `tests/api-work-order-binding.test.ts`.
+
+### 3.35 `POST /work-orders/:id/release` — named unclaim
+
+`postWorkOrderReleaseOp` (`api/routes.ts`) — member-tier
+sibling of claim/transition/binding. Releases a live claim
+(derive emits `claim_released`); no live claim → idempotent
+no-op. **204** either way.
+
+```http
+POST .../work-orders/{work-order-id}/release
+{
+  "releaseEventId": "...",
+  "releaseAt": "..."
+}
+```
+
+- tx: `['requests','responses']`
+- actual: `validateWorkOrderReleaseBody(body)` →
+  `workOrderDocumentHeadFor` (absent → 404 via
+  `missedReadError`; foreign org → 403 at fence) →
+  `appendMessagePair(pair)` for the release op (pair-
+  only; claim liveness is a derive-time decision).
+- doctrinal: release op pair as `post_release_work_order`.
+- props: atomic; member-tier; open-release posture (any
+  member may release another's claim today);
+  `validateWorkOrderReleaseBody`.
+
+Pins: `tests/api-work-order-release.test.ts`.
 
 ---
 
@@ -2061,8 +2095,10 @@ three, Phase 10 Task 6, §5.15; organizations, Phase 12 Task 3,
 writes (Phase 11 Task 8, §5.17) — no dedicated op wraps that
 family, so it stands outside the SIXTEEN
 (`buildMockDataInvocations`, `api/mock-data/seed-message-pairs.ts`),
-so the seed forms each family's pair the SAME way a live request
-would, then writes it alongside the seeded row:
+so the seed forms each family's pair the SAME way a live
+request would, then appends it on the pair plane only
+(`requests`/`responses` — Phase Final deleted every entity
+table; no dual-write beside a seeded row):
 
 - The mock-data seed pre-forms **1498** message pairs — one pair per seeded
   row for most families, but each seeded human/AI member folds in an
@@ -2150,10 +2186,15 @@ would, then writes it alongside the seeded row:
 
 ### 5.4 The two PUT classes
 
-Every document-class PUT belongs to one of two concurrency
-classes, declared per family in `api/family-registry.ts`
-(`ConcurrencyClass`: `'simple' | 'locked'`) and dispatched
-through `api/document-family.ts`'s generic `documentPutHandler`.
+Every document-class PUT belongs to a concurrency class
+declared per family in `api/family-registry.ts`
+(`ConcurrencyClass`: `'simple' | 'locked' | 'create-only'`)
+and dispatched through `api/document-family.ts`'s generic
+`documentPutHandler`. Registry rows today use only
+`'simple'` / `'locked'`; the `'create-only'` arm exists on
+the type for instance addresses (§5.4.1 —
+`CREATE_ONLY_PUT_ROUTE_PATTERNS`, not
+`documentPutHandler`).
 The gate (`handleRequest`) keys the class off the route's
 `documentFamilyWiring` entry ANDed with its family registration
 — NEVER a blanket `DOCUMENT_CLASS_ROUTE_PATTERNS` read — so a
@@ -2209,10 +2250,13 @@ pair is stored for a 412 — the tx aborted or never opened.
 synthetic registration in Task 2 (`tests/document-family.
 test.ts`); Task 3 registers `flows`' own `DocumentFamilyWiring`
 row and moves `PUT /flows/:id` onto it (`documentPutHandler`) —
-the first LIVE route riding the arm (§3.13). `flows/:id`'s `GET`
-rides the SAME generic `documentGetHandler` (§5.5, Task 8) —
-its response additionally carries the `Response-ID` header
-(§3.13).
+the first LIVE route riding the arm (§3.13). `flows/:id`'s
+`GET` is hand-written again (Phase 14 Task 8, undo-as-
+replay): it calls `deriveFlow` directly so the response can
+carry `hasUndoHistory` — a field the generic `entityOf`
+contract has no slot for. `PUT` stays on
+`documentPutHandler`. The GET response still carries the
+`Response-ID` header (§3.13) for the locked echo.
 
 ### 5.4.1 Instance concurrency: create-only PUT + If-Match PATCH
 
@@ -2263,23 +2307,25 @@ instance head (named RFC 9110 §13.1.1 deviation).
 ### 5.5 ideas/projects/flows: generic components
 
 `ideas/:id`, `ideas` (collection), `projects/:id`, `projects`
-(collection), `flows/:id`, and `flows` (collection) — plus
-their `WRITE_RESPONSE_SPECS` entries — dispatch through
-`api/document-family.ts`'s generic `documentEntityRoute`/
-`documentCollectionRoute`/`documentWriteResponseSpec`, driven
-by a per-family `DocumentFamilyWiring` (a lifecycle class, a
-not-found table, a validator, a decompose op, and an entity
-mapper — §5.6) rather than hand-written route objects. For
-`ideas`/`projects` (`simple` concurrency, §5.4) the wire is
-byte-identical to the routes it replaces. `flows` rides the
-SAME generic dispatch as `locked` concurrency (§5.4) — its
-document PUT alone carries the `If-Response-ID`/
-`Follows` four-outcome machinery the other two families never
-need; `flows` also keeps its own hand-written `POST /flows`
-(create, §3.12) and `POST /flows/:id/undo` (§3.14) outside this
-generic dispatch. The untouched existing suite plus
-`tests/document-family.test.ts`'s successBody and dispatch pins
-are the absorption's proof.
+(collection) — plus their `WRITE_RESPONSE_SPECS` entries —
+dispatch through `api/document-family.ts`'s generic
+`documentEntityRoute` / `documentCollectionRoute` /
+`documentWriteResponseSpec`, driven by a per-family
+`DocumentFamilyWiring` (a lifecycle class, a not-found table,
+a validator, a decompose op, and an entity mapper — §5.6)
+rather than hand-written route objects. For `ideas`/
+`projects` (`simple` concurrency, §5.4) the wire is byte-
+identical to the routes it replaces. **`flows` PUT** (and its
+`WRITE_RESPONSE_SPECS` entry) rides the same generic
+`documentPutHandler` as `locked` concurrency (§5.4) — the
+`If-Response-ID` / `Follows` four-outcome machinery. **`flows`
+collection + entity GET** are hand-written (`deriveFlows` /
+`deriveFlow`) so entity GET can embed `hasUndoHistory`
+(Phase 14 Task 8 un-flip). `flows` also keeps hand-written
+`POST /flows` (create, §3.12) and `POST /flows/:id/undo`
+(§3.14) outside generic dispatch. The untouched existing suite
+plus `tests/document-family.test.ts`'s successBody and dispatch
+pins are the absorption's proof.
 
 ### 5.6 The fourth family: work-orders and the stateless class
 
@@ -2400,76 +2446,53 @@ wire seam. The list drag-reorder and detail no-
 attribute-change save echo the trio from data already
 loaded — zero new hops.
 
-### 5.8 The seventh family: objectives and Author gate 3's second amendment
+### 5.8 The seventh family: objectives (trio, simple concurrency)
 
-Task 2 (Phase 7) registers `objectives` as the seventh
-`DocumentFamilyWiring` row (`OBJECTIVES_WIRING`, beside
-ideas/projects/flows/work-orders/records/record-attributes in
-`api/routes.ts`) — the SECOND named partial amendment to
-Decision 7 (Author gate 3).
-
-Decision 7 as amended at Phase 5 (§5.6) scopes `'stateless'` to
-lifecycles "a single trio cannot represent without loss" — the
-work-orders fork. Objectives are a DIFFERENT fork: the trio
-COULD represent the objective alphabet, but is FORBIDDEN three
-ways — the wire body would have to grow it (the unavoidable
-zero-delta violation); a minted genesis event would abort the
-states 911 pin at reseed (the genesis dilemma); and
-absence-as-active is R2's named covenant. The amendment extends
-`'stateless'` to a SECOND, distinct fork: absence-as-active
-families whose lifecycle rides the SHARED `states` log — the
-document body carries entity fields only, lifecycle events keep
-riding the generic `states` plane (already pair-wired), and the
-family's derived reads perform no lifecycle walk. THREE distinct
-`'stateless'` rationales now exist — work-orders' vacuous-in-
-practice (§5.6: its lifecycle CAN be authored, just never
-through the document address), record-attributes' vacuous-by-
-construction (no lifecycle concept exists at all), and
-objectives' forbidden-three-ways above — a third distinct
-rationale is the named trigger for a type-level fork
-(Commandment IX): the next family author reads Decision 7 as
-TWICE amended, not as negotiable.
+Task 2 (Phase 7) registered `objectives` as the seventh
+`DocumentFamilyWiring` row (`OBJECTIVES_WIRING` in
+`api/routes.ts`). States-address retirement flipped it from the
+old `'stateless'` / absence-as-active doctrine onto
+`lifecycle: 'trio'` — the FIFTH trio family. The three retired
+rationales (wire body cannot grow a trio; genesis would abort a
+states pin; absence-as-active on a shared `states` log) no
+longer hold: the document body **carries** the lifecycle trio,
+genesis is an explicit minted event, and there is no shared
+`states` plane.
 
 - **`notFoundTable` is `'objectives'`** — its storage table name
   matches its family name, like ideas/projects/flows/records
   (work-orders/record-attributes are the two families whose
   names diverge).
-- **Consequence named:** `GET /objectives` INCLUDES archived
-  objectives on both planes — the deliberate CONTRAST to
-  records' deleted-exclusion (§5.7); nothing in the objective
-  alphabet can produce a `'deleted'` state, so no derived read
-  ever needs to filter one out.
+- **`lifecycle: 'trio'`** — PUT body is entity fields
+  (`position`) plus `state` / `state_at` / `state_event_id`
+  (`validateObjectiveDocumentBody`). PUT **response** still
+  returns entity fields only (`{id, organization_id,
+  position}` via the write-response spec). GET embeds the
+  lifecycle trio on the derived row
+  (`objectiveDocumentEntityOf`).
+- **Concurrency:** `'simple'` (§5.4) — `Supersedes` chain, no
+  `If-Response-ID`.
+- **Archived inclusion:** `GET /objectives` INCLUDES archived
+  objectives — deliberate CONTRAST to records' deleted-
+  exclusion (§5.7); nothing in the objective alphabet is
+  `'deleted'`, so no derived read filters one out.
 
-**PUT /objectives/:id** now dispatches through
-`documentPutHandler(OBJECTIVES_WIRING)` — the SAME `'simple'`
-concurrency class ideas/projects/work-orders/records ride
-(§5.4) — and `WRITE_RESPONSE_SPECS['objectives/:id']` is
+**PUT /objectives/:id** dispatches through
+`documentPutHandler(OBJECTIVES_WIRING)` — and
+`WRITE_RESPONSE_SPECS['objectives/:id']` is
 `documentWriteResponseSpec(OBJECTIVES_WIRING)`. **GET
-/objectives/:id now DERIVES from the ledger** through the
-generic `documentEntityRoute(OBJECTIVES_WIRING)` (flipped at the
-read-flip task; see §3.29) — `entityOf` is the LIVE reader, and
-it constructs the wire row ID FIRST
-(`{id, organization_id, position}`), the SAME seven-sibling
-convention every shipped `entityOf` follows.
+/objectives/:id DERIVES from the ledger** through the generic
+`documentEntityRoute(OBJECTIVES_WIRING)` — `entityOf` is the
+LIVE reader and constructs the wire row with id first, then
+entity + embedded trio.
 
-**The wire covenant, precisely scoped.** ZERO deltas in request
-shapes, response key sets + values, statuses, headers, and hop
-counts. The response's `{id, organization_id, position}` keys
-and values are byte-identical to the prior hand-written route —
-`validateObjectiveDocumentBody`'s entity/organization_id
-separation guarantees it, and PUT responses are order-blind BY
-CONSTRUCTION (the canonical `sortJsonKeys` pipeline), so key
-order was never part of the covenant for a write. The stray-key
-400 body stays byte-identical (`unexpected key "..." for
-Objective` — the label mandate, §3.29); the missing-position 400
-is the SAME `assertOnlyKeys` call, so it too is unchanged. The
-ONE named sub-cosmetic exception this whole phase carries — a
-flipped GET's JSON key order moving id-last → id-first (the
-seven-sibling `entityOf` convention, verified at `f81e2c33`) —
-fires for the flipped objectives GETs: `objectiveDocumentEntityOf`
-serializes id-first, JSON-semantically and client-invisible
-(consumers destructure by key; deepEqual gates are order-blind),
-the same class every prior flip shipped.
+**The wire covenant, precisely scoped.** PUT request body is
+position + trio; PUT response entity keys stay
+`{id, organization_id, position}` (lifecycle does not leak
+onto the write response). Stray-key 400 stays byte-identical
+(`unexpected key "..." for Objective` — the label mandate,
+§3.29). GET key order is id-first (`objectiveDocumentEntityOf`),
+JSON-semantically and client-invisible.
 
 `tests/api-objective-document.test.ts` (the below-gate op/
 validator pins, the PUT-chain-derives-the-head case, and the
@@ -2520,14 +2543,13 @@ fork" claim now reads as history, not standing doctrine.
   name matches its family name, like ideas/projects/flows/
   records/objectives (work-orders/record-attributes are the two
   families whose names diverge).
-- **GET stays hand-written, old-plane, until Task 8.** Unlike
-  objectives (§5.8, whose `GET` flipped in the SAME phase it
-  registered), `memberships/:id`'s `get` arm is untouched this
-  task — `MEMBERSHIPS_WIRING`'s `entityOf` exists (the contract
-  requires it) but serves no live route yet.
-- **DELETE stays hand-written too** — the `records/:id`
-  template (§5.7): no generic DELETE component exists for any
-  family.
+- **GET is FLIPPED (Task 8)** onto
+  `documentGetHandler(MEMBERSHIPS_WIRING)` /
+  `documentCollectionGetHandler(MEMBERSHIPS_WIRING)` — wire-
+  identical to the old-plane getById/getAll it replaced.
+- **DELETE stays hand-written** — the `records/:id` template
+  (§5.7): no generic DELETE component exists for any family;
+  memberships DELETE is a pure pair-plane tombstone append.
 
 **PUT /memberships/:id** now dispatches through
 `documentPutHandler(MEMBERSHIPS_WIRING)` — the SAME `'simple'`
@@ -2579,21 +2601,17 @@ Task 3 (Phase 8) registers `members`, `ai-members`, and
 `DocumentFamilyWiring` rows (`MEMBERS_WIRING`,
 `AI_MEMBERS_WIRING`, `HUMAN_MEMBERS_WIRING` in `api/routes.ts`)
 — the FIRST `organizationNested:false` ("global-plane")
-registrations of any wiring row, and the FIFTH `'stateless'`
-rationale (Author gate 3, verification-corrected — still no
-type-level fork). All three share ONE document-plane WITH
-genesis bucket, distinct from every prior one: the shared
-member id receives REAL lifecycle events on the
-`members/:id` document-trio PUT (genesis at create;
-archive/reactivate via a later PUT carrying a new trio), so
-a second, independent trio-carrying plane here would FREEZE
-every member's state at genesis forever the moment a second
-event posted — the decisive refutation of a dual plane,
-unlike work-orders' vacuous-in-practice (§5.6), objectives'
-absence-as-active (§5.8), or record-attributes'/
-memberships' vacuous-by-construction pair (§5.9). History
-reads live on `GET members/:id/history` (§2.10); the
-members GET row embeds the lifecycle trio for head state.
+registrations of any wiring row. **Split lifecycle class:**
+`MEMBERS_WIRING` is `lifecycle: 'trio'` (document-address
+lifecycle on `members/:id` — genesis at create;
+archive/reactivate via a later PUT carrying a new trio).
+`AI_MEMBERS_WIRING` and `HUMAN_MEMBERS_WIRING` remain
+`'stateless'` **detail facets** (no independent lifecycle —
+they do not carry a trio of their own). States-address
+retirement retired the dual-plane / FREEZE-at-genesis story:
+lifecycle lives only on the members parent document. History
+reads live on `GET members/:id/history` (§2.10); the members
+GET row embeds the lifecycle trio for head state.
 
 **The blocking fix (`api/document-family.ts`).**
 `documentWriteResponseSpec` unconditionally stamped
@@ -2627,8 +2645,9 @@ green, unmodified, through every commit of this task.
   pin, `tests/api-roster-verb-gaps.test.ts`, proves it survives
   untouched); the row exists for a future synthesis/seed caller
   only.
-- **GET stays hand-written, old-plane, until Task 8** for all
-  three — same as memberships (§5.9).
+- **GET is FLIPPED (Task 8)** for all three onto
+  `documentGetHandler` / `documentCollectionGetHandler` of
+  each wiring row — same flip as memberships (§5.9).
 
 **PUT /members/:id** and **PUT /ai-members/:id** now dispatch
 through `documentPutHandler(MEMBERS_WIRING)` /
@@ -2782,10 +2801,11 @@ every other family honors. `replacePiiSlot`
 rows from `requests` or `responses` — grep-provable. Its two
 callers (`postIdentityPiiDocumentOp`'s PUT,
 the `identities/:id/pii` DELETE closure — both `api/routes.ts`)
-already ran inside `['identity_pii', 'requests', 'responses']`
-before this task; the zone rides that SAME transaction, never a
-second one (Commandment X — wrap the indivisible in the
-platform's existing primitive).
+open only `['requests', 'responses']` (Phase Final Task 2
+stripped the `identity_pii` ROW half — pair-plane only). The
+zone rides that SAME transaction, never a second one
+(Commandment X — wrap the indivisible in the platform's
+existing primitive).
 
 **The single-slot register.** Every write at the address —
 PUT or DELETE — enumerates whatever pair(s) currently occupy it
@@ -2835,8 +2855,9 @@ append-only exemption.
 1-4, scoped to the STORED SERVER PLANE.** Because gate 1 confines
 every PII byte to the /pii address alone, and gates 2-4 keep
 that ONE address chainless and single-slot, erasing it (DELETE)
-leaves zero PII bytes anywhere `requests`/`responses` or
-`identity_pii` can be scanned — proven end to end by a real
+leaves zero PII bytes anywhere `requests`/`responses` can
+be scanned (no `identity_pii` table remains) — proven end to
+end by a real
 grant → accept → human-member create → edit → erase chain
 (`tests/api-pii-hard-delete.test.ts`), scanning every stored
 message for the erased name/email/phone/bio values after the
@@ -3161,25 +3182,25 @@ gone (roles from membership type / claims; mock asserts zero
 still deferred WHOLE here — §5.17 forms its pairs; Phase Final
 strips the ROW half (pair-only seed/read; absolute 1498 / 12).
 
-**The tx-widening trap (a verification finding).**
-`seedHumanCredentials` opened its OWN
-`adapter.transaction(['identity_credentials'], ...)` — calling
-`postIdentityCredentialDocumentOp` inside it would throw the
-nested-subset guard (`api/db-backed.ts`'s `#assertSubset`:
-`identities/:id/credentials/:cid`'s wiring transacts
-`['identity_credentials', 'requests', 'responses']`, and
-`'requests'`/`'responses'` are not in the outer declared set).
-The fix widens `seedHumanCredentials`' own transaction to that
-SAME three-table set — one fix covers both the mock-data and
-bootstrap call sites, since both share this one function. Each
-credential pair is PRE-FORMED from the post-hash secret BEFORE
-the widened transaction opens (`formSeedCredentialPairs`,
+**The credential seed transaction (present-tense).**
+Phase Final stripped the `identity_credentials` ROW half.
+`seedHumanCredentials` now opens a pair-plane-only
+`adapter.transaction(['requests', 'responses'], ...)` and
+calls `postIdentityCredentialDocumentOp` inside it — the SAME
+op every live `PUT identities/:id/credentials/:cid` rides.
+(Historical: the Task-time three-table widen from a nested
+`['identity_credentials']` outer set onto
+`['identity_credentials', 'requests', 'responses']` is
+retired with the row table.) Each credential pair is PRE-FORMED
+from the post-hash secret BEFORE the transaction opens
+(`formSeedCredentialPairs`,
 `api/mock-data/seed-message-pairs.ts`) — a credential's body is
 unknown until PBKDF2 resolves, and crypto never runs in-tx
 (CLAUDE.md § the IndexedDB auto-commit constraint), so this
 credential batch runs its OWN local pass-1/pass-2 split rather
-than joining `formMockDataMessagePairs` / `formBootstrapMessagePair`
-(both already ran, before `seedHumanCredentials` is even called).
+than joining `formMockDataMessagePairs` /
+`formBootstrapMessagePair` (both already ran, before
+`seedHumanCredentials` is even called).
 `tests/credential-surfacing.test.ts` is the Task 2 ordering
 canary — it re-ran green (12 credentials still surface).
 
