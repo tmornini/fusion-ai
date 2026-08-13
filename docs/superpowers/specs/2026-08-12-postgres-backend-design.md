@@ -49,9 +49,9 @@ current.
    vocabulary outside the adapter. Tagged-template
    parameterization only — placeholders and auto-prepared
    statements are structural; the adapter exports no path to
-   `sql.unsafe()`. Boot-time DDL assembled from compile-time
-   constants is the one non-parameterized class (zero user
-   input).
+   `sql.unsafe()`. `sql.unsafe` may exist only INSIDE the
+   adapter, and only for boot-time DDL assembled from
+   compile-time constants (zero user input).
 4. **Extended seam.** The equality-only `getWhere` seam gains
    composite, ordered-head, prefix-range, and body-containment
    reads. A verbatim port was rejected: it scales with the
@@ -179,13 +179,15 @@ documents link to it; the audit counts its KNOWN seams).
 
 Two build outputs from one source tree.
 
-- **Browser ZIP** — today's product, unchanged: composed pages,
-  `api/` in the page, IndexedDB store, demo-tier auth posture.
+- **Browser ZIP** — today's posture and features: composed
+  pages, `api/` in the page, IndexedDB store, demo-tier auth.
+  Not today's stored bytes or `/history` paths.
 - **Server ZIP** — one Node process serves the composed static
   pages AND the API on one origin (no CORS surface). The same
   `api/` spine runs against Postgres via the fourth
   `StorageBackend`. The browser bundle inside this artifact
-  speaks real `fetch`.
+  speaks real `fetch` through a facade that does not import
+  `api/api.ts` or `access-token.ts`.
 
 The server does not get a new API layer: a thin `node:http`
 adapter turns each incoming request into the same vessel
@@ -195,58 +197,88 @@ postgres.js.
 
 Endgame (the yank): delete the IndexedDB and localStorage
 backends, the in-page dispatch composition, the browser ZIP,
-and `BOOTSTRAP_ROUTES`; re-point `API-TREE.md:5` at this spec.
+and `BOOTSTRAP_ROUTES`. This spec is already the authority;
+there is no `API-TREE.md` re-point.
 
 ### B. Storage-format covenant
 
 Cross-tier, prerequisite change; both tiers store the same
-string.
+octets.
 
-- The `message` column holds the ENTIRE canonical wire message
-  (`serializeWire` output: start-line, sorted lower-cased
-  fields, derived Content-Length framing, body), stored as
-  UTF-8 TEXT. The in-app wire form is a Latin-1 binary string
-  (one char per byte); at the storage boundary it is decoded
-  as UTF-8 — valid by construction (ASCII envelope + UTF-8
-  JSON bodies; the media registry is JSON-only). Text → UTF-8
-  bytes round-trips to the exact wire bytes, so
-  `sha256Hex(message)` (TextEncoder = UTF-8) IS the hash of
-  the wire bytes.
-- `message_hash` becomes sha256 of the wire form. Every hash
-  value changes once; `canonicalJson` write-path call sites
-  become `serializeWire`; `parseJson` derive call sites become
+- The `message` column holds the ENTIRE canonical wire
+  message (`serializeWire` output: start-line, sorted
+  lower-cased fields, derived Content-Length framing, body)
+  as BYTEA of those octets. The in-app wire form is a Latin-1
+  binary string (one JS char per octet;
+  `shared/http-message/wire-codec.ts:29-31`). Codec, both
+  directions:
+  - write: Latin-1 wire → one byte per `charCodeAt` → BYTEA.
+  - read: BYTEA → Latin-1 string → `parseWire`.
+  `parseWire` frames the body by JS string length as byte
+  count (`wire-codec.ts:145-151`). Feeding it UTF-8 TEXT
+  mis-frames on the first non-ASCII character; storing the
+  Latin-1 string as TEXT double-encodes. BYTEA avoids both.
+- `message_hash` is SHA-256 of the BYTEA octets. The JS hash
+  at the storage boundary hashes the octet array, not
+  `TextEncoder` of the Latin-1 string (that would
+  UTF-8-encode bytes `0x80–0xFF`). Every hash value changes
+  once; `canonicalJson` write-path call sites become
+  `serializeWire`; `parseJson` derive call sites become
   `parseWire`; the mock-data pair count 1498 holds while all
   hash values re-baseline.
+- Stored bodies are JSON-only via three code locks — not
+  "the media registry is JSON-only" (it admits form and
+  text: `media-registry.ts:59,77,111-117`):
+  1. `JSON_MEDIA_TYPE` is the only type passed to `withBody`
+     (`message-form.ts:17,53-55,82-84`).
+  2. `putBody` overwrites content-type
+     (`shared/http-message/modify.ts:115-122`).
+  3. Request bodies are object-typed at the gate
+     (`request-auth.ts:208-227`).
+  Phase A tightens `WriteResponseSpec.successBody` from
+  `unknown` to `Record<string, unknown>` (`routes.ts:3236-
+  3241`). A string return today silently stores base64
+  (`json-codec.ts:30-33`) and would die at the GIN.
 - The stored wire is always Content-Length framed (chunked is
-  parse-side only), so the body region is everything after the
-  FIRST CRLFCRLF — a provably unique boundary (compact JSON
-  bodies and header values cannot contain a raw CRLF).
+  parse-side only), so the body region is everything after
+  the FIRST CRLFCRLF — a provably unique boundary (compact
+  JSON bodies and header values cannot contain a raw CRLF).
 - Chain provenance rename, riding the same break: the
   `Supersedes` concept is DELETED system-wide (field, wire
-  header, and the per-simple-write `headPairIdAt` pre-tx read
-  that fed it — verified zero consumers). The one surviving
-  chain field (today's `follows`) renames to
-  `Replaces-Response-ID` (wire header) /
+  header, and the per-simple-write `headPairIdAt` pre-tx
+  read that fed it). Provenance-only — no derive walks it
+  (`derive-documents.ts:146-149`); the column and header go
+  away. The one surviving chain field (today's `follows`)
+  renames to `Replaces-Response-ID` (wire header) /
   `replaces_response_id` (seam row key and column). The
   header field inside the stored wire message is the truth;
   the column is app-sent index machinery beside it.
-- The requests seam row gains two app-sent fields, both known
-  at pair formation: `route` (the gate's matched route
+- The requests seam row gains two app-sent fields, both
+  known at pair formation: `route` (the gate's matched route
   pattern; synthesized, auth, and seed pairs name their
   shapes) and `method`. Validators, snapshot format, and the
   IndexedDB tier take the same shape — one covenant break,
   never a second.
+- Phase A invalidates every pre-break IndexedDB origin and
+  every previously exported snapshot (house precedent:
+  SCHEMA.md timestamp-width pin — old snapshots fail import
+  loudly; recovery is reseed). Import rejects them loudly.
+  Boot detect: schema marker present and rows missing
+  `route` → refuse and point at reseed / Settings wipe.
 
 ### C. Schema (DDL, final)
 
 PostgreSQL 15+ (SQL-standard function bodies). All text columns
 `COLLATE "C"`: byte order IS the codebase's orders (id-lex,
 zulu-lexical `at`), and a C-collated btree serves `LIKE 'x%'`
-as a range scan with no extra opclass. `at` stays TEXT — the
-six-digit fraction tail is a same-millisecond sequence counter,
-not microseconds; `timestamptz` would renormalize it and
-destroy the strict-monotonic mint. Ids and timestamps are
-app-minted (no sequences, no `now()`).
+as a range scan with no extra opclass. `at` stays TEXT. Digits
+1–3 of the six-digit fraction are UTC clock milliseconds;
+digits 4–6 are the same-ms sequence counter, busy-advance on
+overflow (`api/types.ts:390-416`). Do not describe the whole
+tail as a counter. `timestamptz` would renormalize `.000000`
+tails and destroy the mint. Ids and timestamps are app-minted
+(no sequences, no `now()`). Strict-monotonic `at` is
+per-process state; § J names the single-process mint realm.
 
     CREATE TABLE IF NOT EXISTS requests (
         id text COLLATE "C" PRIMARY KEY
@@ -260,7 +292,7 @@ app-minted (no sequences, no `now()`).
         requester_identity_id text COLLATE "C" NOT NULL,
         message_hash text COLLATE "C" NOT NULL
             CHECK (message_hash ~ '^[0-9a-f]{64}$'),
-        message text NOT NULL,
+        message bytea NOT NULL,
         route text COLLATE "C" NOT NULL
             CHECK (route ~ '^[a-z0-9:/-]+$'),
         method text COLLATE "C" NOT NULL
@@ -280,28 +312,33 @@ app-minted (no sequences, no `now()`).
             '^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$'),
         status integer NOT NULL
             CHECK (status BETWEEN 100 AND 599),
-        etag text COLLATE "C" NOT NULL,
+        etag text COLLATE "C" NOT NULL
+            CHECK (etag ~ '^[0-9a-f]{64}$'),
         message_hash text COLLATE "C" NOT NULL
             CHECK (message_hash ~ '^[0-9a-f]{64}$'),
-        message text NOT NULL,
+        message bytea NOT NULL,
         replaces_response_id text COLLATE "C" CHECK
             (replaces_response_id ~ '^[0-9A-Za-z]{22}$')
     );
 
     CREATE TABLE IF NOT EXISTS schema_marker (
-        only boolean PRIMARY KEY CHECK (only),
-        created_at text NOT NULL
+        only boolean PRIMARY KEY CHECK (only)
     );
 
-    CREATE FUNCTION message_body(message text) RETURNS jsonb
+    CREATE OR REPLACE FUNCTION message_body(message bytea)
+    RETURNS jsonb
     IMMUTABLE STRICT PARALLEL SAFE LANGUAGE sql
     RETURN CASE
-        WHEN strpos(message, E'\r\n\r\n') = 0 THEN NULL
-        WHEN substr(message,
-             strpos(message, E'\r\n\r\n') + 4) = ''
+        WHEN position(E'\r\n\r\n'::bytea IN message) = 0
             THEN NULL
-        ELSE substr(message,
-             strpos(message, E'\r\n\r\n') + 4)::jsonb
+        WHEN substring(message FROM
+             position(E'\r\n\r\n'::bytea IN message) + 4)
+             = ''::bytea
+            THEN NULL
+        ELSE convert_from(
+             substring(message FROM
+             position(E'\r\n\r\n'::bytea IN message) + 4),
+             'UTF8')::jsonb
     END;
 
 Column notes:
@@ -310,30 +347,52 @@ Column notes:
   `replaces_response_id`, whose absence IS genesis (the
   seam's one sanctioned optional; a NULL never escapes the
   backend — the row mapper emits key-absence).
+- `etag` is the wire ETag: sha256 hex of the stored response
+  BYTEA with the `ETag` and `Date` fields omitted (W14).
+  App-computed at pair formation. Retires today's body-sha256
+  meaning of this column (same covenant break as the hash
+  re-baseline). Collection and live-instance ETags are
+  read-time and do not use this column.
 - The pair FK (`responses.id REFERENCES requests`) makes the
-  1:1 pair balance structural instead of test-asserted.
-  DEFERRABLE INITIALLY DEFERRED: checked at COMMIT, so the
-  PII hard-delete loop's per-row delete order and snapshot
-  import's bulk order stay free. Named tier divergence: a
-  torn snapshot imports silently on IndexedDB and fails on
-  Postgres — Postgres is right.
-- CHECKs mirror the JS storage-edge validators. Not internal
-  defense: the datastore is an edge. The JS validator guards
-  the seam; CHECKs guard direct-SQL access. One gate per
-  tier, same contract.
-- `schema_marker` mirrors the IndexedDB `__schema__` marker
-  store: `hasSchema()` = row exists. Table existence is NOT
-  schema existence — a failed import must leave `hasSchema()`
-  false, and `postSchemaCreation()` stamps only after the
-  import commits.
-- `message_body()` is the ONE sanctioned extraction (§ E). It
-  returns NULL for bodyless messages so the expression index
-  never throws on 204s and bodyless tombstones (NULLs are
-  simply not indexed).
+  response→request half of the 1:1 pair balance structural.
+  An orphan request row remains representable; the reverse
+  stays test-asserted. DEFERRABLE INITIALLY DEFERRED:
+  checked at COMMIT, so the PII hard-delete loop's per-row
+  delete order and snapshot import's bulk order stay free.
+  Named tier divergence: a torn snapshot imports silently
+  on IndexedDB and fails on Postgres — Postgres is right.
+- CHECKs are new tightenings, not mirrors of the JS
+  validators. `id ~ '^[0-9A-Za-z]{22}$'` is mint practice
+  (`crypto-safe-base62.ts`); SCHEMA.md does not CHECK it.
+  `uri_prefix` JS validators require only a trailing `/`;
+  the DDL also requires a leading `/`. Both match actual
+  stored values (`message-address.ts:33`). Route CHECK
+  `^[a-z0-9:/-]+$` admits no underscore — say so, so the
+  first `_` family does not die at INSERT. Hyphens pass.
+  Not internal defense: the datastore is an edge.
+- `schema_marker` is a presence bit (`only boolean PRIMARY
+  KEY CHECK (only)`), matching the IndexedDB `__schema__`
+  row `{ id: 'schema' }` (`backend-indexeddb.ts:511-513`).
+  No `created_at`. `hasSchema()` = row exists. On Postgres
+  the marker stamps INSIDE the import transaction (W21):
+  failed import rolls it back; success is atomic. Table
+  existence is NOT schema existence.
+- `message_body()` is the ONE sanctioned extraction (§ E).
+  It returns NULL for bodyless messages so the expression
+  index never throws on 204s and bodyless tombstones
+  (NULLs are simply not indexed). A non-empty body that
+  fails `::jsonb` THROWS at INSERT via the expression
+  index. The GIN indexes make "non-empty stored bodies
+  parse as JSON" a hard append-time invariant; any future
+  non-JSON media type revisits both indexes first.
+- `CREATE OR REPLACE FUNCTION` — Postgres has no
+  `CREATE FUNCTION IF NOT EXISTS`. Same signature keeps
+  the function identity so dependent expression indexes
+  survive a second boot (B1).
 - No pgcrypto in core DDL. The hash-verify query
-  (`sha256(convert_to(message,'UTF8'))` vs `message_hash`) is
-  documented ops tooling where pgcrypto is available, never a
-  CHECK.
+  (`digest(message, 'sha256')` vs `message_hash`) is
+  documented ops tooling where pgcrypto is available,
+  never a CHECK.
 
 ### D. Indexes
 
@@ -352,6 +411,8 @@ Column notes:
     CREATE UNIQUE INDEX IF NOT EXISTS responses_replaces_key
         ON responses (replaces_response_id)
         WHERE replaces_response_id IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS responses_version_etag
+        ON responses (uri_prefix, uri_id, etag);
     CREATE INDEX IF NOT EXISTS requests_body
         ON requests
         USING gin (message_body(message) jsonb_path_ops);
@@ -362,29 +423,38 @@ Column notes:
 Each index maps to catalogued reads:
 
 - `*_address` — the ~130 family-slice reads (leading-column
-  equality); the six by-id-within-prefix reads as single
-  probes; ordered head selection (`ORDER BY at DESC, id DESC
-  LIMIT 1`) and collection heads (`DISTINCT ON (uri_id)`)
-  come back index-ordered — the `(at, id)` reduction becomes
-  the index's job.
+  equality, call count not distinct readers); the six
+  by-id-within-prefix sites as single probes; ordered head
+  selection (`ORDER BY at DESC, id DESC LIMIT 1`) and
+  collection heads (`DISTINCT ON (uri_id)`) come back
+  index-ordered — the `(at, id)` reduction becomes the
+  index's job.
 - `requests_route` — the nine whole-plane discovery scans
-  become exact probes (`WHERE route = $1`), with per-org
-  narrowing as a `uri_prefix` range inside the route.
+  plus the two `deriveStateFieldValueReferrers` `getAll`s
+  (`derive-state-field-values.ts:187-188`) become exact
+  probes (`WHERE route = $1`), with per-org narrowing as a
+  `uri_prefix` range inside the route.
 - `*_uri_id` — seam fidelity for today's
-  `getWhere('uri_id', ...)`; retired when the six by-id call
-  sites ride composite reads.
+  `getWhere('uri_id', ...)`; retired when the six by-id
+  call sites ride composite reads.
 - `requests_replay` — the replay fast-path and the in-tx
   dedup re-check, twice per write. Non-unique on purpose:
   auth grant pairs legitimately carry duplicate hashes.
 - `responses_replaces_key` — the locked-write concurrency
-  backstop and revision-ETag recovery. Partial uniqueness
-  reproduces IndexedDB's skip-absent-key semantics: genesis
-  rows coexist.
-- `*_body` GINs — body-fact probes (`jti`, `code`,
+  backstop. Partial uniqueness reproduces IndexedDB's
+  skip-absent-key semantics: genesis rows coexist.
+- `responses_version_etag` — noun-scoped
+  `GET <family>/:id/versions/<etag>` lookup. Not unique:
+  N matches serve latest `(at, id)`.
+- `*_body` GINs — replace parse-and-filter scans, not
+  equality `getWhere`s. Body-fact probes (`jti`, `code`,
   `chain_id`, `identity_id`, `organization_id`,
   `attribute_id`, graph node ids) via `@>` containment,
-  which descends nested arrays. `jsonb_path_ops` because
-  every query is containment.
+  which descends nested arrays. Authorize-response `code`
+  is a real `@>` target
+  (`decodedBodyOf(response.message).code`). `jsonb_path_ops`
+  because every query is containment. Named cost: two GIN
+  indexes update on every append.
 
 ### E. The no-extraction principle
 
@@ -408,8 +478,11 @@ and served bytes are always the app's own.
 constructor preset over the same `BackedDbAdapter` as the
 other three. Node-only. postgres.js lives entirely inside
 this backend plus a thin client adapter (the divorce point);
-no library vocabulary escapes, and no path to `sql.unsafe()`
-is exported.
+no library vocabulary escapes. `sql.unsafe` may exist only
+INSIDE the adapter, and only for boot DDL assembled from
+compile-time constants. README's "zero runtime dependencies"
+gains that named exception: postgres.js is bundled into
+`server.mjs` and is never imported outside the adapter.
 
 - **Transactions.** `transaction(tables, mode, fn)` maps to a
   real `BEGIN ... COMMIT`; the `Tx` ops run parameterized
@@ -419,44 +492,116 @@ is exported.
   the pre-tx crypto discipline is RETAINED: one write-path
   shape across tiers, short transactions. Statement timeout
   30 s, mirroring `IDB_OP_TIMEOUT_MS`.
-- **Typed-error mapping** keeps `handleRequest` tier-blind:
-  SQLSTATE 23505 → `UniqueConstraintError` (→ 412); 42P01 →
-  `MissingTableError` (→ recovery); 23503 (torn pair at
-  commit) → new typed error, impossible via the app path,
-  loud 500; 23514 (CHECK) → new typed error, loud 500 (two
-  gates disagreeing is a bug); timeout/connection loss →
-  typed timeout error, surfaced, resources released.
-- **Concurrency.** The pair-append dedup race under READ
-  COMMITTED closes with
-  `pg_advisory_xact_lock(hashtext($hash))` as the append
-  transaction's first statement: same-hash appends serialize,
-  everything else never waits, the in-tx re-check sees the
-  winner. Auth grants bypass dedup by design and do not take
-  the lock. Platform primitive; auto-released at commit.
-- **Notifications.** `postNotification` maps to
-  `pg_notify('fusion_events', payload)` inside the
-  transaction — Postgres delivers on commit, which is the
-  seam's covenant. A8's seam made real; no listener ships
-  yet.
+- **Typed-error mapping** keeps `handleRequest` tier-blind.
+  Discriminate by constraint name; never switch on SQLSTATE
+  alone:
+  - 23505 on `responses_replaces_key` →
+    `UniqueConstraintError` → 412.
+  - 23505 on a PRIMARY KEY → new typed error, loud 500
+    (mint bug; impossible via the app path).
+  - 22P02 (bad `message` body at the GIN) → new typed
+    error, loud 500 (covenant break / bad snapshot).
+  - 42P01 → `MissingTableError` (→ recovery).
+  - 23503 (torn pair at commit) → new typed error, loud
+    500.
+  - 23514 (CHECK) → new typed error, loud 500 (two gates
+    disagreeing is a bug).
+  - timeout / connection loss → typed timeout error,
+    surfaced, resources released.
+- **Concurrency.** Two advisory locks, both
+  `pg_advisory_xact_lock` on an app-computed 52-bit key
+  (first 13 hex digits of a sha256), never undocumented
+  `hashtext`. Collisions only serialize unrelated work —
+  do not claim uniqueness.
+  1. Dedup lock (key from `message_hash`): first statement
+     of a hash-deduped append. Same-hash appends serialize;
+     the in-tx re-check sees the winner. Auth grants bypass
+     and do not take it.
+  2. Address lock (key from `uri_prefix || uri_id`): first
+     statement of every gated write transaction; the gate
+     is then re-read inside the lock. Gate class: genesis
+     PUTs (instance create-only, document-trio first
+     write), work-order claim, binding create-only PUT,
+     invitation ops (accept also writes the membership
+     row), any other read-check-write gate. Plain appends
+     and auth grants skip it. The 412 CAS path is already
+     closed by `responses_replaces_key`.
+- **Notifications.** Seam relocation (W19):
+  `backend-postgres.ts` emits
+  `pg_notify('fusion_events', payload)` inside the write
+  transaction. Postgres delivers on commit and swallows on
+  rollback. The injected `DbLifecycle.postNotification`
+  sink is not used on this backend; IndexedDB keeps the
+  post-commit BroadcastChannel sink. Payload bound is
+  ~8000 bytes. If the serialized `NotificationEvent`
+  would exceed it, emit `{"kind":"full"}` instead of a
+  scoped id list (cap, not chunking). A8's emit-only
+  seam; no listener ships yet.
 - **Snapshots.** `getSnapshot` reads both tables in one
-  readonly tx, same JSON shape. `putSnapshot` validates, then
-  one tx: delete-all + bulk insert both tables, then stamps
-  `schema_marker` after commit. Genuinely atomic — closes the
-  localStorage mid-write quota gap, the last snapshot
-  atomicity residual.
+  readonly tx, same JSON shape. `putSnapshot` validates,
+  then one tx: delete-all + bulk insert both tables +
+  stamp `schema_marker`. Genuinely atomic — closes the
+  localStorage mid-write quota gap and the post-commit
+  marker crash window.
 
 ### G. The extended seam
 
+Two faces. `Tx` is the primitive (`getWhere` and the new SQL
+shapes below). App code reads through
+`EntityStore.getAllWhere` (`api/db.ts:94-97`) over
+`Tx.getWhere` (`api/db.ts:146-150`) and the new
+`EntityStore` methods over those primitives. Each new read
+is named on `EntityStore`; `Tx` gains the matching SQL.
+Implementers hit the split immediately.
+
 Named additions only, each traced to catalogued call sites:
 
-| New read | SQL shape | Serves |
-|---|---|---|
-| `getAllAt(prefix, uriId)` | equality on both columns | the six fetch-then-filter sites |
-| `getHeadAt(prefix, uriId)` | + `ORDER BY at DESC, id DESC LIMIT 1` | head selection |
-| `getAllByRoute(route[, prefixRange])` | route probe + optional range | the nine discovery scans |
-| `getAllWhereBody(containment)` | `message_body(message) @> $1` | body-fact lookups |
-| `getCollectionBody(prefix, filters)` | `string_agg(to_json(message)::text, ',' ...)` over `DISTINCT ON` heads | one-pass collection GET |
-| `existsAt(prefix[, uriId])` | `SELECT EXISTS` | presence probes |
+| New read | Face | SQL shape | Serves |
+|---|---|---|---|
+| `getAllAt(prefix, uriId)` | both | equality on both columns | the six fetch-then-filter sites |
+| `getHeadAt(prefix, uriId)` | both | + `ORDER BY at DESC, id DESC LIMIT 1` | head selection |
+| `getAllByRoute(route[, prefixRange])` | both | route probe + optional range | the nine discovery scans + two SFV `getAll`s |
+| `getAllWhereBody(containment)` | both | `message_body(message) @> $1` | parse-and-filter body facts |
+| `getCollectionBody(prefix, filters)` | `EntityStore` | see SQL below | STREAM collection GET |
+| `existsAt(prefix[, uriId])` | both | `SELECT EXISTS` | presence probes |
+| `getByEtag(prefix, uriId, etag)` | both | address + `etag` | noun-scoped version fetch |
+
+`getCollectionBody` is valid SQL over a subquery — not
+`string_agg(DISTINCT ON ...)`. Head predicate: latest 2xx
+PUT/DELETE per `uri_id` by `(at, id)`; DELETE heads dropped
+(`derive-documents.ts:97-114,156-166`). Order: `uri_id` lex
+ASC (today: `byIdAscending`). Element: `message_body` of the
+stored response — the GET-shaped entity, not a wire envelope.
+
+    SELECT COALESCE(
+        jsonb_agg(body ORDER BY uri_id),
+        '[]'::jsonb)
+    FROM (
+        SELECT uri_id, body
+        FROM (
+            SELECT DISTINCT ON (uri_id)
+                r.uri_id,
+                q.method,
+                message_body(r.message) AS body
+            FROM responses r
+            JOIN requests q ON q.id = r.id
+            WHERE r.uri_prefix = $1
+              AND q.method IN ('PUT', 'DELETE')
+              AND r.status BETWEEN 200 AND 299
+            ORDER BY r.uri_id, r.at DESC, r.id DESC
+        ) heads
+        WHERE method <> 'DELETE'
+    ) live;
+
+Filters stay a named argument (AND-ed into the inner
+`WHERE`). Members roster, `identity-pii`, and
+`GET /organizations` are assembled joins — out of this
+function's scope (see § H catalog).
+
+A one-pass SQL collection read is a per-statement consistent
+snapshot. Today's adapter covenant warns that two awaited
+reads on one ctx are not (`ARCHITECTURE.md` § Adapter
+Conventions). The server tier upgrades that quietly.
 
 During dual-tier these methods get IndexedDB implementations
 (JS filtering inside the store — same semantics, not faster).
@@ -472,20 +617,49 @@ IS the only copy, written in the same transaction as the write
 that changed the truth.
 
 **Covenant.** The stored response body of a write is the
-servable GET answer for its address. Single-resource GET
-streams the head body verbatim (envelope re-spoken through
-`node:http` from columns, fresh `Date`). Collection GET is one
-SQL pass producing `["<escaped wire message>", ...]` — the
-elements are complete wire responses, JSON-string-escaped by
-`to_json`. Named accepted costs: ~10–20% pre-gzip escaping
-bloat, client double-parse, adapter re-plumb to the new
-collection contract.
+servable GET answer for its address. In the write's own
+transaction the writer computes exactly what today's GET
+derive would serve (including genesis-wins-under-skew and
+`hasUndoHistory`); THAT is the stored response body.
+Streaming a stored write body, or today's `successBody`,
+is not today's GET — trio families would lose `state` /
+`state_at` / `state_event_id` / `organization_id`, flows
+would lose `hasUndoHistory`, work-orders would lose the
+binding overlay. Parity pins that "fixed" the stream to
+match a weaker body would be Test Weakening.
 
-**Write-side obligation.** Every write that changes what any
-GET would say leaves that GET's stored body current, same
-transaction. Document PUTs are free (the body written is the
-row). Operation writes must also append an updated parent
-document pair. The op→parent class, exact:
+Single-resource GET streams the head body verbatim
+(envelope re-spoken through `node:http` from columns,
+fresh `Date`, `ETag` from the `etag` column). Collection
+GET of a STREAM family is one SQL pass producing a JSON
+array of those GET-shaped entities (`getCollectionBody`).
+Adapter impact: collection adapters keep
+`response.json() as T[]` — a fetch re-plumb, not a
+wire-contract change. Named accepted costs: GIN write
+amplification (two indexes per append); the collection
+SQL is a join + subquery, not a scan of stored envelopes.
+
+**Embed covenant.** A stored GET body embeds only facts
+owned by its own address plus IMMUTABLE foreign ids —
+never another address's mutable truth (a member's display
+name), never a clock judgment. This is the decision rule
+for follow-on charter item 4, and it keeps the write-side
+obligation bounded to the op→parent class. Today's bodies
+already comply (adapters join display names client-side
+via `memberName`).
+
+**Write-side obligation.** Every write that changes a
+STREAM GET leaves that GET's stored body current, same
+transaction. Document PUTs run the renderer — they are
+not free. Operation writes must also append an updated
+parent document pair. The appended parent pair is a
+synthesized exchange (no wire event occurred). Precedent:
+seed pairs; `postFlowUndoOp`'s document pair
+(`routes.ts:1654-1671`). Its stored request names `route`
+and `method` (now required columns). Undo-on-exhaustion
+appends the op pair only (`routes.ts:1584-1671`).
+
+The op→parent class, exact:
 
 - `work-orders/:id/claim`, `/release`, `/transition`,
   `/binding` (routes.ts:5338/5348/5364/5385) — claim state,
@@ -504,19 +678,46 @@ document pair. The op→parent class, exact:
   (exempt family). Create POSTs already append op + document
   pairs.
 
-**The wave.** All streamable families convert at once, each
-behind a parity pin: a test proving streamed == derived (the
-current derive is the reference implementation, demoted to
-checker) before that family's derive retires. Two carve-outs:
+**GET catalog.** Every GET pattern is classified. The wave
+is the catalog's STREAM rows — not "all streamable families"
+with footnotes. Dashboard / workbox / flow-stats are not
+API routes.
 
-1. **Instances — exempt from streaming permanently.**
-   Per-attribute `read_roles` project each caller's view of
-   `values`; one stored body cannot serve two
-   differently-roled callers. A response-shape fact;
-   authorization itself is untouched everywhere.
-2. **Work-orders — design deferred** to the follow-on session
-   (§ Follow-on charter). The wave executes only after that
-   session supplies the work-order design.
+| Pattern | Class | Notes |
+|---|---|---|
+| ideas / projects / objectives / record-types / members / flows detail | STREAM | Trio families: renderer stamps trio + `organization_id`; flows add `hasUndoHistory` |
+| ai-members / human-members / memberships detail | STREAM | Stateless families: stored GET body is the entity |
+| those families' collections except members | STREAM | `getCollectionBody`; id-lex ASC entities |
+| `GET <family>/:id/versions` index | STREAM | chain fetch; trio embedded |
+| `GET <family>/:id/versions/<etag>` | STREAM | noun-scoped etag lookup; instances PROJECT after |
+| flow collection | STREAM | per-row `hasUndoHistory` is in the stored body |
+| members roster | ASSEMBLE | membership join (`routes.ts:4036-4051`); not a prefix slice |
+| `GET /current-member` | ASSEMBLE | actor's member parent |
+| `GET /identity-pii` | ASSEMBLE | PII rows fenced by memberships across orgs |
+| `GET /organizations` | ASSEMBLE | live orgs ∩ token claims |
+| invitation list | ASSEMBLE | documents + earliest-wins ops + name/email joins |
+| instance detail | PROJECT | `projectReadableValues` after head probe |
+| instance collection | PROJECT | same, per row; not `getCollectionBody` |
+| instance `.../versions` and `.../versions/<etag>` | PROJECT | resolve stored revision, then project |
+| `GET /snapshots/schema` | DUMP | whole-plane dump; admin-gated |
+| work-order detail / collection / history | FOLLOW-ON | binding overlay; charter |
+
+**The wave.** Every STREAM family converts at once, each
+behind a parity pin: a test proving the write-side renderer
+== the current derive over the same store (the derive is
+the reference implementation, demoted to checker) before
+that family's derive retires. Two carve-outs stay out of
+the wave:
+
+1. **Instances — PROJECT, permanently.** Per-attribute
+   `read_roles` project each caller's view of `values`; one
+   stored body cannot serve two differently-roled callers.
+   Stored revision bodies stay full state. A response-shape
+   fact; authorization itself is untouched everywhere.
+2. **Work-orders — FOLLOW-ON.** Design deferred to the
+   follow-on session (§ Follow-on charter). The wave
+   executes only after that session supplies the work-order
+   design.
 
 **Re-verb mandate** (decided here; executed by the follow-on):
 
@@ -525,10 +726,12 @@ checker) before that family's derive retires. Two carve-outs:
   release (tombstone), GET = the claim facts, 404 when
   unclaimed — the absence of the row IS the absence of the
   claim.
-- **Claims expire.** The first time-lapsing state in the
-  system. Stored bodies carry FACTS ONLY — holder and expiry
-  — never judgments: a stored `claimed: true` would rot when
-  the clock crosses expiry with no write to refresh it.
+- **Claims expire.** The first DOMAIN time-lapsing state in
+  the system (authorization-code TTL already compares stored
+  `at` to the clock). Stored bodies carry FACTS ONLY —
+  holder and expiry — never judgments: a stored
+  `claimed: true` would rot when the clock crosses expiry
+  with no write to refresh it.
   "Claimed now" is a read-time comparison of a stored
   timestamp against the clock (house precedent: the
   authorization-code TTL derives from the stored pair's
@@ -557,15 +760,25 @@ exactly three keyed shapes:
 - BODY PROBE — GIN `@>` containment on a body fact.
 
 Family-shaped fetches remain only where the answer is
-family-shaped: collection GET (one-pass SQL) and bulk history
-(route-column probes). This kills the named pathologies:
-single-entity GETs paying full-family scans, history routes
-fetching the family then filtering to one id, flow undo
-fetching the whole flows family, and the fence's
-enumerate-all-organizations walks (membership and flow-graph
-ownership become GIN probes). Instances are exempt from
+family-shaped: STREAM collection GET (one-pass SQL) and
+bulk history (route-column probes). This kills the named
+pathologies: single-entity GETs paying full-family scans,
+history routes fetching the family then filtering to one
+id, flow undo fetching the whole flows family, and the
+organization-enumeration walks
+(`deriveMembershipsForIdentity` at mint;
+`resolveFlowGraphOwner` over every org's `/flows/` prefix,
+`derive-states.ts:167-196`). Those become GIN probes.
+`fenceRequest` does not enumerate organizations
+(`request-auth.ts:109-145`). Instances are exempt from
 streaming only, NOT from keyed reads: head probe →
 ACL-project → serve.
+
+**Keyed-read miss posture.** Happy path: head probe only.
+Miss path: retain `missedReadError` (foreign 403 / absent
+404 via `resolveGlobalOwner`). The `uri_id` index keeps
+earning its keep until the six by-id sites move. Head-
+probe-else-404 is an existence oracle and is forbidden.
 
 **Where reduction lives now.** On the Postgres read path the
 JS reductions dissolve into machinery: the head probe's
@@ -582,35 +795,77 @@ reducers (fail-closed custom comparators). After the yank,
 `/history` renames to `/versions` across the nine lifecycle
 routes and the instance value-history. The version index
 subsumes state history: each version row embeds its lifecycle
-trio; instance versions carry `{etag, at, values}`.
+trio; instance versions carry `{etag, at, values}` after
+projection.
 
-NEW: `GET <family>/:id/versions/<etag>` on every PUTable
-family — per-version fetch. The document-family wire ETag is
-the head pair's response id, and the response id IS the pair
-id, so the fetch is: responses PK probe on `<etag>`; verify
-`uri_prefix` + `uri_id` match the addressed document (else
-404 — no cross-address oracle); stream the stored body
-verbatim. Historical versions are immutable, so this is the
-purest streamed read in the system. Standard fence and
-ownership checks apply.
+**Wire ETag (W14).** Every PUTable-family GET and every
+collection GET emits `ETag`. Value = sha256 hex of the
+complete HTTP response wire with the `ETag` and `Date`
+fields omitted (Date is re-spoken fresh on every serve; a
+Date in the preimage would churn the tag). Algorithm is
+sha256 — the house digest (`shared/digest.ts`). SHA-3 is
+rejected: WebCrypto has none; the browser ZIP cannot
+compute it without a new primitive.
 
-Hazard, managed: `flows/:id/versions` is a RETIRED address
-(Phase 15 router-404, test-pinned). The rename resurrects the
-address with pair-chain semantics. The succession is
-documented (old = a stored version-row table; new = the pair
-chain itself) and the 404 pins flip deliberately, with the
-succession named at the pin site.
+`Response-ID` stays the locator: it is `responses.id`, the
+id that keys both rows of one stored exchange. It does not
+verify the message. Integrity of stored octets is
+`message_hash`. The `etag` column holds the wire ETag for
+that stored response (app-sent).
+
+Live instance GET hashes the PROJECTED wire (per caller,
+read-time). The stored `etag` column hashes the FULL-STATE
+stored wire. Those values differ. Collection ETags hash
+the assembled collection response at read time and are
+not a versions address.
+
+**Per-version fetch.**
+`GET <family>/:id/versions/<etag>` on every PUTable
+family — a suffix on that noun, never a global lookup.
+Authorization is the standard fence on the noun. Lookup:
+among responses at this `uri_prefix` + `uri_id`, the row
+whose `etag` column matches. 0 matches → miss table.
+1 match → serve. N matches → latest `(at, id)` (the index
+is not unique; `Response-ID` in the preimage makes N a
+cryptographic curiosity).
+
+Miss table, written once:
+
+- address match + etag hit → serve
+- row exists at this etag but foreign org → 403
+- no row / wrong noun → 404 (via `missedReadError` when
+  the noun is org-nested and the id is known elsewhere)
+
+Instances are carved out of verbatim streaming: the fetch
+resolves the stored revision, then projects via
+`projectReadableValues` — identical to today's
+value-history route (`routes.ts:5738-5740`). A
+read-restricted caller fetching a historical etag receives
+projected values. A client cannot take a live instance
+`ETag` and fetch `.../versions/<that>` — named, not a bug.
+
+**`flows/:id/versions` succession.** The address is
+retired (no route; comments at `routes.ts:5147-5150,
+3303-3304`). There is no test today that
+`GET /flows/:id/versions` is 404. Phase A lands that 404
+pin BEFORE the rename, then flips it in the same commit
+that registers the pair-chain route, succession named at
+the pin site (old = a stored version-row table; new = the
+pair chain itself).
 
 Work-order and invitation EVENT histories (op folds) keep
-their own shapes; the work-order one belongs to the follow-on
-session.
+their own shapes; the work-order one belongs to the
+follow-on session.
 
 ### J. Server runtime
 
 One Node process, one origin, `node:http` (platform
 primitive). The `node:http` adapter feeds the same
 `handleRequest` vessel the browser tier uses — no second API
-layer.
+layer. Strict-monotonic `at` minting is module-level
+per-process state (`api/types.ts:387-416`, "within a
+realm"). This shape is a covenant: horizontal scale-out is
+a future decision, not an accident.
 
 Boot, fail-fast: validate env → connect pool (fail loud) →
 idempotent DDL → listen.
@@ -628,16 +883,21 @@ its port.
 
 - **Operator seeding:** `--seed-bootstrap` /
   `--seed-mock-data` boot flags seed an empty database and
-  print credentials to the operator terminal, once (A2). No
-  HTTP seeding path exists on this tier.
+  print credentials to the operator terminal, once (A2).
+  They refuse loudly when rows exist — no silent wipe path
+  below HTTP. No HTTP seeding path exists on this tier.
 - **Every I/O bounded:** statement timeout 30 s, request
-  header/body timeouts, a per-request deadline, pool-acquire
-  timeout.
+  header/body timeouts, a per-request deadline. Pool
+  constants: `POOL_MAX = 10`,
+  `POOL_ACQUIRE_TIMEOUT_MS = 5000`.
 - **Structured logs:** one line per request — RFC-3339 zulu
   `at`, standard level, request id, method, path, status,
-  latency ms. Fault detail to logs; the wire keeps the fixed
-  opaque 500 body. No secret, credential, or PII value is
-  ever logged.
+  latency ms. Query strings are stripped from the logged
+  path (authorization-code redirect may carry `?code=`).
+  Fault detail to logs; the wire keeps the fixed opaque
+  500 body. No secret, credential, or PII value is ever
+  logged. Do not copy `access-token.ts:91`'s stale
+  "localStorage" sentence into new prose.
 - **Static serving:** the composed pages and bundles, correct
   content-types, `Cache-Control` on hashed assets — the HTTP
   cache header is the one cache this design ships.
@@ -656,21 +916,43 @@ its documented dev-tier posture until the yank.
    `SIGNING_KEY_MATERIAL` is replaced by
    `JWT_HMAC_SIGNING_KEY` from env, injected at init. Mint
    and verify run only server-side. Wire format, HS256, and
-   caller signatures unchanged. The server ZIP's browser
-   bundle physically contains no key (tree-shaken
-   composition).
+   caller signatures unchanged. Tree-shaking is not a
+   mechanism: the page today mints its own session
+   (`adapters/init.ts:62-75`) and imports the gate through
+   `adapters/shared.ts`. Server-ZIP client graph:
+   - new `adapters/http-facade.ts` — `fetch` + Bearer, same
+     `ClientFacadeAdapter` shape, no import of `api/api.ts`
+     or `access-token.ts`.
+   - session seed becomes `POST /authentication/token` (or
+     a dedicated boot grant). `mintAccessToken` is deleted
+     from the page.
+   - two esbuild entries (§ L). The server-ZIP client
+     entry's metafile is a test: `SIGNING_KEY_MATERIAL` and
+     `backend-indexeddb` must be absent.
+   Browser ZIP keeps today's graph until the yank.
 2. **A2 — in-band credential reveal deleted.** Seeding is
    operator flags; plaintext prints to the terminal once and
    never rides HTTP.
 3. **A3 — credential ledger re-gated.** Stored messages stay
    byte-verbatim; the exposure closes via A5's gate. Named
-   accepted residual: credentials exist verbatim inside
-   stored messages, shielded by the admin gate and Postgres
-   access control.
-4. **A4 — jti replay closed.** The spent-jti check is a GIN
-   body probe over stored token-grant pairs — the ledger
-   already remembers every accepted assertion. A replayed
-   jti → 401. Bounded by the assertion's `exp`.
+   residual at full strength: hoisted headers store
+   `authorization` verbatim (`message-pair.ts:419-423`);
+   token-grant bodies store live `access_token` and
+   `refresh_token` (`authentication.ts:262-267`). Database
+   read access is session theft. A4 does not cover it.
+   Shielded by the admin gate and Postgres access control.
+   Token-at-rest hashing is named future work.
+4. **A4 — jti replay closed.** At grant success the app
+   writes the assertion `jti` as a JSON fact on the stored
+   grant response body (still no-extraction: the app decoded
+   the assertion at pair formation). The spent check is
+   `message_body(message) @> {"jti":"<assertion-jti>"}`
+   over stored grant pairs. A replayed assertion `jti` →
+   401. Bounded by the assertion's `exp`. This is RFC 7523
+   jti-uniqueness, not exact-JWS containment. The `jti`
+   values minted onto access/refresh tokens
+   (`authentication.ts:301-303`) are a different
+   identifier and are not this probe.
 5. **A5 — BOOTSTRAP_ROUTES re-gated.** The bearer exemption
    for `snapshots/*` is removed on the server tier;
    `ROUTE_POLICY` gains admin-only entries. The
@@ -683,17 +965,20 @@ its documented dev-tier posture until the yank.
 7. **Password hashing** (user-added). Server tier hashes with
    scrypt via `node:crypto` — memory-hard, platform
    primitive (Argon2id rejected: npm native dependency
-   against platform doctrine). Hash strings become PHC-style
-   self-describing (algorithm, params, salt, digest);
-   verification dispatches on the stored self-description,
-   so PBKDF2 credentials (demo seeds, browser-ZIP snapshots)
-   keep verifying. Upgrade-on-login: a successful PBKDF2
-   verify appends a rehashed scrypt credential document pair
-   — convergence at the one moment plaintext is legitimately
-   held. Parameters are named constants, OWASP-aligned
-   (N=2^17, r=8, p=1 interactive class). The browser ZIP
-   stays PBKDF2 (WebCrypto has no scrypt) until the yank.
-   Hashers are injected at init per tier;
+   against platform doctrine). Hash strings are ALREADY PHC
+   self-describing (`$pbkdf2-sha256$i=<n>$<salt>$<digest>`,
+   `shared/password-hash.ts:107-109`) with a fail-closed
+   `VERIFIERS` registry. The K.7 delta is: add the scrypt
+   verifier entry, flip `CURRENT_PASSWORD_HASH`, add
+   upgrade-on-login. A successful PBKDF2 verify appends a
+   rehashed scrypt credential document pair — convergence
+   at the one moment plaintext is legitimately held.
+   Parameters are named constants, OWASP-aligned:
+   N=2^17, r=8, p=1, `maxmem` = 160 MiB. N=2^17, r=8
+   needs 128·N·r = 128 MiB; Node's `crypto.scrypt` default
+   `maxmem` is 32 MiB and THROWS without the raise. The
+   browser ZIP stays PBKDF2 (WebCrypto has no scrypt)
+   until the yank. Hashers are injected at init per tier;
    `shared/password-hash.ts` stays the divorce point.
 
 ### L. Build tooling — the dual ZIP
@@ -701,21 +986,28 @@ its documented dev-tier posture until the yank.
 Bare `./build` emits two artifacts (clean tree required, as
 today):
 
-- `fusion-ai-browser.zip` — today's product, unchanged.
-- `fusion-ai-server.zip` — composed pages + a browser bundle
-  whose adapters speak `fetch` + `server.mjs` (the Node
+- `fusion-ai-browser.zip` — today's posture and features
+  (not pre-break stored bytes or `/history` paths).
+- `fusion-ai-server.zip` — composed pages + a browser
+  bundle whose adapters speak `fetch` via
+  `adapters/http-facade.ts` + `server.mjs` (the Node
   bundle: http adapter, Postgres backend, shared `api/`
   spine) — self-contained.
 
-Two composition roots, one codebase: esbuild tree-shakes each
-bundle, so the server ZIP's browser bundle contains no
-IndexedDB backend, no in-page `api/` dispatch, and no demo
-signing key — A1 enforced by the bundler, not by trust.
+Two esbuild entries, one codebase. The server-ZIP client
+entry does not import `api/api.ts`, `access-token.ts`, or
+`backend-indexeddb`. A1 is enforced by a metafile test
+(`SIGNING_KEY_MATERIAL` and `backend-indexeddb` absent
+from that bundle), not by trust in tree-shaking. The
+browser-ZIP entry keeps today's graph until the yank.
 
 postgres.js enters `devDependencies` (joining esbuild and
 typescript) and is bundled INTO `server.mjs` at build time.
 The shipped artifact resolves zero packages: deploy = unzip,
-set three env vars, `node server.mjs`.
+set three env vars, `node server.mjs`. README names the
+exception to "zero runtime dependencies": postgres.js is
+bundled into `server.mjs` and is never imported outside
+the adapter.
 
 `./serve [port]` stays the browser tier. Running the server
 locally IS the deploy path; the Postgres test suite boots it
@@ -731,22 +1023,34 @@ The governing split: `./validate` stays fast and
 dependency-free — it never requires Postgres. A new
 `./test-postgres` runner owns everything needing a live
 database (boots the server programmatically against
-`POSTGRES_URL`); it is a deliberate invocation, never a
-silently-skipped test inside `./validate`.
+`POSTGRES_URL`, operator-supplied). Isolation: a fresh
+schema per run (`CREATE SCHEMA` + `search_path`) so the
+suite is not flaky by construction if two runs overlap. It
+is a deliberate invocation, never a silently-skipped test
+inside `./validate`.
 
 In `./validate` (no Postgres):
 
 - The existing suite, re-baselined once for the wire-format
   break (pair count 1498 absolute holds).
-- Parity pins: per family, render-at-write output == the
-  reference derive over the same store (memory backend).
-- Versions surface logic: index shape (DESC, trio embedded),
-  `/versions/<etag>` hit, wrong-address 404, foreign-org 403,
-  and the `flows/:id/versions` succession pins flipped
-  deliberately with the succession named.
-- Hasher self-description logic: PHC parse/dispatch, PBKDF2
-  verify path, scrypt path (Node crypto is available to the
-  runner).
+- Storage-codec pin: a body containing `é` store/read/hash
+  round-trips on the memory backend (octets in, Latin-1
+  `parseWire` out, `message_hash` equals SHA-256 of those
+  octets).
+- Parity pins: per STREAM family, write-side renderer ==
+  the reference derive over the same store (memory
+  backend).
+- Versions surface logic: index shape (DESC, trio
+  embedded), `GET <family>/:id/versions/<etag>` hit,
+  wrong-noun 404, foreign-org 403, instance historical
+  etag projected for a read-restricted caller, and the
+  `flows/:id/versions` 404 pin landed then flipped in the
+  registering commit with the succession named.
+- Hasher self-description logic: PHC parse/dispatch,
+  PBKDF2 verify path, scrypt path with `maxmem` (Node
+  crypto is available to the runner).
+- Server-ZIP client metafile: `SIGNING_KEY_MATERIAL` and
+  `backend-indexeddb` absent.
 
 In `./test-postgres` (live database):
 
@@ -755,20 +1059,32 @@ In `./test-postgres` (live database):
   round-trip, message-pair semantics) parameterized by
   backend factory, run against real Postgres. Postgres
   becomes the best-tested backend — IndexedDB never had
-  Node-side automated coverage.
-- Typed-error mapping against real SQLSTATEs.
-- Real concurrency: racing identical appends → the advisory
+  Node-side automated coverage. The `é` codec vector runs
+  here too.
+- Typed-error mapping against real SQLSTATEs, including
+  23505-on-PK → 500, 23505-on-`responses_replaces_key` →
+  412, and 22P02 → typed 500.
+- Real concurrency: racing identical appends → the dedup
   lock yields one stored pair, both callers get the stored
   response; two locked writes citing one
-  `replaces_response_id` → exactly one 412; cross-org
+  `replaces_response_id` → exactly one 412; racing
+  same-address geneses → exactly one 200 and one 409;
+  racing claims on an expired head → one winner; racing
+  invitation accepts → one membership row; cross-org
   writers stay isolated under concurrency.
 - Security compositions: anon → `/snapshots/*` 401, member
-  403, admin 200; public-client authorize without challenge
-  rejected; jti replay → 401; boot fails loud without
-  `JWT_HMAC_SIGNING_KEY`; PBKDF2 credential verifies AND the
-  upgrade-on-login pair lands scrypt-self-described.
-- Runtime behavior: fail-fast boot, structured log line
-  shape, fixed 500 body, SIGTERM drain completes then exit 0.
+  403, admin 200; public-client authorize without
+  challenge rejected; assertion-jti replay → 401 (the
+  probe is the stored grant-response `jti` fact, not a
+  token `jti` and not a `jti` key that never exists);
+  boot fails loud without `JWT_HMAC_SIGNING_KEY`; PBKDF2
+  credential verifies AND the upgrade-on-login pair lands
+  scrypt-self-described.
+- Runtime behavior: fail-fast boot, second boot converges
+  (`CREATE OR REPLACE FUNCTION`), structured log line
+  shape (no query string), fixed 500 body, SIGTERM drain
+  completes then exit 0, seed flags refuse on a non-empty
+  database.
 
 TEST-PLAN.md gains a server-tier section — the named
 deliverable closing the manual plan's zero deploy-blocker
@@ -791,7 +1107,7 @@ turns these into tasks):
 
 | Phase | Lands | Gate |
 |---|---|---|
-| A | The covenant break: wire-format storage, hash re-baseline, supersedes deletion, `replaces_response_id` rename, `route` + `method` fields, `/versions` unification + `/versions/<etag>` | `./validate` green |
+| A | The covenant break: BYTEA wire storage, hash re-baseline, supersedes deletion, `replaces_response_id` rename, `route` + `method` fields, `/versions` unification + noun-scoped `/versions/<etag>`, `successBody` tightened, pre-break stores invalidated, `flows/:id/versions` 404 pin landed | `./validate` green |
 | B | Render-at-write machinery + keyed reads + converted families behind parity pins | pins green; wave completion blocked on the follow-on |
 | C | The Postgres backend + `./test-postgres` | seam conformance green on live PG |
 | D | Server runtime + the seven fixes + dual-ZIP build | security tests green; first-light `--record` |
@@ -813,14 +1129,20 @@ turns these into tasks):
   once the six by-id call sites ride composite reads.
 - Docs: closed seams move KNOWN → CLOSED in ARCHITECTURE.md
   § Server-tier deploy blockers (the audit's KNOWN count
-  changes with it); `API-TREE.md:5` re-points to this spec;
-  SCHEMA.md gains the DDL; CLAUDE.md and README follow.
+  changes with it); SCHEMA.md gains the DDL; CLAUDE.md and
+  README follow (README names the postgres.js exception).
+  No `API-TREE.md` re-point.
 
 **Residuals that survive, named:** A3's gated verbatim
-credentials; A7 delegation 403; A8 SSE surface and A9 RUM
-stay future; B3's already-exported snapshot files; B7
-versioned type snapshots; B8/W5 no-abandon. B2's orphan
-stores die with the browser tier.
+credentials (live access/refresh tokens and
+`authorization` headers; token-at-rest hashing is future
+work); A7 delegation 403; A8 SSE surface (and the
+cross-machine staleness until navigation); A9 RUM stays
+future per the measurement design § F; B3's
+already-exported snapshot files; B7 versioned type
+snapshots; B8/W5 no-abandon. B2's orphan stores die with
+the browser tier. Content-hash ETag via SHA-3 is rejected
+and not residual.
 
 ## Follow-on session charter
 
@@ -838,11 +1160,15 @@ work-order surface:
 3. Settle expiry mechanics: stored `expires_at` per claim vs
    expiry derived from the claim pair's `at` plus a named
    TTL; holder-only transition/release rules.
-4. Settle the parent-embed question: whether work-order rows
-   embed claim/binding FACTS (holder, expiry, instance and
-   type ids) for list streaming, or the sub-resources are
-   fetched separately — decided by workbox consumer
-   analysis.
+4. Settle the parent-embed question under the § H embed
+   covenant: a stored GET body may embed facts owned by its
+   own address plus IMMUTABLE foreign ids (`instance_id`,
+   `record_type_id`) — never another address's mutable
+   truth, never a clock judgment. Whether work-order rows
+   embed claim/binding FACTS (holder, expiry, those ids)
+   for list streaming, or the sub-resources are fetched
+   separately, is decided by workbox consumer analysis
+   inside that rule.
 5. Design work-order render-at-write + its event-history
    shape; the conversion wave completes behind its parity
    pins.
@@ -857,8 +1183,9 @@ work-order surface:
   (B4/B5).
 - Versioned record-type snapshots (B7); work-order abandon
   (B8/W5).
-- Re-pointing `API-TREE.md:5` and other doc edits — the
-  implementation plan's work, not this spec's diff.
+- Doc edits outside this file — the implementation plan's
+  work, not this spec's diff. There is no `API-TREE.md`
+  re-point.
 
 ## Cross-references
 
