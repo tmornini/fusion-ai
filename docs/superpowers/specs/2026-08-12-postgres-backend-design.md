@@ -1,8 +1,7 @@
 # Postgres Backend — Design
 
 Date: 2026-08-12
-Status: approved (brainstorm 2026-08-08 → 2026-08-12; all nine
-sections user-gated individually)
+Status: approved, amended per reviews 2026-08-12
 
 ## Context
 
@@ -23,12 +22,14 @@ A key inventory finding shaped the scope: of the deferred items
 the docs gate on the server tier, most are documented as
 landing WITH the tier, not after it. They are in scope here.
 
-`API-TREE.md:5` references a lost external plan
-(`~/.claude/plans/go-to-church-binary-stonebraker.md`) as the
-backend-structure authority. That file is gone; THIS spec is
-its replacement and the authoritative reference. Its surviving
-sentence (`API-TREE.md:7`) — "moving said state into each
-message stored message" — is realized by § Render-at-write.
+This spec is the authoritative reference for the Postgres
+backend structure and the server tier. A lost external plan
+once lived at
+`~/.claude/plans/go-to-church-binary-stonebraker.md`; commit
+`9412921b` removed the `API-TREE.md` cite before this spec
+landed. The authority declaration stands on its own. Render-at-
+write is the mechanism that leaves each GET's stored body
+current.
 
 ## User decisions
 
@@ -37,10 +38,13 @@ message stored message" — is realized by § Render-at-write.
    migration: Postgres starts empty and seeds via the existing
    bootstrap/mock-data pair formation, operator-invoked.
 2. **Dual ZIPs until stable, then the yank.** `./build` emits
-   a browser ZIP (today's product, unchanged) and a server ZIP
-   until Postgres is proven; then the IndexedDB and
-   localStorage backends, the browser ZIP, and the dev-tier
-   postures are deleted.
+   a browser ZIP and a server ZIP until Postgres is proven;
+   then the IndexedDB and localStorage backends, the browser
+   ZIP, and the dev-tier postures are deleted. The browser ZIP
+   keeps today's posture and features (IndexedDB, in-page
+   `handleRequest`, demo auth). It does not keep pre-break
+   stored bytes or `/history` paths — Phase A is a cross-tier
+   covenant break (see Review amendments).
 3. **postgres.js behind our own adapter.** No library
    vocabulary outside the adapter. Tagged-template
    parameterization only — placeholders and auto-prepared
@@ -53,19 +57,25 @@ message stored message" — is realized by § Render-at-write.
    reads. A verbatim port was rejected: it scales with the
    whole database; the extended seam scales with the slice.
 5. **Message storage is the entire canonical wire message** —
-   headers included — byte-verbatim TEXT. JSONB storage
-   rejected (byte-shifted read-backs, inert verbatim-number
-   machinery, unverifiable hash preimage, tier fork, doctrine
-   reversal). Body queryability comes from one GIN expression
-   index, never from stored jsonb.
-6. **Reads stream stored bytes.** Single GETs stream the head
-   response body verbatim; collections assemble in one SQL
-   pass as a JSON array of string-escaped wire messages.
-7. **Render-at-write** (named by this spec; the user's A12
-   mechanism realized): every write leaves the stored bodies
-   of every GET it affects current, in the same transaction.
-   All streamable families convert in one wave behind parity
-   pins. Instances are exempt (per-caller ACL projection).
+   headers included — as BYTEA of the wire octets. JSONB
+   storage rejected (byte-shifted read-backs, inert
+   verbatim-number machinery, unverifiable hash preimage,
+   tier fork, doctrine reversal). TEXT rejected: a Latin-1
+   wire string in a UTF-8 TEXT column cannot round-trip
+   non-ASCII bodies through `parseWire`. Body queryability
+   comes from one GIN expression index, never from stored
+   jsonb.
+6. **Single GETs stream stored bytes.** Collection GET stays
+   a JSON array of GET-shaped entities, id-lex ASC — today's
+   contract. The original "escaped wire envelopes" collection
+   shape is withdrawn (review amendment W3).
+7. **Render-at-write** (named by this spec): every write, in
+   its own transaction, stores exactly the response body
+   today's GET derive would serve for each STREAM address it
+   affects. Document PUTs are not free — the body written is
+   not the GET row. All STREAM families convert in one wave
+   behind parity pins. Instances are exempt (per-caller ACL
+   projection).
 8. **The work-order deep dive moves to a follow-on session.**
    This spec records the covenant and the follow-on's charter;
    the conversion wave completes only after that session
@@ -75,43 +85,85 @@ message stored message" — is realized by § Render-at-write.
    the message. The one sanctioned extraction is the GIN body
    expression index.
 10. **`/history` → `/versions`, unified**, plus per-version
-    fetch at `/versions/<etag>` on every PUTable family.
+    fetch at `GET <family>/:id/versions/<etag>` on every
+    PUTable family. The path token is the wire ETag (sha256
+    of that response's stored octets with `ETag` and `Date`
+    omitted), looked up inside that noun. `Response-ID`
+    stays the locator (`responses.id`).
 11. **Env names call the thing the thing:** `POSTGRES_URL`,
     `JWT_HMAC_SIGNING_KEY`, `HTTP_SERVER_PORT`.
 12. **Password hashing upgrades to scrypt** at the server tier
     (Node platform primitive), with self-describing hash
     strings and upgrade-on-login.
 
+### Review amendments (2026-08-12)
+
+Author choices from the merged revision worklist. All other
+approved decisions stay locked.
+
+1. **W1 — stored representation is BYTEA.** The `message`
+   column holds `serializeWire` octets. `message_hash` is
+   SHA-256 of those octets. `message_body()` is
+   `convert_from` of the body region, then `::jsonb`.
+   `parseWire` stays Latin-1-length. See § B.
+2. **W3 — collection elements stay entities.** Collection
+   GET is `jsonb_agg(message_body(message) ORDER BY uri_id)`
+   over a filtered head subquery. Revises decision 6 for
+   collections only. See § G, § H.
+3. **W4 — spent assertion-jti is a stored fact.** At grant
+   success the app writes the assertion `jti` onto the stored
+   grant response body and probes that. RFC 7523
+   jti-uniqueness. See § K.4.
+4. **W14 — content-hash ETag, noun-scoped versions.** Every
+   PUTable-family GET and every collection GET emits `ETag`
+   = sha256 of the response wire with `ETag` and `Date`
+   omitted. `GET <family>/:id/versions/<etag>` looks up that
+   hash inside the noun. `Response-ID` stays the locator.
+   SHA-3 rejected (WebCrypto has none; house digest is
+   sha256). See § I.
+5. **W19 — `pg_notify` is in-transaction.** Emission moves
+   into `backend-postgres.ts`; Postgres delivers on commit
+   and swallows on rollback. See § F.
+6. **W21 — `schema_marker` stamps in the import
+   transaction.** Presence bit only; no `created_at`. See
+   § C, § F.
+
 ## Deferred-work dispositions
 
-The docs' deferred items, resolved. Tier A items are those the
-docs explicitly gate on the server tier / Postgres; Tier B are
-adjacent deferrals. Canonical list: `ARCHITECTURE.md`
-§ Server-tier deploy blockers (four documents link to it; the
-audit counts its KNOWN seams).
+The docs' deferred items, resolved. **Tier A = A1–A6**, the six
+remaining seams in `ARCHITECTURE.md` § Server-tier deploy
+blockers. A7–A12 are adjacent items, numbered for the yank
+checklist — not remaining blockers. Canonical list:
+`ARCHITECTURE.md` § Server-tier deploy blockers (four
+documents link to it; the audit counts its KNOWN seams).
 
-### Tier A
+### Tier A (A1–A6 — remaining deploy blockers)
 
 | Item | Disposition |
 |---|---|
-| A1 client-shipped HMAC key | IN: key → `JWT_HMAC_SIGNING_KEY` env; mint/verify server-side; wire format, HS256, caller signatures unchanged |
+| A1 client-shipped HMAC key | IN: key → `JWT_HMAC_SIGNING_KEY` env; mint/verify server-side only. Server-ZIP client graph is a fetch facade with no import of `api/api.ts` or `access-token.ts`; session seed is a token-endpoint call; page-side mint deleted. Two esbuild entries; metafile test forbids `SIGNING_KEY_MATERIAL` and `backend-indexeddb` in the server-ZIP client bundle. Wire format, HS256, caller signatures unchanged |
 | A2 in-band credential reveal | IN: deleted; operator boot-flag seeding prints credentials to the terminal, once, never HTTP |
-| A3 plaintext credential ledger | RE-GATE chosen (docs allow re-gate and/or re-mask): snapshot surface admin-only; messages stay verbatim; NAMED RESIDUAL: credentials inside stored messages, behind the gate |
-| A4 client_assertion jti replay | IN: spent-jti check is a GIN body probe over stored grant pairs — the ledger already holds the data; no new table; exp-bounded |
-| A5 auth-free BOOTSTRAP_ROUTES | IN: server tier removes the bearer exemption and adds admin ROUTE_POLICY entries; install runs below HTTP via operator flags; browser ZIP unchanged until the yank deletes the plane |
+| A3 plaintext credential ledger | RE-GATE chosen (docs allow re-gate and/or re-mask): snapshot surface admin-only; messages stay verbatim. NAMED RESIDUAL at full strength: the ledger stores live access/refresh tokens and `authorization` headers verbatim; database read access is session theft; A4 does not cover it. Token-at-rest hashing is named future work (residuals list) |
+| A4 client_assertion jti replay | IN: at grant success the app writes the assertion `jti` as a JSON fact on the stored grant response body (no-extraction: decoded at pair formation) and probes that fact via GIN `@>`. RFC 7523 jti-uniqueness. Bounded by the assertion's `exp`. No new table |
+| A5 auth-free BOOTSTRAP_ROUTES | IN: server tier removes the bearer exemption and adds admin ROUTE_POLICY entries; install runs below HTTP via operator flags; browser ZIP keeps its demo posture until the yank deletes the plane |
 | A6 soft-optional PKCE | IN: server rejects public-client authorize without a code_challenge; client_assertion JWS clients exempt per OAuth 2.1 |
-| A7 delegation ledger | STAYS DEFERRED: cross-party token exchange remains 403 |
-| A8 LISTEN/NOTIFY notifications | SEAM ONLY: backend emits NOTIFY on commit; the SSE `/notifications` surface stays TARGET-STATE |
-| A9 RUM sink / Server-Timing | STAYS AFTER: the module boundary already exists |
-| A10 longitudinal measurement | IN AS OBLIGATION: `./measure --record` at pre-split baseline, server first-light, post-yank |
-| A11 DbAdapter migration seam | REALIZED: `backend-postgres.ts` is the fourth backend |
-| A12 lost binary-stonebraker plan | RESOLVED: this spec is the authoritative reference; `API-TREE.md:5` re-points here (implementation-plan work) |
+
+### Adjacent (A7–A12 — yank checklist, not blockers)
+
+| Item | Disposition |
+|---|---|
+| A7 delegation ledger | Already mitigated: cross-party token exchange is 403 until a ledger exists (`ARCHITECTURE.md` § mitigated). Residual stays 403. Not a remaining blocker |
+| A8 LISTEN/NOTIFY notifications | TARGET-STATE surface (`API-TREE.md`). Backend emits `pg_notify` inside the write transaction (W19); SSE `/notifications` stays future. UX residual: without a listener, cross-machine views stay stale until navigation (BroadcastChannel is same-browser only) |
+| A9 RUM sink / Server-Timing | Not a deploy blocker. Cited: measurement design § F (`page-performance.ts` is the future RUM source; a sink adapter and Server-Timing come later) and that spec's Out of scope. Module boundary exists; nothing is built |
+| A10 longitudinal measurement | IN AS OBLIGATION: `./measure --record` at pre-split baseline, server first-light, post-yank. Process item, not a deploy blocker |
+| A11 DbAdapter migration seam | REALIZED: `backend-postgres.ts` is the fourth backend. Seam item, not a remaining blocker |
+| A12 lost binary-stonebraker plan | RESOLVED: this spec is the authoritative reference. No `API-TREE.md` re-point (the cite is already gone; commit `9412921b`) |
 
 ### Tier B
 
 | Item | Disposition |
 |---|---|
-| B1 no migration primitive | Idempotent boot DDL (`CREATE ... IF NOT EXISTS`); no migration framework until a third schema change demands one; reset = drop + reseed |
+| B1 no migration primitive | Idempotent boot DDL (`CREATE ... IF NOT EXISTS`; `CREATE OR REPLACE FUNCTION` — Postgres has no `IF NOT EXISTS` form for functions); no migration framework until a third schema change demands one; reset = drop + reseed |
 | B2 IndexedDB orphan stores | Browser-tier residual; dies with the tier at the yank |
 | B3 PII erasure residuals | Posture unchanged: hard delete ports as one Postgres tx, single-id-set rule intact; already-exported snapshot files stay a named residual; the export route becomes admin-gated |
 | B4 /snapshots/export route | Stays future; admin-gated `GET /snapshots/schema` serves export |
