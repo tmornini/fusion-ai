@@ -1,7 +1,13 @@
 # Postgres Backend — Design
 
 Date: 2026-08-12
-Status: approved, amended per reviews 2026-08-12
+Status: superseded 2026-08-13
+
+Superseded by:
+`docs/superpowers/specs/2026-08-13-postgres-backend-design.md`
+Do not implement from this file.
+
+Previous status: approved, amended per reviews 2026-08-12
 
 ## Context
 
