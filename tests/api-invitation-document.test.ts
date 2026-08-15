@@ -12,7 +12,7 @@ import {
     documentFamilyWiring,
     documentGetHandler,
 } from '../api/document-family.ts';
-import { sha256Hex } from '../shared/digest.ts';
+import { requestMessageHash } from '../api/message-form.ts';
 import { deriveInvitations } from '../api/derive-invitations.ts';
 import {
     postMembershipDocumentOp,
@@ -420,12 +420,14 @@ test('every stored invitation-family message verifies against'
     assert.equal(responses.length, 15);
     for (const row of requests) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
         );
     }
     for (const row of responses) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
         );
     }
 });

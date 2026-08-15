@@ -5,12 +5,17 @@ import {
     buildResponseModel,
     canonicalJson,
     storedWire,
-    messageHashOf,
+    requestMessageHash,
     bodyEtagOf,
 } from '../api/message-form.ts';
 import { formWritePair } from '../api/message-pair.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
+import {
+    sha256Hex,
+    sha256HexOfBytes,
+} from '../shared/digest.ts';
+import { Octets } from '../shared/http-message/octets.ts';
 
 const AT = '2026-06-15T09:30:00.123456Z';
 
@@ -73,8 +78,8 @@ test('message hash covers the fields', async () => {
         { ...base, fields: [] },
     );
     assert.notEqual(
-        await messageHashOf(canonicalJson(withKey)),
-        await messageHashOf(canonicalJson(without)),
+        await requestMessageHash(storedWire(withKey)),
+        await requestMessageHash(storedWire(without)),
     );
 });
 
@@ -119,4 +124,21 @@ async () => {
     assert.equal(
         JSON.parse(body.toText()).note, '€😀',
     );
+});
+
+test('request hash is sha256 of Latin-1 octets',
+async () => {
+    const model = buildRequestModel({
+        method: 'PUT',
+        target: '/x',
+        fields: [],
+        body: { note: '€' },
+    });
+    const wire = storedWire(model);
+    const got = await requestMessageHash(wire);
+    const want = await sha256HexOfBytes(
+        Octets.fromLatin1(wire).asBytes(),
+    );
+    assert.equal(got, want);
+    assert.notEqual(got, await sha256Hex(wire));
 });

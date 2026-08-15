@@ -8,7 +8,7 @@ import { BackedDbAdapter } from '../api/db-backed.ts';
 import { MemoryStorageBackend } from '../api/backend-memory.ts';
 import type { GuardedDbAdapter } from '../api/db.ts';
 import { handleRequest } from '../api/api.ts';
-import { sha256Hex } from '../shared/digest.ts';
+import { requestMessageHash } from '../api/message-form.ts';
 import { hashPassword } from '../shared/password-hash.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import { devToken } from './token-fixtures.ts';
@@ -244,11 +244,13 @@ test('stored messages verify against their hashes', async () => {
     await fullLoginFlow(db);
     for (const row of await db.requests.getAll()) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash);
+            await requestMessageHash(row.message),
+            row.message_hash);
     }
     for (const row of await db.responses.getAll()) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash);
+            await requestMessageHash(row.message),
+            row.message_hash);
     }
 });
 

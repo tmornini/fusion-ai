@@ -14,7 +14,11 @@ import type {
     FieldLine,
     MessageModel,
 } from '../shared/http-message/types.ts';
-import { sha256Hex } from '../shared/digest.ts';
+import {
+    sha256Hex,
+    sha256HexOfBytes,
+} from '../shared/digest.ts';
+import { Octets } from '../shared/http-message/octets.ts';
 
 const HTTP_VERSION = 'HTTP/1.1';
 const JSON_MEDIA_TYPE = 'application/json';
@@ -101,10 +105,12 @@ export function storedWire(
     return serializeWire(model);
 }
 
-export function messageHashOf(
-    canonical: string,
+export function requestMessageHash(
+    wire: string,
 ): Promise<string> {
-    return sha256Hex(canonical);
+    return sha256HexOfBytes(
+        Octets.fromLatin1(wire).asBytes(),
+    );
 }
 
 export async function bodyEtagOf(

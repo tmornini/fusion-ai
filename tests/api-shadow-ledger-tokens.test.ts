@@ -6,6 +6,7 @@ import {
 } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import { sha256Hex } from '../shared/digest.ts';
+import { requestMessageHash } from '../api/message-form.ts';
 import { DEV_TOKEN, devToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
@@ -344,12 +345,14 @@ async () => {
     ));
     for (const row of await db.requests.getAll()) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
         );
     }
     for (const row of await db.responses.getAll()) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
         );
     }
 });

@@ -12,7 +12,7 @@ import {
     buildRequestModel,
     buildResponseModel,
     storedWire,
-    messageHashOf,
+    requestMessageHash,
     bodyEtagOf,
 } from './message-form.ts';
 import { validateIdentityTokenEntity } from './validators.ts';
@@ -167,11 +167,11 @@ export async function formWritePair(
         uriId,
         requesterIdentityId: input.requesterIdentityId,
         requestMessage,
-        requestHash: await messageHashOf(requestMessage),
+        requestHash: await requestMessageHash(requestMessage),
         responseStatus: input.responseStatus,
         responseMessage,
         responseEtag: await bodyEtagOf(responseModel),
-        responseHash: await messageHashOf(responseMessage),
+        responseHash: await requestMessageHash(responseMessage),
     };
 }
 

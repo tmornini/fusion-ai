@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { memoryDbAdapter } from '../api/db-memory.ts';
-import { sha256Hex } from '../shared/digest.ts';
+import { requestMessageHash } from '../api/message-form.ts';
 import {
     formWritePair,
     headPairIdAt,
@@ -115,11 +115,11 @@ async () => {
     assert.equal(pair.uriId, '42');
     assert.equal(
         pair.requestHash,
-        await sha256Hex(pair.requestMessage),
+        await requestMessageHash(pair.requestMessage),
     );
     assert.equal(
         pair.responseHash,
-        await sha256Hex(pair.responseMessage),
+        await requestMessageHash(pair.responseMessage),
     );
 });
 

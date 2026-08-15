@@ -6,7 +6,7 @@ import {
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
-import { sha256Hex } from '../shared/digest.ts';
+import { requestMessageHash } from '../api/message-form.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import {
     STARK_ORGANIZATION,
@@ -395,13 +395,15 @@ test('every stored message, across every row of both'
     assert.ok(requests.length > 0 && responses.length > 0);
     for (const row of requests) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
             'requests row ' + row.id + ' hash mismatch',
         );
     }
     for (const row of responses) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
             'responses row ' + row.id + ' hash mismatch',
         );
     }

@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import { postBootstrap } from '../api/mock-data.ts';
 import { sharedMockDb } from './mock-seed.ts';
-import { sha256Hex } from '../shared/digest.ts';
+import { requestMessageHash } from '../api/message-form.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import { buildAiMembers } from '../api/mock-data/ai-members.ts';
 import { OBJECTIVE_SEEDS } from '../api/mock-data/objectives.ts';
@@ -1014,12 +1014,14 @@ test('seed pairs verify against their hashes', async () => {
     const db = await sharedMockDb();
     for (const row of await db.requests.getAll()) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
         );
     }
     for (const row of await db.responses.getAll()) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
         );
     }
 });
@@ -1104,12 +1106,14 @@ test('a bootstrap seed populates exactly twelve balanced,'
     assert.equal(atOrganization.length, 1);
     for (const row of requests) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
         );
     }
     for (const row of responses) {
         assert.equal(
-            await sha256Hex(row.message), row.message_hash,
+            await requestMessageHash(row.message),
+            row.message_hash,
         );
     }
 });
