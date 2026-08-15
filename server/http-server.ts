@@ -440,7 +440,12 @@ async function dispatch(
             status = await serveStatic(req, res, filePath);
             return;
         }
-        if (isAuthThrottlePath(pathname)
+        const requestPathname = new URL(
+            'http://'
+                + requestHost(req)
+                + (req.url ?? '/'),
+        ).pathname;
+        if (isAuthThrottlePath(requestPathname)
             && throttle.limited(
                 req.socket.remoteAddress,
                 headerLine(req.headers['forwarded']),

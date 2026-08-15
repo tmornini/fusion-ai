@@ -1,6 +1,7 @@
 // Auth-path throttle keyed by client address.
 // Forwarded / X-Forwarded-For are honored only when
 // socket.remoteAddress is a TRUSTED_PROXY_HOPS hop.
+// Once trusted, key on the rightmost address the hop added.
 
 const AUTH_THROTTLE_LIMIT = 5;
 const AUTH_THROTTLE_WINDOW_MS = 60_000;
@@ -68,9 +69,10 @@ function stripHostPort(value: string): string {
 function forwardedClient(
     raw: string,
 ): string | undefined {
-    const first = raw.split(',')[0];
-    if (first === undefined) return undefined;
-    for (const param of first.split(';')) {
+    const parts = raw.split(',');
+    const last = parts[parts.length - 1];
+    if (last === undefined) return undefined;
+    for (const param of last.split(';')) {
         const trimmed = param.trim();
         const eq = trimmed.indexOf('=');
         if (eq === -1) continue;
@@ -88,9 +90,10 @@ function forwardedClient(
 function xForwardedForClient(
     raw: string,
 ): string | undefined {
-    const first = raw.split(',')[0];
-    if (first === undefined) return undefined;
-    const address = normalizeAddress(first);
+    const parts = raw.split(',');
+    const last = parts[parts.length - 1];
+    if (last === undefined) return undefined;
+    const address = normalizeAddress(last);
     return address === '' ? undefined : address;
 }
 
@@ -120,6 +123,7 @@ function clientAddress(
 
 export function createAuthThrottle(
     trustedProxyHops?: string,
+    now: () => number = Date.now,
 ): AuthThrottle {
     const hops = parseTrustedHops(trustedProxyHops);
     const hits = new Map<string, number[]>();
@@ -131,15 +135,15 @@ export function createAuthThrottle(
                 xForwardedFor,
                 hops,
             );
-            const now = Date.now();
-            const start = now - AUTH_THROTTLE_WINDOW_MS;
+            const at = now();
+            const start = at - AUTH_THROTTLE_WINDOW_MS;
             const prior = hits.get(address) ?? [];
-            const recent = prior.filter((at) => at > start);
+            const recent = prior.filter((hit) => hit > start);
             if (recent.length >= AUTH_THROTTLE_LIMIT) {
                 hits.set(address, recent);
                 return true;
             }
-            recent.push(now);
+            recent.push(at);
             hits.set(address, recent);
             return false;
         },

@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { request } from 'node:http';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -11,6 +12,7 @@ import {
     type HttpListener,
     type RequestHandler,
 } from '../server/http-server.ts';
+import { createAuthThrottle } from '../server/throttle.ts';
 
 async function withServer(
     handle: RequestHandler,
@@ -40,6 +42,28 @@ async function withServer(
         if (listener !== undefined) await listener.close();
         await rm(root, { recursive: true, force: true });
     }
+}
+
+function postRaw(
+    base: string,
+    path: string,
+): Promise<number> {
+    const url = new URL(base);
+    return new Promise((resolve, reject) => {
+        const req = request({
+            hostname: url.hostname,
+            port: url.port,
+            method: 'POST',
+            path,
+        }, (res) => {
+            res.resume();
+            res.on('end', () => {
+                resolve(res.statusCode ?? 0);
+            });
+        });
+        req.on('error', reject);
+        req.end();
+    });
 }
 
 test('sixth authorize in a minute is 429', async () => {
@@ -142,4 +166,99 @@ async () => {
         assert.equal(sixth.status, HTTP_TOO_MANY_REQUESTS);
         assert.equal(handled, 6);
     }, '127.0.0.1');
+});
+
+test('sixth dot-segment authorize is 429', async () => {
+    let handled = 0;
+    const handle: RequestHandler = async () => {
+        handled += 1;
+        return new Response('ok', { status: 200 });
+    };
+    await withServer(handle, async (base) => {
+        const path = '/authentication/./authorize';
+        for (let i = 0; i < 5; i++) {
+            const status = await postRaw(base, path);
+            assert.equal(status, 200);
+        }
+        const sixth = await postRaw(base, path);
+        assert.equal(sixth, HTTP_TOO_MANY_REQUESTS);
+        assert.equal(handled, 5);
+    });
+});
+
+test('IPv4-mapped remote matches a trusted IPv4 hop',
+() => {
+    const throttle = createAuthThrottle('10.0.0.1');
+    const remote = '::ffff:10.0.0.1';
+    for (let i = 0; i < 5; i++) {
+        assert.equal(
+            throttle.limited(
+                remote, undefined, '203.0.113.10',
+            ),
+            false,
+        );
+    }
+    assert.equal(
+        throttle.limited(
+            remote, undefined, '203.0.113.20',
+        ),
+        false,
+    );
+    assert.equal(
+        throttle.limited(
+            remote, undefined, '203.0.113.10',
+        ),
+        true,
+    );
+});
+
+test('injected clock expires the 60s throttle window',
+() => {
+    let now = 1_000_000;
+    const throttle = createAuthThrottle(
+        undefined,
+        () => now,
+    );
+    const remote = '127.0.0.1';
+    for (let i = 0; i < 5; i++) {
+        assert.equal(
+            throttle.limited(
+                remote, undefined, undefined,
+            ),
+            false,
+        );
+    }
+    assert.equal(
+        throttle.limited(remote, undefined, undefined),
+        true,
+    );
+    now += 60_000;
+    assert.equal(
+        throttle.limited(remote, undefined, undefined),
+        false,
+    );
+});
+
+test('trusted hop keys the rightmost X-Forwarded-For',
+() => {
+    const throttle = createAuthThrottle('10.0.0.1');
+    const remote = '10.0.0.1';
+    for (let i = 0; i < 5; i++) {
+        assert.equal(
+            throttle.limited(
+                remote,
+                undefined,
+                '203.0.113.10, 198.51.100.1',
+            ),
+            false,
+        );
+    }
+    assert.equal(
+        throttle.limited(
+            remote,
+            undefined,
+            '203.0.113.20, 198.51.100.1',
+        ),
+        true,
+    );
 });
