@@ -25,7 +25,6 @@ import type {
     IdentityPiiEntity,
     IdentityCredentialEntity,
     ClientRegistrationEntity,
-    IdentityTokenRevocationEntity,
     IdeaEntity,
     IdeaSubmissionEntity,
     StateEntity,
@@ -71,9 +70,6 @@ import {
     validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
     validateClientRegistrationEntity,
-    validateIdentityProviderEntity,
-    validateIdentityTokenEntity,
-    validateIdentityTokenRevocationEntity,
     validateMembershipDocumentBody,
     validateObjectiveCreateBody,
     validateObjectiveDocumentBody,
@@ -262,6 +258,8 @@ import {
     deriveIdentityProviders,
     deriveIdentityProvider,
     deriveTokenRevocation,
+    identityProviderEntityOf,
+    tokenRevocationEntityOf,
 } from './derive-identity-spine.ts';
 import {
     deriveMemberStates,
@@ -280,6 +278,7 @@ import {
 import {
     deriveIdentityTokens,
     deriveIdentityToken,
+    identityTokenEntityOf,
 } from './derive-identity-tokens.ts';
 import {
     param,
@@ -3258,13 +3257,17 @@ async function requireServiceIdentity(
 // below-facade fixtures form pairs derivation can see.
 export async function postIdentityProviderDocumentOp(
     db: DbAdapter,
-    _id: Id,
+    id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
-): Promise<Omit<IdentityProviderEntity, 'id'>> {
-    const entity = withoutId(body) as unknown as
-        Omit<IdentityProviderEntity, 'id'>;
+): Promise<IdentityProviderEntity> {
+    const entity = identityProviderEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: withoutId(body),
+    });
     return db.transaction(
         // Phase Final Task 2: identity_providers ROW half
         // stripped.
@@ -3591,21 +3594,28 @@ export const WRITE_RESPONSE_SPECS:
     // G3: memberships/:id emits membershipDocumentEntityOf
     // (GET derive). Accept and the live PUT share this spec.
     'memberships/:id': documentWriteResponseSpec(MEMBERSHIPS_WIRING),
+    // G4: GET wins. identityTokenEntityOf is id-last;
+    // formTokenEventPair and this spec were id-first.
+    // Stored PUT = GET.
     'identity-tokens/:id': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateIdentityTokenEntity(withoutId(body ?? {})),
+        successBody: (params, body) => identityTokenEntityOf({
+            uriId: param(params, 0),
+            pairId: param(params, 0),
+            method: 'PUT',
+            body: withoutId(body ?? {}),
         }),
     },
+    // G4: tokenRevocationEntityOf (GET derive).
     'identity-token-revocations/:id': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateIdentityTokenRevocationEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            tokenRevocationEntityOf({
+                uriId: param(params, 0),
+                pairId: param(params, 0),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
     // The gate PRE-MINTS the successor jti here — the ONE
     // mint site for a fresh write (this route is REPLAY_
@@ -3632,14 +3642,16 @@ export const WRITE_RESPONSE_SPECS:
             body: withoutId(body ?? {}),
         }),
     },
+    // G4: identityProviderEntityOf (GET derive).
     'identity-providers/:id': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateIdentityProviderEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            identityProviderEntityOf({
+                uriId: param(params, 0),
+                pairId: param(params, 0),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
 };
 
@@ -4750,12 +4762,18 @@ export const routes: Route[] = [
     route('identity-token-revocations/:id', {
         get: (db, p) =>
             deriveTokenRevocation(db, param(p, 0)),
-        put: (db, _p, body, _actor, pair) => {
+        put: (db, p, body, _actor, pair) => {
             // Phase Final Task 2: identity_token_revocations
             // ROW half stripped — pure pair-plane write.
-            // WRITE_RESPONSE_SPECS successBody forms the wire.
-            const entity = withoutId(body) as unknown as
-                Omit<IdentityTokenRevocationEntity, 'id'>;
+            // WRITE_RESPONSE_SPECS successBody forms the wire
+            // via tokenRevocationEntityOf (GET derive).
+            const id = param(p, 0);
+            const entity = tokenRevocationEntityOf({
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: withoutId(body),
+            });
             return db.transaction(
                 ['requests', 'responses'],
                 async (view) => {
@@ -4773,10 +4791,10 @@ export const routes: Route[] = [
     // roots, rotations, revocations alike), so the derivation now
     // sees every row the old plane did. Wire-identical to the
     // hand-written db.identityTokens.getAll() dispatch it
-    // replaces: id-LAST key order (the stored row's own shape),
+    // replaces: id-LAST key order (GET / stored PUT),
     // byIdAscending collection order (== IndexedDB's production
     // getAll order) — tests/drift-identity-tokens.test.ts pins
-    // both.
+    // stored PUT = identityTokenEntityOf.
     route('identity-tokens', {
         get: (db) => deriveIdentityTokens(db),
     }),
@@ -4787,23 +4805,32 @@ export const routes: Route[] = [
     // hand-written db.identityTokens.getById dispatch it
     // replaces, including the 404 body. PUT is PAIR-ONLY (Phase
     // 13 Task 9: the row write retires — nothing has read
-    // identity_tokens rows since Task 6); the wire response is
-    // unaffected, since it derives from WRITE_RESPONSE_SPECS'
-    // successBody (the validated body + id), never from a stored
-    // row. `pair` is always defined for this wired, fenced route
-    // — the transaction still wraps the append for parity with
-    // this address's other writers (rotation/revocation).
+    // identity_tokens rows since Task 6); the wire response
+    // comes from WRITE_RESPONSE_SPECS successBody
+    // (identityTokenEntityOf, id-last). `pair` is always
+    // defined for this wired, fenced route — the transaction
+    // still wraps the append for parity with this address's
+    // other writers (rotation/revocation).
     route('identity-tokens/:id', {
         get: (db, p) => deriveIdentityToken(db, param(p, 0)),
-        put: (db, _p, _body, _actor, pair) =>
-            db.transaction(
+        put: (db, p, body, _actor, pair) => {
+            const id = param(p, 0);
+            const entity = identityTokenEntityOf({
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: withoutId(body),
+            });
+            return db.transaction(
                 ['requests', 'responses'],
                 async (view) => {
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
+                    return entity;
                 },
-            ),
+            );
+        },
     }),
     // Rotate a refresh jti. The ledger read, the rotation
     // plan, and its appends ride ONE transaction
@@ -4877,8 +4904,8 @@ export const routes: Route[] = [
     // stay {get, put}. GET is FLIPPED (Phase 10 Task 8): derived
     // via deriveIdentityProvider — wire-identical to the
     // hand-written db.identityProviders.getById dispatch it
-    // replaces. PUT rides postIdentityProviderDocumentOp (the
-    // controller-sanctioned extraction, prior commit).
+    // replaces. PUT rides postIdentityProviderDocumentOp
+    // (identityProviderEntityOf; GET derive).
     route('identity-providers/:id', {
         get: (db, p) => deriveIdentityProvider(db, param(p, 0)),
         put: (db, p, body, actor, pair) =>

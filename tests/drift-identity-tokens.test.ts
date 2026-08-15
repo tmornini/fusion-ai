@@ -17,11 +17,15 @@ import {
 import { DEV_TOKEN } from './token-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedMessageBodyText, storedPutBodyText,
 } from './http-fixtures.ts';
 import {
     deriveIdentityToken,
     deriveIdentityTokenEventsForJti,
+    identityTokenEntityOf,
 } from '../api/derive-identity-tokens.ts';
+import { formTokenEventPair } from '../api/message-pair.ts';
+import { WRITE_RESPONSE_SPECS } from '../api/routes.ts';
 import {
     authorizationCodeSpent,
     deriveAuthorizationCodeId,
@@ -110,14 +114,11 @@ function jtiOf(token: string): string {
     return claims.jti;
 }
 
-// -- 1: THE KEY-ORDER PROOF + the negative counter-example -----
-// -- (self-contained: no row-plane oracle) ---------------------
+// -- 1: KEY ORDER — derived + stored PUT are id-LAST (G4) ------
 
 test('KEY ORDER: the derived row is id-LAST — matching'
-+ ' validateIdentityTokenEntity\'s own return-literal order —'
-+ ' never the id-FIRST spread WRITE_RESPONSE_SPECS forms for the'
-+ ' ledger\'s STORED RESPONSE message (the negative'
-+ ' counter-example)', async () => {
++ ' validateIdentityTokenEntity\'s own return-literal order',
+async () => {
     const db = await freshDb();
     await PUT(db, 'identity-tokens/tok-order', {
         jti: 'jti-order', identity_id: 'current',
@@ -129,25 +130,79 @@ test('KEY ORDER: the derived row is id-LAST — matching'
         'jti', 'identity_id', 'action', 'chain_id', 'at', 'id',
     ];
     assert.deepEqual(Object.keys(derived), expectedOrder);
+});
 
-    // The id-FIRST spread api/routes.ts's WRITE_RESPONSE_SPECS
-    // ['identity-tokens/:id'].successBody literally forms for the
-    // ledger's STORED RESPONSE message — same field VALUES
-    // (deepEqual holds) but NOT the same bytes (JSON.stringify
-    // preserves insertion order; `id` leads here instead of
-    // trailing).
-    const idFirst = {
-        id: derived.id,
-        jti: derived.jti,
-        identity_id: derived.identity_id,
-        action: derived.action,
-        chain_id: derived.chain_id,
-        at: derived.at,
+// G4: stored PUT = identityTokenEntityOf (id-last). GET wins.
+// The id-first writer pin is deleted — writer matches GET.
+test('stored PUT body equals identityTokenEntityOf id-last',
+async () => {
+    const db = await freshDb();
+    const id = 'tok-g4';
+    const fields = {
+        jti: 'jti-g4', identity_id: 'current',
+        action: 'issued', chain_id: 'chain-g4', at: AT,
     };
-    assert.deepEqual(idFirst, derived);
-    assert.notEqual(
-        JSON.stringify(idFirst), JSON.stringify(derived),
+    const put = await handleRequest(db, req(
+        'PUT', '/identity-tokens/' + id, DEV_TOKEN, fields,
+    ));
+    assert.equal(put.status, 201);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/identity-tokens/', id),
     );
+    const expected = identityTokenEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: fields,
+    });
+    assert.equal(Object.keys(expected).at(-1), 'id');
+    assert.deepEqual(stored, expected);
+    const derived = await deriveIdentityToken(db, id);
+    assert.deepEqual(stored, derived);
+    const wire = await put.json();
+    assert.deepEqual(stored, wire);
+});
+
+test('formTokenEventPair stored body equals '
++ 'identityTokenEntityOf id-last', async () => {
+    const id = 'tok-g4-synth';
+    const event = {
+        jti: 'jti-g4-synth', identity_id: 'current',
+        action: 'issued' as const,
+        chain_id: 'chain-g4-synth', at: AT,
+    };
+    const pair = await formTokenEventPair(
+        id, event, TEST_OPERATION_ID,
+    );
+    const stored = JSON.parse(
+        storedMessageBodyText(pair.responseMessage),
+    );
+    const expected = identityTokenEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: event,
+    });
+    assert.equal(Object.keys(expected).at(-1), 'id');
+    assert.deepEqual(stored, expected);
+});
+
+// Writer matches GET: successBody is identityTokenEntityOf
+// (id-last). The id-first pin is deleted.
+test('identity-tokens/:id successBody is id-last', () => {
+    const entry = WRITE_RESPONSE_SPECS['identity-tokens/:id'];
+    assert.ok(entry !== undefined && 'successBody' in entry);
+    const body = entry.successBody!(
+        ['tok-g4'],
+        {
+            jti: 'j', identity_id: 'id',
+            action: 'issued', chain_id: 'c', at: AT,
+        },
+        'current',
+        undefined,
+    ) as { id: string };
+    assert.equal(Object.keys(body).at(-1), 'id');
+    assert.equal(body.id, 'tok-g4');
 });
 
 // -- 2: GET wire byte-parity — the ACTUAL flipped route against --

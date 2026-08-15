@@ -310,9 +310,9 @@ const TOKEN_EVENT_ROUTE_SEGMENTS: readonly string[] =
 // Synthesizes ONE identity_tokens row's event pair — the SAME
 // address, method, and response shape a real PUT
 // identity-tokens/:id would store for that exact row
-// ({id, jti, identity_id, action, chain_id, at}, per
-// validateIdentityTokenEntity), formed PRE-TX like every other
-// pair (formWritePair's own crypto never runs inside an open
+// (identityTokenEntityOf: jti, identity_id, action, chain_id,
+// at, id — GET wins). Formed PRE-TX like every other pair
+// (formWritePair's own crypto never runs inside an open
 // transaction — the auto-commit constraint). EVENT-APPEND, like
 // every identity_tokens row: identity-tokens/:id carries no
 // DOCUMENT_CLASS_ROUTE_PATTERNS entry — no head-read.
@@ -342,8 +342,8 @@ export async function formTokenEventPair(
         organization: undefined,
         responseStatus: HTTP_OK,
         responseBody: {
-            id,
             ...validateIdentityTokenEntity(body),
+            id,
         },
         operationId,
     });

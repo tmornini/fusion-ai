@@ -14,8 +14,12 @@ import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedOrganizationMember } from './root-admin-fixture.ts';
 import {
-    apiRequest, TEST_OPERATION_ID,
+    apiRequest, TEST_OPERATION_ID, storedPutBodyText,
 } from './http-fixtures.ts';
+import {
+    deriveTokenRevocation,
+    tokenRevocationEntityOf,
+} from '../api/derive-identity-spine.ts';
 
 // WP8 (Phase 13 Task 8) — the phase's ONE sanctioned
 // authorization-widening wire delta: MEMBER_VERBS widens PUT
@@ -147,6 +151,40 @@ test('a member PUT identity-token-revocations/:id naming'
         ).length,
         0,
     );
+});
+
+// G4: stored PUT = tokenRevocationEntityOf (GET derive).
+test('stored PUT body equals tokenRevocationEntityOf',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken('current');
+    const id = 'rev-g4';
+    const fields = {
+        identity_id: 'member1',
+        at: '2026-01-01T00:00:00.000000Z',
+    };
+    const put = await handleRequest(db, req(
+        'PUT', '/identity-token-revocations/' + id,
+        token, fields,
+    ));
+    assert.equal(put.status, 201);
+    const stored = JSON.parse(
+        await storedPutBodyText(
+            db, '/identity-token-revocations/', id,
+        ),
+    );
+    const expected = tokenRevocationEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: fields,
+    });
+    assert.equal(Object.keys(expected)[0], 'id');
+    assert.deepEqual(stored, expected);
+    assert.deepEqual(
+        stored, await deriveTokenRevocation(db, id),
+    );
+    assert.deepEqual(stored, await put.json());
 });
 
 test('the admin path is unchanged: an admin PUT'

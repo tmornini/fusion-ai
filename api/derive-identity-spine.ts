@@ -7,14 +7,18 @@ import type {
     IdentityCredentialKind,
     IdentityCredentialStatus,
     IdentityProviderEntity,
-    IdentityProviderAction,
     IdentityTokenRevocationEntity,
     ClientRegistrationEntity,
     ClientStatus,
     IdentityKind,
 } from './types.ts';
-import { pickString } from './validators.ts';
+import {
+    pickString,
+    validateIdentityProviderEntity,
+    validateIdentityTokenRevocationEntity,
+} from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -248,18 +252,14 @@ export async function deriveCredential(
 const IDENTITY_PROVIDERS_PREFIX =
     canonicalUriCollection(undefined, '/identity-providers/');
 
-function identityProviderEntityOf(
+export function identityProviderEntityOf(
     document: DerivedDocument,
 ): IdentityProviderEntity {
-    const body = document.body;
     return {
         id: document.uriId,
-        identity_id: pickString(body, 'identity_id'),
-        provider: pickString(body, 'provider'),
-        provider_subject: pickString(body, 'provider_subject'),
-        action: pickString(body, 'action') as
-            IdentityProviderAction,
-        at: pickString(body, 'at'),
+        ...validateIdentityProviderEntity(
+            withoutId(document.body),
+        ),
     };
 }
 
@@ -316,13 +316,14 @@ const IDENTITY_TOKEN_REVOCATIONS_PREFIX = canonicalUriCollection(
     undefined, '/identity-token-revocations/',
 );
 
-function tokenRevocationEntityOf(
+export function tokenRevocationEntityOf(
     document: DerivedDocument,
 ): IdentityTokenRevocationEntity {
     return {
         id: document.uriId,
-        identity_id: pickString(document.body, 'identity_id'),
-        at: pickString(document.body, 'at'),
+        ...validateIdentityTokenRevocationEntity(
+            withoutId(document.body),
+        ),
     };
 }
 
