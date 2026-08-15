@@ -474,14 +474,14 @@ test('a client_credentials grant stores its own pair with live'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    // 6: dbWithPasswordUser's own pii + credential pairs (2,
+    // 7: dbWithPasswordUser's own pii + credential pairs (2,
     // Phase 13 Task 8) + the fixture's own membership pair
     // (Phase 13 Task 1) + the registration-facet pair the
     // fixture seeds (clients elimination) precede the token
-    // grant's own event pair (Phase 13 Task 5: issueTokenPair's
-    // root gains its own pair at the row's address) plus its
-    // operation pair.
-    assert.equal(requests.length, 6);
+    // grant's spent-jti ticket, its own event pair (Phase 13
+    // Task 5: the issued root's pair at the row's address),
+    // and its operation pair.
+    assert.equal(requests.length, 7);
     const credRequest = requests.find(
         r => r.uri_collection === '/authentication/token/'
             && r.message.includes(assertion),

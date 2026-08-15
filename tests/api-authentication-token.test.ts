@@ -643,6 +643,114 @@ test('client_credentials issues a gate-valid token', async () => {
     const body = await res.json() as { access_token: string };
     assert.ok(Array.isArray(
         await GET(db, 'members', body.access_token)));
+    assert.notEqual(
+        decodeAccessToken(body.access_token).jti, 'assert-1',
+    );
+});
+
+test('a second client_credentials grant with the same jti'
++ ' is 401 invalid_grant and mints nothing', async () => {
+    const db = await freshDb();
+    await seedMembershipPair(db, 'm-svc-replay', {
+        organization_id: '1',
+        identity_id: 'svc-client',
+        type: 'member',
+        at: '2020-01-01T00:00:00.000000Z',
+    });
+    const { client, assertion } =
+        await signedClientSetup();
+    await seedClientRegistration(db, 'svc-client', client);
+    const first = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: assertion,
+    }));
+    assert.equal(first.status, 201);
+    const before = await db.requests.getAll();
+    const grantCount = before.filter((row) =>
+        row.uri_collection === '/authentication/token/',
+    ).length;
+    const eventCount = before.filter((row) =>
+        row.uri_collection === '/identity-tokens/',
+    ).length;
+    const second = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: assertion,
+    }));
+    assert.equal(second.status, 401);
+    assert.deepEqual(
+        await second.json(), { error: 'invalid_grant' },
+    );
+    const after = await db.requests.getAll();
+    assert.equal(
+        after.filter((row) =>
+            row.uri_collection === '/authentication/token/',
+        ).length,
+        grantCount,
+    );
+    assert.equal(
+        after.filter((row) =>
+            row.uri_collection === '/identity-tokens/',
+        ).length,
+        eventCount,
+    );
+});
+
+test('an expired assertion-jti ticket is still spent',
+async () => {
+    const db = await freshDb();
+    await seedMembershipPair(db, 'm-svc-expired', {
+        organization_id: '1',
+        identity_id: 'svc-client',
+        type: 'member',
+        at: '2020-01-01T00:00:00.000000Z',
+    });
+    const signer = await makeAssertionSigner('ES256');
+    const now = Math.floor(Date.now() / 1000);
+    const jti = 'assert-expired-spent';
+    await seedClientRegistration(db, 'svc-client', {
+        ...activeClient, jwks: signer.jwks,
+    });
+    const ticket = await formWritePair({
+        method: 'PUT',
+        pathname:
+            '/authentication/assertion-jtis/' + jti,
+        routePattern:
+            'authentication/assertion-jtis/:jti',
+        routeSegments: [
+            'authentication', 'assertion-jtis', ':jti',
+        ],
+        pathSegments: [
+            'authentication', 'assertion-jtis', jti,
+        ],
+        headerFields: [],
+        body: { exp: now - 60 },
+        requesterIdentityId: 'svc-client',
+        requestAt: nowUtc(),
+        organization: undefined,
+        responseStatus: 200,
+        responseBody: { exp: now - 60 },
+        operationId: TEST_OPERATION_ID,
+    });
+    await putMessagePair(db, ticket);
+    const assertion = await signer.sign({
+        iss: 'svc-client', sub: 'svc-client',
+        aud: 'fusion-ai-web',
+        exp: now + 300, iat: now, jti,
+    });
+    const res = await handleRequest(db, tokenRequest({
+        grant_type: 'client_credentials',
+        client_id: 'svc-client',
+        client_assertion: assertion,
+    }));
+    assert.equal(res.status, 401);
+    assert.deepEqual(
+        await res.json(), { error: 'invalid_grant' },
+    );
+    assert.equal(
+        (await deriveIdentityTokens(db)).length, 0,
+    );
 });
 
 test('client_credentials refuses an unsigned assertion',

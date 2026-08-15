@@ -60,7 +60,9 @@ import {
     canonicalUriCollection,
     formAuthPair,
     formTokenEventPair,
+    formWritePair,
 } from './message-pair.ts';
+import { messageStore } from './message-store.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import { deriveMembershipsForIdentity } from
     './derive-memberships.ts';
@@ -851,9 +853,10 @@ export async function exchangeBearerForOrganization(
 // authenticates as itself. The client_assertion is REALLY
 // verified — JWS signature against the client's registered
 // JWKS (RS256/ES256, WebCrypto) plus the RFC 7523 claim
-// checks, in api/client-assertion.ts. The remaining seam is
-// jti replay tracking (server tier). The token's sub is the
-// client id (a service principal).
+// checks, in api/client-assertion.ts. A spent-jti ticket
+// rides the same transaction as the grant and token-event
+// pairs — replay is 401 invalid_grant, nothing minted.
+// The token's sub is the client id (a service principal).
 async function grantClientCredentials(
     adapter: DbAdapter,
     body: Record<string, unknown>,
@@ -902,15 +905,77 @@ async function grantClientCredentials(
             'invalid client_assertion: ' + verdict.reason,
         );
     }
-    const name = await nameFor(adapter, clientId);
-    const issued = await issueTokenPair(
-        adapter, clientId, name, body, seed,
+    const replay: TokenResult = failure(
+        HTTP_UNAUTHORIZED, 'invalid_grant',
     );
-    return {
-        ok: true,
-        response: issued.response,
-        pairId: issued.pairId,
-    };
+    const name = await nameFor(adapter, clientId);
+    const refreshJti = generateCryptoSafeBase62();
+    const rootId = generateCryptoSafeBase62();
+    const chainId = generateCryptoSafeBase62();
+    const at = nowUtc();
+    const organizations =
+        await subjectOrganizations(adapter, clientId);
+    const roles = await subjectRoles(adapter, clientId);
+    const response = await mintPair(
+        clientId, name, refreshJti, undefined,
+        { organizations, roles },
+    );
+    const pair = await formAuthPair(
+        seed, body, clientId, HTTP_OK, response,
+    );
+    const eventPair = await formTokenEventPair(rootId, {
+        jti: refreshJti, identity_id: clientId,
+        action: 'issued', chain_id: chainId, at,
+    }, pair.operationId);
+    const ticketBody = { exp: verdict.exp };
+    const ticketPair = await formWritePair({
+        method: 'PUT',
+        pathname: '/authentication/assertion-jtis/'
+            + verdict.jti,
+        routePattern:
+            'authentication/assertion-jtis/:jti',
+        routeSegments: [
+            'authentication', 'assertion-jtis', ':jti',
+        ],
+        pathSegments: [
+            'authentication', 'assertion-jtis',
+            verdict.jti,
+        ],
+        headerFields: [],
+        body: ticketBody,
+        requesterIdentityId: clientId,
+        requestAt: at,
+        organization: undefined,
+        responseStatus: HTTP_OK,
+        responseBody: ticketBody,
+        operationId: pair.operationId,
+    });
+    const consumed = await adapter.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            const locks = view.writeLocks;
+            if (locks !== undefined) {
+                await locks.lockAddress(
+                    '/authentication/assertion-jtis/',
+                    verdict.jti,
+                );
+            }
+            const existing = await messageStore(view).get(
+                '/authentication/assertion-jtis/',
+                verdict.jti,
+            );
+            if (existing !== undefined) {
+                return false;
+            }
+            await putMessagePair(view, ticketPair);
+            await appendMessagePair(view, eventPair);
+            await putMessagePair(view, pair);
+            return true;
+        },
+    );
+    return consumed
+        ? { ok: true, response, pairId: pair.id }
+        : replay;
 }
 
 // GATE 3 — KEY-BY-ANCHOR (Phase 13 Task 7): the presented code's
