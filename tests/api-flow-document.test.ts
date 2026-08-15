@@ -211,7 +211,7 @@ test('postFlowDocumentOp returns the entity, exactly one'
     const create = await handleRequest(db, req(
         'PUT', '/flows/flow-op-1', token, createBody,
     ));
-    assert.equal(create.status, 200);
+    assert.equal(create.status, 201);
     const headId = create.headers.get('Response-ID')!;
     const update = await handleRequest(db, req(
         'PUT', '/flows/flow-op-1', token,
@@ -233,7 +233,7 @@ test('postFlowDocumentOp returns the entity, exactly one'
         }),
         { 'if-match': await headEtag(db, token, 'flow-op-1') },
     ));
-    assert.equal(update.status, 200);
+    assert.equal(update.status, 201);
     const wire = await update.json() as { name: string };
     assert.equal(wire.name, 'Renamed');
     const events = await deriveFlowStateHistory(db, '1', 'flow-op-1');
@@ -281,7 +281,7 @@ test('postFlowDocumentOp with revivals posts the restored'
     const create = await handleRequest(db, req(
         'PUT', '/flows/flow-op-2', token, createBody,
     ));
-    assert.equal(create.status, 200);
+    assert.equal(create.status, 201);
     const headId = create.headers.get('Response-ID')!;
     const update = await handleRequest(db, req(
         'PUT', '/flows/flow-op-2', token,
@@ -297,7 +297,7 @@ test('postFlowDocumentOp with revivals posts the restored'
         },
         { 'if-match': await headEtag(db, token, 'flow-op-2') },
     ));
-    assert.equal(update.status, 200);
+    assert.equal(update.status, 201);
     // SIDECAR-KEEP (C3): pin graphDelta.deletions / revivals
     // on the flow document pairs — no bulk states derive.
     const prefix = canonicalUriCollection('1', '/flows/');
@@ -387,11 +387,14 @@ async () => {
         documentBody('No Match', 'flow-if-match-428-a'),
     ));
     assert.equal(res.status, 428);
-    assert.equal(
-        (await res.json()).error,
-        'If-Match is required to PUT /flows/'
-        + 'flow-if-match-428',
-    );
+    const body = await res.json() as {
+        name: string;
+        error?: string;
+    };
+    assert.equal(body.error, undefined);
+    assert.equal(body.name, 'Fresh Flow');
+    assert.ok(res.headers.get('ETag'));
+    assert.ok(res.headers.get('Date'));
 });
 
 test('locked PUT with a malformed If-Match is 400',
@@ -425,11 +428,14 @@ async () => {
         { 'if-match': '"' + 'b'.repeat(64) + '"' },
     ));
     assert.equal(res.status, 412);
-    assert.equal(
-        (await res.json()).error,
-        'If-Match does not match the current document at '
-        + '/flows/flow-if-match-412',
-    );
+    const body = await res.json() as {
+        name: string;
+        error?: string;
+    };
+    assert.equal(body.error, undefined);
+    assert.equal(body.name, 'Fresh Flow');
+    assert.ok(res.headers.get('ETag'));
+    assert.ok(res.headers.get('Date'));
 });
 
 test('locked PUT with If-Match and no head is 412',
@@ -462,7 +468,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     const first = await handleRequest(db, req(
         'PUT', '/flows/flow-locked-3', token, body, headers,
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
     const eventsAfterFirst =
         await deriveFlowStateHistory(db, '1', 'flow-locked-3');
@@ -471,7 +477,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     const second = await handleRequest(db, req(
         'PUT', '/flows/flow-locked-3', token, body, headers,
     ));
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     assert.equal(second.headers.get('Response-ID'), firstId);
     const stored = await db.responses.getById(firstId!);
     assert.ok(stored !== undefined);
@@ -520,7 +526,7 @@ async () => {
             db, token, 'flow-locked-1',
         ) },
     ));
-    assert.equal(fresh.status, 200);
+    assert.equal(fresh.status, 201);
     assert.equal(fresh.headers.get('Follows'), null);
     assert.equal(fresh.headers.get('Supersedes'), null);
 });
@@ -652,7 +658,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const created = await createFlow(db, token, 'flow-pairs-1');
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
@@ -746,7 +752,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
             graphDelta: emptyDelta(),
         },
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
 
     const requestsAfterFirst = await db.requests.getAll();
     const flowAddressAfterFirst = requestsAfterFirst.filter(
@@ -785,7 +791,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
         },
     ));
     assert.equal(
-        second.status, 204,
+        second.status, 201,
         'the create op holds no echo — no 412',
     );
 
@@ -865,7 +871,7 @@ test('e2e: POST flows/:id/undo forms a document pair with'
             db, token, 'flow-undo-pairs-1',
         ) },
     ));
-    assert.equal(firstSave.status, 200);
+    assert.equal(firstSave.status, 201);
 
     // A SECOND save moves the head away from the one-node
     // graph — undo must revert THIS, landing back on the
@@ -877,7 +883,7 @@ test('e2e: POST flows/:id/undo forms a document pair with'
             db, token, 'flow-undo-pairs-1',
         ) },
     ));
-    assert.equal(secondSave.status, 200);
+    assert.equal(secondSave.status, 201);
 
     const requestsBeforeUndo = await db.requests.getAll();
     const responsesBeforeUndo = await db.responses.getAll();
@@ -888,7 +894,7 @@ test('e2e: POST flows/:id/undo forms a document pair with'
             at: AT,
         },
     ));
-    assert.equal(undone.status, 204);
+    assert.equal(undone.status, 201);
 
     const requestsAfterUndo = await db.requests.getAll();
     const responsesAfterUndo = await db.responses.getAll();
@@ -968,7 +974,7 @@ async () => {
             db, token, 'flow-race-1',
         ) },
     ));
-    assert.equal(before.status, 200);
+    assert.equal(before.status, 201);
     const headEtagValue = await headEtag(
         db, token, 'flow-race-1',
     );
@@ -1019,7 +1025,7 @@ async () => {
         // The save won the race; the undo's write never landed
         // — its own event never posted.
         assert.equal(flow.name, 'Saved');
-        assert.equal(save.status, 200);
+        assert.equal(save.status, 201);
         assert.equal(undo.status, 412);
         const events = await deriveFlowStateHistory(db, '1', 'flow-race-1');
         assert.ok(

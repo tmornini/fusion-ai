@@ -150,7 +150,7 @@ async function seededChainDb(): Promise<MemoryDbAdapter> {
         db,
         req('POST', '/work-orders', DEV_TOKEN, createBody()),
     );
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // Task 8 CUT: legacy fieldValues fold is below-gate
     // stored-data seed (live wire rejects the key).
@@ -207,7 +207,7 @@ async function seededChainDb(): Promise<MemoryDbAdapter> {
             },
         ),
     );
-    assert.equal(release.status, 204);
+    assert.equal(release.status, 201);
 
     return db;
 }
@@ -463,7 +463,7 @@ test(
                 minimalCreate(starkId),
             ),
         );
-        assert.equal(starkCreated.status, 204);
+        assert.equal(starkCreated.status, 201);
 
         const twoCreated = await handleRequest(
             db,
@@ -472,7 +472,7 @@ test(
                 minimalCreate(twoId),
             ),
         );
-        assert.equal(twoCreated.status, 204);
+        assert.equal(twoCreated.status, 201);
 
         const starkRes = await handleRequest(
             db,

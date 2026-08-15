@@ -144,7 +144,7 @@ async function createWorkOrder(
             createBody(workOrderId),
         ),
     );
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 }
 
 // Below-gate transition append (appendInstancePair idiom).

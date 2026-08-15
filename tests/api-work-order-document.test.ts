@@ -315,7 +315,7 @@ test('a work-order create appends a PUT-shaped document pair'
         'POST', '/work-orders', DEV_TOKEN,
         workOrderCreateBody('wo-c1', 'wo-c1-fwo', 'flow-c1'),
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, 5);
@@ -354,7 +354,7 @@ async () => {
         'POST', '/work-orders', DEV_TOKEN,
         workOrderCreateBody('wo-c2', 'wo-c2-fwo-a', 'flow-c2'),
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
     const firstDocumentRow = documentRowAt(
         await db.requests.getAll(), ENTITY_PREFIX, 'wo-c2',
     );
@@ -369,7 +369,7 @@ async () => {
             'wo-c2', 'wo-c2-fwo-b', 'flow-c2', 'wo-c2-revised',
         ),
     ));
-    assert.equal(second.status, 204);
+    assert.equal(second.status, 201);
     const secondDocumentRow = documentRowAt(
         await db.requests.getAll(), ENTITY_PREFIX, 'wo-c2',
         firstDocumentId,
@@ -394,7 +394,7 @@ test('a duplicate work-order create\'s own OPERATION pair'
         'POST', '/work-orders', DEV_TOKEN,
         workOrderCreateBody('wo-c3', 'wo-c3-fwo-a', 'flow-c3'),
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
     const firstDocumentRow = documentRowAt(
         await db.requests.getAll(), ENTITY_PREFIX, 'wo-c3',
     );
@@ -405,7 +405,7 @@ test('a duplicate work-order create\'s own OPERATION pair'
         'POST', '/work-orders', DEV_TOKEN,
         workOrderCreateBody('wo-c3', 'wo-c3-fwo-b', 'flow-c3'),
     ));
-    assert.equal(second.status, 204);
+    assert.equal(second.status, 201);
     const secondOperationId = second.headers.get('Response-ID');
     assert.ok(secondOperationId);
     const secondOperationResponse = await db.responses.getById(
@@ -429,7 +429,7 @@ test('a work-order create ignores a raw colliding states'
             'wo-c4-survives', flowWorkOrderId, 'flow-c4',
         ),
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
     // 2 seed pairs (org+membership) + 3 create pairs.
     assert.equal((await db.requests.getAll()).length, 5);
     assert.equal((await db.responses.getAll()).length, 5);

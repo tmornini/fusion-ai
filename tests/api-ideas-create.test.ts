@@ -82,7 +82,7 @@ test(
                 '2099-01-01T00:00:00.000000Z',
             ),
         ));
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
         const ideaRes = await handleRequest(
             db, req('GET', '/ideas/idea-1', DEV_TOKEN),
         );
@@ -136,7 +136,7 @@ test(
                 state_event_id: 'ev-x',
             },
         ));
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
         const getRes = await handleRequest(db, req(
             'GET', '/ideas/idea-survives', DEV_TOKEN,
         ));
@@ -163,11 +163,11 @@ test(
         const first = await handleRequest(db, req(
             'PUT', '/ideas/idea-retry', DEV_TOKEN, body,
         ));
-        assert.equal(first.status, 200);
+        assert.equal(first.status, 201);
         const second = await handleRequest(db, req(
             'PUT', '/ideas/idea-retry', DEV_TOKEN, body,
         ));
-        assert.equal(second.status, 200);
+        assert.equal(second.status, 201);
         assert.equal(
             second.headers.get('Response-ID'),
             first.headers.get('Response-ID'),

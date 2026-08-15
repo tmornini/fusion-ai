@@ -147,7 +147,7 @@ async function putLiveType(
     const put = await handleRequest(db, req(
         'PUT', TYPE_DETAIL, adminToken, typeBody(),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function putAttribute(
@@ -159,7 +159,7 @@ async function putAttribute(
     const put = await handleRequest(db, req(
         'PUT', ATTRS + '/' + attrId, adminToken, body,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedPublicAndSecretAttrs(
@@ -271,7 +271,7 @@ async () => {
     const put = await putInstance(db, memberToken, [
         { attribute_id: ATTR_PUBLIC, value: 'v0' },
     ]);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const etag0 = put.headers.get('ETag')!;
 
     const patch1 = await patchInstance(
@@ -284,7 +284,7 @@ async () => {
             ],
         },
     );
-    assert.equal(patch1.status, 200);
+    assert.equal(patch1.status, 201);
     const etag1 = patch1.headers.get('ETag')!;
 
     const patch2 = await patchInstance(
@@ -297,7 +297,7 @@ async () => {
             ],
         },
     );
-    assert.equal(patch2.status, 200);
+    assert.equal(patch2.status, 201);
     const etag2 = patch2.headers.get('ETag')!;
 
     const detail = await handleRequest(db, req(
@@ -375,7 +375,7 @@ async () => {
             value: 'secret-0',
         },
     ]);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const etag0 = put.headers.get('ETag')!;
 
     const patch1 = await patchInstance(
@@ -392,7 +392,7 @@ async () => {
             ],
         },
     );
-    assert.equal(patch1.status, 200);
+    assert.equal(patch1.status, 201);
 
     const memberHist = await handleRequest(db, req(
         'GET', INSTANCE_HISTORY, memberToken,
@@ -482,7 +482,7 @@ async () => {
     const put = await putInstance(db, memberToken, [
         { attribute_id: ATTR_PUBLIC, value: 'live' },
     ]);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const del = await handleRequest(db, req(
         'DELETE', INSTANCE_DETAIL, memberToken,
     ));

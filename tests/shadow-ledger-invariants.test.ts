@@ -238,13 +238,13 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         'PUT', '/ideas/inv-idea-1', org1Token,
         ideaPutBody('inv-idea-1', 'Invariant Idea'),
     ));
-    assert.equal(firstIdea.status, 200);
+    assert.equal(firstIdea.status, 201);
     const firstIdeaId = firstIdea.headers.get('Response-ID');
     const secondIdea = await handleRequest(db, req(
         'PUT', '/ideas/inv-idea-1', org1Token,
         ideaPutBody('inv-idea-1', 'Invariant Idea Revised'),
     ));
-    assert.equal(secondIdea.status, 200);
+    assert.equal(secondIdea.status, 201);
     assert.equal(
         secondIdea.headers.get('Supersedes'), null,
     );
@@ -259,7 +259,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
             state_event_id: 'inv-ev-review',
         },
     ));
-    assert.equal(stateAppend.status, 200);
+    assert.equal(stateAppend.status, 201);
 
     // Create POST (records, org 2) — Task 4's bundle: the
     // operation pair, its synthesized document pair, and one
@@ -282,7 +282,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
             }],
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // DELETE — a fresh PUT then its tombstone (records, org 2).
     const recordPut = await handleRequest(db, req(
@@ -292,7 +292,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
             'inv-rec-2', 'Invariant Record', ORGANIZATION_TWO,
         ),
     ));
-    assert.equal(recordPut.status, 200);
+    assert.equal(recordPut.status, 201);
     const recordDeleted = await handleRequest(db, req(
         'DELETE', '/organizations/' + ORGANIZATION_TWO
             + '/record-types/inv-rec-2', org2Token,
@@ -306,7 +306,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         'PUT', '/work-orders/inv-wo-1', org1Token,
         workOrderFields('INV-WO-1', STARK_ORGANIZATION),
     ));
-    assert.equal(workOrderPut.status, 200);
+    assert.equal(workOrderPut.status, 201);
 
     // Operation POST (identity-tokens — global, not org-
     // nested): revoke a pre-seeded chain. The seed itself rides
@@ -321,12 +321,12 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
             action: 'issued', chain_id: 'inv-chain-1', at: AT,
         },
     ));
-    assert.equal(tokenRootPut.status, 200);
+    assert.equal(tokenRootPut.status, 201);
     const revoked = await handleRequest(db, req(
         'POST', '/identity-tokens/inv-jti-root/revocation',
         org1Token, {},
     ));
-    assert.equal(revoked.status, 204);
+    assert.equal(revoked.status, 201);
 
     // Genesis document PUT (flows, org 1) — a fresh id needs no
     // If-Match under the locked class.
@@ -334,7 +334,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         'PUT', '/flows/inv-flow-1', org1Token,
         flowDocumentBody('Invariant Flow', 'inv-flow-1-ev'),
     ));
-    assert.equal(flowGenesis.status, 200);
+    assert.equal(flowGenesis.status, 201);
 
     // Work-order CREATE (org 1) — a genesis POST, joined to the
     // flow just created above: three pairs land (the operation
@@ -348,7 +348,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
             'inv-flow-1', STARK_ORGANIZATION,
         ),
     ));
-    assert.equal(workOrderCreated.status, 204);
+    assert.equal(workOrderCreated.status, 201);
 
     // A FAILED write: 404 on an unknown route — must add
     // nothing to either table. (A claim conflict 409 still

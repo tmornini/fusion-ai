@@ -163,7 +163,7 @@ async function createFlow(
             graphDelta: emptyDelta(),
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 }
 
 async function headResponseId(
@@ -196,7 +196,7 @@ async function save(
         documentBody(name, eventId),
         { 'if-match': etag },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 }
 
 async function undo(
@@ -235,7 +235,7 @@ test(
         const res = await undo(
             db, token, flowId, flowId + '-u1', AT,
         );
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 201);
         assert.equal(
             await currentGraphName(db, token, flowId), 'A',
         );
@@ -262,7 +262,7 @@ test(
         const first = await undo(
             db, token, flowId, flowId + '-u1', AT,
         );
-        assert.equal(first.status, 204);
+        assert.equal(first.status, 201);
         assert.equal(
             await currentGraphName(db, token, flowId), 'A',
             'first undo lands on A',
@@ -272,7 +272,7 @@ test(
             db, token, flowId, flowId + '-u2',
             '2026-01-01T00:00:01.000000Z',
         );
-        assert.equal(second.status, 204);
+        assert.equal(second.status, 201);
         assert.equal(
             await currentGraphName(db, token, flowId), 'genesis',
             'second consecutive undo reaches genesis, not'
@@ -323,7 +323,7 @@ test(
             db, token, flowId, flowId + '-u3',
             '2026-01-01T00:00:02.000000Z',
         );
-        assert.equal(third.status, 204);
+        assert.equal(third.status, 201);
         assert.equal(
             await currentGraphName(db, token, flowId), 'genesis',
             'undo after the save reverts to genesis (D\'s own'
@@ -348,7 +348,7 @@ test(
         const res = await undo(
             db, token, flowId, flowId + '-u1', AT,
         );
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 201);
 
         const after = await db.requests.getAll();
         assert.equal(
@@ -367,7 +367,7 @@ test(
             db, token, flowId, flowId + '-u2',
             '2026-01-01T00:00:01.000000Z',
         );
-        assert.equal(again.status, 204);
+        assert.equal(again.status, 201);
         const afterAgain = await db.requests.getAll();
         assert.equal(
             afterAgain.length, after.length + 1,
@@ -598,7 +598,7 @@ test(
                 },
             },
         ));
-        assert.equal(created.status, 204);
+        assert.equal(created.status, 201);
 
         const got = await handleRequest(db, req(
             'GET', '/flows/' + flowId, token,
@@ -623,13 +623,13 @@ test(
             ),
             { 'if-match': etag },
         ));
-        assert.equal(deleted.status, 200);
+        assert.equal(deleted.status, 201);
 
         const undoAt = '2026-01-01T00:00:02.000000Z';
         const undone = await undo(
             db, token, flowId, flowId + '-undo-ev', undoAt,
         );
-        assert.equal(undone.status, 204);
+        assert.equal(undone.status, 201);
 
         const prefix = canonicalUriCollection('1', '/flows/');
         const [requests, responses] = await Promise.all([
@@ -742,7 +742,7 @@ test(
         const first = await undo(
             db, token, flowId, flowId + '-u1', AT,
         );
-        assert.equal(first.status, 204);
+        assert.equal(first.status, 201);
         assert.equal(
             await currentGraphName(db, token, flowId), 'A',
         );
@@ -767,7 +767,7 @@ test(
             db, token, flowId, flowId + '-u2',
             '2026-01-01T00:00:01.000000Z',
         );
-        assert.equal(second.status, 204);
+        assert.equal(second.status, 201);
         assert.equal(
             await currentGraphName(db, token, flowId), 'A',
             'without the fix, a second undo click cannot make'

@@ -19,11 +19,13 @@ import type { Id } from './types.ts';
 import { messageAddress } from './message-address.ts';
 import {
     formWritePair,
+    appendMessagePair,
     storedResponseFor,
     createdEntityUriId,
     canonicalUriCollection,
     hoistedHeaderFields,
-    responseFromStored,
+    sendWriteResponse,
+    documentHeadAt,
     attachEtag,
     attachDate,
     parseIfMatch,
@@ -103,6 +105,7 @@ import {
     authorizeRequest,
     authorizeIdentityPii,
     parseObjectBody,
+    parsePutBody,
 } from './request-auth.ts';
 import {
     routes,
@@ -331,6 +334,27 @@ function limitedHeaders(
     return limited
         ? { 'Authorization-Limited-Attributes': 'true' }
         : {};
+}
+
+// 412 / 428 with a live PUT: this caller's GET of the
+// current head — fresh Date, current ETag, limited
+// header when the projection omits stored attributes.
+function preconditionDocument(
+    status: number,
+    document: unknown,
+    etag: string,
+    limited: boolean,
+): Response {
+    return attachDate(
+        attachEtag(
+            Response.json(document, {
+                status,
+                headers: limitedHeaders(limited),
+            }),
+            etag,
+        ),
+        nowUtc(),
+    );
 }
 
 async function revisionPairIdForPatch(
@@ -662,7 +686,9 @@ export async function handleRequest(
         || method === 'POST'
         || method === 'PATCH'
     ) {
-        const parse = await parseObjectBody(request);
+        const parse = method === 'PUT'
+            ? await parsePutBody(request)
+            : await parseObjectBody(request);
         if (!parse.ok) {
             return Response.json(
                 {
@@ -902,6 +928,27 @@ export async function handleRequest(
                     'Operation-ID missing after require',
                 );
             }
+            // DELETE table: never-written 404 stores nothing;
+            // already-gone 204 no append; live PUT proceeds.
+            if (method === 'DELETE') {
+                const head = await documentHeadAt(
+                    effective, canonicalPrefix, uriId,
+                );
+                if (head === undefined) {
+                    return Response.json(
+                        { error: 'Not found: ' + pathname },
+                        { status: HTTP_NOT_FOUND },
+                    );
+                }
+                if (head.method === 'DELETE') {
+                    return new Response(null, {
+                        status: HTTP_NO_CONTENT,
+                        headers: {
+                            'Operation-ID': operationId,
+                        },
+                    });
+                }
+            }
             pair = await formWritePair({
                 method, pathname, routePattern,
                 routeSegments: matched.segments,
@@ -913,9 +960,13 @@ export async function handleRequest(
                 organization,
                 operationId,
                 responseStatus: spec.status,
-                responseBody: spec.successBody?.(
-                    params, body, actor, organization,
-                ),
+                responseBody: method === 'PUT'
+                    && body === undefined
+                    ? undefined
+                    : spec.successBody?.(
+                        params, body, actor,
+                        organization,
+                    ),
                 ...(echoMatchesHead
                     && echo !== null
                     && echo !== undefined
@@ -943,8 +994,9 @@ export async function handleRequest(
                     effective, pair.requestHash,
                 );
                 if (replay !== undefined) {
-                    const response =
-                        responseFromStored(replay);
+                    const response = sendWriteResponse(
+                        replay, method, true,
+                    );
                     if (
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
@@ -1011,6 +1063,25 @@ export async function handleRequest(
                     livePut !== undefined
                     && rawIfMatch === null
                 ) {
+                    if (matched.get !== undefined) {
+                        try {
+                            return preconditionDocument(
+                                HTTP_PRECONDITION_REQUIRED,
+                                await matched.get(
+                                    effective, params,
+                                    actor, organization,
+                                    roles,
+                                ),
+                                livePut.version,
+                                false,
+                            );
+                        } catch {
+                            // GET derive may fail on a
+                            // stored shape this caller
+                            // cannot project; status
+                            // still 428.
+                        }
+                    }
                     return Response.json(
                         {
                             error: 'If-Match is required to PUT '
@@ -1039,6 +1110,25 @@ export async function handleRequest(
                     rawIfMatch !== null
                     && !echoMatchesHead
                 ) {
+                    if (
+                        livePut !== undefined
+                        && matched.get !== undefined
+                    ) {
+                        try {
+                            return preconditionDocument(
+                                HTTP_PRECONDITION_FAILED,
+                                await matched.get(
+                                    effective, params,
+                                    actor, organization,
+                                    roles,
+                                ),
+                                livePut.version,
+                                false,
+                            );
+                        } catch {
+                            // Same fallback as 428.
+                        }
+                    }
                     return Response.json(
                         {
                             error: 'If-Match does not '
@@ -1078,7 +1168,34 @@ export async function handleRequest(
                 }
                 const raw = request.headers
                     .get(IF_MATCH_HEADER);
+                const advertisedNow =
+                    await instanceAdvertised(
+                        effective,
+                        pathOrganization,
+                        typeId,
+                        instanceId,
+                        roles,
+                    );
                 if (raw === null) {
+                    if (
+                        advertisedNow !== undefined
+                        && matched.get !== undefined
+                    ) {
+                        try {
+                            return preconditionDocument(
+                                HTTP_PRECONDITION_REQUIRED,
+                                await matched.get(
+                                    effective, params,
+                                    actor, organization,
+                                    roles,
+                                ),
+                                advertisedNow.tag,
+                                advertisedNow.limited,
+                            );
+                        } catch {
+                            // Status stays 428.
+                        }
+                    }
                     return Response.json(
                         {
                             error: 'If-Match is required '
@@ -1101,18 +1218,29 @@ export async function handleRequest(
                         { status: HTTP_BAD_REQUEST },
                     );
                 }
-                const advertisedNow =
-                    await instanceAdvertised(
-                        effective,
-                        pathOrganization,
-                        typeId,
-                        instanceId,
-                        roles,
-                    );
                 if (
                     advertisedNow === undefined
                     || ifMatch !== advertisedNow.tag
                 ) {
+                    if (
+                        advertisedNow !== undefined
+                        && matched.get !== undefined
+                    ) {
+                        try {
+                            return preconditionDocument(
+                                HTTP_PRECONDITION_FAILED,
+                                await matched.get(
+                                    effective, params,
+                                    actor, organization,
+                                    roles,
+                                ),
+                                advertisedNow.tag,
+                                advertisedNow.limited,
+                            );
+                        } catch {
+                            // Status stays 412.
+                        }
+                    }
                     return Response.json(
                         {
                             error: 'If-Match does not '
@@ -1128,7 +1256,9 @@ export async function handleRequest(
                 }
             }
             // Same-body as live PUT head → 200, no append.
-            // Body equality is octets, not ETag.
+            // Body equality is octets, not ETag. The no-op
+            // still takes the in-tx latch so it cannot
+            // return a dead ETag.
             if (
                 method === 'PUT'
                 && livePut !== undefined
@@ -1147,17 +1277,102 @@ export async function handleRequest(
                         parseWire(pair.requestMessage),
                     );
                     if (octetsEqual(liveOctets, newOctets)) {
+                        const raced =
+                            await effective.transaction(
+                                ['requests', 'responses'],
+                                async (view) => {
+                                    const latest =
+                                        await documentHeadPairId(
+                                            view,
+                                            canonicalPrefix,
+                                            uriId,
+                                        );
+                                    return latest
+                                        !== livePut.pairId;
+                                },
+                            );
+                        if (raced) {
+                            return Response.json(
+                                {
+                                    error: 'If-Match does not '
+                                        + 'match the current '
+                                        + 'document at '
+                                        + pathname,
+                                },
+                                {
+                                    status:
+                                        HTTP_PRECONDITION_FAILED,
+                                },
+                            );
+                        }
                         const stored =
                             await effective.responses
                                 .getById(livePut.pairId);
                         if (stored !== undefined) {
                             return attachEtag(
-                                responseFromStored(stored),
+                                sendWriteResponse(
+                                    stored, 'PUT', false,
+                                ),
                                 stored.version,
                             );
                         }
                     }
                 }
+            }
+            // Empty-body PUT is a live empty document. Skip
+            // the family validator; store GET-shaped 200
+            // with ETag sha256('').
+            if (
+                method === 'PUT'
+                && body === undefined
+                && pair !== undefined
+            ) {
+                const emptyPair = pair;
+                await effective.transaction(
+                    ['requests', 'responses'],
+                    async (view) => {
+                        const latchedId =
+                            emptyPair.latchedHeadPairId;
+                        if (latchedId !== undefined) {
+                            const latest =
+                                await documentHeadPairId(
+                                    view,
+                                    emptyPair.uriCollection,
+                                    emptyPair.uriId,
+                                );
+                            if (latest !== latchedId) {
+                                throw new ApiError(
+                                    'If-Match does not match'
+                                    + ' the current document'
+                                    + ' at ' + pathname,
+                                    HTTP_PRECONDITION_FAILED,
+                                );
+                            }
+                        }
+                        await appendMessagePair(
+                            view, emptyPair,
+                        );
+                    },
+                );
+                const stored = await storedResponseFor(
+                    effective, emptyPair.requestHash,
+                );
+                if (stored === undefined) {
+                    throw new Error(
+                        'wired write stored no pair: '
+                        + routePattern,
+                    );
+                }
+                postWriteNotification(
+                    adapter, routePattern, params,
+                    body, organization, actor,
+                );
+                return attachEtag(
+                    sendWriteResponse(
+                        stored, 'PUT', true,
+                    ),
+                    stored.version,
+                );
             }
         }
         switch (method) {
@@ -1352,8 +1567,9 @@ export async function handleRequest(
                         adapter, routePattern, params,
                         body, organization, actor,
                     );
-                    const response =
-                        responseFromStored(stored);
+                    const response = sendWriteResponse(
+                        stored, 'PUT', true,
+                    );
                     if (
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
@@ -1439,8 +1655,9 @@ export async function handleRequest(
                         adapter, routePattern, params,
                         body, organization, actor,
                     );
-                    const response =
-                        responseFromStored(stored);
+                    const response = sendWriteResponse(
+                        stored, 'PATCH', true,
+                    );
                     if (
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
@@ -1513,7 +1730,9 @@ export async function handleRequest(
                         adapter, routePattern, params,
                         body, organization, actor,
                     );
-                    return responseFromStored(stored);
+                    return sendWriteResponse(
+                        stored, 'DELETE', true,
+                    );
                 }
                 postWriteNotification(
                     adapter, routePattern, params,
@@ -1603,7 +1822,9 @@ export async function handleRequest(
                             ],
                         });
                     }
-                    return responseFromStored(authStored);
+                    return sendWriteResponse(
+                        authStored, 'POST', true,
+                    );
                 }
                 if (!matched.post) {
                     return Response.json(
@@ -1640,7 +1861,9 @@ export async function handleRequest(
                         adapter, routePattern, params,
                         body, organization, actor,
                     );
-                    return responseFromStored(stored);
+                    return sendWriteResponse(
+                        stored, 'POST', true,
+                    );
                 }
                 postWriteNotification(
                     adapter, routePattern, params,
@@ -1736,9 +1959,9 @@ async function unwrapResponse<T>(
     response: Response,
 ): Promise<T> {
     if (response.ok) {
-        return (response.status === HTTP_NO_CONTENT
-            ? undefined
-            : await response.json()) as T;
+        const text = await response.text();
+        if (text === '') return undefined as T;
+        return JSON.parse(text) as T;
     }
     const { error } =
         (await response.json()) as {

@@ -503,7 +503,7 @@ async () => {
             nowUtc(),
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
     await assertEntityAndJoinParity(db, workOrderId, flowId);
 
     // Transition with 2+ field values, no release.
@@ -555,7 +555,7 @@ async () => {
             transitionAt: transition2At,
         },
     ));
-    assert.equal(transition2.status, 204);
+    assert.equal(transition2.status, 201);
     await assertEntityAndJoinParity(db, workOrderId, flowId);
 
     // Entity PUT: a position bump. Its own body's flow_graph
@@ -583,7 +583,7 @@ async () => {
             position: 2,
         },
     ));
-    assert.equal(entityPut.status, 200);
+    assert.equal(entityPut.status, 201);
     const putBody = await entityPut.json() as {
         flow_graph: Record<string, unknown>;
     };
@@ -601,7 +601,7 @@ async () => {
             expireAt: claimFreshAt,
         },
     ));
-    assert.equal(claimFresh.status, 204);
+    assert.equal(claimFresh.status, 201);
     await assertEntityAndJoinParity(db, workOrderId, flowId);
 
     // Repeat-claim by A — idempotent no-op: the pair appends,
@@ -621,7 +621,7 @@ async () => {
             expireAt: claimRepeatAt,
         },
     ));
-    assert.equal(claimRepeat.status, 204);
+    assert.equal(claimRepeat.status, 201);
     assert.equal(
         0 /* states table retired */,
         beforeRepeat,
@@ -659,7 +659,7 @@ async () => {
             releaseAt: nowUtc(),
         },
     ));
-    assert.equal(unclaim.status, 204);
+    assert.equal(unclaim.status, 201);
     await assertEntityAndJoinParity(db, workOrderId, flowId);
 
     // The full chain: create(3) + transition1(1) +
@@ -707,7 +707,7 @@ test('duplicate-create: two creates, same work-order id, fresh'
             '2026-05-02T00:00:00.000000Z',
         ),
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
 
     const second = await handleRequest(db, req(
         'POST', '/work-orders', token,
@@ -731,7 +731,7 @@ test('duplicate-create: two creates, same work-order id, fresh'
     ));
     // The create op holds no echo of its own — a duplicate
     // create succeeds outright, never 412ing.
-    assert.equal(second.status, 204);
+    assert.equal(second.status, 201);
 
     const entityRes = await handleRequest(
         db, req('GET', '/work-orders/' + workOrderId, token),
@@ -790,7 +790,7 @@ async () => {
             position: 1,
         },
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
     assert.ok(firstId);
 
@@ -801,7 +801,7 @@ async () => {
             position: 2,
         },
     ));
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     assert.equal(second.headers.get('Supersedes'), null);
 
     const getRes = await handleRequest(
@@ -853,7 +853,7 @@ async () => {
             '2026-05-03T00:00:00.000000Z',
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const prefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/work-orders/',
@@ -1348,7 +1348,7 @@ async () => {
             nowUtc(),
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // Leg 2: release — a transition carrying release, ending
     // A's birth claim (distinct from leg 8's named release
@@ -1369,7 +1369,7 @@ async () => {
             transitionAt: releaseTransitionAt,
         },
     ));
-    assert.equal(release.status, 204);
+    assert.equal(release.status, 201);
 
     // The entity PUT: position bump, flow_graph held CONSTANT
     // (case 5's named invariant) — LOCKTIMEOUT SOURCING is
@@ -1398,7 +1398,7 @@ async () => {
             position: 2,
         },
     ));
-    assert.equal(entityPut.status, 200);
+    assert.equal(entityPut.status, 201);
     const putBody = await entityPut.json() as {
         flow_graph: Record<string, unknown>;
     };
@@ -1415,7 +1415,7 @@ async () => {
             expireAt: reclaimAt,
         },
     ));
-    assert.equal(reclaim.status, 204);
+    assert.equal(reclaim.status, 201);
 
     // Leg 4: idempotent re-claim by A — fires milliseconds after
     // leg 3, well within the tiny lockTimeout, same actor — 0
@@ -1430,7 +1430,7 @@ async () => {
             expireAt: idempotentAt,
         },
     ));
-    assert.equal(idempotent.status, 204);
+    assert.equal(idempotent.status, 201);
 
     // Advance the test clock past the tiny lockTimeout so leg
     // 3's claim genuinely reads as expired to the LIVE route's
@@ -1452,7 +1452,7 @@ async () => {
             expireAt: takeoverExpireAt,
         },
     ));
-    assert.equal(takeover.status, 204);
+    assert.equal(takeover.status, 201);
 
     // Leg 6: transition with values, by B.
     // Task 8 CUT: legacy fieldValues below the gate.
@@ -1498,7 +1498,7 @@ async () => {
             transitionAt: finishTransitionAt,
         },
     ));
-    assert.equal(finish.status, 204);
+    assert.equal(finish.status, 201);
 
     // Leg 8: unclaim via POST work-orders/:id/release
     // (deleteWorkOrderClaim's wire path), by A.
@@ -1511,7 +1511,7 @@ async () => {
             releaseAt: nowUtc(),
         },
     ));
-    assert.equal(unclaim.status, 204);
+    assert.equal(unclaim.status, 201);
 
     const replay = await replayWorkOrderStates(
         db, STARK_ORGANIZATION, workOrderId,
@@ -1597,7 +1597,7 @@ test('same-join-id retry: two different work-order creates '
             '2026-05-03T00:00:00.000000Z',
         ),
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
 
     // A DIFFERENT work order, a DIFFERENT operation (fresh event
     // ids) — not a byte-identical resend, which would replay via
@@ -1622,7 +1622,7 @@ test('same-join-id retry: two different work-order creates '
             '2026-05-03T00:00:01.000000Z',
         ),
     ));
-    assert.equal(second.status, 204);
+    assert.equal(second.status, 201);
 
     const joinPrefix = canonicalUriCollection(
         STARK_ORGANIZATION,

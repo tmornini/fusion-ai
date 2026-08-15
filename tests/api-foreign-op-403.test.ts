@@ -124,7 +124,7 @@ test('foreign-org work-order claim is 404', async () => {
             position: 1,
         },
     ));
-    assert.equal(created.status, 200);
+    assert.equal(created.status, 201);
 
     const claimAt = nowUtc();
     const foreign = await handleRequest(db, req(
@@ -157,7 +157,7 @@ test('foreign-org work-order release is 404', async () => {
             position: 2,
         },
     ));
-    assert.equal(created.status, 200);
+    assert.equal(created.status, 201);
 
     const foreign = await handleRequest(db, req(
         'POST', '/work-orders/wo-foreign-rel/release', tokenB, {
@@ -187,7 +187,7 @@ test('foreign-org work-order transition is 404', async () => {
             position: 3,
         },
     ));
-    assert.equal(created.status, 200);
+    assert.equal(created.status, 201);
 
     const foreign = await handleRequest(db, req(
         'POST',
@@ -241,7 +241,7 @@ test('foreign-org flow undo is 404', async () => {
         },
     ));
     assert.ok(
-        created.status === 204 || created.status === 200,
+        created.status === 201 || created.status === 201,
         'flow create status ' + created.status,
     );
 

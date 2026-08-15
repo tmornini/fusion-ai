@@ -131,7 +131,7 @@ test(
                 releaseAt,
             },
         ));
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 201);
         const events = await claimEventsFor(db);
         const released = events.find(
             (ev) => ev.id === 'rel-ev-1',
@@ -158,7 +158,7 @@ test(
                 releaseAt: nowUtc(),
             },
         ));
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 201);
         // No live claim → pair derives zero events; history
         // carries no event with id 'rel-ev-2'.
         const events = await claimEventsFor(db);
@@ -191,7 +191,7 @@ test(
                 releaseAt: nowUtc(),
             },
         ));
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 201);
         // claim_released authored by the releasing actor
         // (current), not the prior claimant (other).
         const events = await claimEventsFor(db);

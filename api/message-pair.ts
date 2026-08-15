@@ -29,7 +29,9 @@ import {
     ATTRIBUTE_DETAIL_PATTERN,
     INSTANCE_DETAIL_PATTERN,
 } from './family-registry.ts';
-import { HTTP_OK, HTTP_BAD_REQUEST } from './http-errors.ts';
+import {
+    HTTP_OK, HTTP_CREATED, HTTP_NO_CONTENT, HTTP_BAD_REQUEST,
+} from './http-errors.ts';
 
 // The shadow-ledger message pair: one row in `requests`, one
 // in `responses`, sharing `id`. Formed pre-tx (all crypto and
@@ -360,6 +362,40 @@ export async function headPairIdAt(
     return stored?.id;
 }
 
+// Latest PUT or DELETE at the address. Virgin is undefined.
+// DELETE head is a gone document, not a miss.
+export async function documentHeadAt(
+    db: DbAdapter,
+    uriCollection: string,
+    uriId: string,
+): Promise<{ id: string; method: string } | undefined> {
+    const pairs = await messageStore(db).getPairs(
+        uriCollection, uriId,
+    );
+    let head: {
+        at: string;
+        id: string;
+        method: string;
+    } | undefined;
+    for (const pair of pairs) {
+        const method = pair.request.method;
+        if (method !== 'PUT' && method !== 'DELETE') {
+            continue;
+        }
+        const at = pair.response.at;
+        const id = pair.response.id;
+        if (
+            head === undefined
+            || at > head.at
+            || (at === head.at && id > head.id)
+        ) {
+            head = { at, id, method };
+        }
+    }
+    if (head === undefined) return undefined;
+    return { id: head.id, method: head.method };
+}
+
 // Pre-tx idempotency fast-path: the stored response message
 // for a byte-identical resend, or undefined. ALSO the post-
 // dispatch source of every wire response header — the stored
@@ -520,6 +556,27 @@ export function responseFromStored(stored: ResponseEntity): Response {
         : new Response(null, init);
 }
 
+// Send-time status: 201 if this request appended a pair
+// (PUT/PATCH/POST), 200 if it stored nothing, DELETE 204.
+// Stored start-line stays GET-shaped 200 / DELETE 204.
+// Operation-ID is added here (wireHeadersFor), never stored
+// on the GET-shaped blob.
+export function sendWriteResponse(
+    stored: ResponseEntity,
+    method: string,
+    appended: boolean,
+): Response {
+    const rendered = responseFromStored(stored);
+    const status = method === 'DELETE'
+        ? HTTP_NO_CONTENT
+        : appended ? HTTP_CREATED : HTTP_OK;
+    if (status === rendered.status) return rendered;
+    return new Response(rendered.body, {
+        status,
+        headers: rendered.headers,
+    });
+}
+
 // The pre-store body of a just-formed pair's own response
 // message — a handler that must act on a value the gate's
 // successBody resolver already minted (token rotation's
@@ -544,7 +601,10 @@ export function pairResponseBody(
 // (api.ts) since it also folds in postWriteNotification between
 // the lookup and the response there.
 export async function storedPairResponse(
-    adapter: DbAdapter, requestHash: string, opName: string,
+    adapter: DbAdapter,
+    requestHash: string,
+    opName: string,
+    method: string,
 ): Promise<Response> {
     const stored = await storedResponseFor(adapter, requestHash);
     if (stored === undefined) {
@@ -552,7 +612,7 @@ export async function storedPairResponse(
             opName + ' stored no pair for a wired write',
         );
     }
-    return responseFromStored(stored);
+    return sendWriteResponse(stored, method, true);
 }
 
 // In-tx put by pair id (row ops only, no crypto): writes both

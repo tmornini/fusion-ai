@@ -204,7 +204,7 @@ test(
                 id: 'p1',
                 kind: 'person',
             }));
-        assert.equal(create.status, 204);
+        assert.equal(create.status, 201);
 
         const memberDb = memoryDbAdapter();
         await memberDb.postSchemaCreation();

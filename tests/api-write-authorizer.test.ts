@@ -25,8 +25,8 @@ import {
 
 // Pre-write authorizer: probe this address. Same id at two
 // collections is two documents. Foreign-id PUT geneses here;
-// foreign-id DELETE is already-gone 204; genesis (owner-null)
-// is unaffected.
+// foreign-id DELETE never-written here is 404; genesis
+// (owner-null) is unaffected.
 
 const BASE = 'http://localhost';
 const ORGANIZATION_A = '1';
@@ -124,13 +124,13 @@ async () => {
         'PUT', '/ideas/idea-a', tokenA,
         ideaDocument('A-owned', 'ev-idea-a'),
     ));
-    assert.equal(created.status, 200);
+    assert.equal(created.status, 201);
 
     const foreign = await handleRequest(db, req(
         'PUT', '/ideas/idea-a', tokenB,
         ideaDocument('stolen', 'ev-steal'),
     ));
-    assert.equal(foreign.status, 200);
+    assert.equal(foreign.status, 201);
     const gotB = await handleRequest(db, req(
         'GET', '/ideas/idea-a', tokenB,
     ));
@@ -161,7 +161,7 @@ async () => {
         'PUT', '/ideas/idea-b-genesis', tokenB,
         ideaDocument('B-new', 'ev-idea-b'),
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     // Phase Final Task 2: ideas row half stripped — org stamp
     // rides WRITE_RESPONSE_SPECS / derive GET, not the row.
     const getRes = await handleRequest(db, req(
@@ -198,7 +198,7 @@ async () => {
             initialStateAt: '2026-01-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const foreign = await handleRequest(db, req(
         'DELETE',
@@ -206,9 +206,9 @@ async () => {
             + '/record-types/rec-a',
         tokenB,
     ));
-    // Never written at B's record-types address: already-
-    // gone DELETE is 204. A's document is untouched.
-    assert.equal(foreign.status, 204);
+    // Never written at B's record-types address: 404,
+    // nothing stored. A's document is untouched.
+    assert.equal(foreign.status, 404);
     const still = await handleRequest(db, req(
         'GET',
         '/organizations/' + ORGANIZATION_A
@@ -233,12 +233,12 @@ test('foreign-id DELETE memberships/:id is 204', async () => {
             at: '2026-01-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(created.status, 200);
+    assert.equal(created.status, 201);
 
     const foreign = await handleRequest(db, req(
         'DELETE', '/memberships/m-other-a', tokenB,
     ));
-    assert.equal(foreign.status, 204);
+    assert.equal(foreign.status, 404);
     // Phase Final Task 2: memberships ROW half stripped —
     // surviving document is on the pair plane under org A.
     const stillThere = await handleRequest(db, req(
@@ -273,7 +273,7 @@ async () => {
     const created = await handleRequest(db, req(
         'PUT', '/projects/proj-a', tokenA, projectBody,
     ));
-    assert.equal(created.status, 200);
+    assert.equal(created.status, 201);
 
     const foreign = await handleRequest(db, req(
         'PUT', '/projects/proj-a', tokenB, {
@@ -282,7 +282,7 @@ async () => {
             state_event_id: 'ev-steal-proj',
         },
     ));
-    assert.equal(foreign.status, 200);
+    assert.equal(foreign.status, 201);
     const gotB = await handleRequest(db, req(
         'GET', '/projects/proj-a', tokenB,
     ));

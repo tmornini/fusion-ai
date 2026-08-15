@@ -159,7 +159,7 @@ async function putLiveType(
     const put = await handleRequest(db, req(
         'PUT', TYPE_DETAIL, adminToken, typeBody(),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function putAttribute(
@@ -171,7 +171,7 @@ async function putAttribute(
     const put = await handleRequest(db, req(
         'PUT', ATTRS + '/' + attrId, adminToken, body,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedWritableTextAttr(
@@ -246,7 +246,7 @@ async () => {
     const put = await putInstance(db, memberToken, [
         { attribute_id: ATTR_ID, value: 'Hello' },
     ]);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const before = await countInstancePairs(db);
     const del = await handleRequest(db, req(
         'DELETE', INSTANCE_DETAIL, memberToken,
@@ -318,7 +318,7 @@ async () => {
     });
 
     // New bytes: different Authorization → not a replay.
-    // R4: append a SECOND tombstone pair.
+    // Already-gone DELETE is 204 and does not append.
     const pairsBeforeSecond = await countInstancePairs(db);
     const deletesBefore = await countDeletePairs(db);
     const del2 = await handleRequest(db, req(
@@ -327,12 +327,12 @@ async () => {
     assert.equal(del2.status, 204);
     assert.equal(
         await countInstancePairs(db),
-        pairsBeforeSecond + 1,
-        'second DELETE appends new tombstone pair',
+        pairsBeforeSecond,
+        'already-gone DELETE does not append',
     );
     assert.equal(
         await countDeletePairs(db),
-        deletesBefore + 1,
+        deletesBefore,
     );
     const head = await deriveInstanceHead(
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
@@ -350,8 +350,7 @@ async () => {
     ));
     assert.equal(res.status, 404);
     assert.deepEqual(await res.json(), {
-        error: 'Not found: record_instances/'
-            + INSTANCE_ID,
+        error: 'Not found: ' + INSTANCE_DETAIL,
     });
     assert.equal(await countInstancePairs(db), 0);
 });
@@ -396,7 +395,7 @@ async () => {
         write_roles: [],
     });
     const put = await putInstance(db, memberToken, []);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const del = await handleRequest(db, req(
         'DELETE', INSTANCE_DETAIL, memberToken,
     ));
@@ -413,7 +412,7 @@ async () => {
         await adminDb();
     await putLiveType(db, adminToken);
     const put = await putInstance(db, memberToken, []);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const del = await handleRequest(db, req(
         'DELETE', INSTANCE_DETAIL, memberToken,
         undefined,
@@ -439,7 +438,7 @@ async () => {
     const put = await putInstance(db, memberToken, [
         { attribute_id: ATTR_ID, value: 'live' },
     ]);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const h0 = parseIfMatch(put.headers.get('ETag')!)!;
     const patchBody = {
         set: [

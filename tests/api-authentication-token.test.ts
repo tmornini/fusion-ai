@@ -183,7 +183,7 @@ async () => {
         code: 'code-for-match',
         client_id: 'client-a',
     }));
-    assert.equal(match.status, 200);
+    assert.equal(match.status, 201);
 });
 
 // PKCE S256 (RFC 7636): when authorize stored a code_challenge,
@@ -213,7 +213,7 @@ async () => {
         client_id: 'web',
         code_verifier: verifier,
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 });
 
 test('authorization_code with PKCE rejects a wrong verifier',
@@ -273,7 +273,7 @@ async () => {
         grant_type: 'authorization_code', code: 'the-code',
         client_id: 'web',
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const body = await res.json() as {
         access_token: string; refresh_token: string;
         token_type: string; expires_in: number;
@@ -304,7 +304,7 @@ test('replaying a consumed code is a 401 no-op', async () => {
         grant_type: 'authorization_code', code: 'the-code',
         client_id: 'web',
     }));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const before = (await deriveIdentityTokens(db)).length;
     const replay = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
@@ -337,7 +337,7 @@ test(
             })),
         ]);
         assert.deepEqual(
-            [a.status, b.status].sort(), [200, 401],
+            [a.status, b.status].sort(), [201, 401],
         );
         assert.equal(
             (await deriveIdentityTokens(db)).length, 1,
@@ -380,7 +380,7 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
         code: 'the-code-spent',
         client_id: 'web',
     }));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const spent = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code',
         code: 'the-code-spent',
@@ -404,7 +404,7 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
             client_id: 'web',
         })),
     ]);
-    assert.deepEqual([a.status, b.status].sort(), [200, 401]);
+    assert.deepEqual([a.status, b.status].sort(), [201, 401]);
     const raced = a.status === 401 ? a : b;
     assert.deepEqual(
         await raced.json(), { error: INVALID_CODE_ERROR });
@@ -438,7 +438,7 @@ test('refresh rotates to a new pair', async () => {
         grant_type: 'refresh',
         refresh_token: pair1.refresh_token,
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const pair2 = await res.json() as {
         access_token: string; refresh_token: string;
     };
@@ -490,7 +490,7 @@ async () => {
         subject_token: await devToken('current'),
         actor_token: await devToken('current'),
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const body = await res.json() as { access_token: string };
     const claims = decodeAccessToken(body.access_token);
     assert.equal(claims.sub, 'current');
@@ -548,7 +548,7 @@ async () => {
         actor_token: await devToken('current'),
         organization: '1',
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const body = await res.json() as { access_token: string };
     const claims = decodeAccessToken(body.access_token);
     assert.equal(claims.organization, '1');
@@ -593,7 +593,7 @@ async () => {
         subject_token: await devToken('current'),
         actor_token: await devToken('current'),
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const body = await res.json() as { access_token: string };
     const claims = decodeAccessToken(body.access_token);
     assert.equal(claims.organization, undefined);
@@ -639,7 +639,7 @@ test('client_credentials issues a gate-valid token', async () => {
         client_id: 'svc-client',
         client_assertion: assertion,
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const body = await res.json() as { access_token: string };
     assert.ok(Array.isArray(
         await GET(db, 'members', body.access_token)));

@@ -100,7 +100,7 @@ test(
             'deleted', '2020-01-01T00:00:00.000000Z',
             'ev-drv-skew-later',
         );
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
 
         // Genesis must still win the lifecycle reduction: the
         // project stays visible despite the later-arriving

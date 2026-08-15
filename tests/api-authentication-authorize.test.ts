@@ -70,14 +70,14 @@ async () => {
         method: 'password', username: 'demo@example.com',
         password: 's3cret', client_id: 'web',
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const { code } = await res.json() as { code: string };
     assert.ok(code.length > 0);
     const tok = await handleRequest(db, token({
         grant_type: 'authorization_code', code,
         client_id: 'web',
     }));
-    assert.equal(tok.status, 200);
+    assert.equal(tok.status, 201);
     const body = await tok.json() as { access_token: string };
     assert.ok(Array.isArray(
         await GET(db, 'members', body.access_token)));
@@ -94,7 +94,7 @@ test('an expired authorization code is a 401', async () => {
         method: 'password', username: 'demo@example.com',
         password: 's3cret', client_id: 'web',
     }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const { code } = await res.json() as { code: string };
     // 10 min TTL + 1 s past the bound.
     setClockForTest(() =>

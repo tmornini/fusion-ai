@@ -113,7 +113,7 @@ test('pendingInvitationFor: pre-tx vs in-tx (grantInvitation\'s'
             grantAt: '2026-06-02T00:00:00.000000Z',
         },
     ));
-    assert.equal(grant.status, 200);
+    assert.equal(grant.status, 201);
     const afterGrant = await assertPendingWritePathParity(
         db, ORGANIZATION_TWO, inviteeId);
     assert.equal(afterGrant?.id, 'inv-parity-write-first');
@@ -126,7 +126,7 @@ test('pendingInvitationFor: pre-tx vs in-tx (grantInvitation\'s'
             declineAt: '2026-06-02T00:00:01.000000Z',
         },
     ));
-    assert.equal(decline.status, 204);
+    assert.equal(decline.status, 201);
     assert.equal(
         await assertPendingWritePathParity(
             db, ORGANIZATION_TWO, inviteeId),
@@ -145,7 +145,7 @@ test('pendingInvitationFor: pre-tx vs in-tx (grantInvitation\'s'
             grantAt: '2026-06-02T00:00:02.000000Z',
         },
     ));
-    assert.equal(regrant.status, 200);
+    assert.equal(regrant.status, 201);
     const afterRegrant = await assertPendingWritePathParity(
         db, ORGANIZATION_TWO, inviteeId);
     assert.equal(afterRegrant?.id, 'inv-parity-write-second');
@@ -167,7 +167,7 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
                 grantEventId: id + '-grant', grantAt: at,
             },
         ));
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
     }
 
     async function assertStateWritePathParity(
@@ -211,7 +211,7 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
             acceptAt: '2026-06-03T00:00:02.000000Z',
         },
     ));
-    assert.equal(accept.status, 204);
+    assert.equal(accept.status, 201);
     assert.equal(
         await assertStateWritePathParity(
             'inv-parity-write-accepted', ACCEPT_TX_TABLES,
@@ -236,7 +236,7 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
             declineAt: '2026-06-03T00:00:04.000000Z',
         },
     ));
-    assert.equal(decline.status, 204);
+    assert.equal(decline.status, 201);
     assert.equal(
         await assertStateWritePathParity(
             'inv-parity-write-declined',
@@ -258,7 +258,7 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
             revokeAt: '2026-06-03T00:00:06.000000Z',
         },
     ));
-    assert.equal(revoke.status, 204);
+    assert.equal(revoke.status, 201);
     assert.equal(
         await assertStateWritePathParity(
             'inv-parity-write-revoked',
@@ -317,7 +317,7 @@ test('membershipExistsFor: pre-tx vs in-tx (acceptInvitation\'s'
             grantAt: '2026-06-04T00:00:00.000000Z',
         },
     ));
-    assert.equal(grant.status, 200);
+    assert.equal(grant.status, 201);
 
     const accept = await handleRequest(db, req(
         'POST',
@@ -328,7 +328,7 @@ test('membershipExistsFor: pre-tx vs in-tx (acceptInvitation\'s'
             acceptAt: '2026-06-04T00:00:01.000000Z',
         },
     ));
-    assert.equal(accept.status, 204);
+    assert.equal(accept.status, 201);
 
     assert.equal(
         await assertMembershipExistsWritePathParity(

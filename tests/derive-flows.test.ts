@@ -136,7 +136,7 @@ test(
             '2026-06-01T00:00:00.000000Z', 'ev-drv-skew-genesis',
             genesisGraph,
         );
-        assert.equal(genesis.status, 200);
+        assert.equal(genesis.status, 201);
         const head = await handleRequest(db, req(
             'GET', '/flows/' + id, token,
         ));
@@ -155,7 +155,7 @@ test(
             '2020-01-01T00:00:00.000000Z', 'ev-drv-skew-later',
             skewedGraph, { 'if-match': etag },
         );
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
 
         // Genesis must still win the lifecycle reduction: the
         // flow stays visible despite the later-arriving
@@ -226,7 +226,7 @@ test('ordering is oldest live head (at, id)', async () => {
             db, token, id, 'Order ' + id, 'active',
             AT, 'ev-' + id, emptyGraph(),
         );
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
     }
     const derived = await deriveFlows(db, STARK_ORGANIZATION);
     const observed = derived

@@ -242,7 +242,7 @@ async () => {
         'POST', COLLECTION, adminToken,
         createBody(TYPE_ID, ATTR_ID, 'Composed'),
     ));
-    assert.equal(post.status, 204);
+    assert.equal(post.status, 201);
 
     const typeGet = await handleRequest(db, req(
         'GET', DETAIL, adminToken,
@@ -315,7 +315,7 @@ async () => {
         'POST', COLLECTION, adminToken,
         createBody(TYPE_ID, ATTR_ID, 'Asset'),
     ));
-    assert.equal(create.status, 204);
+    assert.equal(create.status, 201);
     await seedFieldValueReferrer(
         db, adminToken, ATTR_ID,
     );
@@ -376,7 +376,7 @@ async () => {
     const post = await handleRequest(db, req(
         'POST', COLLECTION, adminToken, body,
     ));
-    assert.equal(post.status, 204);
+    assert.equal(post.status, 201);
     const typeGet = await handleRequest(db, req(
         'GET', DETAIL, adminToken,
     ));

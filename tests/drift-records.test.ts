@@ -713,7 +713,7 @@ async () => {
             'rec-drift-chain-1-genesis', nowUtc(),
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
     await assertRecordWire();
     await assertAttributeWire(attrA);
     await assertAttributeWire(attrB);
@@ -736,7 +736,7 @@ async () => {
             'active', editStateAt, editStateEventId,
         ),
     ));
-    assert.equal(edited.status, 204);
+    assert.equal(edited.status, 201);
     await assertRecordWire();
     await assertAttributeAbsent(attrA);
     await assertAttributeWire(attrB);
@@ -782,7 +782,7 @@ async () => {
             state_event_id: editStateEventId,
         },
     ));
-    assert.equal(echoed.status, 200);
+    assert.equal(echoed.status, 201);
     assert.equal(
         0 /* states table retired */,
         beforeStatesCount,
@@ -805,7 +805,7 @@ async () => {
             state_event_id: 'rec-drift-chain-1-archived',
         },
     ));
-    assert.equal(archived.status, 200);
+    assert.equal(archived.status, 201);
     await assertRecordWire();
     const afterArchive = await derivedRecords(
         db, STARK_ORGANIZATION,
@@ -826,7 +826,7 @@ async () => {
             state_event_id: 'rec-drift-chain-1-deleted',
         },
     ));
-    assert.equal(deletedTransition.status, 200);
+    assert.equal(deletedTransition.status, 201);
     const deletedGet = await handleRequest(
         db, req('GET', '/organizations/' + STARK_ORGANIZATION
                 + '/record-types/' + recordId, token),
@@ -861,7 +861,7 @@ async () => {
             [], 'rec-drift-chain-2-genesis', nowUtc(),
         ),
     ));
-    assert.equal(secondCreated.status, 204);
+    assert.equal(secondCreated.status, 201);
     const secondDeleted = await handleRequest(db, req(
         'DELETE', '/organizations/' + STARK_ORGANIZATION
                 + '/record-types/' + secondRecordId, token,
@@ -907,7 +907,7 @@ async () => {
             '2026-05-02T00:00:00.000000Z',
         ),
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
 
     const firstDocumentPairs = documentPairsAt(
         await db.requests.getAllWhere('uri_collection', prefix),
@@ -931,7 +931,7 @@ async () => {
             '2026-05-02T00:00:01.000000Z',
         ),
     ));
-    assert.equal(second.status, 204);
+    assert.equal(second.status, 201);
 
     const allRequests =
         await db.requests.getAllWhere('uri_collection', prefix);
@@ -988,7 +988,7 @@ async () => {
             '2026-05-03T00:00:00.000000Z',
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const recordsPrefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/record-types/',
@@ -1072,7 +1072,7 @@ test('GET record trio is lifecycle-current under clock skew'
             state_event_id: genesisEv,
         },
     ));
-    assert.equal(genesis.status, 200);
+    assert.equal(genesis.status, 201);
 
     // Later arrival, earlier state_at, different state + name.
     // 'deleted' would hide the row if it won as current —
@@ -1086,7 +1086,7 @@ test('GET record trio is lifecycle-current under clock skew'
             state_event_id: skewedEv,
         },
     ));
-    assert.equal(skewed.status, 200);
+    assert.equal(skewed.status, 201);
 
     const expected = {
         id: recordId,
@@ -1187,7 +1187,7 @@ async () => {
                 state_event_id: f.ev,
             },
         ));
-        assert.equal(put.status, 200);
+        assert.equal(put.status, 201);
     }
     // Oldest live head (at, id): z, a, m — insertion.
     const expectedIds = [
@@ -1228,7 +1228,7 @@ async () => {
             state_event_id: 'rec-drift-recreate-1-genesis',
         },
     ));
-    assert.equal(genesis.status, 200);
+    assert.equal(genesis.status, 201);
 
     const deleted = await handleRequest(db, req(
         'DELETE', '/organizations/' + STARK_ORGANIZATION
@@ -1257,7 +1257,7 @@ async () => {
             state_event_id: 'rec-drift-recreate-1-reborn',
         },
     ));
-    assert.equal(recreated.status, 200);
+    assert.equal(recreated.status, 201);
     assert.equal(
         recreated.headers.get('Supersedes'), null,
     );
@@ -1465,7 +1465,7 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
             states: ['n-start', 'n-middle', 'claimed'],
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // Task 8 CUT: legacy fieldValues below the gate
     // (live leg still seeds STORED SFV fold shape).

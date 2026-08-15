@@ -197,7 +197,7 @@ async () => {
     const put = await handleRequest(db, req(
         'PUT', DETAIL + 'rt-1', adminToken, body,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const echo = await put.json() as RecordTypePutEcho;
     assert.deepEqual(echo, {
         id: 'rt-1',
@@ -252,7 +252,7 @@ async () => {
             'Stolen', 0, 'active', AT, 'rt-stolen-g',
         ),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const got = await handleRequest(db, req(
         'GET', DETAIL + 'rt-foreign', adminToken,
     ));
@@ -271,7 +271,7 @@ async () => {
             'Rental', 1, 'active', AT, 'rt-1-genesis',
         ),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const del = await handleRequest(db, req(
         'DELETE', DETAIL + 'rt-1', adminToken,
     ));
@@ -341,7 +341,7 @@ async () => {
             },
         },
     ));
-    assert.equal(flowCreate.status, 204);
+    assert.equal(flowCreate.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
         '/flows/flow-restrict-1/records/fr-1',
@@ -353,7 +353,7 @@ async () => {
             at: AT,
         },
     ));
-    assert.equal(join.status, 200);
+    assert.equal(join.status, 201);
     const del = await handleRequest(db, req(
         'DELETE', DETAIL + 'rt-1', adminToken,
     ));
@@ -403,7 +403,7 @@ async () => {
             'Before', 1, 'active', AT, 'rt-1-genesis',
         ),
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const second = await handleRequest(db, req(
         'PUT', DETAIL + 'rt-1', adminToken,
         typeBody(
@@ -411,7 +411,7 @@ async () => {
             'updated',
         ),
     ));
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     const echo = await second.json() as RecordTypePutEcho;
     assert.equal(echo.name, 'After');
     assert.equal(echo.position, 2);

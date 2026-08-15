@@ -139,7 +139,7 @@ async function seedFlow(
             },
         },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 async function seedWorkOrder(
@@ -155,7 +155,7 @@ async function seedWorkOrder(
             position: 1,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
         '/flows/' + FLOW_ID + '/work-orders/' + fwoId,
@@ -166,7 +166,7 @@ async function seedWorkOrder(
             at: AT,
         },
     ));
-    assert.equal(join.status, 200);
+    assert.equal(join.status, 201);
 }
 
 async function seedLiveType(
@@ -183,7 +183,7 @@ async function seedLiveType(
             state_event_id: TYPE_ID + '-genesis',
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedAttribute(
@@ -201,7 +201,7 @@ async function seedAttribute(
             write_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedInstance(
@@ -220,7 +220,7 @@ async function seedInstance(
             ],
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedFlowTypeJoin(
@@ -238,7 +238,7 @@ async function seedFlowTypeJoin(
             at: AT,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function bindInstance(
@@ -256,7 +256,7 @@ async function bindInstance(
             record_type_id: TYPE_ID,
         },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 async function transitionTo(
@@ -277,7 +277,7 @@ async function transitionTo(
             transitionAt: nowUtc(),
         },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 // Fixture: type + instance + flow join + TWO WOs both

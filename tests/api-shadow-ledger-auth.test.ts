@@ -115,7 +115,7 @@ async function fullLoginFlow(db: GuardedDbAdapter): Promise<{
             method: 'password', username: 'demo@example.com',
             password: PASSWORD, client_id: 'web',
         }));
-    assert.equal(authorizeRes.status, 200);
+    assert.equal(authorizeRes.status, 201);
     const { code } = await authorizeRes.json() as {
         code: string;
     };
@@ -124,7 +124,7 @@ async function fullLoginFlow(db: GuardedDbAdapter): Promise<{
             grant_type: 'authorization_code', code,
             client_id: 'web',
         }));
-    assert.equal(tokenRes.status, 200);
+    assert.equal(tokenRes.status, 201);
     const grant = await tokenRes.json() as {
         access_token: string;
         refresh_token: string;
@@ -300,7 +300,7 @@ async () => {
             method: 'password', username: 'demo@example.com',
             password: PASSWORD, client_id: 'web',
         }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     assert.ok(res.headers.get('Response-ID'));
     assert.ok(res.headers.get('Date'));
 });
@@ -327,7 +327,7 @@ async () => {
             grant_type: 'refresh',
             refresh_token: first.refresh_token,
         }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const rotated = await res.json() as {
         access_token: string; refresh_token: string;
     };
@@ -369,7 +369,7 @@ test('a token-exchange grant stores its own pair with live'
             subject_token: subjectToken,
             actor_token: subjectToken,
         }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const body = await res.json() as {
         access_token: string; refresh_token: string;
     };
@@ -467,7 +467,7 @@ test('a client_credentials grant stores its own pair with live'
             client_id: 'svc-client',
             client_assertion: assertion,
         }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const body = await res.json() as {
         access_token: string; refresh_token: string;
     };
@@ -544,7 +544,7 @@ test('an Authorization header sent alongside the token grant is'
         }),
     });
     const res = await handleRequest(db, req);
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const requests = await db.requests.getAll();
     const row = requests.find(
         r => r.uri_collection === '/authentication/token/');

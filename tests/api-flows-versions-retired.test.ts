@@ -59,7 +59,7 @@ async () => {
         db,
         req('PUT', '/flows/flow-ver-1', token, flowBody()),
     );
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 
     const index = await handleRequest(
         db,

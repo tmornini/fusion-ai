@@ -235,7 +235,7 @@ async () => {
             'PUT', '/projects/' + f.id, token,
             projectDocument(f.title, 'submitted', f.at, f.ev),
         ));
-        assert.equal(put.status, 200);
+        assert.equal(put.status, 201);
         assert.deepEqual(
             await put.json(),
             wireProjectPut(f.id, f.title),
@@ -484,7 +484,7 @@ test('live conversion case: a converted idea\'s project'
             baselines: [],
         },
     ));
-    assert.equal(conv.status, 204);
+    assert.equal(conv.status, 201);
 
     const getRes = await handleRequest(
         db, req('GET', '/projects/' + projectId, token),
@@ -539,7 +539,7 @@ test('GET project trio is lifecycle-current under clock skew'
             genesisAt, genesisEv,
         ),
     ));
-    assert.equal(genesis.status, 200);
+    assert.equal(genesis.status, 201);
 
     // Later arrival, earlier state_at, different state + title.
     const skewed = await handleRequest(db, req(
@@ -549,7 +549,7 @@ test('GET project trio is lifecycle-current under clock skew'
             skewedAt, skewedEv,
         ),
     ));
-    assert.equal(skewed.status, 200);
+    assert.equal(skewed.status, 201);
 
     const expected = wireProjectGet(
         projectId, 'Skewed Title', 'submitted',

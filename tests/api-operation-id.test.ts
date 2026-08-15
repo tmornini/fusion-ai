@@ -85,7 +85,7 @@ async () => {
             operationId: TEST_OPERATION_ID,
         }),
     );
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     assert.equal(
         res.headers.get('Operation-ID'),
         TEST_OPERATION_ID,
@@ -121,7 +121,7 @@ async () => {
             },
         }),
     );
-    assert.equal(seed.status, 200);
+    assert.equal(seed.status, 201);
     const before = new Set(
         (await db.requests.getAll()).map((r) => r.id),
     );
@@ -135,7 +135,7 @@ async () => {
             operationId: ROTATION_OP,
         }),
     );
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const fresh = (await db.requests.getAll())
         .filter((r) => !before.has(r.id));
     assert.ok(fresh.length > 1);

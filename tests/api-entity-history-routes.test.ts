@@ -115,7 +115,7 @@ async function seedIdeaLifecycle(
             ),
         ),
     );
-    assert.equal(g.status, 200);
+    assert.equal(g.status, 201);
     const t = await handleRequest(
         db,
         req(
@@ -130,7 +130,7 @@ async function seedIdeaLifecycle(
             ),
         ),
     );
-    assert.equal(t.status, 200);
+    assert.equal(t.status, 201);
 }
 
 function versionOf(res: Response): string {
@@ -159,7 +159,7 @@ test(
                 ),
             ),
         );
-        assert.equal(genesis.status, 200);
+        assert.equal(genesis.status, 201);
         const v1 = versionOf(genesis);
         const later = await handleRequest(
             db,
@@ -175,7 +175,7 @@ test(
                 ),
             ),
         );
-        assert.equal(later.status, 200);
+        assert.equal(later.status, 201);
         const v2 = versionOf(later);
         assert.notEqual(v1, v2);
 
@@ -390,7 +390,7 @@ async function seedProjectLifecycle(
             ),
         ),
     );
-    assert.equal(g.status, 200);
+    assert.equal(g.status, 201);
     const t = await handleRequest(
         db,
         req(
@@ -405,7 +405,7 @@ async function seedProjectLifecycle(
             ),
         ),
     );
-    assert.equal(t.status, 200);
+    assert.equal(t.status, 201);
 }
 
 test(
@@ -526,7 +526,7 @@ async function seedRecordLifecycle(
             ),
         ),
     );
-    assert.equal(g.status, 200);
+    assert.equal(g.status, 201);
     const t = await handleRequest(
         db,
         req(
@@ -541,7 +541,7 @@ async function seedRecordLifecycle(
             ),
         ),
     );
-    assert.equal(t.status, 200);
+    assert.equal(t.status, 201);
 }
 
 test(
@@ -674,7 +674,7 @@ async function seedFlowLifecycle(
             ),
         ),
     );
-    assert.equal(g.status, 200);
+    assert.equal(g.status, 201);
     const headId = g.headers.get('Response-ID');
     assert.ok(headId !== null);
     const t = await handleRequest(
@@ -697,7 +697,7 @@ async function seedFlowLifecycle(
             ).headers.get('ETag')! },
         ),
     );
-    assert.equal(t.status, 200);
+    assert.equal(t.status, 201);
 }
 
 test(
@@ -814,7 +814,7 @@ async function seedObjectiveLifecycle(
             ),
         ),
     );
-    assert.equal(g.status, 200);
+    assert.equal(g.status, 201);
     const t = await handleRequest(
         db,
         req(
@@ -828,7 +828,7 @@ async function seedObjectiveLifecycle(
             ),
         ),
     );
-    assert.equal(t.status, 200);
+    assert.equal(t.status, 201);
 }
 
 test(

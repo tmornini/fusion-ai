@@ -161,7 +161,7 @@ test(
                 initialStateEventId: 'ev-1',
                 initialStateAt: '2099-01-01T00:00:00.000000Z',
             }));
-        assert.equal(create.status, 204);
+        assert.equal(create.status, 201);
         const edit = await handleRequest(adminDb, req(
             'POST', '/ai-members/a1', DEV_TOKEN, {
                 detail: detail('Renamed'),
@@ -169,7 +169,7 @@ test(
                 stateAt: '2099-01-01T00:00:00.000000Z',
                 stateEventId: 'ev-1',
             }));
-        assert.equal(edit.status, 204);
+        assert.equal(edit.status, 201);
 
         const memberDb = memoryDbAdapter();
         await memberDb.postSchemaCreation();

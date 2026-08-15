@@ -136,7 +136,7 @@ async function putLiveType(
     const put = await handleRequest(db, req(
         'PUT', TYPE_DETAIL, adminToken, typeBody(),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedWritableTextAttr(
@@ -154,7 +154,7 @@ async function seedWritableTextAttr(
             write_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function putLiveInstance(
@@ -171,7 +171,7 @@ async function putLiveInstance(
             ],
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 test('type DELETE with one live instance → 409 naming '

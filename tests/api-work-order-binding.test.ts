@@ -185,7 +185,7 @@ async function seedFlow(
             },
         },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 async function seedWorkOrder(
@@ -201,7 +201,7 @@ async function seedWorkOrder(
             position: 1,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
         '/flows/' + FLOW_ID + '/work-orders/' + fwoId,
@@ -212,7 +212,7 @@ async function seedWorkOrder(
             at: AT,
         },
     ));
-    assert.equal(join.status, 200);
+    assert.equal(join.status, 201);
 }
 
 async function seedLiveType(
@@ -233,7 +233,7 @@ async function seedLiveType(
             state_event_id: typeId + '-genesis',
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedAttribute(
@@ -251,7 +251,7 @@ async function seedAttribute(
             write_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedInstance(
@@ -270,7 +270,7 @@ async function seedInstance(
             ],
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedFlowTypeJoin(
@@ -290,7 +290,7 @@ async function seedFlowTypeJoin(
             at: AT,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seededDb(): Promise<{
@@ -425,7 +425,7 @@ async () => {
             state_event_id: typeIdB + '-genesis',
         },
     ));
-    assert.equal(putTypeB.status, 200);
+    assert.equal(putTypeB.status, 201);
     const putAttrB = await handleRequest(db, req(
         'PUT',
         typeB + '/attributes/' + ATTR_ID,
@@ -444,7 +444,7 @@ async () => {
             ],
         },
     ));
-    assert.equal(putAttrB.status, 200);
+    assert.equal(putAttrB.status, 201);
     const foreignInst = 'inst-foreign-b';
     const putInstB = await handleRequest(db, req(
         'PUT',
@@ -459,7 +459,7 @@ async () => {
             ],
         },
     ));
-    assert.equal(putInstB.status, 200);
+    assert.equal(putInstB.status, 201);
     // Bind under org A with the foreign instance id + the
     // org-A joined type — head resolves under fenced org
     // only, so foreign is absent 404 (no oracle).
@@ -500,7 +500,7 @@ async () => {
             ],
         },
     ));
-    assert.equal(attr.status, 200);
+    assert.equal(attr.status, 201);
     const otherInst = 'inst-bind-other';
     const inst = await handleRequest(db, req(
         'PUT',
@@ -517,7 +517,7 @@ async () => {
             ],
         },
     ));
-    assert.equal(inst.status, 200);
+    assert.equal(inst.status, 201);
     const res = await handleRequest(db, req(
         'POST', BINDING, token,
         bindBody(otherInst, TYPE_OTHER),
@@ -538,7 +538,7 @@ async () => {
     const res = await handleRequest(db, req(
         'POST', BINDING, token, bindBody(),
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 
     const detail = await handleRequest(db, req(
         'GET', '/work-orders/' + WO_ID, token,
@@ -583,12 +583,12 @@ async () => {
     const first = await handleRequest(db, req(
         'POST', BINDING, token, bindBody(),
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
     const before = await pairCount(db);
     const second = await handleRequest(db, req(
         'POST', BINDING, token, bindBody(),
     ));
-    assert.equal(second.status, 204);
+    assert.equal(second.status, 201);
     assert.equal(await pairCount(db), before);
 });
 
@@ -600,7 +600,7 @@ async () => {
     const first = await handleRequest(db, req(
         'POST', BINDING, token, bindBody(),
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
     const res = await handleRequest(db, req(
         'POST', BINDING, token,
         bindBody(INSTANCE_2, TYPE_ID),

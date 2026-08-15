@@ -208,7 +208,7 @@ test('PUT members/:id accepts the lifecycle trio and echoes'
             state_event_id: 'mem-trio-1-ev1',
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const wire = await res.json() as Record<string, unknown>;
     assert.equal(wire.id, 'mem-trio-1');
     assert.equal(wire.type, 'human');

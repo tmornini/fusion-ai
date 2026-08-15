@@ -568,7 +568,7 @@ test('POST identity-tokens/:jti/revocation clears authz for a'
             token, {},
         ),
     );
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 });
 
 // ── regime 4: the identity-token-revocations PUT-member/
@@ -593,5 +593,5 @@ test('PUT identity-token-revocations/:id clears authz for a'
             },
         ),
     );
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 });

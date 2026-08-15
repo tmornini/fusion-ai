@@ -83,7 +83,7 @@ test(
                 },
             ),
         );
-        assert.equal(put.status, 200);
+        assert.equal(put.status, 201);
         const res = await handleRequest(
             db,
             req(

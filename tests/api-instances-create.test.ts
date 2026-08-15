@@ -150,7 +150,7 @@ async function putLiveType(
     const put = await handleRequest(db, req(
         'PUT', TYPE_DETAIL, adminToken, typeBody(),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function putAttribute(
@@ -162,7 +162,7 @@ async function putAttribute(
     const put = await handleRequest(db, req(
         'PUT', ATTRS + '/' + attrId, adminToken, body,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedWritableTextAttr(
@@ -202,7 +202,7 @@ async () => {
     const res = await handleRequest(db, req(
         'PUT', INSTANCE_DETAIL, memberToken, body,
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const responseId = res.headers.get('Response-ID');
     assert.ok(
         responseId !== null && responseId !== '',
@@ -246,7 +246,7 @@ async () => {
     const res = await handleRequest(db, req(
         'PUT', INSTANCE_DETAIL, memberToken, { set: [] },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const echo = await res.json() as { set: unknown[] };
     assert.deepEqual(echo.set, []);
     const head = await deriveInstanceHead(
@@ -401,7 +401,7 @@ async () => {
             ],
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 });
 
 test('PUT bad value (number \'abc\') → 400 naming attribute',
@@ -449,7 +449,7 @@ async () => {
             { attribute_id: ATTR_ID, value: 'one' },
         ]),
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const second = await handleRequest(db, req(
         'PUT', INSTANCE_DETAIL, memberToken,
         setBody([
@@ -522,14 +522,14 @@ async () => {
     const first = await handleRequest(db, req(
         'PUT', INSTANCE_DETAIL, memberToken, body,
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const originalId = first.headers.get('Response-ID')!;
     const originalEtag = first.headers.get('ETag');
     const originalBody = await first.json();
     const second = await handleRequest(db, req(
         'PUT', INSTANCE_DETAIL, memberToken, body,
     ));
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     assert.equal(
         second.headers.get('Response-ID'),
         originalId,
@@ -551,7 +551,7 @@ async () => {
     assert.equal(atAddress.length, 1);
 });
 
-test('two creates racing one address → first 200, second 409',
+test('two creates racing one address → first 201, second 409',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -573,7 +573,7 @@ async () => {
     ]);
     assert.deepEqual(
         [a.status, b.status].sort(),
-        [200, 409],
+        [201, 409],
     );
     const loser = a.status === 409 ? a : b;
     assert.deepEqual(await loser.json(), {

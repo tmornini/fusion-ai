@@ -264,7 +264,7 @@ test('leg 4: PUT /organizations/:id then wire + derive agree'
         'PUT', '/organizations/' + STARK_ORGANIZATION,
         adminToken, updatedFields,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const putBody = await put.json() as OrganizationEntity;
     assert.equal(putBody.name, 'Stark Industries Renamed');
 

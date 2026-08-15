@@ -162,7 +162,7 @@ async function putLiveType(
     const put = await handleRequest(db, req(
         'PUT', TYPE_DETAIL, adminToken, typeBody(),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function putAttribute(
@@ -174,7 +174,7 @@ async function putAttribute(
     const put = await handleRequest(db, req(
         'PUT', ATTRS + '/' + attrId, adminToken, body,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedWritableTextAttr(
@@ -264,7 +264,7 @@ async () => {
     const put = await putInstance(db, memberToken, [
         { attribute_id: ATTR_ID, value: 'Hello' },
     ]);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const headEtag = put.headers.get('ETag')!;
     const before = await countInstancePairs(db);
     const patch = await handleRequest(db, req(
@@ -279,7 +279,7 @@ async () => {
         },
         { [IF_MATCH_HEADER]: headEtag },
     ));
-    assert.equal(patch.status, 200);
+    assert.equal(patch.status, 201);
     const newEtag = patch.headers.get('ETag');
     assert.ok(newEtag !== null && newEtag !== '');
     assert.notEqual(newEtag, headEtag);
@@ -332,16 +332,19 @@ async () => {
     const put = await putInstance(db, memberToken, [
         { attribute_id: ATTR_ID, value: 'Hello' },
     ]);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const res = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
         { set: [{ attribute_id: ATTR_ID, value: 'x' }] },
     ));
     assert.equal(res.status, 428);
-    assert.deepEqual(await res.json(), {
-        error: 'If-Match is required to PATCH '
-            + INSTANCE_DETAIL,
-    });
+    const body = await res.json() as {
+        id: string;
+        error?: string;
+    };
+    assert.equal(body.error, undefined);
+    assert.equal(body.id, INSTANCE_ID);
+    assert.ok(res.headers.get('ETag'));
 });
 
 test('PATCH stale If-Match → 412; re-GET + retry → 200',
@@ -359,7 +362,7 @@ async () => {
         { set: [{ attribute_id: ATTR_ID, value: 'B' }] },
         { [IF_MATCH_HEADER]: e0 },
     ));
-    assert.equal(p1.status, 200);
+    assert.equal(p1.status, 201);
     const e1 = p1.headers.get('ETag')!;
     const stale = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
@@ -367,10 +370,13 @@ async () => {
         { [IF_MATCH_HEADER]: e0 },
     ));
     assert.equal(stale.status, 412);
-    assert.deepEqual(await stale.json(), {
-        error: 'If-Match does not match the '
-            + 'current instance at ' + INSTANCE_DETAIL,
-    });
+    const staleBody = await stale.json() as {
+        id: string;
+        error?: string;
+    };
+    assert.equal(staleBody.error, undefined);
+    assert.equal(staleBody.id, INSTANCE_ID);
+    assert.ok(stale.headers.get('ETag'));
     const freshGet = await handleRequest(db, req(
         'GET', INSTANCE_DETAIL, memberToken,
     ));
@@ -381,7 +387,7 @@ async () => {
         { set: [{ attribute_id: ATTR_ID, value: 'C' }] },
         { [IF_MATCH_HEADER]: e1 },
     ));
-    assert.equal(retry.status, 200);
+    assert.equal(retry.status, 201);
     const head = await deriveInstanceHead(
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
     );
@@ -399,7 +405,7 @@ async () => {
     const put = await putInstance(db, memberToken, [
         { attribute_id: ATTR_ID, value: 'Hello' },
     ]);
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const malformed = [
         '*',
         '"a", "b"',
@@ -711,7 +717,7 @@ async () => {
             [IF_MATCH_HEADER]: put.headers.get('ETag')!,
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const afterHead = await deriveInstanceHead(
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
     );
@@ -753,7 +759,7 @@ async () => {
             [IF_MATCH_HEADER]: put.headers.get('ETag')!,
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const echo = await res.json() as {
         set: { attribute_id: string; value: string }[];
     };
@@ -792,7 +798,7 @@ async () => {
         'PATCH', INSTANCE_DETAIL, memberToken, body,
         { [IF_MATCH_HEADER]: e0 },
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const originalEtag = first.headers.get('ETag')!;
     const originalBody = await first.json();
     const originalResponseId =
@@ -810,7 +816,7 @@ async () => {
         },
         { [IF_MATCH_HEADER]: originalEtag },
     ));
-    assert.equal(secondWrite.status, 200);
+    assert.equal(secondWrite.status, 201);
     assert.notEqual(
         secondWrite.headers.get('ETag'),
         originalEtag,
@@ -821,7 +827,7 @@ async () => {
         'PATCH', INSTANCE_DETAIL, memberToken, body,
         { [IF_MATCH_HEADER]: e0 },
     ));
-    assert.equal(replay.status, 200);
+    assert.equal(replay.status, 201);
     assert.equal(
         replay.headers.get('ETag'),
         originalEtag,
@@ -875,7 +881,7 @@ async () => {
     ]);
     assert.deepEqual(
         [a.status, b.status].sort(),
-        [200, 412],
+        [201, 412],
     );
 });
 
@@ -949,7 +955,7 @@ async () => {
         },
         { [IF_MATCH_HEADER]: strongEtagOf(h0) },
     ));
-    assert.equal(advance.status, 200);
+    assert.equal(advance.status, 201);
     const live = await deriveInstanceHead(
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
     );
@@ -1057,7 +1063,7 @@ async () => {
         },
         { [IF_MATCH_HEADER]: e0 },
     ));
-    assert.equal(adminPatch.status, 200);
+    assert.equal(adminPatch.status, 201);
     const e1 = adminPatch.headers.get('ETag')!;
     assert.notEqual(e1, e0);
     // Member still holding e0 412s.
@@ -1107,7 +1113,7 @@ async () => {
         },
         { [IF_MATCH_HEADER]: memberEtag },
     ));
-    assert.equal(retry.status, 200);
+    assert.equal(retry.status, 201);
     const head = await deriveInstanceHead(
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
     );

@@ -112,7 +112,7 @@ test('nested record-types write stamps the bound org'
         'POST', '/organizations/A/record-types',
         token,
         editBody('B')));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
     const get = await handleRequest(db, req(
         'GET',
         '/organizations/A/record-types/rec-1',

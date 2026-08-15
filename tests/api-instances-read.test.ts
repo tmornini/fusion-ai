@@ -151,7 +151,7 @@ async function putLiveType(
     const put = await handleRequest(db, req(
         'PUT', TYPE_DETAIL, adminToken, typeBody(),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function putAttribute(
@@ -163,7 +163,7 @@ async function putAttribute(
     const put = await handleRequest(db, req(
         'PUT', ATTRS + '/' + attrId, adminToken, body,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedPublicAndSecretAttrs(
@@ -271,7 +271,7 @@ async () => {
             },
         ],
     );
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const putPairId = put.headers.get('Response-ID');
     assert.ok(putPairId !== null && putPairId !== '');
     const res = await handleRequest(db, req(
@@ -322,7 +322,7 @@ async () => {
             },
         ],
     );
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const res = await handleRequest(db, req(
         'GET', detailPath(INSTANCE_A), memberToken,
     ));
@@ -353,7 +353,7 @@ async () => {
             },
         ],
     );
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const res = await handleRequest(db, req(
         'GET', detailPath(INSTANCE_A), adminToken,
     ));
@@ -469,7 +469,7 @@ async () => {
             },
         ],
     );
-    assert.equal(putB.status, 200);
+    assert.equal(putB.status, 201);
     const pairB = putB.headers.get('Response-ID')!;
     const putA = await putInstance(
         db, memberToken, INSTANCE_A, [
@@ -479,7 +479,7 @@ async () => {
             },
         ],
     );
-    assert.equal(putA.status, 200);
+    assert.equal(putA.status, 201);
     const pairA = putA.headers.get('Response-ID')!;
     const genesisC = await appendInstancePair(
         db, ORGANIZATION, TYPE_ID, INSTANCE_C,
@@ -560,7 +560,7 @@ async () => {
             },
         ],
     );
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const pairId = put.headers.get('Response-ID')!;
     const res = await handleRequest(db, req(
         'GET', detailPath(INSTANCE_A), memberToken,

@@ -137,7 +137,7 @@ test('e2e: PUT flows/:id/tags/:name creates a tag pinning the'
         'PUT', '/flows/flow-tag-1/tags/v1', token,
         { flow_response_id: responseId },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const putBody = await put.json() as {
         id: string; flow_id: string; flow_response_id: string;
     };
@@ -178,7 +178,7 @@ test('e2e: a re-PUT of the same tag name (pinning a DIFFERENT'
         'PUT', '/flows/flow-tag-3/tags/v1', token,
         { flow_response_id: r1 },
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
     assert.ok(firstId);
 
@@ -195,7 +195,7 @@ test('e2e: a re-PUT of the same tag name (pinning a DIFFERENT'
             )
         ).headers.get('ETag')! },
     ));
-    assert.equal(saved.status, 200);
+    assert.equal(saved.status, 201);
     const r2 = await headResponseId(db, token, 'flow-tag-3');
     assert.notEqual(r2, r1);
 
@@ -203,7 +203,7 @@ test('e2e: a re-PUT of the same tag name (pinning a DIFFERENT'
         'PUT', '/flows/flow-tag-3/tags/v1', token,
         { flow_response_id: r2 },
     ));
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     const secondId = second.headers.get('Response-ID');
     assert.ok(secondId);
     assert.notEqual(secondId, firstId);
@@ -227,7 +227,7 @@ test('e2e: DELETE marks the tag — GET 404s after, and the'
         'PUT', '/flows/flow-tag-4/tags/v1', token,
         { flow_response_id: r1 },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const putId = put.headers.get('Response-ID');
 
     const del = await handleRequest(db, req(
@@ -303,7 +303,7 @@ test('e2e: a member-role identity (not just admin) can'
         'PUT', '/flows/flow-tag-7/tags/v1', memberToken,
         { flow_response_id: r1 },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 
     const get = await handleRequest(db, req(
         'GET', '/flows/flow-tag-7/tags/v1', memberToken,
@@ -336,8 +336,8 @@ test('e2e: two different tag names PUT concurrently on one flow'
             { flow_response_id: r1 },
         )),
     ]);
-    assert.equal(a.status, 200);
-    assert.equal(b.status, 200);
+    assert.equal(a.status, 201);
+    assert.equal(b.status, 201);
 
     const gotAlpha = await handleRequest(db, req(
         'GET', '/flows/flow-tag-8/tags/alpha', token,
@@ -369,7 +369,7 @@ test('e2e: a tag written once still resolves to the EXACT'
         'PUT', '/flows/flow-tag-pin-1/tags/v1', token,
         { flow_response_id: r1 },
     ));
-    assert.equal(tagged.status, 200);
+    assert.equal(tagged.status, 201);
 
     const save2 = await handleRequest(db, req(
         'PUT', '/flows/flow-tag-pin-1', token,
@@ -381,7 +381,7 @@ test('e2e: a tag written once still resolves to the EXACT'
             )
         ).headers.get('ETag')! },
     ));
-    assert.equal(save2.status, 200);
+    assert.equal(save2.status, 201);
     const r2 = await headResponseId(db, token, 'flow-tag-pin-1');
     assert.notEqual(r2, r1);
 
@@ -395,7 +395,7 @@ test('e2e: a tag written once still resolves to the EXACT'
             )
         ).headers.get('ETag')! },
     ));
-    assert.equal(save3.status, 200);
+    assert.equal(save3.status, 201);
     const r3 = await headResponseId(db, token, 'flow-tag-pin-1');
     assert.notEqual(r3, r2);
 

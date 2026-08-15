@@ -358,7 +358,7 @@ test(
                 tokenOther, freshClaimBody(),
             )),
         ]);
-        assert.deepEqual([a.status, b.status].sort(), [204, 409]);
+        assert.deepEqual([a.status, b.status].sort(), [201, 409]);
         const loser = a.status === 409 ? a : b;
         assert.deepEqual(
             await loser.json(),

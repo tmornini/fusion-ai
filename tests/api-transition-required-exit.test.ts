@@ -296,7 +296,7 @@ async function seedFlow(
             },
         },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 async function seedWorkOrder(
@@ -313,7 +313,7 @@ async function seedWorkOrder(
             position: 1,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
         '/flows/' + FLOW_ID + '/work-orders/' + fwoId,
@@ -324,7 +324,7 @@ async function seedWorkOrder(
             at: AT,
         },
     ));
-    assert.equal(join.status, 200);
+    assert.equal(join.status, 201);
 }
 
 async function seedLiveType(
@@ -341,7 +341,7 @@ async function seedLiveType(
             state_event_id: TYPE_ID + '-genesis',
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedAttribute(
@@ -353,7 +353,7 @@ async function seedAttribute(
     const put = await handleRequest(db, req(
         'PUT', ATTRS + '/' + attrId, token, body,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedWritableText(
@@ -383,7 +383,7 @@ async function seedInstance(
         'PUT', INSTANCE_DETAIL, token,
         { set: [...set] },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     return put.headers.get('ETag')!;
 }
 
@@ -402,7 +402,7 @@ async function seedFlowTypeJoin(
             at: AT,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function bindInstance(
@@ -419,7 +419,7 @@ async function bindInstance(
             record_type_id: TYPE_ID,
         },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 // Place the WO on n-step by leaving n-create (no required).
@@ -435,7 +435,7 @@ async function placeOnStep(
         token,
         pureMoveBody(eventId, 'n-step'),
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 async function baseSeed(): Promise<{
@@ -504,7 +504,7 @@ test(
             'POST', TRANSITION, adminToken,
             pureMoveBody('te-ok', 'n-target'),
         ));
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 201);
     },
 );
 
@@ -566,7 +566,7 @@ test(
             }),
             { [IF_MATCH_HEADER]: etag },
         ));
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 201);
     },
 );
 
@@ -626,7 +626,7 @@ test(
             'POST', TRANSITION_FREE, adminToken,
             pureMoveBody('te-free', 'n-free'),
         ));
-        assert.equal(res.status, 204);
+        assert.equal(res.status, 201);
     },
 );
 

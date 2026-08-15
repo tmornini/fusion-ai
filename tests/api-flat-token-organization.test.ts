@@ -123,7 +123,7 @@ async () => {
     const token = await reachableToken('current', ['2']);
     const put = await handleRequest(
         db, putDefaultOrganization(token, 'current', '2'));
-    assert.equal(put.status, 204);
+    assert.equal(put.status, 201);
     const res = await handleRequest(db, getMembers(token));
     assert.equal(res.status, 200);
 });

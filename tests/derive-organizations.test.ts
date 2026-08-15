@@ -65,7 +65,7 @@ test('deriveOrganization mirrors the PUT wire body exactly',
 async () => {
     const db = await freshDb();
     const res = await putOrganization(db, 'org-a', 'Acme');
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const wire = await res.json();
     const derived = await deriveOrganization(db, 'org-a');
     assert.deepEqual(derived, wire);
@@ -79,8 +79,8 @@ test('deriveOrganizations mirrors every PUT wire body,'
     // more heads — derive is id-lex over the full set.
     const beta = await putOrganization(db, 'org-b', 'Beta');
     const alpha = await putOrganization(db, 'org-a', 'Alpha');
-    assert.equal(beta.status, 200);
-    assert.equal(alpha.status, 200);
+    assert.equal(beta.status, 201);
+    assert.equal(alpha.status, 201);
     const derived = await deriveOrganizations(db);
     assert.deepEqual(
         derived.map((o) => o.id),
@@ -162,7 +162,7 @@ test('a PUT whose body echoes id round-trips through'
         'PUT', '/organizations/org-echo', DEV_TOKEN,
         { id: 'org-echo', ...organizationRow('Echo') },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const wire = await res.json();
 
     const derived = await deriveOrganization(db, 'org-echo');

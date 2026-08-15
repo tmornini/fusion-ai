@@ -112,7 +112,7 @@ test('pendingInvitationFor lifecycle on the pair plane'
             grantAt: '2026-06-02T00:00:00.000000Z',
         },
     ));
-    assert.equal(grant.status, 200);
+    assert.equal(grant.status, 201);
     assert.equal(
         (await assertPending())?.id,
         'inv-rehome-parity-1',
@@ -126,7 +126,7 @@ test('pendingInvitationFor lifecycle on the pair plane'
             declineAt: '2026-06-02T00:00:01.000000Z',
         },
     ));
-    assert.equal(decline.status, 204);
+    assert.equal(decline.status, 201);
     assert.equal(await assertPending(), null);
 
     // Declined-reinvite: multi-candidate on the same
@@ -139,7 +139,7 @@ test('pendingInvitationFor lifecycle on the pair plane'
             grantAt: '2026-06-02T00:00:02.000000Z',
         },
     ));
-    assert.equal(regrant.status, 200);
+    assert.equal(regrant.status, 201);
     assert.equal(
         (await assertPending())?.id,
         'inv-rehome-parity-2',
@@ -160,7 +160,7 @@ test('loadInvitation shape: deriveInvitations find-by-id'
             grantAt: '2026-06-02T00:00:00.000000Z',
         },
     ));
-    assert.equal(grant.status, 200);
+    assert.equal(grant.status, 201);
 
     // Phase Final Task 2: invitations ROW half stripped.
     const derived = (await deriveInvitations(db))

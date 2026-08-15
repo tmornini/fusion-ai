@@ -127,7 +127,7 @@ async () => {
             state_at: '2026-01-01T00:00:00.000000Z',
             state_event_id: 'ev-a2',
         }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     // Phase Final Task 2: ideas row half stripped — org stamp
     // is on the wire/pair plane (WRITE_RESPONSE_SPECS), not a
     // row. GET re-derives organization_id from the bound org.
@@ -349,7 +349,7 @@ async function seedChain(
             },
         },
     ));
-    assert.equal(flowWrite.status, 200);
+    assert.equal(flowWrite.status, 201);
     // Phase Final Task 2: objectives row half stripped — seed
     // through the live document PUT with the lifecycle trio
     // (states-address retirement) so the pair plane owns it
@@ -388,7 +388,7 @@ async function seedChain(
             state_event_id: 'r' + s + '-genesis',
         },
     ));
-    assert.equal(recWrite.status, 200);
+    assert.equal(recWrite.status, 201);
     // Phase Final Stage B: work_orders table retired — seed
     // through the live document PUT so the pair plane owns it.
     const {
@@ -402,7 +402,7 @@ async function seedChain(
         await organizationToken(identity, organization),
         woFields,
     ));
-    assert.equal(woWrite.status, 200);
+    assert.equal(woWrite.status, 201);
     // Phase Final Stage B: flow_versions table retired with
     // flows (no residual seed).
     // NAMED re-pin (Phase 4 Task 8): the flipped GET
@@ -657,7 +657,7 @@ async function deepDb(): Promise<MemoryDbAdapter> {
                 state_event_id: 'seMem-' + id,
             },
         ));
-        assert.equal(memberWrite.status, 200);
+        assert.equal(memberWrite.status, 201);
     }
     await seedChain(db, 'A', 'A', 'current');
     await seedChain(db, 'B', 'B', 'pb');
@@ -827,7 +827,7 @@ test('nested flows/:id/tags 404s a foreign-org flow', async () => {
         await organizationToken('pb', 'B'),
         { flow_response_id: 'r-b-1' },
     ));
-    assert.equal(tagged.status, 200);
+    assert.equal(tagged.status, 201);
 
     const res = await handleRequest(db, req(
         'GET', '/flows/fB/tags/v1',

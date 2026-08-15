@@ -314,7 +314,7 @@ async () => {
             'PUT', '/' + TEST_FAMILY + '/doc-1', token,
             { v: 'first' },
         ));
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
         assert.equal(res.headers.get('Follows'), null);
         assert.equal(res.headers.get('Supersedes'), null);
     });
@@ -331,14 +331,14 @@ test('locked arm: a sibling route under the SAME family'
         const first = await handleRequest(db, req(
             'PUT', path, token, { v: 'first' },
         ));
-        assert.equal(first.status, 204);
+        assert.equal(first.status, 201);
         // A second PUT, still with NO If-Match — if the
         // gate mistakenly keyed the locked arm off TEST_FAMILY
         // alone, this would 428 (head present, echo absent).
         const second = await handleRequest(db, req(
             'PUT', path, token, { v: 'second' },
         ));
-        assert.equal(second.status, 204);
+        assert.equal(second.status, 201);
     });
 });
 
@@ -404,7 +404,7 @@ test('locked arm: a matching echo stores no predecessor'
             { v: 'second' },
             { [IF_MATCH_HEADER]: firstEtag },
         ));
-        assert.equal(second.status, 200);
+        assert.equal(second.status, 201);
         assert.equal(second.headers.get('Follows'), null);
         assert.equal(second.headers.get('Supersedes'), null);
         const secondId = second.headers.get('Response-ID')!;
@@ -436,14 +436,14 @@ async () => {
             { [IF_MATCH_HEADER]: firstEtag },
         );
         const edit = await handleRequest(db, editRequest.clone());
-        assert.equal(edit.status, 200);
+        assert.equal(edit.status, 201);
         const editDate = edit.headers.get('Date');
         // A byte-identical resend of the edit: its echo (firstId)
         // is now STALE against the new head (the edit's own id),
         // yet it must replay — never 412 — because the fast path
         // runs BEFORE the four-outcome table.
         const resend = await handleRequest(db, editRequest.clone());
-        assert.equal(resend.status, 200);
+        assert.equal(resend.status, 201);
         assert.equal(resend.headers.get('Date'), editDate);
         assert.equal(
             resend.headers.get('Response-ID'),
@@ -578,7 +578,7 @@ async () => {
         ]);
         const statuses =
             [first.status, second.status].sort();
-        assert.deepEqual(statuses, [200, 412]);
+        assert.deepEqual(statuses, [201, 412]);
         const loser = first.status === 412 ? first : second;
         const loserBody =
             await loser.json() as { error: string };

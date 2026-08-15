@@ -79,7 +79,7 @@ async function putObjective(
             ),
         ),
     );
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 }
 
 test(

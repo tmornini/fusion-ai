@@ -93,12 +93,12 @@ test('PUT-PUT at one address leaves exactly ONE pair (the'
         'PUT', '/identities/slot-1/pii', DEV_TOKEN,
         humanPii('Ann'),
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const second = await handleRequest(db, req(
         'PUT', '/identities/slot-1/pii', DEV_TOKEN,
         humanPii('Ann Marie'),
     ));
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     // Case 7: the tombstone/chain-Supersedes pin re-pinned to its
     // ABSENCE — stated explicitly, not merely the old assertion
     // deleted.
@@ -136,7 +136,7 @@ async () => {
         'PUT', '/identities/slot-2/pii', DEV_TOKEN,
         humanPii('Bob'),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const del = await handleRequest(db, req(
         'DELETE', '/identities/slot-2/pii', DEV_TOKEN,
     ));
@@ -166,13 +166,13 @@ async () => {
     const del = await handleRequest(db, req(
         'DELETE', '/identities/slot-3/pii', DEV_TOKEN,
     ));
-    assert.equal(del.status, 204);
+    assert.equal(del.status, 404);
     assert.equal(del.headers.get('Supersedes'), null);
     const put = await handleRequest(db, req(
         'PUT', '/identities/slot-3/pii', DEV_TOKEN,
         humanPii('Cara'),
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     assert.equal(put.headers.get('Supersedes'), null);
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
@@ -198,14 +198,14 @@ test('a byte-identical resend against the LIVE slot replays'
         'PUT', '/identities/slot-4a/pii', DEV_TOKEN,
         humanPii('Dana'),
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
     const countAfterFirst = (await db.requests.getAll()).length;
     const resend = await handleRequest(db, req(
         'PUT', '/identities/slot-4a/pii', DEV_TOKEN,
         humanPii('Dana'),
     ));
-    assert.equal(resend.status, 200);
+    assert.equal(resend.status, 201);
     // storedResponseFor's WHOLE-pair match (message-pair.ts) —
     // the pre-dispatch fast path, never replacePiiSlot — is what
     // answers this resend; the live slot's row is untouched.
@@ -222,13 +222,13 @@ test('a byte-identical resend AFTER supersession finds no'
         'PUT', '/identities/slot-4b/pii', DEV_TOKEN,
         humanPii('Erin'),
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
     const second = await handleRequest(db, req(
         'PUT', '/identities/slot-4b/pii', DEV_TOKEN,
         humanPii('Erin Marie'),
     ));
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     assert.notEqual(second.headers.get('Response-ID'), firstId);
     // The FIRST body's stored request row was physically removed
     // when the second PUT replaced the slot — storedResponseFor
@@ -238,7 +238,7 @@ test('a byte-identical resend AFTER supersession finds no'
         'PUT', '/identities/slot-4b/pii', DEV_TOKEN,
         humanPii('Erin'),
     ));
-    assert.equal(resend.status, 200);
+    assert.equal(resend.status, 201);
     assert.equal(resend.headers.get('Supersedes'), null);
     assert.notEqual(resend.headers.get('Response-ID'), firstId);
     const requests = await db.requests.getAll();
@@ -268,7 +268,7 @@ test('grant -> accept -> human-member create -> edit -> erase'
         'POST', '/human-members', DEV_TOKEN,
         humanCreateBody(id, 'ev-erasee-1'),
     ));
-    assert.equal(create.status, 204);
+    assert.equal(create.status, 201);
     const intake = await handleRequest(db, req(
         'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         {
@@ -276,7 +276,7 @@ test('grant -> accept -> human-member create -> edit -> erase'
             phone: ERASED_PHONE, bio: ERASED_BIO,
         },
     ));
-    assert.equal(intake.status, 200);
+    assert.equal(intake.status, 201);
     const grantRes = await handleRequest(db, req(
         'POST', '/invitations', await organizationToken(),
         {
@@ -284,7 +284,7 @@ test('grant -> accept -> human-member create -> edit -> erase'
             grantEventId: 'ev-grant-erasee-1', grantAt: AT,
         },
     ));
-    assert.equal(grantRes.status, 200);
+    assert.equal(grantRes.status, 201);
     const invitationId =
         ((await grantRes.json()) as { id: string }).id;
     const acceptRes = await handleRequest(db, req(
@@ -295,7 +295,7 @@ test('grant -> accept -> human-member create -> edit -> erase'
             acceptEventId: 'ev-accept-erasee-1', acceptAt: AT,
         },
     ));
-    assert.equal(acceptRes.status, 204);
+    assert.equal(acceptRes.status, 201);
     const edit = await handleRequest(db, req(
         'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         {
@@ -303,7 +303,7 @@ test('grant -> accept -> human-member create -> edit -> erase'
             phone: EDITED_PHONE, bio: EDITED_BIO,
         },
     ));
-    assert.equal(edit.status, 200);
+    assert.equal(edit.status, 201);
     const erase = await handleRequest(db, req(
         'DELETE', '/identities/' + id + '/pii', DEV_TOKEN,
     ));
@@ -344,7 +344,7 @@ test("the zone's confinement: a non-/pii DELETE (a memberships"
         { organization_id: '1', identity_id: 'current',
         type: 'admin', at: AT },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const putId = put.headers.get('Response-ID');
     const del = await handleRequest(db, req(
         'DELETE', '/memberships/ms-confine-1',

@@ -29,7 +29,7 @@ import {
     formWritePair,
     storedResponseFor,
     appendMessagePair,
-    responseFromStored,
+    sendWriteResponse,
     hoistedHeaderFields,
     storedPairResponse,
     requireOperationId,
@@ -193,7 +193,7 @@ export async function identityDefaultOrganizationRequest(
         const replay = await storedResponseFor(
             ctx.base, pair.requestHash);
         if (replay !== undefined) {
-            return responseFromStored(replay);
+            return sendWriteResponse(replay, 'PUT', true);
         }
         // FLIPPED (Phase 13 Task 8): deriveDefaultOrganization
         // (Phase 11) reads this identity's own /default-org
@@ -244,6 +244,7 @@ export async function identityDefaultOrganizationRequest(
         return storedPairResponse(
             ctx.base, pair.requestHash,
             'identityDefaultOrganizationRequest',
+            'PUT',
         );
     }
     return Response.json(

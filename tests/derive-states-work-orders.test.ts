@@ -188,7 +188,7 @@ test('a live create births exactly the three initial state'
             '2026-05-02T00:00:00.000000Z',
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const derived = forWorkOrder(
         await deriveWorkOrderLifecycle(db), workOrderId,
@@ -215,7 +215,7 @@ test('a SEEDED-shape work order (a bare document PUT, no create'
             position: 1,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 
     const derived = await deriveWorkOrderLifecycle(db);
     assert.deepEqual(forWorkOrder(derived, workOrderId), []);
@@ -239,7 +239,7 @@ test('a claim, then a claim past lockTimeout supersedes with'
             position: 1,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 
     const claim1At = nowUtc();
     const claim1 = await handleRequest(db, req(
@@ -251,7 +251,7 @@ test('a claim, then a claim past lockTimeout supersedes with'
             expireAt: claim1At,
         },
     ));
-    assert.equal(claim1.status, 204);
+    assert.equal(claim1.status, 201);
 
     // Advance the test clock past the tiny lockTimeout so the
     // live route's isClaimEventExpired (via msSinceUtc) reads
@@ -276,7 +276,7 @@ test('a claim, then a claim past lockTimeout supersedes with'
             expireAt: expire2At,
         },
     ));
-    assert.equal(claim2.status, 204);
+    assert.equal(claim2.status, 201);
 
     const derived = forWorkOrder(
         await deriveWorkOrderLifecycle(db), workOrderId,
@@ -305,7 +305,7 @@ test('claim → release → reclaim derives claimed,'
             position: 1,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 
     // Release with no live claim — pair appends, derives zero.
     const bareReleaseId = workOrderId + '-rel-bare';
@@ -317,7 +317,7 @@ test('claim → release → reclaim derives claimed,'
             releaseAt: nowUtc(),
         },
     ));
-    assert.equal(bareRelease.status, 204);
+    assert.equal(bareRelease.status, 201);
     assert.deepEqual(
         forWorkOrder(
             await deriveWorkOrderLifecycle(db), workOrderId,
@@ -335,7 +335,7 @@ test('claim → release → reclaim derives claimed,'
             expireAt: claim1At,
         },
     ));
-    assert.equal(claim1.status, 204);
+    assert.equal(claim1.status, 201);
 
     const releaseEventId = workOrderId + '-rel1';
     const releaseAt = nowUtc();
@@ -347,7 +347,7 @@ test('claim → release → reclaim derives claimed,'
             releaseAt,
         },
     ));
-    assert.equal(release.status, 204);
+    assert.equal(release.status, 201);
 
     const claim2At = nowUtc();
     const claim2 = await handleRequest(db, req(
@@ -359,7 +359,7 @@ test('claim → release → reclaim derives claimed,'
             expireAt: claim2At,
         },
     ));
-    assert.equal(claim2.status, 204);
+    assert.equal(claim2.status, 201);
 
     const derived = forWorkOrder(
         await deriveWorkOrderLifecycle(db), workOrderId,
@@ -411,7 +411,7 @@ test('a transition, then a transition with release ends the'
             '2026-05-02T00:00:00.000000Z',
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const transition1 = await handleRequest(db, req(
         'POST', '/work-orders/' + workOrderId + '/transition',
@@ -422,7 +422,7 @@ test('a transition, then a transition with release ends the'
             transitionAt: '2026-05-02T00:00:01.000000Z',
         },
     ));
-    assert.equal(transition1.status, 204);
+    assert.equal(transition1.status, 201);
 
     const transition2 = await handleRequest(db, req(
         'POST', '/work-orders/' + workOrderId + '/transition',
@@ -437,7 +437,7 @@ test('a transition, then a transition with release ends the'
             transitionAt: '2026-05-02T00:00:02.000000Z',
         },
     ));
-    assert.equal(transition2.status, 204);
+    assert.equal(transition2.status, 201);
 
     const derived = forWorkOrder(
         await deriveWorkOrderLifecycle(db), workOrderId,
@@ -469,7 +469,7 @@ test('the MOVING lock_timeout case: an entity PUT changing'
             position: 1,
         },
     ));
-    assert.equal(put1.status, 200);
+    assert.equal(put1.status, 201);
 
     const claim1At = nowUtc();
     const claim1 = await handleRequest(db, req(
@@ -481,7 +481,7 @@ test('the MOVING lock_timeout case: an entity PUT changing'
             expireAt: claim1At,
         },
     ));
-    assert.equal(claim1.status, 204);
+    assert.equal(claim1.status, 201);
 
     // Shrink lock_timeout mid-history — the entity PUT that makes
     // the AS-OF lookup load-bearing: under the OLD (big) value the
@@ -497,7 +497,7 @@ test('the MOVING lock_timeout case: an entity PUT changing'
             position: 2,
         },
     ));
-    assert.equal(put2.status, 200);
+    assert.equal(put2.status, 201);
 
     setClockForTest(() =>
         Date.now()
@@ -516,7 +516,7 @@ test('the MOVING lock_timeout case: an entity PUT changing'
             expireAt: expire2At,
         },
     ));
-    assert.equal(claim2.status, 204);
+    assert.equal(claim2.status, 201);
 
     const derived = forWorkOrder(
         await deriveWorkOrderLifecycle(db), workOrderId,
@@ -545,7 +545,7 @@ test('HYBRID: a bare document PUT plus a transition genesis'
             position: 1,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 
     const genesis = await handleRequest(db, req(
         'POST',
@@ -557,7 +557,7 @@ test('HYBRID: a bare document PUT plus a transition genesis'
             transitionAt: AT,
         },
     ));
-    assert.equal(genesis.status, 204);
+    assert.equal(genesis.status, 201);
 
     const claimAt = nowUtc();
     const claim = await handleRequest(db, req(
@@ -569,7 +569,7 @@ test('HYBRID: a bare document PUT plus a transition genesis'
             expireAt: claimAt,
         },
     ));
-    assert.equal(claim.status, 204);
+    assert.equal(claim.status, 201);
 
     const ours = forWorkOrder(
         await deriveWorkOrderLifecycle(db), workOrderId,

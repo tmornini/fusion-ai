@@ -530,7 +530,7 @@ test('live-write chain: create, reposition, revision edit,'
             'Chain Objective', '2026-06-01T00:00:00.000000Z',
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
     assert.equal(
         (await db.requests.getAll()).length, beforeCreate + 3,
     );
@@ -578,7 +578,7 @@ test('live-write chain: create, reposition, revision edit,'
             state_event_id: objectiveId + '-active',
         },
     ));
-    assert.equal(reposition.status, 200);
+    assert.equal(reposition.status, 201);
     const repositionResponseId =
         reposition.headers.get('Response-ID');
     assert.ok(repositionResponseId);
@@ -617,7 +617,7 @@ test('live-write chain: create, reposition, revision edit,'
             at: '2026-06-02T00:00:00.000000Z',
         },
     ));
-    assert.equal(revEdit.status, 200);
+    assert.equal(revEdit.status, 201);
     {
         const revs = await deriveObjectiveRevisions(
             db, STARK_ORGANIZATION, objectiveId,
@@ -641,7 +641,7 @@ test('live-write chain: create, reposition, revision edit,'
             state_event_id: objectiveId + '-archived',
         },
     ));
-    assert.equal(archived.status, 200);
+    assert.equal(archived.status, 201);
     {
         const listRes = await handleRequest(
             db, req('GET', '/objectives', token),
@@ -667,7 +667,7 @@ test('live-write chain: create, reposition, revision edit,'
             state_event_id: objectiveId + '-reactivated',
         },
     ));
-    assert.equal(reactivated.status, 200);
+    assert.equal(reactivated.status, 201);
     const reactivatedResponseId =
         reactivated.headers.get('Response-ID');
     assert.ok(reactivatedResponseId);
@@ -740,7 +740,7 @@ test('live-write chain: create, reposition, revision edit,'
             ],
         },
     ));
-    assert.equal(conversion.status, 204);
+    assert.equal(conversion.status, 201);
     assert.equal(
         (await db.requests.getAll()).length,
         beforeConversion + 5,
@@ -773,7 +773,7 @@ test('live-write chain: create, reposition, revision edit,'
             at: '2026-06-06T00:00:00.000000Z',
         },
     ));
-    assert.equal(standaloneBaseline.status, 200);
+    assert.equal(standaloneBaseline.status, 201);
     const actualIdA = 'as-drift-chain-1-a';
     const standaloneActual = await handleRequest(db, req(
         'PUT',
@@ -785,7 +785,7 @@ test('live-write chain: create, reposition, revision edit,'
             at: '2026-06-06T00:00:01.000000Z',
         },
     ));
-    assert.equal(standaloneActual.status, 200);
+    assert.equal(standaloneActual.status, 201);
 
     const baseFinalRes = await handleRequest(
         db, req('GET', basePath, token),
@@ -839,7 +839,7 @@ test('live-write chain: create, reposition, revision edit,'
             'Chain Objective v3', '2026-06-07T00:00:00.000000Z',
         ),
     ));
-    assert.equal(duplicate.status, 204);
+    assert.equal(duplicate.status, 201);
     // Supersedes the latest prior entity-address response
     // (reactivate), not the earlier reposition.
     assert.equal(
@@ -906,7 +906,7 @@ test('the create-op POST pair is not read as a document pair —'
             '2026-06-10T00:00:00.000000Z',
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const prefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/objectives/',
@@ -972,7 +972,7 @@ async () => {
         'PUT', '/objectives/' + objectiveId, token,
         positionBody,
     ));
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const afterFirst = (await db.requests.getAll()).length;
     assert.equal(afterFirst, beforeReposition + 1);
 
@@ -980,7 +980,7 @@ async () => {
         'PUT', '/objectives/' + objectiveId, token,
         positionBody,
     ));
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     const afterSecond = (await db.requests.getAll()).length;
     assert.equal(afterSecond, afterFirst);
     assert.equal(
@@ -1025,7 +1025,7 @@ async () => {
             state_event_id: objectiveId + '-archived',
         },
     ));
-    assert.equal(archived.status, 200);
+    assert.equal(archived.status, 201);
 
     const listRes = await handleRequest(
         db, req('GET', '/objectives', token),
@@ -1076,7 +1076,7 @@ async () => {
                 state_event_id: f.id + '-active',
             },
         ));
-        assert.equal(put.status, 200);
+        assert.equal(put.status, 201);
         assert.deepEqual(
             await put.json(),
             wireObjectivePut(f.id, f.position),
@@ -1144,7 +1144,7 @@ test('GET objective trio is lifecycle-current under clock skew'
             state_event_id: genesisEv,
         },
     ));
-    assert.equal(genesis.status, 200);
+    assert.equal(genesis.status, 201);
 
     // Later arrival, earlier state_at, different state +
     // position. 'archived' is a live objective state — if
@@ -1158,7 +1158,7 @@ test('GET objective trio is lifecycle-current under clock skew'
             state_event_id: skewedEv,
         },
     ));
-    assert.equal(skewed.status, 200);
+    assert.equal(skewed.status, 201);
 
     const expected = wireObjectiveGet(
         objectiveId, 99, 'active',
@@ -1217,7 +1217,7 @@ async () => {
             + revisionId,
         token, body,
     ));
-    assert.equal(putRes.status, 200);
+    assert.equal(putRes.status, 201);
     const expected: ObjectiveRevisionEntity = {
         id: revisionId,
         ...body,

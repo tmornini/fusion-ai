@@ -192,7 +192,7 @@ async function createAiMember(
             initialState, initialStateEventId, initialStateAt,
         },
     ));
-    assert.equal(res.status, 204, 'ai-member create failed');
+    assert.equal(res.status, 201, 'ai-member create failed');
 }
 
 function flowFields(name: string) {
@@ -240,7 +240,7 @@ async function createFlowWithNodes(
             },
         },
     ));
-    assert.equal(res.status, 204, 'flow creation POST failed');
+    assert.equal(res.status, 201, 'flow creation POST failed');
 }
 
 async function headResponseId(
@@ -286,7 +286,7 @@ async function saveFlowWithSidecars(
         },
         { 'if-match': etag },
     ));
-    assert.equal(res.status, 200, 'flow save PUT failed');
+    assert.equal(res.status, 201, 'flow save PUT failed');
 }
 
 function workOrderBody(
@@ -328,7 +328,7 @@ async function createWorkOrder(
             ],
         ),
     ));
-    assert.equal(res.status, 204, 'work order create failed');
+    assert.equal(res.status, 201, 'work order create failed');
 }
 
 async function grantAndAccept(
@@ -341,14 +341,14 @@ async function grantAndAccept(
         'POST', '/invitations', adminToken,
         { email: inviteeEmail, invitationId, grantEventId, grantAt },
     ));
-    assert.equal(grantRes.status, 200, 'grant failed');
+    assert.equal(grantRes.status, 201, 'grant failed');
 
     const acceptRes = await handleRequest(db, req(
         'POST', '/invitations/' + invitationId + '/acceptance',
         inviteeToken,
         { membershipId, acceptEventId, acceptAt },
     ));
-    assert.equal(acceptRes.status, 204, 'accept failed');
+    assert.equal(acceptRes.status, 201, 'accept failed');
 }
 
 interface UnionFixture {
@@ -382,7 +382,7 @@ async function buildUnionFixture(): Promise<UnionFixture> {
             '2026-01-02T00:00:00.000000Z',
         ),
     ));
-    assert.equal(ideaRes.status, 200);
+    assert.equal(ideaRes.status, 201);
 
     const foreignIdeaId = 'idea-union-foreign';
     const foreignIdeaRes = await handleRequest(db, req(
@@ -392,7 +392,7 @@ async function buildUnionFixture(): Promise<UnionFixture> {
             '2026-01-02T00:00:00.000001Z',
         ),
     ));
-    assert.equal(foreignIdeaRes.status, 200);
+    assert.equal(foreignIdeaRes.status, 201);
 
     // (a-objective) an objectives document trio — the
     // states/:id orphan leg's replacement in the five-source
@@ -407,7 +407,7 @@ async function buildUnionFixture(): Promise<UnionFixture> {
             state_event_id: objectiveId + '-genesis',
         },
     ));
-    assert.equal(objectiveRes.status, 200);
+    assert.equal(objectiveRes.status, 201);
 
     // (b) an AI member's document-trio genesis — membered into
     // org A so the fence resolves it there rather than as an
@@ -423,7 +423,7 @@ async function buildUnionFixture(): Promise<UnionFixture> {
         { organization_id: 'A', identity_id: aiMemberId,
         type: 'member', at: AT },
     ));
-    assert.equal(membershipRes.status, 200);
+    assert.equal(membershipRes.status, 201);
 
     // (c) a work order's create-op birth (3 events).
     const workOrderId = 'wo-union';
@@ -639,7 +639,7 @@ test('deriveInvitationStates: a duplicate grant on the same'
             grantAt: '2026-04-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(first.status, 200, 'first grant failed');
+    assert.equal(first.status, 201, 'first grant failed');
 
     const second = await handleRequest(db, req(
         'POST', '/invitations', tokenA,
@@ -650,7 +650,7 @@ test('deriveInvitationStates: a duplicate grant on the same'
             grantAt: '2026-04-01T00:00:00.000001Z',
         },
     ));
-    assert.equal(second.status, 200, 'duplicate grant failed');
+    assert.equal(second.status, 201, 'duplicate grant failed');
     const secondBody = await second.json() as { id: string };
     // The duplicate echoes the ORIGINAL invitation id, never its
     // own submitted one.
@@ -699,7 +699,7 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
             grantAt: '2026-04-02T00:00:00.000000Z',
         },
     ));
-    assert.equal(grantRes.status, 200, 'grant failed');
+    assert.equal(grantRes.status, 201, 'grant failed');
 
     const firstAccept = await handleRequest(db, req(
         'POST', '/invitations/inv-reaccept/acceptance',
@@ -710,7 +710,7 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
             acceptAt: '2026-04-02T00:00:00.000001Z',
         },
     ));
-    assert.equal(firstAccept.status, 204, 'first accept failed');
+    assert.equal(firstAccept.status, 201, 'first accept failed');
 
     const secondAccept = await handleRequest(db, req(
         'POST', '/invitations/inv-reaccept/acceptance',
@@ -722,7 +722,7 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
         },
     ));
     assert.equal(
-        secondAccept.status, 204, 're-accept must stay a no-op',
+        secondAccept.status, 201, 're-accept must stay a no-op',
     );
 
     const rows = await deriveInvitationStates(db);
@@ -760,7 +760,7 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
             grantAt: '2026-04-03T00:00:00.000000Z',
         },
     ));
-    assert.equal(grantRes.status, 200, 'grant failed');
+    assert.equal(grantRes.status, 201, 'grant failed');
 
     const firstDecline = await handleRequest(db, req(
         'POST', '/invitations/inv-redecline/decline',
@@ -770,7 +770,7 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
             declineAt: '2026-04-03T00:00:00.000001Z',
         },
     ));
-    assert.equal(firstDecline.status, 204, 'first decline failed');
+    assert.equal(firstDecline.status, 201, 'first decline failed');
 
     const secondDecline = await handleRequest(db, req(
         'POST', '/invitations/inv-redecline/decline',
@@ -781,7 +781,7 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
         },
     ));
     assert.equal(
-        secondDecline.status, 204,
+        secondDecline.status, 201,
         're-decline must stay a no-op',
     );
 

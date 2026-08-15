@@ -75,7 +75,7 @@ test('admin may write a membership type', async () => {
                 at: '2026-06-03T00:00:00.000000Z',
             }),
         }));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 });
 
 test('authentication precedes authorization (401 first)',

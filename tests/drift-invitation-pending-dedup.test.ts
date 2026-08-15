@@ -63,7 +63,7 @@ async () => {
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(grant.status, 200);
+    assert.equal(grant.status, 201);
     const afterGrant = await pendingInvitationFor(
         db, ORGANIZATION_TWO, inviteeId);
     assert.equal(afterGrant?.id, 'inv-dedup-step0-first');
@@ -80,7 +80,7 @@ async () => {
             declineAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(decline.status, 204);
+    assert.equal(decline.status, 201);
     assert.equal(
         await pendingInvitationFor(
             db, ORGANIZATION_TWO, inviteeId,
@@ -100,7 +100,7 @@ async () => {
             grantAt: '2026-06-01T00:00:02.000000Z',
         },
     ));
-    assert.equal(regrant.status, 200);
+    assert.equal(regrant.status, 201);
     const candidates = (await deriveInvitations(db))
         .filter(inv => inv.organization_id === ORGANIZATION_TWO
             && inv.identity_id === inviteeId);
@@ -120,7 +120,7 @@ async () => {
             acceptAt: '2026-06-01T00:00:03.000000Z',
         },
     ));
-    assert.equal(accept.status, 204);
+    assert.equal(accept.status, 201);
     assert.equal(
         await pendingInvitationFor(
             db, ORGANIZATION_TWO, inviteeId,

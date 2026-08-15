@@ -65,7 +65,7 @@ async () => {
         'PUT', '/identity-token-revocations/self-rev-1', token,
         { identity_id: 'member1', at },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     assert.deepEqual(await res.json(), {
         id: 'self-rev-1', identity_id: 'member1', at,
     });
@@ -110,7 +110,7 @@ async () => {
             at: '2021-01-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     // Access token still admits member-tier GET.
     const still = await handleRequest(
         db, req('GET', '/members', memberToken),
@@ -160,7 +160,7 @@ test('the admin path is unchanged: an admin PUT'
         adminToken,
         { identity_id: 'member1', at },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     assert.deepEqual(await res.json(), {
         id: 'admin-rev-1', identity_id: 'member1', at,
     });

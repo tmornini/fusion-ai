@@ -160,7 +160,7 @@ test('PUT objectives/:id accepts the lifecycle trio and'
             state_event_id: 'obj-trio-1-ev1',
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const wire = await res.json() as Record<string, unknown>;
     assert.equal(wire.id, 'obj-trio-1');
     assert.equal(wire.organization_id, '1');

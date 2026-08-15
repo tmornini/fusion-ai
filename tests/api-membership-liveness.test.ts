@@ -97,7 +97,7 @@ async () => {
         await devToken(), 'current', '1',
         '2020-01-02T00:00:00.000000Z',
     ));
-    assert.equal(pin.status, 204);
+    assert.equal(pin.status, 201);
     await deleteMembership(db, 'test-membership-current');
     const res = await handleRequest(
         db, req('/members', await devToken()));

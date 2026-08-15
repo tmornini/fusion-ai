@@ -78,7 +78,7 @@ test('a created idea derives', async () => {
         db, token, 'idea-drv-created', 'Fresh Idea', 'active',
         '2026-02-01T00:00:00.000000Z', 'ev-drv-created',
     );
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const derived = await deriveIdea(
         db, STARK_ORGANIZATION, 'idea-drv-created',
     );
@@ -111,7 +111,7 @@ test('an edited idea derives the edit body', async () => {
         db, token, 'idea-drv-edited', 'After Edit', 'active',
         '2026-02-01T00:00:00.000000Z', 'ev-drv-edited',
     );
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const derived = await deriveIdea(
         db, STARK_ORGANIZATION, 'idea-drv-edited',
     );
@@ -137,7 +137,7 @@ test(
             db, token, 'idea-drv-deleted', 'Doomed', 'deleted',
             '2026-02-02T00:00:00.000000Z', 'ev-drv-deleted-tomb',
         );
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
 
         const ideas = await deriveIdeas(db, STARK_ORGANIZATION);
         assert.equal(
@@ -169,7 +169,7 @@ test(
             db, token, 'idea-drv-skew', 'Skewed Title', 'deleted',
             '2020-01-01T00:00:00.000000Z', 'ev-drv-skew-later',
         );
-        assert.equal(res.status, 200);
+        assert.equal(res.status, 201);
 
         // Genesis must still win the lifecycle reduction: the
         // idea stays visible despite the later-arriving 'deleted'

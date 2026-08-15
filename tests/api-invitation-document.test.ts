@@ -149,7 +149,7 @@ test('a fresh grant appends 2 pairs — the operation and the'
 async () => {
     const db = await freshDb();
     const res = await grant(db, 'inv-doc-1');
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     // 6: the fixture's own membership pair (Phase 13 Task 1;
@@ -186,9 +186,9 @@ test('a duplicate grant appends ONLY its operation pair — no'
 async () => {
     const db = await freshDb();
     const first = await grant(db, 'inv-doc-2a');
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const second = await grant(db, 'inv-doc-2b');
-    assert.equal(second.status, 200);
+    assert.equal(second.status, 201);
     const requests = await db.requests.getAll();
     const atDuplicateId = requests.filter(
         r => r.uri_collection === '/invitations/'
@@ -249,7 +249,7 @@ test('a fresh accept appends its memberships document at the'
         db, 'inv-doc-3', 'ms-doc-3', 'ev-acc-3',
         '2026-01-01T00:00:01.000000Z',
     );
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     const documents = documentPairsAt(
@@ -285,12 +285,12 @@ async () => {
         db, 'inv-doc-4', 'ms-doc-4', 'ev-acc-4',
         '2026-01-01T00:00:01.000000Z',
     );
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
     const second = await accept(
         db, 'inv-doc-4', 'ms-doc-4b', 'ev-acc-4b',
         '2026-01-01T00:00:02.000000Z',
     );
-    assert.equal(second.status, 204);
+    assert.equal(second.status, 201);
     const documents = (await db.requests.getAll()).filter(
         r => r.uri_collection === '/organizations/1/memberships/',
     );

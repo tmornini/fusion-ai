@@ -62,7 +62,7 @@ async function grant(
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 }
 
 async function bulkRowsFor(
@@ -104,7 +104,7 @@ async () => {
             acceptAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(accept.status, 204);
+    assert.equal(accept.status, 201);
 
     const scoped = await invitationLifecycleStatesFor(db, id);
     assert.equal(scoped.length, 2);
@@ -131,7 +131,7 @@ async () => {
             declineAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(decline.status, 204);
+    assert.equal(decline.status, 201);
 
     const scoped = await invitationLifecycleStatesFor(db, id);
     assert.equal(scoped.length, 2);
@@ -157,7 +157,7 @@ async () => {
             revokeAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(revoke.status, 204);
+    assert.equal(revoke.status, 201);
 
     const scoped = await invitationLifecycleStatesFor(db, id);
     assert.equal(scoped.length, 2);
@@ -206,7 +206,7 @@ test('invitationLifecycleStatesFor: a duplicate-grant\'s'
             grantAt: '2026-06-01T00:00:02.000000Z',
         },
     ));
-    assert.equal(echoRes.status, 200);
+    assert.equal(echoRes.status, 201);
     const echoBody = await echoRes.json() as { id: string };
     assert.equal(echoBody.id, freshId);
 

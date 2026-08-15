@@ -216,7 +216,7 @@ async () => {
             'PUT', '/ideas/' + f.id, token,
             ideaDocument(f.title, 'active', f.at, f.ev),
         ));
-        assert.equal(put.status, 200);
+        assert.equal(put.status, 201);
         // PUT response is canonicalJson (sorted keys) from
         // the stored pair; values match WRITE_RESPONSE_SPECS.
         assert.deepEqual(
@@ -336,7 +336,7 @@ async () => {
         '/ideas/' + ideaId + '/submissions/sub-drift-1',
         token, subBody,
     ));
-    assert.equal(putRes.status, 200);
+    assert.equal(putRes.status, 201);
     // derive / GET insertion order (id, idea_id, member_id, at).
     const expectedSub = {
         id: 'sub-drift-1',
@@ -516,7 +516,7 @@ test('live approve then convert: derived idea history'
             baselines: [],
         },
     ));
-    assert.equal(convert.status, 204);
+    assert.equal(convert.status, 201);
 
     const derived = await deriveIdeaStateHistory(
         db, '1', ideaId,
@@ -562,7 +562,7 @@ test('GET idea trio is lifecycle-current under clock skew'
             'Genesis Title', 'active', genesisAt, genesisEv,
         ),
     ));
-    assert.equal(genesis.status, 200);
+    assert.equal(genesis.status, 201);
 
     // Later arrival, earlier state_at, different state + title.
     const skewed = await handleRequest(db, req(
@@ -571,7 +571,7 @@ test('GET idea trio is lifecycle-current under clock skew'
             'Skewed Title', 'in_review', skewedAt, skewedEv,
         ),
     ));
-    assert.equal(skewed.status, 200);
+    assert.equal(skewed.status, 201);
 
     const expected = wireIdeaGet(
         ideaId, 'Skewed Title', 'active', genesisAt, genesisEv,

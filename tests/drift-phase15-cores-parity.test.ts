@@ -167,7 +167,7 @@ async () => {
             states: ['n-start', 'n-finish', 'claimed'],
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const getRes = await handleRequest(
         db, req('GET', '/work-orders/' + workOrderId, token),
@@ -223,7 +223,7 @@ async () => {
             position: 1,
         },
     ));
-    assert.equal(put1.status, 200);
+    assert.equal(put1.status, 201);
 
     const put2 = await handleRequest(db, req(
         'PUT', '/work-orders/' + workOrderId, token, {
@@ -232,7 +232,7 @@ async () => {
             position: 3,
         },
     ));
-    assert.equal(put2.status, 200);
+    assert.equal(put2.status, 201);
 
     const getRes = await handleRequest(
         db, req('GET', '/work-orders/' + workOrderId, token),
@@ -271,7 +271,7 @@ async () => {
             position: 2,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 
     const preTx = await workOrderDocumentHeadFor(
         db, STARK_ORGANIZATION, workOrderId,
@@ -313,7 +313,7 @@ async () => {
             expireAt: nowUtc(),
         },
     ));
-    assert.equal(claimResponse.status, 204);
+    assert.equal(claimResponse.status, 201);
 
     // Absent id: document head null pre-tx and in-tx; wire
     // 404 carries the same Not found: work_orders/:id bytes.
@@ -478,7 +478,7 @@ test('stateEventVisibilityFor: tier (ii) op-born transition'
             states: ['n-start', 'n-finish', 'claimed'],
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const transitioned = await handleRequest(db, req(
         'POST',
@@ -491,7 +491,7 @@ test('stateEventVisibilityFor: tier (ii) op-born transition'
             transitionAt: nowUtc(),
         },
     ));
-    assert.equal(transitioned.status, 204);
+    assert.equal(transitioned.status, 201);
 
     // Op-born: no states/:id pair at transitionEventId;
     // lives only inside the transition op body.
@@ -542,7 +542,7 @@ test('stateEventVisibilityFor: member-genesis op-born'
             initialStateAt: nowUtc(),
         },
     ));
-    assert.equal(unownedCreate.status, 204);
+    assert.equal(unownedCreate.status, 201);
 
     // Op-born: no states/:id pair at the genesis id.
     const byId = await db.responses.getAllWhere(
@@ -600,7 +600,7 @@ test('stateEventVisibilityFor: member-genesis op-born'
             initialStateAt: nowUtc(),
         },
     ));
-    assert.equal(ownedCreate.status, 204);
+    assert.equal(ownedCreate.status, 201);
     const membership = await handleRequest(db, req(
         'PUT', '/memberships/ms-p15-vis-owned', token, {
             organization_id: STARK_ORGANIZATION,
@@ -609,7 +609,7 @@ test('stateEventVisibilityFor: member-genesis op-born'
             at: nowUtc(),
         },
     ));
-    assert.equal(membership.status, 200);
+    assert.equal(membership.status, 201);
 
     assert.equal(
         await resolveOwningOrganization(
@@ -1022,7 +1022,7 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
             constraints: [],
         },
     ));
-    assert.equal(attrPut.status, 200);
+    assert.equal(attrPut.status, 201);
 
     // Create with the binding already 'added'.
     const created = await handleRequest(db, req(
@@ -1067,7 +1067,7 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
             },
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const afterAdd = await flowGraphBindingsFromPairs(
         db, STARK_ORGANIZATION,
@@ -1141,7 +1141,7 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
             )
         ).headers.get('ETag')! },
     ));
-    assert.equal(putRemove.status, 200);
+    assert.equal(putRemove.status, 201);
 
     const afterRm = await flowGraphBindingsFromPairs(
         db, STARK_ORGANIZATION,
@@ -1189,7 +1189,7 @@ test('residual pin: soft-deleted node drops from'
             constraints: [],
         },
     ));
-    assert.equal(attrPut.status, 200);
+    assert.equal(attrPut.status, 201);
 
     const created = await handleRequest(db, req(
         'POST', '/flows', token, {
@@ -1233,7 +1233,7 @@ test('residual pin: soft-deleted node drops from'
             },
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const afterAdd = await flowGraphBindingsFromPairs(
         db, STARK_ORGANIZATION,
@@ -1286,7 +1286,7 @@ test('residual pin: soft-deleted node drops from'
             )
         ).headers.get('ETag')! },
     ));
-    assert.equal(putDelete.status, 200);
+    assert.equal(putDelete.status, 201);
 
     const afterDel = await flowGraphBindingsFromPairs(
         db, STARK_ORGANIZATION,
@@ -1362,7 +1362,7 @@ async function transitionWithFieldValue(
             states: ['n-start', 'n-finish', 'claimed'],
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // Phase Final Stage B: record_attributes retired.
     const typePut = await handleRequest(db, req(
@@ -1378,7 +1378,7 @@ async function transitionWithFieldValue(
             state_event_id: 'rec-p15-fv-genesis',
         },
     ));
-    assert.equal(typePut.status, 200);
+    assert.equal(typePut.status, 201);
     const attrWrite = await handleRequest(db, req(
         'PUT',
         '/organizations/' + STARK_ORGANIZATION
@@ -1393,7 +1393,7 @@ async function transitionWithFieldValue(
             constraints: [],
         },
     ));
-    assert.equal(attrWrite.status, 200);
+    assert.equal(attrWrite.status, 201);
 
     // Task 8 CUT: legacy fieldValues below the gate.
     await appendLegacyTransition(
@@ -1708,7 +1708,7 @@ async () => {
             constraints: [],
         },
     ));
-    assert.equal(attrPut.status, 200);
+    assert.equal(attrPut.status, 201);
 
     const created = await handleRequest(db, req(
         'POST', '/flows', token, {
@@ -1752,7 +1752,7 @@ async () => {
             },
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const woGraph = {
         name: 'P15 Restrict WO',
@@ -1794,7 +1794,7 @@ async () => {
             states: ['n-start', 'n-finish', 'claimed'],
         },
     ));
-    assert.equal(woCreated.status, 204);
+    assert.equal(woCreated.status, 201);
 
     // recordTypeId scopes the Task 7 instance leg (empty
     // until Task 14 writes instances).

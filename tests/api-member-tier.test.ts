@@ -46,7 +46,7 @@ async () => {
             state_at: '2026-01-01T00:00:00.000000Z',
             state_event_id: 'ev-i1',
         }));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const list = await handleRequest(
         db, req('GET', '/ideas', token));
     assert.equal(list.status, 200);

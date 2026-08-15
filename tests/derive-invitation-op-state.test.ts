@@ -88,7 +88,7 @@ async function grant(
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 }
 
 test('invitationOpStateFor: pending (granted, unanswered)'
@@ -123,7 +123,7 @@ test('invitationOpStateFor: accepted derives \'accepted\','
             acceptAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(accept.status, 204);
+    assert.equal(accept.status, 201);
 
     assert.equal(await invitationOpStateFor(db, id), 'accepted');
     assert.equal(
@@ -147,7 +147,7 @@ test('invitationOpStateFor: declined derives \'declined\','
             declineAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(decline.status, 204);
+    assert.equal(decline.status, 201);
 
     assert.equal(await invitationOpStateFor(db, id), 'declined');
     assert.equal(
@@ -170,7 +170,7 @@ test('invitationOpStateFor: revoked derives \'revoked\','
             revokeAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(revoke.status, 204);
+    assert.equal(revoke.status, 201);
 
     assert.equal(await invitationOpStateFor(db, id), 'revoked');
     assert.equal(

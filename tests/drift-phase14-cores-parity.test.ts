@@ -75,7 +75,7 @@ async function grant(
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
 }
 
 // -- invitationOpStateFor --------------------------------------
@@ -97,7 +97,7 @@ test('invitationOpStateFor: byte-identical pre-tx (the plain'
             acceptAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(accept.status, 204);
+    assert.equal(accept.status, 201);
 
     // Phase Final Task 2: memberships ROW half stripped from
     // acceptInvitation's tx list.
@@ -141,7 +141,7 @@ test('invitationLifecycleStatesFor: byte-identical pre-tx (the'
             revokeAt: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(revoke.status, 204);
+    assert.equal(revoke.status, 201);
 
     const revokeTxTables = ['requests', 'responses'];
     const preTx = await invitationLifecycleStatesFor(db, id);
@@ -241,7 +241,7 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
             states: ['n-start', 'n-middle', 'claimed'],
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // Phase Final Task 2: work_orders dropped from claim tx.
     const claimTxTables = [
@@ -307,7 +307,7 @@ test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
             states: ['n-start', 'n-middle', 'claimed'],
         },
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // Phase Final Task 2: work_orders dropped from claim tx.
     const claimTxTables = [

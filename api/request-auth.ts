@@ -205,12 +205,22 @@ type ParsedBody =
     | { ok: true; body: Record<string, unknown> }
     | { ok: false };
 
-export async function parseObjectBody(
-    request: Request,
-): Promise<ParsedBody> {
+type ParsedPutBody =
+    | { ok: true; body: Record<string, unknown> | undefined }
+    | { ok: false };
+
+function parseObjectText(
+    text: string,
+    allowEmpty: boolean,
+): ParsedPutBody {
+    if (text === '') {
+        return allowEmpty
+            ? { ok: true, body: undefined }
+            : { ok: false };
+    }
     let parsed: unknown;
     try {
-        parsed = await request.json();
+        parsed = JSON.parse(text);
     } catch {
         return { ok: false };
     }
@@ -225,4 +235,20 @@ export async function parseObjectBody(
         ok: true,
         body: parsed as Record<string, unknown>,
     };
+}
+
+export async function parseObjectBody(
+    request: Request,
+): Promise<ParsedBody> {
+    return parseObjectText(
+        await request.text(), false,
+    ) as ParsedBody;
+}
+
+// PUT may carry an empty body: a live empty document,
+// never a delete. POST/PATCH still reject empty as 400.
+export async function parsePutBody(
+    request: Request,
+): Promise<ParsedPutBody> {
+    return parseObjectText(await request.text(), true);
 }

@@ -275,7 +275,7 @@ async function seedFlow(
             },
         },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 async function seedWorkOrder(
@@ -291,7 +291,7 @@ async function seedWorkOrder(
             position: 1,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
         '/flows/' + FLOW_ID + '/work-orders/' + fwoId,
@@ -302,7 +302,7 @@ async function seedWorkOrder(
             at: AT,
         },
     ));
-    assert.equal(join.status, 200);
+    assert.equal(join.status, 201);
 }
 
 async function seedLiveType(
@@ -319,7 +319,7 @@ async function seedLiveType(
             state_event_id: TYPE_ID + '-genesis',
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedAttribute(
@@ -331,7 +331,7 @@ async function seedAttribute(
     const put = await handleRequest(db, req(
         'PUT', ATTRS + '/' + attrId, token, body,
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function seedWritableText(
@@ -363,7 +363,7 @@ async function seedInstance(
         'PUT', INSTANCE_DETAIL, token,
         { set: [...set] },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
     return put.headers.get('ETag')!;
 }
 
@@ -382,7 +382,7 @@ async function seedFlowTypeJoin(
             at: AT,
         },
     ));
-    assert.equal(put.status, 200);
+    assert.equal(put.status, 201);
 }
 
 async function bindInstance(
@@ -401,7 +401,7 @@ async function bindInstance(
             record_type_id: recordTypeId,
         },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 }
 
 async function seededBound(): Promise<{
@@ -578,7 +578,7 @@ async () => {
         }),
         { [IF_MATCH_HEADER]: etag },
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
     const stale = await handleRequest(db, req(
         'POST', TRANSITION, adminToken,
         valueBody({
@@ -616,7 +616,7 @@ async () => {
         }),
         { [IF_MATCH_HEADER]: etag },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
     const get = await handleRequest(db, req(
         'GET', INSTANCE_DETAIL, adminToken,
     ));
@@ -845,7 +845,7 @@ async () => {
             },
             { [IF_MATCH_HEADER]: headEtag! },
         ));
-        assert.equal(patch.status, 200);
+        assert.equal(patch.status, 201);
         headEtag = patch.headers.get('ETag');
     }
     const res = await handleRequest(db, req(
@@ -892,7 +892,7 @@ async () => {
         }),
         { [IF_MATCH_HEADER]: etag },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
 });
 
 // --- 6. constraints ---
@@ -938,7 +938,7 @@ async () => {
         valueBody({ eventId: 'te-tx-2' }),
         { [IF_MATCH_HEADER]: etag },
     ));
-    assert.equal(res.status, 204);
+    assert.equal(res.status, 201);
     assert.equal(
         await requestCount(db),
         before + 2,
@@ -1005,7 +1005,7 @@ async () => {
     ]);
     assert.deepEqual(
         [a.status, b.status].sort(),
-        [204, 412],
+        [201, 412],
     );
     assert.equal(
         await instancePairCount(db),
@@ -1036,14 +1036,14 @@ async () => {
         'POST', TRANSITION, adminToken, body,
         { [IF_MATCH_HEADER]: etag },
     ));
-    assert.equal(first.status, 204);
+    assert.equal(first.status, 201);
     const afterFirst = await instancePairCount(db);
     const afterFirstReq = await requestCount(db);
     const replay = await handleRequest(db, req(
         'POST', TRANSITION, adminToken, body,
         { [IF_MATCH_HEADER]: etag },
     ));
-    assert.equal(replay.status, 204);
+    assert.equal(replay.status, 201);
     assert.equal(
         await instancePairCount(db),
         afterFirst,

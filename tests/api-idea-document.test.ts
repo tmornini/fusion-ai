@@ -91,7 +91,7 @@ test('a document PUT with a new state writes wire entity'
             '2026-01-01T00:00:00.000000Z', 'ev-doc-1',
         ),
     ));
-    assert.equal(res.status, 200);
+    assert.equal(res.status, 201);
     const putWire = await res.json() as Record<string, unknown>;
     assert.equal(putWire.title, 'Fresh');
     // PUT successBody is entity fields only — no trio.
@@ -137,7 +137,7 @@ async () => {
             '2026-01-01T00:00:00.000000Z', 'ev-doc-2',
         ),
     ));
-    assert.equal(edit.status, 200);
+    assert.equal(edit.status, 201);
     const events = await deriveIdeaStateHistory(db, '1', 'doc-2');
     assert.equal(events.length, 1);
     const getRes = await handleRequest(
@@ -179,7 +179,7 @@ async () => {
     const first = await handleRequest(
         db, req('PUT', '/ideas/same-1', token, body),
     );
-    assert.equal(first.status, 200);
+    assert.equal(first.status, 201);
     const firstEtag = first.headers.get('ETag');
     assert.ok(firstEtag !== null && firstEtag !== '');
     const prefix = '/organizations/1/ideas/';
@@ -277,7 +277,7 @@ test('a same-state edit by a DIFFERENT member never'
             trio.stateEventId,
         ),
     ));
-    assert.equal(created.status, 200);
+    assert.equal(created.status, 201);
 
     const edited = await handleRequest(db, req(
         'PUT', '/ideas/doc-5', tokenB,
@@ -286,7 +286,7 @@ test('a same-state edit by a DIFFERENT member never'
             trio.stateEventId,
         ),
     ));
-    assert.equal(edited.status, 200);
+    assert.equal(edited.status, 201);
 
     const events = await deriveIdeaStateHistory(db, '1', 'doc-5');
     assert.equal(events.length, 1);

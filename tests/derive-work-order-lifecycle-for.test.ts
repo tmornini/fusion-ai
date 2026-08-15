@@ -180,7 +180,7 @@ test('workOrderLifecycleStatesFor: birth-claimed create alone'
             nowUtc(),
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const scoped = sortByAtId(
         await workOrderLifecycleStatesFor(
@@ -219,7 +219,7 @@ async () => {
             nowUtc(),
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // Task 8 CUT: legacy fieldValues below the gate
     // (stored-data fold; live wire rejects the key).
@@ -257,7 +257,7 @@ async () => {
             transitionAt: transition2At,
         },
     ));
-    assert.equal(transition2.status, 204);
+    assert.equal(transition2.status, 201);
 
     const entityPut = await handleRequest(db, req(
         'PUT', '/work-orders/' + workOrderId, token, {
@@ -266,7 +266,7 @@ async () => {
             position: 2,
         },
     ));
-    assert.equal(entityPut.status, 200);
+    assert.equal(entityPut.status, 201);
 
     const claimFreshAt = nowUtc();
     const claimFresh = await handleRequest(db, req(
@@ -278,7 +278,7 @@ async () => {
             expireAt: claimFreshAt,
         },
     ));
-    assert.equal(claimFresh.status, 204);
+    assert.equal(claimFresh.status, 201);
 
     const claimRepeatAt = nowUtc();
     const claimRepeat = await handleRequest(db, req(
@@ -290,7 +290,7 @@ async () => {
             expireAt: claimRepeatAt,
         },
     ));
-    assert.equal(claimRepeat.status, 204);
+    assert.equal(claimRepeat.status, 201);
 
     // birth(3) + transition1(1) + transition2(2) + PUT(0) +
     // fresh claim(1) + idempotent repeat(0) = 7.
@@ -336,7 +336,7 @@ test('workOrderLifecycleStatesFor: a release op\'s'
             nowUtc(),
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const releaseEventId = generateCryptoSafeBase62();
     const releaseAt = nowUtc();
@@ -348,7 +348,7 @@ test('workOrderLifecycleStatesFor: a release op\'s'
             releaseAt,
         },
     ));
-    assert.equal(release.status, 204);
+    assert.equal(release.status, 201);
 
     const scoped = sortByAtId(
         await workOrderLifecycleStatesFor(
@@ -403,7 +403,7 @@ async () => {
             nowUtc(),
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     const releaseEventId = generateCryptoSafeBase62();
     const releaseAt = nowUtc();
@@ -415,7 +415,7 @@ async () => {
             releaseAt,
         },
     ));
-    assert.equal(release.status, 204);
+    assert.equal(release.status, 201);
 
     const afterRelease = sortByAtId(
         await workOrderClaimHistoryFor(
@@ -446,7 +446,7 @@ async () => {
             expireAt: claimAt,
         },
     ));
-    assert.equal(reclaim.status, 204);
+    assert.equal(reclaim.status, 201);
 
     const afterReclaim = sortByAtId(
         await workOrderClaimHistoryFor(
@@ -506,7 +506,7 @@ async () => {
             nowUtc(),
         ),
     ));
-    assert.equal(created.status, 204);
+    assert.equal(created.status, 201);
 
     // Task 8 CUT: legacy fieldValues below the gate.
     const transitionAt = nowUtc();
@@ -547,7 +547,7 @@ async () => {
             releaseAt,
         },
     ));
-    assert.equal(release.status, 204);
+    assert.equal(release.status, 201);
 
     const history = await workOrderHistoryFor(
         db, STARK_ORGANIZATION, workOrderId,

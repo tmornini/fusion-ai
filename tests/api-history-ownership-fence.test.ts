@@ -106,7 +106,7 @@ async function seed(): Promise<{
             state_event_id: 'idea-a-genesis',
         },
     ));
-    assert.equal(idea.status, 200);
+    assert.equal(idea.status, 201);
     return { db, token };
 }
 
@@ -149,7 +149,7 @@ async () => {
             state_event_id: 'idea-b-genesis',
         },
     ));
-    assert.equal(foreignIdea.status, 200);
+    assert.equal(foreignIdea.status, 201);
     const res = await handleRequest(db, req(
         'GET', '/ideas/idea-b/versions', token,
     ));

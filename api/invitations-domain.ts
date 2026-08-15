@@ -36,7 +36,7 @@ import {
     formWritePair,
     storedResponseFor,
     appendMessagePair,
-    responseFromStored,
+    sendWriteResponse,
     hoistedHeaderFields,
     storedPairResponse,
     requireOperationId,
@@ -490,7 +490,7 @@ async function grantInvitation(
     const replay = await storedResponseFor(
         ctx.base, pair.requestHash);
     if (replay !== undefined) {
-        return responseFromStored(replay);
+        return sendWriteResponse(replay, 'POST', true);
     }
     // The invitation DOCUMENT pair (Phase 8 Task 6): PUT-shaped,
     // at the SAME (uriCollection, uriId) as the operation pair above
@@ -572,7 +572,8 @@ async function grantInvitation(
         });
     }
     return storedPairResponse(
-        ctx.base, pair.requestHash, 'grantInvitation');
+        ctx.base, pair.requestHash, 'grantInvitation',
+        'POST');
 }
 
 type GrantOutcome =
@@ -736,7 +737,7 @@ async function acceptInvitation(
     const replay = await storedResponseFor(
         ctx.base, pair.requestHash);
     if (replay !== undefined) {
-        return responseFromStored(replay);
+        return sendWriteResponse(replay, 'POST', true);
     }
     // The memberships DOCUMENT pair (Phase 8 Task 6, the B2
     // closure — the third memberships writer to join the
@@ -814,7 +815,8 @@ async function acceptInvitation(
         });
     }
     return storedPairResponse(
-        ctx.base, pair.requestHash, 'acceptInvitation');
+        ctx.base, pair.requestHash, 'acceptInvitation',
+        'POST');
 }
 
 // Decline: the invitee appends 'declined'. No membership is
@@ -862,7 +864,7 @@ async function declineInvitation(
     const replay = await storedResponseFor(
         ctx.base, pair.requestHash);
     if (replay !== undefined) {
-        return responseFromStored(replay);
+        return sendWriteResponse(replay, 'POST', true);
     }
     let conflict = false;
     let noOp = false;
@@ -891,7 +893,8 @@ async function declineInvitation(
         });
     }
     return storedPairResponse(
-        ctx.base, pair.requestHash, 'declineInvitation');
+        ctx.base, pair.requestHash, 'declineInvitation',
+        'POST');
 }
 
 // Revoke: an admin of the invitation's org cancels a pending
@@ -942,7 +945,7 @@ async function revokeInvitation(
     const replay = await storedResponseFor(
         ctx.base, pair.requestHash);
     if (replay !== undefined) {
-        return responseFromStored(replay);
+        return sendWriteResponse(replay, 'POST', true);
     }
     let conflict = false;
     let noOp = false;
@@ -971,7 +974,8 @@ async function revokeInvitation(
         });
     }
     return storedPairResponse(
-        ctx.base, pair.requestHash, 'revokeInvitation');
+        ctx.base, pair.requestHash, 'revokeInvitation',
+        'POST');
 }
 
 // Read one invitation by id from the pair plane, or null when

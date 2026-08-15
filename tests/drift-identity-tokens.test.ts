@@ -300,13 +300,13 @@ test('SECURITY NAMED COVENANT: a revoked chain\'s ACCESS'
         method: 'password', username: 'security-pin@example.com',
         password: PASSWORD, client_id: 'web',
     });
-    assert.equal(authorizeRes.status, 200);
+    assert.equal(authorizeRes.status, 201);
     const { code } = await authorizeRes.json() as { code: string };
     const grantRes = await tokenGrant(db, {
         grant_type: 'authorization_code', code,
         client_id: 'web',
     });
-    assert.equal(grantRes.status, 200);
+    assert.equal(grantRes.status, 201);
     const {
         access_token: accessToken,
         refresh_token: refreshToken,
@@ -327,7 +327,7 @@ test('SECURITY NAMED COVENANT: a revoked chain\'s ACCESS'
         'POST', `/identity-tokens/${rootJti}/revocation`,
         accessToken, {},
     ));
-    assert.equal(revokeRes.status, 204);
+    assert.equal(revokeRes.status, 201);
 
     // ACCESS still passes the gate (≤15-min staleness covenant).
     const afterAccess = await handleRequest(
@@ -378,7 +378,7 @@ test('authorizationCodeSpent: byte-identical pre-tx (the plain'
         method: 'password', username: CODE_EMAIL,
         password: CODE_PASSWORD, client_id: 'web',
     });
-    assert.equal(authorizeRes.status, 200);
+    assert.equal(authorizeRes.status, 201);
     const { code } = await authorizeRes.json() as { code: string };
     const derivedId = await deriveAuthorizationCodeId(code);
 
@@ -396,7 +396,7 @@ test('authorizationCodeSpent: byte-identical pre-tx (the plain'
         grant_type: 'authorization_code', code,
         client_id: 'web',
     });
-    assert.equal(grantRes.status, 200);
+    assert.equal(grantRes.status, 201);
 
     const preTxAfter = await authorizationCodeSpent(db, derivedId);
     const inTxAfter = await db.transaction(
