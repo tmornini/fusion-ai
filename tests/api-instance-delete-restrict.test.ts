@@ -211,7 +211,7 @@ async function seedInstance(
 ): Promise<void> {
     const path = INSTANCES + '/' + instanceId;
     const put = await handleRequest(db, req(
-        'PUT', path, token, {
+        'PATCH', path, token, {
             set: [
                 {
                     attribute_id: ATTR_ID,

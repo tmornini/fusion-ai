@@ -68,6 +68,9 @@ const TYPE_DETAIL =
 const ATTRS = TYPE_DETAIL + '/attributes';
 const INSTANCES = TYPE_DETAIL + '/instances';
 const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
+const WELL_FORMED_TAG =
+    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+    + 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 function req(
     method: string,
@@ -201,7 +204,7 @@ async function putInstance(
     }[],
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, token,
+        'PATCH', INSTANCE_DETAIL, token,
         { set: [...set] },
     ));
 }
@@ -436,7 +439,7 @@ async () => {
     }
 });
 
-test('PATCH absent → 404 via missedReadError (R2)',
+test('PATCH absent with If-Match → 412 (no live PUT)',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -444,12 +447,12 @@ async () => {
     const res = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
         { set: [{ attribute_id: ATTR_ID, value: 'x' }] },
-        { [IF_MATCH_HEADER]: '"ghost"' },
+        { [IF_MATCH_HEADER]: '"' + WELL_FORMED_TAG + '"' },
     ));
-    assert.equal(res.status, 404);
+    assert.equal(res.status, 412);
     assert.deepEqual(await res.json(), {
-        error: 'Not found: record_instances/'
-            + INSTANCE_ID,
+        error: 'If-Match does not match the current '
+            + 'instance at ' + INSTANCE_DETAIL,
     });
 });
 
@@ -478,7 +481,8 @@ async () => {
         'PATCH', INSTANCE_DETAIL, memberToken,
         { set: [{ attribute_id: ATTR_ID, value: 'x' }] },
         {
-            [IF_MATCH_HEADER]: strongEtagOf(genesisId),
+            [IF_MATCH_HEADER]:
+                '"' + WELL_FORMED_TAG + '"',
         },
     ));
     assert.equal(res.status, 404);
@@ -492,7 +496,7 @@ async () => {
     assert.equal(head, undefined);
 });
 
-test('PATCH foreign instance id → 404 (R2)',
+test('PATCH foreign instance id with If-Match → 412',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -513,12 +517,15 @@ async () => {
     const res = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
         { set: [{ attribute_id: ATTR_ID, value: 'x' }] },
-        { [IF_MATCH_HEADER]: '"anything"' },
+        {
+            [IF_MATCH_HEADER]:
+                '"' + WELL_FORMED_TAG + '"',
+        },
     ));
-    assert.equal(res.status, 404);
+    assert.equal(res.status, 412);
     assert.deepEqual(await res.json(), {
-        error:
-            'Not found: record_instances/' + INSTANCE_ID,
+        error: 'If-Match does not match the current '
+            + 'instance at ' + INSTANCE_DETAIL,
     });
 });
 
@@ -1135,7 +1142,7 @@ async () => {
     const put = await putInstance(db, memberToken, [
         { attribute_id: ATTR_ID, value: 'A' },
     ]);
-    assert.equal(await countInstancePairs(db), 1);
+    assert.equal(await countInstancePairs(db), 2);
     await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
         {
@@ -1150,5 +1157,5 @@ async () => {
             [IF_MATCH_HEADER]: put.headers.get('ETag')!,
         },
     ));
-    assert.equal(await countInstancePairs(db), 3);
+    assert.equal(await countInstancePairs(db), 4);
 });

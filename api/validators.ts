@@ -2481,11 +2481,11 @@ export interface RecordDocumentBody {
 // gate is the sole entity-shape check for the document PUT
 // (validateRecordEntity REQUIRES organization_id, which this
 // body never carries pre-stamp). Name non-empty re-homes here.
-// Instance PUT genesis body (Task 15 create-only). Wire
-// carries exactly {set}; clear is PATCH-only (Task 17).
-// Empty string values rejected at the body gate (G9);
-// type/constraint conformance is validateInstanceValues
-// after ACL.
+// Instance PATCH create body (Task 20). Wire carries
+// exactly {set}; [] legal. clear is update-only — on
+// create it is an unexpected key. Empty string values
+// rejected at the body gate (G9); type/constraint
+// conformance is validateInstanceValues after ACL.
 export interface InstancePutBody {
     readonly set: {
         readonly attribute_id: string;

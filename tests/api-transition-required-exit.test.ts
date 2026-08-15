@@ -380,7 +380,7 @@ async function seedInstance(
     }[] = [],
 ): Promise<string> {
     const put = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, token,
+        'PATCH', INSTANCE_DETAIL, token,
         { set: [...set] },
     ));
     assert.equal(put.status, 201);

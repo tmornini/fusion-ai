@@ -195,7 +195,7 @@ async function putInstance(
     }[],
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, token,
+        'PATCH', INSTANCE_DETAIL, token,
         { set: [...set] },
     ));
 }

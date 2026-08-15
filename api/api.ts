@@ -46,7 +46,6 @@ import {
     familyRegistration,
     INSTANCE_DETAIL_PATTERN,
     INSTANCE_VERSION_PATTERN,
-    CREATE_ONLY_PUT_ROUTE_PATTERNS,
     RECORD_TYPES_COLLECTION_PATTERN,
 } from './family-registry.ts';
 import {
@@ -96,6 +95,7 @@ import {
     HTTP_NO_CONTENT,
     HTTP_BAD_REQUEST,
     HTTP_NOT_FOUND,
+    HTTP_CONFLICT,
     HTTP_METHOD_NOT_ALLOWED,
     HTTP_INTERNAL_ERROR,
     HTTP_UNAUTHORIZED,
@@ -804,26 +804,6 @@ export async function handleRequest(
                 }
             }
         }
-        // Create-only PUT (Task 15): If-Match is rejected
-        // before pair formation — create is unconditional
-        // and the in-tx spent-address check owns the race.
-        const isCreateOnlyWrite = method === 'PUT'
-            && CREATE_ONLY_PUT_ROUTE_PATTERNS
-                .has(routePattern);
-        if (
-            isCreateOnlyWrite
-            && request.headers.get(IF_MATCH_HEADER)
-                !== null
-        ) {
-            return Response.json(
-                {
-                    error: 'If-Match is not accepted on PUT: '
-                        + 'create is unconditional at '
-                        + pathname,
-                },
-                { status: HTTP_BAD_REQUEST },
-            );
-        }
         // The shadow-ledger pair: formed pre-tx (all crypto and
         // address resolution happen before a transaction opens
         // — see api/message-pair.ts), gated to routes wired in
@@ -1145,10 +1125,10 @@ export async function handleRequest(
                     );
                 }
             }
-            // Instance PATCH If-Match ladder (Task 17 / R5):
-            // AFTER replay (load-bearing). Tombstone == absent.
-            // Wire pair is operation-plane; the in-tx
-            // head re-read is the race backstop.
+            // Instance PATCH table (Task 20). AFTER replay.
+            // Malformed If-Match is 400 before create/404/
+            // 412. Never-written + no pin → create. DELETE
+            // head + no pin → 409 spent; + pin → 404.
             if (
                 method === 'PATCH'
                 && routePattern
@@ -1157,108 +1137,162 @@ export async function handleRequest(
                 const pathOrganization = param(params, 0);
                 const typeId = param(params, 1);
                 const instanceId = param(params, 2);
+                const prefix = instancesUriPrefix(
+                    pathOrganization, typeId,
+                );
+                const raw = request.headers
+                    .get(IF_MATCH_HEADER);
+                if (raw !== null) {
+                    const parsed = parseIfMatch(raw);
+                    if (parsed === undefined) {
+                        return Response.json(
+                            {
+                                error: 'If-Match must '
+                                    + 'carry exactly '
+                                    + 'one strong '
+                                    + 'validator',
+                            },
+                            {
+                                status:
+                                    HTTP_BAD_REQUEST,
+                            },
+                        );
+                    }
+                }
                 const head = await deriveInstanceHead(
                     effective,
                     pathOrganization,
                     typeId,
                     instanceId,
                 );
+                const docHead = await documentHeadAt(
+                    effective, prefix, instanceId,
+                );
                 if (head === undefined) {
-                    throw await missedReadError(
-                        effective,
-                        instanceId,
-                        organization
-                            ?? pathOrganization,
-                        'record_instances',
-                    );
-                }
-                const raw = request.headers
-                    .get(IF_MATCH_HEADER);
-                const advertisedNow =
-                    await instanceAdvertised(
-                        effective,
-                        pathOrganization,
-                        typeId,
-                        instanceId,
-                        roles,
-                    );
-                if (raw === null) {
-                    if (
-                        advertisedNow !== undefined
-                        && matched.get !== undefined
-                    ) {
-                        try {
-                            return preconditionDocument(
-                                HTTP_PRECONDITION_REQUIRED,
-                                await matched.get(
-                                    effective, params,
-                                    actor, organization,
-                                    roles,
-                                ),
-                                advertisedNow.tag,
-                                advertisedNow.limited,
+                    if (docHead?.method === 'DELETE') {
+                        if (raw === null) {
+                            return Response.json(
+                                {
+                                    error:
+                                        'instance '
+                                        + 'already '
+                                        + 'exists at '
+                                        + pathname,
+                                },
+                                {
+                                    status:
+                                        HTTP_CONFLICT,
+                                },
                             );
-                        } catch {
-                            // Status stays 428.
                         }
+                        throw await missedReadError(
+                            effective,
+                            instanceId,
+                            organization
+                                ?? pathOrganization,
+                            'record_instances',
+                        );
                     }
-                    return Response.json(
-                        {
-                            error: 'If-Match is required '
-                                + 'to PATCH ' + pathname,
-                        },
-                        {
-                            status:
-                                HTTP_PRECONDITION_REQUIRED,
-                        },
-                    );
-                }
-                const ifMatch = parseIfMatch(raw);
-                if (ifMatch === undefined) {
-                    return Response.json(
-                        {
-                            error: 'If-Match must carry '
-                                + 'exactly one strong '
-                                + 'validator',
-                        },
-                        { status: HTTP_BAD_REQUEST },
-                    );
-                }
-                if (
-                    advertisedNow === undefined
-                    || ifMatch !== advertisedNow.tag
-                ) {
+                    if (raw !== null) {
+                        return Response.json(
+                            {
+                                error: 'If-Match does '
+                                    + 'not match the '
+                                    + 'current '
+                                    + 'instance at '
+                                    + pathname,
+                            },
+                            {
+                                status:
+                                    HTTP_PRECONDITION_FAILED,
+                            },
+                        );
+                    }
+                    // Never written, no pin → create.
+                } else {
+                    const advertisedNow =
+                        await instanceAdvertised(
+                            effective,
+                            pathOrganization,
+                            typeId,
+                            instanceId,
+                            roles,
+                        );
+                    if (raw === null) {
+                        if (
+                            advertisedNow !== undefined
+                            && matched.get !== undefined
+                        ) {
+                            try {
+                                return preconditionDocument(
+                                    HTTP_PRECONDITION_REQUIRED,
+                                    await matched.get(
+                                        effective,
+                                        params,
+                                        actor,
+                                        organization,
+                                        roles,
+                                    ),
+                                    advertisedNow.tag,
+                                    advertisedNow.limited,
+                                );
+                            } catch {
+                                // Status stays 428.
+                            }
+                        }
+                        return Response.json(
+                            {
+                                error: 'If-Match is '
+                                    + 'required to '
+                                    + 'PATCH '
+                                    + pathname,
+                            },
+                            {
+                                status:
+                                    HTTP_PRECONDITION_REQUIRED,
+                            },
+                        );
+                    }
+                    const ifMatch = parseIfMatch(raw);
                     if (
-                        advertisedNow !== undefined
-                        && matched.get !== undefined
+                        advertisedNow === undefined
+                        || ifMatch !== advertisedNow.tag
                     ) {
-                        try {
-                            return preconditionDocument(
-                                HTTP_PRECONDITION_FAILED,
-                                await matched.get(
-                                    effective, params,
-                                    actor, organization,
-                                    roles,
-                                ),
-                                advertisedNow.tag,
-                                advertisedNow.limited,
-                            );
-                        } catch {
-                            // Status stays 412.
+                        if (
+                            advertisedNow !== undefined
+                            && matched.get !== undefined
+                        ) {
+                            try {
+                                return preconditionDocument(
+                                    HTTP_PRECONDITION_FAILED,
+                                    await matched.get(
+                                        effective,
+                                        params,
+                                        actor,
+                                        organization,
+                                        roles,
+                                    ),
+                                    advertisedNow.tag,
+                                    advertisedNow.limited,
+                                );
+                            } catch {
+                                // Status stays 412.
+                            }
                         }
+                        return Response.json(
+                            {
+                                error: 'If-Match does '
+                                    + 'not match the '
+                                    + 'current '
+                                    + 'instance at '
+                                    + pathname,
+                            },
+                            {
+                                status:
+                                    HTTP_PRECONDITION_FAILED,
+                            },
+                        );
                     }
-                    return Response.json(
-                        {
-                            error: 'If-Match does not '
-                                + 'match the current '
-                                + 'instance at '
-                                + pathname,
-                        },
-                        {
-                            status:
-                                HTTP_PRECONDITION_FAILED,
-                        },
-                    );
                 }
             }
             // Same-body as live PUT head → 200, no append.
@@ -1624,27 +1658,6 @@ export async function handleRequest(
                     const response = sendWriteResponse(
                         stored, 'PUT', true,
                     );
-                    if (
-                        routePattern
-                            === INSTANCE_DETAIL_PATTERN
-                    ) {
-                        const advertisedPut =
-                            await instanceAdvertised(
-                                effective,
-                                param(params, 0),
-                                param(params, 1),
-                                param(params, 2),
-                                roles,
-                            );
-                        if (
-                            advertisedPut !== undefined
-                        ) {
-                            return attachEtag(
-                                response,
-                                advertisedPut.tag,
-                            );
-                        }
-                    }
                     const putWiring = documentFamilyWiring(
                         matched.segments[0] ?? '',
                     );
@@ -1671,9 +1684,9 @@ export async function handleRequest(
                 return Response.json(result);
             }
             case 'PATCH': {
-                // Task 10/17: instance PATCH wires through
-                // the same gate shape as PUT (pair + replay
-                // + ETag). Ladder ran pre-dispatch above.
+                // Instance PATCH (Task 20): create and
+                // update. Pair + replay + ETag. Table ran
+                // pre-dispatch above.
                 if (!matched.patch) {
                     return Response.json(
                         {

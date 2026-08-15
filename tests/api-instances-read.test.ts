@@ -200,7 +200,7 @@ async function putInstance(
     }[],
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT',
+        'PATCH',
         detailPath(instanceId),
         token,
         { set: [...set] },

@@ -198,7 +198,7 @@ async function putInstance(
     }[],
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, token,
+        'PATCH', INSTANCE_DETAIL, token,
         { set: [...set] },
     ));
 }
@@ -236,8 +236,8 @@ async function countDeletePairs(
 }
 
 test('DELETE live instance → 204; then collection omit, '
-+ 'detail 404, PATCH 404, PUT 409, second DELETE appends '
-+ 'tombstone (R4)',
++ 'detail 404, PATCH+pin 404, PATCH no pin 409, second '
++ 'DELETE appends tombstone (R4)',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -292,7 +292,11 @@ async () => {
     const patch = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
         { set: [{ attribute_id: ATTR_ID, value: 'x' }] },
-        { [IF_MATCH_HEADER]: '"ghost"' },
+        {
+            [IF_MATCH_HEADER]:
+                '"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+                + 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"',
+        },
     ));
     assert.equal(patch.status, 404);
     assert.deepEqual(await patch.json(), {
@@ -301,7 +305,7 @@ async () => {
     });
 
     const putAgain = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, memberToken,
+        'PATCH', INSTANCE_DETAIL, memberToken,
         {
             set: [
                 {

@@ -133,21 +133,21 @@ export async function getRecordInstance(
     );
 }
 
-// Create-only PUT genesis. Returns the fresh etag so the
-// caller can enter edit without a re-GET.
+// PATCH create (no If-Match). Returns the fresh etag
+// so the caller can enter edit without a re-GET.
 export async function putRecordInstance(
     ctx: RequestContext,
     recordTypeId: string,
     id: string,
     set: readonly InstanceValueSet[],
 ): Promise<{ etag: string }> {
-    const { etag } = await ctx.PUTWithEtag(
+    const { etag } = await ctx.PATCHWithEtag(
         instancePath(ctx, recordTypeId, id),
         { set: setWire(set) },
     );
     return {
         etag: requireEtag(
-            etag, 'instance PUT ' + id,
+            etag, 'instance PATCH create ' + id,
         ),
     };
 }

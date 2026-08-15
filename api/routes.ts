@@ -110,6 +110,7 @@ import {
 import {
     appendMessagePair,
     canonicalUriCollection,
+    documentHeadAt,
     formWritePair,
     headPairIdAt,
     pairResponseBody,
@@ -3429,31 +3430,17 @@ export const WRITE_RESPONSE_SPECS:
             },
         },
     },
-    // Nested instances detail (Task 15 PUT create-only;
-    // Task 17 PATCH delta). Wire success body echoes the
-    // request delta only — never the merged head.
+    // Nested instances detail (Task 20): public PUT is
+    // 405; PATCH creates and updates. Wire success body
+    // echoes the request delta only — never the merged
+    // head. PATCH successBody must NOT validate the
+    // delta. Pair formation runs before the gate's
+    // table (replay needs the hash first); body shape
+    // 400 is the handler's job so 428/412/409 answer
+    // first. On the 201 path the body is already valid,
+    // so the echo matches the handler's re-validated
+    // set/clear.
     [INSTANCE_DETAIL_PATTERN]: {
-        put: {
-            status: HTTP_OK,
-            successBody: (params, body) => {
-                const validated = validateInstancePutBody(
-                    body ?? {},
-                );
-                return {
-                    id: param(params, 2),
-                    organization_id: param(params, 0),
-                    record_type_id: param(params, 1),
-                    set: validated.set,
-                };
-            },
-        },
-        // PATCH successBody must NOT validate the delta.
-        // Pair formation runs before the gate's If-Match
-        // ladder (replay needs the hash first); body shape
-        // 400 is the handler's job so 428/412 answer first
-        // (Task 20 ladder steps 6–7). On the 200 path the
-        // body is already valid, so the echo matches the
-        // handler's re-validated set/clear.
         patch: {
             status: HTTP_OK,
             successBody: (params, body) => {
@@ -3940,13 +3927,89 @@ async function instanceAddressSpent(
     );
 }
 
+// Instance PATCH create (Task 20): no live PUT, no
+// If-Match. Body is create-shaped ({set} required,
+// [] legal; clear → 400). Writes the wire PATCH plus
+// an inner PUT {values} so derive still reads PUT|
+// DELETE heads.
+async function postInstanceCreateOp(
+    db: DbAdapter,
+    p: string[],
+    body: Record<string, unknown>,
+    actor: Id,
+    pair: MessagePair,
+    organization: Id | undefined,
+    roles: readonly string[],
+): Promise<void> {
+    const org = requireOrganization(organization);
+    const typeId = param(p, 1);
+    const instanceId = param(p, 2);
+    const pathname = '/organizations/' + org
+        + '/record-types/' + typeId
+        + '/instances/' + instanceId;
+    await requireRecordTypeExists(db, org, typeId);
+    const validated = validateInstancePutBody(body);
+    const attributesById = await loadAttributeSchemaById(
+        db, org, typeId,
+    );
+    assertWritableAttributeIds(
+        validated.set.map((entry) => entry.attribute_id),
+        attributesById,
+        roles,
+    );
+    validateInstanceValues(
+        validated.set, attributesById,
+    );
+    const mergedValues = mergeInstanceValues(
+        [], { set: validated.set },
+    );
+    const revisionPair = await formDocumentPairFor(db, {
+        routePattern: INSTANCE_DETAIL_PATTERN,
+        params: [org, typeId, instanceId],
+        method: 'PUT',
+        body: { values: mergedValues },
+        requesterIdentityId: actor,
+        requestAt: pair.requestAt,
+        operationId: pair.operationId,
+        organization: org,
+        response: {
+            status: HTTP_OK,
+            body: { values: mergedValues },
+        },
+        headerFields: [],
+    });
+    const prefix = instancesUriPrefix(org, typeId);
+    await db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            const latest = await documentHeadAt(
+                view, prefix, instanceId,
+            );
+            if (latest?.method === 'DELETE') {
+                throw new ApiError(
+                    'instance already exists at '
+                        + pathname,
+                    HTTP_CONFLICT,
+                );
+            }
+            if (latest?.method === 'PUT') {
+                throw new ApiError(
+                    'If-Match is required to PATCH '
+                        + pathname,
+                    HTTP_PRECONDITION_REQUIRED,
+                );
+            }
+            await appendMessagePair(view, pair);
+            await appendMessagePair(view, revisionPair);
+        },
+    );
+}
+
 // Instance PATCH two-pair append (Task 17 / R5 / R9).
-// ifMatchTarget is the CLIENT's gate-verified If-Match pair
-// id recovered from the formed wire pair — never a live
-// re-derived head. Merge values read the current head only
-// when it still equals ifMatchTarget; the in-tx head re-read
-// anchors on ifMatchTarget so a concurrent advance cannot
-// silently rebase.
+// Create (no If-Match, never written) is Task 20: set
+// required, [] legal; clear → 400. ifMatchTarget is the
+// CLIENT's gate-verified If-Match recovered from the
+// formed wire pair — never a live re-derived head.
 export async function postInstancePatchOp(
     db: DbAdapter,
     p: string[],
@@ -3969,10 +4032,9 @@ export async function postInstancePatchOp(
     }
     const ifMatchTarget = ifMatchFromPair(pair);
     if (ifMatchTarget === undefined) {
-        // Gate requires If-Match; a pair without it is a
-        // wiring bug, never a normal path.
-        throw new Error(
-            'instance PATCH pair lacks If-Match',
+        return postInstanceCreateOp(
+            db, p, body, actor, pair, organization,
+            roles,
         );
     }
     const head = await deriveInstanceHead(
@@ -5908,14 +5970,15 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Nested instance detail (Task 15 PUT create-only;
-    // Task 16 GET projection + missedReadError R2;
-    // Task 17 PATCH If-Match + full-state revision;
-    // Task 18 DELETE tombstone-wins R4/R9).
-    // Ladder PUT: parent type 404 → body 400 → write-ACL
-    // 403 → value 400 → in-tx spent-address check (R9) +
-    // append. Ladder PATCH: shape → unknown attr → ACL on
-    // set∪clear → value on set → two-pair tx (R5/R9).
+    // Nested instance detail (Task 20): public PUT is
+    // 405. PATCH creates (no pin, never written) and
+    // updates (If-Match). Task 16 GET projection +
+    // missedReadError R2. Task 18 DELETE tombstone-wins
+    // R4/R9. Ladder PATCH create: parent type 404 →
+    // body 400 (set required; clear forbidden) → write-
+    // ACL 403 → value 400 → two-pair tx (wire + inner
+    // PUT). Ladder PATCH update: shape → unknown attr
+    // → ACL on set∪clear → value on set → two-pair tx.
     // Ladder DELETE: parent type 404 → address spent
     // (any pair, including tombstone) else missedReadError;
     // in-tx re-probe + append tombstone (R4 ledger-
@@ -5952,63 +6015,6 @@ export const routes: Route[] = [
                     head.values, attributesById, roles,
                 ),
             };
-        },
-        put: async (
-            db, p, body, _actor, pair, _organization,
-            roles,
-        ) => {
-            const org = param(p, 0);
-            const typeId = param(p, 1);
-            const instanceId = param(p, 2);
-            const pathname = '/organizations/' + org
-                + '/record-types/' + typeId
-                + '/instances/' + instanceId;
-            await requireRecordTypeExists(
-                db, org, typeId,
-            );
-            const validated =
-                validateInstancePutBody(body);
-            const attributesById =
-                await loadAttributeSchemaById(
-                    db, org, typeId,
-                );
-            const attributeIds = validated.set.map(
-                (entry) => entry.attribute_id,
-            );
-            assertWritableAttributeIds(
-                attributeIds, attributesById, roles,
-            );
-            validateInstanceValues(
-                validated.set, attributesById,
-            );
-            const prefix = instancesUriPrefix(
-                org, typeId,
-            );
-            await db.transaction(
-                ['requests', 'responses'],
-                async (view) => {
-                    const responses =
-                        await view.responses
-                            .getAllWhere(
-                                'uri_collection', prefix,
-                            );
-                    const spent = responses.some(
-                        (r) => r.uri_id === instanceId,
-                    );
-                    if (spent) {
-                        throw new ApiError(
-                            'instance already exists at '
-                                + pathname,
-                            HTTP_CONFLICT,
-                        );
-                    }
-                    if (pair !== undefined) {
-                        await appendMessagePair(
-                            view, pair,
-                        );
-                    }
-                },
-            );
         },
         patch: (db, p, body, actor, pair, organization,
             roles,

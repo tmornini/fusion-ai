@@ -261,7 +261,7 @@ async function seedInstance(
 ): Promise<void> {
     const path = INSTANCES + '/' + instanceId;
     const put = await handleRequest(db, req(
-        'PUT', path, token, {
+        'PATCH', path, token, {
             set: [
                 {
                     attribute_id: ATTR_ID,
@@ -447,7 +447,7 @@ async () => {
     assert.equal(putAttrB.status, 201);
     const foreignInst = 'inst-foreign-b';
     const putInstB = await handleRequest(db, req(
-        'PUT',
+        'PATCH',
         typeB + '/instances/' + foreignInst,
         tokenB,
         {
@@ -503,7 +503,7 @@ async () => {
     assert.equal(attr.status, 201);
     const otherInst = 'inst-bind-other';
     const inst = await handleRequest(db, req(
-        'PUT',
+        'PATCH',
         '/organizations/' + ORGANIZATION
         + '/record-types/' + TYPE_OTHER
         + '/instances/' + otherInst,

@@ -2234,6 +2234,9 @@ export async function formInstanceChainPairs():
     const instancePathname =
         '/' + instancePathSegments.join('/');
 
+    // Document-plane genesis: the inner PUT a public
+    // PATCH create would store. Seed writes this one
+    // pair only (1498).
     const genesisId = generateCryptoSafeBase62();
     const genesis = await formWritePair({
         method: 'PUT',
@@ -2242,17 +2245,12 @@ export async function formInstanceChainPairs():
         routeSegments: instanceRouteSegments,
         pathSegments: instancePathSegments,
         headerFields: [],
-        body: { set: [] },
+        body: { values: [] },
         requesterIdentityId: SYSTEM_MEMBER_ID,
         requestAt: genesisAt,
         organization: org,
         responseStatus: HTTP_OK,
-        responseBody: {
-            id: instanceId,
-            organization_id: org,
-            record_type_id: typeId,
-            set: [],
-        },
+        responseBody: { values: [] },
         operationId: genesisId,
     });
 

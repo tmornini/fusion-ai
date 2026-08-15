@@ -827,8 +827,9 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     RECORD_TYPE_DETAIL_PATTERN,
     // Nested attributes detail (Task 7): admin PUT/DELETE.
     ATTRIBUTE_DETAIL_PATTERN,
-    // Nested instances detail (Task 15): create-only PUT
-    // (PAIR_WIRED only — R10 keeps DOCUMENT_CLASS clear).
+    // Nested instances detail: PATCH create/update +
+    // DELETE (PAIR_WIRED only — R10 keeps DOCUMENT_CLASS
+    // clear). Public PUT is 405 (Task 20).
     INSTANCE_DETAIL_PATTERN,
     // states/:id/field-values/:fvid RETIRED from live wire
     // (Phase 15 Task 7); seed still forms pairs at that

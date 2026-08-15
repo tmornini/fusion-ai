@@ -432,7 +432,7 @@ async () => {
         }),
     ));
     const putInst = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, memberToken, {
+        'PATCH', INSTANCE_DETAIL, memberToken, {
             set: [
                 {
                     attribute_id: ATTR_ID,
@@ -478,7 +478,7 @@ async () => {
         }),
     ));
     const putInst = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, memberToken, {
+        'PATCH', INSTANCE_DETAIL, memberToken, {
             set: [
                 {
                     attribute_id: ATTR_ID,
@@ -518,7 +518,7 @@ async () => {
         }),
     ));
     const putInst = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, memberToken, {
+        'PATCH', INSTANCE_DETAIL, memberToken, {
             set: [
                 {
                     attribute_id: ATTR_ID,

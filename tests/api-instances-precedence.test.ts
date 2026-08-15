@@ -184,7 +184,7 @@ async function putInstance(
     }[],
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, token,
+        'PATCH', INSTANCE_DETAIL, token,
         { set: [...set] },
     ));
 }
@@ -239,12 +239,12 @@ async () => {
 
 // --- Step 4–5: parent / existence before dialect ---
 
-test('4 admin PUT instance under absent type → 404 '
+test('4 admin PATCH instance under absent type → 404 '
 + 'record_types',
 async () => {
     const { db, adminToken } = await adminDb();
     const res = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, adminToken,
+        'PATCH', INSTANCE_DETAIL, adminToken,
         { set: [] },
     ));
     assert.equal(res.status, 404);
@@ -253,29 +253,18 @@ async () => {
     });
 });
 
-test('5 PATCH absent instance w/o If-Match → 404 '
-+ '(not 428)',
+test('5 PATCH absent instance w/o If-Match → 201 '
++ 'create (not 428)',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
     await putLiveType(db, adminToken);
     const res = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
-        {
-            set: [
-                {
-                    attribute_id: ATTR_ID,
-                    value: 'x',
-                },
-            ],
-        },
+        { set: [] },
     ));
-    assert.equal(res.status, 404);
+    assert.equal(res.status, 201);
     assert.notEqual(res.status, 428);
-    assert.deepEqual(await res.json(), {
-        error: 'Not found: record_instances/'
-            + INSTANCE_ID,
-    });
 });
 
 // --- Step 6–7: If-Match before body shape ---
@@ -479,7 +468,7 @@ async () => {
 
 // --- Step 12: spent-address 409 is last (in-tx) ---
 
-test('12 PUT race at a spent address → 409 '
+test('12 PATCH create race at one address → 201/428 '
 + '(in-tx, last)',
 async () => {
     const { db, adminToken, memberToken } =
@@ -488,7 +477,7 @@ async () => {
     await seedWritableTextAttr(db, adminToken);
     const [a, b] = await Promise.all([
         handleRequest(db, req(
-            'PUT', INSTANCE_DETAIL, memberToken,
+            'PATCH', INSTANCE_DETAIL, memberToken,
             {
                 set: [
                     {
@@ -499,7 +488,7 @@ async () => {
             },
         )),
         handleRequest(db, req(
-            'PUT', INSTANCE_DETAIL, memberToken,
+            'PATCH', INSTANCE_DETAIL, memberToken,
             {
                 set: [
                     {
@@ -512,13 +501,8 @@ async () => {
     ]);
     assert.deepEqual(
         [a.status, b.status].sort(),
-        [201, 409],
+        [201, 428],
     );
-    const loser = a.status === 409 ? a : b;
-    assert.deepEqual(await loser.json(), {
-        error: 'instance already exists at '
-            + INSTANCE_DETAIL,
-    });
 });
 
 // --- Cross-pins ---

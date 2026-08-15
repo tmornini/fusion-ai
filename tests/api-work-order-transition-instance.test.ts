@@ -360,7 +360,7 @@ async function seedInstance(
     ],
 ): Promise<string> {
     const put = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, token,
+        'PATCH', INSTANCE_DETAIL, token,
         { set: [...set] },
     ));
     assert.equal(put.status, 201);
@@ -814,7 +814,7 @@ async () => {
         write_roles: ['ops'],
     });
     const put = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, adminToken, {
+        'PATCH', INSTANCE_DETAIL, adminToken, {
             set: [
                 {
                     attribute_id: ATTR_ID,
@@ -827,7 +827,8 @@ async () => {
             ],
         },
     ));
-    // PUT create-only — re-PUT may 409; use PATCH.
+    // Instance already live from seed — PATCH create
+    // is 428; GET + If-Match PATCH to set the lock.
     let headEtag = put.headers.get('ETag');
     if (put.status !== 200) {
         const get = await handleRequest(db, req(

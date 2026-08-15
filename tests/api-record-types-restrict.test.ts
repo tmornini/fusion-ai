@@ -162,7 +162,7 @@ async function putLiveInstance(
     token: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', INSTANCE_DETAIL, token, {
+        'PATCH', INSTANCE_DETAIL, token, {
             set: [
                 {
                     attribute_id: ATTR_ID,
