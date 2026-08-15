@@ -18,12 +18,9 @@ export function deleteSessionToken(): void {
 }
 
 // True once postSessionSeed() (or putSessionToken()) has
-// set a holder. Non-throwing — the one caller allowed to
-// run before boot completes (a cross-tab subscriber woken
-// by another tab's write while THIS tab is still
-// initializing) checks this before any
-// principalFromToken(getSessionToken()) read, since every
-// predicate below throws on an unseeded holder.
+// set a holder. Non-throwing so callers can probe before
+// boot completes. getSessionToken() still throws if
+// unseeded; the predicates below return false.
 export function sessionTokenIsSeeded(): boolean {
     return sessionToken !== undefined;
 }
@@ -50,6 +47,9 @@ export function getSessionToken(): string {
 // their reads on a real scoped session instead of firing
 // them on a seed and surfacing a 401.
 export function sessionIsOrganizationScoped(): boolean {
+    if (!sessionTokenIsSeeded()) {
+        return false;
+    }
     return principalFromToken(getSessionToken())
         .organization !== undefined;
 }
@@ -61,6 +61,9 @@ export function sessionIsOrganizationScoped(): boolean {
 // and boot can land it on invitations instead of an
 // organization-scoped dead end.
 export function sessionHasReachableOrganization(): boolean {
+    if (!sessionTokenIsSeeded()) {
+        return false;
+    }
     const organizations =
         principalFromToken(getSessionToken())
             .organizations;

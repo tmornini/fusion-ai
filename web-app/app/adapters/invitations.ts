@@ -16,6 +16,7 @@ import {
 } from '../channels.ts';
 import {
     getSessionCredentials,
+    isCookieSession,
     putSessionCredentials,
 } from './session-credentials.ts';
 import { postSessionRefresh } from './session-refresh.ts';
@@ -187,6 +188,16 @@ export async function postInvitationAcceptance(
 async function remintSessionClaims(
     ctx: RequestContext,
 ): Promise<void> {
+    if (isCookieSession()) {
+        try {
+            const creds = await postSessionRefresh(ctx, '');
+            putSessionToken(creds.accessToken);
+        } catch {
+            // accept already committed; claims catch up on next
+            // natural refresh or login
+        }
+        return;
+    }
     let stored;
     try {
         stored = getSessionCredentials();

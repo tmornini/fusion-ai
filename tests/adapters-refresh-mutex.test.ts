@@ -11,6 +11,8 @@ import {
 } from '../web-app/app/adapters/session-credentials.ts';
 import { putSessionToken } from
     '../web-app/app/adapters/session-token.ts';
+import { runSingleFlightRefresh } from
+    '../web-app/app/adapters/session-refresh-mutex.ts';
 import { UnauthorizedError } from
     '../api/http-errors.ts';
 import { expiredToken } from './token-fixtures.ts';
@@ -115,4 +117,25 @@ async () => {
         );
     });
     assert.equal(refreshPosts, 1);
+});
+
+test('idle tab ignores a peer refresh broadcast',
+async () => {
+    let posts = 0;
+    await runSingleFlightRefresh(async () => {
+        posts += 1;
+        return 'first';
+    });
+    const peer = new BroadcastChannel('fusion-ai:refresh');
+    peer.postMessage({ accessToken: null });
+    for (let i = 0; i < 5; i++) {
+        await new Promise(r => setImmediate(r));
+    }
+    peer.close();
+    const result = await runSingleFlightRefresh(async () => {
+        posts += 1;
+        return 'second';
+    });
+    assert.equal(posts, 2);
+    assert.equal(result, 'second');
 });

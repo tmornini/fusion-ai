@@ -24,6 +24,9 @@ function refreshChannel(): BroadcastChannel | undefined {
     channel = new BroadcastChannel(REFRESH_CHANNEL);
     (channel as { unref?: () => void }).unref?.();
     channel.addEventListener('message', (event: MessageEvent) => {
+        if (inFlight === null) {
+            return;
+        }
         const data = event.data as {
             accessToken?: unknown;
         };
@@ -45,6 +48,7 @@ export function runSingleFlightRefresh(
     }
     const pending = runLocked(refresh).finally(() => {
         inFlight = null;
+        peerAccess = undefined;
     });
     inFlight = pending;
     return pending;
