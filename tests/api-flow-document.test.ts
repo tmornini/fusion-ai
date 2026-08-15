@@ -471,6 +471,12 @@ test('e2e: a byte-identical resend converges (one event, one'
     ));
     assert.equal(second.status, 200);
     assert.equal(second.headers.get('Response-ID'), firstId);
+    const stored = await db.responses.getById(firstId!);
+    assert.ok(stored !== undefined);
+    assert.equal(
+        second.headers.get('ETag'),
+        strongEtagOf(stored.version),
+    );
     const eventsAfterSecond =
         await deriveFlowStateHistory(db, '1', 'flow-locked-3');
     assert.equal(

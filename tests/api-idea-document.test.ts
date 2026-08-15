@@ -178,6 +178,8 @@ async () => {
         db, req('PUT', '/ideas/same-1', token, body),
     );
     assert.equal(first.status, 200);
+    const firstEtag = first.headers.get('ETag');
+    assert.ok(firstEtag !== null && firstEtag !== '');
     const prefix = '/organizations/1/ideas/';
     const before = (await db.requests.getAllWhere(
         'uri_prefix', prefix,
@@ -198,6 +200,7 @@ async () => {
         }),
     );
     assert.equal(second.status, 200);
+    assert.equal(second.headers.get('ETag'), firstEtag);
     const after = (await db.requests.getAllWhere(
         'uri_prefix', prefix,
     )).filter((row) => row.uri_id === 'same-1');

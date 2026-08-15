@@ -2,8 +2,8 @@ import type { RequestContext } from './shared.ts';
 import { activeOrganization } from './shared.ts';
 
 // Domain face of a record instance (Task 21): values as a
-// map keyed by attribute id; etag is the opaque pair id
-// (quotes already stripped) for If-Match on PATCH.
+// map keyed by attribute id; etag is the unquoted 64-hex
+// advertised ETag for If-Match on PATCH.
 export interface RecordInstance {
     readonly id: string;
     readonly recordTypeId: string;

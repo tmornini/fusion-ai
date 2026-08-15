@@ -962,6 +962,11 @@ export async function handleRequest(
                             );
                         }
                     }
+                    if (isDocumentPut) {
+                        return attachEtag(
+                            response, replay.version,
+                        );
+                    }
                     return response;
                 }
             }
@@ -1294,9 +1299,6 @@ export async function handleRequest(
                         putWiring !== undefined
                         && routePattern
                             === putWiring.family + '/:id'
-                        && familyRegistration(
-                            putWiring.family,
-                        )?.concurrency === 'locked'
                     ) {
                         return attachEtag(
                             response, stored.version,
@@ -1747,8 +1749,9 @@ async function bodyWriteResponse(
     );
 }
 
-// Strong ETag header → opaque pair id (strip surrounding
-// quotes when present). Absent / empty → undefined.
+// Strong ETag header → unquoted 64-hex version token
+// (strip surrounding quotes when present). Absent /
+// empty → undefined.
 function etagFromHeader(
     response: Response,
 ): string | undefined {

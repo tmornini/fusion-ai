@@ -18,7 +18,7 @@ import { seededMockDb } from './mock-seed.ts';
 // only) does not exercise. MECHANISM: flows are the LOCKED
 // class (Decision 7) — a SECOND PUT to an existing flow is
 // non-genesis and must thread If-Match via a header-
-// capable req helper (echo the first PUT's pair-id ETag),
+// capable req helper (echo the first PUT's 64-hex ETag),
 // unlike the bare-req idiom the ideas/projects skew tests use.
 
 const BASE = 'http://localhost';

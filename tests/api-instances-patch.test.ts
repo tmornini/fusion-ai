@@ -45,7 +45,8 @@ import {
 
 // Instance PATCH — If-Match + full-state revision (R5).
 // Two pairs per PATCH: wire delta + PUT {values} revision.
-// Gate ladder after replay; ETag = revision pair id.
+// Gate ladder after replay; ETag is documentVersion of
+// the projected body (not the pair id).
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';

@@ -5697,7 +5697,7 @@ export const routes: Route[] = [
     // Nested instances collection (Task 16): member GET
     // under a live type. Parent probe first; heads via
     // deriveInstanceCollection; each row projects values
-    // by attribute ACL and embeds etag (pair id, no quotes).
+    // by attribute ACL and embeds etag (64-hex, no quotes).
     route(INSTANCES_COLLECTION_PATTERN, {
         get: async (
             db, p, _actor, organization, roles,
