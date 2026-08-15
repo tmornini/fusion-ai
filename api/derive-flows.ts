@@ -86,11 +86,9 @@ function flowsUriPrefix(organization: Id): string {
 // supply it, since both already group pairs per flow for their
 // own lifecycle walk (no second pass here). OPTIONAL only so
 // this function keeps satisfying DocumentFamilyWiring's fixed
-// 2-arg `entityOf` contract in FLOWS_WIRING (api/routes.ts) —
-// dead in practice, since both live flows GET routes are
-// hand-written and call deriveFlow/deriveFlows directly (never
-// the generic document-family GET path flows used before this
-// task), never omitting the count.
+// 2-arg `entityOf` contract in FLOWS_WIRING (api/routes.ts).
+// Live GET stays on deriveFlow/deriveFlows (pairCount supplied)
+// so a state-'deleted' head 404s; stored PUT omits the stamp.
 export function flowEntityOf(
     document: DerivedDocument,
     organization: Id,
@@ -108,6 +106,21 @@ export function flowEntityOf(
         graph: normalizedStoredGraph(body['graph']),
         hasUndoHistory: (pairCount ?? 0) > 1,
     };
+}
+
+// G2 stored PUT: flowEntityOf minus the read-time stamp.
+// hasUndoHistory is COUNT(*) > 1 of PUT+DELETE pairs at the
+// flow address — GET adds it; the stored blob never carries
+// it.
+export function flowStoredEntityOf(
+    document: DerivedDocument,
+    organization: Id,
+): Omit<FlowWithGraph, 'hasUndoHistory'> {
+    const {
+        hasUndoHistory: _hasUndoHistory,
+        ...stored
+    } = flowEntityOf(document, organization);
+    return stored;
 }
 
 async function fetchFlowPairs(

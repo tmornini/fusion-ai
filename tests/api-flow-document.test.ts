@@ -1,6 +1,9 @@
 import { test } from 'node:test';
-import { deriveFlowStateHistory } from
-    '../api/derive-flows.ts';
+import {
+    deriveFlowStateHistory,
+    flowEntityOf,
+    flowStoredEntityOf,
+} from '../api/derive-flows.ts';
 import {
     documentPairsAt,
 } from '../api/derive-documents.ts';
@@ -27,8 +30,9 @@ import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
 import {
-    apiRequest, TEST_OPERATION_ID,
+    apiRequest, TEST_OPERATION_ID, storedPutBodyText,
 } from './http-fixtures.ts';
+import { messageStore } from '../api/message-store.ts';
 
 // The flows-specific below-gate op + locked-class e2e coverage
 // for Task 3's document PUT (the generic locked arm itself is
@@ -1035,4 +1039,148 @@ async () => {
             'the losing undo must not have posted its event',
         );
     }
+});
+
+const FLOW_PREFIX = '/organizations/1/flows/';
+
+async function documentPairCount(
+    db: MemoryDbAdapter,
+    flowId: string,
+): Promise<number> {
+    const pairs = await messageStore(db).getPairs(
+        FLOW_PREFIX, flowId,
+    );
+    return pairs.filter((pair) =>
+        pair.request.method === 'PUT'
+        || pair.request.method === 'DELETE',
+    ).length;
+}
+
+async function latestPutRequestBody(
+    db: MemoryDbAdapter,
+    flowId: string,
+): Promise<Record<string, unknown>> {
+    const pairs = await messageStore(db).getPairs(
+        FLOW_PREFIX, flowId,
+    );
+    const puts = pairs.filter((pair) =>
+        pair.request.method === 'PUT',
+    );
+    const latest = puts[puts.length - 1];
+    assert.ok(latest, 'no PUT pair at ' + flowId);
+    return decodeRequestMessage(
+        latest.request.message,
+    ).body;
+}
+
+async function assertStoredPutOmitsUndoHistory(
+    db: MemoryDbAdapter,
+    flowId: string,
+    pairCount: number,
+    token: string,
+): Promise<void> {
+    const stored = JSON.parse(
+        await storedPutBodyText(db, FLOW_PREFIX, flowId),
+    ) as Record<string, unknown>;
+    assert.equal(
+        'hasUndoHistory' in stored, false,
+        'stored PUT must omit hasUndoHistory',
+    );
+    const requestBody = await latestPutRequestBody(
+        db, flowId,
+    );
+    const expected = flowStoredEntityOf(
+        {
+            uriId: flowId,
+            pairId: flowId,
+            method: 'PUT',
+            body: requestBody,
+        },
+        '1',
+    );
+    assert.deepEqual(stored, expected);
+    const got = await handleRequest(
+        db, req('GET', '/flows/' + flowId, token),
+    );
+    assert.equal(got.status, 200);
+    const wire = await got.json() as Record<string, unknown>;
+    assert.equal(
+        wire['hasUndoHistory'], pairCount > 1,
+        'GET stamps hasUndoHistory when COUNT(*) > 1',
+    );
+    const { hasUndoHistory: _flag, ...fromGet } = wire;
+    assert.deepEqual(fromGet, stored);
+    assert.deepEqual(
+        wire,
+        flowEntityOf(
+            {
+                uriId: flowId,
+                pairId: flowId,
+                method: 'PUT',
+                body: requestBody,
+            },
+            '1',
+            pairCount,
+        ),
+    );
+}
+
+// G2: stored PUT = flowEntityOf minus hasUndoHistory.
+// GET adds the stamp when this address has more than one
+// PUT or DELETE pair. Covers every G2 writer.
+test('hasUndoHistory is absent from the stored PUT and '
++ 'present on GET when COUNT(*) > 1',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const flowId = 'flow-g2-stream';
+    const created = await createFlow(db, token, flowId);
+    assert.equal(created.status, 201);
+    assert.equal(await documentPairCount(db, flowId), 1);
+    await assertStoredPutOmitsUndoHistory(
+        db, flowId, 1, token,
+    );
+
+    const saveBody = documentBody(
+        'Saved Graph', flowId + '-save',
+        {
+            graph: {
+                nodes: [{
+                    id: 'n-g2', name: 'N',
+                    positionX: 0, positionY: 0,
+                    isCreate: false, isArchive: false,
+                    memberIds: [], attributes: [],
+                    taskInstructions: '',
+                }],
+                edges: [],
+            },
+        },
+    );
+    const saved = await handleRequest(db, req(
+        'PUT', '/flows/' + flowId, token, saveBody,
+        { 'if-match': await headEtag(db, token, flowId) },
+    ));
+    assert.equal(saved.status, 201);
+    assert.equal(await documentPairCount(db, flowId), 2);
+    await assertStoredPutOmitsUndoHistory(
+        db, flowId, 2, token,
+    );
+    const putJson = await saved.json() as {
+        hasUndoHistory?: boolean;
+        graph?: unknown;
+    };
+    assert.equal('hasUndoHistory' in putJson, false);
+    assert.ok(putJson.graph);
+
+    const undone = await handleRequest(db, req(
+        'POST', '/flows/' + flowId + '/undo', token, {
+            eventId: flowId + '-undo',
+            at: AT,
+        },
+    ));
+    assert.equal(undone.status, 201);
+    assert.equal(await documentPairCount(db, flowId), 3);
+    await assertStoredPutOmitsUndoHistory(
+        db, flowId, 3, token,
+    );
 });

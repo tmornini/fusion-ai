@@ -2149,8 +2149,11 @@ async function bodyWriteResponse(
 
 const ID_SUFFIX = '/:id';
 
-// Stream families (ideas, projects, flows, …). Work-orders
-// still assemble (binding). Record instances still project.
+// Stream families (ideas, projects, …). Work-orders still
+// assemble (binding). Flows stay on derive: stored PUT has
+// no trio, so a state-'deleted' head must 404 via the
+// lifecycle walk, and hasUndoHistory is stamped there.
+// Record instances still project.
 function streamFamilyWiring(
     routePattern: string,
 ): ReturnType<typeof documentFamilyWiring> {

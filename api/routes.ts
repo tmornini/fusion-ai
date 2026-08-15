@@ -371,15 +371,14 @@ const PROJECTS_WIRING: DocumentFamilyWiring = {
     entityOf: (document, organization, current) =>
         projectEntityOf(document, organization, current!),
 };
-// The flows wiring row — Task 3's flip commit, GET-wired at
-// Task 8. entityOf is derive-flows.ts's OWN flowEntityOf, not a
-// routes.ts-local mapper: it returns FlowWithGraph (the entity
-// plus the document's own `graph` field). Live flows GET is
-// hand-written (deriveFlow/deriveFlows) so this slot is unused
-// for reads; the wrapper ignores `current` and omits pairCount
-// (hasUndoHistory false) — same as the prior 2-arg assignability
-// shim. flowEntityOf's third param is pairCount (number), not
-// StateEntity, so it cannot sit in the entityOf slot directly.
+// The flows wiring row. entityOf is derive-flows.ts's OWN
+// flowEntityOf. G2 stored PUT is flowStoredEntityOf (that
+// mapper minus hasUndoHistory). Live GET stays on
+// deriveFlow/deriveFlows so a state-'deleted' head 404s
+// (stored PUT has no trio) and hasUndoHistory is stamped
+// from pair count. This slot stays the 2-arg assignability
+// shim (pairCount omitted). flowEntityOf's third param is
+// pairCount (number), not StateEntity.
 const FLOWS_WIRING: DocumentFamilyWiring = {
     family: 'flows',
     lifecycle: 'trio',
@@ -5123,23 +5122,11 @@ export const routes: Route[] = [
             postIdeaSubmissionOp(db, param(p, 1), body, pair),
     }),
     route('flows', {
-        // GET is FLIPPED (Phase 4 Task 8): the list derives from
-        // the message ledger rather than the old flows table plus
-        // its relation tables. HAND-WRITTEN again as of Phase 14
-        // Task 8 (undo-as-replay) — calls deriveFlows directly
-        // rather than riding the generic documentCollectionRoute:
-        // FlowWithGraph now carries `hasUndoHistory`
-        // (api/types.ts), a field derive-flows.ts's flowEntityOf
-        // computes from the SAME per-flow pair count deriveFlows
-        // already gathers for its own lifecycle walk —
-        // DocumentFamilyWiring's `entityOf` slot is fixed at
-        // (document, organization) for every OTHER family
-        // (ideas/projects/work-orders/records), so widening it
-        // to carry a flows-only field would ripple into every
-        // one of them for no benefit. POST stays this
-        // hand-written create — unlike ideas/projects, flows never
-        // folded genesis into the document PUT (Decision 6), so a
-        // separate create verb remains here.
+        // GET stays deriveFlows: stamps hasUndoHistory from
+        // pair count and omits a state-'deleted' head.
+        // POST stays this hand-written create — unlike
+        // ideas/projects, flows never folded genesis into
+        // the document PUT (Decision 6).
         get: (db, _p, _actor, organization) =>
             deriveFlows(db, requireOrganization(organization)),
         // Member-tier POST — /flows carries POST in
@@ -5198,32 +5185,13 @@ export const routes: Route[] = [
             return postFlowCreationOp(db, body, actor, pairs);
         },
     }),
-    // flows/:id is the FIRST locked-class route (Task 3). GET was
-    // FLIPPED (Phase 4 Task 8) onto the generic documentEntityRoute,
-    // then partially UN-flipped here (Phase 14 Task 8,
-    // undo-as-replay): GET is hand-written again, calling
-    // deriveFlow directly, because FlowWithGraph now carries
-    // `hasUndoHistory` (api/types.ts) — a field computed from this
-    // flow's own document-pair count, which deriveFlow already
-    // gathers for its lifecycle walk but the GENERIC entityOf
-    // contract `(document, organization) => unknown`
-    // (document-family.ts, shared by ideas/projects/work-orders/
-    // records) has no slot for. Widening that shared interface
-    // for one flows-only field would ripple into every other
-    // family's entityOf for no benefit — a hand-written GET,
-    // reusing the SAME deriveFlow this module already exported
-    // for exactly this purpose ("Task 8 wires the route",
-    // derive-flows.ts's own comment), is the smaller, contained
-    // change. PUT stays fully generic (documentPutHandler) —
-    // unaffected, since the write side never touched entityOf.
-    // The gate's four-outcome table (api.ts, keyed off
-    // familyRegistration('flows').concurrency === 'locked')
-    // resolves genesis/412 entirely BEFORE dispatch;
-    // documentPutHandler carries no concurrency branch of its
-    // own — it dispatches straight to postFlowDocumentOp.
-    // Phase Final Task 2: flows + graph ROW halves stripped;
+    // flows/:id is the FIRST locked-class route (Task 3).
+    // G2 GET stays deriveFlow (stamp hasUndoHistory; 404
+    // a state-'deleted' head — stored PUT has no trio).
+    // PUT stays documentPutHandler; the gate's four-
+    // outcome table resolves genesis/412 BEFORE dispatch.
     // graphDelta/revivals ride the pair body (SIDECAR-KEEP).
-    // Member-tier PUT — MEMBER_VERBS['/flows'] includes 'PUT'.
+    // Member-tier PUT.
     {
         segments: ['flows', ':id'],
         get: (db, p, _actor, organization) =>

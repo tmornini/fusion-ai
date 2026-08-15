@@ -39,6 +39,7 @@ import {
     recordTypeEntityOf,
     recordTypesUriPrefix,
 } from './derive-record-types.ts';
+import { flowStoredEntityOf } from './derive-flows.ts';
 
 // param/requireOrganization/withoutId live HERE, not in
 // routes.ts, so this module has NO runtime (value) dependency on
@@ -523,8 +524,8 @@ export function documentCollectionRoute(
 }
 
 // G1 trio families: stored PUT = today's GET derive
-// (wiring.entityOf over the chain, trio included). Flows
-// stay on the weaker echo until G2.
+// (wiring.entityOf over the chain, trio included). G2
+// flows: flowEntityOf minus hasUndoHistory.
 const STREAM_TRIO_FAMILIES: ReadonlySet<string> = new Set([
     'ideas',
     'projects',
@@ -705,6 +706,7 @@ export async function resolveStreamedTrioWriteBody(
 // G1 trio families emit wiring.entityOf (id first, trio last
 // as GET does) instead of the entity-only echo. Live writes
 // prefer resolveStreamedTrioWriteBody (chain-current trio).
+// G2 flows emit flowEntityOf minus hasUndoHistory.
 export function documentWriteResponseSpec(
     wiring: DocumentFamilyWiring,
 ): WriteResponseSpec {
@@ -727,6 +729,14 @@ export function documentWriteResponseSpec(
                     trioDocumentFromBody(id, raw),
                     organization ?? '',
                     trioCurrentFromBody(id, raw, actor),
+                );
+            }
+            if (wiring.family === 'flows') {
+                return flowStoredEntityOf(
+                    trioDocumentFromBody(
+                        param(params, 0), raw,
+                    ),
+                    organization ?? '',
                 );
             }
             return organizationNested
