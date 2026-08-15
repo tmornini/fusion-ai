@@ -24,19 +24,19 @@ and execution.
 
 The demo is multi-organization: loading mock data seeds two
 orgs (Stark Industries and Wayne Enterprises) with a sidebar
-org-switcher for the multi-org user, and surfaces one-time
-demo sign-in credentials on the Snapshots page after a
-wipe-and-load.
+org-switcher for the multi-org user. The browser ZIP may
+surface one-time demo sign-in credentials on the Snapshots
+page after a wipe-and-load. The server ZIP prints those
+credentials once on stderr (`--seed-mock-data`).
 
-**Demo-grade security.** The whole stack — OAuth spine
-included — runs in the browser, and the JWT HMAC signing key
-ships inside the bundle (`api/access-token.ts`), so any party
-holding the bundle can mint a valid token. No client-side
-mitigation exists or is possible; the auth tier demonstrates
-the real wire format and gate logic without providing real
-isolation until a server tier holds the key. The full seam
-checklist is in [ARCHITECTURE.md](ARCHITECTURE.md)
-§ Server-tier deploy blockers.
+**Demo-grade security.** `./build` emits two artifacts:
+`fusion-ai-browser-${SHA}.zip` (IndexedDB, API in the
+page, demo HMAC constant) and
+`fusion-ai-server-${SHA}.zip` (Node + Postgres, pages
+and API on one origin, `JWT_HMAC_SIGNING_KEY` from the
+environment). The yank has not shipped. A1–A6 are
+disposed on the server ZIP as named in
+[ARCHITECTURE.md](ARCHITECTURE.md) § Demo server tier.
 
 ## Getting Started
 
@@ -46,10 +46,13 @@ cd fusion-ai
 npm ci
 ```
 
-`npm ci` installs the build toolchain (tsc, esbuild) at the
-exact versions pinned in `package-lock.json`. The toolchain
-is dev-only: the shipped bundle keeps zero runtime
-dependencies.
+`npm ci` installs the build toolchain (tsc, esbuild) and
+postgres.js 3.4.9 at the exact versions pinned in
+`package-lock.json`. The browser ZIP keeps zero runtime
+dependencies. The server ZIP bundles postgres.js into
+`server.mjs` (`api/postgres-client.ts` is the only
+importer) — the named exception. The unzipped server
+artifact needs no `npm install`.
 
 Everything operational — build, test, conventions — lives
 in [CLAUDE.md](CLAUDE.md); the manual browser regression plan
@@ -61,7 +64,9 @@ design system: [ARCHITECTURE.md](ARCHITECTURE.md) (with
 
 ## Tech Stack
 
-- TypeScript on ES2024, strict mode, zero runtime dependencies
+- TypeScript on ES2024, strict mode. Zero runtime
+  dependencies except postgres.js 3.4.9 bundled into
+  the server ZIP (`api/postgres-client.ts` only)
 - Build-time HTML composition (shared layout + per-page content)
 - CSS custom properties with light/dark theme support
 - SVG charts and ~70 inline SVG icons

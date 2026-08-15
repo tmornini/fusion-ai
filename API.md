@@ -1,6 +1,8 @@
 # API.md — URI Catalog & POST Composition
 
-The `api/` layer is a REST-style HTTP API over IndexedDB. Every
+The `api/` layer is a REST-style HTTP API. The browser ZIP
+runs it in-page over IndexedDB. The server ZIP runs the
+same handlers in Node over Postgres. Every
 operation is an HTTP operation against a relative resource URI;
 single-noun primitives (`GET`/`PUT`/`DELETE` on `/noun/:id`) are the
 leaves, and multi-noun operations (`POST /noun/operation`) are interior
@@ -68,7 +70,9 @@ resolves a request in this order:
    `fenceRequest` (resolve the org once; memberships and
    roles ride token claims — NAMED ≤15-min covenant, not
    live ledger reads; the base adapter is unchanged —
-   tenancy rides `uri_collection`, not an org-scoped decorator)
+   tenancy rides `uri_collection`, not an org-scoped decorator).
+   Bearer 401 body is `{ error: 'invalid_token' }`. Grant
+   401s use `invalid_client` or `invalid_grant` (see §3.8).
    → **nested path-org fence** (after fence, before
    authorize: for `organizations/...` other than bare
    `organizations/:id`, path org must equal the fenced
@@ -85,29 +89,37 @@ resolves a request in this order:
    `identity_id` must be the actor unless admin) runs for
    that route. Then, for a write with a handler on a non-
    exempt route: `writeAuthorizerFor` (foreign id → **403**
-   before pair formation) and, on create-only PUT patterns,
-   reject any `If-Match` with **400** (create is
-   unconditional).
+   before pair formation). Public writes require header
+   `Operation-ID` (22-char); missing or malformed → **400**.
+   The server does not mint that header. Inner PUTs copy
+   the outer id. GET may send it; it is ignored.
 6. **Shadow-ledger pair formation + idempotency + post-
    replay gates**, for a write verb whose route pattern is
    in `PAIR_WIRED_ROUTE_PATTERNS` (skipped for bearer-exempt
    routes and for a verb the matched route has no handler
    for): `formWritePair` builds the canonical
    request/response message pair pre-tx — address
-   resolution, a pre-tx head-read (`headPairIdAt`) for a
-   document-class route (simple class: `Supersedes` chain;
-   locked class / flows: may precompute `follows` when the
-   echo matches the head), and the hashing that feeds
-   idempotency, all before any transaction opens. Unless
-   the route pattern is in `REPLAY_EXEMPT_ROUTE_PATTERNS`, a
+   resolution, a pre-tx live-PUT head-read
+   (`headPairIdAt` / `messageStore.get`) for a
+   document-class route, and the hashing that feeds
+   idempotency, all before any transaction opens. Wire
+   `ETag` / `If-Match` are the quoted 64-hex
+   `documentVersion`. Pair `id` is `Response-ID` only.
+   Unless the route pattern is in
+   `REPLAY_EXEMPT_ROUTE_PATTERNS`, a
    byte-identical resend is served straight from the STORED
    response (`storedResponseFor`) here — the handler never
    runs twice for the same request. **After** a replay miss:
-   the locked `If-Response-ID` four-outcome table may
-   **412** (head present + echo absent, or echo ≠ head);
-   instance PATCH applies its If-Match ladder (absent →
-   **428**, malformed → **400**, stale → **412**). See §5
-   for what pair formation produces on the wire.
+   locked PUT missing If-Match over a live PUT → **428**;
+   malformed → **400**; stale → **412**. Same-body
+   document PUT → **200**, no append. First append
+   send-time **201**; stored PUT start-line stays **200**.
+   DELETE never-written → **404**; already-gone → **204**,
+   no append. Instance PATCH creates when never-written;
+   If-Match ladder on a live head (absent → **428**,
+   malformed → **400**, stale → **412**). Public instance
+   PUT is **405**. See §5 for what pair formation produces
+   on the wire.
 7. Only then does the matched handler run, receiving the base
    adapter (`effective` / `ctx.base`), the verified `actor`
    id, the fenced organization, and — for a pair-wired write —
@@ -128,13 +140,15 @@ unauthenticated — it is a single audited surface.
   a token before minting one):
   - `authentication/token`
   - `authentication/authorize`
-- **`BOOTSTRAP_ROUTES`** — the auth-free dev-tier snapshot plane
-  (installs the datastore before any identity exists; removed or
-  re-gated at the Postgres server tier):
-  - `snapshots/schema`
-  - `snapshots/mock-data`
-  - `snapshots/bootstrap`
-  - `snapshots/import`
+- **`BOOTSTRAP_ROUTES`** — the snapshot plane
+  (`snapshots/schema|mock-data|bootstrap|import`).
+  Bearer-exempt on the **browser ZIP** (dev-tier
+  install). Not bearer-exempt on the **server ZIP**
+  (`setServerTier(true)` from `server/boot.ts`) —
+  snapshots there are admin+bearer. Seed on the
+  server is `--seed-bootstrap` / `--seed-mock-data`
+  below HTTP. AUTHENTICATION_ROUTES stay exempt on
+  both tiers.
 
 ### 1.3 The client facade
 
@@ -251,7 +265,7 @@ Legend for classification:
 - `GET /flows` · `GET|PUT /flows/:id` — primitive. `PUT` is a
   document write (§3.13) and the FIRST locked-class route
   (§5.4) — a save on an existing flow must echo the current
-  head via `If-Response-ID` or 412s.
+  `ETag` via `If-Match` or 428/412s.
 - `POST /flows` — operation (§3.12). Member-tier.
 - `POST /flows/:id/undo` — operation (§3.14).
 - `POST /flows/:id/redo` — retired (Phase 4 Task 4, R1/E5):
@@ -259,12 +273,13 @@ Legend for classification:
   against it 404s (no pattern match) — never a 405
   method-absent gap. Live redo is a single locked
   `PUT /flows/:id` (§3.13).
-- `GET|POST /flows/:id/versions` ·
-  `GET|PUT|DELETE /flows/:id/versions/:vid` — retired
-  (Phase 15 Task 7): router 404 (no pattern match).
-  Phase Final DELETED the `flow_versions` table with the
-  rest of the row plane. Historical prose for the dead
-  surface lives at §3.16 / §3.31.
+- `GET /flows/:id/versions` — pair-chain lifecycle
+  index (live). Old table-backed
+  `GET|PUT|DELETE /flows/:id/versions/:vid` is a miss
+  (404). Writes on the pair-chain address stay unwired
+  (405). Phase Final DELETED the `flow_versions` table.
+  Historical prose for the dead table surface lives at
+  §3.16 / §3.31.
 - `GET /flows/:id/work-orders` ·
   `PUT /flows/:id/work-orders/:woid` — nested.
 - `GET /flows/:id/records` ·
@@ -302,8 +317,8 @@ facade). Base path:
 `organizations/:organization-id/record-types`
 
 Nested under `:record-type-id`:
-`/history`, `/attributes[/:attribute-id]`,
-`/instances[/:instance-id[/history]]`.
+`/versions`, `/attributes[/:attribute-id]`,
+`/instances[/:instance-id[/versions]]`.
 
 In-table nested routes match via `matchRoute` **before** the
 org facade swallows unmatched org-nested paths (dispatch
@@ -330,7 +345,7 @@ If-Match this wave):
 - `DELETE .../record-types/:id` — admin; tombstone;
   RESTRICT if live instances or `flows/:id/records`
   joins
-- `GET .../record-types/:id/history` — member;
+- `GET .../record-types/:id/versions` — member;
   lifecycle-trio history (§2.10)
 
 **Attributes** (nested under type; `'stateless'` SIMPLE
@@ -352,13 +367,14 @@ per-attribute ACL; full dialect in §5.4.1 / §5.20):
   projection; id-lex ASC; row embeds `etag`
 - `GET .../instances/:id` — member; project by read ACL;
   **ETag** header
-- `PUT .../instances/:id` — member; **create only** —
-  409 if address spent (incl. tombstone)
-- `PATCH .../instances/:id` — member; **If-Match
-  required** (428 / 412)
+- `PUT .../instances/:id` — **405** (public PUT
+  retired; PATCH creates)
+- `PATCH .../instances/:id` — member; creates when
+  never-written; **If-Match** on a live head
+  (428 / 412). Same-body PATCH still appends 201
 - `DELETE .../instances/:id` — member; tombstone;
   unconditional (phase 1)
-- `GET .../instances/:id/history` — member;
+- `GET .../instances/:id/versions` — member;
   value-revision chain (`{at, etag, values}` DESC)
 
 `flows/:id/records` (flow↔type join) is UNTOUCHED —
@@ -390,31 +406,32 @@ Wire order is `(at, id)`
 **DESC** on every registration (index 0 = current). No
 new authorization entries —
 `matchesOnSegmentBoundary` extends existing family GET
-grants under `/history`. Route order is load-bearing:
-literal `work-orders/history` and `objectives/history`
+grants under `/versions` (work-orders stay
+`/history`). Route order is load-bearing:
+literal `work-orders/history` and `objectives/versions`
 register **before** the `:id` document routes so
-`matchRoute` does not treat `history` as an id.
+`matchRoute` does not treat the literal as an id.
 
 **Nine lifecycle registrations**
 
-1. `GET ideas/:id/history` —
+1. `GET ideas/:id/versions` —
    `documentStateHistoryHandler(deriveIdeaStateHistory,
    'ideas')`. Wire: `StateEntity[]`
    `{id, entity_id, state, member_id, at}` DESC.
    Empty → `missedReadError` → foreign **403** /
    absent **404** (honest family body).
-2. `GET projects/:id/history` — same builder over
+2. `GET projects/:id/versions` — same builder over
    `deriveProjectStateHistory` / `'projects'`.
-3. `GET organizations/:org/record-types/:id/history` —
+3. `GET organizations/:org/record-types/:id/versions` —
    same builder over
    `deriveRecordStateHistory` / `'record_types'`
    (nested address; flat `records/:id/history` is
    router 404).
-4. `GET flows/:id/history` — same builder over
+4. `GET flows/:id/versions` — same builder over
    `deriveFlowStateHistory` / `'flows'`.
-5. `GET objectives/:id/history` — same builder over
+5. `GET objectives/:id/versions` — same builder over
    `deriveObjectiveStateHistory` / `'objectives'`.
-6. `GET members/:id/history` — `deriveMemberStates`
+6. `GET members/:id/versions` — `deriveMemberStates`
    filtered to `entity_id`, sorted DESC. Global-family
    miss: empty → `EntityNotFoundError('members', id)`
    → **404** only (no org write authorizer).
@@ -435,7 +452,7 @@ register **before** the `:id` document routes so
    `WorkOrderHistoryEventEntity` shape, DESC overall.
    **Always 200** array (empty when the org has no
    work-order lifecycle).
-9. `GET objectives/history` —
+9. `GET objectives/versions` —
    `deriveObjectiveHistories(db, org)`. Org-prefix
    bulk of objective document-trio events,
    `StateEntity` only (no `field_values`), DESC
@@ -443,7 +460,7 @@ register **before** the `:id` document routes so
 
 **One value-history registration (not a lifecycle
 clone).**
-`GET organizations/:org/record-types/:type/instances/:id/history`
+`GET organizations/:org/record-types/:type/instances/:id/versions`
 — value-revision chain: `{ at, etag, values }[]` DESC,
 projected by the caller's **current** read ACL (never
 ACL-as-of-then). Foreign 403 / absent 404 / tombstone
@@ -483,9 +500,10 @@ Lifecycle **writes** ride document-trio PUTs
 (ideas / projects / record-types / flows / objectives /
 members) and named ops (work-order create / claim /
 transition / release, invitations) — never a shared
-event-append address. Instance value writes ride PUT
-genesis / PATCH If-Match / DELETE tombstone (§5.20) —
-not lifecycle-trio PUTs.
+event-append address. Instance public PUT is **405**;
+value writes ride PATCH (creates + updates, If-Match
+on a live head) / DELETE tombstone (§5.20) — not
+lifecycle-trio PUTs.
 
 Org-scoped document PUT/DELETE hit the write authorizer
 (`api/write-authorizer.ts` → `resolveGlobalOwner` →
@@ -547,7 +565,12 @@ runs on the base adapter with explicit guards:
 - `POST /invitations/:id/decline` — decline (§3.24). Invitee-only.
 - `POST /invitations/:id/revocation` — revoke (§3.25). Admin-only.
 
-### 2.13 Snapshots (bootstrap plane, bearer-exempt)
+### 2.13 Snapshots (bootstrap plane)
+
+Bearer-exempt on the **browser ZIP**. Admin+bearer on
+the **server ZIP** (`setServerTier`). Server seed is
+`--seed-bootstrap` / `--seed-mock-data` on an empty
+database only (stderr credentials, never HTTP).
 
 - `GET /snapshots/schema` — schema existence + full export, else null.
   The export (`getSnapshot`, `api/db-backed.ts`) is the pure
@@ -938,7 +961,14 @@ Delegates to `revokeTokenChain` (`api/authentication.ts`).
 `grant_type`. Every grant is **grant-first**: it authenticates
 the presented grant before any side effect, so a failed grant
 appends nothing and mints nothing. `mintPair` is pure crypto (no
-DB). Every SUCCESSFUL grant also forms its own message pair
+DB). Success JSON is `{ access_token, token_type, expires_in }`
+— **no `refresh_token`**. Refresh is an HttpOnly cookie
+(`Path=/authentication`, `SameSite=Strict`; `Secure` off
+only on `http://localhost`). Cookie-session access is
+memory-only. Wire 401 classes: `invalid_token` (bearer
+gate), `invalid_client` (bad `client_assertion`),
+`invalid_grant` (credentials, spent code, spent jti).
+Every SUCCESSFUL grant also forms its own message pair
 pre-tx (`formAuthPair`, from the `AuthPairSeed` the dedicated
 arm seeds in `api/api.ts`) and stores it as the tx's LAST row
 op via `putMessagePair` (keyed by pair id, so two identical
@@ -951,9 +981,11 @@ logins each land) — see §5.1 for the headers this produces and
     `/authentication/authorize/` response family for a raw
     `code` match) → TTL check → redeeming `client_id` must
     equal authorize's issuer (shared 401 on miss/wrong) →
-    optional PKCE S256 when issuer stored `code_challenge`
-    (`code_verifier` → base64url(sha256) must match; absent
-    challenge keeps pre-PKCE redeem) →
+    PKCE S256 when issuer stored `code_challenge`
+    (`code_verifier` → base64url(sha256) must match; the
+    server ZIP rejects authorize without S256, so redeem
+    always verifies there; the browser ZIP still accepts
+    authorize without a challenge) →
     `authorizationCodeSpent` fast-fail
     (`requests.getAllWhere('uri_id', derivedId)` filtered to the
     `identity-tokens/` prefix — a hit IS the spend marker,
@@ -1002,8 +1034,10 @@ logins each land) — see §5.1 for the headers this produces and
     401 `unknown client`) → status/grant-type checks →
     `verifyClientAssertion` (JWS, crypto) → `nameFor` →
     `issueTokenPair` (as above, same tx shape).
-  - props: the same atomic single-tx shape as token-exchange. Bad
-    assertion → 401, appending nothing.
+  - props: the same atomic single-tx shape as token-exchange.
+    Bad assertion → 401 `invalid_client`. Spent `jti` →
+    401 `invalid_grant`, nothing minted. `jti` is
+    required; it is not put on the token JSON.
 
 ### 3.9 `POST /authentication/authorize` — interactive front door
 
@@ -1011,9 +1045,15 @@ logins each land) — see §5.1 for the headers this produces and
 `method`.
 
 - **`password`** → `authorizePassword`:
+  - Server ZIP rejects a request that lacks S256
+    (400, no pair) before the credential check. The
+    browser ZIP keeps the soft path. The client sends
+    S256.
   - `deriveIdentityPiiRows` (full-ledger scan) →
     `identityByEmail` → `deriveCredentialsFor` (identity-keyed)
-    → `currentPasswordSecret` → `verifyPassword` (PBKDF2) → on
+    → `currentPasswordSecret` → `verifyPassword` (PBKDF2;
+    server ZIP hashes new secrets with scrypt and
+    rehashes on verify) → on
     success `formAuthPair` (pre-tx) → tx `[requests, responses]`:
     `putMessagePair(pair)`.
   - doctrinal: verify credentials, then `post_authorization_code`.
@@ -1178,19 +1218,20 @@ mints NO `member_id` ternary — every attempt (including a
 client retry) mints a fresh trio, so nothing here ever resends
 a STORED trio verbatim.
 
-**flows is the FIRST locked-class route** (§5.4, Task 3): a
-save on an existing flow must carry `If-Response-ID`, echoing
-the head the client just read, or the write 412s. The client
+**flows is the FIRST locked-class route** (§5.4): a
+save on an existing flow must carry `If-Match`, echoing
+the advertised `ETag` the client just read, or the write
+428s / 412s. The client
 adapter (`putFlow`, `web-app/app/adapters/flow-mutations.ts`)
-absorbs a 412 with up to 3 attempts total — each retry backs off
+absorbs a 412/428 with up to 3 attempts total — each retry backs off
 (jittered) and rebuilds the body against the NEW head (a fresh
 baseline, fresh delta, fresh trio) before resubmitting; any other
 error, or a third 412, propagates to the caller. version-publish
 is no longer an option embedded in this PUT (Decision 3), nor is
 it a client-side prerequisite of this PUT any more (Phase 14
-Task 8, undo-as-replay): `POST /flows/:id/versions` is
-RETIRED (Phase 15 Task 7, §3.16 — router 404 / no pattern
-match). Undo resolves its restore target from THIS route's
+Task 8, undo-as-replay): `POST /flows/:id/versions` stays
+unwired (405). Pair-chain `GET /flows/:id/versions` is
+live. Undo resolves its restore target from THIS route's
 own document-pair history (§3.14); nothing archives a
 versions snapshot before a save.
 
@@ -1209,19 +1250,17 @@ versions snapshot before a save.
   genuinely different-content collision still 409s via
   `LedgerImmutabilityError`, today's covenant.
 - **Response-ID on GET.** `GET /flows/:id` carries a
-  `Response-ID` header — the current head pair id, the exact
-  value a save's `If-Response-ID` echoes back — attached
-  generically by the gate for any locked-family document GET
-  (never a `flows` literal), served by the generic
-  `documentGetHandler` (§5.5) like every other document GET.
+  `Response-ID` header (pair locator) and an `ETag`
+  (quoted 64-hex `documentVersion`) — the save echoes
+  `If-Match`, not `If-Response-ID`. GET is hand-written
+  `deriveFlow` so it can embed `hasUndoHistory`; it does
+  not stream the stored PUT.
 - **Undo advances the shadow head.** Undo forms its own
   document pair (PUT-shaped, at `flows/:id`'s own address) in
-  the SAME transaction as its own operation pair, taking the
-  locked family's FOLLOWS slot against the pre-undo head —
-  never Supersedes, since the op holds no echo of its own.
-  Undo therefore moves `flows/:id`'s own head exactly like any
-  other save. A save racing an undo for the same head loses the
-  `responses.follows` unique index and 412s; the client absorbs
+  the SAME transaction as its own operation pair. Undo
+  therefore moves `flows/:id`'s own head exactly like any
+  other save. A save racing an undo for the same head
+  412s on the in-tx live-PUT latch; the client absorbs
   it with a jittered retry (`postFlowUndo`, web-app) — with NO
   baseline of its own to rebuild (Phase 14 Task 8): the SERVER
   re-resolves the restore target fresh against the new head on
@@ -1747,10 +1786,13 @@ membership write.
 
 ### 3.26 `POST /snapshots/mock-data` — seed the demo dataset
 
-`postMockDataLoad` (`api/mock-data.ts`). Bearer-exempt, demo-only,
-and — as a `BOOTSTRAP_ROUTES` member — below the shadow ledger
-entirely: this call forms and appends no pair for ITSELF (none of
-§5.1's headers appear on its own response). What it seeds, though,
+`postMockDataLoad` (`api/mock-data.ts`). Bearer-exempt on the
+browser ZIP; admin+bearer on the server ZIP. Below the
+shadow ledger for its OWN request: this call forms and
+appends no pair for ITSELF (none of §5.1's headers appear
+on its own response). Server process seed is
+`--seed-mock-data` on an empty database (stderr
+credentials; A2). What it seeds, though,
 includes **1498** of its OWN pre-formed message pairs
 (EXPECTED_PAIR_COUNT) — see §5.3.
 
@@ -1767,8 +1809,9 @@ includes **1498** of its OWN pre-formed message pairs
      txs.
   4. `postSchemaCreation()` — the schema marker stamps **last**, so a
      failed seed reads as empty and retries cleanly.
-- returns `SeededCredentials` — plaintext sign-ins surfaced in-band,
-  once (deleted at the server tier).
+- returns `SeededCredentials` — plaintext sign-ins surfaced
+  in-band on the browser ZIP, once. Deleted on the server
+  ZIP (stderr seed).
 
 ### 3.27 `POST /snapshots/bootstrap` — seed the pristine minimal state
 
@@ -1786,7 +1829,8 @@ identity, default-org, and organization, plus credentials via
 
 Included for completeness: it is the textbook gate-then-atomic write.
 `putSnapshot` (`api/db-backed.ts`). Also a `BOOTSTRAP_ROUTES`
-member — no pair for this call itself; a restored snapshot's own
+member (browser ZIP bearer-exempt; server ZIP admin+bearer)
+— no pair for this call itself; a restored snapshot's own
 `requests`/`responses` rows, if it had any, ride in with the rest of
 the imported data.
 
@@ -2049,63 +2093,62 @@ names); only dual-write/strangler qualifiers are retired.
 ### 5.1 Response headers and the wire-visible, UI-invisible class
 
 A wired write's response — fresh or replayed — is rebuilt from the
-STORED response row (`responseFromStored`), never re-serialized from
-the handler's live return value, and carries three headers derived
-from that same row (`wireHeadersFor`):
+STORED response row (`responseFromStored` / `sendWriteResponse`),
+never re-serialized from the handler's live return value, and
+carries headers derived from that same row (`wireHeadersFor`):
 
 - **`Date`** — the row's own `at`, rendered IMF-fixdate
   (`new Date(at).toUTCString()`).
-- **`Response-ID`** — the row's `id` (== the paired request's `id`).
-- **`Supersedes`** — the prior response's `id`, present only when this
-  write revisited a document-class address (`DOCUMENT_CLASS_ROUTE_
-  PATTERNS`) that already had one; absent on a genesis pair.
+- **`Response-ID`** — the row's `id` (pair locator).
+- **`Operation-ID`** — the 22-char id from the request
+  (send-time; not stored on the GET-shaped blob).
+- **`ETag`** — quoted 64-hex `documentVersion` of the
+  body octets (later writes: body octets || matched
+  tag). Pair id is **not** the ETag.
+
+Send-time status: **201** if this request appended a
+pair (PUT/PATCH/POST); **200** if it stored nothing
+(same-body document PUT, or POST no-op). Stored PUT
+start-line stays **200**. DELETE is **204**.
+Byte-identical retry (`message_hash`) returns the
+same send-time status as the first time.
 
 Because the body is reconstructed by parsing the row's stored
-canonical message, its top-level key order is whatever `canonicalJson`
-chose at formation time — ASCII-sorted (`sortJsonKeys`) — which need
+`serializeWire` message (Latin-1), its top-level key order is
+whatever formation chose — which need
 not match the order the handler's own object literal would have
 produced. **A byte-identical resend (the idempotency fast-path, §1.1)
-returns the ORIGINAL stored row verbatim**, `Date` included — it is
-never re-stamped "now."
+returns the ORIGINAL stored row**, `Date` included — it is
+never re-stamped "now" on a write replay. GET streams a
+stored PUT with a fresh `Date:` and no `Operation-ID`.
 
-Both facts are the plan's named **wire-visible, UI-invisible** class:
-a client doing raw byte/header comparison can observe them, but
-nothing in this app reads response headers or depends on body key
-order (`unwrapResponse` in `api/api.ts`'s client facade ignores
-headers entirely, and every adapter destructures the body by field
-name) — so the change is real on the wire and inert in the UI.
-
-**The locked class is the one named exception (Task 3).** A
+**The locked class is the one named exception.** A
 locked-family document GET (`flows/:id` today — §5.4, §3.13)
-carries `Response-ID`, and its save path genuinely reads it:
-`GETWithResponseId` (the client facade + `RequestContext`) pulls
-it off the response to echo as `If-Response-ID` on the next PUT,
-and the C6 retry loop branches on the PUT's own failure status
-(`RequestError.status === 412`). This is still wire-visible only
-in the narrow sense that no OTHER header or the body's key order
-is read — the mechanism is a deliberate, documented precondition
-header, not an accidental leak of transport detail into the
-domain layer.
+carries `Response-ID` as provenance. The save path
+echoes the advertised `ETag` as `If-Match` (quoted
+64-hex), not `If-Response-ID`. Missing If-Match over
+a live PUT → **428**. The C6 retry loop branches on
+the PUT's own failure status (`RequestError.status
+=== 412` / `428`).
 
 ### 5.2 The verbatim-storage contract
 
 Every wired write stores its request and response messages
-**verbatim** — the same canonical JSON the wire carries (body
-key order is canonical-sorted; no OTHER header or the body's
-key order is read by the client). There is no masking step on
-the write path: `formWritePair` builds request/response models
-from the caller's fields and body, hashes them, and stores
-them.
+**verbatim** — `serializeWire` Latin-1 (BYTEA on
+Postgres). Request `message_hash` is
+`sha256HexOfBytes` of those octets. There is no
+masking step on the write path.
 
 **Auth pairs hold live credentials.** The two
 `/authentication/*` grant routes store passwords, usernames,
-authorization codes, access/refresh tokens, `client_assertion`
+authorization codes, access tokens, `client_assertion`
 values, and bearer `Authorization` headers as they arrived /
-were issued. This is an accepted **dev-tier** cost — the
-message plane is a plaintext credential ledger until the server
-tier re-gates (or re-masks) it. Named as a deploy blocker in
-[ARCHITECTURE.md](ARCHITECTURE.md) § Server-tier deploy
-blockers.
+were issued. Refresh is cookie-only (not in the token
+JSON) but a raw dump still has verbatim auth messages.
+This is accepted on the **demo server**: snapshots are
+admin+bearer on the server ZIP (A3); messages stay
+verbatim. Token-at-rest hashing is later. See
+[ARCHITECTURE.md](ARCHITECTURE.md) § Demo server tier.
 
 **Why auth routes stay replay-exempt.** Serving a stored auth
 response would re-hand a single-use code or stale/revoked
@@ -2125,8 +2168,10 @@ untouched.
 ### 5.3 Seed pair formation (below the gate)
 
 `POST /snapshots/mock-data` and `POST /snapshots/bootstrap` are
-`BOOTSTRAP_ROUTES` — bearer-exempt and below the ledger for their OWN
-request (§3.26–§3.28). What they seed, though, is itself the output of
+`BOOTSTRAP_ROUTES` — bearer-exempt on the browser ZIP;
+admin+bearer on the server ZIP. Server seed is the
+`--seed-*` flags below HTTP (§2.13). What they seed
+is itself the output of
 FIFTEEN pair-capable write families, in dependency order:
 `human-members`, `ideas`, `idea-submissions`, `projects`, `flows`,
 `work-orders`, `flow-work-orders`, `ai-members`,
@@ -2247,97 +2292,81 @@ family can register `'locked'` (family-registry.ts) with no live
 route riding the arm until its OWN wiring row lands.
 
 - **`simple`** (`ideas`, `projects`, `work-orders` — §5.6;
-  `objectives` — §5.8): the existing head-read → `Supersedes`
-  chain (§5.1) — a repeat PUT ALWAYS succeeds and ALWAYS
-  supersedes the current head.
-- **`locked`** (`flows`, live since Task 3 — §3.13): a repeat PUT
-  must ECHO the current head via the request header
-  `If-Response-ID`, or 412s.
+  `objectives` — §5.8): a repeat PUT ALWAYS succeeds.
+  Same-body as the live PUT head → **200**, no append.
+  First append send-time **201**; stored start-line stays
+  **200**.
+- **`locked`** (`flows`, live — §3.13): a repeat PUT
+  must echo the advertised `ETag` via `If-Match`
+  (quoted 64-hex `documentVersion`), or 412s.
+  Missing If-Match over a live PUT → **428**.
 
-**The request header.** `If-Response-ID` joins the hoisted,
+**The request header.** `If-Match` joins the hoisted,
 hash-covered header set (`HOISTED_HEADER_NAMES`) — a different
 echo is a different request, so a byte-identical resend (the
 SAME echo) still hits the idempotency fast-path FIRST; a stale
 echo on an otherwise-identical body is a NEW request, evaluated
-against the four outcomes below.
+against the six outcomes below.
 
-**The four outcomes**, checked ONLY after the replay fast-path
+**The six outcomes**, checked ONLY after the replay fast-path
 MISSES (ordering is load-bearing: a byte-identical resend of an
-already-succeeded locked write carries its original, now-stale
-echo and MUST replay, never 412):
+already-succeeded locked write MUST replay, never 412):
 
-- head present, echo absent → 412.
-- echo present, echo ≠ head → 412 (head absent counts as "≠",
-  since no head can ever match a claimed one).
-- echo present, echo == head → 200, response carries
-  `Follows: <head>`.
-- head absent, echo absent → 200, genesis — NEITHER header.
+- live PUT, If-Match absent → **428**.
+- live PUT, If-Match malformed → **400**.
+- live PUT, If-Match ≠ advertised version → **412**.
+- live PUT, If-Match == advertised → proceed (same-body
+  → 200 no append; else append 201).
+- no live PUT, If-Match absent → genesis 201.
+- no live PUT, If-Match present → **412**.
 
-**`Follows`** is the locked class's response header
-(`wireHeadersFor`), rendered from the stored row exactly like
-`Supersedes`. Like `Supersedes`, it is PROVENANCE ONLY —
-derivation never walks either chain to decide which pair is
-current (`derive-documents.ts`'s (at, id) reduction alone
-decides that). The two headers are mutually exclusive per
-response: a locked write's carries `Follows` and never
-`Supersedes`; a simple write's carries `Supersedes` and never
-`Follows`.
+There is no `Follows` / `Supersedes` header or column.
+Derivation never walks a chain — `(at, id)` reduction
+alone decides the head. Pair `id` is `Response-ID`
+only.
 
-**The atomic backstop.** Two writers racing the SAME echo both
-pass the pre-check (both observe the same, not-yet-superseded
-head) — the UNIQUE index on `responses.follows` closes the
-race: the first commits, the second's `appendMessagePair` raises
-`UniqueConstraintError`, mapped to 412 by the SAME
-`handleRequest` catch that maps every other unique violation. No
-pair is stored for a 412 — the tx aborted or never opened.
+**The atomic backstop.** Two writers racing the SAME
+echo both pass the pre-check; the in-tx live-PUT latch
+closes the race (second writer 412). No pair is stored
+for a 412 — the tx aborted or never opened.
 
-**Status today:** the locked arm was built and tested against a
-synthetic registration in Task 2 (`tests/document-family.
-test.ts`); Task 3 registers `flows`' own `DocumentFamilyWiring`
-row and moves `PUT /flows/:id` onto it (`documentPutHandler`) —
-the first LIVE route riding the arm (§3.13). `flows/:id`'s
-`GET` is hand-written again (Phase 14 Task 8, undo-as-
+**Status today:** `PUT /flows/:id` rides
+`documentPutHandler` (`locked`). `flows/:id`
+`GET` is hand-written (Phase 14 Task 8, undo-as-
 replay): it calls `deriveFlow` directly so the response can
 carry `hasUndoHistory` — a field the generic `entityOf`
-contract has no slot for. `PUT` stays on
-`documentPutHandler`. The GET response still carries the
-`Response-ID` header (§3.13) for the locked echo.
+contract has no slot for. GET does **not** stream the
+stored PUT (G2). The GET response carries
+`Response-ID` as provenance and `ETag` as the
+advertised version.
 
-### 5.4.1 Instance concurrency: create-only PUT + If-Match PATCH
+### 5.4.1 Instance concurrency: PUT 405 + If-Match PATCH
 
 Sibling dialect to §5.4's two PUT classes. Instances are
 NOT on `DOCUMENT_CLASS_ROUTE_PATTERNS` (R10) and do NOT
-ride `documentPutHandler`. They introduce platform-wide
-`PATCH` plus a strong **ETag / If-Match** dialect:
+ride `documentPutHandler`. Public PUT is **405**. PATCH
+creates and updates. Wire **ETag / If-Match** is the
+quoted 64-hex `documentVersion`.
 
-- **PUT = create only.** Client-minted id; body
-  `{ set: [{ attribute_id, value }] }` (`clear` on PUT
-  → **400**). If ANY prior head exists at the address —
-  including a tombstone — **409**. The address is
-  spent; recovery is a fresh client-minted id. An
-  If-Match header on PUT is **400** (one dialect per
-  verb). Success **200** + `ETag` header (house style —
-  201 has zero call sites).
-- **PATCH = locked partial update.** Requires exactly
-  one strong If-Match validator (lists / `*` → **400**).
-  Body `{ set?, clear? }` merges into the full-state
-  head (`{ values }`). Missing If-Match → **428**;
-  stale → **412**; absent/tombstoned head → **404**
-  (PATCH never creates or revives).
-- **409 vs 412 NAMED.** Create collision (address
-  already used) is **409**. Lost-update on an existing
-  live head is **412**. Do not collapse them — they
-  answer different questions ("does this identity
-  exist?" vs "did concurrent writers race?"). Spec
-  decision 13 schedules post-ship review of folding
-  this divergence with flows' If-Response-ID →
-  If-Match unification.
-- **ETag source.** Wire ETag is the head pair's
-  **response identity** (strong, double-quoted). The
-  stored `responses.etag` column is a sha256 of the
-  BODY — content-addressing, storage-only, **unrelated
-  to the wire ETag**. Implementers must not conflate
-  them.
+- **PUT = 405.** No public create-only PUT. Adapter
+  `putRecordInstance` still PATCHes (name lie).
+- **PATCH = create or locked update.** Never-written +
+  no If-Match → create (201). Live head requires
+  exactly one strong If-Match validator (lists / `*`
+  → **400**). Body `{ set?, clear? }` merges into the
+  full-state head (`{ values }`). Missing If-Match on
+  a live head → **428**; stale → **412**; tombstoned
+  + no pin → **409** spent; + pin → **404**.
+  Same-body PATCH still appends **201** (named
+  residual).
+- **409 vs 412 NAMED.** Address spent (tombstone or
+  prior head on a create-shaped miss) is **409**.
+  Lost-update on an existing live head is **412**.
+- **ETag source.** Wire ETag is quoted 64-hex
+  `documentVersion` of the projected GET body
+  (instance GET advertises that hash, not the stored
+  full-body `version`). If-Match parses exactly one
+  strong validator.
 - **Replay.** Byte-identical resend hits the
   idempotency fast path first. If-Match is hoisted /
   hash-covered, so two PATCHes differing only in
@@ -2363,7 +2392,7 @@ rather than hand-written route objects. For `ideas`/
 identical to the routes it replaces. **`flows` PUT** (and its
 `WRITE_RESPONSE_SPECS` entry) rides the same generic
 `documentPutHandler` as `locked` concurrency (§5.4) — the
-`If-Response-ID` / `Follows` four-outcome machinery. **`flows`
+`If-Match` / `ETag` six-outcome machinery. **`flows`
 collection + entity GET** are hand-written (`deriveFlows` /
 `deriveFlow`) so entity GET can embed `hasUndoHistory`
 (Phase 14 Task 8 un-flip). `flows` also keeps hand-written
@@ -2521,8 +2550,8 @@ genesis is an explicit minted event, and there is no shared
   position}` via the write-response spec). GET embeds the
   lifecycle trio on the derived row
   (`objectiveDocumentEntityOf`).
-- **Concurrency:** `'simple'` (§5.4) — `Supersedes` chain, no
-  `If-Response-ID`.
+- **Concurrency:** `'simple'` (§5.4) — last-writer-wins,
+  no `If-Match`. Same-body → 200 no append.
 - **Archived inclusion:** `GET /objectives` INCLUDES archived
   objectives — deliberate CONTRAST to records' deleted-
   exclusion (§5.7); nothing in the objective alphabet is
@@ -2665,7 +2694,7 @@ archive/reactivate via a later PUT carrying a new trio).
 they do not carry a trio of their own). States-address
 retirement retired the dual-plane / FREEZE-at-genesis story:
 lifecycle lives only on the members parent document. History
-reads live on `GET members/:id/history` (§2.10); the members
+reads live on `GET members/:id/versions` (§2.10); the members
 GET row embeds the lifecycle trio for head state.
 
 **The blocking fix (`api/document-family.ts`).**
@@ -3637,20 +3666,20 @@ live history surfaces (§2.10 — **nine lifecycle + one
 value-history**, wire `(at, id)` DESC, index 0 =
 current):
 
-1. `GET ideas/:id/history`
-2. `GET projects/:id/history`
-3. `GET organizations/:org/record-types/:id/history`
+1. `GET ideas/:id/versions`
+2. `GET projects/:id/versions`
+3. `GET organizations/:org/record-types/:id/versions`
    (flat `records/:id/history` RETIRED → router 404)
-4. `GET flows/:id/history`
-5. `GET objectives/:id/history`
-6. `GET members/:id/history` (global; absent → 404)
+4. `GET flows/:id/versions`
+5. `GET objectives/:id/versions`
+6. `GET members/:id/versions` (global; absent → 404)
 7. `GET work-orders/:id/history` (inline `field_values`)
 8. `GET work-orders/history` (bulk; always 200; inline
    `field_values`)
-9. `GET objectives/history` (bulk; always 200;
+9. `GET objectives/versions` (bulk; always 200;
    `StateEntity` only)
 10. (value-history, not lifecycle)
-    `GET .../record-types/:type/instances/:id/history`
+    `GET .../record-types/:type/instances/:id/versions`
     → `{ at, etag, values }[]` projected by current
     read ACL (§5.20)
 
@@ -3694,7 +3723,7 @@ contract gate — elected DEFER at Phase Final Task 7.
 
 First-class data rows under a record type. Wire =
 
-`organizations/:org/record-types/:type/instances[/:id[/history]]`
+`organizations/:org/record-types/:type/instances[/:id[/versions]]`
 
 Storage name `record_instances`. NOT on
 `DOCUMENT_CLASS_ROUTE_PATTERNS` (R10) — headPairId and
@@ -3710,61 +3739,43 @@ org + type). Wire PATCH is operation-plane
 a full-state revision. GET is one head read (R5) —
 never a client-side fold of revision history.
 
-**PUT genesis (create-only).**
+**PUT is 405.** Public create is PATCH. Adapter
+`putRecordInstance` still PATCHes (name lie).
 
-```http
-PUT .../instances/{instance-id}
-{ "set": [ { "attribute_id": "...", "value": "..." } ] }
-```
-
-| Case | Result |
-| --- | --- |
-| Type absent under fenced org | **404** |
-| `clear` key present | **400** |
-| If-Match present on PUT | **400** (one dialect per verb) |
-| Any prior head (incl. tombstone) | **409** (address spent) |
-| Write-ACL fail on any `set` key | **403** all-or-nothing |
-| Constraint / type / unknown attr | **400** |
-| Success | **200** + `ETag` header |
-
-`set: []` is legal (no schema-level required —
-decision 14). Existence check is in-tx (read-check-
-write); genesis pairs carry no `follows`, so UNIQUE
-`follows` cannot backstop create races.
-
-**PATCH (If-Match required).**
+**PATCH (creates; If-Match on a live head).**
 
 ```http
 PATCH .../instances/{instance-id}
-If-Match: "<etag>"
+If-Match: "<64-hex-documentVersion>"
 { "set": [...], "clear": ["attribute_id"] }
 ```
 
 | Case | Result |
 | --- | --- |
-| Head absent or tombstoned | **404** |
-| If-Match absent | **428** |
-| If-Match ≠ head response id | **412** |
-| If-Match = head | Proceed; `follows` set |
+| Type absent under fenced org | **404** |
+| Never-written, no If-Match | **201** create |
+| Head tombstoned, no If-Match | **409** (address spent) |
+| Head tombstoned + If-Match | **404** |
+| Live head, If-Match absent | **428** |
+| If-Match malformed | **400** |
+| If-Match ≠ advertised version | **412** |
+| If-Match = advertised | Proceed; append 201 |
 | Duplicate attr in `set`, or attr in both `set` and `clear` | **400** |
 | Empty `set` and `clear` | **400** |
 | Write-ACL fail | **403** all-or-nothing |
 | Constraint / type / unknown attr | **400** |
-| `clear` of already-absent value | Success no-op |
+| Same-body PATCH | still appends **201** |
 
-Pipeline (decision 15): pre-tx read head → resolve
-type + attributes → outcomes → validate → authorize →
-merge → form pair with `follows` = head response id
-(crypto pre-tx). ONE transaction appends. Concurrent
-supersede → UNIQUE `responses.follows` →
-`UniqueConstraintError` → **412**. Lost update is
-client re-GET + reconcile + retry; server never auto-
-merges concurrent patches.
+Pipeline: pre-tx read head → resolve type +
+attributes → outcomes → validate → authorize →
+merge → form pair (crypto pre-tx). ONE transaction
+appends (outer PATCH + inner PUT, same
+`Operation-ID`). Concurrent stale If-Match →
+**412**. Lost update is client re-GET + reconcile +
+retry; server never auto-merges concurrent patches.
 
-**409 vs 412 (NAMED).** Create collision → **409**.
-Lost-update on a live head → **412**. See §5.4.1 and
-spec decision 13 (post-ship If-Match unification with
-flows).
+**409 vs 412 (NAMED).** Address spent → **409**.
+Lost-update on a live head → **412**. See §5.4.1.
 
 **DELETE.** Tombstone-wins (replay → **204**). Placement
 RESTRICT: any org WO whose CURRENT bind (§3.34 derive)
@@ -3788,7 +3799,7 @@ embed `etag` string (no per-row response headers).
 Detail GET / PUT / PATCH success carry the strong
 `ETag` header.
 
-**Write-success bodies.** PUT and PATCH 200 bodies echo
+**Write-success bodies.** PATCH 201 bodies echo
 the request-derived delta (validated `set` / `clear` as
 applied + address-derived ids) and the new `ETag` —
 NEVER the merged head (replay must not freeze one
@@ -3796,16 +3807,16 @@ caller's read projection or leak write-only-not-read
 values). GET is the only projection surface.
 
 **Value-revision history.**
-`GET .../instances/:id/history` — NOT a tenth lifecycle-
+`GET .../instances/:id/versions` — NOT a tenth lifecycle-
 trio clone. Each entry `{ at, etag, values }` DESC,
 projected by the caller's **current** read ACL. Foreign
 403 / absent 404 / tombstone 404.
 
-**ETag definition.** Head pair's response identity —
-strong, double-quoted. If-Match parses exactly one
-strong validator. The stored `responses.etag` column
-(body sha256) is **unrelated** to this wire ETag
-(§5.4.1).
+**ETag definition.** Quoted 64-hex `documentVersion`
+of the projected GET body. If-Match parses exactly one
+strong validator. Stored `responses.version` is
+`documentVersion` of the full stored body — the two
+differ by definition (§5.4.1).
 
 **Miss posture (R2).** Every miss surface answers
 through `missedReadError` (foreign 403 / absent 404

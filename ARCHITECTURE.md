@@ -1,9 +1,11 @@
 # Architecture
 
-Vanilla TypeScript with zero runtime dependencies. This
-document covers the domain, data, API, presentation, and
-convention layers. Storage shapes and state alphabets live
-in [SCHEMA.md](SCHEMA.md).
+Vanilla TypeScript. The browser ZIP keeps zero runtime
+dependencies. The server ZIP bundles postgres.js 3.4.9
+behind `api/postgres-client.ts` only (named exception).
+This document covers the domain, data, API, presentation,
+and convention layers. Storage shapes and state alphabets
+live in [SCHEMA.md](SCHEMA.md).
 
 ## Domain objects
 
@@ -119,9 +121,9 @@ Wire = storage at
 `organizations/:org/record-types/:type/{attributes,instances}/...`.
 Flat `/records` and `/record-attributes` are RETIRED.
 Schema: member READ / admin MUTATION (SIMPLE PUT class).
-Instances: member path-tier + per-attribute ACL; PUT
-create-only (409 if address spent); PATCH If-Match
-(428 / 412); DELETE tombstone-wins. See API.md §2.8 /
+Instances: member path-tier + per-attribute ACL; public
+PUT is **405**; PATCH creates and updates (If-Match
+428 / 412); DELETE tombstone-wins. See API.md §2.8 /
 §5.4.1 / §5.20.
 
 The property-test gate at work-order transitions:
@@ -214,9 +216,10 @@ own namespace). `writeAuthorizerFor` /
 `resolveGlobalOwner` before the handler runs: owner-null →
 genesis proceeds; foreign → `ForeignOrganizationError`
 (HTTP 403). Read isolation is derivation plus a miss-path
-global probe: foreign → 403, absent → 404. The HMAC signing
-key is client-shipped, so this is demo-grade isolation
-until the server tier.
+global probe: foreign → 403, absent → 404. Isolation is
+demo-grade: the browser ZIP still ships the HMAC
+constant; the server ZIP takes `JWT_HMAC_SIGNING_KEY`
+from the environment. See § Demo server tier.
 
 #### History — the decorator era (retired Phase Final)
 
@@ -347,79 +350,109 @@ tagged union, erased fallback at the call site). Erasure
 splices `identity_pii` only; the identity, the member, and
 every `member_id` reference survive.
 
-## Server-tier deploy blockers
+## Demo server tier
 
-Every item below is INERT today: the whole store is client-side
-IndexedDB in the page-runner's own browser, so there is no trust
-boundary to cross. Each becomes a live exposure the moment the
-backend is physically split out and the browser becomes an
-untrusted client — this is the disclosure checklist that gates
-that split. Several former entries are now mitigated client-tier
-and listed separately below. An audit re-confirms each remaining
-seam is still KNOWN (seam flag present, unwidened) and separates
-any NEW exposure — see [AUDIT.md](AUDIT.md) § Security: KNOWN
+`./build` emits two artifacts from one source tree (clean
+tree required). First-light is recorded.
+
+- **`fusion-ai-browser-${SHA}.zip`** — IndexedDB, API in
+  the page, demo auth. It took the storage-format break
+  (serializeWire Latin-1, `/history` → `/versions` except
+  work-orders). It is not a museum of the old store.
+- **`fusion-ai-server-${SHA}.zip`** — Node serves composed
+  pages and the API on one origin. Postgres is the store.
+  The page talks `fetch`. The client bundle is the fetch
+  facade (no in-page API, no signing key, no IndexedDB).
+  A metafile test forbids `SIGNING_KEY_MATERIAL` and
+  `backend-indexeddb` in the server graph.
+
+The yank that deletes the in-browser data tier has **not**
+shipped. IndexedDB still ships in the browser ZIP.
+
+### Server process
+
+`node server.mjs` (`server/boot.ts`). Required env, never
+logged and never defaulted: `POSTGRES_URL`,
+`JWT_HMAC_SIGNING_KEY`, `HTTP_SERVER_PORT`. Optional
+`TRUSTED_PROXY_HOPS` (comma list). Body over 1 MiB →
+**413**. Seed `--seed-bootstrap` or `--seed-mock-data` on
+an empty database only; credentials print once on stderr,
+never HTTP. One mint process — do not run two replicas.
+Boot `assertUtf8`; a missing table is a loud 500.
+
+postgres.js 3.4.9 lives behind `api/postgres-client.ts`
+only. DDL is `api/schema-postgres.ts`. Message columns
+are BYTEA Latin-1. Writes `pg_notify('fusion_events',
+…)`; payload over 8000 → `{"kind":"full"}`. Snapshot
+export is REPEATABLE READ. There is no LISTEN and no SSE
+client (stale-until-navigation).
+
+scrypt hashes new server passwords; PBKDF2 still
+verifies, then rehashes. Refresh is an HttpOnly cookie
+(`Path=/authentication`, `SameSite=Strict`; `Secure`
+off only on `http://localhost`). Token JSON has
+`access_token` and no `refresh_token`. Cookie-session
+access is memory-only. 401 classes: `invalid_token`
+(bearer), `invalid_client`, `invalid_grant`. Throttle:
+5 authorize + password-class token grants per address
+per minute; refresh and token-exchange are not counted
+(cookie boot). Wrong `TRUSTED_PROXY_HOPS` makes the
+throttle a global cap; refresh/exchange stay unlimited.
+
+`./measure --base-url` hits a running origin instead of
+spawning `python3 -m http.server` (needs `--password`
+or `MEASURE_PASSWORD`).
+
+### Deploy blockers A1–A6 (disposed on the server ZIP)
+
+These six seams were the old disclosure checklist. On
+the **server ZIP** they are disposed as follows. The
+**browser ZIP** keeps the demo residuals until the yank.
+
+- **A1 HMAC key.** Server mint/verify reads
+  `JWT_HMAC_SIGNING_KEY`. The browser ZIP still ships
+  `SIGNING_KEY_MATERIAL` in client JS.
+- **A2 credential reveal.** Deleted on the server
+  (stderr seed). The browser ZIP may still reveal
+  credentials in-band after wipe-and-load.
+- **A3 plaintext ledger.** Re-gated: snapshots are
+  admin+bearer on the server ZIP; messages stay
+  verbatim. Residual at full strength (this is a
+  demo server). Token-at-rest hashing is later.
+- **A4 jti replay.** Spent. The grant requires `jti`.
+  A second grant with the same assertion is 401
+  `invalid_grant`. Do not put `jti` on the token JSON.
+- **A5 BOOTSTRAP_ROUTES.** Not bearer-exempt on the
+  server ZIP (`setServerTier(true)` from
+  `server/boot.ts`). The browser ZIP keeps the
+  exemption until the yank.
+- **A6 PKCE.** The server rejects authorize without
+  S256. The client sends S256. The browser ZIP still
+  accepts authorize without S256.
+
+### Residuals (named, still live)
+
+- Browser ZIP: demo HMAC, PBKDF2 hashing,
+  `BOOTSTRAP_ROUTES` exempt, anonymous seed
+- Yank not done (IndexedDB still ships)
+- Members/seats rewrite not done
+- Work-order locked verbs not executed
+- Two-role views and token-at-rest hashing later
+- Stale-until-navigation (no NOTIFY listener)
+- XSS can use the refresh cookie from the page
+- A raw dump still has verbatim auth messages
+- Single mint process
+- Throttle is a global cap if `TRUSTED_PROXY_HOPS` is
+  wrong; refresh/exchange unlimited
+- Instance public PUT is 405 (`putRecordInstance`
+  still PATCHes — name lie); same-body PATCH still
+  appends 201
+- `withLifecycleTrio` still exists
+
+An audit re-confirms each residual is still KNOWN
+(seam flag present, unwidened) and separates any NEW
+exposure — see [AUDIT.md](AUDIT.md) § Security: KNOWN
 vs NEW.
-
-Remaining seams — no client-tier mitigation exists:
-
-- **Client-shipped HMAC key.** `SIGNING_KEY_MATERIAL`
-  (`api/access-token.ts`) is a constant in client JS, so any
-  party with the bundle can mint a valid token — forgery is
-  trivial. NO client-tier mitigation exists or is possible:
-  whatever the browser holds, the browser's user holds. Every
-  gate downstream of token verification (org fence, role
-  policy, membership liveness) is therefore demo-grade
-  isolation until the server tier relocates ONLY the key
-  (client constant → server secret/KMS) and who-mints (browser
-  → `/authentication/token`); the wire format, alg (HS256),
-  and every caller signature stay put.
-- **In-band credential reveal.** The mock-data seeder returns
-  freshly-minted plaintext credentials in-band for a one-time
-  reveal. Domain credentials still store only PBKDF2 hashes;
-  the message plane itself is a separate concern (see
-  **Plaintext credential ledger** below). Demo-only by design;
-  the in-band return is deleted at the server tier.
-- **Plaintext credential ledger.** Stored request/response
-  pairs hold the wire bytes verbatim — including every login's
-  password and username, every authorization code, every
-  access/refresh token, every `client_assertion`, and every
-  bearer `Authorization` header on every wired write.
-  `GET /snapshots/schema` (bearer-exempt, `BOOTSTRAP_ROUTES`)
-  exports the whole store, so any downloaded snapshot is a
-  plaintext credential dump. Accepted for the local demo tier;
-  re-gating the snapshot plane and/or re-masking the message
-  plane is a named precondition of the server split. Acting on
-  snapshot-export exposure is out of scope of the verbatim-
-  storage change itself.
-- **client_assertion jti replay.** JWS verification is real
-  (below), but no ledger yet remembers a jti as spent, so a
-  captured assertion replays until its `exp`. The replay
-  ledger lands with the server tier.
-- **Auth-free snapshot plane.** `BOOTSTRAP_ROUTES`
-  (`api/request-auth.ts`) —
-  `snapshots/schema|mock-data|bootstrap|import` — is
-  bearer-exempt UNCONDITIONALLY: no bearer, no route policy,
-  regardless of whether a schema exists. A deliberate dev-tier
-  install/demo decision (the surface is local, ephemeral, and
-  slated for removal), so an anonymous wipe/seed/import is
-  intended, not a regression — the exemption was widened from
-  the old schema-gated window on purpose. This is the LAST
-  seam to leave standing: the whole `BOOTSTRAP_ROUTES`
-  exemption MUST be removed or re-gated the moment the
-  Postgres server tier lands, when the browser becomes an
-  untrusted client and an unauthenticated wipe of a populated
-  tenant store is catastrophic. Compounded by the plaintext
-  credential ledger above: an unauthenticated snapshot is a
-  full credential dump. Until then it is KNOWN and accepted;
-  do not re-raise it.
-- **Soft-optional PKCE on authorize.** `code_challenge` is
-  optional at `/authentication/authorize`; when omitted,
-  `grantAuthorizationCode` skips the verifier check so the
-  password-loop demo works without PKCE. OAuth 2.1 mandates
-  PKCE for public clients — hard enforcement (reject
-  authorize without a challenge for public clients) is a
-  residual for the server tier. When a challenge IS present,
-  S256 verification is real (mitigated below).
 
 Mitigated client-tier — the seam is narrowed in this codebase,
 re-verified by the automated suite:
@@ -433,7 +466,7 @@ re-verified by the automated suite:
   verified (`code_verifier` → base64url(sha256) must match).
   Unknown, spent, expired, wrong-client, or bad-PKCE all
   share one 401 and mint nothing (grant-first). Soft residual
-  when authorize omits the challenge: see remaining seams.
+  when the browser ZIP omits the challenge: see A6.
 - **Token-exchange delegation** (`grantTokenExchange`,
   `api/authentication.ts`): self-delegation ONLY — a
   cross-party exchange (subject ≠ actor) is 403 until a
@@ -466,9 +499,11 @@ re-verified by the automated suite:
 ## API Layer (`/api`)
 
 `api/` is the server tier — the REST/DB-schema request
-handlers, currently running in-browser. Code that crosses the
-client/server chasm lives one level out in `shared/` (a sibling
-of `api/` and `web-app/`): the HTTP wire schema (`http-message/`,
+handlers. The browser ZIP still runs them in-page over
+IndexedDB. The server ZIP runs the same handlers in Node
+over Postgres. Code that crosses the client/server chasm
+lives one level out in `shared/` (a sibling of `api/`
+and `web-app/`): the HTTP wire schema (`http-message/`,
 its own `types.ts`) plus pure cross-chasm utilities
 (`base64url.ts`, `crypto-safe-base62.ts`, `digest.ts`,
 `password-hash.ts`, `ledger-reduction.ts`,
@@ -488,8 +523,9 @@ authoritative list and per-column reference),
 `api/store-history-entity.ts` (`HistoryEntityStore` — the
 sole store class; backs both message-plane tables; no
 tombstone filter, no lifecycle log), `api/db-indexeddb.ts`
-(production persistence tier), `api/db-localstorage.ts`
-(demo tier), `api/db-memory.ts` (test impl), `api/api.ts`
+(browser-ZIP persistence), `api/db-postgres.ts` (server-ZIP
+persistence), `api/db-localstorage.ts` (demo tier),
+`api/db-memory.ts` (test impl), `api/api.ts`
 (the HTTP gate — `handleRequest` plus the
 `GET/PUT/DELETE/POST` helpers, **no module-level adapter;
 threaded explicitly**), `api/routes.ts` (the route table —
@@ -498,7 +534,9 @@ document families plus the surviving state routes),
 `'system'` member plus human and AI rosters as pairs),
 `api/validators.ts` (wire/body validators still consumed by
 `WRITE_RESPONSE_SPECS`, seed pair formation, and the gate).
-The `DbAdapter` interface is the migration seam to Postgres.
+The `DbAdapter` / `StorageBackend` seam has four backends:
+IndexedDB (browser ZIP), localStorage (demo), memory
+(tests), and Postgres (`api/backend-postgres.ts`).
 
 Phase Final deleted every entity table and the dual-write
 row halves. `StateStore` and the three scoping decorators
@@ -526,17 +564,17 @@ session token. Tests pass `createRequestContext` a
 (instances)**, wire `(at, id)` **DESC** (index 0 =
 current):
 
-1. `GET ideas/:id/history`
-2. `GET projects/:id/history`
-3. `GET organizations/:org/record-types/:id/history`
-4. `GET flows/:id/history`
-5. `GET objectives/:id/history`
-6. `GET members/:id/history` (global; absent → 404)
+1. `GET ideas/:id/versions`
+2. `GET projects/:id/versions`
+3. `GET organizations/:org/record-types/:id/versions`
+4. `GET flows/:id/versions`
+5. `GET objectives/:id/versions`
+6. `GET members/:id/versions` (global; absent → 404)
 7. `GET work-orders/:id/history` (inline `field_values`)
 8. `GET work-orders/history` (bulk; always 200)
-9. `GET objectives/history` (bulk; always 200)
+9. `GET objectives/versions` (bulk; always 200)
 10. (value-history)
-    `GET .../record-types/:type/instances/:id/history`
+    `GET .../record-types/:type/instances/:id/versions`
     → `{ at, etag, values }[]` by current read ACL
 
 All reads derive from the message ledger. Trio-family
@@ -557,15 +595,19 @@ lifecycle-current event. Instances carry full-state
 remains the RESTRICT / ownership 3-tier probe. Every
 verb on the retired shared event-append address is
 router 404. Flat `/records` and `/record-attributes`
-are also router 404. Phase 15 Task 7 also retired the
-per-entity current-state alias, nested field-values
-writes, and
-`GET|POST|PUT|DELETE flows/:id/versions[...]` — all
-router 404. Lifecycle writes ride document-trio PUTs and
+are also router 404. Phase 15 Task 7 retired the
+table-backed `flows/:id/versions[...]` writes and the
+zero-caller shared event-append / current-state-alias
+/ nested field-values families. Pair-chain
+`GET flows/:id/versions` is live (old `:vid` is a
+miss). Lifecycle writes ride document-trio PUTs and
 named ops (work-order create/claim/transition/release,
 invitations), not a shared event-append address.
-Instance value writes ride PUT genesis / PATCH
-If-Match / DELETE tombstone. When no schema exists,
+Instance public PUT is **405**; PATCH creates and
+updates (If-Match). GET streams the stored PUT for
+stream families; flows GET still `deriveFlow`;
+assemble surfaces still assemble. G1–G6: stored PUT
+= today's `*EntityOf`. When no schema exists,
 non-entry pages redirect to snapshots.
 
 ## Write-path derives (Phase 14)
@@ -633,21 +675,26 @@ caller already holds, so nesting is never needed to reach the
 open tx, and a caller's own table list stays the single,
 auditable source of truth for what one transaction touches.
 
-### Document-plane 412 (sole conflict mechanism)
+### Document-plane If-Match (sole conflict mechanism)
 
 The DOCUMENT plane — every `flows/:id`-shaped save,
 including undo's own restore write, and every other
-document-trio PUT — detects a stale basis via the
-`responses.follows` unique index: a racing write against
-the same head throws `UniqueConstraintError`, mapped to
-HTTP 412 by `handleRequest`, and the caller retries with a
-fresh basis. The old STATE-plane 409
+document-trio PUT — detects a stale basis via `If-Match`
+of the quoted 64-hex `documentVersion` (sha256 of body
+octets; later writes hash body octets || matched tag).
+Locked PUT missing If-Match over a live PUT → **428**.
+Stale or unmatched → **412**. Same-body document PUT →
+**200**, no append. First append send-time **201**;
+the stored PUT start-line stays **200**. DELETE
+never-written → **404**; already-gone → **204**, no
+append. Pair `id` is `Response-ID` only. There is no
+`follows` / `supersedes` / `etag` / `status` column.
+Public writes require header `Operation-ID` (22-char);
+the server does not mint those. Inner PUTs copy the
+outer id. The old STATE-plane 409
 (`stateEventCollisionFromPairs` →
-`LedgerImmutabilityError` on a re-put of an existing
-event id) retired with the shared event-append address
-itself; identical resends of a document PUT still
-converge via the follows index, not a separate
-immutability class.
+`LedgerImmutabilityError`) retired with the shared
+event-append address.
 
 ### SIDECAR-KEEP and undo-as-replay
 
@@ -845,14 +892,19 @@ and encoding. `BackedDbAdapter` (`api/db-backed.ts`)
 composes one backend into the full `DbStores` bundle
 (two stores).
 
-Three backends implement the seam:
+Four backends implement the seam:
 
-- `backend-indexeddb.ts` — the production tier, wired by
+- `backend-indexeddb.ts` — the browser-ZIP tier, wired by
   `db-indexeddb.ts`. It is the ONLY file that names
   `indexedDB.*` (the divorce point). `transaction` runs a real
   `IDBTransaction` that commits on `oncomplete` and aborts on a
   thrown body, so a batch applies whole or not at all; schema
   presence is a `__schema__` marker store.
+- `backend-postgres.ts` — the server-ZIP tier, wired by
+  `db-postgres.ts`. postgres.js stays behind
+  `api/postgres-client.ts`. Message columns are BYTEA
+  Latin-1; `headPairIdAt` / `messageStore.get` is the live
+  PUT. There is no `uri_id`-only index.
 - `backend-localstorage.ts` — the demo tier, wired by
   `db-localstorage.ts`. It SIMULATES the transaction via
   `backend-buffer-tx.ts` (buffer touched tables, flush on

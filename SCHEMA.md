@@ -17,12 +17,15 @@ two). Each table is an IndexedDB object store
 (`keyPath: 'id'`) in the `fusion-ai` database; the
 localStorage simulated backend keys the same tables as
 `fusion-ai:tableName`; memory uses an in-process Map of
-bare table names. All rows have a text `id` primary key.
-Column types match
-`RequestEntity` / `ResponseEntity`: TEXT (string).
-`method` and `operation_id` are TEXT
-on the request row; `operation_id` is TEXT on the
-response row (same value as the request). Document-body
+bare table names; the server ZIP stores the same
+columns in Postgres (`api/schema-postgres.ts`). All
+rows have a text `id` primary key. Column types match
+`RequestEntity` / `ResponseEntity`: TEXT (string) in
+the TypeScript / IndexedDB view. Postgres stores
+`message` as BYTEA Latin-1. `method` and
+`operation_id` are TEXT on the request row;
+`operation_id` is TEXT on the response row (same
+value as the request). No `uri_id`-only index. Document-body
 composites (arrays and
 objects — `strengths`, `team_dimensions`, `options`,
 `constraints`, `graph`, `graphDelta`, `revivals`,
@@ -136,13 +139,13 @@ metadata only, not a domain timestamp inside the message.
 
 | Column | Type | Notes |
 |--------|------|-------|
-| id | TEXT | PRIMARY KEY — shared with the paired response |
+| id | TEXT | PRIMARY KEY — 22-char pair id |
 | uri_collection | TEXT | Collection URI, trailing `/` kept |
 | uri_id | TEXT | Resource id, or `''` for a collection |
 | at | TEXT | RFC-3339 Zulu — envelope metadata |
 | requester_identity_id | TEXT | identity id of the requester |
-| message_hash | TEXT | sha256 hex digest of `message` |
-| message | TEXT | The canonical stored HTTP message |
+| message_hash | TEXT | `sha256HexOfBytes` of Latin-1 wire |
+| message | TEXT | `serializeWire` Latin-1 (BYTEA in PG) |
 | method | TEXT | HTTP method, `^[A-Z]+$`. No GET rows |
 | operation_id | TEXT | 22-char id. Same on the paired response |
 
@@ -159,8 +162,10 @@ Secondary indexes: `uri_collection`,
 
 ### responses
 
-The paired response: `id` equals the request's `id` (one
-UUID per pair, never a foreign key of its own).
+The paired response: `id` equals the request's `id`
+(pair locator; wire `Response-ID`). No `etag`,
+`status`, `message_hash`, `follows`, or `supersedes`
+column.
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -169,7 +174,7 @@ UUID per pair, never a foreign key of its own).
 | uri_id | TEXT | Resource id, or `''` for a collection |
 | at | TEXT | RFC-3339 Zulu — envelope metadata |
 | version | TEXT | 64-hex `documentVersion` of body octets |
-| message | TEXT | The stored HTTP message (`serializeWire`) |
+| message | TEXT | `serializeWire` Latin-1 (BYTEA in PG) |
 | operation_id | TEXT | 22-char id. Same value as the request |
 
 `responses.version` is the document revision token
@@ -245,10 +250,10 @@ Org-nested wire = storage (no dual-wire flat `/records`):
 ```text
 /organizations/:organization-id/record-types/
   :record-type-id
-    /history
+    /versions
     /attributes/:attribute-id
     /instances/:instance-id
-      /history
+      /versions
 ```
 
 - **record-types** — `'trio'` SIMPLE document family;
@@ -266,10 +271,11 @@ Org-nested wire = storage (no dual-wire flat `/records`):
   `{ values: [{ attribute_id, value }] }`. Wire PATCH
   is **operation-plane** (`set` / `clear`); the server
   merges pre-tx and appends a full-state document pair.
-  GET is one head read. PUT create-only (409 if address
-  spent, including tombstone). PATCH If-Match (428 /
-  412). DELETE tombstone-wins. Value-revision history
-  at `.../instances/:id/history` is **not** a lifecycle-
+  GET is one head read. Public PUT is **405**; PATCH
+  creates and updates (If-Match 428 / 412 on a live
+  head). Same-body PATCH still appends 201. DELETE
+  tombstone-wins. Value-revision history at
+  `.../instances/:id/versions` is **not** a lifecycle-
   trio clone. Derive:
   `api/derive-record-instances.ts`. Wire ETag is
   `documentVersion` of the projected body; stored
@@ -316,22 +322,23 @@ are asserted by validators and derive cores.
 ### History read map (nine lifecycle + one value-history)
 
 Wire order is `(at, id)` **DESC** (index 0 = current) on
-every history route. See API.md §2.10 for full fence and
-wire detail.
+every history route. Trio-family and instance paths
+are `/versions`; work-orders stay `/history`. See
+API.md §2.10 for full fence and wire detail.
 
-1. `GET ideas/:id/history` —
+1. `GET ideas/:id/versions` —
    `deriveIdeaStateHistory` → `StateEntity[]`; empty →
    403 foreign / 404 absent
-2. `GET projects/:id/history` —
+2. `GET projects/:id/versions` —
    `deriveProjectStateHistory` → same
-3. `GET organizations/:org/record-types/:id/history` —
+3. `GET organizations/:org/record-types/:id/versions` —
    `deriveRecordStateHistory` → same (flat
    `records/:id/history` RETIRED)
-4. `GET flows/:id/history` —
+4. `GET flows/:id/versions` —
    `deriveFlowStateHistory` → same
-5. `GET objectives/:id/history` —
+5. `GET objectives/:id/versions` —
    `deriveObjectiveStateHistory` → same
-6. `GET members/:id/history` —
+6. `GET members/:id/versions` —
    `deriveMemberStates` filter → `StateEntity[]`;
    global miss → 404
 7. `GET work-orders/:id/history` —
@@ -340,11 +347,11 @@ wire detail.
 8. `GET work-orders/history` —
    `deriveWorkOrderHistories` → same WO shape;
    always 200
-9. `GET objectives/history` —
+9. `GET objectives/versions` —
    `deriveObjectiveHistories` → `StateEntity[]`;
    always 200
 10. (value-history, not lifecycle)
-    `GET .../record-types/:type/instances/:id/history`
+    `GET .../record-types/:type/instances/:id/versions`
     → `{ at, etag, values }[]` by current read ACL
 
 Org-nested per-id empty → `missedReadError` (foreign
@@ -371,8 +378,8 @@ field-values collection/write, and flat
 404). Lifecycle writes ride document-trio PUTs
 (ideas/projects/record-types/flows/objectives/members)
 and named ops (work-order create/claim/transition/
-release, invitations). Instance value writes ride PUT
-genesis / PATCH If-Match / DELETE tombstone.
+release, invitations). Instance public PUT is 405;
+value writes ride PATCH / DELETE tombstone.
 
 Domain notes (vocabulary, not storage):
 

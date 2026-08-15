@@ -10,9 +10,9 @@ when working with code in this repository.
 ```bash
 ./test                 # Run automated tests
 ./validate             # Type-check + tests + lint (works on dirty tree)
-./build                # Compile, bundle, minify, ZIP to ~/Desktop/
-./build --no-zip dir/  # Bundle to dir/ without zipping (for testing)
-./build dir/           # ZIP to dir/ instead of ~/Desktop/
+./build                # Two ZIPs to ~/Desktop/
+./build --no-zip dir/  # Browser bundle to dir/ without zipping
+./build dir/           # Two ZIPs to dir/ instead of ~/Desktop/
 ./build --help         # Show usage
 ./serve [port]         # Build + start HTTP server (default 8080)
 ./measure              # Full ceremony (record+budgets+25+viz)
@@ -25,6 +25,7 @@ when working with code in this repository.
 ./measure --runs N     # Runs per page (default 25)
 ./measure --visualize  # History HTML from disk (no Chrome)
 ./measure --profile    # API counts + residual (default 4 pages, 1 run)
+./measure --base-url URL  # Hit a running origin (needs --password)
 ```
 
 **Commit before building.** `./build` and `./serve`
@@ -153,7 +154,10 @@ consoles quiet).
 
 Clean tree required for measure sweeps (same as `./build`
 — measures committed bytes); bare `--visualize` alone is
-exempt. Sandbox:
+exempt. `--base-url URL` hits a running origin instead
+of building and spawning `python3 -m http.server`
+(requires `--password` or `MEASURE_PASSWORD`; skips
+snapshots seed). Sandbox:
 `TMPDIR=/tmp/claude ./measure ...`. Chrome binary:
 `$CHROME`, or the macOS default Google Chrome path.
 
@@ -176,7 +180,10 @@ type checking (they run in Node).
 
 ## Architecture
 
-**Vanilla TypeScript** with zero runtime dependencies.
+**Vanilla TypeScript.** The browser ZIP keeps zero
+runtime dependencies. The server ZIP bundles
+postgres.js 3.4.9 behind `api/postgres-client.ts`
+only (named exception).
 Enterprise innovation management platform with modules for
 ideas, projects, members, flows, and workbox, plus a
 dashboard and flow statistics.
@@ -207,9 +214,10 @@ is HTTP-only.
   loop) mint/verify HMAC-SHA256 JWTs (`api/access-token.ts`);
   a Bearer gate in `handleRequest` enforces them. The
   `authorization_code` grant is TTL-bound, client-bound, and
-  PKCE-verified when authorize carries a `code_challenge`
-  (soft-optional when omitted — password-loop demo residual;
-  hard PKCE is a server-tier residual). A client is a
+  PKCE-verified when authorize carries a `code_challenge`.
+  The **server ZIP** rejects authorize without S256; the
+  client sends S256; the **browser ZIP** still accepts
+  without S256. A client is a
   kind-'service' identity + a registration facet
   (`identities/:id/registration`, admin-realm, kind-gated);
   `grantClientCredentials` derives it pre-token, and
@@ -217,18 +225,23 @@ is HTTP-only.
   acting client. Token lifecycle (issue/rotate/revoke) lives
   only as message-pair events now — `identity_tokens` and
   `authorization_codes` are RETIRED tables (Phase 13 Task 9);
-  the `identity_token_revocations` ledger and PBKDF2 password
-  hashing back the gate too. Membership, roles, and
+  the `identity_token_revocations` ledger backs the gate.
+  Server ZIP hashes new passwords with scrypt (PBKDF2
+  verify-then-rehash); browser ZIP stays PBKDF2. Refresh
+  is an HttpOnly cookie; token JSON has no
+  `refresh_token`; cookie-session access is memory-only.
+  401 classes: `invalid_token` / `invalid_client` /
+  `invalid_grant`. Membership, roles, and
   revocation ride claim snapshots (NAMED COVENANT: bite
   at next mint/refresh/exchange or access TTL ≤ 15 min),
   not live pair-plane re-reads. Ownership and default-org
-  fences stay pair-plane. The HMAC key is client-shipped,
-  so isolation is demo-grade until the server tier. The
-  snapshot plane (`BOOTSTRAP_ROUTES`) is intentionally
-  auth-free dev-tier — removed or re-gated when the
-  Postgres server tier lands; see
-  [ARCHITECTURE.md](ARCHITECTURE.md) § Server-tier deploy
-  blockers.
+  fences stay pair-plane. The **server ZIP** takes
+  `JWT_HMAC_SIGNING_KEY` from the environment; the
+  **browser ZIP** still ships the demo constant. Snapshot
+  plane (`BOOTSTRAP_ROUTES`): auth-free on the browser
+  ZIP; admin+bearer on the server ZIP (`setServerTier`).
+  See [ARCHITECTURE.md](ARCHITECTURE.md) § Demo server
+  tier.
 - **Tenancy.** Every authenticated request runs org-scoped
   on the **pair plane**. `fenceRequest` completes the vessel
   with organization, live memberships, and roles from the
@@ -273,19 +286,22 @@ is HTTP-only.
   its restore target from the flow's own document-pair
   history (Phase 14 Task 8). Lifecycle history is nine GET
   registrations plus one value-history
-  (`GET <family>/:id/history` for ideas / projects /
-  record-types / flows / objectives / members /
-  work-orders, plus bulk `GET work-orders/history` and
-  `GET objectives/history`, plus
-  `GET .../record-types/:type/instances/:id/history`
+  (`GET <family>/:id/versions` for ideas / projects /
+  record-types / flows / objectives / members;
+  work-orders stay `GET work-orders/:id/history` plus
+  bulk `GET work-orders/history`;
+  `GET objectives/versions`; plus
+  `GET .../record-types/:type/instances/:id/versions`
   for value revisions) — wire `(at, id)` DESC; work-
   order routes fold `field_values` inline. Ideas /
   projects / record-types / objectives / members GET
   rows embed the lifecycle trio. Flat `/records` and
   `/record-attributes` are RETIRED (router 404). Phase
-  15 retired `flows/:id/versions[...]` and the
-  zero-caller shared event-append / current-state-alias
-  / nested field-values families — all router 404.
+  15 retired table-backed `flows/:id/versions[...]`
+  writes; pair-chain GET is live. Instance public PUT
+  is 405; PATCH creates. Zero-caller shared
+  event-append / current-state-alias / nested
+  field-values families — all router 404.
   Phase Final DELETED the graph/version tables with the
   rest of the row plane. Ownership fences resolve on
   the pair plane (`resolveOwningOrganization`,
@@ -295,19 +311,23 @@ is HTTP-only.
   shares that posture.
 - **Presentation.** Presenters in `web-app/app/presenters/` emit
   `SafeHtml`.
-- **Database.** IndexedDB (`api/backend-indexeddb.ts`): one
-  object store per table (`keyPath: 'id'`) plus a `__schema__`
-  marker store, created on first open via unversioned
-  `indexedDB.open(DB_NAME)`. `TABLE_NAMES` is two:
-  `requests`, `responses` — the pure message plane, both on
-  `HistoryEntityStore`. Every store op crosses the
-  `StorageBackend` transaction seam (`api/db.ts`) — a real
-  `IDBTransaction` that commits on `oncomplete` and aborts on a
-  thrown body. The memory + localStorage backends simulate the
-  same transaction (buffer then flush) for the automated suite
-  and the demo tier. Domain state derives from the message
-  plane; alphabets live in `api/types.ts` /
-  [SCHEMA.md](SCHEMA.md).
+- **Database.** Browser ZIP: IndexedDB
+  (`api/backend-indexeddb.ts`) — one object store per
+  table (`keyPath: 'id'`) plus a `__schema__` marker
+  store. Server ZIP: Postgres (`api/backend-postgres.ts`,
+  DDL in `api/schema-postgres.ts`) — BYTEA Latin-1;
+  postgres.js 3.4.9 behind `api/postgres-client.ts` only.
+  Required env (never logged): `POSTGRES_URL`,
+  `JWT_HMAC_SIGNING_KEY`, `HTTP_SERVER_PORT`. `TABLE_NAMES`
+  is two: `requests`, `responses` — the pure message
+  plane, both on `HistoryEntityStore`. Every store op
+  crosses the `StorageBackend` transaction seam
+  (`api/db.ts`). The memory + localStorage backends
+  simulate the same transaction (buffer then flush) for
+  the automated suite and the demo tier. Domain state
+  derives from the message plane; alphabets live in
+  `api/types.ts` / [SCHEMA.md](SCHEMA.md). The yank has
+  not shipped — IndexedDB still ships in the browser ZIP.
 - **State.** Module-level vars + pub-sub for theme, mobile,
   auth, sidebar.
 
@@ -400,8 +420,9 @@ lg 1024px, xl 1280px.
 
 ## Project Structure
 
-`api/` — the server REST/DB-schema handlers (currently
-in-browser): REST routing, DB adapter interface, mock data,
+`api/` — the server REST/DB-schema handlers (in-page on
+the browser ZIP; Node + Postgres on the server ZIP):
+REST routing, DB adapter interface, mock data,
 validators, plus the auth/authz/tenancy spine:
 `authentication.ts` (OAuth grants), `access-token.ts` (JWT
 mint/verify), `authorization.ts` (per-org roles), the
@@ -435,16 +456,22 @@ the `identities` sidebar key; `invitations/` is the invitee's
 own pending-invitations page (reached via the top-bar bell,
 sharing the `members` sidebar key). `billing/` is a stub.
 
+`server/` — Node boot, HTTP adapter, scrypt, seed flags,
+auth throttle (`server/boot.ts` is the process).
 The composition root is `web-app/app/adapters/init.ts`. Run `ls`
 or read file headers — both are more current than this document
 will ever be.
 
 ## Build
 
-`./build` requires a clean working directory. Output is a ZIP at
-`~/Desktop/`. Use `./build --help` for options. The build script
-itself is the source of truth for what gets composed, bundled,
-and copied — read it, don't read this section.
+`./build` requires a clean working directory. Output is two
+ZIPs at `~/Desktop/`:
+`fusion-ai-browser-${SHA}.zip` and
+`fusion-ai-server-${SHA}.zip`. Use `./build --help` for
+options. The build script itself is the source of truth
+for what gets composed, bundled, and copied — read it,
+don't read this section. Server-graph metafile must not
+contain `SIGNING_KEY_MATERIAL` or `backend-indexeddb`.
 
 ## Testing
 
@@ -453,8 +480,10 @@ Two layers, both zero-dependency.
 ### Automated tests
 
 Node's built-in `node:test` runner with `--strip-types`,
-no test-framework dependency (the only devDependencies are
-`esbuild` and `typescript`, for ./build and ./validate).
+no test-framework dependency (devDependencies are
+`esbuild`, `typescript`, and `postgres` 3.4.9 —
+postgres.js is bundled into `server.mjs`, never
+imported by application code).
 Tests cover pure modules, flow-edit business logic
 (`tests/flow-operations.test.ts`), every data adapter
 (including `adapters-members-union.test.ts` and
@@ -551,7 +580,10 @@ apply to it (RED is the audit's first finding).
   and writes the snapshot rows in ONE transaction (`tx.clear`
   + `tx.put` over `TABLE_NAMES`); pristine/mock-data seeding
   wipes via `deleteSchema` first. On IndexedDB the clear+put
-  is a genuine atomic commit.
+  is a genuine atomic commit. On the **server ZIP**
+  snapshots are admin+bearer; seed is `--seed-*` on an
+  empty database (stderr credentials). The browser ZIP
+  keeps `BOOTSTRAP_ROUTES` bearer-exempt.
 - **Snapshot quota pre-flight.** `putSnapshotFromFile`
   consults `navigator.storage.estimate()` and rejects with
   `SnapshotTooLargeError` if `file.size` exceeds half of
@@ -589,23 +621,24 @@ apply to it (RED is the audit's first finding).
   a *new* event with the new state, not an edit of a prior
   pair. Surviving HTTP surface (reads only, nine lifecycle
   + one value-history, wire DESC): per-entity
-  `GET <family>/:id/history` for ideas / projects /
-  record-types / flows / objectives / members /
-  work-orders (org-nested empty → foreign 403 / absent
-  404; members global 404), bulk `GET work-orders/history`
-  and `GET objectives/history` (always 200 arrays),
+  `GET <family>/:id/versions` for ideas / projects /
+  record-types / flows / objectives / members;
+  work-orders stay `/history` (org-nested empty →
+  foreign 403 / absent 404; members global 404), bulk
+  `GET work-orders/history` and `GET objectives/versions`
+  (always 200 arrays),
   work-order `field_values` folded **inline** on the WO
   history routes (no successor field-values GET), and
   instance value-revision history at
-  `GET .../record-types/:type/instances/:id/history`
+  `GET .../record-types/:type/instances/:id/versions`
   (`{at, etag, values}` DESC by current read ACL). Entity
   GET rows for ideas / projects / record-types /
   objectives / members embed the lifecycle trio.
   Lifecycle writes are document-trio PUTs
   (ideas/projects/record-types/flows/objectives/members)
   and named ops (work-order create/claim/transition/
-  release, invitations); instance values ride PUT
-  genesis / PATCH If-Match / DELETE tombstone — every
+  release, invitations); instance public PUT is 405;
+  values ride PATCH / DELETE tombstone — every
   verb on the retired shared event-append address and
   flat `/records` / `/record-attributes` is router 404;
   `stateEventCollisionFromPairs` is gone. The `states`
