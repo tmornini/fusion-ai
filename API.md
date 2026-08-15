@@ -1421,13 +1421,11 @@ All three pairs share ONE `requestAt` (the create's own
 origination) yet strictly-later response `at` stamps, so the
 document pair — appended AFTER the operation pair — becomes the
 entity address's head. A duplicate create (same work-order id)
-therefore records `Supersedes` on its OWN new document pair
-against the PRIOR document pair; the duplicate's own operation
-pair, reading that SAME shared address fresh at gate entry,
-supersedes that same prior document pair too (`work-orders` is
-`'simple'` concurrency, §5.4 — it chains via `Supersedes`, never
-`Follows`). Three pairs commit or none: a mid-transaction failure
-(a state-ledger collision, say) leaves zero of the three, exactly
+still appends; `(at, id)` reduction alone decides the new head
+(`work-orders` is `'simple'` concurrency, §5.4 — last-writer-wins,
+no `If-Match`, never 412s). Send-time **201** on append (§5.1).
+Three pairs commit or none: a mid-transaction failure (a
+state-ledger collision, say) leaves zero of the three, exactly
 like every other atomic write in this catalog.
 
 ### 3.18 `POST /work-orders/:id/claim` — claim
