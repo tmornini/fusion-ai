@@ -60,6 +60,25 @@ test('sixth authorize in a minute is 429', async () => {
     });
 });
 
+test('sixth authorize with a trailing slash is 429',
+async () => {
+    let handled = 0;
+    const handle: RequestHandler = async () => {
+        handled += 1;
+        return new Response('ok', { status: 200 });
+    };
+    await withServer(handle, async (base) => {
+        const url = base + '/authentication/authorize/';
+        for (let i = 0; i < 5; i++) {
+            const res = await fetch(url, { method: 'POST' });
+            assert.equal(res.status, 200);
+        }
+        const sixth = await fetch(url, { method: 'POST' });
+        assert.equal(sixth.status, HTTP_TOO_MANY_REQUESTS);
+        assert.equal(handled, 5);
+    });
+});
+
 test('spoofed X-Forwarded-For from a non-trusted hop is ignored',
 async () => {
     let handled = 0;

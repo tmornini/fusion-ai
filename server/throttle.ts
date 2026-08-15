@@ -5,16 +5,15 @@
 const AUTH_THROTTLE_LIMIT = 5;
 const AUTH_THROTTLE_WINDOW_MS = 60_000;
 
-const AUTH_PATHS: ReadonlySet<string> = new Set([
-    '/authentication/token',
-    '/authentication/authorize',
-]);
-
 const IPV4_MAPPED =
     /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i;
 
 export function isAuthThrottlePath(pathname: string): boolean {
-    return AUTH_PATHS.has(pathname);
+    const segments = pathname.split('/').filter(Boolean);
+    return segments.length === 2
+        && segments[0] === 'authentication'
+        && (segments[1] === 'token'
+            || segments[1] === 'authorize');
 }
 
 export type AuthThrottle = {
