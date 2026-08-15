@@ -427,10 +427,4 @@ test('every stored invitation-family message verifies against'
             row.message_hash,
         );
     }
-    for (const row of responses) {
-        assert.equal(
-            await requestMessageHash(row.message),
-            row.message_hash,
-        );
-    }
 });

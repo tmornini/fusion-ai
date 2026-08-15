@@ -61,9 +61,7 @@ const VALID_ROWS: Record<
         uri_collection: '/organizations/1/ideas/',
         uri_id: '42',
         at: '2026-01-01T00:00:00.000000Z',
-        status: 200,
         version: 'e'.repeat(64),
-        message_hash: 'b'.repeat(64),
         message: '{"kind":"response"}',
         operation_id: '0123456789ABCDEFGHIJKL',
     },
@@ -76,7 +74,7 @@ const BAD_OVERRIDE: Record<
     string, Record<string, unknown>
 > = {
     requests: { at: 'not-a-timestamp' },
-    responses: { status: 9999 },
+    responses: { version: 'not-a-digest' },
 };
 
 for (const [table, valid] of Object.entries(VALID_ROWS)) {

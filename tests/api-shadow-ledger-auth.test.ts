@@ -248,11 +248,6 @@ test('stored messages verify against their hashes', async () => {
             await requestMessageHash(row.message),
             row.message_hash);
     }
-    for (const row of await db.responses.getAll()) {
-        assert.equal(
-            await requestMessageHash(row.message),
-            row.message_hash);
-    }
 });
 
 test('a wrong password stores no NEW pair beyond the'

@@ -1033,14 +1033,14 @@ export interface RequestEntity {
 }
 
 // The paired response. id equals the request's id.
+// Only successful writes are stored — no status column.
+// Request `message_hash` remains; the response has none.
 export interface ResponseEntity {
     id: Id;
     uri_collection: string;
     uri_id: string;
     at: string;
-    status: number;
     version: string;
-    message_hash: string;
     message: string;
     operation_id: string;
 }

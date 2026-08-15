@@ -287,18 +287,15 @@ test('a seeded ai-member create pair sits at the global'
     const db = await sharedMockDb();
     const firstAiMember = buildAiMembers()[0]!;
     const requests = await db.requests.getAll();
-    const responseById = new Map(
-        (await db.responses.getAll()).map(r => [r.id, r]),
-    );
     // The operation pair shares its uri_id with its OWN detail-
     // document pair (ai-members/:id) and, since Phase 10 Task 6,
     // its OWN identities/:id document pair too — distinguish it
-    // by its OWN 204 response (the document pairs' being 200),
-    // the detail-document test's own precedent below (the
-    // H7/arrival-order hazard class).
+    // by POST (the document pairs are PUT), the detail-document
+    // test's own precedent below (the H7/arrival-order hazard
+    // class).
     const row = requests.find(
         r => r.uri_id === firstAiMember.id
-            && responseById.get(r.id)?.status === 204,
+            && r.method === 'POST',
     );
     assert.ok(row, 'no request row for the seeded ai member');
     assert.equal(row!.uri_collection, '/ai-members/');
@@ -336,17 +333,14 @@ test('a seeded ai-member\'s detail-document pair sits at its'
     const db = await sharedMockDb();
     const firstAiMember = buildAiMembers()[0]!;
     const requests = await db.requests.getAll();
-    const responseById = new Map(
-        (await db.responses.getAll()).map(r => [r.id, r]),
-    );
     // The detail-document pair shares its address with the
     // operation pair (the create-address-collapse precedent —
-    // ai-members' own createBodyIdField), so distinguish it by
-    // its OWN 200 response, the operation pair's being 204.
+    // ai-members' own createBodyIdField), so distinguish it
+    // by PUT, the operation pair being POST.
     const detailRow = requests.find(
         r => r.uri_id === firstAiMember.id
             && r.uri_collection === '/ai-members/'
-            && responseById.get(r.id)?.status === 200,
+            && r.method === 'PUT',
     );
     assert.ok(
         detailRow,
@@ -450,18 +444,15 @@ test('a seeded record\'s document pair sits at its'
 + ' state trio (no id or organization_id key)', async () => {
     const db = await sharedMockDb();
     const requests = await db.requests.getAll();
-    const responseById = new Map(
-        (await db.responses.getAll()).map(r => [r.id, r]),
-    );
     // The document pair shares its address with the operation
     // pair (records' createBodyIdField collapses both onto the
-    // SAME uri_id) — distinguish it by its OWN 200 response, the
-    // operation pair's being 204.
+    // SAME uri_id) — distinguish it by PUT, the operation
+    // pair being POST.
     const documentRow = requests.find(
         r => r.uri_id === customerProfileRecordId
             && r.uri_collection
                 === '/organizations/1/record-types/'
-            && responseById.get(r.id)?.status === 200,
+            && r.method === 'PUT',
     );
     assert.ok(
         documentRow, 'no document pair for the seeded record',
@@ -550,19 +541,16 @@ test('a seeded objective\'s document pair sits at its'
     const db = await sharedMockDb();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
     const requests = await db.requests.getAll();
-    const responseById = new Map(
-        (await db.responses.getAll()).map(r => [r.id, r]),
-    );
     // The document pair shares its address with the operation
     // pair (objectives' createBodyIdField collapses both onto
-    // the SAME uri_id) — distinguish it by its OWN 200
-    // response, the operation pair's being 204.
+    // the SAME uri_id) — distinguish it by PUT, the
+    // operation pair being POST.
     const documentRow = requests.find(
         r => r.uri_id === starkSeed.id
             && r.uri_collection
                 === `/organizations/${STARK_ORGANIZATION}`
                     + '/objectives/'
-            && responseById.get(r.id)?.status === 200,
+            && r.method === 'PUT',
     );
     assert.ok(
         documentRow, 'no document pair for the seeded objective',
@@ -925,9 +913,6 @@ async () => {
     // author against the revision document pair body.
     const db = await sharedMockDb();
     const requests = await db.requests.getAll();
-    const responseById = new Map(
-        (await db.responses.getAll()).map(r => [r.id, r]),
-    );
     for (const starkSeed of OBJECTIVE_SEEDS) {
         const revisionId =
             `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`;
@@ -944,13 +929,12 @@ async () => {
         ) as { body: { member_id: string } };
         // The operation pair alone embeds the full create body
         // (its own `revision` sub-object) — the document pair
-        // now sharing this address carries `{position}` only, so
-        // select by the operation's OWN 204 response (the
-        // document pair's being 200), never a positional first
-        // match (the H7/arrival-order hazard class).
+        // now sharing this address carries `{position}` only,
+        // so select by POST, never a positional first match
+        // (the H7/arrival-order hazard class).
         const row = requests.find(
             r => r.uri_id === starkSeed.id
-                && responseById.get(r.id)?.status === 204,
+                && r.method === 'POST',
         );
         assert.ok(row, 'no request row for ' + starkSeed.id);
         const embedded = pairJsonOf(row!.message) as {
@@ -1013,12 +997,6 @@ test('seeded memberships carry type and no role-grant'
 test('seed pairs verify against their hashes', async () => {
     const db = await sharedMockDb();
     for (const row of await db.requests.getAll()) {
-        assert.equal(
-            await requestMessageHash(row.message),
-            row.message_hash,
-        );
-    }
-    for (const row of await db.responses.getAll()) {
         assert.equal(
             await requestMessageHash(row.message),
             row.message_hash,
@@ -1105,12 +1083,6 @@ test('a bootstrap seed populates exactly twelve balanced,'
     );
     assert.equal(atOrganization.length, 1);
     for (const row of requests) {
-        assert.equal(
-            await requestMessageHash(row.message),
-            row.message_hash,
-        );
-    }
-    for (const row of responses) {
         assert.equal(
             await requestMessageHash(row.message),
             row.message_hash,

@@ -959,10 +959,9 @@ export function operationPairsAt(
     );
     const pairs: OperationPair[] = [];
     for (const response of responses) {
-        if (
-            response.uri_collection !== uriCollection
-            || response.status < 200 || response.status > 299
-        ) continue;
+        if (response.uri_collection !== uriCollection) {
+            continue;
+        }
         const request = requestById.get(response.id);
         if (request === undefined) continue;
         const decoded = decodeRequestOperation(request.message);

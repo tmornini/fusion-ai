@@ -2275,9 +2275,10 @@ export function validateActualScoreEntity(
 
 // The two message-plane ledgers (Phase 0 of the
 // message-as-state migration): one row per stored HTTP
-// request/response. `message_hash` is the sha256 digest
-// (`shared/digest.ts` sha256Hex) of `message`, hex-encoded
-// lowercase.
+// request/response. Request `message_hash` is the sha256
+// digest (`shared/digest.ts` sha256Hex) of `message`,
+// hex-encoded lowercase. The response row has no hash
+// column and no status column.
 const MESSAGE_HASH = /^[0-9a-f]{64}$/;
 
 const HTTP_METHOD = /^[A-Z]+$/;
@@ -2338,8 +2339,8 @@ export function validateRequestEntity(
 }
 
 const RESPONSE_BODY_KEYS: readonly string[] = [
-    'uri_collection', 'uri_id', 'at', 'status', 'version',
-    'message_hash', 'message', 'operation_id',
+    'uri_collection', 'uri_id', 'at', 'version',
+    'message', 'operation_id',
 ];
 
 export function validateResponseEntity(
@@ -2352,23 +2353,6 @@ export function validateResponseEntity(
     if (!uriCollection.endsWith('/')) {
         throw new ValidationError(
             'ResponseEntity.uri_collection must end with "/"',
-        );
-    }
-    const status = pickNumber(body, 'status');
-    if (
-        !Number.isInteger(status)
-        || status < 100 || status > 599
-    ) {
-        throw new ValidationError(
-            'ResponseEntity.status must be an integer in'
-            + ' 100..599',
-        );
-    }
-    const messageHash = pickString(body, 'message_hash');
-    if (!MESSAGE_HASH.test(messageHash)) {
-        throw new ValidationError(
-            'ResponseEntity.message_hash must be a 64-'
-            + 'character lowercase hex sha256 digest',
         );
     }
     const version = pickString(body, 'version');
@@ -2392,9 +2376,7 @@ export function validateResponseEntity(
         uri_collection: uriCollection,
         uri_id: pickString(body, 'uri_id'),
         at,
-        status,
         version,
-        message_hash: messageHash,
         message: pickString(body, 'message'),
         operation_id: operationId,
     };

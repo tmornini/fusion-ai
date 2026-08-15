@@ -278,11 +278,7 @@ async () => {
     assert.equal(attrRow.record_type_id, TYPE_ID);
     assert.equal(attrRow.name, 'Priority');
 
-    const responses = await db.responses.getAll();
     const requests = await db.requests.getAll();
-    const responseById = new Map(
-        responses.map(r => [r.id, r]),
-    );
     const typePrefix =
         '/organizations/' + ORGANIZATION
         + '/record-types/';
@@ -292,21 +288,21 @@ async () => {
     const opPair = requests.find(
         r => r.uri_id === TYPE_ID
             && r.uri_collection === typePrefix
-            && responseById.get(r.id)?.status === 204,
+            && r.method === 'POST',
     );
     assert.ok(opPair, 'operation pair missing');
 
     const documentPair = requests.find(
         r => r.uri_id === TYPE_ID
             && r.uri_collection === typePrefix
-            && responseById.get(r.id)?.status === 200,
+            && r.method === 'PUT',
     );
     assert.ok(documentPair, 'document pair missing');
 
     const attrPair = requests.find(
         r => r.uri_id === ATTR_ID
             && r.uri_collection === attrPrefix
-            && responseById.get(r.id)?.status === 200,
+            && r.method === 'PUT',
     );
     assert.ok(attrPair, 'attribute pair missing');
 });

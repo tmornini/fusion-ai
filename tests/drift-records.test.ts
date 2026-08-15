@@ -1305,11 +1305,7 @@ async function transitionFieldValueCounts(
     );
     const counts = new Map<string, number>();
     for (const response of responses) {
-        if (
-            response.uri_collection !== prefix
-            || response.status < 200
-            || response.status > 299
-        ) continue;
+        if (response.uri_collection !== prefix) continue;
         const request = requestById.get(response.id);
         if (request === undefined) continue;
         const decoded = decodeRequestMessage(request.message);

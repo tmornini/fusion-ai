@@ -586,9 +586,7 @@ export async function putMessagePair(
         uri_collection: pair.uriCollection,
         uri_id: pair.uriId,
         at: nowUtc(),
-        status: pair.responseStatus,
         version: pair.responseEtag,
-        message_hash: pair.responseHash,
         message: pair.responseMessage,
         operation_id: pair.operationId,
     });

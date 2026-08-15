@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 288 486" width="288" height="486">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 288 450" width="288" height="450">
   <defs>
     <style>
       text { font-family: ui-sans-serif, system-ui,
@@ -19,7 +19,7 @@
         stroke-width: 1.5; }
     </style>
   </defs>
-  <rect x="0" y="0" width="288" height="486" fill="hsl(217 30% 97%)" />
+  <rect x="0" y="0" width="288" height="450" fill="hsl(217 30% 97%)" />
   <g class="table">
     <rect class="box" x="40" y="40" width="208" height="188" rx="6" />
     <rect class="head" x="40" y="40" width="208" height="26" rx="6" />
@@ -44,7 +44,7 @@
     <text class="type" x="238" y="223">text</text>
   </g>
   <g class="table">
-    <rect class="box" x="40" y="258" width="208" height="188" rx="6" />
+    <rect class="box" x="40" y="258" width="208" height="152" rx="6" />
     <rect class="head" x="40" y="258" width="208" height="26" rx="6" />
     <text class="thead" x="50" y="276">responses</text>
     <text class="pk" x="50" y="297">id</text>
@@ -55,15 +55,11 @@
     <text class="type" x="238" y="333">text</text>
     <text class="col" x="50" y="351">at</text>
     <text class="type" x="238" y="351">text</text>
-    <text class="col" x="50" y="369">status</text>
-    <text class="type" x="238" y="369">num</text>
-    <text class="col" x="50" y="387">version</text>
+    <text class="col" x="50" y="369">version</text>
+    <text class="type" x="238" y="369">text</text>
+    <text class="col" x="50" y="387">message</text>
     <text class="type" x="238" y="387">text</text>
-    <text class="col" x="50" y="405">message_hash</text>
+    <text class="col" x="50" y="405">operation_id</text>
     <text class="type" x="238" y="405">text</text>
-    <text class="col" x="50" y="423">message</text>
-    <text class="type" x="238" y="423">text</text>
-    <text class="col" x="50" y="441">operation_id</text>
-    <text class="type" x="238" y="441">text</text>
   </g>
 </svg>

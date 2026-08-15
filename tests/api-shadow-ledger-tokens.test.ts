@@ -351,12 +351,6 @@ async () => {
             row.message_hash,
         );
     }
-    for (const row of await db.responses.getAll()) {
-        assert.equal(
-            await requestMessageHash(row.message),
-            row.message_hash,
-        );
-    }
 });
 
 test('request and response counts stay equal across a mix'

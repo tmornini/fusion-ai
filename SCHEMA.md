@@ -19,8 +19,8 @@ localStorage simulated backend keys the same tables as
 `fusion-ai:tableName`; memory uses an in-process Map of
 bare table names. All rows have a text `id` primary key.
 Column types match
-`RequestEntity` / `ResponseEntity`: TEXT (string) and
-INTEGER (`status`). `method` and `operation_id` are TEXT
+`RequestEntity` / `ResponseEntity`: TEXT (string).
+`method` and `operation_id` are TEXT
 on the request row; `operation_id` is TEXT on the
 response row (same value as the request). Document-body
 composites (arrays and
@@ -168,9 +168,7 @@ UUID per pair, never a foreign key of its own).
 | uri_collection | TEXT | Collection URI, trailing `/` kept |
 | uri_id | TEXT | Resource id, or `''` for a collection |
 | at | TEXT | RFC-3339 Zulu — envelope metadata |
-| status | INTEGER | HTTP status, 100..599 |
 | version | TEXT | 64-hex `documentVersion` of body octets |
-| message_hash | TEXT | sha256 hex digest of `message` |
 | message | TEXT | The stored HTTP message (`serializeWire`) |
 | operation_id | TEXT | 22-char id. Same value as the request |
 
