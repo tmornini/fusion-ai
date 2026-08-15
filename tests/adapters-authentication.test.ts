@@ -27,6 +27,8 @@ import {
     seedIdentityPii,
 } from './identity-fixtures.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import { sha256Bytes } from '../shared/digest.ts';
+import { bytesToBase64Url } from '../shared/base64url.ts';
 
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 
@@ -155,4 +157,35 @@ async () => {
     await assert.rejects(
         () => postPasswordLogin(ctx, 'a@b.c', 'pw'),
         /upstream 500/);
+});
+
+test('postPasswordLogin sends S256 challenge and verifier',
+async () => {
+    const posted: Record<string, unknown>[] = [];
+    const ctx = {
+        POST: async (_path: string, body: unknown) => {
+            posted.push(body as Record<string, unknown>);
+            if (posted.length === 1) {
+                return { code: 'issued-code' };
+            }
+            return {
+                access_token: 'a',
+                refresh_token: 'r',
+            };
+        },
+    } as unknown as RequestContext;
+    await postPasswordLogin(ctx, 'a@b.c', 'pw');
+    const authorizeBody = posted[0]!;
+    const tokenBody = posted[1]!;
+    assert.equal(
+        authorizeBody.code_challenge_method, 'S256');
+    assert.equal(typeof tokenBody.code_verifier, 'string');
+    assert.equal(
+        authorizeBody.code_challenge,
+        bytesToBase64Url(
+            await sha256Bytes(
+                tokenBody.code_verifier as string,
+            ),
+        ),
+    );
 });

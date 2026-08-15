@@ -1,4 +1,4 @@
-import { test } from 'node:test';
+import { test, afterEach } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -15,8 +15,15 @@ import {
 import {
     MS_PER_SECOND, setClockForTest, resetClock,
 } from '../api/types.ts';
+import { setServerTier } from '../api/request-auth.ts';
+import { sha256Bytes } from '../shared/digest.ts';
+import { bytesToBase64Url } from '../shared/base64url.ts';
 
 const BASE = 'http://localhost';
+
+afterEach(() => {
+    setServerTier(false);
+});
 
 function jsonPost(path: string, body: unknown): Request {
     return new Request(`${BASE}/${path}`, {
@@ -179,4 +186,41 @@ test('an unknown authorize method is a 400', async () => {
         method: 'telepathy',
     }));
     assert.equal(res.status, 400);
+});
+
+// Server ZIP: authorize without S256 is a request fault
+// (400), grant-first — no code, no stored pair. Browser
+// ZIP (flag off) keeps the soft path. Reset is afterEach.
+test('server-tier authorize without S256 is rejected',
+async () => {
+    setServerTier(true);
+    const db = await dbWithPasswordUser();
+    const res = await handleRequest(db, authorize({
+        method: 'password', username: 'demo@example.com',
+        password: 's3cret', client_id: 'web',
+    }));
+    assert.equal(res.status, 400);
+    assert.deepEqual(
+        await res.json(),
+        { error: 'S256 code_challenge is required' },
+    );
+    assert.ok(await noStoredAuthorizeResponse(db));
+});
+
+test('server-tier authorize with S256 issues a code',
+async () => {
+    setServerTier(true);
+    const db = await dbWithPasswordUser();
+    const verifier = 'pkce-verifier-server-tier';
+    const res = await handleRequest(db, authorize({
+        method: 'password', username: 'demo@example.com',
+        password: 's3cret', client_id: 'web',
+        code_challenge: bytesToBase64Url(
+            await sha256Bytes(verifier),
+        ),
+        code_challenge_method: 'S256',
+    }));
+    assert.equal(res.status, 201);
+    const { code } = await res.json() as { code: string };
+    assert.ok(code.length > 0);
 });
