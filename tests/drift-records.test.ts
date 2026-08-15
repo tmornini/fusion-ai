@@ -383,9 +383,9 @@ test('seeded GET nested record-types wire equals derived'
     // Phase Final Stage B: records table retired.
 });
 
-// -- 2. foreign-org GET 403 on wire + derive ---------------------
+// -- 2. foreign-org GET 404 on wire + derive ---------------------
 
-test('a foreign-org GET 403s on wire and on derive, for'
+test('a foreign-org GET 404s on wire and on derive, for'
 + ' records, record-attributes, and flow_records',
 async () => {
     const db = await seededDb();
@@ -393,12 +393,11 @@ async () => {
         'current', ORGANIZATION_TWO,
     );
 
-    // Nested path org = token org (TWO); foreign id is
-    // STARK-owned — ownership fence 403, not path mismatch.
+    // Nested path org = token org (TWO); foreign id was
+    // never written at this address → 404.
     const expectedRecordMessage =
-        'forbidden: record_types/'
-        + customerProfileRecordId
-        + ' belongs to a different organization';
+        'Not found: record_types/'
+        + customerProfileRecordId;
     const recRes = await handleRequest(
         db,
         req(
@@ -409,7 +408,7 @@ async () => {
             tokenTwo,
         ),
     );
-    assert.equal(recRes.status, 403);
+    assert.equal(recRes.status, 404);
     const recBody = await recRes.json() as { error: string };
     assert.equal(recBody.error, expectedRecordMessage);
     await assert.rejects(
@@ -417,17 +416,16 @@ async () => {
             db, ORGANIZATION_TWO, customerProfileRecordId,
         ),
         (err: unknown) =>
-            err instanceof ForeignOrganizationError
+            err instanceof EntityNotFoundError
             && err.message === expectedRecordMessage,
     );
 
     const attributeId = '5JZ0LeKdPCa4QMtg1RsF1M';
-    // Nested GET probes the parent type first — foreign type
-    // under own path org → record_types ownership 403.
+    // Nested GET probes the parent type first — miss at
+    // this org's record-types address → 404.
     const expectedTypeMessage =
-        'forbidden: record_types/'
-        + customerProfileRecordId
-        + ' belongs to a different organization';
+        'Not found: record_types/'
+        + customerProfileRecordId;
     const attrRes = await handleRequest(
         db,
         req(
@@ -439,26 +437,24 @@ async () => {
             tokenTwo,
         ),
     );
-    assert.equal(attrRes.status, 403);
+    assert.equal(attrRes.status, 404);
     const attrBody = await attrRes.json() as { error: string };
     assert.equal(attrBody.error, expectedTypeMessage);
     const expectedAttributeMessage =
-        'forbidden: record_attributes/' + attributeId
-        + ' belongs to a different organization';
+        'Not found: record_attributes/' + attributeId;
     await assert.rejects(
         () => derivedRecordAttribute(
             db, ORGANIZATION_TWO, attributeId,
         ),
         (err: unknown) =>
-            err instanceof ForeignOrganizationError
+            err instanceof EntityNotFoundError
             && err.message === expectedAttributeMessage,
     );
 
     const joinId = 'frb01CustOnbCustProfA1';
     const flowId = 'h5mErVBQhwdMKwi1co30jB';
     const expectedJoinMessage =
-        'forbidden: flow_records/' + joinId
-        + ' belongs to a different organization';
+        'Not found: flow_records/' + joinId;
     const joinRes = await handleRequest(
         db,
         req(
@@ -467,7 +463,7 @@ async () => {
             tokenTwo,
         ),
     );
-    assert.equal(joinRes.status, 403);
+    assert.equal(joinRes.status, 404);
     const joinBody = await joinRes.json() as { error: string };
     assert.equal(joinBody.error, expectedJoinMessage);
     await assert.rejects(
@@ -475,7 +471,7 @@ async () => {
             db, ORGANIZATION_TWO, flowId, joinId,
         ),
         (err: unknown) =>
-            err instanceof ForeignOrganizationError
+            err instanceof EntityNotFoundError
             && err.message === expectedJoinMessage,
     );
 });

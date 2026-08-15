@@ -457,8 +457,8 @@ test('case 2: GET <family>/:id/history parity — one entity'
 // retired with the address — the own/foreign/deleted legs
 // ride document trios.
 test('case 3: the fence\'s legs — own-org history visible,'
-+ ' foreign history 403 (the leak case), and a DELETED'
-+ ' foreign entity stays fenced (tombstone-immune owner)',
++ ' foreign history 404 (miss at this address), and a'
++ ' DELETED foreign entity still names its owner',
 async () => {
     const db = await seededDb();
     const tokenStark = await organizationToken(
@@ -483,7 +483,7 @@ async () => {
 
     // The DELETED-entity leg: org 2 tombstones its OWN idea —
     // pair plane is IMMUNE to deleted filter, so owner still
-    // resolves and STARK stays 403 on history.
+    // resolves. STARK history is a miss at this address.
     const foreignDeleted = await handleRequest(db, req(
         'PUT', '/ideas/' + foreignIdeaId, tokenOrg2,
         ideaDocument(
@@ -505,14 +505,14 @@ async () => {
         ownWire.some((r) => r.id === ownIdeaId + '-genesis'),
     );
 
-    // Foreign history from STARK → 403; owner still org 2
+    // Foreign history from STARK → 404; owner still org 2
     // after tombstone.
     const foreignRes = await handleRequest(db, req(
         'GET',
         '/ideas/' + foreignIdeaId + '/history',
         tokenStark,
     ));
-    assert.equal(foreignRes.status, 403);
+    assert.equal(foreignRes.status, 404);
     assert.equal(
         await resolveOwningOrganization(
             db, foreignIdeaId, STARK_ORGANIZATION,
@@ -539,11 +539,11 @@ async () => {
         ),
     );
 
-    // STARK idea absent from org 2 history read (403).
+    // STARK idea absent from org 2 history read (404).
     const ownFromOrg2 = await handleRequest(db, req(
         'GET', '/ideas/' + ownIdeaId + '/history', tokenOrg2,
     ));
-    assert.equal(ownFromOrg2.status, 403);
+    assert.equal(ownFromOrg2.status, 404);
 });
 
 // ---- case 4: the WO lifecycle legs (Task 4) ---------------------

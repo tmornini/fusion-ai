@@ -235,7 +235,7 @@ async () => {
     assert.equal(put.status, 403);
 });
 
-test('PUT foreign type id under own org path → 403 '
+test('PUT foreign type id under own org path geneses '
 + '(write authorizer)',
 async () => {
     const { db, adminToken } = await adminDb();
@@ -252,12 +252,13 @@ async () => {
             'Stolen', 0, 'active', AT, 'rt-stolen-g',
         ),
     ));
-    assert.equal(put.status, 403);
-    assert.deepEqual(await put.json(), {
-        error:
-            'forbidden: record_types/rt-foreign'
-            + ' belongs to a different organization',
-    });
+    assert.equal(put.status, 200);
+    const got = await handleRequest(db, req(
+        'GET', DETAIL + 'rt-foreign', adminToken,
+    ));
+    assert.equal(got.status, 200);
+    const wire = await got.json() as { name: string };
+    assert.equal(wire.name, 'Stolen');
 });
 
 test('DELETE unreferenced type, admin → 204; detail 404; '

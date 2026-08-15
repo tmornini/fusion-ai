@@ -330,12 +330,12 @@ export function uniqueColumns(
 export const TABLE_INDEXES:
     Record<string, readonly TableIndexSpec[]> = {
     requests: [
-        'uri_collection', 'uri_id', 'message_hash',
+        'uri_collection', 'message_hash',
         'operation_id',
     ],
     responses: [
         'uri_collection',
-        'uri_id',
         'operation_id',
+        'version',
     ],
 };

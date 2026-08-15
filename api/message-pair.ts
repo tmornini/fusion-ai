@@ -354,10 +354,11 @@ export async function headPairIdAt(
     uriCollection: string,
     uriId: string,
 ): Promise<string | undefined> {
-    const rows = await db.responses
-        .getAllWhere('uri_id', uriId);
+    const rows = await db.responses.getAllWhere(
+        'uri_collection', uriCollection,
+    );
     const atAddress = rows.filter(
-        (row) => row.uri_collection === uriCollection,
+        (row) => row.uri_id === uriId,
     );
     return latestByKey(atAddress, () => 'head')
         .get('head')?.id;

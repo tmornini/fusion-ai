@@ -498,7 +498,7 @@ async () => {
     });
 });
 
-test('history foreign instance id → 403 via '
+test('history foreign instance id → 404 via '
 + 'missedReadError (R2)',
 async () => {
     const { db, adminToken, memberToken } =
@@ -520,11 +520,10 @@ async () => {
     const res = await handleRequest(db, req(
         'GET', INSTANCE_HISTORY, memberToken,
     ));
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     assert.deepEqual(await res.json(), {
         error:
-            'forbidden: record_instances/' + INSTANCE_ID
-            + ' belongs to a different organization',
+            'Not found: record_instances/' + INSTANCE_ID,
     });
 });
 

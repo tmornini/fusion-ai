@@ -597,6 +597,7 @@ export async function handleRequest(
                     adapter,
                     organizationId,
                     fenced.organization,
+                    'organizations',
                 );
                 if (owner !== null) {
                     return Response.json(

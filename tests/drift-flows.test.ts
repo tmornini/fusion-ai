@@ -4,7 +4,6 @@ import type { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import {
     EntityNotFoundError,
-    ForeignOrganizationError,
 } from '../api/db.ts';
 import type {
     FlowWithGraph,
@@ -382,9 +381,9 @@ async () => {
     }
 });
 
-// -- 3. foreign-org id 403 on GET and derive --------------------
+// -- 3. foreign-org id 404 on GET and derive --------------------
 
-test('a foreign-org flow id 403s on GET and on derive',
+test('a foreign-org flow id 404s on GET and on derive',
 async () => {
     const db = await seededDb();
     const foreign = SEEDED_FLOWS.find(
@@ -393,7 +392,7 @@ async () => {
     const otherOrganization = '2';
     await assert.rejects(
         () => deriveFlow(db, otherOrganization, foreign.id),
-        ForeignOrganizationError,
+        EntityNotFoundError,
     );
     const token = await organizationToken(
         'current', otherOrganization,
@@ -401,12 +400,11 @@ async () => {
     const res = await handleRequest(
         db, req('GET', '/flows/' + foreign.id, token),
     );
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
     assert.equal(
         body.error,
-        'forbidden: flows/' + foreign.id
-        + ' belongs to a different organization',
+        'Not found: flows/' + foreign.id,
     );
 });
 

@@ -78,12 +78,6 @@ const ORGANIZATION_NESTED_ENTITY_FAMILIES = [
     'work-orders', 'record-types', 'objectives',
 ] as const;
 
-const ORGANIZATION_NESTED_FAMILY_ADDRESS_PATTERN = new RegExp(
-    '^/organizations/([^/]+)/('
-    + ORGANIZATION_NESTED_ENTITY_FAMILIES.join('|')
-    + ')/$',
-);
-
 const INVITATIONS_PREFIX =
     canonicalUriCollection(undefined, '/invitations/');
 
@@ -271,26 +265,39 @@ async function computeOwningOrganization(
     entityId: Id,
     boundOrganization: Id,
 ): Promise<Id | null> {
-    // (a) org-nested document families + (e) organizations
-    // self-as-owner: a targeted uri_id index read (mirrors
-    // message-pair.ts's own headPairIdAt) rather than a full-
-    // ledger scan — an entity id is globally unique
-    // (generateCryptoSafeBase62), so at most one distinct
-    // document prefix can ever match.
-    const responseHits =
-        await db.responses.getAllWhere('uri_id', entityId);
-    for (const response of responseHits) {
-        if (
-            response.uri_collection
-                === ORGANIZATIONS_ADDRESS_PREFIX
+    // (e) organizations self-as-owner: the document id IS
+    // the owning organization. Collection read, then filter
+    // uri_id in JS — no uri_id-only index.
+    const organizationRows = await db.responses.getAllWhere(
+        'uri_collection', ORGANIZATIONS_ADDRESS_PREFIX,
+    );
+    if (organizationRows.some((row) => row.uri_id === entityId)) {
+        return entityId;
+    }
+
+    // (a) org-nested document families: probe each known
+    // organization's family collection. Same id at two
+    // collections is two documents; this walk still answers
+    // "who owns this id anywhere" for visibility.
+    const organizations = await organizationIds(db);
+    const ordered = [
+        boundOrganization,
+        ...organizations.filter((o) => o !== boundOrganization),
+    ];
+    for (const organization of ordered) {
+        for (
+            const family of ORGANIZATION_NESTED_ENTITY_FAMILIES
         ) {
-            // (e) organizations self-as-owner: the document
-            // id IS the owning organization.
-            return entityId;
+            const prefix = canonicalUriCollection(
+                organization, '/' + family + '/',
+            );
+            const rows = await db.responses.getAllWhere(
+                'uri_collection', prefix,
+            );
+            if (rows.some((row) => row.uri_id === entityId)) {
+                return organization;
+            }
         }
-        const match = ORGANIZATION_NESTED_FAMILY_ADDRESS_PATTERN
-            .exec(response.uri_collection);
-        if (match !== null) return match[1]!;
     }
 
     // (c) invitations: flat address, org lives in the body.
@@ -347,21 +354,10 @@ export async function resolveOwningOrganization(
     return owner;
 }
 
-// Global-existence probe for the 403-vs-404 ownership
-// covenant. Unfiltered uri_id index hit across every org +
-// resolveOwningOrganization fallback (boundOrganization is a
-// cheap-path hint, not a filter). Covers three families the
-// narrower resolveOwningOrganization allowlist omits:
-// memberships, record-attributes, role-grants. Future 403-vs-
-// 404 decisions route through this, not the narrower resolver
-// alone.
-//
-// Prefers a direct uri_id hit (covers memberships + record-
-// attributes, which resolveOwningOrganization's states.entity_id
-// alphabet does not list, and role-grants' flat prefix whose org
-// lives in the response body). Falls back to
-// resolveOwningOrganization for the nested document families
-// already in that alphabet (ideas/projects/flows/...).
+// Address-scoped 403-vs-404 probe. Same id at two
+// collections is two documents. Miss at THIS address is
+// 404. 403 only when this address has a live PUT the
+// caller may not have.
 const ROLE_GRANTS_URI_PREFIX =
     canonicalUriCollection(undefined, '/role-grants/');
 
@@ -369,6 +365,44 @@ const ROLE_GRANTS_URI_PREFIX =
 // /organizations/{id}/...
 const ORGANIZATION_NESTED_URI_PREFIX =
     /^\/organizations\/([^/]+)\//;
+
+// Table → family path segment for the address-scoped
+// owner probe. Nested children (flow tags/records,
+// attributes, instances) probe the parent family at
+// this organization.
+const OWNER_PROBE_FAMILY: Record<string, string> = {
+    ideas: 'ideas',
+    projects: 'projects',
+    flows: 'flows',
+    work_orders: 'work-orders',
+    record_types: 'record-types',
+    record_attributes: 'record-types',
+    record_instances: 'record-types',
+    objectives: 'objectives',
+    memberships: 'memberships',
+    flow_records: 'flows',
+    flow_tags: 'flows',
+};
+
+function ownerProbeCollection(
+    organization: Id,
+    table: string,
+): string | undefined {
+    if (table === 'organizations') {
+        return ORGANIZATIONS_ADDRESS_PREFIX;
+    }
+    if (table === 'invitations') {
+        return INVITATIONS_PREFIX;
+    }
+    if (table === 'role_grants') {
+        return ROLE_GRANTS_URI_PREFIX;
+    }
+    const family = OWNER_PROBE_FAMILY[table];
+    if (family === undefined) return undefined;
+    return canonicalUriCollection(
+        organization, '/' + family + '/',
+    );
+}
 
 function responseBodyOf(
     message: string,
@@ -380,38 +414,69 @@ function responseBodyOf(
         : {};
 }
 
+function ownerFromAddress(
+    uriCollection: string,
+    uriId: Id,
+    message: string,
+): Id | null {
+    if (uriCollection === ORGANIZATIONS_ADDRESS_PREFIX) {
+        return uriId;
+    }
+    const nested = ORGANIZATION_NESTED_URI_PREFIX.exec(
+        uriCollection,
+    );
+    if (nested !== null) return nested[1]!;
+    if (
+        uriCollection === ROLE_GRANTS_URI_PREFIX
+        || uriCollection === INVITATIONS_PREFIX
+    ) {
+        const body = responseBodyOf(message);
+        const organizationId = body['organization_id'];
+        if (typeof organizationId === 'string') {
+            return organizationId;
+        }
+    }
+    return null;
+}
+
 export async function resolveGlobalOwner(
     db: DbAdapter,
     entityId: Id,
     boundOrganization: Id,
+    table?: string,
 ): Promise<Id | null> {
-    const hits = await db.responses.getAllWhere(
-        'uri_id', entityId,
-    );
-    for (const response of hits) {
-        const nested = ORGANIZATION_NESTED_URI_PREFIX.exec(
-            response.uri_collection,
+    const collection = table === undefined
+        ? undefined
+        : ownerProbeCollection(boundOrganization, table);
+    if (collection !== undefined) {
+        const hits = await db.responses.getAllWhere(
+            'uri_collection', collection,
         );
-        if (nested !== null) return nested[1]!;
-        if (response.uri_collection === ROLE_GRANTS_URI_PREFIX) {
-            const body = responseBodyOf(response.message);
-            const organizationId = body['organization_id'];
-            if (typeof organizationId === 'string') {
-                return organizationId;
-            }
+        const atAddress = hits.filter(
+            (row) => row.uri_id === entityId,
+        );
+        if (atAddress.length === 0) return null;
+        for (const response of atAddress) {
+            const owner = ownerFromAddress(
+                response.uri_collection,
+                entityId,
+                response.message,
+            );
+            if (owner !== null) return owner;
         }
+        return boundOrganization;
     }
     return resolveOwningOrganization(
         db, entityId, boundOrganization,
     );
 }
 
-// Miss-path 403-vs-404 helper for org-scoped reads. Probe runs
-// ONLY on the org-scoped miss/deny path (never the happy path).
+// Miss-path 403-vs-404 helper for org-scoped reads. Probe
+// THIS route's collection, not any row with this id.
 // owner-null → EntityNotFoundError (404); foreign →
-// ForeignOrganizationError (403). probeId defaults to id; pass
-// a parent id when the miss is on a nested child (e.g. flow
-// records probe the parent flow).
+// ForeignOrganizationError (403). probeId defaults to id;
+// pass a parent id when the miss is on a nested child
+// (e.g. flow records probe the parent flow).
 export async function missedReadError(
     db: DbAdapter,
     id: Id,
@@ -420,7 +485,7 @@ export async function missedReadError(
     probeId: Id = id,
 ): Promise<EntityNotFoundError | ForeignOrganizationError> {
     const owner = await resolveGlobalOwner(
-        db, probeId, organization,
+        db, probeId, organization, table,
     );
     if (owner !== null && owner !== organization) {
         return new ForeignOrganizationError(table, id);
@@ -1379,11 +1444,10 @@ export async function deriveWorkOrderHistories(
 // known (organization, workOrderId) pair, rather than the
 // whole-org scan the multi-work-order reader needs to discover
 // EVERY id at once —
-//   * create + document pairs: uri_id (both a create's response
-//     and its later document PUT/DELETE share ONE uriId at the
-//     work-orders collection address — the SAME finding
-//     drift-work-orders.test.ts case 8 pins), filtered to the
-//     collection prefix;
+//   * create + document pairs: uri_collection at the
+//     work-orders prefix, filtered to this workOrderId (both
+//     a create's response and its later document PUT/DELETE
+//     share ONE uriId — drift-work-orders.test.ts case 8);
 //   * claim/release/transition: uri_collection at each sub-
 //     resource's own per-id address (WORK_ORDER_CLAIM_PATTERN/
 //     WORK_ORDER_RELEASE_PATTERN/
@@ -1411,15 +1475,20 @@ async function workOrderClaimSourcesFor(
     const collectionPrefix = canonicalUriCollection(
         organization, '/work-orders/',
     );
-    const [byIdRequests, byIdResponses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_id', workOrderId),
-        dbOrView.responses.getAllWhere('uri_id', workOrderId),
-    ]);
-    const collectionRequests = byIdRequests.filter(
-        (r) => r.uri_collection === collectionPrefix,
+    const [byCollectionRequests, byCollectionResponses] =
+        await Promise.all([
+            dbOrView.requests.getAllWhere(
+                'uri_collection', collectionPrefix,
+            ),
+            dbOrView.responses.getAllWhere(
+                'uri_collection', collectionPrefix,
+            ),
+        ]);
+    const collectionRequests = byCollectionRequests.filter(
+        (r) => r.uri_id === workOrderId,
     );
-    const collectionResponses = byIdResponses.filter(
-        (r) => r.uri_collection === collectionPrefix,
+    const collectionResponses = byCollectionResponses.filter(
+        (r) => r.uri_id === workOrderId,
     );
     const createPairs = operationPairsAt(
         collectionRequests, collectionResponses, collectionPrefix,
@@ -1621,7 +1690,7 @@ function historyEventsWithFieldValues(
 // Head-reduction per field-value row id matches
 // stateFieldValuesFrom (api/derive-state-field-values.ts);
 // claim/birth/release rows carry field_values: []. Empty
-// lifecycle → missedReadError (403 foreign / 404 absent).
+// lifecycle → missedReadError (404 miss at this address).
 // Entity-scoped indexed reads only — no whole-plane getAll.
 export async function workOrderHistoryFor(
     db: DbAdapter,
@@ -1732,8 +1801,8 @@ export async function workOrderBindingFor(
 // reads for flow_graph (Task 2 re-anchors the call site).
 //
 // REUSE TARGET: the entity-scoped entityPairs computation
-// inside workOrderClaimSourcesFor (uri_id-indexed +
-// collection-prefix filter) — NOT derivedDocumentEntity /
+// inside workOrderClaimSourcesFor (collection-indexed +
+// uri_id filter) — NOT derivedDocumentEntity /
 // documentGetHandler, whose collection-wide prefix scan is
 // the forbidden whole-plane shape inside a write gate.
 //
@@ -1752,15 +1821,20 @@ export async function workOrderDocumentHeadFor(
     const collectionPrefix = canonicalUriCollection(
         organization, '/work-orders/',
     );
-    const [byIdRequests, byIdResponses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_id', workOrderId),
-        dbOrView.responses.getAllWhere('uri_id', workOrderId),
-    ]);
-    const collectionRequests = byIdRequests.filter(
-        (r) => r.uri_collection === collectionPrefix,
+    const [byCollectionRequests, byCollectionResponses] =
+        await Promise.all([
+            dbOrView.requests.getAllWhere(
+                'uri_collection', collectionPrefix,
+            ),
+            dbOrView.responses.getAllWhere(
+                'uri_collection', collectionPrefix,
+            ),
+        ]);
+    const collectionRequests = byCollectionRequests.filter(
+        (r) => r.uri_id === workOrderId,
     );
-    const collectionResponses = byIdResponses.filter(
-        (r) => r.uri_collection === collectionPrefix,
+    const collectionResponses = byCollectionResponses.filter(
+        (r) => r.uri_id === workOrderId,
     );
     const entityPairs = documentPairsAt(
         collectionRequests, collectionResponses,
@@ -1970,12 +2044,11 @@ export async function deriveInvitationStates(
 
 // ENTITY-SCOPED sibling of deriveInvitationStates above (Phase
 // 14 Task 1): the SAME grant + op-address reduction, restricted
-// to ONE known invitation id via INDEXED reads — uri_id for the
-// grant/document pair (both share ONE uriId: the operation
-// pair's own createdEntityUriId resolution and the document
-// PUT's own path segment, api/invitations-domain.ts's
-// grantInvitation) and uri_collection for each of the three op
-// addresses — rather than the whole-collection scan
+// to ONE known invitation id via INDEXED reads —
+// uri_collection at the invitations prefix, filtered to
+// this id (grant + document share ONE uriId) and
+// uri_collection for each of the three op addresses —
+// rather than the whole-collection scan
 // (documentIds discovery) and the whole-ledger requests.getAll()
 // (op-prefix discovery) the multi-invitation reader above needs
 // to find EVERY id at once. dbOrView-shaped and opens no nested
@@ -1995,15 +2068,20 @@ export async function invitationLifecycleStatesFor(
 ): Promise<StateEntity[]> {
     const rows: StateEntity[] = [];
 
-    const [byIdRequests, byIdResponses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_id', id),
-        dbOrView.responses.getAllWhere('uri_id', id),
-    ]);
-    const collectionRequests = byIdRequests.filter(
-        (r) => r.uri_collection === INVITATIONS_PREFIX,
+    const [byCollectionRequests, byCollectionResponses] =
+        await Promise.all([
+            dbOrView.requests.getAllWhere(
+                'uri_collection', INVITATIONS_PREFIX,
+            ),
+            dbOrView.responses.getAllWhere(
+                'uri_collection', INVITATIONS_PREFIX,
+            ),
+        ]);
+    const collectionRequests = byCollectionRequests.filter(
+        (r) => r.uri_id === id,
     );
-    const collectionResponses = byIdResponses.filter(
-        (r) => r.uri_collection === INVITATIONS_PREFIX,
+    const collectionResponses = byCollectionResponses.filter(
+        (r) => r.uri_id === id,
     );
     const hasDocument = documentPairsAt(
         collectionRequests, collectionResponses,

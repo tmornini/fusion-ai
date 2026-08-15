@@ -17,12 +17,13 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 
-// Family-history ownership fence. Own-org history is 200 with
-// the document-trio genesis; foreign ownership is 403 with an
-// honest body. Full per-family fence coverage lives in
-// api-entity-history-routes.test.ts. Per-family write-
-// write authorizer pins live in api-write-authorizer.
-// Unknown-route 404 (writes-nothing) lives in api.test.ts.
+// Family-history ownership fence. Own-org history is 200
+// with the document-trio genesis; a miss at this address
+// is 404. 403 only when this address has a live PUT the
+// caller may not have. Full per-family coverage lives in
+// api-entity-history-routes.test.ts. Write-authorizer
+// pins live in api-write-authorizer. Unknown-route 404
+// lives in api.test.ts.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -122,8 +123,8 @@ test('GET /ideas/:id/history is 200', async () => {
     );
 });
 
-test('GET /ideas/:id/history fences foreign ownership'
-+ ' (403 with forbidden body)',
+test('GET /ideas/:id/history foreign miss is 404'
++ ' at this address',
 async () => {
     const { db, token } = await seed();
     await seedOrganizationDocument(db, 'B', 'Beta');
@@ -152,13 +153,11 @@ async () => {
     const res = await handleRequest(db, req(
         'GET', '/ideas/idea-b/history', token,
     ));
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     assert.deepEqual(
         await res.json(),
         {
-            error:
-                'forbidden: ideas/idea-b belongs to'
-                + ' a different organization',
+            error: 'Not found: ideas/idea-b',
         },
     );
 });

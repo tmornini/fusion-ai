@@ -35,7 +35,7 @@ import {
 // elimination. Lifecycle events DESC (index 0 = current),
 // with transition field_values folded inline; claim/birth/
 // release rows carry []. Miss posture: empty lifecycle →
-// missedReadError → 403 foreign / 404 absent.
+// missedReadError → 404 miss at this address / 404 absent.
 
 const BASE = 'http://localhost';
 const WORK_ORDER_ID = 'wo-hist-1';
@@ -286,7 +286,7 @@ test(
 );
 
 test(
-    'foreign work order history → 403 honest body',
+    'foreign work order history → 404 at this address',
     async () => {
         const db = await seededMockDb();
         const foreignId = buildWorkOrders()[0]!.id;
@@ -301,12 +301,11 @@ test(
                 tokenTwo,
             ),
         );
-        assert.equal(res.status, 403);
+        assert.equal(res.status, 404);
         const body = await res.json() as { error: string };
         assert.equal(
             body.error,
-            'forbidden: work_orders/' + foreignId
-                + ' belongs to a different organization',
+            'Not found: work_orders/' + foreignId,
         );
         // Stark still owns the seed WO (sanity).
         assert.equal(

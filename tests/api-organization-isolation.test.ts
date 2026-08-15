@@ -820,7 +820,7 @@ for (const c of NESTED_FLOW_CASES) {
 // an entirely different '/organizations/A/...' prefix — the
 // same structural fence every org-nested address rides, with no
 // tag-specific code of its own.
-test('nested flows/:id/tags 403s a foreign-org flow', async () => {
+test('nested flows/:id/tags 404s a foreign-org flow', async () => {
     const db = await deepDb();
     const tagged = await handleRequest(db, req(
         'PUT', '/flows/fB/tags/v1',
@@ -833,12 +833,11 @@ test('nested flows/:id/tags 403s a foreign-org flow', async () => {
         'GET', '/flows/fB/tags/v1',
         await organizationToken('current', 'A'),
     ));
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
     assert.equal(
         body.error,
-        'forbidden: flow_tags/v1 belongs to a different'
-        + ' organization',
+        'Not found: flow_tags/v1',
     );
 });
 
@@ -936,26 +935,22 @@ async () => {
     );
 });
 
-test('work-orders/:id/history 403s a foreign work order',
+test('work-orders/:id/history 404s a foreign work order',
 async () => {
     const db = await deepDb();
-    // woB is B-org; read through the A facade 403s with
-    // the family's honest body.
+    // woB is B-org; never written at A's address → 404.
     const res = await facadeGet(
         db, '/work-orders/woB/history');
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
     assert.equal(
         body.error,
-        'forbidden: work_orders/woB belongs to a'
-        + ' different organization',
+        'Not found: work_orders/woB',
     );
 });
 
 // Family history route (states-URI elimination C1): fence
-// rides ideas/:id/history. STEALTH-WEAKENING trap: do not
-// leave a bare-route foreign-404 that would pass as router
-// miss — foreign must stay 403 with the family's honest body.
+// rides ideas/:id/history. A miss at this address is 404.
 test('ideas history gates on parent ownership',
 async () => {
     const db = await deepDb();
@@ -974,12 +969,11 @@ async () => {
     assert.equal(bOwns.status, 200);
     const foreign = await facadeGet(
         db, '/ideas/iB/history');
-    assert.equal(foreign.status, 403);
+    assert.equal(foreign.status, 404);
     const body = await foreign.json() as { error: string };
     assert.equal(
         body.error,
-        'forbidden: ideas/iB belongs to a different'
-        + ' organization',
+        'Not found: ideas/iB',
     );
 });
 

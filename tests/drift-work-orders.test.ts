@@ -4,7 +4,6 @@ import type { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import {
     EntityNotFoundError,
-    ForeignOrganizationError,
 } from '../api/db.ts';
 import type { DbAdapter } from '../api/db.ts';
 import type {
@@ -281,7 +280,7 @@ test('seeded GET /work-orders wire equals derived collection,'
 
 // -- 2. org-2 empty collection + foreign-org 404 --------------
 
-test('org-2 carries no work orders; a foreign-org GET 403s'
+test('org-2 carries no work orders; a foreign-org GET 404s'
 + ' on wire and on derive', async () => {
     const db = await seededDb();
     const tokenTwo = await organizationToken(
@@ -298,18 +297,17 @@ test('org-2 carries no work orders; a foreign-org GET 403s'
 
     const foreignId = SEEDED_WORK_ORDER_IDS[0]!;
     const expectedMessage =
-        'forbidden: work_orders/' + foreignId
-        + ' belongs to a different organization';
+        'Not found: work_orders/' + foreignId;
     const res = await handleRequest(
         db, req('GET', '/work-orders/' + foreignId, tokenTwo),
     );
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
     assert.equal(body.error, expectedMessage);
     await assert.rejects(
         () => derivedWorkOrder(db, ORGANIZATION_TWO, foreignId),
         (err: unknown) =>
-            err instanceof ForeignOrganizationError
+            err instanceof EntityNotFoundError
             && err.message === expectedMessage,
     );
 });

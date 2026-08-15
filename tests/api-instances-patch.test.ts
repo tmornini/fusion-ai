@@ -486,7 +486,7 @@ async () => {
     assert.equal(head, undefined);
 });
 
-test('PATCH foreign instance id → 403 (R2)',
+test('PATCH foreign instance id → 404 (R2)',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -509,11 +509,10 @@ async () => {
         { set: [{ attribute_id: ATTR_ID, value: 'x' }] },
         { [IF_MATCH_HEADER]: '"anything"' },
     ));
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     assert.deepEqual(await res.json(), {
         error:
-            'forbidden: record_instances/' + INSTANCE_ID
-            + ' belongs to a different organization',
+            'Not found: record_instances/' + INSTANCE_ID,
     });
 });
 

@@ -414,7 +414,7 @@ async () => {
 });
 
 test('GET detail foreign instance id under own org path '
-+ '→ 403 (missedReadError R2)',
++ '→ 404 (missedReadError R2)',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -438,11 +438,10 @@ async () => {
     const res = await handleRequest(db, req(
         'GET', detailPath(INSTANCE_A), memberToken,
     ));
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     assert.deepEqual(await res.json(), {
         error:
-            'forbidden: record_instances/' + INSTANCE_A
-            + ' belongs to a different organization',
+            'Not found: record_instances/' + INSTANCE_A,
     });
 });
 

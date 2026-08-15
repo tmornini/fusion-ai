@@ -21,7 +21,7 @@ import {
 // GET <family>/:id/history — Phase A3 of states-URI
 // elimination. Per trio family (ideas/projects/records/flows/
 // objectives): document-PUT lifecycle → 200 DESC current-first;
-// foreign → 403 honest family body; absent → 404. Shared
+// foreign miss at this address → 404; absent → 404. Shared
 // handler builder wraps derive*StateHistory (ASC) with DESC +
 // missedReadError. Org-nested facade rides free for one leg.
 
@@ -157,7 +157,7 @@ test(
 );
 
 test(
-    'GET ideas/:id/history foreign → 403 honest body',
+    'GET ideas/:id/history foreign → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
@@ -181,12 +181,11 @@ test(
                 DEV_TOKEN,
             ),
         );
-        assert.equal(res.status, 403);
+        assert.equal(res.status, 404);
         const body = await res.json() as { error: string };
         assert.equal(
             body.error,
-            'forbidden: ideas/' + foreign.id
-                + ' belongs to a different organization',
+            'Not found: ideas/' + foreign.id,
         );
         assert.equal(
             STARK_ORGANIZATION !== ORGANIZATION_TWO,
@@ -327,7 +326,7 @@ test(
 );
 
 test(
-    'GET projects/:id/history foreign → 403 honest body',
+    'GET projects/:id/history foreign → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
@@ -351,12 +350,11 @@ test(
                 DEV_TOKEN,
             ),
         );
-        assert.equal(res.status, 403);
+        assert.equal(res.status, 404);
         const body = await res.json() as { error: string };
         assert.equal(
             body.error,
-            'forbidden: projects/' + foreign.id
-                + ' belongs to a different organization',
+            'Not found: projects/' + foreign.id,
         );
     },
 );
@@ -464,7 +462,7 @@ test(
 );
 
 test(
-    'GET nested record-types/:id/history foreign → 403 honest body',
+    'GET nested record-types/:id/history foreign → 404',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
@@ -489,12 +487,11 @@ test(
                 DEV_TOKEN,
             ),
         );
-        assert.equal(res.status, 403);
+        assert.equal(res.status, 404);
         const body = await res.json() as { error: string };
         assert.equal(
             body.error,
-            'forbidden: record_types/' + foreign.id
-                + ' belongs to a different organization',
+            'Not found: record_types/' + foreign.id,
         );
     },
 );
@@ -621,7 +618,7 @@ test(
 );
 
 test(
-    'GET flows/:id/history foreign → 403 honest body',
+    'GET flows/:id/history foreign → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
@@ -645,12 +642,11 @@ test(
                 DEV_TOKEN,
             ),
         );
-        assert.equal(res.status, 403);
+        assert.equal(res.status, 404);
         const body = await res.json() as { error: string };
         assert.equal(
             body.error,
-            'forbidden: flows/' + foreign.id
-                + ' belongs to a different organization',
+            'Not found: flows/' + foreign.id,
         );
     },
 );
@@ -753,7 +749,7 @@ test(
 );
 
 test(
-    'GET objectives/:id/history foreign → 403 honest body',
+    'GET objectives/:id/history foreign → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
@@ -777,12 +773,11 @@ test(
                 DEV_TOKEN,
             ),
         );
-        assert.equal(res.status, 403);
+        assert.equal(res.status, 404);
         const body = await res.json() as { error: string };
         assert.equal(
             body.error,
-            'forbidden: objectives/' + foreign.id
-                + ' belongs to a different organization',
+            'Not found: objectives/' + foreign.id,
         );
     },
 );

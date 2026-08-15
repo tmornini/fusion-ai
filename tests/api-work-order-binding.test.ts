@@ -320,20 +320,19 @@ async function seededDb(): Promise<{
     return { db, token, tokenB };
 }
 
-// 1. foreign-WO bind + malformed body → 403 (fence first)
-test('foreign-WO bind with malformed body → 403'
-+ ' (fence before body)',
+// 1. foreign-WO bind + malformed body → 404 (miss first)
+test('foreign-WO bind with malformed body → 404'
++ ' (miss before body)',
 async () => {
     const { db, tokenB } = await seededDb();
     const res = await handleRequest(db, req(
         'POST', BINDING, tokenB,
         { not_a_key: true },
     ));
-    assert.equal(res.status, 403);
+    assert.equal(res.status, 404);
     assert.deepEqual(await res.json(), {
         error:
-            'forbidden: work_orders/' + WO_ID
-            + ' belongs to a different organization',
+            'Not found: work_orders/' + WO_ID,
     });
 });
 

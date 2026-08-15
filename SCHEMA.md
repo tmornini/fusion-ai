@@ -153,7 +153,7 @@ send it; it is ignored. Seed `formSeedPair` mints one
 id per envelope and copies it onto inner PUTs.
 
 Validator: `validateRequestEntity` (`api/validators.ts`).
-Secondary indexes: `uri_collection`, `uri_id`,
+Secondary indexes: `uri_collection`,
 `message_hash`, `operation_id`
 (`api/db.ts` `TABLE_INDEXES`).
 
@@ -189,8 +189,8 @@ from this column. It is not stored on the GET-shaped
 response blob.
 
 Validator: `validateResponseEntity` (`api/validators.ts`).
-Secondary indexes: `uri_collection`, `uri_id`,
-`operation_id`
+Secondary indexes: `uri_collection`,
+`operation_id`, `version`
 (`api/db.ts` `TABLE_INDEXES`).
 
 ## Derived document families (no table)

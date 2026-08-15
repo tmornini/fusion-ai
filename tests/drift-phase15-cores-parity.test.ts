@@ -4,7 +4,6 @@ import type { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
 import {
     EntityNotFoundError,
-    ForeignOrganizationError,
     type DbAdapter,
     TABLE_NAMES,
 } from '../api/db.ts';
@@ -1416,12 +1415,12 @@ async function transitionWithFieldValue(
 }
 
 // Wire-shape pin (C4): GET work-orders/:id/history is
-// 200 / 403 / 404 by ownership (own → rows with
-// field_values; foreign → 403; absent → 404). Field values
+// 200 / 404 by address (own → rows with field_values;
+// never written here → 404; absent → 404). Field values
 // fold inline; the retired GET states/:id/field-values
 // three-way force lives here.
-test('work-order history GET: 200/403/404 three-way for'
-+ ' own / foreign / absent work orders', async () => {
+test('work-order history GET: 200/404 two-way for'
++ ' own / foreign-or-absent work orders', async () => {
     const db = await seededDb();
     const starkToken = await organizationToken(
         'current', STARK_ORGANIZATION,
@@ -1459,7 +1458,7 @@ test('work-order history GET: 200/403/404 three-way for'
         ownTe!.field_values.map((r) => r.id), [fieldValueId],
     );
 
-    // (foreign) Org two 403s with the work_orders body.
+    // (foreign) Org two 404s — never written at this address.
     const foreign = await handleRequest(
         db,
         req(
@@ -1468,13 +1467,12 @@ test('work-order history GET: 200/403/404 three-way for'
             twoToken,
         ),
     );
-    assert.equal(foreign.status, 403);
+    assert.equal(foreign.status, 404);
     const foreignBody =
         await foreign.json() as { error: string };
     assert.equal(
         foreignBody.error,
-        'forbidden: work_orders/' + workOrderId
-        + ' belongs to a different organization',
+        'Not found: work_orders/' + workOrderId,
     );
 
     // (absent) Ghost work-order id → 404.
@@ -1496,7 +1494,7 @@ test('work-order history GET: 200/403/404 three-way for'
 });
 
 // Derive-path (C4): workOrderHistoryFor throws on foreign
-// (403) and absent (404); own still returns folded rows.
+// miss (404) and absent (404); own still returns folded rows.
 // stateEventVisibilityFor still drives RESTRICT visibility.
 test('workOrderHistoryFor visibility: own field_values,'
 + ' foreign rejects, absent rejects',
@@ -1550,7 +1548,7 @@ async () => {
         () => workOrderHistoryFor(
             db, ORGANIZATION_TWO, workOrderId,
         ),
-        ForeignOrganizationError,
+        EntityNotFoundError,
     );
 
     // Absent work order → EntityNotFoundError.
