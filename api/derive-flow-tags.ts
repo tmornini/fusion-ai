@@ -1,7 +1,8 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, FlowTagEntity } from './types.ts';
-import { pickString } from './validators.ts';
+import { validateFlowTagEntity } from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     type DerivedDocument,
@@ -30,16 +31,16 @@ function flowTagsUriPrefix(
     );
 }
 
-function flowTagEntityOf(
+// G6: GET derive is the stored PUT. id-first; flow_id
+// from the address (never a client body key).
+export function flowTagEntityOf(
     flowId: Id,
     document: DerivedDocument,
 ): FlowTagEntity {
     return {
         id: document.uriId,
         flow_id: flowId,
-        flow_response_id: pickString(
-            document.body, 'flow_response_id',
-        ),
+        ...validateFlowTagEntity(withoutId(document.body)),
     };
 }
 

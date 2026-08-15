@@ -1,7 +1,8 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, ProjectFlowEntity } from './types.ts';
-import { pickString } from './validators.ts';
+import { validateProjectFlowEntity } from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -31,21 +32,15 @@ function projectFlowsUriPrefix(
     );
 }
 
-// The derived entity: the head document's body's own three
-// fields plus `id` from the uriId — a join row carries no
-// organization_id of its own (project_flows is parent-scoped
-// off the project, never org-stamped directly), so unlike
-// flowEntityOf/ideaEntityOf/projectEntityOf there is nothing to
-// stamp from the derivation's own organization parameter here.
-function projectFlowEntityOf(
+// G6: GET derive is the stored PUT. id-first via
+// validateProjectFlowEntity (withoutId first). A join
+// row carries no organization_id of its own.
+export function projectFlowEntityOf(
     document: DerivedDocument,
 ): ProjectFlowEntity {
-    const body = document.body;
     return {
         id: document.uriId,
-        project_id: pickString(body, 'project_id'),
-        flow_id: pickString(body, 'flow_id'),
-        at: pickString(body, 'at'),
+        ...validateProjectFlowEntity(withoutId(document.body)),
     };
 }
 

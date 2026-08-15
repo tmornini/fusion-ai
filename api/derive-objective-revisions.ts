@@ -1,7 +1,9 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, ObjectiveRevisionEntity } from './types.ts';
-import { pickString } from './validators.ts';
+import { validateObjectiveRevisionEntity } from
+    './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -52,24 +54,16 @@ function objectiveRevisionsUriPrefix(
     );
 }
 
-// The derived entity: the head document's body's own five fields
-// plus `id` from the uriId, id FIRST — the seven-sibling
-// entityOf convention (deriveFlowRecords' own comment), picked
-// explicitly (pickString) rather than a body spread: a leaked
-// operation-pair body reaching this construction would throw
-// loudly (the method-filter's defense-in-depth) rather than
-// silently mis-derive.
-function objectiveRevisionEntityOf(
+// G6: GET derive is the stored PUT. id-first via
+// validateObjectiveRevisionEntity (withoutId first).
+export function objectiveRevisionEntityOf(
     document: DerivedDocument,
 ): ObjectiveRevisionEntity {
-    const body = document.body;
     return {
         id: document.uriId,
-        objective_id: pickString(body, 'objective_id'),
-        name: pickString(body, 'name'),
-        description: pickString(body, 'description'),
-        member_id: pickString(body, 'member_id'),
-        at: pickString(body, 'at'),
+        ...validateObjectiveRevisionEntity(
+            withoutId(document.body),
+        ),
     };
 }
 

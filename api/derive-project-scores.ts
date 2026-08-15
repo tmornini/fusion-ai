@@ -6,6 +6,7 @@ import type {
 } from './types.ts';
 import { pickString, pickNumber } from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -48,14 +49,9 @@ function scoresUriPrefix(
     );
 }
 
-// The shared five-field shape both ProjectObjectiveBaselineScore
-// Entity and ProjectObjectiveActualScoreEntity carry — a true
-// byte-twin, picked explicitly (pickString/pickNumber) rather
-// than a body spread, id FIRST, the seven-sibling entityOf
-// convention: a leaked operation-pair body reaching this
-// construction would throw loudly (the method-filter's defense-
-// in-depth) rather than silently mis-derive.
-function scoreEntityOf(document: DerivedDocument): {
+// G6: GET derive is the stored PUT. Shared five-field
+// shape (baseline and actual are byte-twins), id FIRST.
+export function scoreEntityOf(document: DerivedDocument): {
     id: Id;
     project_id: Id;
     objective_id: Id;
@@ -63,7 +59,7 @@ function scoreEntityOf(document: DerivedDocument): {
     member_id: Id;
     at: string;
 } {
-    const body = document.body;
+    const body = withoutId(document.body);
     return {
         id: document.uriId,
         project_id: pickString(body, 'project_id'),

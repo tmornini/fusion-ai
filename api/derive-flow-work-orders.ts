@@ -1,7 +1,8 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, FlowWorkOrderEntity } from './types.ts';
-import { pickString } from './validators.ts';
+import { validateFlowWorkOrderEntity } from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -36,21 +37,17 @@ function flowWorkOrdersUriPrefix(
     );
 }
 
-// The derived entity: the head document's body's own three
-// fields plus `id` from the uriId — a join row carries no
-// organization_id of its own (flow_work_orders is parent-scoped
-// off the flow, never org-stamped directly), so unlike
-// workOrderDocumentEntityOf there is nothing to stamp from the
-// derivation's own organization parameter here.
-function flowWorkOrderEntityOf(
+// G6: GET derive is the stored PUT. id-first via
+// validateFlowWorkOrderEntity (withoutId first). A join
+// row carries no organization_id of its own.
+export function flowWorkOrderEntityOf(
     document: DerivedDocument,
 ): FlowWorkOrderEntity {
-    const body = document.body;
     return {
         id: document.uriId,
-        flow_id: pickString(body, 'flow_id'),
-        work_order_id: pickString(body, 'work_order_id'),
-        at: pickString(body, 'at'),
+        ...validateFlowWorkOrderEntity(
+            withoutId(document.body),
+        ),
     };
 }
 

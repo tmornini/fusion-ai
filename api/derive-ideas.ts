@@ -6,8 +6,12 @@ import type {
     IdeaSubmissionEntity,
     StateEntity,
 } from './types.ts';
-import { pickString, pickNumber } from './validators.ts';
+import {
+    pickString, pickNumber,
+    validateIdeaSubmissionEntity,
+} from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     documentPairsAt,
@@ -183,6 +187,19 @@ export async function deriveIdea(
     return ideaEntityOf(document, organization, current);
 }
 
+// G6: GET derive is the stored PUT. id-first via
+// validateIdeaSubmissionEntity (withoutId first).
+export function ideaSubmissionEntityOf(
+    document: DerivedDocument,
+): IdeaSubmissionEntity {
+    return {
+        id: document.uriId,
+        ...validateIdeaSubmissionEntity(
+            withoutId(document.body),
+        ),
+    };
+}
+
 export async function deriveIdeaSubmissions(
     db: DbAdapter,
     organization: Id,
@@ -195,13 +212,8 @@ export async function deriveIdeaSubmissions(
     ]);
     const documents = deriveDocumentsAt(requests, responses, prefix);
     const submissions: IdeaSubmissionEntity[] = [];
-    for (const [submissionId, document] of documents) {
-        submissions.push({
-            id: submissionId,
-            idea_id: pickString(document.body, 'idea_id'),
-            member_id: pickString(document.body, 'member_id'),
-            at: pickString(document.body, 'at'),
-        });
+    for (const document of documents.values()) {
+        submissions.push(ideaSubmissionEntityOf(document));
     }
     return submissions.sort(byIdAscending);
 }

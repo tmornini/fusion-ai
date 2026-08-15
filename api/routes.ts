@@ -29,9 +29,7 @@ import type {
     IdeaSubmissionEntity,
     StateEntity,
     ObjectiveEntity,
-    ObjectiveRevisionEntity,
     ProjectEntity,
-    ProjectFlowEntity,
     ProjectObjectiveBaselineScoreEntity,
     ProjectObjectiveActualScoreEntity,
     RecordEntity,
@@ -64,7 +62,6 @@ import {
     validateFlowUndoBody,
     validateIdeaConversionBody,
     validateIdeaDocumentBody,
-    validateIdeaSubmissionEntity,
     validateIdentityCreateBody,
     validateIdentityDocumentBody,
     validateIdentityCredentialEntity,
@@ -76,8 +73,6 @@ import {
     validateActualScoreEntity,
     validateProjectDocumentBody,
     validateProjectFlowEntity,
-    validateFlowRecordEntity,
-    validateFlowTagEntity,
     validateFlowTagName,
     validateRecordAttributeDocumentBody,
     validateAttributeDocumentCreate,
@@ -158,6 +153,7 @@ import {
     deriveIdeaSubmissions,
     deriveIdeaStateHistory,
     ideaEntityOf,
+    ideaSubmissionEntityOf,
 } from './derive-ideas.ts';
 import {
     deriveProjectStateHistory,
@@ -220,18 +216,27 @@ import {
     buildFlowGraphDelta,
     buildFlowGraphRevivals,
 } from './flow-graph-diff.ts';
-import { deriveProjectFlows } from './derive-project-flows.ts';
+import {
+    deriveProjectFlows,
+    projectFlowEntityOf,
+} from './derive-project-flows.ts';
 import {
     deriveFlowWorkOrders,
+    flowWorkOrderEntityOf,
 } from './derive-flow-work-orders.ts';
 import {
     deriveFlowRecords,
     deriveFlowRecord,
+    flowRecordEntityOf,
     recordTypeIdsForWorkOrder,
 } from './derive-flow-records.ts';
-import { deriveFlowTag } from './derive-flow-tags.ts';
+import {
+    deriveFlowTag,
+    flowTagEntityOf,
+} from './derive-flow-tags.ts';
 import {
     deriveObjectiveRevisions,
+    objectiveRevisionEntityOf,
 } from './derive-objective-revisions.ts';
 import {
     deriveObjectiveStateHistory,
@@ -240,6 +245,7 @@ import {
 import {
     deriveBaselineScores,
     deriveActualScores,
+    scoreEntityOf,
 } from './derive-project-scores.ts';
 import {
     deriveMembers,
@@ -1132,34 +1138,24 @@ export async function loadAttributeSchemaById(
     return map;
 }
 
-// Wire row for a nested attribute head. Prefers the stored
-// response body (WRITE_RESPONSE_SPECS stamp carries create-
-// time ACL defaults when the client omitted them); falls
-// back to the request body + address echoes. Storage always
-// carries both ACL arrays after a successful create.
-async function nestedAttributeWireOf(
-    db: DbAdapter,
+// G6: GET derive is the stored PUT. Address echoes plus
+// create-time ACL defaults (validate stamps when omitted).
+export function nestedAttributeWireOf(
     organization: Id,
     recordTypeId: Id,
     attributeId: Id,
-    pairId: string,
     requestBody: Record<string, unknown>,
-): Promise<Record<string, unknown>> {
-    const headResponse = await db.responses.getById(pairId);
-    const responseBody = pairResponseBody({
-        responseMessage: headResponse.message,
-    } as MessagePair);
-    if (
-        responseBody !== undefined
-        && typeof responseBody['name'] === 'string'
-    ) {
-        return responseBody;
-    }
+): Record<string, unknown> {
+    const raw = withoutId(requestBody);
+    const entity =
+        'read_roles' in raw && 'write_roles' in raw
+            ? validateAttributeDocumentReplace(raw)
+            : validateAttributeDocumentCreate(raw);
     return {
         id: attributeId,
         organization_id: organization,
         record_type_id: recordTypeId,
-        ...requestBody,
+        ...entity,
     };
 }
 
@@ -1431,7 +1427,8 @@ export async function postRecordAttributeDocumentOp(
 // exists for this family). Phase Final Task 2: the
 // idea_submissions ROW half is stripped — pure pair-plane
 // write (postFlowTagDocumentOp shape). WRITE_RESPONSE_SPECS
-// successBody forms the wire bytes. Exported so the seed can
+// successBody forms the wire bytes via ideaSubmissionEntityOf
+// (GET derive). Exported so the seed can
 // drive submission creation through the same op the route
 // uses (Decision 6's below-facade carve-out). `pair` is
 // optional so a future below-facade caller with no pair keeps
@@ -1444,15 +1441,19 @@ export async function postIdeaSubmissionOp(
     body: Record<string, unknown>,
     pair?: MessagePair,
 ): Promise<IdeaSubmissionEntity> {
-    const entity = withoutId(body) as unknown as
-        Omit<IdeaSubmissionEntity, 'id'>;
+    const entity = ideaSubmissionEntityOf({
+        uriId: sid,
+        pairId: sid,
+        method: 'PUT',
+        body: withoutId(body),
+    });
     return db.transaction(
         ['requests', 'responses'],
         async (view) => {
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return { id: sid, ...entity };
+            return entity;
         },
     );
 }
@@ -2886,13 +2887,17 @@ export async function postWorkOrderDocumentOp(
 // parameter is spelled `_actor`: no state event here to author.
 export async function postFlowWorkOrderDocumentOp(
     db: DbAdapter,
-    _id: Id,
+    id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
-): Promise<Omit<FlowWorkOrderEntity, 'id'>> {
-    const entity = withoutId(body) as unknown as
-        Omit<FlowWorkOrderEntity, 'id'>;
+): Promise<FlowWorkOrderEntity> {
+    const entity = flowWorkOrderEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: withoutId(body),
+    });
     return db.transaction(
         // Phase Final Task 2: flow_work_orders ROW half stripped.
         ['requests', 'responses'],
@@ -2914,13 +2919,17 @@ export async function postFlowWorkOrderDocumentOp(
 // event here to author.
 export async function postFlowRecordDocumentOp(
     db: DbAdapter,
-    _id: Id,
+    id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
-): Promise<Omit<FlowRecordEntity, 'id'>> {
-    const entity = withoutId(body) as unknown as
-        Omit<FlowRecordEntity, 'id'>;
+): Promise<FlowRecordEntity> {
+    const entity = flowRecordEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: withoutId(body),
+    });
     return db.transaction(
         // Phase Final Task 2: flow_records ROW half stripped.
         ['requests', 'responses'],
@@ -2976,15 +2985,19 @@ export async function postBaselineScoreDocumentOp(
 ): Promise<
     ProjectObjectiveBaselineScoreEntity
 > {
-    const entity = withoutId(body) as unknown as
-        Omit<ProjectObjectiveBaselineScoreEntity, 'id'>;
+    const entity = scoreEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: withoutId(body),
+    });
     return db.transaction(
         ['requests', 'responses'],
         async (view) => {
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return { id, ...entity };
+            return entity;
         },
     );
 }
@@ -3001,15 +3014,19 @@ export async function postActualScoreDocumentOp(
     _actor: Id,
     pair?: MessagePair,
 ): Promise<ProjectObjectiveActualScoreEntity> {
-    const entity = withoutId(body) as unknown as
-        Omit<ProjectObjectiveActualScoreEntity, 'id'>;
+    const entity = scoreEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: withoutId(body),
+    });
     return db.transaction(
         ['requests', 'responses'],
         async (view) => {
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
-            return { id, ...entity };
+            return entity;
         },
     );
 }
@@ -3344,12 +3361,13 @@ export const WRITE_RESPONSE_SPECS:
     'ideas/:id/conversion': { status: HTTP_NO_CONTENT },
     'ideas/:id/submissions/:sid': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateIdeaSubmissionEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            ideaSubmissionEntityOf({
+                uriId: param(params, 1),
+                pairId: param(params, 1),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
@@ -3357,12 +3375,13 @@ export const WRITE_RESPONSE_SPECS:
     'projects/:id': documentWriteResponseSpec(PROJECTS_WIRING),
     'projects/:id/flows/:pfid': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateProjectFlowEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            projectFlowEntityOf({
+                uriId: param(params, 1),
+                pairId: param(params, 1),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
     'flows': { status: HTTP_NO_CONTENT },
     // The generic document-form builder (api/document-family.ts)
@@ -3386,12 +3405,13 @@ export const WRITE_RESPONSE_SPECS:
     'work-orders/:id/binding': { status: HTTP_NO_CONTENT },
     'flows/:id/work-orders/:woid': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateFlowWorkOrderEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            flowWorkOrderEntityOf({
+                uriId: param(params, 1),
+                pairId: param(params, 1),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
     // Nested composed POST (Task 9 / Task 23): 204 op response;
     // document + attribute pairs form at nested addresses.
@@ -3437,24 +3457,13 @@ export const WRITE_RESPONSE_SPECS:
     [ATTRIBUTE_DETAIL_PATTERN]: {
         put: {
             status: HTTP_OK,
-            successBody: (params, body) => {
-                const raw = withoutId(body ?? {});
-                const entity =
-                    'read_roles' in raw
-                    && 'write_roles' in raw
-                        ? validateAttributeDocumentReplace(
-                            raw,
-                        )
-                        : validateAttributeDocumentCreate(
-                            raw,
-                        );
-                return {
-                    id: param(params, 2),
-                    organization_id: param(params, 0),
-                    record_type_id: param(params, 1),
-                    ...entity,
-                };
-            },
+            successBody: (params, body) =>
+                nestedAttributeWireOf(
+                    param(params, 0),
+                    param(params, 1),
+                    param(params, 2),
+                    withoutId(body ?? {}),
+                ),
         },
     },
     // Nested instances detail (Task 20): public PUT is
@@ -3488,30 +3497,31 @@ export const WRITE_RESPONSE_SPECS:
     },
     'flows/:id/records/:frid': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateFlowRecordEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            flowRecordEntityOf({
+                uriId: param(params, 1),
+                pairId: param(params, 1),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
     // The ONE validation site for a tag PUT (Phase 14 Task 9):
     // the tag NAME (param 1, the address's own uriId) through
-    // validateFlowTagName, the body through validateFlowTagEntity
-    // — both pure, run pre-tx while the pair is formed, so a
+    // validateFlowTagName; the body through flowTagEntityOf.
+    // Both run pre-tx while the pair is formed, so a
     // malformed name or body throws BEFORE anything is stored
     // (the ideas/:id/submissions/:sid precedent above). GET/DELETE
     // never re-validate the name (route comment); `flow_id` is
     // stamped from the address here, never a client body key.
     'flows/:id/tags/:name': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: validateFlowTagName(param(params, 1)),
-            flow_id: param(params, 0),
-            ...validateFlowTagEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            flowTagEntityOf(param(params, 0), {
+                uriId: validateFlowTagName(param(params, 1)),
+                pairId: param(params, 1),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
     'objectives': { status: HTTP_NO_CONTENT },
     // The generic document-form builder (api/document-family.ts)
@@ -3521,30 +3531,39 @@ export const WRITE_RESPONSE_SPECS:
     'objectives/:id': documentWriteResponseSpec(OBJECTIVES_WIRING),
     'objectives/:id/revisions/:rid': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateObjectiveRevisionEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            objectiveRevisionEntityOf({
+                uriId: param(params, 1),
+                pairId: param(params, 1),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
     'projects/:id/objective-baseline-scores/:sid': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateBaselineScoreEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) => {
+            const raw = withoutId(body ?? {});
+            validateBaselineScoreEntity(raw);
+            return scoreEntityOf({
+                uriId: param(params, 1),
+                pairId: param(params, 1),
+                method: 'PUT',
+                body: raw,
+            });
+        },
     },
     'projects/:id/objective-actual-scores/:sid': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 1),
-            ...validateActualScoreEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) => {
+            const raw = withoutId(body ?? {});
+            validateActualScoreEntity(raw);
+            return scoreEntityOf({
+                uriId: param(params, 1),
+                pairId: param(params, 1),
+                method: 'PUT',
+                body: raw,
+            });
+        },
     },
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
@@ -5295,17 +5314,22 @@ export const routes: Route[] = [
     route('projects/:id/flows/:pfid', {
         // Phase Final Task 2: project_flows ROW half stripped —
         // pure pair-plane write (join derives from the ledger).
+        // G6: reconstructed return is projectFlowEntityOf.
         put: (db, p, body, _actor, pair) => {
             const pfid = param(p, 1);
-            const entity = withoutId(body) as unknown as
-                Omit<ProjectFlowEntity, 'id'>;
+            const entity = projectFlowEntityOf({
+                uriId: pfid,
+                pairId: pfid,
+                method: 'PUT',
+                body: withoutId(body),
+            });
             return db.transaction(
                 ['requests', 'responses'],
                 async (view) => {
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
-                    return { id: pfid, ...entity };
+                    return entity;
                 },
             );
         },
@@ -5722,9 +5746,8 @@ export const routes: Route[] = [
             );
             const rows: { id: string }[] = [];
             for (const [id, document] of documents) {
-                const wire = await nestedAttributeWireOf(
-                    db, org, typeId, id,
-                    document.pairId, document.body,
+                const wire = nestedAttributeWireOf(
+                    org, typeId, id, document.body,
                 );
                 rows.push(wire as { id: string });
             }
@@ -5760,8 +5783,7 @@ export const routes: Route[] = [
                 );
             }
             return nestedAttributeWireOf(
-                db, org, typeId, attrId,
-                document.pairId, document.body,
+                org, typeId, attrId, document.body,
             );
         },
         put: async (db, p, body, _actor, pair) => {
@@ -6374,8 +6396,12 @@ export const routes: Route[] = [
     route('objectives/:id/revisions/:rid', {
         put: (db, p, body, _actor, pair) => {
             const id = param(p, 1);
-            const entity = withoutId(body) as unknown as
-                Omit<ObjectiveRevisionEntity, 'id'>;
+            const entity = objectiveRevisionEntityOf({
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: withoutId(body),
+            });
             return db.transaction(
                 // Phase Final Task 2: objective_revisions ROW
                 // half stripped.
@@ -6384,7 +6410,7 @@ export const routes: Route[] = [
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
-                    return { id, ...entity };
+                    return entity;
                 },
             );
         },

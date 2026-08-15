@@ -1,7 +1,8 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, FlowRecordEntity } from './types.ts';
-import { pickString } from './validators.ts';
+import { validateFlowRecordEntity } from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
+import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -45,21 +46,15 @@ function flowRecordsUriPrefix(
     );
 }
 
-// The derived entity: the head document's body's own three
-// fields plus `id` from the uriId — a join row carries no
-// organization_id of its own (flow_records is parent-scoped off
-// the flow, never org-stamped directly), so unlike
-// recordDocumentEntityOf there is nothing to stamp from the
-// derivation's own organization parameter here.
-function flowRecordEntityOf(
+// G6: GET derive is the stored PUT. id-first via
+// validateFlowRecordEntity (withoutId first). A join
+// row carries no organization_id of its own.
+export function flowRecordEntityOf(
     document: DerivedDocument,
 ): FlowRecordEntity {
-    const body = document.body;
     return {
         id: document.uriId,
-        flow_id: pickString(body, 'flow_id'),
-        record_id: pickString(body, 'record_id'),
-        at: pickString(body, 'at'),
+        ...validateFlowRecordEntity(withoutId(document.body)),
     };
 }
 
