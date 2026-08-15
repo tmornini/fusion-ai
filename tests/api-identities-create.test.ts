@@ -9,7 +9,9 @@ import {
 import { seedOrganizationMember } from './root-admin-fixture.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
+import { identityDocumentEntityOf } from '../api/routes.ts';
 import {
     deriveIdentityPii,
     deriveCredentialsFor,
@@ -223,3 +225,28 @@ test(
         );
     },
 );
+
+test('identity creation stores identityDocumentEntityOf',
+async () => {
+    const db = await freshDb();
+    const id = 'id-g3-create';
+    await POST(db, 'identities', {
+        id,
+        kind: 'person',
+    }, DEV_TOKEN);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/identities/', id),
+    );
+    assert.deepEqual(
+        stored,
+        identityDocumentEntityOf(
+            {
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: { kind: 'person' },
+            },
+            '',
+        ),
+    );
+});

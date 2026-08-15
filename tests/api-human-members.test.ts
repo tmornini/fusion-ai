@@ -11,7 +11,12 @@ import {
 import { seedOrganizationMember } from './root-admin-fixture.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
+import {
+    humanMemberDocumentEntityOf,
+    identityDocumentEntityOf,
+} from '../api/routes.ts';
 
 const BASE = 'http://localhost';
 const MEMBER = 'walt';
@@ -237,3 +242,82 @@ test(
         );
     },
 );
+
+test('human create stores humanMemberDocumentEntityOf '
++ 'and identityDocumentEntityOf', async () => {
+    const db = await freshDb();
+    const id = 'h-g3-create';
+    const fields = detail();
+    await POST(db, 'human-members', {
+        id,
+        detail: fields,
+        initialState: 'active',
+        initialStateEventId: 'ev-g3',
+        initialStateAt: '2099-01-01T00:00:00.000000Z',
+    }, DEV_TOKEN);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/human-members/', id),
+    );
+    assert.deepEqual(
+        stored,
+        humanMemberDocumentEntityOf(
+            {
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: fields,
+            },
+            '',
+        ),
+    );
+    const identityStored = JSON.parse(
+        await storedPutBodyText(db, '/identities/', id),
+    );
+    assert.deepEqual(
+        identityStored,
+        identityDocumentEntityOf(
+            {
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: { kind: 'person' },
+            },
+            '',
+        ),
+    );
+});
+
+test('human edit stores humanMemberDocumentEntityOf',
+async () => {
+    const db = await freshDb();
+    const id = 'h-g3-edit';
+    await POST(db, 'human-members', {
+        id,
+        detail: detail(),
+        initialState: 'active',
+        initialStateEventId: 'ev-g3',
+        initialStateAt: '2099-01-01T00:00:00.000000Z',
+    }, DEV_TOKEN);
+    const fields = { ...detail(), title: 'Director' };
+    await POST(db, 'human-members/' + id, {
+        detail: fields,
+        state: 'active',
+        stateAt: '2099-01-01T00:00:00.000000Z',
+        stateEventId: 'ev-g3',
+    }, DEV_TOKEN);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/human-members/', id),
+    );
+    assert.deepEqual(
+        stored,
+        humanMemberDocumentEntityOf(
+            {
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: fields,
+            },
+            '',
+        ),
+    );
+});

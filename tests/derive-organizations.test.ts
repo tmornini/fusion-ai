@@ -9,6 +9,7 @@ import { EntityNotFoundError } from '../api/db.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
 import {
     seedAdminSchema,
@@ -17,6 +18,7 @@ import {
 import {
     deriveOrganization,
     deriveOrganizations,
+    organizationEntityOf,
 } from '../api/derive-organizations.ts';
 
 // Phase Final Task 2: organizations dual-write stripped. This
@@ -173,4 +175,30 @@ test('a PUT whose body echoes id round-trips through'
         all.find((org) => org.id === 'org-echo'), wire,
     );
     // Phase Final Stage B: organizations table retired.
+});
+
+// G3: stored PUT = organizationEntityOf (id-last). GET wins.
+// The id-first writer pin is deleted — writer matches GET.
+test('stored PUT body equals organizationEntityOf id-last',
+async () => {
+    const db = await freshDb();
+    const id = 'org-g3';
+    const fields = organizationRow('Streamed');
+    const put = await putOrganization(db, id, 'Streamed');
+    assert.equal(put.status, 201);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/organizations/', id),
+    );
+    const expected = organizationEntityOf({
+        uriId: id,
+        pairId: id,
+        method: 'PUT',
+        body: fields,
+    });
+    assert.equal(Object.keys(expected).at(-1), 'id');
+    assert.deepEqual(stored, expected);
+    const derived = await deriveOrganization(db, id);
+    assert.deepEqual(stored, derived);
+    const wire = await put.json();
+    assert.deepEqual(stored, wire);
 });

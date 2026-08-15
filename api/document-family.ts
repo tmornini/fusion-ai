@@ -525,13 +525,22 @@ export function documentCollectionRoute(
 
 // G1 trio families: stored PUT = today's GET derive
 // (wiring.entityOf over the chain, trio included). G2
-// flows: flowEntityOf minus hasUndoHistory.
+// flows: flowEntityOf minus hasUndoHistory. G3 stateless:
+// wiring.entityOf over the incoming body (no trio walk).
 const STREAM_TRIO_FAMILIES: ReadonlySet<string> = new Set([
     'ideas',
     'projects',
     'objectives',
     'members',
 ]);
+
+const STREAM_STATELESS_FAMILIES: ReadonlySet<string> =
+    new Set([
+        'ai-members',
+        'human-members',
+        'identities',
+        'memberships',
+    ]);
 
 const ID_PATTERN_SUFFIX = '/:id';
 
@@ -707,6 +716,7 @@ export async function resolveStreamedTrioWriteBody(
 // as GET does) instead of the entity-only echo. Live writes
 // prefer resolveStreamedTrioWriteBody (chain-current trio).
 // G2 flows emit flowEntityOf minus hasUndoHistory.
+// G3 stateless families emit wiring.entityOf (GET derive).
 export function documentWriteResponseSpec(
     wiring: DocumentFamilyWiring,
 ): WriteResponseSpec {
@@ -714,6 +724,9 @@ export function documentWriteResponseSpec(
         familyRegistration(wiring.family)?.organizationNested
             !== false;
     const streamTrio = STREAM_TRIO_FAMILIES.has(
+        wiring.family,
+    );
+    const streamStateless = STREAM_STATELESS_FAMILIES.has(
         wiring.family,
     );
     return {
@@ -733,6 +746,14 @@ export function documentWriteResponseSpec(
             }
             if (wiring.family === 'flows') {
                 return flowStoredEntityOf(
+                    trioDocumentFromBody(
+                        param(params, 0), raw,
+                    ),
+                    organization ?? '',
+                );
+            }
+            if (streamStateless) {
+                return wiring.entityOf(
                     trioDocumentFromBody(
                         param(params, 0), raw,
                     ),

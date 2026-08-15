@@ -44,7 +44,6 @@ import type {
     MemberEntity,
     MemberKind,
     MemberState,
-    OrganizationEntity,
     AttributeType,
     Constraint,
 } from './types.ts';
@@ -81,7 +80,6 @@ import {
     validateObjectiveRevisionEntity,
     validateBaselineScoreEntity,
     validateActualScoreEntity,
-    validateOrganizationEntity,
     validateProjectDocumentBody,
     validateProjectFlowEntity,
     validateFlowRecordEntity,
@@ -277,6 +275,7 @@ import {
 import {
     deriveOrganization,
     deriveOrganizations,
+    organizationEntityOf,
 } from './derive-organizations.ts';
 import {
     deriveIdentityTokens,
@@ -495,7 +494,7 @@ const OBJECTIVES_WIRING: DocumentFamilyWiring = {
 // — the org-scoped store already stamps organization_id at
 // write time (the objectives fence-stamp analogue), so this
 // read path simply echoes what a live PUT wrote.
-function membershipDocumentEntityOf(
+export function membershipDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
     _current?: StateEntity,
@@ -586,7 +585,7 @@ const MEMBERS_WIRING: DocumentFamilyWiring = {
 // organization_id, no trio — the SAME reason memberDocumentEntityOf's
 // own comment gives). `_organization` stays unused: ai-members is
 // GLOBAL plane too (family-registry.ts: organizationNested:false).
-function aiMemberDocumentEntityOf(
+export function aiMemberDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
     _current?: StateEntity,
@@ -617,7 +616,7 @@ const AI_MEMBERS_WIRING: DocumentFamilyWiring = {
 // aiMemberDocumentEntityOf's own comment gives. `_organization`
 // stays unused: human-members is GLOBAL plane too
 // (family-registry.ts: organizationNested:false).
-function humanMemberDocumentEntityOf(
+export function humanMemberDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
     _current?: StateEntity,
@@ -652,7 +651,7 @@ const HUMAN_MEMBERS_WIRING: DocumentFamilyWiring = {
 // trio — the SAME reason memberDocumentEntityOf's own comment
 // gives). `_organization` stays unused: identities is GLOBAL
 // plane too (family-registry.ts: organizationNested:false).
-function identityDocumentEntityOf(
+export function identityDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
     _current?: StateEntity,
@@ -3540,44 +3539,25 @@ export const WRITE_RESPONSE_SPECS:
     // organization_id, trio last as GET does).
     'members/:id': documentWriteResponseSpec(MEMBERS_WIRING),
     'ai-members': { status: HTTP_NO_CONTENT },
-    // Per-verb: PUT rides the generic document-form builder (see
-    // the ideas/:id entry above for the shared rationale) — the
-    // SAME registration-first consult that keeps members/:id
-    // byte-unchanged applies here too (ai-members is also
-    // organizationNested:false), so the emitted bytes stay
-    // UNCHANGED from the hand-written body this replaces. POST
-    // is the composed edit (204, no body), untouched this task.
+    // G3: PUT emits aiMemberDocumentEntityOf (GET derive).
+    // Create/edit POST form the same address via this spec.
+    // POST response stays 204 (composed edit, no body).
     'ai-members/:id': {
         put: documentWriteResponseSpec(AI_MEMBERS_WIRING),
         post: { status: HTTP_NO_CONTENT },
     },
     'human-members': { status: HTTP_NO_CONTENT },
-    // Per-verb (Task 4): the synthesized detail document pair a
-    // create/edit bundle forms at this address needs a PUT-shaped
-    // spec (the ai-members/:id precedent) even though NO live PUT
-    // route exists here — HUMAN_MEMBERS_WIRING's own comment names
-    // this the first registered family without one. The `put` slot
-    // therefore serves ONLY the route-inline bundle formation and
-    // the seed's own document-class response lookup, never a real
-    // client PUT. `post` stays the composed edit (204, no body),
-    // unchanged.
+    // G3: synthesized PUT emits humanMemberDocumentEntityOf
+    // (GET derive). No live PUT route — create/edit POST and
+    // the seed form this address. POST response stays 204.
     'human-members/:id': {
         put: documentWriteResponseSpec(HUMAN_MEMBERS_WIRING),
         post: { status: HTTP_NO_CONTENT },
     },
     'identities': { status: HTTP_NO_CONTENT },
-    // The generic document-form builder (api/document-family.ts)
-    // absorbs the hand-written successBody — see the members/:id
-    // entry above for the shared rationale. identities is ALSO
-    // organizationNested:false, so documentWriteResponseSpec's
-    // registration-first consult omits the organization_id stamp
-    // here too — the emitted bytes stay UNCHANGED from the
-    // hand-written body above ({id, kind}):
-    // validateIdentityDocumentBody's entity carries no
-    // organization_id to spread in the first place, and the
-    // consult never adds one from the fence either — key-set and
-    // value equality re-confirmed at Step 0(a) of the task that
-    // wired this row.
+    // G3: identities/:id emits identityDocumentEntityOf
+    // (GET derive). Creation and the human-member half share
+    // this spec via formDocumentPairFor.
     'identities/:id': documentWriteResponseSpec(IDENTITIES_WIRING),
     'identities/:id/pii': {
         status: HTTP_OK,
@@ -3608,18 +3588,8 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
-    // The generic document-form builder (api/document-family.ts)
-    // absorbs the hand-written successBody — see the ideas/:id
-    // entry above for the shared rationale. memberships/:id emits
-    // the SAME bytes as before ({id, organization_id, identity_id,
-    // at}): documentWriteResponseSpec stamps organization_id from
-    // the fence FIRST, then spreads doc.entity — since
-    // MembershipDocumentBody's entity carries its OWN
-    // organization_id (unlike objectives' fence-stamped-only
-    // {position}), the spread overwrites the stamp with the SAME
-    // client-supplied value the hand-written body above already
-    // echoed verbatim — key-set and value equality, re-confirmed
-    // at Step 0(a) of the task that wired this row.
+    // G3: memberships/:id emits membershipDocumentEntityOf
+    // (GET derive). Accept and the live PUT share this spec.
     'memberships/:id': documentWriteResponseSpec(MEMBERSHIPS_WIRING),
     'identity-tokens/:id': {
         status: HTTP_OK,
@@ -3651,11 +3621,15 @@ export const WRITE_RESPONSE_SPECS:
         }),
     },
     'identity-tokens/:jti/revocation': { status: HTTP_NO_CONTENT },
+    // G3: GET wins. organizationEntityOf is id-last; the
+    // prior successBody was id-first. Stored PUT = GET.
     'organizations/:id': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateOrganizationEntity(withoutId(body ?? {})),
+        successBody: (params, body) => organizationEntityOf({
+            uriId: param(params, 0),
+            pairId: param(params, 0),
+            method: 'PUT',
+            body: withoutId(body ?? {}),
         }),
     },
     'identity-providers/:id': {
@@ -6105,13 +6079,17 @@ export const routes: Route[] = [
     // none. Phase Final Task 2: the organizations ROW half is
     // stripped — pure pair-plane write (postFlowTagDocumentOp
     // shape). WRITE_RESPONSE_SPECS successBody forms the wire
-    // bytes (and validates via validateOrganizationEntity).
+    // bytes via organizationEntityOf (id-last; GET wins).
     route('organizations/:id', {
         get: (db, p) => deriveOrganization(db, param(p, 0)),
         put: (db, p, body, _actor, pair) => {
             const id = param(p, 0);
-            const entity = withoutId(body) as unknown as
-                Omit<OrganizationEntity, 'id'>;
+            const entity = organizationEntityOf({
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: withoutId(body),
+            });
             return db.transaction(
                 // Phase Final Task 2: organizations ROW half
                 // stripped.
@@ -6120,7 +6098,7 @@ export const routes: Route[] = [
                     if (pair !== undefined) {
                         await appendMessagePair(view, pair);
                     }
-                    return { id, ...entity };
+                    return entity;
                 },
             );
         },

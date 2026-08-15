@@ -25,6 +25,9 @@ import {
     postMemberDocumentOp,
     postAiMemberDocumentOp,
     postHumanMemberDocumentOp,
+    aiMemberDocumentEntityOf,
+    humanMemberDocumentEntityOf,
+    formDocumentPairFor,
 } from '../api/routes.ts';
 import {
     formWritePair,
@@ -758,4 +761,63 @@ test('stored PUT body equals memberDocumentEntityOf of the'
     assert.equal(afterSkew.state, 'active');
     assert.equal(afterSkew.state_event_id, ev);
     assert.equal(afterSkew.type, 'ai');
+});
+
+test('stored PUT body equals aiMemberDocumentEntityOf',
+async () => {
+    const db = memoryDbAdapter();
+    await seedAdminSchema(db);
+    const id = 'ai-g3-stream';
+    const body = aiMemberFields();
+    const put = await handleRequest(
+        db, req('PUT', '/ai-members/' + id, DEV_TOKEN, body),
+    );
+    assert.equal(put.status, 201);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/ai-members/', id),
+    );
+    const expected = aiMemberDocumentEntityOf(
+        {
+            uriId: id,
+            pairId: id,
+            method: 'PUT',
+            body,
+        },
+        '',
+    );
+    assert.deepEqual(stored, expected);
+});
+
+test('synthesized human-members PUT equals '
++ 'humanMemberDocumentEntityOf', async () => {
+    const db = memoryDbAdapter();
+    await seedAdminSchema(db);
+    const id = 'hm-g3-stream';
+    const body = humanMemberFields();
+    const pair = await formDocumentPairFor(db, {
+        routePattern: 'human-members/:id',
+        params: [id],
+        body,
+        requesterIdentityId: 'current',
+        requestAt: AT,
+        organization: '1',
+        operationId: TEST_OPERATION_ID,
+    });
+    await db.transaction(
+        ['requests', 'responses'],
+        (view) => appendMessagePair(view, pair),
+    );
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/human-members/', id),
+    );
+    const expected = humanMemberDocumentEntityOf(
+        {
+            uriId: id,
+            pairId: id,
+            method: 'PUT',
+            body,
+        },
+        '',
+    );
+    assert.deepEqual(stored, expected);
 });

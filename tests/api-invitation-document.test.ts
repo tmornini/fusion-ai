@@ -16,6 +16,7 @@ import { requestMessageHash } from '../api/message-form.ts';
 import { deriveInvitations } from '../api/derive-invitations.ts';
 import {
     postMembershipDocumentOp,
+    membershipDocumentEntityOf,
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
@@ -23,6 +24,7 @@ import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedIdentityPii } from './identity-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
 
 // Phase 8 Task 6: the invitation document plane — the grant's
@@ -269,12 +271,31 @@ test('a fresh accept appends its memberships document at the'
     const derived = await documentGetHandler(wiring)(
         db, ['ms-doc-3'], 'sarah', '1',
     );
-    assert.deepEqual(derived, {
-        id: 'ms-doc-3', organization_id: '1',
-        identity_id: 'sarah',
+    const acceptBody = {
+        organization_id: '1', identity_id: 'sarah',
         type: 'member',
         at: '2026-01-01T00:00:01.000000Z',
+    };
+    assert.deepEqual(derived, {
+        id: 'ms-doc-3', ...acceptBody,
     });
+    const stored = JSON.parse(
+        await storedPutBodyText(
+            db, '/organizations/1/memberships/', 'ms-doc-3',
+        ),
+    );
+    assert.deepEqual(
+        stored,
+        membershipDocumentEntityOf(
+            {
+                uriId: 'ms-doc-3',
+                pairId: 'ms-doc-3',
+                method: 'PUT',
+                body: acceptBody,
+            },
+            '1',
+        ),
+    );
 });
 
 test('a no-op re-accept appends no memberships document',

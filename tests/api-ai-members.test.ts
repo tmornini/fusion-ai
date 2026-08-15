@@ -10,7 +10,9 @@ import { seedOrganizationMember } from './root-admin-fixture.ts';
 import { firstProviderModel } from './member-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
+import { aiMemberDocumentEntityOf } from '../api/routes.ts';
 
 const BASE = 'http://localhost';
 const MEMBER = 'walt';
@@ -202,3 +204,67 @@ test(
         );
     },
 );
+
+test('AI create stores aiMemberDocumentEntityOf at '
++ 'ai-members/:id', async () => {
+    const db = await freshDb();
+    const id = 'a-g3-create';
+    const fields = detail('Claude');
+    await POST(db, 'ai-members', {
+        id,
+        detail: fields,
+        initialState: 'active',
+        initialStateEventId: 'ev-g3',
+        initialStateAt: '2099-01-01T00:00:00.000000Z',
+    }, DEV_TOKEN);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/ai-members/', id),
+    );
+    assert.deepEqual(
+        stored,
+        aiMemberDocumentEntityOf(
+            {
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: fields,
+            },
+            '',
+        ),
+    );
+});
+
+test('AI edit stores aiMemberDocumentEntityOf at '
++ 'ai-members/:id', async () => {
+    const db = await freshDb();
+    const id = 'a-g3-edit';
+    await POST(db, 'ai-members', {
+        id,
+        detail: detail('Claude'),
+        initialState: 'active',
+        initialStateEventId: 'ev-g3',
+        initialStateAt: '2099-01-01T00:00:00.000000Z',
+    }, DEV_TOKEN);
+    const fields = { ...detail('Renamed'), skill_focus: 'qa' };
+    await POST(db, 'ai-members/' + id, {
+        detail: fields,
+        state: 'active',
+        stateAt: '2099-01-01T00:00:00.000000Z',
+        stateEventId: 'ev-g3',
+    }, DEV_TOKEN);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/ai-members/', id),
+    );
+    assert.deepEqual(
+        stored,
+        aiMemberDocumentEntityOf(
+            {
+                uriId: id,
+                pairId: id,
+                method: 'PUT',
+                body: fields,
+            },
+            '',
+        ),
+    );
+});
