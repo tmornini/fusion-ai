@@ -51,7 +51,9 @@ function requestFields() {
         at: '2026-01-01T00:00:00.000000Z',
         requester_identity_id: 'current',
         message_hash: 'a'.repeat(64),
-        message: '{"kind":"request"}',
+        message:
+            'PUT /organizations/1/ideas/42'
+            + ' HTTP/1.1\r\n\r\n',
         method: 'PUT',
         operation_id: '0123456789ABCDEFGHIJKL',
     };
@@ -165,7 +167,9 @@ test(
         assert.equal(rows.length, 1);
         assert.equal(rows[0]?.id, 'u2');
         assert.equal(
-            rows[0]?.message, '{"kind":"request"}',
+            rows[0]?.message,
+            'PUT /organizations/1/ideas/42'
+            + ' HTTP/1.1\r\n\r\n',
         );
     },
 );
