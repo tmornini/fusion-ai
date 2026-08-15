@@ -9,11 +9,12 @@ import type {
     IdentityProviderEntity,
     IdentityTokenRevocationEntity,
     ClientRegistrationEntity,
-    ClientStatus,
     IdentityKind,
 } from './types.ts';
 import {
     pickString,
+    validateIdentityPiiEntity,
+    validateClientRegistrationEntity,
     validateIdentityProviderEntity,
     validateIdentityTokenRevocationEntity,
 } from './validators.ts';
@@ -88,21 +89,16 @@ function piiPrefixFor(identityId: Id): string {
     );
 }
 
-// id-first, picked explicitly (pickString) rather than a body
-// spread — the deriveMemberParents/deriveBaselineScores
-// convention: a leaked operation-pair body reaching this
-// construction throws loudly rather than silently mis-deriving.
-function piiEntityOf(
+// G5: GET derive is the stored PUT. id-first via
+// validateIdentityPiiEntity (withoutId first). A leaked
+// operation-pair body throws rather than mis-deriving.
+export function piiEntityOf(
     identityId: Id,
     document: DerivedDocument,
 ): IdentityPiiEntity {
-    const body = document.body;
     return {
         id: identityId,
-        name: pickString(body, 'name'),
-        email: pickString(body, 'email'),
-        phone: pickString(body, 'phone'),
-        bio: pickString(body, 'bio'),
+        ...validateIdentityPiiEntity(withoutId(document.body)),
     };
 }
 
@@ -395,18 +391,17 @@ function registrationPrefixFor(identityId: Id): string {
     );
 }
 
-function registrationEntityOf(
+// G5: GET derive is the stored PUT. id-first via
+// validateClientRegistrationEntity (withoutId first).
+export function registrationEntityOf(
     identityId: Id,
     document: DerivedDocument,
 ): ClientRegistrationEntity {
-    const body = document.body;
     return {
         id: identityId,
-        grant_types: pickString(body, 'grant_types'),
-        redirect_uris: pickString(body, 'redirect_uris'),
-        jwks: pickString(body, 'jwks'),
-        aud: pickString(body, 'aud'),
-        status: pickString(body, 'status') as ClientStatus,
+        ...validateClientRegistrationEntity(
+            withoutId(document.body),
+        ),
     };
 }
 

@@ -67,9 +67,7 @@ import {
     validateIdeaSubmissionEntity,
     validateIdentityCreateBody,
     validateIdentityDocumentBody,
-    validateIdentityPiiEntity,
     validateIdentityCredentialEntity,
-    validateClientRegistrationEntity,
     validateMembershipDocumentBody,
     validateObjectiveCreateBody,
     validateObjectiveDocumentBody,
@@ -258,6 +256,8 @@ import {
     deriveIdentityProviders,
     deriveIdentityProvider,
     deriveTokenRevocation,
+    piiEntityOf,
+    registrationEntityOf,
     identityProviderEntityOf,
     tokenRevocationEntityOf,
 } from './derive-identity-spine.ts';
@@ -3126,16 +3126,22 @@ export async function postHumanMemberDocumentOp(
 // via replacePiiSlot (hard-delete zone). No states
 // interaction. `pair` is optional so a below-facade caller
 // keeps compiling; the live route always supplies one.
-// WRITE_RESPONSE_SPECS successBody forms the wire bytes.
+// WRITE_RESPONSE_SPECS successBody forms the wire bytes
+// via piiEntityOf (GET derive). G5: the slot still
+// physically deletes the prior pair.
 export async function postIdentityPiiDocumentOp(
     db: DbAdapter,
-    _id: Id,
+    id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
-): Promise<Omit<IdentityPiiEntity, 'id'>> {
-    const entity = withoutId(body) as unknown as
-        Omit<IdentityPiiEntity, 'id'>;
+): Promise<IdentityPiiEntity> {
+    const entity = piiEntityOf(id, {
+        uriId: '',
+        pairId: id,
+        method: 'PUT',
+        body: withoutId(body),
+    });
     return db.transaction(
         // Phase Final Task 2: identity_pii ROW half stripped.
         ['requests', 'responses'],
@@ -3205,16 +3211,22 @@ export async function postIdentityCredentialDocumentOp(
 // shape: Supersedes-chained appendMessagePair, never the pii
 // hard-delete zone. `pair` is optional so a below-facade
 // caller keeps compiling; the live route always supplies one.
-// WRITE_RESPONSE_SPECS successBody forms the wire bytes.
+// WRITE_RESPONSE_SPECS successBody forms the wire bytes
+// via registrationEntityOf (GET derive). DELETE stays a
+// marked tombstone (append), not a slot replace.
 export async function postClientRegistrationDocumentOp(
     db: DbAdapter,
-    _id: Id,
+    id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
-): Promise<Omit<ClientRegistrationEntity, 'id'>> {
-    const entity = withoutId(body) as unknown as
-        Omit<ClientRegistrationEntity, 'id'>;
+): Promise<ClientRegistrationEntity> {
+    const entity = registrationEntityOf(id, {
+        uriId: '',
+        pairId: id,
+        method: 'PUT',
+        body: withoutId(body),
+    });
     return db.transaction(
         ['requests', 'responses'],
         async (view) => {
@@ -3562,12 +3574,19 @@ export const WRITE_RESPONSE_SPECS:
     // (GET derive). Creation and the human-member half share
     // this spec via formDocumentPairFor.
     'identities/:id': documentWriteResponseSpec(IDENTITIES_WIRING),
+    // G5: piiEntityOf (GET derive). replacePiiSlot still
+    // physically deletes the prior pair.
     'identities/:id/pii': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateIdentityPiiEntity(withoutId(body ?? {})),
-        }),
+        successBody: (params, body) => piiEntityOf(
+            param(params, 0),
+            {
+                uriId: '',
+                pairId: param(params, 0),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            },
+        ),
     },
     // The written row's `secret` rides the wire here — a
     // deliberate zero-change carry-over (see the route comment
@@ -3582,14 +3601,17 @@ export const WRITE_RESPONSE_SPECS:
             ),
         }),
     },
+    // G5: registrationEntityOf (GET derive). DELETE is a
+    // marked tombstone (append), not a slot replace.
     'identities/:id/registration': {
         status: HTTP_OK,
-        successBody: (params, body) => ({
-            id: param(params, 0),
-            ...validateClientRegistrationEntity(
-                withoutId(body ?? {}),
-            ),
-        }),
+        successBody: (params, body) =>
+            registrationEntityOf(param(params, 0), {
+                uriId: '',
+                pairId: param(params, 0),
+                method: 'PUT',
+                body: withoutId(body ?? {}),
+            }),
     },
     // G3: memberships/:id emits membershipDocumentEntityOf
     // (GET derive). Accept and the live PUT share this spec.
@@ -4561,6 +4583,7 @@ export const routes: Route[] = [
             postIdentityPiiDocumentOp(
                 db, param(p, 0), body, actor, pair,
             ),
+        // G5: DELETE still replacePiiSlot (physical delete).
         delete: (db, _p, _actor, pair) => {
             // Phase Final Task 2: identity_pii ROW half
             // stripped — pair-plane replacePiiSlot only.

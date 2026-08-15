@@ -7,8 +7,12 @@ import {
 import { handleRequest } from '../api/api.ts';
 import { DEV_TOKEN, organizationToken } from './token-fixtures.ts';
 import {
-    apiRequest, TEST_OPERATION_ID,
+    apiRequest, TEST_OPERATION_ID, storedPutBodyText,
 } from './http-fixtures.ts';
+import {
+    deriveIdentityPii,
+    piiEntityOf,
+} from '../api/derive-identity-spine.ts';
 import {
     seedAdminSchema,
     organizationRow,
@@ -114,13 +118,8 @@ test('PUT-PUT at one address leaves exactly ONE pair (the'
     );
     assert.equal(requests.length, responses.length);
     // Phase Final Task 2: identity_pii ROW half stripped —
-    // domain oracle is deriveIdentityPii. Gate 6 residual:
-    // pre-Final orphan identity_pii rows on old origins stay
-    // until Stage B table deletion; completeness is pair-
-    // plane only.
-    const { deriveIdentityPii } = await import(
-        '../api/derive-identity-spine.ts'
-    );
+    // domain oracle is deriveIdentityPii. G5: PUT-PUT still
+    // physically deletes the prior pair (one-role DELETE).
     const domainRow = await deriveIdentityPii(db, 'slot-1');
     assert.equal(domainRow.name, 'Ann Marie');
     // Phase Final Stage B: identity spine tables retired.
@@ -152,9 +151,6 @@ async () => {
     const messages = await allMessages(db);
     assert.ok(!messages.some(m => m.includes('Bob')));
     assert.ok(!messages.some(m => m.includes('bob@example.com')));
-    const { deriveIdentityPii } = await import(
-        '../api/derive-identity-spine.ts'
-    );
     await assert.rejects(() => deriveIdentityPii(db, 'slot-2'));
 });
 
@@ -181,9 +177,6 @@ async () => {
     assert.equal(atAddress.length, 1);
     assert.equal(
         atAddress[0]!.id, put.headers.get('Response-ID'),
-    );
-    const { deriveIdentityPii } = await import(
-        '../api/derive-identity-spine.ts'
     );
     const domainRow = await deriveIdentityPii(db, 'slot-3');
     assert.equal(domainRow.name, 'Cara');
@@ -308,9 +301,6 @@ test('grant -> accept -> human-member create -> edit -> erase'
         'DELETE', '/identities/' + id + '/pii', DEV_TOKEN,
     ));
     assert.equal(erase.status, 204);
-    const { deriveIdentityPii } = await import(
-        '../api/derive-identity-spine.ts'
-    );
     await assert.rejects(() => deriveIdentityPii(db, id));
 
     const erasedValues = [
@@ -360,4 +350,37 @@ test("the zone's confinement: a non-/pii DELETE (a memberships"
             && r.uri_id === 'ms-confine-1',
     );
     assert.equal(atAddress.length, 2);
+});
+
+// G5: stored PUT = piiEntityOf (GET derive). GET self-only
+// so this pin writes and reads the caller's own slot.
+test('stored PUT body equals piiEntityOf', async () => {
+    const db = await freshDb();
+    const id = 'current';
+    const fields = humanPii('Gina');
+    const put = await handleRequest(db, req(
+        'PUT', '/identities/' + id + '/pii',
+        DEV_TOKEN, fields,
+    ));
+    assert.equal(put.status, 201);
+    const stored = JSON.parse(
+        await storedPutBodyText(
+            db, '/identities/' + id + '/pii/', '',
+        ),
+    );
+    const expected = piiEntityOf(id, {
+        uriId: '',
+        pairId: id,
+        method: 'PUT',
+        body: fields,
+    });
+    assert.equal(Object.keys(expected)[0], 'id');
+    assert.deepEqual(stored, expected);
+    assert.deepEqual(stored, await deriveIdentityPii(db, id));
+    assert.deepEqual(stored, await put.json());
+    const got = await handleRequest(db, req(
+        'GET', '/identities/' + id + '/pii', DEV_TOKEN,
+    ));
+    assert.equal(got.status, 200);
+    assert.deepEqual(stored, await got.json());
 });
