@@ -355,7 +355,7 @@ async function storedPairAt(
             uri_id: pair.uriId,
             at,
             status: pair.responseStatus,
-            etag: pair.responseEtag,
+            version: pair.responseEtag,
             message_hash: pair.responseHash,
             message: pair.responseMessage,
         },

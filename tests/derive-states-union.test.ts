@@ -263,7 +263,11 @@ async function saveFlowWithSidecars(
     revivals: readonly GraphSidecar[],
     stateEventId: string, stateAt: string,
 ): Promise<void> {
-    const headId = await headResponseId(db, token, flowId);
+    const got = await handleRequest(
+        db, req('GET', '/flows/' + flowId, token),
+    );
+    const etag = got.headers.get('ETag');
+    assert.ok(etag, 'no ETag on GET /flows/' + flowId);
     const res = await handleRequest(db, req(
         'PUT', '/flows/' + flowId, token,
         {
@@ -277,7 +281,7 @@ async function saveFlowWithSidecars(
             },
             revivals,
         },
-        { 'if-match': '"' + headId + '"' },
+        { 'if-match': etag },
     ));
     assert.equal(res.status, 200, 'flow save PUT failed');
 }

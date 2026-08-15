@@ -69,6 +69,7 @@ import {
 } from './provider-models.ts';
 import { extractErrorMessage } from '../shared/error-helpers.ts';
 import { ValidationError } from './types.ts';
+import { HEX64 } from './message-form.ts';
 
 export function parseOrThrow(
     raw: string,
@@ -2319,7 +2320,7 @@ export function validateRequestEntity(
 }
 
 const RESPONSE_BODY_KEYS: readonly string[] = [
-    'uri_prefix', 'uri_id', 'at', 'status', 'etag',
+    'uri_prefix', 'uri_id', 'at', 'status', 'version',
     'message_hash', 'message',
 ];
 
@@ -2352,6 +2353,13 @@ export function validateResponseEntity(
             + 'character lowercase hex sha256 digest',
         );
     }
+    const version = pickString(body, 'version');
+    if (!HEX64.test(version)) {
+        throw new ValidationError(
+            'ResponseEntity.version must be a 64-'
+            + 'character lowercase hex digest',
+        );
+    }
     const at = validateTimestampField(
         body, 'at', 'ResponseEntity',
     );
@@ -2360,7 +2368,7 @@ export function validateResponseEntity(
         uri_id: pickString(body, 'uri_id'),
         at,
         status,
-        etag: pickString(body, 'etag'),
+        version,
         message_hash: messageHash,
         message: pickString(body, 'message'),
     };

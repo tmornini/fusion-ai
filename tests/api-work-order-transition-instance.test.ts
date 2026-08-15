@@ -21,6 +21,7 @@ import {
     formWritePair,
     IF_MATCH_HEADER,
     strongEtagOf,
+    HEX64,
     type MessagePair,
 } from '../api/message-pair.ts';
 import {
@@ -629,10 +630,12 @@ async () => {
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
     );
     assert.ok(head !== undefined);
-    assert.equal(
-        get.headers.get('ETag'),
-        strongEtagOf(head.pairId),
+    const getEtag = get.headers.get('ETag');
+    assert.ok(
+        getEtag !== null
+        && HEX64.test(getEtag.slice(1, -1)),
     );
+    assert.notEqual(getEtag, strongEtagOf(head.pairId));
     assert.notEqual(
         get.headers.get('ETag'),
         etag,

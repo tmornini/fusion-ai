@@ -20,6 +20,7 @@ import {
     appendMessagePair,
     IF_MATCH_HEADER,
     strongEtagOf,
+    HEX64,
 } from '../api/message-pair.ts';
 import {
     INSTANCE_DETAIL_PATTERN,
@@ -206,10 +207,12 @@ async () => {
         responseId !== null && responseId !== '',
         'Response-ID present',
     );
-    assert.equal(
-        res.headers.get('ETag'),
-        strongEtagOf(responseId!),
+    const createEtag = res.headers.get('ETag');
+    assert.ok(
+        createEtag !== null
+        && HEX64.test(createEtag.slice(1, -1)),
     );
+    assert.notEqual(createEtag, strongEtagOf(responseId!));
     const echo = await res.json() as {
         id: string;
         organization_id: string;
@@ -532,10 +535,6 @@ async () => {
     assert.equal(
         second.headers.get('ETag'),
         originalEtag,
-    );
-    assert.equal(
-        second.headers.get('ETag'),
-        strongEtagOf(originalId),
     );
     assert.deepEqual(await second.json(), originalBody);
     const responses = await db.responses.getAllWhere(

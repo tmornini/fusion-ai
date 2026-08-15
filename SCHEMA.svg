@@ -53,7 +53,7 @@
     <text class="type" x="238" y="315">text</text>
     <text class="col" x="50" y="333">status</text>
     <text class="type" x="238" y="333">num</text>
-    <text class="col" x="50" y="351">etag</text>
+    <text class="col" x="50" y="351">version</text>
     <text class="type" x="238" y="351">text</text>
     <text class="col" x="50" y="369">message_hash</text>
     <text class="type" x="238" y="369">text</text>

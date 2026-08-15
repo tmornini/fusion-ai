@@ -1037,7 +1037,7 @@ export interface ResponseEntity {
     uri_id: string;
     at: string;
     status: number;
-    etag: string;
+    version: string;
     message_hash: string;
     message: string;
 }

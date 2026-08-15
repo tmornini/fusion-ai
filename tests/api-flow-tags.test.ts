@@ -187,7 +187,11 @@ test('e2e: a re-PUT of the same tag name (pinning a DIFFERENT'
     const saved = await handleRequest(db, req(
         'PUT', '/flows/flow-tag-3', token,
         documentBody('Second Save', 'flow-tag-3-ev-2'),
-        { 'if-match': '"' + r1 + '"' },
+        { 'if-match': (
+            await handleRequest(
+                db, req('GET', '/flows/flow-tag-3', token),
+            )
+        ).headers.get('ETag')! },
     ));
     assert.equal(saved.status, 200);
     const r2 = await headResponseId(db, token, 'flow-tag-3');
@@ -368,7 +372,12 @@ test('e2e: a tag written once still resolves to the EXACT'
     const save2 = await handleRequest(db, req(
         'PUT', '/flows/flow-tag-pin-1', token,
         documentBody('Second Save', 'flow-tag-pin-1-ev-2'),
-        { 'if-match': '"' + r1 + '"' },
+        { 'if-match': (
+            await handleRequest(
+                db,
+                req('GET', '/flows/flow-tag-pin-1', token),
+            )
+        ).headers.get('ETag')! },
     ));
     assert.equal(save2.status, 200);
     const r2 = await headResponseId(db, token, 'flow-tag-pin-1');
@@ -377,7 +386,12 @@ test('e2e: a tag written once still resolves to the EXACT'
     const save3 = await handleRequest(db, req(
         'PUT', '/flows/flow-tag-pin-1', token,
         documentBody('Third Save', 'flow-tag-pin-1-ev-3'),
-        { 'if-match': '"' + r2 + '"' },
+        { 'if-match': (
+            await handleRequest(
+                db,
+                req('GET', '/flows/flow-tag-pin-1', token),
+            )
+        ).headers.get('ETag')! },
     ));
     assert.equal(save3.status, 200);
     const r3 = await headResponseId(db, token, 'flow-tag-pin-1');

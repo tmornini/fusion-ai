@@ -13,7 +13,6 @@ import { handleRequest } from '../api/api.ts';
 import {
     formWritePair,
     appendMessagePair,
-    ifMatchFromPair,
     headPairIdAt,
     IF_MATCH_HEADER,
     strongEtagOf,
@@ -194,7 +193,7 @@ async function testDocumentOp(
         ['requests', 'responses'],
         async (view) => {
             if (pair !== undefined) {
-                const latchedId = ifMatchFromPair(pair);
+                const latchedId = pair.latchedHeadPairId;
                 const latest = await headPairIdAt(
                     view, pair.uriPrefix, pair.uriId,
                 );
@@ -374,7 +373,10 @@ test('locked arm: a stale If-Match echo 412s', async () => {
         const res = await handleRequest(db, req(
             'PUT', '/' + TEST_FAMILY + '/doc-3', token,
             { v: 'second' },
-            { [IF_MATCH_HEADER]: strongEtagOf('bogus') },
+            { [IF_MATCH_HEADER]: strongEtagOf(
+                'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+                + 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+            ) },
         ));
         assert.equal(res.status, 412);
         assert.equal(
@@ -394,11 +396,11 @@ test('locked arm: a matching echo stores no predecessor'
             'PUT', '/' + TEST_FAMILY + '/doc-4', token,
             { v: 'first' },
         ));
-        const firstId = first.headers.get('Response-ID')!;
+        const firstEtag = first.headers.get('ETag')!;
         const second = await handleRequest(db, req(
             'PUT', '/' + TEST_FAMILY + '/doc-4', token,
             { v: 'second' },
-            { [IF_MATCH_HEADER]: strongEtagOf(firstId) },
+            { [IF_MATCH_HEADER]: firstEtag },
         ));
         assert.equal(second.status, 200);
         assert.equal(second.headers.get('Follows'), null);
@@ -425,11 +427,11 @@ async () => {
             'PUT', '/' + TEST_FAMILY + '/doc-5', token,
             { v: 'first' },
         ));
-        const firstId = first.headers.get('Response-ID')!;
+        const firstEtag = first.headers.get('ETag')!;
         const editRequest = req(
             'PUT', '/' + TEST_FAMILY + '/doc-5', token,
             { v: 'second' },
-            { [IF_MATCH_HEADER]: strongEtagOf(firstId) },
+            { [IF_MATCH_HEADER]: firstEtag },
         );
         const edit = await handleRequest(db, editRequest.clone());
         assert.equal(edit.status, 200);
@@ -458,19 +460,19 @@ test('locked arm: a fresh-keyed replay echoing a superseded'
             'PUT', '/' + TEST_FAMILY + '/doc-6', token,
             { v: 'first' },
         ));
-        const genesisId = genesis.headers.get('Response-ID')!;
+        const genesisEtag = genesis.headers.get('ETag')!;
         await handleRequest(db, req(
             'PUT', '/' + TEST_FAMILY + '/doc-6', token,
             { v: 'second' },
-            { [IF_MATCH_HEADER]: strongEtagOf(genesisId) },
+            { [IF_MATCH_HEADER]: genesisEtag },
         ));
         // A DIFFERENT (fresh) address has no head of its own;
-        // echoing doc-6's now-superseded genesis id is neither
+        // echoing doc-6's now-superseded genesis tag is neither
         // "absent" nor "matches MY head" — 412.
         const res = await handleRequest(db, req(
             'PUT', '/' + TEST_FAMILY + '/doc-7', token,
             { v: 'first' },
-            { [IF_MATCH_HEADER]: strongEtagOf(genesisId) },
+            { [IF_MATCH_HEADER]: genesisEtag },
         ));
         assert.equal(res.status, 412);
     });
@@ -499,7 +501,7 @@ test('locked arm: two writers racing the SAME echo — the'
     // cannot close; the in-tx head re-read closes it.
     const echo = {
         name: IF_MATCH_HEADER,
-        value: strongEtagOf(genesis.id),
+        value: strongEtagOf(genesis.responseEtag),
     };
     const writerA = await formWritePair({
         method: 'PUT', pathname: '/' + TEST_PATTERN,
@@ -510,6 +512,8 @@ test('locked arm: two writers racing the SAME echo — the'
         requesterIdentityId: 'current', requestAt: AT,
         organization: '1', responseStatus: 200,
         responseBody: undefined,
+        latchedHeadPairId: genesis.id,
+        matchedEtag: genesis.responseEtag,
     });
     const writerB = await formWritePair({
         method: 'PUT', pathname: '/' + TEST_PATTERN,
@@ -520,6 +524,8 @@ test('locked arm: two writers racing the SAME echo — the'
         requesterIdentityId: 'current', requestAt: AT,
         organization: '1', responseStatus: 200,
         responseBody: undefined,
+        latchedHeadPairId: genesis.id,
+        matchedEtag: genesis.responseEtag,
     });
     await testDocumentOp(
         db, 'race', { v: 'a' }, 'current', writerA,
@@ -554,15 +560,15 @@ async () => {
         const genesis = await handleRequest(db, req(
             'PUT', path, token, { v: 'genesis' },
         ));
-        const head = genesis.headers.get('Response-ID')!;
+        const head = genesis.headers.get('ETag')!;
         const [first, second] = await Promise.all([
             handleRequest(db, req(
                 'PUT', path, token, { v: 'a' },
-                { [IF_MATCH_HEADER]: strongEtagOf(head) },
+                { [IF_MATCH_HEADER]: head },
             )),
             handleRequest(db, req(
                 'PUT', path, token, { v: 'b' },
-                { [IF_MATCH_HEADER]: strongEtagOf(head) },
+                { [IF_MATCH_HEADER]: head },
             )),
         ]);
         const statuses =

@@ -116,8 +116,11 @@ import {
     ifMatchFromPair,
     rawIfMatchFromPair,
     parseIfMatch,
+    IF_MATCH_HEADER,
+    strongEtagOf,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
+import type { FieldLine } from '../shared/http-message/types.ts';
 import { replacePiiSlot } from './pii-hard-delete.ts';
 import {
     generateCryptoSafeBase62,
@@ -193,6 +196,9 @@ import {
     deriveInstanceCollection,
     deriveInstanceRevisions,
     mergeInstanceValues,
+    instanceGetBody,
+    instanceParentEtag,
+    advertisedInstanceEtag,
     type InstanceValue,
 } from './derive-record-instances.ts';
 import {
@@ -1091,7 +1097,7 @@ function attributeSchemaOf(
     };
 }
 
-async function loadAttributeSchemaById(
+export async function loadAttributeSchemaById(
     db: DbAdapter,
     organization: Id,
     recordTypeId: Id,
@@ -1554,6 +1560,7 @@ export async function postFlowDocumentOp(
         ...doc.entity,
         ...documentOperationOrganization(body),
     } as unknown as Omit<FlowEntity, 'id'>;
+    const latchedId = pair?.latchedHeadPairId;
     return db.transaction(
         // Phase Final Task 2: flows + graph ROW halves
         // stripped; states ROW half stripped (pair plane only).
@@ -1563,7 +1570,6 @@ export async function postFlowDocumentOp(
             // states-trace strip; pair body also carries
             // revivals for deriveFlowGraphStates (SIDECAR-KEEP).
             if (pair !== undefined) {
-                const latchedId = ifMatchFromPair(pair);
                 const latest = await headPairIdAt(
                     view, pair.uriPrefix, pair.uriId,
                 );
@@ -2625,10 +2631,7 @@ export async function postWorkOrderTransitionOp(
     const head = await deriveInstanceHead(
         db, org, typeId, instanceId,
     );
-    if (
-        head === undefined
-        || head.pairId !== ifMatchTarget
-    ) {
+    if (head === undefined) {
         throw new ApiError(
             'If-Match does not match the current '
                 + 'instance at ' + pathname,
@@ -2638,6 +2641,25 @@ export async function postWorkOrderTransitionOp(
     const attributesById = await loadAttributeSchemaById(
         db, org, typeId,
     );
+    const projected = projectReadableValues(
+        head.values, attributesById, roles,
+    );
+    const parent = await instanceParentEtag(
+        db, head.pairId,
+    );
+    const advertised = await advertisedInstanceEtag(
+        instanceGetBody(
+            instanceId, org, typeId, projected,
+        ),
+        parent,
+    );
+    if (ifMatchTarget !== advertised) {
+        throw new ApiError(
+            'If-Match does not match the current '
+                + 'instance at ' + pathname,
+            HTTP_PRECONDITION_FAILED,
+        );
+    }
     const aclIds = [
         ...validated.set.map(
             (entry) => entry.attribute_id,
@@ -2679,8 +2701,17 @@ export async function postWorkOrderTransitionOp(
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
         organization: org,
-        response: { status: HTTP_OK, body: {} },
+        response: {
+            status: HTTP_OK,
+            body: { values: mergedValues },
+        },
+        matchedEtag: ifMatchTarget,
+        headerFields: [{
+            name: IF_MATCH_HEADER,
+            value: strongEtagOf(ifMatchTarget),
+        }],
     });
+    const latchedPairId = head.pairId;
     await db.transaction(
         ['requests', 'responses'],
         async (view) => {
@@ -2694,15 +2725,14 @@ export async function postWorkOrderTransitionOp(
                     'work_orders',
                 );
             }
-            // R9: lock head must still be the client's
-            // If-Match target, not merely "unchanged since
-            // our re-derive".
+            // R9: lock head must still be the latched pair
+            // id, not the 64-hex If-Match.
             const latest = await headPairIdAt(
                 view,
                 revisionPair.uriPrefix,
                 revisionPair.uriId,
             );
-            if (latest !== ifMatchTarget) {
+            if (latest !== latchedPairId) {
                 throw new ApiError(
                     'If-Match does not match the current '
                         + 'instance at ' + pathname,
@@ -3681,6 +3711,8 @@ export interface DocumentPairFormInput {
         readonly status: number;
         readonly body: unknown;
     };
+    readonly matchedEtag?: string;
+    readonly headerFields?: readonly FieldLine[];
 }
 
 // The shared document-pair former (Phase 9 Task 2, Commandment
@@ -3725,13 +3757,16 @@ export async function formDocumentPairFor(
         routePattern: input.routePattern,
         routeSegments,
         pathSegments,
-        headerFields: [],
+        headerFields: input.headerFields ?? [],
         body: input.body,
         requesterIdentityId: input.requesterIdentityId,
         requestAt: input.requestAt,
         organization: input.organization,
         responseStatus,
         responseBody,
+        ...(input.matchedEtag !== undefined
+            ? { matchedEtag: input.matchedEtag }
+            : {}),
     });
 }
 
@@ -3925,15 +3960,32 @@ export async function postInstancePatchOp(
             'instance PATCH pair lacks If-Match',
         );
     }
-    // Values only — head must still equal the client's
-    // If-Match target or we 412 (no silent rebase).
     const head = await deriveInstanceHead(
         db, org, typeId, instanceId,
     );
-    if (
-        head === undefined
-        || head.pairId !== ifMatchTarget
-    ) {
+    if (head === undefined) {
+        throw new ApiError(
+            'If-Match does not match the current '
+                + 'instance at ' + pathname,
+            HTTP_PRECONDITION_FAILED,
+        );
+    }
+    const attributesById = await loadAttributeSchemaById(
+        db, org, typeId,
+    );
+    const projectedHead = projectReadableValues(
+        head.values, attributesById, roles,
+    );
+    const parent = await instanceParentEtag(
+        db, head.pairId,
+    );
+    const advertised = await advertisedInstanceEtag(
+        instanceGetBody(
+            instanceId, org, typeId, projectedHead,
+        ),
+        parent,
+    );
+    if (ifMatchTarget !== advertised) {
         throw new ApiError(
             'If-Match does not match the current '
                 + 'instance at ' + pathname,
@@ -3941,9 +3993,6 @@ export async function postInstancePatchOp(
         );
     }
     const validated = validateInstancePatchBody(body);
-    const attributesById = await loadAttributeSchemaById(
-        db, org, typeId,
-    );
     const aclIds = [
         ...validated.set.map(
             (entry) => entry.attribute_id,
@@ -3973,20 +4022,28 @@ export async function postInstancePatchOp(
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
         organization: org,
-        response: { status: HTTP_OK, body: {} },
+        response: {
+            status: HTTP_OK,
+            body: { values: mergedValues },
+        },
+        matchedEtag: ifMatchTarget,
+        headerFields: [{
+            name: IF_MATCH_HEADER,
+            value: strongEtagOf(ifMatchTarget),
+        }],
     });
+    const latchedPairId = head.pairId;
     await db.transaction(
         ['requests', 'responses'],
         async (view) => {
-            // R9: lock head must still be the client's
-            // If-Match target, not merely "unchanged since
-            // our re-derive".
+            // R9: lock head must still be the latched pair
+            // id, not the 64-hex If-Match.
             const latest = await headPairIdAt(
                 view,
                 revisionPair.uriPrefix,
                 revisionPair.uriId,
             );
-            if (latest !== ifMatchTarget) {
+            if (latest !== latchedPairId) {
                 throw new ApiError(
                     'If-Match does not match the current '
                         + 'instance at ' + pathname,
@@ -5655,15 +5712,29 @@ export const routes: Route[] = [
             const heads = await deriveInstanceCollection(
                 db, org, typeId,
             );
-            return heads.map((head) => ({
-                id: head.id,
-                organization_id: org,
-                record_type_id: typeId,
-                values: projectReadableValues(
+            const rows = [];
+            for (const head of heads) {
+                const values = projectReadableValues(
                     head.values, attributesById, roles,
-                ),
-                etag: head.pairId,
-            }));
+                );
+                const parent = await instanceParentEtag(
+                    db, head.pairId,
+                );
+                const etag = await advertisedInstanceEtag(
+                    instanceGetBody(
+                        head.id, org, typeId, values,
+                    ),
+                    parent,
+                );
+                rows.push({
+                    id: head.id,
+                    organization_id: org,
+                    record_type_id: typeId,
+                    values,
+                    etag,
+                });
+            }
+            return rows;
         },
     }),
     // Nested instance value-revision history (Task 19).
@@ -5697,13 +5768,27 @@ export const routes: Route[] = [
                 await loadAttributeSchemaById(
                     db, org, typeId,
                 );
-            return revisions.toReversed().map((rev) => ({
-                at: rev.at,
-                etag: rev.pairId,
-                values: projectReadableValues(
+            const entries = [];
+            for (const rev of revisions.toReversed()) {
+                const values = projectReadableValues(
                     rev.values, attributesById, roles,
-                ),
-            }));
+                );
+                const parent = await instanceParentEtag(
+                    db, rev.pairId,
+                );
+                const etag = await advertisedInstanceEtag(
+                    instanceGetBody(
+                        instanceId, org, typeId, values,
+                    ),
+                    parent,
+                );
+                entries.push({
+                    at: rev.at,
+                    etag,
+                    values,
+                });
+            }
+            return entries;
         },
     }),
     // Nested instance detail (Task 15 PUT create-only;

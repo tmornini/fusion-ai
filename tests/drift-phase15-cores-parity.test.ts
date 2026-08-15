@@ -1133,7 +1133,12 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
             },
             revivals: [],
         },
-        { 'if-match': '"' + headId! + '"' },
+        { 'if-match': (
+            await handleRequest(
+                db,
+                req('GET', '/flows/' + flowId, token),
+            )
+        ).headers.get('ETag')! },
     ));
     assert.equal(putRemove.status, 200);
 
@@ -1273,7 +1278,12 @@ test('residual pin: soft-deleted node drops from'
             },
             revivals: [],
         },
-        { 'if-match': '"' + headId! + '"' },
+        { 'if-match': (
+            await handleRequest(
+                db,
+                req('GET', '/flows/' + flowId, token),
+            )
+        ).headers.get('ETag')! },
     ));
     assert.equal(putDelete.status, 200);
 

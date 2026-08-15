@@ -13,7 +13,9 @@ import {
     buildResponseModel,
     storedWire,
     requestMessageHash,
-    bodyEtagOf,
+    documentVersion,
+    bodyOctetsOf,
+    HEX64,
 } from './message-form.ts';
 import { validateIdentityTokenEntity } from './validators.ts';
 import type { FieldLine } from '../shared/http-message/types.ts';
@@ -55,6 +57,9 @@ export interface MessagePair {
     readonly responseMessage: string;
     readonly responseEtag: string;
     readonly responseHash: string;
+    // Pre-tx lock-head pair id, latched when If-Match
+    // matches the advertised ETag. In-tx re-query only.
+    readonly latchedHeadPairId?: string;
 }
 
 // The gate's seed for the two /authentication/* grant routes
@@ -95,6 +100,10 @@ export interface WritePairInput {
     readonly organization: Id | undefined;
     readonly responseStatus: number;
     readonly responseBody: unknown | undefined;
+    // 64-hex advertised ETag this later write is matching.
+    // Omitted on genesis / unconditional writes.
+    readonly matchedEtag?: string;
+    readonly latchedHeadPairId?: string;
 }
 
 const RESPONSE_ID_FIELD = 'response-id';
@@ -160,6 +169,12 @@ export async function formWritePair(
     });
     const requestMessage = storedWire(requestModel);
     const responseMessage = storedWire(responseModel);
+    const version = input.method === 'DELETE'
+        ? await requestMessageHash(responseMessage)
+        : await documentVersion(
+            bodyOctetsOf(responseModel),
+            input.matchedEtag,
+        );
     return {
         id,
         requestAt: input.requestAt,
@@ -170,8 +185,11 @@ export async function formWritePair(
         requestHash: await requestMessageHash(requestMessage),
         responseStatus: input.responseStatus,
         responseMessage,
-        responseEtag: await bodyEtagOf(responseModel),
+        responseEtag: version,
         responseHash: await requestMessageHash(responseMessage),
+        ...(input.latchedHeadPairId !== undefined
+            ? { latchedHeadPairId: input.latchedHeadPairId }
+            : {}),
     };
 }
 
@@ -293,15 +311,17 @@ export function httpDateOf(at: string): string {
 }
 
 // Locked PUT and PATCH concurrency dialect: If-Match carries
-// the strong ETag (head document-pair response id). Not a
+// the strong ETag (quoted 64-hex documentVersion). Not a
 // credential — stored verbatim so two writes differing only
 // in If-Match are different messages for replay identity.
 export const IF_MATCH_HEADER = 'if-match';
 
-// Parse a wire If-Match value into the opaque pair id.
-// Accepts exactly one strong etag (`"id"`). Anything else —
-// `*`, weak (`W/"…"`), lists, unquoted — yields undefined;
-// the caller answers 400 (malformed precondition).
+export { HEX64 } from './message-form.ts';
+
+// Parse a wire If-Match value into the unquoted 64-hex
+// tag. Accepts exactly one strong etag (`"<hex64>"`).
+// Anything else — `*`, weak, lists, unquoted, pair id —
+// yields undefined; the caller answers 400.
 export function parseIfMatch(
     header: string,
 ): string | undefined {
@@ -313,9 +333,7 @@ export function parseIfMatch(
         return undefined;
     }
     const inner = header.slice(1, -1);
-    if (inner.length === 0 || inner.includes('"')) {
-        return undefined;
-    }
+    if (!HEX64.test(inner)) return undefined;
     return inner;
 }
 
@@ -323,15 +341,21 @@ export function parseIfMatch(
 // pair's request message (hoisted into the hash). This is
 // the gate-verified latch for the in-tx head re-read —
 // never re-derive a live head and treat it as the echo.
-export function ifMatchFromPair(
-    pair: MessagePair,
+export function ifMatchFromMessage(
+    message: string,
 ): string | undefined {
-    const model = parseWire(pair.requestMessage);
+    const model = parseWire(message);
     const field = model.fields.find(
         (line) => line.name === IF_MATCH_HEADER,
     );
     if (field === undefined) return undefined;
     return parseIfMatch(field.value);
+}
+
+export function ifMatchFromPair(
+    pair: MessagePair,
+): string | undefined {
+    return ifMatchFromMessage(pair.requestMessage);
 }
 
 // Raw If-Match header value from a formed pair —
@@ -349,17 +373,16 @@ export function rawIfMatchFromPair(
     return field?.value;
 }
 
-// Strong wire ETag for a document-pair response id.
-// Distinct from `responses.etag` (body sha256 column).
-export function strongEtagOf(pairId: string): string {
-    return '"' + pairId + '"';
+// Strong wire ETag: quotes a 64-hex version token.
+export function strongEtagOf(tag: string): string {
+    return '"' + tag + '"';
 }
 
 // Attach the strong ETag header; returns the same Response.
 export function attachEtag(
-    response: Response, pairId: string,
+    response: Response, tag: string,
 ): Response {
-    response.headers.set('ETag', strongEtagOf(pairId));
+    response.headers.set('ETag', strongEtagOf(tag));
     return response;
 }
 
@@ -485,7 +508,7 @@ export async function putMessagePair(
         uri_id: pair.uriId,
         at: nowUtc(),
         status: pair.responseStatus,
-        etag: pair.responseEtag,
+        version: pair.responseEtag,
         message_hash: pair.responseHash,
         message: pair.responseMessage,
     });

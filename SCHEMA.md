@@ -157,15 +157,19 @@ UUID per pair, never a foreign key of its own).
 | uri_id | TEXT | Resource id, or `''` for a collection |
 | at | TEXT | RFC-3339 Zulu — envelope metadata |
 | status | INTEGER | HTTP status, 100..599 |
-| etag | TEXT | sha256 of body bytes (or empty; `bodyEtagOf`) |
+| version | TEXT | 64-hex `documentVersion` of body octets |
 | message_hash | TEXT | sha256 hex digest of `message` |
-| message | TEXT | The canonical stored HTTP message |
+| message | TEXT | The stored HTTP message (`serializeWire`) |
 
-`responses.etag` is storage-only body content-addressing —
-**unrelated to the wire ETag** on instance
-GET/PUT/PATCH (wire ETag = head pair response id; see
-API.md §5.4.1 / §5.20). Implementers must not conflate
-them.
+`responses.version` is the document revision token
+(unconditional / genesis: sha256 of response body octets;
+later: sha256 of body octets || matched 64-hex). Wire
+`ETag` / `If-Match` are that same token for documents.
+Instance GET advertises `documentVersion` of the
+projected body (not stored). Pair `id` stays
+`Response-ID` (locator). DELETE `version` is sha256 of
+the stored 204 wire (`Date:` omitted). No `Version:`
+header.
 
 Validator: `validateResponseEntity` (`api/validators.ts`).
 Secondary indexes: `uri_prefix`, `uri_id`
@@ -251,8 +255,10 @@ Org-nested wire = storage (no dual-wire flat `/records`):
   412). DELETE tombstone-wins. Value-revision history
   at `.../instances/:id/history` is **not** a lifecycle-
   trio clone. Derive:
-  `api/derive-record-instances.ts`. Wire ETag = head
-  response id (unrelated to `responses.etag` column).
+  `api/derive-record-instances.ts`. Wire ETag is
+  `documentVersion` of the projected body; stored
+  `version` is `documentVersion` of the full stored
+  body. The two differ by definition.
 
 Snapshot import rejects retired flat prefixes
 `/organizations/:org/records/` and

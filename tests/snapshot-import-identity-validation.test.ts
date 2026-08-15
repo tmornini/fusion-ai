@@ -60,7 +60,7 @@ const VALID_ROWS: Record<
         uri_id: '42',
         at: '2026-01-01T00:00:00.000000Z',
         status: 200,
-        etag: 'e'.repeat(64),
+        version: 'e'.repeat(64),
         message_hash: 'b'.repeat(64),
         message: '{"kind":"response"}',
     },

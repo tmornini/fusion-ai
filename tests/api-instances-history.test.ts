@@ -349,7 +349,7 @@ async () => {
             typeof entry.etag === 'string'
             && !entry.etag.includes('"'),
             true,
-            'etag is pairId, no quotes in JSON',
+            'etag is 64-hex, no quotes in JSON',
         );
         assert.equal(typeof entry.at, 'string');
     }

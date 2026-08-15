@@ -10,7 +10,7 @@ import {
     deriveFlowStateHistory,
 } from '../api/derive-flows.ts';
 import { seededMockDb } from './mock-seed.ts';
-import { strongEtagOf } from '../api/message-pair.ts';
+
 
 // The flows sibling of tests/derive-ideas.test.ts/derive-
 // projects.test.ts: unit-level lifecycle-reduction guarantees
@@ -115,19 +115,6 @@ function putFlow(
     ));
 }
 
-async function headResponseId(
-    db: MemoryDbAdapter,
-    token: string,
-    flowId: string,
-): Promise<string> {
-    const got = await handleRequest(db, req(
-        'GET', '/flows/' + flowId, token,
-    ));
-    const id = got.headers.get('Response-ID');
-    assert.ok(id, 'no Response-ID on GET /flows/' + flowId);
-    return id!;
-}
-
 test(
     'a clock-skewed transition does NOT displace genesis — '
     + 'the graph still tracks the DOCUMENT head',
@@ -148,10 +135,14 @@ test(
             genesisGraph,
         );
         assert.equal(genesis.status, 200);
-        const headId = await headResponseId(db, token, id);
+        const head = await handleRequest(db, req(
+            'GET', '/flows/' + id, token,
+        ));
+        const etag = head.headers.get('ETag');
+        assert.ok(etag, 'no ETag on GET /flows/' + id);
 
         // The locked class: this second PUT is non-genesis, so
-        // it must echo the current head's Response-ID rather
+        // it must echo the current head's ETag rather
         // than the bare-req idiom the ideas/projects skew tests
         // use — a save with no echo 412s outright.
         const skewedGraph = graphWithNode(
@@ -160,7 +151,7 @@ test(
         const res = await putFlow(
             db, token, id, 'Skewed Title', 'deleted',
             '2020-01-01T00:00:00.000000Z', 'ev-drv-skew-later',
-            skewedGraph, { 'if-match': strongEtagOf(headId) },
+            skewedGraph, { 'if-match': etag },
         );
         assert.equal(res.status, 200);
 

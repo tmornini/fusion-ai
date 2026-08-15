@@ -933,7 +933,11 @@ async () => {
             },
             revivals: [],
         },
-        { 'if-match': '"' + headId + '"' },
+        { 'if-match': (
+            await handleRequest(
+                db, req('GET', '/flows/' + flowId, token),
+            )
+        ).headers.get('ETag')! },
     ));
     assert.equal(deleted.status, 200);
 

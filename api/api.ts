@@ -18,7 +18,6 @@ import type { Id } from './types.ts';
 import { messageAddress } from './message-address.ts';
 import {
     formWritePair,
-    headPairIdAt,
     storedResponseFor,
     createdEntityUriId,
     canonicalUriPrefix,
@@ -27,10 +26,14 @@ import {
     attachEtag,
     parseIfMatch,
     PAIR_WIRED_ROUTE_PATTERNS,
-    DOCUMENT_CLASS_ROUTE_PATTERNS,
     REPLAY_EXEMPT_ROUTE_PATTERNS,
     IF_MATCH_HEADER,
 } from './message-pair.ts';
+import {
+    bodyOctetsOf,
+} from './message-form.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
+import { HttpMessage } from '../shared/http-message/http-message.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import {
     familyRegistration,
@@ -42,9 +45,14 @@ import {
     documentHeadPairId,
 } from './document-family.ts';
 import {
-    instancesUriPrefix,
     deriveInstanceHead,
+    instanceGetBody,
+    instanceParentEtag,
+    advertisedInstanceEtag,
+    projectionOmitsStored,
+    revisionValuesOf,
 } from './derive-record-instances.ts';
+import { projectReadableValues } from './attribute-acl.ts';
 import {
     ANONYMOUS_ID,
     decodeAccessToken,
@@ -93,6 +101,7 @@ import {
     matchRoute,
     param,
     WRITE_RESPONSE_SPECS,
+    loadAttributeSchemaById,
     type Route,
     type WriteResponseSpec,
 } from './routes.ts';
@@ -243,10 +252,77 @@ function writeResponseSpecFor(
     return entry.post;
 }
 
-// Instance PATCH ETag (R8): the REVISION pair's response
-// id (new head), not the wire PATCH pair. The revision
-// shares the wire pair's requestAt at the same address.
-async function revisionEtagForInstancePatch(
+function octetsEqual(
+    left: Uint8Array,
+    right: Uint8Array,
+): boolean {
+    if (left.length !== right.length) return false;
+    for (let i = 0; i < left.length; i++) {
+        if (left[i] !== right[i]) return false;
+    }
+    return true;
+}
+
+async function livePutVersion(
+    db: DbAdapter,
+    prefix: string,
+    uriId: string,
+): Promise<{ pairId: string; version: string } | undefined> {
+    const pairId = await documentHeadPairId(
+        db, prefix, uriId,
+    );
+    if (pairId === undefined) return undefined;
+    const stored = await db.responses.getById(pairId);
+    if (stored === undefined) return undefined;
+    return { pairId, version: stored.version };
+}
+
+async function instanceAdvertised(
+    db: DbAdapter,
+    organization: string,
+    typeId: string,
+    instanceId: string,
+    roles: readonly string[],
+): Promise<{
+    tag: string;
+    limited: boolean;
+    pairId: string;
+} | undefined> {
+    const head = await deriveInstanceHead(
+        db, organization, typeId, instanceId,
+    );
+    if (head === undefined) return undefined;
+    const attributesById = await loadAttributeSchemaById(
+        db, organization, typeId,
+    );
+    const projected = projectReadableValues(
+        head.values, attributesById, roles,
+    );
+    const parent = await instanceParentEtag(db, head.pairId);
+    const tag = await advertisedInstanceEtag(
+        instanceGetBody(
+            instanceId, organization, typeId, projected,
+        ),
+        parent,
+    );
+    return {
+        tag,
+        limited: projectionOmitsStored(
+            head.values, projected,
+        ),
+        pairId: head.pairId,
+    };
+}
+
+function limitedHeaders(
+    limited: boolean,
+): Record<string, string> {
+    return limited
+        ? { 'Authorization-Limited-Attributes': 'true' }
+        : {};
+}
+
+async function revisionPairIdForPatch(
     db: DbAdapter,
     wirePairId: string,
 ): Promise<string | undefined> {
@@ -262,6 +338,43 @@ async function revisionEtagForInstancePatch(
             && row.id !== wirePairId,
     );
     return revision?.id;
+}
+
+async function advertisedForRevisionPair(
+    db: DbAdapter,
+    organization: string,
+    typeId: string,
+    instanceId: string,
+    roles: readonly string[],
+    revisionPairId: string,
+): Promise<string | undefined> {
+    const request = await db.requests.getById(
+        revisionPairId,
+    );
+    if (request === undefined) return undefined;
+    const model = parseWire(request.message);
+    const wireBody = HttpMessage.fromModel(model).body();
+    const parsed = wireBody.exists()
+        ? JSON.parse(wireBody.toText()) as Record<
+            string, unknown
+        >
+        : {};
+    const values = revisionValuesOf(parsed);
+    const attributesById = await loadAttributeSchemaById(
+        db, organization, typeId,
+    );
+    const projected = projectReadableValues(
+        values, attributesById, roles,
+    );
+    const parent = await instanceParentEtag(
+        db, revisionPairId,
+    );
+    return advertisedInstanceEtag(
+        instanceGetBody(
+            instanceId, organization, typeId, projected,
+        ),
+        parent,
+    );
 }
 
 // The one catch shared by both pre-dispatch ownership regions
@@ -686,21 +799,6 @@ export async function handleRequest(
             const uriId = createdEntityUriId(
                 routePattern, body,
             ) ?? address.uriId;
-            // The head-read class is encoded PER ROUTE PATTERN,
-            // never inferred from uriId — an event-append
-            // address (states/:id) has a non-empty uriId yet
-            // must never chain (message-pair.ts). Create-only
-            // (R10) forces undefined so genesis carries no
-            // pre-tx latch — the in-tx spent check owns the
-            // race.
-            const headPairId =
-                !isCreateOnlyWrite
-                && DOCUMENT_CLASS_ROUTE_PATTERNS
-                    .has(routePattern)
-                    ? await headPairIdAt(
-                        effective, canonicalPrefix, uriId,
-                    )
-                    : undefined;
             // The locked/simple divide (spec §The two PUT classes): keyed by
             // the route's family registration THROUGH THE WIRING CONSULT —
             // never a blanket family-registry or
@@ -725,25 +823,30 @@ export async function handleRequest(
                 && routePattern === wiring.family + '/:id'
                 && familyRegistration(wiring.family)
                     ?.concurrency === 'locked';
-            // The hoisted echo: read If-Match directly (not
-            // merely via hoisted-header storage) so the gate
-            // can compare the parsed pair id against the head
-            // BEFORE dispatch. Only consulted for a locked
-            // write — inert (null) otherwise.
+            // Advertised ETag is the live PUT's version,
+            // never the lock-head pair id. DELETE heads have
+            // no If-Match target (documentHeadPairId skips
+            // them).
+            const livePut = isLockedWrite
+                ? await livePutVersion(
+                    effective, canonicalPrefix, uriId,
+                )
+                : undefined;
+            const advertised = livePut?.version;
+            // The hoisted echo: read If-Match directly so
+            // the gate can compare the parsed 64-hex tag
+            // against the advertised ETag BEFORE dispatch.
             const rawIfMatch = isLockedWrite
                 ? request.headers.get(IF_MATCH_HEADER)
                 : null;
             const echo = rawIfMatch === null
                 ? null
                 : parseIfMatch(rawIfMatch);
-            // echoMatchesHead is true ONLY when the parsed
-            // echo equals the current lock head — the locked
-            // write may proceed. The matched pair id, not
-            // the quoted header, is the in-tx latch.
             const echoMatchesHead = isLockedWrite
                 && echo !== undefined
                 && echo !== null
-                && echo === headPairId;
+                && advertised !== undefined
+                && echo === advertised;
             // DELETE responses are UNIVERSALLY 204 with no
             // body — every wired DELETE handler returns void
             // (message-pair.ts resolution: DELETEs join their
@@ -782,6 +885,15 @@ export async function handleRequest(
                 responseBody: spec.successBody?.(
                     params, body, actor, organization,
                 ),
+                ...(echoMatchesHead
+                    && echo !== null
+                    && echo !== undefined
+                    && livePut !== undefined
+                    ? {
+                        matchedEtag: echo,
+                        latchedHeadPairId: livePut.pairId,
+                    }
+                    : {}),
             });
             // The pre-tx idempotency fast-path: a byte-
             // identical resend never reaches the handler and
@@ -806,26 +918,46 @@ export async function handleRequest(
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
                     ) {
-                        // PUT create: ETag = wire pair id.
-                        // PATCH: ETag = revision sibling
-                        // (R8 original).
                         if (method === 'PATCH') {
                             const revisionId =
-                                await revisionEtagForInstancePatch(
+                                await revisionPairIdForPatch(
                                     effective, replay.id,
                                 );
                             if (
                                 revisionId !== undefined
                             ) {
-                                return attachEtag(
-                                    response,
-                                    revisionId,
-                                );
+                                const tag =
+                                    await advertisedForRevisionPair(
+                                        effective,
+                                        param(params, 0),
+                                        param(params, 1),
+                                        param(params, 2),
+                                        roles,
+                                        revisionId,
+                                    );
+                                if (tag !== undefined) {
+                                    return attachEtag(
+                                        response, tag,
+                                    );
+                                }
                             }
                         }
-                        return attachEtag(
-                            response, replay.id,
-                        );
+                        const advertisedReplay =
+                            await instanceAdvertised(
+                                effective,
+                                param(params, 0),
+                                param(params, 1),
+                                param(params, 2),
+                                roles,
+                            );
+                        if (
+                            advertisedReplay !== undefined
+                        ) {
+                            return attachEtag(
+                                response,
+                                advertisedReplay.tag,
+                            );
+                        }
                     }
                     return response;
                 }
@@ -840,7 +972,7 @@ export async function handleRequest(
             // own tx, so NOTHING is stored.
             if (isLockedWrite) {
                 if (
-                    headPairId !== undefined
+                    livePut !== undefined
                     && rawIfMatch === null
                 ) {
                     return Response.json(
@@ -855,7 +987,7 @@ export async function handleRequest(
                     );
                 }
                 if (
-                    headPairId !== undefined
+                    livePut !== undefined
                     && echo === undefined
                 ) {
                     return Response.json(
@@ -933,7 +1065,18 @@ export async function handleRequest(
                         { status: HTTP_BAD_REQUEST },
                     );
                 }
-                if (ifMatch !== head.pairId) {
+                const advertisedNow =
+                    await instanceAdvertised(
+                        effective,
+                        pathOrganization,
+                        typeId,
+                        instanceId,
+                        roles,
+                    );
+                if (
+                    advertisedNow === undefined
+                    || ifMatch !== advertisedNow.tag
+                ) {
                     return Response.json(
                         {
                             error: 'If-Match does not '
@@ -946,6 +1089,38 @@ export async function handleRequest(
                                 HTTP_PRECONDITION_FAILED,
                         },
                     );
+                }
+            }
+            // Same-body as live PUT head → 200, no append.
+            // Body equality is octets, not ETag.
+            if (
+                method === 'PUT'
+                && livePut !== undefined
+                && (
+                    !isLockedWrite
+                    || echoMatchesHead
+                )
+            ) {
+                const liveReq = await effective.requests
+                    .getById(livePut.pairId);
+                if (liveReq !== undefined) {
+                    const liveOctets = bodyOctetsOf(
+                        parseWire(liveReq.message),
+                    );
+                    const newOctets = bodyOctetsOf(
+                        parseWire(pair.requestMessage),
+                    );
+                    if (octetsEqual(liveOctets, newOctets)) {
+                        const stored =
+                            await effective.responses
+                                .getById(livePut.pairId);
+                        if (stored !== undefined) {
+                            return attachEtag(
+                                responseFromStored(stored),
+                                stored.version,
+                            );
+                        }
+                    }
                 }
             }
         }
@@ -1008,38 +1183,43 @@ export async function handleRequest(
                         effective, prefix, param(params, 0),
                     );
                     if (headPairId !== undefined) {
-                        return attachEtag(
-                            Response.json(result, {
-                                headers: {
-                                    'Response-ID':
-                                        headPairId,
-                                },
-                            }),
-                            headPairId,
-                        );
+                        const stored = await effective
+                            .responses.getById(headPairId);
+                        if (stored !== undefined) {
+                            return attachEtag(
+                                Response.json(result, {
+                                    headers: {
+                                        'Response-ID':
+                                            headPairId,
+                                    },
+                                }),
+                                stored.version,
+                            );
+                        }
                     }
                 }
-                // Instance detail ETag (Task 16 / R8): strong
-                // validator from the head document-pair id
-                // (PUT|DELETE only — never a PATCH wire pair).
-                // Distinct from responses.etag (body sha).
+                // Instance detail ETag: documentVersion of
+                // this caller's projected GET body.
                 if (
                     routePattern
                         === INSTANCE_DETAIL_PATTERN
                 ) {
-                    const headPairId =
-                        await documentHeadPairId(
+                    const advertisedGet =
+                        await instanceAdvertised(
                             effective,
-                            instancesUriPrefix(
-                                param(params, 0),
-                                param(params, 1),
-                            ),
+                            param(params, 0),
+                            param(params, 1),
                             param(params, 2),
+                            roles,
                         );
-                    if (headPairId !== undefined) {
+                    if (advertisedGet !== undefined) {
                         return attachEtag(
-                            Response.json(result),
-                            headPairId,
+                            Response.json(result, {
+                                headers: limitedHeaders(
+                                    advertisedGet.limited,
+                                ),
+                            }),
+                            advertisedGet.tag,
                         );
                     }
                 }
@@ -1087,8 +1267,36 @@ export async function handleRequest(
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
                     ) {
+                        const advertisedPut =
+                            await instanceAdvertised(
+                                effective,
+                                param(params, 0),
+                                param(params, 1),
+                                param(params, 2),
+                                roles,
+                            );
+                        if (
+                            advertisedPut !== undefined
+                        ) {
+                            return attachEtag(
+                                response,
+                                advertisedPut.tag,
+                            );
+                        }
+                    }
+                    const putWiring = documentFamilyWiring(
+                        matched.segments[0] ?? '',
+                    );
+                    if (
+                        putWiring !== undefined
+                        && routePattern
+                            === putWiring.family + '/:id'
+                        && familyRegistration(
+                            putWiring.family,
+                        )?.concurrency === 'locked'
+                    ) {
                         return attachEtag(
-                            response, stored.id,
+                            response, stored.version,
                         );
                     }
                     return response;
@@ -1149,22 +1357,24 @@ export async function handleRequest(
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
                     ) {
-                        // R8: ETag = revision head, not the
-                        // wire PATCH operation pair.
-                        const revisionId =
-                            await revisionEtagForInstancePatch(
-                                effective, stored.id,
+                        const advertisedPatch =
+                            await instanceAdvertised(
+                                effective,
+                                param(params, 0),
+                                param(params, 1),
+                                param(params, 2),
+                                roles,
                             );
                         if (
-                            revisionId !== undefined
+                            advertisedPatch !== undefined
                         ) {
                             return attachEtag(
                                 response,
-                                revisionId,
+                                advertisedPatch.tag,
                             );
                         }
                         return attachEtag(
-                            response, stored.id,
+                            response, stored.version,
                         );
                     }
                     return response;

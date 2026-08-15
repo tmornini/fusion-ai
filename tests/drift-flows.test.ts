@@ -203,6 +203,19 @@ async function headResponseId(
     return id!;
 }
 
+async function headEtag(
+    db: MemoryDbAdapter,
+    token: string,
+    flowId: string,
+): Promise<string> {
+    const got = await handleRequest(db, req(
+        'GET', '/flows/' + flowId, token,
+    ));
+    const tag = got.headers.get('ETag');
+    assert.ok(tag, 'no ETag on GET /flows/' + flowId);
+    return tag!;
+}
+
 async function createFlow(
     db: MemoryDbAdapter,
     token: string,
@@ -528,7 +541,7 @@ test('live-write chain: create, save, node delete, undo, '
         documentBody('Chain Flow Saved', flowId + '-save', {
             state_at: saveAt, graph: fullGraph,
         }),
-        { 'if-match': '"' + headId + '"' },
+        { 'if-match': await headEtag(db, token, flowId) },
     ));
     assert.equal(saved.status, 200);
     headId = saved.headers.get('Response-ID')!;
@@ -543,7 +556,7 @@ test('live-write chain: create, save, node delete, undo, '
                 state_at: versionAt, graph: fullGraph,
             },
         ),
-        { 'if-match': '"' + headId + '"' },
+        { 'if-match': await headEtag(db, token, flowId) },
     ));
     assert.equal(versionedSave.status, 200);
     headId = versionedSave.headers.get('Response-ID')!;
@@ -574,7 +587,7 @@ test('live-write chain: create, save, node delete, undo, '
                 },
             },
         ),
-        { 'if-match': '"' + headId + '"' },
+        { 'if-match': await headEtag(db, token, flowId) },
     ));
     assert.equal(deletedSave.status, 200);
     headId = deletedSave.headers.get('Response-ID')!;
@@ -623,7 +636,7 @@ test('live-write chain: create, save, node delete, undo, '
                 ],
             },
         }),
-        { 'if-match': '"' + headId + '"' },
+        { 'if-match': await headEtag(db, token, flowId) },
     ));
     assert.equal(redone.status, 200);
     headId = redone.headers.get('Response-ID')!;
@@ -638,7 +651,7 @@ test('live-write chain: create, save, node delete, undo, '
             state: 'deleted', state_at: tombstoneAt,
             graph: deletedGraph,
         }),
-        { 'if-match': '"' + headId + '"' },
+        { 'if-match': await headEtag(db, token, flowId) },
     ));
     assert.equal(tombstoned.status, 200);
 
@@ -926,7 +939,7 @@ test('the lock-head terminal reaches exactly the derived '
             documentBody(
                 'Save ' + i, 'flow-drift-lock-head-ev-' + i,
             ),
-            { 'if-match': '"' + headId + '"' },
+            { 'if-match': await headEtag(db, token, flowId) },
         ));
         assert.equal(saved.status, 200);
         assert.equal(saved.headers.get('Follows'), null);

@@ -24,6 +24,7 @@ import {
     IF_MATCH_HEADER,
     strongEtagOf,
     parseIfMatch,
+    HEX64,
 } from '../api/message-pair.ts';
 import {
     ApiError,
@@ -310,10 +311,8 @@ async () => {
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
     );
     assert.ok(head !== undefined);
-    assert.equal(
-        strongEtagOf(head.pairId),
-        newEtag,
-    );
+    assert.ok(newEtag !== null && HEX64.test(newEtag.slice(1, -1)));
+    assert.notEqual(newEtag, strongEtagOf(head.pairId));
     assert.equal(
         await countInstancePairs(db),
         before + 2,
@@ -659,15 +658,19 @@ async () => {
         read_roles: ['admin'],
         write_roles: [],
     });
-    const put = await putInstance(db, adminToken, [
+    await putInstance(db, adminToken, [
         { attribute_id: ATTR_ID, value: 'Hello' },
         { attribute_id: ATTR_LOCKED, value: 's' },
     ]);
+    const memberGet = await handleRequest(db, req(
+        'GET', INSTANCE_DETAIL, memberToken,
+    ));
+    assert.equal(memberGet.status, 200);
     const res = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
         { clear: [ATTR_LOCKED] },
         {
-            [IF_MATCH_HEADER]: put.headers.get('ETag')!,
+            [IF_MATCH_HEADER]: memberGet.headers.get('ETag')!,
         },
     ));
     assert.equal(res.status, 403);
@@ -1067,12 +1070,21 @@ async () => {
         { [IF_MATCH_HEADER]: e0 },
     ));
     assert.equal(blind.status, 412);
-    // Re-GET: member does not see secret, but gets new ETag.
+    // Re-GET: member does not see secret; projected ETag
+    // differs from admin's stored-write ETag.
     const reget = await handleRequest(db, req(
         'GET', INSTANCE_DETAIL, memberToken,
     ));
     assert.equal(reget.status, 200);
-    assert.equal(reget.headers.get('ETag'), e1);
+    const memberEtag = reget.headers.get('ETag')!;
+    assert.notEqual(memberEtag, e0);
+    assert.notEqual(memberEtag, e1);
+    assert.equal(
+        reget.headers.get(
+            'Authorization-Limited-Attributes',
+        ),
+        'true',
+    );
     const visible = await reget.json() as {
         values: { attribute_id: string; value: string }[];
     };
@@ -1089,7 +1101,7 @@ async () => {
                 },
             ],
         },
-        { [IF_MATCH_HEADER]: e1 },
+        { [IF_MATCH_HEADER]: memberEtag },
     ));
     assert.equal(retry.status, 200);
     const head = await deriveInstanceHead(

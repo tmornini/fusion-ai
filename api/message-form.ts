@@ -15,10 +15,11 @@ import type {
     MessageModel,
 } from '../shared/http-message/types.ts';
 import {
-    sha256Hex,
     sha256HexOfBytes,
 } from '../shared/digest.ts';
 import { Octets } from '../shared/http-message/octets.ts';
+
+export const HEX64 = /^[0-9a-f]{64}$/;
 
 const HTTP_VERSION = 'HTTP/1.1';
 const JSON_MEDIA_TYPE = 'application/json';
@@ -113,11 +114,37 @@ export function requestMessageHash(
     );
 }
 
-export async function bodyEtagOf(
+export function bodyOctetsOf(
     model: MessageModel,
-): Promise<string> {
+): Uint8Array {
     const body = HttpMessage.fromModel(model).body();
-    return sha256Hex(
-        body.exists() ? body.toBase64() : '',
+    return body.exists()
+        ? body.toBytes()
+        : new Uint8Array(0);
+}
+
+export function jsonBodyOctets(
+    body: unknown,
+): Uint8Array {
+    return bodyOctetsOf(buildResponseModel({
+        status: 200,
+        fields: [],
+        body,
+    }));
+}
+
+export async function documentVersion(
+    bodyOctets: Uint8Array,
+    matchedEtag?: string,
+): Promise<string> {
+    if (matchedEtag === undefined) {
+        return sha256HexOfBytes(bodyOctets);
+    }
+    const tag = Octets.fromLatin1(matchedEtag).asBytes();
+    const joined = new Uint8Array(
+        bodyOctets.length + tag.length,
     );
+    joined.set(bodyOctets, 0);
+    joined.set(tag, bodyOctets.length);
+    return sha256HexOfBytes(joined);
 }

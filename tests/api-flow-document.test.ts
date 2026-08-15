@@ -229,7 +229,7 @@ test('postFlowDocumentOp returns the entity, exactly one'
                 }],
             },
         }),
-        { 'if-match': strongEtagOf(headId) },
+        { 'if-match': await headEtag(db, token, 'flow-op-1') },
     ));
     assert.equal(update.status, 200);
     const wire = await update.json() as { name: string };
@@ -293,7 +293,7 @@ test('postFlowDocumentOp with revivals posts the restored'
                 },
             ],
         },
-        { 'if-match': strongEtagOf(headId) },
+        { 'if-match': await headEtag(db, token, 'flow-op-2') },
     ));
     assert.equal(update.status, 200);
     // SIDECAR-KEEP (C3): pin graphDelta.deletions / revivals
@@ -420,7 +420,7 @@ async () => {
     const res = await handleRequest(db, req(
         'PUT', '/flows/flow-if-match-412', token,
         documentBody('Stale Match', 'flow-if-match-412-a'),
-        { 'if-match': '"zzzzzzzzzzzzzzzzzzzzzz"' },
+        { 'if-match': '"' + 'b'.repeat(64) + '"' },
     ));
     assert.equal(res.status, 412);
     assert.equal(
@@ -437,7 +437,7 @@ async () => {
     const res = await handleRequest(db, req(
         'PUT', '/flows/flow-if-match-none', token,
         documentBody('Ghost', 'flow-if-match-none-a'),
-        { 'if-match': '"zzzzzzzzzzzzzzzzzzzzzz"' },
+        { 'if-match': '"' + 'b'.repeat(64) + '"' },
     ));
     assert.equal(res.status, 412);
     assert.equal(
@@ -454,7 +454,9 @@ test('e2e: a byte-identical resend converges (one event, one'
     await createFlow(db, token, 'flow-locked-3');
     const headId = await headResponseId(db, token, 'flow-locked-3');
     const body = documentBody('Resend', 'flow-locked-3-a');
-    const headers = { 'if-match': strongEtagOf(headId) };
+    const headers = {
+        'if-match': await headEtag(db, token, 'flow-locked-3'),
+    };
     const first = await handleRequest(db, req(
         'PUT', '/flows/flow-locked-3', token, body, headers,
     ));
@@ -499,14 +501,16 @@ async () => {
     const staleEcho = await handleRequest(db, req(
         'PUT', '/flows/flow-locked-1', token,
         documentBody('Stale Echo', 'flow-locked-1-b'),
-        { 'if-match': strongEtagOf('not-the-real-head') },
+        { 'if-match': '"' + 'b'.repeat(64) + '"' },
     ));
     assert.equal(staleEcho.status, 412);
 
     const fresh = await handleRequest(db, req(
         'PUT', '/flows/flow-locked-1', token,
         documentBody('Fresh Echo', 'flow-locked-1-c'),
-        { 'if-match': strongEtagOf(headId) },
+        { 'if-match': await headEtag(
+            db, token, 'flow-locked-1',
+        ) },
     ));
     assert.equal(fresh.status, 200);
     assert.equal(fresh.headers.get('Follows'), null);
@@ -535,7 +539,9 @@ async () => {
     assert.ok(headId);
     assert.notEqual(headId, createdId);
     const etag = await headEtag(db, token, 'flow-locked-2');
-    assert.equal(etag, strongEtagOf(headId));
+    const stored = await db.responses.getById(headId);
+    assert.ok(stored !== undefined);
+    assert.equal(etag, strongEtagOf(stored.version));
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
         r => r.uri_prefix === '/organizations/1/flows/'
@@ -816,9 +822,6 @@ test('e2e: POST flows/:id/undo forms a document pair with'
     const db = await freshDb();
     const token = await organizationToken();
     await createFlow(db, token, 'flow-undo-pairs-1');
-    const genesisHead = await headResponseId(
-        db, token, 'flow-undo-pairs-1',
-    );
 
     // A non-trivial undo TARGET (one node) — so the graph
     // comparison below actually exercises the mechanism rather
@@ -850,12 +853,11 @@ test('e2e: POST flows/:id/undo forms a document pair with'
                 memberEvents: [], attributeEvents: [],
             },
         }),
-        { 'if-match': strongEtagOf(genesisHead) },
+        { 'if-match': await headEtag(
+            db, token, 'flow-undo-pairs-1',
+        ) },
     ));
     assert.equal(firstSave.status, 200);
-    const headAfterFirstSave = await headResponseId(
-        db, token, 'flow-undo-pairs-1',
-    );
 
     // A SECOND save moves the head away from the one-node
     // graph — undo must revert THIS, landing back on the
@@ -863,7 +865,9 @@ test('e2e: POST flows/:id/undo forms a document pair with'
     const secondSave = await handleRequest(db, req(
         'PUT', '/flows/flow-undo-pairs-1', token,
         documentBody('Back To Empty', 'flow-undo-pairs-1-ev-2'),
-        { 'if-match': strongEtagOf(headAfterFirstSave) },
+        { 'if-match': await headEtag(
+            db, token, 'flow-undo-pairs-1',
+        ) },
     ));
     assert.equal(secondSave.status, 200);
 
@@ -949,16 +953,17 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await createFlow(db, token, 'flow-race-1');
-    const genesisHead = await headResponseId(
-        db, token, 'flow-race-1',
-    );
     const before = await handleRequest(db, req(
         'PUT', '/flows/flow-race-1', token,
         documentBody('Before Race', 'flow-race-1-ev-1'),
-        { 'if-match': strongEtagOf(genesisHead) },
+        { 'if-match': await headEtag(
+            db, token, 'flow-race-1',
+        ) },
     ));
     assert.equal(before.status, 200);
-    const head = await headResponseId(db, token, 'flow-race-1');
+    const headEtagValue = await headEtag(
+        db, token, 'flow-race-1',
+    );
 
     const [undo, save] = await Promise.all([
         handleRequest(db, req(
@@ -970,7 +975,7 @@ async () => {
         handleRequest(db, req(
             'PUT', '/flows/flow-race-1', token,
             documentBody('Saved', 'flow-race-1-save-ev'),
-            { 'if-match': strongEtagOf(head) },
+            { 'if-match': headEtagValue },
         )),
     ]);
 

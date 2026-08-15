@@ -18,7 +18,7 @@ import {
 import {
     formWritePair,
     IF_MATCH_HEADER,
-    strongEtagOf,
+    HEX64,
 } from '../api/message-pair.ts';
 import {
     nowUtc,
@@ -416,15 +416,19 @@ async () => {
         read_roles: ['admin'],
         write_roles: [],
     });
-    const put = await putInstance(db, adminToken, [
+    await putInstance(db, adminToken, [
         { attribute_id: ATTR_ID, value: 'Hello' },
         { attribute_id: ATTR_LOCKED, value: 's' },
     ]);
+    const memberGet = await handleRequest(db, req(
+        'GET', INSTANCE_DETAIL, memberToken,
+    ));
+    assert.equal(memberGet.status, 200);
     const res = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,
         { clear: [ATTR_LOCKED] },
         {
-            [IF_MATCH_HEADER]: put.headers.get('ETag')!,
+            [IF_MATCH_HEADER]: memberGet.headers.get('ETag')!,
         },
     ));
     assert.equal(res.status, 403);
@@ -571,8 +575,8 @@ async () => {
     );
 });
 
-test('ETag byte source ≠ responses.etag column '
-+ '(covenant tier)',
+test('document ETag === version; instance projected ETag '
++ 'is not stored',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -588,15 +592,17 @@ async () => {
     ));
     assert.equal(res.status, 200);
     const header = res.headers.get('ETag');
-    assert.equal(header, strongEtagOf(pairId));
+    assert.ok(header !== null);
+    assert.match(header.slice(1, -1), HEX64);
     const stored = await db.responses.getById(pairId);
     assert.ok(stored !== undefined);
+    assert.match(stored.version, HEX64);
     assert.notEqual(
-        header,
-        stored!.etag,
-        'wire ETag must not be body-sha responses.etag',
+        header.slice(1, -1),
+        stored.version,
+        'instance projected ETag is not stored version',
     );
-    assert.notEqual(pairId, stored!.etag);
+    assert.notEqual(pairId, stored.version);
 });
 
 test('list-row etag == detail ETag validator sans quotes',
@@ -609,7 +615,6 @@ async () => {
         { attribute_id: ATTR_ID, value: 'Hello' },
     ]);
     assert.equal(put.status, 200);
-    const pairId = put.headers.get('Response-ID')!;
     const list = await handleRequest(db, req(
         'GET', INSTANCES, memberToken,
     ));
@@ -620,15 +625,15 @@ async () => {
     }[];
     assert.equal(rows.length, 1);
     assert.equal(rows[0]!.id, INSTANCE_ID);
-    assert.equal(rows[0]!.etag, pairId);
+    assert.ok(HEX64.test(rows[0]!.etag));
     const detail = await handleRequest(db, req(
         'GET', INSTANCE_DETAIL, memberToken,
     ));
     assert.equal(detail.status, 200);
     const detailEtag = detail.headers.get('ETag');
-    assert.equal(detailEtag, strongEtagOf(pairId));
+    assert.ok(detailEtag !== null);
     assert.equal(
         rows[0]!.etag,
-        detailEtag!.slice(1, -1),
+        detailEtag.slice(1, -1),
     );
 });

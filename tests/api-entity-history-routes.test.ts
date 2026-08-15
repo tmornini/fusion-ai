@@ -585,7 +585,12 @@ async function seedFlowLifecycle(
                 '2026-03-02T00:00:00.000000Z',
                 id + '-ev2',
             ),
-            { 'if-match': '"' + headId! + '"' },
+            { 'if-match': (
+                await handleRequest(
+                    db,
+                    req('GET', '/flows/' + id, token),
+                )
+            ).headers.get('ETag')! },
         ),
     );
     assert.equal(t.status, 200);

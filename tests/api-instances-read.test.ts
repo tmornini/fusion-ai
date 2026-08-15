@@ -20,6 +20,7 @@ import {
     formWritePair,
     appendMessagePair,
     strongEtagOf,
+    HEX64,
 } from '../api/message-pair.ts';
 import {
     INSTANCE_DETAIL_PATTERN,
@@ -30,10 +31,10 @@ import {
     DEFAULT_ATTRIBUTE_ACL_ROLES,
 } from '../api/types.ts';
 
-// Instance GET detail + list (Task 16): read projection by
-// attribute ACL, strong ETag from head document-pair id
-// (never responses.etag body sha), list embeds etag sans
-// quotes. Full-state head only (R5 — no fold).
+// Instance GET detail + list: read projection by attribute
+// ACL, advertised ETag is documentVersion of the projected
+// body (not the stored version, not pair id). List embeds
+// etag sans quotes. Full-state head only (R5 — no fold).
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -250,7 +251,7 @@ interface InstanceDetailWire {
 }
 
 test('GET detail member → 200; only read-permitted '
-+ 'values; ETag = strong(head pair id)',
++ 'values; ETag is quoted 64-hex',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -275,10 +276,9 @@ async () => {
         'GET', detailPath(INSTANCE_A), memberToken,
     ));
     assert.equal(res.status, 200);
-    assert.equal(
-        res.headers.get('ETag'),
-        strongEtagOf(putPairId!),
-    );
+    const etag = res.headers.get('ETag');
+    assert.ok(etag !== null && HEX64.test(etag.slice(1, -1)));
+    assert.notEqual(etag, strongEtagOf(putPairId!));
     const body = await res.json() as InstanceDetailWire;
     assert.deepEqual(body, {
         id: INSTANCE_A,
@@ -504,17 +504,17 @@ async () => {
     assert.equal(rows.length, 2);
     assert.equal(rows[0]!.id, INSTANCE_A);
     assert.equal(rows[1]!.id, INSTANCE_B);
-    assert.equal(rows[0]!.etag, pairA);
-    assert.equal(rows[1]!.etag, pairB);
+    assert.ok(HEX64.test(rows[0]!.etag!));
+    assert.ok(HEX64.test(rows[1]!.etag!));
     const detailA = await handleRequest(db, req(
         'GET', detailPath(INSTANCE_A), memberToken,
     ));
     assert.equal(detailA.status, 200);
     const detailEtag = detailA.headers.get('ETag');
-    assert.equal(detailEtag, strongEtagOf(pairA));
+    assert.ok(detailEtag !== null);
     assert.equal(
         rows[0]!.etag,
-        detailEtag!.slice(1, -1),
+        detailEtag.slice(1, -1),
     );
     assert.deepEqual(rows[0]!.values, [
         {
@@ -536,7 +536,8 @@ async () => {
     });
 });
 
-test('ETag byte source ≠ responses.etag column',
+test('document ETag === version; instance projected ETag '
++ 'is not stored',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -565,19 +566,17 @@ async () => {
     ));
     assert.equal(res.status, 200);
     const header = res.headers.get('ETag');
-    assert.equal(header, strongEtagOf(pairId));
+    assert.ok(header !== null);
+    assert.match(header.slice(1, -1), HEX64);
     const stored = await db.responses.getById(pairId);
     assert.ok(stored !== undefined);
+    assert.match(stored.version, HEX64);
     assert.notEqual(
-        header,
-        stored!.etag,
-        'wire ETag must not be body-sha responses.etag',
+        header.slice(1, -1),
+        stored.version,
+        'instance projected ETag is not stored version',
     );
-    assert.notEqual(
-        pairId,
-        stored!.etag,
-        'pair id and body-sha column are distinct bytes',
-    );
+    assert.notEqual(pairId, stored.version);
 });
 
 test('GET after full-state revision pair → values from '
@@ -624,10 +623,12 @@ async () => {
         'GET', detailPath(INSTANCE_A), adminToken,
     ));
     assert.equal(res.status, 200);
-    assert.equal(
-        res.headers.get('ETag'),
-        strongEtagOf(revisionId),
+    const revEtag = res.headers.get('ETag');
+    assert.ok(
+        revEtag !== null
+        && HEX64.test(revEtag.slice(1, -1)),
     );
+    assert.notEqual(revEtag, strongEtagOf(revisionId));
     const body = await res.json() as InstanceDetailWire;
     const byId = new Map(
         body.values.map((v) => [v.attribute_id, v.value]),
