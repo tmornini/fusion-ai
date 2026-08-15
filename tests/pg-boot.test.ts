@@ -10,6 +10,10 @@ import {
     readListenEnv,
     UTF8_REQUIRED,
 } from '../server/boot.ts';
+import {
+    SEED_BOTH_FLAGS,
+    SEED_NONEMPTY,
+} from '../server/seed.ts';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import type { SqlClient } from
@@ -166,6 +170,14 @@ test('bootErrorMessage never echoes a URL', () => {
     assert.equal(
         bootErrorMessage(new Error(MISSING_MARKER)),
         MISSING_MARKER,
+    );
+    assert.equal(
+        bootErrorMessage(new Error(SEED_NONEMPTY)),
+        SEED_NONEMPTY,
+    );
+    assert.equal(
+        bootErrorMessage(new Error(SEED_BOTH_FLAGS)),
+        SEED_BOTH_FLAGS,
     );
 });
 

@@ -1,5 +1,5 @@
 // Fail-fast boot. Env → pool → UTF8 → DDL →
-// marker → listen. Seed flags are Task 41.
+// seed flags → marker → listen.
 // One mint process: do not run two of these.
 // Node-only; excluded from tsc (no @types/node).
 
@@ -15,6 +15,12 @@ import {
 import { POSTGRES_SCHEMA } from
     '../api/schema-postgres.ts';
 import { listenHttp } from './http-server.ts';
+import {
+    applySeedFlag,
+    readSeedMode,
+    SEED_BOTH_FLAGS,
+    SEED_NONEMPTY,
+} from './seed.ts';
 
 export const STATEMENT_TIMEOUT_MS = 30_000;
 export const POOL_ACQUIRE_TIMEOUT_MS = 5_000;
@@ -89,7 +95,7 @@ export async function assertUtf8(
 }
 
 // Presence of the marker row, not table existence.
-// No row: do not listen. Seed flags are Task 41.
+// No row and no successful seed: do not listen.
 export async function hasSchemaMarker(
     sql: SqlClient,
 ): Promise<boolean> {
@@ -124,6 +130,8 @@ function staticRootFromMeta(): string {
 const SAFE_BOOT_MESSAGES: ReadonlySet<string> = new Set([
     UTF8_REQUIRED,
     MISSING_MARKER,
+    SEED_NONEMPTY,
+    SEED_BOTH_FLAGS,
 ]);
 
 export function bootErrorMessage(
@@ -149,7 +157,9 @@ export interface RunningHttp {
 
 export async function boot(
     env: EnvBag = process.env,
+    argv: readonly string[] = process.argv,
 ): Promise<RunningHttp> {
+    const seedMode = readSeedMode(argv);
     const listenEnv = readListenEnv(env);
     const sql = connectPostgres(listenEnv.postgresUrl, {
         statementTimeoutMs: STATEMENT_TIMEOUT_MS,
@@ -157,13 +167,18 @@ export async function boot(
     });
     await assertUtf8(sql);
     await applyDdl(sql);
-    await assertSchemaMarker(sql);
     const adapter = new BackedDbAdapter(
         new PostgresBackend(sql),
         async () => {},
         async () => {},
         () => {},
     );
+    await applySeedFlag(sql, adapter, seedMode, {
+        write: (chunk) => {
+            process.stderr.write(chunk);
+        },
+    });
+    await assertSchemaMarker(sql);
     const listener = await listenHttp({
         adapter,
         staticRoot: staticRootFromMeta(),

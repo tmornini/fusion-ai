@@ -8,4 +8,5 @@ export SCHEMA_NAME="fusion_test_$(date +%s)_$$"
 TZ=UTC node --test --strip-types \
     tests/pg-acceptance.test.ts \
     tests/pg-races.test.ts \
-    tests/pg-boot.test.ts
+    tests/pg-boot.test.ts \
+    tests/pg-seed.test.ts
