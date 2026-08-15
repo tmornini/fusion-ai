@@ -2,9 +2,10 @@
 
 Date: 2026-08-13
 Author: Fusion-AI / Grok Build
-Status: Draft (revised 2026-08-13: KD1 reversed to the
-content-hash wire validator — owner-gated; the review
-synthesis records the adjudication as W22)
+Status: **Superseded** by
+`docs/superpowers/specs/2026-08-14-postgres-backend-design.md`
+(accepted walkthrough 2026-08-13–14). Do not implement
+from this file.
 
 Supersedes:
 `docs/superpowers/specs/2026-08-12-postgres-backend-design.md`
@@ -1049,6 +1050,7 @@ not remaining blockers.
 | B7 versioned type snapshots | Domain feature; stays future. |
 | B8 work-order W5 no-abandon | Domain gap; untouched. |
 | B9 API.md §5 chronology | Docs-only; stays deferred. |
+| B10 304 / `If-None-Match` | Deferred. Content-hash `ETag`s ship on document and record-instance GETs; the server does not evaluate them for conditional GET. Not a silent gap. |
 
 ## Design
 
@@ -2403,6 +2405,9 @@ and its amendments.
 5. Design work-order render-at-write + event-history
    shape; classify `GET work-orders` STREAM or ASSEMBLE
    behind parity pins. Yank does not wait for this.
+6. Consider renaming bind to `location` or `position`
+   (path, vocabulary, and wire keys). Verbs stay
+   locked; the name is open.
 
 ## Out of scope
 
@@ -2413,7 +2418,7 @@ and its amendments.
 - `/snapshots/export` and `/snapshots/pristine` (B4/B5).
 - Versioned record-type snapshots (B7); work-order
   abandon (work-order W5 / B8).
-- A 304 / `If-None-Match` path.
+- A 304 / `If-None-Match` path (B10).
 - A mint realm / multi-process `nowUtc()`.
 - Token-at-rest hashing.
 - A stored-GET re-render primitive.
