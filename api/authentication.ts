@@ -309,11 +309,19 @@ async function issueTokenPair(
     });
     const pair = seed === undefined
         ? undefined
-        : await formAuthPair(seed, body, identityId, HTTP_OK, response);
+        : await formAuthPair(
+            seed, body, identityId, HTTP_OK, response,
+        );
+    // Copy the envelope id: hoisted header when the client
+    // sent one, else formAuthPair's named mint. Seedless
+    // exchange has no AUTH pair — mint one id for the
+    // event pair alone.
+    const operationId = pair?.operationId
+        ?? generateCryptoSafeBase62();
     const eventPair = await formTokenEventPair(rootId, {
         jti: refreshJti, identity_id: identityId,
         action: 'issued', chain_id: chainId, at,
-    });
+    }, operationId);
     await adapter.transaction(
         ['requests', 'responses'],
         async (view) => {
@@ -410,12 +418,16 @@ interface TokenEventWrite {
 
 async function formTokenEventWrites(
     appends: readonly Omit<IdentityTokenEntity, 'id'>[],
+    operationId: string,
 ): Promise<TokenEventWrite[]> {
     const writes: TokenEventWrite[] = [];
     for (const event of appends) {
         const id = generateCryptoSafeBase62();
         writes.push({
-            event, pair: await formTokenEventPair(id, event),
+            event,
+            pair: await formTokenEventPair(
+                id, event, operationId,
+            ),
         });
     }
     return writes;
@@ -472,6 +484,7 @@ async function planRotationAttempt(
     adapter: DbAdapter,
     presentedJti: string,
     newJti: string,
+    operationId: string,
 ): Promise<{
     readonly plan: RotationPlan;
     readonly writes: readonly TokenEventWrite[];
@@ -481,7 +494,12 @@ async function planRotationAttempt(
     );
     const plan = planRotation(rows, presentedJti, newJti, nowUtc());
     const appends = plan.kind === 'unknown' ? [] : plan.appends;
-    return { plan, writes: await formTokenEventWrites(appends) };
+    return {
+        plan,
+        writes: await formTokenEventWrites(
+            appends, operationId,
+        ),
+    };
 }
 
 // Read the token ledger, plan the rotation, and append its
@@ -517,13 +535,15 @@ export async function rotateRefreshJti(
     newJti: string,
     pair?: MessagePair,
 ): Promise<RotationOutcome> {
+    const operationId = pair?.operationId
+        ?? generateCryptoSafeBase62();
     for (
         let attempt = 0;
         attempt < MAX_TOKEN_WRITE_ATTEMPTS;
         attempt++
     ) {
         const provisional = await planRotationAttempt(
-            adapter, presentedJti, newJti,
+            adapter, presentedJti, newJti, operationId,
         );
         try {
             return await adapter.transaction(
@@ -575,6 +595,7 @@ export async function rotateRefreshJti(
 async function planRevocationAttempt(
     adapter: DbAdapter,
     jti: string,
+    operationId: string,
 ): Promise<{
     readonly writes: readonly TokenEventWrite[];
 }> {
@@ -583,7 +604,11 @@ async function planRevocationAttempt(
     const appends = chainId === null || identityId === null
         ? []
         : revocationAppends(rows, chainId, identityId, nowUtc());
-    return { writes: await formTokenEventWrites(appends) };
+    return {
+        writes: await formTokenEventWrites(
+            appends, operationId,
+        ),
+    };
 }
 
 // Revoke every jti in the chain `jti` belongs to (logging out
@@ -612,13 +637,15 @@ export async function revokeTokenChain(
     jti: string,
     pair?: MessagePair,
 ): Promise<void> {
+    const operationId = pair?.operationId
+        ?? generateCryptoSafeBase62();
     for (
         let attempt = 0;
         attempt < MAX_TOKEN_WRITE_ATTEMPTS;
         attempt++
     ) {
         const provisional = await planRevocationAttempt(
-            adapter, jti,
+            adapter, jti, operationId,
         );
         try {
             await adapter.transaction(
@@ -1100,7 +1127,7 @@ async function grantAuthorizationCode(
     const eventPair = await formTokenEventPair(rootId, {
         jti: refreshJti, identity_id: issuer.identityId,
         action: 'issued', chain_id: chainId, at,
-    });
+    }, pair.operationId);
     const consumed = await adapter.transaction(
         ['requests', 'responses'],
         async (view) => {

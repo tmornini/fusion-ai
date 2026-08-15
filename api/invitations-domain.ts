@@ -39,6 +39,7 @@ import {
     responseFromStored,
     hoistedHeaderFields,
     storedPairResponse,
+    requireOperationId,
     OPERATION_ID_HEADER,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
@@ -132,6 +133,10 @@ export async function invitationsRequest(
     if (typeof authed === 'string') {
         return errorJson(authed, HTTP_UNAUTHORIZED);
     }
+    const denied = requireOperationId(
+        request, ctx.method, false,
+    );
+    if (denied !== undefined) return denied;
     const method = ctx.method;
     if (segments.length === 1) {
         if (method === 'GET') {

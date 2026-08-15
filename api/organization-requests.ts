@@ -32,6 +32,7 @@ import {
     responseFromStored,
     hoistedHeaderFields,
     storedPairResponse,
+    requireOperationId,
     OPERATION_ID_HEADER,
 } from './message-pair.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
@@ -78,6 +79,10 @@ export async function identityDefaultOrganizationRequest(
             { status: HTTP_UNAUTHORIZED },
         );
     }
+    const denied = requireOperationId(
+        request, ctx.method, false,
+    );
+    if (denied !== undefined) return denied;
     const identityId = segments[1]!;
     if (authed.principal.id !== identityId) {
         return Response.json(

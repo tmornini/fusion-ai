@@ -323,7 +323,7 @@ const TOKEN_EVENT_ROUTE_SEGMENTS: readonly string[] =
 export async function formTokenEventPair(
     id: Id,
     event: Omit<IdentityTokenEntity, 'id'>,
-    operationId?: string,
+    operationId: string,
 ): Promise<MessagePair> {
     const pathSegments = [TOKEN_EVENT_ROUTE_SEGMENTS[0]!, id];
     const body = event as unknown as Record<string, unknown>;
@@ -343,8 +343,7 @@ export async function formTokenEventPair(
             id,
             ...validateIdentityTokenEntity(body),
         },
-        operationId: operationId
-            ?? generateCryptoSafeBase62(),
+        operationId,
     });
 }
 

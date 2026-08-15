@@ -425,10 +425,6 @@ export async function handleRequest(
     if (pathSegments[0] === 'identities'
         && pathSegments.length === 3
         && pathSegments[2] === 'default-org') {
-        const denied = requireOperationId(
-            request, method, false,
-        );
-        if (denied !== undefined) return denied;
         return identityDefaultOrganizationRequest(
             ctx, request, pathSegments,
         );
@@ -437,10 +433,6 @@ export async function handleRequest(
     // runs on the BASE adapter with explicit guards rather than
     // the org-scoped route table — see invitationsRequest.
     if (pathSegments[0] === 'invitations') {
-        const denied = requireOperationId(
-            request, method, false,
-        );
-        if (denied !== undefined) return denied;
         return invitationsRequest(
             ctx, request, pathSegments,
         );

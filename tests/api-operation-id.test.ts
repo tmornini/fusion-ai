@@ -96,3 +96,76 @@ async () => {
     assert.equal(written.method, 'PUT');
     assert.equal(written.operation_id, TEST_OPERATION_ID);
 });
+
+// 22-char id distinct from TEST_OPERATION_ID so the
+// envelope pin cannot pass by accident on fixture ids.
+const ROTATION_OP = 'RotationOpId0000000001';
+
+test('rotation envelope copies Operation-ID onto every'
++ ' token-event pair',
+async () => {
+    const db = memoryDbAdapter();
+    await seedAdminSchema(db);
+    const seed = await handleRequest(
+        db,
+        apiRequest({
+            method: 'PUT',
+            path: '/identity-tokens/t-root',
+            token: DEV_TOKEN,
+            body: {
+                jti: 'jti-root',
+                identity_id: 'current',
+                action: 'issued',
+                chain_id: 'chain-1',
+                at: '2026-01-01T00:00:00.000000Z',
+            },
+        }),
+    );
+    assert.equal(seed.status, 200);
+    const before = new Set(
+        (await db.requests.getAll()).map((r) => r.id),
+    );
+    const res = await handleRequest(
+        db,
+        apiRequest({
+            method: 'POST',
+            path: '/identity-tokens/jti-root/rotation',
+            token: DEV_TOKEN,
+            body: {},
+            operationId: ROTATION_OP,
+        }),
+    );
+    assert.equal(res.status, 200);
+    const fresh = (await db.requests.getAll())
+        .filter((r) => !before.has(r.id));
+    assert.ok(fresh.length > 1);
+    const outer = fresh.find((r) =>
+        r.uri_collection
+            === '/identity-tokens/jti-root/rotation/',
+    );
+    assert.ok(outer);
+    assert.equal(outer.operation_id, ROTATION_OP);
+    for (const row of fresh) {
+        assert.equal(
+            row.operation_id, ROTATION_OP,
+            row.uri_collection + row.uri_id,
+        );
+    }
+});
+
+test('unauthenticated invitation write is 401, not 400',
+async () => {
+    const db = memoryDbAdapter();
+    await seedAdminSchema(db);
+    const res = await handleRequest(
+        db,
+        new Request('http://localhost/invitations', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({}),
+        }),
+    );
+    assert.equal(res.status, 401);
+});
