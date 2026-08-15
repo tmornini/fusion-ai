@@ -2394,7 +2394,9 @@ export function validateStateEntity(
 ): Omit<StateEntity, 'id'> {
     assertOnlyKeys(
         body, STATE_ENTITY_KEYS, 'StateEntity',
+        ['version'],
     );
+    const version = body['version'];
     return {
         entity_id: pickString(
             body, 'entity_id',
@@ -2406,6 +2408,9 @@ export function validateStateEntity(
         at: validateTimestampField(
             body, 'at', 'StateEntity',
         ),
+        ...(typeof version === 'string'
+            ? { version }
+            : {}),
     };
 }
 

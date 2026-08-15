@@ -41,7 +41,7 @@ export async function deriveObjectiveStateHistory(
     );
 }
 
-// GET objectives/history (states-URI elimination A5):
+// GET objectives/versions (states-URI elimination A5):
 // org-prefix scoped bulk of deriveObjectiveStateHistory —
 // every lifecycle event for every objective under the org
 // prefix, (at, id) DESC overall. Always returns an array

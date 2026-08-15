@@ -284,7 +284,7 @@ async () => {
     });
 });
 
-test('GET .../record-types/:id/history → 200 DESC, '
+test('GET .../record-types/:id/versions → 200 DESC, '
 + 'index 0 current',
 async () => {
     const db = memoryDbAdapter();
@@ -307,7 +307,7 @@ async () => {
     );
     const res = await handleRequest(db, req(
         'GET',
-        '/organizations/1/record-types/rt-1/history',
+        '/organizations/1/record-types/rt-1/versions',
         token,
     ));
     assert.equal(res.status, 200);
@@ -398,7 +398,7 @@ async () => {
     assert.equal(detail.status, 200);
     const history = await handleRequest(db, req(
         'GET',
-        '/organizations/1/record-types/rt-1/history',
+        '/organizations/1/record-types/rt-1/versions',
         token,
     ));
     assert.equal(history.status, 200);

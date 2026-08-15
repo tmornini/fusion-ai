@@ -38,6 +38,7 @@ interface InstanceDetailWire {
 interface InstanceHistoryWire {
     readonly at: string;
     readonly etag: string;
+    readonly version?: string;
     readonly values: readonly InstanceValueWire[];
 }
 
@@ -199,7 +200,7 @@ export async function getRecordInstanceHistory(
 ): Promise<RecordInstanceHistoryEntry[]> {
     const rows = await ctx.GET<InstanceHistoryWire[]>(
         instancePath(ctx, recordTypeId, id)
-        + '/history',
+        + '/versions',
     );
     return rows.map(row => ({
         at: row.at,

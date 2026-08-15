@@ -81,7 +81,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     await seedAdminSchema(db);
     // The source idea, already approved — seeded through the
     // wire (Phase 15 Task 7): bare per-entity current-state
-    // alias retired; surviving /history derives from the pair
+    // alias retired; surviving /versions derives from the pair
     // plane, so a raw ideas.put + states.postEvent leaves no
     // pair and history would read empty after a rolled-back
     // conversion.
@@ -152,12 +152,12 @@ test(
         // The idea moved to 'promoted', authored by the actor.
         // bare per-entity current-state alias RETIRED
         // (Phase 15 Task 7); post-write check rides
-        // surviving /history.
+        // surviving /versions.
         const ideaHistory = await GET<{
             state: string;
             member_id: string;
             at: string;
-        }[]>(db, 'ideas/idea-1/history', DEV_TOKEN);
+        }[]>(db, 'ideas/idea-1/versions', DEV_TOKEN);
         // Family history is DESC — index 0 is current.
         const ideaCurrent = ideaHistory[0]!;
         assert.equal(ideaCurrent.state, 'promoted');
@@ -377,7 +377,7 @@ test(
         );
         assert.equal(project.id, 'p1');
         const ideaHistory = await GET<{ state: string }[]>(
-            db, 'ideas/idea-1/history', DEV_TOKEN,
+            db, 'ideas/idea-1/versions', DEV_TOKEN,
         );
         // Family history is DESC — index 0 is current.
         const ideaCurrent = ideaHistory[0]!;

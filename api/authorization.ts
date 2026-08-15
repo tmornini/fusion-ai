@@ -107,7 +107,8 @@ const MEMBER_VERBS: Readonly<
     '/objectives': ['GET', 'PUT', 'POST'],
     '/objectives/:id/revisions': ['GET', 'PUT'],
     '/flows': ['GET', 'PUT', 'POST'],
-    // /flows/:id/versions RETIRED (Phase 15 Task 7).
+    // GET /flows/:id/versions is pair-chain (member GET
+    // rides '/flows'). Writes stay unwired (405).
     '/flows/:id/work-orders': ['GET', 'PUT'],
     '/flows/:id/records': ['GET', 'PUT', 'DELETE'],
     '/flows/:id/tags': ['GET', 'PUT', 'DELETE'],

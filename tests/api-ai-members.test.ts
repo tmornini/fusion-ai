@@ -69,12 +69,12 @@ test(
         assert.equal(facet.name, 'Claude');
         // bare per-entity current-state alias RETIRED
         // (Phase 15 Task 7); post-write check rides
-        // surviving /history.
+        // surviving /versions.
         const history = await GET<{
             state: string;
             member_id: string;
             at: string;
-        }[]>(db, 'members/a1/history', DEV_TOKEN);
+        }[]>(db, 'members/a1/versions', DEV_TOKEN);
         assert.equal(history.length, 1);
         const current = history[0]!;
         assert.equal(current.state, 'active');

@@ -52,7 +52,7 @@ const TYPE_DETAIL =
 const ATTRS = TYPE_DETAIL + '/attributes';
 const INSTANCES = TYPE_DETAIL + '/instances';
 const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
-const INSTANCE_HISTORY = INSTANCE_DETAIL + '/history';
+const INSTANCE_HISTORY = INSTANCE_DETAIL + '/versions';
 
 function req(
     method: string,
@@ -455,7 +455,7 @@ async () => {
     await putLiveType(db, adminToken);
     const res = await handleRequest(db, req(
         'GET',
-        INSTANCES + '/inst-missing/history',
+        INSTANCES + '/inst-missing/versions',
         memberToken,
     ));
     assert.equal(res.status, 404);
@@ -534,7 +534,7 @@ async () => {
         'GET',
         '/organizations/' + ORGANIZATION
             + '/record-types/no-type/instances/'
-            + INSTANCE_ID + '/history',
+            + INSTANCE_ID + '/versions',
         memberToken,
     ));
     assert.equal(res.status, 404);

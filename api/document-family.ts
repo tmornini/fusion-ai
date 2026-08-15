@@ -1,6 +1,9 @@
 import type { DbAdapter } from './db.ts';
 import { EntityNotFoundError } from './db.ts';
-import type { Id, StateEntity } from './types.ts';
+import type {
+    Id, StateEntity, RequestEntity, ResponseEntity,
+} from './types.ts';
+import { pickString } from './validators.ts';
 import type { MessagePair } from './message-pair.ts';
 import { canonicalUriCollection } from './message-pair.ts';
 import { familyRegistration } from './family-registry.ts';
@@ -14,6 +17,7 @@ import {
     currentLifecycleEvent,
     byIdAscending,
     DELETED_STATE,
+    requestBodyOf,
     type DerivedDocument,
     type DocumentPair,
 } from './derive-documents.ts';
@@ -307,12 +311,11 @@ export function documentEntityRoute(
     };
 }
 
-// GET <family>/:id/history (states-URI elimination A3): wrap a
-// family derive*StateHistory (ASC StateEntity[]) with (at, id)
-// DESC so index 0 is current, and empty → missedReadError
-// (403 foreign / 404 absent) using the family's table name for
-// an honest body. Does NOT change the derive's own ASC for
-// other callers (drift / family-specific oracles).
+// GET <family>/:id/versions: wrap a family derive*StateHistory
+// (ASC StateEntity[]) with (at, id) DESC so index 0 is
+// current, and empty → missedReadError (403 foreign / 404
+// absent) using the family's table name for an honest body.
+// Does NOT change the derive's own ASC for other callers.
 export type DocumentStateHistoryDerive = (
     db: DbAdapter,
     organization: Id,
@@ -333,6 +336,117 @@ export function documentStateHistoryHandler(
             );
         }
         return history.toReversed();
+    };
+}
+
+const PUT_METHOD = 'PUT';
+
+function latestByAtId<T extends { at: string; id: string }>(
+    rows: readonly T[],
+): T {
+    let best = rows[0]!;
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i]!;
+        if (
+            row.at > best.at
+            || (row.at === best.at && row.id > best.id)
+        ) {
+            best = row;
+        }
+    }
+    return best;
+}
+
+// Lookup by version column at this collection + id.
+// 0 → undefined. 1 → that row. N → latest (at, id).
+export async function lookupStoredRevision(
+    db: DbAdapter,
+    prefix: string,
+    id: Id,
+    version: string,
+): Promise<{
+    request: RequestEntity;
+    response: ResponseEntity;
+} | undefined> {
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
+    ]);
+    const matches = responses.filter(
+        (row) => row.uri_id === id && row.version === version,
+    );
+    if (matches.length === 0) return undefined;
+    const response = latestByAtId(matches);
+    const request = requests.find(
+        (row) => row.id === response.id,
+    );
+    if (request === undefined) return undefined;
+    return { request, response };
+}
+
+async function serveDocumentRevision(
+    wiring: DocumentFamilyWiring,
+    db: DbAdapter,
+    organization: Id,
+    id: Id,
+    version: string,
+): Promise<unknown> {
+    const prefix = canonicalUriCollection(
+        organization, '/' + wiring.family + '/',
+    );
+    const found = await lookupStoredRevision(
+        db, prefix, id, version,
+    );
+    if (
+        found === undefined
+        || found.request.method !== PUT_METHOD
+    ) {
+        throw await throwDocumentMiss(
+            wiring, db, organization, id,
+        );
+    }
+    const body = requestBodyOf(found.request.message);
+    const document: DerivedDocument = {
+        uriId: id,
+        pairId: found.response.id,
+        method: found.request.method,
+        body,
+    };
+    if (wiring.lifecycle === 'trio') {
+        const current: StateEntity = {
+            id: pickString(body, 'state_event_id'),
+            entity_id: id,
+            state: pickString(body, 'state'),
+            member_id: found.request.requester_identity_id,
+            at: pickString(body, 'state_at'),
+            version: found.response.version,
+        };
+        return wiring.entityOf(
+            document, organization, current,
+        );
+    }
+    return wiring.entityOf(document, organization);
+}
+
+export function documentVersionGetHandler(
+    wiring: DocumentFamilyWiring,
+): GetHandler {
+    return (db, params, _actor, organization) =>
+        serveDocumentRevision(
+            wiring,
+            db,
+            requireOrganization(organization),
+            param(params, 0),
+            param(params, 1),
+        );
+}
+
+export function documentVersionRoute(
+    wiring: DocumentFamilyWiring,
+): Route {
+    return {
+        segments: [wiring.family, ':id', 'versions', ':version'],
+        get: documentVersionGetHandler(wiring),
     };
 }
 

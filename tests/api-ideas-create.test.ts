@@ -95,9 +95,9 @@ test(
         assert.equal(idea.organization_id, '1');
         // bare per-entity current-state alias RETIRED
         // (Phase 15 Task 7); post-write check rides
-        // surviving /history.
+        // surviving /versions.
         const stateRes = await handleRequest(db, req(
-            'GET', '/ideas/idea-1/history',
+            'GET', '/ideas/idea-1/versions',
             DEV_TOKEN,
         ));
         const history = await stateRes.json() as {

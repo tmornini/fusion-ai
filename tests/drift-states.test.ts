@@ -299,7 +299,7 @@ async () => {
         woSeen += woWire.length;
 
         const objRes = await handleRequest(db, req(
-            'GET', '/objectives/history', token,
+            'GET', '/objectives/versions', token,
         ));
         assert.equal(objRes.status, 200);
         const objWire = await objRes.json() as {
@@ -380,9 +380,12 @@ test('case 2: GET <family>/:id/history parity — one entity'
         const token = await organizationToken(
             'current', STARK_ORGANIZATION,
         );
+        const suffix = family === 'work-order'
+            ? '/history'
+            : '/versions';
         const res = await handleRequest(db, req(
             'GET',
-            '/' + routeFamily + '/' + id + '/history',
+            '/' + routeFamily + '/' + id + suffix,
             token,
         ));
         assert.equal(res.status, 200, family);
@@ -497,7 +500,7 @@ async () => {
 
     // Own history 200 with genesis.
     const ownRes = await handleRequest(db, req(
-        'GET', '/ideas/' + ownIdeaId + '/history', tokenStark,
+        'GET', '/ideas/' + ownIdeaId + '/versions', tokenStark,
     ));
     assert.equal(ownRes.status, 200);
     const ownWire = await ownRes.json() as { id: string }[];
@@ -509,7 +512,7 @@ async () => {
     // after tombstone.
     const foreignRes = await handleRequest(db, req(
         'GET',
-        '/ideas/' + foreignIdeaId + '/history',
+        '/ideas/' + foreignIdeaId + '/versions',
         tokenStark,
     ));
     assert.equal(foreignRes.status, 404);
@@ -523,7 +526,7 @@ async () => {
     // Org 2 still sees its own genesis + delete on history.
     const org2Res = await handleRequest(db, req(
         'GET',
-        '/ideas/' + foreignIdeaId + '/history',
+        '/ideas/' + foreignIdeaId + '/versions',
         tokenOrg2,
     ));
     assert.equal(org2Res.status, 200);
@@ -541,7 +544,7 @@ async () => {
 
     // STARK idea absent from org 2 history read (404).
     const ownFromOrg2 = await handleRequest(db, req(
-        'GET', '/ideas/' + ownIdeaId + '/history', tokenOrg2,
+        'GET', '/ideas/' + ownIdeaId + '/versions', tokenOrg2,
     ));
     assert.equal(ownFromOrg2.status, 404);
 });

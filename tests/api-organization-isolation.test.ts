@@ -949,13 +949,13 @@ async () => {
     );
 });
 
-// Family history route (states-URI elimination C1): fence
-// rides ideas/:id/history. A miss at this address is 404.
+// Family versions route (states-URI elimination C1): fence
+// rides ideas/:id/versions. A miss at this address is 404.
 test('ideas history gates on parent ownership',
 async () => {
     const db = await deepDb();
     const mine = await facadeGet(
-        db, '/ideas/iA/history');
+        db, '/ideas/iA/versions');
     assert.equal(mine.status, 200);
     const mineRows = await mine.json() as { id: string }[];
     assert.ok(mineRows.length >= 1);
@@ -968,7 +968,7 @@ async () => {
     ));
     assert.equal(bOwns.status, 200);
     const foreign = await facadeGet(
-        db, '/ideas/iB/history');
+        db, '/ideas/iB/versions');
     assert.equal(foreign.status, 404);
     const body = await foreign.json() as { error: string };
     assert.equal(

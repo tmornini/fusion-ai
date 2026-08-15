@@ -18,7 +18,7 @@ import {
 const BASE = 'http://localhost';
 const COLLECTION = '/organizations/1/record-types';
 const DETAIL = COLLECTION + '/rt-1';
-const HISTORY = DETAIL + '/history';
+const HISTORY = DETAIL + '/versions';
 
 function req(
     method: string,
@@ -71,7 +71,7 @@ test('POST .../record-types/:id 405s (no post handler '
     assert.equal(res.status, 405);
 });
 
-test('PUT .../record-types/:id/history 405s (no put '
+test('PUT .../record-types/:id/versions 405s (no put '
 + 'handler wired)', async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -81,7 +81,7 @@ test('PUT .../record-types/:id/history 405s (no put '
     assert.equal(res.status, 405);
 });
 
-test('POST .../record-types/:id/history 405s (no post '
+test('POST .../record-types/:id/versions 405s (no post '
 + 'handler wired)', async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -91,7 +91,7 @@ test('POST .../record-types/:id/history 405s (no post '
     assert.equal(res.status, 405);
 });
 
-test('DELETE .../record-types/:id/history 405s (no '
+test('DELETE .../record-types/:id/versions 405s (no '
 + 'delete handler wired)', async () => {
     const db = await freshDb();
     const token = await organizationToken();

@@ -174,21 +174,26 @@ import {
     deriveRecordTypeCollection,
     deriveRecordTypeEntity,
     deriveRecordTypeStateHistory,
+    recordTypeEntityOf,
+    recordTypesUriPrefix,
     requireRecordTypeExists,
 } from './derive-record-types.ts';
 import {
     RECORD_TYPES_COLLECTION_PATTERN,
     RECORD_TYPE_DETAIL_PATTERN,
-    RECORD_TYPE_HISTORY_PATTERN,
+    RECORD_TYPE_VERSIONS_PATTERN,
+    RECORD_TYPE_VERSION_PATTERN,
     ATTRIBUTES_COLLECTION_PATTERN,
     ATTRIBUTE_DETAIL_PATTERN,
     INSTANCES_COLLECTION_PATTERN,
     INSTANCE_DETAIL_PATTERN,
-    INSTANCE_HISTORY_PATTERN,
+    INSTANCE_VERSIONS_PATTERN,
+    INSTANCE_VERSION_PATTERN,
 } from './family-registry.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
+    requestBodyOf,
 } from './derive-documents.ts';
 import {
     instancesUriPrefix,
@@ -199,6 +204,7 @@ import {
     instanceGetBody,
     instanceParentEtag,
     advertisedInstanceEtag,
+    revisionValuesOf,
     type InstanceValue,
 } from './derive-record-instances.ts';
 import {
@@ -285,6 +291,8 @@ import {
     documentGetHandler,
     documentPutHandler,
     documentStateHistoryHandler,
+    documentVersionRoute,
+    lookupStoredRevision,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     type DocumentFamilyWiring,
@@ -4461,6 +4469,10 @@ export const routes: Route[] = [
         get: documentGetHandler(IDENTITIES_WIRING),
         put: documentPutHandler(IDENTITIES_WIRING),
     }),
+    documentVersionRoute(IDENTITIES_WIRING),
+    documentVersionRoute(AI_MEMBERS_WIRING),
+    documentVersionRoute(HUMAN_MEMBERS_WIRING),
+    documentVersionRoute(MEMBERSHIPS_WIRING),
     // PII is a facet of the identity's own subtree: GET is
     // self-only, PUT/DELETE self-or-admin (enforced in the
     // request gate, mirroring /identities/:id/default-org). The
@@ -5146,16 +5158,17 @@ export const routes: Route[] = [
             ),
         put: documentPutHandler(FLOWS_WIRING),
     },
-    // GET flows/:id/history (states-URI elimination A3):
+    // GET flows/:id/versions: pair-chain index. Old
+    // table-backed /versions/:vid stays a miss (404).
     // deriveFlowStateHistory ASC → DESC; empty →
-    // missedReadError('flows'). Segment count 3 vs 2 so no
-    // collision with flows/:id. Member-tier GET via
+    // missedReadError('flows'). Member-tier GET via
     // matchesOnSegmentBoundary on '/flows'.
-    route('flows/:id/history', {
+    route('flows/:id/versions', {
         get: documentStateHistoryHandler(
             deriveFlowStateHistory, 'flows',
         ),
     }),
+    documentVersionRoute(FLOWS_WIRING),
     // Undo-as-replay (Phase 14 Task 8). Phase Final Task 2:
     // flows + graph ROW halves stripped; restore writes the
     // 'updated' state event, revival states events, and the
@@ -5192,10 +5205,8 @@ export const routes: Route[] = [
             );
         },
     }),
-    // flows/:id/versions[+/:vid] RETIRED (Phase 15 Task 7):
-    // zero live product callers; FlowVersion TYPE lives in
-    // flow-history.ts; flow_versions TABLE stays (storage
-    // DELETE NOTHING). ZERO seed pairs — specs deleted fully.
+    // Pair-chain GET flows/:id/versions[+/:version] is
+    // registered above. Old table-backed :vid is a miss.
     // Project↔flow joins nest under their parent project: the
     // project id is param 0, so the SERVER filters the collection
     // to that project (the org fence still rides the facade
@@ -5565,7 +5576,7 @@ export const routes: Route[] = [
             );
         },
     }),
-    route(RECORD_TYPE_HISTORY_PATTERN, {
+    route(RECORD_TYPE_VERSIONS_PATTERN, {
         get: async (db, p, _actor, organization) => {
             const org = requireOrganization(organization);
             const id = param(p, 1);
@@ -5579,6 +5590,45 @@ export const routes: Route[] = [
                 );
             }
             return history.toReversed();
+        },
+    }),
+    route(RECORD_TYPE_VERSION_PATTERN, {
+        get: async (db, p, _actor, organization) => {
+            const org = requireOrganization(organization);
+            const id = param(p, 1);
+            const version = param(p, 2);
+            const found = await lookupStoredRevision(
+                db, recordTypesUriPrefix(org), id, version,
+            );
+            if (
+                found === undefined
+                || found.request.method !== 'PUT'
+            ) {
+                throw await missedReadError(
+                    db, id, org, 'record_types',
+                );
+            }
+            const body = requestBodyOf(
+                found.request.message,
+            );
+            return recordTypeEntityOf(
+                {
+                    uriId: id,
+                    pairId: found.response.id,
+                    method: found.request.method,
+                    body,
+                },
+                org,
+                {
+                    id: pickString(body, 'state_event_id'),
+                    entity_id: id,
+                    state: pickString(body, 'state'),
+                    member_id:
+                        found.request.requester_identity_id,
+                    at: pickString(body, 'state_at'),
+                    version: found.response.version,
+                },
+            );
         },
     }),
     // Nested attributes collection (Task 7): member GET under
@@ -5764,17 +5814,16 @@ export const routes: Route[] = [
             return rows;
         },
     }),
-    // Nested instance value-revision history (Task 19).
+    // Nested instance value-revision versions (Task 19).
     // NOT a lifecycle-trio clone: each entry is full state
     // from a revision (or genesis) PUT pair (R5 — no fold),
     // projected by the caller's CURRENT read ACL. Wire
     // (at, id) DESC so index 0 is the live head. Empty →
     // missedReadError('record_instances') (R2: foreign 403
     // / absent-or-tombstoned 404). Parent type miss first.
-    // Segment count > detail so first-match is safe either
-    // order; registered before detail for literal-history
-    // house order (work-orders/history precedent).
-    route(INSTANCE_HISTORY_PATTERN, {
+    // etag is the projected hash; version is the full-state
+    // column hash.
+    route(INSTANCE_VERSIONS_PATTERN, {
         get: async (
             db, p, _actor, organization, roles,
         ) => {
@@ -5812,10 +5861,51 @@ export const routes: Route[] = [
                 entries.push({
                     at: rev.at,
                     etag,
+                    version: rev.version,
                     values,
                 });
             }
             return entries;
+        },
+    }),
+    route(INSTANCE_VERSION_PATTERN, {
+        get: async (
+            db, p, _actor, organization, roles,
+        ) => {
+            const org = requireOrganization(organization);
+            const typeId = param(p, 1);
+            const instanceId = param(p, 2);
+            const version = param(p, 3);
+            await requireRecordTypeExists(db, org, typeId);
+            const found = await lookupStoredRevision(
+                db,
+                instancesUriPrefix(org, typeId),
+                instanceId,
+                version,
+            );
+            if (
+                found === undefined
+                || found.request.method !== 'PUT'
+            ) {
+                throw await missedReadError(
+                    db, instanceId, org,
+                    'record_instances',
+                );
+            }
+            const attributesById =
+                await loadAttributeSchemaById(
+                    db, org, typeId,
+                );
+            const values = projectReadableValues(
+                revisionValuesOf(
+                    requestBodyOf(found.request.message),
+                ),
+                attributesById,
+                roles,
+            );
+            return instanceGetBody(
+                instanceId, org, typeId, values,
+            );
         },
     }),
     // Nested instance detail (Task 15 PUT create-only;
@@ -6109,14 +6199,10 @@ export const routes: Route[] = [
         get: documentGetHandler(MEMBERS_WIRING),
         put: documentPutHandler(MEMBERS_WIRING),
     }),
-    // GET members/:id/history (states-URI elimination A4):
-    // deriveMemberStates filtered to entity_id; empty →
-    // EntityNotFoundError('members', id) — global-family
-    // posture (organizationNested: false), not
-    // missedReadError. Wire StateEntity (at, id) DESC.
-    // Member-tier GET via matchesOnSegmentBoundary on
-    // '/members'.
-    route('members/:id/history', {
+    // GET members/:id/versions: deriveMemberStates filtered
+    // to entity_id; empty → EntityNotFoundError('members',
+    // id) — global-family posture. Wire StateEntity DESC.
+    route('members/:id/versions', {
         get: async (db, params) => {
             const id = param(params, 0);
             const history = (await deriveMemberStates(db))
@@ -6135,6 +6221,7 @@ export const routes: Route[] = [
             return history.toReversed();
         },
     }),
+    documentVersionRoute(MEMBERS_WIRING),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — GET dispatches to the derived
     // entity, PUT to postIdeaDocumentOp, wire-identical to the
@@ -6142,29 +6229,27 @@ export const routes: Route[] = [
     // MEMBER_ID-CAVEAT prose that lived here moved to the
     // IDEAS_WIRING block above.
     documentEntityRoute(IDEAS_WIRING),
-    // GET ideas/:id/history (states-URI elimination A3):
-    // deriveIdeaStateHistory ASC → DESC; empty →
-    // missedReadError('ideas'). Member-tier GET via
-    // matchesOnSegmentBoundary on '/ideas'.
-    route('ideas/:id/history', {
+    // GET ideas/:id/versions: deriveIdeaStateHistory ASC
+    // → DESC; empty → missedReadError('ideas').
+    route('ideas/:id/versions', {
         get: documentStateHistoryHandler(
             deriveIdeaStateHistory, 'ideas',
         ),
     }),
+    documentVersionRoute(IDEAS_WIRING),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — see the ideas/:id entry above for
     // the shared rationale; the Decision-7/MEMBER_ID-CAVEAT
     // prose moved to the PROJECTS_WIRING block above.
     documentEntityRoute(PROJECTS_WIRING),
-    // GET projects/:id/history (states-URI elimination A3):
-    // deriveProjectStateHistory ASC → DESC; empty →
-    // missedReadError('projects'). Member-tier GET via
-    // matchesOnSegmentBoundary on '/projects'.
-    route('projects/:id/history', {
+    // GET projects/:id/versions: deriveProjectStateHistory
+    // ASC → DESC; empty → missedReadError('projects').
+    route('projects/:id/versions', {
         get: documentStateHistoryHandler(
             deriveProjectStateHistory, 'projects',
         ),
     }),
+    documentVersionRoute(PROJECTS_WIRING),
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger rather than the old objectives table. Rides
     // the generic documentCollectionGetHandler —
@@ -6218,13 +6303,11 @@ export const routes: Route[] = [
             return postObjectiveCreationOp(db, body, pairs);
         },
     }),
-    // GET objectives/history (states-URI elimination A5):
-    // org-scoped bulk lifecycle StateEntity rows, (at, id)
-    // DESC. Always 200 array. MUST register BEFORE
-    // objectives/:id so matchRoute's first-match does not
-    // capture the literal segment as `:id`. Member-tier GET
-    // via matchesOnSegmentBoundary on '/objectives'.
-    route('objectives/history', {
+    // GET objectives/versions: org-scoped bulk lifecycle
+    // StateEntity rows, (at, id) DESC. Always 200 array.
+    // MUST register BEFORE objectives/:id so matchRoute's
+    // first-match does not capture the literal as `:id`.
+    route('objectives/versions', {
         get: (db, _p, _actor, organization) =>
             deriveObjectiveHistories(
                 db, requireOrganization(organization),
@@ -6241,15 +6324,14 @@ export const routes: Route[] = [
     // precedent that already rides this same
     // documentEntityRoute shape.
     documentEntityRoute(OBJECTIVES_WIRING),
-    // GET objectives/:id/history (states-URI elimination A3):
-    // deriveObjectiveStateHistory ASC → DESC; empty →
-    // missedReadError('objectives'). Member-tier GET via
-    // matchesOnSegmentBoundary on '/objectives'.
-    route('objectives/:id/history', {
+    // GET objectives/:id/versions: deriveObjectiveStateHistory
+    // ASC → DESC; empty → missedReadError('objectives').
+    route('objectives/:id/versions', {
         get: documentStateHistoryHandler(
             deriveObjectiveStateHistory, 'objectives',
         ),
     }),
+    documentVersionRoute(OBJECTIVES_WIRING),
     // Objective revisions nest under their parent objective: the
     // objective id is param 0, so the SERVER filters the
     // collection to that objective (the org fence still rides the

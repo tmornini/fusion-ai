@@ -40,11 +40,13 @@ import type { MessagePair, AuthPairSeed } from './message-pair.ts';
 import {
     familyRegistration,
     INSTANCE_DETAIL_PATTERN,
+    INSTANCE_VERSION_PATTERN,
     CREATE_ONLY_PUT_ROUTE_PATTERNS,
 } from './family-registry.ts';
 import {
     documentFamilyWiring,
     documentHeadPairId,
+    lookupStoredRevision,
 } from './document-family.ts';
 import {
     deriveInstanceHead,
@@ -53,6 +55,7 @@ import {
     advertisedInstanceEtag,
     projectionOmitsStored,
     revisionValuesOf,
+    instancesUriPrefix,
 } from './derive-record-instances.ts';
 import { projectReadableValues } from './attribute-acl.ts';
 import {
@@ -1227,6 +1230,52 @@ export async function handleRequest(
                             );
                         }
                     }
+                }
+                // Document /versions/:version: ETag is the
+                // column hash (same as the path token).
+                if (
+                    routePattern.endsWith(
+                        '/versions/:version',
+                    )
+                    && routePattern
+                        !== INSTANCE_VERSION_PATTERN
+                ) {
+                    return attachEtag(
+                        Response.json(result),
+                        param(
+                            params, params.length - 1,
+                        ),
+                    );
+                }
+                // Instance versions leaf: ETag is the
+                // projected hash, not the path token.
+                if (
+                    routePattern
+                        === INSTANCE_VERSION_PATTERN
+                ) {
+                    const found =
+                        await lookupStoredRevision(
+                            effective,
+                            instancesUriPrefix(
+                                param(params, 0),
+                                param(params, 1),
+                            ),
+                            param(params, 2),
+                            param(params, 3),
+                        );
+                    const parent = found === undefined
+                        ? undefined
+                        : await instanceParentEtag(
+                            effective,
+                            found.response.id,
+                        );
+                    const tag =
+                        await advertisedInstanceEtag(
+                            result, parent,
+                        );
+                    return attachEtag(
+                        Response.json(result), tag,
+                    );
                 }
                 // Instance detail ETag: documentVersion of
                 // this caller's projected GET body.

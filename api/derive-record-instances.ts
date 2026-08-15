@@ -31,6 +31,7 @@ export interface InstanceRevision {
     readonly at: string;
     readonly pairId: string;
     readonly values: readonly InstanceValue[];
+    readonly version: string;
 }
 
 export interface InstanceHead {
@@ -257,6 +258,7 @@ export async function deriveInstanceRevisions(
             at: pair.at,
             pairId: pair.id,
             values: revisionValuesOf(pair.body),
+            version: pair.version,
         });
     }
     return revisions;

@@ -32,7 +32,7 @@ const DELETE_METHOD = 'DELETE';
 const DOCUMENT_METHODS: ReadonlySet<string> =
     new Set([PUT_METHOD, DELETE_METHOD]);
 
-function requestBodyOf(
+export function requestBodyOf(
     message: string,
 ): Record<string, unknown> {
     const model = parseWire(message);
@@ -57,6 +57,7 @@ export interface DocumentPair {
     readonly method: string;
     readonly body: Record<string, unknown>;
     readonly requesterIdentityId: Id;
+    readonly version: string;
 }
 
 // Every PUT/DELETE pair at `uriCollection`, request matched
@@ -99,6 +100,7 @@ export function documentPairsAt(
             method: request.method,
             body: requestBodyOf(request.message),
             requesterIdentityId: request.requester_identity_id,
+            version: response.version,
         });
     }
     return pairs.sort((a, b) =>
@@ -163,6 +165,7 @@ export interface DocumentLifecycleEvent {
     readonly state: string;
     readonly stateAt: string;
     readonly memberId: Id;
+    readonly version: string;
 }
 
 // Walk a document's pairs in ARRIVAL order and keep the FIRST
@@ -201,6 +204,7 @@ export function documentLifecycleEvents(
             state: pickString(pair.body, 'state'),
             stateAt: pickString(pair.body, 'state_at'),
             memberId: pair.requesterIdentityId,
+            version: pair.version,
         });
     }
     return events;
@@ -219,6 +223,7 @@ export function stateHistoryFrom(
         state: event.state,
         member_id: event.memberId,
         at: event.stateAt,
+        version: event.version,
     }));
     return rows.sort((a, b) =>
         a.at < b.at ? -1

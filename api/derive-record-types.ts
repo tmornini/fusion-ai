@@ -42,7 +42,7 @@ export function recordTypesUriPrefix(
         + '/record-types/';
 }
 
-function recordTypeEntityOf(
+export function recordTypeEntityOf(
     document: DerivedDocument,
     organization: Id,
     current: StateEntity,
@@ -180,7 +180,7 @@ export async function requireRecordTypeExists(
 // nested type history walk (same prefix, same reduction).
 // Call sites that still name deriveRecordStateHistory
 // (adapters, drift pins) keep compiling; wire history is
-// RECORD_TYPE_HISTORY_PATTERN only after Task 23.
+// RECORD_TYPE_VERSIONS_PATTERN only after Task 23.
 export async function deriveRecordStateHistory(
     db: DbAdapter,
     organization: Id,

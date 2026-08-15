@@ -1594,6 +1594,7 @@ function fieldValuesByTransitionEvent(
                     body: fieldValue.fields,
                     requesterIdentityId:
                         transition.requesterIdentityId,
+                    version: '',
                 });
             }
             continue;

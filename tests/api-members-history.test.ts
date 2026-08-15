@@ -12,7 +12,7 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 
-// GET members/:id/history — Phase A4 of states-URI
+// GET members/:id/versions — Phase A4 of states-URI
 // elimination. Re-homes the api-actor-from-token authorship
 // covenant: PUT members/:id archive stamps actor as
 // member_id on the history event. Global-family miss posture:
@@ -65,7 +65,7 @@ function assertDesc(rows: HistoryEvent[]): void {
 }
 
 test(
-    'GET members/:id/history: archive authored by token',
+    'GET members/:id/versions: archive authored by token',
     async () => {
         const db = await freshDb();
         await seedHumanMember(db, 'current', 'Demo');
@@ -88,7 +88,7 @@ test(
             db,
             req(
                 'GET',
-                '/members/current/history',
+                '/members/current/versions',
                 DEV_TOKEN,
             ),
         );
@@ -107,14 +107,14 @@ test(
 );
 
 test(
-    'GET members/:id/history absent → 404',
+    'GET members/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
         const res = await handleRequest(
             db,
             req(
                 'GET',
-                '/members/no-such-member/history',
+                '/members/no-such-member/versions',
                 DEV_TOKEN,
             ),
         );

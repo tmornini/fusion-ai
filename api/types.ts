@@ -428,6 +428,9 @@ export interface StateEntity {
     state: string;
     member_id: Id;
     at: string;
+    // Present on /versions index rows: the response
+    // version of the pair that recorded this event.
+    version?: string;
 }
 
 // Nested field-value shape on work-order history events

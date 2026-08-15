@@ -93,13 +93,13 @@ export async function getArchivedObjectiveIds(
     );
 }
 
-// Org-scoped bulk lifecycle history (GET objectives/history)
+// Org-scoped bulk lifecycle versions (GET objectives/versions)
 // — StateEntity rows, (at, id) DESC overall. Source for the
 // project score-history archival stream.
 export async function getObjectiveHistories(
     ctx: RequestContext,
 ): Promise<StateEntity[]> {
-    return ctx.GET<StateEntity[]>('objectives/history');
+    return ctx.GET<StateEntity[]>('objectives/versions');
 }
 
 export interface ObjectiveArchivalEvent {

@@ -64,7 +64,7 @@ const ATTRS = TYPE_DETAIL + '/attributes';
 const INSTANCES = TYPE_DETAIL + '/instances';
 const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
 // History route is Task 19 — pin only if registered.
-const INSTANCE_HISTORY = INSTANCE_DETAIL + '/history';
+const INSTANCE_HISTORY = INSTANCE_DETAIL + '/versions';
 
 function req(
     method: string,

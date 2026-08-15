@@ -110,10 +110,10 @@ async function seed(): Promise<{
     return { db, token };
 }
 
-test('GET /ideas/:id/history is 200', async () => {
+test('GET /ideas/:id/versions is 200', async () => {
     const { db, token } = await seed();
     const res = await handleRequest(db, req(
-        'GET', '/ideas/idea-a/history', token,
+        'GET', '/ideas/idea-a/versions', token,
     ));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];
@@ -123,7 +123,7 @@ test('GET /ideas/:id/history is 200', async () => {
     );
 });
 
-test('GET /ideas/:id/history foreign miss is 404'
+test('GET /ideas/:id/versions foreign miss is 404'
 + ' at this address',
 async () => {
     const { db, token } = await seed();
@@ -151,7 +151,7 @@ async () => {
     ));
     assert.equal(foreignIdea.status, 200);
     const res = await handleRequest(db, req(
-        'GET', '/ideas/idea-b/history', token,
+        'GET', '/ideas/idea-b/versions', token,
     ));
     assert.equal(res.status, 404);
     assert.deepEqual(
