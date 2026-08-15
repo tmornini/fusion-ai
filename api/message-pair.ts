@@ -458,6 +458,14 @@ export function attachEtag(
     return response;
 }
 
+// Attach IMF-fixdate Date from an RFC-3339 zulu `at`.
+export function attachDate(
+    response: Response, at: string,
+): Response {
+    response.headers.set('Date', httpDateOf(at));
+    return response;
+}
+
 // The header fields worth storing in a pair's request message:
 // enumerated explicitly (never hoisted blindly). Stored
 // verbatim, including `authorization`.

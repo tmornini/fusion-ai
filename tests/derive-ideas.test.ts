@@ -219,7 +219,7 @@ test(
     },
 );
 
-test('ordering is id-lex', async () => {
+test('ordering is oldest live head (at, id)', async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const ids = [
@@ -235,7 +235,7 @@ test('ordering is id-lex', async () => {
     const observed = derived
         .map((idea) => idea.id)
         .filter((id) => ids.includes(id));
-    assert.deepEqual(observed, [...ids].sort());
+    assert.deepEqual(observed, ids);
 });
 
 test(

@@ -1189,9 +1189,9 @@ async () => {
         ));
         assert.equal(put.status, 200);
     }
-    // id-lex expected order: a, m, z — NOT insertion order.
+    // Oldest live head (at, id): z, a, m — insertion.
     const expectedIds = [
-        'rec-drift-a', 'rec-drift-m', 'rec-drift-z',
+        'rec-drift-z', 'rec-drift-a', 'rec-drift-m',
     ];
     const res = await handleRequest(
         db, req('GET', '/organizations/' + STARK_ORGANIZATION

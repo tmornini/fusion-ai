@@ -25,9 +25,8 @@ import {
 // stripped. This file no longer compares derive vs old-table
 // oracles — the row plane is empty after seed. Coverage
 // re-homes to wire-byte handleRequest assertions and
-// non-lexical live fixtures (drift-identity-tokens
-// craftsmanship: byIdAscending must diverge from insertion
-// order; never function-vs-function only).
+// non-lexical live fixtures (oldest live head (at, id)
+// first; insertion diverges from id-lex).
 
 const BASE = 'http://localhost';
 
@@ -186,9 +185,9 @@ async () => {
 });
 
 // Live fixtures inserted NON-LEX (z, then a, then m) so
-// byIdAscending collection order diverges from insertion.
-test('GET /ideas collection is wire byte-identical to a'
-+ ' literal id-lex reconstruction after non-lex PUTs',
+// oldest live head (at, id) is insertion, not id-lex.
+test('GET /ideas is oldest live head (at, id) first; '
++ 'bodies equal GET /ideas/:id (minus Date)',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
@@ -225,8 +224,13 @@ async () => {
             wireIdeaPut(f.id, f.title),
         );
     }
-    // id-lex expected order: a, m, z — NOT insertion order.
+    // Oldest live head (at, id): z, a, m — insertion, not
+    // id-lex a, m, z.
     const expectedAdded = [
+        wireIdeaGet(
+            'idea-drift-z', 'Zulu', 'active',
+            '2026-07-01T00:00:00.000000Z', 'ev-drift-z',
+        ),
         wireIdeaGet(
             'idea-drift-a', 'Alpha', 'active',
             '2026-07-01T00:00:01.000000Z', 'ev-drift-a',
@@ -235,15 +239,13 @@ async () => {
             'idea-drift-m', 'Mike', 'active',
             '2026-07-01T00:00:02.000000Z', 'ev-drift-m',
         ),
-        wireIdeaGet(
-            'idea-drift-z', 'Zulu', 'active',
-            '2026-07-01T00:00:00.000000Z', 'ev-drift-z',
-        ),
     ];
     const res = await handleRequest(
         db, req('GET', '/ideas', token),
     );
     assert.equal(res.status, 200);
+    assert.ok(res.headers.get('Date'));
+    assert.equal(res.headers.get('ETag'), null);
     const list = await res.json() as { id: string }[];
     const added = list.filter((row) =>
         row.id.startsWith('idea-drift-'));

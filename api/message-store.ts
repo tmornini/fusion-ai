@@ -235,6 +235,21 @@ function entitiesOf(
     return entities;
 }
 
+// Document id on a getCollection row. Stored PUT success
+// bodies carry `id`; absence is a wiring bug.
+export function liveHeadId(entity: unknown): string {
+    if (
+        entity === null
+        || typeof entity !== 'object'
+        || !('id' in entity)
+        || typeof entity.id !== 'string'
+        || entity.id === ''
+    ) {
+        throw new Error('live head has no id');
+    }
+    return entity.id;
+}
+
 async function pairsInCollection(
     db: DbStores,
     collection: string,

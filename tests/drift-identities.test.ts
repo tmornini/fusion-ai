@@ -298,8 +298,8 @@ test('identities collection wire equals derive (16 incl. the'
     const db = await seededDb();
     // Phase Final Stage B: identity spine tables retired.
 
-    const derived = sortById(
-        await derivedIdentities(db, GLOBAL_PLANE_PLACEHOLDER),
+    const derived = await derivedIdentities(
+        db, GLOBAL_PLANE_PLACEHOLDER,
     );
     assert.equal(derived.length, 16);
     const token = await organizationToken(

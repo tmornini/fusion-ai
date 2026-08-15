@@ -362,8 +362,8 @@ async () => {
         db, req('GET', '/memberships', tokenStark),
     );
     assert.equal(resStark.status, 200);
-    const stark = sortById(
-        await derivedMemberships(db, STARK_ORGANIZATION),
+    const stark = await derivedMemberships(
+        db, STARK_ORGANIZATION,
     );
     assert.equal(await resStark.text(), JSON.stringify(stark));
     assert.equal(stark.length, 10);
@@ -375,8 +375,8 @@ async () => {
         db, req('GET', '/memberships', tokenTwo),
     );
     assert.equal(resTwo.status, 200);
-    const org2 = sortById(
-        await derivedMemberships(db, ORGANIZATION_TWO),
+    const org2 = await derivedMemberships(
+        db, ORGANIZATION_TWO,
     );
     assert.equal(await resTwo.text(), JSON.stringify(org2));
     assert.equal(org2.length, 6);
@@ -483,8 +483,8 @@ test('ai-members + human-members wire equals derive (GLOBAL)'
         db, req('GET', '/ai-members', token),
     );
     assert.equal(resAi.status, 200);
-    const derivedAi = sortById(
-        await derivedAiMembers(db, GLOBAL_PLANE_PLACEHOLDER),
+    const derivedAi = await derivedAiMembers(
+        db, GLOBAL_PLANE_PLACEHOLDER,
     );
     assert.equal(await resAi.text(), JSON.stringify(derivedAi));
     assert.equal(derivedAi.length, 4);
@@ -493,8 +493,8 @@ test('ai-members + human-members wire equals derive (GLOBAL)'
         db, req('GET', '/human-members', token),
     );
     assert.equal(resHuman.status, 200);
-    const derivedHuman = sortById(
-        await derivedHumanMembers(db, GLOBAL_PLANE_PLACEHOLDER),
+    const derivedHuman = await derivedHumanMembers(
+        db, GLOBAL_PLANE_PLACEHOLDER,
     );
     assert.equal(
         await resHuman.text(), JSON.stringify(derivedHuman),

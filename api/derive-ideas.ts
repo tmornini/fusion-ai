@@ -20,6 +20,8 @@ import {
     type DerivedDocument,
     type DocumentPair,
 } from './derive-documents.ts';
+import { liveHeadId, messageStore } from
+    './message-store.ts';
 
 // Ideas' own reshaping of the generic message-plane reduction
 // (derive-documents.ts): the async fetching (one prefix scan per
@@ -104,10 +106,11 @@ async function fetchIdeaPairs(
     };
 }
 
-// id-lex ordered (the IndexedDB reference), deleted-filtered —
-// the head lifecycle state 'deleted' excludes an idea exactly as
-// EntityStore's states-log tombstone filter does today (archived
-// ideas are NOT filtered here; ideaIsVisible does that downstream,
+// Oldest live head (at, id) first via getCollection,
+// deleted-filtered — the head lifecycle state 'deleted'
+// excludes an idea exactly as EntityStore's states-log
+// tombstone filter does today (archived ideas are NOT
+// filtered here; ideaIsVisible does that downstream,
 // untouched).
 export async function deriveIdeas(
     db: DbAdapter,
@@ -124,7 +127,7 @@ export async function deriveIdeas(
             list.push(pair);
         }
     }
-    const ideas: IdeaEntity[] = [];
+    const byId = new Map<Id, IdeaEntity>();
     for (const [ideaId, document] of documents) {
         const history = stateHistoryFrom(
             documentLifecycleEvents(
@@ -138,11 +141,18 @@ export async function deriveIdeas(
         // After DELETED filter history is non-empty for every
         // live trio document (genesis always mints an event).
         const current = currentLifecycleEvent(history)!;
-        ideas.push(
+        byId.set(
+            ideaId,
             ideaEntityOf(document, organization, current),
         );
     }
-    return ideas.sort(byIdAscending);
+    const live = await messageStore(db).getCollection(prefix);
+    const ideas: IdeaEntity[] = [];
+    for (const entity of live) {
+        const row = byId.get(liveHeadId(entity));
+        if (row !== undefined) ideas.push(row);
+    }
+    return ideas;
 }
 
 export async function deriveIdea(

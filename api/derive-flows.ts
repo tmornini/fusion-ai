@@ -23,6 +23,8 @@ import {
     type DerivedDocument,
     type DocumentPair,
 } from './derive-documents.ts';
+import { liveHeadId, messageStore } from
+    './message-store.ts';
 
 // Flows' own reshaping of the generic message-plane reduction
 // (derive-documents.ts): the async fetching (one prefix scan per
@@ -125,12 +127,13 @@ async function fetchFlowPairs(
     };
 }
 
-// id-lex ordered (the IndexedDB reference), deleted-filtered —
-// the head lifecycle state 'deleted' excludes a flow exactly as
-// EntityStore's states-log tombstone filter does today
-// (dead-in-practice for flows today — no live route ever PUTs a
-// 'deleted' state trio — but the drift check exercises it via a
-// live document PUT, mechanism-parity with the old plane).
+// Oldest live head (at, id) first via getCollection,
+// deleted-filtered — the head lifecycle state 'deleted'
+// excludes a flow exactly as EntityStore's states-log
+// tombstone filter does today (dead-in-practice for flows
+// today — no live route ever PUTs a 'deleted' state trio —
+// but the drift check exercises it via a live document PUT,
+// mechanism-parity with the old plane).
 export async function deriveFlows(
     db: DbAdapter,
     organization: Id,
@@ -146,7 +149,7 @@ export async function deriveFlows(
             list.push(pair);
         }
     }
-    const flows: FlowWithGraph[] = [];
+    const byId = new Map<Id, FlowWithGraph>();
     for (const [flowId, document] of documents) {
         const history = stateHistoryFrom(
             documentLifecycleEvents(
@@ -157,12 +160,18 @@ export async function deriveFlows(
         if (currentDocumentState(history) === DELETED_STATE) {
             continue;
         }
-        flows.push(flowEntityOf(
+        byId.set(flowId, flowEntityOf(
             document, organization,
             pairsByFlowId.get(flowId)?.length ?? 0,
         ));
     }
-    return flows.sort(byIdAscending);
+    const live = await messageStore(db).getCollection(prefix);
+    const flows: FlowWithGraph[] = [];
+    for (const entity of live) {
+        const row = byId.get(liveHeadId(entity));
+        if (row !== undefined) flows.push(row);
+    }
+    return flows;
 }
 
 export async function deriveFlow(

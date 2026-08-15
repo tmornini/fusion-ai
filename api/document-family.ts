@@ -15,7 +15,6 @@ import {
     stateHistoryFrom,
     currentDocumentState,
     currentLifecycleEvent,
-    byIdAscending,
     DELETED_STATE,
     requestBodyOf,
     type DerivedDocument,
@@ -28,7 +27,8 @@ import type {
     WriteResponseSpec,
 } from './routes.ts';
 import { HTTP_OK } from './http-errors.ts';
-import { messageStore } from './message-store.ts';
+import { liveHeadId, messageStore } from
+    './message-store.ts';
 
 // param/requireOrganization/withoutId live HERE, not in
 // routes.ts, so this module has NO runtime (value) dependency on
@@ -436,6 +436,8 @@ export function documentCollectionGetHandler(
         const prefix = canonicalUriCollection(
             organizationId, '/' + wiring.family + '/',
         );
+        const store = messageStore(db);
+        const live = await store.getCollection(prefix);
         const [requests, responses] = await Promise.all([
             db.requests.getAllWhere('uri_collection', prefix),
             db.responses.getAllWhere('uri_collection', prefix),
@@ -461,7 +463,7 @@ export function documentCollectionGetHandler(
                 }
             }
         }
-        const rows: { id: Id }[] = [];
+        const byId = new Map<Id, unknown>();
         for (const [id, document] of documents) {
             if (wiring.lifecycle === 'trio') {
                 const history = stateHistoryFrom(
@@ -476,20 +478,28 @@ export function documentCollectionGetHandler(
                 ) continue;
                 const current =
                     currentLifecycleEvent(history)!;
-                rows.push(
+                byId.set(
+                    id,
                     wiring.entityOf(
                         document, organizationId, current,
-                    ) as { id: Id },
+                    ),
                 );
                 continue;
             }
-            rows.push(
-                wiring.entityOf(
-                    document, organizationId,
-                ) as { id: Id },
+            byId.set(
+                id,
+                wiring.entityOf(document, organizationId),
             );
         }
-        return rows.sort(byIdAscending);
+        // Oldest live head (at, id) first — getCollection
+        // order. Bodies match GET :id (entityOf), not the
+        // stored PUT echo. Trio-deleted heads are omitted.
+        const rows: unknown[] = [];
+        for (const entity of live) {
+            const row = byId.get(liveHeadId(entity));
+            if (row !== undefined) rows.push(row);
+        }
+        return rows;
     };
 }
 

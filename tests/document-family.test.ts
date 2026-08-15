@@ -673,7 +673,8 @@ async function putStatelessDocumentPair(
         pathSegments: [STATELESS_FAMILY, id],
         headerFields: [], body, requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
-        responseStatus: 200, responseBody: undefined,
+        responseStatus: 200,
+        responseBody: { id, ...body },
         operationId: TEST_OPERATION_ID,
     });
     await db.transaction(

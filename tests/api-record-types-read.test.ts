@@ -191,15 +191,15 @@ async () => {
     assert.deepEqual(await res.json(), []);
 });
 
-test('GET .../record-types → 200 rows id-lex ASC, '
-+ 'trio embedded, member token',
+test('GET .../record-types → 200 oldest live head '
++ '(at, id) first, trio embedded, member token',
 async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     const token = await seedOrganizationWithMember(
         db, '1', 'member1', 'Org One', 'm-1', 'member',
     );
-    // Seed out of id-lex order so ASC sort is observable.
+    // Seed out of id-lex order so (at, id) is observable.
     await seedRecordTypePair(
         db, '1', 'rt-b',
         recordTypeBody(
@@ -218,17 +218,17 @@ async () => {
     assert.equal(res.status, 200);
     const rows = await res.json() as RecordTypeWireRow[];
     assert.equal(rows.length, 2);
-    assert.equal(rows[0]!.id, 'rt-a');
-    assert.equal(rows[1]!.id, 'rt-b');
+    assert.equal(rows[0]!.id, 'rt-b');
+    assert.equal(rows[1]!.id, 'rt-a');
     assert.deepEqual(rows[0], {
-        id: 'rt-a',
+        id: 'rt-b',
         organization_id: '1',
-        name: 'Alpha',
-        description: 'Alpha desc',
-        position: 1,
+        name: 'Beta',
+        description: 'Beta desc',
+        position: 2,
         state: 'active',
         state_at: AT,
-        state_event_id: 'rt-a-genesis',
+        state_event_id: 'rt-b-genesis',
     });
 });
 

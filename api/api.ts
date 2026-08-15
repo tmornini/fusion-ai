@@ -13,6 +13,7 @@ import type { LatencySimulation } from './latency.ts';
 import {
     ValidationError,
     msSinceUtc,
+    nowUtc,
 } from './types.ts';
 import type { Id } from './types.ts';
 import { messageAddress } from './message-address.ts';
@@ -24,6 +25,7 @@ import {
     hoistedHeaderFields,
     responseFromStored,
     attachEtag,
+    attachDate,
     parseIfMatch,
     requireOperationId,
     OPERATION_ID_HEADER,
@@ -42,6 +44,7 @@ import {
     INSTANCE_DETAIL_PATTERN,
     INSTANCE_VERSION_PATTERN,
     CREATE_ONLY_PUT_ROUTE_PATTERNS,
+    RECORD_TYPES_COLLECTION_PATTERN,
 } from './family-registry.ts';
 import {
     documentFamilyWiring,
@@ -1302,6 +1305,15 @@ export async function handleRequest(
                         );
                     }
                 }
+                // Stream collection GET: one Date: now. No
+                // collection ETag. No 304. Assemble surfaces
+                // (organizations, invitations, members join)
+                // stay Date-free.
+                if (isLiveHeadCollectionGet(routePattern)) {
+                    return attachDate(
+                        Response.json(result), nowUtc(),
+                    );
+                }
                 return Response.json(result);
             }
             case 'PUT': {
@@ -1829,6 +1841,19 @@ async function bodyWriteResponse(
             },
         ),
     );
+}
+
+// Stream family collection GET (live heads). members is
+// a memberships join (not this path). record-types is
+// org-nested, so its pattern is not the family name.
+function isLiveHeadCollectionGet(
+    routePattern: string,
+): boolean {
+    if (routePattern === 'members') return false;
+    if (routePattern === RECORD_TYPES_COLLECTION_PATTERN) {
+        return true;
+    }
+    return documentFamilyWiring(routePattern) !== undefined;
 }
 
 // Strong ETag header → unquoted 64-hex version token

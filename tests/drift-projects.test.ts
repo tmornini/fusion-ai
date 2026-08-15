@@ -204,9 +204,9 @@ async () => {
 });
 
 // Live fixtures inserted NON-LEX (z, then a, then m) so
-// byIdAscending collection order diverges from insertion.
-test('GET /projects collection is wire byte-identical to a'
-+ ' literal id-lex reconstruction after non-lex PUTs',
+// oldest live head (at, id) is insertion, not id-lex.
+test('GET /projects collection is oldest live head '
++ '(at, id) first after non-lex PUTs',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
@@ -241,8 +241,12 @@ async () => {
             wireProjectPut(f.id, f.title),
         );
     }
-    // id-lex expected order: a, m, z — NOT insertion order.
+    // Oldest live head (at, id): z, a, m — insertion.
     const expectedAdded = [
+        wireProjectGet(
+            'project-drift-z', 'Zulu', 'submitted',
+            '2026-07-01T00:00:00.000000Z', 'ev-drift-z',
+        ),
         wireProjectGet(
             'project-drift-a', 'Alpha', 'submitted',
             '2026-07-01T00:00:01.000000Z', 'ev-drift-a',
@@ -250,10 +254,6 @@ async () => {
         wireProjectGet(
             'project-drift-m', 'Mike', 'submitted',
             '2026-07-01T00:00:02.000000Z', 'ev-drift-m',
-        ),
-        wireProjectGet(
-            'project-drift-z', 'Zulu', 'submitted',
-            '2026-07-01T00:00:00.000000Z', 'ev-drift-z',
         ),
     ];
     const res = await handleRequest(

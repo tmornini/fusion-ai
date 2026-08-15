@@ -9,11 +9,12 @@ import {
     stateHistoryFrom,
     currentDocumentState,
     currentLifecycleEvent,
-    byIdAscending,
     DELETED_STATE,
     type DerivedDocument,
     type DocumentPair,
 } from './derive-documents.ts';
+import { liveHeadId, messageStore } from
+    './message-store.ts';
 
 // Org-nested record-types derive surface, plus the folded
 // flat-records history helper (formerly derive-records.ts).
@@ -97,7 +98,7 @@ export async function deriveRecordTypeCollection(
             list.push(pair);
         }
     }
-    const rows: RecordTypeWireRow[] = [];
+    const byId = new Map<Id, RecordTypeWireRow>();
     for (const [id, document] of documents) {
         const history = stateHistoryFrom(
             documentLifecycleEvents(
@@ -109,13 +110,20 @@ export async function deriveRecordTypeCollection(
             continue;
         }
         const current = currentLifecycleEvent(history)!;
-        rows.push(
+        byId.set(
+            id,
             recordTypeEntityOf(
                 document, organization, current,
             ),
         );
     }
-    return rows.sort(byIdAscending);
+    const live = await messageStore(db).getCollection(prefix);
+    const rows: RecordTypeWireRow[] = [];
+    for (const entity of live) {
+        const row = byId.get(liveHeadId(entity));
+        if (row !== undefined) rows.push(row);
+    }
+    return rows;
 }
 
 export async function deriveRecordTypeEntity(

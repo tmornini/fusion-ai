@@ -1056,11 +1056,11 @@ async () => {
 // -- 9. non-lexical live fixtures (byIdAscending craft) --------
 
 test('live PUTs in non-lexical id order: collection is'
-+ ' id-lex ordered, not insertion order',
++ ' oldest live head (at, id) first',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    // Insert z, then a, then m — collection must return a, m, z.
+    // Insert z, then a, then m — collection is that order.
     const fixtures = [
         { id: 'obj-drift-z', position: 30 },
         { id: 'obj-drift-a', position: 10 },
@@ -1085,16 +1085,16 @@ async () => {
     const fixtureAt = '2026-06-13T00:00:00.000000Z';
     const expectedAdded = [
         wireObjectiveGet(
+            'obj-drift-z', 30, 'active',
+            fixtureAt, 'obj-drift-z-active',
+        ),
+        wireObjectiveGet(
             'obj-drift-a', 10, 'active',
             fixtureAt, 'obj-drift-a-active',
         ),
         wireObjectiveGet(
             'obj-drift-m', 20, 'active',
             fixtureAt, 'obj-drift-m-active',
-        ),
-        wireObjectiveGet(
-            'obj-drift-z', 30, 'active',
-            fixtureAt, 'obj-drift-z-active',
         ),
     ];
     const res = await handleRequest(
