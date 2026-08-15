@@ -60,5 +60,7 @@ function wrap(sql: Tagged): SqlClient {
 export function connectPostgres(
     url: string,
 ): SqlClient {
-    return wrap(postgres(url) as unknown as Tagged);
+    return wrap(postgres(url, {
+        onnotice: () => {},
+    }) as unknown as Tagged);
 }

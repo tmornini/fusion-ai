@@ -67,8 +67,8 @@ export class PostgresBackend implements StorageBackend {
             const rows = await this.#sql.query<{
                 only: boolean;
             }>`
-                SELECT only FROM schema_marker
-                WHERE only
+                SELECT "only" FROM schema_marker
+                WHERE "only"
                 LIMIT 1
             `;
             return rows.length > 0;
@@ -80,7 +80,7 @@ export class PostgresBackend implements StorageBackend {
     async postSchemaCreation(): Promise<void> {
         try {
             await this.#sql.query`
-                INSERT INTO schema_marker (only)
+                INSERT INTO schema_marker ("only")
                 VALUES (true)
                 ON CONFLICT DO NOTHING
             `;

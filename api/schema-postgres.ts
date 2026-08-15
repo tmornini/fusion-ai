@@ -56,7 +56,7 @@ export const POSTGRES_RESPONSES_TABLE =
 
 export const POSTGRES_SCHEMA_MARKER_TABLE =
     String.raw`CREATE TABLE IF NOT EXISTS schema_marker (
-    only boolean PRIMARY KEY CHECK (only)
+    "only" boolean PRIMARY KEY CHECK ("only")
 );`;
 
 export const POSTGRES_MESSAGE_BODY_FUNCTION =

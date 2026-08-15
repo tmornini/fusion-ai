@@ -18,7 +18,8 @@ LONG_LINES=$( {
         ! -name 'TEST-PLAN.md' \
         ! -name 'API-TREE.md' \
         -exec awk "$AWK_LINT" {} +
-    awk "$AWK_LINT" build serve test validate generate-schema-svg
+    awk "$AWK_LINT" build serve test test-postgres \
+        validate generate-schema-svg
 } )
 
 if [ -n "$LONG_LINES" ]; then
