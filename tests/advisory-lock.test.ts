@@ -9,9 +9,12 @@ import { Octets } from
 import {
     ADVISORY_KEY_HEX_DIGITS,
     SNAPSHOT_IMPORT_LOCK_NAME,
+    FUSION_EVENTS_CHANNEL,
     PG_NOTIFY_PAYLOAD_MAX_BYTES,
     POOL_MAX,
+    SNAPSHOT_EXPORT_ISOLATION,
     advisoryKey,
+    notifyPayload,
 } from '../api/advisory-lock.ts';
 
 const SIGN_BIT_FLOOR = 2n ** 52n;
@@ -80,6 +83,38 @@ test('lock and notify constants stay named', () => {
         SNAPSHOT_IMPORT_LOCK_NAME,
         'fusion.snapshot.import',
     );
+    assert.equal(FUSION_EVENTS_CHANNEL, 'fusion_events');
     assert.equal(PG_NOTIFY_PAYLOAD_MAX_BYTES, 8000);
     assert.equal(POOL_MAX, 10);
+    assert.equal(
+        SNAPSHOT_EXPORT_ISOLATION,
+        'ISOLATION LEVEL REPEATABLE READ READ ONLY',
+    );
+});
+
+test('notifyPayload emits full when over 8000 bytes',
+() => {
+    const small = {
+        kind: 'scoped' as const,
+        organizationIds: ['1'],
+        identityIds: ['current'],
+    };
+    assert.equal(
+        notifyPayload(small),
+        JSON.stringify(small),
+    );
+    const ids = [];
+    for (let i = 0; i < 400; i++) {
+        ids.push('organization-' + String(i).padStart(8, '0'));
+    }
+    const large = {
+        kind: 'scoped' as const,
+        organizationIds: ids,
+        identityIds: [],
+    };
+    assert.ok(
+        new TextEncoder().encode(JSON.stringify(large))
+            .length > PG_NOTIFY_PAYLOAD_MAX_BYTES,
+    );
+    assert.equal(notifyPayload(large), '{"kind":"full"}');
 });

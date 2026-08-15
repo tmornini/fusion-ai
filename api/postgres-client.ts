@@ -3,6 +3,7 @@
 // pg_advisory_xact_lock inside it.
 
 import postgres from 'postgres';
+import { POOL_MAX } from './advisory-lock.ts';
 
 export interface SqlClient {
     query<T>(
@@ -11,22 +12,28 @@ export interface SqlClient {
     ): Promise<T[]>;
     begin<T>(
         fn: (sql: SqlClient) => Promise<T>,
+        options?: string,
     ): Promise<T>;
     unsafe<T>(query: string): Promise<T[]>;
     end(): Promise<void>;
 }
+
+type BeginFn = (
+    fn: (tx: Tagged) => Promise<unknown>,
+) => Promise<unknown>;
 
 type Tagged = {
     (
         strings: TemplateStringsArray,
         ...values: readonly unknown[]
     ): Promise<unknown[]>;
-    begin: (
-        fn: (tx: Tagged) => Promise<unknown>,
-    ) => Promise<unknown>;
-    savepoint?: (
-        fn: (tx: Tagged) => Promise<unknown>,
-    ) => Promise<unknown>;
+    begin: BeginFn & (
+        (
+            options: string,
+            fn: (tx: Tagged) => Promise<unknown>,
+        ) => Promise<unknown>
+    );
+    savepoint?: BeginFn;
     unsafe: (query: string) => Promise<unknown[]>;
     end?: () => Promise<void>;
 };
@@ -42,10 +49,18 @@ function wrap(sql: Tagged): SqlClient {
         },
         begin<T>(
             fn: (inner: SqlClient) => Promise<T>,
+            options?: string,
         ): Promise<T> {
-            const start = sql.savepoint ?? sql.begin;
-            return start((tx) => fn(wrap(tx))) as
-                Promise<T>;
+            const inner = (tx: Tagged): Promise<T> =>
+                fn(wrap(tx));
+            if (sql.savepoint !== undefined) {
+                return sql.savepoint(inner) as Promise<T>;
+            }
+            if (options !== undefined) {
+                return sql.begin(options, inner) as
+                    Promise<T>;
+            }
+            return sql.begin(inner) as Promise<T>;
         },
         unsafe<T>(query: string): Promise<T[]> {
             return sql.unsafe(query) as
@@ -61,6 +76,7 @@ export function connectPostgres(
     url: string,
 ): SqlClient {
     return wrap(postgres(url, {
+        max: POOL_MAX,
         onnotice: () => {},
     }) as unknown as Tagged);
 }

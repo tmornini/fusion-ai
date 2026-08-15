@@ -31,7 +31,10 @@ import {
 } from './family-registry.ts';
 import {
     HTTP_OK, HTTP_CREATED, HTTP_NO_CONTENT, HTTP_BAD_REQUEST,
+    HTTP_PRECONDITION_FAILED, ApiError,
 } from './http-errors.ts';
+import type { NotificationEvent } from
+    './notifications.ts';
 
 // The shadow-ledger message pair: one row in `requests`, one
 // in `responses`, sharing `id`. Formed pre-tx (all crypto and
@@ -664,6 +667,30 @@ export async function putMessagePair(
     view: DbAdapter,
     pair: MessagePair,
 ): Promise<void> {
+    await coordinateWrite(view, pair, false);
+    await writePairRows(view, pair);
+    await notifyWrite(view, pair);
+}
+
+// In-tx append (row ops only, no crypto): skips silently if a
+// request with the same hash is already stored (the concurrent
+// -retry guard); otherwise puts both rows via writePairRows.
+export async function appendMessagePair(
+    view: DbAdapter,
+    pair: MessagePair,
+): Promise<void> {
+    await coordinateWrite(view, pair, true);
+    const replay = await view.requests
+        .getAllWhere('message_hash', pair.requestHash);
+    if (replay.length > 0) return;
+    await writePairRows(view, pair);
+    await notifyWrite(view, pair);
+}
+
+async function writePairRows(
+    view: DbAdapter,
+    pair: MessagePair,
+): Promise<void> {
     await view.requests.put(pair.id, {
         uri_collection: pair.uriCollection,
         uri_id: pair.uriId,
@@ -689,17 +716,93 @@ export async function putMessagePair(
     });
 }
 
-// In-tx append (row ops only, no crypto): skips silently if a
-// request with the same hash is already stored (the concurrent
-// -retry guard); otherwise puts both rows via putMessagePair.
-export async function appendMessagePair(
+// Lock order: import (shared), dedup if hash-deduped,
+// address if gated, then FOR UPDATE + a new latest SELECT.
+async function coordinateWrite(
+    view: DbAdapter,
+    pair: MessagePair,
+    hashDeduped: boolean,
+): Promise<void> {
+    const locks = view.writeLocks;
+    if (locks === undefined) return;
+    await locks.lockImportShared();
+    if (hashDeduped) {
+        await locks.lockDedup(pair.requestHash);
+    }
+    const gated = isGatedAddress(pair.uriCollection);
+    if (gated) {
+        await locks.lockAddress(
+            pair.uriCollection, pair.uriId,
+        );
+    }
+    const latched = pair.latchedHeadPairId;
+    if (latched !== undefined) {
+        await locks.lockHead(latched);
+        const latest = await locks.latestPutDelete(
+            pair.uriCollection, pair.uriId,
+        );
+        if (latest === null || latest.id !== latched) {
+            throw new ApiError(
+                'If-Match does not match the current'
+                + ' document at '
+                + pair.uriCollection + pair.uriId,
+                HTTP_PRECONDITION_FAILED,
+            );
+        }
+        return;
+    }
+    if (!gated) return;
+    const latest = await locks.latestPutDelete(
+        pair.uriCollection, pair.uriId,
+    );
+    if (latest !== null && latest.method === 'PUT') {
+        throw new ApiError(
+            'If-Match does not match the current'
+            + ' document at '
+            + pair.uriCollection + pair.uriId,
+            HTTP_PRECONDITION_FAILED,
+        );
+    }
+}
+
+async function notifyWrite(
     view: DbAdapter,
     pair: MessagePair,
 ): Promise<void> {
-    const replay = await view.requests
-        .getAllWhere('message_hash', pair.requestHash);
-    if (replay.length > 0) return;
-    await putMessagePair(view, pair);
+    const notify = view.writeLocks?.notify;
+    if (notify === undefined) return;
+    await notify(eventForPair(pair));
+}
+
+function eventForPair(
+    pair: MessagePair,
+): NotificationEvent {
+    const parts = pair.uriCollection
+        .split('/')
+        .filter((part) => part !== '');
+    const organizationIds =
+        parts[0] === 'organizations'
+            && parts[1] !== undefined
+            ? [parts[1]]
+            : [];
+    return {
+        kind: 'scoped',
+        organizationIds,
+        identityIds: [pair.requesterIdentityId],
+    };
+}
+
+function isGatedAddress(collection: string): boolean {
+    const parts = collection
+        .split('/')
+        .filter((part) => part !== '');
+    const family = parts[0] === 'organizations'
+        ? (parts[2] ?? '')
+        : (parts[0] ?? '');
+    const concurrency = familyRegistration(family)
+        ?.concurrency;
+    return concurrency === 'locked'
+        || concurrency === 'create-only';
 }
 
 // The create-address override table: which body field names
