@@ -306,7 +306,7 @@ Legend for classification:
 - `POST /work-orders/:id/transition` — operation (§3.19).
 - `POST /work-orders/:id/binding` — operation (§3.34).
 - `POST /work-orders/:id/release` — operation (§3.35).
-  Named unclaim; 204 either way; foreign-WO 403;
+  Named unclaim; 201 on append; foreign-WO 403;
   nonexistent-WO 404.
 
 ### 2.8 Record types, attributes & instances
@@ -1437,7 +1437,8 @@ like every other atomic write in this catalog.
   (`workOrderClaimHistoryFor` / derive) → if a live claim by
   another member → 409; by the caller → no-op; else
   `appendMessagePair(pair)` for the claim op (expiry + claim
-  derive from op pairs at read time).
+  derive from op pairs at read time). Send-time **201** on
+  append (§5.1).
 - doctrinal: claim-history read + claim op pair as
   `post_claim_work_order`.
 - props: atomic; **TOCTOU-safe** (read + check + append ride one tx, so
@@ -1519,9 +1520,9 @@ in order:**
 7. 403 attribute write ACL (all-or-nothing)
 8. 400 value type / constraint violations
 9. 400 required-at-exit violations (W10)
-10. In-tx: UNIQUE `follows` race → 412; nothing stored
-11. 204 success (today's transition status; op +
-    revision committed together)
+10. In-tx: live-head latch race → 412; nothing stored
+11. 201 success on append (op + revision committed
+    together)
 
 Error bodies: house `{ "error": "<string>" }` only.
 Pins: `tests/api-work-order-transition.test.ts`.
@@ -1968,12 +1969,13 @@ record-type. Body:
 { "instance_id": "...", "record_type_id": "..." }
 ```
 
-→ **204**. One binding op pair, one tx — no document
-write, no instance revision. The CURRENT bind derives
-from the WO's own binding op-pair prefix (latest
-`(at, id)` wins) — claim-op derive precedent. WO entity
-GET (detail and list rows) EMBEDS the derived bind as
-`instance_id` + `record_type_id` wire fields
+→ **201** on first append. One binding op pair, one
+tx — no document write, no instance revision. The
+CURRENT bind derives from the WO's own binding
+op-pair prefix (latest `(at, id)` wins) — claim-op
+derive precedent. WO entity GET (detail and list
+rows) EMBEDS the derived bind as `instance_id` +
+`record_type_id` wire fields
 (derive-at-read; never a document field; the
 `hasUndoHistory` embed precedent).
 
@@ -1999,8 +2001,8 @@ GET (detail and list rows) EMBEDS the derived bind as
 5. 400 `record_type_id` not among the flow's live
    joins
 6. 409 already bound to a different pair (in-tx)
-7. 204 success (op voice — claim / transition /
-   release parity); byte-identical resend replays
+7. 201 on first append; byte-identical resend
+   replays the stored send-time status
 
 Pins: `tests/api-work-order-binding.test.ts`.
 
@@ -2009,7 +2011,7 @@ Pins: `tests/api-work-order-binding.test.ts`.
 `postWorkOrderReleaseOp` (`api/routes.ts`) — member-tier
 sibling of claim/transition/binding. Releases a live claim
 (derive emits `claim_released`); no live claim → idempotent
-no-op. **204** either way.
+no-op. **201** on append either way.
 
 ```http
 POST .../work-orders/{work-order-id}/release

@@ -133,9 +133,10 @@ One row per stored canonical HTTP request message. The
 message text IS the row; `uri_collection` (retains its trailing
 `/`) and `uri_id` (empty string for a collection request) are
 addressing metadata, and `message_hash` is an index over the
-sha256 digest (`shared/digest.ts` `sha256Hex`) of `message`
-— never a second copy of its truth. `at` is pair ENVELOPE
-metadata only, not a domain timestamp inside the message.
+sha256 digest (`shared/digest.ts` `sha256HexOfBytes`) of
+the Latin-1 wire octets of `message` — never a second copy
+of its truth. `at` is pair ENVELOPE metadata only, not a
+domain timestamp inside the message.
 
 | Column | Type | Notes |
 |--------|------|-------|
