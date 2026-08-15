@@ -1,4 +1,5 @@
-import { decodeAccessToken } from '../../../api/access-token.ts';
+import { decodeAccessToken } from
+    '../../../shared/access-token-decode.ts';
 import { STORAGE_KEY_AUTHORIZATION } from '../storage-keys.ts';
 
 // The persisted session credential: the OAuth token pair the

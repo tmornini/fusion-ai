@@ -1,5 +1,9 @@
 import { base64UrlDecode } from './base64url.ts';
 
+// The anonymous seed subject. Decode-side so the server
+// client can name it without importing mint/verify.
+export const ANONYMOUS_ID = 'anonymous';
+
 // The resolved principal — the subject of a request as
 // claimed by the token. Distinct from the storage
 // Identity ({id,kind}): this is the token's claim view.

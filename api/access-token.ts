@@ -11,6 +11,7 @@ import {
 } from '../shared/access-token-decode.ts';
 
 export {
+    ANONYMOUS_ID,
     decodeAccessToken,
     principalFromClaims,
     principalFromToken,
@@ -19,8 +20,6 @@ export type {
     AccessTokenClaims,
     Principal,
 } from '../shared/access-token-decode.ts';
-
-export const ANONYMOUS_ID: Id = 'anonymous';
 
 export const TOKEN_AUDIENCE = 'fusion-ai-web';
 const SIGNING_KEY_ID = 'dev-co-located';

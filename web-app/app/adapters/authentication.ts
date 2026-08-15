@@ -1,5 +1,5 @@
 import type { RequestContext } from './shared.ts';
-import { UnauthorizedError } from '../../../api/api.ts';
+import { UnauthorizedError } from '../../../api/http-errors.ts';
 import type {
     SessionCredentials,
 } from './session-credentials.ts';

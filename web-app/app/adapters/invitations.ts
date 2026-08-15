@@ -10,7 +10,7 @@ import {
     RequestError,
     HTTP_NOT_FOUND,
     HTTP_CONFLICT,
-} from '../../../api/api.ts';
+} from '../../../api/http-errors.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -19,7 +19,7 @@ import {
     putSessionCredentials,
 } from './session-credentials.ts';
 import { postSessionRefresh } from './session-refresh.ts';
-import { putSessionToken } from './init.ts';
+import { putSessionToken } from './session-token.ts';
 export {
     isInvitationState,
 } from '../../../api/types.ts';

@@ -3,31 +3,25 @@ import {
     type Id,
 } from '../../../api/types.ts';
 import {
-    GET as httpGet,
-    GETWithEtag as httpGetWithEtag,
-    PUT as httpPut,
-    PUTWithEtag as httpPutWithEtag,
-    PATCH as httpPatch,
-    PATCHWithEtag as httpPatchWithEtag,
-    DELETE as httpDelete,
-    POST as httpPost,
     UnauthorizedError,
-    type ClientFacadeAdapter,
-} from '../../../api/api.ts';
+} from '../../../api/http-errors.ts';
 import { OPERATION_ID_HEADER } from
     '../../../api/message-pair.ts';
 import {
     generateCryptoSafeBase62,
 } from '../../../shared/crypto-safe-base62.ts';
 import {
-    getDbAdapter,
     getSessionToken,
     putSessionToken,
-} from './init.ts';
+} from './session-token.ts';
+import {
+    getClientFacade,
+    wrapClientAdapter,
+} from './facade-holder.ts';
 import {
     type Principal,
     principalFromToken,
-} from '../../../api/access-token.ts';
+} from '../../../shared/access-token-decode.ts';
 import {
     resolveCredentialDecision,
 } from '../credential-resolution.ts';
@@ -55,7 +49,7 @@ import type { HttpFacade } from './http-facade.ts';
 
 // Either the in-page handleRequest adapter or the fetch
 // facade. RequestContext verbs are the same on both.
-type ClientFacade = ClientFacadeAdapter | HttpFacade;
+type ClientFacade = HttpFacade | object;
 
 // Rows whose `field` equals `value` — the single-field
 // equality filter the adapters repeat. Type-safe: `field`
@@ -182,77 +176,13 @@ export function createRecoveringRequestContext(
     return makeRequestContext(adapter, token, true);
 }
 
-function isInPageAdapter(
-    adapter: ClientFacade,
-): adapter is ClientFacadeAdapter {
-    return typeof (adapter as ClientFacadeAdapter)
-        .simulateLatency === 'function';
-}
-
-function facadeVerbs(
-    adapter: ClientFacade,
-): HttpFacade {
-    if (!isInPageAdapter(adapter)) {
-        return adapter;
-    }
-    return {
-        GET: (resource, token, requestId) =>
-            httpGet(adapter, resource, token, requestId),
-        GETWithEtag: (resource, token, requestId) =>
-            httpGetWithEtag(
-                adapter, resource, token, requestId,
-            ),
-        PUT: (
-            resource, payload, token,
-            headerFields, requestId,
-        ) => httpPut(
-            adapter, resource, payload, token,
-            headerFields, requestId,
-        ),
-        PUTWithEtag: (
-            resource, payload, token,
-            headerFields, requestId,
-        ) => httpPutWithEtag(
-            adapter, resource, payload, token,
-            headerFields, requestId,
-        ),
-        PATCH: (
-            resource, payload, token,
-            headerFields, requestId,
-        ) => httpPatch(
-            adapter, resource, payload, token,
-            headerFields, requestId,
-        ),
-        PATCHWithEtag: (
-            resource, payload, token,
-            headerFields, requestId,
-        ) => httpPatchWithEtag(
-            adapter, resource, payload, token,
-            headerFields, requestId,
-        ),
-        DELETE: (
-            resource, token, requestId, headerFields,
-        ) => httpDelete(
-            adapter, resource, token, requestId,
-            headerFields,
-        ),
-        POST: (
-            resource, payload, token,
-            requestId, headerFields,
-        ) => httpPost(
-            adapter, resource, payload, token,
-            requestId, headerFields,
-        ),
-    };
-}
-
 function makeRequestContext(
     adapter: ClientFacade,
     token: string,
     recover: boolean,
 ): RequestContext {
     const identity = principalFromToken(token);
-    const verbs = facadeVerbs(adapter);
+    const verbs = wrapClientAdapter(adapter);
 
     function run<T>(
         make: (tok: string) => Promise<T>,
@@ -419,7 +349,7 @@ export async function jitteredBackoff(
 
 export function sessionContext(): RequestContext {
     return createRecoveringRequestContext(
-        getDbAdapter(), getSessionToken(),
+        getClientFacade(), getSessionToken(),
     );
 }
 
