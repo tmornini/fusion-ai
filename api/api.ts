@@ -818,16 +818,19 @@ export async function handleRequest(
             const wiring = documentFamilyWiring(
                 matched.segments[0] ?? '',
             );
-            const isLockedWrite = method === 'PUT'
+            const isDocumentPut = method === 'PUT'
                 && wiring !== undefined
-                && routePattern === wiring.family + '/:id'
+                && routePattern === wiring.family + '/:id';
+            const isLockedWrite = isDocumentPut
+                && wiring !== undefined
                 && familyRegistration(wiring.family)
                     ?.concurrency === 'locked';
             // Advertised ETag is the live PUT's version,
             // never the lock-head pair id. DELETE heads have
             // no If-Match target (documentHeadPairId skips
-            // them).
-            const livePut = isLockedWrite
+            // them). Same-body no-append uses this for both
+            // PUT kinds (simple and locked).
+            const livePut = isDocumentPut
                 ? await livePutVersion(
                     effective, canonicalPrefix, uriId,
                 )

@@ -165,6 +165,45 @@ test('a byte-identical resend converges: one event,'
     assert.equal((await db.responses.getAll()).length, 3);
 });
 
+test('same-body second PUT on a simple document is 200'
++ ' and does not append',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const body = ideaDocument(
+        'Same Body', 'active',
+        '2026-01-01T00:00:00.000000Z', 'ev-same-1',
+    );
+    const first = await handleRequest(
+        db, req('PUT', '/ideas/same-1', token, body),
+    );
+    assert.equal(first.status, 200);
+    const prefix = '/organizations/1/ideas/';
+    const before = (await db.requests.getAllWhere(
+        'uri_prefix', prefix,
+    )).filter((row) => row.uri_id === 'same-1');
+    assert.equal(before.length, 1);
+    // Different hoisted header → different request hash,
+    // so this is same-body, not replay.
+    const second = await handleRequest(
+        db,
+        new Request('http://localhost/ideas/same-1', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: 'Bearer ' + token,
+                'Idempotency-Key': 'k-same-1',
+            },
+            body: JSON.stringify(body),
+        }),
+    );
+    assert.equal(second.status, 200);
+    const after = (await db.requests.getAllWhere(
+        'uri_prefix', prefix,
+    )).filter((row) => row.uri_id === 'same-1');
+    assert.equal(after.length, 1);
+});
+
 test('the pair body and GET wire both carry the'
 + ' lifecycle-current trio (stamped from the event,'
 + ' not re-copied from the head body)', async () => {
