@@ -72,11 +72,34 @@ function wrap(sql: Tagged): SqlClient {
     };
 }
 
+export interface PostgresConnectOptions {
+    readonly statementTimeoutMs?: number;
+    readonly acquireTimeoutMs?: number;
+}
+
 export function connectPostgres(
     url: string,
+    options?: PostgresConnectOptions,
 ): SqlClient {
+    const acquireMs = options?.acquireTimeoutMs;
+    const statementMs = options?.statementTimeoutMs;
     return wrap(postgres(url, {
         max: POOL_MAX,
         onnotice: () => {},
+        ...(acquireMs !== undefined
+            ? {
+                connect_timeout: Math.max(
+                    1,
+                    Math.ceil(acquireMs / 1000),
+                ),
+            }
+            : {}),
+        ...(statementMs !== undefined
+            ? {
+                connection: {
+                    statement_timeout: statementMs,
+                },
+            }
+            : {}),
     }) as unknown as Tagged);
 }

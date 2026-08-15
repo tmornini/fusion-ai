@@ -1,20 +1,26 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
+    applyDdl,
+    assertSchemaMarker,
     assertUtf8,
+    bootErrorMessage,
     hasSchemaMarker,
+    MISSING_MARKER,
+    readListenEnv,
+    UTF8_REQUIRED,
 } from '../server/boot.ts';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import type { SqlClient } from
     '../api/postgres-client.ts';
+import { POSTGRES_SCHEMA } from
+    '../api/schema-postgres.ts';
 
 // Unit pins stay Postgres-free. Live SHOW runs only
 // when POSTGRES_URL is set (./test-postgres).
 
 const POSTGRES_URL = process.env['POSTGRES_URL'];
-const UTF8_REQUIRED =
-    'Postgres server_encoding must be UTF8';
 
 function fakeClient(
     rows: Record<string, unknown>[],
@@ -32,7 +38,10 @@ function fakeClient(
             return Promise.resolve(rows as T[]);
         },
         begin: async (fn) => fn(sql),
-        unsafe: async () => [],
+        unsafe: async <T>(query: string) => {
+            texts.push(query);
+            return [] as T[];
+        },
         end: async () => {},
     };
     return { sql, texts };
@@ -84,6 +93,79 @@ async () => {
     assert.match(
         marked.texts[0] ?? '',
         /FROM schema_marker/,
+    );
+});
+
+test('readListenEnv requires the three secrets', () => {
+    assert.throws(
+        () => readListenEnv({
+            JWT_HMAC_SIGNING_KEY: 'k',
+            HTTP_SERVER_PORT: '8080',
+        }),
+        /missing required env POSTGRES_URL/,
+    );
+    assert.throws(
+        () => readListenEnv({
+            POSTGRES_URL: 'postgres://x',
+            HTTP_SERVER_PORT: '8080',
+        }),
+        /missing required env JWT_HMAC_SIGNING_KEY/,
+    );
+    assert.throws(
+        () => readListenEnv({
+            POSTGRES_URL: 'postgres://x',
+            JWT_HMAC_SIGNING_KEY: 'k',
+        }),
+        /missing required env HTTP_SERVER_PORT/,
+    );
+    assert.throws(
+        () => readListenEnv({
+            POSTGRES_URL: 'postgres://x',
+            JWT_HMAC_SIGNING_KEY: 'k',
+            HTTP_SERVER_PORT: 'nope',
+        }),
+        /HTTP_SERVER_PORT must be an integer/,
+    );
+    const env = readListenEnv({
+        POSTGRES_URL: 'postgres://x',
+        JWT_HMAC_SIGNING_KEY: 'k',
+        HTTP_SERVER_PORT: '8080',
+        TRUSTED_PROXY_HOPS: '10.0.0.1',
+    });
+    assert.equal(env.port, 8080);
+    assert.equal(env.trustedProxyHops, '10.0.0.1');
+});
+
+test('applyDdl runs the compile-time schema',
+async () => {
+    const fake = fakeClient([]);
+    await applyDdl(fake.sql);
+    assert.equal(fake.texts[0], POSTGRES_SCHEMA);
+});
+
+test('assertSchemaMarker refuses an empty marker',
+async () => {
+    const empty = fakeClient([]);
+    await assert.rejects(
+        () => assertSchemaMarker(empty.sql),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message === MISSING_MARKER,
+    );
+    const marked = fakeClient([{ only: true }]);
+    await assertSchemaMarker(marked.sql);
+});
+
+test('bootErrorMessage never echoes a URL', () => {
+    assert.equal(
+        bootErrorMessage(new Error(
+            'connect postgres://user:pw@h/db',
+        )),
+        'boot failed',
+    );
+    assert.equal(
+        bootErrorMessage(new Error(MISSING_MARKER)),
+        MISSING_MARKER,
     );
 });
 
