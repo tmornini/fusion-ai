@@ -12,6 +12,7 @@ export interface SqlClient {
     begin<T>(
         fn: (sql: SqlClient) => Promise<T>,
     ): Promise<T>;
+    unsafe<T>(query: string): Promise<T[]>;
     end(): Promise<void>;
 }
 
@@ -26,6 +27,7 @@ type Tagged = {
     savepoint?: (
         fn: (tx: Tagged) => Promise<unknown>,
     ) => Promise<unknown>;
+    unsafe: (query: string) => Promise<unknown[]>;
     end?: () => Promise<void>;
 };
 
@@ -44,6 +46,10 @@ function wrap(sql: Tagged): SqlClient {
             const start = sql.savepoint ?? sql.begin;
             return start((tx) => fn(wrap(tx))) as
                 Promise<T>;
+        },
+        unsafe<T>(query: string): Promise<T[]> {
+            return sql.unsafe(query) as
+                unknown as Promise<T[]>;
         },
         end(): Promise<void> {
             return sql.end?.() ?? Promise.resolve();

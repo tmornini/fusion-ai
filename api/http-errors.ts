@@ -55,6 +55,7 @@ export const HTTP_PRECONDITION_REQUIRED = 428;
 export const HTTP_UNPROCESSABLE_ENTITY = 422;
 export const HTTP_INTERNAL_ERROR = 500;
 export const HTTP_NOT_IMPLEMENTED = 501;
+export const HTTP_GATEWAY_TIMEOUT = 504;
 
 // A JSON error response at one status — the shape every
 // invitation guard returns on rejection.
