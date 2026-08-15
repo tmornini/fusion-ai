@@ -26,9 +26,15 @@ import {
     HTTP_METHOD_NOT_ALLOWED,
     HTTP_NOT_FOUND,
     HTTP_PAYLOAD_TOO_LARGE,
+    HTTP_TOO_MANY_REQUESTS,
 } from '../api/http-errors.ts';
 import { OPERATION_ID_HEADER } from
     '../api/message-pair.ts';
+import {
+    createAuthThrottle,
+    isAuthThrottlePath,
+    type AuthThrottle,
+} from './throttle.ts';
 
 export const REQUEST_BODY_MAX_BYTES = 1_048_576;
 export const DRAIN_TIMEOUT_MS = 10_000;
@@ -71,6 +77,7 @@ export interface HttpListenOptions {
     readonly handle?: RequestHandler;
     readonly log?: RequestLog;
     readonly drainMs?: number;
+    readonly trustedProxyHops?: string;
 }
 
 export interface HttpListener {
@@ -113,6 +120,17 @@ function staticExtensionOf(pathname: string): string {
 function pathWithoutQuery(raw: string): string {
     const q = raw.indexOf('?');
     return q === -1 ? raw : raw.slice(0, q);
+}
+
+function headerLine(
+    value: string | string[] | undefined,
+): string | undefined {
+    if (value === undefined) return undefined;
+    if (Array.isArray(value)) {
+        if (value.length === 0) return undefined;
+        return value.join(',');
+    }
+    return value === '' ? undefined : value;
 }
 
 export function safeStaticPath(
@@ -386,6 +404,7 @@ async function dispatch(
     options: HttpListenOptions,
     handle: RequestHandler,
     log: RequestLog,
+    throttle: AuthThrottle,
 ): Promise<void> {
     const started = Date.now();
     let status = HTTP_INTERNAL_ERROR;
@@ -419,6 +438,20 @@ async function dispatch(
                 return;
             }
             status = await serveStatic(req, res, filePath);
+            return;
+        }
+        if (isAuthThrottlePath(pathname)
+            && throttle.limited(
+                req.socket.remoteAddress,
+                headerLine(req.headers['forwarded']),
+                headerLine(req.headers['x-forwarded-for']),
+            )) {
+            writeJson(
+                res,
+                HTTP_TOO_MANY_REQUESTS,
+                { error: 'too many requests' },
+            );
+            status = HTTP_TOO_MANY_REQUESTS;
             return;
         }
         const bytes = body.kind === 'bytes'
@@ -466,8 +499,13 @@ export function listenHttp(
     const handle = options.handle ?? handleRequest;
     const log = options.log ?? defaultLog;
     const drainMs = options.drainMs ?? DRAIN_TIMEOUT_MS;
+    const throttle = createAuthThrottle(
+        options.trustedProxyHops,
+    );
     const server = createServer((req, res) => {
-        void dispatch(req, res, options, handle, log);
+        void dispatch(
+            req, res, options, handle, log, throttle,
+        );
     });
     return new Promise((resolveListen, reject) => {
         server.once('error', reject);
