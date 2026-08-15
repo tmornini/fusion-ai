@@ -27,7 +27,12 @@ import {
 } from '../api/family-registry.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
+import {
+    deriveRecordTypeEntity,
+    recordTypeEntityOf,
+} from '../api/derive-record-types.ts';
 
 // Nested record-types WRITE surface (Task 3): admin PUT
 // (simple class, trio document), admin DELETE with type
@@ -45,6 +50,9 @@ interface RecordTypePutEcho {
     name: string;
     description: string;
     position: number;
+    state: string;
+    state_at: string;
+    state_event_id: string;
 }
 
 interface RecordTypeGetRow extends RecordTypePutEcho {
@@ -150,6 +158,9 @@ async function seedRecordTypeBelowGate(
             name: body['name'],
             description: body['description'],
             position: body['position'],
+            state: body['state'],
+            state_at: body['state_at'],
+            state_event_id: body['state_event_id'],
         },
         operationId: TEST_OPERATION_ID,
     });
@@ -205,22 +216,16 @@ async () => {
         name: 'Rental',
         description: 'Rental desc',
         position: 1,
+        state: 'active',
+        state_at: AT,
+        state_event_id: 'rt-1-genesis',
     });
     const get = await handleRequest(db, req(
         'GET', DETAIL + 'rt-1', adminToken,
     ));
     assert.equal(get.status, 200);
     const row = await get.json() as RecordTypeGetRow;
-    assert.deepEqual(row, {
-        id: 'rt-1',
-        organization_id: ORGANIZATION,
-        name: 'Rental',
-        description: 'Rental desc',
-        position: 1,
-        state: 'active',
-        state_at: AT,
-        state_event_id: 'rt-1-genesis',
-    });
+    assert.deepEqual(row, echo);
 });
 
 test('PUT .../record-types/:id member token → 403',
@@ -424,4 +429,65 @@ async () => {
     assert.equal(row.name, 'After');
     assert.equal(row.description, 'updated');
     assert.equal(row.position, 2);
+});
+
+test('stored PUT body equals recordTypeEntityOf of the'
++ ' same chain', async () => {
+    const { db, adminToken } = await adminDb();
+    const id = 'rt-g1-stream';
+    const body = typeBody(
+        'Streamed', 1, 'active', AT, 'ev-g1',
+    );
+    const put = await handleRequest(
+        db, req('PUT', DETAIL + id, adminToken, body),
+    );
+    assert.equal(put.status, 201);
+    const prefix = '/organizations/'
+        + ORGANIZATION + '/record-types/';
+    const stored = JSON.parse(
+        await storedPutBodyText(db, prefix, id),
+    );
+    const expected = recordTypeEntityOf(
+        {
+            uriId: id,
+            pairId: id,
+            method: 'PUT',
+            body,
+        },
+        ORGANIZATION,
+        {
+            id: 'ev-g1',
+            entity_id: id,
+            state: 'active',
+            member_id: 'current',
+            at: AT,
+        },
+    );
+    assert.deepEqual(stored, expected);
+    assert.deepEqual(
+        stored,
+        await deriveRecordTypeEntity(
+            db, ORGANIZATION, id,
+        ),
+    );
+    const skewed = await handleRequest(db, req(
+        'PUT', DETAIL + id, adminToken,
+        typeBody(
+            'Skewed', 1, 'deleted',
+            '2020-01-01T00:00:00.000000Z', 'ev-g1-skew',
+        ),
+    ));
+    assert.equal(skewed.status, 201);
+    const afterSkew = JSON.parse(
+        await storedPutBodyText(db, prefix, id),
+    );
+    assert.deepEqual(
+        afterSkew,
+        await deriveRecordTypeEntity(
+            db, ORGANIZATION, id,
+        ),
+    );
+    assert.equal(afterSkew.state, 'active');
+    assert.equal(afterSkew.state_event_id, 'ev-g1');
+    assert.equal(afterSkew.name, 'Skewed');
 });

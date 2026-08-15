@@ -68,8 +68,8 @@ function ideaDocument(
     };
 }
 
-// PUT response shape (documentWriteResponseSpec successBody):
-// entity fields only — no lifecycle trio on the write wire.
+// PUT response shape (documentWriteResponseSpec / G1):
+// entity fields plus lifecycle-current trio.
 function wireIdeaPut(
     id: string,
     title: string,
@@ -231,7 +231,7 @@ async () => {
         // the stored pair; values match WRITE_RESPONSE_SPECS.
         assert.deepEqual(
             await put.json(),
-            wireIdeaPut(f.id, f.title),
+            wireIdeaGet(f.id, f.title, 'active', f.at, f.ev),
         );
     }
     // Oldest live head (at, id): z, a, m — insertion, not
@@ -578,13 +578,13 @@ test('GET idea trio is lifecycle-current under clock skew'
     );
     assert.equal(getRes.status, 200);
     const prefix = '/organizations/1/ideas/';
-    assert.equal(
-        await getRes.text(),
-        await storedPutBodyText(db, prefix, ideaId),
-    );
-
     const expected = wireIdeaGet(
         ideaId, 'Skewed Title', 'active', genesisAt, genesisEv,
+    );
+    assert.deepEqual(await getRes.json(), expected);
+    assert.deepEqual(
+        JSON.parse(await storedPutBodyText(db, prefix, ideaId)),
+        expected,
     );
     const derived = await deriveIdea(db, '1', ideaId);
     assert.equal(

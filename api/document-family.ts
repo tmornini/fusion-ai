@@ -3,10 +3,16 @@ import { EntityNotFoundError } from './db.ts';
 import type {
     Id, StateEntity, RequestEntity, ResponseEntity,
 } from './types.ts';
-import { pickString } from './validators.ts';
+import {
+    pickString,
+    validateRecordDocumentBody,
+} from './validators.ts';
 import type { MessagePair } from './message-pair.ts';
 import { canonicalUriCollection } from './message-pair.ts';
-import { familyRegistration } from './family-registry.ts';
+import {
+    familyRegistration,
+    RECORD_TYPE_DETAIL_PATTERN,
+} from './family-registry.ts';
 import { missedReadError } from './derive-states.ts';
 import {
     deriveDocumentsAt,
@@ -29,6 +35,10 @@ import type {
 import { HTTP_OK } from './http-errors.ts';
 import { liveHeadId, messageStore } from
     './message-store.ts';
+import {
+    recordTypeEntityOf,
+    recordTypesUriPrefix,
+} from './derive-record-types.ts';
 
 // param/requireOrganization/withoutId live HERE, not in
 // routes.ts, so this module has NO runtime (value) dependency on
@@ -512,6 +522,164 @@ export function documentCollectionRoute(
     };
 }
 
+// G1 trio families: stored PUT = today's GET derive
+// (wiring.entityOf over the chain, trio included). Flows
+// stay on the weaker echo until G2.
+const STREAM_TRIO_FAMILIES: ReadonlySet<string> = new Set([
+    'ideas',
+    'projects',
+    'objectives',
+    'members',
+]);
+
+const ID_PATTERN_SUFFIX = '/:id';
+
+// Arrival-last sentinel so this write is the newest link
+// in the lifecycle walk (first-occurrence-wins by
+// state_event_id; current is (state_at, id)).
+const INCOMING_PAIR_AT = '9999-12-31T23:59:59.999999Z';
+const INCOMING_PAIR_ID = '\uffff';
+
+function idFamilyOf(pattern: string): string | undefined {
+    if (!pattern.endsWith(ID_PATTERN_SUFFIX)) {
+        return undefined;
+    }
+    const family = pattern.slice(
+        0, -ID_PATTERN_SUFFIX.length,
+    );
+    if (family.includes('/')) return undefined;
+    return family;
+}
+
+function trioCurrentFromBody(
+    id: Id,
+    body: Record<string, unknown>,
+    actor: Id,
+): StateEntity {
+    return {
+        id: pickString(body, 'state_event_id'),
+        entity_id: id,
+        state: pickString(body, 'state'),
+        member_id: actor,
+        at: pickString(body, 'state_at'),
+    };
+}
+
+function trioDocumentFromBody(
+    id: Id,
+    body: Record<string, unknown>,
+): DerivedDocument {
+    return {
+        uriId: id,
+        pairId: id,
+        method: PUT_METHOD,
+        body,
+    };
+}
+
+export async function streamedTrioEntityOf(
+    db: DbAdapter,
+    prefix: string,
+    id: Id,
+    body: Record<string, unknown>,
+    actor: Id,
+    organization: Id,
+    entityOf: DocumentFamilyWiring['entityOf'],
+): Promise<unknown> {
+    const raw = withoutId(body);
+    const stored = await messageStore(db).getPairs(
+        prefix, id,
+    );
+    const existing = documentPairsAt(
+        stored.map((pair) => pair.request),
+        stored.map((pair) => pair.response),
+        prefix,
+    );
+    const incoming: DocumentPair = {
+        id: INCOMING_PAIR_ID,
+        at: INCOMING_PAIR_AT,
+        uriId: id,
+        method: PUT_METHOD,
+        body: raw,
+        requesterIdentityId: actor,
+        version: '',
+    };
+    const history = stateHistoryFrom(
+        documentLifecycleEvents([...existing, incoming]),
+        id,
+    );
+    const document = trioDocumentFromBody(id, raw);
+    const current = currentLifecycleEvent(history)!;
+    return entityOf(document, organization, current);
+}
+
+async function streamedTrioWriteBody(
+    db: DbAdapter,
+    wiring: DocumentFamilyWiring,
+    id: Id,
+    body: Record<string, unknown>,
+    actor: Id,
+    organization: Id,
+): Promise<unknown> {
+    const raw = withoutId(body);
+    wiring.validateDocument(raw);
+    const prefix = canonicalUriCollection(
+        organization,
+        '/' + wiring.family + '/',
+    );
+    return streamedTrioEntityOf(
+        db, prefix, id, raw, actor, organization,
+        wiring.entityOf,
+    );
+}
+
+// Live G1 write body: mapper over the chain including this
+// write. Undefined means the caller uses successBody.
+export async function resolveStreamedTrioWriteBody(
+    db: DbAdapter,
+    routePattern: string,
+    params: string[],
+    body: Record<string, unknown> | undefined,
+    actor: Id,
+    organization: Id | undefined,
+): Promise<unknown | undefined> {
+    if (body === undefined) return undefined;
+    if (routePattern === RECORD_TYPE_DETAIL_PATTERN) {
+        const org = param(params, 0);
+        const id = param(params, 1);
+        validateRecordDocumentBody(withoutId(body));
+        return streamedTrioEntityOf(
+            db,
+            recordTypesUriPrefix(org),
+            id,
+            body,
+            actor,
+            org,
+            (document, organization, current) =>
+                recordTypeEntityOf(
+                    document, organization, current!,
+                ),
+        );
+    }
+    const family = idFamilyOf(routePattern);
+    if (
+        family === undefined
+        || !STREAM_TRIO_FAMILIES.has(family)
+    ) {
+        return undefined;
+    }
+    const wiring = documentFamilyWiring(family);
+    if (wiring === undefined) return undefined;
+    return streamedTrioWriteBody(
+        db,
+        wiring,
+        param(params, 0),
+        body,
+        actor,
+        organization ?? '',
+    );
+}
+
 // The registration-first consult (Phase 8 Task 3, the first
 // global-plane families: members/ai-members/human-members,
 // organizationNested:false) — mirrors canonicalUriCollection's own
@@ -533,18 +701,34 @@ export function documentCollectionRoute(
 // wire-visible EXTRA KEY with no hand-written counterpart —
 // this consult omits the line entirely for that class instead
 // of spreading over it.
+//
+// G1 trio families emit wiring.entityOf (id first, trio last
+// as GET does) instead of the entity-only echo. Live writes
+// prefer resolveStreamedTrioWriteBody (chain-current trio).
 export function documentWriteResponseSpec(
     wiring: DocumentFamilyWiring,
 ): WriteResponseSpec {
     const organizationNested =
         familyRegistration(wiring.family)?.organizationNested
             !== false;
+    const streamTrio = STREAM_TRIO_FAMILIES.has(
+        wiring.family,
+    );
     return {
         status: HTTP_OK,
-        successBody: (params, body, _actor, organization) => {
-            const doc = wiring.validateDocument(
-                withoutId(body ?? {}),
-            ) as { entity: Record<string, unknown> };
+        successBody: (params, body, actor, organization) => {
+            const raw = withoutId(body ?? {});
+            const doc = wiring.validateDocument(raw) as {
+                entity: Record<string, unknown>;
+            };
+            if (streamTrio) {
+                const id = param(params, 0);
+                return wiring.entityOf(
+                    trioDocumentFromBody(id, raw),
+                    organization ?? '',
+                    trioCurrentFromBody(id, raw, actor),
+                );
+            }
             return organizationNested
                 ? {
                     id: param(params, 0),

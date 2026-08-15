@@ -1157,10 +1157,13 @@ test('GET member trio is lifecycle-current under clock skew'
         },
     ));
     assert.equal(genesis.status, 201);
-    // PUT successBody is entity fields only — no trio.
+    // PUT successBody is memberDocumentEntityOf (G1 trio).
     assert.deepEqual(await genesis.json(), {
         id: memberId,
         type: 'human',
+        state: 'active',
+        state_at: genesisAt,
+        state_event_id: genesisEv,
     });
 
     // Later arrival, earlier state_at, different state +
@@ -1190,9 +1193,12 @@ test('GET member trio is lifecycle-current under clock skew'
         db, req('GET', '/members/' + memberId, token),
     );
     assert.equal(res.status, 200);
-    assert.equal(
-        await res.text(),
-        await storedPutBodyText(db, '/members/', memberId),
+    assert.deepEqual(await res.json(), expected);
+    assert.deepEqual(
+        JSON.parse(
+            await storedPutBodyText(db, '/members/', memberId),
+        ),
+        expected,
     );
 
     const derived = await deriveMemberParent(db, memberId);

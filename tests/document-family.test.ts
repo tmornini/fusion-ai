@@ -78,15 +78,9 @@ async function freshDb(): Promise<MemoryDbAdapter> {
 }
 
 // -- (a) documentWriteResponseSpec's successBody, pinned
-// against FIXED expected literals. Before the wiring-collapse
-// fix, this compared the generic builder's output against
-// WRITE_RESPONSE_SPECS['ideas|projects/:id'] — TWO hand-
-// maintained wiring copies — but that spec entry is now built
-// from the SAME single registered row (routes.ts's
-// registerDocumentFamilyWiring call), so a same-object
-// comparison would prove nothing. Pinned to literals instead —
-// a strengthening: this is the ONLY place the shape of a
-// document PUT's successBody is asserted byte-for-byte. -------
+// against FIXED expected literals. G1 trio families emit
+// wiring.entityOf (id first, trio last). Pinned to literals —
+// the shape of a document PUT's successBody. -------
 
 test('documentWriteResponseSpec produces the ideas'
 + ' successBody', () => {
@@ -104,6 +98,7 @@ test('documentWriteResponseSpec produces the ideas'
         title: 'T', position: 1, problem_statement: 'p',
         target_users: 't', proposed_solution: 's',
         expected_outcome: 'o', success_metrics: 'm',
+        state: 'active', state_at: AT, state_event_id: 'ev-1',
     });
 });
 
@@ -123,6 +118,7 @@ test('documentWriteResponseSpec produces the projects'
         title: 'T', description: 'd', progress: 5,
         start_date: '2026-01-01', target_end_date: '2026-02-01',
         estimated_cost: 100, actual_cost: 50, position: 1,
+        state: 'submitted', state_at: AT, state_event_id: 'ev-1',
     });
 });
 

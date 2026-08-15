@@ -73,8 +73,8 @@ function projectDocument(
     };
 }
 
-// PUT response shape (documentWriteResponseSpec successBody):
-// entity fields only — no lifecycle trio on the write wire.
+// PUT response shape (documentWriteResponseSpec / G1):
+// entity fields plus lifecycle-current trio.
 function wireProjectPut(
     id: string,
     title: string,
@@ -248,7 +248,9 @@ async () => {
         assert.equal(put.status, 201);
         assert.deepEqual(
             await put.json(),
-            wireProjectPut(f.id, f.title),
+            wireProjectGet(
+                f.id, f.title, 'submitted', f.at, f.ev,
+            ),
         );
     }
     const res = await handleRequest(
@@ -556,11 +558,12 @@ test('GET project trio is lifecycle-current under clock skew'
         db, req('GET', '/projects/' + projectId, token),
     );
     assert.equal(getRes.status, 200);
-    assert.equal(
-        await getRes.text(),
-        await storedPutBodyText(
+    assert.deepEqual(await getRes.json(), expected);
+    assert.deepEqual(
+        JSON.parse(await storedPutBodyText(
             db, '/organizations/1/projects/', projectId,
-        ),
+        )),
+        expected,
     );
 
     const derived = await deriveProject(db, '1', projectId);

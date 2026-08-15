@@ -63,8 +63,8 @@ test(
         assert.equal(objective.position, 1);
         // The fence stamped the bound org — never the body.
         assert.equal(objective.organization_id, '1');
-        // GET streams the stored PUT (no trio until G1).
-        assert.equal(objective.state, undefined);
+        // GET streams the stored PUT (G1: trio included).
+        assert.equal(objective.state, 'active');
         // The leaf revision route is PUT-only; read the nested
         // per-objective collection and find the revision the
         // create synthesized (the server filters to obj-1).

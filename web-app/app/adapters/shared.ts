@@ -64,8 +64,8 @@ export function filterByField<T, K extends keyof T>(
     return rows.filter(row => row[field] === value);
 }
 
-// Task 19 streams stored PUT bodies (no trio until G1).
-// Fill lifecycle from GET <family>/:id/versions.
+// G1 stores trio on the PUT; GET streams it. Pre-G1
+// rows still fill lifecycle from GET :id/versions.
 interface TrioRow {
     readonly id: string;
     readonly state?: string;

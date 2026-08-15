@@ -296,6 +296,7 @@ import {
     lookupStoredRevision,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
+    resolveStreamedTrioWriteBody,
     type DocumentFamilyWiring,
 } from './document-family.ts';
 import type { DerivedDocument } from './derive-documents.ts';
@@ -3323,8 +3324,9 @@ export const WRITE_RESPONSE_SPECS:
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody: it validates the
     // full wire document (entity + trio) through the wiring's
-    // OWN validator and discards the trio — the same GET/PUT
-    // symmetry Decision 7's wire-parity rule holds for reads.
+    // OWN validator. G1 trio families emit wiring.entityOf
+    // (id first, trio last — the GET derive). Live writes
+    // chain-walk current via resolveStreamedTrioWriteBody.
     'ideas/:id': documentWriteResponseSpec(IDEAS_WIRING),
     'ideas/:id/conversion': { status: HTTP_NO_CONTENT },
     'ideas/:id/submissions/:sid': {
@@ -3389,15 +3391,27 @@ export const WRITE_RESPONSE_SPECS:
     [RECORD_TYPE_DETAIL_PATTERN]: {
         put: {
             status: HTTP_OK,
-            successBody: (params, body) => {
-                const doc = validateRecordDocumentBody(
-                    withoutId(body ?? {}),
+            successBody: (params, body, actor) => {
+                const raw = withoutId(body ?? {});
+                validateRecordDocumentBody(raw);
+                const id = param(params, 1);
+                const organization = param(params, 0);
+                return recordTypeEntityOf(
+                    {
+                        uriId: id,
+                        pairId: id,
+                        method: 'PUT',
+                        body: raw,
+                    },
+                    organization,
+                    {
+                        id: pickString(raw, 'state_event_id'),
+                        entity_id: id,
+                        state: pickString(raw, 'state'),
+                        member_id: actor,
+                        at: pickString(raw, 'state_at'),
+                    },
                 );
-                return {
-                    id: param(params, 1),
-                    organization_id: param(params, 0),
-                    ...doc.entity,
-                };
             },
         },
     },
@@ -3489,11 +3503,8 @@ export const WRITE_RESPONSE_SPECS:
     'objectives': { status: HTTP_NO_CONTENT },
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
-    // entry above for the shared rationale. objectives/:id emits
-    // the SAME bytes as before ({id, organization_id, position}):
-    // validateObjectiveDocumentBody's entity/organization_id
-    // separation guarantees doc.entity never carries the key,
-    // byte-identical to today's hand-built body.
+    // entry above for the shared rationale. G1: objectives/:id
+    // emits objectiveDocumentEntityOf (id first, trio last).
     'objectives/:id': documentWriteResponseSpec(OBJECTIVES_WIRING),
     'objectives/:id/revisions/:rid': {
         status: HTTP_OK,
@@ -3526,15 +3537,8 @@ export const WRITE_RESPONSE_SPECS:
     // absorbs the hand-written successBody — see the ideas/:id
     // entry above for the shared rationale. members/:id is the
     // FIRST organizationNested:false family this builder serves
-    // — documentWriteResponseSpec's own registration-first
-    // consult (this commit) omits the organization_id stamp
-    // entirely for this class, so the emitted bytes stay
-    // UNCHANGED from the hand-written body above ({id, type}):
-    // validateMemberDocumentBody's entity carries no
-    // organization_id to spread in the first place, and the
-    // consult never adds one from the fence either — key-set and
-    // value equality re-confirmed at Step 0(a) of the task that
-    // wired this row.
+    // — G1 emits memberDocumentEntityOf (id first, no
+    // organization_id, trio last as GET does).
     'members/:id': documentWriteResponseSpec(MEMBERS_WIRING),
     'ai-members': { status: HTTP_NO_CONTENT },
     // Per-verb: PUT rides the generic document-form builder (see
@@ -3726,10 +3730,11 @@ export interface DocumentPairFormInput {
 // formWritePair FROM message-pair.ts, so the dependency runs
 // one way only). Builds the pair PRE-TX only — the in-tx
 // appendMessagePair calls stay at each op's own transaction.
-// `_db` is kept so every call site still passes the adapter;
-// the former no longer head-reads.
+// db is the chain-walk for G1 trio stored PUT bodies
+// (resolveStreamedTrioWriteBody). Other families still
+// use successBody alone.
 export async function formDocumentPairFor(
-    _db: DbAdapter,
+    db: DbAdapter,
     input: DocumentPairFormInput,
 ): Promise<MessagePair> {
     const routeSegments = input.routePattern.split('/');
@@ -3747,7 +3752,15 @@ export async function formDocumentPairFor(
     } else {
         const spec = resolveWriteResponseSpec(input.routePattern);
         responseStatus = spec.status;
-        responseBody = spec.successBody?.(
+        const streamed = await resolveStreamedTrioWriteBody(
+            db,
+            input.routePattern,
+            [...input.params],
+            input.body,
+            input.requesterIdentityId,
+            input.organization,
+        );
+        responseBody = streamed ?? spec.successBody?.(
             [...input.params], input.body,
             input.requesterIdentityId, input.organization,
         );

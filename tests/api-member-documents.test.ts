@@ -36,7 +36,12 @@ import {
 } from '../api/document-family.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
+import {
+    deriveMemberParent,
+    memberParentOf,
+} from '../api/derive-members.ts';
 
 // Members are a lifecycle-trio family (states-address
 // retirement): PUT /members/:id carries {type} plus the trio
@@ -212,9 +217,9 @@ test('PUT members/:id accepts the lifecycle trio and echoes'
     const wire = await res.json() as Record<string, unknown>;
     assert.equal(wire.id, 'mem-trio-1');
     assert.equal(wire.type, 'human');
-    assert.ok(!('state' in wire));
-    assert.ok(!('state_at' in wire));
-    assert.ok(!('state_event_id' in wire));
+    assert.equal(wire.state, 'active');
+    assert.ok('state_at' in wire);
+    assert.equal(wire.state_event_id, 'mem-trio-1-ev1');
 });
 
 test('PUT members/:id with {type} alone is 400', async () => {
@@ -699,3 +704,58 @@ for (const {
         );
     });
 }
+
+test('stored PUT body equals memberDocumentEntityOf of the'
++ ' same chain', async () => {
+    const db = memoryDbAdapter();
+    await seedAdminSchema(db);
+    const token = await organizationToken();
+    const id = 'mem-g1-stream';
+    const at = '2026-01-01T00:00:00.000000Z';
+    const ev = 'ev-g1';
+    const body = memberFields('human', 'active', at, ev);
+    const put = await handleRequest(
+        db, req('PUT', '/members/' + id, token, body),
+    );
+    assert.equal(put.status, 201);
+    const stored = JSON.parse(
+        await storedPutBodyText(db, '/members/', id),
+    );
+    const expected = memberParentOf(
+        {
+            uriId: id,
+            pairId: id,
+            method: 'PUT',
+            body,
+        },
+        {
+            id: ev,
+            entity_id: id,
+            state: 'active',
+            member_id: 'current',
+            at,
+        },
+    );
+    assert.deepEqual(stored, expected);
+    assert.deepEqual(
+        stored, await deriveMemberParent(db, id),
+    );
+    const skewed = await handleRequest(db, req(
+        'PUT', '/members/' + id, token,
+        memberFields(
+            'ai', 'archived',
+            '2020-01-01T00:00:00.000000Z', 'ev-g1-skew',
+        ),
+    ));
+    assert.equal(skewed.status, 201);
+    const afterSkew = JSON.parse(
+        await storedPutBodyText(db, '/members/', id),
+    );
+    assert.deepEqual(
+        afterSkew,
+        await deriveMemberParent(db, id),
+    );
+    assert.equal(afterSkew.state, 'active');
+    assert.equal(afterSkew.state_event_id, ev);
+    assert.equal(afterSkew.type, 'ai');
+});

@@ -65,6 +65,7 @@ import { HttpMessage } from '../shared/http-message/http-message.ts';
 import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
 
 // Phase Final Task 2: records(+record_attributes+flow_records)
@@ -1105,6 +1106,15 @@ test('GET record trio is lifecycle-current under clock skew'
     );
     assert.equal(res.status, 200);
     assert.equal(await res.text(), JSON.stringify(expected));
+    assert.deepEqual(
+        JSON.parse(await storedPutBodyText(
+            db,
+            '/organizations/' + STARK_ORGANIZATION
+                + '/record-types/',
+            recordId,
+        )),
+        expected,
+    );
 
     const derived = await derivedRecord(
         db, STARK_ORGANIZATION, recordId,

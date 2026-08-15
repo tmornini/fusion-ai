@@ -122,8 +122,8 @@ async function derivedObjective(
     ) as Promise<ObjectiveEntity>;
 }
 
-// PUT response shape (documentWriteResponseSpec successBody):
-// entity fields only — no lifecycle trio on the write wire.
+// PUT response shape (documentWriteResponseSpec / G1):
+// entity fields plus lifecycle-current trio.
 function wireObjectivePut(
     id: string,
     position: number,
@@ -621,7 +621,11 @@ test('live-write chain: create, reposition, revision edit,'
         );
         assert.deepEqual(
             await reposition.json(),
-            wireObjectivePut(objectiveId, 77),
+            wireObjectiveGet(
+                objectiveId, 77, 'active',
+                '2026-06-01T00:00:00.000000Z',
+                objectiveId + '-active',
+            ),
         );
     }
 
@@ -1127,7 +1131,11 @@ async () => {
         assert.equal(put.status, 201);
         assert.deepEqual(
             await put.json(),
-            wireObjectivePut(f.id, f.position),
+            wireObjectiveGet(
+                f.id, f.position, 'active',
+                '2026-06-13T00:00:00.000000Z',
+                f.id + '-active',
+            ),
         );
     }
     const res = await handleRequest(
@@ -1205,14 +1213,15 @@ test('GET objective trio is lifecycle-current under clock skew'
         db, req('GET', '/objectives/' + objectiveId, token),
     );
     assert.equal(res.status, 200);
-    assert.equal(
-        await res.text(),
-        await storedPutBodyText(
+    assert.deepEqual(await res.json(), expected);
+    assert.deepEqual(
+        JSON.parse(await storedPutBodyText(
             db,
             '/organizations/' + STARK_ORGANIZATION
                 + '/objectives/',
             objectiveId,
-        ),
+        )),
+        expected,
     );
 
     const derived = await derivedObjective(

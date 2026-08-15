@@ -54,6 +54,7 @@ import {
     lookupStoredRevision,
     throwDocumentMiss,
     requireOrganization,
+    resolveStreamedTrioWriteBody,
 } from './document-family.ts';
 import {
     messageStore,
@@ -935,6 +936,18 @@ export async function handleRequest(
                     });
                 }
             }
+            const streamedTrioBody =
+                method === 'PUT'
+                && body === undefined
+                    ? undefined
+                    : await resolveStreamedTrioWriteBody(
+                        effective,
+                        routePattern,
+                        params,
+                        body,
+                        actor,
+                        organization,
+                    );
             pair = await formWritePair({
                 method, pathname, routePattern,
                 routeSegments: matched.segments,
@@ -949,10 +962,11 @@ export async function handleRequest(
                 responseBody: method === 'PUT'
                     && body === undefined
                     ? undefined
-                    : spec.successBody?.(
-                        params, body, actor,
-                        organization,
-                    ),
+                    : streamedTrioBody
+                        ?? spec.successBody?.(
+                            params, body, actor,
+                            organization,
+                        ),
                 ...(echoMatchesHead
                     && echo !== null
                     && echo !== undefined

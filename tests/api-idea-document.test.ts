@@ -1,6 +1,9 @@
 import { test } from 'node:test';
-import { deriveIdeaStateHistory } from
-    '../api/derive-ideas.ts';
+import {
+    deriveIdea,
+    deriveIdeaStateHistory,
+    ideaEntityOf,
+} from '../api/derive-ideas.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -12,6 +15,7 @@ import { seedAdminSchema } from './test-fixtures.ts';
 import { seedOrganizationMember } from './root-admin-fixture.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
 } from './http-fixtures.ts';
 import { HttpMessage } from
     '../shared/http-message/http-message.ts';
@@ -32,12 +36,8 @@ function pairJsonOf(message: string): {
 
 // Phase 2 Task 2 (Decision 7 state-in-entity): PUT /ideas/:id
 // takes the FULL document — entity fields plus the state trio.
-// Phase Final Task 2: ideas ROW half stripped; the trio still
-// lands on the states log via states.postEvent (until the
-// states-trace strip). Cases exercise the MEMBER_ID CAVEAT
-// (state-unchanged edit replays the STORED head event's
-// member_id) and wire-parity (pair request carries the trio;
-// GET/WRITE_RESPONSE_SPECS form the entity without state).
+// G1: stored PUT body is ideaEntityOf of the same chain
+// (trio included). GET streams that stored body.
 
 const BASE = 'http://localhost';
 
@@ -96,8 +96,7 @@ test('a document PUT with a new state writes wire entity'
     assert.equal(res.status, 201);
     const putWire = await res.json() as Record<string, unknown>;
     assert.equal(putWire.title, 'Fresh');
-    // PUT successBody is entity fields only — no trio.
-    assert.ok(!('state' in putWire));
+    assert.equal(putWire.state, 'active');
     const getRes = await handleRequest(
         db, req('GET', '/ideas/doc-1', token),
     );
@@ -107,8 +106,7 @@ test('a document PUT with a new state writes wire entity'
         state?: string;
     };
     assert.equal(getWire.title, 'Fresh');
-    // GET streams the stored PUT (no trio until G1).
-    assert.ok(!('state' in getWire));
+    assert.equal(getWire.state, 'active');
     const events = await deriveIdeaStateHistory(db, '1', 'doc-1');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'active');
@@ -207,7 +205,7 @@ async () => {
 });
 
 test('the pair request body carries the lifecycle trio;'
-+ ' GET streams the stored PUT (no trio)', async () => {
++ ' GET streams the stored PUT (with trio)', async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await handleRequest(db, req(
@@ -225,7 +223,7 @@ test('the pair request body carries the lifecycle trio;'
         state?: string;
     };
     assert.equal(wire.title, 'Wired');
-    assert.ok(!('state' in wire));
+    assert.equal(wire.state, 'in_review');
     const requests = await db.requests.getAll();
     // seedRootAdmin 2 + idea PUT 1
     assert.equal(requests.length, 3);
@@ -339,4 +337,58 @@ test('GET /ideas/:id body octets equal the live PUT '
     } finally {
         resetClock();
     }
+});
+
+test('stored PUT body equals ideaEntityOf of the same chain',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const id = 'idea-g1-stream';
+    const at = '2026-01-01T00:00:00.000000Z';
+    const ev = 'ev-g1';
+    const body = ideaDocument('Streamed', 'active', at, ev);
+    const put = await handleRequest(
+        db, req('PUT', '/ideas/' + id, token, body),
+    );
+    assert.equal(put.status, 201);
+    const prefix = '/organizations/1/ideas/';
+    const stored = JSON.parse(
+        await storedPutBodyText(db, prefix, id),
+    );
+    const expected = ideaEntityOf(
+        {
+            uriId: id,
+            pairId: id,
+            method: 'PUT',
+            body,
+        },
+        '1',
+        {
+            id: ev,
+            entity_id: id,
+            state: 'active',
+            member_id: 'current',
+            at,
+        },
+    );
+    assert.deepEqual(stored, expected);
+    assert.deepEqual(stored, await deriveIdea(db, '1', id));
+    const skewed = await handleRequest(db, req(
+        'PUT', '/ideas/' + id, token,
+        ideaDocument(
+            'Skewed', 'in_review',
+            '2020-01-01T00:00:00.000000Z', 'ev-g1-skew',
+        ),
+    ));
+    assert.equal(skewed.status, 201);
+    const afterSkew = JSON.parse(
+        await storedPutBodyText(db, prefix, id),
+    );
+    assert.deepEqual(
+        afterSkew,
+        await deriveIdea(db, '1', id),
+    );
+    assert.equal(afterSkew.state, 'active');
+    assert.equal(afterSkew.state_event_id, ev);
+    assert.equal(afterSkew.title, 'Skewed');
 });
