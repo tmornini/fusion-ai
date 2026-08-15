@@ -25,6 +25,20 @@ import {
     workOrderBindingFor,
     workOrderHistoryFor,
 } from '../api/derive-states.ts';
+import { HttpMessage } from
+    '../shared/http-message/http-message.ts';
+
+function pairJsonOf(message: string): {
+    readonly body: Record<string, unknown>;
+} {
+    const body = HttpMessage.fromWire(message).body();
+    return {
+        body: body.exists()
+            ? JSON.parse(body.toText()) as
+                Record<string, unknown>
+            : {},
+    };
+}
 
 // Task 6: WO-instance SoT seed chain — genesis empty, binding,
 // Review 6 + Complete 1 new-shape ops with revision pairs.
@@ -153,7 +167,7 @@ async () => {
     );
     assert.ok(otherReqs.length > 0);
     for (const request of otherReqs) {
-        const embedded = JSON.parse(request.message) as {
+        const embedded = pairJsonOf(request.message) as {
             body: Record<string, unknown>;
         };
         assert.ok(

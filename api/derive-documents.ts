@@ -7,10 +7,7 @@ import type {
 import { pickString } from './validators.ts';
 import { latestByKey } from '../shared/ledger-reduction.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 
 // The message-plane reduction, family-agnostic and pure over
 // rows a family's own derivation has already fetched (Efficiency:
@@ -43,7 +40,7 @@ function isSuccessStatus(status: number): boolean {
 }
 
 function requestMethodOf(message: string): string {
-    const model = parseJson(message, defaultBodyRegistry());
+    const model = parseWire(message);
     if (model.startLine.kind !== 'request') {
         throw new Error(
             'stored request message carries no request line',
@@ -55,7 +52,7 @@ function requestMethodOf(message: string): string {
 function requestBodyOf(
     message: string,
 ): Record<string, unknown> {
-    const model = parseJson(message, defaultBodyRegistry());
+    const model = parseWire(message);
     const body = HttpMessage.fromModel(model).body();
     return body.exists()
         ? JSON.parse(body.toText()) as Record<string, unknown>

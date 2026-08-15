@@ -14,6 +14,20 @@ import {
 import {
     type ProjectObjectiveBaselineScoreEntity,
 } from '../api/types.ts';
+import { HttpMessage } from
+    '../shared/http-message/http-message.ts';
+
+function pairJsonOf(message: string): {
+    readonly body: Record<string, unknown>;
+} {
+    const body = HttpMessage.fromWire(message).body();
+    return {
+        body: body.exists()
+            ? JSON.parse(body.toText()) as
+                Record<string, unknown>
+            : {},
+    };
+}
 
 // POST ideas/:id/conversion is the LONE cross-aggregate write:
 // a new project row, the promoted idea row, TWO state events
@@ -239,7 +253,7 @@ test(
         // The requester is the caller, never the idea's author.
         assert.equal(request.requester_identity_id, 'current');
 
-        const parsed = JSON.parse(request.message) as {
+        const parsed = pairJsonOf(request.message) as {
             body: Record<string, unknown>;
         };
         assert.deepEqual(parsed.body, {
@@ -267,7 +281,7 @@ test(
         // The conversion's idea pair is the one carrying
         // 'promoted' (the seed carried 'approved').
         const ideaRequest = atIdeaAddress.find((r) => {
-            const body = (JSON.parse(r.message) as {
+            const body = (pairJsonOf(r.message) as {
                 body: Record<string, unknown>;
             }).body;
             return body['state'] === 'promoted';
@@ -278,7 +292,7 @@ test(
             ideaRequest.requester_identity_id, 'current',
         );
 
-        const ideaParsed = JSON.parse(ideaRequest.message) as {
+        const ideaParsed = pairJsonOf(ideaRequest.message) as {
             body: Record<string, unknown>;
         };
         assert.deepEqual(ideaParsed.body, {
@@ -319,7 +333,7 @@ test(
                 baselineRequest.requester_identity_id,
                 'current',
             );
-            const baselineParsed = JSON.parse(
+            const baselineParsed = pairJsonOf(
                 baselineRequest.message,
             ) as { body: Record<string, unknown> };
             // KEY-SET spot-check: the wire body is the

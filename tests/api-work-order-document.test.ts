@@ -21,11 +21,8 @@ import {
 } from '../api/validators.ts';
 import { postWorkOrderDocumentOp } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
 
 // Phase 5 Task 2 (fourth-family, 'stateless' evidence): PUT
 // /work-orders/:id takes the entity's OWN fields only — no
@@ -262,7 +259,7 @@ function workOrderCreateBody(
     };
 }
 
-// Decode a stored request row's canonical message back into
+// Decode a stored request row's serializeWire message back into
 // its method + body — the SAME decode
 // tests/api-flow-document.test.ts's own decodeRequestMessage
 // performs, reconstructed here read-only (each test file is
@@ -271,7 +268,7 @@ function decodeRequestMessage(message: string): {
     readonly method: string;
     readonly body: Record<string, unknown>;
 } {
-    const model = parseJson(message, defaultBodyRegistry());
+    const model = parseWire(message);
     if (model.startLine.kind !== 'request') {
         throw new Error(
             'stored message carries no request line',

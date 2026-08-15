@@ -36,6 +36,20 @@ import {
 import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { deriveOrganization } from
     '../api/derive-organizations.ts';
+import { HttpMessage } from
+    '../shared/http-message/http-message.ts';
+
+function pairJsonOf(message: string): {
+    readonly body: Record<string, unknown>;
+} {
+    const body = HttpMessage.fromWire(message).body();
+    return {
+        body: body.exists()
+            ? JSON.parse(body.toText()) as
+                Record<string, unknown>
+            : {},
+    };
+}
 
 // Task 4: the seed's pair-wired op-invocations (human-members,
 // ideas, idea-submissions, flows, ai-members, records,
@@ -194,7 +208,7 @@ async () => {
     const derived = await deriveOrganization(
         db, STARK_ORGANIZATION,
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(embedded.body, {
@@ -229,7 +243,7 @@ test('a seeded human member\'s PII intake pair sits at its own'
     );
     assert.ok(row, 'no request row for the seeded PII intake');
     assert.equal(row!.uri_id, '');
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -251,7 +265,7 @@ test('a seeded human member\'s identities-document pair sits at'
     assert.ok(
         row, 'no request row for the seeded identities document',
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(embedded.body, { kind: 'person' });
@@ -304,7 +318,7 @@ test('a seeded ai-member\'s member-document pair sits at the'
         memberRow,
         'no member-document pair for the seeded ai member',
     );
-    const embedded = JSON.parse(memberRow!.message) as {
+    const embedded = pairJsonOf(memberRow!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(embedded.body, {
@@ -338,7 +352,7 @@ test('a seeded ai-member\'s detail-document pair sits at its'
         detailRow,
         'no detail-document pair for the seeded ai member',
     );
-    const embedded = JSON.parse(detailRow!.message) as {
+    const embedded = pairJsonOf(detailRow!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -360,7 +374,7 @@ test('a seeded system member\'s member-document pair sits at'
         memberRow,
         'no member-document pair for the seeded system member',
     );
-    const embedded = JSON.parse(memberRow!.message) as {
+    const embedded = pairJsonOf(memberRow!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(embedded.body, {
@@ -386,7 +400,7 @@ test('a seeded membership document pair sits at its org-nested'
         row!.uri_prefix,
         `/organizations/${STARK_ORGANIZATION}/memberships/`,
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -407,7 +421,7 @@ async () => {
     );
     assert.ok(row, 'no request row for the seeded default-org event');
     assert.equal(row!.uri_id, 'seed-default-org-' + firstMember.id);
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -456,7 +470,7 @@ test('a seeded record\'s document pair sits at its'
     // falsifiable: a spurious id/organization_id key riding the
     // recorded body would drift from wire fidelity with no
     // address-only check catching it.
-    const embedded = JSON.parse(documentRow!.message) as {
+    const embedded = pairJsonOf(documentRow!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -486,7 +500,7 @@ test('a seeded record attribute\'s document pair sits at'
         '/organizations/1/record-types/'
         + 'rec01CustProfRec0rdAB1/attributes/',
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -553,7 +567,7 @@ test('a seeded objective\'s document pair sits at its'
     assert.ok(
         documentRow, 'no document pair for the seeded objective',
     );
-    const embedded = JSON.parse(documentRow!.message) as {
+    const embedded = pairJsonOf(documentRow!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -583,7 +597,7 @@ test('a seeded objective\'s revision pair sits at its own'
     assert.ok(
         revisionRow, 'no revision pair for the seeded objective',
     );
-    const embedded = JSON.parse(revisionRow!.message) as {
+    const embedded = pairJsonOf(revisionRow!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -606,7 +620,7 @@ test('a seeded work-order document pair sits at its org-nested'
     // spurious `id` key riding the recorded body would drift
     // from wire fidelity with no address-only check catching
     // it, so the key set itself is the falsifiable pin.
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -628,7 +642,7 @@ async () => {
         `/organizations/${STARK_ORGANIZATION}/flows/`
             + `${firstJoin.flow_id}/work-orders/`,
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -649,7 +663,7 @@ test('a seeded flow-record join pair sits at its org-nested'
         `/organizations/${STARK_ORGANIZATION}/flows/`
             + `${firstJoin.flow_id}/records/`,
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -672,7 +686,7 @@ function transitionRequestForEvent(
     requester_identity_id: string } | undefined {
     return requests.find((r) => {
         try {
-            const embedded = JSON.parse(r.message) as {
+            const embedded = pairJsonOf(r.message) as {
                 body?: { transitionEventId?: string };
             };
             return embedded.body?.transitionEventId
@@ -698,7 +712,7 @@ test('a seeded work-order trace event\'s pair sits at its'
         `/organizations/${STARK_ORGANIZATION}/work-orders/`
             + `${firstTrace.entity_id}/transition/`,
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -772,7 +786,7 @@ test('a seeded state_field_value folds into its parent'
     // gone on WO01.
     const row = requests.find((r) => {
         try {
-            const embedded = JSON.parse(r.message) as {
+            const embedded = pairJsonOf(r.message) as {
                 body?: {
                     set?: readonly {
                         attribute_id: string;
@@ -798,7 +812,7 @@ test('a seeded state_field_value folds into its parent'
                 + '/work-orders/[^/]+/transition/$',
         ),
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: {
             set: readonly {
                 attribute_id: string;
@@ -834,7 +848,7 @@ async () => {
             && r.uri_id === SYSTEM_MEMBER_ID,
     );
     assert.ok(memberRow, 'no system members/:id pair');
-    const embedded = JSON.parse(memberRow!.message) as {
+    const embedded = pairJsonOf(memberRow!.message) as {
         body: Record<string, unknown>;
     };
     assert.equal(embedded.body.state_event_id, eventId);
@@ -867,7 +881,7 @@ test('a seeded baseline-score pair sits at its org-nested'
             + `${firstBaseline.fields.project_id}`
             + '/objective-baseline-scores/',
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -889,7 +903,7 @@ test('a seeded actual-score pair sits at its org-nested'
             + `${firstActual.fields.project_id}`
             + '/objective-actual-scores/',
     );
-    const embedded = JSON.parse(row!.message) as {
+    const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -925,7 +939,7 @@ async () => {
             revisionRow,
             'no revision pair for ' + starkSeed.id,
         );
-        const revisionBody = JSON.parse(
+        const revisionBody = pairJsonOf(
             revisionRow!.message,
         ) as { body: { member_id: string } };
         // The operation pair alone embeds the full create body
@@ -939,7 +953,7 @@ async () => {
                 && responseById.get(r.id)?.status === 204,
         );
         assert.ok(row, 'no request row for ' + starkSeed.id);
-        const embedded = JSON.parse(row!.message) as {
+        const embedded = pairJsonOf(row!.message) as {
             body: { revision: { member_id: string } };
         };
         assert.equal(
@@ -963,7 +977,7 @@ test('a seeded credential\'s response body carries the full'
         r => r.id === requestRow!.id,
     );
     assert.ok(responseRow, 'no response row for ' + id);
-    const embedded = JSON.parse(responseRow!.message) as {
+    const embedded = pairJsonOf(responseRow!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
@@ -985,7 +999,7 @@ test('seeded memberships carry type and no role-grant'
         r.uri_prefix.includes('/memberships/'));
     assert.ok(membershipReqs.length > 0);
     for (const row of membershipReqs) {
-        const embedded = JSON.parse(row.message) as {
+        const embedded = pairJsonOf(row.message) as {
             body: Record<string, unknown>;
         };
         assert.ok(
@@ -1061,7 +1075,7 @@ test('a bootstrap seed populates exactly twelve balanced,'
             && r.uri_id === SYSTEM_MEMBER_ID,
     );
     assert.equal(atSystemMember.length, 1);
-    const systemMemberEmbedded = JSON.parse(
+    const systemMemberEmbedded = pairJsonOf(
         atSystemMember[0]!.message,
     ) as { body: Record<string, unknown> };
     assert.equal(

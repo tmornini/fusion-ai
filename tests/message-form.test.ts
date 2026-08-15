@@ -4,11 +4,30 @@ import {
     buildRequestModel,
     buildResponseModel,
     canonicalJson,
+    storedWire,
     messageHashOf,
     bodyEtagOf,
 } from '../api/message-form.ts';
+import { formWritePair } from '../api/message-pair.ts';
+import { HttpMessage } from '../shared/http-message/http-message.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 
 const AT = '2026-06-15T09:30:00.123456Z';
+
+const validInput = {
+    method: 'PUT',
+    pathname: '/ideas/42',
+    routePattern: 'ideas/:id',
+    routeSegments: ['ideas', ':id'],
+    pathSegments: ['ideas', '42'],
+    headerFields: [],
+    body: { title: 'T' },
+    requesterIdentityId: 'current',
+    requestAt: AT,
+    organization: '1',
+    responseStatus: 204,
+    responseBody: undefined,
+};
 
 test('canonical JSON is stable across key permutations',
 () => {
@@ -69,4 +88,35 @@ test('etag covers only the body', async () => {
         status: 200, fields: [], body: { v: 1 },
     });
     assert.equal(await bodyEtagOf(a), await bodyEtagOf(b));
+});
+
+test('stored pair message is serializeWire',
+async () => {
+    const pair = await formWritePair(validInput);
+    assert.equal(
+        pair.requestMessage.includes('\r\n\r\n'),
+        true,
+    );
+    assert.equal(
+        pair.requestMessage.includes('"startLine"'),
+        false,
+    );
+    const model = parseWire(pair.requestMessage);
+    assert.equal(model.startLine.kind, 'request');
+});
+
+test('stored wire round-trips euro and emoji',
+async () => {
+    const model = buildRequestModel({
+        method: 'PUT',
+        target: '/x',
+        fields: [],
+        body: { note: '€😀' },
+    });
+    const wire = storedWire(model);
+    const back = parseWire(wire);
+    const body = HttpMessage.fromModel(back).body();
+    assert.equal(
+        JSON.parse(body.toText()).note, '€😀',
+    );
 });

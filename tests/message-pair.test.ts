@@ -8,10 +8,7 @@ import {
     storedResponseFor,
     appendMessagePair,
 } from '../api/message-pair.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 
 const INPUT = {
     method: 'PUT',
@@ -145,9 +142,7 @@ async () => {
     assert.equal(
         'supersedes' in pair, false,
     );
-    const model = parseJson(
-        pair.responseMessage, defaultBodyRegistry(),
-    );
+    const model = parseWire(pair.responseMessage);
     assert.equal(
         model.fields.some(
             (f) => f.name === 'follows'

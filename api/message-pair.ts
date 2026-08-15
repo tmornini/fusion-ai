@@ -11,17 +11,14 @@ import { messageAddress } from './message-address.ts';
 import {
     buildRequestModel,
     buildResponseModel,
-    canonicalJson,
+    storedWire,
     messageHashOf,
     bodyEtagOf,
 } from './message-form.ts';
 import { validateIdentityTokenEntity } from './validators.ts';
 import type { FieldLine } from '../shared/http-message/types.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 import { REQUEST_ID_HEADER } from './request-context.ts';
 import {
     familyRegistration,
@@ -52,7 +49,7 @@ export interface MessagePair {
     readonly uriPrefix: string;
     readonly uriId: string;
     readonly requesterIdentityId: Id;
-    readonly requestMessage: string;   // canonical
+    readonly requestMessage: string;   // serializeWire
     readonly requestHash: string;
     readonly responseStatus: number;
     readonly responseMessage: string;
@@ -161,8 +158,8 @@ export async function formWritePair(
         fields: responseFields,
         body: input.responseBody,
     });
-    const requestMessage = canonicalJson(requestModel);
-    const responseMessage = canonicalJson(responseModel);
+    const requestMessage = storedWire(requestModel);
+    const responseMessage = storedWire(responseModel);
     return {
         id,
         requestAt: input.requestAt,
@@ -329,9 +326,7 @@ export function parseIfMatch(
 export function ifMatchFromPair(
     pair: MessagePair,
 ): string | undefined {
-    const model = parseJson(
-        pair.requestMessage, defaultBodyRegistry(),
-    );
+    const model = parseWire(pair.requestMessage);
     const field = model.fields.find(
         (line) => line.name === IF_MATCH_HEADER,
     );
@@ -347,9 +342,7 @@ export function ifMatchFromPair(
 export function rawIfMatchFromPair(
     pair: MessagePair,
 ): string | undefined {
-    const model = parseJson(
-        pair.requestMessage, defaultBodyRegistry(),
-    );
+    const model = parseWire(pair.requestMessage);
     const field = model.fields.find(
         (line) => line.name === IF_MATCH_HEADER,
     );
@@ -402,13 +395,11 @@ export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
 }
 
 // Rebuild the wire Response from a stored response row's
-// canonical message — the one reconstruction path shared by a
-// fresh write's success return and an idempotent replay's early
-// return.
+// serializeWire message — the one reconstruction path shared
+// by a fresh write's success return and an idempotent replay's
+// early return.
 export function responseFromStored(stored: ResponseEntity): Response {
-    const model = parseJson(
-        stored.message, defaultBodyRegistry(),
-    );
+    const model = parseWire(stored.message);
     if (model.startLine.kind !== 'response') {
         throw new Error(
             'stored response message has no status line: '
@@ -433,9 +424,7 @@ export function responseFromStored(stored: ResponseEntity): Response {
 export function pairResponseBody(
     pair: MessagePair,
 ): Record<string, unknown> | undefined {
-    const model = parseJson(
-        pair.responseMessage, defaultBodyRegistry(),
-    );
+    const model = parseWire(pair.responseMessage);
     const body = HttpMessage.fromModel(model).body();
     return body.exists()
         ? JSON.parse(body.toText()) as Record<string, unknown>

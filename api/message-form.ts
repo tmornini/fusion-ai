@@ -7,6 +7,9 @@ import {
 import {
     defaultBodyRegistry,
 } from '../shared/http-message/media-registry.ts';
+import {
+    serializeWire,
+} from '../shared/http-message/wire-codec.ts';
 import type {
     FieldLine,
     MessageModel,
@@ -90,6 +93,12 @@ export function canonicalJson(
     model: MessageModel,
 ): string {
     return HttpMessage.fromModel(model).toJson();
+}
+
+export function storedWire(
+    model: MessageModel,
+): string {
+    return serializeWire(model);
 }
 
 export function messageHashOf(

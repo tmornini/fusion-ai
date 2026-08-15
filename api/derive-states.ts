@@ -27,10 +27,7 @@ import { latestByKey } from '../shared/ledger-reduction.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import { latestClaimEvent } from './work-order-claims.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 
 // Pair-plane lifecycle derives and ownership resolution
 // (Phase 11
@@ -376,7 +373,7 @@ const ORGANIZATION_NESTED_URI_PREFIX =
 function responseBodyOf(
     message: string,
 ): Record<string, unknown> {
-    const model = parseJson(message, defaultBodyRegistry());
+    const model = parseWire(message);
     const body = HttpMessage.fromModel(model).body();
     return body.exists()
         ? JSON.parse(body.toText()) as Record<string, unknown>
@@ -845,7 +842,7 @@ function decodeRequestOperation(message: string): {
     readonly method: string;
     readonly body: Record<string, unknown>;
 } {
-    const model = parseJson(message, defaultBodyRegistry());
+    const model = parseWire(message);
     if (model.startLine.kind !== 'request') {
         throw new Error(
             'stored request message carries no request line',

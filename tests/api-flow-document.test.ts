@@ -24,11 +24,8 @@ import {
 import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
 
 // The flows-specific below-gate op + locked-class e2e coverage
 // for Task 3's document PUT (the generic locked arm itself is
@@ -164,7 +161,7 @@ async function headEtag(
     return raw!;
 }
 
-// Decode a stored request row's canonical message back into its
+// Decode a stored request row's serializeWire message back into its
 // method + body — the SAME decode derive-documents.ts's private
 // requestMethodOf/requestBodyOf perform, reconstructed here
 // read-only for wire-level assertions (this file never imports
@@ -173,7 +170,7 @@ function decodeRequestMessage(message: string): {
     readonly method: string;
     readonly body: Record<string, unknown>;
 } {
-    const model = parseJson(message, defaultBodyRegistry());
+    const model = parseWire(message);
     if (model.startLine.kind !== 'request') {
         throw new Error(
             'stored message carries no request line',

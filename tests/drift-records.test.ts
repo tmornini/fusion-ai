@@ -60,11 +60,8 @@ import {
     SEED_INSTANCE_ID,
 } from '../api/mock-data/seed-message-pairs.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
 import { seededMockDb } from './mock-seed.ts';
 
 // Phase Final Task 2: records(+record_attributes+flow_records)
@@ -335,7 +332,7 @@ function decodeRequestMessage(message: string): {
     readonly method: string;
     readonly body: Record<string, unknown>;
 } {
-    const model = parseJson(message, defaultBodyRegistry());
+    const model = parseWire(message);
     if (model.startLine.kind !== 'request') {
         throw new Error(
             'stored message carries no request line',

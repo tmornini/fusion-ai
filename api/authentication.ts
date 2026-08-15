@@ -29,10 +29,7 @@ import {
 } from './types.ts';
 import { pickString } from './validators.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
-import { parseJson } from '../shared/http-message/json-codec.ts';
-import {
-    defaultBodyRegistry,
-} from '../shared/http-message/media-registry.ts';
+import { parseWire } from '../shared/http-message/wire-codec.ts';
 import {
     planRotation,
     isTokenRevoked,
@@ -917,7 +914,7 @@ const IDENTITY_TOKENS_EVENT_PREFIX =
 // IX) rather than forcing a shared extraction across three
 // unrelated modules for a task that touches only this one.
 function decodedBodyOf(message: string): Record<string, unknown> {
-    const model = parseJson(message, defaultBodyRegistry());
+    const model = parseWire(message);
     const body = HttpMessage.fromModel(model).body();
     return body.exists()
         ? JSON.parse(body.toText()) as Record<string, unknown>

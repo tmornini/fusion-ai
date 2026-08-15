@@ -10,6 +10,20 @@ import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedOrganizationMember } from './root-admin-fixture.ts';
+import { HttpMessage } from
+    '../shared/http-message/http-message.ts';
+
+function pairJsonOf(message: string): {
+    readonly body: Record<string, unknown>;
+} {
+    const body = HttpMessage.fromWire(message).body();
+    return {
+        body: body.exists()
+            ? JSON.parse(body.toText()) as
+                Record<string, unknown>
+            : {},
+    };
+}
 
 // Phase 2 Task 2 (Decision 7 state-in-entity): PUT /ideas/:id
 // takes the FULL document — entity fields plus the state trio.
@@ -179,7 +193,7 @@ test('the pair body and GET wire both carry the'
     const requests = await db.requests.getAll();
     // seedRootAdmin 2 + idea PUT 1
     assert.equal(requests.length, 3);
-    const parsed = JSON.parse(requests[2]!.message) as {
+    const parsed = pairJsonOf(requests[2]!.message) as {
         body: { state: string; state_at: string };
     };
     assert.equal(parsed.body.state, 'in_review');

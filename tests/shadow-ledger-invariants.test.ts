@@ -18,6 +18,20 @@ import {
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
 import { seededMockDb } from './mock-seed.ts';
+import { HttpMessage } from
+    '../shared/http-message/http-message.ts';
+
+function pairJsonOf(message: string): {
+    readonly body: Record<string, unknown>;
+} {
+    const body = HttpMessage.fromWire(message).body();
+    return {
+        body: body.exists()
+            ? JSON.parse(body.toText()) as
+                Record<string, unknown>
+            : {},
+    };
+}
 
 // Standing shadow-ledger invariants (Task 5): properties every
 // requests/responses pair must hold REGARDLESS of which family
@@ -465,7 +479,7 @@ test('a seeded idea\'s create-pair request reproduces its'
                     + '/ideas/',
     );
     assert.ok(createRow, 'no create pair for the seeded idea');
-    const parsed = JSON.parse(createRow!.message) as {
+    const parsed = pairJsonOf(createRow!.message) as {
         body: {
             state: string;
             state_event_id: string;
