@@ -1292,6 +1292,35 @@ export async function handleRequest(
                                 },
                             );
                         if (raced) {
+                            const nowLive =
+                                await livePutVersion(
+                                    effective,
+                                    canonicalPrefix,
+                                    uriId,
+                                );
+                            if (
+                                nowLive !== undefined
+                                && matched.get
+                                    !== undefined
+                            ) {
+                                try {
+                                    return preconditionDocument(
+                                        HTTP_PRECONDITION_FAILED,
+                                        await matched.get(
+                                            effective,
+                                            params,
+                                            actor,
+                                            organization,
+                                            roles,
+                                        ),
+                                        nowLive.version,
+                                        false,
+                                    );
+                                } catch {
+                                    // GET derive failed;
+                                    // no document body.
+                                }
+                            }
                             return Response.json(
                                 {
                                     error: 'If-Match does not '
