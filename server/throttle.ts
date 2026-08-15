@@ -17,6 +17,13 @@ export function isAuthThrottlePath(pathname: string): boolean {
             || segments[1] === 'authorize');
 }
 
+export function isAuthTokenPath(pathname: string): boolean {
+    const segments = pathname.split('/').filter(Boolean);
+    return segments.length === 2
+        && segments[0] === 'authentication'
+        && segments[1] === 'token';
+}
+
 export type AuthThrottle = {
     limited(
         remoteAddress: string | undefined,

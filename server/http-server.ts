@@ -33,6 +33,7 @@ import { OPERATION_ID_HEADER } from
 import {
     createAuthThrottle,
     isAuthThrottlePath,
+    isAuthTokenPath,
     type AuthThrottle,
 } from './throttle.ts';
 
@@ -348,6 +349,26 @@ async function serveStatic(
     return 200;
 }
 
+function grantTypeOf(bytes: Buffer): string | undefined {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(bytes.toString('utf8'));
+    } catch {
+        return undefined;
+    }
+    if (parsed === null
+        || typeof parsed !== 'object'
+        || Array.isArray(parsed)) {
+        return undefined;
+    }
+    const grantType = (parsed as {
+        readonly grant_type?: unknown;
+    }).grant_type;
+    return typeof grantType === 'string'
+        ? grantType
+        : undefined;
+}
+
 function isWriteMethod(method: string): boolean {
     return method !== 'GET' && method !== 'HEAD';
 }
@@ -445,7 +466,13 @@ async function dispatch(
                 + requestHost(req)
                 + (req.url ?? '/'),
         ).pathname;
+        let grantType: string | undefined;
+        if (isAuthTokenPath(requestPathname)
+            && body.kind === 'bytes') {
+            grantType = grantTypeOf(body.bytes);
+        }
         if (isAuthThrottlePath(requestPathname)
+            && grantType !== 'refresh'
             && throttle.limited(
                 req.socket.remoteAddress,
                 headerLine(req.headers['forwarded']),
