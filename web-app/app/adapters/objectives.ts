@@ -12,6 +12,8 @@ import {
 } from '../../../api/types.ts';
 import {
     type RequestContext,
+    withLifecycleTrio,
+    withLifecycleTrios,
 } from './shared.ts';
 import {
     createSubscriptionChannel,
@@ -39,14 +41,22 @@ export function notifyObjectiveChange(): void {
 export async function getObjectives(
     ctx: RequestContext,
 ): Promise<ObjectiveEntity[]> {
-    return ctx.GET<ObjectiveEntity[]>('objectives');
+    return withLifecycleTrios(
+        ctx, 'objectives',
+        await ctx.GET<ObjectiveEntity[]>('objectives'),
+    );
 }
 
 export async function getObjective(
     ctx: RequestContext,
     id: ObjectiveId,
 ): Promise<ObjectiveEntity> {
-    return ctx.GET<ObjectiveEntity>(`objectives/${id}`);
+    return withLifecycleTrio(
+        ctx, 'objectives',
+        await ctx.GET<ObjectiveEntity>(
+            `objectives/${id}`,
+        ),
+    );
 }
 
 // Lifecycle-current trio is stamped on the ObjectiveEntity

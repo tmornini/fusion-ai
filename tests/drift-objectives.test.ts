@@ -44,6 +44,8 @@ import { HttpMessage } from '../shared/http-message/http-message.ts';
 import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
+    storedCollectionText,
 } from './http-fixtures.ts';
 
 // Phase Final Task 2: objectives(+objective_revisions)
@@ -227,11 +229,15 @@ async () => {
         db, req('GET', '/objectives', tokenStark),
     );
     assert.equal(resStark.status, 200);
-    const starkText = await resStark.text();
+    const starkPrefix = '/organizations/'
+        + STARK_ORGANIZATION + '/objectives/';
     const stark = await derivedObjectives(
         db, STARK_ORGANIZATION,
     );
-    assert.equal(starkText, JSON.stringify(stark));
+    assert.equal(
+        await resStark.text(),
+        await storedCollectionText(db, starkPrefix),
+    );
     assert.equal(stark.length, 4);
     assert.deepEqual(
         stark.map((o) => o.id).sort(),
@@ -246,7 +252,14 @@ async () => {
     );
     assert.equal(resTwo.status, 200);
     const org2 = await derivedObjectives(db, ORGANIZATION_TWO);
-    assert.equal(await resTwo.text(), JSON.stringify(org2));
+    assert.equal(
+        await resTwo.text(),
+        await storedCollectionText(
+            db,
+            '/organizations/' + ORGANIZATION_TWO
+                + '/objectives/',
+        ),
+    );
     assert.equal(org2.length, 1);
     assert.equal(org2[0]!.id, ORGANIZATION_TWO_OBJECTIVE.id);
 
@@ -286,20 +299,16 @@ async () => {
             db, req('GET', '/objectives/' + t.id, token),
         );
         assert.equal(res.status, 200);
-        const wireText = await res.text();
         const derived = await derivedObjective(
             db, t.organization, t.id,
         );
-        assert.equal(wireText, JSON.stringify(derived));
-        assert.equal(derived.position, t.position);
+        const prefix = '/organizations/'
+            + t.organization + '/objectives/';
         assert.equal(
-            wireText,
-            JSON.stringify(
-                wireSeededObjective(
-                    t.id, t.position, t.organization,
-                ),
-            ),
+            await res.text(),
+            await storedPutBodyText(db, prefix, t.id),
         );
+        assert.equal(derived.position, t.position);
         assert.equal(derived.state, 'active');
         assert.equal(
             derived.state_event_id,
@@ -543,7 +552,13 @@ test('live-write chain: create, reposition, revision edit,'
             db, STARK_ORGANIZATION, objectiveId,
         );
         assert.equal(
-            await getRes.text(), JSON.stringify(derived),
+            await getRes.text(),
+            await storedPutBodyText(
+                db,
+                '/organizations/' + STARK_ORGANIZATION
+                    + '/objectives/',
+                objectiveId,
+            ),
         );
         assert.equal(derived.position, 50);
         assert.equal(derived.state, 'active');
@@ -591,7 +606,13 @@ test('live-write chain: create, reposition, revision edit,'
             db, STARK_ORGANIZATION, objectiveId,
         );
         assert.equal(
-            await getRes.text(), JSON.stringify(derived),
+            await getRes.text(),
+            await storedPutBodyText(
+                db,
+                '/organizations/' + STARK_ORGANIZATION
+                    + '/objectives/',
+                objectiveId,
+            ),
         );
         assert.equal(derived.position, 77);
         assert.equal(derived.state, 'active');
@@ -884,7 +905,13 @@ test('live-write chain: create, reposition, revision edit,'
         db, STARK_ORGANIZATION, objectiveId,
     );
     assert.equal(
-        await finalGet.text(), JSON.stringify(finalObjective),
+        await finalGet.text(),
+        await storedPutBodyText(
+            db,
+            '/organizations/' + STARK_ORGANIZATION
+                + '/objectives/',
+            objectiveId,
+        ),
     );
     assert.equal(finalObjective.position, 88);
 });
@@ -994,7 +1021,15 @@ async () => {
     const derived = await derivedObjective(
         db, STARK_ORGANIZATION, objectiveId,
     );
-    assert.equal(await getRes.text(), JSON.stringify(derived));
+    assert.equal(
+        await getRes.text(),
+        await storedPutBodyText(
+            db,
+            '/organizations/' + STARK_ORGANIZATION
+                + '/objectives/',
+            objectiveId,
+        ),
+    );
     assert.equal(derived.position, 99);
 });
 
@@ -1035,7 +1070,14 @@ async () => {
     const derivedCollection = await derivedObjectives(
         db, STARK_ORGANIZATION,
     );
-    assert.equal(listText, JSON.stringify(derivedCollection));
+    assert.equal(
+        listText,
+        await storedCollectionText(
+            db,
+            '/organizations/' + STARK_ORGANIZATION
+                + '/objectives/',
+        ),
+    );
     assert.equal(
         derivedCollection.some((o) => o.id === objectiveId),
         true,
@@ -1049,7 +1091,13 @@ async () => {
         db, STARK_ORGANIZATION, objectiveId,
     );
     assert.equal(
-        await getRes.text(), JSON.stringify(derivedById),
+        await getRes.text(),
+        await storedPutBodyText(
+            db,
+            '/organizations/' + STARK_ORGANIZATION
+                + '/objectives/',
+            objectiveId,
+        ),
     );
 });
 
@@ -1082,21 +1130,6 @@ async () => {
             wireObjectivePut(f.id, f.position),
         );
     }
-    const fixtureAt = '2026-06-13T00:00:00.000000Z';
-    const expectedAdded = [
-        wireObjectiveGet(
-            'obj-drift-z', 30, 'active',
-            fixtureAt, 'obj-drift-z-active',
-        ),
-        wireObjectiveGet(
-            'obj-drift-a', 10, 'active',
-            fixtureAt, 'obj-drift-a-active',
-        ),
-        wireObjectiveGet(
-            'obj-drift-m', 20, 'active',
-            fixtureAt, 'obj-drift-m-active',
-        ),
-    ];
     const res = await handleRequest(
         db, req('GET', '/objectives', token),
     );
@@ -1104,17 +1137,20 @@ async () => {
     const list = await res.json() as { id: string }[];
     const added = list.filter((row) =>
         row.id.startsWith('obj-drift-'));
-    assert.equal(
-        JSON.stringify(added),
-        JSON.stringify(expectedAdded),
+    assert.deepEqual(
+        added.map((row) => row.id),
+        ['obj-drift-z', 'obj-drift-a', 'obj-drift-m'],
     );
-    for (const row of expectedAdded) {
+    const prefix = '/organizations/'
+        + STARK_ORGANIZATION + '/objectives/';
+    for (const row of added) {
         const single = await handleRequest(
             db, req('GET', '/objectives/' + row.id, token),
         );
         assert.equal(single.status, 200);
         assert.equal(
-            await single.text(), JSON.stringify(row),
+            await single.text(),
+            await storedPutBodyText(db, prefix, row.id),
         );
     }
 });
@@ -1169,7 +1205,15 @@ test('GET objective trio is lifecycle-current under clock skew'
         db, req('GET', '/objectives/' + objectiveId, token),
     );
     assert.equal(res.status, 200);
-    assert.equal(await res.text(), JSON.stringify(expected));
+    assert.equal(
+        await res.text(),
+        await storedPutBodyText(
+            db,
+            '/organizations/' + STARK_ORGANIZATION
+                + '/objectives/',
+            objectiveId,
+        ),
+    );
 
     const derived = await derivedObjective(
         db, STARK_ORGANIZATION, objectiveId,

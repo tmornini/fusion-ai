@@ -179,7 +179,7 @@ export function documentFamilyWiring(
 // foreign id 403s and a genuine absence 404s. Global-plane
 // families (members, identities, …) stay EntityNotFoundError
 // only — they must not probe.
-async function throwDocumentMiss(
+export async function throwDocumentMiss(
     wiring: DocumentFamilyWiring,
     db: DbAdapter,
     organization: Id,

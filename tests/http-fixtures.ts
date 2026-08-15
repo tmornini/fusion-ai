@@ -1,5 +1,9 @@
 import { generateCryptoSafeBase62 } from
     '../shared/crypto-safe-base62.ts';
+import { HttpMessage } from
+    '../shared/http-message/http-message.ts';
+import { messageStore } from '../api/message-store.ts';
+import type { DbAdapter } from '../api/db.ts';
 
 const BASE = 'http://localhost';
 
@@ -39,4 +43,37 @@ export function apiRequest(input: {
             ? { body: JSON.stringify(input.body) }
             : {}),
     });
+}
+
+export function storedMessageBodyText(
+    message: string,
+): string {
+    const body = HttpMessage.fromWire(message).body();
+    return body.exists() ? body.toText() : '';
+}
+
+export async function storedPutBodyText(
+    db: DbAdapter,
+    collection: string,
+    id: string,
+): Promise<string> {
+    const stored = await messageStore(db).get(
+        collection, id,
+    );
+    if (stored === undefined) {
+        throw new Error(
+            'no live PUT at ' + collection + id,
+        );
+    }
+    return storedMessageBodyText(stored.message);
+}
+
+export async function storedCollectionText(
+    db: DbAdapter,
+    collection: string,
+): Promise<string> {
+    const rows = await messageStore(db).getCollection(
+        collection,
+    );
+    return JSON.stringify(rows);
 }

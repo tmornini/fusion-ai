@@ -109,12 +109,8 @@ test('a document PUT with a new state writes wire entity'
         state_event_id: string;
     };
     assert.equal(getWire.title, 'Fresh');
-    // GET stamps lifecycle-current trio from the event.
-    assert.equal(getWire.state, 'submitted');
-    assert.equal(
-        getWire.state_at, '2026-01-01T00:00:00.000000Z',
-    );
-    assert.equal(getWire.state_event_id, 'ev-doc-1');
+    // GET streams the stored PUT (no trio until G1).
+    assert.ok(!('state' in getWire));
     const events = await deriveProjectStateHistory(db, '1', 'doc-1');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'submitted');
@@ -169,9 +165,8 @@ test('a byte-identical resend converges: one event,'
     assert.equal((await db.responses.getAll()).length, 3);
 });
 
-test('the pair body and GET wire both carry the'
-+ ' lifecycle-current trio (stamped from the event,'
-+ ' not re-copied from the head body)', async () => {
+test('the pair request body carries the lifecycle trio;'
++ ' GET streams the stored PUT (no trio)', async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await handleRequest(db, req(
@@ -185,15 +180,11 @@ test('the pair body and GET wire both carry the'
         db, req('GET', '/projects/doc-4', token),
     );
     const wire = await getRes.json() as {
-        state: string;
-        state_at: string;
-        state_event_id: string;
+        title: string;
+        state?: string;
     };
-    assert.equal(wire.state, 'under_review');
-    assert.equal(
-        wire.state_at, '2026-01-01T00:00:00.000000Z',
-    );
-    assert.equal(wire.state_event_id, 'ev-doc-4');
+    assert.equal(wire.title, 'Wired');
+    assert.ok(!('state' in wire));
     const requests = await db.requests.getAll();
     // seedRootAdmin 2 + project PUT 1
     assert.equal(requests.length, 3);

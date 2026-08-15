@@ -64,6 +64,55 @@ export function filterByField<T, K extends keyof T>(
     return rows.filter(row => row[field] === value);
 }
 
+// Task 19 streams stored PUT bodies (no trio until G1).
+// Fill lifecycle from GET <family>/:id/versions.
+interface TrioRow {
+    readonly id: string;
+    readonly state?: string;
+    readonly state_at?: string;
+    readonly state_event_id?: string;
+}
+
+interface VersionRow {
+    readonly id: string;
+    readonly state: string;
+    readonly at: string;
+    readonly version?: string;
+}
+
+export async function withLifecycleTrio<T extends TrioRow>(
+    ctx: RequestContext,
+    family: string,
+    row: T,
+): Promise<T> {
+    if (row.state !== undefined) return row;
+    const history = await ctx.GET<readonly VersionRow[]>(
+        family + '/' + row.id + '/versions',
+    );
+    const current = history[0];
+    if (current === undefined) return row;
+    return {
+        ...row,
+        state: current.state,
+        state_at: current.at,
+        state_event_id: current.id,
+    };
+}
+
+export async function withLifecycleTrios<T extends TrioRow>(
+    ctx: RequestContext,
+    family: string,
+    rows: readonly T[],
+): Promise<T[]> {
+    return Promise.all(
+        rows.map(
+            (row) => withLifecycleTrio(ctx, family, row),
+        ),
+    );
+}
+
+
+
 export interface RequestContext {
     readonly requestId: string;
     readonly identity: Principal;

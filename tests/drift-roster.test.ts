@@ -49,6 +49,8 @@ import { HttpMessage } from '../shared/http-message/http-message.ts';
 import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
+    storedCollectionText,
 } from './http-fixtures.ts';
 
 // Phase Final Task 2: roster (members / human_members /
@@ -365,7 +367,14 @@ async () => {
     const stark = await derivedMemberships(
         db, STARK_ORGANIZATION,
     );
-    assert.equal(await resStark.text(), JSON.stringify(stark));
+    assert.equal(
+        await resStark.text(),
+        await storedCollectionText(
+            db,
+            '/organizations/' + STARK_ORGANIZATION
+                + '/memberships/',
+        ),
+    );
     assert.equal(stark.length, 10);
 
     const tokenTwo = await organizationToken(
@@ -378,7 +387,14 @@ async () => {
     const org2 = await derivedMemberships(
         db, ORGANIZATION_TWO,
     );
-    assert.equal(await resTwo.text(), JSON.stringify(org2));
+    assert.equal(
+        await resTwo.text(),
+        await storedCollectionText(
+            db,
+            '/organizations/' + ORGANIZATION_TWO
+                + '/memberships/',
+        ),
+    );
     assert.equal(org2.length, 6);
 
     const THIRD_ORGANIZATION = '3';
@@ -411,7 +427,17 @@ test('per-membership GET wire equals derive (all 16); missing-'
         const derived = await derivedMembership(
             db, membership.organization_id, membership.id,
         );
-        assert.equal(await res.text(), JSON.stringify(derived));
+        assert.equal(
+            await res.text(),
+            await storedPutBodyText(
+                db,
+                '/organizations/'
+                    + membership.organization_id
+                    + '/memberships/',
+                membership.id,
+            ),
+        );
+        assert.equal(derived.id, membership.id);
     }
 
     const missingId = 'no-such-membership';
@@ -486,7 +512,10 @@ test('ai-members + human-members wire equals derive (GLOBAL)'
     const derivedAi = await derivedAiMembers(
         db, GLOBAL_PLANE_PLACEHOLDER,
     );
-    assert.equal(await resAi.text(), JSON.stringify(derivedAi));
+    assert.equal(
+        await resAi.text(),
+        await storedCollectionText(db, '/ai-members/'),
+    );
     assert.equal(derivedAi.length, 4);
 
     const resHuman = await handleRequest(
@@ -497,7 +526,8 @@ test('ai-members + human-members wire equals derive (GLOBAL)'
         db, GLOBAL_PLANE_PLACEHOLDER,
     );
     assert.equal(
-        await resHuman.text(), JSON.stringify(derivedHuman),
+        await resHuman.text(),
+        await storedCollectionText(db, '/human-members/'),
     );
     assert.equal(derivedHuman.length, 11);
 
@@ -509,7 +539,13 @@ test('ai-members + human-members wire equals derive (GLOBAL)'
         const derived = await derivedAiMember(
             db, GLOBAL_PLANE_PLACEHOLDER, row.id,
         );
-        assert.equal(await res.text(), JSON.stringify(derived));
+        assert.equal(
+            await res.text(),
+            await storedPutBodyText(
+                db, '/ai-members/', row.id,
+            ),
+        );
+        assert.equal(derived.id, row.id);
     }
     for (const row of derivedHuman) {
         const res = await handleRequest(
@@ -519,7 +555,13 @@ test('ai-members + human-members wire equals derive (GLOBAL)'
         const derived = await derivedHumanMember(
             db, GLOBAL_PLANE_PLACEHOLDER, row.id,
         );
-        assert.equal(await res.text(), JSON.stringify(derived));
+        assert.equal(
+            await res.text(),
+            await storedPutBodyText(
+                db, '/human-members/', row.id,
+            ),
+        );
+        assert.equal(derived.id, row.id);
     }
 
     const missingId = 'no-such-detail';
@@ -1148,7 +1190,10 @@ test('GET member trio is lifecycle-current under clock skew'
         db, req('GET', '/members/' + memberId, token),
     );
     assert.equal(res.status, 200);
-    assert.equal(await res.text(), JSON.stringify(expected));
+    assert.equal(
+        await res.text(),
+        await storedPutBodyText(db, '/members/', memberId),
+    );
 
     const derived = await deriveMemberParent(db, memberId);
     assert.equal(

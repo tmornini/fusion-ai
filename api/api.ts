@@ -28,6 +28,7 @@ import {
     documentHeadAt,
     attachEtag,
     attachDate,
+    streamGetFromStored,
     parseIfMatch,
     requireOperationId,
     OPERATION_ID_HEADER,
@@ -52,7 +53,12 @@ import {
     documentFamilyWiring,
     documentHeadPairId,
     lookupStoredRevision,
+    throwDocumentMiss,
+    requireOrganization,
 } from './document-family.ts';
+import {
+    messageStore,
+} from './message-store.ts';
 import {
     deriveInstanceHead,
     instanceGetBody,
@@ -1417,6 +1423,25 @@ export async function handleRequest(
                         { status: HTTP_METHOD_NOT_ALLOWED },
                     );
                 }
+                const streamedDocument =
+                    await streamStoredDocumentGet(
+                        effective,
+                        routePattern,
+                        params,
+                        organization,
+                    );
+                if (streamedDocument !== undefined) {
+                    return streamedDocument;
+                }
+                const streamedCollection =
+                    await streamStoredCollectionGet(
+                        effective,
+                        routePattern,
+                        organization,
+                    );
+                if (streamedCollection !== undefined) {
+                    return streamedCollection;
+                }
                 const result = await matched.get(
                     effective,
                     params,
@@ -2093,6 +2118,76 @@ async function bodyWriteResponse(
             },
         ),
     );
+}
+
+const ID_SUFFIX = '/:id';
+
+// Stream families (ideas, projects, flows, …). Work-orders
+// still assemble (binding). Record instances still project.
+function streamFamilyWiring(
+    routePattern: string,
+): ReturnType<typeof documentFamilyWiring> {
+    if (!routePattern.endsWith(ID_SUFFIX)) {
+        return undefined;
+    }
+    const family = routePattern.slice(0, -ID_SUFFIX.length);
+    if (
+        family === 'work-orders'
+        || family === 'flows'
+        || family.includes('/')
+    ) {
+        return undefined;
+    }
+    return documentFamilyWiring(family);
+}
+
+function streamCollectionWiring(
+    routePattern: string,
+): ReturnType<typeof documentFamilyWiring> {
+    if (routePattern === 'work-orders') return undefined;
+    if (routePattern === 'flows') return undefined;
+    if (routePattern === 'members') return undefined;
+    if (routePattern.includes('/')) return undefined;
+    return documentFamilyWiring(routePattern);
+}
+
+async function streamStoredDocumentGet(
+    db: DbAdapter,
+    routePattern: string,
+    params: string[],
+    organization: Id | undefined,
+): Promise<Response | undefined> {
+    const wiring = streamFamilyWiring(routePattern);
+    if (wiring === undefined) return undefined;
+    const organizationId = requireOrganization(organization);
+    const id = param(params, 0);
+    const prefix = canonicalUriCollection(
+        organizationId, '/' + wiring.family + '/',
+    );
+    const stored = await messageStore(db).get(prefix, id);
+    if (stored === undefined) {
+        throw await throwDocumentMiss(
+            wiring, db, organizationId, id,
+        );
+    }
+    return streamGetFromStored(stored, nowUtc());
+}
+
+async function streamStoredCollectionGet(
+    db: DbAdapter,
+    routePattern: string,
+    organization: Id | undefined,
+): Promise<Response | undefined> {
+    const wiring = streamCollectionWiring(routePattern);
+    if (wiring === undefined) return undefined;
+    const organizationId = requireOrganization(organization);
+    const prefix = canonicalUriCollection(
+        organizationId, '/' + wiring.family + '/',
+    );
+    const rows = await messageStore(db).getCollection(
+        prefix,
+    );
+    return attachDate(Response.json(rows), nowUtc());
 }
 
 // Stream family collection GET (live heads). members is

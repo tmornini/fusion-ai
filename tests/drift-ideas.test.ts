@@ -19,6 +19,8 @@ import {
 import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
+    storedPutBodyText,
+    storedCollectionText,
 } from './http-fixtures.ts';
 
 // Phase Final Task 2: ideas(+idea_submissions) dual-write
@@ -123,7 +125,7 @@ const SEEDED_IDEAS = buildIdeas().map((idea, index) => ({
     success_metrics: idea.success_metrics,
 }));
 
-test('seeded GET /ideas wire equals deriveIdeas per org',
+test('seeded GET /ideas wire equals stored live PUT bodies',
 async () => {
     const db = await seededDb();
     for (const organization of ['1', '2']) {
@@ -134,14 +136,18 @@ async () => {
             db, req('GET', '/ideas', token),
         );
         assert.equal(res.status, 200);
-        const wireText = await res.text();
+        const prefix = '/organizations/'
+            + organization + '/ideas/';
+        assert.equal(
+            await res.text(),
+            await storedCollectionText(db, prefix),
+        );
         const derived = await deriveIdeas(db, organization);
-        assert.equal(wireText, JSON.stringify(derived));
         assert.ok(derived.length > 0);
     }
 });
 
-test('per-idea GET wire equals deriveIdea for every seed',
+test('per-idea GET wire equals the stored PUT body',
 async () => {
     const db = await seededDb();
     for (const seed of SEEDED_IDEAS) {
@@ -152,11 +158,15 @@ async () => {
             db, req('GET', '/ideas/' + seed.id, token),
         );
         assert.equal(res.status, 200);
-        const wireText = await res.text();
+        const prefix = '/organizations/'
+            + seed.organization + '/ideas/';
+        assert.equal(
+            await res.text(),
+            await storedPutBodyText(db, prefix, seed.id),
+        );
         const derived = await deriveIdea(
             db, seed.organization, seed.id,
         );
-        assert.equal(wireText, JSON.stringify(derived));
         assert.equal(derived.title, seed.title);
         assert.equal(derived.position, seed.position);
     }
@@ -225,21 +235,7 @@ async () => {
         );
     }
     // Oldest live head (at, id): z, a, m — insertion, not
-    // id-lex a, m, z.
-    const expectedAdded = [
-        wireIdeaGet(
-            'idea-drift-z', 'Zulu', 'active',
-            '2026-07-01T00:00:00.000000Z', 'ev-drift-z',
-        ),
-        wireIdeaGet(
-            'idea-drift-a', 'Alpha', 'active',
-            '2026-07-01T00:00:01.000000Z', 'ev-drift-a',
-        ),
-        wireIdeaGet(
-            'idea-drift-m', 'Mike', 'active',
-            '2026-07-01T00:00:02.000000Z', 'ev-drift-m',
-        ),
-    ];
+    // id-lex a, m, z. Bodies equal stored PUT (Task 19).
     const res = await handleRequest(
         db, req('GET', '/ideas', token),
     );
@@ -249,17 +245,25 @@ async () => {
     const list = await res.json() as { id: string }[];
     const added = list.filter((row) =>
         row.id.startsWith('idea-drift-'));
-    assert.equal(
-        JSON.stringify(added),
-        JSON.stringify(expectedAdded),
+    assert.deepEqual(
+        added.map((row) => row.id),
+        ['idea-drift-z', 'idea-drift-a', 'idea-drift-m'],
     );
-    for (const row of expectedAdded) {
+    const prefix = '/organizations/1/ideas/';
+    for (const row of added) {
         const single = await handleRequest(
             db, req('GET', '/ideas/' + row.id, token),
         );
         assert.equal(single.status, 200);
         assert.equal(
-            await single.text(), JSON.stringify(row),
+            await single.text(),
+            await storedPutBodyText(db, prefix, row.id),
+        );
+        assert.deepEqual(
+            JSON.parse(await storedPutBodyText(
+                db, prefix, row.id,
+            )),
+            row,
         );
     }
 });
@@ -298,18 +302,16 @@ test('derived history keeps the FIRST arrival\'s authorship'
     assert.equal(derived[0]!.member_id, 'current');
 
     // Wire entity reflects the SECOND title; authorship of the
-    // head event stays on member A; GET trio is the one event.
+    // head event stays on member A. GET streams the stored PUT.
     const getRes = await handleRequest(
         db, req('GET', '/ideas/' + ideaId, tokenA),
     );
     assert.equal(getRes.status, 200);
     assert.equal(
         await getRes.text(),
-        JSON.stringify(wireIdeaGet(
-            ideaId, 'Second', 'active',
-            '2026-04-01T00:00:00.000000Z',
-            'ev-drift-authorship-caveat',
-        )),
+        await storedPutBodyText(
+            db, '/organizations/1/ideas/', ideaId,
+        ),
     );
 });
 
@@ -420,14 +422,10 @@ test('live-write lifecycle: create + edit + transition +'
         db, req('GET', '/ideas/' + ideaId, token),
     );
     assert.equal(beforeDelete.status, 200);
+    const prefix = '/organizations/1/ideas/';
     assert.equal(
         await beforeDelete.text(),
-        JSON.stringify(wireIdeaGet(
-            ideaId, 'Lifecycle Idea Edited', 'in_review',
-            '2026-03-02T00:00:00.000000Z',
-            'ev-drift-lifecycle-review',
-            2,
-        )),
+        await storedPutBodyText(db, prefix, ideaId),
     );
 
     await handleRequest(db, req(
@@ -440,10 +438,16 @@ test('live-write lifecycle: create + edit + transition +'
         ),
     ));
 
+    // Trio-deleted is still a live PUT head. GET streams it.
+    // Derive still 404s the deleted state.
     const afterDelete = await handleRequest(
         db, req('GET', '/ideas/' + ideaId, token),
     );
-    assert.equal(afterDelete.status, 404);
+    assert.equal(afterDelete.status, 200);
+    assert.equal(
+        await afterDelete.text(),
+        await storedPutBodyText(db, prefix, ideaId),
+    );
     await assert.rejects(
         () => deriveIdea(db, '1', ideaId),
         EntityNotFoundError,
@@ -453,7 +457,7 @@ test('live-write lifecycle: create + edit + transition +'
     );
     const list = await listRes.json() as { id: string }[];
     assert.equal(
-        list.some((idea) => idea.id === ideaId), false,
+        list.some((idea) => idea.id === ideaId), true,
     );
 
     const derivedHistory = await deriveIdeaStateHistory(
@@ -525,20 +529,16 @@ test('live approve then convert: derived idea history'
     assert.ok(
         derived.some((event) => event.state === 'promoted'),
     );
-    // Entity GET still serves the promoted idea (only
-    // 'deleted' tombstones); list filters via ideaIsVisible.
-    // GET trio is the lifecycle-current 'promoted' event.
+    // Entity GET streams the stored PUT (conversion document).
     const getRes = await handleRequest(
         db, req('GET', '/ideas/' + ideaId, token),
     );
     assert.equal(getRes.status, 200);
     assert.equal(
         await getRes.text(),
-        JSON.stringify(wireIdeaGet(
-            ideaId, 'Approve Then Convert', 'promoted',
-            '2026-06-03T00:00:00.000000Z',
-            'ev-drift-conversion-promoted',
-        )),
+        await storedPutBodyText(
+            db, '/organizations/1/ideas/', ideaId,
+        ),
     );
 });
 
@@ -573,15 +573,19 @@ test('GET idea trio is lifecycle-current under clock skew'
     ));
     assert.equal(skewed.status, 201);
 
-    const expected = wireIdeaGet(
-        ideaId, 'Skewed Title', 'active', genesisAt, genesisEv,
-    );
     const getRes = await handleRequest(
         db, req('GET', '/ideas/' + ideaId, token),
     );
     assert.equal(getRes.status, 200);
-    assert.equal(await getRes.text(), JSON.stringify(expected));
+    const prefix = '/organizations/1/ideas/';
+    assert.equal(
+        await getRes.text(),
+        await storedPutBodyText(db, prefix, ideaId),
+    );
 
+    const expected = wireIdeaGet(
+        ideaId, 'Skewed Title', 'active', genesisAt, genesisEv,
+    );
     const derived = await deriveIdea(db, '1', ideaId);
     assert.equal(
         JSON.stringify(derived), JSON.stringify(expected),
@@ -590,18 +594,4 @@ test('GET idea trio is lifecycle-current under clock skew'
     assert.equal(derived.state, 'active');
     assert.equal(derived.state_at, genesisAt);
     assert.equal(derived.state_event_id, genesisEv);
-
-    const listRes = await handleRequest(
-        db, req('GET', '/ideas', token),
-    );
-    assert.equal(listRes.status, 200);
-    const list = await listRes.json() as {
-        id: string;
-        state: string;
-        state_at: string;
-        state_event_id: string;
-        title: string;
-    }[];
-    const row = list.find((idea) => idea.id === ideaId);
-    assert.deepEqual(row, expected);
 });

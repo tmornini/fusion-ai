@@ -556,6 +556,39 @@ export function responseFromStored(stored: ResponseEntity): Response {
         : new Response(null, init);
 }
 
+// Stream a stored PUT as this caller's GET: same body
+// octets, Date replaced with now, no Operation-ID.
+// ETag and Response-ID are projection headers.
+export function streamGetFromStored(
+    stored: ResponseEntity,
+    at: string,
+): Response {
+    const model = parseWire(stored.message);
+    if (model.startLine.kind !== 'response') {
+        throw new Error(
+            'stored response message has no status line: '
+            + stored.id,
+        );
+    }
+    const headers = new Headers();
+    headers.set('Date', httpDateOf(at));
+    headers.set('Response-ID', stored.id);
+    const storedBody = HttpMessage.fromModel(model).body();
+    if (storedBody.exists()) {
+        headers.set('Content-Type', 'application/json');
+    }
+    const response = storedBody.exists()
+        ? new Response(storedBody.toText(), {
+            status: HTTP_OK,
+            headers,
+        })
+        : new Response(null, {
+            status: HTTP_OK,
+            headers,
+        });
+    return attachEtag(response, stored.version);
+}
+
 // Send-time status: 201 if this request appended a pair
 // (PUT/PATCH/POST), 200 if it stored nothing, DELETE 204.
 // Stored start-line stays GET-shaped 200 / DELETE 204.
