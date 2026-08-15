@@ -22,6 +22,14 @@ import {
     SEED_NONEMPTY,
 } from './seed.ts';
 import { setServerTier } from '../api/request-auth.ts';
+import {
+    setPasswordHasher,
+    setScryptDerive,
+} from '../shared/password-hash.ts';
+import {
+    scryptHash,
+    scryptDerive,
+} from './scrypt-hash.ts';
 
 export const STATEMENT_TIMEOUT_MS = 30_000;
 export const POOL_ACQUIRE_TIMEOUT_MS = 5_000;
@@ -161,6 +169,8 @@ export async function boot(
     argv: readonly string[] = process.argv,
 ): Promise<RunningHttp> {
     setServerTier(true);
+    setPasswordHasher(scryptHash);
+    setScryptDerive(scryptDerive);
     const seedMode = readSeedMode(argv);
     const listenEnv = readListenEnv(env);
     const sql = connectPostgres(listenEnv.postgresUrl, {

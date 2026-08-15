@@ -27,7 +27,10 @@ import {
     type IdentityCredentialEntity,
     type IdentityPiiEntity,
 } from './types.ts';
-import { pickString } from './validators.ts';
+import {
+    pickString,
+    validateIdentityCredentialEntity,
+} from './validators.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
 import {
@@ -1380,9 +1383,55 @@ async function authorizePassword(
     const pair = await formAuthPair(
         seed, body, identityId, HTTP_OK, response,
     );
+    let rehashPair: MessagePair | undefined;
+    if (
+        isServerTier()
+        && secret.startsWith('$pbkdf2-sha256$')
+    ) {
+        const at = nowUtc();
+        const cid = generateCryptoSafeBase62();
+        const hashed = await hashPassword(password);
+        const credBody: Record<string, unknown> = {
+            identity_id: identityId,
+            kind: 'password',
+            status: 'set',
+            secret: hashed,
+            at,
+        };
+        rehashPair = await formWritePair({
+            method: 'PUT',
+            pathname: '/identities/' + identityId
+                + '/credentials/' + cid,
+            routePattern:
+                'identities/:id/credentials/:cid',
+            routeSegments: [
+                'identities', ':id', 'credentials', ':cid',
+            ],
+            pathSegments: [
+                'identities', identityId,
+                'credentials', cid,
+            ],
+            headerFields: [],
+            body: credBody,
+            requesterIdentityId: identityId,
+            requestAt: at,
+            organization: undefined,
+            responseStatus: HTTP_OK,
+            responseBody: {
+                id: cid,
+                ...validateIdentityCredentialEntity(
+                    credBody,
+                ),
+            },
+            operationId: pair.operationId,
+        });
+    }
     await adapter.transaction(
         ['requests', 'responses'],
         async (view) => {
+            if (rehashPair !== undefined) {
+                await appendMessagePair(view, rehashPair);
+            }
             await putMessagePair(view, pair);
         },
     );

@@ -6,7 +6,11 @@ import {
 } from '../api/db-memory.ts';
 import { GET, handleRequest } from '../api/api.ts';
 import { canonicalUriCollection } from '../api/message-pair.ts';
-import { hashPassword } from '../shared/password-hash.ts';
+import {
+    hashPassword,
+    setPasswordHasher,
+    setScryptDerive,
+} from '../shared/password-hash.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import {
     seedIdentityCredential,
@@ -18,11 +22,19 @@ import {
 import { setServerTier } from '../api/request-auth.ts';
 import { sha256Bytes } from '../shared/digest.ts';
 import { bytesToBase64Url } from '../shared/base64url.ts';
+import { deriveCredentialsFor } from
+    '../api/derive-identity-spine.ts';
+import {
+    scryptHash,
+    scryptDerive,
+} from '../server/scrypt-hash.ts';
 
 const BASE = 'http://localhost';
 
 afterEach(() => {
     setServerTier(false);
+    setPasswordHasher(null);
+    setScryptDerive(null);
 });
 
 function jsonPost(path: string, body: unknown): Request {
@@ -223,4 +235,36 @@ async () => {
     assert.equal(res.status, 201);
     const { code } = await res.json() as { code: string };
     assert.ok(code.length > 0);
+});
+
+test('server-tier PBKDF2 login appends a scrypt secret',
+async () => {
+    const db = await dbWithPasswordUser();
+    setServerTier(true);
+    setPasswordHasher(scryptHash);
+    setScryptDerive(scryptDerive);
+    const verifier = 'pkce-verifier-rehash';
+    const res = await handleRequest(db, authorize({
+        method: 'password', username: 'demo@example.com',
+        password: 's3cret', client_id: 'web',
+        code_challenge: bytesToBase64Url(
+            await sha256Bytes(verifier),
+        ),
+        code_challenge_method: 'S256',
+    }));
+    assert.equal(res.status, 201);
+    const rows = await deriveCredentialsFor(db, 'current');
+    const passwords = rows.filter(
+        row => row.kind === 'password',
+    );
+    assert.ok(passwords.length > 0);
+    const latest = passwords.reduce((a, b) => {
+        if (a.at > b.at) return a;
+        if (a.at < b.at) return b;
+        return a.id > b.id ? a : b;
+    });
+    assert.match(latest.secret, /^\$scrypt\$/);
+    assert.ok(passwords.some(
+        row => row.secret.startsWith('$pbkdf2-sha256$'),
+    ));
 });
