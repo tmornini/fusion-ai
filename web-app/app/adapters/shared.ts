@@ -51,6 +51,11 @@ import {
 import {
     recordApiRequest,
 } from '../page-request-profile.ts';
+import type { HttpFacade } from './http-facade.ts';
+
+// Either the in-page handleRequest adapter or the fetch
+// facade. RequestContext verbs are the same on both.
+type ClientFacade = ClientFacadeAdapter | HttpFacade;
 
 // Rows whose `field` equals `value` — the single-field
 // equality filter the adapters repeat. Type-safe: `field`
@@ -161,7 +166,7 @@ export interface RequestContext {
 // captured token. The recovering sibling below is the
 // sessionContext path.
 export function createRequestContext(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     token: string,
 ): RequestContext {
     return makeRequestContext(adapter, token, false);
@@ -171,18 +176,83 @@ export function createRequestContext(
 // via withAuthRecovery and retries against the live token
 // once.
 export function createRecoveringRequestContext(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     token: string,
 ): RequestContext {
     return makeRequestContext(adapter, token, true);
 }
 
+function isInPageAdapter(
+    adapter: ClientFacade,
+): adapter is ClientFacadeAdapter {
+    return typeof (adapter as ClientFacadeAdapter)
+        .simulateLatency === 'function';
+}
+
+function facadeVerbs(
+    adapter: ClientFacade,
+): HttpFacade {
+    if (!isInPageAdapter(adapter)) {
+        return adapter;
+    }
+    return {
+        GET: (resource, token, requestId) =>
+            httpGet(adapter, resource, token, requestId),
+        GETWithEtag: (resource, token, requestId) =>
+            httpGetWithEtag(
+                adapter, resource, token, requestId,
+            ),
+        PUT: (
+            resource, payload, token,
+            headerFields, requestId,
+        ) => httpPut(
+            adapter, resource, payload, token,
+            headerFields, requestId,
+        ),
+        PUTWithEtag: (
+            resource, payload, token,
+            headerFields, requestId,
+        ) => httpPutWithEtag(
+            adapter, resource, payload, token,
+            headerFields, requestId,
+        ),
+        PATCH: (
+            resource, payload, token,
+            headerFields, requestId,
+        ) => httpPatch(
+            adapter, resource, payload, token,
+            headerFields, requestId,
+        ),
+        PATCHWithEtag: (
+            resource, payload, token,
+            headerFields, requestId,
+        ) => httpPatchWithEtag(
+            adapter, resource, payload, token,
+            headerFields, requestId,
+        ),
+        DELETE: (
+            resource, token, requestId, headerFields,
+        ) => httpDelete(
+            adapter, resource, token, requestId,
+            headerFields,
+        ),
+        POST: (
+            resource, payload, token,
+            requestId, headerFields,
+        ) => httpPost(
+            adapter, resource, payload, token,
+            requestId, headerFields,
+        ),
+    };
+}
+
 function makeRequestContext(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     token: string,
     recover: boolean,
 ): RequestContext {
     const identity = principalFromToken(token);
+    const verbs = facadeVerbs(adapter);
 
     function run<T>(
         make: (tok: string) => Promise<T>,
@@ -218,8 +288,8 @@ function makeRequestContext(
         identity,
         GET: <T>(resource: string) => {
             recordApiRequest('GET', resource);
-            return run<T>(tok => httpGet<T>(
-                adapter, resource, tok, requestId,
+            return run<T>(tok => verbs.GET<T>(
+                resource, tok, requestId,
             ));
         },
         GETWithEtag: <T>(resource: string) => {
@@ -228,8 +298,8 @@ function makeRequestContext(
                 body: T;
                 etag: string | undefined;
             }>(
-                tok => httpGetWithEtag<T>(
-                    adapter, resource, tok, requestId,
+                tok => verbs.GETWithEtag<T>(
+                    resource, tok, requestId,
                 ),
             );
         },
@@ -241,8 +311,8 @@ function makeRequestContext(
         ) => {
             recordApiRequest('PUT', resource);
             return run<T>(
-                tok => httpPut<T>(
-                    adapter, resource, body, tok,
+                tok => verbs.PUT<T>(
+                    resource, body, tok,
                     writeHeaders(headerFields), requestId,
                 ));
         },
@@ -257,8 +327,8 @@ function makeRequestContext(
                 body: T;
                 etag: string | undefined;
             }>(
-                tok => httpPutWithEtag<T>(
-                    adapter, resource, body, tok,
+                tok => verbs.PUTWithEtag<T>(
+                    resource, body, tok,
                     writeHeaders(headerFields), requestId,
                 ),
             );
@@ -271,8 +341,8 @@ function makeRequestContext(
         ) => {
             recordApiRequest('PATCH', resource);
             return run<T>(
-                tok => httpPatch<T>(
-                    adapter, resource, body, tok,
+                tok => verbs.PATCH<T>(
+                    resource, body, tok,
                     writeHeaders(headerFields), requestId,
                 ));
         },
@@ -287,8 +357,8 @@ function makeRequestContext(
                 body: T;
                 etag: string | undefined;
             }>(
-                tok => httpPatchWithEtag<T>(
-                    adapter, resource, body, tok,
+                tok => verbs.PATCHWithEtag<T>(
+                    resource, body, tok,
                     writeHeaders(headerFields), requestId,
                 ),
             );
@@ -296,8 +366,8 @@ function makeRequestContext(
         DELETE: (resource: string) => {
             recordApiRequest('DELETE', resource);
             return run<void>(
-                tok => httpDelete(
-                    adapter, resource, tok, requestId,
+                tok => verbs.DELETE(
+                    resource, tok, requestId,
                     writeHeaders(),
                 ));
         },
@@ -307,8 +377,8 @@ function makeRequestContext(
         ) => {
             recordApiRequest('POST', resource);
             return run<T>(
-                tok => httpPost<T>(
-                    adapter, resource, body, tok,
+                tok => verbs.POST<T>(
+                    resource, body, tok,
                     requestId, writeHeaders(),
                 ));
         },
@@ -320,8 +390,8 @@ function makeRequestContext(
         ) => {
             recordApiRequest('POST', resource);
             return run<T>(
-                tok => httpPost<T>(
-                    adapter, resource, body, tok,
+                tok => verbs.POST<T>(
+                    resource, body, tok,
                     requestId, writeHeaders(headerFields),
                 ));
         },
@@ -363,7 +433,7 @@ export function sessionContext(): RequestContext {
 let recoveryInFlight: Promise<string | null> | null = null;
 
 function sharedRecovery(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     requestOrganization: Id | undefined,
 ): Promise<string | null> {
     recoveryInFlight ??= recoverSession(adapter, requestOrganization)
@@ -382,7 +452,7 @@ function sharedRecovery(
 // second 401 (or no refreshable credential) clears the session
 // and bounces to login — there is no third attempt.
 async function withAuthRecovery<T>(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     token: string,
     requestOrganization: Id | undefined,
     make: (tok: string) => Promise<T>,
@@ -416,7 +486,7 @@ async function withAuthRecovery<T>(
 // 401 with no refreshable credential never makes a pointless
 // refresh round-trip.
 async function recoverSession(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     requestOrganization: Id | undefined,
 ): Promise<string | null> {
     let creds: SessionCredentials | null;
@@ -471,7 +541,7 @@ async function recoverSession(
 // recovery branches: re-install a known-live token (install), and
 // refresh-then-install (refresh).
 async function installAndScope(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     flatToken: string,
     requestOrganization: Id | undefined,
 ): Promise<string | null> {
@@ -494,7 +564,7 @@ async function installAndScope(
 // that itself 401s (reuse/expiry) is terminal and must not
 // recurse. A dead refresh scrubs the session and bounces.
 async function refreshCredentials(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     refreshToken: string,
 ): Promise<SessionCredentials | null> {
     const free = createRequestContext(adapter, getSessionToken());
@@ -521,7 +591,7 @@ async function refreshCredentials(
 // (no claim) falls back to the identity default, then the first
 // reachable.
 async function rescopeToActiveOrganization(
-    adapter: ClientFacadeAdapter,
+    adapter: ClientFacade,
     flatToken: string,
     requestOrganization: Id | undefined,
 ): Promise<void> {
