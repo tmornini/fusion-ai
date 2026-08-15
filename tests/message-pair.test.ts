@@ -29,7 +29,7 @@ test('an org-owned pair stores at the org-nested prefix',
 async () => {
     const pair = await formWritePair({ ...INPUT });
     assert.equal(
-        pair.uriPrefix, '/organizations/1/ideas/',
+        pair.uriCollection, '/organizations/1/ideas/',
     );
 });
 
@@ -44,7 +44,7 @@ async () => {
         organization: '1',
     });
     assert.equal(
-        pair.uriPrefix, '/identities/ada/pii/',
+        pair.uriCollection, '/identities/ada/pii/',
     );
 });
 
@@ -77,7 +77,7 @@ async () => {
         },
     });
     assert.equal(
-        pair.uriPrefix,
+        pair.uriCollection,
         '/organizations/1/record-types/'
         + typeId + '/attributes/',
     );
@@ -101,7 +101,7 @@ async () => {
         ],
     });
     assert.equal(
-        pair.uriPrefix,
+        pair.uriCollection,
         '/organizations/1/record-types/',
     );
 });
@@ -110,7 +110,7 @@ test('a formed pair binds request and response by one id',
 async () => {
     const pair = await formWritePair({ ...INPUT });
     assert.equal(
-        pair.uriPrefix, '/organizations/1/ideas/',
+        pair.uriCollection, '/organizations/1/ideas/',
     );
     assert.equal(pair.uriId, '42');
     assert.equal(

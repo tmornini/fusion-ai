@@ -163,7 +163,7 @@ async () => {
         '/organizations/' + STARK_ORGANIZATION
         + '/work-orders/' + otherWoId + '/transition/';
     const otherReqs = await db.requests.getAllWhere(
-        'uri_prefix', otherPrefix,
+        'uri_collection', otherPrefix,
     );
     assert.ok(otherReqs.length > 0);
     for (const request of otherReqs) {
@@ -193,8 +193,8 @@ async () => {
         STARK_ORGANIZATION, SEED_RECORD_TYPE_ID,
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const byId = new Map(
         responses

@@ -57,7 +57,7 @@ import {
 import {
     appendMessagePair,
     putMessagePair,
-    canonicalUriPrefix,
+    canonicalUriCollection,
     formAuthPair,
     formTokenEventPair,
 } from './message-pair.ts';
@@ -901,9 +901,9 @@ export async function deriveAuthorizationCodeId(
 }
 
 const AUTHORIZE_PREFIX =
-    canonicalUriPrefix(undefined, '/authentication/authorize/');
+    canonicalUriCollection(undefined, '/authentication/authorize/');
 const IDENTITY_TOKENS_EVENT_PREFIX =
-    canonicalUriPrefix(undefined, '/identity-tokens/');
+    canonicalUriCollection(undefined, '/identity-tokens/');
 
 // A stored message's JSON body — the ONE local decode this file
 // needs for both the request and response side of the authorize
@@ -949,7 +949,7 @@ async function authorizeCodeIssuer(
     code: string,
 ): Promise<AuthorizeCodeIssuer | null> {
     const responses = await adapter.responses
-        .getAllWhere('uri_prefix', AUTHORIZE_PREFIX);
+        .getAllWhere('uri_collection', AUTHORIZE_PREFIX);
     const matched = responses.find(
         (response) =>
             decodedBodyOf(response.message).code === code,
@@ -998,7 +998,7 @@ export async function authorizationCodeSpent(
     const rows = await dbOrView.requests
         .getAllWhere('uri_id', derivedId);
     return rows.some(
-        (row) => row.uri_prefix === IDENTITY_TOKENS_EVENT_PREFIX,
+        (row) => row.uri_collection === IDENTITY_TOKENS_EVENT_PREFIX,
     );
 }
 

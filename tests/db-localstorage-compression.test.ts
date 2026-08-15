@@ -23,7 +23,7 @@ function installShim(): Map<string, string> {
 // Pin the localStorage write surface on requests
 // (message-plane survivor with string fields).
 const baseRequest = {
-    uri_prefix: '/organizations/1/ideas/',
+    uri_collection: '/organizations/1/ideas/',
     uri_id: '42',
     at: '2026-01-01T00:00:00.000000Z',
     requester_identity_id: 'current',
@@ -133,7 +133,7 @@ test(
         const adapter = localStorageDbAdapter();
         await adapter.postSchemaCreation();
         await adapter.requests.put('r1', {
-            uri_prefix: '/organizations/1/ideas/',
+            uri_collection: '/organizations/1/ideas/',
             uri_id: '42',
             at: '2026-01-01T00:00:00.000000Z',
             requester_identity_id: 'current',

@@ -418,7 +418,7 @@ async () => {
         await adminDb();
     await putLiveType(db, adminToken);
     // Below-gate pair under org B: resolveGlobalOwner reads
-    // uri_prefix org segment. Same instance id must not be
+    // uri_collection org segment. Same instance id must not be
     // live under org 1 (head miss → missedReadError probe).
     await seedOrganizationDocument(db, 'B', 'Beta');
     await appendInstancePair(

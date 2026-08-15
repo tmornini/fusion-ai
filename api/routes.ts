@@ -109,7 +109,7 @@ import {
 } from './validators.ts';
 import {
     appendMessagePair,
-    canonicalUriPrefix,
+    canonicalUriCollection,
     formWritePair,
     headPairIdAt,
     pairResponseBody,
@@ -1106,8 +1106,8 @@ export async function loadAttributeSchemaById(
         organization, recordTypeId,
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const documents = deriveDocumentsAt(
         requests, responses, prefix,
@@ -1486,7 +1486,7 @@ export function flowCreateDocumentBody(
 // The three pairs a live POST /flows forms (Task 5): the gate's
 // own operation pair (204, at the flows/:id address per Task 1's
 // createdEntityUriId override — POST 'flows' and PUT 'flows/:id'
-// collapse onto the SAME (uriPrefix, uriId), see derive-
+// collapse onto the SAME (uriCollection, uriId), see derive-
 // documents.ts's DOCUMENT_METHODS filter for why the two never
 // collide as documents), plus the document and join pairs the
 // route pre-forms below. All three share ONE requestAt (the
@@ -1571,7 +1571,7 @@ export async function postFlowDocumentOp(
             // revivals for deriveFlowGraphStates (SIDECAR-KEEP).
             if (pair !== undefined) {
                 const latest = await headPairIdAt(
-                    view, pair.uriPrefix, pair.uriId,
+                    view, pair.uriCollection, pair.uriId,
                 );
                 if (
                     latchedId !== undefined
@@ -1680,7 +1680,7 @@ export async function postFlowUndoOp(
         async (view) => {
             const latest = await headPairIdAt(
                 view,
-                documentPair.uriPrefix,
+                documentPair.uriCollection,
                 documentPair.uriId,
             );
             if (latest !== current.id) {
@@ -1699,7 +1699,7 @@ export async function postFlowUndoOp(
 // The three pairs a live POST /objectives forms (Task 3): the
 // gate's own operation pair (204, at the objectives/:id address
 // per the create-body-id-field override — POST 'objectives' and
-// PUT 'objectives/:id' collapse onto the SAME (uriPrefix,
+// PUT 'objectives/:id' collapse onto the SAME (uriCollection,
 // uriId), the flows/records precedent), the synthesized document
 // pair (objectives/:id), and the synthesized revision pair
 // (objectives/:id/revisions/:rid) the route pre-forms below. All
@@ -1843,7 +1843,7 @@ export async function postObjectiveDocumentOp(
 // OPERATION pair's own address — the flows create-address-
 // collapse precedent (a bare create-POST's createBodyIdField
 // override and an edit-POST's path-derived uriId both land on
-// the SAME (uriPrefix, uriId) as a live PUT there would) — so it
+// the SAME (uriCollection, uriId) as a live PUT there would) — so it
 // becomes THAT address's new head, appended after the operation
 // pair.
 //
@@ -2165,7 +2165,7 @@ function workOrderCreateDocumentBody(
 // the gate's own operation pair (204, at the work-orders/:id
 // address per the registry's createBodyIdField — POST
 // 'work-orders' and PUT 'work-orders/:id' collapse onto the
-// SAME (uriPrefix, uriId), exactly as flows/:id did for its
+// SAME (uriCollection, uriId), exactly as flows/:id did for its
 // own create), plus the document and join pairs the route
 // pre-forms below. All three share ONE requestAt (the
 // create's own origination) yet strictly-later RESPONSE `at`
@@ -2729,7 +2729,7 @@ export async function postWorkOrderTransitionOp(
             // id, not the 64-hex If-Match.
             const latest = await headPairIdAt(
                 view,
-                revisionPair.uriPrefix,
+                revisionPair.uriCollection,
                 revisionPair.uriId,
             );
             if (latest !== latchedPairId) {
@@ -2923,7 +2923,7 @@ export async function postFlowRecordDocumentOp(
 
 // Flow tag document write — the codebase's FIRST pair-plane-ONLY
 // write (Phase 14 Task 9): no table, no row, no dual-write. The
-// pair alone carries everything (uriPrefix/uriId encode the
+// pair alone carries everything (uriCollection/uriId encode the
 // address; the stored request's method distinguishes a PUT tag
 // from a DELETE tombstone), so this op needs neither `id`
 // nor `body` — the
@@ -3129,7 +3129,7 @@ export async function postIdentityPiiDocumentOp(
         ['requests', 'responses'],
         async (view) => {
             if (pair !== undefined) {
-                await replacePiiSlot(view, pair.uriPrefix, pair);
+                await replacePiiSlot(view, pair.uriCollection, pair);
             }
             return entity;
         },
@@ -3863,15 +3863,15 @@ async function inFlightPlacementBlockersFor(
     organization: Id,
     instanceId: Id,
 ): Promise<string[]> {
-    const workOrdersPrefix = canonicalUriPrefix(
+    const workOrdersPrefix = canonicalUriCollection(
         organization, '/work-orders/',
     );
     const [woRequests, woResponses] = await Promise.all([
         view.requests.getAllWhere(
-            'uri_prefix', workOrdersPrefix,
+            'uri_collection', workOrdersPrefix,
         ),
         view.responses.getAllWhere(
-            'uri_prefix', workOrdersPrefix,
+            'uri_collection', workOrdersPrefix,
         ),
     ]);
     const woHeads = deriveDocumentsAt(
@@ -3918,7 +3918,7 @@ async function instanceAddressSpent(
     instanceId: Id,
 ): Promise<boolean> {
     const responses = await db.responses.getAllWhere(
-        'uri_prefix', prefix,
+        'uri_collection', prefix,
     );
     return responses.some(
         (response) => response.uri_id === instanceId,
@@ -4040,7 +4040,7 @@ export async function postInstancePatchOp(
             // id, not the 64-hex If-Match.
             const latest = await headPairIdAt(
                 view,
-                revisionPair.uriPrefix,
+                revisionPair.uriCollection,
                 revisionPair.uriId,
             );
             if (latest !== latchedPairId) {
@@ -4477,7 +4477,7 @@ export const routes: Route[] = [
                 async (view) => {
                     if (pair !== undefined) {
                         await replacePiiSlot(
-                            view, pair.uriPrefix, pair,
+                            view, pair.uriCollection, pair,
                         );
                     }
                 },
@@ -5155,7 +5155,7 @@ export const routes: Route[] = [
                 return undefined;
             }
             const resolution = await resolveFlowUndoTarget(
-                db, organization, id, pair.uriPrefix,
+                db, organization, id, pair.uriCollection,
             );
             if (resolution === undefined) {
                 throw await missedReadError(
@@ -5415,7 +5415,7 @@ export const routes: Route[] = [
     // lifecycle + inline field_values fold, (at, id) DESC.
     // Miss posture lives inside workOrderHistoryFor (empty →
     // missedReadError). No api.ts pre-dispatch guard — the
-    // derive reads only this org's uri_prefix addresses.
+    // derive reads only this org's uri_collection addresses.
     // Member-tier GET via matchesOnSegmentBoundary on
     // '/work-orders'.
     route('work-orders/:id/history', {
@@ -5567,10 +5567,10 @@ export const routes: Route[] = [
             const [requests, responses] =
                 await Promise.all([
                     db.requests.getAllWhere(
-                        'uri_prefix', prefix,
+                        'uri_collection', prefix,
                     ),
                     db.responses.getAllWhere(
-                        'uri_prefix', prefix,
+                        'uri_collection', prefix,
                     ),
                 ]);
             const documents = deriveDocumentsAt(
@@ -5601,10 +5601,10 @@ export const routes: Route[] = [
             const [requests, responses] =
                 await Promise.all([
                     db.requests.getAllWhere(
-                        'uri_prefix', prefix,
+                        'uri_collection', prefix,
                     ),
                     db.responses.getAllWhere(
-                        'uri_prefix', prefix,
+                        'uri_collection', prefix,
                     ),
                 ]);
             const document = deriveDocumentsAt(
@@ -5629,10 +5629,10 @@ export const routes: Route[] = [
             const [requests, responses] =
                 await Promise.all([
                     db.requests.getAllWhere(
-                        'uri_prefix', prefix,
+                        'uri_collection', prefix,
                     ),
                     db.responses.getAllWhere(
-                        'uri_prefix', prefix,
+                        'uri_collection', prefix,
                     ),
                 ]);
             const hasHead = deriveDocumentsAt(
@@ -5667,10 +5667,10 @@ export const routes: Route[] = [
             const [requests, responses] =
                 await Promise.all([
                     db.requests.getAllWhere(
-                        'uri_prefix', prefix,
+                        'uri_collection', prefix,
                     ),
                     db.responses.getAllWhere(
-                        'uri_prefix', prefix,
+                        'uri_collection', prefix,
                     ),
                 ]);
             if (!deriveDocumentsAt(
@@ -5873,7 +5873,7 @@ export const routes: Route[] = [
                     const responses =
                         await view.responses
                             .getAllWhere(
-                                'uri_prefix', prefix,
+                                'uri_collection', prefix,
                             );
                     const spent = responses.some(
                         (r) => r.uri_id === instanceId,

@@ -1022,7 +1022,7 @@ export interface ProjectObjectiveActualScoreEntity {
 // and index machinery, never a second truth.
 export interface RequestEntity {
     id: Id;
-    uri_prefix: string;
+    uri_collection: string;
     uri_id: string;
     at: string;
     requester_identity_id: Id;
@@ -1033,7 +1033,7 @@ export interface RequestEntity {
 // The paired response. id equals the request's id.
 export interface ResponseEntity {
     id: Id;
-    uri_prefix: string;
+    uri_collection: string;
     uri_id: string;
     at: string;
     status: number;

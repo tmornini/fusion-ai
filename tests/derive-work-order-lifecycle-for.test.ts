@@ -25,7 +25,7 @@ import {
 // to api/derive-states.ts) over INDEXED reads scoped to ONE
 // known (organization, workOrderId) pair — uri_id for the
 // create/document pairs (they share ONE uriId at the work-orders
-// collection address), uri_prefix for the claim/transition
+// collection address), uri_collection for the claim/transition
 // sub-resource addresses, and the organization's own states/:id
 // prefix (filtered locally to this entity) for gate 5a's rows —
 // rather than the whole-org scan deriveWorkOrderLifecycle needs

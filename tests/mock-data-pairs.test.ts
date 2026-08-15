@@ -188,7 +188,7 @@ async () => {
         r => r.uri_id === firstIdea.id,
     );
     assert.ok(row, 'no request row for the seeded idea');
-    assert.equal(row!.uri_prefix, '/organizations/1/ideas/');
+    assert.equal(row!.uri_collection, '/organizations/1/ideas/');
 });
 
 test('a seeded organizations pair sits at the global'
@@ -200,7 +200,7 @@ async () => {
     const db = await sharedMockDb();
     const requests = await db.requests.getAll();
     const row = requests.find(
-        r => r.uri_prefix === '/organizations/'
+        r => r.uri_collection === '/organizations/'
             && r.uri_id === STARK_ORGANIZATION,
     );
     assert.ok(row, 'no request row for the seeded organization');
@@ -228,7 +228,7 @@ test('a seeded human-member create pair sits at the global'
     const requests = await db.requests.getAll();
     const row = requests.find(r => r.uri_id === 'current');
     assert.ok(row, 'no request row for the current member');
-    assert.equal(row!.uri_prefix, '/human-members/');
+    assert.equal(row!.uri_collection, '/human-members/');
 });
 
 test('a seeded human member\'s PII intake pair sits at its own'
@@ -238,7 +238,7 @@ test('a seeded human member\'s PII intake pair sits at its own'
     const firstMember = buildMembers()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
-        r => r.uri_prefix
+        r => r.uri_collection
             === '/identities/' + firstMember.id + '/pii/',
     );
     assert.ok(row, 'no request row for the seeded PII intake');
@@ -259,7 +259,7 @@ test('a seeded human member\'s identities-document pair sits at'
     const firstMember = buildMembers()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
-        r => r.uri_prefix === '/identities/'
+        r => r.uri_collection === '/identities/'
             && r.uri_id === firstMember.id,
     );
     assert.ok(
@@ -279,7 +279,7 @@ test('a seeded flow create pair sits at its org-nested'
         r => r.uri_id === 'h5mErVBQhwdMKwi1co30jB',
     );
     assert.ok(row, 'no request row for the seeded flow');
-    assert.equal(row!.uri_prefix, '/organizations/1/flows/');
+    assert.equal(row!.uri_collection, '/organizations/1/flows/');
 });
 
 test('a seeded ai-member create pair sits at the global'
@@ -301,7 +301,7 @@ test('a seeded ai-member create pair sits at the global'
             && responseById.get(r.id)?.status === 204,
     );
     assert.ok(row, 'no request row for the seeded ai member');
-    assert.equal(row!.uri_prefix, '/ai-members/');
+    assert.equal(row!.uri_collection, '/ai-members/');
 });
 
 test('a seeded ai-member\'s member-document pair sits at the'
@@ -312,7 +312,7 @@ test('a seeded ai-member\'s member-document pair sits at the'
     const requests = await db.requests.getAll();
     const memberRow = requests.find(
         r => r.uri_id === firstAiMember.id
-            && r.uri_prefix === '/members/',
+            && r.uri_collection === '/members/',
     );
     assert.ok(
         memberRow,
@@ -345,7 +345,7 @@ test('a seeded ai-member\'s detail-document pair sits at its'
     // its OWN 200 response, the operation pair's being 204.
     const detailRow = requests.find(
         r => r.uri_id === firstAiMember.id
-            && r.uri_prefix === '/ai-members/'
+            && r.uri_collection === '/ai-members/'
             && responseById.get(r.id)?.status === 200,
     );
     assert.ok(
@@ -368,7 +368,7 @@ test('a seeded system member\'s member-document pair sits at'
     const requests = await db.requests.getAll();
     const memberRow = requests.find(
         r => r.uri_id === SYSTEM_MEMBER_ID
-            && r.uri_prefix === '/members/',
+            && r.uri_collection === '/members/',
     );
     assert.ok(
         memberRow,
@@ -397,7 +397,7 @@ test('a seeded membership document pair sits at its org-nested'
     );
     assert.ok(row, 'no request row for the seeded membership');
     assert.equal(
-        row!.uri_prefix,
+        row!.uri_collection,
         `/organizations/${STARK_ORGANIZATION}/memberships/`,
     );
     const embedded = pairJsonOf(row!.message) as {
@@ -416,7 +416,7 @@ async () => {
     const firstMember = buildMembers()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
-        r => r.uri_prefix
+        r => r.uri_collection
             === '/identities/' + firstMember.id + '/default-org/',
     );
     assert.ok(row, 'no request row for the seeded default-org event');
@@ -440,7 +440,7 @@ test('a seeded record create pair sits at its org-nested'
     assert.ok(row, 'no request row for the seeded record');
     // Task 4: wire family `records` stores at record-types.
     assert.equal(
-        row!.uri_prefix,
+        row!.uri_collection,
         '/organizations/1/record-types/',
     );
 });
@@ -459,7 +459,7 @@ test('a seeded record\'s document pair sits at its'
     // operation pair's being 204.
     const documentRow = requests.find(
         r => r.uri_id === customerProfileRecordId
-            && r.uri_prefix
+            && r.uri_collection
                 === '/organizations/1/record-types/'
             && responseById.get(r.id)?.status === 200,
     );
@@ -496,7 +496,7 @@ test('a seeded record attribute\'s document pair sits at'
         row, 'no request row for the seeded attribute',
     );
     assert.equal(
-        row!.uri_prefix,
+        row!.uri_collection,
         '/organizations/1/record-types/'
         + 'rec01CustProfRec0rdAB1/attributes/',
     );
@@ -528,7 +528,7 @@ test('a seeded objective create pair sits at its org-nested'
     assert.equal(starkRows.length, 2);
     for (const row of starkRows) {
         assert.equal(
-            row.uri_prefix,
+            row.uri_collection,
             `/organizations/${STARK_ORGANIZATION}/objectives/`,
         );
     }
@@ -538,7 +538,7 @@ test('a seeded objective create pair sits at its org-nested'
     assert.equal(org2Rows.length, 2);
     for (const row of org2Rows) {
         assert.equal(
-            row.uri_prefix,
+            row.uri_collection,
             `/organizations/${ORGANIZATION_TWO}/objectives/`,
         );
     }
@@ -559,7 +559,7 @@ test('a seeded objective\'s document pair sits at its'
     // response, the operation pair's being 204.
     const documentRow = requests.find(
         r => r.uri_id === starkSeed.id
-            && r.uri_prefix
+            && r.uri_collection
                 === `/organizations/${STARK_ORGANIZATION}`
                     + '/objectives/'
             && responseById.get(r.id)?.status === 200,
@@ -590,7 +590,7 @@ test('a seeded objective\'s revision pair sits at its own'
     const requests = await db.requests.getAll();
     const revisionRow = requests.find(
         r => r.uri_id === revisionId
-            && r.uri_prefix
+            && r.uri_collection
                 === `/organizations/${STARK_ORGANIZATION}`
                     + `/objectives/${starkSeed.id}/revisions/`,
     );
@@ -615,7 +615,7 @@ test('a seeded work-order document pair sits at its org-nested'
         r => r.uri_id === firstWorkOrder.id,
     );
     assert.ok(row, 'no request row for the seeded work order');
-    assert.equal(row!.uri_prefix, '/organizations/1/work-orders/');
+    assert.equal(row!.uri_collection, '/organizations/1/work-orders/');
     // The id-strip covenant (verification finding, lens 4): a
     // spurious `id` key riding the recorded body would drift
     // from wire fidelity with no address-only check catching
@@ -638,7 +638,7 @@ async () => {
     const row = requests.find(r => r.uri_id === firstJoin.id);
     assert.ok(row, 'no request row for the seeded join');
     assert.equal(
-        row!.uri_prefix,
+        row!.uri_collection,
         `/organizations/${STARK_ORGANIZATION}/flows/`
             + `${firstJoin.flow_id}/work-orders/`,
     );
@@ -659,7 +659,7 @@ test('a seeded flow-record join pair sits at its org-nested'
     const row = requests.find(r => r.uri_id === firstJoin.id);
     assert.ok(row, 'no request row for the seeded join');
     assert.equal(
-        row!.uri_prefix,
+        row!.uri_collection,
         `/organizations/${STARK_ORGANIZATION}/flows/`
             + `${firstJoin.flow_id}/records/`,
     );
@@ -679,10 +679,10 @@ test('a seeded flow-record join pair sits at its org-nested'
 // direct writes mock-data.ts already made).
 
 function transitionRequestForEvent(
-    requests: readonly { message: string; uri_prefix: string;
+    requests: readonly { message: string; uri_collection: string;
         requester_identity_id: string }[],
     eventId: string,
-): { message: string; uri_prefix: string;
+): { message: string; uri_collection: string;
     requester_identity_id: string } | undefined {
     return requests.find((r) => {
         try {
@@ -708,7 +708,7 @@ test('a seeded work-order trace event\'s pair sits at its'
     );
     assert.ok(row, 'no request row for the seeded transition');
     assert.equal(
-        row!.uri_prefix,
+        row!.uri_collection,
         `/organizations/${STARK_ORGANIZATION}/work-orders/`
             + `${firstTrace.entity_id}/transition/`,
     );
@@ -806,7 +806,7 @@ test('a seeded state_field_value folds into its parent'
     });
     assert.ok(row, 'no transition carries the seeded field value');
     assert.match(
-        row!.uri_prefix,
+        row!.uri_collection,
         new RegExp(
             `^/organizations/${STARK_ORGANIZATION}`
                 + '/work-orders/[^/]+/transition/$',
@@ -844,7 +844,7 @@ async () => {
         `seed-member-${SYSTEM_MEMBER_ID}-active`;
     const requests = await db.requests.getAll();
     const memberRow = requests.find(
-        r => r.uri_prefix === '/members/'
+        r => r.uri_collection === '/members/'
             && r.uri_id === SYSTEM_MEMBER_ID,
     );
     assert.ok(memberRow, 'no system members/:id pair');
@@ -876,7 +876,7 @@ test('a seeded baseline-score pair sits at its org-nested'
     const row = requests.find(r => r.uri_id === firstBaseline.id);
     assert.ok(row, 'no request row for the seeded baseline score');
     assert.equal(
-        row!.uri_prefix,
+        row!.uri_collection,
         `/organizations/${STARK_ORGANIZATION}/projects/`
             + `${firstBaseline.fields.project_id}`
             + '/objective-baseline-scores/',
@@ -898,7 +898,7 @@ test('a seeded actual-score pair sits at its org-nested'
     const row = requests.find(r => r.uri_id === firstActual.id);
     assert.ok(row, 'no request row for the seeded actual score');
     assert.equal(
-        row!.uri_prefix,
+        row!.uri_collection,
         `/organizations/${STARK_ORGANIZATION}/projects/`
             + `${firstActual.fields.project_id}`
             + '/objective-actual-scores/',
@@ -933,7 +933,7 @@ async () => {
             `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`;
         const revisionRow = requests.find(
             r => r.uri_id === revisionId
-                && r.uri_prefix.includes('/revisions/'),
+                && r.uri_collection.includes('/revisions/'),
         );
         assert.ok(
             revisionRow,
@@ -992,11 +992,11 @@ test('seeded memberships carry type and no role-grant'
     const requests = await db.requests.getAll();
     assert.equal(
         requests.filter(r =>
-            r.uri_prefix.includes('/role-grants/')).length,
+            r.uri_collection.includes('/role-grants/')).length,
         0,
     );
     const membershipReqs = requests.filter(r =>
-        r.uri_prefix.includes('/memberships/'));
+        r.uri_collection.includes('/memberships/'));
     assert.ok(membershipReqs.length > 0);
     for (const row of membershipReqs) {
         const embedded = pairJsonOf(row.message) as {
@@ -1059,21 +1059,21 @@ test('a bootstrap seed populates exactly twelve balanced,'
     assert.equal(requests.length, 12);
     assert.equal(responses.length, 12);
     const atEntity = requests.filter(
-        r => r.uri_prefix === '/human-members/'
+        r => r.uri_collection === '/human-members/'
             && r.uri_id === 'current',
     );
     assert.equal(atEntity.length, 2);
     const atMember = requests.filter(
-        r => r.uri_prefix === '/members/' && r.uri_id === 'current',
+        r => r.uri_collection === '/members/' && r.uri_id === 'current',
     );
     assert.equal(atMember.length, 1);
     const atIdentity = requests.filter(
-        r => r.uri_prefix === '/identities/'
+        r => r.uri_collection === '/identities/'
             && r.uri_id === 'current',
     );
     assert.equal(atIdentity.length, 1);
     const atSystemMember = requests.filter(
-        r => r.uri_prefix === '/members/'
+        r => r.uri_collection === '/members/'
             && r.uri_id === SYSTEM_MEMBER_ID,
     );
     assert.equal(atSystemMember.length, 1);
@@ -1085,22 +1085,22 @@ test('a bootstrap seed populates exactly twelve balanced,'
         'bootstrap-system-active',
     );
     const atMembership = requests.filter(
-        r => r.uri_prefix
+        r => r.uri_collection
             === `/organizations/${STARK_ORGANIZATION}/memberships/`
             && r.uri_id === 'bootstrap-membership-current',
     );
     assert.equal(atMembership.length, 1);
     const atPii = requests.filter(
-        r => r.uri_prefix === '/identities/current/pii/',
+        r => r.uri_collection === '/identities/current/pii/',
     );
     assert.equal(atPii.length, 1);
     const atDefaultOrganization = requests.filter(
-        r => r.uri_prefix === '/identities/current/default-org/'
+        r => r.uri_collection === '/identities/current/default-org/'
             && r.uri_id === 'bootstrap-default-org-current',
     );
     assert.equal(atDefaultOrganization.length, 1);
     const atOrganization = requests.filter(
-        r => r.uri_prefix === '/organizations/'
+        r => r.uri_collection === '/organizations/'
             && r.uri_id === STARK_ORGANIZATION,
     );
     assert.equal(atOrganization.length, 1);

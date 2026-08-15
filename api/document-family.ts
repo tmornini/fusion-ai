@@ -2,7 +2,7 @@ import type { DbAdapter } from './db.ts';
 import { EntityNotFoundError } from './db.ts';
 import type { Id, StateEntity } from './types.ts';
 import type { MessagePair } from './message-pair.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import { familyRegistration } from './family-registry.ts';
 import { missedReadError } from './derive-states.ts';
 import {
@@ -209,12 +209,12 @@ async function derivedDocumentEntity(
     organization: Id,
     id: Id,
 ): Promise<unknown> {
-    const prefix = canonicalUriPrefix(
+    const prefix = canonicalUriCollection(
         organization, '/' + wiring.family + '/',
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const document = deriveDocumentsAt(
         requests, responses, prefix,
@@ -259,9 +259,9 @@ export function documentGetHandler(
 // "the advertisable Response-ID" (derive-documents.ts) — over
 // the SAME (requests, responses) fetch and the SAME reduction
 // (deriveDocumentsAt) derivedDocumentEntity runs to build the
-// entity. Mirrors headPairIdAt's own (db, uriPrefix, uriId)
+// entity. Mirrors headPairIdAt's own (db, uriCollection, uriId)
 // shape (message-pair.ts) so a caller already holding a
-// family-prefixed uriPrefix swaps the source with no other
+// family-prefixed uriCollection swaps the source with no other
 // change, but computes the DOCUMENT head (2xx PUT/DELETE pairs
 // only) rather than headPairIdAt's LOCK head (any method, any
 // status) — a locked family's GET Response-ID attach (api.ts)
@@ -271,14 +271,14 @@ export function documentGetHandler(
 // computing the concept, not two independently-maintained ones.
 export async function documentHeadPairId(
     db: DbAdapter,
-    uriPrefix: string,
+    uriCollection: string,
     id: Id,
 ): Promise<string | undefined> {
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', uriPrefix),
-        db.responses.getAllWhere('uri_prefix', uriPrefix),
+        db.requests.getAllWhere('uri_collection', uriCollection),
+        db.responses.getAllWhere('uri_collection', uriCollection),
     ]);
-    return deriveDocumentsAt(requests, responses, uriPrefix)
+    return deriveDocumentsAt(requests, responses, uriCollection)
         .get(id)?.pairId;
 }
 
@@ -350,12 +350,12 @@ export function documentCollectionGetHandler(
         const organizationId = requireOrganization(
             organization,
         );
-        const prefix = canonicalUriPrefix(
+        const prefix = canonicalUriCollection(
             organizationId, '/' + wiring.family + '/',
         );
         const [requests, responses] = await Promise.all([
-            db.requests.getAllWhere('uri_prefix', prefix),
-            db.responses.getAllWhere('uri_prefix', prefix),
+            db.requests.getAllWhere('uri_collection', prefix),
+            db.responses.getAllWhere('uri_collection', prefix),
         ]);
         const documents = deriveDocumentsAt(
             requests, responses, prefix,
@@ -421,13 +421,13 @@ export function documentCollectionRoute(
 
 // The registration-first consult (Phase 8 Task 3, the first
 // global-plane families: members/ai-members/human-members,
-// organizationNested:false) — mirrors canonicalUriPrefix's own
+// organizationNested:false) — mirrors canonicalUriCollection's own
 // registration-first pattern (message-pair.ts): a family's
 // registration decides whether organization_id belongs on the
 // wire response AT ALL, never a blanket stamp. One clause
 // overstates the mirror: their UNREGISTERED-family fallbacks
 // point opposite ways — this consult defaults to STAMPING
-// organization_id, while canonicalUriPrefix defaults per its
+// organization_id, while canonicalUriCollection defaults per its
 // own tier rule instead (dead code today — every wired family
 // is registered). For the eight org-nested families registered
 // before this task, the stamp below was a no-op — their

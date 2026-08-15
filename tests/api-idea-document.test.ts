@@ -182,7 +182,7 @@ async () => {
     assert.ok(firstEtag !== null && firstEtag !== '');
     const prefix = '/organizations/1/ideas/';
     const before = (await db.requests.getAllWhere(
-        'uri_prefix', prefix,
+        'uri_collection', prefix,
     )).filter((row) => row.uri_id === 'same-1');
     assert.equal(before.length, 1);
     // Different hoisted header → different request hash,
@@ -202,7 +202,7 @@ async () => {
     assert.equal(second.status, 200);
     assert.equal(second.headers.get('ETag'), firstEtag);
     const after = (await db.requests.getAllWhere(
-        'uri_prefix', prefix,
+        'uri_collection', prefix,
     )).filter((row) => row.uri_id === 'same-1');
     assert.equal(after.length, 1);
 });

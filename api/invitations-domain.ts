@@ -478,7 +478,7 @@ async function grantInvitation(
         return responseFromStored(replay);
     }
     // The invitation DOCUMENT pair (Phase 8 Task 6): PUT-shaped,
-    // at the SAME (uriPrefix, uriId) as the operation pair above
+    // at the SAME (uriCollection, uriId) as the operation pair above
     // — the entity minus id, so the wire NEVER carries the
     // invitee's email (the invitee is already resolved to
     // identity_id above; the document stores only the
@@ -628,7 +628,7 @@ export async function pendingInvitationFor(
 }
 
 // Form an operation-addressed pair for an invitation sub-route
-// (acceptance/decline/revocation): uriPrefix
+// (acceptance/decline/revocation): uriCollection
 // '/invitations/<id>/<op>/', uriId '' — no head-read, so it
 // never chains. A repeat op (a no-op re-accept/re-decline/
 // re-revoke) still gets its OWN genesis pair at that same

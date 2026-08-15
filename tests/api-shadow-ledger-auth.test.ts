@@ -140,12 +140,12 @@ async () => {
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     const authFlowRows = [...requests, ...responses].filter(
-        row => row.uri_prefix === '/authentication/authorize/'
-            || row.uri_prefix === '/authentication/token/',
+        row => row.uri_collection === '/authentication/authorize/'
+            || row.uri_collection === '/authentication/token/',
     );
     assert.equal(authFlowRows.length, 4);
     const authorizeRequest = requests.find(
-        r => r.uri_prefix === '/authentication/authorize/');
+        r => r.uri_collection === '/authentication/authorize/');
     assert.ok(authorizeRequest);
     assert.ok(
         authorizeRequest!.message.includes(PASSWORD),
@@ -156,21 +156,21 @@ async () => {
         'authorize request missing live email',
     );
     const authorizeResponse = responses.find(
-        r => r.uri_prefix === '/authentication/authorize/');
+        r => r.uri_collection === '/authentication/authorize/');
     assert.ok(authorizeResponse);
     assert.ok(
         authorizeResponse!.message.includes(code),
         'authorize response missing live code',
     );
     const tokenRequest = requests.find(
-        r => r.uri_prefix === '/authentication/token/');
+        r => r.uri_collection === '/authentication/token/');
     assert.ok(tokenRequest);
     assert.ok(
         tokenRequest!.message.includes(code),
         'token request missing live code',
     );
     const tokenResponse = responses.find(
-        r => r.uri_prefix === '/authentication/token/');
+        r => r.uri_collection === '/authentication/token/');
     assert.ok(tokenResponse);
     assert.ok(
         tokenResponse!.message.includes(access_token),
@@ -200,15 +200,15 @@ test('a full login flow keeps requests/responses balanced,'
     // instead, so it alone carries a non-empty uri_id in this
     // slice. Indices 4–5 are authorize + token.
     const authHops = requests.slice(4).filter(
-        row => row.uri_prefix === '/authentication/authorize/'
-            || row.uri_prefix === '/authentication/token/',
+        row => row.uri_collection === '/authentication/authorize/'
+            || row.uri_collection === '/authentication/token/',
     );
     assert.equal(authHops.length, 2);
     for (const row of authHops) {
         assert.equal(row.uri_id, '');
     }
     const tokenEventRequest = requests.slice(4).find(
-        row => row.uri_prefix === '/identity-tokens/',
+        row => row.uri_collection === '/identity-tokens/',
     );
     assert.ok(tokenEventRequest);
     assert.notEqual(tokenEventRequest!.uri_id, '');
@@ -216,18 +216,18 @@ test('a full login flow keeps requests/responses balanced,'
     // pins: the two AUTH hops stay operation-addressed, the token
     // grant's row event response carries its OWN row's (non-
     // empty) uri_id — a request/response pair shares one `id`
-    // AND one (uri_prefix, uri_id) address (appendMessagePair),
+    // AND one (uri_collection, uri_id) address (appendMessagePair),
     // so this is the identical classification, re-applied.
     const responseAuthHops = responses.slice(4).filter(
-        row => row.uri_prefix === '/authentication/authorize/'
-            || row.uri_prefix === '/authentication/token/',
+        row => row.uri_collection === '/authentication/authorize/'
+            || row.uri_collection === '/authentication/token/',
     );
     assert.equal(responseAuthHops.length, 2);
     for (const row of responseAuthHops) {
         assert.equal(row.uri_id, '');
     }
     const tokenEventResponse = responses.slice(4).find(
-        row => row.uri_prefix === '/identity-tokens/',
+        row => row.uri_collection === '/identity-tokens/',
     );
     assert.ok(tokenEventResponse);
     assert.notEqual(tokenEventResponse!.uri_id, '');
@@ -346,7 +346,7 @@ async () => {
     // the retired root, the issued successor — Phase 13 Task 5).
     assert.equal(requests.length, 10);
     const refreshRequest = requests.find(
-        r => r.uri_prefix === '/authentication/token/'
+        r => r.uri_collection === '/authentication/token/'
             && r.message.includes(first.refresh_token),
     );
     assert.ok(refreshRequest);
@@ -387,7 +387,7 @@ test('a token-exchange grant stores its own pair with live'
     // pair.
     assert.equal(requests.length, 6);
     const exchangeRequest = requests.find(
-        r => r.uri_prefix === '/authentication/token/'
+        r => r.uri_collection === '/authentication/token/'
             && r.message.includes(subjectToken),
     );
     assert.ok(exchangeRequest);
@@ -486,7 +486,7 @@ test('a client_credentials grant stores its own pair with live'
     // operation pair.
     assert.equal(requests.length, 6);
     const credRequest = requests.find(
-        r => r.uri_prefix === '/authentication/token/'
+        r => r.uri_collection === '/authentication/token/'
             && r.message.includes(assertion),
     );
     assert.ok(credRequest);
@@ -550,7 +550,7 @@ test('an Authorization header sent alongside the token grant is'
     assert.equal(res.status, 200);
     const requests = await db.requests.getAll();
     const row = requests.find(
-        r => r.uri_prefix === '/authentication/token/');
+        r => r.uri_collection === '/authentication/token/');
     assert.ok(row);
     assert.ok(
         row!.message.includes('some-stale-caller-token'));
@@ -570,7 +570,7 @@ test('a reused (already-rotated-away) refresh token grant is a'
     }));
     const before = (await db.requests.getAll()).length;
     const opPairsBefore = (await db.requests.getAll()).filter(
-        r => r.uri_prefix === '/authentication/token/'
+        r => r.uri_collection === '/authentication/token/'
             && r.uri_id === '',
     ).length;
     // Same reasoning as the double-spent-code test above: a
@@ -587,7 +587,7 @@ test('a reused (already-rotated-away) refresh token grant is a'
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
     const opPairsAfter = requests.filter(
-        r => r.uri_prefix === '/authentication/token/'
+        r => r.uri_collection === '/authentication/token/'
             && r.uri_id === '',
     ).length;
     assert.equal(

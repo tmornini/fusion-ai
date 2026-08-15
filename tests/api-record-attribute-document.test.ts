@@ -284,8 +284,8 @@ test('a DELETE-head derives absent on the nested attributes'
     const prefix = '/organizations/1/record-types/'
         + typeId + '/attributes/';
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const head = deriveDocumentsAt(
         requests, responses, prefix,

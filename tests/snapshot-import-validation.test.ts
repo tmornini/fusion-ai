@@ -179,7 +179,7 @@ test(
             requests: [
                 {
                     id: 'u1',
-                    uri_prefix:
+                    uri_collection:
                         '/organizations/1/ideas/',
                     uri_id: '42',
                     at: '2026-01-01T00:00:00.000000Z',
@@ -206,7 +206,7 @@ test(
         const json = JSON.stringify({
             responses: [{
                 id: 'o1',
-                uri_prefix: '/organizations/1/ideas/',
+                uri_collection: '/organizations/1/ideas/',
                 uri_id: '42',
                 at: '2026-01-01T00:00:00.000000Z',
                 status: 200,
@@ -233,7 +233,7 @@ test(
         const json = JSON.stringify({
             requests: [{
                 id: 'o1',
-                uri_prefix: '/organizations/1/ideas/',
+                uri_collection: '/organizations/1/ideas/',
                 uri_id: '42',
                 at: '2026-01-01T00:00:00.000000Z',
                 requester_identity_id: 'current',
@@ -259,7 +259,7 @@ test(
             requests: [
                 {
                     id: 'u1',
-                    uri_prefix:
+                    uri_collection:
                         '/organizations/1/ideas/',
                     uri_id: '42',
                     at: '2026-01-01T00:00:00.000000Z',
@@ -330,7 +330,7 @@ test(
             localStorageDbAdapter();
         await adapter.postSchemaCreation();
         await adapter.requests.put('u1', {
-            uri_prefix: '/organizations/1/ideas/',
+            uri_collection: '/organizations/1/ideas/',
             uri_id: '42',
             at: '2026-01-01T00:00:00.000000Z',
             requester_identity_id: 'current',
@@ -360,7 +360,7 @@ test(
         // Pin export surface on requests
         // (message-plane survivor).
         await adapter.requests.put('m1', {
-            uri_prefix: '/organizations/1/ideas/',
+            uri_collection: '/organizations/1/ideas/',
             uri_id: '42',
             at: '2026-01-01T00:00:00.000000Z',
             requester_identity_id: 'current',

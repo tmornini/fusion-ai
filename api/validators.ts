@@ -2281,7 +2281,7 @@ export function validateActualScoreEntity(
 const MESSAGE_HASH = /^[0-9a-f]{64}$/;
 
 const REQUEST_BODY_KEYS: readonly string[] = [
-    'uri_prefix', 'uri_id', 'at', 'requester_identity_id',
+    'uri_collection', 'uri_id', 'at', 'requester_identity_id',
     'message_hash', 'message',
 ];
 
@@ -2291,10 +2291,10 @@ export function validateRequestEntity(
     assertOnlyKeys(
         body, REQUEST_BODY_KEYS, 'RequestEntity',
     );
-    const uriPrefix = pickString(body, 'uri_prefix');
-    if (!uriPrefix.endsWith('/')) {
+    const uriCollection = pickString(body, 'uri_collection');
+    if (!uriCollection.endsWith('/')) {
         throw new ValidationError(
-            'RequestEntity.uri_prefix must end with "/"',
+            'RequestEntity.uri_collection must end with "/"',
         );
     }
     const messageHash = pickString(body, 'message_hash');
@@ -2308,7 +2308,7 @@ export function validateRequestEntity(
         body, 'at', 'RequestEntity',
     );
     return {
-        uri_prefix: uriPrefix,
+        uri_collection: uriCollection,
         uri_id: pickString(body, 'uri_id'),
         at,
         requester_identity_id: pickString(
@@ -2320,7 +2320,7 @@ export function validateRequestEntity(
 }
 
 const RESPONSE_BODY_KEYS: readonly string[] = [
-    'uri_prefix', 'uri_id', 'at', 'status', 'version',
+    'uri_collection', 'uri_id', 'at', 'status', 'version',
     'message_hash', 'message',
 ];
 
@@ -2330,10 +2330,10 @@ export function validateResponseEntity(
     assertOnlyKeys(
         body, RESPONSE_BODY_KEYS, 'ResponseEntity',
     );
-    const uriPrefix = pickString(body, 'uri_prefix');
-    if (!uriPrefix.endsWith('/')) {
+    const uriCollection = pickString(body, 'uri_collection');
+    if (!uriCollection.endsWith('/')) {
         throw new ValidationError(
-            'ResponseEntity.uri_prefix must end with "/"',
+            'ResponseEntity.uri_collection must end with "/"',
         );
     }
     const status = pickNumber(body, 'status');
@@ -2364,7 +2364,7 @@ export function validateResponseEntity(
         body, 'at', 'ResponseEntity',
     );
     return {
-        uri_prefix: uriPrefix,
+        uri_collection: uriCollection,
         uri_id: pickString(body, 'uri_id'),
         at,
         status,

@@ -81,13 +81,13 @@ async () => {
     // Phase Final Stage B: identity spine tables retired.
     const requests = await db.requests.getAll();
     const own = requests.find(
-        r => r.uri_prefix === '/identity-token-revocations/'
+        r => r.uri_collection === '/identity-token-revocations/'
             && r.uri_id === 'self-rev-1',
     );
     assert.ok(own);
     const responses = await db.responses.getAll();
     const ownResponse = responses.find(
-        r => r.uri_prefix === '/identity-token-revocations/'
+        r => r.uri_collection === '/identity-token-revocations/'
             && r.uri_id === 'self-rev-1',
     );
     assert.ok(ownResponse);

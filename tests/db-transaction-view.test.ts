@@ -3,7 +3,7 @@ import { strict as assert } from 'node:assert';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 
 const aResponse = {
-    uri_prefix: '/organizations/1/flows/',
+    uri_collection: '/organizations/1/flows/',
     uri_id: '7',
     at: '2026-01-01T00:00:00.000000Z',
     status: 204,
@@ -13,7 +13,7 @@ const aResponse = {
 };
 
 const aRequest = {
-    uri_prefix: '/organizations/1/ideas/',
+    uri_collection: '/organizations/1/ideas/',
     uri_id: '42',
     at: '2026-01-01T00:00:00.000000Z',
     requester_identity_id: 'current',

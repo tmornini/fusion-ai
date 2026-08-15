@@ -2,7 +2,7 @@ import type { DbAdapter } from './db.ts';
 import { EntityNotFoundError } from './db.ts';
 import type { Id, IdentityTokenEntity } from './types.ts';
 import { validateIdentityTokenEntity } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import { withoutId } from './document-family.ts';
 import {
     deriveDocumentsAt,
@@ -94,7 +94,7 @@ import {
 const IDENTITY_TOKENS_TABLE = 'identity_tokens';
 
 const IDENTITY_TOKENS_PREFIX =
-    canonicalUriPrefix(undefined, '/identity-tokens/');
+    canonicalUriCollection(undefined, '/identity-tokens/');
 
 function identityTokenEntityOf(
     document: DerivedDocument,
@@ -110,10 +110,10 @@ async function fetchIdentityTokenDocuments(
 ): Promise<Map<string, DerivedDocument>> {
     const [requests, responses] = await Promise.all([
         dbOrView.requests.getAllWhere(
-            'uri_prefix', IDENTITY_TOKENS_PREFIX,
+            'uri_collection', IDENTITY_TOKENS_PREFIX,
         ),
         dbOrView.responses.getAllWhere(
-            'uri_prefix', IDENTITY_TOKENS_PREFIX,
+            'uri_collection', IDENTITY_TOKENS_PREFIX,
         ),
     ]);
     return deriveDocumentsAt(

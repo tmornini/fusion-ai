@@ -16,7 +16,7 @@ import {
     resolveFlowUndoTarget,
 } from '../api/derive-flows.ts';
 import {
-    formWritePair, canonicalUriPrefix,
+    formWritePair, canonicalUriCollection,
 } from '../api/message-pair.ts';
 import {
     organizationToken, DEV_TOKEN,
@@ -496,7 +496,7 @@ test(
         const actor = 'current';
         // Phase Final Task 5: the store decorator is gone;
         // handlers and resolveFlowUndoTarget read the base
-        // adapter. Pair-plane tenancy rides uri_prefix.
+        // adapter. Pair-plane tenancy rides uri_collection.
         await createFlow(db, token, flowId);
         await save(db, token, flowId, 'A', flowId + '-a');
 
@@ -505,7 +505,7 @@ test(
         // resolveFlowUndoTarget's own pre-tx read sees inside
         // the live route, at the instant a concurrent write
         // could still race it.
-        const undoUriPrefix = canonicalUriPrefix(
+        const undoUriPrefix = canonicalUriCollection(
             organization, '/flows/' + flowId + '/undo/',
         );
         const staleResolution = await resolveFlowUndoTarget(
@@ -628,10 +628,10 @@ test(
         );
         assert.equal(undone.status, 204);
 
-        const prefix = canonicalUriPrefix('1', '/flows/');
+        const prefix = canonicalUriCollection('1', '/flows/');
         const [requests, responses] = await Promise.all([
-            db.requests.getAllWhere('uri_prefix', prefix),
-            db.responses.getAllWhere('uri_prefix', prefix),
+            db.requests.getAllWhere('uri_collection', prefix),
+            db.responses.getAllWhere('uri_collection', prefix),
         ]);
         const pairs = documentPairsAt(
             requests, responses, prefix,

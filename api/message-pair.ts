@@ -48,7 +48,7 @@ export interface MessagePair {
     // late as a same-tx write permits. Envelope only (S1): body
     // timestamps belong to the message's creator.
     readonly requestAt: string;
-    readonly uriPrefix: string;
+    readonly uriCollection: string;
     readonly uriId: string;
     readonly requesterIdentityId: Id;
     readonly requestMessage: string;   // serializeWire
@@ -96,7 +96,7 @@ export interface WritePairInput {
     // The VERIFIED fence organization for organization-owned
     // families; undefined for the global plane. Decides the
     // canonical organization-nested prefix — see
-    // canonicalUriPrefix.
+    // canonicalUriCollection.
     readonly organization: Id | undefined;
     readonly responseStatus: number;
     readonly responseBody: unknown | undefined;
@@ -122,7 +122,7 @@ const ORGANIZATION_NESTED_FIRST_SEGMENTS: ReadonlySet<string> =
 // ONE prefix voice. A registered family's organizationNested
 // slot decides first; the literal set above is the fallback
 // for every not-yet-registered first segment.
-export function canonicalUriPrefix(
+export function canonicalUriCollection(
     organization: Id | undefined,
     flatPrefix: string,
 ): string {
@@ -146,8 +146,8 @@ export async function formWritePair(
     const address = messageAddress(
         input.routeSegments, input.pathSegments,
     );
-    const uriPrefix = canonicalUriPrefix(
-        input.organization, address.uriPrefix,
+    const uriCollection = canonicalUriCollection(
+        input.organization, address.uriCollection,
     );
     const createdId = createdEntityUriId(
         input.routePattern, input.body,
@@ -178,7 +178,7 @@ export async function formWritePair(
     return {
         id,
         requestAt: input.requestAt,
-        uriPrefix,
+        uriCollection,
         uriId,
         requesterIdentityId: input.requesterIdentityId,
         requestMessage,
@@ -195,7 +195,7 @@ export async function formWritePair(
 
 // Complete an AuthPairSeed into a MessagePair for a grant's own
 // response: operation-addressed (uriId '', global plane — see
-// canonicalUriPrefix with organization undefined), never a
+// canonicalUriCollection with organization undefined), never a
 // head-read. The two /authentication/* routes are the only
 // callers; each grant calls this pre-tx, once its own domain
 // read has resolved the requester identity and its response
@@ -276,13 +276,13 @@ export async function formTokenEventPair(
 // reduction. Returns undefined when the address is virgin.
 export async function headPairIdAt(
     db: DbAdapter,
-    uriPrefix: string,
+    uriCollection: string,
     uriId: string,
 ): Promise<string | undefined> {
     const rows = await db.responses
         .getAllWhere('uri_id', uriId);
     const atAddress = rows.filter(
-        (row) => row.uri_prefix === uriPrefix,
+        (row) => row.uri_collection === uriCollection,
     );
     return latestByKey(atAddress, () => 'head')
         .get('head')?.id;
@@ -491,7 +491,7 @@ export async function putMessagePair(
     pair: MessagePair,
 ): Promise<void> {
     await view.requests.put(pair.id, {
-        uri_prefix: pair.uriPrefix,
+        uri_collection: pair.uriCollection,
         uri_id: pair.uriId,
         at: pair.requestAt,
         requester_identity_id: pair.requesterIdentityId,
@@ -504,7 +504,7 @@ export async function putMessagePair(
     // await, so the auto-commit constraint (which bars only
     // awaited promises) is not in play.
     await view.responses.put(pair.id, {
-        uri_prefix: pair.uriPrefix,
+        uri_collection: pair.uriCollection,
         uri_id: pair.uriId,
         at: nowUtc(),
         status: pair.responseStatus,

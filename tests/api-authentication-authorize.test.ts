@@ -5,7 +5,7 @@ import {
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import { GET, handleRequest } from '../api/api.ts';
-import { canonicalUriPrefix } from '../api/message-pair.ts';
+import { canonicalUriCollection } from '../api/message-pair.ts';
 import { hashPassword } from '../shared/password-hash.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import {
@@ -41,8 +41,8 @@ async function noStoredAuthorizeResponse(
     db: MemoryDbAdapter,
 ): Promise<boolean> {
     const responses = await db.responses.getAllWhere(
-        'uri_prefix',
-        canonicalUriPrefix(undefined, '/authentication/authorize/'),
+        'uri_collection',
+        canonicalUriCollection(undefined, '/authentication/authorize/'),
     );
     return responses.length === 0;
 }

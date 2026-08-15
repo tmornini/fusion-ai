@@ -476,7 +476,7 @@ test('a seeded idea\'s create-pair request reproduces its'
     const requests = await db.requests.getAll();
     const createRow = requests.find(
         r => r.uri_id === idea.id
-            && r.uri_prefix
+            && r.uri_collection
                 === `/organizations/${STARK_ORGANIZATION}`
                     + '/ideas/',
     );

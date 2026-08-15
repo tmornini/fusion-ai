@@ -289,21 +289,21 @@ async () => {
 
     const opPair = requests.find(
         r => r.uri_id === TYPE_ID
-            && r.uri_prefix === typePrefix
+            && r.uri_collection === typePrefix
             && responseById.get(r.id)?.status === 204,
     );
     assert.ok(opPair, 'operation pair missing');
 
     const documentPair = requests.find(
         r => r.uri_id === TYPE_ID
-            && r.uri_prefix === typePrefix
+            && r.uri_collection === typePrefix
             && responseById.get(r.id)?.status === 200,
     );
     assert.ok(documentPair, 'document pair missing');
 
     const attrPair = requests.find(
         r => r.uri_id === ATTR_ID
-            && r.uri_prefix === attrPrefix
+            && r.uri_collection === attrPrefix
             && responseById.get(r.id)?.status === 200,
     );
     assert.ok(attrPair, 'attribute pair missing');

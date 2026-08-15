@@ -1,6 +1,6 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, StateEntity } from './types.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import {
     documentPairsAt,
     documentLifecycleEvents,
@@ -15,7 +15,7 @@ import {
 // never rebuilt here (the derive-ideas.ts shape).
 
 function objectivesUriPrefix(organization: Id): string {
-    return canonicalUriPrefix(organization, '/objectives/');
+    return canonicalUriCollection(organization, '/objectives/');
 }
 
 // One row per pair whose state_event_id is NEW — the document
@@ -30,8 +30,8 @@ export async function deriveObjectiveStateHistory(
 ): Promise<StateEntity[]> {
     const prefix = objectivesUriPrefix(organization);
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const pairs = documentPairsAt(
         requests, responses, prefix,
@@ -54,8 +54,8 @@ export async function deriveObjectiveHistories(
 ): Promise<StateEntity[]> {
     const prefix = objectivesUriPrefix(organization);
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const pairs = documentPairsAt(
         requests, responses, prefix,

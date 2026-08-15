@@ -11,7 +11,7 @@ import type {
     ObjectiveEntity,
     ObjectiveRevisionEntity,
 } from '../api/types.ts';
-import { canonicalUriPrefix } from '../api/message-pair.ts';
+import { canonicalUriCollection } from '../api/message-pair.ts';
 import { documentPairsAt } from '../api/derive-documents.ts';
 import {
     documentGetHandler,
@@ -819,13 +819,13 @@ test('live-write chain: create, reposition, revision edit,'
     // reposition + archive + reactivate = 5 (archive/reactivate
     // ride PUT /objectives/:id after states-address retirement).
     const revisionId3 = objectiveId + '-rev-3';
-    const objectivesPrefix = canonicalUriPrefix(
+    const objectivesPrefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/objectives/',
     );
     const beforeDuplicateIds = new Set(
         (
             await db.responses.getAllWhere(
-                'uri_prefix', objectivesPrefix,
+                'uri_collection', objectivesPrefix,
             )
         ).filter((r) => r.uri_id === objectiveId)
             .map((r) => r.id),
@@ -848,8 +848,8 @@ test('live-write chain: create, reposition, revision edit,'
     );
 
     const [afterRequests, afterResponses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', objectivesPrefix),
-        db.responses.getAllWhere('uri_prefix', objectivesPrefix),
+        db.requests.getAllWhere('uri_collection', objectivesPrefix),
+        db.responses.getAllWhere('uri_collection', objectivesPrefix),
     ]);
     const afterAtAddress = afterResponses.filter(
         (r) => r.uri_id === objectiveId,
@@ -908,15 +908,15 @@ test('the create-op POST pair is not read as a document pair —'
     ));
     assert.equal(created.status, 204);
 
-    const prefix = canonicalUriPrefix(
+    const prefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/objectives/',
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const atAddress = requests.filter(
-        (r) => r.uri_prefix === prefix
+        (r) => r.uri_collection === prefix
             && r.uri_id === objectiveId,
     );
     assert.equal(atAddress.length, 2);

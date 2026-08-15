@@ -26,7 +26,7 @@
     <text class="thead" x="50" y="58">requests</text>
     <text class="pk" x="50" y="79">id</text>
     <text class="type" x="238" y="79">id</text>
-    <text class="col" x="50" y="97">uri_prefix</text>
+    <text class="col" x="50" y="97">uri_collection</text>
     <text class="type" x="238" y="97">text</text>
     <text class="col" x="50" y="115">uri_id</text>
     <text class="type" x="238" y="115">text</text>
@@ -45,7 +45,7 @@
     <text class="thead" x="50" y="240">responses</text>
     <text class="pk" x="50" y="261">id</text>
     <text class="type" x="238" y="261">id</text>
-    <text class="col" x="50" y="279">uri_prefix</text>
+    <text class="col" x="50" y="279">uri_collection</text>
     <text class="type" x="238" y="279">text</text>
     <text class="col" x="50" y="297">uri_id</text>
     <text class="type" x="238" y="297">text</text>

@@ -175,8 +175,8 @@ async function fetchInstancePairs(
         organization, recordTypeId,
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return documentPairsAt(requests, responses, prefix);
 }
@@ -195,8 +195,8 @@ export async function deriveInstanceHead(
         organization, recordTypeId,
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const document = deriveDocumentsAt(
         requests, responses, prefix,
@@ -219,8 +219,8 @@ export async function deriveInstanceCollection(
         organization, recordTypeId,
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const documents = deriveDocumentsAt(
         requests, responses, prefix,

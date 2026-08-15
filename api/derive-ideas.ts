@@ -7,7 +7,7 @@ import type {
     StateEntity,
 } from './types.ts';
 import { pickString, pickNumber } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     documentPairsAt,
@@ -32,14 +32,14 @@ import {
 const IDEAS_TABLE = 'ideas';
 
 function ideasUriPrefix(organization: Id): string {
-    return canonicalUriPrefix(organization, '/ideas/');
+    return canonicalUriCollection(organization, '/ideas/');
 }
 
 function submissionsUriPrefix(
     organization: Id,
     ideaId: Id,
 ): string {
-    return canonicalUriPrefix(
+    return canonicalUriCollection(
         organization, '/ideas/' + ideaId + '/submissions/',
     );
 }
@@ -95,8 +95,8 @@ async function fetchIdeaPairs(
     readonly pairs: readonly DocumentPair[];
 }> {
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return {
         documents: deriveDocumentsAt(requests, responses, prefix),
@@ -180,8 +180,8 @@ export async function deriveIdeaSubmissions(
 ): Promise<IdeaSubmissionEntity[]> {
     const prefix = submissionsUriPrefix(organization, ideaId);
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const documents = deriveDocumentsAt(requests, responses, prefix);
     const submissions: IdeaSubmissionEntity[] = [];

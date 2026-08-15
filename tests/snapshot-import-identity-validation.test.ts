@@ -47,7 +47,7 @@ const VALID_ROWS: Record<
 > = {
     requests: {
         id: 'rq1',
-        uri_prefix: '/organizations/1/ideas/',
+        uri_collection: '/organizations/1/ideas/',
         uri_id: '42',
         at: '2026-01-01T00:00:00.000000Z',
         requester_identity_id: 'current',
@@ -56,7 +56,7 @@ const VALID_ROWS: Record<
     },
     responses: {
         id: 'rs1',
-        uri_prefix: '/organizations/1/ideas/',
+        uri_collection: '/organizations/1/ideas/',
         uri_id: '42',
         at: '2026-01-01T00:00:00.000000Z',
         status: 200,

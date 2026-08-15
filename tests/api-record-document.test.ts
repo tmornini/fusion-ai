@@ -342,7 +342,7 @@ async function storedPairAt(
     return {
         request: {
             id: pair.id,
-            uri_prefix: pair.uriPrefix,
+            uri_collection: pair.uriCollection,
             uri_id: pair.uriId,
             at,
             requester_identity_id: pair.requesterIdentityId,
@@ -351,7 +351,7 @@ async function storedPairAt(
         },
         response: {
             id: pair.id,
-            uri_prefix: pair.uriPrefix,
+            uri_collection: pair.uriCollection,
             uri_id: pair.uriId,
             at,
             status: pair.responseStatus,

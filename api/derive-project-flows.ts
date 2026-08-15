@@ -1,7 +1,7 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, ProjectFlowEntity } from './types.ts';
 import { pickString } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -26,7 +26,7 @@ function projectFlowsUriPrefix(
     organization: Id,
     projectId: Id,
 ): string {
-    return canonicalUriPrefix(
+    return canonicalUriCollection(
         organization, '/projects/' + projectId + '/flows/',
     );
 }
@@ -59,8 +59,8 @@ export async function deriveProjectFlows(
 ): Promise<ProjectFlowEntity[]> {
     const prefix = projectFlowsUriPrefix(organization, projectId);
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const documents = deriveDocumentsAt(
         requests, responses, prefix,

@@ -155,7 +155,7 @@ async () => {
     // (Stage B), and the grant's own 2 pairs.
     assert.equal(requests.length, 6);
     const atAddress = requests.filter(
-        r => r.uri_prefix === '/invitations/'
+        r => r.uri_collection === '/invitations/'
             && r.uri_id === 'inv-doc-1',
     );
     assert.equal(atAddress.length, 2);
@@ -188,12 +188,12 @@ async () => {
     assert.equal(second.status, 200);
     const requests = await db.requests.getAll();
     const atDuplicateId = requests.filter(
-        r => r.uri_prefix === '/invitations/'
+        r => r.uri_collection === '/invitations/'
             && r.uri_id === 'inv-doc-2b',
     );
     assert.equal(atDuplicateId.length, 1);
     const atFreshId = requests.filter(
-        r => r.uri_prefix === '/invitations/'
+        r => r.uri_collection === '/invitations/'
             && r.uri_id === 'inv-doc-2a',
     );
     assert.equal(atFreshId.length, 2);
@@ -289,7 +289,7 @@ async () => {
     );
     assert.equal(second.status, 204);
     const documents = (await db.requests.getAll()).filter(
-        r => r.uri_prefix === '/organizations/1/memberships/',
+        r => r.uri_collection === '/organizations/1/memberships/',
     );
     // 2: the fixture's own membership pair (Phase 13 Task 1)
     // shares this SAME org-nested address, so it matches the

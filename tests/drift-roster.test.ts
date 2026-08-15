@@ -13,7 +13,7 @@ import type {
 } from '../api/types.ts';
 import { nowUtc } from
     '../api/types.ts';
-import { canonicalUriPrefix } from '../api/message-pair.ts';
+import { canonicalUriCollection } from '../api/message-pair.ts';
 import { documentPairsAt } from '../api/derive-documents.ts';
 import {
     documentGetHandler,
@@ -168,7 +168,7 @@ const HUMAN_MEMBERS_TEST_WIRING: DocumentFamilyWiring = {
 const READER_ACTOR: Id = 'drift-reader';
 
 // members/ai-members/human-members are GLOBAL plane (family-
-// registry.ts: organizationNested:false) — canonicalUriPrefix
+// registry.ts: organizationNested:false) — canonicalUriCollection
 // ignores whatever organization value a caller passes for these
 // three families, so this fixed placeholder is never load-
 // bearing; requireOrganization (document-family.ts) merely
@@ -951,13 +951,13 @@ test('the ai-members and human-members create-op POST pairs are'
     ));
     assert.equal(aiCreated.status, 204);
 
-    const aiPrefix = canonicalUriPrefix(undefined, '/ai-members/');
+    const aiPrefix = canonicalUriCollection(undefined, '/ai-members/');
     const [aiRequests, aiResponses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', aiPrefix),
-        db.responses.getAllWhere('uri_prefix', aiPrefix),
+        db.requests.getAllWhere('uri_collection', aiPrefix),
+        db.responses.getAllWhere('uri_collection', aiPrefix),
     ]);
     const atAiAddress = aiRequests.filter(
-        (r) => r.uri_prefix === aiPrefix && r.uri_id === aiId,
+        (r) => r.uri_collection === aiPrefix && r.uri_id === aiId,
     );
     assert.equal(atAiAddress.length, 2);
     const aiDocumentPairs = documentPairsAt(
@@ -990,15 +990,15 @@ test('the ai-members and human-members create-op POST pairs are'
     ));
     assert.equal(humanCreated.status, 204);
 
-    const humanPrefix = canonicalUriPrefix(
+    const humanPrefix = canonicalUriCollection(
         undefined, '/human-members/',
     );
     const [humanRequests, humanResponses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', humanPrefix),
-        db.responses.getAllWhere('uri_prefix', humanPrefix),
+        db.requests.getAllWhere('uri_collection', humanPrefix),
+        db.responses.getAllWhere('uri_collection', humanPrefix),
     ]);
     const atHumanAddress = humanRequests.filter(
-        (r) => r.uri_prefix === humanPrefix
+        (r) => r.uri_collection === humanPrefix
             && r.uri_id === humanId,
     );
     assert.equal(atHumanAddress.length, 2);
@@ -1028,10 +1028,10 @@ test('the ai-members and human-members create-op POST pairs are'
 
     // exactly-one-document-head-per-address at members/:id too —
     // the ONE shared roster row every member kind writes through.
-    const membersPrefix = canonicalUriPrefix(undefined, '/members/');
+    const membersPrefix = canonicalUriCollection(undefined, '/members/');
     const [memberRequests, memberResponses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', membersPrefix),
-        db.responses.getAllWhere('uri_prefix', membersPrefix),
+        db.requests.getAllWhere('uri_collection', membersPrefix),
+        db.responses.getAllWhere('uri_collection', membersPrefix),
     ]);
     for (const id of [aiId, humanId]) {
         const pairs = documentPairsAt(

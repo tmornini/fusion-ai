@@ -17,7 +17,7 @@ import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
 } from '../api/mock-data/seed-constants.ts';
-import { canonicalUriPrefix } from '../api/message-pair.ts';
+import { canonicalUriCollection } from '../api/message-pair.ts';
 import { deriveDocumentsAt } from '../api/derive-documents.ts';
 import { organizationToken } from './token-fixtures.ts';
 import {
@@ -310,10 +310,10 @@ function assertWireEqualsDerived(
 async function derivedHeadPairId(
     db: MemoryDbAdapter, organization: string, flowId: string,
 ): Promise<string> {
-    const prefix = canonicalUriPrefix(organization, '/flows/');
+    const prefix = canonicalUriCollection(organization, '/flows/');
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const documents = deriveDocumentsAt(
         requests, responses, prefix,
@@ -824,7 +824,7 @@ test('the create-op POST pair is not read as a document pair '
 
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
-        (r) => r.uri_prefix === '/organizations/1/flows/'
+        (r) => r.uri_collection === '/organizations/1/flows/'
             && r.uri_id === flowId,
     );
     // Both an operation (POST, 204) pair and a document (PUT)
@@ -1082,13 +1082,13 @@ test('same-join-id retry: two different flow creates reusing '
     );
     assert.equal(second.status, 204);
 
-    const joinPrefix = canonicalUriPrefix(
+    const joinPrefix = canonicalUriCollection(
         STARK_ORGANIZATION,
         '/projects/' + projectId + '/flows/',
     );
     const joinResponses = (await db.responses.getAllWhere(
         'uri_id', sharedPfid,
-    )).filter((row) => row.uri_prefix === joinPrefix);
+    )).filter((row) => row.uri_collection === joinPrefix);
     assert.equal(joinResponses.length, 2);
     for (const response of joinResponses) {
         assert.equal('supersedes' in response, false);

@@ -46,7 +46,7 @@ import { seededMockDb } from './mock-seed.ts';
 // put() bodies omit it.
 function requestFields() {
     return {
-        uri_prefix: '/organizations/1/ideas/',
+        uri_collection: '/organizations/1/ideas/',
         uri_id: '42',
         at: '2026-01-01T00:00:00.000000Z',
         requester_identity_id: 'current',
@@ -544,7 +544,7 @@ test(
         const ctx = stubSnapshotCtx({
             members: [],
             requests: [{
-                id: 'r1', uri_prefix: '/members/',
+                id: 'r1', uri_collection: '/members/',
                 uri_id: 'm1',
                 at: '2026-01-01T00:00:00.000000Z',
                 requester_identity_id: 'system',
@@ -568,7 +568,7 @@ test(
         const ctx = stubSnapshotCtx({
             members: [],
             requests: [{
-                id: 'r1', uri_prefix: '/human-members/',
+                id: 'r1', uri_collection: '/human-members/',
                 uri_id: 'u1',
                 at: '2026-01-01T00:00:00.000000Z',
                 requester_identity_id: 'system',

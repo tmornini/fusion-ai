@@ -22,8 +22,8 @@ const KEYED_READS: ReadonlyArray<{
 }> = [
     { table: 'requests', column: 'message_hash' },
     { table: 'responses', column: 'uri_id' },
-    { table: 'requests', column: 'uri_prefix' },
-    { table: 'responses', column: 'uri_prefix' },
+    { table: 'requests', column: 'uri_collection' },
+    { table: 'responses', column: 'uri_collection' },
 ];
 
 test('responses carry no unique follows index', () => {

@@ -27,7 +27,7 @@ import { deriveInvitations } from
     '../api/derive-invitations.ts';
 import { deriveOrganizations } from
     '../api/derive-organizations.ts';
-import { canonicalUriPrefix } from '../api/message-pair.ts';
+import { canonicalUriCollection } from '../api/message-pair.ts';
 import { deriveDocumentsAt } from
     '../api/derive-documents.ts';
 import {
@@ -46,12 +46,12 @@ async function allMemberships(db: MemoryDbAdapter) {
         at: string;
     }> = [];
     for (const organization of organizations) {
-        const prefix = canonicalUriPrefix(
+        const prefix = canonicalUriCollection(
             organization.id, '/memberships/',
         );
         const [requests, responses] = await Promise.all([
-            db.requests.getAllWhere('uri_prefix', prefix),
-            db.responses.getAllWhere('uri_prefix', prefix),
+            db.requests.getAllWhere('uri_collection', prefix),
+            db.responses.getAllWhere('uri_collection', prefix),
         ]);
         for (const document of deriveDocumentsAt(
             requests, responses, prefix,

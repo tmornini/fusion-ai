@@ -104,7 +104,7 @@ test('PUT-PUT at one address leaves exactly ONE pair (the'
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     const atAddress = requests.filter(
-        r => r.uri_prefix === '/identities/slot-1/pii/',
+        r => r.uri_collection === '/identities/slot-1/pii/',
     );
     assert.equal(atAddress.length, 1);
     assert.equal(
@@ -144,7 +144,7 @@ async () => {
     assert.equal(del.headers.get('Supersedes'), null);
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
-        r => r.uri_prefix === '/identities/slot-2/pii/',
+        r => r.uri_collection === '/identities/slot-2/pii/',
     );
     assert.equal(atAddress.length, 1);
     const messages = await allMessages(db);
@@ -174,7 +174,7 @@ async () => {
     assert.equal(put.headers.get('Supersedes'), null);
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
-        r => r.uri_prefix === '/identities/slot-3/pii/',
+        r => r.uri_collection === '/identities/slot-3/pii/',
     );
     assert.equal(atAddress.length, 1);
     assert.equal(
@@ -241,7 +241,7 @@ test('a byte-identical resend AFTER supersession finds no'
     assert.notEqual(resend.headers.get('Response-ID'), firstId);
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
-        r => r.uri_prefix === '/identities/slot-4b/pii/',
+        r => r.uri_collection === '/identities/slot-4b/pii/',
     );
     assert.equal(atAddress.length, 1);
 });
@@ -354,7 +354,7 @@ test("the zone's confinement: a non-/pii DELETE (a memberships"
     assert.equal(del.headers.get('Supersedes'), null);
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
-        r => r.uri_prefix === '/organizations/1/memberships/'
+        r => r.uri_collection === '/organizations/1/memberships/'
             && r.uri_id === 'ms-confine-1',
     );
     assert.equal(atAddress.length, 2);

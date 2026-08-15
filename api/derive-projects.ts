@@ -2,7 +2,7 @@ import type { DbAdapter } from './db.ts';
 import { missedReadError } from './derive-states.ts';
 import type { Id, ProjectEntity, StateEntity } from './types.ts';
 import { pickString, pickNumber } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     documentPairsAt,
@@ -31,7 +31,7 @@ import {
 const PROJECTS_TABLE = 'projects';
 
 function projectsUriPrefix(organization: Id): string {
-    return canonicalUriPrefix(organization, '/projects/');
+    return canonicalUriCollection(organization, '/projects/');
 }
 
 // The derived entity: the head document's body minus the
@@ -87,8 +87,8 @@ async function fetchProjectPairs(
     readonly pairs: readonly DocumentPair[];
 }> {
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return {
         documents: deriveDocumentsAt(requests, responses, prefix),

@@ -102,7 +102,7 @@ test('PUT identity-tokens/:id appends its pair at the entity'
     assert.equal(res.status, 200);
     const requests = await db.requests.getAll();
     assert.equal(requests.length, 3);
-    assert.equal(requests[2]!.uri_prefix, '/identity-tokens/');
+    assert.equal(requests[2]!.uri_collection, '/identity-tokens/');
     assert.equal(requests[2]!.uri_id, 'tok-1');
     const domainRow = await deriveIdentityToken(db, 'tok-1');
     assert.deepEqual(await res.json(), domainRow);
@@ -163,7 +163,7 @@ test('PUT identity-token-revocations/:id appends its pair at'
     const requests = await db.requests.getAll();
     assert.equal(requests.length, 3);
     assert.equal(
-        requests[2]!.uri_prefix, '/identity-token-revocations/',
+        requests[2]!.uri_collection, '/identity-token-revocations/',
     );
     assert.equal(requests[2]!.uri_id, 'rev-1');
     // Phase Final Task 2: identity_token_revocations ROW half
@@ -193,7 +193,7 @@ test('a rotation appends its pair at an operation address:'
     assert.notEqual(wireBody.jti, ROOT_JTI);
     const requests = await db.requests.getAll();
     const row = requests.find(
-        r => r.uri_prefix
+        r => r.uri_collection
             === `/identity-tokens/${ROOT_JTI}/rotation/`,
     );
     assert.ok(row);
@@ -271,7 +271,7 @@ test('a revocation appends its pair at an operation address:'
     assert.equal(res.status, 204);
     const requests = await db.requests.getAll();
     const row = requests.find(
-        r => r.uri_prefix
+        r => r.uri_collection
             === `/identity-tokens/${ROOT_JTI}/revocation/`,
     );
     assert.ok(row);
@@ -291,7 +291,7 @@ async () => {
     assert.equal(res.status, 204);
     const requests = await db.requests.getAll();
     const row = requests.find(
-        r => r.uri_prefix
+        r => r.uri_collection
             === '/identity-tokens/ghost/revocation/',
     );
     assert.ok(row);
@@ -322,7 +322,7 @@ async () => {
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
     const rows = requests.filter(
-        r => r.uri_prefix
+        r => r.uri_collection
             === `/identity-tokens/${ROOT_JTI}/revocation/`,
     );
     assert.equal(rows.length, 2);
@@ -415,7 +415,7 @@ async function assertRootEventPair(
     const root = rows[0]!;
     const requests = await db.requests.getAll();
     const eventRequest = requests.find(
-        r => r.uri_prefix === '/identity-tokens/'
+        r => r.uri_collection === '/identity-tokens/'
             && r.uri_id === root.id,
     );
     assert.ok(eventRequest, 'no event pair for the issued root');
@@ -489,7 +489,7 @@ async () => {
     assert.equal(root!.id, await sha256Hex('the-code'));
     const requests = await db.requests.getAll();
     const opPair = requests.find(
-        r => r.uri_prefix === '/authentication/token/',
+        r => r.uri_collection === '/authentication/token/',
     );
     assert.ok(opPair);
     assert.equal(opPair!.uri_id, '');
@@ -553,7 +553,7 @@ async function assertEventPairForRow(
     const row = await deriveIdentityToken(db, rowId);
     const requests = await db.requests.getAll();
     const eventRequest = requests.find(
-        r => r.uri_prefix === '/identity-tokens/'
+        r => r.uri_collection === '/identity-tokens/'
             && r.uri_id === rowId,
     );
     assert.ok(eventRequest, 'no event pair for row ' + rowId);
@@ -596,7 +596,7 @@ test('a rotation\'s ROTATE branch appends an event pair for'
     await assertEventPairForRow(db, issued!.id);
     const requests = await db.requests.getAll();
     const opPair = requests.find(
-        r => r.uri_prefix
+        r => r.uri_collection
             === `/identity-tokens/${ROOT_JTI}/rotation/`,
     );
     assert.ok(opPair);
@@ -738,7 +738,7 @@ async () => {
     const requests = await db.requests.getAll();
     assert.equal(
         requests.filter(
-            r => r.uri_prefix === '/authentication/token/',
+            r => r.uri_collection === '/authentication/token/',
         ).length, 0,
     );
 });

@@ -12,7 +12,7 @@ import type {
 } from '../api/types.ts';
 import { nowUtc } from
     '../api/types.ts';
-import { canonicalUriPrefix } from '../api/message-pair.ts';
+import { canonicalUriCollection } from '../api/message-pair.ts';
 import { documentPairsAt } from '../api/derive-documents.ts';
 import {
     documentGetHandler,
@@ -167,7 +167,7 @@ const MEMBERSHIPS_TEST_WIRING: DocumentFamilyWiring = {
 };
 
 // identities is GLOBAL plane (family-registry.ts:
-// organizationNested:false) — canonicalUriPrefix ignores whatever
+// organizationNested:false) — canonicalUriCollection ignores whatever
 // organization value a caller passes for this family, so this
 // fixed placeholder is never load-bearing; requireOrganization
 // (document-family.ts) merely demands a defined value to dispatch

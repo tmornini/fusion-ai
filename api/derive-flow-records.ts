@@ -1,7 +1,7 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, FlowRecordEntity } from './types.ts';
 import { pickString } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -40,7 +40,7 @@ function flowRecordsUriPrefix(
     organization: Id,
     flowId: Id,
 ): string {
-    return canonicalUriPrefix(
+    return canonicalUriCollection(
         organization, '/flows/' + flowId + '/records/',
     );
 }
@@ -70,8 +70,8 @@ async function fetchFlowRecordDocuments(
 ): Promise<Map<string, DerivedDocument>> {
     const prefix = flowRecordsUriPrefix(organization, flowId);
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return deriveDocumentsAt(requests, responses, prefix);
 }

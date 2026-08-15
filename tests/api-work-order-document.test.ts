@@ -295,7 +295,7 @@ function documentRowAt(
     excludeId?: string,
 ): RequestEntity | undefined {
     return requests.find(
-        r => r.uri_prefix === prefix
+        r => r.uri_collection === prefix
             && r.uri_id === uriId
             && r.id !== excludeId
             && decodeRequestMessage(r.message).method === 'PUT',

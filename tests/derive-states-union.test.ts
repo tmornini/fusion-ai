@@ -29,7 +29,7 @@ import {
 } from '../api/derive-documents.ts';
 import {
     formWritePair,
-    canonicalUriPrefix,
+    canonicalUriCollection,
 } from '../api/message-pair.ts';
 import {
     postMembershipDocumentOp,
@@ -539,10 +539,10 @@ async () => {
         ],
     );
     // Graph sidecars on the flow document pairs (C3).
-    const prefix = canonicalUriPrefix('A', '/flows/');
+    const prefix = canonicalUriCollection('A', '/flows/');
     const [requests, responses] = await Promise.all([
-        fx.db.requests.getAllWhere('uri_prefix', prefix),
-        fx.db.responses.getAllWhere('uri_prefix', prefix),
+        fx.db.requests.getAllWhere('uri_collection', prefix),
+        fx.db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const sidecarIds: string[] = [];
     for (const pair of documentPairsAt(

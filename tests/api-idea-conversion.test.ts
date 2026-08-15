@@ -238,13 +238,13 @@ test(
 
         const atProjectAddress = allRequests.filter(
             (r) =>
-                r.uri_prefix === '/organizations/1/projects/'
+                r.uri_collection === '/organizations/1/projects/'
                 && r.uri_id === 'p9',
         );
         assert.equal(atProjectAddress.length, 1);
         const responsesAtProjectAddress = allResponses.filter(
             (r) =>
-                r.uri_prefix === '/organizations/1/projects/'
+                r.uri_collection === '/organizations/1/projects/'
                 && r.uri_id === 'p9',
         );
         assert.equal(responsesAtProjectAddress.length, 1);
@@ -267,13 +267,13 @@ test(
         // document pair both land at idea-1's address.
         const atIdeaAddress = allRequests.filter(
             (r) =>
-                r.uri_prefix === '/organizations/1/ideas/'
+                r.uri_collection === '/organizations/1/ideas/'
                 && r.uri_id === 'idea-1',
         );
         assert.equal(atIdeaAddress.length, 2);
         const responsesAtIdeaAddress = allResponses.filter(
             (r) =>
-                r.uri_prefix === '/organizations/1/ideas/'
+                r.uri_collection === '/organizations/1/ideas/'
                 && r.uri_id === 'idea-1',
         );
         assert.equal(responsesAtIdeaAddress.length, 2);
@@ -316,14 +316,14 @@ test(
         for (const { id, fields } of baselineCases) {
             const atBaselineAddress = allRequests.filter(
                 (r) =>
-                    r.uri_prefix === baselinesPrefix
+                    r.uri_collection === baselinesPrefix
                     && r.uri_id === id,
             );
             assert.equal(atBaselineAddress.length, 1);
             const responsesAtBaselineAddress = allResponses
                 .filter(
                     (r) =>
-                        r.uri_prefix === baselinesPrefix
+                        r.uri_collection === baselinesPrefix
                         && r.uri_id === id,
                 );
             assert.equal(responsesAtBaselineAddress.length, 1);

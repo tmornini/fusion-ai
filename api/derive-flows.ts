@@ -9,7 +9,7 @@ import {
     validateFlowNodeAttributeEntity,
     validateFlowNodeMemberEntity,
 } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import { normalizedStoredGraph } from
     './flow-graph-relations.ts';
 import {
@@ -66,7 +66,7 @@ import {
 const FLOWS_TABLE = 'flows';
 
 function flowsUriPrefix(organization: Id): string {
-    return canonicalUriPrefix(organization, '/flows/');
+    return canonicalUriCollection(organization, '/flows/');
 }
 
 // The derived entity: the head document's body minus the
@@ -116,8 +116,8 @@ async function fetchFlowPairs(
     readonly pairs: readonly DocumentPair[];
 }> {
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return {
         documents: deriveDocumentsAt(requests, responses, prefix),
@@ -195,7 +195,7 @@ export async function deriveFlow(
 
 // Undo-as-replay's own resolution (Phase 14 Task 8): given this
 // flow's OWN undo-operation-pair address prefix (the route's
-// own `pair.uriPrefix` — already flow-specific, since `undo` is
+// own `pair.uriCollection` — already flow-specific, since `undo` is
 // a literal final route segment, so messageAddress folds the
 // real id into the PREFIX rather than a separate uriId), walks
 // this flow's flows/:id document-pair history and replays it as
@@ -232,10 +232,10 @@ export async function resolveFlowUndoTarget(
     const prefix = flowsUriPrefix(organization);
     const [requests, responses, undoRequests] =
         await Promise.all([
-            db.requests.getAllWhere('uri_prefix', prefix),
-            db.responses.getAllWhere('uri_prefix', prefix),
+            db.requests.getAllWhere('uri_collection', prefix),
+            db.responses.getAllWhere('uri_collection', prefix),
             db.requests.getAllWhere(
-                'uri_prefix', undoUriPrefix,
+                'uri_collection', undoUriPrefix,
             ),
         ]);
     const pairs = documentPairsAt(requests, responses, prefix)
@@ -347,8 +347,8 @@ export async function flowGraphBindingsFromPairs(
 ): Promise<FlowGraphBindingLedgers> {
     const prefix = flowsUriPrefix(organization);
     const [requests, responses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_prefix', prefix),
-        dbOrView.responses.getAllWhere('uri_prefix', prefix),
+        dbOrView.requests.getAllWhere('uri_collection', prefix),
+        dbOrView.responses.getAllWhere('uri_collection', prefix),
     ]);
     const attributeEvents: FlowNodeAttributeEntity[] = [];
     const memberEvents: FlowNodeMemberEntity[] = [];

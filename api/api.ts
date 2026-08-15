@@ -20,7 +20,7 @@ import {
     formWritePair,
     storedResponseFor,
     createdEntityUriId,
-    canonicalUriPrefix,
+    canonicalUriCollection,
     hoistedHeaderFields,
     responseFromStored,
     attachEtag,
@@ -329,7 +329,7 @@ async function revisionPairIdForPatch(
     const wireReq = await db.requests.getById(wirePairId);
     if (wireReq === undefined) return undefined;
     const siblings = await db.requests.getAllWhere(
-        'uri_prefix', wireReq.uri_prefix,
+        'uri_collection', wireReq.uri_collection,
     );
     const revision = siblings.find(
         (row) =>
@@ -467,7 +467,7 @@ export async function handleRequest(
     // fenceRequest, which completes the vessel: the
     // organization, the live memberships, and the roles.
     // Surviving stores are global (message plane);
-    // pair-plane tenancy rides uri_prefix. effective stays
+    // pair-plane tenancy rides uri_collection. effective stays
     // the unfenced base adapter.
     let effective: DbAdapter = adapter;
     // The acting member, sourced from the verified token and
@@ -793,8 +793,8 @@ export async function handleRequest(
             const address = messageAddress(
                 matched.segments, pathSegments,
             );
-            const canonicalPrefix = canonicalUriPrefix(
-                organization, address.uriPrefix,
+            const canonicalPrefix = canonicalUriCollection(
+                organization, address.uriCollection,
             );
             const uriId = createdEntityUriId(
                 routePattern, body,
@@ -1175,7 +1175,7 @@ export async function handleRequest(
                     && familyRegistration(readWiring.family)
                         ?.concurrency === 'locked'
                 ) {
-                    const prefix = canonicalUriPrefix(
+                    const prefix = canonicalUriCollection(
                         organization,
                         '/' + readWiring.family + '/',
                     );

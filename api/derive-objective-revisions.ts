@@ -1,7 +1,7 @@
 import type { DbAdapter } from './db.ts';
 import type { Id, ObjectiveRevisionEntity } from './types.ts';
 import { pickString } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -20,7 +20,7 @@ import {
 // FAMILY-ROOTED objectives/ prefix — OBJECTIVES_WIRING IS that
 // derivation — so this nested sub-resource needs its own bespoke
 // module, exactly as flow_records did (research finding 10:
-// param() throws on '', and documentPairsAt matches uri_prefix
+// param() throws on '', and documentPairsAt matches uri_collection
 // by EQUALITY, so a revision pair at .../objectives/{id}/
 // revisions/ can never leak into the objectives-collection
 // derivation, or vice versa).
@@ -46,7 +46,7 @@ function objectiveRevisionsUriPrefix(
     organization: Id,
     objectiveId: Id,
 ): string {
-    return canonicalUriPrefix(
+    return canonicalUriCollection(
         organization,
         '/objectives/' + objectiveId + '/revisions/',
     );
@@ -90,8 +90,8 @@ export async function deriveObjectiveRevisions(
         organization, objectiveId,
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const documents = deriveDocumentsAt(
         requests, responses, prefix,

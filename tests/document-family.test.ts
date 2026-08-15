@@ -195,7 +195,7 @@ async function testDocumentOp(
             if (pair !== undefined) {
                 const latchedId = pair.latchedHeadPairId;
                 const latest = await headPairIdAt(
-                    view, pair.uriPrefix, pair.uriId,
+                    view, pair.uriCollection, pair.uriId,
                 );
                 if (
                     latchedId !== undefined
@@ -585,7 +585,7 @@ async () => {
         const responses = await db.responses.getAll();
         const atPath = responses.filter(
             (row) =>
-                row.uri_prefix
+                row.uri_collection
                     === '/organizations/1/'
                     + TEST_FAMILY + '/'
                 && row.uri_id === 'doc-race',

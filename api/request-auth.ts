@@ -105,7 +105,7 @@ type FenceResult =
 // (write authorizer / resolveGlobalOwner) remain pair-plane
 // reads. Phase Final Task 5 retired the store decorator:
 // handlers receive ctx.base; pair-plane tenancy rides
-// uri_prefix.
+// uri_collection.
 export async function fenceRequest(
     ctx: AuthenticatedContext,
 ): Promise<FenceResult> {

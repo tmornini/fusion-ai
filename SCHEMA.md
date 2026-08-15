@@ -115,7 +115,7 @@ The append-only ledgers every pair-wired HTTP write appends
 into. Seeded demo data forms pairs pre-tx (`formSeedPair`);
 `EXPECTED_PAIR_COUNT` 1498 / bootstrap 12 is absolute.
 Global-spine (pass-through), NOT org-fenced at the store:
-tenancy lives IN `uri_prefix`, enforced at the route gate
+tenancy lives IN `uri_collection`, enforced at the route gate
 and the write authorizer
 (`api/write-authorizer.ts` via
 `resolveGlobalOwner`, which may fall back to
@@ -124,7 +124,7 @@ and the write authorizer
 ### requests
 
 One row per stored canonical HTTP request message. The
-message text IS the row; `uri_prefix` (retains its trailing
+message text IS the row; `uri_collection` (retains its trailing
 `/`) and `uri_id` (empty string for a collection request) are
 addressing metadata, and `message_hash` is an index over the
 sha256 digest (`shared/digest.ts` `sha256Hex`) of `message`
@@ -134,7 +134,7 @@ metadata only, not a domain timestamp inside the message.
 | Column | Type | Notes |
 |--------|------|-------|
 | id | TEXT | PRIMARY KEY — shared with the paired response |
-| uri_prefix | TEXT | Collection URI, trailing `/` kept |
+| uri_collection | TEXT | Collection URI, trailing `/` kept |
 | uri_id | TEXT | Resource id, or `''` for a collection |
 | at | TEXT | RFC-3339 Zulu — envelope metadata |
 | requester_identity_id | TEXT | identity id of the requester |
@@ -142,7 +142,7 @@ metadata only, not a domain timestamp inside the message.
 | message | TEXT | The canonical stored HTTP message |
 
 Validator: `validateRequestEntity` (`api/validators.ts`).
-Secondary indexes: `uri_prefix`, `uri_id`, `message_hash`
+Secondary indexes: `uri_collection`, `uri_id`, `message_hash`
 (`api/db.ts` `TABLE_INDEXES`).
 
 ### responses
@@ -153,7 +153,7 @@ UUID per pair, never a foreign key of its own).
 | Column | Type | Notes |
 |--------|------|-------|
 | id | TEXT | PRIMARY KEY — equals the request's id |
-| uri_prefix | TEXT | Collection URI, trailing `/` kept |
+| uri_collection | TEXT | Collection URI, trailing `/` kept |
 | uri_id | TEXT | Resource id, or `''` for a collection |
 | at | TEXT | RFC-3339 Zulu — envelope metadata |
 | status | INTEGER | HTTP status, 100..599 |
@@ -172,7 +172,7 @@ the stored 204 wire (`Date:` omitted). No `Version:`
 header.
 
 Validator: `validateResponseEntity` (`api/validators.ts`).
-Secondary indexes: `uri_prefix`, `uri_id`
+Secondary indexes: `uri_collection`, `uri_id`
 (`api/db.ts` `TABLE_INDEXES`).
 
 ## Derived document families (no table)

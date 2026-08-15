@@ -499,7 +499,7 @@ test('stateEventVisibilityFor: tier (ii) op-born transition'
     );
     const statesTail = '/' + 'states' + '/';
     const statesHits = byId.filter((r) =>
-        r.uri_prefix.endsWith(statesTail));
+        r.uri_collection.endsWith(statesTail));
     assert.equal(statesHits.length, 0);
 
     assert.equal(
@@ -549,7 +549,7 @@ test('stateEventVisibilityFor: member-genesis op-born'
     );
     const statesTail = '/' + 'states' + '/';
     const statesHits = byId.filter((r) =>
-        r.uri_prefix.endsWith(statesTail));
+        r.uri_collection.endsWith(statesTail));
     assert.equal(statesHits.length, 0);
 
     assert.equal(

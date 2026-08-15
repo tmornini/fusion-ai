@@ -22,7 +22,7 @@ import {
     documentPairsAt,
 } from '../api/derive-documents.ts';
 import {
-    canonicalUriPrefix,
+    canonicalUriCollection,
 } from '../api/message-pair.ts';
 import { deriveIdeaStateHistory } from
     '../api/derive-ideas.ts';
@@ -950,12 +950,12 @@ async () => {
     ));
     assert.equal(undone.status, 204);
 
-    const prefix = canonicalUriPrefix(
+    const prefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/flows/',
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const pairs = documentPairsAt(
         requests, responses, prefix,

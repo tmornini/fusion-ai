@@ -126,7 +126,7 @@ async function instancePairCount(
         ORGANIZATION, TYPE_ID,
     );
     const responses = await db.responses.getAllWhere(
-        'uri_prefix', prefix,
+        'uri_collection', prefix,
     );
     return responses.filter(
         (r) => r.uri_id === INSTANCE_ID,

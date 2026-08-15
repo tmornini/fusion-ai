@@ -14,7 +14,7 @@ import type {
     IdentityKind,
 } from './types.ts';
 import { pickString } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -30,7 +30,7 @@ import {
 // class): '/pii' forms ONE distinct prefix PER IDENTITY
 // ('/identities/<id>/pii/', uriId '' — a singleton document at a
 // collection-style address, message-address.ts), so no index can
-// serve "every request whose uri_prefix has this shape" for an
+// serve "every request whose uri_collection has this shape" for an
 // arbitrary id. deriveIdentityPiiRows reads db.requests/responses
 // IN FULL (ONE shared tx) and matches PII_ADDRESS_PATTERN — the
 // segment-boundary rule verified against derive-invitations.ts's
@@ -79,7 +79,7 @@ import {
 const PII_ADDRESS_PATTERN = /^\/identities\/([^/]+)\/pii\/$/;
 
 function piiPrefixFor(identityId: Id): string {
-    return canonicalUriPrefix(
+    return canonicalUriCollection(
         undefined, '/identities/' + identityId + '/pii/',
     );
 }
@@ -119,9 +119,9 @@ export async function deriveIdentityPiiRows(
             const prefixes = new Set<string>();
             for (const request of requests) {
                 if (
-                    PII_ADDRESS_PATTERN.test(request.uri_prefix)
+                    PII_ADDRESS_PATTERN.test(request.uri_collection)
                 ) {
-                    prefixes.add(request.uri_prefix);
+                    prefixes.add(request.uri_collection);
                 }
             }
             const rows: IdentityPiiEntity[] = [];
@@ -154,8 +154,8 @@ export async function deriveIdentityPii(
         ['requests', 'responses'],
         async (view) => {
             const [requests, responses] = await Promise.all([
-                view.requests.getAllWhere('uri_prefix', prefix),
-                view.responses.getAllWhere('uri_prefix', prefix),
+                view.requests.getAllWhere('uri_collection', prefix),
+                view.responses.getAllWhere('uri_collection', prefix),
             ]);
             const document = deriveDocumentsAt(
                 requests, responses, prefix,
@@ -175,7 +175,7 @@ export async function deriveIdentityPii(
 // ---- (api/derive-project-scores.ts) ------------------------------
 
 function credentialsPrefixFor(identityId: Id): string {
-    return canonicalUriPrefix(
+    return canonicalUriCollection(
         undefined,
         '/identities/' + identityId + '/credentials/',
     );
@@ -205,8 +205,8 @@ async function fetchCredentialDocuments(
 ): Promise<Map<string, DerivedDocument>> {
     const prefix = credentialsPrefixFor(identityId);
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return deriveDocumentsAt(requests, responses, prefix);
 }
@@ -246,7 +246,7 @@ export async function deriveCredential(
 // ---- identity_providers — same event-plane shape, REQUEST body -
 
 const IDENTITY_PROVIDERS_PREFIX =
-    canonicalUriPrefix(undefined, '/identity-providers/');
+    canonicalUriCollection(undefined, '/identity-providers/');
 
 function identityProviderEntityOf(
     document: DerivedDocument,
@@ -268,10 +268,10 @@ async function fetchIdentityProviderDocuments(
 ): Promise<Map<string, DerivedDocument>> {
     const [requests, responses] = await Promise.all([
         db.requests.getAllWhere(
-            'uri_prefix', IDENTITY_PROVIDERS_PREFIX,
+            'uri_collection', IDENTITY_PROVIDERS_PREFIX,
         ),
         db.responses.getAllWhere(
-            'uri_prefix', IDENTITY_PROVIDERS_PREFIX,
+            'uri_collection', IDENTITY_PROVIDERS_PREFIX,
         ),
     ]);
     return deriveDocumentsAt(
@@ -312,7 +312,7 @@ export async function deriveIdentityProvider(
 // ---- 'sign out everywhere' gate's (tokenRevocationReason's -----
 // ---- FIRST read) one production reader --------------------------
 
-const IDENTITY_TOKEN_REVOCATIONS_PREFIX = canonicalUriPrefix(
+const IDENTITY_TOKEN_REVOCATIONS_PREFIX = canonicalUriCollection(
     undefined, '/identity-token-revocations/',
 );
 
@@ -336,10 +336,10 @@ export async function deriveTokenRevocationsFor(
 ): Promise<IdentityTokenRevocationEntity[]> {
     const [requests, responses] = await Promise.all([
         db.requests.getAllWhere(
-            'uri_prefix', IDENTITY_TOKEN_REVOCATIONS_PREFIX,
+            'uri_collection', IDENTITY_TOKEN_REVOCATIONS_PREFIX,
         ),
         db.responses.getAllWhere(
-            'uri_prefix', IDENTITY_TOKEN_REVOCATIONS_PREFIX,
+            'uri_collection', IDENTITY_TOKEN_REVOCATIONS_PREFIX,
         ),
     ]);
     const documents = deriveDocumentsAt(
@@ -361,10 +361,10 @@ export async function deriveTokenRevocation(
 ): Promise<IdentityTokenRevocationEntity> {
     const [requests, responses] = await Promise.all([
         db.requests.getAllWhere(
-            'uri_prefix', IDENTITY_TOKEN_REVOCATIONS_PREFIX,
+            'uri_collection', IDENTITY_TOKEN_REVOCATIONS_PREFIX,
         ),
         db.responses.getAllWhere(
-            'uri_prefix', IDENTITY_TOKEN_REVOCATIONS_PREFIX,
+            'uri_collection', IDENTITY_TOKEN_REVOCATIONS_PREFIX,
         ),
     ]);
     const document = deriveDocumentsAt(
@@ -388,7 +388,7 @@ export async function deriveTokenRevocation(
 // ---- closure stays pii-only) -------------------------------------
 
 function registrationPrefixFor(identityId: Id): string {
-    return canonicalUriPrefix(
+    return canonicalUriCollection(
         undefined,
         '/identities/' + identityId + '/registration/',
     );
@@ -420,8 +420,8 @@ export async function deriveClientRegistration(
 ): Promise<ClientRegistrationEntity> {
     const prefix = registrationPrefixFor(identityId);
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const document = deriveDocumentsAt(
         requests, responses, prefix,
@@ -443,12 +443,12 @@ export async function deriveIdentityKind(
     db: DbAdapter,
     identityId: Id,
 ): Promise<IdentityKind | undefined> {
-    const prefix = canonicalUriPrefix(
+    const prefix = canonicalUriCollection(
         undefined, '/identities/',
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const document = deriveDocumentsAt(
         requests, responses, prefix,

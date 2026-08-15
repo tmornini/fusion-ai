@@ -6,7 +6,7 @@ import {
     validateResponseEntity,
 } from './validators.ts';
 
-// Anchored retired message-plane uri_prefix patterns.
+// Anchored retired message-plane uri_collection patterns.
 // Task 5: flat records. Task 8: flat record-attributes.
 // Anchored so the live flows/:id/records join family is
 // accepted (never a substring match).
@@ -106,7 +106,7 @@ export function parseAndValidateSnapshot(
             }
             const r = row as Record<string, unknown>;
             validateSnapshotRow(table, r, i);
-            const prefix = r['uri_prefix'];
+            const prefix = r['uri_collection'];
             if (typeof prefix === 'string') {
                 for (
                     const p of RETIRED_URI_PREFIX_PATTERNS
@@ -118,7 +118,7 @@ export function parseAndValidateSnapshot(
                             + ' in table "'
                             + table
                             + '" carries retired'
-                            + ' uri_prefix '
+                            + ' uri_collection '
                             + prefix
                             + '. Re-snapshot from'
                             + ' current state.',

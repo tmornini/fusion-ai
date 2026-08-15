@@ -538,7 +538,7 @@ async () => {
     );
     assert.deepEqual(await second.json(), originalBody);
     const responses = await db.responses.getAllWhere(
-        'uri_prefix',
+        'uri_collection',
         '/organizations/' + ORGANIZATION
             + '/record-types/' + TYPE_ID
             + '/instances/',
@@ -579,7 +579,7 @@ async () => {
             + INSTANCE_DETAIL,
     });
     const responses = await db.responses.getAllWhere(
-        'uri_prefix',
+        'uri_collection',
         '/organizations/' + ORGANIZATION
             + '/record-types/' + TYPE_ID
             + '/instances/',

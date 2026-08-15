@@ -18,7 +18,7 @@ import {
 } from '../api/validators.ts';
 import {
     headPairIdAt,
-    canonicalUriPrefix,
+    canonicalUriCollection,
     strongEtagOf,
 } from '../api/message-pair.ts';
 import { organizationToken } from './token-fixtures.ts';
@@ -298,10 +298,10 @@ test('postFlowDocumentOp with revivals posts the restored'
     assert.equal(update.status, 200);
     // SIDECAR-KEEP (C3): pin graphDelta.deletions / revivals
     // on the flow document pairs — no bulk states derive.
-    const prefix = canonicalUriPrefix('1', '/flows/');
+    const prefix = canonicalUriCollection('1', '/flows/');
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const pairs = documentPairsAt(
         requests, responses, prefix,
@@ -550,7 +550,7 @@ async () => {
     assert.equal(etag, strongEtagOf(stored.version));
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
-        r => r.uri_prefix === '/organizations/1/flows/'
+        r => r.uri_collection === '/organizations/1/flows/'
             && r.uri_id === 'flow-locked-2',
     );
     assert.equal(atAddress.length, 2);
@@ -580,7 +580,7 @@ async () => {
     assert.ok(headId);
     const lockHead = await headPairIdAt(
         db,
-        canonicalUriPrefix('1', '/flows/'),
+        canonicalUriCollection('1', '/flows/'),
         'flow-parity-1',
     );
     assert.equal(headId, lockHead);
@@ -658,7 +658,7 @@ async () => {
     assert.equal(responses.length, 5);
 
     const flowAddress = requests.filter(
-        r => r.uri_prefix === '/organizations/1/flows/'
+        r => r.uri_collection === '/organizations/1/flows/'
             && r.uri_id === 'flow-pairs-1',
     );
     assert.equal(flowAddress.length, 2);
@@ -698,7 +698,7 @@ async () => {
     const joinPrefix =
         '/organizations/1/projects/proj-1/flows/';
     const joinAddress = requests.filter(
-        r => r.uri_prefix === joinPrefix
+        r => r.uri_collection === joinPrefix
             && r.uri_id === 'flow-pairs-1-pf',
     );
     assert.equal(joinAddress.length, 1);
@@ -748,7 +748,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
 
     const requestsAfterFirst = await db.requests.getAll();
     const flowAddressAfterFirst = requestsAfterFirst.filter(
-        r => r.uri_prefix === '/organizations/1/flows/'
+        r => r.uri_collection === '/organizations/1/flows/'
             && r.uri_id === 'flow-dup-1',
     );
     const firstDocumentRequest = flowAddressAfterFirst.find(
@@ -789,7 +789,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
 
     const requestsAfterSecond = await db.requests.getAll();
     const flowAddressAfterSecond = requestsAfterSecond.filter(
-        r => r.uri_prefix === '/organizations/1/flows/'
+        r => r.uri_collection === '/organizations/1/flows/'
             && r.uri_id === 'flow-dup-1',
     );
     const documentRequests = flowAddressAfterSecond.filter(
@@ -903,7 +903,7 @@ test('e2e: POST flows/:id/undo forms a document pair with'
 
     const responses = await db.responses.getAll();
     const documentResponses = responses.filter(
-        r => r.uri_prefix === '/organizations/1/flows/'
+        r => r.uri_collection === '/organizations/1/flows/'
             && r.uri_id === 'flow-undo-pairs-1',
     );
     const priorIds = new Set(
@@ -992,7 +992,7 @@ async () => {
 
     const responses = await db.responses.getAll();
     const atFlow = responses.filter(
-        r => r.uri_prefix === '/organizations/1/flows/'
+        r => r.uri_collection === '/organizations/1/flows/'
             && r.uri_id === 'flow-race-1',
     );
     // Genesis create + Before Race + exactly one racer.

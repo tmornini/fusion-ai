@@ -5,7 +5,7 @@ import type {
     ProjectObjectiveActualScoreEntity,
 } from './types.ts';
 import { pickString, pickNumber } from './validators.ts';
-import { canonicalUriPrefix } from './message-pair.ts';
+import { canonicalUriCollection } from './message-pair.ts';
 import {
     deriveDocumentsAt,
     byIdAscending,
@@ -43,7 +43,7 @@ function scoresUriPrefix(
     projectId: Id,
     segment: string,
 ): string {
-    return canonicalUriPrefix(
+    return canonicalUriCollection(
         organization, '/projects/' + projectId + '/' + segment + '/',
     );
 }
@@ -82,8 +82,8 @@ async function fetchScoreDocuments(
 ): Promise<Map<string, DerivedDocument>> {
     const prefix = scoresUriPrefix(organization, projectId, segment);
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return deriveDocumentsAt(requests, responses, prefix);
 }

@@ -18,7 +18,7 @@ import {
     MS_PER_SECOND, nowUtc,
     setClockForTest, resetClock,
 } from '../api/types.ts';
-import { canonicalUriPrefix } from '../api/message-pair.ts';
+import { canonicalUriCollection } from '../api/message-pair.ts';
 import {
     documentPairsAt,
     type DocumentPair,
@@ -566,8 +566,8 @@ async () => {
     // round-tripped response — two independently re-encoded
     // values, not the same in-memory literal.
     const storedCreatePostRow = (await db.requests.getAllWhere(
-        'uri_prefix',
-        canonicalUriPrefix(STARK_ORGANIZATION, '/work-orders/'),
+        'uri_collection',
+        canonicalUriCollection(STARK_ORGANIZATION, '/work-orders/'),
     )).find(
         (r) => r.uri_id === workOrderId
             && decodeRequestMessage(r.message).method === 'POST',
@@ -855,15 +855,15 @@ async () => {
     ));
     assert.equal(created.status, 204);
 
-    const prefix = canonicalUriPrefix(
+    const prefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/work-orders/',
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const atAddress = requests.filter(
-        (r) => r.uri_prefix === prefix
+        (r) => r.uri_collection === prefix
             && r.uri_id === workOrderId,
     );
     // Both an operation (POST, 204) pair and a document (PUT)
@@ -956,7 +956,7 @@ function atIdCompare(
 function allPairsAt(
     requests: readonly RequestEntity[],
     responses: readonly ResponseEntity[],
-    uriPrefix: string,
+    uriCollection: string,
 ): AnyPair[] {
     const requestById = new Map(
         requests.map((request) => [request.id, request]),
@@ -964,7 +964,7 @@ function allPairsAt(
     const pairs: AnyPair[] = [];
     for (const response of responses) {
         if (
-            response.uri_prefix !== uriPrefix
+            response.uri_collection !== uriCollection
             || response.status < 200
             || response.status > 299
         ) continue;
@@ -1192,12 +1192,12 @@ async function replayWorkOrderStates(
     organization: string,
     workOrderId: string,
 ): Promise<ReplayResult> {
-    const woPrefix = canonicalUriPrefix(
+    const woPrefix = canonicalUriCollection(
         organization, '/work-orders/',
     );
     const [woRequests, woResponses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', woPrefix),
-        db.responses.getAllWhere('uri_prefix', woPrefix),
+        db.requests.getAllWhere('uri_collection', woPrefix),
+        db.responses.getAllWhere('uri_collection', woPrefix),
     ]);
     const allWoPairs = allPairsAt(woRequests, woResponses, woPrefix);
     const createPair = allWoPairs.find(
@@ -1212,44 +1212,44 @@ async function replayWorkOrderStates(
         woRequests, woResponses, woPrefix,
     ).filter((pair) => pair.uriId === workOrderId);
 
-    const claimPrefix = canonicalUriPrefix(
+    const claimPrefix = canonicalUriCollection(
         organization,
         '/work-orders/' + workOrderId + '/claim/',
     );
     const [claimRequests, claimResponses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', claimPrefix),
-        db.responses.getAllWhere('uri_prefix', claimPrefix),
+        db.requests.getAllWhere('uri_collection', claimPrefix),
+        db.responses.getAllWhere('uri_collection', claimPrefix),
     ]);
     const claimPairs = allPairsAt(
         claimRequests, claimResponses, claimPrefix,
     ).filter((p) => p.method === 'POST');
 
-    const releasePrefix = canonicalUriPrefix(
+    const releasePrefix = canonicalUriCollection(
         organization,
         '/work-orders/' + workOrderId + '/release/',
     );
     const [releaseRequests, releaseResponses] =
         await Promise.all([
             db.requests.getAllWhere(
-                'uri_prefix', releasePrefix,
+                'uri_collection', releasePrefix,
             ),
             db.responses.getAllWhere(
-                'uri_prefix', releasePrefix,
+                'uri_collection', releasePrefix,
             ),
         ]);
     const releasePairs = allPairsAt(
         releaseRequests, releaseResponses, releasePrefix,
     ).filter((p) => p.method === 'POST');
 
-    const transitionPrefix = canonicalUriPrefix(
+    const transitionPrefix = canonicalUriCollection(
         organization,
         '/work-orders/' + workOrderId + '/transition/',
     );
     const [
         transitionRequests, transitionResponses,
     ] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', transitionPrefix),
-        db.responses.getAllWhere('uri_prefix', transitionPrefix),
+        db.requests.getAllWhere('uri_collection', transitionPrefix),
+        db.responses.getAllWhere('uri_collection', transitionPrefix),
     ]);
     const transitionPairs = allPairsAt(
         transitionRequests, transitionResponses,
@@ -1383,8 +1383,8 @@ async () => {
     // literal — so a canonical-JSON regression that mangled
     // either differently would be caught.
     const storedCreatePostRow = (await db.requests.getAllWhere(
-        'uri_prefix',
-        canonicalUriPrefix(STARK_ORGANIZATION, '/work-orders/'),
+        'uri_collection',
+        canonicalUriCollection(STARK_ORGANIZATION, '/work-orders/'),
     )).find(
         (r) => r.uri_id === workOrderId
             && decodeRequestMessage(r.message).method === 'POST',
@@ -1626,13 +1626,13 @@ test('same-join-id retry: two different work-order creates '
     ));
     assert.equal(second.status, 204);
 
-    const joinPrefix = canonicalUriPrefix(
+    const joinPrefix = canonicalUriCollection(
         STARK_ORGANIZATION,
         '/flows/' + flowId + '/work-orders/',
     );
     const joinResponses = (await db.responses.getAllWhere(
         'uri_id', sharedFwoId,
-    )).filter((row) => row.uri_prefix === joinPrefix);
+    )).filter((row) => row.uri_collection === joinPrefix);
     assert.equal(joinResponses.length, 2);
     for (const response of joinResponses) {
         assert.equal('supersedes' in response, false);

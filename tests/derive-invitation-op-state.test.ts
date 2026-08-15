@@ -13,7 +13,7 @@ import { seededMockDb } from './mock-seed.ts';
 
 // The Phase 14 Task 1 core: invitationOpStateFor is the ENTITY-
 // SCOPED sibling of the whole-ledger-scanning (private)
-// invitationOpStates — three indexed getAllWhere('uri_prefix',
+// invitationOpStates — three indexed getAllWhere('uri_collection',
 // ...) reads (one per op kind) instead of a db.requests.getAll()
 // walk. This file proves it correct against the ROW-PLANE
 // (states table) currentInvitationState reproduces, over three

@@ -14,7 +14,7 @@ import type {
 } from '../api/types.ts';
 import { nowUtc } from
     '../api/types.ts';
-import { canonicalUriPrefix } from '../api/message-pair.ts';
+import { canonicalUriCollection } from '../api/message-pair.ts';
 import { documentPairsAt } from '../api/derive-documents.ts';
 import {
     documentGetHandler,
@@ -195,10 +195,10 @@ async function resolveAttributePath(
         + '/record-types/';
     for (const hit of hits) {
         if (
-            hit.uri_prefix.startsWith(needle)
-            && hit.uri_prefix.endsWith('/attributes/')
+            hit.uri_collection.startsWith(needle)
+            && hit.uri_collection.endsWith('/attributes/')
         ) {
-            const typeId = hit.uri_prefix
+            const typeId = hit.uri_collection
                 .slice(needle.length)
                 .split('/')[0];
             if (typeId !== undefined && typeId !== '') {
@@ -890,7 +890,7 @@ async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const recordId = 'rec-drift-dup-1';
-    const prefix = canonicalUriPrefix(
+    const prefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/record-types/',
     );
 
@@ -912,8 +912,8 @@ async () => {
     assert.equal(first.status, 204);
 
     const firstDocumentPairs = documentPairsAt(
-        await db.requests.getAllWhere('uri_prefix', prefix),
-        await db.responses.getAllWhere('uri_prefix', prefix),
+        await db.requests.getAllWhere('uri_collection', prefix),
+        await db.responses.getAllWhere('uri_collection', prefix),
         prefix,
     ).filter((pair) => pair.uriId === recordId);
     assert.equal(firstDocumentPairs.length, 1);
@@ -936,9 +936,9 @@ async () => {
     assert.equal(second.status, 204);
 
     const allRequests =
-        await db.requests.getAllWhere('uri_prefix', prefix);
+        await db.requests.getAllWhere('uri_collection', prefix);
     const allResponses =
-        await db.responses.getAllWhere('uri_prefix', prefix);
+        await db.responses.getAllWhere('uri_collection', prefix);
     const secondDocumentPairs = documentPairsAt(
         allRequests, allResponses, prefix,
     ).filter((pair) => pair.uriId === recordId);
@@ -992,15 +992,15 @@ async () => {
     ));
     assert.equal(created.status, 204);
 
-    const recordsPrefix = canonicalUriPrefix(
+    const recordsPrefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/record-types/',
     );
     const [recordRequests, recordResponses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', recordsPrefix),
-        db.responses.getAllWhere('uri_prefix', recordsPrefix),
+        db.requests.getAllWhere('uri_collection', recordsPrefix),
+        db.responses.getAllWhere('uri_collection', recordsPrefix),
     ]);
     const atRecordAddress = recordRequests.filter(
-        (r) => r.uri_prefix === recordsPrefix
+        (r) => r.uri_collection === recordsPrefix
             && r.uri_id === recordId,
     );
     assert.equal(atRecordAddress.length, 2);
@@ -1033,10 +1033,10 @@ async () => {
     const [attributeRequests, attributeResponses] =
         await Promise.all([
             db.requests.getAllWhere(
-                'uri_prefix', attributesPrefix,
+                'uri_collection', attributesPrefix,
             ),
             db.responses.getAllWhere(
-                'uri_prefix', attributesPrefix,
+                'uri_collection', attributesPrefix,
             ),
         ]);
     const attributeDocumentPairs = documentPairsAt(
@@ -1294,13 +1294,13 @@ async function transitionFieldValueCounts(
     organization: string,
     workOrderId: string,
 ): Promise<Map<string, number>> {
-    const prefix = canonicalUriPrefix(
+    const prefix = canonicalUriCollection(
         organization,
         '/work-orders/' + workOrderId + '/transition/',
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     const requestById = new Map(
         requests.map((request) => [request.id, request]),
@@ -1308,7 +1308,7 @@ async function transitionFieldValueCounts(
     const counts = new Map<string, number>();
     for (const response of responses) {
         if (
-            response.uri_prefix !== prefix
+            response.uri_collection !== prefix
             || response.status < 200
             || response.status > 299
         ) continue;

@@ -68,8 +68,8 @@ async function fetchRecordTypePairs(
     readonly pairs: readonly DocumentPair[];
 }> {
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return {
         documents: deriveDocumentsAt(

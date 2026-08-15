@@ -209,7 +209,7 @@ async function countInstancePairs(
         ORGANIZATION, TYPE_ID,
     );
     const responses = await db.responses.getAllWhere(
-        'uri_prefix', prefix,
+        'uri_collection', prefix,
     );
     return responses.filter(
         (r) => r.uri_id === INSTANCE_ID,
@@ -223,8 +223,8 @@ async function countDeletePairs(
         ORGANIZATION, TYPE_ID,
     );
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_prefix', prefix),
-        db.responses.getAllWhere('uri_prefix', prefix),
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
     ]);
     return documentPairsAt(
         requests, responses, prefix,

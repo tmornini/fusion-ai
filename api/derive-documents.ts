@@ -76,12 +76,12 @@ export interface DocumentPair {
     readonly requesterIdentityId: Id;
 }
 
-// Every 2xx PUT/DELETE pair at `uriPrefix`, request matched to
+// Every 2xx PUT/DELETE pair at `uriCollection`, request matched to
 // its response by their shared id, decoded once — ascending by
 // the envelope (at, id), the SAME arrival order headPairIdAt
 // (message-pair.ts) picks a single head from. That shared
 // mechanism is ordering ONLY: headPairIdAt filters by uri_id/
-// uri_prefix alone — every status AND method, since it serves
+// uri_collection alone — every status AND method, since it serves
 // Supersedes/Follows provenance (the LOCK head) — while this
 // function ALSO excludes non-2xx pairs (only a successful
 // response can carry a live document) AND excludes every
@@ -94,7 +94,7 @@ export interface DocumentPair {
 export function documentPairsAt(
     requests: readonly RequestEntity[],
     responses: readonly ResponseEntity[],
-    uriPrefix: string,
+    uriCollection: string,
 ): readonly DocumentPair[] {
     const requestById = new Map(
         requests.map((request) => [request.id, request]),
@@ -102,7 +102,7 @@ export function documentPairsAt(
     const pairs: DocumentPair[] = [];
     for (const response of responses) {
         if (
-            response.uri_prefix !== uriPrefix
+            response.uri_collection !== uriCollection
             || !isSuccessStatus(response.status)
         ) continue;
         const request = requestById.get(response.id);
@@ -147,9 +147,9 @@ export interface DerivedDocument {
 export function deriveDocumentsAt(
     requests: readonly RequestEntity[],
     responses: readonly ResponseEntity[],
-    uriPrefix: string,
+    uriCollection: string,
 ): Map<string, DerivedDocument> {
-    const pairs = documentPairsAt(requests, responses, uriPrefix);
+    const pairs = documentPairsAt(requests, responses, uriCollection);
     const heads = latestByKey(pairs, (pair) => pair.uriId);
     const documents = new Map<string, DerivedDocument>();
     for (const [uriId, head] of heads) {
