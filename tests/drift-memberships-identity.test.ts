@@ -268,8 +268,9 @@ test('leg 6: LIVE accept — grant + accept an invitation through'
     assert.equal(after.length, 2);
     assert.equal(
         after.some(
-            (m) => m.id === membershipId
-                && m.organization_id === ORGANIZATION_TWO,
+            (m) => m.identity_id === sarahId
+                && m.organization_id === ORGANIZATION_TWO
+                && m.type === 'member',
         ),
         true,
     );

@@ -8,6 +8,7 @@ import {
     ATTRIBUTE_DETAIL_PATTERN,
     INSTANCE_DETAIL_PATTERN,
     RECORD_TYPE_DETAIL_PATTERN,
+    ORGANIZATION_MEMBER_DETAIL_PATTERN,
 } from '../api/family-registry.ts';
 
 function specsOf(
@@ -138,6 +139,9 @@ const DUMMY_BODIES: Readonly<
     'memberships/:id': {
         organization_id: 'organization-1',
         identity_id: 'id', type: 'member', at: AT,
+    },
+    [ORGANIZATION_MEMBER_DETAIL_PATTERN]: {
+        type: 'member', at: AT,
     },
     'identity-tokens/:id': {
         jti: 'j', identity_id: 'id',

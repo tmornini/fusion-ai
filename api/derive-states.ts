@@ -209,6 +209,21 @@ async function organizationHasMemberPair(
     organization: Id,
     identityId: Id,
 ): Promise<boolean> {
+    const seatPrefix = '/organizations/' + organization
+        + '/members/';
+    const [seatRequests, seatResponses] = await Promise.all([
+        db.requests.getAllWhere(
+            'uri_collection', seatPrefix,
+        ),
+        db.responses.getAllWhere(
+            'uri_collection', seatPrefix,
+        ),
+    ]);
+    if (deriveDocumentsAt(
+        seatRequests, seatResponses, seatPrefix,
+    ).has(identityId)) {
+        return true;
+    }
     const prefix = canonicalUriCollection(
         organization, '/memberships/',
     );
@@ -393,6 +408,10 @@ function ownerProbeCollection(
     }
     if (table === 'invitations') {
         return INVITATIONS_PREFIX;
+    }
+    if (table === 'organization_members') {
+        return '/organizations/' + organization
+            + '/members/';
     }
     if (table === 'role_grants') {
         return ROLE_GRANTS_URI_PREFIX;

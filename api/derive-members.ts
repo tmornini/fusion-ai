@@ -15,6 +15,7 @@ import {
     type DerivedDocument,
     type DocumentPair,
 } from './derive-documents.ts';
+import { seatsPrefixFor } from './derive-memberships.ts';
 
 // The member directory's own reduction over the message ledger —
 // Phase 8 Task 7, the roster's last derivation before the readers
@@ -179,14 +180,31 @@ export async function deriveMembers(
     organization: Id,
 ): Promise<MemberEntity[]> {
     const membershipsPrefix = membershipsPrefixFor(organization);
-    const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_collection', membershipsPrefix),
-        db.responses.getAllWhere('uri_collection', membershipsPrefix),
-    ]);
+    const seatPrefix = seatsPrefixFor(organization);
+    const [requests, responses, seatRequests, seatResponses] =
+        await Promise.all([
+            db.requests.getAllWhere(
+                'uri_collection', membershipsPrefix,
+            ),
+            db.responses.getAllWhere(
+                'uri_collection', membershipsPrefix,
+            ),
+            db.requests.getAllWhere(
+                'uri_collection', seatPrefix,
+            ),
+            db.responses.getAllWhere(
+                'uri_collection', seatPrefix,
+            ),
+        ]);
     const memberships = deriveDocumentsAt(
         requests, responses, membershipsPrefix,
     );
     const identityIds = new Set<Id>();
+    for (const document of deriveDocumentsAt(
+        seatRequests, seatResponses, seatPrefix,
+    ).values()) {
+        identityIds.add(document.uriId);
+    }
     for (const document of memberships.values()) {
         identityIds.add(pickString(document.body, 'identity_id'));
     }

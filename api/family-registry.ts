@@ -171,3 +171,12 @@ export const INSTANCE_VERSIONS_PATTERN =
     INSTANCE_DETAIL_PATTERN + '/versions';
 export const INSTANCE_VERSION_PATTERN =
     INSTANCE_VERSIONS_PATTERN + '/:version';
+// Organization member seat (Task 52): the relationship
+// itself. Path carries organization + identity; body is
+// privilege type. Collection prefix slice is the roster
+// of seats. Kind stays on the identity.
+export const ORGANIZATION_MEMBERS_COLLECTION_PATTERN =
+    'organizations/:organization-id/members';
+export const ORGANIZATION_MEMBER_DETAIL_PATTERN =
+    ORGANIZATION_MEMBERS_COLLECTION_PATTERN
+        + '/:identity-id';

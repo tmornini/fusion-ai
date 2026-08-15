@@ -185,6 +185,28 @@ async function deriveMembershipsAll(db: DbAdapter) {
         at: string;
     }> = [];
     for (const organization of organizations) {
+        const seatPrefix = '/organizations/'
+            + organization.id + '/members/';
+        const [seatRequests, seatResponses] =
+            await Promise.all([
+                db.requests.getAllWhere(
+                    'uri_collection', seatPrefix,
+                ),
+                db.responses.getAllWhere(
+                    'uri_collection', seatPrefix,
+                ),
+            ]);
+        for (const document of deriveDocumentsAt(
+            seatRequests, seatResponses, seatPrefix,
+        ).values()) {
+            rows.push({
+                id: document.uriId,
+                organization_id: organization.id,
+                identity_id: document.uriId,
+                type: String(document.body['type']),
+                at: String(document.body['at']),
+            });
+        }
         const prefix = canonicalUriCollection(
             organization.id, '/memberships/',
         );

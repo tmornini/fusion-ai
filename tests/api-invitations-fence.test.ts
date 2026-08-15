@@ -49,6 +49,28 @@ async function allMemberships(db: MemoryDbAdapter) {
         at: string;
     }> = [];
     for (const organization of organizations) {
+        const seatPrefix = '/organizations/'
+            + organization.id + '/members/';
+        const [seatRequests, seatResponses] =
+            await Promise.all([
+                db.requests.getAllWhere(
+                    'uri_collection', seatPrefix,
+                ),
+                db.responses.getAllWhere(
+                    'uri_collection', seatPrefix,
+                ),
+            ]);
+        for (const document of deriveDocumentsAt(
+            seatRequests, seatResponses, seatPrefix,
+        ).values()) {
+            rows.push({
+                id: document.uriId,
+                organization_id: organization.id,
+                identity_id: document.uriId,
+                type: String(document.body['type']),
+                at: String(document.body['at']),
+            });
+        }
         const prefix = canonicalUriCollection(
             organization.id, '/memberships/',
         );
@@ -690,7 +712,7 @@ test('a removed member who re-accepts gets a no-op — not a'
         }));
     assert.equal(accept.status, 201);
     const del = await handleRequest(db, req(
-        'DELETE', '/memberships/ms-sarah-removed',
+        'DELETE', '/organizations/2/members/sarah',
         await organizationToken('current', '2')));
     assert.equal(del.status, 204);
     const statesBefore = (await invitationLifecycleStatesFor(db, id)).length;

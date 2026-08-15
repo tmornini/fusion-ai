@@ -1,7 +1,11 @@
 import type { DbAdapter } from './db.ts';
+import { EntityNotFoundError } from './db.ts';
 import type { Id, MembershipEntity } from './types.ts';
-import { pickString, validateMembershipEntity } from
-    './validators.ts';
+import {
+    pickString,
+    validateMembershipEntity,
+    validateSeatDocumentBody,
+} from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import { withoutId } from './document-family.ts';
@@ -109,6 +113,26 @@ function membershipsPrefixFor(organization: Id): string {
     return canonicalUriCollection(organization, '/memberships/');
 }
 
+export function seatsPrefixFor(organization: Id): string {
+    return '/organizations/' + organization + '/members/';
+}
+
+export function seatEntityOf(
+    document: DerivedDocument,
+    organization: Id,
+): MembershipEntity {
+    const body = validateSeatDocumentBody(
+        withoutId(document.body),
+    );
+    return {
+        id: document.uriId,
+        organization_id: organization,
+        identity_id: document.uriId,
+        type: body.type,
+        at: body.at,
+    };
+}
+
 function membershipEntityOf(
     document: DerivedDocument,
 ): MembershipEntity {
@@ -140,6 +164,22 @@ export async function deriveMembershipsForIdentity(
     const organizations = await deriveOrganizations(db);
     const rows: MembershipEntity[] = [];
     for (const organization of organizations) {
+        const seatPrefix = seatsPrefixFor(organization.id);
+        const [seatRequests, seatResponses] = await Promise.all([
+            db.requests.getAllWhere(
+                'uri_collection', seatPrefix,
+            ),
+            db.responses.getAllWhere(
+                'uri_collection', seatPrefix,
+            ),
+        ]);
+        const seat = deriveDocumentsAt(
+            seatRequests, seatResponses, seatPrefix,
+        ).get(identityId);
+        if (seat !== undefined) {
+            rows.push(seatEntityOf(seat, organization.id));
+            continue;
+        }
         const prefix = membershipsPrefixFor(organization.id);
         const [requests, responses] = await Promise.all([
             db.requests.getAllWhere('uri_collection', prefix),
@@ -170,6 +210,20 @@ export async function membershipExistsFor(
     organization: Id,
     identityId: Id,
 ): Promise<boolean> {
+    const seatPrefix = seatsPrefixFor(organization);
+    const [seatRequests, seatResponses] = await Promise.all([
+        dbOrView.requests.getAllWhere(
+            'uri_collection', seatPrefix,
+        ),
+        dbOrView.responses.getAllWhere(
+            'uri_collection', seatPrefix,
+        ),
+    ]);
+    if (deriveDocumentsAt(
+        seatRequests, seatResponses, seatPrefix,
+    ).has(identityId)) {
+        return true;
+    }
     const prefix = membershipsPrefixFor(organization);
     const [requests, responses] = await Promise.all([
         dbOrView.requests.getAllWhere('uri_collection', prefix),
@@ -186,4 +240,44 @@ export async function membershipExistsFor(
         }
     }
     return false;
+}
+
+export async function deriveOrganizationMemberSeats(
+    db: DbAdapter,
+    organization: Id,
+): Promise<MembershipEntity[]> {
+    const prefix = seatsPrefixFor(organization);
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
+    ]);
+    const documents = deriveDocumentsAt(
+        requests, responses, prefix,
+    );
+    const rows: MembershipEntity[] = [];
+    for (const document of documents.values()) {
+        rows.push(seatEntityOf(document, organization));
+    }
+    return rows.sort(byAtThenIdAscending);
+}
+
+export async function deriveOrganizationMemberSeat(
+    db: DbAdapter,
+    organization: Id,
+    identityId: Id,
+): Promise<MembershipEntity> {
+    const prefix = seatsPrefixFor(organization);
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllWhere('uri_collection', prefix),
+        db.responses.getAllWhere('uri_collection', prefix),
+    ]);
+    const document = deriveDocumentsAt(
+        requests, responses, prefix,
+    ).get(identityId);
+    if (document === undefined) {
+        throw new EntityNotFoundError(
+            'organization_members', identityId,
+        );
+    }
+    return seatEntityOf(document, organization);
 }

@@ -66,6 +66,7 @@ import {
     validateIdentityDocumentBody,
     validateIdentityCredentialEntity,
     validateMembershipDocumentBody,
+    validateSeatDocumentBody,
     validateObjectiveCreateBody,
     validateObjectiveDocumentBody,
     validateObjectiveRevisionEntity,
@@ -178,6 +179,8 @@ import {
     INSTANCE_DETAIL_PATTERN,
     INSTANCE_VERSIONS_PATTERN,
     INSTANCE_VERSION_PATTERN,
+    ORGANIZATION_MEMBERS_COLLECTION_PATTERN,
+    ORGANIZATION_MEMBER_DETAIL_PATTERN,
 } from './family-registry.ts';
 import {
     deriveDocumentsAt,
@@ -252,6 +255,10 @@ import {
     deriveMemberParent,
     memberParentOf,
 } from './derive-members.ts';
+import {
+    deriveOrganizationMemberSeats,
+    deriveOrganizationMemberSeat,
+} from './derive-memberships.ts';
 import {
     deriveIdentityPiiRows,
     deriveIdentityPii,
@@ -3634,6 +3641,26 @@ export const WRITE_RESPONSE_SPECS:
     // G3: memberships/:id emits membershipDocumentEntityOf
     // (GET derive). Accept and the live PUT share this spec.
     'memberships/:id': documentWriteResponseSpec(MEMBERSHIPS_WIRING),
+    // Seat document: path is the relationship. Body is
+    // type + at. organization_id / identity_id are
+    // reconstructed from the path for the wire entity.
+    [ORGANIZATION_MEMBER_DETAIL_PATTERN]: {
+        status: HTTP_OK,
+        successBody: (params, body) => {
+            const organization = param(params, 0);
+            const identityId = param(params, 1);
+            const seat = validateSeatDocumentBody(
+                withoutId(body ?? {}),
+            );
+            return {
+                id: identityId,
+                organization_id: organization,
+                identity_id: identityId,
+                type: seat.type,
+                at: seat.at,
+            };
+        },
+    },
     // G4: GET wins. identityTokenEntityOf is id-last;
     // formTokenEventPair and this spec were id-first.
     // Stored PUT = GET.
@@ -6166,6 +6193,33 @@ export const routes: Route[] = [
     // (memberships is organizationNested:true, so the derived
     // prefix fences to the caller's org exactly as the
     // org-scoped adapter already did for the hand-written read).
+    route(ORGANIZATION_MEMBERS_COLLECTION_PATTERN, {
+        get: (db, _p, _actor, organization) =>
+            deriveOrganizationMemberSeats(
+                db, requireOrganization(organization),
+            ),
+    }),
+    route(ORGANIZATION_MEMBER_DETAIL_PATTERN, {
+        get: (db, p, _actor, organization) =>
+            deriveOrganizationMemberSeat(
+                db, requireOrganization(organization),
+                param(p, 1),
+            ),
+        put: (db, p, body, actor, pair) =>
+            postMembershipDocumentOp(
+                db, param(p, 1), body, actor, pair,
+            ),
+        delete: (db, _p, _actor, pair) => {
+            return db.transaction(
+                ['requests', 'responses'],
+                async (view) => {
+                    if (pair !== undefined) {
+                        await appendMessagePair(view, pair);
+                    }
+                },
+            );
+        },
+    }),
     route('memberships', {
         get: documentCollectionGetHandler(MEMBERSHIPS_WIRING),
     }),

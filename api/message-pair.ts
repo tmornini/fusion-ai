@@ -28,6 +28,7 @@ import {
     RECORD_TYPE_DETAIL_PATTERN,
     ATTRIBUTE_DETAIL_PATTERN,
     INSTANCE_DETAIL_PATTERN,
+    ORGANIZATION_MEMBER_DETAIL_PATTERN,
 } from './family-registry.ts';
 import {
     HTTP_OK, HTTP_CREATED, HTTP_NO_CONTENT, HTTP_BAD_REQUEST,
@@ -934,6 +935,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     // DELETE (PAIR_WIRED only — R10 keeps DOCUMENT_CLASS
     // clear). Public PUT is 405 (Task 20).
     INSTANCE_DETAIL_PATTERN,
+    ORGANIZATION_MEMBER_DETAIL_PATTERN,
     // states/:id/field-values/:fvid RETIRED from live wire
     // (Phase 15 Task 7); seed still forms pairs at that
     // address via formSeedPair + WRITE_RESPONSE_SPECS.
@@ -1031,6 +1033,7 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         // Nested attributes detail (Task 7): simple class —
         // attributes never join the If-Match dialect.
         ATTRIBUTE_DETAIL_PATTERN,
+        ORGANIZATION_MEMBER_DETAIL_PATTERN,
         // states/:id/field-values/:fvid RETIRED from live wire
         // (Phase 15 Task 7); seed still forms pairs at that
         // address via formSeedPair + WRITE_RESPONSE_SPECS.

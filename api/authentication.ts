@@ -261,8 +261,9 @@ export async function subjectOrganizations(
 }
 
 // Claim roles baked at mint: one `{type}:{organization_id}`
-// per live membership. The gate projects these for the fenced
-// org; it never re-derives role grants.
+// per live seat (memberships dual-read until Task 55). The
+// gate projects these for the fenced organization; it never
+// re-derives role grants.
 async function subjectRoles(
     adapter: DbAdapter,
     identityId: Id,

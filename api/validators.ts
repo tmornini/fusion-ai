@@ -35,6 +35,7 @@ import type {
     StateFieldValueEntity,
     OrganizationEntity,
     MembershipEntity,
+    MembershipType,
     InvitationEntity,
     IdeaSubmissionEntity,
     ProjectFlowEntity,
@@ -2030,6 +2031,35 @@ export function validateMembershipDocumentBody(
             type,
             at,
         },
+    };
+}
+
+const SEAT_DOCUMENT_BODY_KEYS: readonly string[] = [
+    'type', 'at',
+];
+
+export interface SeatDocumentBody {
+    readonly type: MembershipType;
+    readonly at: string;
+}
+
+// PUT organizations/:organization-id/members/:identity-id.
+// Organization and identity ride the path. Privilege type
+// and the moment of union ride the body.
+export function validateSeatDocumentBody(
+    body: Record<string, unknown>,
+): SeatDocumentBody {
+    assertOnlyKeys(
+        body, SEAT_DOCUMENT_BODY_KEYS, 'SeatDocumentBody',
+    );
+    return {
+        type: validateEnumField(
+            body, 'type', MEMBERSHIP_TYPES,
+            'membership type', 'SeatDocumentBody',
+        ),
+        at: validateTimestampField(
+            body, 'at', 'SeatDocumentBody',
+        ),
     };
 }
 

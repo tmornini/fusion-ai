@@ -38,6 +38,8 @@ import {
     deriveMemberParent,
     deriveMembers,
 } from '../api/derive-members.ts';
+import { deriveOrganizationMemberSeat } from
+    '../api/derive-memberships.ts';
 import { deriveInvitations } from '../api/derive-invitations.ts';
 import {
     STARK_ORGANIZATION,
@@ -898,9 +900,10 @@ async () => {
         (row) => row.id === 'inv-roster-jessica',
     )!;
     assert.equal(jessicaRow.state, 'accepted');
-    const derivedJessicaMembership = await derivedMembership(
-        db, organization, 'ms-roster-jessica',
-    );
+    const derivedJessicaMembership =
+        await deriveOrganizationMemberSeat(
+            db, organization, jessicaId,
+        );
     assert.equal(
         derivedJessicaMembership.identity_id, jessicaId,
     );
