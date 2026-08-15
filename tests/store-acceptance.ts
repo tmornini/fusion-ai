@@ -7,6 +7,8 @@ import { seedAdminSchema } from './test-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateCryptoSafeBase62 } from
+    '../shared/crypto-safe-base62.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 
 // Parameterized store acceptance. ./test-postgres will
@@ -15,6 +17,9 @@ import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 
 const AT = '2026-01-01T00:00:00.000000Z';
 const IDEA_PREFIX = '/organizations/1/ideas/';
+const FLOW_PREFIX = '/organizations/1/flows/';
+const WIRE_REQUEST =
+    'PUT /organizations/1/ideas/42 HTTP/1.1\r\n\r\n';
 
 function req(
     method: string,
@@ -60,6 +65,25 @@ function membershipDocument(
         identity_id: identityId,
         type: 'member',
         at: AT,
+    };
+}
+
+function projectDocument(
+    title: string,
+    stateEventId: string,
+): Record<string, unknown> {
+    return {
+        title,
+        description: 'd',
+        progress: 0,
+        start_date: '2026-01-01',
+        target_end_date: '2026-06-01',
+        estimated_cost: 1000,
+        actual_cost: 0,
+        position: 1,
+        state: 'submitted',
+        state_at: AT,
+        state_event_id: stateEventId,
     };
 }
 
@@ -115,28 +139,48 @@ function flowDocument(
     };
 }
 
-function preBreakSnapshot(): string {
-    const wireRequest =
-        'PUT /organizations/1/ideas/42 HTTP/1.1\r\n\r\n';
-    const wireResponse = 'HTTP/1.1 204 No Content\r\n\r\n';
+function currentRequestRow(): Record<string, unknown> {
+    return {
+        id: 'rq1',
+        uri_collection: '/organizations/1/ideas/',
+        uri_id: '42',
+        at: AT,
+        requester_identity_id: 'current',
+        message_hash: 'a'.repeat(64),
+        message: WIRE_REQUEST,
+        method: 'PUT',
+        operation_id: TEST_OPERATION_ID,
+    };
+}
+
+function omit(
+    row: Record<string, unknown>,
+    key: string,
+): Record<string, unknown> {
+    const { [key]: _dropped, ...rest } = row;
+    return rest;
+}
+
+function snapshotWithoutOperationId(): string {
+    return JSON.stringify({
+        requests: [
+            omit(currentRequestRow(), 'operation_id'),
+        ],
+    });
+}
+
+function snapshotCanonicalJson(): string {
     return JSON.stringify({
         requests: [{
-            id: 'rq1',
-            uri_collection: '/organizations/1/ideas/',
-            uri_id: '42',
-            at: AT,
-            requester_identity_id: 'current',
-            message_hash: 'a'.repeat(64),
-            message: wireRequest,
-            method: 'PUT',
-        }],
-        responses: [{
-            id: 'rs1',
-            uri_collection: '/organizations/1/ideas/',
-            uri_id: '42',
-            at: AT,
-            version: 'e'.repeat(64),
-            message: wireResponse,
+            ...currentRequestRow(),
+            message: JSON.stringify({
+                startLine: {
+                    kind: 'request',
+                    method: 'PUT',
+                    target: '/organizations/1/ideas/42',
+                    version: 'HTTP/1.1',
+                },
+            }),
         }],
     });
 }
@@ -215,7 +259,7 @@ export function defineStoreAcceptance(
         );
         const second = await handleRequest(db, req(
             'PUT', '/ideas/sa-same', token, body,
-            { 'Idempotency-Key': 'k-sa-same' },
+            undefined, generateCryptoSafeBase62(),
         ));
         assert.equal(second.status, 200);
         assert.equal(second.headers.get('ETag'), firstEtag);
@@ -254,8 +298,13 @@ export function defineStoreAcceptance(
 
     test(name + ': address miss is 404', async () => {
         const { db, token } = await ready();
+        const put = await handleRequest(db, req(
+            'PUT', '/projects/sa-miss', token,
+            projectDocument('Other', 'ev-sa-miss'),
+        ));
+        assert.equal(put.status, 201);
         const got = await handleRequest(
-            db, req('GET', '/ideas/sa-missing', token),
+            db, req('GET', '/ideas/sa-miss', token),
         );
         assert.equal(got.status, 404);
     });
@@ -266,25 +315,68 @@ export function defineStoreAcceptance(
             'POST', '/flows', token, flowCreate('sa-flow'),
         ));
         assert.equal(created.status, 201);
+        const live = await handleRequest(
+            db, req('GET', '/flows/sa-flow', token),
+        );
+        assert.equal(live.status, 200);
+        const liveEtag = live.headers.get('ETag');
+        const liveBody = await live.json() as {
+            name: string;
+        };
+        assert.equal(liveBody.name, 'Acceptance');
+        const before = await pairsAt(
+            db, FLOW_PREFIX, 'sa-flow',
+        );
         const stale = await handleRequest(db, req(
             'PUT', '/flows/sa-flow', token,
             flowDocument('Stale', 'sa-flow-a'),
             { 'if-match': '"' + 'b'.repeat(64) + '"' },
         ));
         assert.equal(stale.status, 412);
+        assert.equal(
+            await pairsAt(db, FLOW_PREFIX, 'sa-flow'),
+            before,
+        );
+        const again = await handleRequest(
+            db, req('GET', '/flows/sa-flow', token),
+        );
+        assert.equal(again.status, 200);
+        assert.equal(again.headers.get('ETag'), liveEtag);
+        const againBody = await again.json() as {
+            name: string;
+        };
+        assert.equal(againBody.name, liveBody.name);
     });
 
     test(name + ': snapshot loud-reject', async () => {
         const { db } = await ready();
         const before = (await db.requests.getAll()).length;
-        const res = await handleRequest(db, req(
+        const missingOp = await handleRequest(db, req(
             'PUT', '/snapshots/import', undefined,
-            { json: preBreakSnapshot() },
+            { json: snapshotWithoutOperationId() },
         ));
-        assert.equal(res.status, 400);
-        const body = await res.json() as { error: string };
-        assert.match(body.error, /operation_id/);
-        assert.match(body.error, /Re-snapshot|reseed/);
+        assert.equal(missingOp.status, 400);
+        const missingBody = await missingOp.json() as {
+            error: string;
+        };
+        assert.match(missingBody.error, /operation_id/);
+        assert.match(
+            missingBody.error, /Re-snapshot|reseed/,
+        );
+        const canon = await handleRequest(db, req(
+            'PUT', '/snapshots/import', undefined,
+            { json: snapshotCanonicalJson() },
+        ));
+        assert.equal(canon.status, 400);
+        const canonBody = await canon.json() as {
+            error: string;
+        };
+        assert.match(
+            canonBody.error, /serializeWire|message/,
+        );
+        assert.match(
+            canonBody.error, /Re-snapshot|reseed/,
+        );
         assert.equal(
             (await db.requests.getAll()).length, before,
         );
