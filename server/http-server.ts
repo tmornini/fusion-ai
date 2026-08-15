@@ -473,6 +473,7 @@ async function dispatch(
         }
         if (isAuthThrottlePath(requestPathname)
             && grantType !== 'refresh'
+            && grantType !== 'token-exchange'
             && throttle.limited(
                 req.socket.remoteAddress,
                 headerLine(req.headers['forwarded']),

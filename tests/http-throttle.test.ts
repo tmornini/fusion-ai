@@ -110,6 +110,32 @@ async () => {
     });
 });
 
+test('six token-exchange grants reach the handler',
+async () => {
+    let handled = 0;
+    const handle: RequestHandler = async () => {
+        handled += 1;
+        return new Response('ok', { status: 200 });
+    };
+    await withServer(handle, async (base) => {
+        const url = base + '/authentication/token';
+        const body = JSON.stringify({
+            grant_type: 'token-exchange',
+        });
+        for (let i = 0; i < 6; i++) {
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                },
+                body,
+            });
+            assert.equal(res.status, 200);
+        }
+        assert.equal(handled, 6);
+    });
+});
+
 test('sixth non-refresh token grant in a minute is 429',
 async () => {
     let handled = 0;
