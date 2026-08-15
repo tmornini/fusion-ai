@@ -6,8 +6,8 @@ import { nowUtc } from './types.ts';
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
-import { latestByKey } from '../shared/ledger-reduction.ts';
 import { messageAddress } from './message-address.ts';
+import { messageStore } from './message-store.ts';
 import {
     buildRequestModel,
     buildResponseModel,
@@ -347,21 +347,17 @@ export async function formTokenEventPair(
     });
 }
 
-// Latest response pair id at the address, by the (at, id)
-// reduction. Returns undefined when the address is virgin.
+// Live PUT pair id at the address. POST/PATCH are not
+// heads. DELETE head and a virgin address are undefined.
 export async function headPairIdAt(
     db: DbAdapter,
     uriCollection: string,
     uriId: string,
 ): Promise<string | undefined> {
-    const rows = await db.responses.getAllWhere(
-        'uri_collection', uriCollection,
+    const stored = await messageStore(db).get(
+        uriCollection, uriId,
     );
-    const atAddress = rows.filter(
-        (row) => row.uri_id === uriId,
-    );
-    return latestByKey(atAddress, () => 'head')
-        .get('head')?.id;
+    return stored?.id;
 }
 
 // Pre-tx idempotency fast-path: the stored response message

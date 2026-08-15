@@ -28,6 +28,7 @@ import type {
     WriteResponseSpec,
 } from './routes.ts';
 import { HTTP_OK } from './http-errors.ts';
+import { messageStore } from './message-store.ts';
 
 // param/requireOrganization/withoutId live HERE, not in
 // routes.ts, so this module has NO runtime (value) dependency on
@@ -195,18 +196,15 @@ async function throwDocumentMiss(
     );
 }
 
-// The generic per-id derivation: fetch the family's prefix ONCE,
-// reduce to the head document (deriveDocumentsAt), and — for a
-// 'trio' family ONLY — walk the lifecycle history
-// (documentLifecycleEvents/stateHistoryFrom/currentDocumentState)
-// over the SAME pairs to 404 a lifecycle-deleted document too,
-// matching what deriveIdea/deriveProject compute. A 'stateless'
-// family's document body carries no trio
-// (documentLifecycleEvents' pickString would throw on its
-// absence), so its ONLY tombstone signal is a DELETE-method head
-// — already 404-absent via deriveDocumentsAt above, needing no
-// further walk. Soft-deleted foreign docs miss the caller
-// prefix and 403 via the global probe.
+// The generic per-id derivation: store.getPairs at this
+// address, reduce to the head document (deriveDocumentsAt),
+// and — for a 'trio' family ONLY — walk the lifecycle
+// history over those same pairs to 404 a lifecycle-deleted
+// document too. A 'stateless' family's document body carries
+// no trio, so its ONLY tombstone signal is a DELETE-method
+// head — already 404-absent via deriveDocumentsAt. Soft-
+// deleted foreign docs miss the caller prefix and 403 via
+// the global probe.
 async function derivedDocumentEntity(
     wiring: DocumentFamilyWiring,
     db: DbAdapter,
@@ -216,10 +214,11 @@ async function derivedDocumentEntity(
     const prefix = canonicalUriCollection(
         organization, '/' + wiring.family + '/',
     );
-    const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_collection', prefix),
-        db.responses.getAllWhere('uri_collection', prefix),
-    ]);
+    const stored = await messageStore(db).getPairs(
+        prefix, id,
+    );
+    const requests = stored.map((pair) => pair.request);
+    const responses = stored.map((pair) => pair.response);
     const document = deriveDocumentsAt(
         requests, responses, prefix,
     ).get(id);
@@ -259,31 +258,18 @@ export function documentGetHandler(
         );
 }
 
-// The document's own head pair id — DerivedDocument.pairId,
-// "the advertisable Response-ID" (derive-documents.ts) — over
-// the SAME (requests, responses) fetch and the SAME reduction
-// (deriveDocumentsAt) derivedDocumentEntity runs to build the
-// entity. Mirrors headPairIdAt's own (db, uriCollection, uriId)
-// shape (message-pair.ts) so a caller already holding a
-// family-prefixed uriCollection swaps the source with no other
-// change, but computes the DOCUMENT head (2xx PUT/DELETE pairs
-// only) rather than headPairIdAt's LOCK head (any method, any
-// status) — a locked family's GET Response-ID attach (api.ts)
-// is the one caller: a document-class address (design decision
-// 6) exposes only PUT at flows/:id, so the two reductions agree
-// in practice (pinned by a test), but this is now ONE mechanism
-// computing the concept, not two independently-maintained ones.
+// Live PUT pair id at this address — store.get, the same
+// live-document reduction headPairIdAt now uses. A DELETE
+// head or virgin address is undefined.
 export async function documentHeadPairId(
     db: DbAdapter,
     uriCollection: string,
     id: Id,
 ): Promise<string | undefined> {
-    const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_collection', uriCollection),
-        db.responses.getAllWhere('uri_collection', uriCollection),
-    ]);
-    return deriveDocumentsAt(requests, responses, uriCollection)
-        .get(id)?.pairId;
+    const stored = await messageStore(db).get(
+        uriCollection, id,
+    );
+    return stored?.id;
 }
 
 // The route body is UNCHANGED dispatch to the documentOp for
@@ -341,22 +327,6 @@ export function documentStateHistoryHandler(
 
 const PUT_METHOD = 'PUT';
 
-function latestByAtId<T extends { at: string; id: string }>(
-    rows: readonly T[],
-): T {
-    let best = rows[0]!;
-    for (let i = 1; i < rows.length; i++) {
-        const row = rows[i]!;
-        if (
-            row.at > best.at
-            || (row.at === best.at && row.id > best.id)
-        ) {
-            best = row;
-        }
-    }
-    return best;
-}
-
 // Lookup by version column at this collection + id.
 // 0 → undefined. 1 → that row. N → latest (at, id).
 export async function lookupStoredRevision(
@@ -368,20 +338,19 @@ export async function lookupStoredRevision(
     request: RequestEntity;
     response: ResponseEntity;
 } | undefined> {
-    const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_collection', prefix),
-        db.responses.getAllWhere('uri_collection', prefix),
-    ]);
-    const matches = responses.filter(
-        (row) => row.uri_id === id && row.version === version,
+    const store = messageStore(db);
+    const response = await store.getByVersion(
+        prefix, id, version,
     );
-    if (matches.length === 0) return undefined;
-    const response = latestByAtId(matches);
-    const request = requests.find(
-        (row) => row.id === response.id,
+    if (response === undefined) return undefined;
+    const pair = (await store.getPairs(prefix, id)).find(
+        (entry) => entry.response.id === response.id,
     );
-    if (request === undefined) return undefined;
-    return { request, response };
+    if (pair === undefined) return undefined;
+    return {
+        request: pair.request,
+        response: pair.response,
+    };
 }
 
 async function serveDocumentRevision(
