@@ -287,6 +287,35 @@ test('human create stores humanMemberDocumentEntityOf '
     );
 });
 
+// PUT identity with a title, then edit the human. A
+// synthesized {kind} identity head would drop the title.
+test('human edit keeps a folded identity title',
+async () => {
+    const db = await freshDb();
+    const id = 'h-keep-title';
+    await POST(db, 'human-members', {
+        id,
+        detail: detail(),
+        initialState: 'active',
+        initialStateEventId: 'ev-keep',
+        initialStateAt: '2099-01-01T00:00:00.000000Z',
+    }, DEV_TOKEN);
+    await PUT(db, 'identities/' + id, {
+        kind: 'person',
+        title: 'Principal',
+    }, DEV_TOKEN);
+    await POST(db, 'human-members/' + id, {
+        detail: { ...detail(), title: 'Director' },
+        state: 'active',
+        stateAt: '2099-01-01T00:00:00.000000Z',
+        stateEventId: 'ev-keep',
+    }, DEV_TOKEN);
+    const identity = await GET<{ title?: string }>(
+        db, 'identities/' + id, DEV_TOKEN,
+    );
+    assert.equal(identity.title, 'Principal');
+});
+
 test('human edit stores humanMemberDocumentEntityOf',
 async () => {
     const db = await freshDb();

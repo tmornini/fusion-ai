@@ -1860,20 +1860,18 @@ export async function postObjectiveDocumentOp(
 // pair.
 //
 // identityDocument (Task 5) widens this SAME bundle for the
-// human create/edit routes alone: the synthesized identities/:id
+// human CREATE route alone: the synthesized identities/:id
 // document pair, byte-indistinguishable from a live PUT there
-// ({kind:'person'}), appended LAST — after detailDocument. The AI
-// routes never populate it (finding 10: postAiMemberCreationOp
-// writes no identities row — an AI member has no identity of its
-// own), so postAiMemberCreationOp/postAiMemberEditOp always
-// receive it undefined; the field stays on this ONE shared type
+// ({kind:'person'}), appended LAST — after detailDocument. The
+// human EDIT route does not form it — a later {kind} head
+// would drop a folded person profile. The AI routes never
+// populate it (finding 10: postAiMemberCreationOp writes no
+// identities row — an AI member has no identity of its own),
+// so postAiMemberCreationOp/postAiMemberEditOp always receive
+// it undefined; the field stays on this ONE shared type
 // rather than forking a person-only sibling, since every
 // consuming op already honors it uniformly via the SAME
-// `!== undefined` guard the other two fields use. On a human
-// EDIT the body is byte-identical to the create's own, so it
-// FOLDS by message_hash (appendMessagePair's dedup skip) rather
-// than appending a second row — the SAME fold memberDocument's
-// own `type` field already exercises on every edit.
+// `!== undefined` guard the other two fields use.
 export interface MemberWritePairs {
     readonly operation: MessagePair;
     readonly memberDocument: MessagePair;
@@ -1916,7 +1914,7 @@ export function memberDocumentBodyOf(
 // memberDocumentBodyOf: the identity kind is a server-supplied
 // fact the caller pins, never read off a request body — the
 // ONE builder both the identity-create route and the human
-// create/edit routes share (the latter always pass 'person',
+// create route share (the latter always passes 'person',
 // the sole kind a member's own identity ever takes).
 export function identityDocumentBodyOf(
     kind: IdentityKind,
@@ -2066,9 +2064,9 @@ export async function postAiMemberEditOp(
 // Human-member edit: Phase Final Task 2 strips members +
 // human_members + identities ROW halves — pure pair-plane
 // write. No states interaction. PII changes ONLY via PUT
-// identities/:id/pii. A FOURTH identities/:id document pair
-// appends LAST IFF supplied; its body ({kind:'person'}) is
-// byte-identical to create's, so it FOLDS by message_hash.
+// identities/:id/pii. The route does not form an
+// identities/:id pair — rewriting {kind} would drop a
+// folded person profile.
 export async function postHumanMemberEditOp(
     db: DbAdapter,
     _id: Id,
@@ -4421,11 +4419,9 @@ export const routes: Route[] = [
         // Human-member edit (Task 4, the SAME composed-EDIT
         // synthesis as ai-members/:id above): forms the member-
         // document/detail-document bundle beside the gate's own
-        // operation pair. Task 5: ALSO forms the identities/:id
-        // document pair, the SAME {kind:'person'} body the create
-        // route forms — byte-identical, so it FOLDS by
-        // message_hash rather than appending a second row (the
-        // memberDocument fold precedent, cross-family). Admin-
+        // operation pair. Does not form an identities/:id pair
+        // — create already wrote genesis {kind}; rewriting
+        // {kind} would drop a folded person profile. Admin-
         // only, exactly as create — no member-tier POST entry
         // exists. See postHumanMemberEditOp for the transaction
         // shape.
@@ -4471,22 +4467,10 @@ export const routes: Route[] = [
                         organization,
                     },
                 );
-                const identityDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'identities/:id',
-                        params: [id],
-                        body: identityDocumentBodyOf('person'),
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
                 pairs = {
                     operation: pair,
                     memberDocument,
                     detailDocument,
-                    identityDocument,
                 };
             }
             return postHumanMemberEditOp(db, id, body, pairs);
