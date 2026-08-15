@@ -29,7 +29,7 @@ import {
     ATTRIBUTE_DETAIL_PATTERN,
     INSTANCE_DETAIL_PATTERN,
 } from './family-registry.ts';
-import { HTTP_OK } from './http-errors.ts';
+import { HTTP_OK, HTTP_BAD_REQUEST } from './http-errors.ts';
 
 // The shadow-ledger message pair: one row in `requests`, one
 // in `responses`, sharing `id`. Formed pre-tx (all crypto and
@@ -57,6 +57,8 @@ export interface MessagePair {
     readonly responseMessage: string;
     readonly responseEtag: string;
     readonly responseHash: string;
+    readonly method: string;
+    readonly operationId: string;
     // Pre-tx lock-head pair id, latched when If-Match
     // matches the advertised ETag. In-tx re-query only.
     readonly latchedHeadPairId?: string;
@@ -104,6 +106,10 @@ export interface WritePairInput {
     // Omitted on genesis / unconditional writes.
     readonly matchedEtag?: string;
     readonly latchedHeadPairId?: string;
+    // Required on every formed pair. Public writes supply
+    // the hoisted Operation-ID; seed and inner PUTs pass
+    // the envelope id here. Never minted for a public write.
+    readonly operationId: string;
 }
 
 const RESPONSE_ID_FIELD = 'response-id';
@@ -139,9 +145,64 @@ export function canonicalUriCollection(
     return flatPrefix;
 }
 
+export const OPERATION_ID_HEADER = 'operation-id';
+
+export function requireOperationId(
+    request: Request,
+    method: string,
+    bearerExempt: boolean,
+): Response | undefined {
+    if (bearerExempt) return undefined;
+    if (
+        method === 'GET' || method === 'HEAD'
+    ) {
+        return undefined;
+    }
+    const value = request.headers.get(
+        OPERATION_ID_HEADER,
+    );
+    if (value === null || value === '') {
+        return Response.json(
+            {
+                error: 'Operation-ID is required on '
+                    + method,
+            },
+            { status: HTTP_BAD_REQUEST },
+        );
+    }
+    if (!/^[0-9A-Za-z]{22}$/.test(value)) {
+        return Response.json(
+            {
+                error: 'Operation-ID must be a 22-'
+                    + 'character id',
+            },
+            { status: HTTP_BAD_REQUEST },
+        );
+    }
+    return undefined;
+}
+
+function headerFieldsWithOperationId(
+    fields: readonly FieldLine[],
+    operationId: string,
+): FieldLine[] {
+    if (fields.some((f) => f.name === OPERATION_ID_HEADER)) {
+        return [...fields];
+    }
+    return [
+        ...fields,
+        { name: OPERATION_ID_HEADER, value: operationId },
+    ];
+}
+
 export async function formWritePair(
     input: WritePairInput,
 ): Promise<MessagePair> {
+    if (!/^[0-9A-Za-z]{22}$/.test(input.operationId)) {
+        throw new Error(
+            'operationId must be a 22-character id',
+        );
+    }
     const id = generateCryptoSafeBase62();
     const address = messageAddress(
         input.routeSegments, input.pathSegments,
@@ -153,10 +214,13 @@ export async function formWritePair(
         input.routePattern, input.body,
     );
     const uriId = createdId ?? address.uriId;
+    const headerFields = headerFieldsWithOperationId(
+        input.headerFields, input.operationId,
+    );
     const requestModel = buildRequestModel({
         method: input.method,
         target: input.pathname,
-        fields: input.headerFields,
+        fields: headerFields,
         body: input.body,
     });
     const responseFields = [
@@ -187,6 +251,8 @@ export async function formWritePair(
         responseMessage,
         responseEtag: version,
         responseHash: await requestMessageHash(responseMessage),
+        method: input.method,
+        operationId: input.operationId,
         ...(input.latchedHeadPairId !== undefined
             ? { latchedHeadPairId: input.latchedHeadPairId }
             : {}),
@@ -206,7 +272,11 @@ export async function formAuthPair(
     requesterIdentityId: Id,
     responseStatus: number,
     responseBody: unknown,
+    operationId?: string,
 ): Promise<MessagePair> {
+    const hoisted = seed.headerFields.find(
+        (f) => f.name === OPERATION_ID_HEADER,
+    )?.value;
     return formWritePair({
         ...seed,
         body,
@@ -214,6 +284,9 @@ export async function formAuthPair(
         organization: undefined,
         responseStatus,
         responseBody,
+        operationId: operationId
+            ?? hoisted
+            ?? generateCryptoSafeBase62(),
     });
 }
 
@@ -250,6 +323,7 @@ const TOKEN_EVENT_ROUTE_SEGMENTS: readonly string[] =
 export async function formTokenEventPair(
     id: Id,
     event: Omit<IdentityTokenEntity, 'id'>,
+    operationId?: string,
 ): Promise<MessagePair> {
     const pathSegments = [TOKEN_EVENT_ROUTE_SEGMENTS[0]!, id];
     const body = event as unknown as Record<string, unknown>;
@@ -269,6 +343,8 @@ export async function formTokenEventPair(
             id,
             ...validateIdentityTokenEntity(body),
         },
+        operationId: operationId
+            ?? generateCryptoSafeBase62(),
     });
 }
 
@@ -391,7 +467,7 @@ export function attachEtag(
 // verbatim, including `authorization`.
 const HOISTED_HEADER_NAMES: readonly string[] = [
     'authorization', 'content-type', 'idempotency-key',
-    REQUEST_ID_HEADER, IF_MATCH_HEADER,
+    REQUEST_ID_HEADER, IF_MATCH_HEADER, OPERATION_ID_HEADER,
 ];
 
 export function hoistedHeaderFields(request: Request): FieldLine[] {
@@ -413,6 +489,7 @@ export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
     const headers: Record<string, string> = {
         'Date': httpDateOf(stored.at),
         'Response-ID': stored.id,
+        'Operation-ID': stored.operation_id,
     };
     return headers;
 }
@@ -497,6 +574,8 @@ export async function putMessagePair(
         requester_identity_id: pair.requesterIdentityId,
         message_hash: pair.requestHash,
         message: pair.requestMessage,
+        method: pair.method,
+        operation_id: pair.operationId,
     });
     // The response row's `at` — SAME column name as the
     // requests row, per the author — is minted HERE, as late
@@ -511,6 +590,7 @@ export async function putMessagePair(
         version: pair.responseEtag,
         message_hash: pair.responseHash,
         message: pair.responseMessage,
+        operation_id: pair.operationId,
     });
 }
 

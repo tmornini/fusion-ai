@@ -53,6 +53,8 @@ const VALID_ROWS: Record<
         requester_identity_id: 'current',
         message_hash: 'a'.repeat(64),
         message: '{"kind":"request"}',
+        method: 'PUT',
+        operation_id: '0123456789ABCDEFGHIJKL',
     },
     responses: {
         id: 'rs1',
@@ -63,6 +65,7 @@ const VALID_ROWS: Record<
         version: 'e'.repeat(64),
         message_hash: 'b'.repeat(64),
         message: '{"kind":"response"}',
+        operation_id: '0123456789ABCDEFGHIJKL',
     },
 };
 

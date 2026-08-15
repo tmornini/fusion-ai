@@ -20,6 +20,7 @@ import {
     createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { organizationToken } from './token-fixtures.ts';
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
 import { seedIdentityPii } from './identity-fixtures.ts';
 import {
@@ -85,6 +86,7 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
+        operationId: TEST_OPERATION_ID,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
@@ -233,7 +235,10 @@ async function eraseIdentityPii(
         `http://localhost/identities/${target}/pii`,
         {
             method: 'DELETE',
-            headers: { 'Authorization': 'Bearer ' + token },
+            headers: {
+                'Authorization': 'Bearer ' + token,
+                'operation-id': TEST_OPERATION_ID,
+            },
         },
     ));
     assert.equal(response.status, 204);

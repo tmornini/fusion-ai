@@ -25,6 +25,9 @@ import {
 import {
     RECORD_TYPE_DETAIL_PATTERN,
 } from '../api/family-registry.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // Nested record-types WRITE surface (Task 3): admin PUT
 // (simple class, trio document), admin DELETE with type
@@ -56,15 +59,12 @@ function req(
     token: string,
     body?: unknown,
 ): Request {
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token,
-        },
-        ...(body !== undefined
-            ? { body: JSON.stringify(body) }
-            : {}),
+        path,
+        token,
+        body,
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -113,6 +113,7 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
+        operationId: TEST_OPERATION_ID,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
@@ -150,6 +151,7 @@ async function seedRecordTypeBelowGate(
             description: body['description'],
             position: body['position'],
         },
+        operationId: TEST_OPERATION_ID,
     });
     await postRecordDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,

@@ -14,6 +14,9 @@ import {
 } from '../api/mock-data/seed-constants.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 import { sharedMockDb } from './mock-seed.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // GET <family>/:id/history — Phase A3 of states-URI
 // elimination. Per trio family (ideas/projects/records/flows/
@@ -39,17 +42,13 @@ function req(
     body?: unknown,
     headers?: Record<string, string>,
 ): Request {
-    const h: Record<string, string> = {
-        'Content-Type': 'application/json',
-        ...(headers ?? {}),
-    };
-    if (token !== undefined) {
-        h['Authorization'] = 'Bearer ' + token;
-    }
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: h,
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        path,
+        token,
+        body,
+        headers,
+        operationId: TEST_OPERATION_ID,
     });
 }
 

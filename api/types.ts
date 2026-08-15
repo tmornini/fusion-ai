@@ -1028,6 +1028,8 @@ export interface RequestEntity {
     requester_identity_id: Id;
     message_hash: string;
     message: string;
+    method: string;
+    operation_id: string;
 }
 
 // The paired response. id equals the request's id.
@@ -1040,6 +1042,7 @@ export interface ResponseEntity {
     version: string;
     message_hash: string;
     message: string;
+    operation_id: string;
 }
 
 export interface ProjectEntity {

@@ -19,6 +19,9 @@ import { formWritePair } from '../api/message-pair.ts';
 import {
     RECORD_TYPE_DETAIL_PATTERN,
 } from '../api/family-registry.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // Nested record-types READ surface (Task 2): collection,
 // detail, lifecycle history, member tier, and the shared
@@ -57,13 +60,12 @@ function req(
     token: string,
     body?: unknown,
 ): Request {
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token,
-        },
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        path,
+        token,
+        body,
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -94,6 +96,7 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
+        operationId: TEST_OPERATION_ID,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
@@ -146,6 +149,7 @@ async function seedRecordTypePair(
             organization_id: organization,
             ...body,
         },
+        operationId: TEST_OPERATION_ID,
     });
     await postRecordDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,

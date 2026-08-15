@@ -8,6 +8,9 @@ import {
 import { DEV_TOKEN } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedHumanMember } from './member-fixtures.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // GET members/:id/history — Phase A4 of states-URI
 // elimination. Re-homes the api-actor-from-token authorship
@@ -32,16 +35,12 @@ function req(
     token?: string,
     body?: unknown,
 ): Request {
-    const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-    };
-    if (token !== undefined) {
-        headers['Authorization'] = 'Bearer ' + token;
-    }
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers,
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        path,
+        token,
+        body,
+        operationId: TEST_OPERATION_ID,
     });
 }
 

@@ -2280,9 +2280,12 @@ export function validateActualScoreEntity(
 // lowercase.
 const MESSAGE_HASH = /^[0-9a-f]{64}$/;
 
+const HTTP_METHOD = /^[A-Z]+$/;
+const OPERATION_ID = /^[0-9A-Za-z]{22}$/;
+
 const REQUEST_BODY_KEYS: readonly string[] = [
     'uri_collection', 'uri_id', 'at', 'requester_identity_id',
-    'message_hash', 'message',
+    'message_hash', 'message', 'method', 'operation_id',
 ];
 
 export function validateRequestEntity(
@@ -2307,6 +2310,19 @@ export function validateRequestEntity(
     const at = validateTimestampField(
         body, 'at', 'RequestEntity',
     );
+    const method = pickString(body, 'method');
+    if (!HTTP_METHOD.test(method)) {
+        throw new ValidationError(
+            'RequestEntity.method must match ^[A-Z]+$',
+        );
+    }
+    const operationId = pickString(body, 'operation_id');
+    if (!OPERATION_ID.test(operationId)) {
+        throw new ValidationError(
+            'RequestEntity.operation_id must be a 22-'
+            + 'character id',
+        );
+    }
     return {
         uri_collection: uriCollection,
         uri_id: pickString(body, 'uri_id'),
@@ -2316,12 +2332,14 @@ export function validateRequestEntity(
         ),
         message_hash: messageHash,
         message: pickString(body, 'message'),
+        method,
+        operation_id: operationId,
     };
 }
 
 const RESPONSE_BODY_KEYS: readonly string[] = [
     'uri_collection', 'uri_id', 'at', 'status', 'version',
-    'message_hash', 'message',
+    'message_hash', 'message', 'operation_id',
 ];
 
 export function validateResponseEntity(
@@ -2363,6 +2381,13 @@ export function validateResponseEntity(
     const at = validateTimestampField(
         body, 'at', 'ResponseEntity',
     );
+    const operationId = pickString(body, 'operation_id');
+    if (!OPERATION_ID.test(operationId)) {
+        throw new ValidationError(
+            'ResponseEntity.operation_id must be a 22-'
+            + 'character id',
+        );
+    }
     return {
         uri_collection: uriCollection,
         uri_id: pickString(body, 'uri_id'),
@@ -2371,6 +2396,7 @@ export function validateResponseEntity(
         version,
         message_hash: messageHash,
         message: pickString(body, 'message'),
+        operation_id: operationId,
     };
 }
 

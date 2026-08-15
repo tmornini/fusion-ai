@@ -25,6 +25,9 @@ import { workOrderHistoryFor } from
 import {
     deriveStateFieldValueReferrers,
 } from '../api/derive-state-field-values.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // Task 3: history fold speaks BOTH transition shapes
 // (A4 shape-disjoint). Transition pairs seeded BELOW the
@@ -42,15 +45,12 @@ function req(
     token: string,
     body?: unknown,
 ): Request {
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token,
-        },
-        ...(body !== undefined
-            ? { body: JSON.stringify(body) }
-            : {}),
+        path,
+        token,
+        body,
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -173,6 +173,7 @@ async function appendTransitionPair(
         organization,
         responseStatus: 204,
         responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],

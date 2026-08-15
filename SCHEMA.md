@@ -20,7 +20,10 @@ localStorage simulated backend keys the same tables as
 bare table names. All rows have a text `id` primary key.
 Column types match
 `RequestEntity` / `ResponseEntity`: TEXT (string) and
-INTEGER (`status`). Document-body composites (arrays and
+INTEGER (`status`). `method` and `operation_id` are TEXT
+on the request row; `operation_id` is TEXT on the
+response row (same value as the request). Document-body
+composites (arrays and
 objects — `strengths`, `team_dimensions`, `options`,
 `constraints`, `graph`, `graphDelta`, `revivals`,
 `flow_graph`) store as native nested JSON on the wire and
@@ -140,9 +143,18 @@ metadata only, not a domain timestamp inside the message.
 | requester_identity_id | TEXT | identity id of the requester |
 | message_hash | TEXT | sha256 hex digest of `message` |
 | message | TEXT | The canonical stored HTTP message |
+| method | TEXT | HTTP method, `^[A-Z]+$`. No GET rows |
+| operation_id | TEXT | 22-char id. Same on the paired response |
+
+Public PUT/PATCH/POST/DELETE send header `Operation-ID`
+(22-char id). Missing or malformed → 400. The server
+never mints this header for a public write. GET may
+send it; it is ignored. Seed `formSeedPair` mints one
+id per envelope and copies it onto inner PUTs.
 
 Validator: `validateRequestEntity` (`api/validators.ts`).
-Secondary indexes: `uri_collection`, `uri_id`, `message_hash`
+Secondary indexes: `uri_collection`, `uri_id`,
+`message_hash`, `operation_id`
 (`api/db.ts` `TABLE_INDEXES`).
 
 ### responses
@@ -160,6 +172,7 @@ UUID per pair, never a foreign key of its own).
 | version | TEXT | 64-hex `documentVersion` of body octets |
 | message_hash | TEXT | sha256 hex digest of `message` |
 | message | TEXT | The stored HTTP message (`serializeWire`) |
+| operation_id | TEXT | 22-char id. Same value as the request |
 
 `responses.version` is the document revision token
 (unconditional / genesis: sha256 of response body octets;
@@ -171,8 +184,13 @@ projected body (not stored). Pair `id` stays
 the stored 204 wire (`Date:` omitted). No `Version:`
 header.
 
+Write HTTP responses add `Operation-ID` at send time
+from this column. It is not stored on the GET-shaped
+response blob.
+
 Validator: `validateResponseEntity` (`api/validators.ts`).
-Secondary indexes: `uri_collection`, `uri_id`
+Secondary indexes: `uri_collection`, `uri_id`,
+`operation_id`
 (`api/db.ts` `TABLE_INDEXES`).
 
 ## Derived document families (no table)

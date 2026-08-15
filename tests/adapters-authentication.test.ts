@@ -26,6 +26,7 @@ import {
     seedIdentityCredential,
     seedIdentityPii,
 } from './identity-fixtures.ts';
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 
@@ -69,6 +70,7 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
+        operationId: TEST_OPERATION_ID,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,

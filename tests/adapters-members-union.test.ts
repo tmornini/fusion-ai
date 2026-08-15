@@ -1,3 +1,4 @@
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 // @ts-expect-error — Node global stub
 globalThis.localStorage = {
     getItem: () => null,
@@ -92,6 +93,7 @@ async function flatDocumentPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -125,6 +127,7 @@ async function humanDetailPair(
         responseBody: spec.successBody?.(
             [id], detail, SYSTEM_MEMBER_ID, undefined,
         ),
+        operationId: TEST_OPERATION_ID,
     });
 }
 

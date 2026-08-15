@@ -17,6 +17,7 @@ import {
     sha256HexOfBytes,
 } from '../shared/digest.ts';
 import { Octets } from '../shared/http-message/octets.ts';
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 const AT = '2026-06-15T09:30:00.123456Z';
 
@@ -33,6 +34,7 @@ const validInput = {
     organization: '1',
     responseStatus: 204,
     responseBody: undefined,
+    operationId: TEST_OPERATION_ID,
 };
 
 test('canonical JSON is stable across key permutations',

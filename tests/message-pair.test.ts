@@ -9,6 +9,7 @@ import {
     appendMessagePair,
 } from '../api/message-pair.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 const INPUT = {
     method: 'PUT',
@@ -23,6 +24,7 @@ const INPUT = {
     organization: '1',
     responseStatus: 204,
     responseBody: undefined,
+    operationId: TEST_OPERATION_ID,
 } as const;
 
 test('an org-owned pair stores at the org-nested prefix',
@@ -42,6 +44,7 @@ async () => {
         routeSegments: ['identities', ':id', 'pii'],
         pathSegments: ['identities', 'ada', 'pii'],
         organization: '1',
+        operationId: TEST_OPERATION_ID,
     });
     assert.equal(
         pair.uriCollection, '/identities/ada/pii/',
@@ -75,6 +78,7 @@ async () => {
             options: [],
             constraints: [],
         },
+        operationId: TEST_OPERATION_ID,
     });
     assert.equal(
         pair.uriCollection,
@@ -99,6 +103,7 @@ async () => {
             'organizations', '1',
             'record-types', 'r1',
         ],
+        operationId: TEST_OPERATION_ID,
     });
     assert.equal(
         pair.uriCollection,
@@ -135,6 +140,7 @@ test('formed response has no follows or supersedes',
 async () => {
     const pair = await formWritePair({
         ...INPUT,
+        operationId: TEST_OPERATION_ID,
     });
     assert.equal(
         'follows' in pair, false,

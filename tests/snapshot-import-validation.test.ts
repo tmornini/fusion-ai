@@ -186,6 +186,9 @@ test(
                     requester_identity_id: 'current',
                     message_hash: 'a'.repeat(64),
                     message: '{"kind":"request"}',
+                    method: 'PUT',
+                    operation_id:
+                        '0123456789ABCDEFGHIJKL',
                     rogue_field: 'invalid',
                 },
             ],
@@ -213,6 +216,7 @@ test(
                 version: 'e'.repeat(64),
                 message_hash: 'b'.repeat(64),
                 message: '{"kind":"response"}',
+                operation_id: '0123456789ABCDEFGHIJKL',
                 rogue_field: 'invalid',
             }],
         });
@@ -239,6 +243,8 @@ test(
                 requester_identity_id: 'current',
                 message_hash: 'a'.repeat(64),
                 message: '{"kind":"request"}',
+                method: 'PUT',
+                operation_id: '0123456789ABCDEFGHIJKL',
             }],
         });
         await adapter.putSnapshot(json);
@@ -266,6 +272,9 @@ test(
                     requester_identity_id: 'current',
                     message_hash: 'a'.repeat(64),
                     message: '{"kind":"request"}',
+                    method: 'PUT',
+                    operation_id:
+                        '0123456789ABCDEFGHIJKL',
                 },
             ],
         });
@@ -336,6 +345,8 @@ test(
             requester_identity_id: 'current',
             message_hash: 'a'.repeat(64),
             message: '{"kind":"request"}',
+            method: 'PUT',
+            operation_id: '0123456789ABCDEFGHIJKL',
         });
         await adapter.postSchemaCreation();
         const requests =
@@ -366,6 +377,8 @@ test(
             requester_identity_id: 'current',
             message_hash: 'a'.repeat(64),
             message: '{"kind":"request"}',
+            method: 'PUT',
+            operation_id: '0123456789ABCDEFGHIJKL',
         });
         const json =
             await adapter.getSnapshot();

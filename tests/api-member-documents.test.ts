@@ -34,6 +34,9 @@ import {
     documentFamilyWiring,
     documentGetHandler,
 } from '../api/document-family.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // Members are a lifecycle-trio family (states-address
 // retirement): PUT /members/:id carries {type} plus the trio
@@ -55,14 +58,12 @@ function req(
     token: string,
     body?: unknown,
 ): Request {
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
-        },
-        ...(body === undefined
-            ? {} : { body: JSON.stringify(body) }),
+        path,
+        token,
+        body,
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -413,6 +414,7 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     // Phase Final Task 2: members ROW half stripped —
     // op returns the reconstructed entity; only pairs land.
@@ -444,6 +446,7 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     const written = await postAiMemberDocumentOp(
         db, 'ai-doc-op-1', body, 'current', pair,
@@ -471,6 +474,7 @@ test('postHumanMemberDocumentOp writes exactly the pair and'
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     const written = await postHumanMemberDocumentOp(
         db, 'hm-doc-op-1', body, 'current', pair,
@@ -542,6 +546,7 @@ async function putDocumentPair(
         requestAt,
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -567,6 +572,7 @@ async function deleteDocumentPair(
         requestAt,
         organization: undefined,
         responseStatus: 204, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],

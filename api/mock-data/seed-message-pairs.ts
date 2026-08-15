@@ -134,8 +134,12 @@ import {
 } from '../types.ts';
 import {
     formWritePair,
+    OPERATION_ID_HEADER,
 } from '../message-pair.ts';
 import type { MessagePair } from '../message-pair.ts';
+import {
+    generateCryptoSafeBase62,
+} from '../../shared/crypto-safe-base62.ts';
 import {
     HTTP_NO_CONTENT,
     HTTP_OK,
@@ -2043,7 +2047,10 @@ export function buildMockDataInvocations():
 // LAST segment.
 async function formSeedPair(
     inv: MockDataInvocation, requestAt: string,
+    operationId?: string,
 ): Promise<MessagePair> {
+    const envelopeId = operationId
+        ?? generateCryptoSafeBase62();
     const idParams = inv.idParams;
     const routeSegments = inv.routePattern.split('/');
     let paramIndex = 0;
@@ -2080,13 +2087,19 @@ async function formSeedPair(
         // redact, no content-type to hoist. Honest about the
         // below-gate carve-out rather than synthesizing a fake
         // bearer (CLAUDE.md's named carve-out).
-        headerFields: [],
+        headerFields: [
+            {
+                name: OPERATION_ID_HEADER,
+                value: envelopeId,
+            },
+        ],
         body: inv.body,
         requesterIdentityId: inv.requesterIdentityId,
         requestAt,
         organization: inv.organization,
         responseStatus: response.status,
         responseBody: response.body,
+        operationId: envelopeId,
         // Fresh database: every seed pair is genesis.
     });
 }
@@ -2155,6 +2168,7 @@ async function formDefaultOrganizationSeedPair(
     const pathSegments = [
         'identities', identityId, 'default-org', eventId,
     ];
+    const operationId = generateCryptoSafeBase62();
     return formWritePair({
         method: 'PUT',
         pathname: '/' + pathSegments.join('/'),
@@ -2163,13 +2177,19 @@ async function formDefaultOrganizationSeedPair(
             'identities', ':id', 'default-org', ':eventId',
         ],
         pathSegments,
-        headerFields: [],
+        headerFields: [
+            {
+                name: OPERATION_ID_HEADER,
+                value: operationId,
+            },
+        ],
         body: defaultOrganizationSeedBody(organizationId, eventId),
         requesterIdentityId: identityId,
         requestAt,
         organization: undefined,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
+        operationId,
     });
 }
 
@@ -2214,6 +2234,7 @@ export async function formInstanceChainPairs():
     const instancePathname =
         '/' + instancePathSegments.join('/');
 
+    const genesisId = generateCryptoSafeBase62();
     const genesis = await formWritePair({
         method: 'PUT',
         pathname: instancePathname,
@@ -2232,8 +2253,10 @@ export async function formInstanceChainPairs():
             record_type_id: typeId,
             set: [],
         },
+        operationId: genesisId,
     });
 
+    const bindingId = generateCryptoSafeBase62();
     const binding = await formWritePair({
         method: 'POST',
         pathname:
@@ -2255,8 +2278,10 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
+        operationId: bindingId,
     });
 
+    const reviewOpId = generateCryptoSafeBase62();
     const reviewOp = await formWritePair({
         method: 'POST',
         pathname:
@@ -2275,6 +2300,7 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
+        operationId: reviewOpId,
     });
 
     const reviewSet = seedSetFor(review.id);
@@ -2294,8 +2320,10 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_OK,
         responseBody: {},
+        operationId: reviewOpId,
     });
 
+    const completeOpId = generateCryptoSafeBase62();
     const completeOp = await formWritePair({
         method: 'POST',
         pathname:
@@ -2314,6 +2342,7 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
+        operationId: completeOpId,
     });
 
     const completeSet = seedSetFor(complete.id);
@@ -2333,6 +2362,7 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_OK,
         responseBody: {},
+        operationId: completeOpId,
     });
 
     const pairs = new Map<string, MessagePair>();
@@ -2527,6 +2557,7 @@ export async function formBootstrapMessagePair(
     readonly organizationPair: MessagePair;
 }> {
     const body = bootstrapCurrentMemberBody(nowUtc());
+    const envelopeId = generateCryptoSafeBase62();
     const operation = await formSeedPair(
         {
             key: seedPairKey('human-members', 'current'),
@@ -2536,6 +2567,7 @@ export async function formBootstrapMessagePair(
             body,
         },
         requestAt,
+        envelopeId,
     );
     const memberDocument = await formSeedPair(
         {
@@ -2553,6 +2585,7 @@ export async function formBootstrapMessagePair(
             }),
         },
         requestAt,
+        envelopeId,
     );
     const detailDocument = await formSeedPair(
         {
@@ -2564,6 +2597,7 @@ export async function formBootstrapMessagePair(
             body: humanMemberDetailBodyOf(body),
         },
         requestAt,
+        envelopeId,
     );
     // Task 5: the current member's own identities/:id document
     // pair — the SAME fourth invocation the mock-data seed's own
@@ -2578,6 +2612,7 @@ export async function formBootstrapMessagePair(
             body: identityDocumentBodyOf('person'),
         },
         requestAt,
+        envelopeId,
     );
     const membershipPair = await formSeedPair(
         {

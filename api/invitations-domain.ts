@@ -39,6 +39,7 @@ import {
     responseFromStored,
     hoistedHeaderFields,
     storedPairResponse,
+    OPERATION_ID_HEADER,
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
 import { formDocumentPairFor } from './routes.ts';
@@ -463,6 +464,14 @@ async function grantInvitation(
         };
     const routeSegments = ['invitations'];
     const pathSegments = ['invitations'];
+    const operationId = request.headers.get(
+        OPERATION_ID_HEADER,
+    );
+    if (operationId === null || operationId === '') {
+        throw new Error(
+            'Operation-ID missing after require',
+        );
+    }
     const pair = await formWritePair({
         method: 'POST', pathname: '/invitations',
         routePattern: 'invitations',
@@ -471,6 +480,7 @@ async function grantInvitation(
         body: storedBody, requesterIdentityId: ctx.principal.id,
         requestAt: ctx.requestAt, organization: undefined,
         responseStatus: HTTP_OK, responseBody,
+        operationId,
     });
     const replay = await storedResponseFor(
         ctx.base, pair.requestHash);
@@ -511,6 +521,7 @@ async function grantInvitation(
             organization: undefined,
             responseStatus: HTTP_OK,
             responseBody: { id: invitationId, ...documentBody },
+            operationId,
         })
         : undefined;
     // The member/pending checks and the write run in ONE transaction so
@@ -641,6 +652,14 @@ async function formInvitationOpPair(
     invitationId: Id,
     op: string,
 ): Promise<MessagePair> {
+    const operationId = request.headers.get(
+        OPERATION_ID_HEADER,
+    );
+    if (operationId === null || operationId === '') {
+        throw new Error(
+            'Operation-ID missing after require',
+        );
+    }
     return formWritePair({
         method: 'POST',
         pathname: '/invitations/' + invitationId + '/' + op,
@@ -652,6 +671,7 @@ async function formInvitationOpPair(
         requestAt: ctx.requestAt, organization: undefined,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
+        operationId,
     });
 }
 
@@ -742,6 +762,7 @@ async function acceptInvitation(
             requesterIdentityId: ctx.principal.id,
             requestAt: ctx.requestAt,
             organization: inv.organization_id,
+            operationId: pair.operationId,
         },
     );
     // The pending check rides INSIDE the write transaction so a

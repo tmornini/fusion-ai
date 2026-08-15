@@ -329,9 +329,13 @@ export function uniqueColumns(
 // collection IS its rows.
 export const TABLE_INDEXES:
     Record<string, readonly TableIndexSpec[]> = {
-    requests: ['uri_collection', 'uri_id', 'message_hash'],
+    requests: [
+        'uri_collection', 'uri_id', 'message_hash',
+        'operation_id',
+    ],
     responses: [
         'uri_collection',
         'uri_id',
+        'operation_id',
     ],
 };

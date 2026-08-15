@@ -13,6 +13,7 @@ import {
     formWritePair,
     type MessagePair,
 } from '../api/message-pair.ts';
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 // Below-facade pair formation for the seeded writes below
 // (Phase 10 Task 8's fixture budget, finding 18) — the SAME
@@ -54,6 +55,7 @@ async function identityDocumentPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, undefined,
         ),
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -84,6 +86,7 @@ async function identityPiiDocumentPair(
         responseBody: spec.successBody?.(
             [id], pii, SYSTEM_MEMBER_ID, undefined,
         ),
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -118,6 +121,7 @@ async function identityCredentialDocumentPair(
         responseBody: spec.successBody?.(
             [id, cid], fields, SYSTEM_MEMBER_ID, undefined,
         ),
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -148,6 +152,7 @@ async function identityProviderDocumentPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, undefined,
         ),
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -268,6 +273,7 @@ async function clientRegistrationDocumentPair(
         responseBody: spec.successBody?.(
             [id], fields, SYSTEM_MEMBER_ID, undefined,
         ),
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -307,6 +313,7 @@ export async function seedClientRegistrationTombstone(
         organization: undefined,
         responseStatus: 204,
         responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],

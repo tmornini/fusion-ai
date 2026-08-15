@@ -32,6 +32,7 @@ import {
     responseFromStored,
     hoistedHeaderFields,
     storedPairResponse,
+    OPERATION_ID_HEADER,
 } from './message-pair.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import {
@@ -159,6 +160,14 @@ export async function identityDefaultOrganizationRequest(
         // constraint). The response is ALWAYS 204/no-body, so
         // the pair's shape is identical whether or not the org
         // actually changes.
+        const operationId = request.headers.get(
+            OPERATION_ID_HEADER,
+        );
+        if (operationId === null || operationId === '') {
+            throw new Error(
+                'Operation-ID missing after require',
+            );
+        }
         const pair = await formWritePair({
             method: 'PUT',
             pathname: ctx.pathname,
@@ -174,6 +183,7 @@ export async function identityDefaultOrganizationRequest(
             requestAt: ctx.requestAt, organization: undefined,
             responseStatus: HTTP_NO_CONTENT,
             responseBody: undefined,
+            operationId,
         });
         const replay = await storedResponseFor(
             ctx.base, pair.requestHash);

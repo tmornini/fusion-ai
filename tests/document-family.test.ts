@@ -47,6 +47,9 @@ import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { ApiError, HTTP_PRECONDITION_FAILED } from
     '../api/http-errors.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -58,15 +61,13 @@ function req(
     body?: unknown,
     headers?: Record<string, string>,
 ): Request {
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
-            ...headers,
-        },
-        ...(body === undefined
-            ? {} : { body: JSON.stringify(body) }),
+        path,
+        token,
+        body,
+        headers,
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -154,6 +155,7 @@ test('documentEntityRoute (simple arm) PUTs through the'
         headerFields: [], body, requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     const written = await route.put!(
         db, ['idea-9'], body, 'current', pair,
@@ -491,6 +493,7 @@ test('locked arm: two writers racing the SAME echo — the'
         requesterIdentityId: 'current', requestAt: AT,
         organization: '1', responseStatus: 200,
         responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -514,6 +517,7 @@ test('locked arm: two writers racing the SAME echo — the'
         responseBody: undefined,
         latchedHeadPairId: genesis.id,
         matchedEtag: genesis.responseEtag,
+        operationId: TEST_OPERATION_ID,
     });
     const writerB = await formWritePair({
         method: 'PUT', pathname: '/' + TEST_PATTERN,
@@ -526,6 +530,7 @@ test('locked arm: two writers racing the SAME echo — the'
         responseBody: undefined,
         latchedHeadPairId: genesis.id,
         matchedEtag: genesis.responseEtag,
+        operationId: TEST_OPERATION_ID,
     });
     await testDocumentOp(
         db, 'race', { v: 'a' }, 'current', writerA,
@@ -669,6 +674,7 @@ async function putStatelessDocumentPair(
         headerFields: [], body, requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -690,6 +696,7 @@ async function deleteStatelessDocumentPair(
         requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],

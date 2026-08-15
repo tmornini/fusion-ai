@@ -25,6 +25,8 @@ import {
     responseFromStored,
     attachEtag,
     parseIfMatch,
+    requireOperationId,
+    OPERATION_ID_HEADER,
     PAIR_WIRED_ROUTE_PATTERNS,
     REPLAY_EXEMPT_ROUTE_PATTERNS,
     IF_MATCH_HEADER,
@@ -117,6 +119,9 @@ import {
     REQUEST_ID_HEADER,
     type IncomingContext,
 } from './request-context.ts';
+import {
+    generateCryptoSafeBase62,
+} from '../shared/crypto-safe-base62.ts';
 
 export {
     ApiError,
@@ -420,6 +425,10 @@ export async function handleRequest(
     if (pathSegments[0] === 'identities'
         && pathSegments.length === 3
         && pathSegments[2] === 'default-org') {
+        const denied = requireOperationId(
+            request, method, false,
+        );
+        if (denied !== undefined) return denied;
         return identityDefaultOrganizationRequest(
             ctx, request, pathSegments,
         );
@@ -428,6 +437,10 @@ export async function handleRequest(
     // runs on the BASE adapter with explicit guards rather than
     // the org-scoped route table — see invitationsRequest.
     if (pathSegments[0] === 'invitations') {
+        const denied = requireOperationId(
+            request, method, false,
+        );
+        if (denied !== undefined) return denied;
         return invitationsRequest(
             ctx, request, pathSegments,
         );
@@ -633,6 +646,11 @@ export async function handleRequest(
     }
     const { route: matched, params } = match;
     const routePattern = matched.segments.join('/');
+
+    const denied = requireOperationId(
+        request, method, bearerExempt,
+    );
+    if (denied !== undefined) return denied;
 
     // Parse the request body when the method
     // has one. A malformed or non-object JSON
@@ -875,6 +893,16 @@ export async function handleRequest(
                     + routePattern,
                 );
             }
+            const operationId = request.headers.get(
+                OPERATION_ID_HEADER,
+            );
+            if (
+                operationId === null || operationId === ''
+            ) {
+                throw new Error(
+                    'Operation-ID missing after require',
+                );
+            }
             pair = await formWritePair({
                 method, pathname, routePattern,
                 routeSegments: matched.segments,
@@ -884,6 +912,7 @@ export async function handleRequest(
                 requesterIdentityId: actor,
                 requestAt: ctx.requestAt,
                 organization,
+                operationId,
                 responseStatus: spec.status,
                 responseBody: spec.successBody?.(
                     params, body, actor, organization,
@@ -1679,6 +1708,7 @@ function facadeHeaders(
     token: string,
     requestId: string | undefined,
     contentType: boolean,
+    write = false,
 ): Record<string, string> {
     const headers: Record<string, string> = {
         'Authorization': 'Bearer ' + token,
@@ -1688,6 +1718,10 @@ function facadeHeaders(
     }
     if (requestId !== undefined) {
         headers[REQUEST_ID_HEADER] = requestId;
+    }
+    if (write) {
+        headers[OPERATION_ID_HEADER] =
+            generateCryptoSafeBase62();
     }
     return headers;
 }
@@ -1732,9 +1766,15 @@ async function bodyWriteResponse(
     requestId?: string,
 ): Promise<Response> {
     await adapter.simulateLatency();
-    const headers = facadeHeaders(token, requestId, true);
+    const headers = facadeHeaders(
+        token, requestId, true, true,
+    );
     for (const [name, value] of headerFields ?? []) {
         headers[name] = value;
+    }
+    if (headers[OPERATION_ID_HEADER] === undefined) {
+        headers[OPERATION_ID_HEADER] =
+            generateCryptoSafeBase62();
     }
     return handleRequest(
         adapter,
@@ -1875,8 +1915,19 @@ export async function DELETE(
     resource: string,
     token: string,
     requestId?: string,
+    headerFields?: readonly (readonly [string, string])[],
 ): Promise<void> {
     await adapter.simulateLatency();
+    const headers = facadeHeaders(
+        token, requestId, false, true,
+    );
+    for (const [name, value] of headerFields ?? []) {
+        headers[name] = value;
+    }
+    if (headers[OPERATION_ID_HEADER] === undefined) {
+        headers[OPERATION_ID_HEADER] =
+            generateCryptoSafeBase62();
+    }
     await unwrapResponse(
         await handleRequest(
             adapter,
@@ -1884,9 +1935,7 @@ export async function DELETE(
                 `${BASE_URL}/${resource}`,
                 {
                     method: 'DELETE',
-                    headers: facadeHeaders(
-                        token, requestId, false,
-                    ),
+                    headers,
                 },
             ),
         ),
@@ -1903,10 +1952,14 @@ export async function POST<T>(
 ): Promise<T> {
     await adapter.simulateLatency();
     const headers = facadeHeaders(
-        token, requestId, true,
+        token, requestId, true, true,
     );
     for (const [name, value] of headerFields ?? []) {
         headers[name] = value;
+    }
+    if (headers[OPERATION_ID_HEADER] === undefined) {
+        headers[OPERATION_ID_HEADER] =
+            generateCryptoSafeBase62();
     }
     return unwrapResponse<T>(
         await handleRequest(

@@ -4,6 +4,9 @@ import { handleRequest } from '../api/api.ts';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 const BASE = 'http://localhost';
 
@@ -12,11 +15,11 @@ function req(
     path: string,
     token: string,
 ): Request {
-    return new Request(BASE + path, {
+    return apiRequest({
         method,
-        headers: {
-            Authorization: 'Bearer ' + token,
-        },
+        path,
+        token,
+        operationId: TEST_OPERATION_ID,
     });
 }
 

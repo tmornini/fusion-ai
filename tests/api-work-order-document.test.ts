@@ -23,6 +23,9 @@ import { postWorkOrderDocumentOp } from '../api/routes.ts';
 import { formWritePair } from '../api/message-pair.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // Phase 5 Task 2 (fourth-family, 'stateless' evidence): PUT
 // /work-orders/:id takes the entity's OWN fields only — no
@@ -146,6 +149,7 @@ test('postWorkOrderDocumentOp returns the entity and the'
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     const written = await postWorkOrderDocumentOp(
         db, 'wo-doc-op-1', body, 'current', pair,
@@ -198,13 +202,12 @@ function req(
     token: string,
     body?: unknown,
 ): Request {
-    return new Request(`http://localhost${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
-        },
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        path,
+        token,
+        body,
+        operationId: TEST_OPERATION_ID,
     });
 }
 

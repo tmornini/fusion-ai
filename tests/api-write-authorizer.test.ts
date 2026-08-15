@@ -19,6 +19,9 @@ import {
     type MessagePair,
 } from '../api/message-pair.ts';
 import { SYSTEM_MEMBER_ID, nowUtc } from '../api/types.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // Phase Final Task 1(e): pass-first pins for the pre-write
 // ownership authorizer. Foreign-id PUT 404 per family class;
@@ -37,13 +40,12 @@ function req(
     token: string,
     body?: unknown,
 ): Request {
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
-        },
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        path,
+        token,
+        body,
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -90,6 +92,7 @@ async function membershipPair(
             [membershipId], body, SYSTEM_MEMBER_ID,
             organization,
         ),
+        operationId: TEST_OPERATION_ID,
     });
 }
 

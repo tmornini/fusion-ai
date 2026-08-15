@@ -40,6 +40,9 @@ import {
 } from '../web-app/app/presenters/flow-designer.ts';
 import { performUndo } from '../web-app/app/flow-operations.ts';
 import type { GraphNode } from '../api/types.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 // Phase 14 Task 8 (undo-as-replay): the hard constraint's FIVE
 // pinned sequences, plus the SIDECAR-KEEP proof — see the PINNED
@@ -69,14 +72,13 @@ function req(
     body?: unknown,
     headers?: Record<string, string>,
 ): Request {
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
-            ...(headers ?? {}),
-        },
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        path,
+        token,
+        body,
+        headers,
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -534,6 +536,7 @@ test(
             organization,
             responseStatus: 204,
             responseBody: undefined,
+            operationId: TEST_OPERATION_ID,
         });
         await assert.rejects(
             () => postFlowUndoOp(

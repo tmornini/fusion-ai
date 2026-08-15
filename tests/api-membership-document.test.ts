@@ -22,6 +22,7 @@ import {
     documentFamilyWiring,
     documentGetHandler,
 } from '../api/document-family.ts';
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 // Phase 8 Task 2 (eighth family, 'stateless'): PUT
 // /memberships/:id takes the entity's OWN fields only — no
@@ -122,6 +123,7 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     // Phase Final Task 2: memberships ROW half stripped —
     // op returns the reconstructed entity; only pairs land.
@@ -184,6 +186,7 @@ async function putDocumentPair(
         requestAt,
         organization: '1',
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -208,6 +211,7 @@ async function deleteDocumentPair(
         requestAt,
         organization: '1',
         responseStatus: 204, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],

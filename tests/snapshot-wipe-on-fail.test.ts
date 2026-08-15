@@ -39,6 +39,8 @@ const aRequest = {
     requester_identity_id: 'current',
     message_hash: 'a'.repeat(64),
     message: '{"kind":"request"}',
+    method: 'PUT',
+    operation_id: '0123456789ABCDEFGHIJKL',
 };
 
 // Wipe-on-fail is retired: the import now runs in one

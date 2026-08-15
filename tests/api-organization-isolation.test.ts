@@ -39,6 +39,9 @@ import {
 } from '../api/derive-identity-spine.ts';
 import { deriveOrganization } from
     '../api/derive-organizations.ts';
+import {
+    apiRequest, TEST_OPERATION_ID,
+} from './http-fixtures.ts';
 
 const BASE = 'http://localhost';
 
@@ -48,13 +51,12 @@ function req(
     token: string,
     body?: unknown,
 ): Request {
-    return new Request(`${BASE}${path}`, {
+    return apiRequest({
         method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + token,
-        },
-        ...(body ? { body: JSON.stringify(body) } : {}),
+        path,
+        token,
+        body,
+        operationId: TEST_OPERATION_ID,
     });
 }
 
@@ -514,6 +516,7 @@ async function seedChain(
         organization,
         responseStatus: 204,
         responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await postWorkOrderTransitionOp(
         db, woId, body, identity,
@@ -577,6 +580,7 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [membershipId], body, SYSTEM_MEMBER_ID, organization,
         ),
+        operationId: TEST_OPERATION_ID,
     });
     await postMembershipDocumentOp(
         db, membershipId, body, SYSTEM_MEMBER_ID, pair,

@@ -14,6 +14,8 @@ import {
     UnauthorizedError,
     type ClientFacadeAdapter,
 } from '../../../api/api.ts';
+import { OPERATION_ID_HEADER } from
+    '../../../api/message-pair.ts';
 import {
     generateCryptoSafeBase62,
 } from '../../../shared/crypto-safe-base62.ts';
@@ -147,6 +149,21 @@ function makeRequestContext(
     // REQUEST_ID_HEADER so the server gate reuses it instead
     // of minting a second, unrelated trace.
     const requestId = generateCryptoSafeBase62();
+    const operationId = generateCryptoSafeBase62();
+    function writeHeaders(
+        extra?:
+            readonly (readonly [string, string])[],
+    ): readonly (readonly [string, string])[] {
+        if (extra?.some(([name]) =>
+            name.toLowerCase() === OPERATION_ID_HEADER
+        )) {
+            return extra;
+        }
+        return [
+            [OPERATION_ID_HEADER, operationId],
+            ...(extra ?? []),
+        ];
+    }
     const ctx: RequestContext = {
         requestId,
         identity,
@@ -177,7 +194,7 @@ function makeRequestContext(
             return run<T>(
                 tok => httpPut<T>(
                     adapter, resource, body, tok,
-                    headerFields, requestId,
+                    writeHeaders(headerFields), requestId,
                 ));
         },
         PUTWithEtag: <T>(
@@ -193,7 +210,7 @@ function makeRequestContext(
             }>(
                 tok => httpPutWithEtag<T>(
                     adapter, resource, body, tok,
-                    headerFields, requestId,
+                    writeHeaders(headerFields), requestId,
                 ),
             );
         },
@@ -207,7 +224,7 @@ function makeRequestContext(
             return run<T>(
                 tok => httpPatch<T>(
                     adapter, resource, body, tok,
-                    headerFields, requestId,
+                    writeHeaders(headerFields), requestId,
                 ));
         },
         PATCHWithEtag: <T>(
@@ -223,7 +240,7 @@ function makeRequestContext(
             }>(
                 tok => httpPatchWithEtag<T>(
                     adapter, resource, body, tok,
-                    headerFields, requestId,
+                    writeHeaders(headerFields), requestId,
                 ),
             );
         },
@@ -232,6 +249,7 @@ function makeRequestContext(
             return run<void>(
                 tok => httpDelete(
                     adapter, resource, tok, requestId,
+                    writeHeaders(),
                 ));
         },
         POST: <T>(
@@ -242,7 +260,7 @@ function makeRequestContext(
             return run<T>(
                 tok => httpPost<T>(
                     adapter, resource, body, tok,
-                    requestId,
+                    requestId, writeHeaders(),
                 ));
         },
         POSTWithHeaders: <T>(
@@ -255,7 +273,7 @@ function makeRequestContext(
             return run<T>(
                 tok => httpPost<T>(
                     adapter, resource, body, tok,
-                    requestId, headerFields,
+                    requestId, writeHeaders(headerFields),
                 ));
         },
     };

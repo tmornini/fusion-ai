@@ -22,6 +22,7 @@ import {
     documentFamilyWiring,
     documentGetHandler,
 } from '../api/document-family.ts';
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 // Phase 10 Task 4 (twelfth registered family): PUT
 // /identities/:id takes the entity's OWN field only ({kind}),
@@ -138,6 +139,7 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     const written = await postIdentityDocumentOp(
         db, 'id-doc-op-1', body, 'current', pair,
@@ -193,6 +195,7 @@ async function putDocumentPair(
         requestAt,
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -217,6 +220,7 @@ async function deleteDocumentPair(
         requestAt,
         organization: undefined,
         responseStatus: 204, responseBody: undefined,
+        operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
         ['requests', 'responses'],

@@ -4,6 +4,7 @@ import { memoryDbAdapter } from '../api/db-memory.ts';
 import { GET, handleRequest } from '../api/api.ts';
 import { devToken } from './token-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
+import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 const BASE = 'http://localhost';
 
@@ -65,6 +66,7 @@ test('admin may write a membership type', async () => {
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': 'Bearer ' + await devToken(),
+                'operation-id': TEST_OPERATION_ID,
             },
             body: JSON.stringify({
                 organization_id: '1',

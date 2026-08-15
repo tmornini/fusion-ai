@@ -997,6 +997,7 @@ async function formRecordWritePairs(
         body: documentBody,
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
+        operationId: pair.operationId,
         organization,
     });
     // Attribute pairs form at nested ATTRIBUTE_DETAIL_
@@ -1017,6 +1018,7 @@ async function formRecordWritePairs(
                 body: attributeBody,
                 requesterIdentityId: actor,
                 requestAt: pair.requestAt,
+                operationId: pair.operationId,
                 organization,
             });
         }),
@@ -1038,6 +1040,7 @@ async function formRecordWritePairs(
                 body: undefined,
                 requesterIdentityId: actor,
                 requestAt: pair.requestAt,
+                operationId: pair.operationId,
                 organization,
                 method: 'DELETE',
                 response: {
@@ -1672,6 +1675,7 @@ export async function postFlowUndoOp(
         body: documentBody,
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
+        operationId: pair.operationId,
         organization,
     });
     return db.transaction(
@@ -2700,6 +2704,7 @@ export async function postWorkOrderTransitionOp(
         body: { values: mergedValues },
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
+        operationId: pair.operationId,
         organization: org,
         response: {
             status: HTTP_OK,
@@ -3713,6 +3718,7 @@ export interface DocumentPairFormInput {
     };
     readonly matchedEtag?: string;
     readonly headerFields?: readonly FieldLine[];
+    readonly operationId: string;
 }
 
 // The shared document-pair former (Phase 9 Task 2, Commandment
@@ -3764,6 +3770,7 @@ export async function formDocumentPairFor(
         organization: input.organization,
         responseStatus,
         responseBody,
+        operationId: input.operationId,
         ...(input.matchedEtag !== undefined
             ? { matchedEtag: input.matchedEtag }
             : {}),
@@ -4021,6 +4028,7 @@ export async function postInstancePatchOp(
         body: { values: mergedValues },
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
+        operationId: pair.operationId,
         organization: org,
         response: {
             status: HTTP_OK,
@@ -4110,6 +4118,7 @@ export const routes: Route[] = [
                         body: memberBody,
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4122,6 +4131,7 @@ export const routes: Route[] = [
                         body: detailBody,
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4180,6 +4190,7 @@ export const routes: Route[] = [
                         body: memberBody,
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4192,6 +4203,7 @@ export const routes: Route[] = [
                         body: detailBody,
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4242,6 +4254,7 @@ export const routes: Route[] = [
                         body: memberBody,
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4254,6 +4267,7 @@ export const routes: Route[] = [
                         body: detailBody,
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4264,6 +4278,7 @@ export const routes: Route[] = [
                         body: identityDocumentBodyOf('person'),
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4329,6 +4344,7 @@ export const routes: Route[] = [
                         body: memberBody,
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4341,6 +4357,7 @@ export const routes: Route[] = [
                         body: detailBody,
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4351,6 +4368,7 @@ export const routes: Route[] = [
                         body: identityDocumentBodyOf('person'),
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4395,6 +4413,7 @@ export const routes: Route[] = [
                         body: identityDocumentBodyOf(b.kind),
                         requesterIdentityId: actor,
                         requestAt: pair.requestAt,
+                        operationId: pair.operationId,
                         organization,
                     },
                 );
@@ -4411,6 +4430,7 @@ export const routes: Route[] = [
                             body: fields,
                             requesterIdentityId: actor,
                             requestAt: pair.requestAt,
+                            operationId: pair.operationId,
                             organization,
                         });
                     pairs = {
@@ -4915,6 +4935,7 @@ export const routes: Route[] = [
                     body: projectDocument,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
+                    operationId: pair.operationId,
                     organization,
                 });
                 // The idea's OWN document pair, at its EXISTING
@@ -4929,6 +4950,7 @@ export const routes: Route[] = [
                     body: ideaDocument,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
+                    operationId: pair.operationId,
                     organization,
                 });
                 // The per-baseline pairs (Task 4): N synthesized
@@ -4953,6 +4975,7 @@ export const routes: Route[] = [
                             body: baseline.fields,
                             requesterIdentityId: actor,
                             requestAt: pair.requestAt,
+                            operationId: pair.operationId,
                             organization,
                         },
                     ));
@@ -5056,6 +5079,7 @@ export const routes: Route[] = [
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
+                    operationId: pair.operationId,
                     organization,
                 });
                 // The live :pfid PUT's request shape, verified by
@@ -5079,6 +5103,7 @@ export const routes: Route[] = [
                     body: b.projectFlow,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
+                    operationId: pair.operationId,
                     organization,
                 });
                 pairs = { operation: pair, document, join };
@@ -5279,6 +5304,7 @@ export const routes: Route[] = [
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
+                    operationId: pair.operationId,
                     organization,
                 });
                 // The live :woid PUT's request shape, verified
@@ -5303,6 +5329,7 @@ export const routes: Route[] = [
                     body: b.flowWorkOrder,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
+                    operationId: pair.operationId,
                     organization,
                 });
                 pairs = { operation: pair, document, join };
@@ -6172,6 +6199,7 @@ export const routes: Route[] = [
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
+                    operationId: pair.operationId,
                     organization,
                 });
                 const revisionBody = objectiveRevisionBodyOf(b);
@@ -6182,6 +6210,7 @@ export const routes: Route[] = [
                     body: revisionBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
+                    operationId: pair.operationId,
                     organization,
                 });
                 pairs = { operation: pair, document, revision };

@@ -29,6 +29,8 @@ const baseRequest = {
     requester_identity_id: 'current',
     message_hash: 'a'.repeat(64),
     message: '{"kind":"request"}',
+    method: 'PUT',
+    operation_id: '0123456789ABCDEFGHIJKL',
 };
 
 // Writes are plain JSON since the F-080 measurement
@@ -139,6 +141,8 @@ test(
             requester_identity_id: 'current',
             message_hash: 'a'.repeat(64),
             message: '{"kind":"request"}',
+            method: 'PUT',
+            operation_id: '0123456789ABCDEFGHIJKL',
         });
         const stored = map.get(KEY_PREFIX + 'requests');
         assert.ok(stored, 'expected stored requests value');

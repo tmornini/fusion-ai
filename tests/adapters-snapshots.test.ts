@@ -52,6 +52,8 @@ function requestFields() {
         requester_identity_id: 'current',
         message_hash: 'a'.repeat(64),
         message: '{"kind":"request"}',
+        method: 'PUT',
+        operation_id: '0123456789ABCDEFGHIJKL',
     };
 }
 function buildRequest(id: string) {
