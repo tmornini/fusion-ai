@@ -4,10 +4,16 @@ import {
     createHttpFacade,
 } from '../web-app/app/adapters/http-facade.ts';
 import {
+    createRecoveringRequestContext,
+} from '../web-app/app/adapters/shared.ts';
+import {
     setCookieSession,
 } from '../web-app/app/adapters/session-credentials.ts';
 import { putSessionToken } from
     '../web-app/app/adapters/session-token.ts';
+import { UnauthorizedError } from
+    '../api/http-errors.ts';
+import { expiredToken } from './token-fixtures.ts';
 
 afterEach(() => {
     setCookieSession(false);
@@ -65,6 +71,48 @@ async () => {
         ]);
         assert.ok(Array.isArray(a));
         assert.ok(Array.isArray(b));
+    });
+    assert.equal(refreshPosts, 1);
+});
+
+test('cookie-session recover after a failed facade refresh'
++ ' does not POST again',
+async () => {
+    // @ts-expect-error — Node stub for navigateTo
+    globalThis.document = {
+        documentElement: {
+            getAttribute: () => 'dashboard',
+        },
+    };
+    // @ts-expect-error — Node stub for navigateTo
+    globalThis.window = { location: { href: '', search: '' } };
+    setCookieSession(true);
+    const deadAccess = await expiredToken();
+    putSessionToken(deadAccess);
+    let refreshPosts = 0;
+    await withMockFetch(async (input) => {
+        const url = String(input);
+        if (url.endsWith('/authentication/token')) {
+            refreshPosts += 1;
+            return new Response(
+                JSON.stringify({ error: 'invalid_grant' }),
+                { status: 401 },
+            );
+        }
+        return new Response(
+            JSON.stringify({ error: 'invalid_token' }),
+            { status: 401 },
+        );
+    }, async () => {
+        const facade = createHttpFacade(
+            'http://example.test',
+        );
+        const ctx = createRecoveringRequestContext(
+            facade, deadAccess);
+        await assert.rejects(
+            () => ctx.GET('members'),
+            UnauthorizedError,
+        );
     });
     assert.equal(refreshPosts, 1);
 });

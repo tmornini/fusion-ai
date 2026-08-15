@@ -31,6 +31,7 @@ import {
 import {
     TEST_OPERATION_ID,
     refreshTokenFromSetCookie,
+    setCookieHeader,
 } from './http-fixtures.ts';
 
 // C1 discharge under the verbatim-storage contract: the
@@ -384,11 +385,10 @@ test('a token-exchange grant stores its own pair with live'
     assert.equal(res.status, 201);
     const bodyJson = await res.json() as {
         access_token: string;
+        refresh_token?: unknown;
     };
-    const body = {
-        access_token: bodyJson.access_token,
-        refresh_token: refreshTokenFromSetCookie(res),
-    };
+    assert.equal(bodyJson.refresh_token, undefined);
+    assert.equal(setCookieHeader(res), '');
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
@@ -408,10 +408,12 @@ test('a token-exchange grant stores its own pair with live'
     );
     assert.ok(exchangeResponse);
     assert.ok(
-        exchangeResponse!.message.includes(body.access_token),
+        exchangeResponse!.message.includes(
+            bodyJson.access_token,
+        ),
     );
     assert.equal(
-        exchangeResponse!.message.includes(body.refresh_token),
+        exchangeResponse!.message.includes('refresh_token'),
         false,
     );
 });

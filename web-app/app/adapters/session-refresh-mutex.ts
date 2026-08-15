@@ -8,7 +8,7 @@
 const REFRESH_LOCK = 'fusion-refresh';
 const REFRESH_CHANNEL = 'fusion-ai:refresh';
 
-let inFlight: Promise<unknown> | null = null;
+let inFlight: Promise<string | null> | null = null;
 let peerAccess: string | null | undefined;
 let channel: BroadcastChannel | undefined;
 
@@ -36,12 +36,12 @@ function refreshChannel(): BroadcastChannel | undefined {
     return channel;
 }
 
-export function runSingleFlightRefresh<T>(
-    refresh: () => Promise<T>,
-): Promise<T> {
+export function runSingleFlightRefresh(
+    refresh: () => Promise<string | null>,
+): Promise<string | null> {
     refreshChannel();
     if (inFlight !== null) {
-        return inFlight as Promise<T>;
+        return inFlight;
     }
     const pending = runLocked(refresh).finally(() => {
         inFlight = null;
@@ -50,21 +50,18 @@ export function runSingleFlightRefresh<T>(
     return pending;
 }
 
-async function runLocked<T>(
-    refresh: () => Promise<T>,
-): Promise<T> {
-    const work = async (): Promise<T> => {
+async function runLocked(
+    refresh: () => Promise<string | null>,
+): Promise<string | null> {
+    const work = async (): Promise<string | null> => {
         if (peerAccess !== undefined) {
             const taken = peerAccess;
             peerAccess = undefined;
-            return taken as T;
+            return taken;
         }
         const result = await refresh();
         const bus = refreshChannel();
-        if (
-            bus !== undefined
-            && (typeof result === 'string' || result === null)
-        ) {
+        if (bus !== undefined) {
             bus.postMessage({ accessToken: result });
         }
         return result;

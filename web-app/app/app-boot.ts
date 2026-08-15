@@ -240,10 +240,25 @@ async function cookieRefreshAndInstall(
     const ctx = createRequestContext(
         getClientFacade(), token);
     try {
-        const creds = await runSingleFlightRefresh(
-            () => postSessionRefresh(ctx, ''),
+        const access = await runSingleFlightRefresh(
+            async () => {
+                try {
+                    const creds = await postSessionRefresh(
+                        ctx, '');
+                    putSessionToken(creds.accessToken);
+                    return creds.accessToken;
+                } catch (err) {
+                    if (err instanceof UnauthorizedError) {
+                        return null;
+                    }
+                    throw err;
+                }
+            },
         );
-        putSessionToken(creds.accessToken);
+        if (access === null) {
+            return false;
+        }
+        putSessionToken(access);
         return true;
     } catch (err) {
         if (err instanceof UnauthorizedError) {
@@ -312,10 +327,26 @@ async function refreshAndInstall(
     const ctx = createRequestContext(
         getClientFacade(), getSessionToken());
     try {
-        const creds = await postSessionRefresh(
-            ctx, refreshToken);
-        putSessionCredentials(creds);
-        putSessionToken(creds.accessToken);
+        const access = await runSingleFlightRefresh(
+            async () => {
+                try {
+                    const creds = await postSessionRefresh(
+                        ctx, refreshToken);
+                    putSessionCredentials(creds);
+                    putSessionToken(creds.accessToken);
+                    return creds.accessToken;
+                } catch (err) {
+                    if (err instanceof UnauthorizedError) {
+                        return null;
+                    }
+                    throw err;
+                }
+            },
+        );
+        if (access === null) {
+            return false;
+        }
+        putSessionToken(access);
         return true;
     } catch (err) {
         if (err instanceof UnauthorizedError) {

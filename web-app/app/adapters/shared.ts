@@ -461,26 +461,24 @@ async function recoverSession(
             adapter, decision.accessToken, requestOrganization);
     }
     if (isCookieSession()) {
-        const access = await refreshCookieAccess(adapter);
-        if (access === null) {
-            return null;
-        }
-        return installAndScope(
-            adapter, access, requestOrganization);
+        // HttpFacade already single-flights the cookie
+        // refresh. A second POST here is reuse.
+        deleteSessionCredentials();
+        redirectToLogin();
+        return null;
     }
     if (decision.kind !== 'refresh') {
         deleteSessionCredentials();
         redirectToLogin();
         return null;
     }
-    const refreshed = await refreshCredentials(
+    const access = await refreshCredentials(
         adapter, decision.refreshToken);
-    if (refreshed === null) {
+    if (access === null) {
         return null;
     }
-    putSessionCredentials(refreshed);
     return installAndScope(
-        adapter, refreshed.accessToken, requestOrganization);
+        adapter, access, requestOrganization);
 }
 
 // Install a flat token as the session and re-scope it to the active
@@ -515,41 +513,36 @@ async function installAndScope(
 // Run the refresh grant on a recovery-FREE context: a refresh
 // that itself 401s (reuse/expiry) is terminal and must not
 // recurse. A dead refresh scrubs the session and bounces.
-async function refreshCookieAccess(
+async function refreshCredentials(
     adapter: ClientFacade,
+    refreshToken: string,
 ): Promise<string | null> {
     const token = sessionTokenIsSeeded()
         ? getSessionToken()
         : '';
     const free = createRequestContext(adapter, token);
     try {
-        return await runSingleFlightRefresh(async () => {
-            const creds = await postSessionRefresh(free, '');
-            putSessionToken(creds.accessToken);
-            return creds.accessToken;
-        });
-    } catch (err) {
-        if (err instanceof UnauthorizedError) {
+        const access = await runSingleFlightRefresh(
+            async () => {
+                try {
+                    const creds = await postSessionRefresh(
+                        free, refreshToken);
+                    putSessionCredentials(creds);
+                    return creds.accessToken;
+                } catch (err) {
+                    if (err instanceof UnauthorizedError) {
+                        return null;
+                    }
+                    throw err;
+                }
+            },
+        );
+        if (access === null) {
             deleteSessionCredentials();
             redirectToLogin();
             return null;
         }
-        throw err;
-    }
-}
-
-async function refreshCredentials(
-    adapter: ClientFacade,
-    refreshToken: string,
-): Promise<SessionCredentials | null> {
-    const token = sessionTokenIsSeeded()
-        ? getSessionToken()
-        : '';
-    const free = createRequestContext(adapter, token);
-    try {
-        return await runSingleFlightRefresh(
-            () => postSessionRefresh(free, refreshToken),
-        );
+        return access;
     } catch (err) {
         if (err instanceof UnauthorizedError) {
             deleteSessionCredentials();

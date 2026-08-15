@@ -1942,9 +1942,18 @@ export async function handleRequest(
                     const written = sendWriteResponse(
                         authStored, 'POST', true,
                     );
+                    const grantType =
+                        typeof body!.grant_type === 'string'
+                            ? body!.grant_type
+                            : '';
+                    const setsRefreshCookie =
+                        grantType === 'authorization_code'
+                        || grantType === 'refresh'
+                        || grantType === 'client_credentials';
                     if (
                         routePattern === 'authentication/token'
                         && 'refreshToken' in dispatched
+                        && setsRefreshCookie
                     ) {
                         return attachSetCookie(
                             written,

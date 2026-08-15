@@ -539,6 +539,37 @@ async () => {
         await GET(db, 'members', body['access_token'] as string)));
 });
 
+test('stale body refresh_token loses to a live Cookie',
+async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+    const pair1 = await initialPair(db);
+    const rotated = await handleRequest(db, tokenRequest({
+        grant_type: 'refresh',
+        refresh_token: pair1.refresh_token,
+    }));
+    assert.equal(rotated.status, 201);
+    const liveCookie = refreshTokenFromSetCookie(rotated);
+    const res = await handleRequest(db, new Request(
+        `${BASE}/authentication/token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Cookie: 'refresh_token=' + liveCookie,
+            },
+            body: JSON.stringify({
+                grant_type: 'refresh',
+                refresh_token: pair1.refresh_token,
+            }),
+        }));
+    assert.equal(res.status, 201);
+    const body = await res.json() as {
+        access_token: string;
+    };
+    assert.ok(Array.isArray(
+        await GET(db, 'members', body.access_token)));
+});
+
 test('refresh rotates to a new pair', async () => {
     const db = await freshDb();
     await seedRootAdmin(db);
@@ -610,6 +641,38 @@ async () => {
     // the delegated token passes the gate (current = admin)
     assert.ok(Array.isArray(
         await GET(db, 'members', body.access_token)));
+});
+
+test('token-exchange 201 has no refresh Set-Cookie',
+async () => {
+    const db = await freshDb();
+    await seedRootAdmin(db);
+    const pair = await initialPair(db);
+    const rotated = await handleRequest(db, new Request(
+        `${BASE}/authentication/token`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Cookie: 'refresh_token=' + pair.refresh_token,
+            },
+            body: JSON.stringify({ grant_type: 'refresh' }),
+        }));
+    assert.equal(rotated.status, 201);
+    assert.match(setCookieHeader(rotated), /refresh_token=/);
+    const access = (await rotated.json() as {
+        access_token: string;
+    }).access_token;
+    const exchange = await handleRequest(db, tokenRequest({
+        grant_type: 'token-exchange',
+        subject_token: access,
+        actor_token: access,
+    }));
+    assert.equal(exchange.status, 201);
+    const body = await exchange.json() as Record<
+        string, unknown
+    >;
+    assert.equal(body['refresh_token'], undefined);
+    assert.equal(setCookieHeader(exchange), '');
 });
 
 test('token-exchange denies cross-party delegation',

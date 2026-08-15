@@ -811,14 +811,13 @@ async function grantRefresh(
     seed: AuthPairSeed,
     cookieHeader?: string | null,
 ): Promise<TokenResult> {
+    const fromCookie = refreshTokenFromCookieHeader(
+        cookieHeader ?? null,
+    );
     const fromBody = typeof body.refresh_token === 'string'
         ? body.refresh_token
         : '';
-    const token = fromBody !== ''
-        ? fromBody
-        : refreshTokenFromCookieHeader(
-            cookieHeader ?? null,
-        );
+    const token = fromCookie !== '' ? fromCookie : fromBody;
     const now = nowEpochSeconds();
     const verified = await verifyAccessToken(token, now);
     if (!verified.valid) {
