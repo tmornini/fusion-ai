@@ -71,6 +71,9 @@ export function sessionHasReachableOrganization(): boolean {
 // True when the held token belongs to a logged-in
 // identity rather than the anonymous seed.
 export function sessionIsAuthenticated(): boolean {
+    if (!sessionTokenIsSeeded()) {
+        return false;
+    }
     return principalFromToken(getSessionToken()).id
         !== ANONYMOUS_ID;
 }

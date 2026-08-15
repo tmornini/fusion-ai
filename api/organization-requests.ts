@@ -6,15 +6,14 @@ import {
     identityDefaultOrganization,
 } from './authentication.ts';
 import {
-    errorJson,
     HTTP_NO_CONTENT,
     HTTP_BAD_REQUEST,
-    HTTP_UNAUTHORIZED,
     HTTP_FORBIDDEN,
     HTTP_METHOD_NOT_ALLOWED,
 } from './http-errors.ts';
 import {
     authenticateRequest,
+    unauthorizedBearerResponse,
     parseObjectBody,
     callerOrganizationIds,
 } from './request-auth.ts';
@@ -74,10 +73,7 @@ export async function identityDefaultOrganizationRequest(
     const authed =
         await authenticateRequest(ctx, request);
     if (typeof authed === 'string') {
-        return Response.json(
-            { error: authed },
-            { status: HTTP_UNAUTHORIZED },
-        );
+        return unauthorizedBearerResponse(authed);
     }
     const denied = requireOperationId(
         request, ctx.method, false,
@@ -268,7 +264,7 @@ export async function organizationsEnumerationRequest(
     const authed =
         await authenticateRequest(ctx, request);
     if (typeof authed === 'string') {
-        return errorJson(authed, HTTP_UNAUTHORIZED);
+        return unauthorizedBearerResponse(authed);
     }
     return enumerateMyOrganizations(authed);
 }

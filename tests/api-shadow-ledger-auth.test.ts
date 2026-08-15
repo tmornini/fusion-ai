@@ -28,7 +28,10 @@ import {
     seedIdentityCredential,
     seedIdentityPii,
 } from './identity-fixtures.ts';
-import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import {
+    TEST_OPERATION_ID,
+    refreshTokenFromSetCookie,
+} from './http-fixtures.ts';
 
 // C1 discharge under the verbatim-storage contract: the
 // /authentication/{token,authorize} message pairs carry live
@@ -127,9 +130,12 @@ async function fullLoginFlow(db: GuardedDbAdapter): Promise<{
     assert.equal(tokenRes.status, 201);
     const grant = await tokenRes.json() as {
         access_token: string;
-        refresh_token: string;
     };
-    return { code, ...grant };
+    return {
+        code,
+        access_token: grant.access_token,
+        refresh_token: refreshTokenFromSetCookie(tokenRes),
+    };
 }
 
 test('live secrets land in the auth-flow ledger rows',
@@ -177,9 +183,10 @@ async () => {
         tokenResponse!.message.includes(access_token),
         'token response missing access_token',
     );
-    assert.ok(
+    assert.equal(
         tokenResponse!.message.includes(refresh_token),
-        'token response missing refresh_token',
+        false,
+        'token stored JSON must omit refresh_token',
     );
 });
 
@@ -328,8 +335,12 @@ async () => {
             refresh_token: first.refresh_token,
         }));
     assert.equal(res.status, 201);
-    const rotated = await res.json() as {
-        access_token: string; refresh_token: string;
+    const rotatedJson = await res.json() as {
+        access_token: string;
+    };
+    const rotated = {
+        access_token: rotatedJson.access_token,
+        refresh_token: refreshTokenFromSetCookie(res),
     };
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
@@ -353,8 +364,9 @@ async () => {
     assert.ok(
         refreshResponse!.message.includes(rotated.access_token),
     );
-    assert.ok(
+    assert.equal(
         refreshResponse!.message.includes(rotated.refresh_token),
+        false,
     );
 });
 
@@ -370,8 +382,12 @@ test('a token-exchange grant stores its own pair with live'
             actor_token: subjectToken,
         }));
     assert.equal(res.status, 201);
-    const body = await res.json() as {
-        access_token: string; refresh_token: string;
+    const bodyJson = await res.json() as {
+        access_token: string;
+    };
+    const body = {
+        access_token: bodyJson.access_token,
+        refresh_token: refreshTokenFromSetCookie(res),
     };
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
@@ -394,8 +410,9 @@ test('a token-exchange grant stores its own pair with live'
     assert.ok(
         exchangeResponse!.message.includes(body.access_token),
     );
-    assert.ok(
+    assert.equal(
         exchangeResponse!.message.includes(body.refresh_token),
+        false,
     );
 });
 
@@ -468,8 +485,12 @@ test('a client_credentials grant stores its own pair with live'
             client_assertion: assertion,
         }));
     assert.equal(res.status, 201);
-    const body = await res.json() as {
-        access_token: string; refresh_token: string;
+    const bodyJson = await res.json() as {
+        access_token: string;
+    };
+    const body = {
+        access_token: bodyJson.access_token,
+        refresh_token: refreshTokenFromSetCookie(res),
     };
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
@@ -494,8 +515,9 @@ test('a client_credentials grant stores its own pair with live'
     assert.ok(
         credResponse!.message.includes(body.access_token),
     );
-    assert.ok(
+    assert.equal(
         credResponse!.message.includes(body.refresh_token),
+        false,
     );
 });
 

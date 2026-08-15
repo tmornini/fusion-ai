@@ -18,6 +18,7 @@ import { DEV_TOKEN } from './token-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
     storedMessageBodyText, storedPutBodyText,
+    refreshTokenFromSetCookie,
 } from './http-fixtures.ts';
 import {
     deriveIdentityToken,
@@ -362,13 +363,9 @@ test('SECURITY NAMED COVENANT: a revoked chain\'s ACCESS'
         client_id: 'web',
     });
     assert.equal(grantRes.status, 201);
-    const {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-    } = await grantRes.json() as {
-        access_token: string;
-        refresh_token: string;
-    };
+    const { access_token: accessToken } =
+        await grantRes.json() as { access_token: string };
+    const refreshToken = refreshTokenFromSetCookie(grantRes);
     const rootJti = jtiOf(refreshToken);
 
     // Live BEFORE revocation: access token reaches admin route.

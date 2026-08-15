@@ -14,7 +14,10 @@ import type {
     AuthenticatedContext,
     RequestContext,
 } from './request-context.ts';
-import { HTTP_FORBIDDEN } from './http-errors.ts';
+import {
+    HTTP_FORBIDDEN,
+    HTTP_UNAUTHORIZED,
+} from './http-errors.ts';
 import {
     projectClaimRolesForOrganization,
     isPermitted,
@@ -91,6 +94,18 @@ export async function authenticateRequest(
         ...ctx,
         principal: principalFromClaims(result.claims),
     };
+}
+
+// Wire body is the named class. The specific reason is
+// logged only — never returned.
+export function unauthorizedBearerResponse(
+    reason: string,
+): Response {
+    console.warn('authentication failed', { reason });
+    return Response.json(
+        { error: 'invalid_token' },
+        { status: HTTP_UNAUTHORIZED },
+    );
 }
 
 type FenceResult =

@@ -79,8 +79,16 @@ test(
 test(
     '401 through the fetch facade is UnauthorizedError',
     async () => {
+        // @ts-expect-error — Node stub for navigateTo
+        globalThis.document = {
+            documentElement: {
+                getAttribute: () => 'dashboard',
+            },
+        };
+        // @ts-expect-error — Node stub for navigateTo
+        globalThis.window = { location: { href: '' } };
         await withMockFetch(async () => new Response(
-            JSON.stringify({ error: 'expired' }),
+            JSON.stringify({ error: 'invalid_token' }),
             { status: 401 },
         ), async () => {
             const facade = createHttpFacade(
@@ -92,7 +100,8 @@ test(
                     assert.ok(
                         err instanceof UnauthorizedError,
                     );
-                    assert.equal(err.reason, 'expired');
+                    assert.equal(
+                        err.reason, 'invalid_token');
                     return true;
                 },
             );

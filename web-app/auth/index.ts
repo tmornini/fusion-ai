@@ -23,6 +23,7 @@ import {
     getSessionToken,
     putSessionToken,
     sessionHasReachableOrganization,
+    sessionTokenIsSeeded,
 } from '../app/adapters/session-token.ts';
 import {
     createRequestContext,
@@ -591,7 +592,11 @@ export async function init(): Promise<void> {
             try {
                 creds = await postPasswordLogin(
                     createRequestContext(
-                        getClientFacade(), getSessionToken()),
+                        getClientFacade(),
+                        sessionTokenIsSeeded()
+                            ? getSessionToken()
+                            : '',
+                    ),
                     email, password,
                 );
             } catch (err) {

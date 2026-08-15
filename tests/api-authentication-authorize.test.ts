@@ -126,7 +126,7 @@ test('an expired authorization code is a 401', async () => {
         assert.equal(tok.status, 401);
         assert.deepEqual(
             await tok.json(),
-            { error: 'invalid or used authorization code' },
+            { error: 'invalid_grant' },
         );
     } finally {
         resetClock();
@@ -141,6 +141,8 @@ async () => {
         password: 'WRONG', client_id: 'web',
     }));
     assert.equal(res.status, 401);
+    assert.deepEqual(
+        await res.json(), { error: 'invalid_grant' });
     assert.ok(await noStoredAuthorizeResponse(db));
 });
 

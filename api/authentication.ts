@@ -99,7 +99,6 @@ import { isServerTier } from './request-auth.ts';
 
 export interface TokenResponse {
     readonly access_token: string;
-    readonly refresh_token: string;
     readonly token_type: 'Bearer';
     readonly expires_in: number;
 }
@@ -108,6 +107,9 @@ export type TokenResult =
     | {
         readonly ok: true;
         readonly response: TokenResponse;
+        // Minted refresh JWT — send-time Set-Cookie only.
+        // Never serialized into the stored pair / wire JSON.
+        readonly refreshToken: string;
         // The just-stored AUTH pair's id — undefined only for
         // exchangeBearerForOrganization's internal, seedless hop
         // (never a real /authentication/token request, so it
@@ -128,9 +130,98 @@ function failure(status: number, error: string): TokenResult {
     return { ok: false, status, error };
 }
 
+// Grant 401s: named class on the wire; reason stays on the
+// TokenResult / AuthorizeResult for logs at the HTTP arm.
+export function wireGrantError(error: string): string {
+    if (error.startsWith('invalid client_assertion')) {
+        return 'invalid_client';
+    }
+    if (
+        error === 'invalid credentials'
+        || error === 'invalid or used authorization code'
+        || error === 'invalid_grant'
+    ) {
+        return 'invalid_grant';
+    }
+    return error;
+}
+
 const ACCESS_TTL_SECONDS = 15 * 60;
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 const AUTHORIZATION_CODE_TTL_SECONDS = 10 * 60;
+
+const REFRESH_COOKIE_NAME = 'refresh_token';
+const REFRESH_COOKIE_PATH = '/authentication';
+
+// Secure follows the public URL. Off only when that origin
+// is http://localhost (local HTTP exception).
+function refreshCookieIsSecure(request: Request): boolean {
+    const url = new URL(request.url);
+    return !(
+        url.protocol === 'http:'
+        && url.hostname === 'localhost'
+    );
+}
+
+function refreshCookieAttributes(
+    request: Request,
+    extra: readonly string[],
+): string {
+    const parts = [
+        'HttpOnly',
+        'SameSite=Strict',
+        'Path=' + REFRESH_COOKIE_PATH,
+        ...extra,
+    ];
+    if (refreshCookieIsSecure(request)) {
+        parts.push('Secure');
+    }
+    return parts.join('; ');
+}
+
+export function refreshSetCookie(
+    refreshToken: string,
+    request: Request,
+): string {
+    return REFRESH_COOKIE_NAME + '=' + refreshToken
+        + '; ' + refreshCookieAttributes(request, []);
+}
+
+export function refreshClearCookie(
+    request: Request,
+): string {
+    return REFRESH_COOKIE_NAME + '=; '
+        + refreshCookieAttributes(request, ['Max-Age=0']);
+}
+
+export function refreshTokenFromCookieHeader(
+    header: string | null,
+): string {
+    if (header === null || header === '') {
+        return '';
+    }
+    for (const part of header.split(';')) {
+        const trimmed = part.trim();
+        const eq = trimmed.indexOf('=');
+        if (eq <= 0) continue;
+        const name = trimmed.slice(0, eq).trim();
+        if (name !== REFRESH_COOKIE_NAME) continue;
+        return trimmed.slice(eq + 1).trim();
+    }
+    return '';
+}
+
+export function attachSetCookie(
+    response: Response,
+    cookie: string,
+): Response {
+    const headers = new Headers(response.headers);
+    headers.append('Set-Cookie', cookie);
+    return new Response(response.body, {
+        status: response.status,
+        headers,
+    });
+}
 
 // A token's display name = the identity's PII name when present,
 // else the id (a presentation transform at the call site — a
@@ -244,7 +335,10 @@ async function mintPair(
         organizations?: readonly Id[];
         roles?: readonly string[];
     },
-): Promise<TokenResponse> {
+): Promise<{
+    readonly response: TokenResponse;
+    readonly refreshToken: string;
+}> {
     const iat = nowEpochSeconds();
     const roles = scope?.roles ?? [];
     const accessToken = await mintAccessToken({
@@ -263,10 +357,12 @@ async function mintPair(
         ttlSeconds: REFRESH_TTL_SECONDS, jti: refreshJti,
     });
     return {
-        access_token: accessToken,
-        refresh_token: refreshToken,
-        token_type: 'Bearer',
-        expires_in: ACCESS_TTL_SECONDS,
+        response: {
+            access_token: accessToken,
+            token_type: 'Bearer',
+            expires_in: ACCESS_TTL_SECONDS,
+        },
+        refreshToken,
     };
 }
 
@@ -299,6 +395,7 @@ async function issueTokenPair(
     organization?: Id,
 ): Promise<{
     readonly response: TokenResponse;
+    readonly refreshToken: string;
     readonly pairId: string | undefined;
 }> {
     const refreshJti = generateCryptoSafeBase62();
@@ -308,11 +405,12 @@ async function issueTokenPair(
     const organizations =
         await subjectOrganizations(adapter, identityId);
     const roles = await subjectRoles(adapter, identityId);
-    const response = await mintPair(identityId, name, refreshJti, act, {
+    const minted = await mintPair(identityId, name, refreshJti, act, {
         ...(organization ? { organization } : {}),
         organizations,
         roles,
     });
+    const response = minted.response;
     const pair = seed === undefined
         ? undefined
         : await formAuthPair(
@@ -337,7 +435,11 @@ async function issueTokenPair(
             }
         },
     );
-    return { response, pairId: pair?.id };
+    return {
+        response,
+        refreshToken: minted.refreshToken,
+        pairId: pair?.id,
+    };
 }
 
 // Both revocation controls the gate enforces, in ONE place so
@@ -707,10 +809,16 @@ async function grantRefresh(
     adapter: DbAdapter,
     body: Record<string, unknown>,
     seed: AuthPairSeed,
+    cookieHeader?: string | null,
 ): Promise<TokenResult> {
-    const token = typeof body.refresh_token === 'string'
+    const fromBody = typeof body.refresh_token === 'string'
         ? body.refresh_token
         : '';
+    const token = fromBody !== ''
+        ? fromBody
+        : refreshTokenFromCookieHeader(
+            cookieHeader ?? null,
+        );
     const now = nowEpochSeconds();
     const verified = await verifyAccessToken(token, now);
     if (!verified.valid) {
@@ -731,10 +839,11 @@ async function grantRefresh(
         adapter, verified.claims.sub);
     const roles = await subjectRoles(
         adapter, verified.claims.sub);
-    const response = await mintPair(
+    const minted = await mintPair(
         verified.claims.sub, name, newJti,
         undefined, { organizations, roles },
     );
+    const response = minted.response;
     const pair = await formAuthPair(
         seed, body, verified.claims.sub, HTTP_OK, response,
     );
@@ -742,7 +851,12 @@ async function grantRefresh(
         adapter, verified.claims.jti, newJti, pair,
     );
     if (outcome.kind === 'rotate') {
-        return { ok: true, response, pairId: pair.id };
+        return {
+            ok: true,
+            response,
+            refreshToken: minted.refreshToken,
+            pairId: pair.id,
+        };
     }
     return failure(HTTP_UNAUTHORIZED, 'refresh token reuse or unknown');
 }
@@ -826,6 +940,7 @@ async function grantTokenExchange(
     return {
         ok: true,
         response: issued.response,
+        refreshToken: issued.refreshToken,
         pairId: issued.pairId,
     };
 }
@@ -919,10 +1034,11 @@ async function grantClientCredentials(
     const organizations =
         await subjectOrganizations(adapter, clientId);
     const roles = await subjectRoles(adapter, clientId);
-    const response = await mintPair(
+    const minted = await mintPair(
         clientId, name, refreshJti, undefined,
         { organizations, roles },
     );
+    const response = minted.response;
     const pair = await formAuthPair(
         seed, body, clientId, HTTP_OK, response,
     );
@@ -977,7 +1093,12 @@ async function grantClientCredentials(
         },
     );
     return consumed
-        ? { ok: true, response, pairId: pair.id }
+        ? {
+            ok: true,
+            response,
+            refreshToken: minted.refreshToken,
+            pairId: pair.id,
+        }
         : replay;
 }
 
@@ -1179,10 +1300,11 @@ async function grantAuthorizationCode(
     // grantTokenExchange's own act:{sub: actor}. sub stays
     // the user; issuer.clientId is already verified equal to
     // the redeeming client_id above.
-    const response = await mintPair(
+    const minted = await mintPair(
         issuer.identityId, name, refreshJti,
         { sub: issuer.clientId }, { organizations, roles },
     );
+    const response = minted.response;
     const pair = await formAuthPair(
         seed, body, issuer.identityId, HTTP_OK, response,
     );
@@ -1208,7 +1330,12 @@ async function grantAuthorizationCode(
         },
     );
     return consumed
-        ? { ok: true, response, pairId: pair.id }
+        ? {
+            ok: true,
+            response,
+            refreshToken: minted.refreshToken,
+            pairId: pair.id,
+        }
         : invalid;
 }
 
@@ -1220,6 +1347,7 @@ export async function postToken(
     adapter: DbAdapter,
     body: Record<string, unknown>,
     seed: AuthPairSeed,
+    cookieHeader?: string | null,
 ): Promise<TokenResult> {
     const grantType = typeof body.grant_type === 'string'
         ? body.grant_type
@@ -1228,7 +1356,9 @@ export async function postToken(
         case 'authorization_code':
             return grantAuthorizationCode(adapter, body, seed);
         case 'refresh':
-            return grantRefresh(adapter, body, seed);
+            return grantRefresh(
+                adapter, body, seed, cookieHeader,
+            );
         case 'token-exchange':
             return grantTokenExchange(adapter, body, seed);
         case 'client_credentials':

@@ -20,6 +20,7 @@ import {
 import {
     getSessionToken,
     putSessionToken,
+    sessionTokenIsSeeded,
 } from './adapters/session-token.ts';
 import { getClientFacade } from './adapters/facade-holder.ts';
 import {
@@ -52,7 +53,10 @@ import {
     getSessionCredentials,
     putSessionCredentials,
     deleteSessionCredentials,
+    isCookieSession,
 } from './adapters/session-credentials.ts';
+import { runSingleFlightRefresh } from
+    './adapters/session-refresh-mutex.ts';
 import {
     resolveCredentialDecision,
 } from './credential-resolution.ts';
@@ -188,6 +192,21 @@ async function scopeBootIfCredentialed(
         log.warn('corrupt session credential', 'core', err);
         return [];
     }
+    if (isCookieSession()) {
+        if (!(await cookieRefreshAndInstall())) {
+            return [];
+        }
+        try {
+            return await scopeBootToActiveOrganization();
+        } catch (err) {
+            log.warn(
+                'opportunistic org scope failed',
+                'core',
+                err,
+            );
+            return [];
+        }
+    }
     const now = nowEpochSeconds();
     const decision = resolveCredentialDecision(creds, now);
     if (decision.kind === 'login') {
@@ -213,7 +232,35 @@ async function scopeBootIfCredentialed(
 // or bounce to login when there is nothing usable. Returns
 // false once it has redirected — the caller must stop
 // booting.
+async function cookieRefreshAndInstall(
+): Promise<boolean> {
+    const token = sessionTokenIsSeeded()
+        ? getSessionToken()
+        : '';
+    const ctx = createRequestContext(
+        getClientFacade(), token);
+    try {
+        const creds = await runSingleFlightRefresh(
+            () => postSessionRefresh(ctx, ''),
+        );
+        putSessionToken(creds.accessToken);
+        return true;
+    } catch (err) {
+        if (err instanceof UnauthorizedError) {
+            return false;
+        }
+        throw err;
+    }
+}
+
 async function bootAuthGate(): Promise<boolean> {
+    if (isCookieSession()) {
+        if (await cookieRefreshAndInstall()) {
+            return true;
+        }
+        redirectToLogin();
+        return false;
+    }
     let creds: SessionCredentials | null;
     try {
         creds = getSessionCredentials();

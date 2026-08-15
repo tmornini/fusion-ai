@@ -88,6 +88,11 @@ import {
     exchangeBearerForOrganization,
     postToken,
     postAuthorize,
+    attachSetCookie,
+    refreshSetCookie,
+    refreshClearCookie,
+    refreshTokenFromCookieHeader,
+    wireGrantError,
 } from './authentication.ts';
 import {
     ApiError,
@@ -108,6 +113,7 @@ import {
     AUTHENTICATION_ROUTES,
     BOOTSTRAP_ROUTES,
     authenticateRequest,
+    unauthorizedBearerResponse,
     fenceRequest,
     authorizeRequest,
     authorizeIdentityPii,
@@ -549,10 +555,7 @@ export async function handleRequest(
         const authed =
             await authenticateRequest(ctx, request);
         if (typeof authed === 'string') {
-            return Response.json(
-                { error: authed },
-                { status: HTTP_UNAUTHORIZED },
-            );
+            return unauthorizedBearerResponse(authed);
         }
         // Auth first; only then admit an unmatched path as
         // 404 (bytes unchanged for authenticated callers).
@@ -1675,6 +1678,15 @@ export async function handleRequest(
                     const response = sendWriteResponse(
                         stored, 'PUT', true,
                     );
+                    if (
+                        routePattern
+                            === 'identity-token-revocations/:id'
+                    ) {
+                        return attachSetCookie(
+                            response,
+                            refreshClearCookie(request),
+                        );
+                    }
                     const putWiring = documentFamilyWiring(
                         matched.segments[0] ?? '',
                     );
@@ -1857,10 +1869,31 @@ export async function handleRequest(
                     const dispatched =
                         routePattern === 'authentication/token'
                             ? await postToken(
-                                effective, body!, seed)
+                                effective, body!, seed,
+                                request.headers.get('cookie'))
                             : await postAuthorize(
                                 effective, body!, seed);
                     if (!dispatched.ok) {
+                        if (dispatched.status
+                            === HTTP_UNAUTHORIZED) {
+                            console.warn(
+                                'authentication failed',
+                                {
+                                    reason: dispatched.error,
+                                },
+                            );
+                            return Response.json(
+                                {
+                                    error: wireGrantError(
+                                        dispatched.error,
+                                    ),
+                                },
+                                {
+                                    status:
+                                        dispatched.status,
+                                },
+                            );
+                        }
                         return Response.json(
                             { error: dispatched.error },
                             { status: dispatched.status },
@@ -1906,9 +1939,22 @@ export async function handleRequest(
                             ],
                         });
                     }
-                    return sendWriteResponse(
+                    const written = sendWriteResponse(
                         authStored, 'POST', true,
                     );
+                    if (
+                        routePattern === 'authentication/token'
+                        && 'refreshToken' in dispatched
+                    ) {
+                        return attachSetCookie(
+                            written,
+                            refreshSetCookie(
+                                dispatched.refreshToken,
+                                request,
+                            ),
+                        );
+                    }
+                    return written;
                 }
                 if (!matched.post) {
                     return Response.json(
@@ -2039,13 +2085,40 @@ export async function handleRequest(
 export type ClientFacadeAdapter =
     GuardedDbAdapter & LatencySimulation;
 
+function setCookieFromResponse(response: Response): string {
+    const cookies = typeof response.headers.getSetCookie
+        === 'function'
+        ? response.headers.getSetCookie()
+        : [];
+    if (cookies.length > 0) {
+        return cookies.join('; ');
+    }
+    return response.headers.get('Set-Cookie') ?? '';
+}
+
 async function unwrapResponse<T>(
     response: Response,
 ): Promise<T> {
     if (response.ok) {
         const text = await response.text();
         if (text === '') return undefined as T;
-        return JSON.parse(text) as T;
+        const parsed: unknown = JSON.parse(text);
+        const refresh = refreshTokenFromCookieHeader(
+            setCookieFromResponse(response),
+        );
+        if (
+            refresh !== ''
+            && typeof parsed === 'object'
+            && parsed !== null
+            && !Array.isArray(parsed)
+            && !('refresh_token' in parsed)
+        ) {
+            return {
+                ...(parsed as Record<string, unknown>),
+                refresh_token: refresh,
+            } as T;
+        }
+        return parsed as T;
     }
     const { error } =
         (await response.json()) as {

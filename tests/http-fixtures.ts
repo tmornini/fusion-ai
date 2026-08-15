@@ -11,6 +11,28 @@ const BASE = 'http://localhost';
 // not ride a public write (seed/tests). Not a public mint.
 export const TEST_OPERATION_ID = '0123456789ABCDEFGHIJKL';
 
+export function setCookieHeader(res: Response): string {
+    const cookies = typeof res.headers.getSetCookie
+        === 'function'
+        ? res.headers.getSetCookie()
+        : [];
+    if (cookies.length > 0) {
+        return cookies.join('\n');
+    }
+    return res.headers.get('Set-Cookie') ?? '';
+}
+
+export function refreshTokenFromSetCookie(
+    res: Response,
+): string {
+    const match = /(?:^|[\n,])\s*refresh_token=([^;\n]+)/
+        .exec(setCookieHeader(res));
+    if (match === null) {
+        throw new Error('Set-Cookie missing refresh_token');
+    }
+    return match[1]!.trim();
+}
+
 export function apiRequest(input: {
     readonly method: string;
     readonly path: string;

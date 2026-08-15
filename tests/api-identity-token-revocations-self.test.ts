@@ -98,6 +98,31 @@ async () => {
     assert.ok(ownResponse);
 });
 
+test('logout-everywhere success clears the refresh cookie',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken('member1');
+    const res = await handleRequest(db, req(
+        'PUT', '/identity-token-revocations/self-rev-cookie',
+        token,
+        {
+            identity_id: 'member1',
+            at: '2026-01-01T00:00:00.000000Z',
+        },
+    ));
+    assert.equal(res.status, 201);
+    const cookies = typeof res.headers.getSetCookie
+        === 'function'
+        ? res.headers.getSetCookie()
+        : [res.headers.get('Set-Cookie') ?? ''];
+    const cookie = cookies.join('\n');
+    assert.match(cookie, /refresh_token=/);
+    assert.match(cookie, /Max-Age=0/);
+    assert.match(cookie, /HttpOnly/i);
+    assert.match(cookie, /Path=\/authentication/);
+    assert.match(cookie, /SameSite=Strict/i);
+});
+
 test("a member's self-revoke: ACCESS still works until exp"
 + ' (NAMED ≤15-min covenant); REFRESH grant is 401ed',
 async () => {

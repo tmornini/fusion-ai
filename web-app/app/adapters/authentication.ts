@@ -3,6 +3,7 @@ import { UnauthorizedError } from '../../../api/http-errors.ts';
 import type {
     SessionCredentials,
 } from './session-credentials.ts';
+import { isCookieSession } from './session-credentials.ts';
 import { generateCryptoSafeBase62 } from
     '../../../shared/crypto-safe-base62.ts';
 import { sha256Bytes } from '../../../shared/digest.ts';
@@ -55,12 +56,12 @@ export async function postPasswordLogin(
     }
     let grant: {
         access_token: string;
-        refresh_token: string;
+        refresh_token?: string;
     };
     try {
         grant = await ctx.POST<{
             access_token: string;
-            refresh_token: string;
+            refresh_token?: string;
         }>('authentication/token', {
             grant_type: 'authorization_code',
             code,
@@ -75,6 +76,8 @@ export async function postPasswordLogin(
     }
     return {
         accessToken: grant.access_token,
-        refreshToken: grant.refresh_token,
+        refreshToken: isCookieSession()
+            ? ''
+            : (grant.refresh_token ?? ''),
     };
 }

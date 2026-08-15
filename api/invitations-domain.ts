@@ -16,12 +16,12 @@ import {
     HTTP_NO_CONTENT,
     HTTP_BAD_REQUEST,
     HTTP_NOT_FOUND,
-    HTTP_UNAUTHORIZED,
     HTTP_FORBIDDEN,
     HTTP_CONFLICT,
 } from './http-errors.ts';
 import {
     authenticateRequest,
+    unauthorizedBearerResponse,
     parseObjectBody,
 } from './request-auth.ts';
 import {
@@ -131,7 +131,7 @@ export async function invitationsRequest(
     const authed =
         await authenticateRequest(ctx, request);
     if (typeof authed === 'string') {
-        return errorJson(authed, HTTP_UNAUTHORIZED);
+        return unauthorizedBearerResponse(authed);
     }
     const denied = requireOperationId(
         request, ctx.method, false,

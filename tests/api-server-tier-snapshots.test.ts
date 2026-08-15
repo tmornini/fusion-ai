@@ -33,7 +33,7 @@ async () => {
         `${BASE}/snapshots/schema`));
     assert.equal(res.status, 401);
     const body = await res.json() as { error: string };
-    assert.match(body.error, /missing bearer token/);
+    assert.equal(body.error, 'invalid_token');
 });
 
 test('server-tier snapshots forbid a member bearer',

@@ -78,6 +78,7 @@ import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import {
     deriveIdentityTokens,
 } from '../api/derive-identity-tokens.ts';
+import { refreshTokenFromSetCookie } from './http-fixtures.ts';
 
 const BASE = 'http://localhost';
 
@@ -131,7 +132,11 @@ async function issuePair(db: MemoryDbAdapter): Promise<{
                 client_id: 'web',
             }),
         }));
-    return res.json();
+    const body = await res.json() as { access_token: string };
+    return {
+        access_token: body.access_token,
+        refresh_token: refreshTokenFromSetCookie(res),
+    };
 }
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
