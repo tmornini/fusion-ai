@@ -2,8 +2,10 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { connectPostgres } from
     '../api/postgres-client.ts';
-import { PostgresBackend } from
-    '../api/backend-postgres.ts';
+import {
+    PostgresBackend,
+    type PostgresTx,
+} from '../api/backend-postgres.ts';
 import { BackedDbAdapter } from '../api/db-backed.ts';
 import { TABLE_NAMES } from '../api/db.ts';
 import type { DbAdapter } from '../api/db.ts';
@@ -20,10 +22,16 @@ import {
     SNAPSHOT_IMPORT_LOCK_NAME,
     advisoryKey,
 } from '../api/advisory-lock.ts';
+import {
+    ApiError,
+    HTTP_GATEWAY_TIMEOUT,
+    HTTP_INTERNAL_ERROR,
+} from '../api/http-errors.ts';
 
 // Live Postgres races: first-writer, If-Match, hash
-// dedup, import vs append. Skip when POSTGRES_URL is
-// unset so ./validate stays Postgres-free.
+// dedup, import vs append, deadlock 500, timeout 504.
+// Skip when POSTGRES_URL is unset so ./validate stays
+// Postgres-free.
 
 const POSTGRES_URL = process.env['POSTGRES_URL'];
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
@@ -423,6 +431,91 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
             }
         } finally {
             await holder.end();
+        }
+    });
+
+    test('live deadlock maps to loud 500',
+    { timeout: 8000 },
+    async () => {
+        const leftHeld = Promise.withResolvers<void>();
+        const rightHeld = Promise.withResolvers<void>();
+        const left = backend.transaction(
+            ['requests'],
+            'readonly',
+            async (tx) => {
+                const pg = tx as PostgresTx;
+                await pg.lock('fusion.test.deadlock.l');
+                leftHeld.resolve();
+                await rightHeld.promise;
+                await pg.lock('fusion.test.deadlock.r');
+            },
+        );
+        const right = backend.transaction(
+            ['requests'],
+            'readonly',
+            async (tx) => {
+                const pg = tx as PostgresTx;
+                await pg.lock('fusion.test.deadlock.r');
+                rightHeld.resolve();
+                await leftHeld.promise;
+                await pg.lock('fusion.test.deadlock.l');
+            },
+        );
+        const settled = await Promise.allSettled([
+            left, right,
+        ]);
+        const rejected = settled.filter(
+            (row) => row.status === 'rejected',
+        );
+        assert.ok(rejected.length >= 1);
+        const error = rejected[0]?.reason;
+        assert.ok(error instanceof ApiError);
+        assert.equal(error.status, HTTP_INTERNAL_ERROR);
+        assert.equal(error.message, 'deadlock');
+    });
+
+    test('live statement timeout maps to 504',
+    async () => {
+        const holder = connectPostgres(
+            urlWithSearchPath(POSTGRES_URL, schema),
+        );
+        const tightUrl = new URL(
+            urlWithSearchPath(POSTGRES_URL, schema),
+        );
+        tightUrl.searchParams.set(
+            'statement_timeout', '500',
+        );
+        const tightSql = connectPostgres(tightUrl.href);
+        const tight = new PostgresBackend(tightSql);
+        const label = 'fusion.test.timeout';
+        try {
+            await holder.begin(async (tx) => {
+                await tx.query`
+                    SELECT pg_advisory_xact_lock(
+                        ${Number(await advisoryKey(
+                            label,
+                        ))}
+                    )
+                `;
+                await assert.rejects(
+                    () => tight.transaction(
+                        ['requests'],
+                        'readonly',
+                        (txn) => (
+                            txn as PostgresTx
+                        ).lock(label),
+                    ),
+                    (error: unknown) =>
+                        error instanceof ApiError
+                        && error.status
+                            === HTTP_GATEWAY_TIMEOUT
+                        && error.message
+                            === 'gateway timeout',
+                );
+            });
+        } finally {
+            await holder.end();
+            await tightSql.end();
         }
     });
 }
