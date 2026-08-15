@@ -32,14 +32,10 @@ import {
     pickString,
     validateTimestampField,
 } from './validators.ts';
-import { messageAddress } from './message-address.ts';
 import {
     formWritePair,
-    headPairIdAt,
     storedResponseFor,
     appendMessagePair,
-    createdEntityUriId,
-    canonicalUriPrefix,
     responseFromStored,
     hoistedHeaderFields,
     storedPairResponse,
@@ -467,13 +463,6 @@ async function grantInvitation(
         };
     const routeSegments = ['invitations'];
     const pathSegments = ['invitations'];
-    const address = messageAddress(routeSegments, pathSegments);
-    const canonicalPrefix =
-        canonicalUriPrefix(undefined, address.uriPrefix);
-    const uriId = createdEntityUriId('invitations', storedBody)
-        ?? address.uriId;
-    const headPairId = await headPairIdAt(
-        ctx.base, canonicalPrefix, uriId);
     const pair = await formWritePair({
         method: 'POST', pathname: '/invitations',
         routePattern: 'invitations',
@@ -482,7 +471,6 @@ async function grantInvitation(
         body: storedBody, requesterIdentityId: ctx.principal.id,
         requestAt: ctx.requestAt, organization: undefined,
         responseStatus: HTTP_OK, responseBody,
-        headPairId,
     });
     const replay = await storedResponseFor(
         ctx.base, pair.requestHash);
@@ -523,7 +511,6 @@ async function grantInvitation(
             organization: undefined,
             responseStatus: HTTP_OK,
             responseBody: { id: invitationId, ...documentBody },
-            headPairId,
         })
         : undefined;
     // The member/pending checks and the write run in ONE transaction so
@@ -665,7 +652,6 @@ async function formInvitationOpPair(
         requestAt: ctx.requestAt, organization: undefined,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
-        headPairId: undefined,
     });
 }
 

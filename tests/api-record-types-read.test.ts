@@ -94,7 +94,6 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
-        headPairId: undefined,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
@@ -123,7 +122,6 @@ async function seedRecordTypePair(
     organization: string,
     id: string,
     body: Record<string, unknown>,
-    headPairId?: string,
 ): Promise<string> {
     const pathname =
         '/organizations/' + organization
@@ -148,7 +146,6 @@ async function seedRecordTypePair(
             organization_id: organization,
             ...body,
         },
-        headPairId,
     });
     await postRecordDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,

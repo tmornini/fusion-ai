@@ -413,7 +413,6 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     // Phase Final Task 2: members ROW half stripped —
     // op returns the reconstructed entity; only pairs land.
@@ -445,7 +444,6 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     const written = await postAiMemberDocumentOp(
         db, 'ai-doc-op-1', body, 'current', pair,
@@ -473,7 +471,6 @@ test('postHumanMemberDocumentOp writes exactly the pair and'
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     const written = await postHumanMemberDocumentOp(
         db, 'hm-doc-op-1', body, 'current', pair,
@@ -533,7 +530,6 @@ async function putDocumentPair(
     id: string,
     body: Record<string, unknown>,
     requestAt: string,
-    headPairId?: string,
 ): Promise<string> {
     const pair = await formWritePair({
         method: 'PUT',
@@ -546,7 +542,6 @@ async function putDocumentPair(
         requestAt,
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
-        headPairId,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -560,7 +555,6 @@ async function deleteDocumentPair(
     family: string,
     id: string,
     requestAt: string,
-    headPairId?: string,
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'DELETE',
@@ -573,7 +567,6 @@ async function deleteDocumentPair(
         requestAt,
         organization: undefined,
         responseStatus: 204, responseBody: undefined,
-        headPairId,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -648,7 +641,7 @@ for (const {
         );
         const secondResponse =
             await db.responses.getById(secondId);
-        assert.equal(secondResponse.supersedes, firstId);
+        assert.equal('supersedes' in secondResponse, false);
 
         const headAfterSecond = await documentGetHandler(wiring)(
             db, [family + '-chain-1'], 'current', 'ignored',

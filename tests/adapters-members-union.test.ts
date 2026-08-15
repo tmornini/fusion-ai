@@ -92,7 +92,6 @@ async function flatDocumentPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -126,7 +125,6 @@ async function humanDetailPair(
         responseBody: spec.successBody?.(
             [id], detail, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 

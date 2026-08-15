@@ -1030,11 +1030,7 @@ export interface RequestEntity {
     message: string;
 }
 
-// The paired response. id equals the request's id. follows /
-// supersedes are absent when the write had no predecessor —
-// key absence, not null (the IndexedDB unique index skips
-// absent keys, which is the partial-index semantics the
-// two-PUT-classes design requires).
+// The paired response. id equals the request's id.
 export interface ResponseEntity {
     id: Id;
     uri_prefix: string;
@@ -1044,8 +1040,6 @@ export interface ResponseEntity {
     etag: string;
     message_hash: string;
     message: string;
-    follows?: string;
-    supersedes?: string;
 }
 
 export interface ProjectEntity {

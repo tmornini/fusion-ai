@@ -174,7 +174,6 @@ export async function identityDefaultOrganizationRequest(
             requestAt: ctx.requestAt, organization: undefined,
             responseStatus: HTTP_NO_CONTENT,
             responseBody: undefined,
-            headPairId: undefined,
         });
         const replay = await storedResponseFor(
             ctx.base, pair.requestHash);

@@ -62,7 +62,7 @@ test('message hash covers the fields', async () => {
 test('etag covers only the body', async () => {
     const a = buildResponseModel({
         status: 200,
-        fields: [{ name: 'supersedes', value: 'r1' }],
+        fields: [{ name: 'x-trace', value: 'r1' }],
         body: { v: 1 },
     });
     const b = buildResponseModel({

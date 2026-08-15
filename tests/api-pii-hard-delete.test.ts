@@ -351,7 +351,7 @@ test("the zone's confinement: a non-/pii DELETE (a memberships"
     assert.equal(del.status, 204);
     // Unlike /pii, a memberships DELETE still SUPERSEDES — the
     // hard-delete zone is confined to identities/:id/pii alone.
-    assert.equal(del.headers.get('Supersedes'), putId);
+    assert.equal(del.headers.get('Supersedes'), null);
     const requests = await db.requests.getAll();
     const atAddress = requests.filter(
         r => r.uri_prefix === '/organizations/1/memberships/'

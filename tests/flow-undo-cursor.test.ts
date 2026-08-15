@@ -4,7 +4,9 @@ import {
     memoryDbAdapter,
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
-import { UniqueConstraintError } from '../api/db.ts';
+import {
+    ApiError, HTTP_PRECONDITION_FAILED,
+} from '../api/http-errors.ts';
 import { handleRequest, RequestError } from '../api/api.ts';
 import { postFlowUndoOp } from '../api/routes.ts';
 import {
@@ -467,20 +469,16 @@ function snapOf(
 
 // -- 5b. stale resolution basis (fix wave) -----
 
-// Review finding, fix wave: the undo write's `follows` MUST
-// derive from the SAME read that produced the diff basis
-// (resolveFlowUndoTarget's own `current`), never a second,
-// independent headPairIdAt read — otherwise a save landing
-// AFTER the snapshot was captured (a genuine cross-tab window
-// CLAUDE.md's cross-tab doctrine anticipates) lets the undo
-// write succeed anchored to the FRESH head while its own
-// delta/revivals still reflect the STALE snapshot, silently
-// discarding the concurrent save instead of colliding and
-// 412ing. This drives postFlowUndoOp DIRECTLY (the seam the fix
-// extracted) with a DELIBERATELY stale resolution, bypassing
-// the live route's always-fresh resolveFlowUndoTarget call —
-// the only way to construct this exact window deterministically
-// rather than racing a timer.
+// Review finding, fix wave: the undo write's in-tx latch MUST
+// be the SAME read that produced the diff basis
+// (resolveFlowUndoTarget's own `current`), never a second
+// independent head-read — otherwise a save landing AFTER the
+// snapshot was captured lets the undo write succeed against
+// the FRESH head while its own delta/revivals still reflect
+// the STALE snapshot, silently discarding the concurrent
+// save instead of 412ing. This drives postFlowUndoOp DIRECTLY
+// with a DELIBERATELY stale resolution, bypassing the live
+// route's always-fresh resolveFlowUndoTarget call.
 test(
     'undo cursor (fix wave): a write driven by a STALE'
     + ' resolution snapshot 412s — it must never silently'
@@ -516,18 +514,9 @@ test(
         // is now stale.
         await save(db, token, flowId, 'B', flowId + '-b');
 
-        // Drive the write with the STALE resolution. Before the
-        // fix, `follows` came from formDocumentPairFor's OWN
-        // independent headPairIdAt read, which would see B's
-        // FRESH head and anchor there — landing successfully
-        // (no collision) while delta/revivals still reflected
-        // the stale snapshot, silently discarding B. Anchored
-        // to staleResolution's own current.id (this test's
-        // fix), it instead collides with B's OWN follows claim
-        // on the SAME pre-race head and 412s
-        // (UniqueConstraintError — api.ts's own mapping for a
-        // live request; this test drives the op directly, so it
-        // observes the raw error class the gate maps FROM).
+        // Drive the write with the STALE resolution. The
+        // in-tx head re-read sees B as the live lock head
+        // and 412s — it must never silently discard B.
         const pair = await formWritePair({
             method: 'POST',
             pathname: '/flows/' + flowId + '/undo',
@@ -541,7 +530,6 @@ test(
             organization,
             responseStatus: 204,
             responseBody: undefined,
-            headPairId: undefined,
         });
         await assert.rejects(
             () => postFlowUndoOp(
@@ -549,7 +537,9 @@ test(
                 staleResolution!,
                 { eventId: flowId + '-stale-ev', at: AT },
             ),
-            UniqueConstraintError,
+            (err: unknown) =>
+                err instanceof ApiError
+                && err.status === HTTP_PRECONDITION_FAILED,
         );
 
         // B's content survives untouched — the whole stale-basis

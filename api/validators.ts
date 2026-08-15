@@ -543,8 +543,8 @@ export function pickStringNumberRecord(
 // yields undefined, so the caller omits the property from
 // the validated result (key absence models "none"); a
 // PRESENT `null` is the Sin of Null and is rejected outright.
-// An empty string is likewise rejected — non-empty per the
-// follows/supersedes spec these fields serve.
+// An empty string is likewise rejected — presence of the
+// key demands a non-empty string.
 export function pickOptionalString(
     body: Record<string, unknown>,
     key: string,
@@ -673,11 +673,9 @@ export function validateEnumField<E extends string>(
 // here because each shape must be
 // enumerated case-by-case.
 
-// `optional` names keys that MAY appear but need not — the
-// follows/supersedes shape (absent is the only valid "none",
-// so they are never in `expected`). Every existing caller
-// omits the 4th argument, so the accepted set collapses to
-// `expected` and behavior is unchanged for them.
+// `optional` names keys that MAY appear but need not.
+// Every existing caller omits the 4th argument, so the
+// accepted set collapses to `expected`.
 export function assertOnlyKeys(
     body: Record<string, unknown>,
     expected: readonly string[],
@@ -2325,20 +2323,11 @@ const RESPONSE_BODY_KEYS: readonly string[] = [
     'message_hash', 'message',
 ];
 
-// follows/supersedes are the only optional keys in the
-// codebase: present only when the write had a predecessor.
-// assertOnlyKeys's 4th argument admits them without requiring
-// them — absence is the sole valid "none" (Sin of Null).
-const RESPONSE_OPTIONAL_BODY_KEYS: readonly string[] = [
-    'follows', 'supersedes',
-];
-
 export function validateResponseEntity(
     body: Record<string, unknown>,
 ): Omit<ResponseEntity, 'id'> {
     assertOnlyKeys(
         body, RESPONSE_BODY_KEYS, 'ResponseEntity',
-        RESPONSE_OPTIONAL_BODY_KEYS,
     );
     const uriPrefix = pickString(body, 'uri_prefix');
     if (!uriPrefix.endsWith('/')) {
@@ -2366,12 +2355,6 @@ export function validateResponseEntity(
     const at = validateTimestampField(
         body, 'at', 'ResponseEntity',
     );
-    const follows = pickOptionalString(
-        body, 'follows', 'ResponseEntity',
-    );
-    const supersedes = pickOptionalString(
-        body, 'supersedes', 'ResponseEntity',
-    );
     return {
         uri_prefix: uriPrefix,
         uri_id: pickString(body, 'uri_id'),
@@ -2380,9 +2363,6 @@ export function validateResponseEntity(
         etag: pickString(body, 'etag'),
         message_hash: messageHash,
         message: pickString(body, 'message'),
-        ...(follows !== undefined ? { follows } : {}),
-        ...(supersedes !== undefined
-            ? { supersedes } : {}),
     };
 }
 

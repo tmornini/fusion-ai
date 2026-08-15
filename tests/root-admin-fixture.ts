@@ -89,7 +89,6 @@ export async function seedOrganizationDocument(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
     await db.transaction(
         // Phase Final Task 2: organizations ROW half stripped.
@@ -127,7 +126,6 @@ async function membershipDocumentPair(
             [membershipId], body, SYSTEM_MEMBER_ID,
             ROOT_ADMIN_ORGANIZATION,
         ),
-        headPairId: undefined,
     });
 }
 

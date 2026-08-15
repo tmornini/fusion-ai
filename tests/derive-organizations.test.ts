@@ -118,7 +118,7 @@ test('a second live PUT supersedes the first; derive sees the'
     const firstId = first.headers.get('Response-ID');
     assert.ok(firstId);
     const second = await putOrganization(db, 'org-c', 'Second');
-    assert.equal(second.headers.get('Supersedes'), firstId);
+    assert.equal(second.headers.get('Supersedes'), null);
 
     const derived = await deriveOrganization(db, 'org-c');
     assert.equal(derived.name, 'Second');

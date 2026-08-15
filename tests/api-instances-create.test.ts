@@ -100,7 +100,6 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
-        headPairId: undefined,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
@@ -486,7 +485,6 @@ async () => {
         organization: ORGANIZATION,
         responseStatus: 204,
         responseBody: undefined,
-        headPairId: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],

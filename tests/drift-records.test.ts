@@ -920,7 +920,6 @@ async () => {
         prefix,
     ).filter((pair) => pair.uriId === recordId);
     assert.equal(firstDocumentPairs.length, 1);
-    const firstDocumentPairId = firstDocumentPairs[0]!.id;
 
     const second = await handleRequest(db, req(
         'POST', '/organizations/' + STARK_ORGANIZATION
@@ -952,7 +951,7 @@ async () => {
         (r) => r.id === secondDocumentPairId,
     )!;
     assert.equal(
-        secondDocumentResponseRow.supersedes, firstDocumentPairId,
+        'supersedes' in secondDocumentResponseRow, false,
     );
 
     const res = await handleRequest(
@@ -1265,7 +1264,7 @@ async () => {
     ));
     assert.equal(recreated.status, 200);
     assert.equal(
-        recreated.headers.get('Supersedes'), deleteResponseId,
+        recreated.headers.get('Supersedes'), null,
     );
 
     const res = await handleRequest(

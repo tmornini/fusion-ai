@@ -138,7 +138,6 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     const written = await postIdentityDocumentOp(
         db, 'id-doc-op-1', body, 'current', pair,
@@ -182,7 +181,6 @@ async function putDocumentPair(
     id: string,
     body: Record<string, unknown>,
     requestAt: string,
-    headPairId?: string,
 ): Promise<string> {
     const pair = await formWritePair({
         method: 'PUT',
@@ -195,7 +193,6 @@ async function putDocumentPair(
         requestAt,
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
-        headPairId,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -208,7 +205,6 @@ async function deleteDocumentPair(
     db: MemoryDbAdapter,
     id: string,
     requestAt: string,
-    headPairId?: string,
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'DELETE',
@@ -221,7 +217,6 @@ async function deleteDocumentPair(
         requestAt,
         organization: undefined,
         responseStatus: 204, responseBody: undefined,
-        headPairId,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -253,7 +248,7 @@ test('a PUT chain Supersedes-chains and the head derives the'
         '2026-02-02T00:00:00.000000Z', firstId,
     );
     const secondResponse = await db.responses.getById(secondId);
-    assert.equal(secondResponse.supersedes, firstId);
+    assert.equal('supersedes' in secondResponse, false);
 
     const headAfterSecond = await documentGetHandler(wiring)(
         db, ['identities-chain-1'], 'current', 'ignored',

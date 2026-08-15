@@ -113,7 +113,6 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
-        headPairId: undefined,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
@@ -151,7 +150,6 @@ async function seedRecordTypeBelowGate(
             description: body['description'],
             position: body['position'],
         },
-        headPairId: undefined,
     });
     await postRecordDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,

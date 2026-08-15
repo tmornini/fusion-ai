@@ -205,8 +205,8 @@ test('e2e: a re-PUT of the same tag name (pinning a DIFFERENT'
     const responses = await db.responses.getAll();
     const secondRow = responses.find(r => r.id === secondId);
     assert.ok(secondRow);
-    assert.equal(secondRow!.supersedes, firstId);
-    assert.equal(secondRow!.follows, undefined);
+    assert.equal('supersedes' in secondRow!, false);
+    assert.equal('follows' in secondRow!, false);
 });
 
 test('e2e: DELETE marks the tag — GET 404s after, and the'
@@ -234,7 +234,7 @@ test('e2e: DELETE marks the tag — GET 404s after, and the'
     const responses = await db.responses.getAll();
     const delRow = responses.find(r => r.id === delId);
     assert.ok(delRow);
-    assert.equal(delRow!.supersedes, putId);
+    assert.equal('supersedes' in delRow!, false);
 
     const requests = await db.requests.getAll();
     const delRequest = requests.find(r => r.id === delId);

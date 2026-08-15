@@ -905,15 +905,15 @@ test('sidecar insensitivity: graphDelta/revivals disagreeing '
 
 // -- 11. the Follows-chain terminal -----------------------------
 
-test('the Follows chain terminal reaches exactly the derived '
+test('the lock-head terminal reaches exactly the derived '
 + 'head pair id', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const flowId = 'flow-drift-follows-chain';
+    const flowId = 'flow-drift-lock-head-chain';
 
     const genesis = await handleRequest(db, req(
         'PUT', '/flows/' + flowId, token,
-        documentBody('Genesis', 'flow-drift-follows-genesis'),
+        documentBody('Genesis', 'flow-drift-lock-head-genesis'),
     ));
     assert.equal(genesis.status, 200);
     const genesisId = genesis.headers.get('Response-ID')!;
@@ -924,39 +924,25 @@ test('the Follows chain terminal reaches exactly the derived '
         const saved = await handleRequest(db, req(
             'PUT', '/flows/' + flowId, token,
             documentBody(
-                'Save ' + i, 'flow-drift-follows-ev-' + i,
+                'Save ' + i, 'flow-drift-lock-head-ev-' + i,
             ),
             { 'if-match': '"' + headId + '"' },
         ));
         assert.equal(saved.status, 200);
-        assert.equal(saved.headers.get('Follows'), headId);
+        assert.equal(saved.headers.get('Follows'), null);
         headId = saved.headers.get('Response-ID')!;
     }
-
-    // Walk the stored follows chain from genesis: the chain's
-    // own terminal must be exactly the head the derivation
-    // resolves to.
-    const responses = await db.responses.getAll();
-    let cursor = genesisId;
-    let steps = 0;
-    for (;;) {
-        const next = responses.find((r) => r.follows === cursor);
-        if (next === undefined) break;
-        cursor = next.id;
-        steps++;
-    }
-    assert.equal(steps, saveCount);
 
     const headPairId = await derivedHeadPairId(
         db, STARK_ORGANIZATION, flowId,
     );
-    assert.equal(cursor, headPairId);
-    assert.equal(cursor, headId);
+    assert.equal(headId, headPairId);
 
     const derived = await deriveFlow(
         db, STARK_ORGANIZATION, flowId,
     );
     assert.equal(derived.name, 'Save ' + (saveCount - 1));
+    assert.notEqual(headId, genesisId);
 });
 
 // -- 12. a live multi-member, multi-attribute node save --------
@@ -1092,7 +1078,7 @@ test('same-join-id retry: two different flow creates reusing '
     )).filter((row) => row.uri_prefix === joinPrefix);
     assert.equal(joinResponses.length, 2);
     for (const response of joinResponses) {
-        assert.equal(response.supersedes, undefined);
-        assert.equal(response.follows, undefined);
+        assert.equal('supersedes' in response, false);
+        assert.equal('follows' in response, false);
     }
 });

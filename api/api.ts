@@ -244,17 +244,24 @@ function writeResponseSpecFor(
 }
 
 // Instance PATCH ETag (R8): the REVISION pair's response
-// id (new head), not the wire PATCH pair. Recovery is one
-// UNIQUE follows lookup on the If-Match-verified head the
-// wire operation raced — synthesis Mechanism (Task 17).
+// id (new head), not the wire PATCH pair. The revision
+// shares the wire pair's requestAt at the same address.
 async function revisionEtagForInstancePatch(
     db: DbAdapter,
-    ifMatchPairId: string,
+    wirePairId: string,
 ): Promise<string | undefined> {
-    const rows = await db.responses.getAllWhere(
-        'follows', ifMatchPairId,
+    const wireReq = await db.requests.getById(wirePairId);
+    if (wireReq === undefined) return undefined;
+    const siblings = await db.requests.getAllWhere(
+        'uri_prefix', wireReq.uri_prefix,
     );
-    return rows[0]?.id;
+    const revision = siblings.find(
+        (row) =>
+            row.uri_id === wireReq.uri_id
+            && row.at === wireReq.at
+            && row.id !== wirePairId,
+    );
+    return revision?.id;
 }
 
 // The one catch shared by both pre-dispatch ownership regions
@@ -683,9 +690,9 @@ export async function handleRequest(
             // never inferred from uriId — an event-append
             // address (states/:id) has a non-empty uriId yet
             // must never chain (message-pair.ts). Create-only
-            // (R10) forces undefined so genesis carries neither
-            // supersedes nor follows — the in-tx spent check
-            // owns the race.
+            // (R10) forces undefined so genesis carries no
+            // pre-tx latch — the in-tx spent check owns the
+            // race.
             const headPairId =
                 !isCreateOnlyWrite
                 && DOCUMENT_CLASS_ROUTE_PATTERNS
@@ -729,17 +736,14 @@ export async function handleRequest(
             const echo = rawIfMatch === null
                 ? null
                 : parseIfMatch(rawIfMatch);
-            // follows is set ONLY when the parsed echo matches
-            // the current head — the locked sibling of
-            // headPairId's supersedes; the two are mutually
-            // exclusive by construction (a locked write never
-            // supersedes). The matched pair id, not the quoted
-            // header.
-            const follows = isLockedWrite
+            // echoMatchesHead is true ONLY when the parsed
+            // echo equals the current lock head — the locked
+            // write may proceed. The matched pair id, not
+            // the quoted header, is the in-tx latch.
+            const echoMatchesHead = isLockedWrite
                 && echo !== undefined
                 && echo !== null
-                && echo === headPairId
-                ? echo : undefined;
+                && echo === headPairId;
             // DELETE responses are UNIVERSALLY 204 with no
             // body — every wired DELETE handler returns void
             // (message-pair.ts resolution: DELETEs join their
@@ -778,12 +782,6 @@ export async function handleRequest(
                 responseBody: spec.successBody?.(
                     params, body, actor, organization,
                 ),
-                // A locked write never supersedes (its head-read
-                // decides genesis/412/follows, never a chain);
-                // a simple write carries headPairId exactly as
-                // today.
-                headPairId: isLockedWrite ? undefined : headPairId,
-                ...(follows === undefined ? {} : { follows }),
             });
             // The pre-tx idempotency fast-path: a byte-
             // identical resend never reaches the handler and
@@ -809,27 +807,20 @@ export async function handleRequest(
                             === INSTANCE_DETAIL_PATTERN
                     ) {
                         // PUT create: ETag = wire pair id.
-                        // PATCH: ETag = revision that followed
-                        // the If-Match head (R8 original).
+                        // PATCH: ETag = revision sibling
+                        // (R8 original).
                         if (method === 'PATCH') {
-                            const raw = request.headers
-                                .get(IF_MATCH_HEADER);
-                            const ifMatch = raw === null
-                                ? undefined
-                                : parseIfMatch(raw);
-                            if (ifMatch !== undefined) {
-                                const revisionId =
-                                    await revisionEtagForInstancePatch(
-                                        effective, ifMatch,
-                                    );
-                                if (
-                                    revisionId !== undefined
-                                ) {
-                                    return attachEtag(
-                                        response,
-                                        revisionId,
-                                    );
-                                }
+                            const revisionId =
+                                await revisionEtagForInstancePatch(
+                                    effective, replay.id,
+                                );
+                            if (
+                                revisionId !== undefined
+                            ) {
+                                return attachEtag(
+                                    response,
+                                    revisionId,
+                                );
                             }
                         }
                         return attachEtag(
@@ -842,7 +833,7 @@ export async function handleRequest(
             // The locked six-outcome table, applied ONLY after
             // the replay fast-path MISSES: live + absent → 428;
             // live + malformed → 400; live + ≠ head → 412; live
-            // + == head → follows already set above, proceed;
+            // + == head → echoMatchesHead, proceed;
             // none + absent → genesis; none + present → 412.
             // A 412 here returns BEFORE dispatch, and
             // appendMessagePair only ever runs inside the op's
@@ -878,7 +869,7 @@ export async function handleRequest(
                 }
                 if (
                     rawIfMatch !== null
-                    && follows === undefined
+                    && !echoMatchesHead
                 ) {
                     return Response.json(
                         {
@@ -892,9 +883,8 @@ export async function handleRequest(
             }
             // Instance PATCH If-Match ladder (Task 17 / R5):
             // AFTER replay (load-bearing). Tombstone == absent.
-            // Wire pair is operation-plane; revision pair
-            // carries follows = verified head (UNIQUE
-            // backstop).
+            // Wire pair is operation-plane; the in-tx
+            // head re-read is the race backstop.
             if (
                 method === 'PATCH'
                 && routePattern
@@ -1161,24 +1151,17 @@ export async function handleRequest(
                     ) {
                         // R8: ETag = revision head, not the
                         // wire PATCH operation pair.
-                        const raw = request.headers
-                            .get(IF_MATCH_HEADER);
-                        const ifMatch = raw === null
-                            ? undefined
-                            : parseIfMatch(raw);
-                        if (ifMatch !== undefined) {
-                            const revisionId =
-                                await revisionEtagForInstancePatch(
-                                    effective, ifMatch,
-                                );
-                            if (
-                                revisionId !== undefined
-                            ) {
-                                return attachEtag(
-                                    response,
-                                    revisionId,
-                                );
-                            }
+                        const revisionId =
+                            await revisionEtagForInstancePatch(
+                                effective, stored.id,
+                            );
+                        if (
+                            revisionId !== undefined
+                        ) {
+                            return attachEtag(
+                                response,
+                                revisionId,
+                            );
                         }
                         return attachEtag(
                             response, stored.id,

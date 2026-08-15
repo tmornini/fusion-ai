@@ -151,7 +151,6 @@ async () => {
         requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     const written = await postRecordDocumentOp(
         db, 'rec-1', body, 'current', pair,
@@ -197,7 +196,6 @@ async () => {
         requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     await postRecordDocumentOp(
         db, 'rec-2', firstBody, 'current', firstPair,
@@ -237,7 +235,6 @@ test('postRecordDocumentOp with a fresh trio posts a'
         requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     await postRecordDocumentOp(
         db, 'rec-3', firstBody, 'current', firstPair,
@@ -259,7 +256,6 @@ test('postRecordDocumentOp with a fresh trio posts a'
         requestAt: '2026-01-02T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: firstPair.id,
     });
     await postRecordDocumentOp(
         db, 'rec-3', secondBody, 'current', secondPair,
@@ -342,7 +338,6 @@ async function storedPairAt(
         organization: '1',
         responseStatus: method === 'DELETE' ? 204 : 200,
         responseBody: undefined,
-        headPairId: undefined,
     });
     return {
         request: {

@@ -691,7 +691,7 @@ async () => {
         aiMemberDocumentBody('Chain AI Facet'),
     ));
     assert.equal(facetPut.status, 200);
-    assert.ok(facetPut.headers.get('Supersedes'));
+    assert.equal(facetPut.headers.get('Supersedes'), null);
     const derivedAiDetail3 = await derivedAiMember(
         db, GLOBAL_PLANE_PLACEHOLDER, aiId,
     );
@@ -1225,7 +1225,7 @@ test('plain PUT-supersession at a membership address — a'
         },
     ));
     assert.equal(second.status, 200);
-    assert.equal(second.headers.get('Supersedes'), firstId);
+    assert.equal(second.headers.get('Supersedes'), null);
 
     const derived = await derivedMembership(
         db, STARK_ORGANIZATION, membershipId,

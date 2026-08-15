@@ -139,7 +139,6 @@ test('postRecordAttributeDocumentOp writes exactly the'
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     // Phase Final Task 2: record_attributes ROW half stripped
     // — pair plane + op return are the oracles.
@@ -234,7 +233,6 @@ async function putDocumentPair(
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -269,7 +267,6 @@ async function deleteDocumentPair(
         requestAt: '2026-01-02T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],

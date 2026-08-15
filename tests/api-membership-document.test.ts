@@ -122,7 +122,6 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     // Phase Final Task 2: memberships ROW half stripped —
     // op returns the reconstructed entity; only pairs land.
@@ -173,7 +172,6 @@ async function putDocumentPair(
     id: string,
     body: Record<string, unknown>,
     requestAt: string,
-    headPairId?: string,
 ): Promise<string> {
     const pair = await formWritePair({
         method: 'PUT',
@@ -186,7 +184,6 @@ async function putDocumentPair(
         requestAt,
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -199,7 +196,6 @@ async function deleteDocumentPair(
     db: MemoryDbAdapter,
     id: string,
     requestAt: string,
-    headPairId?: string,
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'DELETE',
@@ -212,7 +208,6 @@ async function deleteDocumentPair(
         requestAt,
         organization: '1',
         responseStatus: 204, responseBody: undefined,
-        headPairId,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -247,7 +242,7 @@ async () => {
     );
     const secondResponse =
         await db.responses.getById(secondId);
-    assert.equal(secondResponse.supersedes, firstId);
+    assert.equal('supersedes' in secondResponse, false);
 
     const headAfterSecond = await documentGetHandler(wiring)(
         db, ['ms-chain-1'], 'current', '1',

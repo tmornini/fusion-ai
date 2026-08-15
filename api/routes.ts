@@ -119,7 +119,6 @@ import {
 } from './message-pair.ts';
 import type { MessagePair } from './message-pair.ts';
 import { replacePiiSlot } from './pii-hard-delete.ts';
-import { messageAddress } from './message-address.ts';
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
@@ -1564,6 +1563,20 @@ export async function postFlowDocumentOp(
             // states-trace strip; pair body also carries
             // revivals for deriveFlowGraphStates (SIDECAR-KEEP).
             if (pair !== undefined) {
+                const latchedId = ifMatchFromPair(pair);
+                const latest = await headPairIdAt(
+                    view, pair.uriPrefix, pair.uriId,
+                );
+                if (
+                    latchedId !== undefined
+                    && latest !== latchedId
+                ) {
+                    throw new ApiError(
+                        'If-Match does not match the current'
+                        + ' document at /flows/' + id,
+                        HTTP_PRECONDITION_FAILED,
+                    );
+                }
                 await appendMessagePair(view, pair);
             }
             return { id, ...entity };
@@ -1578,9 +1591,8 @@ export async function postFlowDocumentOp(
 // states events, and the operation + synthesized document
 // pairs (graphDelta/revivals SIDECAR-KEEP on the document
 // body) commit as ONE transaction. Exhaustion appends only
-// the operation pair. `follows: current.id` anchors the
-// document pair to the EXACT head this resolution saw so a
-// racing save 412s via the responses.follows unique index.
+// the operation pair. `current.id` is the in-tx latch so a
+// racing save 412s when the lock head has moved.
 export async function postFlowUndoOp(
     db: DbAdapter,
     id: Id,
@@ -1648,9 +1660,6 @@ export async function postFlowUndoOp(
         revivals,
     };
     validateFlowDocumentBody(documentBody);
-    // The flows family is LOCKED, so this document write takes
-    // the FOLLOWS slot (never supersedes; the op holds no echo
-    // of its own — design decision 5).
     const documentPair = await formDocumentPairFor(db, {
         routePattern: 'flows/:id',
         params: [id],
@@ -1658,13 +1667,23 @@ export async function postFlowUndoOp(
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
         organization,
-        chain: 'follows',
-        follows: current.id,
     });
     return db.transaction(
         // Phase Final Task 2: flows + graph ROW halves stripped.
         ['requests', 'responses'],
         async (view) => {
+            const latest = await headPairIdAt(
+                view,
+                documentPair.uriPrefix,
+                documentPair.uriId,
+            );
+            if (latest !== current.id) {
+                throw new ApiError(
+                    'If-Match does not match the current'
+                    + ' document at /flows/' + id,
+                    HTTP_PRECONDITION_FAILED,
+                );
+            }
             await appendMessagePair(view, pair);
             await appendMessagePair(view, documentPair);
         },
@@ -2660,8 +2679,6 @@ export async function postWorkOrderTransitionOp(
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
         organization: org,
-        chain: 'follows',
-        follows: ifMatchTarget,
         response: { status: HTTP_OK, body: {} },
     });
     await db.transaction(
@@ -2677,16 +2694,15 @@ export async function postWorkOrderTransitionOp(
                     'work_orders',
                 );
             }
-            // R9: live head must still be the client's
+            // R9: lock head must still be the client's
             // If-Match target, not merely "unchanged since
             // our re-derive".
-            const live = await deriveInstanceHead(
-                view, org, typeId, instanceId,
+            const latest = await headPairIdAt(
+                view,
+                revisionPair.uriPrefix,
+                revisionPair.uriId,
             );
-            if (
-                live === undefined
-                || live.pairId !== ifMatchTarget
-            ) {
+            if (latest !== ifMatchTarget) {
                 throw new ApiError(
                     'If-Match does not match the current '
                         + 'instance at ' + pathname,
@@ -2879,8 +2895,8 @@ export async function postFlowRecordDocumentOp(
 // write (Phase 14 Task 9): no table, no row, no dual-write. The
 // pair alone carries everything (uriPrefix/uriId encode the
 // address; the stored request's method distinguishes a PUT tag
-// from a DELETE tombstone; supersedes/follows encode the SIMPLE-
-// class chain), so this op needs neither `id` nor `body` — the
+// from a DELETE tombstone), so this op needs neither `id`
+// nor `body` — the
 // SAME shape identity-tokens/:id's own pair-only PUT rides (Phase
 // 13 Task 9). `pair` is optional so a below-facade caller with no
 // pair keeps compiling; ZERO seed tags means no such caller
@@ -3645,19 +3661,6 @@ function resolveWriteResponseSpec(
     return spec;
 }
 
-// The chain class a formed pair's head resolution takes
-// (finding 10 iii/iv): 'supersedes' (default) reads the address'
-// real head via headPairIdAt and stores it as headPairId —
-// today's ordinary document-revisit shape. 'follows' reads the
-// SAME real head but stores it as `follows`, NEVER headPairId —
-// the flows/:id/undo locked slot (backed by the responses.follows
-// unique index). 'none' skips the head-read entirely and stores
-// neither field — the two genesis-forced join sites (flow-create,
-// work-order-create), which are Genesis-undefined BY DESIGN even
-// on a same-join-id retry (Step 0(d') pin).
-export type DocumentPairChainClass =
-    'supersedes' | 'follows' | 'none';
-
 export interface DocumentPairFormInput {
     readonly routePattern: string;
     // Pattern params, in order (e.g. ['members/:id']'s single
@@ -3672,22 +3675,6 @@ export interface DocumentPairFormInput {
     readonly requestAt: string;
     readonly organization: Id | undefined;
     readonly method?: 'PUT' | 'DELETE';
-    readonly chain?: DocumentPairChainClass;
-    // Anchors chain 'follows' to a CALLER-SUPPLIED pair id
-    // instead of a fresh headPairIdAt read — REQUIRED whenever
-    // the caller already read the address' head as part of
-    // computing the pair's own BODY (undo-as-replay's
-    // resolveFlowUndoTarget, api/derive-flows.ts, Phase 14 Task
-    // 8 fix wave): letting this function's OWN independent
-    // headPairIdAt read decide `follows` AFTER the body was
-    // already diffed against an earlier read opens a window —
-    // a save landing BETWEEN the two reads moves the real head,
-    // so the undo write would anchor to that FRESH head (no
-    // collision, 204) while its own diff still reflects the
-    // STALE snapshot, silently discarding the concurrent save
-    // instead of colliding on the responses.follows unique
-    // index and 412ing. Ignored unless chain === 'follows'.
-    readonly follows?: Id;
     // The spec-less tombstone sites (finding 10 i): an explicit
     // response, bypassing WRITE_RESPONSE_SPECS entirely.
     readonly response?: {
@@ -3699,16 +3686,17 @@ export interface DocumentPairFormInput {
 // The shared document-pair former (Phase 9 Task 2, Commandment
 // IX): replaces every route-inline formWritePair block that
 // shared this ONE core shape — resolve the response, resolve the
-// address, head-read per the chain class, form the pair. Lives
-// beside WRITE_RESPONSE_SPECS (routes.ts, not message-pair.ts):
-// the specs live here, and message-pair.ts must never import
-// routes.ts (Step 0(c) — the import graph stays acyclic; routes.ts
-// already imports formWritePair/headPairIdAt FROM message-pair.ts,
-// so the dependency runs one way only). Builds the pair PRE-TX
-// only — the in-tx appendMessagePair calls stay at each op's own
-// transaction, untouched.
+// address, form the pair. Lives beside WRITE_RESPONSE_SPECS
+// (routes.ts, not message-pair.ts): the specs live here, and
+// message-pair.ts must never import routes.ts (Step 0(c) — the
+// import graph stays acyclic; routes.ts already imports
+// formWritePair FROM message-pair.ts, so the dependency runs
+// one way only). Builds the pair PRE-TX only — the in-tx
+// appendMessagePair calls stay at each op's own transaction.
+// `_db` is kept so every call site still passes the adapter;
+// the former no longer head-reads.
 export async function formDocumentPairFor(
-    db: DbAdapter,
+    _db: DbAdapter,
     input: DocumentPairFormInput,
 ): Promise<MessagePair> {
     const routeSegments = input.routePattern.split('/');
@@ -3718,19 +3706,6 @@ export async function formDocumentPairFor(
             ? input.params[nextParam++]!
             : segment,
     );
-    const address = messageAddress(routeSegments, pathSegments);
-    const chain = input.chain ?? 'supersedes';
-    const head = chain === 'none'
-        ? undefined
-        : chain === 'follows' && input.follows !== undefined
-            ? input.follows
-            : await headPairIdAt(
-                db,
-                canonicalUriPrefix(
-                    input.organization, address.uriPrefix,
-                ),
-                address.uriId,
-            );
     let responseStatus: number;
     let responseBody: unknown;
     if (input.response !== undefined) {
@@ -3757,9 +3732,6 @@ export async function formDocumentPairFor(
         organization: input.organization,
         responseStatus,
         responseBody,
-        headPairId: chain === 'supersedes' ? head : undefined,
-        ...(chain === 'follows' && head !== undefined
-            ? { follows: head } : {}),
     });
 }
 
@@ -3922,9 +3894,9 @@ async function instanceAddressSpent(
 // ifMatchTarget is the CLIENT's gate-verified If-Match pair
 // id recovered from the formed wire pair — never a live
 // re-derived head. Merge values read the current head only
-// when it still equals ifMatchTarget; revision.follows and
-// the in-tx check both anchor on ifMatchTarget so a concurrent
-// advance cannot silently rebase.
+// when it still equals ifMatchTarget; the in-tx head re-read
+// anchors on ifMatchTarget so a concurrent advance cannot
+// silently rebase.
 export async function postInstancePatchOp(
     db: DbAdapter,
     p: string[],
@@ -3990,10 +3962,8 @@ export async function postInstancePatchOp(
             clear: validated.clear,
         },
     );
-    // Revision: EXPLICIT follows = ifMatchTarget (never a
-    // newer live head). Wire is operation-plane (no
-    // follows); UNIQUE on revision.follows serializes
-    // concurrent writers. Ghost-replay closed via
+    // Revision: If-Match target is the in-tx latch.
+    // Wire is operation-plane; ghost-replay closed via
     // headerFields: [] on the synthetic revision.
     const revisionPair = await formDocumentPairFor(db, {
         routePattern: INSTANCE_DETAIL_PATTERN,
@@ -4003,23 +3973,20 @@ export async function postInstancePatchOp(
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
         organization: org,
-        chain: 'follows',
-        follows: ifMatchTarget,
         response: { status: HTTP_OK, body: {} },
     });
     await db.transaction(
         ['requests', 'responses'],
         async (view) => {
-            // R9: live head must still be the client's
+            // R9: lock head must still be the client's
             // If-Match target, not merely "unchanged since
             // our re-derive".
-            const live = await deriveInstanceHead(
-                view, org, typeId, instanceId,
+            const latest = await headPairIdAt(
+                view,
+                revisionPair.uriPrefix,
+                revisionPair.uriId,
             );
-            if (
-                live === undefined
-                || live.pairId !== ifMatchTarget
-            ) {
+            if (latest !== ifMatchTarget) {
                 throw new ApiError(
                     'If-Match does not match the current '
                         + 'instance at ' + pathname,
@@ -5056,7 +5023,6 @@ export const routes: Route[] = [
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    chain: 'none',
                 });
                 pairs = { operation: pair, document, join };
             }
@@ -5083,7 +5049,7 @@ export const routes: Route[] = [
     // unaffected, since the write side never touched entityOf.
     // The gate's four-outcome table (api.ts, keyed off
     // familyRegistration('flows').concurrency === 'locked')
-    // resolves genesis/412/follows entirely BEFORE dispatch;
+    // resolves genesis/412 entirely BEFORE dispatch;
     // documentPutHandler carries no concurrency branch of its
     // own — it dispatches straight to postFlowDocumentOp.
     // Phase Final Task 2: flows + graph ROW halves stripped;
@@ -5115,8 +5081,8 @@ export const routes: Route[] = [
     // server-computed into the document pair body
     // (SIDECAR-KEEP → deriveFlowGraphStates). No flow_versions
     // row is read or written. Exhaustion appends only the
-    // operation pair. FOLLOWS collision → 412 via the
-    // responses.follows unique index.
+    // operation pair. A moved lock head → 412 via the
+    // in-tx head re-read.
     route('flows/:id/undo', {
         post: async (
             db, p, body, actor, pair, organization,
@@ -5281,7 +5247,6 @@ export const routes: Route[] = [
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
                     organization,
-                    chain: 'none',
                 });
                 pairs = { operation: pair, document, join };
             }

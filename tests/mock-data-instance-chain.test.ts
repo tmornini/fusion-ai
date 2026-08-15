@@ -171,8 +171,8 @@ async () => {
     }
 });
 
-test('chain provenance: revision follows predecessor;'
-+ ' genesis has none',
+test('chain provenance: three instance pairs ordered by at;'
++ ' no predecessor columns',
 async () => {
     const db = await seededDb();
     const prefix = instancesUriPrefix(
@@ -206,7 +206,11 @@ async () => {
     const reviewRev = byId.get(ordered[1]!.id)!;
     const completeRev = byId.get(ordered[2]!.id)!;
 
-    assert.equal(genesis.follows, undefined);
-    assert.equal(reviewRev.follows, genesis.id);
-    assert.equal(completeRev.follows, reviewRev.id);
+    assert.ok(genesis);
+    assert.ok(reviewRev);
+    assert.ok(completeRev);
+    for (const row of [genesis, reviewRev, completeRev]) {
+        assert.equal('follows' in row, false);
+        assert.equal('supersedes' in row, false);
+    }
 });

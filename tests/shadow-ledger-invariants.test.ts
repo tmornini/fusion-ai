@@ -230,7 +230,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     ));
     assert.equal(secondIdea.status, 200);
     assert.equal(
-        secondIdea.headers.get('Supersedes'), firstIdeaId,
+        secondIdea.headers.get('Supersedes'), null,
     );
 
     // Idea state-change trio PUT (states/:id retired) — a

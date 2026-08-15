@@ -805,7 +805,7 @@ async () => {
         },
     ));
     assert.equal(second.status, 200);
-    assert.equal(second.headers.get('Supersedes'), firstId);
+    assert.equal(second.headers.get('Supersedes'), null);
 
     const getRes = await handleRequest(
         db, req('GET', '/work-orders/' + workOrderId, token),
@@ -1638,7 +1638,7 @@ test('same-join-id retry: two different work-order creates '
     )).filter((row) => row.uri_prefix === joinPrefix);
     assert.equal(joinResponses.length, 2);
     for (const response of joinResponses) {
-        assert.equal(response.supersedes, undefined);
-        assert.equal(response.follows, undefined);
+        assert.equal('supersedes' in response, false);
+        assert.equal('follows' in response, false);
     }
 });

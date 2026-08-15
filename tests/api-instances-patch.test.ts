@@ -111,7 +111,6 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
-        headPairId: undefined,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
@@ -226,7 +225,6 @@ async function appendInstancePair(
     method: 'PUT' | 'DELETE',
     body: Record<string, unknown> | undefined,
     requestAt: string,
-    headPairId?: string,
 ): Promise<string> {
     const pathname = '/organizations/' + organization
         + '/record-types/' + typeId
@@ -244,7 +242,6 @@ async function appendInstancePair(
         organization,
         responseStatus: method === 'DELETE' ? 204 : 200,
         responseBody: undefined,
-        headPairId,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -932,7 +929,6 @@ async () => {
             set: staleBody.set,
             clear: [],
         },
-        headPairId: undefined,
     });
     // Advance the real head past H0.
     const advance = await handleRequest(db, req(
@@ -990,39 +986,15 @@ async () => {
     assert.equal(after?.pairId, live.pairId);
 });
 
-test('explicit-follows race pin: formDocumentPairFor never '
-+ 're-reads head when follows is supplied',
+test('formed revision pair carries no predecessor fields',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
     await putLiveType(db, adminToken);
     await seedWritableTextAttr(db, adminToken);
-    const put = await putInstance(db, memberToken, [
+    await putInstance(db, memberToken, [
         { attribute_id: ATTR_ID, value: 'A' },
     ]);
-    const h0 = parseIfMatch(put.headers.get('ETag')!)!;
-    // Advance the real head past h0.
-    const p1 = await handleRequest(db, req(
-        'PATCH', INSTANCE_DETAIL, memberToken,
-        {
-            set: [
-                {
-                    attribute_id: ATTR_ID,
-                    value: 'B',
-                },
-            ],
-        },
-        {
-            [IF_MATCH_HEADER]: put.headers.get('ETag')!,
-        },
-    ));
-    assert.equal(p1.status, 200);
-    const live = await deriveInstanceHead(
-        db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
-    );
-    assert.notEqual(live?.pairId, h0);
-    // Form a revision anchored to the STALE head id
-    // explicitly — must not silently re-read live head.
     const revision = await formDocumentPairFor(db, {
         routePattern: INSTANCE_DETAIL_PATTERN,
         params: [ORGANIZATION, TYPE_ID, INSTANCE_ID],
@@ -1038,16 +1010,10 @@ async () => {
         requesterIdentityId: SYSTEM_MEMBER_ID,
         requestAt: nowUtc(),
         organization: ORGANIZATION,
-        chain: 'follows',
-        follows: h0,
         response: { status: 200, body: {} },
     });
-    assert.equal(
-        revision.follows,
-        h0,
-        'explicit follows wins; no live-head re-read',
-    );
-    assert.notEqual(revision.follows, live?.pairId);
+    assert.equal('follows' in revision, false);
+    assert.equal('supersedes' in revision, false);
 });
 
 test('ETag/ACL interplay: unreadable write moves head; '

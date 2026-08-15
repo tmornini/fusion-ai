@@ -164,7 +164,6 @@ async function memberDocumentPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -201,7 +200,6 @@ async function detailDocumentPair(
         responseBody: spec.successBody?.(
             [id], detail, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -236,7 +234,6 @@ async function identityPiiDocumentPair(
         responseBody: spec.successBody?.(
             [id], pii, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -258,7 +255,6 @@ async function memberCreateOperationPair(
         organization: undefined,
         responseStatus: 204,
         responseBody: undefined,
-        headPairId: undefined,
     });
 }
 
@@ -290,7 +286,6 @@ async function membershipDocumentPair(
             [membershipId], body, SYSTEM_MEMBER_ID,
             MEMBER_ORGANIZATION,
         ),
-        headPairId: undefined,
     });
 }
 

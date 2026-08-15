@@ -585,7 +585,7 @@ test('live-write chain: create, reposition, revision edit,'
     const repositionResponseId =
         reposition.headers.get('Response-ID');
     assert.ok(repositionResponseId);
-    assert.ok(reposition.headers.get('Supersedes'));
+    assert.equal(reposition.headers.get('Supersedes'), null);
     {
         const getRes = await handleRequest(
             db, req('GET', '/objectives/' + objectiveId, token),
@@ -847,7 +847,7 @@ test('live-write chain: create, reposition, revision edit,'
     // (reactivate), not the earlier reposition.
     assert.equal(
         duplicate.headers.get('Supersedes'),
-        reactivatedResponseId,
+        null,
     );
 
     const [afterRequests, afterResponses] = await Promise.all([
@@ -863,7 +863,7 @@ test('live-write chain: create, reposition, revision edit,'
     );
     assert.equal(newRows.length, 2);
     for (const row of newRows) {
-        assert.equal(row.supersedes, reactivatedResponseId);
+        assert.equal('supersedes' in row, false);
     }
     const documentPairsAfter = documentPairsAt(
         afterRequests, afterResponses, objectivesPrefix,
@@ -876,8 +876,8 @@ test('live-write chain: create, reposition, revision edit,'
         (r) => r.id === newestDocumentPair.id,
     )!;
     assert.equal(
-        newestDocumentResponseRow.supersedes,
-        reactivatedResponseId,
+        'supersedes' in newestDocumentResponseRow,
+        false,
     );
 
     const finalGet = await handleRequest(

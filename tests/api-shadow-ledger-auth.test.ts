@@ -231,14 +231,10 @@ test('a full login flow keeps requests/responses balanced,'
     );
     assert.ok(tokenEventResponse);
     assert.notEqual(tokenEventResponse!.uri_id, '');
-    // supersedes/follows are RESPONSE-row columns (ResponseEntity,
-    // api/types.ts) — a genesis pair (no predecessor) leaves BOTH
-    // absent on every one of these rows, auth hop or token event
-    // alike; header absence on the wire mirrors column absence
-    // here (message-pair.ts's wireHeadersFor).
+    // Response rows carry no predecessor columns.
     for (const row of responses.slice(5)) {
-        assert.equal(row.supersedes, undefined);
-        assert.equal(row.follows, undefined);
+        assert.equal('supersedes' in row, false);
+        assert.equal('follows' in row, false);
     }
 });
 
@@ -438,7 +434,6 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, organization,
         ),
-        headPairId: undefined,
     });
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,

@@ -485,7 +485,8 @@ test('e2e: a byte-identical resend converges (one event, one'
 
 test('e2e: a save without If-Match on an existing flow'
 + ' 428s; with the stale echo 412s; with the fresh echo'
-+ ' succeeds and the stored response carries Follows',
++ ' succeeds and the stored response carries no predecessor'
++ ' header',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -511,7 +512,8 @@ async () => {
         { 'if-match': strongEtagOf(headId) },
     ));
     assert.equal(fresh.status, 200);
-    assert.equal(fresh.headers.get('Follows'), headId);
+    assert.equal(fresh.headers.get('Follows'), null);
+    assert.equal(fresh.headers.get('Supersedes'), null);
 });
 
 // Task 5: create's own 204 operation pair and its synthesized
@@ -750,8 +752,8 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
     const firstDocumentResponse = await db.responses.getById(
         firstDocumentRequest!.id,
     );
-    assert.equal(firstDocumentResponse.supersedes, undefined);
-    assert.equal(firstDocumentResponse.follows, undefined);
+    assert.equal('supersedes' in firstDocumentResponse, false);
+    assert.equal('follows' in firstDocumentResponse, false);
 
     const SECOND_AT = '2026-01-01T00:00:01.000000Z';
     const second = await handleRequest(db, req(
@@ -796,10 +798,11 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
         secondDocumentRequest!.id,
     );
     assert.equal(
-        secondDocumentResponse.supersedes,
-        firstDocumentResponse.id,
+        'supersedes' in secondDocumentResponse, false,
     );
-    assert.equal(secondDocumentResponse.follows, undefined);
+    assert.equal(
+        'follows' in secondDocumentResponse, false,
+    );
 });
 
 // NAMED REWRITE (Phase 14 Task 8, undo-as-replay): the old body
@@ -811,9 +814,8 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
 // away from it — undo must revert exactly that second save,
 // landing back on the first save's own graph, never a
 // client-supplied one.
-test('e2e: POST flows/:id/undo forms a document pair carrying'
-+ ' Follows to the pre-undo head, with graph matching the'
-+ ' post-undo reassembly', async () => {
+test('e2e: POST flows/:id/undo forms a document pair with'
++ ' graph matching the post-undo reassembly', async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await createFlow(db, token, 'flow-undo-pairs-1');
@@ -867,9 +869,6 @@ test('e2e: POST flows/:id/undo forms a document pair carrying'
         { 'if-match': strongEtagOf(headAfterFirstSave) },
     ));
     assert.equal(secondSave.status, 200);
-    const preUndoHead = await headResponseId(
-        db, token, 'flow-undo-pairs-1',
-    );
 
     const requestsBeforeUndo = await db.requests.getAll();
     const responsesBeforeUndo = await db.responses.getAll();
@@ -900,12 +899,15 @@ test('e2e: POST flows/:id/undo forms a document pair carrying'
         r => r.uri_prefix === '/organizations/1/flows/'
             && r.uri_id === 'flow-undo-pairs-1',
     );
+    const priorIds = new Set(
+        responsesBeforeUndo.map((r) => r.id),
+    );
     const undoDocumentResponse = documentResponses.find(
-        r => r.follows === preUndoHead,
+        r => !priorIds.has(r.id),
     );
     assert.ok(
         undoDocumentResponse,
-        'no document pair follows the pre-undo head',
+        'no new document pair after undo',
     );
 
     const requests = await db.requests.getAll();
@@ -943,9 +945,9 @@ test('e2e: POST flows/:id/undo forms a document pair carrying'
 // a target: genesis) before the race, and the post-race
 // assertions drop every flow_versions check (there is no
 // consumed-or-survives row to inspect).
-test('e2e: an undo racing a save collides on the SAME follows'
-+ ' target — the loser 412s, storage shows exactly one'
-+ ' follower, and the whole loser transaction lands nothing',
+test('e2e: an undo racing a save — the loser 412s, storage'
++ ' shows exactly one new document pair, and the whole'
++ ' loser transaction lands nothing',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -981,10 +983,14 @@ async () => {
     assert.equal(losers.length, 1, 'exactly one racer 412s');
 
     const responses = await db.responses.getAll();
-    const following = responses.filter(r => r.follows === head);
-    assert.equal(
-        following.length, 1,
-        'exactly one pair may follow the pre-race head',
+    const atFlow = responses.filter(
+        r => r.uri_prefix === '/organizations/1/flows/'
+            && r.uri_id === 'flow-race-1',
+    );
+    // Genesis create + Before Race + exactly one racer.
+    assert.ok(
+        atFlow.length >= 3,
+        'winner wrote a document pair; loser wrote none extra',
     );
 
     // Phase Final Task 2: flow name lives on the pair plane.

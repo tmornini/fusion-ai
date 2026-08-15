@@ -333,6 +333,5 @@ export const TABLE_INDEXES:
     responses: [
         'uri_prefix',
         'uri_id',
-        { column: 'follows', unique: true },
     ],
 };

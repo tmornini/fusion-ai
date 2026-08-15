@@ -119,7 +119,6 @@ async () => {
         responseBody: spec.successBody?.(
             ['s2'], detail, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
     await postAiMemberDocumentOp(
         db, 's2', detail, SYSTEM_MEMBER_ID, pair,

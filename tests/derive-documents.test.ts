@@ -33,7 +33,6 @@ async function storedPairAt(
         organization: '1',
         responseStatus: status,
         responseBody: undefined,
-        headPairId: undefined,
     });
     return {
         request: {

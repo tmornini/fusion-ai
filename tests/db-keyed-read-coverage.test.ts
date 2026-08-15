@@ -26,6 +26,18 @@ const KEYED_READS: ReadonlyArray<{
     { table: 'responses', column: 'uri_prefix' },
 ];
 
+test('responses carry no unique follows index', () => {
+    const cols = TABLE_INDEXES['responses'] ?? [];
+    assert.equal(
+        cols.some(
+            (spec) =>
+                typeof spec !== 'string'
+                && spec.column === 'follows',
+        ),
+        false,
+    );
+});
+
 test('every keyed read has a matching secondary index', () => {
     for (const { table, column } of KEYED_READS) {
         const cols = TABLE_INDEXES[table] ?? [];

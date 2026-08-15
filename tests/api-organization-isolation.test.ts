@@ -577,7 +577,6 @@ async function seedMembershipPair(
         responseBody: spec.successBody?.(
             [membershipId], body, SYSTEM_MEMBER_ID, organization,
         ),
-        headPairId: undefined,
     });
     await postMembershipDocumentOp(
         db, membershipId, body, SYSTEM_MEMBER_ID, pair,

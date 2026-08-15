@@ -219,7 +219,6 @@ async () => {
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     // Phase Final Task 2: objectives ROW half stripped —
     // op returns the reconstructed entity; only pairs land.
@@ -280,7 +279,6 @@ async function putDocumentPair(
         requestAt: at,
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -304,7 +302,6 @@ async function deleteDocumentPair(
         requestAt: at,
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],

@@ -170,9 +170,8 @@ export const INSTANCE_HISTORY_PATTERN =
 
 // Create-only PUT addresses (Task 15): If-Match rejected;
 // in-tx spent-address check owns the race. NOT registered
-// in DOCUMENT_CLASS_ROUTE_PATTERNS (R10) — headPairId stays
-// undefined so genesis carries neither supersedes nor
-// follows.
+// in DOCUMENT_CLASS_ROUTE_PATTERNS (R10) — no pre-tx
+// latch; the in-tx spent check owns the race.
 export const CREATE_ONLY_PUT_ROUTE_PATTERNS:
     ReadonlySet<string> =
     new Set([INSTANCE_DETAIL_PATTERN]);

@@ -54,7 +54,6 @@ async function identityDocumentPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -85,7 +84,6 @@ async function identityPiiDocumentPair(
         responseBody: spec.successBody?.(
             [id], pii, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -120,7 +118,6 @@ async function identityCredentialDocumentPair(
         responseBody: spec.successBody?.(
             [id, cid], fields, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -151,7 +148,6 @@ async function identityProviderDocumentPair(
         responseBody: spec.successBody?.(
             [id], body, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -272,7 +268,6 @@ async function clientRegistrationDocumentPair(
         responseBody: spec.successBody?.(
             [id], fields, SYSTEM_MEMBER_ID, undefined,
         ),
-        headPairId: undefined,
     });
 }
 
@@ -312,7 +307,6 @@ export async function seedClientRegistrationTombstone(
         organization: undefined,
         responseStatus: 204,
         responseBody: undefined,
-        headPairId: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],

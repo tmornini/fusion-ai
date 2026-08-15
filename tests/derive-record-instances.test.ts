@@ -59,7 +59,6 @@ async function appendInstancePair(
     method: 'PUT' | 'DELETE',
     body: Record<string, unknown> | undefined,
     requestAt: string,
-    headPairId?: string,
 ): Promise<string> {
     const pair = await formWritePair({
         method,
@@ -78,7 +77,6 @@ async function appendInstancePair(
         organization: ORGANIZATION,
         responseStatus: method === 'DELETE' ? 204 : 200,
         responseBody: undefined,
-        headPairId,
     });
     await db.transaction(
         ['requests', 'responses'],

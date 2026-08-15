@@ -285,7 +285,7 @@ export async function documentHeadPairId(
 // The route body is UNCHANGED dispatch to the documentOp for
 // BOTH concurrency classes — the locked/simple divide is
 // resolved entirely upstream, at the gate (api.ts's four-outcome
-// table decides follows/supersedes/412 BEFORE this handler ever
+// table decides genesis/412 BEFORE this handler ever
 // runs), so documentPutHandler carries no concurrency branch of
 // its own.
 export function documentPutHandler(

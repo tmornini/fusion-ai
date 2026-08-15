@@ -58,15 +58,6 @@ export interface MessagePair {
     readonly responseMessage: string;
     readonly responseEtag: string;
     readonly responseHash: string;
-    readonly supersedes?: string;      // absent == genesis
-    // The locked-class sibling of supersedes (spec §The two
-    // PUT classes): the verified If-Match pair id, carried
-    // forward as PROVENANCE rather than displacement — mutually
-    // exclusive with supersedes (a locked non-genesis write sets
-    // follows and never supersedes; a simple write sets
-    // supersedes and never follows). Absent == genesis, exactly
-    // like supersedes.
-    readonly follows?: string;
 }
 
 // The gate's seed for the two /authentication/* grant routes
@@ -107,19 +98,8 @@ export interface WritePairInput {
     readonly organization: Id | undefined;
     readonly responseStatus: number;
     readonly responseBody: unknown | undefined;
-    readonly headPairId: string | undefined;
-    // The locked-class counterpart of headPairId: the verified
-    // If-Match pair id, set by the caller ONLY when the gate's
-    // six-outcome table (api.ts) resolved the write as a
-    // matching-echo non-genesis locked write — mutually
-    // exclusive with headPairId (a caller passes one or the
-    // other, never both). Optional so every existing simple-
-    // family call site keeps compiling unchanged.
-    readonly follows?: string;
 }
 
-const SUPERSEDES_FIELD = 'supersedes';
-const FOLLOWS_FIELD = 'follows';
 const RESPONSE_ID_FIELD = 'response-id';
 
 // Fallback for first path segments that are organization-
@@ -175,14 +155,6 @@ export async function formWritePair(
     });
     const responseFields = [
         { name: RESPONSE_ID_FIELD, value: id },
-        ...(input.headPairId === undefined ? [] : [{
-            name: SUPERSEDES_FIELD,
-            value: input.headPairId,
-        }]),
-        ...(input.follows === undefined ? [] : [{
-            name: FOLLOWS_FIELD,
-            value: input.follows,
-        }]),
     ];
     const responseModel = buildResponseModel({
         status: input.responseStatus,
@@ -203,20 +175,16 @@ export async function formWritePair(
         responseMessage,
         responseEtag: await bodyEtagOf(responseModel),
         responseHash: await messageHashOf(responseMessage),
-        ...(input.headPairId === undefined
-            ? {} : { supersedes: input.headPairId }),
-        ...(input.follows === undefined
-            ? {} : { follows: input.follows }),
     };
 }
 
 // Complete an AuthPairSeed into a MessagePair for a grant's own
 // response: operation-addressed (uriId '', global plane — see
 // canonicalUriPrefix with organization undefined), never a
-// head-read, so it never chains (no Supersedes). The two
-// /authentication/* routes are the only callers; each grant
-// calls this pre-tx, once its own domain read has resolved the
-// requester identity and its response body is fully known.
+// head-read. The two /authentication/* routes are the only
+// callers; each grant calls this pre-tx, once its own domain
+// read has resolved the requester identity and its response
+// body is fully known.
 export async function formAuthPair(
     seed: AuthPairSeed,
     body: Record<string, unknown>,
@@ -231,7 +199,6 @@ export async function formAuthPair(
         organization: undefined,
         responseStatus,
         responseBody,
-        headPairId: undefined,
     });
 }
 
@@ -258,8 +225,7 @@ const TOKEN_EVENT_ROUTE_SEGMENTS: readonly string[] =
 // pair (formWritePair's own crypto never runs inside an open
 // transaction — the auto-commit constraint). EVENT-APPEND, like
 // every identity_tokens row: identity-tokens/:id carries no
-// DOCUMENT_CLASS_ROUTE_PATTERNS entry, so headPairId is always
-// undefined here too — no head-read, no Supersedes.
+// DOCUMENT_CLASS_ROUTE_PATTERNS entry — no head-read.
 // requesterIdentityId is the event's OWN identity_id (the
 // affected identity) — the NAMED convention for a write with no
 // authenticated actor in view at this depth (an internal grant,
@@ -288,13 +254,11 @@ export async function formTokenEventPair(
             id,
             ...validateIdentityTokenEntity(body),
         },
-        headPairId: undefined,
     });
 }
 
-// Pre-tx head-read: latest response pair id at the address, by
-// the (at, id) reduction — provenance source for Supersedes.
-// Returns undefined when the address is virgin.
+// Latest response pair id at the address, by the (at, id)
+// reduction. Returns undefined when the address is virgin.
 export async function headPairIdAt(
     db: DbAdapter,
     uriPrefix: string,
@@ -360,8 +324,8 @@ export function parseIfMatch(
 
 // Recover the client's If-Match target from a formed wire
 // pair's request message (hoisted into the hash). This is
-// the gate-verified anchor for R9 / revision.follows — never
-// re-derive a live head and treat it as the client's echo.
+// the gate-verified latch for the in-tx head re-read —
+// never re-derive a live head and treat it as the echo.
 export function ifMatchFromPair(
     pair: MessagePair,
 ): string | undefined {
@@ -434,12 +398,6 @@ export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
         'Date': httpDateOf(stored.at),
         'Response-ID': stored.id,
     };
-    if (stored.supersedes !== undefined) {
-        headers['Supersedes'] = stored.supersedes;
-    }
-    if (stored.follows !== undefined) {
-        headers['Follows'] = stored.follows;
-    }
     return headers;
 }
 
@@ -541,10 +499,6 @@ export async function putMessagePair(
         etag: pair.responseEtag,
         message_hash: pair.responseHash,
         message: pair.responseMessage,
-        ...(pair.supersedes === undefined
-            ? {} : { supersedes: pair.supersedes }),
-        ...(pair.follows === undefined
-            ? {} : { follows: pair.follows }),
     });
 }
 
@@ -727,12 +681,12 @@ export const REPLAY_EXEMPT_ROUTE_PATTERNS: Set<string> =
 
 // The head-read class, PER ROUTE PATTERN — never inferred from
 // a request's own uriId. A document address is revisited
-// (create then update, or repeated PUT) and forms a Supersedes
-// chain via a pre-tx head-read; an operation address (uriId
-// always '') and an event-append address (a fresh, client-
-// minted id every write, e.g. states/:id) never chain, even
-// though an event-append uriId is never ''. Grown family by
-// family alongside PAIR_WIRED_ROUTE_PATTERNS.
+// (create then update, or repeated PUT) and takes a pre-tx
+// head-read; an operation address (uriId always '') and an
+// event-append address (a fresh, client-minted id every write,
+// e.g. states/:id) never head-read, even though an event-
+// append uriId is never ''. Grown family by family alongside
+// PAIR_WIRED_ROUTE_PATTERNS.
 // 'identities/:id/pii' is RETIRED here (Phase 10 Task 3): the
 // /pii address is the message plane's sanctioned hard-delete
 // zone (api/pii-hard-delete.ts) — CHAINLESS by construction, so
@@ -753,8 +707,8 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         // api.ts's isLockedWrite exact-matches routePattern ===
         // family + '/:id', and a 4-segment pattern never
         // equals 'flows/:id' — so registering tags here safely
-        // opts that address into the ordinary head-read/
-        // Supersedes chain, never the locked four-outcome table.
+        // opts that address into the ordinary head-read,
+        // never the locked four-outcome table.
         'flows/:id/tags/:name',
         'work-orders',
         'work-orders/:id',
@@ -781,8 +735,7 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         // share the supersession chain at the type uri_id.
         RECORD_TYPES_COLLECTION_PATTERN,
         // Nested record-types detail (Task 3): simple class —
-        // gate stamps supersedes for non-locked PUTs; no
-        // If-Match required on types.
+        // no If-Match required on types.
         RECORD_TYPE_DETAIL_PATTERN,
         // Nested attributes detail (Task 7): simple class —
         // attributes never join the If-Match dialect.

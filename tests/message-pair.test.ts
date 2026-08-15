@@ -8,6 +8,10 @@ import {
     storedResponseFor,
     appendMessagePair,
 } from '../api/message-pair.ts';
+import { parseJson } from '../shared/http-message/json-codec.ts';
+import {
+    defaultBodyRegistry,
+} from '../shared/http-message/media-registry.ts';
 
 const INPUT = {
     method: 'PUT',
@@ -22,7 +26,6 @@ const INPUT = {
     organization: '1',
     responseStatus: 204,
     responseBody: undefined,
-    headPairId: undefined,
 } as const;
 
 test('an org-owned pair stores at the org-nested prefix',
@@ -121,7 +124,6 @@ async () => {
         pair.responseHash,
         await sha256Hex(pair.responseMessage),
     );
-    assert.equal(pair.supersedes, undefined);
 });
 
 test('the event at rides the body byte-exact; the arrival '
@@ -132,15 +134,26 @@ test('the event at rides the body byte-exact; the arrival '
     assert.equal(pair.requestAt, INPUT.requestAt);
 });
 
-test('a supersedes fold changes the response hash',
+test('formed response has no follows or supersedes',
 async () => {
-    const genesis = await formWritePair({ ...INPUT });
-    const displaced = await formWritePair(
-        { ...INPUT, headPairId: 'prior-pair' },
+    const pair = await formWritePair({
+        ...INPUT,
+    });
+    assert.equal(
+        'follows' in pair, false,
     );
-    assert.equal(displaced.supersedes, 'prior-pair');
-    assert.notEqual(
-        genesis.responseHash, displaced.responseHash,
+    assert.equal(
+        'supersedes' in pair, false,
+    );
+    const model = parseJson(
+        pair.responseMessage, defaultBodyRegistry(),
+    );
+    assert.equal(
+        model.fields.some(
+            (f) => f.name === 'follows'
+                || f.name === 'supersedes',
+        ),
+        false,
     );
 });
 

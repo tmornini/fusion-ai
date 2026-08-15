@@ -149,7 +149,6 @@ test('postWorkOrderDocumentOp returns the entity and the'
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     const written = await postWorkOrderDocumentOp(
         db, 'wo-doc-op-1', body, 'current', pair,
@@ -380,17 +379,16 @@ async () => {
         secondDocumentRow!.id,
     );
     assert.equal(
-        secondDocumentResponse.supersedes, firstDocumentId,
+        'supersedes' in secondDocumentResponse, false,
     );
 
     for (const response of await db.responses.getAll()) {
-        assert.equal(response.follows, undefined);
+        assert.equal('follows' in response, false);
     }
 });
 
 test('a duplicate work-order create\'s own OPERATION pair'
-+ ' also records Supersedes == the first DOCUMENT pair\'s'
-+ ' id', async () => {
++ ' stores no predecessor column', async () => {
     const db = await freshDb();
     const first = await handleRequest(db, req(
         'POST', '/work-orders', DEV_TOKEN,
@@ -414,7 +412,7 @@ test('a duplicate work-order create\'s own OPERATION pair'
         secondOperationId!,
     );
     assert.equal(
-        secondOperationResponse.supersedes, firstDocumentId,
+        'supersedes' in secondOperationResponse, false,
     );
 });
 

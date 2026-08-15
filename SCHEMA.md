@@ -26,10 +26,7 @@ objects — `strengths`, `team_dimensions`, `options`,
 `flow_graph`) store as native nested JSON on the wire and
 in the pair body, never as JSON-encoded strings. Required
 columns are NOT NULL — entity validation on creation
-ensures every required field is present. `follows` /
-`supersedes` are optional-by-absence (never `null`, never
-`''`); see responses below and
-`RESPONSE_OPTIONAL_BODY_KEYS` in `api/validators.ts`.
+ensures every required field is present.
 `serializeValue` (`api/storage-serialize.ts`) rejects
 null/undefined on present keys only.
 
@@ -151,13 +148,7 @@ Secondary indexes: `uri_prefix`, `uri_id`, `message_hash`
 ### responses
 
 The paired response: `id` equals the request's `id` (one
-UUID per pair, never a foreign key of its own). `follows` /
-`supersedes` are ABSENT KEYS when the write had no
-predecessor — never `null`, never `''`. Absence-of-key IS
-absence-of-event, and IndexedDB skips absent keys when
-indexing, which is the partial-unique-index semantics the
-two-PUT-classes design requires; a `null` value for either
-is rejected by `validateResponseEntity` as invalid.
+UUID per pair, never a foreign key of its own).
 
 | Column | Type | Notes |
 |--------|------|-------|
@@ -169,8 +160,6 @@ is rejected by `validateResponseEntity` as invalid.
 | etag | TEXT | sha256 of body bytes (or empty; `bodyEtagOf`) |
 | message_hash | TEXT | sha256 hex digest of `message` |
 | message | TEXT | The canonical stored HTTP message |
-| follows | TEXT | ABSENT unless this follows a prior pair |
-| supersedes | TEXT | ABSENT unless this supersedes a pair |
 
 `responses.etag` is storage-only body content-addressing —
 **unrelated to the wire ETag** on instance
@@ -179,8 +168,8 @@ API.md §5.4.1 / §5.20). Implementers must not conflate
 them.
 
 Validator: `validateResponseEntity` (`api/validators.ts`).
-Secondary indexes: `uri_prefix`, `uri_id`, and the unique
-`follows` index (`api/db.ts` `TABLE_INDEXES`).
+Secondary indexes: `uri_prefix`, `uri_id`
+(`api/db.ts` `TABLE_INDEXES`).
 
 ## Derived document families (no table)
 

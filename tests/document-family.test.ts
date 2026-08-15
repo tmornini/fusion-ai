@@ -6,7 +6,6 @@ import {
 } from '../api/db-memory.ts';
 import {
     EntityNotFoundError,
-    UniqueConstraintError,
 } from '../api/db.ts';
 import type { DbAdapter } from '../api/db.ts';
 import type { Id } from '../api/types.ts';
@@ -14,6 +13,8 @@ import { handleRequest } from '../api/api.ts';
 import {
     formWritePair,
     appendMessagePair,
+    ifMatchFromPair,
+    headPairIdAt,
     IF_MATCH_HEADER,
     strongEtagOf,
 } from '../api/message-pair.ts';
@@ -45,6 +46,8 @@ import {
 import { deriveIdea } from '../api/derive-ideas.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
+import { ApiError, HTTP_PRECONDITION_FAILED } from
+    '../api/http-errors.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -152,7 +155,6 @@ test('documentEntityRoute (simple arm) PUTs through the'
         headerFields: [], body, requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     const written = await route.put!(
         db, ['idea-9'], body, 'current', pair,
@@ -192,6 +194,21 @@ async function testDocumentOp(
         ['requests', 'responses'],
         async (view) => {
             if (pair !== undefined) {
+                const latchedId = ifMatchFromPair(pair);
+                const latest = await headPairIdAt(
+                    view, pair.uriPrefix, pair.uriId,
+                );
+                if (
+                    latchedId !== undefined
+                    && latest !== latchedId
+                ) {
+                    throw new ApiError(
+                        'If-Match does not match the current'
+                        + ' document at /'
+                        + TEST_FAMILY + '/' + id,
+                        HTTP_PRECONDITION_FAILED,
+                    );
+                }
                 await appendMessagePair(view, pair);
             }
             return { id, ...body };
@@ -368,8 +385,8 @@ test('locked arm: a stale If-Match echo 412s', async () => {
     });
 });
 
-test('locked arm: a matching echo populates follows, not'
-+ ' supersedes', async () => {
+test('locked arm: a matching echo stores no predecessor'
++ ' columns or headers', async () => {
     await withSyntheticLockedFamily(async () => {
         const db = await freshDb();
         const token = await organizationToken();
@@ -384,13 +401,17 @@ test('locked arm: a matching echo populates follows, not'
             { [IF_MATCH_HEADER]: strongEtagOf(firstId) },
         ));
         assert.equal(second.status, 200);
-        assert.equal(second.headers.get('Follows'), firstId);
+        assert.equal(second.headers.get('Follows'), null);
         assert.equal(second.headers.get('Supersedes'), null);
         const secondId = second.headers.get('Response-ID')!;
         const stored = (await db.responses.getAll())
             .find((row) => row.id === secondId);
-        assert.equal(stored?.follows, firstId);
-        assert.equal(stored?.supersedes, undefined);
+        assert.equal(
+            stored !== undefined
+                && !('follows' in stored)
+                && !('supersedes' in stored),
+            true,
+        );
     });
 });
 
@@ -456,7 +477,7 @@ test('locked arm: a fresh-keyed replay echoing a superseded'
 });
 
 test('locked arm: two writers racing the SAME echo — the'
-+ ' second aborts via the unique follows index', async () => {
++ ' second aborts via the in-tx head re-read', async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     const genesis = await formWritePair({
@@ -467,7 +488,7 @@ test('locked arm: two writers racing the SAME echo — the'
         headerFields: [], body: { v: 'genesis' },
         requesterIdentityId: 'current', requestAt: AT,
         organization: '1', responseStatus: 200,
-        responseBody: undefined, headPairId: undefined,
+        responseBody: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -475,60 +496,56 @@ test('locked arm: two writers racing the SAME echo — the'
     );
     // Two writers both observed the SAME head (genesis.id)
     // before either committed — the race the pre-check alone
-    // cannot close; the UNIQUE index on responses.follows is
-    // the platform primitive that closes it.
+    // cannot close; the in-tx head re-read closes it.
+    const echo = {
+        name: IF_MATCH_HEADER,
+        value: strongEtagOf(genesis.id),
+    };
     const writerA = await formWritePair({
         method: 'PUT', pathname: '/' + TEST_PATTERN,
         routePattern: TEST_PATTERN,
         routeSegments: [TEST_FAMILY, ':id'],
         pathSegments: [TEST_FAMILY, 'race'],
-        headerFields: [], body: { v: 'a' },
+        headerFields: [echo], body: { v: 'a' },
         requesterIdentityId: 'current', requestAt: AT,
         organization: '1', responseStatus: 200,
-        responseBody: undefined, headPairId: undefined,
-        follows: genesis.id,
+        responseBody: undefined,
     });
     const writerB = await formWritePair({
         method: 'PUT', pathname: '/' + TEST_PATTERN,
         routePattern: TEST_PATTERN,
         routeSegments: [TEST_FAMILY, ':id'],
         pathSegments: [TEST_FAMILY, 'race'],
-        headerFields: [], body: { v: 'b' },
+        headerFields: [echo], body: { v: 'b' },
         requesterIdentityId: 'current', requestAt: AT,
         organization: '1', responseStatus: 200,
-        responseBody: undefined, headPairId: undefined,
-        follows: genesis.id,
+        responseBody: undefined,
     });
-    await db.transaction(
-        ['requests', 'responses'],
-        (view) => appendMessagePair(view, writerA),
+    await testDocumentOp(
+        db, 'race', { v: 'a' }, 'current', writerA,
     );
     await assert.rejects(
-        db.transaction(
-            ['requests', 'responses'],
-            (view) => appendMessagePair(view, writerB),
+        () => testDocumentOp(
+            db, 'race', { v: 'b' }, 'current', writerB,
         ),
-        UniqueConstraintError,
+        (err: unknown) =>
+            err instanceof ApiError
+            && err.status === HTTP_PRECONDITION_FAILED,
     );
 });
 
 // The e2e sibling of the storage-level race above: TWO PUTs
 // echoing the SAME valid head, launched together through
 // handleRequest itself — never formWritePair/appendMessagePair
-// directly — so the gate's OWN UniqueConstraintError -> 412
-// mapping (api.ts's catch block) is what's under test, not the
-// storage primitive alone. On the memory backend, the global
-// transaction serializer (store-serializer.ts) processes each
-// racer's headPairIdAt read and dispatch as separate queued
-// steps, so BOTH racers observe genesis as their head and pass
-// the pre-dispatch echo check before either's write commits —
-// verified empirically (ten runs, zero flakes; see the fix
-// report) — so the SECOND-dispatched racer's write collides on
-// the unique responses.follows index, never the pre-check's
-// echo-mismatch branch (a distinct error message), pinning the
-// gate's mapping rather than re-proving the storage primitive.
+// directly — so the in-tx head re-read's 412 is what's under
+// test. On the memory backend, the global transaction
+// serializer (store-serializer.ts) processes each racer's
+// headPairIdAt read and dispatch as separate queued steps, so
+// BOTH racers observe genesis as their head and pass the
+// pre-dispatch echo check before either's write commits — the
+// SECOND-dispatched racer's in-tx re-read then 412s.
 test('locked arm: two concurrent PUTs echoing the same head —'
-+ ' the loser 412s via the gate\'s unique-index mapping',
++ ' the loser 412s via the in-tx head re-read',
 async () => {
     await withSyntheticLockedFamily(async () => {
         const db = await freshDb();
@@ -554,22 +571,20 @@ async () => {
         const loser = first.status === 412 ? first : second;
         const loserBody =
             await loser.json() as { error: string };
-        // The mechanism pin: this exact message is thrown
-        // only by the storage layer's unique-column scan
-        // (api/db.ts's UniqueConstraintError), never by the
-        // gate's pre-check branches (api.ts:532-550), which
-        // read "If-Match is required..." or "...does
-        // not match the current document...".
         assert.equal(
             loserBody.error,
-            'Unique column responses.follows already holds'
-            + ' this value',
+            'If-Match does not match the current document at '
+            + path,
         );
         const responses = await db.responses.getAll();
-        const followingHead = responses.filter(
-            (row) => row.follows === head,
+        const atPath = responses.filter(
+            (row) =>
+                row.uri_prefix
+                    === '/organizations/1/'
+                    + TEST_FAMILY + '/'
+                && row.uri_id === 'doc-race',
         );
-        assert.equal(followingHead.length, 1);
+        assert.equal(atPath.length, 2);
         // Genesis + exactly one winner write landed; the
         // loser stored NOTHING — no partial write survives.
         assert.equal((await db.requests.getAll()).length, 4);
@@ -648,7 +663,6 @@ async function putStatelessDocumentPair(
         headerFields: [], body, requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],
@@ -670,7 +684,6 @@ async function deleteStatelessDocumentPair(
         requesterIdentityId: 'current',
         requestAt: AT, organization: '1',
         responseStatus: 200, responseBody: undefined,
-        headPairId: undefined,
     });
     await db.transaction(
         ['requests', 'responses'],

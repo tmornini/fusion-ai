@@ -75,10 +75,7 @@
 // quadruple), and each seeded role grant forms its OWN
 // role-grants/:id document pair. Every invocation here (as
 // always) forms through the SAME formSeedPair pipeline, UNTOUCHED
-// — formSeedPair carries no `chain` argument at all, so
-// headPairId is undefined for EVERY seed pair by construction
-// (always-genesis; the live-path `chain: 'none'` vocabulary,
-// api/routes.ts's formDocumentPairFor, does not apply here). The
+// — formSeedPair is genesis by construction. The
 // 12 identity-credential document pairs (11 human passwords + the
 // system client secret) are the ONE exception: a credential's
 // hashed secret is unknown until PBKDF2 resolves inside
@@ -2090,9 +2087,7 @@ async function formSeedPair(
         organization: inv.organization,
         responseStatus: response.status,
         responseBody: response.body,
-        // Fresh database: every seed pair is genesis, so there
-        // is nothing to chain off of — no pre-tx head-read.
-        headPairId: undefined,
+        // Fresh database: every seed pair is genesis.
     });
 }
 
@@ -2175,22 +2170,20 @@ async function formDefaultOrganizationSeedPair(
         organization: undefined,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
-        headPairId: undefined,
     });
 }
 
 // The instance chain cannot ride formSeedPair: its
-// revisions have predecessors (follows) and its head
-// depends on (at, id) order — so this pass mints
-// DISTINCT ascending requestAt values (a named
-// deviation from the seed's shared-arrival-moment
-// covenant) and forms sequentially, capturing each
-// pair id for the next link's follows. headerFields
-// stays [] for every link — the seed's no-bearer
-// carve-out extends to If-Match on seed revision pairs
-// (never hoist If-Match onto synthetic revisions; the
-// wire op pair's hoisted If-Match is what makes resends
-// distinct messages on the live path).
+// revisions share an address and its head depends on
+// (at, id) order — so this pass mints DISTINCT
+// ascending requestAt values (a named deviation from
+// the seed's shared-arrival-moment covenant) and forms
+// sequentially. headerFields stays [] for every link
+// — the seed's no-bearer carve-out extends to If-Match
+// on seed revision pairs (never hoist If-Match onto
+// synthetic revisions; the wire op pair's hoisted
+// If-Match is what makes resends distinct messages on
+// the live path).
 export async function formInstanceChainPairs():
     Promise<ReadonlyMap<string, MessagePair>>
 {
@@ -2239,7 +2232,6 @@ export async function formInstanceChainPairs():
             record_type_id: typeId,
             set: [],
         },
-        headPairId: undefined,
     });
 
     const binding = await formWritePair({
@@ -2263,7 +2255,6 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
-        headPairId: undefined,
     });
 
     const reviewOp = await formWritePair({
@@ -2284,7 +2275,6 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
-        headPairId: undefined,
     });
 
     const reviewSet = seedSetFor(review.id);
@@ -2304,8 +2294,6 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_OK,
         responseBody: {},
-        headPairId: undefined,
-        follows: genesis.id,
     });
 
     const completeOp = await formWritePair({
@@ -2326,7 +2314,6 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_NO_CONTENT,
         responseBody: undefined,
-        headPairId: undefined,
     });
 
     const completeSet = seedSetFor(complete.id);
@@ -2346,8 +2333,6 @@ export async function formInstanceChainPairs():
         organization: org,
         responseStatus: HTTP_OK,
         responseBody: {},
-        headPairId: undefined,
-        follows: reviewRevision.id,
     });
 
     const pairs = new Map<string, MessagePair>();
