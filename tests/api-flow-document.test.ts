@@ -1019,7 +1019,7 @@ async () => {
         // Undo won the race, reverting all the way back to
         // genesis (the only pair before "Before Race"); the
         // save's write never landed.
-        assert.equal(undo.status, 204);
+        assert.equal(undo.status, 201);
         assert.equal(save.status, 412);
     } else {
         // The save won the race; the undo's write never landed
