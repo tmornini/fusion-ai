@@ -1909,14 +1909,15 @@ export function memberDocumentBodyOf(
     };
 }
 
-// The wire body a live PUT identities/:id would carry for this
-// SAME write: `kind` alone — validateIdentityDocumentBody's only
-// field. Same rationale as memberDocumentBodyOf: the identity
-// kind is a server-supplied fact the caller pins, never read off
-// a request body — the ONE builder both the identity-create
-// route and the human create/edit routes share (the latter
-// always pass 'person', the sole kind a member's own identity
-// ever takes).
+// The wire body a synthesized PUT identities/:id carries:
+// `kind` alone. A live PUT may also fold a person profile;
+// this builder is the create/seed path, where a person
+// without a profile is valid. Same rationale as
+// memberDocumentBodyOf: the identity kind is a server-supplied
+// fact the caller pins, never read off a request body — the
+// ONE builder both the identity-create route and the human
+// create/edit routes share (the latter always pass 'person',
+// the sole kind a member's own identity ever takes).
 export function identityDocumentBodyOf(
     kind: IdentityKind,
 ): Record<string, unknown> {

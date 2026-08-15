@@ -797,20 +797,60 @@ export function validateMemberDocumentBody(
 
 const IDENTITY_BODY_KEYS: readonly string[] = ['kind'];
 
+// Person-only. Same four fields HumanMemberEntity validates;
+// optional here so `{ kind }` still admits a person without
+// a profile. A service that names any of them is 400.
+const IDENTITY_PROFILE_KEYS: readonly string[] = [
+    'title', 'department',
+    'strengths', 'team_dimensions',
+];
+
 export function validateIdentityEntity(
     body: Record<string, unknown>,
 ): Omit<IdentityEntity, 'id'> {
     assertOnlyKeys(
         body, IDENTITY_BODY_KEYS, 'IdentityEntity',
+        IDENTITY_PROFILE_KEYS,
     );
     const kind = validateEnumField(
         body, 'kind', ['person', 'service'],
         'identity kind', 'IdentityEntity',
     );
-    return { kind };
+    if (kind === 'service') {
+        assertOnlyKeys(
+            body, IDENTITY_BODY_KEYS, 'IdentityEntity',
+        );
+        return { kind };
+    }
+    return {
+        kind,
+        ...('title' in body
+            ? { title: pickString(body, 'title') }
+            : {}),
+        ...('department' in body
+            ? {
+                department: pickString(
+                    body, 'department',
+                ),
+            }
+            : {}),
+        ...('strengths' in body
+            ? {
+                strengths: pickStringArray(
+                    body, 'strengths',
+                ),
+            }
+            : {}),
+        ...('team_dimensions' in body
+            ? {
+                team_dimensions:
+                    pickStringNumberRecord(
+                        body, 'team_dimensions',
+                    ),
+            }
+            : {}),
+    };
 }
-
-const IDENTITY_DOCUMENT_BODY_KEYS: readonly string[] = ['kind'];
 
 export interface IdentityDocumentBody {
     readonly entity: Omit<IdentityEntity, 'id'>;
@@ -825,31 +865,21 @@ export interface IdentityDocumentBody {
 // states/:id, so a document-address trio here would FREEZE that
 // lifecycle at genesis forever. THE LABEL MANDATE (the Phase 7
 // Objective precedent, a NAMED byte-parity-over-convention
-// choice): the assertOnlyKeys label is 'IdentityEntity', matching
-// TODAY'S store validator (validateIdentityEntity) byte-for-byte,
-// NOT the 'IdentityDocumentBody' naming convention every other
+// choice): this gate delegates to validateIdentityEntity, so
+// the assertOnlyKeys label stays 'IdentityEntity' — NOT the
+// 'IdentityDocumentBody' naming convention every other
 // *DocumentBody validator uses — the label appears in the wire
 // 400 body ("unexpected key ... for IdentityEntity"), and the
-// convention's label would change those bytes. `kind`'s own rule
-// (validateEnumField over the SAME two-member enum) is IDENTICAL
-// to validateIdentityEntity's, so the missing/stray-key 400s stay
-// byte-identical on both paths too. Global plane (family-
-// registry.ts: organizationNested:false) — no organization_id
-// exists on this entity, so nothing is tolerated beyond `kind`.
+// convention's label would change those bytes. A person may
+// carry the four HumanMemberEntity profile fields; a service
+// that names any of them is 400. Existing `{ kind }` PUTs
+// still admit a person without a profile. Global plane
+// (family-registry.ts: organizationNested:false).
 export function validateIdentityDocumentBody(
     body: Record<string, unknown>,
 ): IdentityDocumentBody {
-    assertOnlyKeys(
-        body, IDENTITY_DOCUMENT_BODY_KEYS, 'IdentityEntity',
-    );
-    const kind = validateEnumField(
-        body, 'kind', ['person', 'service'],
-        'identity kind', 'IdentityEntity',
-    );
     return {
-        entity: {
-            kind,
-        },
+        entity: validateIdentityEntity(body),
     };
 }
 

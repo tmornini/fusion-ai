@@ -475,6 +475,13 @@ export type IdentityKind = 'person' | 'service';
 export interface IdentityEntity {
     id: Id;
     kind: IdentityKind;
+    // Person-only human profile. Omitted on a service and
+    // on a person that has none — never null. Title is
+    // not PII; name/email/phone/bio stay on the pii facet.
+    title?: string;
+    department?: string;
+    strengths?: string[];
+    team_dimensions?: Record<string, number>;
 }
 
 // The person-PII facet, keyed by the shared identity id. A
