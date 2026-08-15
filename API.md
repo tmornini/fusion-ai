@@ -181,17 +181,22 @@ Legend for classification:
   is a document write (§5.10) — the ninth family, and the FIRST
   `organizationNested:false` one: no `organization_id` exists on
   this entity at all.
+- `GET /members/:id/versions/:version` — document
+  version leaf (§2.10).
 - `GET /current-member` — the verified caller's own member row.
 - `GET /ai-members` · `GET|PUT /ai-members/:id` — primitive.
   `PUT /ai-members/:id` is a document write (§5.10) — the tenth
   family, joining `MEMBERS_WIRING`'s shared-log-with-genesis
-  bucket.
+  bucket. `GET /ai-members/:id/versions/:version` —
+  document version leaf (§2.10).
 - `POST /ai-members` · `POST /ai-members/:id` — operation (§3.1, §3.2).
   Admin-only.
 - `GET /human-members` · `GET /human-members/:id` — primitive.
   `human-members/:id` is registered for the document wiring
   (§5.10) — the eleventh family — but carries no live `PUT`, the
   first registered family without one.
+  `GET /human-members/:id/versions/:version` — document
+  version leaf (§2.10).
 - `POST /human-members` · `POST /human-members/:id` — operation (§3.3,
   §3.4). Admin-only.
 
@@ -200,6 +205,8 @@ Legend for classification:
 - `GET /identities` · `GET|PUT /identities/:id` — primitive. `PUT`
   is a document write (§5.13) — the TWELFTH registered family,
   joining `MEMBERS_WIRING`'s shared-log-with-genesis bucket.
+- `GET /identities/:id/versions/:version` — document
+  version leaf (§2.10).
 - `POST /identities` — operation (§3.5). Admin-only.
 - `GET|PUT|DELETE /identities/:id/pii` — facet. Self-only read;
   self-or-admin write. PUT/DELETE ride the message plane's
@@ -240,7 +247,8 @@ Legend for classification:
 ### 2.4 Ideas
 
 - `GET /ideas` · `GET|PUT /ideas/:id` — primitive (§3.10).
-  Member-tier.
+  Member-tier. `GET /ideas/:id/versions/:version` —
+  document version leaf (§2.10).
 - `POST /ideas` — retired (Phase 2 Task 3, R1): the composed
   create folded into the PUT above; the route now 405s like
   any other method-absent verb.
@@ -252,7 +260,8 @@ Legend for classification:
 ### 2.5 Projects
 
 - `GET /projects` · `GET|PUT /projects/:id` — primitive
-  (§3.32). Member-tier.
+  (§3.32). Member-tier. `GET /projects/:id/versions/:version`
+  — document version leaf (§2.10).
 - `GET /projects/:id/flows` · `PUT|DELETE /projects/:id/flows/:pfid` —
   nested (project↔flow join).
 - `GET /projects/:id/objective-baseline-scores` ·
@@ -274,12 +283,16 @@ Legend for classification:
   method-absent gap. Live redo is a single locked
   `PUT /flows/:id` (§3.13).
 - `GET /flows/:id/versions` — pair-chain lifecycle
-  index (live). Old table-backed
-  `GET|PUT|DELETE /flows/:id/versions/:vid` is a miss
-  (404). Writes on the pair-chain address stay unwired
-  (405). Phase Final DELETED the `flow_versions` table.
-  Historical prose for the dead table surface lives at
-  §3.16 / §3.31.
+  index (live). Wire `StateEntity` rows include
+  `version` (the lookup token).
+- `GET /flows/:id/versions/:version` — live
+  document version leaf (`documentVersionRoute`).
+  Table-backed PUT/DELETE on this address stay
+  unwired (405). Writes on the pair-chain index
+  stay unwired (405). Phase Final DELETED the
+  `flow_versions` table. Historical prose for the
+  dead table-backed write surface lives at §3.16 /
+  §3.31.
 - `GET /flows/:id/work-orders` ·
   `PUT /flows/:id/work-orders/:woid` — nested.
 - `GET /flows/:id/records` ·
@@ -346,7 +359,8 @@ If-Match this wave):
   RESTRICT if live instances or `flows/:id/records`
   joins
 - `GET .../record-types/:id/versions` — member;
-  lifecycle-trio history (§2.10)
+  lifecycle-trio history (§2.10). No document
+  version leaf.
 
 **Attributes** (nested under type; `'stateless'` SIMPLE
 PUT; admin mutation; body drops `record_id` — type id
@@ -375,7 +389,11 @@ per-attribute ACL; full dialect in §5.4.1 / §5.20):
 - `DELETE .../instances/:id` — member; tombstone;
   unconditional (phase 1)
 - `GET .../instances/:id/versions` — member;
-  value-revision chain (`{at, etag, values}` DESC)
+  value-revision chain
+  (`{at, etag, version, values}` DESC)
+- `GET .../instances/:id/versions/:version` —
+  member; one stored revision (lookup token is
+  index `version`)
 
 `flows/:id/records` (flow↔type join) is UNTOUCHED —
 accepted debt, not this family's wire.
@@ -390,6 +408,8 @@ accepted debt, not this family's wire.
   (§3.29): the collection via
   `documentCollectionGetHandler(OBJECTIVES_WIRING)`, the entity
   via `documentEntityRoute(OBJECTIVES_WIRING)`.
+  `GET /objectives/:id/versions/:version` — document
+  version leaf (§2.10).
 - `POST /objectives` — operation (§3.21).
 - `GET /objectives/:id/revisions` ·
   `PUT /objectives/:id/revisions/:rid` — nested.
@@ -417,7 +437,9 @@ register **before** the `:id` document routes so
 1. `GET ideas/:id/versions` —
    `documentStateHistoryHandler(deriveIdeaStateHistory,
    'ideas')`. Wire: `StateEntity[]`
-   `{id, entity_id, state, member_id, at}` DESC.
+   `{id, entity_id, state, member_id, at,
+   version}` DESC. `version` is the lookup
+   token for `GET .../versions/:version`.
    Empty → `missedReadError` → foreign **403** /
    absent **404** (honest family body).
 2. `GET projects/:id/versions` — same builder over
@@ -458,13 +480,26 @@ register **before** the `:id` document routes so
    `StateEntity` only (no `field_values`), DESC
    overall. **Always 200** array.
 
+**Document version leaves** (`documentVersionRoute`).
+`GET /:family/:id/versions/:version` is live for
+identities, ai-members, human-members, memberships,
+flows, members, ideas, projects, and objectives.
+The `:version` token is the stored response
+`version` (64-hex) advertised on the index row
+where the family has one. Instance leaf
+`GET .../instances/:id/versions/:version` is also
+live (§5.20). Record-types and work-orders have
+no document version leaf.
+
 **One value-history registration (not a lifecycle
 clone).**
 `GET organizations/:org/record-types/:type/instances/:id/versions`
-— value-revision chain: `{ at, etag, values }[]` DESC,
+— value-revision chain:
+`{ at, etag, version, values }[]` DESC,
 projected by the caller's **current** read ACL (never
-ACL-as-of-then). Foreign 403 / absent 404 / tombstone
-404. Full dialect: §5.20.
+ACL-as-of-then). `version` is the lookup token for
+`GET .../instances/:id/versions/:version`. Foreign
+403 / absent 404 / tombstone 404. Full dialect: §5.20.
 
 **Head-state on entity GETs (lifecycle trio).** Ideas,
 projects, record-types, objectives, and members GET
@@ -542,6 +577,8 @@ RETIRED with the address itself (see
   document handlers over `MEMBERSHIPS_WIRING`. `DELETE` is
   hand-written: a pure pair-plane tombstone append on
   `['requests','responses']`.
+  `GET /memberships/:id/versions/:version` — document
+  version leaf (§2.10).
 - `GET|PUT /identities/:id/default-org` — the read/write face of the
   default-org ledger. Self-only. `GET` (and every other caller of
   `identityDefaultOrganization`, `api/authentication.ts`) reads via
@@ -1230,8 +1267,9 @@ error, or a third 412, propagates to the caller. version-publish
 is no longer an option embedded in this PUT (Decision 3), nor is
 it a client-side prerequisite of this PUT any more (Phase 14
 Task 8, undo-as-replay): `POST /flows/:id/versions` stays
-unwired (405). Pair-chain `GET /flows/:id/versions` is
-live. Undo resolves its restore target from THIS route's
+unwired (405). Pair-chain `GET /flows/:id/versions` and
+`GET /flows/:id/versions/:version` are live. Undo
+resolves its restore target from THIS route's
 own document-pair history (§3.14); nothing archives a
 versions snapshot before a save.
 
@@ -1310,13 +1348,15 @@ below.
   pair (`api.ts`'s "wired write stored no pair" guard fires
   otherwise). A LATER resolution walk correctly ignores this
   attempt: it carries no correlated document pair to displace
-  anything. 204 either way — the client cannot and does not
-  need to distinguish "restored" from "no-op" from the response
-  alone (see `hasUndoHistory` below).
+  anything. Send-time **201** either way — undo
+  appends (target resolved or exhaustion). The
+  client cannot and does not need to distinguish
+  "restored" from "no-op" from the response alone
+  (see `hasUndoHistory` below).
 - **`hasUndoHistory` rides the flow's own GET, not this
   response.** `WRITE_RESPONSE_SPECS`-driven responses are
   computed PRE-HANDLER, from request params/body alone — this
-  route's own 204 can never carry post-resolution data. Instead,
+  route's own 201 can never carry post-resolution data. Instead,
   `FlowWithGraph`/`FlowGraph` (§5.x) carry a `hasUndoHistory`
   boolean — this flow's own document-pair count exceeding one —
   computed by `flowEntityOf` (`api/derive-flows.ts`) and reused
@@ -1366,10 +1406,14 @@ had no other verb left to survive it.
 
 ### 3.16 `POST /flows/:id/versions` — RETIRED (Phase 15 Task 7)
 
-**Route retired.** A request against `/flows/:id/versions`
-(or the leaf `/flows/:id/versions/:vid`) 404s — no pattern
-match. Historical shape (kept for the dual-write-era
-record; do not re-implement):
+**Write route retired.** `POST /flows/:id/versions` is
+unwired (405) — pair-chain GET on this address is live
+(§2.10). The GET leaf
+`/flows/:id/versions/:version` is live
+(`documentVersionRoute`). Table-backed PUT/DELETE on
+the leaf stay unwired (405). Historical POST shape
+(kept for the dual-write-era record; do not
+re-implement):
 
 - tx: `['requests','responses']`
 - actual: `flowVersions.put(id, version)`; for each
@@ -1379,8 +1423,9 @@ record; do not re-implement):
   (undo-as-replay).** Versioned edits and redo used to
   archive through this route before `PUT /flows/:id`;
   undo-as-replay stopped both. Phase 15 Task 7 removed the
-  routes and adapters; Phase Final DELETED the
-  `flow_versions` table with the rest of the row plane.
+  table-backed write routes and adapters; Phase Final
+  DELETED the `flow_versions` table with the rest of
+  the row plane.
 
 ### 3.17 `POST /work-orders` — create work order
 
@@ -1900,13 +1945,18 @@ as one of their own facet puts.
   byte-identical to what `validateMemberEntity` reconstructed
   before this task.
 
-### 3.31 `flows/:id/versions/:vid` — RETIRED (Phase 15 Task 7)
+### 3.31 table-backed `flows/:id/versions/:vid` writes
+### — RETIRED (Phase 15 Task 7)
 
-**Route retired** with the collection (§3.16). Historical
-leaf shape: DOCUMENT-class PUT/DELETE over
-`flow_versions` with `appendMessagePair`. Cap-trim splices
-that once lived inside the publish op are gone with the
-route; Phase Final DELETED the table with the row plane.
+**Table-backed PUT/DELETE retired** with the publish
+op (§3.16). Pair-plane GET
+`/flows/:id/versions/:version` is live
+(`documentVersionRoute`, §2.10). Historical leaf
+shape: DOCUMENT-class PUT/DELETE over
+`flow_versions` with `appendMessagePair`. Cap-trim
+splices that once lived inside the publish op are
+gone with those writes; Phase Final DELETED the
+table with the row plane.
 
 ### 3.32 `PUT /projects/:id` — project document write (not a POST)
 
@@ -3680,8 +3730,9 @@ current):
    `StateEntity` only)
 10. (value-history, not lifecycle)
     `GET .../record-types/:type/instances/:id/versions`
-    → `{ at, etag, values }[]` projected by current
-    read ACL (§5.20)
+    → `{ at, etag, version, values }[]` projected by
+    current read ACL (§5.20). Leaf
+    `.../versions/:version` is live.
 
 Per-entity org-nested legs (1–5, 7) empty →
 `missedReadError` → foreign **403** / absent **404**.
@@ -3695,11 +3746,17 @@ embeds on GET rows for ideas / projects / record-types /
 objectives / members (not flows; work-orders stay
 stateless; instances carry `values`, not trio).
 
-`flow_versions` routes and table are GONE (Phase 15
-retired routes; Phase Final deleted the table). Also
-router-404: per-entity current-state alias; nested
-field-values write address; bulk five-source lifecycle
-collection.
+`flow_versions` table and table-backed write routes
+are GONE (Phase 15 retired writes; Phase Final
+deleted the table). Pair-chain
+`GET /flows/:id/versions` and
+`GET /flows/:id/versions/:version` are live.
+Document version leaves (`documentVersionRoute`) and
+the instance version leaf are live — see §2.10.
+Record-types and work-orders have no document version
+leaf. Also router-404: per-entity current-state
+alias; nested field-values write address; bulk
+five-source lifecycle collection.
 
 **Seed reshape (states-address retirement).** The 861
 historical work-order traces reseed as
@@ -3707,8 +3764,9 @@ historical work-order traces reseed as
 fold into those transition bodies. No bare event-append or
 nested field-values leaf seed pairs remain. No
 `WRITE_RESPONSE_SPECS` leaf entry for the retired field-
-values write address. `flows/:id/versions*` specs and
-handlers are gone with the routes. Mock seed absolute:
+values write address. Table-backed
+`flows/:id/versions*` write specs are gone with
+those routes. Mock seed absolute:
 **EXPECTED_PAIR_COUNT = 1498** / bootstrap 12.
 
 **§5 chronological gap (named) — DEFERRED.** Tasks 1–6 of
@@ -3723,7 +3781,7 @@ contract gate — elected DEFER at Phase Final Task 7.
 
 First-class data rows under a record type. Wire =
 
-`organizations/:org/record-types/:type/instances[/:id[/versions]]`
+`organizations/:org/record-types/:type/instances[/:id[/versions[/:version]]]`
 
 Storage name `record_instances`. NOT on
 `DOCUMENT_CLASS_ROUTE_PATTERNS` (R10) — headPairId and
@@ -3808,8 +3866,10 @@ values). GET is the only projection surface.
 
 **Value-revision history.**
 `GET .../instances/:id/versions` — NOT a tenth lifecycle-
-trio clone. Each entry `{ at, etag, values }` DESC,
-projected by the caller's **current** read ACL. Foreign
+trio clone. Each entry `{ at, etag, version, values }`
+DESC, projected by the caller's **current** read ACL.
+`version` is the lookup token for
+`GET .../instances/:id/versions/:version`. Foreign
 403 / absent 404 / tombstone 404.
 
 **ETag definition.** Quoted 64-hex `documentVersion`
