@@ -113,6 +113,7 @@ import {
     authorizeIdentityPii,
     parseObjectBody,
     parsePutBody,
+    isServerTier,
 } from './request-auth.ts';
 import {
     routes,
@@ -535,13 +536,15 @@ export async function handleRequest(
     // threaded to every handler (Task 10 reconciliation 5).
     // Empty for bearer-exempt routes (no fence ran).
     let roles: readonly string[] = [];
-    // BOOTSTRAP_ROUTES: the accepted dev-tier auth-free
-    // snapshot plane (removed at the Postgres server tier) —
-    // see api/request-auth.ts. An unmatched path can never be
-    // exempt — bearerExempt requires a defined route pattern.
+    // BOOTSTRAP_ROUTES: bearer-exempt on the browser ZIP;
+    // the server ZIP (isServerTier) does not exempt them.
+    // AUTHENTICATION_ROUTES stay exempt on both tiers.
+    // An unmatched path can never be exempt — bearerExempt
+    // requires a defined route pattern.
     const bearerExempt = matchedRoutePattern !== undefined
         && (AUTHENTICATION_ROUTES.has(matchedRoutePattern)
-            || BOOTSTRAP_ROUTES.has(matchedRoutePattern));
+            || (!isServerTier()
+                && BOOTSTRAP_ROUTES.has(matchedRoutePattern)));
     if (!bearerExempt) {
         const authed =
             await authenticateRequest(ctx, request);

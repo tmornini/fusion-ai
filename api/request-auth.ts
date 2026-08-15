@@ -40,14 +40,12 @@ export const AUTHENTICATION_ROUTES: ReadonlySet<string> =
         'authentication/authorize',
     ]);
 
-// The snapshot/bootstrap plane is auth-free — a dev-tier
-// install/demo surface that runs below the auth tier (it
-// installs the datastore before any identity can exist). It
-// carries no bearer and no route policy, regardless of
-// whether a schema exists. This is a KNOWN, accepted dev-tier
-// decision, not a regression — see ARCHITECTURE.md
-// § Server-tier deploy blockers. The whole exemption MUST be
-// removed or re-gated when the Postgres server tier lands.
+// The snapshot/bootstrap plane. The set still names that
+// plane (postWriteNotification posts a full-refresh). The
+// browser ZIP treats these routes as bearer-exempt. The
+// server ZIP — setServerTier(true) from server/boot.ts —
+// does not. AUTHENTICATION_ROUTES stay exempt on both
+// tiers. Do not sniff window; only boot() sets the flag.
 export const BOOTSTRAP_ROUTES: ReadonlySet<string> =
     new Set([
         'snapshots/schema',
@@ -55,6 +53,16 @@ export const BOOTSTRAP_ROUTES: ReadonlySet<string> =
         'snapshots/bootstrap',
         'snapshots/import',
     ]);
+
+let serverTier = false;
+
+export function setServerTier(enabled: boolean): void {
+    serverTier = enabled;
+}
+
+export function isServerTier(): boolean {
+    return serverTier;
+}
 
 export async function authenticateRequest(
     ctx: IncomingContext,

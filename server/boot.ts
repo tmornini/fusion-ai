@@ -21,6 +21,7 @@ import {
     SEED_BOTH_FLAGS,
     SEED_NONEMPTY,
 } from './seed.ts';
+import { setServerTier } from '../api/request-auth.ts';
 
 export const STATEMENT_TIMEOUT_MS = 30_000;
 export const POOL_ACQUIRE_TIMEOUT_MS = 5_000;
@@ -159,6 +160,7 @@ export async function boot(
     env: EnvBag = process.env,
     argv: readonly string[] = process.argv,
 ): Promise<RunningHttp> {
+    setServerTier(true);
     const seedMode = readSeedMode(argv);
     const listenEnv = readListenEnv(env);
     const sql = connectPostgres(listenEnv.postgresUrl, {
