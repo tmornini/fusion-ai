@@ -1,87 +1,87 @@
 {
     "auth": {
-        "readyMs": 94
+        "readyMs": 90
     },
     "billing": {
         "readyMs": 111
     },
     "dashboard": {
-        "readyMs": 229
+        "readyMs": 139
     },
     "design-system": {
-        "readyMs": 121
+        "readyMs": 122
     },
     "flow-detail": {
-        "readyMs": 147
+        "readyMs": 144
     },
     "flow-stats": {
         "readyMs": 187
     },
     "flows": {
-        "readyMs": 151
+        "readyMs": 148
     },
     "idea-convert": {
-        "readyMs": 162
+        "readyMs": 158
     },
     "idea-create": {
-        "readyMs": 147
+        "readyMs": 145
     },
     "idea-detail": {
-        "readyMs": 178
+        "readyMs": 170
     },
     "ideas": {
-        "readyMs": 180
+        "readyMs": 181
     },
     "identities": {
-        "readyMs": 183
+        "readyMs": 180
     },
     "identity-detail": {
-        "readyMs": 190
+        "readyMs": 188
     },
     "identity-providers": {
-        "readyMs": 168
+        "readyMs": 167
     },
     "identity-tokens": {
-        "readyMs": 186
+        "readyMs": 180
     },
     "invitations": {
-        "readyMs": 199
+        "readyMs": 197
     },
     "landing": {
         "readyMs": 154
     },
     "member-detail": {
-        "readyMs": 243
+        "readyMs": 242
     },
     "members": {
         "readyMs": 247
     },
     "not-found": {
-        "readyMs": 171
+        "readyMs": 168
     },
     "organization": {
-        "readyMs": 311
+        "readyMs": 306
     },
     "project-detail": {
-        "readyMs": 248
+        "readyMs": 244
     },
     "projects": {
-        "readyMs": 248
+        "readyMs": 249
     },
     "record-create": {
-        "readyMs": 247
+        "readyMs": 244
     },
     "record-detail": {
-        "readyMs": 393
+        "readyMs": 387
     },
     "records": {
-        "readyMs": 262
+        "readyMs": 260
     },
     "snapshots": {
-        "readyMs": 331
+        "readyMs": 326
     },
     "workbox": {
-        "readyMs": 508
+        "readyMs": 500
     },
     "workbox-detail": {
         "readyMs": 314
