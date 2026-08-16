@@ -405,9 +405,7 @@ Domain notes (vocabulary, not storage):
   live on the next document head. Write-path graph
   law: `memberIds` name person members / identities
   only (an `/ai-members` id is 400). `agentIds` name
-  live `/ai-agents` documents. Seed graphs may still
-  carry AI member ids in `memberIds` until reseed;
-  GET derive still reads them. Empty `agentIds` are
+  live `/ai-agents` documents. Empty `agentIds` are
   omitted from stored JSON.
 
 Client history reads live in

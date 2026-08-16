@@ -130,6 +130,7 @@ import type {
 import {
     DEFAULT_LOCK_TIMEOUT,
     SYSTEM_MEMBER_ID,
+    storedGraph,
 } from '../types.ts';
 import {
     formWritePair,
@@ -153,6 +154,7 @@ import {
     identityDocumentBodyOf,
 } from '../routes.ts';
 import {
+    asStoredGraph,
     validateFlowCreateBody,
     validateRecordWriteBody,
     validateObjectiveCreateBody,
@@ -840,6 +842,39 @@ export function buildScoreSeedProjects():
             state: projectStateEventById.get(project.id)!.state,
         }),
     );
+}
+
+// CREATE reduction rebuilds memberIds from memberEvents
+// and drops agentIds. Stamp the authored agentIds onto
+// the stored document graph so GET derive matches the
+// seed source.
+function seedFlowDocumentBody(
+    createBody: ReturnType<typeof validateFlowCreateBody>,
+    authored: FlowSeed['graph'],
+): Record<string, unknown> {
+    const document = flowCreateDocumentBody(createBody);
+    const reduced = asStoredGraph(
+        document['graph'], 'seed reduced graph',
+    );
+    const source = asStoredGraph(
+        authored, 'seed authored graph',
+    );
+    const agents = new Map(
+        source.nodes.map((node) => [node.id, node.agentIds]),
+    );
+    return {
+        ...document,
+        graph: storedGraph({
+            nodes: reduced.nodes.map((node) => {
+                const agentIds = agents.get(node.id);
+                return agentIds !== undefined
+                    && agentIds.length > 0
+                    ? { ...node, agentIds }
+                    : node;
+            }),
+            edges: reduced.edges,
+        }),
+    };
 }
 
 export function flowSeedBody(
@@ -1593,7 +1628,7 @@ export function buildMockDataInvocations():
             idParams: [flow.id],
             organization: STARK_ORGANIZATION,
             requesterIdentityId: event.member_id,
-            body: flowCreateDocumentBody(b),
+            body: seedFlowDocumentBody(b, flow.graph),
         });
         invocations.push({
             key: seedPairKey(

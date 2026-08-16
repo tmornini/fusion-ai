@@ -187,10 +187,10 @@ async function resolveFlowGraphOwner(
 }
 
 // The org-less member/identity fallback (an ai-member/human-member
-// id, i.e. an identity id): memberships is organization-nested
-// (family-registry.ts), so there is no single address to scan —
-// THE GATE-15 PRECEDENT unions the same per-org derivation across
-// every known organization instead.
+// id, i.e. an identity id): seats are organization-nested, so
+// there is no single address to scan — THE GATE-15 PRECEDENT
+// unions the same per-org derivation across every known
+// organization instead.
 //
 // ASKER-RELATIVE BY NECESSITY: an identity can hold memberships in
 // MULTIPLE organizations at once. api/store-parent-scoped.ts's own
@@ -219,35 +219,9 @@ async function organizationHasMemberPair(
             'uri_collection', seatPrefix,
         ),
     ]);
-    if (deriveDocumentsAt(
+    return deriveDocumentsAt(
         seatRequests, seatResponses, seatPrefix,
-    ).has(identityId)) {
-        return true;
-    }
-    const prefix = canonicalUriCollection(
-        organization, '/memberships/',
-    );
-    const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_collection', prefix),
-        db.responses.getAllWhere('uri_collection', prefix),
-    ]);
-    // HEAD-REDUCED (deriveDocumentsAt), not raw pairs, unlike
-    // every other leg in this module: a membership REMOVAL is a
-    // genuine hard row-DELETE — no states-log soft-delete event
-    // exists for memberships — so a DELETE head must exclude the
-    // row here to reproduce old-plane parity. Do not swap this
-    // for documentPairsAt for "consistency" with the other legs.
-    const documents = deriveDocumentsAt(
-        requests, responses, prefix,
-    );
-    for (const document of documents.values()) {
-        if (
-            pickString(document.body, 'identity_id') === identityId
-        ) {
-            return true;
-        }
-    }
-    return false;
+    ).has(identityId);
 }
 
 async function resolveViaMembershipPairPlane(

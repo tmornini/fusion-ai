@@ -32,8 +32,11 @@ import {
 } from '../api/message-pair.ts';
 import {
     postMembershipDocumentOp,
+    postMemberDocumentOp,
+    memberDocumentBodyOf,
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
+import { deriveMembers } from '../api/derive-members.ts';
 import { seedIdentityPii } from './identity-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
@@ -90,7 +93,7 @@ function req(
 // a raw row here would go derivation-invisible. Every id/field
 // value stays IDENTICAL to the raw puts these replace — only the
 // write mechanism changes.
-async function seedMembershipPair(
+async function leftoverMembershipPair(
     db: MemoryDbAdapter,
     id: string,
     body: Record<string, unknown>,
@@ -122,6 +125,51 @@ async function seedMembershipPair(
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
     );
+}
+
+async function seedMemberParent(
+    db: MemoryDbAdapter,
+    id: string,
+): Promise<void> {
+    const body = memberDocumentBodyOf('human', {
+        state: 'active',
+        stateAt: AT,
+        stateEventId: 'seed-member-' + id + '-active',
+    });
+    const spec = WRITE_RESPONSE_SPECS['members/:id'];
+    if (spec === undefined || !('status' in spec)) {
+        throw new Error(
+            'no per-write response spec for members/:id',
+        );
+    }
+    const pair = await formWritePair({
+        method: 'PUT',
+        pathname: '/members/' + id,
+        routePattern: 'members/:id',
+        routeSegments: ['members', ':id'],
+        pathSegments: ['members', id],
+        headerFields: [],
+        body,
+        requesterIdentityId: SYSTEM_MEMBER_ID,
+        requestAt: nowUtc(),
+        organization: undefined,
+        responseStatus: spec.status,
+        responseBody: spec.successBody?.(
+            [id], body, SYSTEM_MEMBER_ID, undefined,
+        ),
+        operationId: TEST_OPERATION_ID,
+    });
+    await postMemberDocumentOp(
+        db, id, body, SYSTEM_MEMBER_ID, pair,
+    );
+}
+
+async function seedMembershipPair(
+    db: MemoryDbAdapter,
+    id: string,
+    body: Record<string, unknown>,
+): Promise<void> {
+    await leftoverMembershipPair(db, id, body);
     await seedSeat(
         db,
         String(body['organization_id'] ?? body.organization_id),
@@ -129,7 +177,6 @@ async function seedMembershipPair(
         (body['type'] ?? body.type) as 'admin' | 'member',
         String(body['at'] ?? body.at),
     );
-
 }
 
 // Two orgs (A, B), one admin identity each — the derive-states-
@@ -476,6 +523,46 @@ async function buildUnionFixture(): Promise<UnionFixture> {
 }
 
 // ---- 1. ownership fence (bulk union retired with C3) --------
+
+test('a leftover /memberships/ pair without a seat'
++ ' does not own the identity',
+async () => {
+    const db = memoryDbAdapter();
+    await db.postSchemaCreation();
+    await seedOrganizationDocument(db, 'A', 'Acme');
+    await leftoverMembershipPair(db, 'm-leftover', {
+        organization_id: 'A', identity_id: 'ghost',
+        type: 'member', at: AT,
+    });
+    assert.equal(
+        await resolveOwningOrganization(db, 'ghost', 'A'),
+        null,
+    );
+});
+
+test('deriveMembers is seats-only: leftover'
++ ' /memberships/ does not join; a live seat does',
+async () => {
+    const db = memoryDbAdapter();
+    await db.postSchemaCreation();
+    await seedOrganizationDocument(db, 'A', 'Acme');
+    await seedMemberParent(db, 'ghost');
+    await leftoverMembershipPair(db, 'm-leftover', {
+        organization_id: 'A', identity_id: 'ghost',
+        type: 'member', at: AT,
+    });
+    assert.equal(
+        (await deriveMembers(db, 'A'))
+            .some((row) => row.id === 'ghost'),
+        false,
+    );
+    await seedSeat(db, 'A', 'ghost', 'member', AT);
+    assert.equal(
+        (await deriveMembers(db, 'A'))
+            .some((row) => row.id === 'ghost'),
+        true,
+    );
+});
 
 test('resolveOwningOrganization: own entities resolve to A;'
 + ' foreign idea resolves to B (no bulk-union leak path)',

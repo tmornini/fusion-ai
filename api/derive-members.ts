@@ -26,19 +26,19 @@ import { seatsPrefixFor } from './derive-memberships.ts';
 // false — so canonicalUriCollection ignores whatever organization
 // argument a caller passes for this family); deriveMembers
 // re-derives route('members')'s own hand-written GET closure
-// (api/routes.ts): a membership names an org's roster by
-// identity_id, and the system member rides along unconditionally
-// — it authors events in every org but holds no membership row
-// of its own.
+// (api/routes.ts): a live seat names an org's roster by
+// identity id, and the system member rides along unconditionally
+// — it authors events in every org but holds no seat of its
+// own.
 //
 // THE JOIN DIRECTION (Commandment IV — Logic): deriveMembers
 // iterates deriveMemberParents and TESTS each member for a
-// membership — never the reverse. An identity with a membership
-// row but no members row (live-reachable via
-// postIdentityCreationOp, the shipped Add Identity flow, which
-// creates identity + pii with NO members row) is silently
-// DROPPED here, exactly as the live closure drops it — never a
-// non-null assertion on a parent that may not exist.
+// seat — never the reverse. An identity with a seat but no
+// members row (live-reachable via postIdentityCreationOp, the
+// shipped Add Identity flow, which creates identity + pii with
+// NO members row) is silently DROPPED here, exactly as the
+// live closure drops it — never a non-null assertion on a
+// parent that may not exist.
 //
 // Reads db.requests/db.responses (+ pickString over their decoded
 // bodies) ONLY. route('members') and route('members/:id') derive
@@ -46,10 +46,6 @@ import { seatsPrefixFor } from './derive-memberships.ts';
 // retired old-plane closure.
 
 const MEMBERS_PREFIX = canonicalUriCollection(undefined, '/members/');
-
-function membershipsPrefixFor(organization: Id): string {
-    return canonicalUriCollection(organization, '/memberships/');
-}
 
 // id-first — the seven-sibling entityOf convention — picked
 // explicitly (pickString) rather than a body spread, the
@@ -167,46 +163,32 @@ export async function deriveMemberParent(
 }
 
 // The JOIN view — route('members')'s own GET closure
-// (api/routes.ts), re-derived from the ledger: the org-nested
-// memberships heads name an org's roster by identity_id; every
-// member-parent whose id lands in that set, PLUS every 'system'
-// member unconditionally (a system member authors events in
-// every org but holds no membership row), survives the filter.
+// (api/routes.ts), re-derived from the ledger: live seats
+// name an org's roster by identity id; every member-parent
+// whose id lands in that set, PLUS every 'system' member
+// unconditionally (a system member authors events in every
+// org but holds no seat of its own), survives the filter.
 // See the module header for the join-direction covenant this
-// mirrors exactly — an orphaned membership (an identity with no
-// members row) is silently absent from the result, never thrown.
+// mirrors exactly — an unseated identity (a parent with no
+// seat) is silently absent from the result, never thrown.
 export async function deriveMembers(
     db: DbAdapter,
     organization: Id,
 ): Promise<MemberEntity[]> {
-    const membershipsPrefix = membershipsPrefixFor(organization);
     const seatPrefix = seatsPrefixFor(organization);
-    const [requests, responses, seatRequests, seatResponses] =
-        await Promise.all([
-            db.requests.getAllWhere(
-                'uri_collection', membershipsPrefix,
-            ),
-            db.responses.getAllWhere(
-                'uri_collection', membershipsPrefix,
-            ),
-            db.requests.getAllWhere(
-                'uri_collection', seatPrefix,
-            ),
-            db.responses.getAllWhere(
-                'uri_collection', seatPrefix,
-            ),
-        ]);
-    const memberships = deriveDocumentsAt(
-        requests, responses, membershipsPrefix,
-    );
+    const [seatRequests, seatResponses] = await Promise.all([
+        db.requests.getAllWhere(
+            'uri_collection', seatPrefix,
+        ),
+        db.responses.getAllWhere(
+            'uri_collection', seatPrefix,
+        ),
+    ]);
     const identityIds = new Set<Id>();
     for (const document of deriveDocumentsAt(
         seatRequests, seatResponses, seatPrefix,
     ).values()) {
         identityIds.add(document.uriId);
-    }
-    for (const document of memberships.values()) {
-        identityIds.add(pickString(document.body, 'identity_id'));
     }
     const parents = await deriveMemberParents(db);
     return parents.filter(
