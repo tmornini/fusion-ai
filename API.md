@@ -192,6 +192,12 @@ Legend for classification:
   document version leaf (§2.10).
 - `POST /ai-members` · `POST /ai-members/:id` — operation (§3.1, §3.2).
   Admin-only.
+- `GET /ai-agents` · `GET|PUT /ai-agents/:id` — primitive.
+  `PUT /ai-agents/:id` is a document write — the fourteenth
+  family, global-plane, not a member and not an identity.
+  Body is `name`, `description`, `skill_focus`, `model`.
+  `GET /ai-agents/:id/versions/:version` — document version
+  leaf (§2.10).
 - `GET /human-members` · `GET /human-members/:id` — primitive.
   `human-members/:id` is registered for the document wiring
   (§5.10) — the eleventh family — but carries no live `PUT`, the

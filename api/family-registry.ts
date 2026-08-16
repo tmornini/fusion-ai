@@ -137,6 +137,16 @@ export const FAMILY_REGISTRY: readonly FamilyRegistration[] = [
             // 'organizations', {get}) is GET-only); the same
             // inert slot as memberships/members above.
     },
+    {
+        family: 'ai-agents',
+        organizationNested: false, // GLOBAL plane: a
+            // standing agent is not a member and not an
+            // identity, and is not nested under an
+            // organization.
+        concurrency: 'simple',
+        createBodyIdField: 'id', // INERT — no collection
+            // POST exists; genesis is PUT /ai-agents/:id.
+    },
 ];
 
 export function familyRegistration(

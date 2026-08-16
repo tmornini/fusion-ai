@@ -402,7 +402,13 @@ Domain notes (vocabulary, not storage):
   `flowGraphBindingsFromPairs`). A work order freezes
   `flow_graph` as the same native shape plus
   `name` / `lockTimeout`. A fresh node/edge is born
-  live on the next document head.
+  live on the next document head. Write-path graph
+  law: `memberIds` name person members / identities
+  only (an `/ai-members` id is 400). `agentIds` name
+  live `/ai-agents` documents. Seed graphs may still
+  carry AI member ids in `memberIds` until reseed;
+  GET derive still reads them. Empty `agentIds` are
+  omitted from stored JSON.
 
 Client history reads live in
 `adapters/work-orders-queries.ts`

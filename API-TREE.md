@@ -10,6 +10,8 @@ organization/default-organization sub-routers).
   |      └── /history
 └─|─ /ai-members/ • RECONCILED: tenth registered family, GLOBAL plane (detail facet, 'stateless'); GET collection; GET|PUT :id document; POST collection create + POST :id edit (admin)
   |  └── :id
+└─|─ /ai-agents/ • RECONCILED: fourteenth registered family, GLOBAL plane ('stateless'); not a member and not an identity; GET collection; GET|PUT :id document (name, description, skill_focus, model)
+  |  └── :id
 └─|─ /human-members/ • RECONCILED: eleventh registered family, GLOBAL plane (detail facet, 'stateless'); GET collection; GET :id; POST collection create + POST :id edit (admin); NO live PUT on :id (wiring/seed only)
   |  └── :id
 └─|─ /current-member • RECONCILED: GET actor's own member parent (global plane; deriveMemberParent)

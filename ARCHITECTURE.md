@@ -516,6 +516,8 @@ its own `types.ts`) plus pure cross-chasm utilities
 `MemberEntity` parent + `Member` union (`HumanMember` /
 `AIMember` / `SystemMember`),
 `GraphNode.memberIds: MemberId[]`,
+`GraphNode.agentIds?: AgentId[]` (write-path `/ai-agents`
+ids; omitted from stored JSON when empty),
 `GraphNode.attributes: NodeAttribute[]`, record/constraint
 shapes, `StateEntity` as the **derived** event DTO, the
 state alphabets, and `SYSTEM_MEMBER_ID`), `api/db.ts`

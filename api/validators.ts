@@ -19,6 +19,7 @@ import type {
     MemberEntity,
     HumanMemberEntity,
     AIMemberEntity,
+    AIAgentEntity,
     MemberState,
     IdeaEntity,
     IdeaState,
@@ -356,6 +357,13 @@ function asGraphNode(
         obj['memberIds'],
         label + '.memberIds',
     );
+    const agentIdsRaw = obj['agentIds'];
+    const agentIds = agentIdsRaw === undefined
+        ? undefined
+        : asMemberIds(
+            agentIdsRaw,
+            label + '.agentIds',
+        );
     return {
         id: asGraphId(
             obj['id'], label + '.id',
@@ -380,6 +388,9 @@ function asGraphNode(
             label + '.isArchive',
         ),
         memberIds,
+        ...(agentIds === undefined
+            ? {}
+            : { agentIds }),
         attributes: attrsArr.map((a, i) =>
             asNodeAttribute(
                 a,
@@ -415,6 +426,36 @@ function asGraphEdge(
             label + '.toNodeId',
         ),
     };
+}
+
+// Write-path graph law (Task 54): memberIds may name
+// person members / identities only. agentIds must name
+// live /ai-agents documents. GET derive still parses
+// seed graphs that carry AI member ids in memberIds.
+export function assertFlowGraphWriteLaw(
+    graph: StoredGraph,
+    aiMemberIds: ReadonlySet<string>,
+    liveAgentIds: ReadonlySet<string>,
+): void {
+    for (const node of graph.nodes) {
+        for (const id of node.memberIds) {
+            if (aiMemberIds.has(id)) {
+                throw new ValidationError(
+                    'memberIds may name person members'
+                    + ' or identities only, not AI'
+                    + ' members',
+                );
+            }
+        }
+        for (const id of node.agentIds ?? []) {
+            if (!liveAgentIds.has(id)) {
+                throw new ValidationError(
+                    'agentIds must name a live AI'
+                    + ' agent',
+                );
+            }
+        }
+    }
 }
 
 export function asStoredGraph(
@@ -1258,6 +1299,82 @@ export function validateAiMemberDocumentBody(
         throw new ValidationError(
             'model must be a known provider'
             + ' model id on AIMemberEntity',
+        );
+    }
+    return {
+        entity: {
+            name: pickString(body, 'name'),
+            description: pickString(
+                body, 'description',
+            ),
+            skill_focus: pickString(
+                body, 'skill_focus',
+            ),
+            model,
+        },
+    };
+}
+
+const AI_AGENT_BODY_KEYS:
+    readonly string[] = [
+    'name', 'description', 'model', 'skill_focus',
+];
+
+export function validateAIAgentEntity(
+    body: Record<string, unknown>,
+): Omit<AIAgentEntity, 'id'> {
+    assertOnlyKeys(
+        body,
+        AI_AGENT_BODY_KEYS,
+        'AIAgentEntity',
+    );
+    const model = pickString(body, 'model');
+    if (!isProviderModelId(model)) {
+        throw new ValidationError(
+            'model must be a known provider'
+            + ' model id on AIAgentEntity',
+        );
+    }
+    return {
+        name: pickString(body, 'name'),
+        description: pickString(
+            body, 'description',
+        ),
+        skill_focus: pickString(
+            body, 'skill_focus',
+        ),
+        model,
+    };
+}
+
+const AI_AGENT_DOCUMENT_BODY_KEYS:
+    readonly string[] = [
+    'name', 'description', 'model', 'skill_focus',
+];
+
+export interface AiAgentDocumentBody {
+    readonly entity: Omit<AIAgentEntity, 'id'>;
+}
+
+// The HTTP-body gate for PUT /ai-agents/:id: a
+// standalone global-plane family, not a member and
+// not an identity. THE LABEL MANDATE: assertOnlyKeys
+// speaks 'AIAgentEntity', matching
+// validateAIAgentEntity byte-for-byte. model uses
+// the SAME catalog-membership gate.
+export function validateAiAgentDocumentBody(
+    body: Record<string, unknown>,
+): AiAgentDocumentBody {
+    assertOnlyKeys(
+        body,
+        AI_AGENT_DOCUMENT_BODY_KEYS,
+        'AIAgentEntity',
+    );
+    const model = pickString(body, 'model');
+    if (!isProviderModelId(model)) {
+        throw new ValidationError(
+            'model must be a known provider'
+            + ' model id on AIAgentEntity',
         );
     }
     return {

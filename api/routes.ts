@@ -16,6 +16,7 @@ import type {
 import type {
     Id,
     AIMemberEntity,
+    AIAgentEntity,
     FlowEntity,
     FlowWorkOrderEntity,
     FlowRecordEntity,
@@ -52,6 +53,8 @@ import {
     validateAIMemberCreateBody,
     validateAIMemberEditBody,
     validateAiMemberDocumentBody,
+    validateAiAgentDocumentBody,
+    assertFlowGraphWriteLaw,
     validateHumanMemberCreateBody,
     validateHumanMemberDocumentBody,
     validateHumanMemberEditBody,
@@ -308,6 +311,7 @@ import {
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
     resolveStreamedTrioWriteBody,
+    liveGlobalDocumentIds,
     type DocumentFamilyWiring,
 } from './document-family.ts';
 import type { DerivedDocument } from './derive-documents.ts';
@@ -698,6 +702,28 @@ const IDENTITIES_WIRING: DocumentFamilyWiring = {
     documentOp: postIdentityDocumentOp,
     entityOf: identityDocumentEntityOf,
 };
+export function aiAgentDocumentEntityOf(
+    document: DerivedDocument,
+    _organization: Id,
+    _current?: StateEntity,
+): unknown {
+    return {
+        id: document.uriId,
+        ...document.body,
+    };
+}
+// The ai-agents wiring row — the FOURTEENTH registered
+// family. Not a member and not an identity: a standing
+// agent document on the global plane. Stateless: no
+// lifecycle trio. notFoundTable matches the family name.
+const AI_AGENTS_WIRING: DocumentFamilyWiring = {
+    family: 'ai-agents',
+    lifecycle: 'stateless',
+    notFoundTable: 'ai-agents',
+    validateDocument: validateAiAgentDocumentBody,
+    documentOp: postAiAgentDocumentOp,
+    entityOf: aiAgentDocumentEntityOf,
+};
 registerDocumentFamilyWiring(IDEAS_WIRING);
 registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
@@ -708,6 +734,7 @@ registerDocumentFamilyWiring(MEMBERS_WIRING);
 registerDocumentFamilyWiring(AI_MEMBERS_WIRING);
 registerDocumentFamilyWiring(HUMAN_MEMBERS_WIRING);
 registerDocumentFamilyWiring(IDENTITIES_WIRING);
+registerDocumentFamilyWiring(AI_AGENTS_WIRING);
 
 // Every handler receives the verified caller's id (actor) as
 // its final argument — the one place authorship is sourced.
@@ -1566,6 +1593,22 @@ export async function postFlowCreationOp(
 // reconstructed return is for below-facade callers and type
 // parity. `pair` is optional so a below-facade caller with no
 // pair keeps compiling; the live route always supplies one.
+async function assertLiveFlowGraphWriteLaw(
+    db: DbAdapter,
+    graph: Record<string, unknown>,
+): Promise<void> {
+    const parsed = asStoredGraph(
+        graph, 'FlowDocumentBody.graph',
+    );
+    const [aiMemberIds, liveAgentIds] = await Promise.all([
+        liveGlobalDocumentIds(db, 'ai-members'),
+        liveGlobalDocumentIds(db, 'ai-agents'),
+    ]);
+    assertFlowGraphWriteLaw(
+        parsed, aiMemberIds, liveAgentIds,
+    );
+}
+
 export async function postFlowDocumentOp(
     db: DbAdapter,
     id: Id,
@@ -1574,6 +1617,7 @@ export async function postFlowDocumentOp(
     pair?: MessagePair,
 ): Promise<FlowEntity> {
     const doc = validateFlowDocumentBody(withoutId(body));
+    await assertLiveFlowGraphWriteLaw(db, doc.graph);
     const entity = {
         ...doc.entity,
         ...documentOperationOrganization(body),
@@ -3203,6 +3247,29 @@ export async function postIdentityDocumentOp(
     );
 }
 
+// AI-agent document write — pair-plane only. Not a
+// member and not an identity. `pair` is optional so a
+// below-facade caller keeps compiling.
+export async function postAiAgentDocumentOp(
+    db: DbAdapter,
+    _id: Id,
+    body: Record<string, unknown>,
+    _actor: Id,
+    pair?: MessagePair,
+): Promise<Omit<AIAgentEntity, 'id'>> {
+    const entity = withoutId(body) as unknown as
+        Omit<AIAgentEntity, 'id'>;
+    return db.transaction(
+        ['requests', 'responses'],
+        async (view) => {
+            if (pair !== undefined) {
+                await appendMessagePair(view, pair);
+            }
+            return entity;
+        },
+    );
+}
+
 // Identity credential document write — Phase Final Task 2:
 // the identity_credentials ROW half is stripped — pure
 // pair-plane write. No states interaction. `pair` is
@@ -3599,6 +3666,7 @@ export const WRITE_RESPONSE_SPECS:
     // (GET derive). Creation and the human-member half share
     // this spec via formDocumentPairFor.
     'identities/:id': documentWriteResponseSpec(IDENTITIES_WIRING),
+    'ai-agents/:id': documentWriteResponseSpec(AI_AGENTS_WIRING),
     // G5: piiEntityOf (GET derive). replacePiiSlot still
     // physically deletes the prior pair.
     'identities/:id/pii': {
@@ -4582,7 +4650,13 @@ export const routes: Route[] = [
         get: documentGetHandler(IDENTITIES_WIRING),
         put: documentPutHandler(IDENTITIES_WIRING),
     }),
+    documentCollectionRoute(AI_AGENTS_WIRING),
+    route('ai-agents/:id', {
+        get: documentGetHandler(AI_AGENTS_WIRING),
+        put: documentPutHandler(AI_AGENTS_WIRING),
+    }),
     documentVersionRoute(IDENTITIES_WIRING),
+    documentVersionRoute(AI_AGENTS_WIRING),
     documentVersionRoute(AI_MEMBERS_WIRING),
     documentVersionRoute(HUMAN_MEMBERS_WIRING),
     documentVersionRoute(MEMBERSHIPS_WIRING),
@@ -5203,6 +5277,10 @@ export const routes: Route[] = [
                 const b = validateFlowCreateBody(body);
                 const documentBody = flowCreateDocumentBody(b);
                 validateFlowDocumentBody(documentBody);
+                await assertLiveFlowGraphWriteLaw(
+                    db, documentBody.graph as
+                        Record<string, unknown>,
+                );
                 const document = await formDocumentPairFor(db, {
                     routePattern: 'flows/:id',
                     params: [b.id],

@@ -131,6 +131,7 @@ const MEMBER_VERBS: Readonly<
     // elimination C3).
     '/members': ['GET'],
     '/ai-members': ['GET'],
+    '/ai-agents': ['GET'],
     '/human-members': ['GET'],
     '/current-member': ['GET'],
     '/organizations': ['GET'],

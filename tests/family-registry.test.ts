@@ -135,6 +135,17 @@ test('organizations is the thirteenth registered family,'
     });
 });
 
+test('ai-agents is the fourteenth registered family,'
++ ' global-plane, not a member and not an identity',
+() => {
+    assert.deepEqual(familyRegistration('ai-agents'), {
+        family: 'ai-agents',
+        organizationNested: false,
+        concurrency: 'simple',
+        createBodyIdField: 'id',
+    });
+});
+
 test('an unregistered family returns undefined', () => {
     assert.equal(familyRegistration('not-a-family'), undefined);
 });

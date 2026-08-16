@@ -123,6 +123,11 @@ const DUMMY_BODIES: Readonly<
         strengths: [], team_dimensions: {},
     },
     'identities/:id': { kind: 'person' },
+    'ai-agents/:id': {
+        name: 'A', description: 'd',
+        model: 'mnte677fU2G1V2B9vJp9z7',
+        skill_focus: 's',
+    },
     'identities/:id/pii': {
         name: 'N', email: 'e@x', phone: '1',
         bio: 'b',

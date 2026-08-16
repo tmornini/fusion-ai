@@ -201,13 +201,21 @@ export class FlowDesignerPresenter {
     #buildSaveShape(
         snap: FlowSnapshot,
     ): FlowSaveShape {
+        const aiMemberIds = new Set(
+            snap.aiMembers.map(a => a.idForLink()),
+        );
         return {
             name: snap.flowName,
             isLocked: snap.isLocked,
             isAutoLayout: snap.isAutoLayout,
             isAutoFit: snap.isAutoFit,
             lockTimeout: snap.lockTimeout,
-            nodes: snap.nodes,
+            nodes: snap.nodes.map(n => ({
+                ...n,
+                memberIds: n.memberIds.filter(
+                    id => !aiMemberIds.has(id),
+                ),
+            })),
             edges: snap.edges,
         };
     }

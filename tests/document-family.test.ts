@@ -157,6 +157,20 @@ test('documentWriteResponseSpec produces the ai-members'
     assert.deepEqual(actual, { id: 'ai-1', ...body });
 });
 
+test('documentWriteResponseSpec produces the ai-agents'
++ ' successBody (G3 entityOf, request-body key order)',
+() => {
+    const wiring = documentFamilyWiring('ai-agents')!;
+    const body = {
+        name: 'A', description: 'd',
+        model: 'mnte677fU2G1V2B9vJp9z7',
+        skill_focus: 's',
+    };
+    const actual = documentWriteResponseSpec(wiring)
+        .successBody!(['ag-1'], body, 'current', '1');
+    assert.deepEqual(actual, { id: 'ag-1', ...body });
+});
+
 test('documentWriteResponseSpec produces the human-members'
 + ' successBody (G3 entityOf)', () => {
     const wiring = documentFamilyWiring('human-members')!;

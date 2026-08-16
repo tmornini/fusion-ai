@@ -22,6 +22,7 @@ const COLLECTION_ROUTES: readonly string[] = [
     'memberships',
     'members',
     'ai-members',
+    'ai-agents',
     'ideas',
     'projects',
     'flows',
