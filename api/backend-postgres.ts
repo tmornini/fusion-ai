@@ -239,6 +239,17 @@ function postgresTx(
             );
             return rows.map((row) => entityOf<T>(row));
         },
+        async getWhereBody<T extends { id: string }>(
+            table: string,
+            collection: string,
+            containment: Record<string, unknown>,
+        ): Promise<T[]> {
+            const name = assertMessageTable(table);
+            const rows = await selectWhereBody(
+                sql, name, collection, containment,
+            );
+            return rows.map((row) => entityOf<T>(row));
+        },
         async put<T extends { id: string }>(
             table: string,
             row: T,
@@ -537,6 +548,25 @@ async function selectAddressVersion(
         WHERE uri_collection = ${collection}
           AND uri_id = ${uriId}
           AND version = ${version}
+        ORDER BY at, id
+    `;
+}
+
+async function selectWhereBody(
+    sql: SqlClient,
+    table: 'requests' | 'responses',
+    collection: string,
+    containment: Record<string, unknown>,
+): Promise<Record<string, unknown>[]> {
+    if (table === 'requests') {
+        throw new Error(
+            'getWhereBody does not accept requests',
+        );
+    }
+    return sql.query`
+        SELECT * FROM responses
+        WHERE uri_collection = ${collection}
+          AND message_body(message) @> ${containment}::jsonb
         ORDER BY at, id
     `;
 }

@@ -107,6 +107,10 @@ export interface EntityStore<
         uriId: string,
         version: string,
     ): Promise<T[]>;
+    getAllWhereBody(
+        collection: string,
+        containment: Record<string, unknown>,
+    ): Promise<T[]>;
     getById(id: string): Promise<T>;
     put(
         id: string,
@@ -170,6 +174,11 @@ export interface Tx {
         collection: string,
         uriId: string,
         version: string,
+    ): Promise<T[]>;
+    getWhereBody<T extends { id: string }>(
+        table: string,
+        collection: string,
+        containment: Record<string, unknown>,
     ): Promise<T[]>;
     put<T extends { id: string }>(
         table: string,

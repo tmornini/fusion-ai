@@ -245,6 +245,36 @@ test('getWhere throws for version', async () => {
     );
 });
 
+test('getWhereBody uses message_body containment',
+async () => {
+    const fake = fakeClient();
+    const backend = new PostgresBackend(fake.sql);
+    await backend.transaction(
+        ['responses'],
+        'readonly',
+        (tx) => tx.getWhereBody(
+            'responses',
+            '/authentication/authorize/',
+            { code: 'abc' },
+        ),
+    );
+    const text = fake.calls[0]!.text;
+    assert.match(text, /FROM responses/);
+    assert.match(text, /uri_collection = \$1/);
+    assert.match(
+        text, /message_body\(message\) @> \$2/,
+    );
+    assert.match(text, /ORDER BY at, id/);
+    assert.deepEqual(
+        fake.calls[0]!.values[0],
+        '/authentication/authorize/',
+    );
+    assert.deepEqual(
+        fake.calls[0]!.values[1],
+        { code: 'abc' },
+    );
+});
+
 test('put writes BYTEA via Octets.fromLatin1',
 async () => {
     const fake = fakeClient();

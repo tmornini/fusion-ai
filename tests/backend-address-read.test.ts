@@ -5,6 +5,10 @@ import { MemoryStorageBackend }
 import { HistoryEntityStore } from
     '../api/store-history-entity.ts';
 import { backendRunner } from '../api/db.ts';
+import { serializeWire } from
+    '../shared/http-message/wire-codec.ts';
+import { Octets } from
+    '../shared/http-message/octets.ts';
 
 interface Row {
     id: string;
@@ -129,4 +133,65 @@ async () => {
         got.map((row) => row.id),
         ['old', 'new'],
     );
+});
+
+function jsonWire(body: unknown): string {
+    const json = JSON.stringify(body);
+    return serializeWire({
+        startLine: {
+            kind: 'response',
+            version: 'HTTP/1.1',
+            status: 200,
+            reason: 'OK',
+        },
+        fields: [
+            {
+                name: 'content-type',
+                value: 'application/json',
+            },
+        ],
+        body: Octets.fromLatin1(json),
+        trailer: undefined,
+    });
+}
+
+test('getWhereBody is collection + JSON containment',
+async () => {
+    const backend = new MemoryStorageBackend();
+    await backend.ensureTables(['responses']);
+    await backend.transaction(
+        ['responses'], 'readwrite',
+        async (tx) => {
+            await tx.put('responses', {
+                id: 'hit',
+                uri_collection: '/authentication/authorize/',
+                uri_id: '',
+                at: '2026-01-01T00:00:00.000001Z',
+                message: jsonWire({ code: 'abc' }),
+            });
+            await tx.put('responses', {
+                id: 'miss',
+                uri_collection: '/authentication/authorize/',
+                uri_id: '',
+                at: '2026-01-01T00:00:00.000002Z',
+                message: jsonWire({ code: 'zzz' }),
+            });
+            await tx.put('responses', {
+                id: 'other',
+                uri_collection: '/ideas/',
+                uri_id: '1',
+                at: '2026-01-01T00:00:00.000001Z',
+                message: jsonWire({ code: 'abc' }),
+            });
+        },
+    );
+    const got = await backend.transaction(
+        ['responses'], 'readonly',
+        (tx) => tx.getWhereBody(
+            'responses',
+            '/authentication/authorize/',
+            { code: 'abc' },
+        ),
+    );
+    assert.deepEqual(got.map((row) => row.id), ['hit']);
 });
