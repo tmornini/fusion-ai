@@ -69,13 +69,17 @@ export function messageStore(db: DbStores): MessageStore {
             return pairsInCollection(db, collection);
         },
         async getAllWhereBody(collection, containment) {
-            const pairs = await pairsInCollection(
-                db, collection,
-            );
-            return pairs.filter((pair) => containsFact(
-                jsonBodyOf(pair.response.message),
-                containment,
-            ));
+            const responses =
+                await db.responses.getAllWhereBody(
+                    collection, containment,
+                );
+            const pairs: StoredPair[] = [];
+            for (const response of responses) {
+                const request = await db.requests
+                    .getById(response.id);
+                pairs.push({ request, response });
+            }
+            return sortByAtId(pairs);
         },
         async getCollection(collection) {
             return entitiesOf(
@@ -134,25 +138,6 @@ function jsonBodyOf(message: string): unknown | undefined {
     const body = HttpMessage.fromModel(model).body();
     if (!body.exists()) return undefined;
     return JSON.parse(body.toText());
-}
-
-function containsFact(
-    body: unknown,
-    containment: Record<string, unknown>,
-): boolean {
-    if (body === null || typeof body !== 'object') {
-        return false;
-    }
-    const record = body as Record<string, unknown>;
-    for (const [key, value] of Object.entries(containment)) {
-        if (
-            JSON.stringify(record[key])
-            !== JSON.stringify(value)
-        ) {
-            return false;
-        }
-    }
-    return true;
 }
 
 function matchesFilters(

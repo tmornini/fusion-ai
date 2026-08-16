@@ -1175,14 +1175,11 @@ async function authorizeCodeIssuer(
     adapter: DbAdapter,
     code: string,
 ): Promise<AuthorizeCodeIssuer | null> {
-    const responses = await adapter.responses
-        .getAllWhere('uri_collection', AUTHORIZE_PREFIX);
-    const matched = responses.find(
-        (response) =>
-            decodedBodyOf(response.message).code === code,
-    );
+    const hits = await messageStore(adapter)
+        .getAllWhereBody(AUTHORIZE_PREFIX, { code });
+    const matched = hits[0]?.response;
     if (matched === undefined) return null;
-    const request = await adapter.requests.getById(matched.id);
+    const request = hits[0]!.request;
     const requestBody = decodedBodyOf(request.message);
     // code_challenge is optional on authorize (PKCE only when
     // the client sent one). Soft read — pickString would throw
