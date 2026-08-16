@@ -1571,14 +1571,17 @@ designer "tag current" action lands.)
   flow's head document pair in `requests`/`responses`
   (DevTools → Application → IndexedDB → `fusion-ai`) —
   the stored graphDelta / graph body carries
-  `memberIds: [<humanId>, <aiId>]` on that node.
+  `memberIds: [<humanId>]` and `agentIds: [<aiId>]` on
+  that node. Human ticks persist in `memberIds`; agent
+  ticks persist in `agentIds`.
 - [ ] **F60** Untick one of the two checkboxes. Reload the
   page and reopen the panel. PASS: only the remaining
-  ticked member persists in `memberIds`.
-- [ ] **F61** Untick all checkboxes so `memberIds` is `[]`.
-  Reload the page. PASS: every checkbox in the panel is
-  unticked. The node now displays the danger badge per
-  F73.
+  ticked assignee persists — a remaining human in
+  `memberIds`, a remaining agent in `agentIds`.
+- [ ] **F61** Untick all checkboxes so `memberIds` is `[]`
+  and `agentIds` is empty. Reload the page. PASS: every
+  checkbox in the panel is unticked. The node now
+  displays the danger badge per F73.
 - [ ] **F62** Lock the flow via the designer-header Locked switch.
   Open a regular-node panel. PASS: every checkbox in the
   Members fieldset is rendered with the `disabled`
