@@ -2,6 +2,9 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { MemoryStorageBackend }
     from '../api/backend-memory.ts';
+import { HistoryEntityStore } from
+    '../api/store-history-entity.ts';
+import { backendRunner } from '../api/db.ts';
 
 interface Row {
     id: string;
@@ -59,4 +62,29 @@ async () => {
         got.map((row) => row.id),
         ['a', 'b'],
     );
+});
+
+test('getAllAtAddress delegates to Tx.getAddress',
+async () => {
+    const backend = new MemoryStorageBackend();
+    await backend.ensureTables(['requests']);
+    const store = new HistoryEntityStore<Row>(
+        'requests',
+        backendRunner(backend),
+        (body) => body as Omit<Row, 'id'>,
+    );
+    await store.put('a', {
+        uri_collection: '/ideas/',
+        uri_id: '1',
+        at: '2026-01-01T00:00:00.000001Z',
+    });
+    await store.put('c', {
+        uri_collection: '/ideas/',
+        uri_id: '2',
+        at: '2026-01-01T00:00:00.000001Z',
+    });
+    const got = await store.getAllAtAddress(
+        '/ideas/', '1',
+    );
+    assert.deepEqual(got.map((row) => row.id), ['a']);
 });

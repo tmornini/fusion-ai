@@ -98,6 +98,10 @@ export interface EntityStore<
         column: string,
         key: string,
     ): Promise<T[]>;
+    getAllAtAddress(
+        collection: string,
+        uriId: string,
+    ): Promise<T[]>;
     getById(id: string): Promise<T>;
     put(
         id: string,
