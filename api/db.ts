@@ -406,3 +406,22 @@ export const TABLE_INDEXES:
         'uri_collection',
     ],
 };
+
+export function assertGetWhereColumn(
+    table: string,
+    column: string,
+): void {
+    if (column === 'uri_id') {
+        throw new Error(
+            'getWhere does not accept uri_id',
+        );
+    }
+    const specs = TABLE_INDEXES[table];
+    if (specs === undefined) return;
+    const allowed = specs.map(indexColumn);
+    if (!allowed.includes(column)) {
+        throw new Error(
+            'getWhere does not accept ' + column,
+        );
+    }
+}

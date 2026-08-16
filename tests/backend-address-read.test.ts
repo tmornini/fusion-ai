@@ -195,3 +195,59 @@ async () => {
     );
     assert.deepEqual(got.map((row) => row.id), ['hit']);
 });
+
+test('memory getWhere refuses uri_id', async () => {
+    const backend = new MemoryStorageBackend();
+    await backend.ensureTables(['requests']);
+    await assert.rejects(
+        () => backend.transaction(
+            ['requests'],
+            'readonly',
+            (tx) => tx.getWhere(
+                'requests', 'uri_id', '1',
+            ),
+        ),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message
+                === 'getWhere does not accept uri_id',
+    );
+});
+
+test('memory getWhere refuses version', async () => {
+    const backend = new MemoryStorageBackend();
+    await backend.ensureTables(['responses']);
+    await assert.rejects(
+        () => backend.transaction(
+            ['responses'],
+            'readonly',
+            (tx) => tx.getWhere(
+                'responses', 'version', 'ab',
+            ),
+        ),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message
+                === 'getWhere does not accept version',
+    );
+});
+
+test('memory getWhere refuses operation_id',
+async () => {
+    const backend = new MemoryStorageBackend();
+    await backend.ensureTables(['requests']);
+    await assert.rejects(
+        () => backend.transaction(
+            ['requests'],
+            'readonly',
+            (tx) => tx.getWhere(
+                'requests', 'operation_id', 'x',
+            ),
+        ),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message
+                === 'getWhere does not accept'
+                + ' operation_id',
+    );
+});

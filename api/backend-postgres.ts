@@ -3,9 +3,8 @@
 // address, then FOR UPDATE. Notify is in-transaction.
 
 import {
-    TABLE_INDEXES,
     TABLE_NAMES,
-    indexColumn,
+    assertGetWhereColumn,
     type StorageBackend,
     type Tx,
     type TxMode,
@@ -362,18 +361,7 @@ function assertIndexedColumn(
     table: 'requests' | 'responses',
     column: string,
 ): void {
-    if (column === 'uri_id') {
-        throw new Error(
-            'getWhere does not accept uri_id',
-        );
-    }
-    const allowed = (TABLE_INDEXES[table] ?? [])
-        .map(indexColumn);
-    if (!allowed.includes(column)) {
-        throw new Error(
-            'getWhere does not accept ' + column,
-        );
-    }
+    assertGetWhereColumn(table, column);
 }
 
 function entityOf<T extends { id: string }>(

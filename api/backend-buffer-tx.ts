@@ -3,6 +3,7 @@ import {
 } from './storage-serialize.ts';
 import {
     UniqueConstraintError,
+    assertGetWhereColumn,
     uniqueColumns,
     type Tx,
     type TxMode,
@@ -73,6 +74,7 @@ export function bufferTx(
             column: string,
             key: string,
         ): Promise<T[]> {
+            assertGetWhereColumn(table, column);
             return scoped(table)
                 .filter(row => (
                     row as Record<string, unknown>
