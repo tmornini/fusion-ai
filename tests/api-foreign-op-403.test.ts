@@ -25,6 +25,7 @@ import {
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 // Foreign-op miss pins: work-order claim/release/transition
 // and flow undo. The write authorizer never covers these
@@ -97,6 +98,14 @@ async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
             'm-current-b', memBody, ORGANIZATION_B,
         ),
     );
+    await seedSeat(
+        db,
+        String(memBody['organization_id'] ?? memBody.organization_id),
+        String(memBody['identity_id'] ?? memBody.identity_id),
+        (memBody['type'] ?? memBody.type) as 'admin' | 'member',
+        String(memBody['at'] ?? memBody.at),
+    );
+
     return db;
 }
 

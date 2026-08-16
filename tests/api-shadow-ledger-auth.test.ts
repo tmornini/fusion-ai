@@ -10,19 +10,15 @@ import type { GuardedDbAdapter } from '../api/db.ts';
 import { handleRequest } from '../api/api.ts';
 import { requestMessageHash } from '../api/message-form.ts';
 import { hashPassword } from '../shared/password-hash.ts';
-import { seedRootAdmin } from './root-admin-fixture.ts';
+import {
+    seedRootAdmin, seedSeat,
+} from './root-admin-fixture.ts';
 import { devToken } from './token-fixtures.ts';
 import {
     makeAssertionSigner,
 } from './client-assertion-fixtures.ts';
 import type { NotificationEvent } from '../api/notifications.ts';
 import { REQUEST_ID_HEADER } from '../api/request-context.ts';
-import {
-    postMembershipDocumentOp,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
-import { formWritePair } from '../api/message-pair.ts';
-import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import {
     seedClientRegistration,
     seedIdentityCredential,
@@ -426,35 +422,15 @@ test('a token-exchange grant stores its own pair with live'
 // write mechanism changes.
 async function seedMembershipPair(
     db: GuardedDbAdapter,
-    id: string,
+    _id: string,
     body: Record<string, unknown>,
 ): Promise<void> {
-    const organization = body.organization_id as string;
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for memberships/:id',
-        );
-    }
-    const pair = await formWritePair({
-        method: 'PUT',
-        pathname: '/memberships/' + id,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', id],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, organization,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-    await postMembershipDocumentOp(
-        db, id, body, SYSTEM_MEMBER_ID, pair,
+    await seedSeat(
+        db,
+        String(body.organization_id),
+        String(body.identity_id),
+        body.type as 'admin' | 'member',
+        String(body.at),
     );
 }
 

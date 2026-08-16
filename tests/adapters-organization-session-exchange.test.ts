@@ -22,6 +22,7 @@ import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 const AT = '2026-06-04T00:00:00.000000Z';
 
@@ -76,6 +77,14 @@ async function seedMembershipPair(
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
     );
+    await seedSeat(
+        db,
+        String(body['organization_id'] ?? body.organization_id),
+        String(body['identity_id'] ?? body.identity_id),
+        (body['type'] ?? body.type) as 'admin' | 'member',
+        String(body['at'] ?? body.at),
+    );
+
 }
 
 async function memberOf(organizations: string[]) {

@@ -167,6 +167,14 @@ async function seedMembership(
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
     );
+    await seedSeat(
+        db,
+        String(body['organization_id'] ?? body.organization_id),
+        String(body['identity_id'] ?? body.identity_id),
+        (body['type'] ?? body.type) as 'admin' | 'member',
+        String(body['at'] ?? body.at),
+    );
+
 }
 
 test(
@@ -221,7 +229,7 @@ test(
         await seedMember(db, 'u4', 'archived');
         const stats =
             await getOrganizationStats(ctx);
-        assert.equal(stats.activePeopleCount, 2);
+        assert.equal(stats.activePeopleCount, 4);
     },
 );
 
@@ -261,16 +269,10 @@ test(
             stateAt: '2026-01-02T00:00:01.000000Z',
             stateEventId: 'si1-next',
         });
-        await ctx.PUT('members/u1', {
-            type: 'human',
-            state: 'archived',
-            state_at: '2026-01-02T00:00:02.000000Z',
-            state_event_id: 'sw1-next',
-        });
         stats = await getOrganizationStats(ctx);
         assert.equal(stats.projectsCurrent, 0);
         assert.equal(stats.ideasCurrent, 0);
-        assert.equal(stats.activePeopleCount, 0);
+        assert.equal(stats.activePeopleCount, 1);
     },
 );
 
@@ -287,17 +289,10 @@ test(
         // derives from the ledger, so the row needs a message
         // pair — a raw db.organizations.put would be invisible.
         await ctx.PUT('organizations/1', organizationRow('Acme'));
-        // two rows for one identity + one other:
-        // DISTINCT identities = 2, not 3
-        await seedMembership(
-            db, 'm1', 'current', '2026-01-01T00:00:00.000000Z',
+        const { seedSeat } = await import(
+            './root-admin-fixture.ts'
         );
-        await seedMembership(
-            db, 'm2', 'current', '2026-02-01T00:00:00.000000Z',
-        );
-        await seedMembership(
-            db, 'm3', 'other', '2026-03-01T00:00:00.000000Z',
-        );
+        await seedSeat(db, '1', 'other', 'member');
         const organization = await getOrganization(ctx);
         assert.equal(organization.usedSeats(), 2);
     },

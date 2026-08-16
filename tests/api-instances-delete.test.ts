@@ -44,6 +44,7 @@ import {
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 // Instance DELETE — tombstone posture (Task 18 / R4 / R9).
 // Absent → missedReadError; live OR already-tombstoned →
@@ -115,6 +116,14 @@ async function seedMembershipPair(
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
     );
+    await seedSeat(
+        db,
+        String(body['organization_id'] ?? body.organization_id),
+        String(body['identity_id'] ?? body.identity_id),
+        (body['type'] ?? body.type) as 'admin' | 'member',
+        String(body['at'] ?? body.at),
+    );
+
 }
 
 async function adminDb(): Promise<{

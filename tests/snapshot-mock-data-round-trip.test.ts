@@ -42,7 +42,7 @@ test(
         // name from pair-plane GET.
         const ai = await ctx.GET<{
             id: string; name: string;
-        }>('ai-members/tuJwPxYtBur2KCLquScShB');
+        }>('ai-agents/tuJwPxYtBur2KCLquScShB');
         assert.equal(ai.name, 'Claude Opus 4.8');
         // Phase Final Stage B: roster tables retired.
     },

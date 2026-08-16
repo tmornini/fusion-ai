@@ -29,6 +29,7 @@ import {
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
 import { sha256Bytes } from '../shared/digest.ts';
 import { bytesToBase64Url } from '../shared/base64url.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 const REFRESH_TTL_SECONDS = 30 * 24 * 60 * 60;
 
@@ -77,6 +78,14 @@ async function seedMembershipPair(
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
     );
+    await seedSeat(
+        db,
+        String(body['organization_id'] ?? body.organization_id),
+        String(body['identity_id'] ?? body.identity_id),
+        (body['type'] ?? body.type) as 'admin' | 'member',
+        String(body['at'] ?? body.at),
+    );
+
 }
 
 async function passwordUserCtx() {
@@ -113,7 +122,7 @@ async () => {
         ctx, 'demo@example.com', 's3cret');
     assert.ok(creds);
     assert.ok(Array.isArray(
-        await GET(db, 'members', creds.accessToken)));
+        await GET(db, 'organizations/1/members', creds.accessToken)));
 });
 
 test('postPasswordLogin issues a 30-day refresh token',

@@ -30,6 +30,7 @@ import {
     apiRequest,
     storedPutBodyText,
 } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 // Phase 8 Task 2 (eighth family, 'stateless'): PUT
 // /memberships/:id takes the entity's OWN fields only — no
@@ -145,23 +146,22 @@ async () => {
 
 // -- 3. byte-identical resend (the E6 fast-path sibling pin) --
 
-test('a byte-identical PUT resend to memberships/:id converges'
+test('a byte-identical PUT resend to a seat converges'
 + ' to one stored request/response pair', async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const body = documentFields();
+    const body = { type: 'member', at: documentFields().at };
     const first = await PUT(
-        db, 'memberships/ms-resend-1', body, DEV_TOKEN,
+        db, 'organizations/1/members/sarah', body, DEV_TOKEN,
     );
     const second = await PUT(
-        db, 'memberships/ms-resend-1', body, DEV_TOKEN,
+        db, 'organizations/1/members/sarah', body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
-    // seedAdminSchema: org + membership (no role-grant) = 2;
-    // one unique membership PUT = 3 (byte-identical resend
-    // dedups).
-    assert.equal((await db.requests.getAll()).length, 3);
-    assert.equal((await db.responses.getAll()).length, 3);
+    // seedAdminSchema: org + current seat; one unique
+    // sarah seat PUT. Byte-identical resend dedups.
+    assert.equal((await db.requests.getAll()).length, 4);
+    assert.equal((await db.responses.getAll()).length, 4);
 });
 
 // -- 4. below-route via the generic handlers (the drift-file
@@ -295,17 +295,20 @@ test('a DELETE-head derives absent through the generic'
     );
 });
 
-test('stored PUT body equals membershipDocumentEntityOf',
+test('stored PUT body equals the seat wire entity',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const id = 'ms-g3-stream';
-    const body = documentFields();
+    const id = 'sarah';
+    const body = {
+        type: 'member',
+        at: documentFields().at,
+    };
     const put = await handleRequest(
         db,
         apiRequest({
             method: 'PUT',
-            path: '/memberships/' + id,
+            path: '/organizations/1/members/' + id,
             token: DEV_TOKEN,
             body,
             operationId: TEST_OPERATION_ID,
@@ -314,19 +317,14 @@ async () => {
     assert.equal(put.status, 201);
     const stored = JSON.parse(
         await storedPutBodyText(
-            db, '/organizations/1/memberships/', id,
+            db, '/organizations/1/members/', id,
         ),
     );
-    assert.deepEqual(
-        stored,
-        membershipDocumentEntityOf(
-            {
-                uriId: id,
-                pairId: id,
-                method: 'PUT',
-                body,
-            },
-            '1',
-        ),
-    );
+    assert.deepEqual(stored, {
+        id,
+        organization_id: '1',
+        identity_id: id,
+        type: 'member',
+        at: documentFields().at,
+    });
 });

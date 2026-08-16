@@ -254,8 +254,6 @@ import {
     scoreEntityOf,
 } from './derive-project-scores.ts';
 import {
-    deriveMembers,
-    deriveMemberParent,
     memberParentOf,
 } from './derive-members.ts';
 import {
@@ -278,7 +276,6 @@ import {
     tokenRevocationEntityOf,
 } from './derive-identity-spine.ts';
 import {
-    deriveMemberStates,
     deriveWorkOrderHistories,
     workOrderBindingFor,
     workOrderClaimHistoryFor,
@@ -884,16 +881,14 @@ function withoutSecret(
 // read rode) so this holds for however many organizations
 // actually exist, not only the ones a test happened to seed.
 async function membershipsAcrossAllOrganizations(
-    db: DbAdapter, actor: Id,
+    db: DbAdapter, _actor: Id,
 ): Promise<MembershipEntity[]> {
     const organizations = await deriveOrganizations(db);
     const perOrganization = await Promise.all(
         organizations.map((organization) =>
-            // Empty roles: internal pair-plane scan, not a
-            // user-facing dispatch (Task 10 GetHandler arity).
-            documentCollectionGetHandler(MEMBERSHIPS_WIRING)(
-                db, [], actor, organization.id, [],
-            ) as Promise<MembershipEntity[]>,
+            deriveOrganizationMemberSeats(
+                db, organization.id,
+            ),
         ),
     );
     return perOrganization.flat();
@@ -1600,13 +1595,10 @@ async function assertLiveFlowGraphWriteLaw(
     const parsed = asStoredGraph(
         graph, 'FlowDocumentBody.graph',
     );
-    const [aiMemberIds, liveAgentIds] = await Promise.all([
-        liveGlobalDocumentIds(db, 'ai-members'),
-        liveGlobalDocumentIds(db, 'ai-agents'),
-    ]);
-    assertFlowGraphWriteLaw(
-        parsed, aiMemberIds, liveAgentIds,
+    const liveAgentIds = await liveGlobalDocumentIds(
+        db, 'ai-agents',
     );
+    assertFlowGraphWriteLaw(parsed, liveAgentIds);
 }
 
 export async function postFlowDocumentOp(
@@ -1969,8 +1961,17 @@ export function memberDocumentBodyOf(
 // the sole kind a member's own identity ever takes).
 export function identityDocumentBodyOf(
     kind: IdentityKind,
+    profile?: {
+        readonly title: string;
+        readonly department: string;
+        readonly strengths: string[];
+        readonly team_dimensions: Record<string, number>;
+    },
 ): Record<string, unknown> {
-    return { kind };
+    if (kind === 'service' || profile === undefined) {
+        return { kind };
+    }
+    return { kind, ...profile };
 }
 
 // The wire body a live PUT ai-members/:id would carry for this
@@ -4268,309 +4269,6 @@ export async function postInstancePatchOp(
 }
 
 export const routes: Route[] = [
-    route('members', {
-        // GET is FLIPPED (Task 8): derived via deriveMembers —
-        // wire-identical to the hand-written membership-join
-        // dispatch it replaces. The org-scoped memberships
-        // prefix stands in for the fenced db.memberships
-        // read; deriveMemberParents' own global MEMBERS_PREFIX
-        // stands in for the unfenced db.members.getAll() read.
-        // The join IS the org fence — it re-scopes on an org
-        // switch with no denormalized column to keep in sync.
-        // The system member still rides along unconditionally
-        // — deriveMembers' own filter, mirrored from this
-        // closure's prior body — so author resolution
-        // (getMemberMap) still finds it; the human/ai roster
-        // filters it out by type.
-        get: (db, _p, _actor, organization) =>
-            deriveMembers(db, requireOrganization(organization)),
-    }),
-    route('ai-members', {
-        // GET is FLIPPED (Task 8): derived via
-        // documentCollectionGetHandler — wire-identical to the
-        // hand-written db.aiMembers.getAll() dispatch it
-        // replaces; ai-members is GLOBAL plane
-        // (organizationNested:false), so the read stays
-        // unfenced exactly as before.
-        get: documentCollectionGetHandler(AI_MEMBERS_WIRING),
-        // Admin-only — POST /ai-members has no member-tier
-        // entry, so it falls to the root admin tier in
-        // ROUTE_POLICY. Task 4: forms the member-document and
-        // detail-document pairs INLINE PRE-TX, beside the gate's
-        // own operation pair — the objectives-family precedent
-        // (route('objectives', ...) below). See
-        // postAiMemberCreationOp for the transaction shape.
-        post: async (
-            db, _p, body, actor, pair, organization,
-        ) => {
-            let pairs: MemberWritePairs | undefined;
-            if (
-                pair !== undefined && organization !== undefined
-            ) {
-                const b = validateAIMemberCreateBody(body);
-                const memberBody = memberDocumentBodyOf('ai', {
-                    state: b.initialState,
-                    stateAt: b.initialStateAt,
-                    stateEventId: b.initialStateEventId,
-                });
-                validateMemberDocumentBody(memberBody);
-                const memberDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'members/:id',
-                        params: [b.id],
-                        body: memberBody,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                const detailBody = aiMemberDetailBodyOf(body);
-                validateAiMemberDocumentBody(detailBody);
-                const detailDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'ai-members/:id',
-                        params: [b.id],
-                        body: detailBody,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                pairs = {
-                    operation: pair,
-                    memberDocument,
-                    detailDocument,
-                };
-            }
-            return postAiMemberCreationOp(db, body, actor, pairs);
-        },
-    }),
-    // PUT rides the generic documentPutHandler(AI_MEMBERS_WIRING)
-    // (this commit) — wire-identical to postAiMemberDocumentOp's
-    // own direct dispatch it replaces (the extraction commit
-    // immediately prior). POST stays hand-written beside it — the
-    // composed members + ai_members edit, the first pattern in
-    // this codebase to need a PER-VERB WriteResponseSpec entry
-    // (see message-pair.ts / WRITE_RESPONSE_SPECS). GET reproduces
-    // the prior closure byte-equivalently.
-    route('ai-members/:id', {
-        // GET is FLIPPED (Task 8): absorbed into the generic
-        // documentGetHandler(AI_MEMBERS_WIRING) — the SAME
-        // wiring row PUT already rides — wire-identical to the
-        // hand-written db.aiMembers.getById dispatch it
-        // replaces.
-        get: documentGetHandler(AI_MEMBERS_WIRING),
-        put: documentPutHandler(AI_MEMBERS_WIRING),
-        // AI-member edit (Task 4, the migration's FIRST composed-
-        // EDIT synthesis): forms the SAME member-document/detail-
-        // document bundle the create route above forms, beside
-        // the gate's own operation pair (already pair-wired at
-        // this exact address). Admin-only, exactly as create — no
-        // member-tier POST entry exists. See postAiMemberEditOp
-        // for the transaction shape.
-        post: async (db, p, body, actor, pair, organization) => {
-            const id = param(p, 0);
-            let pairs: MemberWritePairs | undefined;
-            if (
-                pair !== undefined && organization !== undefined
-            ) {
-                // Bound (not discarded): detail shape plus the
-                // echoed lifecycle trio, threaded into the
-                // synthesized members/:id document body.
-                const e = validateAIMemberEditBody(body);
-                const memberBody = memberDocumentBodyOf('ai', {
-                    state: e.state,
-                    stateAt: e.stateAt,
-                    stateEventId: e.stateEventId,
-                });
-                validateMemberDocumentBody(memberBody);
-                const memberDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'members/:id',
-                        params: [id],
-                        body: memberBody,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                const detailBody = aiMemberDetailBodyOf(body);
-                validateAiMemberDocumentBody(detailBody);
-                const detailDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'ai-members/:id',
-                        params: [id],
-                        body: detailBody,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                pairs = {
-                    operation: pair,
-                    memberDocument,
-                    detailDocument,
-                };
-            }
-            return postAiMemberEditOp(db, id, body, pairs);
-        },
-    }),
-    route('human-members', {
-        // GET is FLIPPED (Task 8): derived via
-        // documentCollectionGetHandler — wire-identical to the
-        // hand-written db.humanMembers.getAll() dispatch it
-        // replaces; human-members is GLOBAL plane
-        // (organizationNested:false), so the read stays
-        // unfenced exactly as before.
-        get: documentCollectionGetHandler(HUMAN_MEMBERS_WIRING),
-        // Admin-only — POST /human-members has no member-tier
-        // entry, so it falls to the root admin tier in
-        // ROUTE_POLICY. Task 4: forms the member-document and
-        // detail-document pairs INLINE PRE-TX, the ai-members
-        // precedent above, at the human-facet addresses. Task 5:
-        // ALSO forms the identities/:id document pair — a human
-        // member's own identity row, which an AI member never has
-        // (finding 10) — appended LAST. See
-        // postHumanMemberCreationOp for the transaction shape.
-        post: async (
-            db, _p, body, actor, pair, organization,
-        ) => {
-            let pairs: MemberWritePairs | undefined;
-            if (
-                pair !== undefined && organization !== undefined
-            ) {
-                const b = validateHumanMemberCreateBody(body);
-                const memberBody = memberDocumentBodyOf('human', {
-                    state: b.initialState,
-                    stateAt: b.initialStateAt,
-                    stateEventId: b.initialStateEventId,
-                });
-                validateMemberDocumentBody(memberBody);
-                const memberDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'members/:id',
-                        params: [b.id],
-                        body: memberBody,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                const detailBody = humanMemberDetailBodyOf(body);
-                validateHumanMemberDocumentBody(detailBody);
-                const detailDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'human-members/:id',
-                        params: [b.id],
-                        body: detailBody,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                const identityDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'identities/:id',
-                        params: [b.id],
-                        body: identityDocumentBodyOf('person'),
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                pairs = {
-                    operation: pair,
-                    memberDocument,
-                    detailDocument,
-                    identityDocument,
-                };
-            }
-            return postHumanMemberCreationOp(
-                db, body, actor, pairs,
-            );
-        },
-    }),
-    // HUMAN_MEMBERS_WIRING registers alongside members/ai-members
-    // (Phase 8 Task 3) but serves NO live PUT route here — verbs
-    // stay {get, post}, the SAME 405 verb-gap pin from Task 2
-    // (tests/api-roster-verb-gaps.test.ts) proves survives
-    // untouched. The wiring row's documentOp/entityOf, and this
-    // task's WRITE_RESPONSE_SPECS['human-members/:id'].put, exist
-    // for the synthesized bundle below and the seed only — see
-    // HUMAN_MEMBERS_WIRING's own comment above. GET is FLIPPED
-    // (Task 8): absorbed into the generic
-    // documentGetHandler(HUMAN_MEMBERS_WIRING) — wire-identical
-    // to the hand-written db.humanMembers.getById dispatch it
-    // replaces.
-    route('human-members/:id', {
-        get: documentGetHandler(HUMAN_MEMBERS_WIRING),
-        // Human-member edit (Task 4, the SAME composed-EDIT
-        // synthesis as ai-members/:id above): forms the member-
-        // document/detail-document bundle beside the gate's own
-        // operation pair. Does not form an identities/:id pair
-        // — create already wrote genesis {kind}; rewriting
-        // {kind} would drop a folded person profile. Admin-
-        // only, exactly as create — no member-tier POST entry
-        // exists. See postHumanMemberEditOp for the transaction
-        // shape.
-        post: async (db, p, body, actor, pair, organization) => {
-            const id = param(p, 0);
-            let pairs: MemberWritePairs | undefined;
-            if (
-                pair !== undefined && organization !== undefined
-            ) {
-                // Bound (not discarded): detail shape plus the
-                // echoed lifecycle trio, threaded into the
-                // synthesized members/:id document body.
-                const e = validateHumanMemberEditBody(body);
-                const memberBody = memberDocumentBodyOf(
-                    'human', {
-                        state: e.state,
-                        stateAt: e.stateAt,
-                        stateEventId: e.stateEventId,
-                    },
-                );
-                validateMemberDocumentBody(memberBody);
-                const memberDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'members/:id',
-                        params: [id],
-                        body: memberBody,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                const detailBody = humanMemberDetailBodyOf(body);
-                validateHumanMemberDocumentBody(detailBody);
-                const detailDocument = await formDocumentPairFor(
-                    db, {
-                        routePattern: 'human-members/:id',
-                        params: [id],
-                        body: detailBody,
-                        requesterIdentityId: actor,
-                        requestAt: pair.requestAt,
-                        operationId: pair.operationId,
-                        organization,
-                    },
-                );
-                pairs = {
-                    operation: pair,
-                    memberDocument,
-                    detailDocument,
-                };
-            }
-            return postHumanMemberEditOp(db, id, body, pairs);
-        },
-    }),
     route('identities', {
         // GET is FLIPPED (Phase 10 Task 8): derived via
         // documentCollectionGetHandler — wire-identical to the
@@ -4657,9 +4355,6 @@ export const routes: Route[] = [
     }),
     documentVersionRoute(IDENTITIES_WIRING),
     documentVersionRoute(AI_AGENTS_WIRING),
-    documentVersionRoute(AI_MEMBERS_WIRING),
-    documentVersionRoute(HUMAN_MEMBERS_WIRING),
-    documentVersionRoute(MEMBERSHIPS_WIRING),
     // PII is a facet of the identity's own subtree: GET is
     // self-only, PUT/DELETE self-or-admin (enforced in the
     // request gate, mirroring
@@ -6299,84 +5994,6 @@ export const routes: Route[] = [
             );
         },
     }),
-    route('memberships', {
-        get: documentCollectionGetHandler(MEMBERSHIPS_WIRING),
-    }),
-    // GET is FLIPPED (Task 8): absorbed into the generic
-    // documentGetHandler(MEMBERSHIPS_WIRING) — the SAME wiring
-    // row PUT already rides — wire-identical to the
-    // hand-written db.memberships.getById dispatch it replaces.
-    // PUT rides the generic documentPutHandler(MEMBERSHIPS_WIRING)
-    // (prior commit) — wire-identical to postMembershipDocumentOp's
-    // own direct dispatch it replaces. DELETE stays hand-written
-    // in place of makeIdRoute<MembershipEntity>'s fixed closure so
-    // it can append its message pair in the same transaction as
-    // the write (the factory has no per-family pair selector — see
-    // message-pair.ts; no generic DELETE component exists either —
-    // the records/:id template). Verbs stay {get, put, delete}.
-    route('memberships/:id', {
-        get: documentGetHandler(MEMBERSHIPS_WIRING),
-        put: documentPutHandler(MEMBERSHIPS_WIRING),
-        // Phase Final Task 2: memberships ROW half stripped —
-        // DELETE is a pure pair-plane tombstone append.
-        delete: (db, _p, _actor, pair) => {
-            return db.transaction(
-                ['requests', 'responses'],
-                async (view) => {
-                    if (pair !== undefined) {
-                        await appendMessagePair(view, pair);
-                    }
-                },
-            );
-        },
-    }),
-    // GET is FLIPPED (Task 8): derived via
-    // deriveMemberParent(db, actor) — wire-identical to the
-    // hand-written db.members.getById(actor) dispatch it
-    // replaces (members is GLOBAL plane, so the actor's own id
-    // resolves the same row regardless of active org).
-    route('current-member', {
-        get: (db, _p, actor) => deriveMemberParent(db, actor),
-    }),
-
-    // GET is FLIPPED (Task 8): absorbed into the generic
-    // documentGetHandler(MEMBERS_WIRING) — the SAME wiring row
-    // PUT already rides; memberDocumentEntityOf stamps entity
-    // fields plus the lifecycle-current trio (A10). PUT rides
-    // the generic documentPutHandler(MEMBERS_WIRING) (prior
-    // commit). Verbs stay {get, put} — members/:id has no
-    // DELETE today, mirroring the identities/:id precedent.
-    // Global plane: no organization stamping (the members
-    // directory row carries no organization_id) — see
-    // documentWriteResponseSpec's own registration-first consult
-    // (document-family.ts).
-    route('members/:id', {
-        get: documentGetHandler(MEMBERS_WIRING),
-        put: documentPutHandler(MEMBERS_WIRING),
-    }),
-    // GET members/:id/versions: deriveMemberStates filtered
-    // to entity_id; empty → EntityNotFoundError('members',
-    // id) — global-family posture. Wire StateEntity DESC.
-    route('members/:id/versions', {
-        get: async (db, params) => {
-            const id = param(params, 0);
-            const history = (await deriveMemberStates(db))
-                .filter((e) => e.entity_id === id)
-                .sort((a, b) =>
-                    a.at < b.at ? -1
-                        : a.at > b.at ? 1
-                            : a.id < b.id ? -1
-                                : a.id > b.id ? 1
-                                    : 0);
-            if (history.length === 0) {
-                throw new EntityNotFoundError(
-                    'members', id,
-                );
-            }
-            return history.toReversed();
-        },
-    }),
-    documentVersionRoute(MEMBERS_WIRING),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — GET dispatches to the derived
     // entity, PUT to postIdeaDocumentOp, wire-identical to the

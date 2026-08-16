@@ -79,6 +79,7 @@ import {
     deriveIdentityTokens,
 } from '../api/derive-identity-tokens.ts';
 import { refreshTokenFromSetCookie } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 
@@ -177,6 +178,14 @@ async function seedMembershipPair(
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
     );
+    await seedSeat(
+        db,
+        String(body['organization_id'] ?? body.organization_id),
+        String(body['identity_id'] ?? body.identity_id),
+        (body['type'] ?? body.type) as 'admin' | 'member',
+        String(body['at'] ?? body.at),
+    );
+
 }
 
 // Authorize `current` as admin of `org` and stamp the
@@ -252,7 +261,7 @@ async () => {
     const ctx = createRecoveringRequestContext(
         db, deadAccess);
     // the 401 triggers refresh + org re-scope + one retry
-    const members = await ctx.GET('members');
+    const members = await ctx.GET('organizations/1/members');
     assert.ok(Array.isArray(members));
 });
 
@@ -272,7 +281,7 @@ async () => {
     // both reads 401 in parallel; a second refresh would be
     // branded reuse and revoke the fresh chain
     const [members, organizations] = await Promise.all([
-        ctx.GET('members'),
+        ctx.GET('organizations/1/members'),
         ctx.GET('organizations'),
     ]);
     assert.ok(Array.isArray(members));
@@ -304,7 +313,7 @@ async () => {
     const ctx = createRecoveringRequestContext(
         db, seed);
     // recovery re-installs the live token, re-scopes, and retries
-    const members = await ctx.GET('members');
+    const members = await ctx.GET('organizations/1/members');
     assert.ok(Array.isArray(members));
     // the live session is preserved (not scrubbed) and now scoped
     assert.notEqual(getSessionCredentials(), null);
@@ -326,7 +335,7 @@ async () => {
         db, dead);
     // the 401 is unrecoverable: the original error propagates
     await assert.rejects(
-        () => ctx.GET('members'), UnauthorizedError);
+        () => ctx.GET('organizations/1/members'), UnauthorizedError);
     // the dead credential was scrubbed...
     assert.equal(getSessionCredentials(), null);
     // ...and the tab was redirected to the login page
@@ -352,7 +361,7 @@ async () => {
             const ctx = createRecoveringRequestContext(
                 db, dead);
             await assert.rejects(
-                () => ctx.GET('members'), UnauthorizedError);
+                () => ctx.GET('organizations/1/members'), UnauthorizedError);
         },
     );
     assert.equal(

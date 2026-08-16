@@ -9,17 +9,12 @@ import { organizationToken } from './token-fixtures.ts';
 import { documentPairsAt } from '../api/derive-documents.ts';
 import { requestMessageHash } from '../api/message-form.ts';
 import { deriveInvitations } from '../api/derive-invitations.ts';
-import {
-    postMembershipDocumentOp,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
-import { formWritePair } from '../api/message-pair.ts';
-import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedIdentityPii } from './identity-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
     storedPutBodyText,
 } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 // Phase 8 Task 6: the invitation document plane — the grant's
 // PUT-shaped invitation document (the entity minus id, NO email
@@ -72,35 +67,15 @@ async function person(
 // mechanism changes.
 async function seedMembershipPair(
     db: MemoryDbAdapter,
-    id: string,
+    _id: string,
     body: Record<string, unknown>,
 ): Promise<void> {
-    const organization = body.organization_id as string;
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for memberships/:id',
-        );
-    }
-    const pair = await formWritePair({
-        method: 'PUT',
-        pathname: '/memberships/' + id,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', id],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, organization,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-    await postMembershipDocumentOp(
-        db, id, body, SYSTEM_MEMBER_ID, pair,
+    await seedSeat(
+        db,
+        String(body.organization_id),
+        String(body.identity_id),
+        body.type as 'admin' | 'member',
+        String(body.at),
     );
 }
 
@@ -291,10 +266,10 @@ async () => {
     );
     assert.equal(second.status, 201);
     const documents = (await db.requests.getAll()).filter(
-        r => r.uri_collection === '/organizations/1/members/',
+        r => r.uri_collection === '/organizations/1/members/'
+            && r.uri_id === 'sarah',
     );
     assert.equal(documents.length, 1);
-    assert.equal(documents[0]!.uri_id, 'sarah');
 });
 
 // ── deriveInvitations: the message-plane reduction ──

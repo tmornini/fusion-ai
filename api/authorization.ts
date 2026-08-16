@@ -83,8 +83,8 @@ export function matchesOnSegmentBoundary(
 // Admin surfaces — identities, credentials,
 // providers, memberships, organization and
 // member WRITES, snapshots — are absent: deny-by-default
-// keeps them at the root admin entries. members/ai-members/
-// human-members appear read-only here for author and roster
+// keeps them at the root admin entries. Seats and
+// ai-agents appear read-only here for author and roster
 // display; their writes stay admin (member management).
 // identity-tokens POST covers only its rotation/revocation
 // sub-routes — session management any member performs.
@@ -129,11 +129,8 @@ const MEMBER_VERBS: Readonly<
     '/work-orders': ['GET', 'PUT', 'POST'],
     // Bulk lifecycle collection RETIRED (states-URI
     // elimination C3).
-    '/members': ['GET'],
-    '/ai-members': ['GET'],
     '/ai-agents': ['GET'],
-    '/human-members': ['GET'],
-    '/current-member': ['GET'],
+    '/organizations/:id/members': ['GET'],
     '/organizations': ['GET'],
     '/identity-tokens': ['POST'],
     '/identity-token-revocations': ['PUT'],

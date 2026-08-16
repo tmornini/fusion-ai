@@ -6,13 +6,10 @@ import {
 } from '../api/db-memory.ts';
 import { identityDefaultOrganization } from '../api/authentication.ts';
 import { formWritePair, appendMessagePair } from '../api/message-pair.ts';
-import {
-    postMembershipDocumentOp,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
 import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 const T1 = '2026-01-01T00:00:00.000000Z';
 const T2 = '2026-02-01T00:00:00.000000Z';
@@ -43,38 +40,10 @@ async function seedMembershipPair(
     // to deriveMembershipsForIdentity's own enumerate-then-probe
     // (via deriveOrganizations).
     await seedOrganizationDocument(
-        db, organizationId, organizationId);
-    const body = {
-        organization_id: organizationId,
-        identity_id: identityId,
-        type: 'member',
-        at,
-    };
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for memberships/:id',
-        );
-    }
-    const pair = await formWritePair({
-        method: 'PUT',
-        pathname: '/memberships/' + id,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', id],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: at,
-        organization: organizationId,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, organizationId,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-    await postMembershipDocumentOp(
-        db, id, body, SYSTEM_MEMBER_ID, pair,
+        db, organizationId, organizationId,
+    );
+    await seedSeat(
+        db, organizationId, identityId, 'member', at,
     );
 }
 
@@ -162,19 +131,19 @@ test(
         await seedDefaultOrganizationEvent(
             db, 'me', '2', T2,
         );
-        const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-        if (spec === undefined || !('status' in spec)) {
-            throw new Error(
-                'no per-write response spec for'
-                + ' memberships/:id',
-            );
-        }
         const tombstone = await formWritePair({
             method: 'DELETE',
-            pathname: '/memberships/m2',
-            routePattern: 'memberships/:id',
-            routeSegments: ['memberships', ':id'],
-            pathSegments: ['memberships', 'm2'],
+            pathname: '/organizations/2/members/me',
+            routePattern:
+                'organizations/:organization-id/members'
+                + '/:identity-id',
+            routeSegments: [
+                'organizations', ':organization-id',
+                'members', ':identity-id',
+            ],
+            pathSegments: [
+                'organizations', '2', 'members', 'me',
+            ],
             headerFields: [],
             body: {},
             requesterIdentityId: SYSTEM_MEMBER_ID,

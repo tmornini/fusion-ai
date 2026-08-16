@@ -840,7 +840,7 @@ test(
 );
 
 test(
-    'assertFlowGraphWriteLaw rejects an AI member'
+    'assertFlowGraphWriteLaw rejects an AI agent'
     + ' id in memberIds',
     () => {
         const graph = asStoredGraph(
@@ -857,9 +857,9 @@ test(
         );
         assert.throws(
             () => assertFlowGraphWriteLaw(
-                graph, new Set(['ai-1']), new Set(),
+                graph, new Set(['ai-1']),
             ),
-            /not AI members/,
+            /not AI agents/,
         );
     },
 );
@@ -883,9 +883,7 @@ test(
         );
         assert.doesNotThrow(() =>
             assertFlowGraphWriteLaw(
-                graph,
-                new Set(['ai-1']),
-                new Set(['agent-1']),
+                graph, new Set(['agent-1']),
             ),
         );
     },

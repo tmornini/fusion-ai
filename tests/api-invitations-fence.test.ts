@@ -27,16 +27,12 @@ import { deriveInvitations } from
     '../api/derive-invitations.ts';
 import { deriveOrganizations } from
     '../api/derive-organizations.ts';
-import { canonicalUriCollection } from '../api/message-pair.ts';
 import { deriveDocumentsAt } from
     '../api/derive-documents.ts';
 import {
-    validateMembershipEntity,
-} from '../api/validators.ts';
-import { withoutId } from '../api/document-family.ts';
-import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 // Phase Final Task 2: memberships on the pair plane.
 async function allMemberships(db: MemoryDbAdapter) {
@@ -71,23 +67,6 @@ async function allMemberships(db: MemoryDbAdapter) {
                 at: String(document.body['at']),
             });
         }
-        const prefix = canonicalUriCollection(
-            organization.id, '/memberships/',
-        );
-        const [requests, responses] = await Promise.all([
-            db.requests.getAllWhere('uri_collection', prefix),
-            db.responses.getAllWhere('uri_collection', prefix),
-        ]);
-        for (const document of deriveDocumentsAt(
-            requests, responses, prefix,
-        ).values()) {
-            rows.push({
-                ...validateMembershipEntity(
-                    withoutId(document.body),
-                ),
-                id: document.uriId,
-            });
-        }
     }
     return rows;
 }
@@ -103,35 +82,15 @@ const AT = '2026-01-01T00:00:00.000000Z';
 // the raw puts these replace — only the write mechanism changes.
 async function seedMembershipPair(
     db: MemoryDbAdapter,
-    id: string,
+    _id: string,
     body: Record<string, unknown>,
 ): Promise<void> {
-    const organization = body.organization_id as string;
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for memberships/:id',
-        );
-    }
-    const pair = await formWritePair({
-        method: 'PUT',
-        pathname: '/memberships/' + id,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', id],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, organization,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-    await postMembershipDocumentOp(
-        db, id, body, SYSTEM_MEMBER_ID, pair,
+    await seedSeat(
+        db,
+        String(body.organization_id),
+        String(body.identity_id),
+        body.type as 'admin' | 'member',
+        String(body.at),
     );
 }
 
@@ -312,7 +271,8 @@ async function rosterIds(
     db: MemoryDbAdapter,
 ): Promise<Set<string>> {
     const res = await handleRequest(db, req(
-        'GET', '/members', await organizationToken('current', '2')));
+        'GET', '/organizations/2/members',
+        await organizationToken('current', '2')));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];
     return new Set(rows.map(r => r.id));

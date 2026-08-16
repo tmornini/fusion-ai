@@ -428,22 +428,20 @@ function asGraphEdge(
     };
 }
 
-// Write-path graph law (Task 54): memberIds may name
-// person members / identities only. agentIds must name
-// live /ai-agents documents. GET derive still parses
-// seed graphs that carry AI member ids in memberIds.
+// Write-path graph law: memberIds may name person
+// identities only. agentIds must name live /ai-agents
+// documents.
 export function assertFlowGraphWriteLaw(
     graph: StoredGraph,
-    aiMemberIds: ReadonlySet<string>,
     liveAgentIds: ReadonlySet<string>,
 ): void {
     for (const node of graph.nodes) {
         for (const id of node.memberIds) {
-            if (aiMemberIds.has(id)) {
+            if (liveAgentIds.has(id)) {
                 throw new ValidationError(
-                    'memberIds may name person members'
-                    + ' or identities only, not AI'
-                    + ' members',
+                    'memberIds may name person'
+                    + ' identities only, not AI'
+                    + ' agents',
                 );
             }
         }

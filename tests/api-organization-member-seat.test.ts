@@ -29,6 +29,7 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 // Task 52: the seat document is the membership
 // relationship. Accept writes the inner PUT;

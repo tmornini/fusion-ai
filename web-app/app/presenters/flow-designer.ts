@@ -215,6 +215,9 @@ export class FlowDesignerPresenter {
                 memberIds: n.memberIds.filter(
                     id => !aiMemberIds.has(id),
                 ),
+                agentIds: n.memberIds.filter(
+                    id => aiMemberIds.has(id),
+                ),
             })),
             edges: snap.edges,
         };

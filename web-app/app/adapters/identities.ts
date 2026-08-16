@@ -129,28 +129,21 @@ function serviceFacet(
 export async function getIdentityRoster(
     ctx: RequestContext,
 ): Promise<IdentityRosterRow[]> {
-    const [identities, piiRows, aiRows] =
+    const [identities, piiRows] =
         await Promise.all([
             ctx.GET<IdentityEntity[]>('identities'),
             ctx.GET<IdentityPiiEntity[]>('identity-pii'),
-            ctx.GET<AIMemberEntity[]>('ai-members'),
         ]);
     const piiById = new Map<Id, IdentityPiiEntity>();
     for (const row of piiRows) {
         piiById.set(row.id, row);
-    }
-    const aiById = new Map<Id, AIMemberEntity>();
-    for (const row of aiRows) {
-        aiById.set(row.id, row);
     }
     return identities.map(identity =>
         identity.kind === 'service'
             ? {
                 kind: 'service',
                 id: identity.id,
-                service: serviceFacet(
-                    aiById.get(identity.id),
-                ),
+                service: serviceFacet(undefined),
             }
             : {
                 kind: 'person',
@@ -187,13 +180,10 @@ export async function getMemberPii(
 // visible. Mirrors getMemberPii; the CALLER redacts an
 // absent name rather than leaking the id.
 export async function getServiceFacet(
-    ctx: RequestContext,
-    id: Id,
+    _ctx: RequestContext,
+    _id: Id,
 ): Promise<ServiceFacet> {
-    const all = await ctx.GET<AIMemberEntity[]>(
-        'ai-members',
-    );
-    return serviceFacet(all.find(r => r.id === id));
+    return serviceFacet(undefined);
 }
 
 export async function deleteIdentityPii(

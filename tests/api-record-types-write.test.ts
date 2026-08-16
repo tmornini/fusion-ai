@@ -33,6 +33,7 @@ import {
     deriveRecordTypeEntity,
     recordTypeEntityOf,
 } from '../api/derive-record-types.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 // Nested record-types WRITE surface (Task 3): admin PUT
 // (simple class, trio document), admin DELETE with type
@@ -126,6 +127,14 @@ async function seedMembershipPair(
     await postMembershipDocumentOp(
         db, id, body, SYSTEM_MEMBER_ID, pair,
     );
+    await seedSeat(
+        db,
+        String(body['organization_id'] ?? body.organization_id),
+        String(body['identity_id'] ?? body.identity_id),
+        (body['type'] ?? body.type) as 'admin' | 'member',
+        String(body['at'] ?? body.at),
+    );
+
 }
 
 async function seedRecordTypeBelowGate(

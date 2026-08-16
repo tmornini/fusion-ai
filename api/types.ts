@@ -1093,9 +1093,7 @@ export interface GraphNode {
     isCreate: boolean;
     isArchive: boolean;
     memberIds: MemberId[];
-    // Write-path roster for /ai-agents ids. Absent on
-    // seed graphs until Task 55 reseed; asGraphNode
-    // leaves a missing key absent.
+    // Write-path roster for /ai-agents ids.
     agentIds?: AgentId[];
     attributes: NodeAttribute[];
     taskInstructions: string;
@@ -1273,8 +1271,6 @@ function storedGraphNode(
             node.attributes.map(storedNodeAttribute),
         taskInstructions: node.taskInstructions,
     };
-    // Omit empty agentIds so seed GET bytes stay
-    // identical until Task 55 reseed.
     const agentIds = node.agentIds;
     if (agentIds !== undefined && agentIds.length > 0) {
         stored['agentIds'] = agentIds;

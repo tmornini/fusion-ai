@@ -266,7 +266,7 @@ test(
         // Phase Final Task 2: members ROW half stripped —
         // directory lives on the pair plane.
         const rows = await ctx.GET<Array<{ id: string }>>(
-            'members',
+            'organizations/1/members',
         );
         assert.ok(
             rows.length > 0,
@@ -550,7 +550,7 @@ test(
         const ctx = stubSnapshotCtx({
             members: [],
             requests: [{
-                id: 'r1', uri_collection: '/members/',
+                id: 'r1', uri_collection: '/identities/',
                 uri_id: 'm1',
                 at: '2026-01-01T00:00:00.000000Z',
                 requester_identity_id: 'system',

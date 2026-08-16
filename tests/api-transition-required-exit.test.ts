@@ -30,6 +30,7 @@ import {
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { seedSeat } from './root-admin-fixture.ts';
 
 // POST work-orders/:id/transition — W10 required-at-exit
 // gate (Task 9). Gate tier only: every transition leaving
@@ -262,6 +263,14 @@ async function seedMember1(
             'm-member1', memBody, ORGANIZATION,
         ),
     );
+    await seedSeat(
+        db,
+        String(memBody['organization_id'] ?? memBody.organization_id),
+        String(memBody['identity_id'] ?? memBody.identity_id),
+        (memBody['type'] ?? memBody.type) as 'admin' | 'member',
+        String(memBody['at'] ?? memBody.at),
+    );
+
 }
 
 async function seedFlow(

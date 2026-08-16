@@ -72,14 +72,21 @@ test('admin is permitted on every verb at root', () => {
             isPermitted(verb, '/memberships/x', ['admin']),
             true);
         assert.equal(
-            isPermitted(verb, '/members', ['admin']), true);
+            isPermitted(
+                verb, '/organizations/1/members', ['admin'],
+            ), true);
     }
 });
 
 test('deny-by-default: no held role is forbidden', () => {
-    assert.equal(isPermitted('GET', '/members', []), false);
     assert.equal(
-        isPermitted('GET', '/members', ['viewer']), false);
+        isPermitted(
+            'GET', '/organizations/1/members', [],
+        ), false);
+    assert.equal(
+        isPermitted(
+            'GET', '/organizations/1/members', ['viewer'],
+        ), false);
 });
 
 test('member tier: content surfaces are permitted', () => {
@@ -130,9 +137,12 @@ test('prefixes match on segment boundaries only', () => {
     // half-match '/memberships' — a different, admin-only
     // surface that merely shares the leading characters.
     assert.equal(
-        isPermitted('GET', '/members', ['member']), true);
+        isPermitted(
+            'GET', '/organizations/1/members', ['member'],
+        ), true);
     assert.equal(
-        isPermitted('GET', '/members/m1', ['member']), true);
+        isPermitted('GET', '/members/m1', ['member']),
+        false);
     assert.equal(
         isPermitted('GET', '/memberships', ['member']),
         false);

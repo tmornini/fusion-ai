@@ -2,11 +2,8 @@ import type { DbAdapter } from './db.ts';
 import { EntityNotFoundError } from './db.ts';
 import type { Id, MembershipEntity } from './types.ts';
 import {
-    pickString,
-    validateMembershipEntity,
     validateSeatDocumentBody,
 } from './validators.ts';
-import { canonicalUriCollection } from './message-pair.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import { withoutId } from './document-family.ts';
 import {
@@ -109,10 +106,6 @@ import {
 // db.memberships, the row-plane table Task 3 retires this
 // derivation to replace.
 
-function membershipsPrefixFor(organization: Id): string {
-    return canonicalUriCollection(organization, '/memberships/');
-}
-
 export function seatsPrefixFor(organization: Id): string {
     return '/organizations/' + organization + '/members/';
 }
@@ -130,15 +123,6 @@ export function seatEntityOf(
         identity_id: document.uriId,
         type: body.type,
         at: body.at,
-    };
-}
-
-function membershipEntityOf(
-    document: DerivedDocument,
-): MembershipEntity {
-    return {
-        ...validateMembershipEntity(withoutId(document.body)),
-        id: document.uriId,
     };
 }
 
@@ -178,21 +162,6 @@ export async function deriveMembershipsForIdentity(
         ).get(identityId);
         if (seat !== undefined) {
             rows.push(seatEntityOf(seat, organization.id));
-            continue;
-        }
-        const prefix = membershipsPrefixFor(organization.id);
-        const [requests, responses] = await Promise.all([
-            db.requests.getAllWhere('uri_collection', prefix),
-            db.responses.getAllWhere('uri_collection', prefix),
-        ]);
-        const documents = deriveDocumentsAt(
-            requests, responses, prefix,
-        );
-        for (const document of documents.values()) {
-            const membership = membershipEntityOf(document);
-            if (membership.identity_id === identityId) {
-                rows.push(membership);
-            }
         }
     }
     return rows.sort(byAtThenIdAscending);
@@ -219,27 +188,9 @@ export async function membershipExistsFor(
             'uri_collection', seatPrefix,
         ),
     ]);
-    if (deriveDocumentsAt(
+    return deriveDocumentsAt(
         seatRequests, seatResponses, seatPrefix,
-    ).has(identityId)) {
-        return true;
-    }
-    const prefix = membershipsPrefixFor(organization);
-    const [requests, responses] = await Promise.all([
-        dbOrView.requests.getAllWhere('uri_collection', prefix),
-        dbOrView.responses.getAllWhere('uri_collection', prefix),
-    ]);
-    const documents = deriveDocumentsAt(
-        requests, responses, prefix,
-    );
-    for (const document of documents.values()) {
-        if (
-            pickString(document.body, 'identity_id') === identityId
-        ) {
-            return true;
-        }
-    }
-    return false;
+    ).has(identityId);
 }
 
 export async function deriveOrganizationMemberSeats(

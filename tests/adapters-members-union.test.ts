@@ -247,7 +247,7 @@ test(
         const { db } = await setupSeeded();
         const ctx = createRequestContext(db, await devToken());
         const map = await getMemberMap(ctx);
-        assert.equal(map.size, 2);
+        assert.equal(map.size, 3);
         const human = map.get('hw_sarah_chen')!;
         const ai = map.get('ai_claude_opus')!;
         assert.ok(human);
@@ -321,46 +321,51 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        // Lifecycle rides the members/:id document trio —
-        // same path as the system-member seed above.
-        const memberBody = memberDocumentBodyOf('human', {
-            state: 'active',
-            stateAt: '2026-01-01T00:00:00.000000Z',
-            stateEventId: 'st-member_without_pii',
+        const { seedSeat } = await import(
+            './root-admin-fixture.ts'
+        );
+        const {
+            postIdentityDocumentOp,
+            identityDocumentBodyOf,
+        } = await import('../api/routes.ts');
+        const identityBody = identityDocumentBodyOf(
+            'person', {
+                title: 'product_manager',
+                department: 'Product',
+                strengths: [],
+                team_dimensions: {},
+            },
+        );
+        const spec = WRITE_RESPONSE_SPECS['identities/:id'];
+        if (spec === undefined || !('status' in spec)) {
+            throw new Error('no identities/:id spec');
+        }
+        const pair = await formWritePair({
+            method: 'PUT',
+            pathname: '/identities/member_without_pii',
+            routePattern: 'identities/:id',
+            routeSegments: ['identities', ':id'],
+            pathSegments: [
+                'identities', 'member_without_pii',
+            ],
+            headerFields: [],
+            body: identityBody,
+            requesterIdentityId: SYSTEM_MEMBER_ID,
+            requestAt: nowUtc(),
+            organization: undefined,
+            responseStatus: spec.status,
+            responseBody: spec.successBody?.(
+                ['member_without_pii'], identityBody,
+                SYSTEM_MEMBER_ID, undefined,
+            ),
+            operationId: TEST_OPERATION_ID,
         });
-        await postMemberDocumentOp(
-            db, 'member_without_pii', memberBody,
-            SYSTEM_MEMBER_ID,
-            await flatDocumentPair(
-                'members/:id', 'member_without_pii',
-                memberBody, undefined,
-            ),
+        await postIdentityDocumentOp(
+            db, 'member_without_pii', identityBody,
+            SYSTEM_MEMBER_ID, pair,
         );
-        const detail = {
-            title: 'product_manager',
-            department: 'Product',
-            strengths: [],
-            team_dimensions: {},
-        };
-        await postHumanMemberDocumentOp(
-            db, 'member_without_pii', detail, SYSTEM_MEMBER_ID,
-            await humanDetailPair('member_without_pii', detail),
-        );
-        // Erasure removes PII, not the membership — the member
-        // still belongs to the org, so the join still finds it.
-        const membershipBody = {
-            organization_id: '1',
-            identity_id: 'member_without_pii',
-        type: 'member',
-            at: '2020-01-01T00:00:00.000000Z',
-        };
-        await postMembershipDocumentOp(
-            db, 'mb-member_without_pii', membershipBody,
-            SYSTEM_MEMBER_ID,
-            await flatDocumentPair(
-                'memberships/:id', 'mb-member_without_pii',
-                membershipBody, '1',
-            ),
+        await seedSeat(
+            db, '1', 'member_without_pii', 'member',
         );
         const ctx = createRequestContext(db, await devToken());
         const map = await getMemberMap(ctx);

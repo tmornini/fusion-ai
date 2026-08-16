@@ -26,7 +26,8 @@ async function deleteMembership(
     db: MemoryDbAdapter, id: string,
 ): Promise<void> {
     const res = await handleRequest(
-        db, new Request(`${BASE}/memberships/${id}`, {
+        db, new Request(
+            `${BASE}/organizations/1/members/${id}`, {
             method: 'DELETE',
             headers: {
                 'Authorization': 'Bearer '
@@ -66,7 +67,7 @@ test('a live member passes the membership fence',
 async () => {
     const db = await adminDb();
     const res = await handleRequest(
-        db, req('/members', await organizationToken()));
+        db, req('/organizations/1/members', await organizationToken()));
     assert.equal(res.status, 200);
 });
 
@@ -75,14 +76,14 @@ async () => {
     const db = await adminDb();
     const token = await organizationToken();   // org '1' claim
     const before = await handleRequest(
-        db, req('/members', token));
+        db, req('/organizations/1/members', token));
     assert.equal(before.status, 200);
     // Claim-based fence: de-membership lands on the pair plane
     // but the existing token's organizations claim still holds
     // until mint/refresh/exchange or exp.
-    await deleteMembership(db, 'test-membership-current');
+    await deleteMembership(db, 'current');
     const after = await handleRequest(
-        db, req('/members', token));
+        db, req('/organizations/1/members', token));
     assert.equal(after.status, 200);
 });
 
@@ -97,8 +98,8 @@ async () => {
         await devToken(), 'current', '1',
     ));
     assert.equal(pin.status, 201);
-    await deleteMembership(db, 'test-membership-current');
+    await deleteMembership(db, 'current');
     const res = await handleRequest(
-        db, req('/members', await devToken()));
+        db, req('/organizations/1/members', await devToken()));
     assert.equal(res.status, 403);
 });

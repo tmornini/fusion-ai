@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { GET, POST, handleRequest } from '../api/api.ts';
+import { GET, PUT, POST, handleRequest } from
+    '../api/api.ts';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import { DEV_TOKEN, organizationToken } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
@@ -135,12 +136,11 @@ test('PUT /ai-agents/:id writes the four fields; GET'
 test('a flow write with an AI member id in memberIds'
 + ' is 400', async () => {
     const db = await freshDb();
-    await POST(db, 'ai-members', {
-        id: 'ai-bot-1',
-        detail: detail('Bot'),
-        initialState: 'active',
-        initialStateEventId: 'ev-ai-1',
-        initialStateAt: AT,
+    await PUT(db, 'ai-agents/ai-bot-1', {
+        name: 'Bot',
+        description: '',
+        skill_focus: '',
+        model: firstProviderModel().id,
     }, DEV_TOKEN);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
