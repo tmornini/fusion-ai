@@ -1565,23 +1565,21 @@ designer "tag current" action lands.)
   (alphabetized by name). When the checkbox list overflows
   the panel height, the fieldset scrolls inside its own
   region.
-- [ ] **F59** Tick one human checkbox and one AI checkbox.
-  Reload the page and reopen the same node panel. PASS:
-  the same two checkboxes are still ticked. Inspect the
-  flow's head document pair in `requests`/`responses`
-  (DevTools → Application → IndexedDB → `fusion-ai`) —
-  the stored graphDelta / graph body carries
-  `memberIds: [<humanId>]` and `agentIds: [<aiId>]` on
-  that node. Human ticks persist in `memberIds`; agent
-  ticks persist in `agentIds`.
-- [ ] **F60** Untick one of the two checkboxes. Reload the
-  page and reopen the panel. PASS: only the remaining
-  ticked assignee persists — a remaining human in
-  `memberIds`, a remaining agent in `agentIds`.
-- [ ] **F61** Untick all checkboxes so `memberIds` is `[]`
-  and `agentIds` is empty. Reload the page. PASS: every
-  checkbox in the panel is unticked. The node now
-  displays the danger badge per F73.
+- [ ] **F59** Tick one human checkbox. Reload the page
+  and reopen the same node panel. PASS: that human
+  checkbox is still ticked. Inspect the flow's head
+  document pair — the stored graph body carries
+  `memberIds: [<humanId>]`. AI checkboxes are
+  display-only (`data-ai-member-id`): they reflect
+  stored `agentIds` and do not write. A seeded
+  `agentIds` list survives this save.
+- [ ] **F60** Untick the human checkbox. Reload the page
+  and reopen the panel. PASS: the human is gone from
+  `memberIds`. Stored `agentIds` are unchanged.
+- [ ] **F61** Untick all human checkboxes so `memberIds`
+  is `[]`. Reload the page. PASS: every human checkbox
+  in the panel is unticked. The node now displays the
+  danger badge per F73 if no humans remain.
 - [ ] **F62** Lock the flow via the designer-header Locked switch.
   Open a regular-node panel. PASS: every checkbox in the
   Members fieldset is rendered with the `disabled`
