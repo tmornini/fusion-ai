@@ -10,12 +10,14 @@ import { HttpMessage } from
 import { parseWire } from
     '../shared/http-message/wire-codec.ts';
 
-// Named reads over the message plane. Dual-ZIP memory/IDB
-// path: index `uri_collection`, then filter in JS. No
-// uri_id-only scan. Live document = latest PUT or DELETE
-// at (uri_collection, uri_id) by (at, id). Head PUT →
-// that response. Head DELETE → none. POST/PATCH are not
-// heads.
+// Named reads over the message plane. One document
+// is getAllAtAddress (collection + uri_id). A
+// collection is getAllWhere('uri_collection').
+// Body containment is getAllWhereBody. No
+// uri_id-only scan. Live document = latest PUT or
+// DELETE at (uri_collection, uri_id) by (at, id).
+// Head PUT → that response. Head DELETE → none. POST/PATCH
+// are not heads.
 
 const PUT_METHOD = 'PUT';
 const DELETE_METHOD = 'DELETE';

@@ -1026,9 +1026,9 @@ logins each land) — see §5.1 for the headers this produces and
 
 - **`authorization_code`** → `grantAuthorizationCode`:
   - PRE-TX: `deriveAuthorizationCodeId` (`sha256Hex(code)`) →
-    `authorizeCodeIssuer` (scans the
-    `/authentication/authorize/` response family for a raw
-    `code` match) → TTL check → redeeming `client_id` must
+    `authorizeCodeIssuer` (`messageStore.getAllWhereBody`
+    on `/authentication/authorize/` with `{ code }`) →
+    TTL check → redeeming `client_id` must
     equal authorize's issuer (shared 401 on miss/wrong) →
     PKCE S256 when issuer stored `code_challenge`
     (`code_verifier` → base64url(sha256) must match; the
@@ -1036,10 +1036,11 @@ logins each land) — see §5.1 for the headers this produces and
     always verifies there; the browser ZIP still accepts
     authorize without a challenge) →
     `authorizationCodeSpent` fast-fail
-    (`requests.getAllWhere('uri_id', derivedId)` filtered to the
-    `identity-tokens/` prefix — a hit IS the spend marker,
-    KEY-BY-ANCHOR: the issued root's row id equals the code's
-    own digest) → `mintPair` → `formAuthPair` →
+    (`requests.getAllAtAddress` on
+    `/identity-tokens/` + the code digest — a hit
+    IS the spend marker, KEY-BY-ANCHOR: the issued
+    root's row id equals the code's own digest) →
+    `mintPair` → `formAuthPair` →
     `formTokenEventPair` (the root's own event). Mints
     `act: {sub: clientId}` — the acting client — on the
     access token (RFC 8693 shape, the token-exchange
