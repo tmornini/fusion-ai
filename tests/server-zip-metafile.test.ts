@@ -5,6 +5,37 @@ import * as esbuild from 'esbuild';
 
 const BUILD_SCRIPT = readFileSync('build', 'utf8');
 
+// Deleted names no longer appear in live source. Hunt
+// the live mint symbols too, or a server-core import of
+// access-token would pass this pin.
+const FORBIDDEN_INPUTS = [
+    'backend-indexeddb',
+    'api/access-token.ts',
+] as const;
+const FORBIDDEN_SOURCES = [
+    'SIGNING_KEY_MATERIAL',
+    'hmacSigningKeyMaterial',
+    'mintAccessToken',
+] as const;
+
+function clientGraphHits(
+    input: string,
+    src: string,
+): string[] {
+    const hits: string[] = [];
+    for (const fragment of FORBIDDEN_INPUTS) {
+        if (input.includes(fragment)) {
+            hits.push(input + ':' + fragment);
+        }
+    }
+    for (const fragment of FORBIDDEN_SOURCES) {
+        if (src.includes(fragment)) {
+            hits.push(input + ':' + fragment);
+        }
+    }
+    return hits;
+}
+
 test('build emits one ZIP from the server-core entry', () => {
     assert.match(
         BUILD_SCRIPT,
@@ -24,8 +55,32 @@ test('build emits one ZIP from the server-core entry', () => {
     );
 });
 
+test('client-graph pin matches mint and deleted names',
+() => {
+    const input = 'api/access-token.ts';
+    const src = readFileSync(input, 'utf8');
+    assert.deepEqual(
+        clientGraphHits(input, src),
+        [
+            'api/access-token.ts:api/access-token.ts',
+            'api/access-token.ts:hmacSigningKeyMaterial',
+            'api/access-token.ts:mintAccessToken',
+        ],
+    );
+    assert.deepEqual(
+        clientGraphHits(
+            'api/backend-indexeddb.ts',
+            'SIGNING_KEY_MATERIAL',
+        ),
+        [
+            'api/backend-indexeddb.ts:backend-indexeddb',
+            'api/backend-indexeddb.ts:SIGNING_KEY_MATERIAL',
+        ],
+    );
+});
+
 test(
-    'client graph omits signing key and IndexedDB',
+    'client graph omits token mint, signing key, IndexedDB',
     async () => {
         const result = await esbuild.build({
             entryPoints: [
@@ -45,13 +100,8 @@ test(
             const path = input.includes('?')
                 ? input.slice(0, input.indexOf('?'))
                 : input;
-            if (input.includes('backend-indexeddb')) {
-                hits.push(input);
-            }
             const src = readFileSync(path, 'utf8');
-            if (src.includes('SIGNING_KEY_MATERIAL')) {
-                hits.push(input);
-            }
+            hits.push(...clientGraphHits(input, src));
         }
         assert.deepEqual(hits, []);
     },
