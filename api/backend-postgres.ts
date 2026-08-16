@@ -481,25 +481,11 @@ async function selectWhere(
                 ORDER BY at, id
             `;
         }
-        if (column === 'operation_id') {
-            return sql.query`
-                SELECT * FROM requests
-                WHERE operation_id = ${key}
-                ORDER BY at, id
-            `;
-        }
     } else {
         if (column === 'uri_collection') {
             return sql.query`
                 SELECT * FROM responses
                 WHERE uri_collection = ${key}
-                ORDER BY at, id
-            `;
-        }
-        if (column === 'operation_id') {
-            return sql.query`
-                SELECT * FROM responses
-                WHERE operation_id = ${key}
                 ORDER BY at, id
             `;
         }

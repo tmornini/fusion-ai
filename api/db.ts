@@ -401,10 +401,8 @@ export const TABLE_INDEXES:
     Record<string, readonly TableIndexSpec[]> = {
     requests: [
         'uri_collection', 'message_hash',
-        'operation_id',
     ],
     responses: [
         'uri_collection',
-        'operation_id',
     ],
 };

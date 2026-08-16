@@ -245,6 +245,42 @@ test('getWhere throws for version', async () => {
     );
 });
 
+test('schema drops unused operation indexes', () => {
+    assert.match(
+        POSTGRES_SCHEMA,
+        /DROP INDEX IF EXISTS requests_operation/,
+    );
+    assert.match(
+        POSTGRES_SCHEMA,
+        /DROP INDEX IF EXISTS responses_operation/,
+    );
+    assert.doesNotMatch(
+        POSTGRES_SCHEMA,
+        /CREATE INDEX.*operation/,
+    );
+});
+
+test('getWhere throws for operation_id', async () => {
+    const fake = fakeClient();
+    const backend = new PostgresBackend(fake.sql);
+    await assert.rejects(
+        () => backend.transaction(
+            ['requests'],
+            'readonly',
+            (tx) => tx.getWhere(
+                'requests',
+                'operation_id',
+                'cccccccccccccccccccccc',
+            ),
+        ),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message
+                === 'getWhere does not accept'
+                + ' operation_id',
+    );
+});
+
 test('getWhereBody uses message_body containment',
 async () => {
     const fake = fakeClient();
