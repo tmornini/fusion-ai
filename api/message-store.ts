@@ -279,8 +279,18 @@ async function pairsAt(
     collection: string,
     id: string,
 ): Promise<StoredPair[]> {
-    const pairs = await pairsInCollection(db, collection);
-    return pairs.filter(
-        (pair) => pair.response.uri_id === id,
+    const [requests, responses] = await Promise.all([
+        db.requests.getAllAtAddress(collection, id),
+        db.responses.getAllAtAddress(collection, id),
+    ]);
+    const requestById = new Map(
+        requests.map((request) => [request.id, request]),
     );
+    const pairs: StoredPair[] = [];
+    for (const response of responses) {
+        const request = requestById.get(response.id);
+        if (request === undefined) continue;
+        pairs.push({ request, response });
+    }
+    return sortByAtId(pairs);
 }
