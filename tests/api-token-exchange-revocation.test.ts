@@ -154,7 +154,7 @@ test('refresh on a logged-out but live jti is the'
     // via the PUT route (not a raw store write, Phase 13 Task 9:
     // the row plane no longer receives writes at all) — revokedDb
     // already grants 'current' admin, the role this route needs.
-    await PUT(db, 'identity-tokens/t-live', {
+    await PUT(db, 'identities/u1/tokens/t-live', {
         jti: 'live-jti', identity_id: 'u1',
         action: 'issued', chain_id: 'c1',
         at: '2019-01-01T00:00:00.000000Z',

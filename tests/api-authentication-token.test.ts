@@ -480,7 +480,8 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
     const derivedId =
         await deriveAuthorizationCodeId('the-code-spent');
     assert.equal(
-        await authorizationCodeSpent(db, derivedId), true);
+        await authorizationCodeSpent(db, derivedId, 'current'),
+        true);
 });
 
 async function initialPair(
@@ -833,7 +834,7 @@ test('a second client_credentials grant with the same jti'
         row.uri_collection === '/authentication/token/',
     ).length;
     const eventCount = before.filter((row) =>
-        row.uri_collection === '/identity-tokens/',
+        row.uri_collection === '/identities/svc-client/tokens/',
     ).length;
     const second = await handleRequest(db, tokenRequest({
         grant_type: 'client_credentials',
@@ -853,7 +854,7 @@ test('a second client_credentials grant with the same jti'
     );
     assert.equal(
         after.filter((row) =>
-            row.uri_collection === '/identity-tokens/',
+            row.uri_collection === '/identities/svc-client/tokens/',
         ).length,
         eventCount,
     );

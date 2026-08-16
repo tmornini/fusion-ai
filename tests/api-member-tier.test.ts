@@ -104,3 +104,35 @@ test('GET /identity-pii is retired for an admin'
         db, req('GET', '/identity-pii', token));
     assert.equal(res.status, 404);
 });
+
+test('GET /identities/:id/tokens 403s for a member'
++ ' (not in MEMBER_VERBS GET)', async () => {
+    const db = await memberDb();
+    const token = await devToken(MEMBER);
+    const res = await handleRequest(
+        db, req('GET', '/identities/current/tokens', token));
+    assert.equal(res.status, 403);
+});
+
+test('POST /identities/:id/tokens/:jti/rotation 409s for a'
++ ' member on an unknown jti', async () => {
+    const db = await memberDb();
+    const token = await devToken(MEMBER);
+    const res = await handleRequest(db, req(
+        'POST',
+        '/identities/current/tokens/bogus-jti/rotation',
+        token, {},
+    ));
+    assert.equal(res.status, 409);
+});
+
+test('POST /identity-tokens/:jti/rotation is retired'
++ ' (router 404) for a member', async () => {
+    const db = await memberDb();
+    const token = await devToken(MEMBER);
+    const res = await handleRequest(db, req(
+        'POST', '/identity-tokens/bogus-jti/rotation',
+        token, {},
+    ));
+    assert.equal(res.status, 404);
+});

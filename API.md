@@ -232,12 +232,17 @@ Legend for classification:
 
 ### 2.3 Auth spine — tokens, providers, grants
 
-- `GET /identity-tokens` (derived) · `GET /identity-tokens/:id`
-  (derived) · `PUT /identity-tokens/:id` — primitive. `PUT` is
-  pair-only (Phase 13 Task 9 retired the row write — nothing
-  has read `identity_tokens` rows since Task 6).
-- `POST /identity-tokens/:jti/rotation` — operation (§3.6).
-- `POST /identity-tokens/:jti/revocation` — operation (§3.7).
+- `GET /identities/:id/tokens` (derived) ·
+  `GET|PUT /identities/:id/tokens/:tid` — nested under the
+  identity. Admin-only GET. `PUT` is pair-only and stamps
+  `identity_id` from the path. Flat `GET /identity-tokens` ·
+  `GET|PUT /identity-tokens/:id` are RETIRED (router 404).
+- `POST /identities/:id/tokens/:jti/rotation` — operation
+  (§3.6). Path identity must match the jti's identity.
+  Flat `POST /identity-tokens/:jti/rotation` is RETIRED.
+- `POST /identities/:id/tokens/:jti/revocation` — operation
+  (§3.7). Path identity must match the jti's identity.
+  Flat `POST /identity-tokens/:jti/revocation` is RETIRED.
 - `GET|PUT /identity-token-revocations/:id` — primitive. `GET`
   admin-only; `PUT` is self-or-admin (WP8, Phase 13 Task 8) — a
   member may revoke its OWN token chain, naming another
@@ -963,7 +968,7 @@ PII, so it stays one atomic write).
   fence organization — a below-facade caller (`api/mock-data.ts`,
   Task 6's own scope) skips it, exactly like every prior bundle.
 
-### 3.6 `POST /identity-tokens/:jti/rotation` — rotate refresh jti
+### 3.6 `POST /identities/:id/tokens/:jti/rotation` — rotate refresh jti
 
 Delegates to `rotateRefreshJti` (`api/authentication.ts`).
 
@@ -986,7 +991,7 @@ Delegates to `rotateRefreshJti` (`api/authentication.ts`).
   PAIR-ONLY (Phase 13 Task 9 retired the `identity_tokens` row
   write — every event lives only as its own message pair).
 
-### 3.7 `POST /identity-tokens/:jti/revocation` — revoke chain
+### 3.7 `POST /identities/:id/tokens/:jti/revocation` — revoke chain
 
 Delegates to `revokeTokenChain` (`api/authentication.ts`).
 
@@ -1040,8 +1045,9 @@ logins each land) — see §5.1 for the headers this produces and
     authorize without a challenge) →
     `authorizationCodeSpent` fast-fail
     (`requests.getAllAtAddress` on
-    `/identity-tokens/` + the code digest — a hit
-    IS the spend marker, KEY-BY-ANCHOR: the issued
+    `/identities/<id>/tokens/` + the code digest —
+    leftover `/identity-tokens/` still dual-read — a
+    hit IS the spend marker, KEY-BY-ANCHOR: the issued
     root's row id equals the code's own digest) →
     `mintPair` → `formAuthPair` →
     `formTokenEventPair` (the root's own event). Mints
@@ -3169,14 +3175,16 @@ the wiring landed):
    combos: this side channel never calls `matchRoute` — a POST or
    DELETE falls through its own if-chain to ITS OWN inline 405
    terminal (`organization-requests.ts`).
-3. The identity-tokens authz-tier regime — 3 combos: `GET
-   /identity-tokens` is admin-only (absent from `MEMBER_VERBS`),
-   so a member-tier token 403s at the authz layer BEFORE
-   `matchRoute` runs; `POST /identity-tokens/:jti/rotation` and
-   `.../revocation`, by contrast, DO match `MEMBER_VERBS`'
-   `'/identity-tokens'` entry (POST), so a member-tier token
-   clears authz and reaches the route handler's own domain terms
-   (409 reuse; 204 idempotent no-op) instead of 403.
+3. The identity-tokens authz-tier regime — `GET
+   /identities/:id/tokens` is admin-only (absent from
+   `MEMBER_VERBS` GET), so a member-tier token 403s at the
+   authz layer BEFORE `matchRoute` runs; `POST
+   /identities/:id/tokens/:jti/rotation` and `.../revocation`
+   match `MEMBER_VERBS`' `'/identities/:id/tokens'` POST, so a
+   member-tier token clears authz and reaches the handler's
+   own domain terms (409 reuse; 204 idempotent no-op). Flat
+   `/identity-tokens` is RETIRED (router 404). Path identity
+   must match the jti's identity or 403.
 4. The identity-token-revocations authz-tier regime — 1 combo:
    `PUT /identity-token-revocations/:id` matches `MEMBER_VERBS`
    (member clears authz; self-target 2xx). GET stays admin-only.

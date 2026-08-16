@@ -17,7 +17,7 @@ test('an identities route targets the path identity', () => {
 test('a body identity_id is a target', () => {
     assert.deepEqual(
         identityTargetsFor(
-            'identity-tokens/:id', ['t1'],
+            'identity-token-revocations/:id', ['t1'],
             { identity_id: 'ada' },
         ),
         ['ada'],

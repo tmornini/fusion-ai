@@ -166,7 +166,7 @@ test('a jti revoked in the ledger still admits the access'
 + ' token until exp', async () => {
     const db = await freshDb();
     await PUT(
-        db, 'identity-tokens/e1',
+        db, 'identities/current/tokens/e1',
         {
             jti: 'dev-current', identity_id: 'current',
             action: 'issued', chain_id: 'c1',
@@ -175,7 +175,7 @@ test('a jti revoked in the ledger still admits the access'
         await devToken(),
     );
     await PUT(
-        db, 'identity-tokens/e2',
+        db, 'identities/current/tokens/e2',
         {
             jti: 'dev-current', identity_id: 'current',
             action: 'revoked', chain_id: 'c1',

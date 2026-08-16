@@ -86,8 +86,9 @@ export function matchesOnSegmentBoundary(
 // keeps them at the root admin entries. Seats and
 // ai-agents appear read-only here for author and roster
 // display; their writes stay admin (member management).
-// identity-tokens POST covers only its rotation/revocation
-// sub-routes — session management any member performs.
+// identities/:id/tokens POST covers only its rotation/
+// revocation sub-routes — session management any member
+// performs. Do not add GET.
 // identity-token-revocations PUT (WP8, Phase 13 Task 8) widens
 // analogously: a member may revoke its OWN token chain — a real
 // logout-everywhere, not merely rotation/revocation of a single
@@ -132,7 +133,7 @@ const MEMBER_VERBS: Readonly<
     '/ai-agents': ['GET'],
     '/organizations/:id/members': ['GET'],
     '/organizations': ['GET'],
-    '/identity-tokens': ['POST'],
+    '/identities/:id/tokens': ['POST'],
     '/identity-token-revocations': ['PUT'],
 };
 
