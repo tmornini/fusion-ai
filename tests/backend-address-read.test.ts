@@ -88,3 +88,45 @@ async () => {
     );
     assert.deepEqual(got.map((row) => row.id), ['a']);
 });
+
+test('getAddressVersion is address+version, ordered',
+async () => {
+    const backend = new MemoryStorageBackend();
+    await backend.ensureTables(['responses']);
+    await backend.transaction(
+        ['responses'], 'readwrite',
+        async (tx) => {
+            await tx.put('responses', {
+                id: 'old',
+                uri_collection: '/ideas/',
+                uri_id: '1',
+                at: '2026-01-01T00:00:00.000001Z',
+                version: 'aa',
+            });
+            await tx.put('responses', {
+                id: 'new',
+                uri_collection: '/ideas/',
+                uri_id: '1',
+                at: '2026-01-01T00:00:00.000002Z',
+                version: 'aa',
+            });
+            await tx.put('responses', {
+                id: 'other',
+                uri_collection: '/ideas/',
+                uri_id: '1',
+                at: '2026-01-01T00:00:00.000003Z',
+                version: 'bb',
+            });
+        },
+    );
+    const got = await backend.transaction(
+        ['responses'], 'readonly',
+        (tx) => tx.getAddressVersion(
+            'responses', '/ideas/', '1', 'aa',
+        ),
+    );
+    assert.deepEqual(
+        got.map((row) => row.id),
+        ['old', 'new'],
+    );
+});

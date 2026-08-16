@@ -102,6 +102,11 @@ export interface EntityStore<
         collection: string,
         uriId: string,
     ): Promise<T[]>;
+    getAllAtVersion(
+        collection: string,
+        uriId: string,
+        version: string,
+    ): Promise<T[]>;
     getById(id: string): Promise<T>;
     put(
         id: string,
@@ -159,6 +164,12 @@ export interface Tx {
         table: string,
         collection: string,
         uriId: string,
+    ): Promise<T[]>;
+    getAddressVersion<T extends { id: string }>(
+        table: string,
+        collection: string,
+        uriId: string,
+        version: string,
     ): Promise<T[]>;
     put<T extends { id: string }>(
         table: string,
@@ -386,6 +397,5 @@ export const TABLE_INDEXES:
     responses: [
         'uri_collection',
         'operation_id',
-        'version',
     ],
 };

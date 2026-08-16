@@ -100,11 +100,26 @@ export function messageStore(db: DbStores): MessageStore {
         },
         async getByVersion(collection, id, version) {
             const matches = (
-                await pairsAt(db, collection, id)
-            ).filter(
-                (pair) => pair.response.version === version,
+                await db.responses.getAllAtVersion(
+                    collection, id, version,
+                )
             );
-            return latestOf(matches)?.response;
+            const requestById = new Map(
+                (
+                    await db.requests.getAllAtAddress(
+                        collection, id,
+                    )
+                ).map((request) => [request.id, request]),
+            );
+            const pairs: StoredPair[] = [];
+            for (const response of matches) {
+                const request = requestById.get(
+                    response.id,
+                );
+                if (request === undefined) continue;
+                pairs.push({ request, response });
+            }
+            return latestOf(pairs)?.response;
         },
     };
 }

@@ -185,6 +185,47 @@ async () => {
     );
 });
 
+test('getAddressVersion uses the triple predicate',
+async () => {
+    const fake = fakeClient();
+    const backend = new PostgresBackend(fake.sql);
+    await backend.transaction(
+        ['responses'],
+        'readonly',
+        (tx) => tx.getAddressVersion(
+            'responses', '/ideas/', '42', 'ab',
+        ),
+    );
+    const text = fake.calls[0]!.text;
+    assert.match(text, /FROM responses/);
+    assert.match(text, /uri_collection = \$1/);
+    assert.match(text, /uri_id = \$2/);
+    assert.match(text, /version = \$3/);
+    assert.match(text, /ORDER BY at, id/);
+    assert.deepEqual(
+        fake.calls[0]!.values,
+        ['/ideas/', '42', 'ab'],
+    );
+});
+
+test('getWhere throws for version', async () => {
+    const fake = fakeClient();
+    const backend = new PostgresBackend(fake.sql);
+    await assert.rejects(
+        () => backend.transaction(
+            ['responses'],
+            'readonly',
+            (tx) => tx.getWhere(
+                'responses', 'version', 'ab',
+            ),
+        ),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message
+                === 'getWhere does not accept version',
+    );
+});
+
 test('put writes BYTEA via Octets.fromLatin1',
 async () => {
     const fake = fakeClient();

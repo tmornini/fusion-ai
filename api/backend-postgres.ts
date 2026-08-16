@@ -227,6 +227,18 @@ function postgresTx(
             );
             return rows.map((row) => entityOf<T>(row));
         },
+        async getAddressVersion<T extends { id: string }>(
+            table: string,
+            collection: string,
+            uriId: string,
+            version: string,
+        ): Promise<T[]> {
+            const name = assertMessageTable(table);
+            const rows = await selectAddressVersion(
+                sql, name, collection, uriId, version,
+            );
+            return rows.map((row) => entityOf<T>(row));
+        },
         async put<T extends { id: string }>(
             table: string,
             row: T,
@@ -480,13 +492,6 @@ async function selectWhere(
                 ORDER BY at, id
             `;
         }
-        if (column === 'version') {
-            return sql.query`
-                SELECT * FROM responses
-                WHERE version = ${key}
-                ORDER BY at, id
-            `;
-        }
     }
     throw new Error(
         'getWhere does not accept ' + column,
@@ -511,6 +516,27 @@ async function selectAddress(
         SELECT * FROM responses
         WHERE uri_collection = ${collection}
           AND uri_id = ${uriId}
+        ORDER BY at, id
+    `;
+}
+
+async function selectAddressVersion(
+    sql: SqlClient,
+    table: 'requests' | 'responses',
+    collection: string,
+    uriId: string,
+    version: string,
+): Promise<Record<string, unknown>[]> {
+    if (table === 'requests') {
+        throw new Error(
+            'getAddressVersion does not accept requests',
+        );
+    }
+    return sql.query`
+        SELECT * FROM responses
+        WHERE uri_collection = ${collection}
+          AND uri_id = ${uriId}
+          AND version = ${version}
         ORDER BY at, id
     `;
 }
