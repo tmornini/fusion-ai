@@ -1222,10 +1222,10 @@ export async function authorizationCodeSpent(
     dbOrView: DbAdapter,
     derivedId: Id,
 ): Promise<boolean> {
-    const rows = await dbOrView.requests.getAllWhere(
-        'uri_collection', IDENTITY_TOKENS_EVENT_PREFIX,
+    const rows = await dbOrView.requests.getAllAtAddress(
+        IDENTITY_TOKENS_EVENT_PREFIX, derivedId,
     );
-    return rows.some((row) => row.uri_id === derivedId);
+    return rows.length > 0;
 }
 
 // authorization_code grant: consume an ISSUED code, then issue a
