@@ -20,15 +20,21 @@ const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const IDEA_COLLECTION = '/ideas/';
 const FILLER_COLLECTION = '/filler/';
 const AUTH_COLLECTION = '/authentication/authorize/';
+const VERSION_COLLECTION = '/versioned/';
 const IDEA_URI_ID = '1';
 const IDEA_N = 1;
 const AUTH_N = 9;
-const FILLER_START = 100;
-const FILLER_COUNT = 120;
+const AUTH_OTHER_START = 10;
+const AUTH_OTHER_COUNT = 199;
+const VERSION_URI_ID = '1';
+const VERSION_N = 500;
+const VERSION_EXTRA_START = 501;
+const VERSION_EXTRA_COUNT = 80;
+const FILLER_START = 1000;
+const FILLER_COUNT = 2000;
 const REQUESTER = 'bbbbbbbbbbbbbbbbbbbbbb';
 const OPERATION = 'cccccccccccccccccccccc';
 const AUTH_CONTAINMENT = { code: 'abc' };
-const FILLER_PAD = 'x'.repeat(4096);
 
 function schemaName(): string {
     const base = process.env['SCHEMA_NAME']
@@ -131,6 +137,37 @@ async function putPair(
     });
 }
 
+async function putAuthorize(
+    tx: Tx,
+    n: number,
+    code: string,
+): Promise<void> {
+    const id = id22(n);
+    const at = atStamp(n);
+    await tx.put('requests', {
+        id,
+        uri_collection: AUTH_COLLECTION,
+        uri_id: '',
+        at,
+        requester_identity_id: REQUESTER,
+        message_hash: hex64(n),
+        message:
+            'GET /authentication/authorize/'
+            + ' HTTP/1.1\r\n\r\n',
+        method: 'GET',
+        operation_id: OPERATION,
+    });
+    await tx.put('responses', {
+        id,
+        uri_collection: AUTH_COLLECTION,
+        uri_id: '',
+        at,
+        version: hex64(n),
+        message: jsonWire({ code }),
+        operation_id: OPERATION,
+    });
+}
+
 async function seedRows(
     backend: PostgresBackend,
 ): Promise<void> {
@@ -138,28 +175,15 @@ async function seedRows(
         TABLE_NAMES,
         'readwrite',
         async (tx) => {
-            await tx.put('requests', {
-                id: id22(AUTH_N),
-                uri_collection: AUTH_COLLECTION,
-                uri_id: '',
-                at: atStamp(AUTH_N),
-                requester_identity_id: REQUESTER,
-                message_hash: hex64(AUTH_N),
-                message:
-                    'GET /authentication/authorize/'
-                    + ' HTTP/1.1\r\n\r\n',
-                method: 'GET',
-                operation_id: OPERATION,
-            });
-            await tx.put('responses', {
-                id: id22(AUTH_N),
-                uri_collection: AUTH_COLLECTION,
-                uri_id: '',
-                at: atStamp(AUTH_N),
-                version: hex64(AUTH_N),
-                message: jsonWire(AUTH_CONTAINMENT),
-                operation_id: OPERATION,
-            });
+            await putAuthorize(
+                tx,
+                AUTH_N,
+                AUTH_CONTAINMENT.code,
+            );
+            for (let i = 0; i < AUTH_OTHER_COUNT; i++) {
+                const n = AUTH_OTHER_START + i;
+                await putAuthorize(tx, n, 'c' + String(n));
+            }
             for (let n = 1; n <= 4; n++) {
                 await putPair(
                     tx,
@@ -173,6 +197,34 @@ async function seedRows(
                     'PUT',
                 );
             }
+            // Many versions at one address so the triple
+            // beats address + version filter. Keep
+            // /ideas/ small for the collection pin.
+            await putPair(
+                tx,
+                VERSION_N,
+                VERSION_COLLECTION,
+                VERSION_URI_ID,
+                putWire(
+                    VERSION_COLLECTION + VERSION_URI_ID,
+                    '',
+                ),
+                'PUT',
+            );
+            for (let i = 0; i < VERSION_EXTRA_COUNT; i++) {
+                const n = VERSION_EXTRA_START + i;
+                await putPair(
+                    tx,
+                    n,
+                    VERSION_COLLECTION,
+                    VERSION_URI_ID,
+                    putWire(
+                        VERSION_COLLECTION + VERSION_URI_ID,
+                        '',
+                    ),
+                    'PUT',
+                );
+            }
             for (let i = 0; i < FILLER_COUNT; i++) {
                 const n = FILLER_START + i;
                 await putPair(
@@ -180,10 +232,7 @@ async function seedRows(
                     n,
                     FILLER_COLLECTION,
                     String(n),
-                    putWire(
-                        FILLER_COLLECTION + String(n),
-                        FILLER_PAD,
-                    ),
+                    putWire('', ''),
                     'PUT',
                 );
             }
@@ -216,6 +265,19 @@ function assertIndexPlan(
     assert.doesNotMatch(text, /Seq Scan/);
 }
 
+function assertOneIndex(
+    text: string,
+    names: readonly string[],
+): void {
+    const found = names.some((name) => text.includes(name));
+    assert.ok(
+        found,
+        'expected one of ' + names.join(', ')
+        + ' in\n' + text,
+    );
+    assert.doesNotMatch(text, /Seq Scan/);
+}
+
 if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
     test(
         'postgres explain skipped without POSTGRES_URL',
@@ -230,7 +292,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
     const backend = new PostgresBackend(sql);
     const ideaId = id22(IDEA_N);
     const ideaHash = hex64(IDEA_N);
-    const ideaVersion = hex64(IDEA_N);
+    const versionHit = hex64(VERSION_N);
 
     before(async () => {
         await sql.unsafe(
@@ -347,9 +409,14 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
             explainText(requests),
             ['requests_address'],
         );
-        assertIndexPlan(
+        // Same prefix as responses_address; planner may
+        // pick responses_version for the responses half.
+        assertOneIndex(
             explainText(responses),
-            ['responses_address'],
+            [
+                'responses_address',
+                'responses_version',
+            ],
         );
     });
 
@@ -360,9 +427,9 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         >`
             EXPLAIN
             SELECT * FROM responses
-            WHERE uri_collection = ${IDEA_COLLECTION}
-              AND uri_id = ${IDEA_URI_ID}
-              AND version = ${ideaVersion}
+            WHERE uri_collection = ${VERSION_COLLECTION}
+              AND uri_id = ${VERSION_URI_ID}
+              AND version = ${versionHit}
             ORDER BY at, id
         `;
         assertIndexPlan(
@@ -404,9 +471,19 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
             ORDER BY r.at DESC, r.id DESC
             LIMIT 1
         `;
-        assertIndexPlan(
-            explainText(plans),
-            ['responses_address', 'requests_pkey'],
+        const text = explainText(plans);
+        assert.ok(
+            text.includes('requests_pkey'),
+            'expected requests_pkey in\n' + text,
+        );
+        // ORDER BY at DESC prefers responses_address;
+        // accept the shared-prefix version index too.
+        assertOneIndex(
+            text,
+            [
+                'responses_address',
+                'responses_version',
+            ],
         );
     });
 }
