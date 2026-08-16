@@ -25,7 +25,7 @@ import {
 // deriveMembershipsForIdentity is therefore ENUMERATE-THEN-PROBE:
 // deriveOrganizations(db) (api/derive-organizations.ts) enumerates
 // every LIVE organization, then this walks each organization's
-// own '/organizations/<oid>/memberships/' prefix in turn —
+// own '/organizations/<oid>/members/' prefix in turn —
 // EXHAUSTIVE, never short-circuited, unlike organizationHasMember-
 // Pair's own co-membership fast path (api/derive-states.ts): that
 // function answers "does this identity belong to ONE named
@@ -60,8 +60,8 @@ import {
 //
 // withoutId FIRST, always (the organizationEntityOf precedent,
 // re-confirmed here after a Fable review Critical): PUT
-// memberships/:id is a LIVE wired route
-// (documentPutHandler(MEMBERSHIPS_WIRING)), and
+// organizations/:organization-id/members/:identity-id is the
+// LIVE seat write (not leftover memberships/:id), and
 // documentWriteResponseSpec's own validateDocument call tolerates
 // a stray `id` for the RESPONSE ONLY
 // (`wiring.validateDocument(withoutId(body ?? {}))`, api/document-
