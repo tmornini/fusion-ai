@@ -49,6 +49,8 @@ import {
     DEFAULT_ATTRIBUTE_ACL_ROLES,
     ValidationError,
 } from './types.ts';
+import { hashPassword } from
+    '../shared/password-hash.ts';
 import {
     validateAIMemberCreateBody,
     validateAIMemberEditBody,
@@ -4111,13 +4113,27 @@ export const routes: Route[] = [
                     const { id: credId, ...fields } =
                         b.credential as {
                             id: string;
+                            secret: string;
                         } & Record<string, unknown>;
+                    if (typeof fields.secret !== 'string'
+                        || fields.secret === '') {
+                        throw new ValidationError(
+                            'IdentityCreateServiceBody'
+                            + '.credential.secret must'
+                            + ' be a non-empty string',
+                        );
+                    }
                     const credentialDocument =
                         await formDocumentPairFor(db, {
                             routePattern:
                                 'identities/:id/credentials/:cid',
                             params: [b.id, credId],
-                            body: fields,
+                            body: {
+                                ...fields,
+                                secret: await hashPassword(
+                                    fields.secret,
+                                ),
+                            },
                             requesterIdentityId: actor,
                             requestAt: pair.requestAt,
                             operationId: pair.operationId,

@@ -14,7 +14,6 @@ import {
     RequestError,
     HTTP_NOT_FOUND,
 } from '../../../api/http-errors.ts';
-import { hashPassword } from '../../../shared/password-hash.ts';
 import type { RequestContext } from './shared.ts';
 import {
     createSubscriptionChannel,
@@ -310,9 +309,9 @@ export class IdentityPiiIntakeFailedError extends Error {
 // separate PUT identities/:id/pii (Phase 10 Task 2's intake
 // decomposition — the two hops are no longer one transaction,
 // so a bad PII sub-object can no longer roll the identity back);
-// service → identity + a hashed client_secret credential, still
-// one POST /identities transaction. The secret is hashed HERE
-// (client-side); the route touches no crypto.
+// service → identity + a client_secret credential, still
+// one POST /identities transaction. The secret is hashed
+// on the server write.
 export async function postIdentityCreation(
     ctx: RequestContext,
     id: Id,
@@ -343,7 +342,7 @@ export async function postIdentityCreation(
                 identity_id: id,
                 kind: 'client_secret',
                 status: 'set',
-                secret: await hashPassword(spec.secret),
+                secret: spec.secret,
                 at: nowUtc(),
             },
         });

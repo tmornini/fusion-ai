@@ -3,8 +3,29 @@ import { strict as assert } from 'node:assert';
 import { readFileSync } from 'node:fs';
 import * as esbuild from 'esbuild';
 
+const BUILD_SCRIPT = readFileSync('build', 'utf8');
+
+test('build emits one ZIP from the server-core entry', () => {
+    assert.match(
+        BUILD_SCRIPT,
+        /fusion-ai-server-\$\{SHA\}\.zip/,
+    );
+    assert.doesNotMatch(
+        BUILD_SCRIPT,
+        /fusion-ai-browser/,
+    );
+    assert.match(
+        BUILD_SCRIPT,
+        /web-app\/app\/server-core\.ts/,
+    );
+    assert.doesNotMatch(
+        BUILD_SCRIPT,
+        /web-app\/app\/core\.ts/,
+    );
+});
+
 test(
-    'server-core graph omits signing key and IndexedDB',
+    'client graph omits signing key and IndexedDB',
     async () => {
         const result = await esbuild.build({
             entryPoints: [

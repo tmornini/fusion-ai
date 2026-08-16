@@ -89,7 +89,6 @@ import {
     HTTP_FORBIDDEN,
     HTTP_NOT_IMPLEMENTED,
 } from './http-errors.ts';
-import { isServerTier } from './request-auth.ts';
 
 // The OAuth 2.1 token + authorize logic, kept out of the route
 // table. Each function returns a RESULT (success | failure) — an
@@ -1449,37 +1448,34 @@ async function equalizeFailureTiming(
 }
 
 // The password loop: verify username + password, and on success
-// issue an authorization code bound to (identity, client). The
-// server ZIP rejects a request that lacks S256 before the
-// credential check — a 400 request fault, no pair. The browser
-// ZIP keeps the soft path. Every credential failure returns the
-// SAME 401 (no user enumeration) and appends nothing —
-// grant-first, no-op on failure. The code is recorded PAIR-ONLY
-// (Phase 13 Task 9: the row half retires here — nothing has
-// read authorization_codes rows since Task 7). The stored pair
-// holds the request and response verbatim (password, code, and
-// all) — accepted dev-tier plaintext ledger cost.
+// issue an authorization code bound to (identity, client). A
+// request that lacks S256 is a 400 request fault, no pair.
+// Every credential failure returns the SAME 401 (no user
+// enumeration) and appends nothing — grant-first, no-op on
+// failure. The code is recorded PAIR-ONLY (Phase 13 Task 9:
+// the row half retires here — nothing has read
+// authorization_codes rows since Task 7). The stored pair
+// holds the request and response verbatim (password, code,
+// and all) — accepted dev-tier plaintext ledger cost.
 async function authorizePassword(
     adapter: DbAdapter,
     body: Record<string, unknown>,
     seed: AuthPairSeed,
 ): Promise<AuthorizeResult> {
-    if (isServerTier()) {
-        const challenge =
-            typeof body.code_challenge === 'string'
-                ? body.code_challenge
-                : '';
-        const method =
-            typeof body.code_challenge_method === 'string'
-                ? body.code_challenge_method
-                : '';
-        if (challenge === '' || method !== 'S256') {
-            return {
-                ok: false,
-                status: HTTP_BAD_REQUEST,
-                error: 'S256 code_challenge is required',
-            };
-        }
+    const challenge =
+        typeof body.code_challenge === 'string'
+            ? body.code_challenge
+            : '';
+    const method =
+        typeof body.code_challenge_method === 'string'
+            ? body.code_challenge_method
+            : '';
+    if (challenge === '' || method !== 'S256') {
+        return {
+            ok: false,
+            status: HTTP_BAD_REQUEST,
+            error: 'S256 code_challenge is required',
+        };
     }
     const username = typeof body.username === 'string'
         ? body.username
@@ -1525,10 +1521,7 @@ async function authorizePassword(
         seed, body, identityId, HTTP_OK, response,
     );
     let rehashPair: MessagePair | undefined;
-    if (
-        isServerTier()
-        && secret.startsWith('$pbkdf2-sha256$')
-    ) {
+    if (secret.startsWith('$pbkdf2-sha256$')) {
         const at = nowUtc();
         const cid = generateCryptoSafeBase62();
         const hashed = await hashPassword(password);

@@ -9,7 +9,7 @@ import { strict as assert } from 'node:assert';
 import {
     createRequestContext,
 } from '../web-app/app/adapters/shared.ts';
-import { devToken } from './token-fixtures.ts';
+import { organizationToken } from './token-fixtures.ts';
 import {
     getSnapshot,
     putSnapshot,
@@ -34,7 +34,7 @@ test(
     async () => {
         const db = await seededMockDb();
         const ctx = createRequestContext(
-            db, await devToken(),
+            db, await organizationToken(),
         );
         const json = await getSnapshot(ctx);
         await putSnapshot(ctx, json);
@@ -104,7 +104,7 @@ test(
     async () => {
         const db = await seededMockDb();
         const ctx = createRequestContext(
-            db, await devToken(),
+            db, await organizationToken(),
         );
         const before = await deriveFamilies(db);
         const requestsBefore = await db.requests.getAll();

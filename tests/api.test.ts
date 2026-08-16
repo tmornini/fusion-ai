@@ -242,6 +242,8 @@ test(
                             'application/json',
                         'Authorization':
                             'Bearer ' + DEV_TOKEN,
+                        'Operation-ID':
+                            TEST_OPERATION_ID,
                     },
                     body: '{not valid json',
                 },

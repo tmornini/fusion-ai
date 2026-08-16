@@ -357,10 +357,10 @@ export function defineStoreAcceptance(
     });
 
     test(name + ': snapshot loud-reject', async () => {
-        const { db } = await ready();
+        const { db, token } = await ready();
         const before = (await db.requests.getAll()).length;
         const missingOp = await handleRequest(db, req(
-            'PUT', '/snapshots/import', undefined,
+            'PUT', '/snapshots/import', token,
             { json: snapshotWithoutOperationId() },
         ));
         assert.equal(missingOp.status, 400);
@@ -372,7 +372,7 @@ export function defineStoreAcceptance(
             missingBody.error, /Re-snapshot|reseed/,
         );
         const canon = await handleRequest(db, req(
-            'PUT', '/snapshots/import', undefined,
+            'PUT', '/snapshots/import', token,
             { json: snapshotCanonicalJson() },
         ));
         assert.equal(canon.status, 400);

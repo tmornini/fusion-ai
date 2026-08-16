@@ -5,7 +5,7 @@ import {
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import { GET } from '../api/api.ts';
-import { hashPassword } from '../shared/password-hash.ts';
+import { testHashPassword } from './mock-seed.ts';
 import { decodeAccessToken } from '../api/access-token.ts';
 import {
     createRequestContext,
@@ -81,7 +81,8 @@ async function passwordUserCtx() {
     });
     await seedIdentityCredential(db, 'current', 'c1', {
         identity_id: 'current', kind: 'password',
-        status: 'set', secret: await hashPassword('s3cret'),
+        status: 'set',
+        secret: await testHashPassword('s3cret'),
         at: '2026-06-03T00:00:00.000000Z',
     });
     const ctx = createRequestContext(

@@ -44,11 +44,9 @@ export const AUTHENTICATION_ROUTES: ReadonlySet<string> =
     ]);
 
 // The snapshot/bootstrap plane. The set still names that
-// plane (postWriteNotification posts a full-refresh). The
-// browser ZIP treats these routes as bearer-exempt. The
-// server ZIP — setServerTier(true) from server/boot.ts —
-// does not. AUTHENTICATION_ROUTES stay exempt on both
-// tiers. Do not sniff window; only boot() sets the flag.
+// plane (postWriteNotification posts a full-refresh).
+// These routes are never bearer-exempt.
+// AUTHENTICATION_ROUTES stay exempt.
 export const BOOTSTRAP_ROUTES: ReadonlySet<string> =
     new Set([
         'snapshots/schema',
@@ -56,16 +54,6 @@ export const BOOTSTRAP_ROUTES: ReadonlySet<string> =
         'snapshots/bootstrap',
         'snapshots/import',
     ]);
-
-let serverTier = false;
-
-export function setServerTier(enabled: boolean): void {
-    serverTier = enabled;
-}
-
-export function isServerTier(): boolean {
-    return serverTier;
-}
 
 export async function authenticateRequest(
     ctx: IncomingContext,

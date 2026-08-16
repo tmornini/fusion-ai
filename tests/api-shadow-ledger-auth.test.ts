@@ -9,11 +9,13 @@ import { MemoryStorageBackend } from '../api/backend-memory.ts';
 import type { GuardedDbAdapter } from '../api/db.ts';
 import { handleRequest } from '../api/api.ts';
 import { requestMessageHash } from '../api/message-form.ts';
-import { hashPassword } from '../shared/password-hash.ts';
+import { testHashPassword } from './mock-seed.ts';
 import {
     seedRootAdmin, seedSeat,
 } from './root-admin-fixture.ts';
 import { devToken } from './token-fixtures.ts';
+import { sha256Bytes } from '../shared/digest.ts';
+import { bytesToBase64Url } from '../shared/base64url.ts';
 import {
     makeAssertionSigner,
 } from './client-assertion-fixtures.ts';
@@ -75,7 +77,8 @@ async function seedPasswordUser(
     });
     await seedIdentityCredential(db, 'current', 'c1', {
         identity_id: 'current', kind: 'password',
-        status: 'set', secret: await hashPassword(PASSWORD),
+        status: 'set',
+        secret: await testHashPassword(PASSWORD),
         at: '2026-06-03T00:00:00.000000Z',
     });
 }
@@ -105,15 +108,34 @@ async function dbWithPasswordUserAndNotify(
     return db;
 }
 
+async function s256Fields(): Promise<{
+    readonly verifier: string;
+    readonly code_challenge: string;
+    readonly code_challenge_method: 'S256';
+}> {
+    const verifier = 'pkce-verifier-ledger';
+    return {
+        verifier,
+        code_challenge: bytesToBase64Url(
+            await sha256Bytes(verifier),
+        ),
+        code_challenge_method: 'S256',
+    };
+}
+
 async function fullLoginFlow(db: GuardedDbAdapter): Promise<{
     readonly code: string;
     readonly access_token: string;
     readonly refresh_token: string;
 }> {
+    const pkce = await s256Fields();
     const authorizeRes = await handleRequest(db, jsonPost(
         'authentication/authorize', {
             method: 'password', username: 'demo@example.com',
             password: PASSWORD, client_id: 'web',
+            code_challenge: pkce.code_challenge,
+            code_challenge_method:
+                pkce.code_challenge_method,
         }));
     assert.equal(authorizeRes.status, 201);
     const { code } = await authorizeRes.json() as {
@@ -123,6 +145,7 @@ async function fullLoginFlow(db: GuardedDbAdapter): Promise<{
         'authentication/token', {
             grant_type: 'authorization_code', code,
             client_id: 'web',
+            code_verifier: pkce.verifier,
         }));
     assert.equal(tokenRes.status, 201);
     const grant = await tokenRes.json() as {
@@ -198,8 +221,8 @@ test('a full login flow keeps requests/responses balanced,'
     assert.equal(requests.length, responses.length);
     // seedRootAdmin: org + membership (2; role-grants retired)
     // + pii + credential (2) + authorize + token + token-event
-    // (3) = 7.
-    assert.equal(requests.length, 7);
+    // + pbkdf2-to-scrypt rehash (4) = 8.
+    assert.equal(requests.length, 8);
     // The AUTH hops stay operation-addressed (uriId ''); the
     // token grant's row event pair rides its OWN row's address
     // instead, so it alone carries a non-empty uri_id in this
@@ -257,10 +280,14 @@ test('stored messages verify against their hashes', async () => {
 test('a wrong password stores no NEW pair beyond the'
 + " fixture's own pii + credential seed", async () => {
     const db = await dbWithPasswordUser();
+    const pkce = await s256Fields();
     const res = await handleRequest(db, jsonPost(
         'authentication/authorize', {
             method: 'password', username: 'demo@example.com',
             password: 'WRONG', client_id: 'web',
+            code_challenge: pkce.code_challenge,
+            code_challenge_method:
+                pkce.code_challenge_method,
         }));
     assert.equal(res.status, 401);
     // 2: the fixture's own pii + credential pairs (Phase 13 Task
@@ -299,10 +326,14 @@ test('the wire response on a 2xx carries a Response-ID and'
 + ' Date header derived from the stored pair',
 async () => {
     const db = await dbWithPasswordUser();
+    const pkce = await s256Fields();
     const res = await handleRequest(db, jsonPost(
         'authentication/authorize', {
             method: 'password', username: 'demo@example.com',
             password: PASSWORD, client_id: 'web',
+            code_challenge: pkce.code_challenge,
+            code_challenge_method:
+                pkce.code_challenge_method,
         }));
     assert.equal(res.status, 201);
     assert.ok(res.headers.get('Response-ID'));
@@ -342,13 +373,14 @@ async () => {
     const requests = await db.requests.getAll();
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    // 10: the fixture's own pii + credential pairs (2, Phase 13
+    // 11: the fixture's own pii + credential pairs (2, Phase 13
     // Task 8) + seedRootAdmin's 2 fixture pairs + authorize +
     // token (the token hop's own event pair, Phase 13 Task 5,
-    // brings fullLoginFlow's count to 7) + refresh's own
-    // operation pair + refresh's rotate-branch event pairs (2:
-    // the retired root, the issued successor — Phase 13 Task 5).
-    assert.equal(requests.length, 10);
+    // plus pbkdf2 rehash, brings fullLoginFlow's count to 8)
+    // + refresh's own operation pair + refresh's rotate-branch
+    // event pairs (2: the retired root, the issued successor —
+    // Phase 13 Task 5).
+    assert.equal(requests.length, 11);
     const refreshRequest = requests.find(
         r => r.uri_collection === '/authentication/token/'
             && r.message.includes(first.refresh_token),
@@ -523,10 +555,14 @@ test('an Authorization header sent alongside the token grant is'
 + ' stored verbatim', async () => {
     const db = await dbWithPasswordUser();
     await seedRootAdmin(db);
+    const pkce = await s256Fields();
     const authorizeRes = await handleRequest(db, jsonPost(
         'authentication/authorize', {
             method: 'password', username: 'demo@example.com',
             password: PASSWORD, client_id: 'web',
+            code_challenge: pkce.code_challenge,
+            code_challenge_method:
+                pkce.code_challenge_method,
         }));
     const { code } = await authorizeRes.json() as {
         code: string;
@@ -541,6 +577,7 @@ test('an Authorization header sent alongside the token grant is'
             grant_type: 'authorization_code',
             code,
             client_id: 'web',
+            code_verifier: pkce.verifier,
         }),
     });
     const res = await handleRequest(db, req);

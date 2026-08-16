@@ -45,11 +45,11 @@ function writtenPattern(entry: Route): string | undefined {
     return entry.segments.join('/');
 }
 
-// BOOTSTRAP_ROUTES (the auth-free dev-tier snapshot plane) and
-// AUTHENTICATION_ROUTES (the dedicated grant arm) never reach
-// the generic pair block — api/api.ts gates it on
-// `!bearerExempt`, and both sets are bearerExempt. Named, not
-// inferred.
+// BOOTSTRAP_ROUTES (the snapshot plane) and
+// AUTHENTICATION_ROUTES (the dedicated grant arm) never
+// reach the generic pair block. AUTHENTICATION_ROUTES
+// are bearer-exempt; BOOTSTRAP_ROUTES still skip pair
+// wiring. Named, not inferred.
 const NAMED_EXEMPT_ROUTE_PATTERNS: ReadonlySet<string> = new Set([
     ...BOOTSTRAP_ROUTES,
     ...AUTHENTICATION_ROUTES,
