@@ -197,9 +197,10 @@ async function seedRows(
                     'PUT',
                 );
             }
-            // Many versions at one address so the triple
-            // beats address + version filter. Keep
-            // /ideas/ small for the collection pin.
+            // Fat address (81 versions at one uri_id):
+            // version triple beats address + filter;
+            // address ORDER BY prefers responses_address.
+            // Keep /ideas/ small for the collection pin.
             await putPair(
                 tx,
                 VERSION_N,
@@ -262,19 +263,6 @@ function assertIndexPlan(
             'expected ' + name + ' in\n' + text,
         );
     }
-    assert.doesNotMatch(text, /Seq Scan/);
-}
-
-function assertOneIndex(
-    text: string,
-    names: readonly string[],
-): void {
-    const found = names.some((name) => text.includes(name));
-    assert.ok(
-        found,
-        'expected one of ' + names.join(', ')
-        + ' in\n' + text,
-    );
     assert.doesNotMatch(text, /Seq Scan/);
 }
 
@@ -401,22 +389,17 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         >`
             EXPLAIN
             SELECT * FROM responses
-            WHERE uri_collection = ${IDEA_COLLECTION}
-              AND uri_id = ${IDEA_URI_ID}
+            WHERE uri_collection = ${VERSION_COLLECTION}
+              AND uri_id = ${VERSION_URI_ID}
             ORDER BY at, id
         `;
         assertIndexPlan(
             explainText(requests),
             ['requests_address'],
         );
-        // Same prefix as responses_address; planner may
-        // pick responses_version for the responses half.
-        assertOneIndex(
+        assertIndexPlan(
             explainText(responses),
-            [
-                'responses_address',
-                'responses_version',
-            ],
+            ['responses_address'],
         );
     });
 
@@ -465,8 +448,8 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
             SELECT r.id, q.method
             FROM responses r
             JOIN requests q ON q.id = r.id
-            WHERE r.uri_collection = ${IDEA_COLLECTION}
-              AND r.uri_id = ${IDEA_URI_ID}
+            WHERE r.uri_collection = ${VERSION_COLLECTION}
+              AND r.uri_id = ${VERSION_URI_ID}
               AND q.method IN ('PUT', 'DELETE')
             ORDER BY r.at DESC, r.id DESC
             LIMIT 1
@@ -476,14 +459,6 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
             text.includes('requests_pkey'),
             'expected requests_pkey in\n' + text,
         );
-        // ORDER BY at DESC prefers responses_address;
-        // accept the shared-prefix version index too.
-        assertOneIndex(
-            text,
-            [
-                'responses_address',
-                'responses_version',
-            ],
-        );
+        assertIndexPlan(text, ['responses_address']);
     });
 }
