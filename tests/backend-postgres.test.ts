@@ -102,6 +102,25 @@ test('ensureTables runs compile-time SCHEMA', async () => {
     assert.equal(fake.calls[0]!.text, POSTGRES_SCHEMA);
 });
 
+test('schema declares collection indexes', () => {
+    assert.match(
+        POSTGRES_SCHEMA,
+        /CREATE INDEX IF NOT EXISTS requests_collection/,
+    );
+    assert.match(
+        POSTGRES_SCHEMA,
+        /CREATE INDEX IF NOT EXISTS responses_collection/,
+    );
+    assert.match(
+        POSTGRES_SCHEMA,
+        /ON requests \(uri_collection, at, id\)/,
+    );
+    assert.match(
+        POSTGRES_SCHEMA,
+        /ON responses \(uri_collection, at, id\)/,
+    );
+});
+
 test('deleteSchema drops tables, function, marker',
 async () => {
     const fake = fakeClient();

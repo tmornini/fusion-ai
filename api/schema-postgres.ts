@@ -81,6 +81,10 @@ export const POSTGRES_INDEXES =
     ON requests (uri_collection, uri_id, at, id);
 CREATE INDEX IF NOT EXISTS responses_address
     ON responses (uri_collection, uri_id, at, id);
+CREATE INDEX IF NOT EXISTS requests_collection
+    ON requests (uri_collection, at, id);
+CREATE INDEX IF NOT EXISTS responses_collection
+    ON responses (uri_collection, at, id);
 CREATE INDEX IF NOT EXISTS requests_replay
     ON requests (message_hash);
 CREATE INDEX IF NOT EXISTS requests_operation
