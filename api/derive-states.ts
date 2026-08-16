@@ -109,17 +109,19 @@ async function organizationIds(
 // The invitation's own organization_id — carried in the STORED
 // REQUEST body (derive-invitations.ts's own precedent), never the
 // uri_collection (the invitations address is flat, unlike every
-// org-nested family above). A full scan of the (small) invitations
-// family, mirroring derive-invitations.ts exactly — reused rather
+// org-nested family above). Address read of this id at the
+// invitations collection — the same head fold, reused rather
 // than reimplemented.
 async function resolveInvitationOwner(
     db: DbAdapter,
     entityId: Id,
 ): Promise<Id | null> {
     const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_collection', INVITATIONS_PREFIX),
-        db.responses.getAllWhere(
-            'uri_collection', INVITATIONS_PREFIX,
+        db.requests.getAllAtAddress(
+            INVITATIONS_PREFIX, entityId,
+        ),
+        db.responses.getAllAtAddress(
+            INVITATIONS_PREFIX, entityId,
         ),
     ]);
     const document = deriveDocumentsAt(
@@ -214,14 +216,15 @@ async function organizationHasMemberPair(
 ): Promise<boolean> {
     const seatPrefix = '/organizations/' + organization
         + '/members/';
-    const [seatRequests, seatResponses] = await Promise.all([
-        db.requests.getAllWhere(
-            'uri_collection', seatPrefix,
-        ),
-        db.responses.getAllWhere(
-            'uri_collection', seatPrefix,
-        ),
-    ]);
+    const [seatRequests, seatResponses] =
+        await Promise.all([
+            db.requests.getAllAtAddress(
+                seatPrefix, identityId,
+            ),
+            db.responses.getAllAtAddress(
+                seatPrefix, identityId,
+            ),
+        ]);
     return deriveDocumentsAt(
         seatRequests, seatResponses, seatPrefix,
     ).has(identityId);
