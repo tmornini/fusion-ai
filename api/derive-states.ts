@@ -445,12 +445,10 @@ export async function resolveGlobalOwner(
         ? undefined
         : ownerProbeCollection(boundOrganization, table);
     if (collection !== undefined) {
-        const hits = await db.responses.getAllWhere(
-            'uri_collection', collection,
-        );
-        const atAddress = hits.filter(
-            (row) => row.uri_id === entityId,
-        );
+        const atAddress =
+            await db.responses.getAllAtAddress(
+                collection, entityId,
+            );
         if (atAddress.length === 0) return null;
         for (const response of atAddress) {
             const owner = ownerFromAddress(
