@@ -78,11 +78,13 @@ export const FAMILY_REGISTRY: readonly FamilyRegistration[] = [
         organizationNested: true,
         concurrency: 'simple',
         createBodyIdField: 'id', // INERT — no collection POST
-            // exists for memberships; a row is created only
-            // when an invitee accepts an invitation (see
-            // adapters/invitations.ts) — the projects-precedent
-            // inert slot (message-pair.ts): this lookup never
-            // fires.
+            // exists for memberships; accept writes a seat
+            // at organizations/:organization-id/members/
+            // :identity-id (see invitations-domain.ts), not
+            // a memberships row. Leftover /memberships
+            // rows lose to a live seat until Task 55. The
+            // projects-precedent inert slot
+            // (message-pair.ts): this lookup never fires.
     },
     {
         family: 'members',

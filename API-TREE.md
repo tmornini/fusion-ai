@@ -59,7 +59,8 @@ URI tree of the HTTP surface; source of record is api/routes.ts (the route table
   |    |          └── /conversion             • RECONCILED: POST ideas/:id/conversion — promote idea→project (+ baseline score pairs) in one tx
   |    |          └── /submissions/
   |    |              └── :sid                • RECONCILED: ideas/:id/submissions — GET collection under idea; PUT leaf only
-  |    |  └── /memberships/                   • canonical storage (tenancy covenant)
+  |    |  └── /members/:identity-id           • seat document (Task 52) — accept writes PUT /organizations/:organization-id/members/:identity-id at the invitation's organization, same Operation-ID; seats win leftover /memberships rows until Task 55
+  |    |  └── /memberships/                   • leftover join storage until Task 55 (tenancy dual-read)
   |    |  └── /projects/
   |    |      └── :id
   |    |          └── /flows/

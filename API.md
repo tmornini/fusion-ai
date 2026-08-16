@@ -1777,8 +1777,8 @@ three, exactly like every other atomic write in this catalog.
 
 ### 3.23 `POST /invitations/:id/acceptance` — accept
 
-`acceptInvitation` (`api/invitations-domain.ts`). The only live
-membership write.
+`acceptInvitation` (`api/invitations-domain.ts`). Accept writes
+a seat, not a leftover `/memberships/:id` row.
 
 - before tx: `loadInvitation` (`deriveInvitations` find-by-id;
   404 if absent);
@@ -1788,14 +1788,17 @@ membership write.
 - tx: `['requests','responses']`
 - actual: pair-plane invitation state guard (`accepted` →
   no-op pair; not `pending` → 409, nothing); already-member
-  guard; if new member: `appendMessagePair(membershipDocument)`
-  (invitation's org, not caller's active org); always
-  `appendMessagePair(pair)` on no-op/pending paths.
-- doctrinal: state guard + membership document pair +
-  accept op pair as `post_accept_invitation`.
+  guard; if new member: `appendMessagePair(seatDocument)` —
+  `PUT /organizations/:organization-id/members/:identity-id`
+  at the invitation's organization, same Operation-ID as the
+  accept; always `appendMessagePair(pair)` on no-op/pending
+  paths. Seats win leftover `/memberships` rows until Task
+  55.
+- doctrinal: state guard + seat document pair + accept op
+  pair as `post_accept_invitation`.
 - props: atomic; invitee-only; idempotent (re-accept is a no-op,
   still its own genesis pair — never a `Supersedes` chain);
-  membership is written in the **invitation's** org, never the
+  the seat is written in the **invitation's** org, never the
   caller's active org; TOCTOU-safe.
 
 ### 3.24 `POST /invitations/:id/decline` — decline
@@ -2855,30 +2858,21 @@ all for that outcome, belt-and-suspenders. Every conflict path
 (already-member, the in-tx race-disagreement throw) forms and
 appends nothing, unchanged.
 
-**Accept: the B2 closure — the third memberships writer joins
-the document plane.** `acceptInvitation` forms a PUT-shaped
-MEMBERSHIPS document pair pre-tx — address =
-`canonicalUriCollection(inv.organization_id, '/memberships/')`
-(the INVITATION's org, never the caller's active org, mirroring
-the domain write's own organization choice), `uriId` = the
-caller's own `membershipId`, body `{organization_id:
-inv.organization_id, identity_id: caller, at}` byte-mirroring
-the row, response via `WRITE_RESPONSE_SPECS['memberships/:id']`
-— the SAME spec (`documentWriteResponseSpec(MEMBERSHIPS_WIRING)`,
-§5.9) a live `PUT /memberships/:id` resolves, since THIS pair
-DOES have a live twin. Formed pre-tx (crypto cannot run inside
-a transaction body) but appended ONLY inside the `!already`
-branch (Phase Final: pure pair-plane — the memberships ROW
-half is stripped; the pair IS the write): a re-accept that
-finds a membership already present, or a 409 conflict,
-appends no membership document either. Before this
-task, memberships had exactly two document writers: the live
-`PUT /memberships/:id` route and the mock-data seed (Phase 8
-Task 5, `postMembershipDocumentOp`); a live accepted invitation
-is the third — and, before Task 8 flips the readers, the ONLY
-writer whose pair a derived (not old-plane) membership read
-would otherwise miss entirely, since the accepted membership
-was never seeded and never PUT directly.
+**Accept: the seat document — same Operation-ID.**
+`acceptInvitation` forms a PUT-shaped seat document pair
+pre-tx — address
+`PUT /organizations/:organization-id/members/:identity-id`
+at the INVITATION's organization (never the caller's
+active org), `uriId` = the invitee's identity, body
+`{type: 'member', at}`, same Operation-ID as the accept
+op pair. Response via `WRITE_RESPONSE_SPECS` for that
+seat pattern — the SAME spec a live admin `PUT` of a
+seat resolves. Formed pre-tx (crypto cannot run inside a
+transaction body) but appended ONLY inside the
+`!already` branch: a re-accept that finds a membership
+already present, or a 409 conflict, appends no seat
+either. Seats win leftover `/memberships` rows until
+Task 55.
 
 **The op addresses are unchanged and carry no document.**
 Accept/decline/revoke each still form their existing

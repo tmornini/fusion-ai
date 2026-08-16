@@ -22,8 +22,9 @@ import { nowUtc, SYSTEM_MEMBER_ID } from
     '../api/types.ts';
 import { organizationToken, devToken } from
     './token-fixtures.ts';
-import { seedOrganizationDocument } from
-    './test-fixtures.ts';
+import {
+    seedAdminSchema, seedOrganizationDocument,
+} from './test-fixtures.ts';
 import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
@@ -238,4 +239,73 @@ async () => {
         SEAT_DETAIL, 'PUT');
     assert.ok(authorizer);
     assert.equal(authorizer.idParamIndex, 1);
+});
+
+async function mintedOrganizations(
+    db: MemoryDbAdapter,
+    identity: string,
+): Promise<readonly string[] | undefined> {
+    const minted = await handleRequest(
+        db, new Request(
+            'http://localhost/authentication/token', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    grant_type: 'token-exchange',
+                    subject_token: await devToken(
+                        identity),
+                    actor_token: await devToken(
+                        identity),
+                }),
+            },
+        ),
+    );
+    assert.equal(minted.status, 201);
+    const payload = await minted.json() as {
+        access_token: string;
+    };
+    return decodeAccessToken(
+        payload.access_token,
+    ).organizations;
+}
+
+test('live admin PUT of a seat 201s and GETs back;'
++ ' DELETE then mint omits that organization',
+async () => {
+    const db = memoryDbAdapter();
+    await seedAdminSchema(db);
+    const admin = await organizationToken(
+        'current', '1');
+    const identity = 'seat-put';
+    const path = '/organizations/1/members/'
+        + identity;
+    const body = { type: 'member', at: AT };
+    const created = await handleRequest(db, req(
+        'PUT', path, admin, body,
+    ));
+    assert.equal(created.status, 201);
+    const got = await handleRequest(db, req(
+        'GET', path, admin,
+    ));
+    assert.equal(got.status, 200);
+    assert.deepEqual(await got.json(), {
+        id: identity,
+        organization_id: '1',
+        identity_id: identity,
+        ...body,
+    });
+    assert.deepEqual(
+        await mintedOrganizations(db, identity),
+        ['1'],
+    );
+    const removed = await handleRequest(db, req(
+        'DELETE', path, admin,
+    ));
+    assert.equal(removed.status, 204);
+    assert.equal(
+        await mintedOrganizations(db, identity),
+        undefined,
+    );
 });
