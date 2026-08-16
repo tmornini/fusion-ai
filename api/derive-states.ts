@@ -258,12 +258,13 @@ async function computeOwningOrganization(
     boundOrganization: Id,
 ): Promise<Id | null> {
     // (e) organizations self-as-owner: the document id IS
-    // the owning organization. Collection read, then filter
-    // uri_id in JS — no uri_id-only index.
-    const organizationRows = await db.responses.getAllWhere(
-        'uri_collection', ORGANIZATIONS_ADDRESS_PREFIX,
-    );
-    if (organizationRows.some((row) => row.uri_id === entityId)) {
+    // the owning organization. Address read of this id at
+    // the organizations collection.
+    const organizationRows =
+        await db.responses.getAllAtAddress(
+            ORGANIZATIONS_ADDRESS_PREFIX, entityId,
+        );
+    if (organizationRows.length > 0) {
         return entityId;
     }
 
@@ -283,10 +284,11 @@ async function computeOwningOrganization(
             const prefix = canonicalUriCollection(
                 organization, '/' + family + '/',
             );
-            const rows = await db.responses.getAllWhere(
-                'uri_collection', prefix,
-            );
-            if (rows.some((row) => row.uri_id === entityId)) {
+            const rows =
+                await db.responses.getAllAtAddress(
+                    prefix, entityId,
+                );
+            if (rows.length > 0) {
                 return organization;
             }
         }
