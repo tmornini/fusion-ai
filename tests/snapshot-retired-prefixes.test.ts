@@ -31,6 +31,8 @@ const LEGACY_RECORDS_PREFIX =
     '/organizations/1/records/';
 const LEGACY_RECORD_ATTRIBUTES_PREFIX =
     '/organizations/1/record-attributes/';
+const LEGACY_IDENTITY_PII_PREFIX =
+    '/identity-pii/some-id/';
 const LIVE_FLOW_RECORDS_PREFIX =
     '/organizations/1/flows/f1/records/';
 
@@ -270,6 +272,64 @@ test(
             findings.includes(
                 'requests[].uri_collection='
                 + LEGACY_RECORD_ATTRIBUTES_PREFIX,
+            ),
+        );
+    },
+);
+
+test(
+    'parseAndValidateSnapshot rejects requests row with'
+    + ' retired identity-pii uri_collection via'
+    + ' ValidationError',
+    () => {
+        const json = snapshotJson(
+            'requests', LEGACY_IDENTITY_PII_PREFIX,
+        );
+        assert.throws(
+            () => parseAndValidateSnapshot(json),
+            (err: unknown) =>
+                err instanceof ValidationError
+                && err.message.includes(
+                    LEGACY_IDENTITY_PII_PREFIX,
+                )
+                && err.message.includes('retired'),
+        );
+    },
+);
+
+test(
+    'parseAndValidateSnapshot rejects responses row with'
+    + ' retired identity-pii uri_collection via'
+    + ' ValidationError',
+    () => {
+        const json = snapshotJson(
+            'responses', LEGACY_IDENTITY_PII_PREFIX,
+        );
+        assert.throws(
+            () => parseAndValidateSnapshot(json),
+            (err: unknown) =>
+                err instanceof ValidationError
+                && err.message.includes(
+                    LEGACY_IDENTITY_PII_PREFIX,
+                )
+                && err.message.includes('retired'),
+        );
+    },
+);
+
+test(
+    'scanForRetiredKeys lists legacy identity-pii'
+    + ' uri_collection on requests',
+    () => {
+        const findings = scanForRetiredKeys({
+            requests: [
+                requestRow(LEGACY_IDENTITY_PII_PREFIX),
+            ],
+        });
+        assert.ok(
+            findings.includes(
+                'requests[].uri_collection='
+                + LEGACY_IDENTITY_PII_PREFIX,
             ),
         );
     },

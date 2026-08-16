@@ -149,8 +149,8 @@ export const RETIRED_STATE_VALUES_PER_ENTITY:
 // Mirrored from api/snapshot-validator.ts
 // RETIRED_URI_PREFIX_PATTERNS (gate of record). Client
 // pre-flight only. Task 5: records; Task 8:
-// record-attributes. Anchored so flows/:id/records join
-// paths pass.
+// record-attributes. identity-pii collection retired.
+// Anchored so flows/:id/records join paths pass.
 const RETIRED_URI_PREFIX_PATTERNS:
     readonly RegExp[] = [
     /^\/organizations\/[^/]+\/records\//,
@@ -159,6 +159,7 @@ const RETIRED_URI_PREFIX_PATTERNS:
     /^\/human-members\//,
     /^\/ai-members\//,
     /^\/organizations\/[^/]+\/memberships\//,
+    /^\/identity-pii\//,
 ];
 
 export class SnapshotIncompatibleError extends Error {

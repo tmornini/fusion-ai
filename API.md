@@ -215,10 +215,11 @@ Legend for classification:
 - `GET /identities/:id/versions/:version` — document
   version leaf (§2.10).
 - `POST /identities` — operation (§3.5). Admin-only.
-- `GET|PUT|DELETE /identities/:id/pii` — facet. Self-only read;
-  self-or-admin write. PUT/DELETE ride the message plane's
-  sanctioned hard-delete zone (§5.12).
-- `GET /identity-pii` — admin PII roster.
+- `GET|PUT|DELETE /identities/:id/pii` — facet. GET is
+  self-or-admin; PUT/DELETE are self-or-admin. The only
+  PII HTTP (flat `/identity-pii` is RETIRED, router 404).
+  PUT/DELETE ride the message plane's sanctioned
+  hard-delete zone (§5.12).
 - `GET /identities/:id/credentials` ·
   `GET|PUT /identities/:id/credentials/:cid` — nested; the opaque
   `secret` is projected out on every read. Admin-only. `PUT`'s

@@ -257,7 +257,6 @@ import {
     deriveOrganizationMemberSeat,
 } from './derive-memberships.ts';
 import {
-    deriveIdentityPiiRows,
     deriveIdentityPii,
     deriveCredentialsFor,
     deriveCredential,
@@ -4152,10 +4151,10 @@ export const routes: Route[] = [
     documentVersionRoute(IDENTITIES_WIRING),
     documentVersionRoute(AI_AGENTS_WIRING),
     // PII is a facet of the identity's own subtree: GET is
-    // self-only, PUT/DELETE self-or-admin (enforced in the
-    // request gate, mirroring
-    // /identities/:id/default-organization). The
-    // identity-pii COLLECTION below (admin roster) is separate.
+    // self-or-admin, PUT/DELETE self-or-admin (enforced in
+    // the request gate, mirroring
+    // /identities/:id/default-organization). There is no
+    // flat identity-pii collection (retired, router 404).
     // PUT/DELETE each REPLACE the slot's message pair
     // (replacePiiSlot, api/pii-hard-delete.ts) in the same
     // transaction as the write — the message plane's sanctioned
@@ -4167,15 +4166,37 @@ export const routes: Route[] = [
     // yields uriId '' (a singleton document at a collection-
     // style address). GET is FLIPPED (Phase 10 Task 8): derived
     // via deriveIdentityPii — wire-identical to the hand-written
-    // db.identityPii.getById dispatch it replaces. No fence is
-    // reproduced HERE: authorizeIdentityPii (the gate dispatch,
-    // api.ts/request-auth.ts, UNTOUCHED by this task) already
-    // restricts a GET to the caller reading its OWN pii, and a
-    // fenced request's own membership always includes its active
-    // org, so the row is always visible to itself regardless of
-    // any org fence.
+    // db.identityPii.getById dispatch it replaces.
+    // authorizeIdentityPii (the gate dispatch) restricts a GET
+    // to self or admin. The handler then applies the same
+    // viaMembership org fence credentials use: foreign 403,
+    // orphan visible. A member never reads another identity's
+    // pii.
     route('identities/:id/pii', {
-        get: (db, p) => deriveIdentityPii(db, param(p, 0)),
+        get: async (db, p, actor, organization) => {
+            const organizationId = requireOrganization(
+                organization,
+            );
+            const identityId = param(p, 0);
+            const row = await deriveIdentityPii(
+                db, identityId,
+            );
+            const memberships =
+                await membershipsAcrossAllOrganizations(
+                    db, actor,
+                );
+            const owner =
+                ownerOrganizationViaMembershipPairPlane(
+                    memberships, identityId, organizationId,
+                );
+            if (owner !== null
+                && owner !== organizationId) {
+                throw new ForeignOrganizationError(
+                    'identity_pii', identityId,
+                );
+            }
+            return row;
+        },
         put: (db, p, body, actor, pair) =>
             postIdentityPiiDocumentOp(
                 db, param(p, 0), body, actor, pair,
@@ -4196,30 +4217,6 @@ export const routes: Route[] = [
             );
         },
     }),
-    // GET is FLIPPED (Phase 10 Task 8): derived via
-    // deriveIdentityPiiRows, THEN fenced by gate 15's production
-    // membership pair plane (above) — reproducing, byte-
-    // identically, the SAME three-way viaMembership decision the
-    // hand-written db.identityPii.getAll() dispatch (the org-
-    // scoped adapter's own parentScope+viaMembership) made.
-    route('identity-pii', {
-        get: async (db, _p, actor, organization) => {
-            const organizationId = requireOrganization(
-                organization,
-            );
-            const rows = await deriveIdentityPiiRows(db);
-            const memberships =
-                await membershipsAcrossAllOrganizations(
-                    db, actor,
-                );
-            return rows.filter((row) => {
-                const owner = ownerOrganizationViaMembershipPairPlane(
-                    memberships, row.id, organizationId,
-                );
-                return owner === null || owner === organizationId;
-            });
-        },
-    }),
     // Credentials nest under their parent identity: the identity
     // id is param 0, so the SERVER filters the collection to that
     // identity by its identity_id FK (the org fence still rides
@@ -4235,9 +4232,9 @@ export const routes: Route[] = [
     // WRITE_RESPONSE_SPECS's 'identities/:id/credentials/:cid'
     // entry, which reconstructs the FULL entity, unlike the GETs'
     // withoutSecret projection). GET is FLIPPED (Phase 10 Task 8):
-    // derived via deriveCredentialsFor, fenced the SAME way
-    // identity-pii's collection above is (gate 15, keyed on the
-    // PARENT identity id rather than each row's own id) — a
+    // derived via deriveCredentialsFor, fenced via gate 15
+    // (keyed on the PARENT identity id rather than each
+    // row's own id) — a
     // hidden identity's credentials read as an EMPTY array, byte-
     // identical to parentScope.getAllWhere silently dropping every
     // matched-but-invisible row (never a 404 — getAllWhere never

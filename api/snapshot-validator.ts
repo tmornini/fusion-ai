@@ -106,6 +106,7 @@ function refusePreBreakMessage(
 
 // Anchored retired message-plane uri_collection patterns.
 // Task 5: flat records. Task 8: flat record-attributes.
+// identity-pii collection retired (router 404).
 // Anchored so the live flows/:id/records join family is
 // accepted (never a substring match).
 const RETIRED_URI_PREFIX_PATTERNS:
@@ -116,6 +117,7 @@ const RETIRED_URI_PREFIX_PATTERNS:
     /^\/human-members\//,
     /^\/ai-members\//,
     /^\/organizations\/[^/]+\/memberships\//,
+    /^\/identity-pii\//,
 ];
 
 // Map table name → entity validator. Stored rows

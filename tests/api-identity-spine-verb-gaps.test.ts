@@ -20,9 +20,9 @@ import {
 // accidental route or authz change, not a wiring change. THREE
 // regimes (finding 20), each dispatched a different way:
 //
-// (1) the route-table regime — 36 combos across the FIFTEEN
+// (1) the route-table regime — 36 combos across the
 // identity-spine route() patterns (identities, identities/:id,
-// identities/:id/pii, identity-pii, identities/:id/credentials,
+// identities/:id/pii, identities/:id/credentials,
 // identities/:id/credentials/:cid, identity-token-revocations/
 // :id, role-grants, role-grants/:id, identity-tokens,
 // identity-tokens/:id, identity-tokens/:jti/rotation,
@@ -169,33 +169,33 @@ async () => {
     assert.equal(res.status, 405);
 });
 
-test('PUT identity-pii 405s (no put handler wired)', async () => {
+test('PUT identity-pii 404s (route retired)', async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('PUT', '/identity-pii', token, {}),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
-test('POST identity-pii 405s (no post handler wired)',
+test('POST identity-pii 404s (route retired)',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('POST', '/identity-pii', token, {}),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
-test('DELETE identity-pii 405s (no delete handler wired)',
+test('DELETE identity-pii 404s (route retired)',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('DELETE', '/identity-pii', token),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
 test('PUT identities/:id/credentials 405s (no put handler'
