@@ -10,15 +10,7 @@ import {
     seedAdminSchema,
     seedOrganizationDocument,
 } from './test-fixtures.ts';
-import {
-    postMembershipDocumentOp,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
-import {
-    formWritePair,
-    type MessagePair,
-} from '../api/message-pair.ts';
-import { SYSTEM_MEMBER_ID, nowUtc } from '../api/types.ts';
+import { nowUtc } from '../api/types.ts';
 import {
     generateCryptoSafeBase62,
 } from '../shared/crypto-safe-base62.ts';
@@ -53,35 +45,6 @@ function req(
     });
 }
 
-async function membershipPair(
-    membershipId: string,
-    body: Record<string, unknown>,
-    organization: string,
-): Promise<MessagePair> {
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error('missing memberships/:id spec');
-    }
-    return formWritePair({
-        method: 'PUT',
-        pathname: `/memberships/${membershipId}`,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', membershipId],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [membershipId], body, SYSTEM_MEMBER_ID,
-            organization,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-}
-
 async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
@@ -92,12 +55,6 @@ async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
         type: 'admin',
         at: AT,
     };
-    await postMembershipDocumentOp(
-        db, 'm-current-b', memBody, SYSTEM_MEMBER_ID,
-        await membershipPair(
-            'm-current-b', memBody, ORGANIZATION_B,
-        ),
-    );
     await seedSeat(
         db,
         String(memBody['organization_id'] ?? memBody.organization_id),

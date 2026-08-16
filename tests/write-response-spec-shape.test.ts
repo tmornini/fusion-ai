@@ -109,19 +109,6 @@ const DUMMY_BODIES: Readonly<
         project_id: 'id', objective_id: 'id',
         score: 0, member_id: 'id', at: AT,
     },
-    'members/:id': {
-        type: 'human', state: 'active',
-        state_at: AT, state_event_id: 'ev-1',
-    },
-    'ai-members/:id': {
-        name: 'A', description: 'd',
-        model: 'mnte677fU2G1V2B9vJp9z7',
-        skill_focus: 's',
-    },
-    'human-members/:id': {
-        title: 'T', department: 'D',
-        strengths: [], team_dimensions: {},
-    },
     'identities/:id': { kind: 'person' },
     'ai-agents/:id': {
         name: 'A', description: 'd',
@@ -140,10 +127,6 @@ const DUMMY_BODIES: Readonly<
         grant_types: 'client_credentials',
         redirect_uris: '', jwks: '', aud: 'a',
         status: 'active',
-    },
-    'memberships/:id': {
-        organization_id: 'organization-1',
-        identity_id: 'id', type: 'member', at: AT,
     },
     [ORGANIZATION_MEMBER_DETAIL_PATTERN]: {
         type: 'member', at: AT,
@@ -166,6 +149,21 @@ const DUMMY_BODIES: Readonly<
         at: AT,
     },
 };
+
+test('leftover roster :id specs are gone', () => {
+    for (const pattern of [
+        'members/:id',
+        'memberships/:id',
+        'ai-members/:id',
+        'human-members/:id',
+    ]) {
+        assert.equal(
+            WRITE_RESPONSE_SPECS[pattern],
+            undefined,
+            pattern,
+        );
+    }
+});
 
 test('every write successBody returns an object or is omitted',
 () => {

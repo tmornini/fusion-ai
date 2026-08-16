@@ -50,9 +50,6 @@ const WRITE_AUTHORIZERS:
         ['objectives/:id', {
             table: 'objectives', idParamIndex: 0,
         }],
-        ['memberships/:id', {
-            table: 'memberships', idParamIndex: 0,
-        }],
         // Nested record-types detail (Task 3): id is param
         // index 1 (:record-type-id).
         [RECORD_TYPE_DETAIL_PATTERN, {

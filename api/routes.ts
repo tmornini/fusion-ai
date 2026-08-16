@@ -52,13 +52,10 @@ import {
 import {
     validateAIMemberCreateBody,
     validateAIMemberEditBody,
-    validateAiMemberDocumentBody,
     validateAiAgentDocumentBody,
     assertFlowGraphWriteLaw,
     validateHumanMemberCreateBody,
-    validateHumanMemberDocumentBody,
     validateHumanMemberEditBody,
-    validateMemberDocumentBody,
     validateFlowCreateBody,
     validateFlowDocumentBody,
     validateFlowWorkOrderEntity,
@@ -68,7 +65,6 @@ import {
     validateIdentityCreateBody,
     validateIdentityDocumentBody,
     validateIdentityCredentialEntity,
-    validateMembershipDocumentBody,
     validateSeatDocumentBody,
     validateObjectiveCreateBody,
     validateObjectiveDocumentBody,
@@ -253,9 +249,6 @@ import {
     deriveActualScores,
     scoreEntityOf,
 } from './derive-project-scores.ts';
-import {
-    memberParentOf,
-} from './derive-members.ts';
 import {
     deriveOrganizationMemberSeats,
     deriveOrganizationMemberSeat,
@@ -495,175 +488,9 @@ const OBJECTIVES_WIRING: DocumentFamilyWiring = {
             document, organization, current!,
         ),
 };
-// The generic GET machinery (not yet flipped for memberships —
-// Task 8) this entityOf will serve: the head pair's body already
-// carries exactly {organization_id, identity_id, at} —
-// memberships' wire PUT body includes its OWN organization_id
-// (UNLIKE work-orders' tolerated-but-optional stamp), so a
-// spread is safe here: no per-field picking needed, and
-// there is no trio to leak.
-// `_organization` stays unused: this entityOf reads
-// organization_id off the body itself, never the fence argument
-// — the org-scoped store already stamps organization_id at
-// write time (the objectives fence-stamp analogue), so this
-// read path simply echoes what a live PUT wrote.
-export function membershipDocumentEntityOf(
-    document: DerivedDocument,
-    _organization: Id,
-    _current?: StateEntity,
-): unknown {
-    return {
-        id: document.uriId,
-        ...document.body,
-    };
-}
-// The memberships wiring row — the eighth family, and the
-// FOURTH 'stateless' one (record-attributes shared the same
-// vacuous-BY-CONSTRUCTION bucket before Task 23 retired its
-// flat wiring row). This is the CORRECTED stateless-fork
-// contrast (Author gate 3, adjudicated at the roster phase —
-// OBJECTIVES_WIRING's own comment above re-reads its "type-level
-// fork" claim as history, not standing doctrine): work-orders'
-// 'stateless' is vacuous-in-practice (family-scoped event pairs
-// post through the create/claim/transition ops, just never the
-// document address); objectives and the members parent document
-// (MEMBERS_WIRING below) both now carry document trios on their
-// own addresses (states-address retirement); record-attributes
-// and memberships share neither — a membership carries NO
-// lifecycle concept whatsoever, a pure join relation (Codd's
-// own teaching: the identities of the joined, plus the moment
-// of union). GET stays hand-written old-plane until Task 8;
-// only PUT rides the generic machinery this task —
-// memberships/:id's own DELETE stays hand-written too, the
-// records/:id template (no generic DELETE component exists).
-// notFoundTable is 'memberships' — its storage table name
-// matches its family name, like ideas/projects/flows/records/
-// objectives (work-orders/record-attributes are the two whose
-// names diverge).
-const MEMBERSHIPS_WIRING: DocumentFamilyWiring = {
-    family: 'memberships',
-    lifecycle: 'stateless',
-    notFoundTable: 'memberships',
-    validateDocument: validateMembershipDocumentBody,
-    documentOp: postMembershipDocumentOp,
-    entityOf: membershipDocumentEntityOf,
-};
-// Head document → wire MemberEntity. Entity field (`type`)
-// from the head body; the lifecycle trio is stamped from the
-// lifecycle-current StateEntity via derive-members.ts's
-// memberParentOf (never re-copied from the head body —
-// genesis-wins-under-skew). `current` is required on the live
-// trio path (document-family always supplies it after the
-// DELETED filter). `_organization` stays unused: the members
-// directory is GLOBAL plane (family-registry.ts:
-// organizationNested: false) — the FIRST family on it — so
-// there is no fence value to stamp at all.
-function memberDocumentEntityOf(
-    document: DerivedDocument,
-    _organization: Id,
-    current: StateEntity,
-): MemberEntity {
-    return memberParentOf(document, current);
-}
-// The members wiring row — the ninth family, a 'trio' one
-// since the states-address retirement. The old FREEZE-at-
-// genesis refutation is RETIRED: its premise — a competing
-// states/:id log receiving archive/reactivate events the
-// document plane could never see — died with the address.
-// Every lifecycle write now rides THIS document address:
-// create folds initialState* into the members/:id pair, a
-// state change PUTs a fresh trio, a detail edit echoes the
-// current trio byte-identically and FOLDS by message_hash
-// (appendMessagePair's dedup skip) instead of appending;
-// documentLifecycleEvents' first-occurrence-wins dedup by
-// state_event_id resolves any echo that does land. Global
-// plane: no organization stamping (the members directory row
-// carries no organization_id) — see documentWriteResponseSpec's
-// registration-first consult (document-family.ts).
-// memberDocumentEntityOf requires the lifecycle-current
-// event; the generic trio path always supplies it after
-// DELETED filter.
-const MEMBERS_WIRING: DocumentFamilyWiring = {
-    family: 'members',
-    lifecycle: 'trio',
-    notFoundTable: 'members',
-    validateDocument: validateMemberDocumentBody,
-    documentOp: postMemberDocumentOp,
-    entityOf: (document, organization, current) =>
-        memberDocumentEntityOf(
-            document, organization, current!,
-        ),
-};
-// The bare ai_members facet row spreads safely (no
-// organization_id, no trio — the SAME reason memberDocumentEntityOf's
-// own comment gives). `_organization` stays unused: ai-members is
-// GLOBAL plane too (family-registry.ts: organizationNested:false).
-export function aiMemberDocumentEntityOf(
-    document: DerivedDocument,
-    _organization: Id,
-    _current?: StateEntity,
-): unknown {
-    return {
-        id: document.uriId,
-        ...document.body,
-    };
-}
-// The ai-members wiring row — the tenth family, joining
-// MEMBERS_WIRING's shared-log-with-genesis 'stateless' bucket
-// (see its own comment above for the full rationale-contrast):
-// the SAME shared member id, the SAME genesis-at-create/PUT-
-// states/:id lifecycle, no new bucket needed. notFoundTable is
-// 'ai_members' — its storage table name (db-backed.ts's
-// EntityStore key) diverges from its hyphenated family/route
-// name, the SAME snake_case divergence work-orders/record-
-// attributes established.
-const AI_MEMBERS_WIRING: DocumentFamilyWiring = {
-    family: 'ai-members',
-    lifecycle: 'stateless',
-    notFoundTable: 'ai_members',
-    validateDocument: validateAiMemberDocumentBody,
-    documentOp: postAiMemberDocumentOp,
-    entityOf: aiMemberDocumentEntityOf,
-};
-// The human_members facet row spreads safely, the SAME reason
-// aiMemberDocumentEntityOf's own comment gives. `_organization`
-// stays unused: human-members is GLOBAL plane too
-// (family-registry.ts: organizationNested:false).
-export function humanMemberDocumentEntityOf(
-    document: DerivedDocument,
-    _organization: Id,
-    _current?: StateEntity,
-): unknown {
-    return {
-        id: document.uriId,
-        ...document.body,
-    };
-}
-// The human-members wiring row — the eleventh family, and the
-// THIRD (last) member of MEMBERS_WIRING's shared-log-with-
-// genesis 'stateless' bucket (see its own comment above for the
-// full rationale-contrast). UNLIKE members/ai-members, this
-// wiring row serves NO live route: human-members/:id carries
-// only {get, post} today, and this task adds no route or verb —
-// the FIRST registered family without a live document PUT
-// (documentOp/entityOf exist for a future synthesis/seed caller
-// only, mirroring the projects-createBodyIdField inert-slot
-// precedent: a fully-shaped row with no live caller yet).
-// notFoundTable is 'human_members' — its storage table name
-// diverges from its hyphenated family/route name, the SAME
-// snake_case divergence AI_MEMBERS_WIRING's own comment names.
-const HUMAN_MEMBERS_WIRING: DocumentFamilyWiring = {
-    family: 'human-members',
-    lifecycle: 'stateless',
-    notFoundTable: 'human_members',
-    validateDocument: validateHumanMemberDocumentBody,
-    documentOp: postHumanMemberDocumentOp,
-    entityOf: humanMemberDocumentEntityOf,
-};
-// The bare identities row spreads safely (no organization_id, no
-// trio — the SAME reason memberDocumentEntityOf's own comment
-// gives). `_organization` stays unused: identities is GLOBAL
-// plane too (family-registry.ts: organizationNested:false).
+// The bare identities row spreads safely (no organization_id,
+// no trio). `_organization` stays unused: identities is
+// GLOBAL plane (family-registry.ts: organizationNested:false).
 export function identityDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
@@ -726,10 +553,6 @@ registerDocumentFamilyWiring(PROJECTS_WIRING);
 registerDocumentFamilyWiring(FLOWS_WIRING);
 registerDocumentFamilyWiring(WORK_ORDERS_WIRING);
 registerDocumentFamilyWiring(OBJECTIVES_WIRING);
-registerDocumentFamilyWiring(MEMBERSHIPS_WIRING);
-registerDocumentFamilyWiring(MEMBERS_WIRING);
-registerDocumentFamilyWiring(AI_MEMBERS_WIRING);
-registerDocumentFamilyWiring(HUMAN_MEMBERS_WIRING);
 registerDocumentFamilyWiring(IDENTITIES_WIRING);
 registerDocumentFamilyWiring(AI_AGENTS_WIRING);
 
@@ -3645,23 +3468,6 @@ export const WRITE_RESPONSE_SPECS:
     // FIRST organizationNested:false family this builder serves
     // — G1 emits memberDocumentEntityOf (id first, no
     // organization_id, trio last as GET does).
-    'members/:id': documentWriteResponseSpec(MEMBERS_WIRING),
-    'ai-members': { status: HTTP_NO_CONTENT },
-    // G3: PUT emits aiMemberDocumentEntityOf (GET derive).
-    // Create/edit POST form the same address via this spec.
-    // POST response stays 204 (composed edit, no body).
-    'ai-members/:id': {
-        put: documentWriteResponseSpec(AI_MEMBERS_WIRING),
-        post: { status: HTTP_NO_CONTENT },
-    },
-    'human-members': { status: HTTP_NO_CONTENT },
-    // G3: synthesized PUT emits humanMemberDocumentEntityOf
-    // (GET derive). No live PUT route — create/edit POST and
-    // the seed form this address. POST response stays 204.
-    'human-members/:id': {
-        put: documentWriteResponseSpec(HUMAN_MEMBERS_WIRING),
-        post: { status: HTTP_NO_CONTENT },
-    },
     'identities': { status: HTTP_NO_CONTENT },
     // G3: identities/:id emits identityDocumentEntityOf
     // (GET derive). Creation and the human-member half share
@@ -3707,9 +3513,6 @@ export const WRITE_RESPONSE_SPECS:
                 body: withoutId(body ?? {}),
             }),
     },
-    // G3: memberships/:id emits membershipDocumentEntityOf
-    // (GET derive). Accept and the live PUT share this spec.
-    'memberships/:id': documentWriteResponseSpec(MEMBERSHIPS_WIRING),
     // Seat document: path is the relationship. Body is
     // type + at. organization_id / identity_id are
     // reconstructed from the path for the wire entity.

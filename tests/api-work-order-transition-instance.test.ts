@@ -14,18 +14,11 @@ import {
 } from './test-fixtures.ts';
 import { seedCurrentMember } from './member-fixtures.ts';
 import {
-    postMembershipDocumentOp,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
-import {
-    formWritePair,
     IF_MATCH_HEADER,
     strongEtagOf,
     HEX64,
-    type MessagePair,
 } from '../api/message-pair.ts';
 import {
-    SYSTEM_MEMBER_ID,
     DEFAULT_ATTRIBUTE_ACL_ROLES,
     DEFAULT_LOCK_TIMEOUT,
     nowUtc,
@@ -82,35 +75,6 @@ function req(
         token,
         body,
         headers: extraHeaders,
-        operationId: TEST_OPERATION_ID,
-    });
-}
-
-async function membershipPair(
-    membershipId: string,
-    body: Record<string, unknown>,
-    organization: string,
-): Promise<MessagePair> {
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error('missing memberships/:id spec');
-    }
-    return formWritePair({
-        method: 'PUT',
-        pathname: '/memberships/' + membershipId,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', membershipId],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [membershipId], body, SYSTEM_MEMBER_ID,
-            organization,
-        ),
         operationId: TEST_OPERATION_ID,
     });
 }
@@ -219,12 +183,6 @@ async function seedOrganizationB(
         type: 'admin',
         at: AT,
     };
-    await postMembershipDocumentOp(
-        db, 'm-current-b', memBody, SYSTEM_MEMBER_ID,
-        await membershipPair(
-            'm-current-b', memBody, ORGANIZATION_B,
-        ),
-    );
     await seedSeat(
         db,
         String(memBody['organization_id'] ?? memBody.organization_id),
@@ -244,12 +202,6 @@ async function seedMember1(
         type: 'member',
         at: AT,
     };
-    await postMembershipDocumentOp(
-        db, 'm-member1', memBody, SYSTEM_MEMBER_ID,
-        await membershipPair(
-            'm-member1', memBody, ORGANIZATION,
-        ),
-    );
     await seedSeat(
         db,
         String(memBody['organization_id'] ?? memBody.organization_id),

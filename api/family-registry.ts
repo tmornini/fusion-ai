@@ -74,68 +74,29 @@ export const FAMILY_REGISTRY: readonly FamilyRegistration[] = [
         createBodyIdField: 'id',
     },
     {
-        family: 'memberships',
-        organizationNested: true,
-        concurrency: 'simple',
-        createBodyIdField: 'id', // INERT — no collection POST
-            // exists for memberships; accept writes a seat
-            // at organizations/:organization-id/members/
-            // :identity-id (see invitations-domain.ts), not
-            // a memberships row. Leftover /memberships
-            // rows lose to a live seat until Task 55. The
-            // projects-precedent inert slot
-            // (message-pair.ts): this lookup never fires.
-    },
-    {
-        family: 'members',
-        organizationNested: false, // the FIRST global-plane
-            // row: the members roster is derived from the
-            // memberships ledger across every organization,
-            // never an organization-scoped store.
-        concurrency: 'simple',
-        createBodyIdField: 'id', // INERT — no collection POST
-            // exists for members either; the same inert slot
-            // as memberships above.
-    },
-    {
-        family: 'ai-members',
-        organizationNested: false,
-        concurrency: 'simple',
-        createBodyIdField: 'id',
-    },
-    {
-        family: 'human-members',
-        organizationNested: false,
-        concurrency: 'simple',
-        createBodyIdField: 'id',
-    },
-    {
         family: 'identities',
-        organizationNested: false, // GLOBAL plane, like
-            // members/ai-members/human-members: the identity
-            // spine spans every organization, never scoped to
-            // one.
+        organizationNested: false, // GLOBAL plane: the
+            // identity spine spans every organization,
+            // never scoped to one.
         concurrency: 'simple',
         createBodyIdField: 'id', // LIVE — POST /identities
-            // consults this slot for its bare collection-POST
-            // create route (unlike the projects/members-family
-            // inert-slot precedent above).
+            // consults this slot for its bare collection-
+            // POST create route.
     },
     {
         family: 'organizations',
-        organizationNested: false, // the tenant ROOT itself:
-            // an organization can never be nested under
-            // another organization — global plane, like
-            // members/ai-members/human-members/identities.
+        organizationNested: false, // the tenant ROOT
+            // itself: an organization can never be nested
+            // under another organization — global plane,
+            // like identities.
         concurrency: 'simple', // routes.ts's own PUT
             // organizations/:id comment: "a repeat PUT
             // records Supersedes" — the simple-class chain
             // (spec §The two PUT classes), never
             // If-Match/Follows.
-        createBodyIdField: 'id', // INERT — no collection POST
-            // exists for organizations either (route(
-            // 'organizations', {get}) is GET-only); the same
-            // inert slot as memberships/members above.
+        createBodyIdField: 'id', // INERT — no collection
+            // POST exists for organizations (route(
+            // 'organizations', {get}) is GET-only).
     },
     {
         family: 'ai-agents',

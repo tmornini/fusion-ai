@@ -27,7 +27,6 @@ import {
 import type {
     MemberId,
     Member,
-    Id,
 } from '../api/types.ts';
 import {
     SYSTEM_MEMBER_NAME,
@@ -42,95 +41,11 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import {
-    postMemberDocumentOp,
-    postHumanMemberDocumentOp,
-    postMembershipDocumentOp,
-    memberDocumentBodyOf,
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import {
     formWritePair,
-    type MessagePair,
 } from '../api/message-pair.ts';
-
-// Below-facade pair formation for this file's raw-write
-// re-points (finding 18's fixture budget) — the SAME mechanism
-// tests/member-fixtures.ts uses (Step 1), LOCAL here because
-// this file needs bodies member-fixtures.ts never forms: a
-// system-typed member document, and a human member with NO
-// identity_pii row (the erased-PII scenario below). 'members/:id'
-// and 'memberships/:id' share ONE flat WriteResponseSpec shape;
-// 'human-members/:id' carries a PER-VERB spec instead (the
-// ai-members/:id precedent) — the same split
-// tests/member-fixtures.ts's own memberDocumentPair/
-// detailDocumentPair pair draws, mirrored here rather than
-// forced into one shape.
-async function flatDocumentPair(
-    routePattern: 'members/:id' | 'memberships/:id',
-    id: Id,
-    body: Record<string, unknown>,
-    organization: Id | undefined,
-): Promise<MessagePair> {
-    const spec = WRITE_RESPONSE_SPECS[routePattern];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for ' + routePattern,
-        );
-    }
-    const segment = routePattern.split('/')[0]!;
-    return formWritePair({
-        method: 'PUT',
-        pathname: `/${segment}/${id}`,
-        routePattern,
-        routeSegments: [segment, ':id'],
-        pathSegments: [segment, id],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, organization,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-}
-
-async function humanDetailPair(
-    id: Id,
-    detail: Record<string, unknown>,
-): Promise<MessagePair> {
-    const entry = WRITE_RESPONSE_SPECS['human-members/:id'];
-    if (
-        entry === undefined
-        || 'status' in entry
-        || entry.put === undefined
-    ) {
-        throw new Error(
-            'no per-write response spec for human-members/:id',
-        );
-    }
-    const spec = entry.put;
-    return formWritePair({
-        method: 'PUT',
-        pathname: `/human-members/${id}`,
-        routePattern: 'human-members/:id',
-        routeSegments: ['human-members', ':id'],
-        pathSegments: ['human-members', id],
-        headerFields: [],
-        body: detail,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization: undefined,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], detail, SYSTEM_MEMBER_ID, undefined,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-}
-
 async function setupSeeded(): Promise<{
     db: MemoryDbAdapter;
 }> {
@@ -153,20 +68,6 @@ test(
         await seedAdminSchema(db);
         await seedHumanMember(
             db, 'hw_sarah', 'Sarah Chen',
-        );
-        // Lifecycle rides the members/:id document trio —
-        // the same path a live PUT members/:id state change
-        // would take (states-address retirement).
-        const systemBody = memberDocumentBodyOf('system', {
-            state: 'active',
-            stateAt: '2026-01-01T00:00:00.000000Z',
-            stateEventId: 'st-system',
-        });
-        await postMemberDocumentOp(
-            db, 'system', systemBody, SYSTEM_MEMBER_ID,
-            await flatDocumentPair(
-                'members/:id', 'system', systemBody, undefined,
-            ),
         );
         const ctx = createRequestContext(db, await devToken());
         const roster = await getMembers(ctx);

@@ -548,15 +548,11 @@ const STREAM_TRIO_FAMILIES: ReadonlySet<string> = new Set([
     'ideas',
     'projects',
     'objectives',
-    'members',
 ]);
 
 const STREAM_STATELESS_FAMILIES: ReadonlySet<string> =
     new Set([
-        'ai-members',
-        'human-members',
         'identities',
-        'memberships',
         'ai-agents',
     ]);
 
@@ -709,7 +705,7 @@ export async function resolveStreamedTrioWriteBody(
 }
 
 // The registration-first consult (Phase 8 Task 3, the first
-// global-plane families: members/ai-members/human-members,
+// global-plane families: identities/ai-agents,
 // organizationNested:false) — mirrors canonicalUriCollection's own
 // registration-first pattern (message-pair.ts): a family's
 // registration decides whether organization_id belongs on the

@@ -11,15 +11,6 @@ import {
     seedOrganizationDocument,
 } from './test-fixtures.ts';
 import {
-    postMembershipDocumentOp,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
-import {
-    formWritePair,
-    type MessagePair,
-} from '../api/message-pair.ts';
-import { SYSTEM_MEMBER_ID, nowUtc } from '../api/types.ts';
-import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
@@ -66,35 +57,6 @@ function ideaDocument(
     };
 }
 
-async function membershipPair(
-    membershipId: string,
-    body: Record<string, unknown>,
-    organization: string,
-): Promise<MessagePair> {
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error('missing memberships/:id spec');
-    }
-    return formWritePair({
-        method: 'PUT',
-        pathname: `/memberships/${membershipId}`,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', membershipId],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [membershipId], body, SYSTEM_MEMBER_ID,
-            organization,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-}
-
 // Org A = seedRootAdmin's '1'; Org B is a second tenant that
 // `current` also administers — foreign-id probes always use the
 // B token against an A-owned document. Privilege is membership
@@ -109,10 +71,6 @@ async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
         type: 'admin',
         at: '2020-01-01T00:00:00.000000Z',
     };
-    await postMembershipDocumentOp(
-        db, 'm-current-b', memBody, SYSTEM_MEMBER_ID,
-        await membershipPair('m-current-b', memBody, ORGANIZATION_B),
-    );
     await seedSeat(
         db,
         String(memBody['organization_id'] ?? memBody.organization_id),

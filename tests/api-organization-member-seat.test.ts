@@ -193,32 +193,12 @@ async () => {
         type: 'admin',
         at: AT,
     };
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error('missing memberships spec');
-    }
-    await postMembershipDocumentOp(
-        db, 'm-current-b', memBody, SYSTEM_MEMBER_ID,
-        await formWritePair({
-            method: 'PUT',
-            pathname: '/memberships/m-current-b',
-            routePattern: 'memberships/:id',
-            routeSegments: ['memberships', ':id'],
-            pathSegments: [
-                'memberships', 'm-current-b',
-            ],
-            headerFields: [],
-            body: memBody,
-            requesterIdentityId: SYSTEM_MEMBER_ID,
-            requestAt: nowUtc(),
-            organization: 'B',
-            responseStatus: spec.status,
-            responseBody: spec.successBody?.(
-                ['m-current-b'], memBody,
-                SYSTEM_MEMBER_ID, 'B',
-            ),
-            operationId: TEST_OPERATION_ID,
-        }),
+    await seedSeat(
+        db,
+        String(memBody['organization_id'] ?? memBody.organization_id),
+        String(memBody['identity_id'] ?? memBody.identity_id),
+        (memBody['type'] ?? memBody.type) as 'admin' | 'member',
+        String(memBody['at'] ?? memBody.at),
     );
     const tokenB = await organizationToken(
         'current', 'B');

@@ -51,32 +51,6 @@ async function seedMembershipPair(
         type: 'member',
         at: AT,
     };
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for memberships/:id',
-        );
-    }
-    const pair = await formWritePair({
-        method: 'PUT',
-        pathname: '/memberships/' + id,
-        routePattern: 'memberships/:id',
-        routeSegments: ['memberships', ':id'],
-        pathSegments: ['memberships', id],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, organization,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-    await postMembershipDocumentOp(
-        db, id, body, SYSTEM_MEMBER_ID, pair,
-    );
     await seedSeat(
         db,
         String(body['organization_id'] ?? body.organization_id),

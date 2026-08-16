@@ -34,10 +34,12 @@ import {
     postMembershipDocumentOp,
     postMemberDocumentOp,
     memberDocumentBodyOf,
-    WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import { deriveMembers } from '../api/derive-members.ts';
-import { seedIdentityPii } from './identity-fixtures.ts';
+import {
+    seedIdentityPii,
+    seedPersonIdentity,
+} from './identity-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
@@ -99,12 +101,6 @@ async function leftoverMembershipPair(
     body: Record<string, unknown>,
 ): Promise<void> {
     const organization = body.organization_id as string;
-    const spec = WRITE_RESPONSE_SPECS['memberships/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for memberships/:id',
-        );
-    }
     const pair = await formWritePair({
         method: 'PUT',
         pathname: '/memberships/' + id,
@@ -116,10 +112,8 @@ async function leftoverMembershipPair(
         requesterIdentityId: SYSTEM_MEMBER_ID,
         requestAt: nowUtc(),
         organization,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, organization,
-        ),
+        responseStatus: 200,
+        responseBody: { id, ...body },
         operationId: TEST_OPERATION_ID,
     });
     await postMembershipDocumentOp(
@@ -127,7 +121,7 @@ async function leftoverMembershipPair(
     );
 }
 
-async function seedMemberParent(
+async function leftoverMemberParent(
     db: MemoryDbAdapter,
     id: string,
 ): Promise<void> {
@@ -136,12 +130,6 @@ async function seedMemberParent(
         stateAt: AT,
         stateEventId: 'seed-member-' + id + '-active',
     });
-    const spec = WRITE_RESPONSE_SPECS['members/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for members/:id',
-        );
-    }
     const pair = await formWritePair({
         method: 'PUT',
         pathname: '/members/' + id,
@@ -153,10 +141,8 @@ async function seedMemberParent(
         requesterIdentityId: SYSTEM_MEMBER_ID,
         requestAt: nowUtc(),
         organization: undefined,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, undefined,
-        ),
+        responseStatus: 200,
+        responseBody: { id, ...body },
         operationId: TEST_OPERATION_ID,
     });
     await postMemberDocumentOp(
@@ -166,10 +152,9 @@ async function seedMemberParent(
 
 async function seedMembershipPair(
     db: MemoryDbAdapter,
-    id: string,
+    _id: string,
     body: Record<string, unknown>,
 ): Promise<void> {
-    await leftoverMembershipPair(db, id, body);
     await seedSeat(
         db,
         String(body['organization_id'] ?? body.organization_id),
@@ -540,13 +525,13 @@ async () => {
     );
 });
 
-test('deriveMembers is seats-only: leftover'
-+ ' /memberships/ does not join; a live seat does',
+test('deriveMembers is seats ∩ identities: leftover'
++ ' /members/ and /memberships/ do not join',
 async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     await seedOrganizationDocument(db, 'A', 'Acme');
-    await seedMemberParent(db, 'ghost');
+    await leftoverMemberParent(db, 'ghost');
     await leftoverMembershipPair(db, 'm-leftover', {
         organization_id: 'A', identity_id: 'ghost',
         type: 'member', at: AT,
@@ -557,6 +542,16 @@ async () => {
         false,
     );
     await seedSeat(db, 'A', 'ghost', 'member', AT);
+    assert.equal(
+        (await deriveMembers(db, 'A'))
+            .some((row) => row.id === 'ghost'),
+        false,
+        'leftover /members/ parent does not join',
+    );
+    await seedPersonIdentity(db, 'ghost', {
+        name: 'Ghost', email: 'g@x.com',
+        phone: '', bio: '',
+    });
     assert.equal(
         (await deriveMembers(db, 'A'))
             .some((row) => row.id === 'ghost'),

@@ -14,15 +14,7 @@ import {
 import { handleRequest } from '../api/api.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
-import { seedIdentityPii } from './identity-fixtures.ts';
-import {
-    postMemberDocumentOp,
-    postMembershipDocumentOp,
-    memberDocumentBodyOf,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
-import { formWritePair } from '../api/message-pair.ts';
-import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { seedPersonIdentity } from './identity-fixtures.ts';
 import { deriveInvitations } from
     '../api/derive-invitations.ts';
 import { deriveOrganizations } from
@@ -138,57 +130,15 @@ async function seed(): Promise<MemoryDbAdapter> {
     return db;
 }
 
-// The member document write is re-pointed onto the message
-// pair postMemberDocumentOp appends (finding 18's fixture
-// budget): rosterIds below reads GET /members, which is now
-// ledger-derived, so an identity absent from the message plane
-// would never surface as a member-parent regardless of its
-// membership. identities stays raw — no GET /identities (or
-// /identities/:id) reads it anywhere in this file. identityPii's
-// OWN stays-raw acceptance EXPIRES here: GET /invitations
-// (exercised below) enriches invited_by_name by reading the
-// identity_pii plane (api/invitations-domain.ts), which Task 8
-// Step 3 re-points onto deriveIdentityPiiRows — so PII forms
-// its pair below-facade via the SAME exported op the live PUT
-// identities/:id/pii route uses.
+// Person identities ride the live identities + PII documents.
+// GET /invitations enriches invited_by_name from identity_pii.
 async function person(
     db: MemoryDbAdapter,
     id: string,
     name: string,
     email: string,
 ): Promise<void> {
-    const body = memberDocumentBodyOf('human', {
-        state: 'active',
-        stateAt: AT,
-        stateEventId: 'seed-member-' + id + '-active',
-    });
-    const spec = WRITE_RESPONSE_SPECS['members/:id'];
-    if (spec === undefined || !('status' in spec)) {
-        throw new Error(
-            'no per-write response spec for members/:id',
-        );
-    }
-    const pair = await formWritePair({
-        method: 'PUT',
-        pathname: '/members/' + id,
-        routePattern: 'members/:id',
-        routeSegments: ['members', ':id'],
-        pathSegments: ['members', id],
-        headerFields: [],
-        body,
-        requesterIdentityId: SYSTEM_MEMBER_ID,
-        requestAt: nowUtc(),
-        organization: undefined,
-        responseStatus: spec.status,
-        responseBody: spec.successBody?.(
-            [id], body, SYSTEM_MEMBER_ID, undefined,
-        ),
-        operationId: TEST_OPERATION_ID,
-    });
-    await postMemberDocumentOp(
-        db, id, body, SYSTEM_MEMBER_ID, pair,
-    );
-    await seedIdentityPii(db, id, {
+    await seedPersonIdentity(db, id, {
         name, email, phone: '', bio: '',
     });
 }
