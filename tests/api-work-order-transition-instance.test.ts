@@ -362,7 +362,7 @@ async function bindInstance(
     recordTypeId: string = TYPE_ID,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST',
+        'PUT',
         '/work-orders/' + woId + '/binding',
         token,
         {

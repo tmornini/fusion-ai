@@ -224,7 +224,7 @@ test('a claim, then a claim past lockTimeout supersedes with'
 
     const claim1At = nowUtc();
     const claim1 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        'PUT', '/work-orders/' + workOrderId + '/claim', token,
         {
             claimEventId: workOrderId + '-ce1',
             claimAt: claim1At,
@@ -249,7 +249,7 @@ test('a claim, then a claim past lockTimeout supersedes with'
     const expire2At = nowUtc();
     const claim2At = nowUtc();
     const claim2 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        'PUT', '/work-orders/' + workOrderId + '/claim', token,
         {
             claimEventId: workOrderId + '-ce2',
             claimAt: claim2At,
@@ -288,17 +288,13 @@ test('claim → release → reclaim derives claimed,'
     ));
     assert.equal(put.status, 201);
 
-    // Release with no live claim — pair appends, derives zero.
-    const bareReleaseId = workOrderId + '-rel-bare';
+    // DELETE with no claim row is 404; derive stays empty.
     const bareRelease = await handleRequest(db, req(
-        'POST',
-        '/work-orders/' + workOrderId + '/release',
-        token, {
-            releaseEventId: bareReleaseId,
-            releaseAt: nowUtc(),
-        },
+        'DELETE',
+        '/work-orders/' + workOrderId + '/claim',
+        token,
     ));
-    assert.equal(bareRelease.status, 201);
+    assert.equal(bareRelease.status, 404);
     assert.deepEqual(
         forWorkOrder(
             await deriveWorkOrderLifecycle(db), workOrderId,
@@ -308,7 +304,7 @@ test('claim → release → reclaim derives claimed,'
 
     const claim1At = nowUtc();
     const claim1 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        'PUT', '/work-orders/' + workOrderId + '/claim', token,
         {
             claimEventId: workOrderId + '-ce1',
             claimAt: claim1At,
@@ -318,21 +314,16 @@ test('claim → release → reclaim derives claimed,'
     ));
     assert.equal(claim1.status, 201);
 
-    const releaseEventId = workOrderId + '-rel1';
-    const releaseAt = nowUtc();
     const release = await handleRequest(db, req(
-        'POST',
-        '/work-orders/' + workOrderId + '/release',
-        token, {
-            releaseEventId,
-            releaseAt,
-        },
+        'DELETE',
+        '/work-orders/' + workOrderId + '/claim',
+        token,
     ));
-    assert.equal(release.status, 201);
+    assert.equal(release.status, 204);
 
     const claim2At = nowUtc();
     const claim2 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        'PUT', '/work-orders/' + workOrderId + '/claim', token,
         {
             claimEventId: workOrderId + '-ce2',
             claimAt: claim2At,
@@ -349,18 +340,9 @@ test('claim → release → reclaim derives claimed,'
         derived.map((row) => row.state),
         ['claimed', 'claim_released', 'claimed'],
     );
-    assert.deepEqual(
-        derived.map((row) => row.id),
-        [
-            workOrderId + '-ce1',
-            releaseEventId,
-            workOrderId + '-ce2',
-        ],
-    );
-    assert.ok(
-        !derived.some((row) => row.id === bareReleaseId),
-        'no-live-claim release must derive zero events',
-    );
+    assert.equal(derived[0]!.id, workOrderId + '-ce1');
+    assert.equal(derived[1]!.state, 'claim_released');
+    assert.equal(derived[2]!.id, workOrderId + '-ce2');
 });
 
 // -- 4. a transition, then a transition with release --------------
@@ -454,7 +436,7 @@ test('the MOVING lock_timeout case: an entity PUT changing'
 
     const claim1At = nowUtc();
     const claim1 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        'PUT', '/work-orders/' + workOrderId + '/claim', token,
         {
             claimEventId: workOrderId + '-ce1',
             claimAt: claim1At,
@@ -489,7 +471,7 @@ test('the MOVING lock_timeout case: an entity PUT changing'
     const expire2At = nowUtc();
     const claim2At = nowUtc();
     const claim2 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        'PUT', '/work-orders/' + workOrderId + '/claim', token,
         {
             claimEventId: workOrderId + '-ce2',
             claimAt: claim2At,
@@ -542,7 +524,7 @@ test('HYBRID: a bare document PUT plus a transition genesis'
 
     const claimAt = nowUtc();
     const claim = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token,
+        'PUT', '/work-orders/' + workOrderId + '/claim', token,
         {
             claimEventId: workOrderId + '-ce1',
             claimAt,

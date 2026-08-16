@@ -378,7 +378,7 @@ async function bindInstance(
     woId: string = WO_ID,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST',
+        'PUT',
         '/work-orders/' + woId + '/binding',
         token,
         {

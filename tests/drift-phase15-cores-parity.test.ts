@@ -304,7 +304,7 @@ async () => {
 
     // Live path: claim against the re-anchored gate succeeds.
     const claimResponse = await handleRequest(db, req(
-        'POST',
+        'PUT',
         '/work-orders/' + workOrderId + '/claim',
         token, {
             claimEventId: generateCryptoSafeBase62(),

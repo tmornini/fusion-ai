@@ -4455,25 +4455,32 @@ const WORK_ORDER_CLAIM_KEYS: readonly string[] = [
     'claimEventId', 'claimAt',
     'expireEventId', 'expireAt',
 ];
+const WORK_ORDER_CLAIM_OPTIONAL: readonly string[] = [
+    'expires_at',
+];
 
 export interface WorkOrderClaimBody {
     readonly claimEventId: string;
     readonly claimAt: string;
     readonly expireEventId: string;
     readonly expireAt: string;
+    readonly expiresAt?: string;
 }
 
-// Gate for POST /work-orders/:id/claim. The caller mints
+// Gate for PUT /work-orders/:id/claim. The caller mints
 // both event ids and timestamps; the route reads them via
 // this validator and never calls generateCryptoSafeBase62
 // for the claim events. Authorship is server-derived
 // (actor for 'claimed', prior.member_id for
 // 'claim_expired') — never supplied by the caller.
+// expires_at is the stored claim-document fact; "claimed
+// now" is judged at read against the clock.
 export function validateWorkOrderClaimBody(
     body: Record<string, unknown>,
 ): WorkOrderClaimBody {
     assertOnlyKeys(
         body, WORK_ORDER_CLAIM_KEYS, 'WorkOrderClaimBody',
+        WORK_ORDER_CLAIM_OPTIONAL,
     );
     const claimEventId = pickString(body, 'claimEventId');
     const expireEventId = pickString(
@@ -4490,7 +4497,20 @@ export function validateWorkOrderClaimBody(
     const expireAt = validateTimestampField(
         body, 'expireAt', 'WorkOrderClaimBody',
     );
-    return { claimEventId, claimAt, expireEventId, expireAt };
+    const expiresAt = Object.hasOwn(body, 'expires_at')
+        ? validateTimestampField(
+            body, 'expires_at', 'WorkOrderClaimBody',
+        )
+        : undefined;
+    if (expiresAt === undefined) {
+        return {
+            claimEventId, claimAt, expireEventId, expireAt,
+        };
+    }
+    return {
+        claimEventId, claimAt, expireEventId, expireAt,
+        expiresAt,
+    };
 }
 
 const WORK_ORDER_RELEASE_KEYS: readonly string[] = [
@@ -4502,10 +4522,11 @@ export interface WorkOrderReleaseBody {
     readonly releaseAt: string;
 }
 
-// Gate for POST /work-orders/:id/release. The caller mints
-// the event id and timestamp (the claim-body precedent);
-// authorship is server-derived (actor) — never supplied by
-// the caller. A single terminal event, so no expire pair.
+// Gate for the retired POST /work-orders/:id/release
+// body (legacy derive only). Live release is DELETE
+// /work-orders/:id/claim (no body). The caller minted
+// the event id and timestamp; authorship is server-
+// derived (actor).
 export function validateWorkOrderReleaseBody(
     body: Record<string, unknown>,
 ): WorkOrderReleaseBody {
@@ -4534,9 +4555,9 @@ export interface WorkOrderBindingBody {
     readonly recordTypeId: string;
 }
 
-// Gate for POST /work-orders/:id/binding. Two opaque ids only —
+// Gate for PUT /work-orders/:id/binding. Two opaque ids only —
 // no timestamps, no event ids. The CURRENT bind derives from
-// the op-pair prefix (workOrderBindingFor); rebind is 409.
+// the pair prefix (workOrderBindingFor); rebind is 409.
 export function validateWorkOrderBindingBody(
     body: Record<string, unknown>,
 ): WorkOrderBindingBody {

@@ -22,7 +22,7 @@ import {
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
 
-// POST work-orders/:id/binding — bind WO ↔ instance.
+// PUT work-orders/:id/binding — bind WO ↔ instance.
 // Ladder order is the covenant's (fence → body → instance →
 // join → in-tx 409), NOT claim's internal body-first order —
 // deliberate divergence so a foreign-WO bind with a
@@ -290,7 +290,7 @@ test('foreign-WO bind with malformed body → 404'
 async () => {
     const { db, tokenB } = await seededDb();
     const res = await handleRequest(db, req(
-        'POST', BINDING, tokenB,
+        'PUT', BINDING, tokenB,
         { not_a_key: true },
     ));
     assert.equal(res.status, 404);
@@ -305,7 +305,7 @@ test('absent WO bind → 404',
 async () => {
     const { db, token } = await seededDb();
     const res = await handleRequest(db, req(
-        'POST', '/work-orders/wo-absent/binding',
+        'PUT', '/work-orders/wo-absent/binding',
         token, bindBody(),
     ));
     assert.equal(res.status, 404);
@@ -317,13 +317,13 @@ test('bad body (missing key / unknown key / empty'
 async () => {
     const { db, token } = await seededDb();
     const missing = await handleRequest(db, req(
-        'POST', BINDING, token,
+        'PUT', BINDING, token,
         { instance_id: INSTANCE_ID },
     ));
     assert.equal(missing.status, 400);
 
     const unknown = await handleRequest(db, req(
-        'POST', BINDING, token, {
+        'PUT', BINDING, token, {
             instance_id: INSTANCE_ID,
             record_type_id: TYPE_ID,
             extra: true,
@@ -332,7 +332,7 @@ async () => {
     assert.equal(unknown.status, 400);
 
     const empty = await handleRequest(db, req(
-        'POST', BINDING, token, {
+        'PUT', BINDING, token, {
             instance_id: '',
             record_type_id: TYPE_ID,
         },
@@ -347,7 +347,7 @@ async () => {
     const { db, token, tokenB } = await seededDb();
 
     const absent = await handleRequest(db, req(
-        'POST', BINDING, token,
+        'PUT', BINDING, token,
         bindBody('inst-missing', TYPE_ID),
     ));
     assert.equal(absent.status, 404);
@@ -364,7 +364,7 @@ async () => {
     ));
     assert.equal(del.status, 204);
     const tomb = await handleRequest(db, req(
-        'POST', BINDING, token,
+        'PUT', BINDING, token,
         bindBody(INSTANCE_TOMB, TYPE_ID),
     ));
     assert.equal(tomb.status, 404);
@@ -428,7 +428,7 @@ async () => {
     // org-A joined type — head resolves under fenced org
     // only, so foreign is absent 404 (no oracle).
     const foreign = await handleRequest(db, req(
-        'POST', BINDING, token,
+        'PUT', BINDING, token,
         bindBody(foreignInst, TYPE_ID),
     ));
     assert.equal(foreign.status, 404);
@@ -482,8 +482,9 @@ async () => {
         },
     ));
     assert.equal(inst.status, 201);
+    const before = await pairCount(db);
     const res = await handleRequest(db, req(
-        'POST', BINDING, token,
+        'PUT', BINDING, token,
         bindBody(otherInst, TYPE_OTHER),
     ));
     assert.equal(res.status, 400);
@@ -492,15 +493,16 @@ async () => {
         err.error,
         /not joined to the work order's flow/,
     );
+    assert.equal(await pairCount(db), before);
 });
 
-// 6. fresh bind → 204 + GET embed; unbound omits keys
-test('fresh bind → 204; detail + list embed; unbound'
+// 6. fresh bind → 201 + GET embed; unbound omits keys
+test('fresh bind → 201; detail + list embed; unbound'
 + ' omits keys',
 async () => {
     const { db, token } = await seededDb();
     const res = await handleRequest(db, req(
-        'POST', BINDING, token, bindBody(),
+        'PUT', BINDING, token, bindBody(),
     ));
     assert.equal(res.status, 201);
 
@@ -539,18 +541,18 @@ async () => {
     );
 });
 
-// 7. re-bind same pair → 204 replay (pair count stable)
-test('re-bind same pair byte-identically → 204'
+// 7. re-bind same pair → 201 replay (pair count stable)
+test('re-bind same pair byte-identically → 201'
 + ' replay (pair count unchanged)',
 async () => {
     const { db, token } = await seededDb();
     const first = await handleRequest(db, req(
-        'POST', BINDING, token, bindBody(),
+        'PUT', BINDING, token, bindBody(),
     ));
     assert.equal(first.status, 201);
     const before = await pairCount(db);
     const second = await handleRequest(db, req(
-        'POST', BINDING, token, bindBody(),
+        'PUT', BINDING, token, bindBody(),
     ));
     assert.equal(second.status, 201);
     assert.equal(await pairCount(db), before);
@@ -562,11 +564,11 @@ async () => {
     const { db, token } = await seededDb();
     await seedInstance(db, token, INSTANCE_2);
     const first = await handleRequest(db, req(
-        'POST', BINDING, token, bindBody(),
+        'PUT', BINDING, token, bindBody(),
     ));
     assert.equal(first.status, 201);
     const res = await handleRequest(db, req(
-        'POST', BINDING, token,
+        'PUT', BINDING, token,
         bindBody(INSTANCE_2, TYPE_ID),
     ));
     assert.equal(res.status, 409);

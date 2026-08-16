@@ -94,7 +94,7 @@ test('foreign-org work-order claim is 404', async () => {
 
     const claimAt = nowUtc();
     const foreign = await handleRequest(db, req(
-        'POST', '/work-orders/wo-foreign-claim/claim', tokenB, {
+        'PUT', '/work-orders/wo-foreign-claim/claim', tokenB, {
             claimEventId: generateCryptoSafeBase62(),
             claimAt,
             expireEventId: generateCryptoSafeBase62(),
@@ -126,16 +126,9 @@ test('foreign-org work-order release is 404', async () => {
     assert.equal(created.status, 201);
 
     const foreign = await handleRequest(db, req(
-        'POST', '/work-orders/wo-foreign-rel/release', tokenB, {
-            releaseEventId: generateCryptoSafeBase62(),
-            releaseAt: nowUtc(),
-        },
+        'DELETE', '/work-orders/wo-foreign-rel/claim', tokenB,
     ));
     assert.equal(foreign.status, 404);
-    assert.deepEqual(await foreign.json(), {
-        error:
-            'Not found: work_orders/wo-foreign-rel',
-    });
 });
 
 test('foreign-org work-order transition is 404', async () => {

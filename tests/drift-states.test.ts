@@ -641,7 +641,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
 
     const freshClaimAt = nowUtc();
     const freshClaim = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
             claimEventId: workOrderId + '-ce1',
             claimAt: freshClaimAt,
             expireEventId: workOrderId + '-ee1',
@@ -660,7 +660,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
     ).length;
     const repeatClaimAt = nowUtc();
     const repeatClaim = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
             claimEventId: workOrderId + '-ce2',
             claimAt: repeatClaimAt,
             expireEventId: workOrderId + '-ee2',
@@ -684,7 +684,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
     const takeoverExpireAt = nowUtc();
     const takeoverClaimAt = nowUtc();
     const takeover = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
             claimEventId: workOrderId + '-ce3',
             claimAt: takeoverClaimAt,
             expireEventId: workOrderId + '-ee3',
@@ -737,7 +737,7 @@ async () => {
 
     const claimAt = nowUtc();
     const claim = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
             claimEventId: workOrderId + '-ce1',
             claimAt,
             expireEventId: workOrderId + '-ee1',
@@ -802,7 +802,7 @@ async () => {
 
     const claimAt = nowUtc();
     const claim = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
             claimEventId: workOrderId + '-ce1',
             claimAt,
             expireEventId: workOrderId + '-ee1',
@@ -812,21 +812,13 @@ async () => {
     assert.equal(claim.status, 201);
     await assertHistoryParity(db, STARK_ORGANIZATION, workOrderId);
 
-    // The named release: web-app/app/adapters/work-orders-
-    // deletions.ts's deleteWorkOrderClaim posts this EXACT
-    // shape — POST work-orders/:id/release with
-    // {releaseEventId, releaseAt}.
-    const releaseEventId = workOrderId + '-release1';
-    const releaseAt = nowUtc();
+    // The named release: DELETE work-orders/:id/claim.
     const released = await handleRequest(db, req(
-        'POST',
-        '/work-orders/' + workOrderId + '/release',
-        token, {
-            releaseEventId,
-            releaseAt,
-        },
+        'DELETE',
+        '/work-orders/' + workOrderId + '/claim',
+        token,
     ));
-    assert.equal(released.status, 201);
+    assert.equal(released.status, 204);
     const afterRelease = await assertDerivedHistory(
         db, STARK_ORGANIZATION, workOrderId,
     );
@@ -845,7 +837,7 @@ async () => {
     // claim-vocabulary event).
     const reclaimAt = nowUtc();
     const reclaimed = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
             claimEventId: workOrderId + '-ce2',
             claimAt: reclaimAt,
             expireEventId: workOrderId + '-ee2',

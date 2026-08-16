@@ -126,7 +126,7 @@ const MEMBER_VERBS: Readonly<
         ['GET', 'PUT', 'PATCH', 'DELETE'],
     // Nested field-values collection RETIRED (states-URI
     // elimination C4); field values fold on WO history.
-    '/work-orders': ['GET', 'PUT', 'POST'],
+    '/work-orders': ['GET', 'PUT', 'POST', 'DELETE'],
     // Bulk lifecycle collection RETIRED (states-URI
     // elimination C3).
     '/ai-agents': ['GET'],

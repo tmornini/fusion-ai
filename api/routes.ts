@@ -87,7 +87,6 @@ import {
     validateWorkOrderClaimBody,
     validateWorkOrderCreateBody,
     validateWorkOrderDocumentBody,
-    validateWorkOrderReleaseBody,
     validateWorkOrderTransitionBody,
     asWorkOrderFlowGraph,
     pickString,
@@ -119,6 +118,8 @@ import {
     latestClaimEvent,
     isClaimEventExpired,
     isClaimState,
+    isExpiresAtPassed,
+    addUtcSeconds,
 } from './work-order-claims.ts';
 import {
     ATTRIBUTE_RESTRICT_TABLES,
@@ -273,6 +274,7 @@ import {
 import {
     deriveWorkOrderHistories,
     workOrderBindingFor,
+    workOrderClaimDocumentFor,
     workOrderClaimHistoryFor,
     workOrderDocumentHeadFor,
     workOrderHistoryFor,
@@ -2064,6 +2066,7 @@ export interface WorkOrderCreationPairs {
     readonly operation: MessagePair;
     readonly document: MessagePair;
     readonly join: MessagePair;
+    readonly claim: MessagePair;
 }
 
 // Work-order creation. Phase Final Task 2: work_orders +
@@ -2088,16 +2091,15 @@ export async function postWorkOrderCreationOp(
         // ROW halves stripped.
         ['requests', 'responses'],
         async (view) => {
-            // Three pairs or none (Atomicity): the operation
-            // pair (the gate's own), the synthesized document
-            // pair, and the synthesized join pair — appended
-            // in that order, LAST, so the document pair's
-            // response `at` strictly follows the operation
-            // pair's.
+            // Four pairs or none (Atomicity): operation,
+            // document, join, and the genesis claim
+            // document so DELETE /claim can release the
+            // creation-time claim.
             if (pairs !== undefined) {
                 await appendMessagePair(view, pairs.operation);
                 await appendMessagePair(view, pairs.document);
                 await appendMessagePair(view, pairs.join);
+                await appendMessagePair(view, pairs.claim);
             }
         },
     );
@@ -2167,11 +2169,18 @@ export async function postWorkOrderClaimOp(
             const prior = latestClaimEvent(
                 events, workOrderId,
             );
+            const claimDoc = await workOrderClaimDocumentFor(
+                view, organization, workOrderId,
+            );
+            const priorExpired = claimDoc !== null
+                ? isExpiresAtPassed(claimDoc.expiresAt)
+                : prior !== null
+                    && isClaimEventExpired(
+                        prior, graph.lockTimeout,
+                    );
             const priorLive = prior !== null
                 && prior.state === 'claimed'
-                && !isClaimEventExpired(
-                    prior, graph.lockTimeout,
-                );
+                && !priorExpired;
             if (priorLive) {
                 if (prior.member_id === actor) {
                     if (pair !== undefined) {
@@ -2197,52 +2206,22 @@ export async function postWorkOrderClaimOp(
     );
 }
 
-// Release a work order's claim — the claim op's single-
-// transaction, pair-on-every-exit shape. Unlike claim, no
-// gate decision exists here: release has no 409 branch, and
-// the pair appends whether or not a live claim exists (a
-// wired route must never resolve a pair the transaction
-// never stored), so deciding liveness at the gate would
-// change nothing observable. The decision is made ONCE, at
-// derive time (applyReleasePair): a live unexpired claim as
-// of releaseAt derives the claim_released event; otherwise
-// the pair derives zero events — the idempotent no-op. 204
-// either way. The head read below is the 404 existence and
-// org fence, nothing more. Release stays open to any org
-// member (today's unclaim posture; the UI shows Unclaim only
-// when claimed).
-//
-// NOTE the deliberate shape: unlike claim, release has NO
-// foreign-claim 409 and NO branch that skips the append —
-// the live-or-not decision is REPLAYED at derive time
-// (Task 10's applyReleasePair), deterministically, from the
-// same (at, id)-ordered history the gate would read. The
-// gate itself only guards existence (404) and body validity
-// (400). This keeps the op idempotent (a resend folds by
-// message_hash) and keeps gate and derive from ever
-// disagreeing. The head read stays even though lockTimeout
-// is only consumed at replay: it IS the 404 existence fence.
-export async function postWorkOrderReleaseOp(
+// DELETE work-orders/:id/claim — tombstone the claim
+// document. The gate's DELETE table already 404s a never-
+// written address and 204s an already-DELETE head without
+// dispatch. A PUT head proceeds here; append the DELETE
+// pair. applyReleasePair synthesizes claim_released from
+// the pair (id/at/actor) — no caller-minted body.
+export async function deleteWorkOrderClaimOp(
     db: DbAdapter,
-    workOrderId: Id,
-    body: Record<string, unknown>,
+    _workOrderId: Id,
     _actor: Id,
-    organization: Id,
+    _organization: Id,
     pair?: MessagePair,
 ): Promise<void> {
     return db.transaction(
         ['requests', 'responses'],
         async (view) => {
-            validateWorkOrderReleaseBody(body);
-            const wo = await workOrderDocumentHeadFor(
-                view, organization, workOrderId,
-            );
-            if (wo === null) {
-                throw await missedReadError(
-                    view, workOrderId, organization,
-                    'work_orders',
-                );
-            }
             if (pair !== undefined) {
                 await appendMessagePair(view, pair);
             }
@@ -3299,7 +3278,6 @@ export const WRITE_RESPONSE_SPECS:
     'work-orders/:id':
         documentWriteResponseSpec(WORK_ORDERS_WIRING),
     'work-orders/:id/claim': { status: HTTP_NO_CONTENT },
-    'work-orders/:id/release': { status: HTTP_NO_CONTENT },
     'work-orders/:id/transition': { status: HTTP_NO_CONTENT },
     'work-orders/:id/binding': { status: HTTP_NO_CONTENT },
     'flows/:id/work-orders/:woid': {
@@ -5039,7 +5017,32 @@ export const routes: Route[] = [
                     operationId: pair.operationId,
                     organization,
                 });
-                pairs = { operation: pair, document, join };
+                const graph = asWorkOrderFlowGraph(
+                    b.workOrder['flow_graph'],
+                    'workOrder.flow_graph',
+                );
+                const claimAt = b.stateEventAts[2]!;
+                const claim = await formDocumentPairFor(db, {
+                    routePattern: 'work-orders/:id/claim',
+                    params: [b.id],
+                    body: {
+                        claimEventId: b.stateEventIds[2]!,
+                        claimAt,
+                        expireEventId:
+                            b.stateEventIds[2]! + '-exp',
+                        expireAt: claimAt,
+                        expires_at: addUtcSeconds(
+                            claimAt, graph.lockTimeout,
+                        ),
+                    },
+                    requesterIdentityId: actor,
+                    requestAt: pair.requestAt,
+                    operationId: pair.operationId,
+                    organization,
+                });
+                pairs = {
+                    operation: pair, document, join, claim,
+                };
             }
             return postWorkOrderCreationOp(
                 db, body, actor, pairs,
@@ -5090,21 +5093,37 @@ export const routes: Route[] = [
         },
         put: documentPutHandler(WORK_ORDERS_WIRING),
     }),
-    // See postWorkOrderClaimOp for the transaction shape.
+    // PUT claims, GET returns facts (404 only when
+    // unclaimed), DELETE releases (DELETE head =
+    // unclaimed). Member-tier via MEMBER_VERBS
+    // GET/PUT/DELETE on /work-orders.
     route('work-orders/:id/claim', {
-        post: (db, p, body, actor, pair, organization) =>
+        get: async (db, p, _actor, organization) => {
+            const org = requireOrganization(
+                organization,
+            );
+            const workOrderId = param(p, 0);
+            const claim = await workOrderClaimDocumentFor(
+                db, org, workOrderId,
+            );
+            if (claim === null) {
+                throw new EntityNotFoundError(
+                    'work_order_claims', workOrderId,
+                );
+            }
+            return {
+                member_id: claim.memberId,
+                expires_at: claim.expiresAt,
+            };
+        },
+        put: (db, p, body, actor, pair, organization) =>
             postWorkOrderClaimOp(
                 db, param(p, 0), body, actor,
                 requireOrganization(organization), pair,
             ),
-    }),
-    // Member-tier POST — /work-orders carries POST in
-    // MEMBER_VERBS. See postWorkOrderReleaseOp for the
-    // transaction shape.
-    route('work-orders/:id/release', {
-        post: (db, p, body, actor, pair, organization) =>
-            postWorkOrderReleaseOp(
-                db, param(p, 0), body, actor,
+        delete: (db, p, actor, pair, organization) =>
+            deleteWorkOrderClaimOp(
+                db, param(p, 0), actor,
                 requireOrganization(organization), pair,
             ),
     }),
@@ -5135,11 +5154,11 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Member-tier POST — /work-orders carries POST in
-    // MEMBER_VERBS (claim/transition precedent). See
-    // postWorkOrderBindingOp for the transaction shape.
+    // Create-only PUT — first bind 201; rebind 409;
+    // no DELETE. POST is gone. Member-tier via
+    // MEMBER_VERBS PUT on /work-orders.
     route('work-orders/:id/binding', {
-        post: (db, p, body, actor, pair, organization) =>
+        put: (db, p, body, actor, pair, organization) =>
             postWorkOrderBindingOp(
                 db, param(p, 0), body, actor,
                 requireOrganization(organization), pair,

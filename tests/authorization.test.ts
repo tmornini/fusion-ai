@@ -96,7 +96,11 @@ test('member tier: content surfaces are permitted', () => {
         isPermitted('PUT', '/ideas/i1', ['member']), true);
     assert.equal(
         isPermitted(
-            'POST', '/work-orders/w1/claim', ['member']),
+            'PUT', '/work-orders/w1/claim', ['member']),
+        true);
+    assert.equal(
+        isPermitted(
+            'DELETE', '/work-orders/w1/claim', ['member']),
         true);
     assert.equal(
         isPermitted(

@@ -231,7 +231,7 @@ async function seedClaim(
     workOrderId: string,
     claimAt: string,
 ): Promise<void> {
-    await ctx.POST(`work-orders/${workOrderId}/claim`, {
+    await ctx.PUT(`work-orders/${workOrderId}/claim`, {
         claimEventId: generateCryptoSafeBase62(),
         claimAt,
         expireEventId: generateCryptoSafeBase62(),
@@ -242,12 +242,11 @@ async function seedClaim(
 async function seedRelease(
     ctx: RequestContext,
     workOrderId: string,
-    releaseAt: string,
+    _releaseAt: string,
 ): Promise<void> {
-    await ctx.POST(`work-orders/${workOrderId}/release`, {
-        releaseEventId: generateCryptoSafeBase62(),
-        releaseAt,
-    });
+    await ctx.DELETE(
+        `work-orders/${workOrderId}/claim`,
+    );
 }
 
 async function seedBareWorkOrder(
