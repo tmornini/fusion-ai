@@ -11,6 +11,7 @@ import { seedOrganizationMember } from './root-admin-fixture.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { seedIdentityProvider } from './identity-fixtures.ts';
 
 // Pins the CURRENT status of every deliberate identity-spine
 // verb gap, through handleRequest, so Task 4's document-wiring
@@ -26,9 +27,9 @@ import {
 // identities/:id/credentials/:cid, identity-token-revocations/
 // :id, role-grants, role-grants/:id, identity-tokens,
 // identity-tokens/:id, identity-tokens/:jti/rotation,
-// identity-tokens/:jti/revocation, identity-providers,
-// identity-providers/:id): a matched pattern with no handler
-// for the request's verb 405s via handleRequest's own
+// identity-tokens/:jti/revocation, identities/:id/providers,
+// identities/:id/providers/:eid): a matched pattern with no
+// handler for the request's verb 405s via handleRequest's own
 // per-method branch ("Method X not allowed on <path>"). Every
 // one of these patterns is admin-only for any verb this suite
 // exercises (none of their prefixes appear in authorization.ts's
@@ -449,54 +450,134 @@ test('DELETE identity-tokens/:jti/revocation 405s (no delete'
     assert.equal(res.status, 405);
 });
 
-test('PUT identity-providers 405s (no put handler wired)',
+const SARAH_PROVIDER = {
+    identity_id: 'sarah',
+    provider: 'google',
+    provider_subject: 'sub-sarah',
+    action: 'linked',
+    at: '2026-01-01T00:00:00.000000Z',
+};
+
+test('GET /identities/:id/providers lists that identity',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await seedIdentityProvider(
+        db, 'sarah', 'ip-sarah-1', SARAH_PROVIDER,
+    );
+    const res = await handleRequest(
+        db, req('GET', '/identities/sarah/providers', token),
+    );
+    assert.equal(res.status, 200);
+    const rows = await res.json() as readonly {
+        readonly provider: string;
+        readonly provider_subject: string;
+        readonly action: string;
+    }[];
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0]!.provider, 'google');
+    assert.equal(rows[0]!.provider_subject, 'sub-sarah');
+    assert.equal(rows[0]!.action, 'linked');
+});
+
+test('GET /identities/:id/providers 403s for a member'
++ ' naming another identity (absent from MEMBER_VERBS)',
+async () => {
+    const db = await freshDb();
+    await seedOrganizationMember(db, 'sarah');
+    const token = await devToken('sarah');
+    const res = await handleRequest(
+        db, req(
+            'GET', '/identities/current/providers', token,
+        ),
+    );
+    assert.equal(res.status, 403);
+});
+
+test('GET /identity-providers is retired (router 404)',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(
+        db, req('GET', '/identity-providers', token),
+    );
+    assert.equal(res.status, 404);
+});
+
+test('GET /identity-providers/:id is retired (router 404)',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    await seedIdentityProvider(
+        db, 'sarah', 'ip1', SARAH_PROVIDER,
+    );
+    const res = await handleRequest(
+        db, req('GET', '/identity-providers/ip1', token),
+    );
+    assert.equal(res.status, 404);
+});
+
+test('PUT /identity-providers/:id is retired (router 404)',
+async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(
+        db, req(
+            'PUT', '/identity-providers/ip1', token,
+            SARAH_PROVIDER,
+        ),
+    );
+    assert.equal(res.status, 404);
+});
+
+test('PUT identity-providers 404s (route retired)',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('PUT', '/identity-providers', token, {}),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
-test('POST identity-providers 405s (no post handler wired)',
+test('POST identity-providers 404s (route retired)',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('POST', '/identity-providers', token, {}),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
-test('DELETE identity-providers 405s (no delete handler'
-+ ' wired)', async () => {
+test('DELETE identity-providers 404s (route retired)',
+async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('DELETE', '/identity-providers', token),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
-test('POST identity-providers/:id 405s (no post handler'
-+ ' wired)', async () => {
+test('POST identity-providers/:id 404s (route retired)',
+async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('POST', '/identity-providers/ip1', token, {}),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
-test('DELETE identity-providers/:id 405s (no delete handler'
-+ ' wired)', async () => {
+test('DELETE identity-providers/:id 404s (route retired)',
+async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('DELETE', '/identity-providers/ip1', token),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
 // ── regime 2: the default-organization side channel's own

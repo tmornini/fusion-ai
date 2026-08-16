@@ -242,8 +242,10 @@ Legend for classification:
   admin-only; `PUT` is self-or-admin (WP8, Phase 13 Task 8) — a
   member may revoke its OWN token chain, naming another
   identity still requires admin.
-- `GET /identity-providers` · `GET|PUT /identity-providers/:id` —
-  primitive.
+- `GET /identities/:id/providers` ·
+  `GET|PUT /identities/:id/providers/:eid` — nested under the
+  identity. Admin-only. Flat `GET /identity-providers` ·
+  `GET|PUT /identity-providers/:id` are RETIRED (router 404).
 - `GET /role-grants` · `GET|PUT /role-grants/:id` — RETIRED
   (router 404). Roles derive from membership `type` / claims;
   `postRoleGrantDocumentOp` and the role-grants seed pairs are
@@ -3156,12 +3158,13 @@ combos across four regimes**
 (`tests/api-identity-spine-verb-gaps.test.ts`, own commit BEFORE
 the wiring landed):
 
-1. The route-table regime — 36 combos across the FIFTEEN
-   identity-spine `route()` patterns (`identities` through
-   `identity-providers/:id`): a matched pattern with no handler
-   for the request's verb 405s via `handleRequest`'s own
-   per-method branch; role-grants / role-grants/:id patterns are
-   retired and assert 404 (not matchRoute 405).
+1. The route-table regime — 36 combos across the identity-spine
+   `route()` patterns (`identities` through
+   `identities/:id/providers/:eid`): a matched pattern with no
+   handler for the request's verb 405s via `handleRequest`'s own
+   per-method branch; role-grants, flat identity-providers, and
+   their `:id` patterns are retired and assert 404 (not
+   matchRoute 405).
 2. The `identities/:id/default-org` side channel regime — 2
    combos: this side channel never calls `matchRoute` — a POST or
    DELETE falls through its own if-chain to ITS OWN inline 405

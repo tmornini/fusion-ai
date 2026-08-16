@@ -33,8 +33,6 @@ import {
     deriveIdentityPii,
     deriveCredentialsFor,
     deriveCredential,
-    deriveIdentityProviders,
-    deriveIdentityProvider,
     deriveTokenRevocation,
     deriveTokenRevocationsFor,
 } from '../api/derive-identity-spine.ts';

@@ -262,7 +262,7 @@ import {
     deriveCredential,
     deriveClientRegistration,
     deriveIdentityKind,
-    deriveIdentityProviders,
+    deriveIdentityProvidersFor,
     deriveIdentityProvider,
     deriveTokenRevocation,
     piiEntityOf,
@@ -3163,20 +3163,30 @@ async function requireServiceIdentity(
 // below-facade fixtures form pairs derivation can see.
 export async function postIdentityProviderDocumentOp(
     db: DbAdapter,
+    identityId: Id,
     id: Id,
     body: Record<string, unknown>,
     _actor: Id,
     pair?: MessagePair,
 ): Promise<IdentityProviderEntity> {
+    const raw = withoutId(body);
+    if (
+        'identity_id' in raw
+        && raw['identity_id'] !== identityId
+    ) {
+        throw new ApiError(
+            'identity_id does not match path identity',
+            HTTP_BAD_REQUEST,
+        );
+    }
+    const stamped = { ...raw, identity_id: identityId };
     const entity = identityProviderEntityOf({
         uriId: id,
         pairId: id,
         method: 'PUT',
-        body: withoutId(body),
+        body: stamped,
     });
     return db.transaction(
-        // Phase Final Task 2: identity_providers ROW half
-        // stripped.
         ['requests', 'responses'],
         async (view) => {
             if (pair !== undefined) {
@@ -3560,15 +3570,19 @@ export const WRITE_RESPONSE_SPECS:
             body: withoutId(body ?? {}),
         }),
     },
-    // G4: identityProviderEntityOf (GET derive).
-    'identity-providers/:id': {
+    // G4: identityProviderEntityOf (GET derive). identity_id
+    // is stamped from the path so stored PUT = GET.
+    'identities/:id/providers/:eid': {
         status: HTTP_OK,
         successBody: (params, body) =>
             identityProviderEntityOf({
-                uriId: param(params, 0),
-                pairId: param(params, 0),
+                uriId: param(params, 1),
+                pairId: param(params, 1),
                 method: 'PUT',
-                body: withoutId(body ?? {}),
+                body: {
+                    ...withoutId(body ?? {}),
+                    identity_id: param(params, 0),
+                },
             }),
     },
 };
@@ -4375,7 +4389,7 @@ export const routes: Route[] = [
     // hand-written db.identityTokenRevocations.getById dispatch
     // it replaces. No fence: identity_token_revocations is
     // GLOBAL-plane (no organization_id field at all), matching
-    // its sibling identity-providers below.
+    // nested identities/:id/providers below.
     route('identity-token-revocations/:id', {
         get: (db, p) =>
             deriveTokenRevocation(db, param(p, 0)),
@@ -4501,33 +4515,24 @@ export const routes: Route[] = [
             await revokeTokenChain(db, param(p, 0), pair);
         },
     }),
-    // GET is FLIPPED (Phase 10 Task 8): derived via
-    // deriveIdentityProviders — wire-identical to the
-    // hand-written db.identityProviders.getAll() dispatch it
-    // replaces. No fence: GLOBAL-plane (no organization_id field
-    // at all), matching identities' own global-plane collection
-    // above.
-    route('identity-providers', {
-        get: (db) => deriveIdentityProviders(db),
+    // Nested provider events (credentials shape). Dual-read
+    // still sees leftover /identity-providers/ pairs. No fence:
+    // GLOBAL-plane (no organization_id). ADMIN-ONLY — not in
+    // MEMBER_VERBS. Flat /identity-providers is retired
+    // (router 404).
+    route('identities/:id/providers', {
+        get: (db, p) =>
+            deriveIdentityProvidersFor(db, param(p, 0)),
     }),
-    // Hand-written in place of makeIdRoute<
-    // IdentityProviderEntity> so PUT can append its message
-    // pair in the same transaction as the write — the
-    // factory's fixed closures have no per-family pair
-    // selector (see message-pair.ts). identity_providers is a
-    // HistoryEntityStore ledger row (linked/unlinked events) and
-    // a GLOBAL-plane store (no organization_id field at all), so
-    // this is EVENT-APPEND: no head-read, no Supersedes. Verbs
-    // stay {get, put}. GET is FLIPPED (Phase 10 Task 8): derived
-    // via deriveIdentityProvider — wire-identical to the
-    // hand-written db.identityProviders.getById dispatch it
-    // replaces. PUT rides postIdentityProviderDocumentOp
-    // (identityProviderEntityOf; GET derive).
-    route('identity-providers/:id', {
-        get: (db, p) => deriveIdentityProvider(db, param(p, 0)),
+    route('identities/:id/providers/:eid', {
+        get: (db, p) =>
+            deriveIdentityProvider(
+                db, param(p, 0), param(p, 1),
+            ),
         put: (db, p, body, actor, pair) =>
             postIdentityProviderDocumentOp(
-                db, param(p, 0), body, actor, pair,
+                db, param(p, 0), param(p, 1),
+                body, actor, pair,
             ),
     }),
     // The grant closures retire into api.ts's dedicated

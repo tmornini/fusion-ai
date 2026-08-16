@@ -918,7 +918,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'identity-tokens/:jti/rotation',
     'identity-tokens/:jti/revocation',
     'organizations/:id',
-    'identity-providers/:id',
+    'identities/:id/providers/:eid',
     // Nested record-types collection POST (Task 9) + detail
     // PUT/DELETE (Task 3).
     RECORD_TYPES_COLLECTION_PATTERN,

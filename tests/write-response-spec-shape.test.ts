@@ -143,7 +143,7 @@ const DUMMY_BODIES: Readonly<
         next_billing: AT, seats: 1,
         projects_limit: 1, ideas_limit: 1,
     },
-    'identity-providers/:id': {
+    'identities/:id/providers/:eid': {
         identity_id: 'id', provider: 'p',
         provider_subject: 's', action: 'linked',
         at: AT,
