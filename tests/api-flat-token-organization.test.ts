@@ -89,17 +89,13 @@ function getMembers(token: string) {
     });
 }
 
-// Task 8 (Phase 11): the flat-token fence fallback
-// (identityDefaultOrganization) now derives from the
-// /identities/:id/default-org/ message-pair ledger, never the
-// identity_default_organizations table directly — so seeding a
-// SET default here must ride the real PUT route (the same
-// production write path), not a raw table put.
+// Seeding a SET default rides the live PUT route.
 function putDefaultOrganization(
     token: string, identityId: string, organization: string,
 ) {
     return new Request(
-        `${BASE}/identities/${identityId}/default-org`, {
+        `${BASE}/identities/${identityId}`
+            + '/default-organization', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -108,8 +104,6 @@ function putDefaultOrganization(
             },
             body: JSON.stringify({
                 organization_id: organization,
-                eventId: 'ev-flat-default-1',
-                at: AT,
             }),
         });
 }

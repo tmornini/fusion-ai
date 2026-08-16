@@ -36,9 +36,9 @@ export function projectClaimRolesForOrganization(
 }
 
 // The org an identity has CURRENTLY chosen as its default: the
-// latest event in its append-only default-org ledger, null when
-// it has none. The default (at, id) total order decides a
-// same-`at` tie deterministically on every backend.
+// SET default-organization document, null when it has none.
+// The default (at, id) total order decides a same-`at` tie
+// deterministically on every backend.
 export function currentDefaultOrganizationFor(
     rows: readonly IdentityDefaultOrganizationEntity[],
     identityId: Id,

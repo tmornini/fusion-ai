@@ -1,4 +1,5 @@
-URI tree of the HTTP surface; source of record is api/routes.ts (the route table), api/api.ts (handleRequest pre-match + facades), api/invitations-domain.ts (the invitation sub-router), and api/organization-requests.ts (the org/default-org sub-routers).
+URI tree of the HTTP surface; source of record is api/routes.ts (the route table), api/api.ts (handleRequest pre-match + facades), api/invitations-domain.ts (the invitation sub-router), and api/organization-requests.ts (the
+organization/default-organization sub-routers).
 
 └─|─ /invitations/ • RECONCILED: derived view, but NOT a registered family — the permanent side channel (Author gate 2); grant/accept synthesize PUT-shaped document pairs off the route table, rows derive from PUT-method document heads at /invitations/ and state from op-address pair presence (accepted/declined/revoked/pending), the facade's 404-only verb regime preserved — Phase 15 gate 6 re-homes grant email onto deriveIdentityPiiRows and pendingInvitationFor/loadInvitation onto deriveInvitations (no live invitations-table decision read) — see the roster seam FLIPPED 2026-07-06 block + Phase 15 FLIPPED
   |  └── :id
@@ -21,7 +22,7 @@ URI tree of the HTTP surface; source of record is api/routes.ts (the route table
   |      └── binding                          • RECONCILED: POST work-orders/:id/binding — named bind op, member-tier POST; current bind derived from op pairs (claim precedent); rebind 409; WO GET embeds instance_id + record_type_id — see API.md §3.34
 └─|─ /identities/
   |  └── :id
-  |      └─|─ /default-org                     • RECONCILED: GET|PUT side channel (api/organization-requests.ts) — self-only tree-ownership gate; pair-plane ledger at /identities/:id/default-org/; PUT appends only when org changes and membership holds
+  |      └─|─ /default-organization            • RECONCILED: GET|PUT simple document (api/organization-requests.ts) — self-only tree-ownership gate; pair-plane document at /identities/:id/default-organization/; PUT { organization_id } must be a live seat else 400; GET 404 if never SET; revoke does not rewrite it; token resolution uses SET if live seat else PRIMARY else deny
   |      └─|─ /credentials                     • RECONCILED: collection GET returns rows[]; not a singleton document
   |      |  └── :cid                           • GET|PUT per-credential document at identities/:id/credentials/:cid
   |      └─|─ /notifications                   • TARGET-STATE: postgres LISTEN/NOTIFY for all changes to identity

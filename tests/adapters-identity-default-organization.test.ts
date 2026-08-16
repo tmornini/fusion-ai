@@ -97,11 +97,11 @@ async () => {
     assert.equal(await getIdentityDefaultOrganization(ctx), '1');
 });
 
-test('getIdentityDefaultOrganization resolves the primary membership',
+test('getIdentityDefaultOrganization is null when never SET',
 async () => {
     const db = await memberOf(['1']);
     const ctx = createRequestContext(db, await devToken());
-    assert.equal(await getIdentityDefaultOrganization(ctx), '1');
+    assert.equal(await getIdentityDefaultOrganization(ctx), null);
 });
 
 test('putIdentityDefaultOrganization rejects a non-member org',

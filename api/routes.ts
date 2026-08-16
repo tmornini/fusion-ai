@@ -4588,7 +4588,8 @@ export const routes: Route[] = [
     documentVersionRoute(MEMBERSHIPS_WIRING),
     // PII is a facet of the identity's own subtree: GET is
     // self-only, PUT/DELETE self-or-admin (enforced in the
-    // request gate, mirroring /identities/:id/default-org). The
+    // request gate, mirroring
+    // /identities/:id/default-organization). The
     // identity-pii COLLECTION below (admin roster) is separate.
     // PUT/DELETE each REPLACE the slot's message pair
     // (replacePiiSlot, api/pii-hard-delete.ts) in the same

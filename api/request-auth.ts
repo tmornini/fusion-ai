@@ -181,7 +181,8 @@ export function authorizeRequest(
 // The PII facet of an identity's subtree. A member reads ONLY
 // its own (GET self); writes are its own OR an admin's (member
 // management). Mirrors the tree-ownership check of
-// /identities/:id/default-org, widened to admin for writes.
+// /identities/:id/default-organization, widened to admin for
+// writes.
 export function authorizeIdentityPii(
     ctx: RequestContext,
     targetId: string,

@@ -27,8 +27,9 @@ The source of record is `api/routes.ts` (the route table),
 `api/api.ts` (`handleRequest` + facades), `api/request-auth.ts` (the
 gate), `api/authentication.ts` (the OAuth grants),
 `api/invitations-domain.ts` (the invitation sub-router),
-`api/organization-requests.ts` (the org/default-org
-sub-routers), and `api/message-pair.ts` (shadow-ledger pair
+`api/organization-requests.ts` (the
+organization/default-organization sub-routers), and
+`api/message-pair.ts` (shadow-ledger pair
 formation — §5). This file summarizes them; on any
 disagreement, the code wins.
 
@@ -42,8 +43,8 @@ disagreement, the code wins.
 resolves a request in this order:
 
 1. **Three pre-match special routes**, before `matchRoute`:
-   - `/identities/:id/default-org` (3 segments) →
-     `identityDefaultOrganizationRequest`.
+   - `/identities/:id/default-organization` (3
+     segments) → `identityDefaultOrganizationRequest`.
    - `/invitations/...` (first segment `invitations`) →
      `invitationsRequest` (its own sub-router; see §2.12).
    - bare `GET /organizations` →
@@ -579,14 +580,15 @@ RETIRED with the address itself (see
   `['requests','responses']`.
   `GET /memberships/:id/versions/:version` — document
   version leaf (§2.10).
-- `GET|PUT /identities/:id/default-org` — the read/write face of the
-  default-org ledger. Self-only. `GET` (and every other caller of
-  `identityDefaultOrganization`, `api/authentication.ts`) reads via
-  `deriveDefaultOrganization`
-  (`api/derive-default-organization.ts`): a TARGETED
-  `requests`/`responses` read at the identity-keyed
-  `/identities/:id/default-org/` prefix. `PUT` is pair-plane
-  only (Phase Final) — no row table remains.
+- `GET|PUT /identities/:id/default-organization` — a
+  simple document. Self-only. `GET` returns the SET
+  document or 404 if never SET. `PUT { organization_id }`
+  must be a live seat, else 400. No public DELETE.
+  Revoke does not rewrite this document. Token
+  resolution (`identityDefaultOrganization`) uses the
+  SET if that organization is a live seat, else PRIMARY,
+  else deny. Derived via `deriveDefaultOrganization`
+  at `/identities/:id/default-organization/`.
 
 ### 2.12 Invitations (sub-router)
 

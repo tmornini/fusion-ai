@@ -256,7 +256,8 @@ test(
         // GET ideas is flipped (Phase 2 Task 5): it derives from
         // the message ledger, never db.ideas, so the fault must
         // be forced from the store the derivation actually reads.
-        // Task 8 (Phase 11): the fence's own default-org fallback
+        // Task 8 (Phase 11): the fence's own
+        // default-organization fallback
         // ALSO derives from db.requests now
         // (identityDefaultOrganization / deriveDefaultOrganization)
         // — so the fault is targeted at the ideas prefix alone,

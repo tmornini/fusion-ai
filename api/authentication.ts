@@ -67,8 +67,10 @@ import {
 } from './message-pair.ts';
 import { messageStore } from './message-store.ts';
 import type { MessagePair, AuthPairSeed } from './message-pair.ts';
-import { deriveMembershipsForIdentity } from
-    './derive-memberships.ts';
+import {
+    deriveMembershipsForIdentity,
+    membershipExistsFor,
+} from './derive-memberships.ts';
 import {
     deriveCredentialsFor,
     deriveClientRegistration,
@@ -276,14 +278,12 @@ async function subjectRoles(
 }
 
 // The org a flat (un-exchanged) token resolves to, server-side:
-// the identity's SET default, else its PRIMARY membership, else
-// null. The gate denies a null — there is no global default left
-// to fall back on. Task 8 (Phase 11): the row source is the
-// derived /identities/:id/default-org/ message-pair ledger
-// (api/derive-default-organization.ts), never the
-// identity_default_organizations table directly — the reducer
-// below is UNCHANGED, and the primary-membership fallback stays
-// verbatim.
+// the SET default-organization document if that organization
+// is a live seat, else PRIMARY (earliest remaining join `at`,
+// lex organization id on tie), else null. The gate denies a
+// null — there is no global default left to fall back on.
+// Revoke does not rewrite the SET document; this read skips
+// a SET that is no longer a live seat.
 export async function identityDefaultOrganization(
     adapter: DbAdapter,
     identityId: Id,
@@ -291,9 +291,20 @@ export async function identityDefaultOrganization(
     const events = await deriveDefaultOrganization(
         adapter, identityId,
     );
-    const chosen = currentDefaultOrganizationFor(events, identityId);
-    if (chosen !== null) return chosen;
-    return await primaryMembershipOrganization(adapter, identityId);
+    const chosen = currentDefaultOrganizationFor(
+        events, identityId,
+    );
+    if (
+        chosen !== null
+        && await membershipExistsFor(
+            adapter, chosen, identityId,
+        )
+    ) {
+        return chosen;
+    }
+    return await primaryMembershipOrganization(
+        adapter, identityId,
+    );
 }
 
 // The earliest org an identity joined. Equal join moments

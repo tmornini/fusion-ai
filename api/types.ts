@@ -538,11 +538,11 @@ export interface IdentityTokenRevocationEntity {
     at: string;
 }
 
-// An identity's chosen default org. Append-only: a change is
-// a NEW row; the current default is the LATEST `at` per
-// identity, and no row means unset (never a nullable column —
-// an identity is born org-less). The chosen org must be one
-// of the identity's memberships, fenced at the write.
+// An identity's chosen default organization. A simple
+// document: PUT { organization_id } (must be a live seat);
+// GET that document or 404 if never SET. Revoke does not
+// rewrite it. Token resolution uses the SET if it is a live
+// seat, else PRIMARY, else deny.
 export interface IdentityDefaultOrganizationEntity {
     id: Id;
     identity_id: Id;

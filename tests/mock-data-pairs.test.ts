@@ -135,7 +135,8 @@ function pairJsonOf(message: string): {
 // each with a revision — net +4 vs 1494) + 11 identity-default-
 // organization pairs (Phase 11 Task 8: one event-append pair
 // per seeded human member at its identity-keyed
-// /identities/:id/default-org/ address; Phase Final Task 2
+// /identities/:id/default-organization/ address; Phase Final
+// Task 2
 // strips the identity_default_organizations ROW half — pairs
 // alone remain) + 1 gate0001 Capture step (R1-FIX-A re-home)
 // = 1498 after WO-instance SoT seed (+4: instance genesis +
@@ -403,24 +404,30 @@ test('a seeded membership document pair sits at its org-nested'
     );
 });
 
-test('a seeded default-org pair sits at its identity-keyed'
-+ ' address, its body carrying the three default-org keys',
+test('a seeded default-organization pair sits at its'
++ ' identity-keyed address, its body carrying'
++ ' organization_id',
 async () => {
     const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
     const requests = await db.requests.getAll();
     const row = requests.find(
         r => r.uri_collection
-            === '/identities/' + firstMember.id + '/default-org/',
+            === '/identities/' + firstMember.id
+                + '/default-organization/',
     );
-    assert.ok(row, 'no request row for the seeded default-org event');
-    assert.equal(row!.uri_id, 'seed-default-org-' + firstMember.id);
+    assert.ok(
+        row,
+        'no request row for the seeded'
+            + ' default-organization document',
+    );
+    assert.equal(row!.uri_id, '');
     const embedded = pairJsonOf(row!.message) as {
         body: Record<string, unknown>;
     };
     assert.deepEqual(
         Object.keys(embedded.body).sort(),
-        ['at', 'eventId', 'organization_id'],
+        ['organization_id'],
     );
 });
 
@@ -1030,8 +1037,8 @@ test('a bootstrap seed populates exactly twelve balanced,'
     // documents (formed by seedHumanCredentials' local pass-1/
     // pass-2 split, api/mock-data.ts) — 7 + 1 + 2 = 10. Role-
     // grant pair retired (membership type:"admin" is privilege).
-    // Phase 11 Task 8: bootstrap's OWN default-org event
-    // ('bootstrap-default-org-current') — 10 + 1 = 11. Phase 12
+    // Phase 11 Task 8: bootstrap's OWN default-organization
+    // document — 10 + 1 = 11. Phase 12
     // Task 3: bootstrap's OWN lone organizations pair
     // (STARK_ORGANIZATION) — 11 + 1 = 12.
     assert.equal(requests.length, 12);
@@ -1073,8 +1080,9 @@ test('a bootstrap seed populates exactly twelve balanced,'
     );
     assert.equal(atPii.length, 1);
     const atDefaultOrganization = requests.filter(
-        r => r.uri_collection === '/identities/current/default-org/'
-            && r.uri_id === 'bootstrap-default-org-current',
+        r => r.uri_collection
+            === '/identities/current/default-organization/'
+            && r.uri_id === '',
     );
     assert.equal(atDefaultOrganization.length, 1);
     const atOrganization = requests.filter(

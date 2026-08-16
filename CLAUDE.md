@@ -234,8 +234,9 @@ is HTTP-only.
   `invalid_grant`. Membership, roles, and
   revocation ride claim snapshots (NAMED COVENANT: bite
   at next mint/refresh/exchange or access TTL ≤ 15 min),
-  not live pair-plane re-reads. Ownership and default-org
-  fences stay pair-plane. The **server ZIP** takes
+  not live pair-plane re-reads. Ownership and
+  default-organization fences stay pair-plane. The
+  **server ZIP** takes
   `JWT_HMAC_SIGNING_KEY` from the environment; the
   **browser ZIP** still ships the demo constant. Snapshot
   plane (`BOOTSTRAP_ROUTES`): auth-free on the browser
@@ -250,12 +251,15 @@ is HTTP-only.
   Surviving stores are global; tenancy rides
   `uri_collection`. A flat (un-exchanged) token
   resolves its org via
-  `identityDefaultOrganization`: the identity's SET default
-  org (pair-plane `/identities/:id/default-org/` ledger,
-  latest wins), else its PRIMARY membership org, else a
-  403 — there is no global default. Membership and roles come from
-  access-token claims (baked at mint from membership
-  `type`; gate projects for the fenced org). NAMED
+  `identityDefaultOrganization`: the identity's SET
+  default organization (pair-plane
+  `/identities/:id/default-organization` document) if
+  that organization is a live seat, else PRIMARY
+  (earliest remaining join `at`, lex id on tie), else a
+  403 — there is no global default. Membership and
+  roles come from access-token claims (baked at mint
+  from membership `type`; gate projects for the
+  fenced org). NAMED
   COVENANT: de-membership / demotion / revocation bite at
   next mint/refresh/exchange or access TTL (≤ 15 min), not
   the very next request. Ownership fences stay pair-plane.

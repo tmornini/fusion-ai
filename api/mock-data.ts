@@ -378,7 +378,7 @@ async function postMockDataLoadIn(
                     requirePair(
                         pairs,
                         seedPairKey(
-                            'identities/:id/default-org',
+                            'identities/:id/default-organization',
                             member.id,
                         ),
                     ),
@@ -1139,7 +1139,8 @@ export async function postBootstrap(
     // ONCE inside formBootstrapMessagePair and reused verbatim
     // by pass 2 below, the SAME discipline currentMemberBody's
     // own nowUtc() already follows. Phase 11 Task 8: ALSO forms
-    // bootstrap's own default-org event pair — the mock-data
+    // bootstrap's own default-organization document pair —
+    // the mock-data
     // seed's own per-member precedent, mirrored here for
     // bootstrap's lone identity.
     const {

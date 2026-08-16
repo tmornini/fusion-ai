@@ -127,7 +127,8 @@ test('AUTHENTICATION_ROUTES ride the dedicated pair arm, so'
 // channel: this test can only assert what it already knows to
 // list. A future write path dispatched the same way (matched by
 // literal path segments in api.ts BEFORE matchRoute/routes[]
-// ever runs — the identities/:id/default-org and /invitations/
+// ever runs — the identities/:id/default-organization and
+// /invitations/
 // shape) is invisible to test 1's enumeration BY CONSTRUCTION,
 // and invisible here too unless someone hand-adds its module to
 // the array below. Even for the two files already listed, this

@@ -468,7 +468,7 @@ export async function handleRequest(
         .filter(Boolean);
     if (pathSegments[0] === 'identities'
         && pathSegments.length === 3
-        && pathSegments[2] === 'default-org') {
+        && pathSegments[2] === 'default-organization') {
         return identityDefaultOrganizationRequest(
             ctx, request, pathSegments,
         );

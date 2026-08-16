@@ -183,9 +183,11 @@ rides `uri_collection` on the pair plane. Handlers receive
 `ctx.base`. The org rides the VERIFIED token claim,
 never the path; a flat (un-exchanged) token has none and
 resolves via `identityDefaultOrganization`: the identity's
-SET default org (`identity_default_organizations` ledger,
-latest wins), else its PRIMARY membership org, else a 403 —
-there is no global default to fall back on. Both
+SET default organization (pair-plane
+`/identities/:id/default-organization` document) if that
+organization is a live seat, else PRIMARY (earliest
+remaining join `at`, lex id on tie), else a 403 — there
+is no global default to fall back on. Both
 `memberOrganizations` and `roles` come from access-token
 claims (organizations set + `{type}:{organization_id}`
 roles baked at every mint/refresh/exchange from membership
