@@ -170,7 +170,7 @@ ADDRESS family each agent mutates:
 
 | Agent | Mutation domain (pair-address families) |
 |---|---|
-| Agent-B | creates one human member via signup (identity + membership + human-member addresses) |
+| Agent-B | creates one human member via signup (identity + PII + seat at `organizations/:id/members`) |
 | Agent-D | `ideas` document + idea lifecycle state pairs |
 | Agent-E | `projects` document pairs (plus one flow via the project-detail New Flow path) |
 | Agent-F | `flows` document + undo operation pairs (graphDelta/revivals live in the flow document body) |
@@ -621,41 +621,26 @@ on. Run these in order.
 - [ ] **AA5** With Human selected, fill all fields for
   "Sarah Chen" (Title: Project Lead, Department:
   Operations). Click Create. PASS: toast confirms
-  creation; the member is written but does NOT appear in
-  the membership-derived roster. NOTE (deferred
-  auto-membership): Add
-  Member creates an IDENTITY + member detail row but no
-  membership/org binding — that binding now arrives only
-  via the invitation flow (V1/V4). So a freshly Added
-  human does NOT appear on the Members list, which is
-  membership-joined via `deriveMembers` (a parent row
-  shows only when its identity holds a membership for
-  this org). New-identity auto-membership on creation is
-  DEFERRED, so this gap is EXPECTED, not a failure.
+  creation; `PUT /identities/:id` plus PII and a seat at
+  the active organization (`PUT organizations/:id/members/:identity-id`);
+  the person appears in the seat-derived roster.
 - [ ] **AA6** Repeat for all 10 humans: Sarah Chen, Mike
   Thompson, Jessica Park, David Martinez, Emily Rodriguez
   (pending), Alex Kim, Marcus Johnson, David Kim, Lisa
   Wang, James Miller (archived). PASS: all 10 are written
-  but, per the deferred note, do NOT appear in the
-  membership-derived roster. NOTE
-  (deferred auto-membership): as in AA5, Add Member binds
-  no org membership — the org-binding now comes via
-  invitation (V1/V4). Each freshly Added human is NOT yet
-  in the `memberships`-derived roster until invited and
-  accepted; that DEFERRED path is expected.
+  as identity + PII + seat and appear in the seat-derived
+  roster.
 - [ ] **AA7** Reload the Members page. PASS: the roster
-  is membership-derived, so the freshly Added humans (no
-  membership) do NOT re-render — only seeded and invited+
-  accepted members do. Same deferred path as AA5.
+  is seat-derived; the freshly Added humans re-render
+  with the seeded seats.
 - [ ] **AA7a** Click "+ Add Member", switch the Kind
   toggle to AI. PASS: the Human form hides and the AI
   form appears. Fill Name, pick a Model, fill
   Description and Skill Focus. PASS: Create is blocked
   until a Model is chosen; once chosen, click Create →
   toast confirms and the AI is written as a pair-plane
-  AI member document (POST `ai-members`); like a freshly
-  Added human it binds no membership, so it does NOT
-  appear in the roster.
+  AI agent document (`PUT /ai-agents/:id`); it appears in
+  the AIs group (agents are global, not seated).
   Repeat for 4 AIs matching mock data (Claude Opus 4.8,
   Claude Sonnet 4.6, GPT-5.5, Grok 4.3).
 
@@ -2139,15 +2124,15 @@ the claude-in-chrome MCP.
 
 ### Membership invitations (V) — Members "Invite member"
 
-> The invitation flow is the org-binding path that "Add
-> Member" no longer performs (see the deferred-auto-membership
-> note on AA5/AA6/G14). An admin invites an EXISTING identity
-> by email → a pending invitation; the invitee reads it on
+> "Add Member" seats a new person at the active
+> organization (AA5/G14). Invite is the path that seats
+> an EXISTING identity in this org. An admin invites by
+> email → a pending invitation; the invitee reads it on
 > `invitations/` (reached via the top-bar bell) and Accepts
 > (writes a seat in the invitation's org) or
 > Declines; an admin can Revoke an outstanding one from the
-> Organization page. DEFERRED (not built): new-identity auto-
-> membership on creation, and email delivery. Sources:
+> Organization page. DEFERRED (not built): email delivery.
+> Sources:
 > `web-app/members/index.ts` (`handleInviteSubmit`),
 > `web-app/app/adapters/invitations.ts`,
 > `api/invitations-domain.ts` (`grantInvitation` /
