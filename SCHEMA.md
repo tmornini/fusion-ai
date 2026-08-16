@@ -295,8 +295,11 @@ Org-nested wire = storage (no dual-wire flat `/records`):
   body. The two differ by definition.
 
 Snapshot import rejects retired flat prefixes
-`/organizations/:org/records/` and
-`/organizations/:org/record-attributes/` (anchored so
+`/organizations/:org/records/`,
+`/organizations/:org/record-attributes/`,
+`/identity-pii/`, `/identity-providers/`,
+`/identity-tokens/`, and
+`/identity-token-revocations/` (anchored so
 `flows/:id/records` join pairs pass) via
 `RETIRED_URI_PREFIX_PATTERNS` on both server
 (`api/snapshot-validator.ts`) and client

@@ -123,7 +123,7 @@ async () => {
         jti: 'stale-but-live',
     });
     await PUT(
-        db, 'identity-token-revocations/r1',
+        db, 'identities/current/token-revocations/r1',
         {
             identity_id: 'current',
             at: '2021-01-01T00:00:00.000000Z',
@@ -152,7 +152,7 @@ test('a token minted within a revocation second still'
         jti: 'same-second',
     });
     await PUT(
-        db, 'identity-token-revocations/r1',
+        db, 'identities/current/token-revocations/r1',
         { identity_id: 'current', at: revokedAt },
         await devToken(),
     );

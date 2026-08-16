@@ -919,7 +919,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'identities/:id/credentials/:cid',
     'identities/:id/registration',
     'identities/:id/tokens/:tid',
-    'identity-token-revocations/:id',
+    'identities/:id/token-revocations/:rid',
     'identities/:id/tokens/:jti/rotation',
     'identities/:id/tokens/:jti/revocation',
     'organizations/:id',

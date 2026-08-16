@@ -24,8 +24,9 @@ import { seedIdentityProvider } from './identity-fixtures.ts';
 // (1) the route-table regime — 36 combos across the
 // identity-spine route() patterns (identities, identities/:id,
 // identities/:id/pii, identities/:id/credentials,
-// identities/:id/credentials/:cid, identity-token-revocations/
-// :id, role-grants, role-grants/:id, identities/:id/tokens,
+// identities/:id/credentials/:cid, identities/:id/token-
+// revocations/:rid, role-grants, role-grants/:id,
+// identities/:id/tokens,
 // identities/:id/tokens/:tid, identities/:id/tokens/:jti/
 // rotation, identities/:id/tokens/:jti/revocation,
 // identities/:id/providers, identities/:id/providers/:eid):
@@ -35,8 +36,8 @@ import { seedIdentityProvider } from './identity-fixtures.ts';
 // retired and assert 404. Every live pattern here is
 // admin-only for any verb this suite exercises (none of their
 // prefixes appear in authorization.ts's MEMBER_VERBS, aside
-// from '/identities/:id/tokens' POST and — since WP8, Phase
-// 13 Task 8 — '/identity-token-revocations' PUT, neither of
+// from '/identities/:id/tokens' POST and
+// '/identities/:id/token-revocations' PUT, neither of
 // which this regime's POST/DELETE combos exercise), so an
 // admin token is required to reach the 405 branch rather
 // than an earlier 403.
@@ -69,19 +70,16 @@ import { seedIdentityProvider } from './identity-fixtures.ts';
 // RETIRED (router 404). Path identity must match the
 // jti's identity or 403; an absent jti GET 404s.
 //
-// (4) the identity-token-revocations authz-tier regime (WP8,
-// Phase 13 Task 8) — 1 combo: GET identity-token-revocations/:id
-// stays admin-only — UNTOUCHED, not re-pinned here (regime 1's
-// own comment above already names the fact; this regime adds no
-// new GET assertion). PUT, by contrast, now DOES match
-// MEMBER_VERBS' new '/identity-token-revocations': PUT entry, so
-// a member-tier token clears authz and reaches the route
-// handler — which then answers on api/api.ts's Region B
-// self-only ownership-fence terms (2xx for a self-target; a
-// foreign target's byte-pinned 403 lives in
-// tests/api-identity-token-revocations-self.test.ts, not here —
-// this file pins the authz-TIER asymmetry only, the regime 3
-// precedent). The ONE sanctioned combo-pin addition this phase.
+// (4) the identity-token-revocations authz-tier regime —
+// 1 combo: GET identities/:id/token-revocations/:rid stays
+// admin-only. PUT matches MEMBER_VERBS'
+// '/identities/:id/token-revocations' PUT, so a member-tier
+// token clears authz and reaches the route handler — which
+// then answers on api/api.ts's Region B self-only fence
+// (path identity vs actor). Flat
+// /identity-token-revocations/:rid is RETIRED (router 404).
+// A foreign target's 403 lives in
+// tests/api-identity-token-revocations-self.test.ts.
 //
 // 36 + 2 + 3 + 1 = 42 combos (the brief's own estimate was ~19
 // per route-table-style regime; this is the actual, execution-
@@ -261,8 +259,8 @@ test('DELETE identities/:id/credentials/:cid 405s (no delete'
     assert.equal(res.status, 405);
 });
 
-test('POST identity-token-revocations/:id 405s (no post'
-+ ' handler wired)', async () => {
+test('POST identity-token-revocations/:id 404s'
++ ' (route retired)', async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
@@ -270,15 +268,68 @@ test('POST identity-token-revocations/:id 405s (no post'
             'POST', '/identity-token-revocations/r1', token, {},
         ),
     );
-    assert.equal(res.status, 405);
+    assert.equal(res.status, 404);
 });
 
-test('DELETE identity-token-revocations/:id 405s (no delete'
-+ ' handler wired)', async () => {
+test('DELETE identity-token-revocations/:id 404s'
++ ' (route retired)', async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
         db, req('DELETE', '/identity-token-revocations/r1', token),
+    );
+    assert.equal(res.status, 404);
+});
+
+test('PUT identity-token-revocations/:id 404s'
++ ' (route retired)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(
+        db, req(
+            'PUT', '/identity-token-revocations/r1', token, {
+                identity_id: 'current',
+                at: '2026-01-01T00:00:00.000000Z',
+            },
+        ),
+    );
+    assert.equal(res.status, 404);
+});
+
+test('GET identity-token-revocations/:id 404s'
++ ' (route retired)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(
+        db, req('GET', '/identity-token-revocations/r1', token),
+    );
+    assert.equal(res.status, 404);
+});
+
+test('POST identities/:id/token-revocations/:rid 405s'
++ ' (no post handler wired)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(
+        db, req(
+            'POST',
+            '/identities/current/token-revocations/r1',
+            token, {},
+        ),
+    );
+    assert.equal(res.status, 405);
+});
+
+test('DELETE identities/:id/token-revocations/:rid 405s'
++ ' (no delete handler wired)', async () => {
+    const db = await freshDb();
+    const token = await organizationToken();
+    const res = await handleRequest(
+        db, req(
+            'DELETE',
+            '/identities/current/token-revocations/r1',
+            token,
+        ),
     );
     assert.equal(res.status, 405);
 });
@@ -773,10 +824,11 @@ test('GET /identities/:id/tokens/:tid 404s for an absent'
 // ── regime 4: the identity-token-revocations PUT-member/
 // GET-admin authz asymmetry (WP8, Phase 13 Task 8; 1 combo) ──
 
-test('PUT identity-token-revocations/:id clears authz for a'
-+ ' member-tier token naming itself (MEMBER_VERBS widens'
-+ " '/identity-token-revocations' PUT) and succeeds 2xx —"
-+ ' the row-level self/foreign fence lives in'
+test('PUT identities/:id/token-revocations/:rid clears'
++ ' authz for a member-tier token naming itself'
++ " (MEMBER_VERBS widens '/identities/:id/token-revocations'"
++ ' PUT) and succeeds 2xx — the path-level self/foreign'
++ ' fence lives in'
 + ' tests/api-identity-token-revocations-self.test.ts, not'
 + ' here', async () => {
     const db = await freshDb();
@@ -784,7 +836,8 @@ test('PUT identity-token-revocations/:id clears authz for a'
     const token = await organizationToken('member1');
     const res = await handleRequest(
         db, req(
-            'PUT', '/identity-token-revocations/regime4-1',
+            'PUT',
+            '/identities/member1/token-revocations/regime4-1',
             token,
             {
                 identity_id: 'member1',

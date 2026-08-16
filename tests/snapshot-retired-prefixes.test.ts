@@ -33,8 +33,19 @@ const LEGACY_RECORD_ATTRIBUTES_PREFIX =
     '/organizations/1/record-attributes/';
 const LEGACY_IDENTITY_PII_PREFIX =
     '/identity-pii/some-id/';
+const LEGACY_IDENTITY_PROVIDERS_PREFIX =
+    '/identity-providers/some-id/';
+const LEGACY_IDENTITY_TOKENS_PREFIX =
+    '/identity-tokens/some-id/';
+const LEGACY_IDENTITY_TOKEN_REVOCATIONS_PREFIX =
+    '/identity-token-revocations/some-id/';
 const LIVE_FLOW_RECORDS_PREFIX =
     '/organizations/1/flows/f1/records/';
+const LEGACY_IDENTITY_SPINE_PREFIXES = [
+    LEGACY_IDENTITY_PROVIDERS_PREFIX,
+    LEGACY_IDENTITY_TOKENS_PREFIX,
+    LEGACY_IDENTITY_TOKEN_REVOCATIONS_PREFIX,
+] as const;
 
 function requestRow(uriCollection: string) {
     return {
@@ -332,6 +343,65 @@ test(
                 + LEGACY_IDENTITY_PII_PREFIX,
             ),
         );
+    },
+);
+
+test(
+    'parseAndValidateSnapshot rejects requests row with'
+    + ' retired identity-providers / identity-tokens /'
+    + ' identity-token-revocations uri_collection via'
+    + ' ValidationError',
+    () => {
+        for (const prefix of LEGACY_IDENTITY_SPINE_PREFIXES) {
+            const json = snapshotJson('requests', prefix);
+            assert.throws(
+                () => parseAndValidateSnapshot(json),
+                (err: unknown) =>
+                    err instanceof ValidationError
+                    && err.message.includes(prefix)
+                    && err.message.includes('retired'),
+                prefix,
+            );
+        }
+    },
+);
+
+test(
+    'parseAndValidateSnapshot rejects responses row with'
+    + ' retired identity-providers / identity-tokens /'
+    + ' identity-token-revocations uri_collection via'
+    + ' ValidationError',
+    () => {
+        for (const prefix of LEGACY_IDENTITY_SPINE_PREFIXES) {
+            const json = snapshotJson('responses', prefix);
+            assert.throws(
+                () => parseAndValidateSnapshot(json),
+                (err: unknown) =>
+                    err instanceof ValidationError
+                    && err.message.includes(prefix)
+                    && err.message.includes('retired'),
+                prefix,
+            );
+        }
+    },
+);
+
+test(
+    'scanForRetiredKeys lists legacy identity-providers /'
+    + ' identity-tokens / identity-token-revocations'
+    + ' uri_collection on requests',
+    () => {
+        for (const prefix of LEGACY_IDENTITY_SPINE_PREFIXES) {
+            const findings = scanForRetiredKeys({
+                requests: [requestRow(prefix)],
+            });
+            assert.ok(
+                findings.includes(
+                    'requests[].uri_collection=' + prefix,
+                ),
+                prefix,
+            );
+        }
     },
 );
 

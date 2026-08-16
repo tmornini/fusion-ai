@@ -3541,15 +3541,20 @@ export const WRITE_RESPONSE_SPECS:
                 },
             }),
     },
-    // G4: tokenRevocationEntityOf (GET derive).
-    'identity-token-revocations/:id': {
+    // G4: tokenRevocationEntityOf (GET derive). identity_id
+    // is stamped from the path so stored PUT = GET
+    // (omit-PUT cannot poison GET).
+    'identities/:id/token-revocations/:rid': {
         status: HTTP_OK,
         successBody: (params, body) =>
             tokenRevocationEntityOf({
-                uriId: param(params, 0),
-                pairId: param(params, 0),
+                uriId: param(params, 1),
+                pairId: param(params, 1),
                 method: 'PUT',
-                body: withoutId(body ?? {}),
+                body: {
+                    ...withoutId(body ?? {}),
+                    identity_id: param(params, 0),
+                },
             }),
     },
     // The gate PRE-MINTS the successor jti here — the ONE
@@ -4385,34 +4390,40 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Hand-written in place of makeIdRoute<
-    // IdentityTokenRevocationEntity> so PUT can append its
-    // message pair in the same transaction as the write — the
-    // factory's fixed closures have no per-family pair
-    // selector (see message-pair.ts). identity_token_revocations
-    // is a HistoryEntityStore ledger row, so this is
-    // EVENT-APPEND: no head-read, no Supersedes (message-pair.ts
-    // DOCUMENT_CLASS_ROUTE_PATTERNS omits it on purpose). Verbs
-    // stay {get, put}. GET is FLIPPED (Phase 10 Task 8): derived
-    // via deriveTokenRevocation — wire-identical to the
-    // hand-written db.identityTokenRevocations.getById dispatch
-    // it replaces. No fence: identity_token_revocations is
-    // GLOBAL-plane (no organization_id field at all), matching
-    // nested identities/:id/providers below.
-    route('identity-token-revocations/:id', {
+    // Nested token-revocations (tokens/providers shape). No
+    // collection route. GET is admin-only (not in
+    // MEMBER_VERBS). PUT is member-legal via
+    // '/identities/:id/token-revocations' PUT; Region B
+    // keeps it self-only (path identity vs actor). Flat
+    // /identity-token-revocations is retired (router 404).
+    // EVENT-APPEND: no head-read, no Supersedes. Path
+    // identity is the address — stamped on write and GET.
+    route('identities/:id/token-revocations/:rid', {
         get: (db, p) =>
-            deriveTokenRevocation(db, param(p, 0)),
+            deriveTokenRevocation(
+                db, param(p, 0), param(p, 1),
+            ),
         put: (db, p, body, _actor, pair) => {
-            // Phase Final Task 2: identity_token_revocations
-            // ROW half stripped — pure pair-plane write.
-            // WRITE_RESPONSE_SPECS successBody forms the wire
-            // via tokenRevocationEntityOf (GET derive).
-            const id = param(p, 0);
+            const identityId = param(p, 0);
+            const id = param(p, 1);
+            const raw = withoutId(body);
+            if (
+                'identity_id' in raw
+                && raw['identity_id'] !== identityId
+            ) {
+                throw new ApiError(
+                    'identity_id does not match path identity',
+                    HTTP_BAD_REQUEST,
+                );
+            }
+            const stamped = {
+                ...raw, identity_id: identityId,
+            };
             const entity = tokenRevocationEntityOf({
                 uriId: id,
                 pairId: id,
                 method: 'PUT',
-                body: withoutId(body),
+                body: stamped,
             });
             return db.transaction(
                 ['requests', 'responses'],

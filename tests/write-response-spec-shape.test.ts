@@ -135,7 +135,7 @@ const DUMMY_BODIES: Readonly<
         jti: 'j', identity_id: 'id',
         action: 'issued', chain_id: 'c', at: AT,
     },
-    'identity-token-revocations/:id': {
+    'identities/:id/token-revocations/:rid': {
         identity_id: 'id', at: AT,
     },
     'organizations/:id': {

@@ -86,8 +86,8 @@ resolves a request in this order:
    either the pair or the handler ever sees it.
 5. **Region B + pre-pair write guards** (after body parse):
    the self-only identity-token-revocation target guard
-   (`PUT identity-token-revocations/:id` — body
-   `identity_id` must be the actor unless admin) runs for
+   (`PUT identities/:id/token-revocations/:rid` — path
+   identity must be the actor unless admin) runs for
    that route. Then, for a write with a handler on a non-
    exempt route: `writeAuthorizerFor` (foreign id → **403**
    before pair formation). Public writes require header
@@ -243,10 +243,13 @@ Legend for classification:
 - `POST /identities/:id/tokens/:jti/revocation` — operation
   (§3.7). Path identity must match the jti's identity.
   Flat `POST /identity-tokens/:jti/revocation` is RETIRED.
-- `GET|PUT /identity-token-revocations/:id` — primitive. `GET`
-  admin-only; `PUT` is self-or-admin (WP8, Phase 13 Task 8) — a
-  member may revoke its OWN token chain, naming another
-  identity still requires admin.
+- `GET|PUT /identities/:id/token-revocations/:rid` —
+  nested under the identity. `GET` admin-only; `PUT` is
+  self-or-admin (path identity vs actor) — a member may
+  revoke its OWN token chain, naming another identity
+  still requires admin. Path stamps `identity_id`.
+  Flat `GET|PUT /identity-token-revocations/:id` is
+  RETIRED (router 404). No collection route.
 - `GET /identities/:id/providers` ·
   `GET|PUT /identities/:id/providers/:eid` — nested under the
   identity. Admin-only. Flat `GET /identity-providers` ·
@@ -3186,9 +3189,10 @@ the wiring landed):
    `/identity-tokens` is RETIRED (router 404). Path identity
    must match the jti's identity or 403.
 4. The identity-token-revocations authz-tier regime — 1 combo:
-   `PUT /identity-token-revocations/:id` matches `MEMBER_VERBS`
-   (member clears authz; self-target 2xx). GET stays admin-only.
-   (36 + 2 + 3 + 1 = 42.)
+   `PUT /identities/:id/token-revocations/:rid` matches
+   `MEMBER_VERBS` (member clears authz; self-target 2xx). GET
+   stays admin-only. Flat `/identity-token-revocations` is
+   RETIRED (router 404). (36 + 2 + 3 + 1 = 42.)
 
 `tests/family-registry.test.ts` gains the twelfth case
 (`identities`, global-plane like `members`). **As of Phase 12:**

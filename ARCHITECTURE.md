@@ -501,9 +501,10 @@ re-verified by the automated suite:
   writes, and snapshots stay admin-only
   (deny-by-default). Seat and ai-agent GET are
   member-readable. Member-tier carve-outs:
-  `identity-tokens` POST (rotation/revocation) and
-  `identity-token-revocations` PUT (self logout-everywhere;
-  write authorizer keeps the write self-only).
+  `identities/:id/tokens` POST (rotation/revocation) and
+  `identities/:id/token-revocations` PUT (self
+  logout-everywhere; write authorizer keeps the write
+  self-only — path identity vs actor).
 
 ## API Layer (`/api`)
 

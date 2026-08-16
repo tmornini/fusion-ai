@@ -156,26 +156,30 @@ test('a second PUT to the SAME identity-tokens/:id id forms'
     assert.equal(domainRow.jti, 'jti-3-again');
 });
 
-// ── identity-token-revocations/:id — EVENT-APPEND ──
+// ── identities/:id/token-revocations/:rid — EVENT-APPEND ──
 
-test('PUT identity-token-revocations/:id appends its pair at'
-+ ' the entity address', async () => {
+test('PUT identities/:id/token-revocations/:rid appends its'
++ ' pair at the entity address', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
-        'PUT', '/identity-token-revocations/rev-1', DEV_TOKEN,
+        'PUT',
+        '/identities/current/token-revocations/rev-1',
+        DEV_TOKEN,
         revocationFields(),
     ));
     assert.equal(res.status, 201);
     const requests = await db.requests.getAll();
     assert.equal(requests.length, 3);
     assert.equal(
-        requests[2]!.uri_collection, '/identity-token-revocations/',
+        requests[2]!.uri_collection,
+        '/identities/current/token-revocations/',
     );
     assert.equal(requests[2]!.uri_id, 'rev-1');
     // Phase Final Task 2: identity_token_revocations ROW half
     // stripped — oracle is the pair plane.
-    const domainRow =
-        await deriveTokenRevocation(db, 'rev-1');
+    const domainRow = await deriveTokenRevocation(
+        db, 'current', 'rev-1',
+    );
     assert.deepEqual(await res.json(), domainRow);
 });
 
@@ -375,7 +379,9 @@ test('request and response counts stay equal across a mix'
     ));
     assert.equal(reused.status, 409);
     const failed = await handleRequest(db, req(
-        'PUT', '/identity-token-revocations/rev-fail', DEV_TOKEN,
+        'PUT',
+        '/identities/current/token-revocations/rev-fail',
+        DEV_TOKEN,
         { identity_id: 'current' }, // missing required `at`
     ));
     assert.equal(failed.status, 400);

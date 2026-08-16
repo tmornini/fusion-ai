@@ -136,3 +136,62 @@ test('POST /identity-tokens/:jti/rotation is retired'
     ));
     assert.equal(res.status, 404);
 });
+
+test('member PUT identities/:id/token-revocations/:rid'
++ ' naming self succeeds 201', async () => {
+    const db = await memberDb();
+    const token = await devToken(MEMBER);
+    const res = await handleRequest(db, req(
+        'PUT',
+        '/identities/' + MEMBER + '/token-revocations/m-rev-1',
+        token,
+        { at: '2026-01-01T00:00:00.000000Z' },
+    ));
+    assert.equal(res.status, 201);
+});
+
+test('member PUT identities/:id/token-revocations/:rid'
++ ' naming another identity 403s', async () => {
+    const db = await memberDb();
+    const token = await devToken(MEMBER);
+    const res = await handleRequest(db, req(
+        'PUT',
+        '/identities/someone-else/token-revocations/m-rev-2',
+        token,
+        { at: '2026-01-01T00:00:00.000000Z' },
+    ));
+    assert.equal(res.status, 403);
+});
+
+test('GET identities/:id/token-revocations/:rid 403s for'
++ ' a member (not in MEMBER_VERBS GET)', async () => {
+    const db = await memberDb();
+    const token = await devToken(MEMBER);
+    const res = await handleRequest(db, req(
+        'GET',
+        '/identities/' + MEMBER + '/token-revocations/r1',
+        token,
+    ));
+    assert.equal(res.status, 403);
+});
+
+test('GET /identity-token-revocations/:rid is retired'
++ ' (router 404) for a member', async () => {
+    const db = await memberDb();
+    const token = await devToken(MEMBER);
+    const res = await handleRequest(db, req(
+        'GET', '/identity-token-revocations/r1', token,
+    ));
+    assert.equal(res.status, 404);
+});
+
+test('PUT /identity-token-revocations/:rid is retired'
++ ' (router 404) for a member', async () => {
+    const db = await memberDb();
+    const token = await devToken(MEMBER);
+    const res = await handleRequest(db, req(
+        'PUT', '/identity-token-revocations/r1', token,
+        { at: '2026-01-01T00:00:00.000000Z' },
+    ));
+    assert.equal(res.status, 404);
+});
