@@ -400,9 +400,8 @@ export async function postWorkOrderTransition(
 }
 
 // Bind a work order to one org-owned instance of one
-// record type. Claim-op adapter voice: mint nothing
-// client-side beyond the body; notify on success.
-export async function postWorkOrderBinding(
+// record type. Create-only PUT; notify on success.
+export async function putWorkOrderBinding(
     ctx: RequestContext,
     workOrderId: string,
     instanceId: string,
@@ -443,7 +442,7 @@ export async function putWorkOrder(
 // stored fact). expireAt is minted BEFORE claimAt
 // so it orders earlier in the event log (nowUtc is
 // strictly monotonic).
-export async function postWorkOrderClaim(
+export async function putWorkOrderClaim(
     ctx: RequestContext,
     workOrderId: string,
 ): Promise<void> {

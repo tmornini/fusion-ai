@@ -221,15 +221,16 @@ never a row to begin with.
 
 ### Work-order instance binding (pair-plane only, no table)
 
-`work-orders/:id/binding` is a named operation family with
-no backing table: `POST` appends a binding op pair at
-`/work-orders/:id/binding/`. The CURRENT bind derives from
-the WO's own binding op-pair prefix — latest `(at, id)`
-wins (claim-op derive precedent). WO GET embeds
-`instance_id` + `record_type_id` at read time (never a
-document field). Transition-driven value writes append
-instance **revision** pairs at the instance's own
-canonical address
+`work-orders/:id/binding` is a create-only PUT family with
+no backing table: first `PUT` appends a binding pair at
+`/work-orders/:id/binding/` (201). Rebind is 409. POST is
+405. The CURRENT bind derives from the WO's own binding
+op-pair prefix — latest `(at, id)` wins (claim-op derive
+precedent). WO GET embeds `instance_id` +
+`record_type_id` at read time (never a document field).
+Transition-driven value writes append instance
+**revision** pairs at the instance's own canonical
+address
 (`organizations/:org/record-types/:type/instances/:id`) —
 the bind itself writes no instance revision. See
 API.md §3.34 / §3.19.
@@ -378,9 +379,10 @@ field-values collection/write, and flat
 `/records` / `/record-attributes` are RETIRED (router
 404). Lifecycle writes ride document-trio PUTs
 (ideas/projects/record-types/flows/objectives/members)
-and named ops (work-order create/claim/transition/
-release, invitations). Instance public PUT is 405;
-value writes ride PATCH / DELETE tombstone.
+and named ops (work-order create / claim PUT /
+transition POST / bind PUT, invitations). Release
+is DELETE on the claim address. Instance public
+PUT is 405; values ride PATCH / DELETE tombstone.
 
 Domain notes (vocabulary, not storage):
 

@@ -16,12 +16,12 @@ organization/default-organization sub-routers).
   |  └── :id
 └─|─ /current-member • RECONCILED: GET actor's own member parent (global plane; deriveMemberParent)
 └─|─ /identity-pii • RECONCILED: GET collection roster (fenced via membership pair plane over deriveIdentityPiiRows) — distinct from nested identities/:id/pii
-└─|─ work-orders/ • RECONCILED: registered org-nested document family (organizationNested:true, concurrency:'simple', lifecycle:'stateless' — flat wire; storage uri_prefix nests org), collection + entity GETs with optional binding enrichment (instance_id + record_type_id), PUT via documentPutHandler, POST create, named ops claim/transition/release/binding; no DELETE
+└─|─ work-orders/ • RECONCILED: registered org-nested document family (organizationNested:true, concurrency:'simple', lifecycle:'stateless' — flat wire; storage uri_prefix nests org), collection + entity GETs with optional binding enrichment (instance_id + record_type_id), PUT via documentPutHandler, POST create, named ops PUT/GET/DELETE claim, POST transition, PUT binding (create-only); POST release retired (404); no document DELETE
   |  └── :id/
-  |      └── claim                            • RECONCILED: claim graph head from workOrderDocumentHeadFor (Phase 15 Task 2); contention 409 + nonexistent-WO 404 + foreign-WO 403 held — see Phase 15 FLIPPED + honest HTTP status covenant
+  |      └── claim                            • RECONCILED: PUT/GET/DELETE work-orders/:id/claim — first PUT 201; GET {member_id, expires_at} 200 / 404 only when unclaimed; DELETE releases 204; POST 405; contention 409 + nonexistent-WO 404 + foreign-WO 403 — see API.md §3.18
   |      └── transition                       • RECONCILED: POST work-orders/:id/transition — post-Phase-2 body (instance_id + record_type_id + set/clear); If-Match preconditions bound instance head (named RFC 9110 §13.1.1 deviation); op + revision one-tx; legacy fieldValues key → 400 at the gate; pure moves carry neither If-Match nor asserts — see API.md §3.19
-  |      └── release                          • RECONCILED: POST work-orders/:id/release — named unclaim op, 204, read-decide-append, replayed at derive; foreign-WO 403; nonexistent-WO 404
-  |      └── binding                          • RECONCILED: POST work-orders/:id/binding — named bind op, member-tier POST; current bind derived from op pairs (claim precedent); rebind 409; WO GET embeds instance_id + record_type_id — see API.md §3.34
+  |      └── release                          • RETIRED: POST work-orders/:id/release — router 404; unclaim is DELETE work-orders/:id/claim — see API.md §3.35
+  |      └── binding                          • RECONCILED: PUT work-orders/:id/binding — create-only bind, first 201, rebind 409, POST 405; current bind derived from op pairs (claim precedent); WO GET embeds instance_id + record_type_id — see API.md §3.34
 └─|─ /identities/
   |  └── :id
   |      └─|─ /default-organization            • RECONCILED: GET|PUT simple document (api/organization-requests.ts) — self-only tree-ownership gate; pair-plane document at /identities/:id/default-organization/; PUT { organization_id } must be a live seat else 400; GET 404 if never SET; revoke does not rewrite it; token resolution uses SET if live seat else PRIMARY else deny

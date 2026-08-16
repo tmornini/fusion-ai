@@ -1761,8 +1761,8 @@ designer "tag current" action lands.)
   the bind-instance dialog listing instances for
   the flow's record type (rows use
   `data-instance-pick`, never `data-attribute-id`);
-  picking an instance POSTs
-  `work-orders/:id/binding` (204), the dialog
+  picking an instance PUTs
+  `work-orders/:id/binding` (201), the dialog
   closes, and the screen re-presents with a bound
   Instance badge and pre-filled values from the
   instance head.
@@ -1776,17 +1776,19 @@ designer "tag current" action lands.)
 ### Workbox — Transitions
 
 - [ ] **WB11** Fill in required attributes and click
-  a transition button. PASS: transition is
-  recorded, work order moves to the next state,
-  browser navigates back to the inbox. The work
-  order appears in the Active tab (unclaimed).
+  a transition button. PASS: transition POSTs
+  `work-orders/:id/transition` (201), work order
+  moves to the next state, browser navigates back
+  to the inbox. The work order appears in the
+  Active tab (unclaimed).
 - [ ] **WB12** Click the work order row in the
-  Active tab. PASS: work order is claimed and
-  browser navigates to the action screen
-  showing the new state's attributes.
+  Active tab. PASS: work order PUTs
+  `work-orders/:id/claim` (201) and the browser
+  navigates to the action screen showing the new
+  state's attributes.
 - [ ] **WB13** Click "Release Work Order". PASS:
-  a single click posts `POST
-  work-orders/:id/release` (204), soft-releases
+  a single click DELETEs
+  `work-orders/:id/claim` (204), soft-releases
   the active claim, and the browser navigates to
   the inbox, where the work order reappears in the
   Active tab.
@@ -1794,7 +1796,7 @@ designer "tag current" action lands.)
   the Active tab, click the same work order again
   (claim). PASS: action screen opens under the
   caller's claim. Click "Release Work Order"
-  (unclaim via the release op). PASS: back on the
+  (unclaim via DELETE claim). PASS: back on the
   Active tab unclaimed. Click the row a third time
   (reclaim). PASS: claim succeeds again; the pair
   plane carries the sequence
@@ -1824,7 +1826,7 @@ designer "tag current" action lands.)
   `GET work-orders/:id/history` and the instance
   head). PASS: the work-order document pair head
   carries `display_id` and `flow_graph` JSON; the
-  binding op is at `work-orders/:id/binding` with
+  binding PUT is at `work-orders/:id/binding` with
   `{instance_id, record_type_id}`; value-bearing
   transitions are `work-orders/:id/transition` op
   pairs whose body is the **instance shape**

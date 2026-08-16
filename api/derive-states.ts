@@ -1816,7 +1816,8 @@ export async function workOrderClaimHistoryFor(
 }
 
 // The CURRENT bind: latest binding pair wins under
-// (at, id). Reads POST (seed) and PUT (locked verb).
+// (at, id). Reads PUT (locked verb). POST still
+// accepted for pre-lock pairs.
 // Entity-scoped indexed reads; in-tx safe (dbOrView).
 export async function workOrderBindingFor(
     dbOrView: DbAdapter,

@@ -155,7 +155,7 @@ Claim-expiration implementation:
 returns `null` for a `'claimed'` event older than
 `lockTimeout` seconds even when no `'claim_expired'` /
 `'claim_released'` event has yet superseded it.
-`postWorkOrderClaim` materializes that implicit expiration
+`putWorkOrderClaim` materializes that implicit expiration
 as an explicit `'claim_expired'` event when a new claim
 notices a stale prior, so the durable record converges on
 the reader's view.

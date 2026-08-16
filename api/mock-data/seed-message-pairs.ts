@@ -2173,7 +2173,7 @@ export async function formInstanceChainPairs():
 
     const bindingId = generateCryptoSafeBase62();
     const binding = await formWritePair({
-        method: 'POST',
+        method: 'PUT',
         pathname:
             '/work-orders/' + woId + '/binding',
         routePattern: 'work-orders/:id/binding',

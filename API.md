@@ -322,12 +322,16 @@ Legend for classification:
   entity read (`GET /work-orders/:id`) derive from the message ledger (Task
   7, Phase 5), not a hand-written dispatch.
 - `POST /work-orders` — operation (§3.17). Member-tier.
-- `POST /work-orders/:id/claim` — operation (§3.18).
+- `PUT|GET|DELETE /work-orders/:id/claim` — claim
+  document (§3.18). First PUT **201**. GET
+  `{member_id, expires_at}`; 404 only when unclaimed.
+  DELETE releases (**204**). POST 405.
 - `POST /work-orders/:id/transition` — operation (§3.19).
-- `POST /work-orders/:id/binding` — operation (§3.34).
-- `POST /work-orders/:id/release` — operation (§3.35).
-  Named unclaim; 201 on append; foreign-WO 403;
-  nonexistent-WO 404.
+- `PUT /work-orders/:id/binding` — create-only bind
+  (§3.34). First **201**; rebind 409; POST 405.
+- `POST /work-orders/:id/release` — RETIRED (router
+  404). Unclaim is `DELETE /work-orders/:id/claim`
+  (§3.18 / §3.35).
 
 ### 2.8 Record types, attributes & instances
 
@@ -515,9 +519,9 @@ from the lifecycle-current event (genesis-wins-under-
 skew), never the head PUT body alone. Flows skip the
 embed (no consumer). Work-orders stay `'stateless'` —
 lifecycle lives only on create / claim / transition /
-release / binding ops and the history routes above. Instances
-carry `values` (full-state head), not the lifecycle
-trio.
+binding ops and the history routes above. Unclaim is
+DELETE on the claim address. Instances carry
+`values` (full-state head), not the lifecycle trio.
 
 **Field values have no successor route.** Product
 reads fold them inline on work-order history (7)/(8).
@@ -541,7 +545,7 @@ op pairs, not bare leaf pairs (§5.16 / §5.19).
 Lifecycle **writes** ride document-trio PUTs
 (ideas / projects / record-types / flows / objectives /
 members) and named ops (work-order create / claim /
-transition / release, invitations) — never a shared
+transition / bind, invitations) — never a shared
 event-append address. Instance public PUT is **405**;
 value writes ride PATCH (creates + updates, If-Match
 on a live head) / DELETE tombstone (§5.20) — not
@@ -659,7 +663,7 @@ and appends message pairs — there is no entity-table put
 and no `states.postEvent`. Lifecycle rides document-pair
 bodies (trio families fold `state` / `state_at` /
 `state_event_id` into the document body) or named-op pairs
-(work-order claim / transition / release / binding,
+(work-order claim / transition / binding,
 invitations).
 
 Notation in the doctrinal lines: `put_x` ≈ the document
@@ -1481,21 +1485,43 @@ Three pairs commit or none: a mid-transaction failure (a
 state-ledger collision, say) leaves zero of the three, exactly
 like every other atomic write in this catalog.
 
-### 3.18 `POST /work-orders/:id/claim` — claim
+### 3.18 `PUT|GET|DELETE /work-orders/:id/claim` — claim
+
+Create-only-style claim document. PUT first-success
+**201**; GET returns `{member_id, expires_at}` (**200**)
+or **404** only when unclaimed (no row or DELETE head);
+DELETE releases (**204**). POST `/claim` is **405**.
+
+```http
+PUT .../work-orders/{work-order-id}/claim
+{
+  "claimEventId": "...",
+  "claimAt": "...",
+  "expireEventId": "...",
+  "expireAt": "...",
+  "expires_at": "..."
+}
+```
 
 - tx: `['requests','responses']`
 - actual: pair-plane claim history
   (`workOrderClaimHistoryFor` / derive) → if a live claim by
   another member → 409; by the caller → no-op; else
-  `appendMessagePair(pair)` for the claim op (expiry + claim
-  derive from op pairs at read time). Send-time **201** on
-  append (§5.1).
-- doctrinal: claim-history read + claim op pair as
-  `post_claim_work_order`.
-- props: atomic; **TOCTOU-safe** (read + check + append ride one tx, so
-  two concurrent claims cannot both see "no live claim"); idempotent
-  for the current holder — the pair still appends, that call's only
-  write; member-tier.
+  `appendMessagePair(pair)` for the claim document (expiry
+  + claim derive from pairs at read time). Send-time **201**
+  on append (§5.1). GET reads
+  `workOrderClaimDocumentFor`. DELETE appends a DELETE
+  pair; DELETE head = unclaimed.
+- doctrinal: claim-history read + claim pair as
+  `put_claim_work_order`; unclaim as
+  `delete_claim_work_order`.
+- props: atomic; **TOCTOU-safe** (read + check + append
+  ride one tx, so two concurrent claims cannot both see
+  "no live claim"); idempotent for the current holder —
+  the pair still appends, that call's only write;
+  member-tier.
+
+Pins: `tests/api-work-order-claim.test.ts`.
 
 ### 3.19 `POST /work-orders/:id/transition` — transition along an edge
 
@@ -2019,7 +2045,7 @@ the RESTRICT tombstone (§5.7). **Admin-tier** mutation
   STORED head event's `member_id`, never the editing
   actor.
 
-### 3.34 `POST /work-orders/:id/binding` — bind an instance
+### 3.34 `PUT /work-orders/:id/binding` — bind an instance
 
 Binds a work order to one org-owned instance of one
 record-type. Body:
@@ -2043,7 +2069,7 @@ rows) EMBEDS the derived bind as `instance_id` +
   prior pair names a DIFFERENT
   `(instance_id, record_type_id)` → 409; else
   `appendMessagePair(pair)` for the binding op.
-- doctrinal: binding op pair as `post_bind_work_order`.
+- doctrinal: binding op pair as `put_bind_work_order`.
 - props: atomic; **TOCTOU-safe** (in-tx rebind check);
   **claim-agnostic** member-tier (A7 — parity with the
   transition op's shipped posture; workbox UX may still
@@ -2065,33 +2091,14 @@ rows) EMBEDS the derived bind as `instance_id` +
 
 Pins: `tests/api-work-order-binding.test.ts`.
 
-### 3.35 `POST /work-orders/:id/release` — named unclaim
+### 3.35 `POST /work-orders/:id/release` — RETIRED
 
-`postWorkOrderReleaseOp` (`api/routes.ts`) — member-tier
-sibling of claim/transition/binding. Releases a live claim
-(derive emits `claim_released`); no live claim → idempotent
-no-op. **201** on append either way.
-
-```http
-POST .../work-orders/{work-order-id}/release
-{
-  "releaseEventId": "...",
-  "releaseAt": "..."
-}
-```
-
-- tx: `['requests','responses']`
-- actual: `validateWorkOrderReleaseBody(body)` →
-  `workOrderDocumentHeadFor` (absent → 404 via
-  `missedReadError`; foreign org → 403 at fence) →
-  `appendMessagePair(pair)` for the release op (pair-
-  only; claim liveness is a derive-time decision).
-- doctrinal: release op pair as `post_release_work_order`.
-- props: atomic; member-tier; open-release posture (any
-  member may release another's claim today);
-  `validateWorkOrderReleaseBody`.
-
-Pins: `tests/api-work-order-release.test.ts`.
+**Write route retired.** `POST /work-orders/:id/release`
+is unwired (router **404**). Live unclaim is
+`DELETE /work-orders/:id/claim` (§3.18): no body;
+DELETE head = unclaimed; GET then 404s. Pins:
+`tests/api-work-order-release.test.ts`,
+`tests/api-work-orders-verb-gaps.test.ts`.
 
 ---
 
@@ -2477,10 +2484,10 @@ now declares:
   `currentDocumentState`) to 404 a lifecycle-deleted document
   too. `work-orders` is the FIRST `'stateless'` family: a work
   order's lifecycle is written ONLY by `POST /work-orders`
-  (§3.17), `POST /work-orders/:id/claim` (§3.18), `POST
-  /work-orders/:id/transition` (§3.19), `POST
-  /work-orders/:id/binding` (§3.34), and `POST
-  /work-orders/:id/release` (named unclaim) — never by a
+  (§3.17), `PUT /work-orders/:id/claim` (§3.18), `POST
+  /work-orders/:id/transition` (§3.19), `PUT
+  /work-orders/:id/binding` (§3.34), and `DELETE
+  /work-orders/:id/claim` (unclaim) — never by a
   document PUT — so `validateWorkOrderDocumentBody` 400s a
   body carrying any trio key (the stateless covenant is
   validator-enforced, not caller discipline), and the generic
@@ -3886,7 +3893,7 @@ honest family body `record_instances`).
 
 **Phase 2 resolution (G6).** Work-order ↔ instance SoT
 coupling is the doctrine of record: bind op
-`POST /work-orders/:id/binding` (§3.34), transition
+`PUT /work-orders/:id/binding` (§3.34), transition
 value writes through the instance head with If-Match
 (§3.19), placement UNIQUE by construction. Design:
 `docs/superpowers/specs/2026-08-05-work-order-instance-
