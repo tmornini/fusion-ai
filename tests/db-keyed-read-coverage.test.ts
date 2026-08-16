@@ -1,5 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { TABLE_INDEXES } from '../api/db.ts';
 
 // Every call-site keyed read in the codebase: a place that reads
@@ -55,4 +57,43 @@ test('every keyed read has a matching secondary index', () => {
             + 'IndexedDB read throws NotFoundError at runtime.',
         );
     }
+});
+
+function apiTypeScriptFiles(dir: string): string[] {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir, {
+        withFileTypes: true,
+    })) {
+        const path = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            out.push(...apiTypeScriptFiles(path));
+            continue;
+        }
+        if (entry.name.endsWith('.ts')) {
+            out.push(path);
+        }
+    }
+    return out;
+}
+
+test('KEYED_READS lists every getAllWhere literal',
+() => {
+    const call = /getAllWhere\(\s*'([^']+)'/g;
+    const found = new Set<string>();
+    for (const file of apiTypeScriptFiles('api')) {
+        const text = readFileSync(file, 'utf8')
+            .replace(/^\s*\/\/.*$/gm, '');
+        for (const match of text.matchAll(call)) {
+            const column = match[1];
+            if (column === undefined) continue;
+            found.add(column);
+        }
+    }
+    const listed = new Set(
+        KEYED_READS.map((row) => row.column),
+    );
+    assert.deepEqual(
+        [...found].sort(),
+        [...listed].sort(),
+    );
 });
