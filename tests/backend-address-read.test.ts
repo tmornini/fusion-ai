@@ -251,3 +251,43 @@ async () => {
                 + ' operation_id',
     );
 });
+
+test('memory getAddressVersion refuses requests',
+async () => {
+    const backend = new MemoryStorageBackend();
+    await backend.ensureTables(['requests']);
+    await assert.rejects(
+        () => backend.transaction(
+            ['requests'],
+            'readonly',
+            (tx) => tx.getAddressVersion(
+                'requests', '/ideas/', '1', 'aa',
+            ),
+        ),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message
+                === 'getAddressVersion does not'
+                + ' accept requests',
+    );
+});
+
+test('memory getWhereBody refuses requests',
+async () => {
+    const backend = new MemoryStorageBackend();
+    await backend.ensureTables(['requests']);
+    await assert.rejects(
+        () => backend.transaction(
+            ['requests'],
+            'readonly',
+            (tx) => tx.getWhereBody(
+                'requests', '/ideas/', { n: 1 },
+            ),
+        ),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message
+                === 'getWhereBody does not accept'
+                + ' requests',
+    );
+});

@@ -115,6 +115,12 @@ export function bufferTx(
             uriId: string,
             version: string,
         ): Promise<T[]> {
+            if (table === 'requests') {
+                throw new Error(
+                    'getAddressVersion does not'
+                    + ' accept requests',
+                );
+            }
             return scoped(table)
                 .filter((row) => {
                     const rec = row as
@@ -144,6 +150,12 @@ export function bufferTx(
             collection: string,
             containment: Record<string, unknown>,
         ): Promise<T[]> {
+            if (table === 'requests') {
+                throw new Error(
+                    'getWhereBody does not accept'
+                    + ' requests',
+                );
+            }
             return scoped(table)
                 .filter((row) => {
                     const rec = row as
