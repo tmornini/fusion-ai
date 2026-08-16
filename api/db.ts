@@ -151,6 +151,11 @@ export interface Tx {
         column: string,
         key: string,
     ): Promise<T[]>;
+    getAddress<T extends { id: string }>(
+        table: string,
+        collection: string,
+        uriId: string,
+    ): Promise<T[]>;
     put<T extends { id: string }>(
         table: string,
         row: T,

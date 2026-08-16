@@ -75,6 +75,34 @@ export function bufferTx(
                 )[column] === key)
                 .map(row => ({ ...row })) as T[];
         },
+        async getAddress<T extends { id: string }>(
+            table: string,
+            collection: string,
+            uriId: string,
+        ): Promise<T[]> {
+            return scoped(table)
+                .filter((row) => {
+                    const rec = row as
+                        Record<string, unknown>;
+                    return rec['uri_collection']
+                        === collection
+                        && rec['uri_id'] === uriId;
+                })
+                .sort((left, right) => {
+                    const l = left as
+                        Record<string, unknown>;
+                    const r = right as
+                        Record<string, unknown>;
+                    const atL = String(l['at'] ?? '');
+                    const atR = String(r['at'] ?? '');
+                    if (atL < atR) return -1;
+                    if (atL > atR) return 1;
+                    if (left.id < right.id) return -1;
+                    if (left.id > right.id) return 1;
+                    return 0;
+                })
+                .map((row) => ({ ...row })) as T[];
+        },
         async put<T extends { id: string }>(
             table: string,
             row: T,
