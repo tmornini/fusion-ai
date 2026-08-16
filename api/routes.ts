@@ -3836,12 +3836,11 @@ async function instanceAddressSpent(
     prefix: string,
     instanceId: Id,
 ): Promise<boolean> {
-    const responses = await db.responses.getAllWhere(
-        'uri_collection', prefix,
-    );
-    return responses.some(
-        (response) => response.uri_id === instanceId,
-    );
+    const responses =
+        await db.responses.getAllAtAddress(
+            prefix, instanceId,
+        );
+    return responses.length > 0;
 }
 
 // Instance PATCH create (Task 20): no live PUT, no

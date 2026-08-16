@@ -1500,8 +1500,8 @@ export async function deriveWorkOrderHistories(
 // known (organization, workOrderId) pair, rather than the
 // whole-org scan the multi-work-order reader needs to discover
 // EVERY id at once —
-//   * create + document pairs: uri_collection at the
-//     work-orders prefix, filtered to this workOrderId (both
+//   * create + document pairs: address read at the
+//     work-orders prefix + this workOrderId (both
 //     a create's response and its later document PUT/DELETE
 //     share ONE uriId — drift-work-orders.test.ts case 8);
 //   * claim/release/transition: uri_collection at each sub-
@@ -1531,21 +1531,15 @@ async function workOrderClaimSourcesFor(
     const collectionPrefix = canonicalUriCollection(
         organization, '/work-orders/',
     );
-    const [byCollectionRequests, byCollectionResponses] =
+    const [collectionRequests, collectionResponses] =
         await Promise.all([
-            dbOrView.requests.getAllWhere(
-                'uri_collection', collectionPrefix,
+            dbOrView.requests.getAllAtAddress(
+                collectionPrefix, workOrderId,
             ),
-            dbOrView.responses.getAllWhere(
-                'uri_collection', collectionPrefix,
+            dbOrView.responses.getAllAtAddress(
+                collectionPrefix, workOrderId,
             ),
         ]);
-    const collectionRequests = byCollectionRequests.filter(
-        (r) => r.uri_id === workOrderId,
-    );
-    const collectionResponses = byCollectionResponses.filter(
-        (r) => r.uri_id === workOrderId,
-    );
     const createPairs = operationPairsAt(
         collectionRequests, collectionResponses, collectionPrefix,
     );
@@ -1933,10 +1927,10 @@ export async function workOrderClaimDocumentFor(
 // reads for flow_graph (Task 2 re-anchors the call site).
 //
 // REUSE TARGET: the entity-scoped entityPairs computation
-// inside workOrderClaimSourcesFor (collection-indexed +
-// uri_id filter) — NOT derivedDocumentEntity /
-// documentGetHandler, whose collection-wide prefix scan is
-// the forbidden whole-plane shape inside a write gate.
+// inside workOrderClaimSourcesFor (address read) — NOT
+// derivedDocumentEntity / documentGetHandler, whose
+// collection-wide prefix scan is the forbidden whole-plane
+// shape inside a write gate.
 //
 // HEAD REDUCTION: documentPairsAt already sorts by (at, id)
 // ascending and admits only PUT/DELETE, so the last pair IS
@@ -1953,21 +1947,15 @@ export async function workOrderDocumentHeadFor(
     const collectionPrefix = canonicalUriCollection(
         organization, '/work-orders/',
     );
-    const [byCollectionRequests, byCollectionResponses] =
+    const [collectionRequests, collectionResponses] =
         await Promise.all([
-            dbOrView.requests.getAllWhere(
-                'uri_collection', collectionPrefix,
+            dbOrView.requests.getAllAtAddress(
+                collectionPrefix, workOrderId,
             ),
-            dbOrView.responses.getAllWhere(
-                'uri_collection', collectionPrefix,
+            dbOrView.responses.getAllAtAddress(
+                collectionPrefix, workOrderId,
             ),
         ]);
-    const collectionRequests = byCollectionRequests.filter(
-        (r) => r.uri_id === workOrderId,
-    );
-    const collectionResponses = byCollectionResponses.filter(
-        (r) => r.uri_id === workOrderId,
-    );
     const entityPairs = documentPairsAt(
         collectionRequests, collectionResponses,
         collectionPrefix,
@@ -2177,8 +2165,8 @@ export async function deriveInvitationStates(
 // ENTITY-SCOPED sibling of deriveInvitationStates above (Phase
 // 14 Task 1): the SAME grant + op-address reduction, restricted
 // to ONE known invitation id via INDEXED reads —
-// uri_collection at the invitations prefix, filtered to
-// this id (grant + document share ONE uriId) and
+// address read at the invitations prefix + this id
+// (grant + document share ONE uriId) and
 // uri_collection for each of the three op addresses —
 // rather than the whole-collection scan
 // (documentIds discovery) and the whole-ledger requests.getAll()
@@ -2200,21 +2188,15 @@ export async function invitationLifecycleStatesFor(
 ): Promise<StateEntity[]> {
     const rows: StateEntity[] = [];
 
-    const [byCollectionRequests, byCollectionResponses] =
+    const [collectionRequests, collectionResponses] =
         await Promise.all([
-            dbOrView.requests.getAllWhere(
-                'uri_collection', INVITATIONS_PREFIX,
+            dbOrView.requests.getAllAtAddress(
+                INVITATIONS_PREFIX, id,
             ),
-            dbOrView.responses.getAllWhere(
-                'uri_collection', INVITATIONS_PREFIX,
+            dbOrView.responses.getAllAtAddress(
+                INVITATIONS_PREFIX, id,
             ),
         ]);
-    const collectionRequests = byCollectionRequests.filter(
-        (r) => r.uri_id === id,
-    );
-    const collectionResponses = byCollectionResponses.filter(
-        (r) => r.uri_id === id,
-    );
     const hasDocument = documentPairsAt(
         collectionRequests, collectionResponses,
         INVITATIONS_PREFIX,
