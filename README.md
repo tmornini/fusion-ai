@@ -17,26 +17,24 @@ and execution.
 - **Identities** — people and service identities, their external
   provider links, and access tokens
 - **Account** — organization settings, members, and billing;
-  members join by email invitation (accept creates the
-  membership; an admin may revoke a pending invite)
+  members join by email invitation (accept writes the
+  seat; an admin may revoke a pending invite)
 - **Snapshots** — database management
   (wipe, reload, upload/download snapshots)
 
 The demo is multi-organization: loading mock data seeds two
 orgs (Stark Industries and Wayne Enterprises) with a sidebar
-org-switcher for the multi-org user. The browser ZIP may
-surface one-time demo sign-in credentials on the Snapshots
-page after a wipe-and-load. The server ZIP prints those
-credentials once on stderr (`--seed-mock-data`).
+org-switcher for the multi-org user. Operator seed prints
+sign-in credentials once on stderr (`--seed-mock-data`).
+The Snapshots page (admin+bearer) may still surface those
+credentials after an in-app wipe-and-load.
 
-**Demo-grade security.** `./build` emits two artifacts:
-`fusion-ai-browser-${SHA}.zip` (IndexedDB, API in the
-page, demo HMAC constant) and
-`fusion-ai-server-${SHA}.zip` (Node + Postgres, pages
-and API on one origin, `JWT_HMAC_SIGNING_KEY` from the
-environment). The yank has not shipped. A1–A6 are
-disposed on the server ZIP as named in
-[ARCHITECTURE.md](ARCHITECTURE.md) § Demo server tier.
+**Demo-grade security.** `./build` emits one artifact:
+`fusion-ai-server-${SHA}.zip` (Node + Postgres, pages and
+API on one origin, `JWT_HMAC_SIGNING_KEY` from the
+environment). The in-browser data tier is gone. A1–A6 are
+disposed as named in [ARCHITECTURE.md](ARCHITECTURE.md)
+§ Demo server tier.
 
 ## Getting Started
 
@@ -48,11 +46,10 @@ npm ci
 
 `npm ci` installs the build toolchain (tsc, esbuild) and
 postgres.js 3.4.9 at the exact versions pinned in
-`package-lock.json`. The browser ZIP keeps zero runtime
-dependencies. The server ZIP bundles postgres.js into
+`package-lock.json`. The ZIP bundles postgres.js into
 `server.mjs` (`api/postgres-client.ts` is the only
-importer) — the named exception. The unzipped server
-artifact needs no `npm install`.
+importer) — the named exception. The unzipped artifact
+needs no `npm install`.
 
 Everything operational — build, test, conventions — lives
 in [CLAUDE.md](CLAUDE.md); the manual browser regression plan
