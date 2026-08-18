@@ -899,8 +899,7 @@ Two backends implement the seam:
 
 The memory backend shares the buffer-then-flush helper so
 the test backend cannot lie about what the production
-gate enforces. Postgres import is one transaction
-(exclusive lock + `schema_marker` in the same commit).
+gate enforces.
 
 ## Page Module Pattern
 
