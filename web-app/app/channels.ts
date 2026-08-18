@@ -1,4 +1,5 @@
 import {
+    postNotificationEvent,
     subscribeNotificationEvents,
 } from './adapters/broadcast-channel.ts';
 import {
@@ -9,6 +10,9 @@ import {
 import {
     principalFromToken,
 } from '../../shared/access-token-decode.ts';
+import type {
+    NotificationEvent,
+} from '../../api/notifications.ts';
 
 type Listener<T> = (value: T) => void;
 
@@ -44,6 +48,26 @@ export interface SubscriptionChannel {
     subscribe(
         fn: () => void,
     ): () => void;
+}
+
+function eventForThisTab(): NotificationEvent {
+    if (!sessionTokenIsSeeded()) {
+        return { kind: 'full' };
+    }
+    const principal =
+        principalFromToken(getSessionToken());
+    const organizationIds =
+        principal.organization !== undefined
+            ? [principal.organization]
+            : [...(principal.organizations ?? [])];
+    const identityIds = sessionIsAuthenticated()
+        ? [principal.id]
+        : [];
+    return {
+        kind: 'scoped',
+        organizationIds,
+        identityIds,
+    };
 }
 
 export function createSubscriptionChannel(
@@ -91,7 +115,10 @@ export function createSubscriptionChannel(
         }
     });
     return {
-        notify: () => channel.send(),
+        notify: () => {
+            channel.send();
+            postNotificationEvent(eventForThisTab());
+        },
         subscribe: (fn) =>
             channel.subscribe(fn),
     };
