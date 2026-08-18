@@ -266,7 +266,7 @@ test('seeded GET /work-orders wire equals derived collection,'
         'current', STARK_ORGANIZATION,
     );
     const res = await handleRequest(
-        db, req('GET', '/work-orders', token),
+        db, req('GET', '/work-orders/', token),
     );
     assert.equal(res.status, 200);
     const wireText = await res.text();
@@ -287,7 +287,7 @@ test('org-2 carries no work orders; a foreign-org GET 404s'
         'current', ORGANIZATION_TWO,
     );
     const emptyRes = await handleRequest(
-        db, req('GET', '/work-orders', tokenTwo),
+        db, req('GET', '/work-orders/', tokenTwo),
     );
     assert.equal(emptyRes.status, 200);
     assert.equal(await emptyRes.text(), '[]');
@@ -352,7 +352,7 @@ test('flow-work-order join wire equals derive across every'
             db,
             req(
                 'GET',
-                '/flows/' + flowId + '/work-orders',
+                '/flows/' + flowId + '/work-orders/',
                 token,
             ),
         );
@@ -377,7 +377,7 @@ test('a flow with no work orders derives an empty join list'
         db,
         req(
             'GET',
-            '/flows/' + EMPTY_FLOW_ID + '/work-orders',
+            '/flows/' + EMPTY_FLOW_ID + '/work-orders/',
             token,
         ),
     );
@@ -445,7 +445,7 @@ async function assertEntityAndJoinParity(
     const joinRes = await handleRequest(
         db,
         req(
-            'GET', '/flows/' + flowId + '/work-orders', token,
+            'GET', '/flows/' + flowId + '/work-orders/', token,
         ),
     );
     assert.equal(joinRes.status, 200);
@@ -488,7 +488,7 @@ async () => {
     // Create by A: birth-claimed — the third event IS 'claimed'
     // by the creator (verification finding, lens 3).
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', tokenA,
+        'POST', '/work-orders/', tokenA,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId, graph,
             {
@@ -683,7 +683,7 @@ test('duplicate-create: two creates, same work-order id, fresh'
     const pfidB = 'wo-drift-dup-1-fwo-b';
 
     const first = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             workOrderId, pfidA, flowId, graph,
             {
@@ -705,7 +705,7 @@ test('duplicate-create: two creates, same work-order id, fresh'
     assert.equal(first.status, 201);
 
     const second = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             workOrderId, pfidB, flowId, graph,
             {
@@ -829,7 +829,7 @@ async () => {
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId, graph,
             {
@@ -1354,7 +1354,7 @@ async () => {
 
     // Leg 1: birth-claimed create by A.
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', tokenA,
+        'POST', '/work-orders/', tokenA,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId, graph,
             {
@@ -1595,7 +1595,7 @@ test('same-join-id retry: two different work-order creates '
     const sharedFwoId = 'wo-drift-retry-fwo-shared';
 
     const first = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             'wo-drift-retry-a', sharedFwoId, flowId, graph,
             {
@@ -1620,7 +1620,7 @@ test('same-join-id retry: two different work-order creates '
     // ids) — not a byte-identical resend, which would replay via
     // the E6 fast path and append no second pair at all.
     const second = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             'wo-drift-retry-b', sharedFwoId, flowId, graph,
             {

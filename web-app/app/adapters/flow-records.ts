@@ -35,7 +35,7 @@ async function getFlowRecordsForFlow(
     flowId: Id,
 ): Promise<FlowRecordEntity[]> {
     return ctx.GET<FlowRecordEntity[]>(
-        'flows/' + flowId + '/records',
+        'flows/' + flowId + '/records/',
     );
 }
 
@@ -62,7 +62,7 @@ async function getAllFlowWorkOrderEntities(
     const flows = await getFlowEntities(ctx);
     const perFlow = await Promise.all(
         flows.map(f => ctx.GET<FlowWorkOrderEntity[]>(
-            'flows/' + f.id + '/work-orders',
+            'flows/' + f.id + '/work-orders/',
         )),
     );
     return perFlow.flat();
@@ -163,7 +163,7 @@ export async function getFlowSummariesForRecord(
 ): Promise<BoundFlowSummary[]> {
     const [rows, flows] = await Promise.all([
         getAllFlowRecordEntities(ctx),
-        ctx.GET<FlowEntity[]>('flows'),
+        ctx.GET<FlowEntity[]>('flows/'),
     ]);
     const wanted = new Set(
         filterByField(rows, 'record_id', recordId)

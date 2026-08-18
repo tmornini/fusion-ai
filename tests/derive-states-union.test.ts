@@ -256,7 +256,7 @@ async function createFlowWithNodes(
     flowId: string, nodeIds: readonly string[],
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/flows', token,
+        'POST', '/flows/', token,
         {
             id: flowId,
             flow: flowFields('Flow ' + flowId),
@@ -354,7 +354,7 @@ async function createWorkOrder(
     db: MemoryDbAdapter, token: string, id: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         workOrderBody(
             id, id + '-fwo', 'flow-union-wo-placeholder',
             [

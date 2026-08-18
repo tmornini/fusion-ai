@@ -221,7 +221,7 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token, {
+        'POST', '/work-orders/', token, {
             id: workOrderId,
             workOrder: {
                 display_id: 'parity-' + workOrderId,
@@ -287,7 +287,7 @@ test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token, {
+        'POST', '/work-orders/', token, {
             id: workOrderId,
             workOrder: {
                 display_id: 'parity-' + workOrderId,

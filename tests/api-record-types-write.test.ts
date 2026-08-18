@@ -177,7 +177,7 @@ async function adminDb(): Promise<{
 const DETAIL =
     '/organizations/' + ORGANIZATION + '/record-types/';
 const COLLECTION =
-    '/organizations/' + ORGANIZATION + '/record-types';
+    '/organizations/' + ORGANIZATION + '/record-types/';
 
 test('PUT .../record-types/:id admin → 200, body echoes '
 + 'entity; GET sees trio',
@@ -300,7 +300,7 @@ async () => {
         ),
     ));
     const flowCreate = await handleRequest(db, req(
-        'POST', '/flows', adminToken, {
+        'POST', '/flows/', adminToken, {
             id: 'flow-restrict-1',
             flow: {
                 name: 'Intake',

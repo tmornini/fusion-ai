@@ -80,7 +80,7 @@ test(
             { id: string; name: string }[]
         >(
             'organizations/1/record-types/rec-1'
-            + '/attributes',
+            + '/attributes/',
         );
         assert.equal(attrs.length, 1);
         assert.equal(attrs[0]!.name, 'Fee');
@@ -174,7 +174,7 @@ test(
             { id: string }[]
         >(
             'organizations/1/record-types/rec-1'
-            + '/attributes',
+            + '/attributes/',
         );
         assert.equal(attrs.length, 1);
         assert.equal(attrs[0]!.id, 'a-new');

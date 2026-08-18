@@ -53,7 +53,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/objectives', token, {},
+        'PUT', '/objectives/', token, {},
     ));
     assert.equal(res.status, 405);
 });
@@ -74,7 +74,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/objectives', token),
+        db, req('DELETE', '/objectives/', token),
     );
     assert.equal(res.status, 405);
 });
@@ -104,7 +104,7 @@ test('POST objectives/:id/revisions 405s (no post handler'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'POST', '/objectives/o1/revisions', token, {},
+        'POST', '/objectives/o1/revisions/', token, {},
     ));
     assert.equal(res.status, 405);
 });
@@ -114,7 +114,7 @@ test('PUT objectives/:id/revisions 405s (no put handler'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/objectives/o1/revisions', token, {},
+        'PUT', '/objectives/o1/revisions/', token, {},
     ));
     assert.equal(res.status, 405);
 });
@@ -124,7 +124,7 @@ test('DELETE objectives/:id/revisions 405s (no delete handler'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/objectives/o1/revisions', token),
+        db, req('DELETE', '/objectives/o1/revisions/', token),
     );
     assert.equal(res.status, 405);
 });
@@ -165,7 +165,7 @@ test('POST projects/:id/objective-baseline-scores 405s (no'
     const token = await organizationToken();
     const res = await handleRequest(db, req(
         'POST',
-        '/projects/p1/objective-baseline-scores',
+        '/projects/p1/objective-baseline-scores/',
         token, {},
     ));
     assert.equal(res.status, 405);
@@ -177,7 +177,7 @@ test('PUT projects/:id/objective-baseline-scores 405s (no'
     const token = await organizationToken();
     const res = await handleRequest(db, req(
         'PUT',
-        '/projects/p1/objective-baseline-scores',
+        '/projects/p1/objective-baseline-scores/',
         token, {},
     ));
     assert.equal(res.status, 405);
@@ -189,7 +189,7 @@ test('DELETE projects/:id/objective-baseline-scores 405s (no'
     const token = await organizationToken();
     const res = await handleRequest(db, req(
         'DELETE',
-        '/projects/p1/objective-baseline-scores',
+        '/projects/p1/objective-baseline-scores/',
         token,
     ));
     assert.equal(res.status, 405);
@@ -237,7 +237,7 @@ test('POST projects/:id/objective-actual-scores 405s (no'
     const token = await organizationToken();
     const res = await handleRequest(db, req(
         'POST',
-        '/projects/p1/objective-actual-scores',
+        '/projects/p1/objective-actual-scores/',
         token, {},
     ));
     assert.equal(res.status, 405);
@@ -249,7 +249,7 @@ test('PUT projects/:id/objective-actual-scores 405s (no put'
     const token = await organizationToken();
     const res = await handleRequest(db, req(
         'PUT',
-        '/projects/p1/objective-actual-scores',
+        '/projects/p1/objective-actual-scores/',
         token, {},
     ));
     assert.equal(res.status, 405);
@@ -261,7 +261,7 @@ test('DELETE projects/:id/objective-actual-scores 405s (no'
     const token = await organizationToken();
     const res = await handleRequest(db, req(
         'DELETE',
-        '/projects/p1/objective-actual-scores',
+        '/projects/p1/objective-actual-scores/',
         token,
     ));
     assert.equal(res.status, 405);

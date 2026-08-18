@@ -84,7 +84,7 @@ export async function getBaselineScoresForProject(
 ): Promise<ObjectiveScore[]> {
     const rows = await ctx.GET<
         ProjectObjectiveBaselineScoreEntity[]
-    >('projects/' + projectId + '/objective-baseline-scores');
+    >('projects/' + projectId + '/objective-baseline-scores/');
     return rows.map(toObjectiveScore);
 }
 
@@ -95,7 +95,7 @@ export async function getActualScoresForProject(
 ): Promise<ObjectiveScore[]> {
     const rows = await ctx.GET<
         ProjectObjectiveActualScoreEntity[]
-    >('projects/' + projectId + '/objective-actual-scores');
+    >('projects/' + projectId + '/objective-actual-scores/');
     return rows.map(toObjectiveScore);
 }
 

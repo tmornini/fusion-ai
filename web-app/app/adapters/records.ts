@@ -36,7 +36,7 @@ async function getAllFlowRecords(
     const flows = await getFlowEntities(ctx);
     const perFlow = await Promise.all(
         flows.map(f => ctx.GET<FlowRecordEntity[]>(
-            'flows/' + f.id + '/records',
+            'flows/' + f.id + '/records/',
         )),
     );
     return perFlow.flat();
@@ -77,14 +77,14 @@ export function notifyRecordChange(): void {
 function recordTypesPath(ctx: RequestContext): string {
     return 'organizations/'
         + activeOrganization(ctx)
-        + '/record-types';
+        + '/record-types/';
 }
 
 function recordTypePath(
     ctx: RequestContext,
     id: RecordId,
 ): string {
-    return recordTypesPath(ctx) + '/' + id;
+    return recordTypesPath(ctx) + id;
 }
 
 export async function getRecordEntities(
@@ -149,7 +149,7 @@ export async function getRecords(
             RecordAttributeEntity[]
         >(
             recordTypePath(ctx, row.id)
-            + '/attributes',
+            + '/attributes/',
         )),
     );
     const attrCountByRecord = new Map<

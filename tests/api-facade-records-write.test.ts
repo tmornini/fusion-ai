@@ -92,7 +92,7 @@ test('nested record-types write stamps the bound org'
     const db = await oneOrganization();
     const token = await organizationToken('current', 'A');
     const res = await handleRequest(db, req(
-        'POST', '/organizations/A/record-types',
+        'POST', '/organizations/A/record-types/',
         token,
         editBody('B')));
     assert.equal(res.status, 201);
@@ -114,7 +114,7 @@ test('nested record-types write into a non-member org'
     // Token scoped to A cannot use path org B (org-match).
     const token = await organizationToken('current', 'A');
     const res = await handleRequest(db, req(
-        'POST', '/organizations/B/record-types',
+        'POST', '/organizations/B/record-types/',
         token,
         editBody('B')));
     assert.equal(res.status, 403);

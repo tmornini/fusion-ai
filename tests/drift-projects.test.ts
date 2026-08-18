@@ -150,7 +150,7 @@ test('seeded GET /projects wire equals deriveProjects'
             'current', organization,
         );
         const res = await handleRequest(
-            db, req('GET', '/projects', token),
+            db, req('GET', '/projects/', token),
         );
         assert.equal(res.status, 200);
         const prefix = '/organizations/'
@@ -254,7 +254,7 @@ async () => {
         );
     }
     const res = await handleRequest(
-        db, req('GET', '/projects', token),
+        db, req('GET', '/projects/', token),
     );
     assert.equal(res.status, 200);
     const list = await res.json() as { id: string }[];
@@ -423,7 +423,7 @@ async () => {
         EntityNotFoundError,
     );
     const listRes = await handleRequest(
-        db, req('GET', '/projects', token),
+        db, req('GET', '/projects/', token),
     );
     const list = await listRes.json() as { id: string }[];
     assert.equal(
@@ -496,7 +496,7 @@ test('live conversion case: a converted idea\'s project'
     );
 
     const listRes = await handleRequest(
-        db, req('GET', '/projects', token),
+        db, req('GET', '/projects/', token),
     );
     const list = await listRes.json() as { id: string }[];
     assert.ok(list.some((p) => p.id === projectId));
@@ -576,7 +576,7 @@ test('GET project trio is lifecycle-current under clock skew'
     assert.equal(derived.state_event_id, genesisEv);
 
     const listRes = await handleRequest(
-        db, req('GET', '/projects', token),
+        db, req('GET', '/projects/', token),
     );
     assert.equal(listRes.status, 200);
     const list = await listRes.json() as { id: string }[];

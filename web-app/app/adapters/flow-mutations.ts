@@ -88,7 +88,7 @@ export async function postFlowCreation(
         now,
     );
 
-    await ctx.POST('flows', {
+    await ctx.POST('flows/', {
         id: input.flowId,
         flow: {
             name: input.name,

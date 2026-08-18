@@ -61,7 +61,7 @@ export async function getIdeaEntities(
 ): Promise<IdeaEntity[]> {
     return withLifecycleTrios(
         ctx, 'ideas',
-        await ctx.GET<IdeaEntity[]>('ideas'),
+        await ctx.GET<IdeaEntity[]>('ideas/'),
     );
 }
 
@@ -82,7 +82,7 @@ async function getIdeaSubmissionsForIdea(
     ideaId: string,
 ): Promise<IdeaSubmissionEntity[]> {
     return ctx.GET<IdeaSubmissionEntity[]>(
-        'ideas/' + ideaId + '/submissions',
+        'ideas/' + ideaId + '/submissions/',
     );
 }
 

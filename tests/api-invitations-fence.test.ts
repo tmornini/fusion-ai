@@ -221,7 +221,7 @@ async function rosterIds(
     db: MemoryDbAdapter,
 ): Promise<Set<string>> {
     const res = await handleRequest(db, req(
-        'GET', '/organizations/2/members',
+        'GET', '/organizations/2/members/',
         await organizationToken('current', '2')));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];

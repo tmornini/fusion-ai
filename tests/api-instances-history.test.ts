@@ -50,9 +50,9 @@ const INSTANCE_ID = 'inst-hist-1';
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
     + '/record-types/' + TYPE_ID;
-const ATTRS = TYPE_DETAIL + '/attributes';
-const INSTANCES = TYPE_DETAIL + '/instances';
-const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
+const ATTRS = TYPE_DETAIL + '/attributes/';
+const INSTANCES = TYPE_DETAIL + '/instances/';
+const INSTANCE_DETAIL = INSTANCES + INSTANCE_ID;
 const INSTANCE_HISTORY = INSTANCE_DETAIL + '/versions';
 
 function req(
@@ -138,7 +138,7 @@ async function putAttribute(
     body: Record<string, unknown>,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', ATTRS + '/' + attrId, adminToken, body,
+        'PUT', ATTRS + attrId, adminToken, body,
     ));
     assert.equal(put.status, 201);
 }
@@ -436,7 +436,7 @@ async () => {
     await putLiveType(db, adminToken);
     const res = await handleRequest(db, req(
         'GET',
-        INSTANCES + '/inst-missing/versions',
+        INSTANCES + 'inst-missing/versions',
         memberToken,
     ));
     assert.equal(res.status, 404);

@@ -60,7 +60,7 @@ export async function getProjectEntities(
 ): Promise<ProjectEntity[]> {
     return withLifecycleTrios(
         ctx, 'projects',
-        await ctx.GET<ProjectEntity[]>('projects'),
+        await ctx.GET<ProjectEntity[]>('projects/'),
     );
 }
 

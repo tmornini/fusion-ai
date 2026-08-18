@@ -226,7 +226,7 @@ async () => {
         'current', STARK_ORGANIZATION,
     );
     const resStark = await handleRequest(
-        db, req('GET', '/objectives', tokenStark),
+        db, req('GET', '/objectives/', tokenStark),
     );
     assert.equal(resStark.status, 200);
     const starkPrefix = '/organizations/'
@@ -248,7 +248,7 @@ async () => {
         'current', ORGANIZATION_TWO,
     );
     const resTwo = await handleRequest(
-        db, req('GET', '/objectives', tokenTwo),
+        db, req('GET', '/objectives/', tokenTwo),
     );
     assert.equal(resTwo.status, 200);
     const org2 = await derivedObjectives(db, ORGANIZATION_TWO);
@@ -356,7 +356,7 @@ async () => {
         const token = await organizationToken(
             'current', organization,
         );
-        const path = '/objectives/' + id + '/revisions';
+        const path = '/objectives/' + id + '/revisions/';
         const res = await handleRequest(
             db, req('GET', path, token),
         );
@@ -375,7 +375,7 @@ async () => {
     );
     const foreignRes = await handleRequest(db, req(
         'GET',
-        '/objectives/' + foreignId + '/revisions',
+        '/objectives/' + foreignId + '/revisions/',
         tokenTwo,
     ));
     assert.equal(foreignRes.status, 200);
@@ -408,10 +408,10 @@ test('score collection wire equals derive per project: an'
     const fullCoverageProjectId = 'u6YkHhlGc91oDMkr3x0isa';
     const fullBasePath =
         '/projects/' + fullCoverageProjectId
-        + '/objective-baseline-scores';
+        + '/objective-baseline-scores/';
     const fullActPath =
         '/projects/' + fullCoverageProjectId
-        + '/objective-actual-scores';
+        + '/objective-actual-scores/';
     const fullBaseRes = await handleRequest(
         db, req('GET', fullBasePath, tokenStark),
     );
@@ -442,7 +442,7 @@ test('score collection wire equals derive per project: an'
     const partialBaseRes = await handleRequest(db, req(
         'GET',
         '/projects/' + partialProjectId
-        + '/objective-baseline-scores',
+        + '/objective-baseline-scores/',
         tokenStark,
     ));
     assert.equal(partialBaseRes.status, 200);
@@ -533,7 +533,7 @@ test('live-write chain: create, reposition, revision edit,'
 
     const beforeCreate = (await db.requests.getAll()).length;
     const created = await handleRequest(db, req(
-        'POST', '/objectives', token,
+        'POST', '/objectives/', token,
         objectiveCreateBody(
             objectiveId, 50, objectiveId + '-rev-1',
             'Chain Objective', '2026-06-01T00:00:00.000000Z',
@@ -570,7 +570,7 @@ test('live-write chain: create, reposition, revision edit,'
         );
         const revRes = await handleRequest(db, req(
             'GET',
-            '/objectives/' + objectiveId + '/revisions',
+            '/objectives/' + objectiveId + '/revisions/',
             token,
         ));
         const revs = await deriveObjectiveRevisions(
@@ -669,7 +669,7 @@ test('live-write chain: create, reposition, revision edit,'
     assert.equal(archived.status, 201);
     {
         const listRes = await handleRequest(
-            db, req('GET', '/objectives', token),
+            db, req('GET', '/objectives/', token),
         );
         const list = await listRes.json() as { id: string }[];
         assert.equal(
@@ -772,7 +772,7 @@ test('live-write chain: create, reposition, revision edit,'
     );
     const basePath =
         '/projects/' + projectId
-        + '/objective-baseline-scores';
+        + '/objective-baseline-scores/';
     const baseRes = await handleRequest(
         db, req('GET', basePath, token),
     );
@@ -826,7 +826,7 @@ test('live-write chain: create, reposition, revision edit,'
 
     const actPath =
         '/projects/' + projectId
-        + '/objective-actual-scores';
+        + '/objective-actual-scores/';
     const actFinalRes = await handleRequest(
         db, req('GET', actPath, token),
     );
@@ -858,7 +858,7 @@ test('live-write chain: create, reposition, revision edit,'
     assert.equal(beforeDuplicateIds.size, 5);
 
     const duplicate = await handleRequest(db, req(
-        'POST', '/objectives', token,
+        'POST', '/objectives/', token,
         objectiveCreateBody(
             objectiveId, 88, revisionId3,
             'Chain Objective v3', '2026-06-07T00:00:00.000000Z',
@@ -931,7 +931,7 @@ test('the create-op POST pair is not read as a document pair —'
     const objectiveId = 'obj-drift-method-filter-1';
 
     const created = await handleRequest(db, req(
-        'POST', '/objectives', token,
+        'POST', '/objectives/', token,
         objectiveCreateBody(
             objectiveId, 1, objectiveId + '-rev-1', 'n',
             '2026-06-10T00:00:00.000000Z',
@@ -983,7 +983,7 @@ async () => {
     const objectiveId = 'obj-drift-resend-1';
 
     await handleRequest(db, req(
-        'POST', '/objectives', token,
+        'POST', '/objectives/', token,
         objectiveCreateBody(
             objectiveId, 5, objectiveId + '-rev-1', 'n',
             '2026-06-11T00:00:00.000000Z',
@@ -1049,7 +1049,7 @@ async () => {
     const objectiveId = 'obj-drift-archived-1';
 
     await handleRequest(db, req(
-        'POST', '/objectives', token,
+        'POST', '/objectives/', token,
         objectiveCreateBody(
             objectiveId, 1, objectiveId + '-rev-1', 'n',
             '2026-06-12T00:00:00.000000Z',
@@ -1067,7 +1067,7 @@ async () => {
     assert.equal(archived.status, 201);
 
     const listRes = await handleRequest(
-        db, req('GET', '/objectives', token),
+        db, req('GET', '/objectives/', token),
     );
     assert.equal(listRes.status, 200);
     const listText = await listRes.text();
@@ -1139,7 +1139,7 @@ async () => {
         );
     }
     const res = await handleRequest(
-        db, req('GET', '/objectives', token),
+        db, req('GET', '/objectives/', token),
     );
     assert.equal(res.status, 200);
     const list = await res.json() as { id: string }[];
@@ -1250,7 +1250,7 @@ async () => {
     const token = await organizationToken();
     const objectiveId = 'obj-drift-rev-wire-1';
     await handleRequest(db, req(
-        'POST', '/objectives', token,
+        'POST', '/objectives/', token,
         objectiveCreateBody(
             objectiveId, 1, objectiveId + '-rev-1', 'n',
             '2026-06-13T00:00:00.000000Z',

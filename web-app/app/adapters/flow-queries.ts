@@ -66,7 +66,7 @@ async function getProjectFlowsForProject(
     projectId: string,
 ): Promise<ProjectFlowEntity[]> {
     return ctx.GET<ProjectFlowEntity[]>(
-        'projects/' + projectId + '/flows',
+        'projects/' + projectId + '/flows/',
     );
 }
 
@@ -97,9 +97,9 @@ getFlowsWithProjectNames(
     const [
         flows, projectFlows, allProjects,
     ] = await Promise.all([
-        ctx.GET<FlowWithGraph[]>('flows'),
+        ctx.GET<FlowWithGraph[]>('flows/'),
         getProjectFlowEntities(ctx),
-        ctx.GET<ProjectEntity[]>('projects'),
+        ctx.GET<ProjectEntity[]>('projects/'),
     ]);
     const projectNameById = new Map(
         allProjects.map(
@@ -145,7 +145,7 @@ export async function getFlowsByProject(
     const [projectFlows, flows] =
         await Promise.all([
             getProjectFlowsForProject(ctx, projectId),
-            ctx.GET<FlowWithGraph[]>('flows'),
+            ctx.GET<FlowWithGraph[]>('flows/'),
         ]);
 
     const flowIds = new Set(

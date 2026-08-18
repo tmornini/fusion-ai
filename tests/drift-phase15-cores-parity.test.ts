@@ -145,7 +145,7 @@ async () => {
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token, {
+        'POST', '/work-orders/', token, {
             id: workOrderId,
             workOrder: {
                 display_id: 'p15-' + workOrderId,
@@ -456,7 +456,7 @@ test('stateEventVisibilityFor: tier (ii) op-born transition'
     const transitionEventId = workOrderId + '-te1';
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token, {
+        'POST', '/work-orders/', token, {
             id: workOrderId,
             workOrder: {
                 display_id: 'vis-' + workOrderId,
@@ -683,7 +683,7 @@ async () => {
         'current', STARK_ORGANIZATION,
     );
     const listRes = await handleRequest(
-        db, req('GET', '/work-orders', token),
+        db, req('GET', '/work-orders/', token),
     );
     assert.equal(listRes.status, 200);
     const rows = await listRes.json() as {
@@ -816,7 +816,7 @@ async () => {
     );
     const recordsRes = await handleRequest(
         db, req('GET', '/organizations/' + STARK_ORGANIZATION
-            + '/record-types', recordToken),
+            + '/record-types/', recordToken),
     );
     assert.equal(recordsRes.status, 200);
     const recordsStark = await recordsRes.json() as {
@@ -961,7 +961,7 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
 
     // Create with the binding already 'added'.
     const created = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: flowId,
             flow: {
                 name: 'P15 Bind Flow',
@@ -1127,7 +1127,7 @@ test('residual pin: soft-deleted node drops from'
     assert.equal(attrPut.status, 201);
 
     const created = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: flowId,
             flow: {
                 name: 'P15 SoftDel Flow',
@@ -1275,7 +1275,7 @@ async function transitionWithFieldValue(
     const token = await organizationToken();
     const graph = workOrderFlowGraph(8 * 60 * 60);
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token, {
+        'POST', '/work-orders/', token, {
             id: workOrderId,
             workOrder: {
                 display_id: 'fv-' + workOrderId,
@@ -1567,7 +1567,7 @@ async () => {
         'current', STARK_ORGANIZATION,
     );
     const woListRes = await handleRequest(
-        db, req('GET', '/work-orders', woToken),
+        db, req('GET', '/work-orders/', woToken),
     );
     assert.equal(woListRes.status, 200);
     const workOrders = await woListRes.json() as {
@@ -1646,7 +1646,7 @@ async () => {
     assert.equal(attrPut.status, 201);
 
     const created = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: flowId,
             flow: {
                 name: 'P15 Restrict Flow',
@@ -1707,7 +1707,7 @@ async () => {
         edges: [],
     };
     const woCreated = await handleRequest(db, req(
-        'POST', '/work-orders', token, {
+        'POST', '/work-orders/', token, {
             id: woId,
             workOrder: {
                 display_id: 'p15-restrict-wo',

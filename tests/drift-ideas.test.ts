@@ -133,7 +133,7 @@ async () => {
             'current', organization,
         );
         const res = await handleRequest(
-            db, req('GET', '/ideas', token),
+            db, req('GET', '/ideas/', token),
         );
         assert.equal(res.status, 200);
         const prefix = '/organizations/'
@@ -237,7 +237,7 @@ async () => {
     // Oldest live head (at, id): z, a, m — insertion, not
     // id-lex a, m, z. Bodies equal stored PUT (Task 19).
     const res = await handleRequest(
-        db, req('GET', '/ideas', token),
+        db, req('GET', '/ideas/', token),
     );
     assert.equal(res.status, 200);
     assert.ok(res.headers.get('Date'));
@@ -349,7 +349,7 @@ async () => {
     // PUT response is canonicalJson (sorted keys); values match.
     assert.deepEqual(await putRes.json(), expectedSub);
     const listRes = await handleRequest(db, req(
-        'GET', '/ideas/' + ideaId + '/submissions', token,
+        'GET', '/ideas/' + ideaId + '/submissions/', token,
     ));
     assert.equal(listRes.status, 200);
     assert.equal(
@@ -377,7 +377,7 @@ test('seeded idea submissions: derive non-empty for every'
             'current', organization,
         );
         const res = await handleRequest(db, req(
-            'GET', '/ideas/' + id + '/submissions', token,
+            'GET', '/ideas/' + id + '/submissions/', token,
         ));
         assert.equal(res.status, 200);
         assert.equal(
@@ -453,7 +453,7 @@ test('live-write lifecycle: create + edit + transition +'
         EntityNotFoundError,
     );
     const listRes = await handleRequest(
-        db, req('GET', '/ideas', token),
+        db, req('GET', '/ideas/', token),
     );
     const list = await listRes.json() as { id: string }[];
     assert.equal(

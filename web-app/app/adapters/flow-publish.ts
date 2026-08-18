@@ -81,7 +81,7 @@ export async function getFlowsForCreation(
     ctx: RequestContext,
 ): Promise<FlowsForCreation> {
     const flows = await ctx.GET<FlowWithGraph[]>(
-        'flows',
+        'flows/',
     );
     const ready: FlowPickerEntry[] = [];
     const notReady: NotReadyFlowEntry[] = [];

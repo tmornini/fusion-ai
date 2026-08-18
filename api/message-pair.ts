@@ -869,7 +869,10 @@ export function createdEntityUriId(
     // to answer, now answered from the registry instead.
     // Falls back to the literal table for every not-yet-
     // registered pattern.
-    const registered = familyRegistration(routePattern);
+    const family = routePattern.endsWith('/')
+        ? routePattern.slice(0, -1)
+        : routePattern;
+    const registered = familyRegistration(family);
     const field = registered !== undefined
         ? registered.createBodyIdField
         : CREATE_BODY_ID_FIELDS[routePattern];
@@ -893,12 +896,12 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'ideas/:id/submissions/:sid',
     'projects/:id',
     'projects/:id/flows/:pfid',
-    'flows',
+    'flows/',
     'flows/:id',
     'flows/:id/undo',
     // flows/:id/versions[+/:vid] RETIRED (Phase 15 Task 7).
     'flows/:id/tags/:name',
-    'work-orders',
+    'work-orders/',
     'work-orders/:id',
     'work-orders/:id/claim',
     'work-orders/:id/transition',
@@ -906,13 +909,13 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'flows/:id/work-orders/:woid',
     // Flat records + record-attributes retired (Task 23).
     'flows/:id/records/:frid',
-    'objectives',
+    'objectives/',
     'objectives/:id',
     'objectives/:id/revisions/:rid',
     'projects/:id/objective-baseline-scores/:sid',
     'projects/:id/objective-actual-scores/:sid',
     'ai-agents/:id',
-    'identities',
+    'identities/',
     'identities/:id',
     'identities/:id/pii',
     'identities/:id/credentials/:cid',
@@ -989,7 +992,7 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'ideas/:id/submissions/:sid',
         'projects/:id',
         'projects/:id/flows/:pfid',
-        'flows',
+        'flows/',
         'flows/:id',
         // flows/:id/versions/:vid RETIRED (Phase 15 Task 7).
         // SIMPLE class (Phase 14 Task 9, gate 8): the locked
@@ -1000,19 +1003,19 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         // opts that address into the ordinary head-read,
         // never the locked four-outcome table.
         'flows/:id/tags/:name',
-        'work-orders',
+        'work-orders/',
         'work-orders/:id',
         'work-orders/:id/claim',
         'flows/:id/work-orders/:woid',
         // Flat records + record-attributes retired (Task 23).
         'flows/:id/records/:frid',
-        'objectives',
+        'objectives/',
         'objectives/:id',
         'objectives/:id/revisions/:rid',
         'projects/:id/objective-baseline-scores/:sid',
         'projects/:id/objective-actual-scores/:sid',
         'ai-agents/:id',
-        'identities',
+        'identities/',
         'identities/:id',
         'identities/:id/credentials/:cid',
         'identities/:id/registration',

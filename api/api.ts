@@ -196,7 +196,29 @@ async function facadeRequest(
         );
     }
     const flatUrl = new URL(request.url);
-    flatUrl.pathname = '/' + segments.slice(2).join('/');
+    const rest = segments.slice(2);
+    let flatPath = '/' + rest.join('/');
+    // Collection routes now end in '/'. A facade rewrite
+    // of /organizations/:org/ideas must become /ideas/,
+    // not slashless /ideas (no table row). Prefer the
+    // slashed form when only that matches.
+    if (
+        rest.length > 0
+        && rest[rest.length - 1] !== ''
+        && matchRoute(
+            routeTable, pathSegmentsOf(flatPath),
+        ) === null
+    ) {
+        const slashed = flatPath + '/';
+        if (
+            matchRoute(
+                routeTable, pathSegmentsOf(slashed),
+            ) !== null
+        ) {
+            flatPath = slashed;
+        }
+    }
+    flatUrl.pathname = flatPath;
     const headers = new Headers(request.headers);
     headers.set(
         'authorization',
@@ -2241,11 +2263,13 @@ function streamFamilyWiring(
 function streamCollectionWiring(
     routePattern: string,
 ): ReturnType<typeof documentFamilyWiring> {
-    if (routePattern === 'work-orders') return undefined;
-    if (routePattern === 'flows') return undefined;
+    if (routePattern === 'work-orders/') return undefined;
+    if (routePattern === 'flows/') return undefined;
     if (routePattern === 'members') return undefined;
-    if (routePattern.includes('/')) return undefined;
-    return documentFamilyWiring(routePattern);
+    if (!routePattern.endsWith('/')) return undefined;
+    const family = routePattern.slice(0, -1);
+    if (family.includes('/')) return undefined;
+    return documentFamilyWiring(family);
 }
 
 async function streamStoredDocumentGet(
@@ -2297,7 +2321,11 @@ function isLiveHeadCollectionGet(
     if (routePattern === RECORD_TYPES_COLLECTION_PATTERN) {
         return true;
     }
-    return documentFamilyWiring(routePattern) !== undefined;
+    const family = routePattern.endsWith('/')
+        ? routePattern.slice(0, -1)
+        : routePattern;
+    if (family.includes('/')) return false;
+    return documentFamilyWiring(family) !== undefined;
 }
 
 // Strong ETag header → unquoted 64-hex version token

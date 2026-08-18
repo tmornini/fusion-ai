@@ -47,9 +47,9 @@ const FWO_ID = 'fwo-bind-1';
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
     + '/record-types/' + TYPE_ID;
-const ATTRS = TYPE_DETAIL + '/attributes';
-const INSTANCES = TYPE_DETAIL + '/instances';
-const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
+const ATTRS = TYPE_DETAIL + '/attributes/';
+const INSTANCES = TYPE_DETAIL + '/instances/';
+const INSTANCE_DETAIL = INSTANCES + INSTANCE_ID;
 const BINDING =
     '/work-orders/' + WO_ID + '/binding';
 
@@ -122,7 +122,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Bind Flow',
@@ -205,7 +205,7 @@ async function seedAttribute(
     token: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', ATTRS + '/' + ATTR_ID, token, {
+        'PUT', ATTRS + ATTR_ID, token, {
             name: 'Title',
             attribute_type: 'text',
             sort_order: 0,
@@ -223,7 +223,7 @@ async function seedInstance(
     token: string,
     instanceId: string,
 ): Promise<void> {
-    const path = INSTANCES + '/' + instanceId;
+    const path = INSTANCES + instanceId;
     const put = await handleRequest(db, req(
         'PATCH', path, token, {
             set: [
@@ -359,7 +359,7 @@ async () => {
     await seedInstance(db, token, INSTANCE_TOMB);
     const del = await handleRequest(db, req(
         'DELETE',
-        INSTANCES + '/' + INSTANCE_TOMB,
+        INSTANCES + INSTANCE_TOMB,
         token,
     ));
     assert.equal(del.status, 204);
@@ -517,7 +517,7 @@ async () => {
     assert.equal(d['record_type_id'], TYPE_ID);
 
     const list = await handleRequest(db, req(
-        'GET', '/work-orders', token,
+        'GET', '/work-orders/', token,
     ));
     assert.equal(list.status, 200);
     const rows = await list.json() as Record<

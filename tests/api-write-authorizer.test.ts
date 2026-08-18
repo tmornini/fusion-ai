@@ -149,7 +149,7 @@ async () => {
     const created = await handleRequest(db, req(
         'POST',
         '/organizations/' + ORGANIZATION_A
-            + '/record-types',
+            + '/record-types/',
         tokenA, {
             id: 'rec-a',
             kind: 'create',

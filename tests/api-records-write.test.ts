@@ -26,7 +26,7 @@ test(
     async () => {
         const db = await freshDb();
         await seedCurrentMember(db);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'create',
             id: 'rec-1',
             record: {
@@ -66,7 +66,7 @@ test(
         assert.equal(history.length, 1);
         assert.equal(history[0]!.state, 'active');
         const attrs = await GET<unknown[]>(
-            db, 'organizations/1/record-types/rec-1/attributes', DEV_TOKEN,
+            db, 'organizations/1/record-types/rec-1/attributes/', DEV_TOKEN,
         );
         assert.equal(attrs.length, 1);
     },
@@ -79,7 +79,7 @@ test(
     async () => {
         const db = await freshDb();
         await seedCurrentMember(db);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'create',
             id: 'rec-2',
             record: {
@@ -120,7 +120,7 @@ test(
     async () => {
         const db = await freshDb();
         await seedCurrentMember(db);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'create',
             id: 'rec-1',
             record: {
@@ -135,7 +135,7 @@ test(
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'edit',
             id: 'rec-1',
             record: {
@@ -178,7 +178,7 @@ test(
     async () => {
         const db = await freshDb();
         await seedCurrentMember(db);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'create',
             id: 'rec-1',
             record: {
@@ -204,7 +204,7 @@ test(
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'edit',
             id: 'rec-1',
             record: {
@@ -234,7 +234,7 @@ test(
         const all = await GET<{
             id: string;
             name: string;
-        }[]>(db, 'organizations/1/record-types/rec-1/attributes', DEV_TOKEN);
+        }[]>(db, 'organizations/1/record-types/rec-1/attributes/', DEV_TOKEN);
         assert.equal(all.length, 1);
         assert.equal(all[0]!.id, 'a-new');
         assert.equal(all[0]!.name, 'New');
@@ -247,7 +247,7 @@ test(
     async () => {
         const db = await freshDb();
         await seedCurrentMember(db);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'create',
             id: 'rec-1',
             record: {
@@ -272,7 +272,7 @@ test(
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'edit',
             id: 'rec-1',
             record: {
@@ -323,7 +323,7 @@ test(
         const db = await freshDb();
         await seedCurrentMember(db);
         await assert.rejects(
-            () => POST(db, 'organizations/1/record-types', {
+            () => POST(db, 'organizations/1/record-types/', {
                 kind: 'create',
                 id: 'rec-1',
                 record: {
@@ -361,7 +361,7 @@ test(
         const db = await freshDb();
         await seedCurrentMember(db);
         await assert.rejects(
-            () => POST(db, 'organizations/1/record-types', {
+            () => POST(db, 'organizations/1/record-types/', {
                 kind: 'create',
                 id: 'rec-1',
                 record: {
@@ -398,7 +398,7 @@ test(
         const db = await freshDb();
         await seedCurrentMember(db);
         await assert.rejects(
-            () => POST(db, 'organizations/1/record-types', {
+            () => POST(db, 'organizations/1/record-types/', {
                 kind: 'destroy',
                 id: 'rec-1',
                 record: {
@@ -420,7 +420,7 @@ test(
         const db = await freshDb();
         await seedCurrentMember(db);
         await assert.rejects(
-            () => POST(db, 'organizations/1/record-types', {
+            () => POST(db, 'organizations/1/record-types/', {
                 kind: 'create',
                 id: 'rec-1',
                 record: {
@@ -446,7 +446,7 @@ test(
         const db = await freshDb();
         await seedCurrentMember(db);
         await assert.rejects(
-            () => POST(db, 'organizations/1/record-types', {
+            () => POST(db, 'organizations/1/record-types/', {
                 kind: 'create',
                 id: 'rec-1',
                 record: {
@@ -473,7 +473,7 @@ test(
         const db = await freshDb();
         await seedCurrentMember(db);
         await assert.rejects(
-            () => POST(db, 'organizations/1/record-types', {
+            () => POST(db, 'organizations/1/record-types/', {
                 kind: 'edit',
                 id: 'rec-1',
                 record: {
@@ -494,7 +494,7 @@ test(
     async () => {
         const db = await freshDb();
         await seedCurrentMember(db);
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'create',
             id: 'rec-at',
             record: {
@@ -541,7 +541,7 @@ test(
         // a raw colliding states row no longer aborts the
         // pair-plane create.
     // Phase Final Stage B: states table retired.
-        await POST(db, 'organizations/1/record-types', {
+        await POST(db, 'organizations/1/record-types/', {
             kind: 'create',
             id: 'rec-survives',
             record: {

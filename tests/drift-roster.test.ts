@@ -364,7 +364,7 @@ async () => {
         db, req(
             'GET',
             '/organizations/' + STARK_ORGANIZATION
-                + '/members',
+                + '/members/',
             tokenStark,
         ),
     );
@@ -385,7 +385,7 @@ async () => {
         db, req(
             'GET',
             '/organizations/' + ORGANIZATION_TWO
-                + '/members',
+                + '/members/',
             tokenTwo,
         ),
     );
@@ -513,14 +513,14 @@ test('ai-agents + identities wire equals GET (GLOBAL)'
     const token = await organizationToken();
 
     const resAi = await handleRequest(
-        db, req('GET', '/ai-agents', token),
+        db, req('GET', '/ai-agents/', token),
     );
     assert.equal(resAi.status, 200);
     const agents = await resAi.json() as { id: string }[];
     assert.equal(agents.length, 4);
 
     const resHuman = await handleRequest(
-        db, req('GET', '/identities', token),
+        db, req('GET', '/identities/', token),
     );
     assert.equal(resHuman.status, 200);
     const identities = await resHuman.json() as {
@@ -584,7 +584,7 @@ test('seat collection counts per org; current identity;'
     const resMembers = await handleRequest(
         db, req(
             'GET',
-            '/organizations/1/members',
+            '/organizations/1/members/',
             token,
         ),
     );
@@ -603,7 +603,7 @@ test('seat collection counts per org; current identity;'
         db, req(
             'GET',
             '/organizations/' + STARK_ORGANIZATION
-                + '/members',
+                + '/members/',
             await organizationToken(
                 'current', STARK_ORGANIZATION,
             ),

@@ -1607,7 +1607,7 @@ export function buildMockDataInvocations():
         );
         invocations.push({
             key: seedPairKey('flows', flow.id),
-            routePattern: 'flows',
+            routePattern: 'flows/',
             organization: STARK_ORGANIZATION,
             requesterIdentityId: event.member_id,
             body: createBody,
@@ -1842,7 +1842,7 @@ export function buildMockDataInvocations():
         );
         invocations.push({
             key: seedPairKey('objectives', seed.id),
-            routePattern: 'objectives',
+            routePattern: 'objectives/',
             organization: STARK_ORGANIZATION,
             requesterIdentityId: memberId,
             body: createBody,
@@ -1884,7 +1884,7 @@ export function buildMockDataInvocations():
         key: seedPairKey(
             'objectives', ORGANIZATION_TWO_OBJECTIVE.id,
         ),
-        routePattern: 'objectives',
+        routePattern: 'objectives/',
         organization: ORGANIZATION_TWO,
         requesterIdentityId: SYSTEM_MEMBER_ID,
         body: org2CreateBody,

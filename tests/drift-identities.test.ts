@@ -292,7 +292,7 @@ test('identities collection wire equals derive (12 incl.'
         'current', STARK_ORGANIZATION,
     );
     const res = await handleRequest(
-        db, req('GET', '/identities', token),
+        db, req('GET', '/identities/', token),
     );
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), derived);
@@ -385,7 +385,7 @@ test('identity-pii derive (11 seeded slots) fenced both'
     // and VISIBLE from ORGANIZATION_TWO.
     const foreignId = 'pii-fence-foreign-1';
     await handleRequest(db, req(
-        'POST', '/identities', adminToken,
+        'POST', '/identities/', adminToken,
         { id: foreignId, kind: 'person' },
     ));
     await handleRequest(db, req(
@@ -419,7 +419,7 @@ test('identity-pii derive (11 seeded slots) fenced both'
     // visible from STARK (and would be from any org).
     const orphanId = 'pii-fence-orphan-1';
     await handleRequest(db, req(
-        'POST', '/identities', adminToken,
+        'POST', '/identities/', adminToken,
         { id: orphanId, kind: 'person' },
     ));
     await handleRequest(db, req(
@@ -527,7 +527,7 @@ test('credentials fence-input fix: a mismatched write (address'
     const identityB = 'cred-mismatch-b';
     for (const id of [identityA, identityB]) {
         await handleRequest(db, req(
-            'POST', '/identities', adminToken,
+            'POST', '/identities/', adminToken,
             { id, kind: 'person' },
         ));
     }

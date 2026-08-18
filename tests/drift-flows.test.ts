@@ -226,7 +226,7 @@ async function createFlow(
     eventId: string,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: flowId,
             flow: flowFields('Fresh Flow'),
             projectFlowId,
@@ -268,7 +268,7 @@ async function wireFlowsText(
         'current', organization,
     );
     const res = await handleRequest(
-        db, req('GET', '/flows', token),
+        db, req('GET', '/flows/', token),
     );
     assert.equal(res.status, 200);
     return res.text();
@@ -433,7 +433,7 @@ test('project-flows wire equals derive across every'
     );
     for (const projectId of SEEDED_PROJECT_FLOW_PROJECT_IDS) {
         const res = await handleRequest(db, req(
-            'GET', '/projects/' + projectId + '/flows', token,
+            'GET', '/projects/' + projectId + '/flows/', token,
         ));
         assert.equal(res.status, 200);
         const wireText = await res.text();
@@ -452,7 +452,7 @@ test('the two-flows project orders both join rows'
     );
     const res = await handleRequest(db, req(
         'GET',
-        '/projects/' + TWO_FLOWS_PROJECT_ID + '/flows',
+        '/projects/' + TWO_FLOWS_PROJECT_ID + '/flows/',
         token,
     ));
     assert.equal(res.status, 200);
@@ -497,7 +497,7 @@ test('live-write chain: create, save, node delete, undo, '
 
     // Create: two nodes, one edge.
     const created = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: flowId,
             flow: flowFields('Chain Flow'),
             projectFlowId: flowId + '-pf',
@@ -690,10 +690,10 @@ test('live join-row chain: PUT appears on wire/derive, '
     const token = await organizationToken();
     const projectId = l2cProjectId;
     const pfid = 'pf-drift-join-1';
-    const listPath = '/projects/' + projectId + '/flows';
+    const listPath = '/projects/' + projectId + '/flows/';
 
     const putRes = await handleRequest(db, req(
-        'PUT', listPath + '/' + pfid,
+        'PUT', listPath + pfid,
         token,
         {
             project_id: projectId,
@@ -721,7 +721,7 @@ test('live join-row chain: PUT appears on wire/derive, '
 
     const delRes = await handleRequest(db, req(
         'DELETE',
-        listPath + '/' + pfid, token,
+        listPath + pfid, token,
     ));
     assert.equal(delRes.status, 204);
 
@@ -791,7 +791,7 @@ async () => {
     // TWO join rows on wire and derive (Phase Final Task 2:
     // project_flows row half stripped).
     const joinsRes = await handleRequest(db, req(
-        'GET', '/projects/' + projectId + '/flows', token,
+        'GET', '/projects/' + projectId + '/flows/', token,
     ));
     const wireJoins = (await joinsRes.json() as {
         id: string;

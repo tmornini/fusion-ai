@@ -42,9 +42,9 @@ const FR_ID = 'fr-del-restrict-1';
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
     + '/record-types/' + TYPE_ID;
-const ATTRS = TYPE_DETAIL + '/attributes';
-const INSTANCES = TYPE_DETAIL + '/instances';
-const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
+const ATTRS = TYPE_DETAIL + '/attributes/';
+const INSTANCES = TYPE_DETAIL + '/instances/';
+const INSTANCE_DETAIL = INSTANCES + INSTANCE_ID;
 
 const N_CREATE = 'n-create';
 const N_MID = 'n-mid';
@@ -112,7 +112,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Delete Restrict Flow',
@@ -191,7 +191,7 @@ async function seedAttribute(
     token: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', ATTRS + '/' + ATTR_ID, token, {
+        'PUT', ATTRS + ATTR_ID, token, {
             name: 'Title',
             attribute_type: 'text',
             sort_order: 0,
@@ -209,7 +209,7 @@ async function seedInstance(
     token: string,
     instanceId: string,
 ): Promise<void> {
-    const path = INSTANCES + '/' + instanceId;
+    const path = INSTANCES + instanceId;
     const put = await handleRequest(db, req(
         'PATCH', path, token, {
             set: [
@@ -351,7 +351,7 @@ async () => {
     await seedInstance(db, token, INSTANCE_FRESH);
     const res = await handleRequest(db, req(
         'DELETE',
-        INSTANCES + '/' + INSTANCE_FRESH,
+        INSTANCES + INSTANCE_FRESH,
         token,
     ));
     assert.equal(res.status, 204);

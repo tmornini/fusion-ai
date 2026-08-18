@@ -90,7 +90,7 @@ async function derivedRecordAttributes(
         db,
         new Request(
             'http://localhost/organizations/'
-            + organization + '/record-types',
+            + organization + '/record-types/',
             {
                 headers: {
                     Authorization: 'Bearer ' + token,
@@ -113,7 +113,7 @@ async function derivedRecordAttributes(
             new Request(
                 'http://localhost/organizations/'
                 + organization + '/record-types/'
-                + type.id + '/attributes',
+                + type.id + '/attributes/',
                 {
                     headers: {
                         Authorization: 'Bearer ' + token,
@@ -303,7 +303,7 @@ test('every work order belongs to org 1', async () => {
     );
     const res = await handleRequest(
         db,
-        new Request('http://localhost/work-orders', {
+        new Request('http://localhost/work-orders/', {
             headers: {
                 Authorization: 'Bearer ' + token,
             },
@@ -324,7 +324,7 @@ test('every work order belongs to org 1', async () => {
     );
     const empty = await handleRequest(
         db,
-        new Request('http://localhost/work-orders', {
+        new Request('http://localhost/work-orders/', {
             headers: {
                 Authorization: 'Bearer ' + tokenTwo,
             },

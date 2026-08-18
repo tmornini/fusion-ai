@@ -19,25 +19,25 @@ import { seededMockDb } from './mock-seed.ts';
 // to end.
 const COLLECTION_ROUTES: readonly string[] = [
     'organizations',
-    'organizations/1/members',
-    'ai-agents',
-    'ideas',
-    'projects',
-    'flows',
-    'projects/any-project/flows',
-    'work-orders',
+    'organizations/1/members/',
+    'ai-agents/',
+    'ideas/',
+    'projects/',
+    'flows/',
+    'projects/any-project/flows/',
+    'work-orders/',
     'work-orders/history',
-    'flows/any-flow/work-orders',
+    'flows/any-flow/work-orders/',
     // GET states/:id/field-values RETIRED (C4); field values
     // fold on work-orders/:id/history.
-    'organizations/1/record-types',
-    'flows/any-flow/records',
-    'ideas/any-idea/submissions',
-    'objectives',
+    'organizations/1/record-types/',
+    'flows/any-flow/records/',
+    'ideas/any-idea/submissions/',
+    'objectives/',
     'objectives/versions',
-    'objectives/any-objective/revisions',
-    'projects/any-project/objective-baseline-scores',
-    'projects/any-project/objective-actual-scores',
+    'objectives/any-objective/revisions/',
+    'projects/any-project/objective-baseline-scores/',
+    'projects/any-project/objective-actual-scores/',
     // Bulk lifecycle collection RETIRED (states-URI
     // elimination C3).
 ];

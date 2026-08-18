@@ -18,10 +18,10 @@ async function freshDb() {
     return db;
 }
 
-const TYPES = 'organizations/1/record-types';
-const TYPE = TYPES + '/rec-1';
-const ATTRS = TYPE + '/attributes';
-const ATTR = ATTRS + '/a-1';
+const TYPES = 'organizations/1/record-types/';
+const TYPE = TYPES + 'rec-1';
+const ATTRS = TYPE + '/attributes/';
+const ATTR = ATTRS + 'a-1';
 
 // record-types
 
@@ -183,7 +183,7 @@ test(
     async () => {
         const db = await freshDb();
         const out = await GET<unknown[]>(
-            db, 'flows/flow-1/records', DEV_TOKEN,
+            db, 'flows/flow-1/records/', DEV_TOKEN,
         );
         assert.deepEqual(out, []);
     },

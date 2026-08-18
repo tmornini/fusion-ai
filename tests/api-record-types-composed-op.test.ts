@@ -41,10 +41,10 @@ const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const ORGANIZATION = '1';
 const COLLECTION =
-    '/organizations/' + ORGANIZATION + '/record-types';
+    '/organizations/' + ORGANIZATION + '/record-types/';
 const TYPE_ID = 'rt-composed-1';
 const ATTR_ID = 'attr-composed-1';
-const DETAIL = COLLECTION + '/' + TYPE_ID;
+const DETAIL = COLLECTION + TYPE_ID;
 const ATTR_DETAIL =
     DETAIL + '/attributes/' + ATTR_ID;
 

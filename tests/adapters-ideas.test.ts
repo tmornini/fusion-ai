@@ -351,7 +351,7 @@ test(
                 ProjectObjectiveBaselineScoreEntity[]
             >(
                 'projects/p1/objective'
-                + '-baseline-scores',
+                + '-baseline-scores/',
             );
         assert.equal(mine.length, 2);
         const byObj = new Map(

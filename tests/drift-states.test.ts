@@ -576,7 +576,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
     const tinyLockTimeoutSeconds = 1;
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId,
             workOrderFlowGraph(bigLockTimeoutSeconds),
@@ -781,7 +781,7 @@ async () => {
     const bigLockTimeoutSeconds = 8 * 60 * 60;
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId,
             workOrderFlowGraph(bigLockTimeoutSeconds),
@@ -881,7 +881,7 @@ async () => {
     const genesisAt = '2026-02-01T00:00:00.000000Z';
 
     const created = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: flowId,
             flow: flowFields('Drift Node Flow'),
             projectFlowId: flowId + '-pf',

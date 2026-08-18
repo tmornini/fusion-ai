@@ -734,7 +734,7 @@ async () => {
     const before = await deriveIdentityTokens(db);
     const beforeIds = new Set(before.map(r => r.id));
     const res = await handleRequest(db, new Request(
-        `${BASE}/organizations/1/identities/current/tokens`, {
+        `${BASE}/organizations/1/identities/current/tokens/`, {
             method: 'GET',
             headers: { 'Authorization': 'Bearer ' + flatToken },
         },

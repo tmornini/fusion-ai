@@ -45,7 +45,7 @@ test(
     + ' revision on the pair plane in one operation',
     async () => {
         const db = await freshDb();
-        await POST(db, 'objectives', {
+        await POST(db, 'objectives/', {
             id: 'obj-1',
             objective: objectiveFields(),
             revisionId: 'rev-1',
@@ -72,7 +72,7 @@ test(
             id: string;
             objective_id: string;
             name: string;
-        }>>(db, 'objectives/obj-1/revisions', DEV_TOKEN);
+        }>>(db, 'objectives/obj-1/revisions/', DEV_TOKEN);
         const revision = revisions.find(r => r.id === 'rev-1');
         assert.ok(revision);
         assert.equal(revision.objective_id, 'obj-1');
@@ -91,7 +91,7 @@ test(
         // pre-tx (pair formation), so no pairs land and
         // GET cannot derive the objective.
         await assert.rejects(
-            () => POST(db, 'objectives', {
+            () => POST(db, 'objectives/', {
                 id: 'obj-rollback',
                 objective: objectiveFields(),
                 revisionId: 'rev-rollback',

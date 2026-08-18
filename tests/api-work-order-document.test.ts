@@ -312,7 +312,7 @@ test('a work-order create appends a PUT-shaped document pair'
 + ' address, all three sharing one requestAt', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
-        'POST', '/work-orders', DEV_TOKEN,
+        'POST', '/work-orders/', DEV_TOKEN,
         workOrderCreateBody('wo-c1', 'wo-c1-fwo', 'flow-c1'),
     ));
     assert.equal(res.status, 201);
@@ -351,7 +351,7 @@ test('a duplicate work-order create (same WO id) records'
 async () => {
     const db = await freshDb();
     const first = await handleRequest(db, req(
-        'POST', '/work-orders', DEV_TOKEN,
+        'POST', '/work-orders/', DEV_TOKEN,
         workOrderCreateBody('wo-c2', 'wo-c2-fwo-a', 'flow-c2'),
     ));
     assert.equal(first.status, 201);
@@ -364,7 +364,7 @@ async () => {
     const firstDocumentId = firstDocumentRow!.id;
 
     const second = await handleRequest(db, req(
-        'POST', '/work-orders', DEV_TOKEN,
+        'POST', '/work-orders/', DEV_TOKEN,
         workOrderCreateBody(
             'wo-c2', 'wo-c2-fwo-b', 'flow-c2', 'wo-c2-revised',
         ),
@@ -391,7 +391,7 @@ test('a duplicate work-order create\'s own OPERATION pair'
 + ' stores no predecessor column', async () => {
     const db = await freshDb();
     const first = await handleRequest(db, req(
-        'POST', '/work-orders', DEV_TOKEN,
+        'POST', '/work-orders/', DEV_TOKEN,
         workOrderCreateBody('wo-c3', 'wo-c3-fwo-a', 'flow-c3'),
     ));
     assert.equal(first.status, 201);
@@ -402,7 +402,7 @@ test('a duplicate work-order create\'s own OPERATION pair'
     const firstDocumentId = firstDocumentRow!.id;
 
     const second = await handleRequest(db, req(
-        'POST', '/work-orders', DEV_TOKEN,
+        'POST', '/work-orders/', DEV_TOKEN,
         workOrderCreateBody('wo-c3', 'wo-c3-fwo-b', 'flow-c3'),
     ));
     assert.equal(second.status, 201);
@@ -424,7 +424,7 @@ test('a work-order create ignores a raw colliding states'
     // collision no longer aborts the pair-plane create.
     // Phase Final Stage B: states table retired.
     const res = await handleRequest(db, req(
-        'POST', '/work-orders', DEV_TOKEN,
+        'POST', '/work-orders/', DEV_TOKEN,
         workOrderCreateBody(
             'wo-c4-survives', flowWorkOrderId, 'flow-c4',
         ),

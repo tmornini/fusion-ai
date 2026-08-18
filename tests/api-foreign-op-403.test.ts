@@ -175,7 +175,7 @@ test('foreign-org flow undo is 404', async () => {
         'current', ORGANIZATION_B,
     );
     const created = await handleRequest(db, req(
-        'POST', '/flows', tokenA, {
+        'POST', '/flows/', tokenA, {
             id: 'flow-foreign-undo',
             flow: {
                 name: 'Foreign Undo',

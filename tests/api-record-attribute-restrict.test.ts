@@ -103,7 +103,7 @@ async function seedFlowNodeAttribute(
         extraAttributeEvents = [],
         extraNodes = [],
     } = opts;
-    await POST(db, 'flows', {
+    await POST(db, 'flows/', {
         id: flowId,
         flow: {
             name: 'Intake',
@@ -493,7 +493,7 @@ test(
         const db = await seededDb();
         // Bare host flow (no attribute binding) for the WO
         // join — WO referrers ride the frozen flow_graph head.
-        await POST(db, 'flows', {
+        await POST(db, 'flows/', {
             id: 'f-wo-host',
             flow: {
                 name: 'Host',
@@ -525,7 +525,7 @@ test(
                 attributeEvents: [],
             },
         }, DEV_TOKEN);
-        await POST(db, 'work-orders', {
+        await POST(db, 'work-orders/', {
             id: 'wo1',
             workOrder: {
                 display_id: 'WO',
@@ -582,7 +582,7 @@ test(
         const requestsBefore = await db.requests.getAll();
         const responsesBefore = await db.responses.getAll();
         await assert.rejects(
-            () => POST(db, 'organizations/1/record-types', {
+            () => POST(db, 'organizations/1/record-types/', {
                 kind: 'edit',
                 id: 'r1',
                 record: {

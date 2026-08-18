@@ -267,7 +267,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     // 2+N, not 1).
     const created = await handleRequest(db, req(
         'POST', '/organizations/' + ORGANIZATION_TWO
-            + '/record-types', org2Token,
+            + '/record-types/', org2Token,
         createRecordBody(
             'inv-rec-1', 'inv-rec-1-ev', ORGANIZATION_TWO,
             [{
@@ -344,7 +344,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     // pair), none of them route-exercised in this mixed batch
     // before now.
     const workOrderCreated = await handleRequest(db, req(
-        'POST', '/work-orders', org1Token,
+        'POST', '/work-orders/', org1Token,
         workOrderCreateBody(
             'inv-wo-create-1', 'inv-wo-create-1-fwo',
             'inv-flow-1', STARK_ORGANIZATION,

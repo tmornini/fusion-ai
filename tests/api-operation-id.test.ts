@@ -62,7 +62,7 @@ async () => {
     await seedAdminSchema(db);
     const res = await handleRequest(
         db,
-        new Request('http://localhost/ideas', {
+        new Request('http://localhost/ideas/', {
             headers: {
                 Authorization: 'Bearer ' + DEV_TOKEN,
             },

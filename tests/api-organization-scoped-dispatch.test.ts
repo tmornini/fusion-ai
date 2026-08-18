@@ -52,7 +52,7 @@ test('an org-scoped token fences GET to its tenant',
 async () => {
     const db = await twoOrganizationIdeas();
     const rows = await GET<{ id: string }[]>(
-        db, 'ideas', await organizationToken('1'));
+        db, 'ideas/', await organizationToken('1'));
     assert.deepEqual(rows.map(r => r.id), ['a1']);
 });
 
@@ -60,7 +60,7 @@ test('a flat token bridges to the default org',
 async () => {
     const db = await twoOrganizationIdeas();
     const rows = await GET<{ id: string }[]>(
-        db, 'ideas', await organizationToken(''));
+        db, 'ideas/', await organizationToken(''));
     // No honest unscoped default since SP-6: the token
     // resolves to org '1', so the org '7' idea stays hidden.
     assert.deepEqual(rows.map(r => r.id), ['a1']);

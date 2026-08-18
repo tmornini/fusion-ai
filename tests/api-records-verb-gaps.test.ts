@@ -114,7 +114,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'POST', '/flows/f1/records', token, {},
+        'POST', '/flows/f1/records/', token, {},
     ));
     assert.equal(res.status, 405);
 });
@@ -124,7 +124,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/flows/f1/records', token, {},
+        'PUT', '/flows/f1/records/', token, {},
     ));
     assert.equal(res.status, 405);
 });
@@ -134,7 +134,7 @@ test('DELETE flows/:id/records 405s (no delete handler'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/flows/f1/records', token),
+        db, req('DELETE', '/flows/f1/records/', token),
     );
     assert.equal(res.status, 405);
 });

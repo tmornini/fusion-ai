@@ -377,7 +377,7 @@ async function getWorkOrderEntities(
     ctx: RequestContext,
 ): Promise<WorkOrderEntity[]> {
     return ctx.GET<WorkOrderEntity[]>(
-        'work-orders',
+        'work-orders/',
     );
 }
 
@@ -394,7 +394,7 @@ export async function getFlowWorkOrderEntities(
 ): Promise<FlowWorkOrderEntity[]> {
     return ctx.GET<
         FlowWorkOrderEntity[]
-    >('flows/' + flowId + '/work-orders');
+    >('flows/' + flowId + '/work-orders/');
 }
 
 export async function getWorkOrder(

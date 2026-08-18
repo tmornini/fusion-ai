@@ -139,7 +139,7 @@ async function createWorkOrder(
         db,
         req(
             'POST',
-            '/work-orders',
+            '/work-orders/',
             DEV_TOKEN,
             createBody(workOrderId),
         ),

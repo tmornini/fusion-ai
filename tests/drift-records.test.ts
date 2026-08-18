@@ -151,7 +151,7 @@ async function derivedRecordAttributes(
         req(
             'GET',
             '/organizations/' + organization
-                + '/record-types',
+                + '/record-types/',
             token,
         ),
     );
@@ -171,7 +171,7 @@ async function derivedRecordAttributes(
                 'GET',
                 '/organizations/' + organization
                     + '/record-types/' + type.id
-                    + '/attributes',
+                    + '/attributes/',
                 token,
             ),
         );
@@ -366,7 +366,7 @@ test('seeded GET nested record-types wire equals derived'
             db, req(
                 'GET',
                 '/organizations/' + organization
-                    + '/record-types',
+                    + '/record-types/',
                 token,
             ),
         );
@@ -595,7 +595,7 @@ async () => {
             db,
             req(
                 'GET',
-                '/flows/' + flowId + '/records',
+                '/flows/' + flowId + '/records/',
                 token,
             ),
         );
@@ -628,7 +628,7 @@ async () => {
         db,
         req(
             'GET',
-            '/flows/' + EMPTY_FLOW_ID + '/records',
+            '/flows/' + EMPTY_FLOW_ID + '/records/',
             token,
         ),
     );
@@ -700,7 +700,7 @@ async () => {
     // Step 1: create, 2 attributes.
     const created = await handleRequest(db, req(
         'POST', '/organizations/' + STARK_ORGANIZATION
-            + '/record-types', token,
+            + '/record-types/', token,
         createRecordBody(
             recordId, STARK_ORGANIZATION, 'Chain Record',
             [
@@ -725,7 +725,7 @@ async () => {
     const editStateEventId = 'rec-drift-chain-1-edit';
     const edited = await handleRequest(db, req(
         'POST', '/organizations/' + STARK_ORGANIZATION
-            + '/record-types', token,
+            + '/record-types/', token,
         editRecordBody(
             recordId, STARK_ORGANIZATION, 'Chain Record',
             [
@@ -751,7 +751,7 @@ async () => {
     ).length;
     const rejected = await handleRequest(db, req(
         'POST', '/organizations/' + STARK_ORGANIZATION
-            + '/record-types', token,
+            + '/record-types/', token,
         editRecordBody(
             recordId, STARK_ORGANIZATION, 'Chain Record',
             [], ['5JZ0LeKdPCa4QMtg1RsF1M'],
@@ -856,7 +856,7 @@ async () => {
     const secondRecordId = 'rec-drift-chain-2';
     const secondCreated = await handleRequest(db, req(
         'POST', '/organizations/' + STARK_ORGANIZATION
-            + '/record-types', token,
+            + '/record-types/', token,
         createRecordBody(
             secondRecordId, STARK_ORGANIZATION, 'Second Record',
             [], 'rec-drift-chain-2-genesis', nowUtc(),
@@ -895,7 +895,7 @@ async () => {
 
     const first = await handleRequest(db, req(
         'POST', '/organizations/' + STARK_ORGANIZATION
-            + '/record-types', token,
+            + '/record-types/', token,
         createRecordBody(
             recordId, STARK_ORGANIZATION, 'Dup First',
             [
@@ -919,7 +919,7 @@ async () => {
 
     const second = await handleRequest(db, req(
         'POST', '/organizations/' + STARK_ORGANIZATION
-            + '/record-types', token,
+            + '/record-types/', token,
         createRecordBody(
             recordId, STARK_ORGANIZATION, 'Dup Second',
             [
@@ -976,7 +976,7 @@ async () => {
 
     const created = await handleRequest(db, req(
         'POST', '/organizations/' + STARK_ORGANIZATION
-            + '/record-types', token,
+            + '/record-types/', token,
         createRecordBody(
             recordId, STARK_ORGANIZATION, 'Method Filter Record',
             [
@@ -1205,7 +1205,7 @@ async () => {
     ];
     const res = await handleRequest(
         db, req('GET', '/organizations/' + STARK_ORGANIZATION
-                + '/record-types', token),
+                + '/record-types/', token),
     );
     assert.equal(res.status, 200);
     const list = await res.json() as { id: string }[];
@@ -1286,7 +1286,7 @@ async () => {
 
     const listRes = await handleRequest(
         db, req('GET', '/organizations/' + STARK_ORGANIZATION
-                + '/record-types', token),
+                + '/record-types/', token),
     );
     assert.equal(listRes.status, 200);
     const list = await listRes.json() as { id: string }[];
@@ -1453,7 +1453,7 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token, {
+        'POST', '/work-orders/', token, {
             id: liveWorkOrderId,
             workOrder: {
                 display_id: 'drift-valuecount-1',

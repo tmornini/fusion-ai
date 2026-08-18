@@ -43,7 +43,7 @@ export async function getObjectives(
 ): Promise<ObjectiveEntity[]> {
     return withLifecycleTrios(
         ctx, 'objectives',
-        await ctx.GET<ObjectiveEntity[]>('objectives'),
+        await ctx.GET<ObjectiveEntity[]>('objectives/'),
     );
 }
 
@@ -172,7 +172,7 @@ async function getRevisionsForObjective(
     objectiveId: ObjectiveId,
 ): Promise<ObjectiveRevisionEntity[]> {
     return ctx.GET<ObjectiveRevisionEntity[]>(
-        'objectives/' + objectiveId + '/revisions',
+        'objectives/' + objectiveId + '/revisions/',
     );
 }
 
@@ -272,7 +272,7 @@ export async function postObjectiveCreation(
     // definition), supplied here. Genesis trio mints with the
     // create body (states-address retirement) — no separate
     // states/:id event.
-    await ctx.POST('objectives', {
+    await ctx.POST('objectives/', {
         id,
         objective: {
             position,

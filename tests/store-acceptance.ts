@@ -272,7 +272,7 @@ export function defineStoreAcceptance(
     test(name + ': If-Match stale is 412', async () => {
         const { db, token } = await ready();
         const created = await handleRequest(db, req(
-            'POST', '/flows', token, flowCreate('sa-flow'),
+            'POST', '/flows/', token, flowCreate('sa-flow'),
         ));
         assert.equal(created.status, 201);
         const live = await handleRequest(

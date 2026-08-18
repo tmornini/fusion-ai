@@ -284,7 +284,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         const token = await organizationToken();
         const id = 'race-match';
         const created = await handleRequest(db, req(
-            'POST', '/flows', token, flowCreate(id),
+            'POST', '/flows/', token, flowCreate(id),
         ));
         assert.equal(created.status, 201);
         const live = await handleRequest(

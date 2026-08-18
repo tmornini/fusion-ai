@@ -36,7 +36,7 @@ test('GET on unknown route throws', async () => {
 test('GET ideas returns array', async () => {
     const db = await freshDb();
     const ideas =
-        await GET<unknown[]>(db, 'ideas', DEV_TOKEN);
+        await GET<unknown[]>(db, 'ideas/', DEV_TOKEN);
     assert.deepEqual(ideas, []);
 });
 
@@ -106,7 +106,7 @@ test(
         await seedHumanMember(db, 'hw_1', 'Sarah Chen');
         const members =
             await GET<{ id: string }[]>(
-                db, 'organizations/1/members',
+                db, 'organizations/1/members/',
                 await organizationToken());
         assert.ok(
             members.some(row => row.id === 'hw_1'),
@@ -121,7 +121,7 @@ test(
         await seedAIMember(db, 'ai_1', 'Opus');
         const ais =
             await GET<unknown[]>(
-                db, 'ai-agents', DEV_TOKEN);
+                db, 'ai-agents/', DEV_TOKEN);
         assert.equal(ais.length, 1);
     },
 );
@@ -145,7 +145,7 @@ test(
     async () => {
         const db = await freshDb();
         await assert.rejects(
-            () => POST(db, 'projects', {}, DEV_TOKEN),
+            () => POST(db, 'projects/', {}, DEV_TOKEN),
             /not allowed/i,
         );
     },
@@ -217,7 +217,7 @@ test(
         const response = await handleRequest(
             db,
             new Request(
-                'http://localhost/identities',
+                'http://localhost/identities/',
                 {
                     method: 'POST',
                     headers: {
@@ -272,7 +272,7 @@ test(
                 'error',
                 () => handleRequest(
                     db,
-                    new Request('http://localhost/ideas', {
+                    new Request('http://localhost/ideas/', {
                         headers: {
                             'Authorization':
                                 'Bearer ' + DEV_TOKEN,

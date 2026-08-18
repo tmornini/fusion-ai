@@ -166,7 +166,7 @@ async () => {
         db, '1', 'member1', 'Org One', 'm-1', 'member',
     );
     const res = await handleRequest(db, req(
-        'GET', '/organizations/1/record-types', token,
+        'GET', '/organizations/1/record-types/', token,
     ));
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), []);
@@ -194,7 +194,7 @@ async () => {
         ),
     );
     const res = await handleRequest(db, req(
-        'GET', '/organizations/1/record-types', token,
+        'GET', '/organizations/1/record-types/', token,
     ));
     assert.equal(res.status, 200);
     const rows = await res.json() as RecordTypeWireRow[];
@@ -327,7 +327,7 @@ async () => {
     );
     const res = await handleRequest(db, req(
         'GET',
-        '/organizations/B/record-types',
+        '/organizations/B/record-types/',
         tokenA,
     ));
     assert.equal(res.status, 403);
@@ -345,7 +345,7 @@ async () => {
     );
     const res = await handleRequest(db, req(
         'GET',
-        '/organizations/no-such-org/record-types',
+        '/organizations/no-such-org/record-types/',
         token,
     ));
     assert.equal(res.status, 403);
@@ -368,7 +368,7 @@ async () => {
         ),
     );
     const collection = await handleRequest(db, req(
-        'GET', '/organizations/1/record-types', token,
+        'GET', '/organizations/1/record-types/', token,
     ));
     assert.equal(collection.status, 200);
     const detail = await handleRequest(db, req(

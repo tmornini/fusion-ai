@@ -116,7 +116,7 @@ async function createFlow(
     flowId: string,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'POST', '/flows', token,
+        'POST', '/flows/', token,
         {
             id: flowId,
             flow: flowFields('Fresh Flow'),
@@ -740,7 +740,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
     const token = await organizationToken();
 
     const first = await handleRequest(db, req(
-        'POST', '/flows', token,
+        'POST', '/flows/', token,
         {
             id: 'flow-dup-1',
             flow: flowFields('Fresh Flow'),
@@ -778,7 +778,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
 
     const SECOND_AT = '2026-01-01T00:00:01.000000Z';
     const second = await handleRequest(db, req(
-        'POST', '/flows', token,
+        'POST', '/flows/', token,
         {
             id: 'flow-dup-1',
             flow: flowFields('Fresh Flow'),

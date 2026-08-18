@@ -535,7 +535,7 @@ export function documentCollectionRoute(
     wiring: DocumentFamilyWiring,
 ): Route {
     return {
-        segments: [wiring.family],
+        segments: [wiring.family, ''],
         get: documentCollectionGetHandler(wiring),
     };
 }

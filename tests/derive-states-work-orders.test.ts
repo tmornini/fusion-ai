@@ -149,7 +149,7 @@ test('a live create births exactly the three initial state'
     const workOrderId = 'wo-lifecycle-create-1';
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             workOrderId, workOrderId + '-fwo', 'flow-x',
             workOrderFlowGraph(8 * 60 * 60),
@@ -354,7 +354,7 @@ test('a transition, then a transition with release ends the'
     const workOrderId = 'wo-lifecycle-transition-1';
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token,
+        'POST', '/work-orders/', token,
         createWorkOrderBody(
             workOrderId, workOrderId + '-fwo', 'flow-x',
             workOrderFlowGraph(8 * 60 * 60),

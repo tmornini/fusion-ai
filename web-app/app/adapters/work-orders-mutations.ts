@@ -99,7 +99,7 @@ export async function postWorkOrderCreation(
                 `flows/${input.flowId}`,
             ),
             generateDisplayId(input.workOrderId),
-            ctx.GET<WorkOrderEntity[]>('work-orders'),
+            ctx.GET<WorkOrderEntity[]>('work-orders/'),
         ]);
     const readiness = validateFlowForCreation(flow);
     if (!readiness.ready) {
@@ -164,7 +164,7 @@ export async function postWorkOrderCreation(
     // event ids are minted client-side so a retry hits the same
     // rows; their authorship is stamped server-side from the
     // token, never the body.
-    await ctx.POST('work-orders', {
+    await ctx.POST('work-orders/', {
         id: input.workOrderId,
         workOrder: {
             display_id: displayId,

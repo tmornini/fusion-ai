@@ -94,7 +94,7 @@ async function allAttributes(
             db,
             new Request(
                 'http://localhost/organizations/'
-                + organization + '/record-types',
+                + organization + '/record-types/',
                 {
                     headers: {
                         Authorization: 'Bearer ' + token,
@@ -110,7 +110,7 @@ async function allAttributes(
                 new Request(
                     'http://localhost/organizations/'
                     + organization + '/record-types/'
-                    + type.id + '/attributes',
+                    + type.id + '/attributes/',
                     {
                         headers: {
                             Authorization: 'Bearer ' + token,
@@ -352,7 +352,7 @@ test(
         ): Promise<void> {
             const res = await handleRequest(
                 db,
-                new Request('http://localhost/flows', {
+                new Request('http://localhost/flows/', {
                     headers: {
                         Authorization: 'Bearer ' + token,
                     },

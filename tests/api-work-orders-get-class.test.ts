@@ -39,8 +39,8 @@ const FWO_ID = 'fwo-class-1';
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
     + '/record-types/' + TYPE_ID;
-const ATTRS = TYPE_DETAIL + '/attributes';
-const INSTANCES = TYPE_DETAIL + '/instances';
+const ATTRS = TYPE_DETAIL + '/attributes/';
+const INSTANCES = TYPE_DETAIL + '/instances/';
 const BINDING = '/work-orders/' + WO_ID + '/binding';
 const DOCUMENT_PREFIX =
     '/organizations/' + ORGANIZATION + '/work-orders/';
@@ -81,7 +81,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Class Flow',
@@ -160,7 +160,7 @@ async function seedAttribute(
     token: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', ATTRS + '/' + ATTR_ID, token, {
+        'PUT', ATTRS + ATTR_ID, token, {
             name: 'Title',
             attribute_type: 'text',
             sort_order: 0,
@@ -178,7 +178,7 @@ async function seedInstance(
     token: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PATCH', INSTANCES + '/' + INSTANCE_ID, token, {
+        'PATCH', INSTANCES + INSTANCE_ID, token, {
             set: [
                 {
                     attribute_id: ATTR_ID,
@@ -284,7 +284,7 @@ async () => {
     }
 
     const list = await handleRequest(db, req(
-        'GET', '/work-orders', token,
+        'GET', '/work-orders/', token,
     ));
     assert.equal(list.status, 200);
     const rows = await list.json() as Record<
@@ -315,7 +315,7 @@ async () => {
     );
 
     const list = await handleRequest(db, req(
-        'GET', '/work-orders', token,
+        'GET', '/work-orders/', token,
     ));
     assert.equal(list.status, 200);
     const rows = await list.json() as Record<
@@ -366,7 +366,7 @@ async () => {
         'current', ORGANIZATION,
     );
     const created = await handleRequest(db, req(
-        'POST', '/work-orders', token, createBody(WO_ID),
+        'POST', '/work-orders/', token, createBody(WO_ID),
     ));
     assert.equal(created.status, 201);
 

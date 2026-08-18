@@ -190,7 +190,7 @@ test(
     async () => {
         const db = await freshDb();
         const res = await handleRequest(db, req(
-            'POST', '/ideas', DEV_TOKEN,
+            'POST', '/ideas/', DEV_TOKEN,
             ideaGenesisBody(
                 'idea-405', 'Should Not Create',
                 '2026-01-01T00:00:00.000000Z',

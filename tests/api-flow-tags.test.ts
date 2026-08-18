@@ -93,7 +93,7 @@ async function createFlow(
     flowId: string,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'POST', '/flows', token,
+        'POST', '/flows/', token,
         {
             id: flowId,
             flow: flowFields('Fresh Flow'),

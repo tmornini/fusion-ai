@@ -66,9 +66,9 @@ const INSTANCE_ID = 'inst-patch-1';
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
     + '/record-types/' + TYPE_ID;
-const ATTRS = TYPE_DETAIL + '/attributes';
-const INSTANCES = TYPE_DETAIL + '/instances';
-const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
+const ATTRS = TYPE_DETAIL + '/attributes/';
+const INSTANCES = TYPE_DETAIL + '/instances/';
+const INSTANCE_DETAIL = INSTANCES + INSTANCE_ID;
 const WELL_FORMED_TAG =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
     + 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -156,7 +156,7 @@ async function putAttribute(
     body: Record<string, unknown>,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', ATTRS + '/' + attrId, adminToken, body,
+        'PUT', ATTRS + attrId, adminToken, body,
     ));
     assert.equal(put.status, 201);
 }

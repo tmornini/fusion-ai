@@ -234,7 +234,7 @@ async () => {
     const ctx = createRecoveringRequestContext(
         db, deadAccess);
     // the 401 triggers refresh + org re-scope + one retry
-    const members = await ctx.GET('organizations/1/members');
+    const members = await ctx.GET('organizations/1/members/');
     assert.ok(Array.isArray(members));
 });
 
@@ -254,7 +254,7 @@ async () => {
     // both reads 401 in parallel; a second refresh would be
     // branded reuse and revoke the fresh chain
     const [members, organizations] = await Promise.all([
-        ctx.GET('organizations/1/members'),
+        ctx.GET('organizations/1/members/'),
         ctx.GET('organizations'),
     ]);
     assert.ok(Array.isArray(members));
@@ -286,7 +286,7 @@ async () => {
     const ctx = createRecoveringRequestContext(
         db, seed);
     // recovery re-installs the live token, re-scopes, and retries
-    const members = await ctx.GET('organizations/1/members');
+    const members = await ctx.GET('organizations/1/members/');
     assert.ok(Array.isArray(members));
     // the live session is preserved (not scrubbed) and now scoped
     assert.notEqual(getSessionCredentials(), null);
@@ -308,7 +308,7 @@ async () => {
         db, dead);
     // the 401 is unrecoverable: the original error propagates
     await assert.rejects(
-        () => ctx.GET('organizations/1/members'), UnauthorizedError);
+        () => ctx.GET('organizations/1/members/'), UnauthorizedError);
     // the dead credential was scrubbed...
     assert.equal(getSessionCredentials(), null);
     // ...and the tab was redirected to the login page
@@ -334,7 +334,7 @@ async () => {
             const ctx = createRecoveringRequestContext(
                 db, dead);
             await assert.rejects(
-                () => ctx.GET('organizations/1/members'), UnauthorizedError);
+                () => ctx.GET('organizations/1/members/'), UnauthorizedError);
         },
     );
     assert.equal(
@@ -371,7 +371,7 @@ test('a recovering context reads through the vessel token,'
     });
     // another tab moves the shared session holder to org B
     putSessionToken(await organizationToken('current', 'B'));
-    const rows = await ctx.GET<{ id: string }[]>('ideas');
+    const rows = await ctx.GET<{ id: string }[]>('ideas/');
     // the read ran in the vessel's org A, not the global's B
     assert.deepEqual(rows.map(r => r.id), ['a1']);
 });
@@ -400,7 +400,7 @@ test('recovery re-scopes to the vessel org claim, not the'
     const ctx = createRecoveringRequestContext(db, deadA);
     // the 401 drives refresh + re-scope; recovery must honor the
     // vessel's own org A, never the preference another tab wrote
-    await ctx.GET('ideas');
+    await ctx.GET('ideas/');
     const scoped =
         principalFromToken(getSessionToken()).organization;
     // one vessel truth: the recovered session matches the
@@ -426,7 +426,7 @@ test('recovery leaves the cross-tab active-org preference'
     // the foreground tab is viewing org B
     localStorage.setItem(ACTIVE_ORGANIZATION_ID, 'B');
     const ctx = createRecoveringRequestContext(db, deadA);
-    await ctx.GET('ideas');
+    await ctx.GET('ideas/');
     // the background recovery scopes ITS session to vessel org A...
     assert.equal(
         principalFromToken(getSessionToken()).organization, 'A');

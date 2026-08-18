@@ -105,7 +105,7 @@ async function createFlow(
     projectId: string,
 ): Promise<void> {
     const created = await handleRequest(db, req(
-        'POST', '/flows', token,
+        'POST', '/flows/', token,
         {
             id: flowId,
             flow: {
@@ -179,7 +179,7 @@ async () => {
     );
     assert.deepEqual(derived, [expected]);
     const got = await handleRequest(db, req(
-        'GET', '/ideas/' + ideaId + '/submissions', token,
+        'GET', '/ideas/' + ideaId + '/submissions/', token,
     ));
     assert.equal(got.status, 200);
     assert.deepEqual(await got.json(), [stored]);
@@ -217,7 +217,7 @@ async () => {
     );
     assert.deepEqual(derived, [expected]);
     const got = await handleRequest(db, req(
-        'GET', '/projects/' + projectId + '/flows', token,
+        'GET', '/projects/' + projectId + '/flows/', token,
     ));
     assert.equal(got.status, 200);
     assert.deepEqual(await got.json(), [stored]);
@@ -256,7 +256,7 @@ async () => {
     );
     assert.deepEqual(derived, [expected]);
     const got = await handleRequest(db, req(
-        'GET', '/flows/' + flowId + '/work-orders', token,
+        'GET', '/flows/' + flowId + '/work-orders/', token,
     ));
     assert.equal(got.status, 200);
     assert.deepEqual(await got.json(), [stored]);
@@ -301,7 +301,7 @@ async () => {
         ),
     );
     const list = await handleRequest(db, req(
-        'GET', '/flows/' + flowId + '/records', token,
+        'GET', '/flows/' + flowId + '/records/', token,
     ));
     assert.equal(list.status, 200);
     assert.deepEqual(await list.json(), [stored]);
@@ -409,7 +409,7 @@ async () => {
     const list = await handleRequest(db, req(
         'GET',
         '/organizations/' + ORGANIZATION
-        + '/record-types/' + typeId + '/attributes',
+        + '/record-types/' + typeId + '/attributes/',
         token,
     ));
     assert.equal(list.status, 200);
@@ -422,7 +422,7 @@ async () => {
     const objectiveId = 'obj-g6';
     const rid = 'rev-g6';
     const created = await handleRequest(db, req(
-        'POST', '/objectives', token,
+        'POST', '/objectives/', token,
         {
             id: objectiveId,
             objective: { position: 1 },
@@ -463,7 +463,7 @@ async () => {
     assert.deepEqual(derived, [expected]);
     const got = await handleRequest(db, req(
         'GET',
-        '/objectives/' + objectiveId + '/revisions',
+        '/objectives/' + objectiveId + '/revisions/',
         token,
     ));
     assert.equal(got.status, 200);
@@ -506,7 +506,7 @@ async () => {
     const got = await handleRequest(db, req(
         'GET',
         '/projects/' + projectId
-        + '/objective-baseline-scores',
+        + '/objective-baseline-scores/',
         token,
     ));
     assert.equal(got.status, 200);
@@ -549,7 +549,7 @@ async () => {
     const got = await handleRequest(db, req(
         'GET',
         '/projects/' + projectId
-        + '/objective-actual-scores',
+        + '/objective-actual-scores/',
         token,
     ));
     assert.equal(got.status, 200);

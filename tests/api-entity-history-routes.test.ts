@@ -272,7 +272,7 @@ test(
             db,
             req(
                 'GET',
-                '/ideas',
+                '/ideas/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),
@@ -441,7 +441,7 @@ test(
             db,
             req(
                 'GET',
-                '/projects',
+                '/projects/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),
@@ -578,7 +578,7 @@ test(
             req(
                 'GET',
                 '/organizations/' + ORGANIZATION_TWO
-                    + '/record-types',
+                    + '/record-types/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),
@@ -733,7 +733,7 @@ test(
             db,
             req(
                 'GET',
-                '/flows',
+                '/flows/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),
@@ -864,7 +864,7 @@ test(
             db,
             req(
                 'GET',
-                '/objectives',
+                '/objectives/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),

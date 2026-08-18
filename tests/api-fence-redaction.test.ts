@@ -51,7 +51,7 @@ test(
                 'error',
                 () => handleRequest(
                     db,
-                    new Request('http://localhost/ideas', {
+                    new Request('http://localhost/ideas/', {
                         headers: {
                             'Authorization':
                                 'Bearer ' + DEV_TOKEN,
@@ -91,7 +91,7 @@ test(
         await assert.rejects(
             () => handleRequest(
                 db,
-                new Request('http://localhost/ideas', {
+                new Request('http://localhost/ideas/', {
                     headers: {
                         'Authorization': 'Bearer ' + DEV_TOKEN,
                     },

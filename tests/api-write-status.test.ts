@@ -249,8 +249,8 @@ async () => {
     const second = await handleRequest(
         db,
         new Request(
-            'http://localhost/organizations/1/members'
-            + '/ws-del-gone',
+            'http://localhost/organizations/1/members/'
+            + 'ws-del-gone',
             {
                 method: 'DELETE',
                 headers: {

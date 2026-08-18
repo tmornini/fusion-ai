@@ -671,13 +671,13 @@ interface LeafCase {
 }
 
 const LEAF_CASES: LeafCase[] = [
-    { name: 'ideas/:id/submissions',
-        aPath: '/ideas/iA/submissions',
-        bPath: '/ideas/iB/submissions',
+    { name: 'ideas/:id/submissions/',
+        aPath: '/ideas/iA/submissions/',
+        bPath: '/ideas/iB/submissions/',
         a: 'isA', b: 'isB' },
-    { name: 'objectives/:id/revisions',
-        aPath: '/objectives/oA/revisions',
-        bPath: '/objectives/oB/revisions',
+    { name: 'objectives/:id/revisions/',
+        aPath: '/objectives/oA/revisions/',
+        bPath: '/objectives/oB/revisions/',
         a: 'orevA', b: 'orevB' },
 ];
 
@@ -744,7 +744,7 @@ for (const c of NESTED_FLOW_CASES) {
         const db = await deepDb();
         const foreign = await handleRequest(db, req(
             'GET',
-            '/organizations/B/flows/fB/' + c.seg,
+            '/organizations/B/flows/fB/' + c.seg + '/',
             await organizationToken('pb', 'B'),
         ));
         assert.equal(foreign.status, 200);
@@ -756,7 +756,7 @@ for (const c of NESTED_FLOW_CASES) {
             'foreign ' + c.b + ' missing on B plane',
         );
         const res = await facadeGet(
-            db, '/flows/fA/' + c.seg);
+            db, '/flows/fA/' + c.seg + '/');
         assert.equal(res.status, 200);
         const rows = await res.json() as { id: string }[];
         assert.deepEqual(rows.map(r => r.id), [c.a]);
@@ -842,7 +842,7 @@ for (const c of NESTED_PROJECT_CASES) {
         // Foreign join/score exists on B's pair plane.
         const foreign = await handleRequest(db, req(
             'GET',
-            '/organizations/B/projects/pB/' + c.seg,
+            '/organizations/B/projects/pB/' + c.seg + '/',
             await organizationToken('pb', 'B'),
         ));
         assert.equal(foreign.status, 200);
@@ -854,7 +854,7 @@ for (const c of NESTED_PROJECT_CASES) {
             'foreign ' + c.b + ' missing on B plane',
         );
         const res = await facadeGet(
-            db, '/projects/pA/' + c.seg);
+            db, '/projects/pA/' + c.seg + '/');
         assert.equal(res.status, 200);
         const rows = await res.json() as { id: string }[];
         assert.deepEqual(rows.map(r => r.id), [c.a]);
@@ -976,7 +976,7 @@ async () => {
     // pa is a co-member of A — its nested collection lists the
     // credential with the secret projected out.
     const res = await facadeGet(
-        db, '/identities/pa/credentials');
+        db, '/identities/pa/credentials/');
     assert.equal(res.status, 200);
     const rows = await res.json() as Array<{
         id: string;
@@ -996,7 +996,7 @@ async () => {
         'cred-pb');
     // Phase Final Stage B: identity spine tables retired.
     const other = await facadeGet(
-        db, '/identities/pb/credentials');
+        db, '/identities/pb/credentials/');
     assert.equal(other.status, 403);
     const otherBody = await other.json() as { error: string };
     assert.equal(
@@ -1035,11 +1035,11 @@ async () => {
     // pa's membership type:"member" bakes claim role member:A
     // via organizationToken — admin surface stays denied.
     const asAdmin = await handleRequest(db, req(
-        'GET', '/organizations/A/identities/pa/credentials',
+        'GET', '/organizations/A/identities/pa/credentials/',
         await organizationToken('current', 'A')));
     assert.equal(asAdmin.status, 200);
     const asMember = await handleRequest(db, req(
-        'GET', '/organizations/A/identities/pa/credentials',
+        'GET', '/organizations/A/identities/pa/credentials/',
         await organizationToken('pa', 'A')));
     assert.equal(asMember.status, 403);
 });
@@ -1121,7 +1121,7 @@ async () => {
     // orphan has no membership → null owner → visible orphan in
     // its own nested collection, read through the A facade.
     const res = await facadeGet(
-        db, '/identities/orphan/credentials');
+        db, '/identities/orphan/credentials/');
     assert.equal(res.status, 200);
     const ids = (await res.json() as Array<{
         identity_id: string;

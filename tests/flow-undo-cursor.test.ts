@@ -149,7 +149,7 @@ async function createFlow(
     flowId: string,
 ): Promise<void> {
     const created = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: flowId,
             flow: flowFields('genesis'),
             projectFlowId: flowId + '-pf',
@@ -574,7 +574,7 @@ test(
         const nodeId = 'sidecar-node';
 
         const created = await handleRequest(db, req(
-            'POST', '/flows', token, {
+            'POST', '/flows/', token, {
                 id: flowId,
                 flow: flowFields('Sidecar Flow'),
                 projectFlowId: flowId + '-pf',

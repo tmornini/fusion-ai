@@ -458,9 +458,9 @@ export async function computeFlowBackupResolution(
     // no second hop to the states log.
     const [flows, projects] =
         await Promise.all([
-            ctx.GET<FlowWithGraph[]>('flows'),
+            ctx.GET<FlowWithGraph[]>('flows/'),
             ctx.GET<ProjectEntity[]>(
-                'projects',
+                'projects/',
             ),
         ]);
     const flowExists = flows.some(
@@ -552,7 +552,7 @@ export async function postFlowFromBackup(
         now,
     );
     const linkId = generateCryptoSafeBase62();
-    await ctx.POST('flows', {
+    await ctx.POST('flows/', {
         id: flowId,
         flow: {
             name: backup.flow.name,
@@ -861,7 +861,7 @@ export async function postFlowFromMermaid(
         now,
     );
     const linkId = generateCryptoSafeBase62();
-    await ctx.POST('flows', {
+    await ctx.POST('flows/', {
         id: flowId,
         flow: {
             name: firstNode.name + ' (import)',
@@ -1207,7 +1207,7 @@ export async function postFlowFromZip(
         now,
     );
     const linkId = generateCryptoSafeBase62();
-    await ctx.POST('flows', {
+    await ctx.POST('flows/', {
         id: flowId,
         flow: {
             name: flowName,

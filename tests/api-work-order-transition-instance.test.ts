@@ -56,9 +56,9 @@ const FWO_ID = 'fwo-tx-inst-1';
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
     + '/record-types/' + TYPE_ID;
-const ATTRS = TYPE_DETAIL + '/attributes';
-const INSTANCES = TYPE_DETAIL + '/instances';
-const INSTANCE_DETAIL = INSTANCES + '/' + INSTANCE_ID;
+const ATTRS = TYPE_DETAIL + '/attributes/';
+const INSTANCES = TYPE_DETAIL + '/instances/';
+const INSTANCE_DETAIL = INSTANCES + INSTANCE_ID;
 const TRANSITION =
     '/work-orders/' + WO_ID + '/transition';
 
@@ -217,7 +217,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/flows', token, {
+        'POST', '/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Tx Inst Flow',
@@ -298,7 +298,7 @@ async function seedAttribute(
     body: Record<string, unknown>,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', ATTRS + '/' + attrId, token, body,
+        'PUT', ATTRS + attrId, token, body,
     ));
     assert.equal(put.status, 201);
 }

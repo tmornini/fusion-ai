@@ -148,7 +148,7 @@ async function seededChainDb(): Promise<MemoryDbAdapter> {
 
     const created = await handleRequest(
         db,
-        req('POST', '/work-orders', DEV_TOKEN, createBody()),
+        req('POST', '/work-orders/', DEV_TOKEN, createBody()),
     );
     assert.equal(created.status, 201);
 
@@ -454,7 +454,7 @@ test(
         const starkCreated = await handleRequest(
             db,
             req(
-                'POST', '/work-orders', DEV_TOKEN,
+                'POST', '/work-orders/', DEV_TOKEN,
                 minimalCreate(starkId),
             ),
         );
@@ -463,7 +463,7 @@ test(
         const twoCreated = await handleRequest(
             db,
             req(
-                'POST', '/work-orders', tokenTwo,
+                'POST', '/work-orders/', tokenTwo,
                 minimalCreate(twoId),
             ),
         );

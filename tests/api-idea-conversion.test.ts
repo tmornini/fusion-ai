@@ -183,7 +183,7 @@ test(
             ProjectObjectiveBaselineScoreEntity[]
         >(
             db,
-            'projects/p1/objective-baseline-scores',
+            'projects/p1/objective-baseline-scores/',
             DEV_TOKEN,
         );
         assert.equal(mine.length, 2);
