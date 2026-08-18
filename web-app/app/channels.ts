@@ -95,27 +95,34 @@ export function createSubscriptionChannel(
         if (!sessionTokenIsSeeded()) {
             return;
         }
-        const principal =
-            principalFromToken(getSessionToken());
-        // Active org claim wins when present (post-exchange).
-        // A flat login token has only `organizations`; the
-        // pair-plane fence still serves the default org, so
-        // match any reachable org the event names.
-        const organizationHit =
-            principal.organization !== undefined
-                ? event.organizationIds.includes(
-                    principal.organization,
-                )
-                : sessionIsAuthenticated()
-                    && (principal.organizations ?? [])
-                        .some(id =>
-                            event.organizationIds
-                                .includes(id));
-        const identityHit =
-            sessionIsAuthenticated()
-            && event.identityIds.includes(principal.id);
-        if (organizationHit || identityHit) {
-            channel.send();
+        try {
+            const principal =
+                principalFromToken(getSessionToken());
+            // Active org claim wins when present
+            // (post-exchange). A flat login token has only
+            // `organizations`; the pair-plane fence still
+            // serves the default org, so match any
+            // reachable org the event names.
+            const organizationHit =
+                principal.organization !== undefined
+                    ? event.organizationIds.includes(
+                        principal.organization,
+                    )
+                    : sessionIsAuthenticated()
+                        && (principal.organizations ?? [])
+                            .some(id =>
+                                event.organizationIds
+                                    .includes(id));
+            const identityHit =
+                sessionIsAuthenticated()
+                && event.identityIds.includes(
+                    principal.id,
+                );
+            if (organizationHit || identityHit) {
+                channel.send();
+            }
+        } catch {
+            return;
         }
     });
     return {

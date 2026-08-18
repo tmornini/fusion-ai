@@ -293,3 +293,23 @@ async () => {
     listener.close();
     assert.deepEqual(seen, [{ kind: 'full' }]);
 });
+
+test('a scoped event with a non-jwt seed does not throw'
+    + ' and does not fire',
+async () => {
+    putSessionToken('reminted-access');
+    const ch = createSubscriptionChannel();
+    let fired = 0;
+    ch.subscribe(() => { fired += 1; });
+    const poster = new BroadcastChannel(
+        CHANNEL_NAME,
+    );
+    poster.postMessage({
+        kind: 'scoped',
+        organizationIds: ['1'],
+        identityIds: ['current'],
+    });
+    await deliver();
+    poster.close();
+    assert.equal(fired, 0);
+});
