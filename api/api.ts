@@ -182,6 +182,17 @@ function invitationWriteOwnsNotification(
             === 'identities/:id/invitations/:id';
 }
 
+// Tenant-root document and its version reads. Path org
+// is the document id, not a nested product fence.
+function isOrganizationDocumentPath(
+    pattern: string,
+): boolean {
+    return pattern === 'organizations/:id'
+        || pattern === 'organizations/:id/versions/'
+        || pattern
+            === 'organizations/:id/versions/:etag';
+}
+
 function postWriteNotification(
     adapter: GuardedDbAdapter,
     routePattern: string,
@@ -500,6 +511,13 @@ export async function handleRequest(
                     && fencePattern
                         !== 'identities/:id/'
                             + 'invitations/:id'
+                    && fencePattern
+                        !== 'identities/:id/'
+                            + 'invitations/:id/versions/'
+                    && fencePattern
+                        !== 'identities/:id/'
+                            + 'invitations/:id/versions/'
+                            + ':etag'
                 ) {
                     return Response.json(
                         { error: fence.error },
@@ -514,15 +532,17 @@ export async function handleRequest(
                 // before authorizeRequest. Path org never
                 // authorizes alone — mismatch (incl.
                 // nonexistent path org) is 403 with a fixed
-                // body. No auto-exchange. Bare
-                // organizations/:id keeps its own membership
-                // fence below; every other organizations/...
-                // match takes this arm.
+                // body. No auto-exchange. The organization
+                // document and its versions keep the
+                // membership fence below; every other
+                // organizations/... match takes this arm.
                 if (
                     match !== null
                     && match.route.segments[0]
                         === 'organizations'
-                    && fencePattern !== 'organizations/:id'
+                    && !isOrganizationDocumentPath(
+                        fencePattern,
+                    )
                     && fenceParams[0]
                         !== fenced.organization
                 ) {
@@ -547,7 +567,8 @@ export async function handleRequest(
                         { status: HTTP_FORBIDDEN },
                     );
                 }
-                // organizations/:id is global passthrough;
+                // Organization document reads (item and
+                // versions) are global passthrough;
                 // fence READS to the caller's memberships.
                 // A real org the caller is not a member of
                 // is 403 (honest); a genuinely absent id
@@ -555,7 +576,9 @@ export async function handleRequest(
                 // org is created before its first membership
                 // exists.
                 if (method === 'GET'
-                    && fencePattern === 'organizations/:id'
+                    && isOrganizationDocumentPath(
+                        fencePattern,
+                    )
                     && !fenced.memberOrganizations
                         .has(param(fenceParams, 0))) {
                     const organizationId =
