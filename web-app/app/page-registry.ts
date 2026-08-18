@@ -315,19 +315,6 @@ export const PAGE_REGISTRY: Record<
             + ' payment',
         loader: () => import('../billing/index'),
     },
-    snapshots: {
-        title: 'Snapshots',
-        layout: 'sidebar',
-        inSidebarNav: true,
-        sourceDir: 'snapshots',
-        sourceFile: 'index',
-        icon: iconDatabase,
-        keywords:
-            'data export import wipe',
-        requiresAuth: true,
-        cssBundles: ['pages-snapshots'],
-        loader: () => import('../snapshots/index'),
-    },
     'design-system': {
         title: 'Design System',
         layout: 'sidebar',
