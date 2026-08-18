@@ -20,11 +20,12 @@ import {
 } from './http-fixtures.ts';
 
 // GET <family>/:id/versions — Phase A3 of states-URI
-// elimination. Per trio family (ideas/projects/records/flows/
-// objectives): document-PUT lifecycle → 200 DESC current-first;
-// foreign miss at this address → 404; absent → 404. Shared
-// handler builder wraps derive*StateHistory (ASC) with DESC +
-// missedReadError. Org-nested facade rides free for one leg.
+// elimination. Per trio family (ideas, projects, records,
+// flows, objectives): document-PUT lifecycle → 200 DESC
+// current-first; foreign miss at this address → 404;
+// absent → 404. Shared handler builder wraps
+// derive*StateHistory (ASC) with DESC + missedReadError.
+// Product versions live under organizations/:id/.
 
 const BASE = 'http://localhost';
 
@@ -105,7 +106,7 @@ async function seedIdeaLifecycle(
         db,
         req(
             'PUT',
-            '/ideas/' + id,
+            '/organizations/1/ideas/' + id,
             token,
             ideaBody(
                 'Hist Idea',
@@ -120,7 +121,7 @@ async function seedIdeaLifecycle(
         db,
         req(
             'PUT',
-            '/ideas/' + id,
+            '/organizations/1/ideas/' + id,
             token,
             ideaBody(
                 'Hist Idea',
@@ -140,7 +141,7 @@ function versionOf(res: Response): string {
 }
 
 test(
-    'GET ideas/:id/versions 200 DESC; /history 404; '
+    'GET organizations/:id/ideas/:id/versions 200 DESC; /history 404; '
     + '/versions/:version serves that revision',
     async () => {
         const db = await freshDb();
@@ -149,7 +150,7 @@ test(
             db,
             req(
                 'PUT',
-                '/ideas/' + id,
+                '/organizations/1/ideas/' + id,
                 DEV_TOKEN,
                 ideaBody(
                     'Hist Idea',
@@ -165,7 +166,7 @@ test(
             db,
             req(
                 'PUT',
-                '/ideas/' + id,
+                '/organizations/1/ideas/' + id,
                 DEV_TOKEN,
                 ideaBody(
                     'Hist Idea Revised',
@@ -181,7 +182,8 @@ test(
 
         const index = await handleRequest(
             db,
-            req('GET', '/ideas/' + id + '/versions', DEV_TOKEN),
+            req('GET', '/organizations/1/ideas/' + id +
+                '/versions', DEV_TOKEN),
         );
         assert.equal(index.status, 200);
         const rows = await index.json() as HistoryEvent[];
@@ -196,7 +198,8 @@ test(
 
         const retired = await handleRequest(
             db,
-            req('GET', '/ideas/' + id + '/history', DEV_TOKEN),
+            req('GET', '/organizations/1/ideas/' + id +
+                '/history', DEV_TOKEN),
         );
         assert.equal(retired.status, 404);
 
@@ -204,7 +207,7 @@ test(
             db,
             req(
                 'GET',
-                '/ideas/' + id + '/versions/' + v1,
+                '/organizations/1/ideas/' + id + '/versions/' + v1,
                 DEV_TOKEN,
             ),
         );
@@ -223,7 +226,7 @@ test(
             db,
             req(
                 'GET',
-                '/ideas/' + id + '/versions/' + v2,
+                '/organizations/1/ideas/' + id + '/versions/' + v2,
                 DEV_TOKEN,
             ),
         );
@@ -240,14 +243,15 @@ test(
 );
 
 test(
-    'GET ideas/:id/versions: 200 DESC current-first',
+    'GET organizations/:id/ideas/:id/versions: 200 DESC current-first',
     async () => {
         const db = await freshDb();
         const id = 'idea-hist-1';
         await seedIdeaLifecycle(db, id, DEV_TOKEN);
         const res = await handleRequest(
             db,
-            req('GET', '/ideas/' + id + '/versions', DEV_TOKEN),
+            req('GET', '/organizations/1/ideas/' + id +
+                '/versions', DEV_TOKEN),
         );
         assert.equal(res.status, 200);
         const rows = await res.json() as HistoryEvent[];
@@ -265,14 +269,15 @@ test(
 );
 
 test(
-    'GET ideas/:id/versions foreign → 404 at this address',
+    'GET organizations/:id/ideas/:id/versions foreign → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
             db,
             req(
                 'GET',
-                '/ideas/',
+                '/organizations/' + ORGANIZATION_TWO
+                    + '/ideas/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),
@@ -285,7 +290,7 @@ test(
             db,
             req(
                 'GET',
-                '/ideas/' + foreign.id + '/versions',
+                '/organizations/1/ideas/' + foreign.id + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -303,7 +308,7 @@ test(
 );
 
 test(
-    'GET ideas/:id/versions absent → 404',
+    'GET organizations/:id/ideas/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
         const missing = 'no-such-idea';
@@ -311,7 +316,7 @@ test(
             db,
             req(
                 'GET',
-                '/ideas/' + missing + '/versions',
+                '/organizations/1/ideas/' + missing + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -325,8 +330,7 @@ test(
 );
 
 test(
-    'org-nested facade /organizations/:org/ideas/:id/versions'
-    + ' rides free',
+    'GET organizations/:id/ideas/:id/versions is 200',
     async () => {
         const db = await freshDb();
         const id = 'idea-hist-facade';
@@ -380,7 +384,7 @@ async function seedProjectLifecycle(
         db,
         req(
             'PUT',
-            '/projects/' + id,
+            '/organizations/1/projects/' + id,
             token,
             projectBody(
                 'Hist Project',
@@ -395,7 +399,7 @@ async function seedProjectLifecycle(
         db,
         req(
             'PUT',
-            '/projects/' + id,
+            '/organizations/1/projects/' + id,
             token,
             projectBody(
                 'Hist Project',
@@ -409,7 +413,7 @@ async function seedProjectLifecycle(
 }
 
 test(
-    'GET projects/:id/versions: 200 DESC current-first',
+    'GET organizations/:id/projects/:id/versions: 200 DESC current-first',
     async () => {
         const db = await freshDb();
         const id = 'project-hist-1';
@@ -418,7 +422,7 @@ test(
             db,
             req(
                 'GET',
-                '/projects/' + id + '/versions',
+                '/organizations/1/projects/' + id + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -434,14 +438,16 @@ test(
 );
 
 test(
-    'GET projects/:id/versions foreign → 404 at this address',
+    'GET organizations/:id/projects/:id/versions foreign'
+    + ' → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
             db,
             req(
                 'GET',
-                '/projects/',
+                '/organizations/' + ORGANIZATION_TWO
+                    + '/projects/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),
@@ -454,7 +460,7 @@ test(
             db,
             req(
                 'GET',
-                '/projects/' + foreign.id + '/versions',
+                '/organizations/1/projects/' + foreign.id + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -468,7 +474,7 @@ test(
 );
 
 test(
-    'GET projects/:id/versions absent → 404',
+    'GET organizations/:id/projects/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
         const missing = 'no-such-project';
@@ -476,7 +482,7 @@ test(
             db,
             req(
                 'GET',
-                '/projects/' + missing + '/versions',
+                '/organizations/1/projects/' + missing + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -664,7 +670,7 @@ async function seedFlowLifecycle(
         db,
         req(
             'PUT',
-            '/flows/' + id,
+            '/organizations/1/flows/' + id,
             token,
             flowDocBody(
                 'Hist Flow',
@@ -681,7 +687,7 @@ async function seedFlowLifecycle(
         db,
         req(
             'PUT',
-            '/flows/' + id,
+            '/organizations/1/flows/' + id,
             token,
             flowDocBody(
                 'Hist Flow',
@@ -692,7 +698,7 @@ async function seedFlowLifecycle(
             { 'if-match': (
                 await handleRequest(
                     db,
-                    req('GET', '/flows/' + id, token),
+                    req('GET', '/organizations/1/flows/' + id, token),
                 )
             ).headers.get('ETag')! },
         ),
@@ -701,7 +707,7 @@ async function seedFlowLifecycle(
 }
 
 test(
-    'GET flows/:id/versions: 200 DESC current-first',
+    'GET organizations/:id/flows/:id/versions: 200 DESC current-first',
     async () => {
         const db = await freshDb();
         const id = 'flow-hist-1';
@@ -710,7 +716,7 @@ test(
             db,
             req(
                 'GET',
-                '/flows/' + id + '/versions',
+                '/organizations/1/flows/' + id + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -726,14 +732,15 @@ test(
 );
 
 test(
-    'GET flows/:id/versions foreign → 404 at this address',
+    'GET organizations/:id/flows/:id/versions foreign → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
             db,
             req(
                 'GET',
-                '/flows/',
+                '/organizations/' + ORGANIZATION_TWO
+                    + '/flows/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),
@@ -746,7 +753,7 @@ test(
             db,
             req(
                 'GET',
-                '/flows/' + foreign.id + '/versions',
+                '/organizations/1/flows/' + foreign.id + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -760,7 +767,7 @@ test(
 );
 
 test(
-    'GET flows/:id/versions absent → 404',
+    'GET organizations/:id/flows/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
         const missing = 'no-such-flow';
@@ -768,7 +775,7 @@ test(
             db,
             req(
                 'GET',
-                '/flows/' + missing + '/versions',
+                '/organizations/1/flows/' + missing + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -805,7 +812,7 @@ async function seedObjectiveLifecycle(
         db,
         req(
             'PUT',
-            '/objectives/' + id,
+            '/organizations/1/objectives/' + id,
             token,
             objectiveBody(
                 'active',
@@ -819,7 +826,7 @@ async function seedObjectiveLifecycle(
         db,
         req(
             'PUT',
-            '/objectives/' + id,
+            '/organizations/1/objectives/' + id,
             token,
             objectiveBody(
                 'archived',
@@ -832,7 +839,7 @@ async function seedObjectiveLifecycle(
 }
 
 test(
-    'GET objectives/:id/versions: 200 DESC current-first',
+    'GET organizations/:id/objectives/:id/versions: 200 DESC current-first',
     async () => {
         const db = await freshDb();
         const id = 'objective-hist-1';
@@ -841,7 +848,7 @@ test(
             db,
             req(
                 'GET',
-                '/objectives/' + id + '/versions',
+                '/organizations/1/objectives/' + id + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -857,14 +864,16 @@ test(
 );
 
 test(
-    'GET objectives/:id/versions foreign → 404 at this address',
+    'GET organizations/:id/objectives/:id/versions foreign'
+    + ' → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
             db,
             req(
                 'GET',
-                '/objectives/',
+                '/organizations/' + ORGANIZATION_TWO
+                    + '/objectives/',
                 await organizationToken(
                     'current', ORGANIZATION_TWO,
                 ),
@@ -877,7 +886,7 @@ test(
             db,
             req(
                 'GET',
-                '/objectives/' + foreign.id + '/versions',
+                '/organizations/1/objectives/' + foreign.id + '/versions',
                 DEV_TOKEN,
             ),
         );
@@ -891,7 +900,7 @@ test(
 );
 
 test(
-    'GET objectives/:id/versions absent → 404',
+    'GET organizations/:id/objectives/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
         const missing = 'no-such-objective';
@@ -899,7 +908,7 @@ test(
             db,
             req(
                 'GET',
-                '/objectives/' + missing + '/versions',
+                '/organizations/1/objectives/' + missing + '/versions',
                 DEV_TOKEN,
             ),
         );

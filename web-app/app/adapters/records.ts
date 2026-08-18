@@ -12,6 +12,7 @@ import {
 } from '../../../api/types.ts';
 import {
     activeOrganization,
+    organizationItem,
     type RequestContext,
 } from './shared.ts';
 import {
@@ -36,7 +37,8 @@ async function getAllFlowRecords(
     const flows = await getFlowEntities(ctx);
     const perFlow = await Promise.all(
         flows.map(f => ctx.GET<FlowRecordEntity[]>(
-            'flows/' + f.id + '/records/',
+            organizationItem(ctx, 'flows', f.id)
+                + '/records/',
         )),
     );
     return perFlow.flat();

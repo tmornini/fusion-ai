@@ -300,7 +300,7 @@ async () => {
         ),
     ));
     const flowCreate = await handleRequest(db, req(
-        'POST', '/flows/', adminToken, {
+        'POST', '/organizations/1/flows/', adminToken, {
             id: 'flow-restrict-1',
             flow: {
                 name: 'Intake',
@@ -330,7 +330,7 @@ async () => {
     assert.equal(flowCreate.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
-        '/flows/flow-restrict-1/records/fr-1',
+        '/organizations/1/flows/flow-restrict-1/records/fr-1',
         adminToken,
         {
             id: 'fr-1',

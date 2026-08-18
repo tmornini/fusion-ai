@@ -100,6 +100,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 
 const RECORDS_TEST_WIRING: DocumentFamilyWiring = {
     family: 'record-types',
+    httpNest: 'organization',
     lifecycle: 'trio',
     notFoundTable: 'record_types',
     validateDocument: validateRecordDocumentBody,
@@ -135,7 +136,7 @@ async function derivedRecord(
     db: DbAdapter, organization: Id, id: Id,
 ): Promise<RecordEntity> {
     return documentGetHandler(RECORDS_TEST_WIRING)(
-        db, [id], READER_ACTOR, organization,
+        db, [organization, id], READER_ACTOR, organization,
     ) as Promise<RecordEntity>;
 }
 
@@ -460,7 +461,8 @@ async () => {
         db,
         req(
             'GET',
-            '/flows/' + flowId + '/records/' + joinId,
+            '/organizations/' + ORGANIZATION_TWO
+                + '/flows/' + flowId + '/records/' + joinId,
             tokenTwo,
         ),
     );
@@ -595,7 +597,8 @@ async () => {
             db,
             req(
                 'GET',
-                '/flows/' + flowId + '/records/',
+                '/organizations/' + organization
+                    + '/flows/' + flowId + '/records/',
                 token,
             ),
         );
@@ -611,7 +614,8 @@ async () => {
             db,
             req(
                 'GET',
-                '/flows/' + flowId + '/records/' + joinId,
+                '/organizations/' + organization
+                    + '/flows/' + flowId + '/records/' + joinId,
                 token,
             ),
         );
@@ -628,7 +632,7 @@ async () => {
         db,
         req(
             'GET',
-            '/flows/' + EMPTY_FLOW_ID + '/records/',
+            '/organizations/1/flows/' + EMPTY_FLOW_ID + '/records/',
             token,
         ),
     );
@@ -1304,7 +1308,7 @@ async function transitionFieldValueCounts(
 ): Promise<Map<string, number>> {
     const prefix = canonicalUriCollection(
         organization,
-        '/work-orders/' + workOrderId + '/transition/',
+        '/organizations/1/work-orders/' + workOrderId + '/transition/',
     );
     const [requests, responses] = await Promise.all([
         db.requests.getAllWhere('uri_collection', prefix),
@@ -1453,7 +1457,7 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders/', token, {
+        'POST', '/organizations/1/work-orders/', token, {
             id: liveWorkOrderId,
             workOrder: {
                 display_id: 'drift-valuecount-1',

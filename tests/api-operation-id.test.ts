@@ -27,7 +27,7 @@ async () => {
     await seedAdminSchema(db);
     const res = await handleRequest(
         db,
-        new Request('http://localhost/ideas/i1', {
+        new Request('http://localhost/organizations/1/ideas/i1', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ async () => {
         db,
         apiRequest({
             method: 'PUT',
-            path: '/ideas/i2',
+            path: '/organizations/1/ideas/i2',
             token: DEV_TOKEN,
             body: validIdea,
             operationId: 'too-short',
@@ -62,7 +62,7 @@ async () => {
     await seedAdminSchema(db);
     const res = await handleRequest(
         db,
-        new Request('http://localhost/ideas/', {
+        new Request('http://localhost/organizations/1/ideas/', {
             headers: {
                 Authorization: 'Bearer ' + DEV_TOKEN,
             },
@@ -79,7 +79,7 @@ async () => {
         db,
         apiRequest({
             method: 'PUT',
-            path: '/ideas/i3',
+            path: '/organizations/1/ideas/i3',
             token: DEV_TOKEN,
             body: validIdea,
             operationId: TEST_OPERATION_ID,

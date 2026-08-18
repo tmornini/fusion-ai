@@ -869,9 +869,14 @@ export function createdEntityUriId(
     // to answer, now answered from the registry instead.
     // Falls back to the literal table for every not-yet-
     // registered pattern.
-    const family = routePattern.endsWith('/')
+    const stripped = routePattern.endsWith('/')
         ? routePattern.slice(0, -1)
         : routePattern;
+    const family = stripped.startsWith('organizations/:id/')
+        && !stripped.slice('organizations/:id/'.length)
+            .includes('/')
+        ? stripped.slice('organizations/:id/'.length)
+        : stripped;
     const registered = familyRegistration(family);
     const field = registered !== undefined
         ? registered.createBodyIdField
@@ -891,29 +896,31 @@ export function createdEntityUriId(
 // write route — so no intermediate commit ever advertises a
 // Response-ID it did not store.
 export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
-    'ideas/:id',
-    'ideas/:id/conversion',
-    'ideas/:id/submissions/:sid',
-    'projects/:id',
-    'projects/:id/flows/:pfid',
-    'flows/',
-    'flows/:id',
-    'flows/:id/undo',
+    'organizations/:id/ideas/:id',
+    'organizations/:id/ideas/:id/conversion',
+    'organizations/:id/ideas/:id/submissions/:sid',
+    'organizations/:id/projects/:id',
+    'organizations/:id/projects/:id/flows/:pfid',
+    'organizations/:id/flows/',
+    'organizations/:id/flows/:id',
+    'organizations/:id/flows/:id/undo',
     // flows/:id/versions[+/:vid] RETIRED (Phase 15 Task 7).
-    'flows/:id/tags/:name',
-    'work-orders/',
-    'work-orders/:id',
-    'work-orders/:id/claim',
-    'work-orders/:id/transition',
-    'work-orders/:id/binding',
-    'flows/:id/work-orders/:woid',
+    'organizations/:id/flows/:id/tags/:name',
+    'organizations/:id/work-orders/',
+    'organizations/:id/work-orders/:id',
+    'organizations/:id/work-orders/:id/claim',
+    'organizations/:id/work-orders/:id/transition',
+    'organizations/:id/work-orders/:id/binding',
+    'organizations/:id/flows/:id/work-orders/:woid',
     // Flat records + record-attributes retired (Task 23).
-    'flows/:id/records/:frid',
-    'objectives/',
-    'objectives/:id',
-    'objectives/:id/revisions/:rid',
-    'projects/:id/objective-baseline-scores/:sid',
-    'projects/:id/objective-actual-scores/:sid',
+    'organizations/:id/flows/:id/records/:frid',
+    'organizations/:id/objectives/',
+    'organizations/:id/objectives/:id',
+    'organizations/:id/objectives/:id/revisions/:rid',
+    'organizations/:id/projects/:id'
+        + '/objective-baseline-scores/:sid',
+    'organizations/:id/projects/:id'
+        + '/objective-actual-scores/:sid',
     'ai-agents/:id',
     'identities/',
     'identities/:id',
@@ -989,32 +996,35 @@ export const REPLAY_EXEMPT_ROUTE_PATTERNS: Set<string> =
 // wired for pair STORAGE in PAIR_WIRED_ROUTE_PATTERNS above.
 export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
     new Set([
-        'ideas/:id',
-        'ideas/:id/submissions/:sid',
-        'projects/:id',
-        'projects/:id/flows/:pfid',
-        'flows/',
-        'flows/:id',
+        'organizations/:id/ideas/:id',
+        'organizations/:id/ideas/:id/submissions/:sid',
+        'organizations/:id/projects/:id',
+        'organizations/:id/projects/:id/flows/:pfid',
+        'organizations/:id/flows/',
+        'organizations/:id/flows/:id',
         // flows/:id/versions/:vid RETIRED (Phase 15 Task 7).
         // SIMPLE class (Phase 14 Task 9, gate 8): the locked
         // class 'flows' itself rides is structurally MOOT here —
-        // api.ts's isLockedWrite exact-matches routePattern ===
-        // family + '/:id', and a 4-segment pattern never
-        // equals 'flows/:id' — so registering tags here safely
-        // opts that address into the ordinary head-read,
-        // never the locked four-outcome table.
-        'flows/:id/tags/:name',
-        'work-orders/',
-        'work-orders/:id',
-        'work-orders/:id/claim',
-        'flows/:id/work-orders/:woid',
+        // api.ts's isLockedWrite is routePattern ===
+        // documentEntityPattern(wiring), which for flows is
+        // organizations/:id/flows/:id — a tags address
+        // never equals that, so registering tags here
+        // safely opts that address into the ordinary
+        // head-read, never the locked four-outcome table.
+        'organizations/:id/flows/:id/tags/:name',
+        'organizations/:id/work-orders/',
+        'organizations/:id/work-orders/:id',
+        'organizations/:id/work-orders/:id/claim',
+        'organizations/:id/flows/:id/work-orders/:woid',
         // Flat records + record-attributes retired (Task 23).
-        'flows/:id/records/:frid',
-        'objectives/',
-        'objectives/:id',
-        'objectives/:id/revisions/:rid',
-        'projects/:id/objective-baseline-scores/:sid',
-        'projects/:id/objective-actual-scores/:sid',
+        'organizations/:id/flows/:id/records/:frid',
+        'organizations/:id/objectives/',
+        'organizations/:id/objectives/:id',
+        'organizations/:id/objectives/:id/revisions/:rid',
+        'organizations/:id/projects/:id'
+            + '/objective-baseline-scores/:sid',
+        'organizations/:id/projects/:id'
+            + '/objective-actual-scores/:sid',
         'ai-agents/:id',
         'identities/',
         'identities/:id',

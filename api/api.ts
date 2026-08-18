@@ -52,6 +52,8 @@ import {
 import {
     documentFamilyWiring,
     documentHeadPairId,
+    entityIdParam,
+    idFamilyOf,
     lookupStoredRevision,
     throwDocumentMiss,
     requireOrganization,
@@ -86,7 +88,6 @@ import {
     assertWritableInOrganization,
 } from './write-authorizer.ts';
 import {
-    exchangeBearerForOrganization,
     postToken,
     postAuthorize,
     attachSetCookie,
@@ -161,77 +162,6 @@ export {
 const routeTable: readonly Route[] = routes;
 
 const BASE_URL = 'http://localhost';
-
-// Facade rewrite: exchange the caller's bearer for a token
-// scoped to segments[1], then re-enter the gate against the
-// flat resource path (segments[2:]). A non-member's exchange
-// is a 403 — the tenant fence — and mints nothing.
-async function facadeRequest(
-    ctx: IncomingContext,
-    request: Request,
-    segments: readonly string[],
-): Promise<Response> {
-    const header = request.headers.get('authorization');
-    if (header === null
-        || !header.startsWith('Bearer ')) {
-        return Response.json(
-            { error: 'facade requires a bearer token' },
-            { status: HTTP_UNAUTHORIZED },
-        );
-    }
-    const bearer = header.slice('Bearer '.length);
-    const exchanged = await exchangeBearerForOrganization(
-        ctx.base, bearer, segments[1]!,
-    );
-    if (!exchanged.ok) {
-        return Response.json(
-            { error: exchanged.error },
-            { status: exchanged.status },
-        );
-    }
-    const flatUrl = new URL(request.url);
-    const rest = segments.slice(2);
-    let flatPath = '/' + rest.join('/');
-    // Collection routes now end in '/'. A facade rewrite
-    // of /organizations/:org/ideas must become /ideas/,
-    // not slashless /ideas (no table row). Prefer the
-    // slashed form when only that matches.
-    if (
-        rest.length > 0
-        && rest[rest.length - 1] !== ''
-        && matchRoute(
-            routeTable, pathSegmentsOf(flatPath),
-        ) === null
-    ) {
-        const slashed = flatPath + '/';
-        if (
-            matchRoute(
-                routeTable, pathSegmentsOf(slashed),
-            ) !== null
-        ) {
-            flatPath = slashed;
-        }
-    }
-    flatUrl.pathname = flatPath;
-    const headers = new Headers(request.headers);
-    headers.set(
-        'authorization',
-        'Bearer ' + exchanged.response.access_token,
-    );
-    // The inner hop is the SAME user request — it keeps the
-    // outer vessel's id across the re-entry.
-    headers.set(REQUEST_ID_HEADER, ctx.requestId);
-    const hasBody = ctx.method === 'PUT'
-        || ctx.method === 'POST'
-        || ctx.method === 'PATCH';
-    const flatRequest = new Request(flatUrl.toString(), {
-        method: ctx.method,
-        headers,
-        ...(hasBody
-            ? { body: await request.text() } : {}),
-    });
-    return handleRequest(ctx.base, flatRequest);
-}
 
 // The gate-side Decision 5 post: fired once per successful
 // write, AFTER the route handler's promise resolves (so on
@@ -486,22 +416,7 @@ export async function handleRequest(
     // Match first (pure, no I/O). Authentication runs before
     // the no-match 404 so an unauthenticated caller never maps
     // route topology (unknown path and real route both 401).
-    // In-table organizations/... patterns win over the facade
-    // when registered; the facade swallows only unmatched
-    // nested org paths (length ≥ 3).
     const match = matchRoute(routeTable, pathSegments);
-    // Facade: /organizations/:org/:entity[/:id] — exchange the
-    // caller's bearer for an org-scoped token and re-enter the
-    // gate against the flat resource path, so the existing
-    // handler is fenced automatically. Organization rides the
-    // one verified token, never the path.
-    if (
-        match === null
-        && pathSegments[0] === 'organizations'
-        && pathSegments.length >= 3
-    ) {
-        return facadeRequest(ctx, request, pathSegments);
-    }
     const matchedRoutePattern = match !== null
         ? match.route.segments.join('/')
         : undefined;
@@ -860,12 +775,13 @@ export async function handleRequest(
             // documentEntityRoute's own pattern is always exactly
             // `${family}/:id`. PUT-only: the two PUT classes govern PUT,
             // never POST/DELETE.
-            const wiring = documentFamilyWiring(
-                matched.segments[0] ?? '',
+            const wiring = wiringForSegments(
+                matched.segments,
             );
             const isDocumentPut = method === 'PUT'
                 && wiring !== undefined
-                && routePattern === wiring.family + '/:id';
+                && routePattern
+                    === documentEntityPattern(wiring);
             const isLockedWrite = isDocumentPut
                 && wiring !== undefined
                 && familyRegistration(wiring.family)
@@ -1525,13 +1441,15 @@ export async function handleRequest(
                 // threshold with the write side's own inline
                 // check (Commandment IX Generality) — kept
                 // duplicated rather than prematurely shared.
-                const readWiring = documentFamilyWiring(
-                    matched.segments[0] ?? '',
+                const readWiring = wiringForSegments(
+                    matched.segments,
                 );
                 if (
                     readWiring !== undefined
                     && routePattern
-                        === readWiring.family + '/:id'
+                        === documentEntityPattern(
+                            readWiring,
+                        )
                     && familyRegistration(readWiring.family)
                         ?.concurrency === 'locked'
                 ) {
@@ -1548,7 +1466,8 @@ export async function handleRequest(
                     // class address (tests/api-flow-document.test.ts
                     // pins the equality); one mechanism now.
                     const headPairId = await documentHeadPairId(
-                        effective, prefix, param(params, 0),
+                        effective, prefix,
+                        entityIdParam(readWiring, params),
                     );
                     if (headPairId !== undefined) {
                         const stored = await effective
@@ -1700,13 +1619,15 @@ export async function handleRequest(
                             refreshClearCookie(request),
                         );
                     }
-                    const putWiring = documentFamilyWiring(
-                        matched.segments[0] ?? '',
+                    const putWiring = wiringForSegments(
+                        matched.segments,
                     );
                     if (
                         putWiring !== undefined
                         && routePattern
-                            === putWiring.family + '/:id'
+                            === documentEntityPattern(
+                                putWiring,
+                            )
                     ) {
                         return attachEtag(
                             response, stored.version,
@@ -2258,7 +2179,24 @@ async function bodyWriteResponse(
     );
 }
 
-const ID_SUFFIX = '/:id';
+function wiringForSegments(
+    segments: readonly string[],
+): ReturnType<typeof documentFamilyWiring> {
+    const family = segments[0] === 'organizations'
+        ? (segments[2] ?? '')
+        : (segments[0] ?? '');
+    return documentFamilyWiring(family);
+}
+
+function documentEntityPattern(
+    wiring: NonNullable<
+        ReturnType<typeof documentFamilyWiring>
+    >,
+): string {
+    return wiring.httpNest === 'organization'
+        ? 'organizations/:id/' + wiring.family + '/:id'
+        : wiring.family + '/:id';
+}
 
 // Stream families (ideas, projects, …). Work-orders still
 // assemble (binding). Flows stay on derive: stored PUT has
@@ -2268,29 +2206,45 @@ const ID_SUFFIX = '/:id';
 function streamFamilyWiring(
     routePattern: string,
 ): ReturnType<typeof documentFamilyWiring> {
-    if (!routePattern.endsWith(ID_SUFFIX)) {
-        return undefined;
-    }
-    const family = routePattern.slice(0, -ID_SUFFIX.length);
+    const family = idFamilyOf(routePattern);
     if (
-        family === 'work-orders'
+        family === undefined
+        || family === 'work-orders'
         || family === 'flows'
-        || family.includes('/')
     ) {
         return undefined;
     }
     return documentFamilyWiring(family);
 }
 
+function collectionFamilyOf(
+    routePattern: string,
+): string | undefined {
+    if (!routePattern.endsWith('/')) return undefined;
+    const rest = routePattern.slice(0, -1);
+    if (rest.startsWith('organizations/:id/')) {
+        const family = rest.slice(
+            'organizations/:id/'.length,
+        );
+        if (family.includes('/')) return undefined;
+        return family;
+    }
+    if (rest.includes('/')) return undefined;
+    return rest;
+}
+
 function streamCollectionWiring(
     routePattern: string,
 ): ReturnType<typeof documentFamilyWiring> {
-    if (routePattern === 'work-orders/') return undefined;
-    if (routePattern === 'flows/') return undefined;
-    if (routePattern === 'members') return undefined;
-    if (!routePattern.endsWith('/')) return undefined;
-    const family = routePattern.slice(0, -1);
-    if (family.includes('/')) return undefined;
+    const family = collectionFamilyOf(routePattern);
+    if (
+        family === undefined
+        || family === 'work-orders'
+        || family === 'flows'
+        || family === 'members'
+    ) {
+        return undefined;
+    }
     return documentFamilyWiring(family);
 }
 
@@ -2303,7 +2257,7 @@ async function streamStoredDocumentGet(
     const wiring = streamFamilyWiring(routePattern);
     if (wiring === undefined) return undefined;
     const organizationId = requireOrganization(organization);
-    const id = param(params, 0);
+    const id = entityIdParam(wiring, params);
     const prefix = canonicalUriCollection(
         organizationId, '/' + wiring.family + '/',
     );
@@ -2339,14 +2293,13 @@ async function streamStoredCollectionGet(
 function isLiveHeadCollectionGet(
     routePattern: string,
 ): boolean {
-    if (routePattern === 'members') return false;
     if (routePattern === RECORD_TYPES_COLLECTION_PATTERN) {
         return true;
     }
-    const family = routePattern.endsWith('/')
-        ? routePattern.slice(0, -1)
-        : routePattern;
-    if (family.includes('/')) return false;
+    const family = collectionFamilyOf(routePattern);
+    if (family === undefined || family === 'members') {
+        return false;
+    }
     return documentFamilyWiring(family) !== undefined;
 }
 

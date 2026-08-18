@@ -12,6 +12,8 @@ import {
 } from '../../../api/types.ts';
 import {
     type RequestContext,
+    organizationCollection,
+    organizationItem,
     withLifecycleTrio,
     withLifecycleTrios,
 } from './shared.ts';
@@ -43,7 +45,9 @@ export async function getObjectives(
 ): Promise<ObjectiveEntity[]> {
     return withLifecycleTrios(
         ctx, 'objectives',
-        await ctx.GET<ObjectiveEntity[]>('objectives/'),
+        await ctx.GET<ObjectiveEntity[]>(
+            organizationCollection(ctx, 'objectives'),
+        ),
     );
 }
 
@@ -54,7 +58,7 @@ export async function getObjective(
     return withLifecycleTrio(
         ctx, 'objectives',
         await ctx.GET<ObjectiveEntity>(
-            `objectives/${id}`,
+            organizationItem(ctx, 'objectives', id),
         ),
     );
 }
@@ -109,7 +113,10 @@ export async function getArchivedObjectiveIds(
 export async function getObjectiveHistories(
     ctx: RequestContext,
 ): Promise<StateEntity[]> {
-    return ctx.GET<StateEntity[]>('objectives/versions');
+    return ctx.GET<StateEntity[]>(
+        organizationCollection(ctx, 'objectives')
+            + 'versions',
+    );
 }
 
 export interface ObjectiveArchivalEvent {
@@ -172,7 +179,8 @@ async function getRevisionsForObjective(
     objectiveId: ObjectiveId,
 ): Promise<ObjectiveRevisionEntity[]> {
     return ctx.GET<ObjectiveRevisionEntity[]>(
-        'objectives/' + objectiveId + '/revisions/',
+        organizationItem(ctx, 'objectives', objectiveId)
+            + '/revisions/',
     );
 }
 
@@ -272,7 +280,9 @@ export async function postObjectiveCreation(
     // definition), supplied here. Genesis trio mints with the
     // create body (states-address retirement) — no separate
     // states/:id event.
-    await ctx.POST('objectives/', {
+    await ctx.POST(
+        organizationCollection(ctx, 'objectives'),
+        {
         id,
         objective: {
             position,
@@ -302,7 +312,8 @@ export async function postObjectiveRevision(
     const member = await getCurrentHumanMember(ctx);
     const revisionId = generateCryptoSafeBase62();
     await ctx.PUT(
-        `objectives/${id}/revisions/${revisionId}`,
+        organizationItem(ctx, 'objectives', id)
+            + '/revisions/' + revisionId,
         {
             objective_id: id,
             name,
@@ -325,7 +336,9 @@ export async function postObjectiveArchival(
     id: ObjectiveId,
 ): Promise<void> {
     const current = await getObjective(ctx, id);
-    await ctx.PUT(`objectives/${id}`, {
+    await ctx.PUT(
+        organizationItem(ctx, 'objectives', id),
+        {
         position: current.position,
         state: 'archived',
         state_at: nowUtc(),
@@ -339,7 +352,9 @@ export async function postObjectiveReactivation(
     id: ObjectiveId,
 ): Promise<void> {
     const current = await getObjective(ctx, id);
-    await ctx.PUT(`objectives/${id}`, {
+    await ctx.PUT(
+        organizationItem(ctx, 'objectives', id),
+        {
         position: current.position,
         state: 'active',
         state_at: nowUtc(),
@@ -354,7 +369,9 @@ export async function putObjectivePosition(
     position: number,
     stateDetail: ObjectiveStateDetail,
 ): Promise<void> {
-    await ctx.PUT(`objectives/${id}`, {
+    await ctx.PUT(
+        organizationItem(ctx, 'objectives', id),
+        {
         position,
         state: stateDetail.state,
         state_at: stateDetail.stateAt,

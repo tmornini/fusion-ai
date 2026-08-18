@@ -107,6 +107,7 @@ const TABLES: ReadonlyArray<[
 
 const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
     family: 'work-orders',
+    httpNest: 'organization',
     lifecycle: 'stateless',
     notFoundTable: 'work_orders',
     validateDocument: validateWorkOrderDocumentBody,

@@ -59,7 +59,8 @@ import {
 // Objectives are the FIFTH lifecycle-trio family (states-
 // address retirement). Absence-as-active (R2) is RETIRED —
 // every objective carries an explicit genesis event; archive/
-// reactivate ride PUT /objectives/:id. OBJECTIVES_TEST_WIRING
+// reactivate ride PUT /organizations/:id/objectives/:id.
+// OBJECTIVES_TEST_WIRING
 // mirrors routes.ts's private OBJECTIVES_WIRING so derived
 // reads exercise the ACTUAL generic handlers. Nested
 // revisions/scores ride bespoke derives (no generic family
@@ -88,6 +89,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 
 const OBJECTIVES_TEST_WIRING: DocumentFamilyWiring = {
     family: 'objectives',
+    httpNest: 'organization',
     lifecycle: 'trio',
     notFoundTable: 'objectives',
     validateDocument: validateObjectiveDocumentBody,
@@ -118,7 +120,7 @@ async function derivedObjective(
     db: MemoryDbAdapter, organization: Id, id: Id,
 ): Promise<ObjectiveEntity> {
     return documentGetHandler(OBJECTIVES_TEST_WIRING)(
-        db, [id], READER_ACTOR, organization,
+        db, [organization, id], READER_ACTOR, organization,
     ) as Promise<ObjectiveEntity>;
 }
 
@@ -226,7 +228,7 @@ async () => {
         'current', STARK_ORGANIZATION,
     );
     const resStark = await handleRequest(
-        db, req('GET', '/objectives/', tokenStark),
+        db, req('GET', '/organizations/1/objectives/', tokenStark),
     );
     assert.equal(resStark.status, 200);
     const starkPrefix = '/organizations/'
@@ -248,7 +250,12 @@ async () => {
         'current', ORGANIZATION_TWO,
     );
     const resTwo = await handleRequest(
-        db, req('GET', '/objectives/', tokenTwo),
+        db, req(
+            'GET',
+            '/organizations/' + ORGANIZATION_TWO
+                + '/objectives/',
+            tokenTwo,
+        ),
     );
     assert.equal(resTwo.status, 200);
     const org2 = await derivedObjectives(db, ORGANIZATION_TWO);
@@ -296,7 +303,12 @@ async () => {
             'current', t.organization,
         );
         const res = await handleRequest(
-            db, req('GET', '/objectives/' + t.id, token),
+            db, req(
+                'GET',
+                '/organizations/' + t.organization
+                    + '/objectives/' + t.id,
+                token,
+            ),
         );
         assert.equal(res.status, 200);
         const derived = await derivedObjective(
@@ -323,7 +335,12 @@ async () => {
         'current', ORGANIZATION_TWO,
     );
     const foreignRes = await handleRequest(
-        db, req('GET', '/objectives/' + foreignId, tokenTwo),
+        db, req(
+            'GET',
+            '/organizations/' + ORGANIZATION_TWO
+                + '/objectives/' + foreignId,
+            tokenTwo,
+        ),
     );
     assert.equal(foreignRes.status, 404);
     const body = await foreignRes.json() as { error: string };
@@ -356,7 +373,8 @@ async () => {
         const token = await organizationToken(
             'current', organization,
         );
-        const path = '/objectives/' + id + '/revisions/';
+        const path = '/organizations/' + organization
+            + '/objectives/' + id + '/revisions/';
         const res = await handleRequest(
             db, req('GET', path, token),
         );
@@ -375,7 +393,8 @@ async () => {
     );
     const foreignRes = await handleRequest(db, req(
         'GET',
-        '/objectives/' + foreignId + '/revisions/',
+        '/organizations/' + ORGANIZATION_TWO
+            + '/objectives/' + foreignId + '/revisions/',
         tokenTwo,
     ));
     assert.equal(foreignRes.status, 200);
@@ -407,10 +426,10 @@ test('score collection wire equals derive per project: an'
 
     const fullCoverageProjectId = 'u6YkHhlGc91oDMkr3x0isa';
     const fullBasePath =
-        '/projects/' + fullCoverageProjectId
+        '/organizations/1/projects/' + fullCoverageProjectId
         + '/objective-baseline-scores/';
     const fullActPath =
-        '/projects/' + fullCoverageProjectId
+        '/organizations/1/projects/' + fullCoverageProjectId
         + '/objective-actual-scores/';
     const fullBaseRes = await handleRequest(
         db, req('GET', fullBasePath, tokenStark),
@@ -441,7 +460,7 @@ test('score collection wire equals derive per project: an'
     const partialProjectId = 'P04PredMa1ntzyXY010203';
     const partialBaseRes = await handleRequest(db, req(
         'GET',
-        '/projects/' + partialProjectId
+        '/organizations/1/projects/' + partialProjectId
         + '/objective-baseline-scores/',
         tokenStark,
     ));
@@ -509,7 +528,11 @@ test('score collection wire equals derive per project: an'
     assert.equal(derivedActualTotal.length, 92);
 
     const foreignRes = await handleRequest(db, req(
-        'GET', fullBasePath, tokenTwo,
+        'GET',
+        '/organizations/' + ORGANIZATION_TWO
+            + '/projects/' + fullCoverageProjectId
+            + '/objective-baseline-scores/',
+        tokenTwo,
     ));
     assert.equal(foreignRes.status, 200);
     assert.equal(await foreignRes.text(), '[]');
@@ -533,7 +556,7 @@ test('live-write chain: create, reposition, revision edit,'
 
     const beforeCreate = (await db.requests.getAll()).length;
     const created = await handleRequest(db, req(
-        'POST', '/objectives/', token,
+        'POST', '/organizations/1/objectives/', token,
         objectiveCreateBody(
             objectiveId, 50, objectiveId + '-rev-1',
             'Chain Objective', '2026-06-01T00:00:00.000000Z',
@@ -545,7 +568,8 @@ test('live-write chain: create, reposition, revision edit,'
     );
     {
         const getRes = await handleRequest(
-            db, req('GET', '/objectives/' + objectiveId, token),
+            db, req('GET', '/organizations/1/objectives/' +
+                objectiveId, token),
         );
         assert.equal(getRes.status, 200);
         const derived = await derivedObjective(
@@ -570,7 +594,7 @@ test('live-write chain: create, reposition, revision edit,'
         );
         const revRes = await handleRequest(db, req(
             'GET',
-            '/objectives/' + objectiveId + '/revisions/',
+            '/organizations/1/objectives/' + objectiveId + '/revisions/',
             token,
         ));
         const revs = await deriveObjectiveRevisions(
@@ -585,7 +609,7 @@ test('live-write chain: create, reposition, revision edit,'
     // Position PUT echoes the genesis trio (putObjectivePosition
     // shape) — same state_event_id so echo-dedup mints no event.
     const reposition = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token,
+        'PUT', '/organizations/1/objectives/' + objectiveId, token,
         {
             position: 77,
             state: 'active',
@@ -600,7 +624,8 @@ test('live-write chain: create, reposition, revision edit,'
     assert.equal(reposition.headers.get('Supersedes'), null);
     {
         const getRes = await handleRequest(
-            db, req('GET', '/objectives/' + objectiveId, token),
+            db, req('GET', '/organizations/1/objectives/' +
+                objectiveId, token),
         );
         const derived = await derivedObjective(
             db, STARK_ORGANIZATION, objectiveId,
@@ -632,7 +657,7 @@ test('live-write chain: create, reposition, revision edit,'
     const revisionId2 = objectiveId + '-rev-2';
     const revEdit = await handleRequest(db, req(
         'PUT',
-        '/objectives/' + objectiveId + '/revisions/'
+        '/organizations/1/objectives/' + objectiveId + '/revisions/'
             + revisionId2,
         token,
         {
@@ -653,12 +678,12 @@ test('live-write chain: create, reposition, revision edit,'
         assert.equal(latestByAt.id, revisionId2);
     }
 
-    // ARCHIVE via PUT /objectives/:id with the archived
+    // ARCHIVE via PUT /organizations/:id/objectives/:id with the archived
     // lifecycle trio — objective STAYS in the collection
     // (trio families exclude only 'deleted'; archived is a
     // live objective state).
     const archived = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token,
+        'PUT', '/organizations/1/objectives/' + objectiveId, token,
         {
             position: 50,
             state: 'archived',
@@ -669,7 +694,7 @@ test('live-write chain: create, reposition, revision edit,'
     assert.equal(archived.status, 201);
     {
         const listRes = await handleRequest(
-            db, req('GET', '/objectives/', token),
+            db, req('GET', '/organizations/1/objectives/', token),
         );
         const list = await listRes.json() as { id: string }[];
         assert.equal(
@@ -684,7 +709,7 @@ test('live-write chain: create, reposition, revision edit,'
     }
 
     const reactivated = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token,
+        'PUT', '/organizations/1/objectives/' + objectiveId, token,
         {
             position: 50,
             state: 'active',
@@ -698,7 +723,8 @@ test('live-write chain: create, reposition, revision edit,'
     assert.ok(reactivatedResponseId);
     {
         const getRes = await handleRequest(
-            db, req('GET', '/objectives/' + objectiveId, token),
+            db, req('GET', '/organizations/1/objectives/' +
+                objectiveId, token),
         );
         assert.equal(getRes.status, 200);
     }
@@ -707,7 +733,7 @@ test('live-write chain: create, reposition, revision edit,'
     // PUT (ideas row half already stripped).
     const ideaId = 'idea-drift-chain-1';
     await handleRequest(db, req(
-        'PUT', '/ideas/' + ideaId, token, {
+        'PUT', '/organizations/1/ideas/' + ideaId, token, {
             title: 'Chain Idea', position: 1,
             problem_statement: 'p', target_users: 't',
             proposed_solution: 's', expected_outcome: 'o',
@@ -723,7 +749,7 @@ test('live-write chain: create, reposition, revision edit,'
     const secondObjectiveId = OBJECTIVE_SEEDS[0]!.id;
     const beforeConversion = (await db.requests.getAll()).length;
     const conversion = await handleRequest(db, req(
-        'POST', '/ideas/' + ideaId + '/conversion', token, {
+        'POST', '/organizations/1/ideas/' + ideaId + '/conversion', token, {
             projectId,
             project: {
                 title: 'Chain Project', description: 'd',
@@ -771,7 +797,7 @@ test('live-write chain: create, reposition, revision edit,'
         beforeConversion + 5,
     );
     const basePath =
-        '/projects/' + projectId
+        '/organizations/1/projects/' + projectId
         + '/objective-baseline-scores/';
     const baseRes = await handleRequest(
         db, req('GET', basePath, token),
@@ -790,7 +816,7 @@ test('live-write chain: create, reposition, revision edit,'
     const baselineIdC = 'bl-drift-chain-1-c';
     const standaloneBaseline = await handleRequest(db, req(
         'PUT',
-        '/projects/' + projectId
+        '/organizations/1/projects/' + projectId
         + '/objective-baseline-scores/' + baselineIdC,
         token, {
             project_id: projectId, objective_id: objectiveId,
@@ -802,7 +828,7 @@ test('live-write chain: create, reposition, revision edit,'
     const actualIdA = 'as-drift-chain-1-a';
     const standaloneActual = await handleRequest(db, req(
         'PUT',
-        '/projects/' + projectId
+        '/organizations/1/projects/' + projectId
         + '/objective-actual-scores/' + actualIdA,
         token, {
             project_id: projectId, objective_id: objectiveId,
@@ -825,7 +851,7 @@ test('live-write chain: create, reposition, revision edit,'
     assert.equal(derivedBaselinesFinal.length, 3);
 
     const actPath =
-        '/projects/' + projectId
+        '/organizations/1/projects/' + projectId
         + '/objective-actual-scores/';
     const actFinalRes = await handleRequest(
         db, req('GET', actPath, token),
@@ -842,10 +868,11 @@ test('live-write chain: create, reposition, revision edit,'
     // Duplicate create — same id, fresh revisionId.
     // Entity-address pairs before: create op + create doc +
     // reposition + archive + reactivate = 5 (archive/reactivate
-    // ride PUT /objectives/:id after states-address retirement).
+    // ride PUT /organizations/:id/objectives/:id after states-address
+    // retirement).
     const revisionId3 = objectiveId + '-rev-3';
     const objectivesPrefix = canonicalUriCollection(
-        STARK_ORGANIZATION, '/objectives/',
+        STARK_ORGANIZATION, '/organizations/1/objectives/',
     );
     const beforeDuplicateIds = new Set(
         (
@@ -858,7 +885,7 @@ test('live-write chain: create, reposition, revision edit,'
     assert.equal(beforeDuplicateIds.size, 5);
 
     const duplicate = await handleRequest(db, req(
-        'POST', '/objectives/', token,
+        'POST', '/organizations/1/objectives/', token,
         objectiveCreateBody(
             objectiveId, 88, revisionId3,
             'Chain Objective v3', '2026-06-07T00:00:00.000000Z',
@@ -903,7 +930,7 @@ test('live-write chain: create, reposition, revision edit,'
     );
 
     const finalGet = await handleRequest(
-        db, req('GET', '/objectives/' + objectiveId, token),
+        db, req('GET', '/organizations/1/objectives/' + objectiveId, token),
     );
     const finalObjective = await derivedObjective(
         db, STARK_ORGANIZATION, objectiveId,
@@ -931,7 +958,7 @@ test('the create-op POST pair is not read as a document pair —'
     const objectiveId = 'obj-drift-method-filter-1';
 
     const created = await handleRequest(db, req(
-        'POST', '/objectives/', token,
+        'POST', '/organizations/1/objectives/', token,
         objectiveCreateBody(
             objectiveId, 1, objectiveId + '-rev-1', 'n',
             '2026-06-10T00:00:00.000000Z',
@@ -940,7 +967,7 @@ test('the create-op POST pair is not read as a document pair —'
     assert.equal(created.status, 201);
 
     const prefix = canonicalUriCollection(
-        STARK_ORGANIZATION, '/objectives/',
+        STARK_ORGANIZATION, '/organizations/1/objectives/',
     );
     const [requests, responses] = await Promise.all([
         db.requests.getAllWhere('uri_collection', prefix),
@@ -983,7 +1010,7 @@ async () => {
     const objectiveId = 'obj-drift-resend-1';
 
     await handleRequest(db, req(
-        'POST', '/objectives/', token,
+        'POST', '/organizations/1/objectives/', token,
         objectiveCreateBody(
             objectiveId, 5, objectiveId + '-rev-1', 'n',
             '2026-06-11T00:00:00.000000Z',
@@ -1000,7 +1027,7 @@ async () => {
     };
     const beforeReposition = (await db.requests.getAll()).length;
     const first = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token,
+        'PUT', '/organizations/1/objectives/' + objectiveId, token,
         positionBody,
     ));
     assert.equal(first.status, 201);
@@ -1008,7 +1035,7 @@ async () => {
     assert.equal(afterFirst, beforeReposition + 1);
 
     const second = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token,
+        'PUT', '/organizations/1/objectives/' + objectiveId, token,
         positionBody,
     ));
     assert.equal(second.status, 201);
@@ -1020,7 +1047,7 @@ async () => {
     );
 
     const getRes = await handleRequest(
-        db, req('GET', '/objectives/' + objectiveId, token),
+        db, req('GET', '/organizations/1/objectives/' + objectiveId, token),
     );
     const derived = await derivedObjective(
         db, STARK_ORGANIZATION, objectiveId,
@@ -1041,7 +1068,7 @@ async () => {
 
 test('THE ARCHIVED-INCLUSION PIN: an objective with a live'
 + " 'archived' document-plane event appears in GET /objectives"
-+ ' AND GET objectives/:id 200 — archived is NOT deleted;'
++ ' AND GET organizations/:id/objectives/:id 200 — archived is NOT deleted;'
 + " trio families exclude only state='deleted'",
 async () => {
     const db = await seededDb();
@@ -1049,14 +1076,14 @@ async () => {
     const objectiveId = 'obj-drift-archived-1';
 
     await handleRequest(db, req(
-        'POST', '/objectives/', token,
+        'POST', '/organizations/1/objectives/', token,
         objectiveCreateBody(
             objectiveId, 1, objectiveId + '-rev-1', 'n',
             '2026-06-12T00:00:00.000000Z',
         ),
     ));
     const archived = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token,
+        'PUT', '/organizations/1/objectives/' + objectiveId, token,
         {
             position: 1,
             state: 'archived',
@@ -1067,7 +1094,7 @@ async () => {
     assert.equal(archived.status, 201);
 
     const listRes = await handleRequest(
-        db, req('GET', '/objectives/', token),
+        db, req('GET', '/organizations/1/objectives/', token),
     );
     assert.equal(listRes.status, 200);
     const listText = await listRes.text();
@@ -1088,7 +1115,7 @@ async () => {
     );
 
     const getRes = await handleRequest(
-        db, req('GET', '/objectives/' + objectiveId, token),
+        db, req('GET', '/organizations/1/objectives/' + objectiveId, token),
     );
     assert.equal(getRes.status, 200);
     const derivedById = await derivedObjective(
@@ -1120,7 +1147,7 @@ async () => {
     ];
     for (const f of fixtures) {
         const put = await handleRequest(db, req(
-            'PUT', '/objectives/' + f.id, token,
+            'PUT', '/organizations/1/objectives/' + f.id, token,
             {
                 position: f.position,
                 state: 'active',
@@ -1139,7 +1166,7 @@ async () => {
         );
     }
     const res = await handleRequest(
-        db, req('GET', '/objectives/', token),
+        db, req('GET', '/organizations/1/objectives/', token),
     );
     assert.equal(res.status, 200);
     const list = await res.json() as { id: string }[];
@@ -1153,7 +1180,7 @@ async () => {
         + STARK_ORGANIZATION + '/objectives/';
     for (const row of added) {
         const single = await handleRequest(
-            db, req('GET', '/objectives/' + row.id, token),
+            db, req('GET', '/organizations/1/objectives/' + row.id, token),
         );
         assert.equal(single.status, 200);
         assert.equal(
@@ -1181,7 +1208,7 @@ test('GET objective trio is lifecycle-current under clock skew'
     const skewedEv = 'obj-drift-skew-1-skewed';
 
     const genesis = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token, {
+        'PUT', '/organizations/1/objectives/' + objectiveId, token, {
             position: 1,
             state: 'active',
             state_at: genesisAt,
@@ -1195,7 +1222,7 @@ test('GET objective trio is lifecycle-current under clock skew'
     // it won as current the GET trio would flip; genesis-
     // wins keeps the objective active.
     const skewed = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token, {
+        'PUT', '/organizations/1/objectives/' + objectiveId, token, {
             position: 99,
             state: 'archived',
             state_at: skewedAt,
@@ -1210,7 +1237,7 @@ test('GET objective trio is lifecycle-current under clock skew'
     );
 
     const res = await handleRequest(
-        db, req('GET', '/objectives/' + objectiveId, token),
+        db, req('GET', '/organizations/1/objectives/' + objectiveId, token),
     );
     assert.equal(res.status, 200);
     assert.deepEqual(await res.json(), expected);
@@ -1250,7 +1277,7 @@ async () => {
     const token = await organizationToken();
     const objectiveId = 'obj-drift-rev-wire-1';
     await handleRequest(db, req(
-        'POST', '/objectives/', token,
+        'POST', '/organizations/1/objectives/', token,
         objectiveCreateBody(
             objectiveId, 1, objectiveId + '-rev-1', 'n',
             '2026-06-13T00:00:00.000000Z',
@@ -1266,7 +1293,7 @@ async () => {
     };
     const putRes = await handleRequest(db, req(
         'PUT',
-        '/objectives/' + objectiveId + '/revisions/'
+        '/organizations/1/objectives/' + objectiveId + '/revisions/'
             + revisionId,
         token, body,
     ));

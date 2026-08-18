@@ -18,11 +18,11 @@ import {
     storedPutBodyText, storedCollectionText,
 } from './http-fixtures.ts';
 
-// GET work-orders (inbox), GET work-orders/:id, and
+// GET work-orders (inbox), GET organizations/:id/work-orders/:id, and
 // work-order history are Assemble / derive: JavaScript
 // over pair reads. They are not Stream. A bound GET
 // cannot equal the stored document PUT — bind facts
-// live on work-orders/:id/binding/ and join at read.
+// live on organizations/:id/work-orders/:id/binding/ and join at read.
 // History stays /history, not /versions.
 
 const ORGANIZATION = '1';
@@ -41,7 +41,7 @@ const TYPE_DETAIL =
     + '/record-types/' + TYPE_ID;
 const ATTRS = TYPE_DETAIL + '/attributes/';
 const INSTANCES = TYPE_DETAIL + '/instances/';
-const BINDING = '/work-orders/' + WO_ID + '/binding';
+const BINDING = '/organizations/1/work-orders/' + WO_ID + '/binding';
 const DOCUMENT_PREFIX =
     '/organizations/' + ORGANIZATION + '/work-orders/';
 
@@ -81,7 +81,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/flows/', token, {
+        'POST', '/organizations/1/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Class Flow',
@@ -118,7 +118,7 @@ async function seedWorkOrder(
     fwoId: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', '/work-orders/' + woId, token, {
+        'PUT', '/organizations/1/work-orders/' + woId, token, {
             display_id: 'abcd',
             flow_graph: graphJson(),
             position: 1,
@@ -127,7 +127,7 @@ async function seedWorkOrder(
     assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
-        '/flows/' + FLOW_ID + '/work-orders/' + fwoId,
+        '/organizations/1/flows/' + FLOW_ID + '/work-orders/' + fwoId,
         token,
         {
             flow_id: FLOW_ID,
@@ -196,7 +196,7 @@ async function seedFlowTypeJoin(
 ): Promise<void> {
     const put = await handleRequest(db, req(
         'PUT',
-        '/flows/' + FLOW_ID + '/records/' + FR_ID,
+        '/organizations/1/flows/' + FLOW_ID + '/records/' + FR_ID,
         token,
         {
             id: FR_ID,
@@ -240,7 +240,7 @@ async function bindWorkOrder(
     assert.equal(res.status, 201);
 }
 
-test('GET work-orders/:id is Assemble, not Stream',
+test('GET organizations/:id/work-orders/:id is Assemble, not Stream',
 async () => {
     const { db, token } = await seededDb();
     await bindWorkOrder(db, token);
@@ -254,7 +254,7 @@ async () => {
     );
 
     const detail = await handleRequest(db, req(
-        'GET', '/work-orders/' + WO_ID, token,
+        'GET', '/organizations/1/work-orders/' + WO_ID, token,
     ));
     assert.equal(detail.status, 200);
     const got = await detail.json() as Record<
@@ -284,7 +284,7 @@ async () => {
     }
 
     const list = await handleRequest(db, req(
-        'GET', '/work-orders/', token,
+        'GET', '/organizations/1/work-orders/', token,
     ));
     assert.equal(list.status, 200);
     const rows = await list.json() as Record<
@@ -302,7 +302,7 @@ async () => {
     const { db, token } = await seededDb();
 
     const detail = await handleRequest(db, req(
-        'GET', '/work-orders/' + WO_UNBOUND, token,
+        'GET', '/organizations/1/work-orders/' + WO_UNBOUND, token,
     ));
     assert.equal(detail.status, 200);
     const got = await detail.json() as Record<
@@ -315,7 +315,7 @@ async () => {
     );
 
     const list = await handleRequest(db, req(
-        'GET', '/work-orders/', token,
+        'GET', '/organizations/1/work-orders/', token,
     ));
     assert.equal(list.status, 200);
     const rows = await list.json() as Record<
@@ -366,23 +366,23 @@ async () => {
         'current', ORGANIZATION,
     );
     const created = await handleRequest(db, req(
-        'POST', '/work-orders/', token, createBody(WO_ID),
+        'POST', '/organizations/1/work-orders/', token, createBody(WO_ID),
     ));
     assert.equal(created.status, 201);
 
     const history = await handleRequest(db, req(
-        'GET', '/work-orders/' + WO_ID + '/history', token,
+        'GET', '/organizations/1/work-orders/' + WO_ID + '/history', token,
     ));
     assert.equal(history.status, 200);
     assert.ok(Array.isArray(await history.json()));
 
     const versions = await handleRequest(db, req(
-        'GET', '/work-orders/' + WO_ID + '/versions', token,
+        'GET', '/organizations/1/work-orders/' + WO_ID + '/versions', token,
     ));
     assert.equal(versions.status, 404);
 
     const bulk = await handleRequest(db, req(
-        'GET', '/work-orders/history', token,
+        'GET', '/organizations/1/work-orders/history', token,
     ));
     assert.equal(bulk.status, 200);
     assert.ok(Array.isArray(await bulk.json()));

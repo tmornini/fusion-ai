@@ -115,7 +115,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/ideas/ws-1', token,
+        'PUT', '/organizations/1/ideas/ws-1', token,
         ideaDocument('First', 'ev-ws-1'),
     ));
     assert.equal(res.status, 201);
@@ -137,7 +137,7 @@ async () => {
     const token = await organizationToken();
     const body = ideaDocument('Same', 'ev-ws-same');
     const first = await handleRequest(
-        db, req('PUT', '/ideas/ws-same', token, body),
+        db, req('PUT', '/organizations/1/ideas/ws-same', token, body),
     );
     assert.equal(first.status, 201);
     const firstEtag = first.headers.get('ETag');
@@ -148,7 +148,7 @@ async () => {
     assert.equal(before, 1);
     const second = await handleRequest(
         db,
-        new Request('http://localhost/ideas/ws-same', {
+        new Request('http://localhost/organizations/1/ideas/ws-same', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -173,14 +173,14 @@ async () => {
     const token = await organizationToken();
     const body = ideaDocument('Retry', 'ev-ws-retry');
     const first = await handleRequest(
-        db, req('PUT', '/ideas/ws-retry', token, body),
+        db, req('PUT', '/organizations/1/ideas/ws-retry', token, body),
     );
     assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
     const firstOp = first.headers.get('Operation-ID');
     const firstBytes = await first.text();
     const second = await handleRequest(
-        db, req('PUT', '/ideas/ws-retry', token, body),
+        db, req('PUT', '/organizations/1/ideas/ws-retry', token, body),
     );
     assert.equal(second.status, 201);
     assert.equal(
@@ -296,7 +296,7 @@ async () => {
     const token = await organizationToken();
     const res = await handleRequest(
         db,
-        new Request('http://localhost/ideas/ws-empty', {
+        new Request('http://localhost/organizations/1/ideas/ws-empty', {
             method: 'PUT',
             headers: {
                 Authorization: 'Bearer ' + token,

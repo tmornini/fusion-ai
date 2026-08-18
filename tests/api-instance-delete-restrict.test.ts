@@ -112,7 +112,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/flows/', token, {
+        'POST', '/organizations/1/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Delete Restrict Flow',
@@ -149,7 +149,7 @@ async function seedWorkOrder(
     fwoId: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', '/work-orders/' + woId, token, {
+        'PUT', '/organizations/1/work-orders/' + woId, token, {
             display_id: 'abcd',
             flow_graph: flowGraph(),
             position: 1,
@@ -158,7 +158,7 @@ async function seedWorkOrder(
     assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
-        '/flows/' + FLOW_ID + '/work-orders/' + fwoId,
+        '/organizations/1/flows/' + FLOW_ID + '/work-orders/' + fwoId,
         token,
         {
             flow_id: FLOW_ID,
@@ -229,7 +229,7 @@ async function seedFlowTypeJoin(
 ): Promise<void> {
     const put = await handleRequest(db, req(
         'PUT',
-        '/flows/' + FLOW_ID + '/records/' + FR_ID,
+        '/organizations/1/flows/' + FLOW_ID + '/records/' + FR_ID,
         token,
         {
             id: FR_ID,
@@ -249,7 +249,7 @@ async function bindInstance(
 ): Promise<void> {
     const res = await handleRequest(db, req(
         'PUT',
-        '/work-orders/' + woId + '/binding',
+        '/organizations/1/work-orders/' + woId + '/binding',
         token,
         {
             instance_id: instanceId,
@@ -268,7 +268,7 @@ async function transitionTo(
 ): Promise<void> {
     const res = await handleRequest(db, req(
         'POST',
-        '/work-orders/' + woId + '/transition',
+        '/organizations/1/work-orders/' + woId + '/transition',
         token,
         {
             transitionEventId: eventId,
@@ -388,7 +388,7 @@ async () => {
     assert.equal(del.status, 204);
     const bind = await handleRequest(db, req(
         'PUT',
-        '/work-orders/' + WO_UNBOUND + '/binding',
+        '/organizations/1/work-orders/' + WO_UNBOUND + '/binding',
         token,
         {
             instance_id: INSTANCE_ID,

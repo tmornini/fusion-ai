@@ -83,6 +83,25 @@ interface VersionRow {
     readonly version?: string;
 }
 
+export function organizationCollection(
+    ctx: RequestContext,
+    family: string,
+): string {
+    return 'organizations/'
+        + activeOrganization(ctx)
+        + '/' + family + '/';
+}
+
+export function organizationItem(
+    ctx: RequestContext,
+    family: string,
+    id: string,
+): string {
+    return 'organizations/'
+        + activeOrganization(ctx)
+        + '/' + family + '/' + id;
+}
+
 export async function withLifecycleTrio<T extends TrioRow>(
     ctx: RequestContext,
     family: string,
@@ -90,7 +109,8 @@ export async function withLifecycleTrio<T extends TrioRow>(
 ): Promise<T> {
     if (row.state !== undefined) return row;
     const history = await ctx.GET<readonly VersionRow[]>(
-        family + '/' + row.id + '/versions',
+        organizationItem(ctx, family, row.id)
+            + '/versions',
     );
     const current = history[0];
     if (current === undefined) return row;

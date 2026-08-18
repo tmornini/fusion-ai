@@ -330,7 +330,7 @@ async () => {
         'PUT', ATTR_DETAIL, adminToken, attrCore(),
     ));
     const flowCreate = await handleRequest(db, req(
-        'POST', '/flows/', adminToken, {
+        'POST', '/organizations/1/flows/', adminToken, {
             id: 'flow-attr-restrict-1',
             flow: {
                 name: 'Intake',

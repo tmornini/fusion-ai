@@ -375,6 +375,7 @@ export { param, requireOrganization, withoutId };
 // bare states/:id resend would.
 const IDEAS_WIRING: DocumentFamilyWiring = {
     family: 'ideas',
+    httpNest: 'organization',
     lifecycle: 'trio',
     notFoundTable: 'ideas',
     validateDocument: validateIdeaDocumentBody,
@@ -386,6 +387,7 @@ const IDEAS_WIRING: DocumentFamilyWiring = {
 };
 const PROJECTS_WIRING: DocumentFamilyWiring = {
     family: 'projects',
+    httpNest: 'organization',
     lifecycle: 'trio',
     notFoundTable: 'projects',
     validateDocument: validateProjectDocumentBody,
@@ -406,6 +408,7 @@ const PROJECTS_WIRING: DocumentFamilyWiring = {
 // pairCount (number), not StateEntity.
 const FLOWS_WIRING: DocumentFamilyWiring = {
     family: 'flows',
+    httpNest: 'organization',
     lifecycle: 'trio',
     notFoundTable: 'flows',
     validateDocument: validateFlowDocumentBody,
@@ -440,6 +443,7 @@ function workOrderDocumentEntityOf(
 }
 const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
     family: 'work-orders',
+    httpNest: 'organization',
     lifecycle: 'stateless',
     notFoundTable: 'work_orders',
     validateDocument: validateWorkOrderDocumentBody,
@@ -499,6 +503,7 @@ function objectiveDocumentEntityOf(
 // after DELETED filter.
 const OBJECTIVES_WIRING: DocumentFamilyWiring = {
     family: 'objectives',
+    httpNest: 'organization',
     lifecycle: 'trio',
     notFoundTable: 'objectives',
     validateDocument: validateObjectiveDocumentBody,
@@ -540,6 +545,7 @@ export function identityDocumentEntityOf(
 // families whose names diverge).
 const IDENTITIES_WIRING: DocumentFamilyWiring = {
     family: 'identities',
+    httpNest: 'global',
     lifecycle: 'stateless',
     notFoundTable: 'identities',
     validateDocument: validateIdentityDocumentBody,
@@ -562,6 +568,7 @@ export function aiAgentDocumentEntityOf(
 // lifecycle trio. notFoundTable matches the family name.
 const AI_AGENTS_WIRING: DocumentFamilyWiring = {
     family: 'ai-agents',
+    httpNest: 'global',
     lifecycle: 'stateless',
     notFoundTable: 'ai-agents',
     validateDocument: validateAiAgentDocumentBody,
@@ -1568,8 +1575,8 @@ export async function postFlowUndoOp(
     };
     validateFlowDocumentBody(documentBody);
     const documentPair = await formDocumentPairFor(db, {
-        routePattern: 'flows/:id',
-        params: [id],
+        routePattern: 'organizations/:id/flows/:id',
+        params: [organization, id],
         body: documentBody,
         requesterIdentityId: actor,
         requestAt: pair.requestAt,
@@ -2489,7 +2496,9 @@ export async function postWorkOrderTransitionOp(
         );
     }
     const transitionPath =
-        '/work-orders/' + workOrderId + '/transition';
+        '/organizations/' + organization
+        + '/work-orders/' + workOrderId
+        + '/transition';
     const rawIfMatch = rawIfMatchFromPair(pair);
     if (rawIfMatch === undefined) {
         throw new ApiError(
@@ -3265,14 +3274,17 @@ export const WRITE_RESPONSE_SPECS:
     // OWN validator. G1 trio families emit wiring.entityOf
     // (id first, trio last — the GET derive). Live writes
     // chain-walk current via resolveStreamedTrioWriteBody.
-    'ideas/:id': documentWriteResponseSpec(IDEAS_WIRING),
-    'ideas/:id/conversion': { status: HTTP_NO_CONTENT },
-    'ideas/:id/submissions/:sid': {
+    'organizations/:id/ideas/:id':
+        documentWriteResponseSpec(IDEAS_WIRING),
+    'organizations/:id/ideas/:id/conversion': {
+        status: HTTP_NO_CONTENT,
+    },
+    'organizations/:id/ideas/:id/submissions/:sid': {
         status: HTTP_OK,
         successBody: (params, body) =>
             ideaSubmissionEntityOf({
-                uriId: param(params, 1),
-                pairId: param(params, 1),
+                uriId: param(params, 2),
+                pairId: param(params, 2),
                 method: 'PUT',
                 body: withoutId(body ?? {}),
             }),
@@ -3280,18 +3292,19 @@ export const WRITE_RESPONSE_SPECS:
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
     // entry above for the shared rationale.
-    'projects/:id': documentWriteResponseSpec(PROJECTS_WIRING),
-    'projects/:id/flows/:pfid': {
+    'organizations/:id/projects/:id':
+        documentWriteResponseSpec(PROJECTS_WIRING),
+    'organizations/:id/projects/:id/flows/:pfid': {
         status: HTTP_OK,
         successBody: (params, body) =>
             projectFlowEntityOf({
-                uriId: param(params, 1),
-                pairId: param(params, 1),
+                uriId: param(params, 2),
+                pairId: param(params, 2),
                 method: 'PUT',
                 body: withoutId(body ?? {}),
             }),
     },
-    'flows/': { status: HTTP_NO_CONTENT },
+    'organizations/:id/flows/': { status: HTTP_NO_CONTENT },
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
     // entry above for the shared rationale. flows/:id is the
@@ -3300,22 +3313,33 @@ export const WRITE_RESPONSE_SPECS:
     // plan time) — only the gate's pre-dispatch four-outcome
     // table (api.ts) differs for a locked family, never this
     // successBody.
-    'flows/:id': documentWriteResponseSpec(FLOWS_WIRING),
-    'flows/:id/undo': { status: HTTP_NO_CONTENT },
+    'organizations/:id/flows/:id':
+        documentWriteResponseSpec(FLOWS_WIRING),
+    'organizations/:id/flows/:id/undo': {
+        status: HTTP_NO_CONTENT,
+    },
     // flows/:id/versions[+/:vid] WRITE_RESPONSE_SPECS RETIRED
     // (Phase 15 Task 7): ZERO seed pairs at those addresses.
-    'work-orders/': { status: HTTP_NO_CONTENT },
-    'work-orders/:id':
+    'organizations/:id/work-orders/': {
+        status: HTTP_NO_CONTENT,
+    },
+    'organizations/:id/work-orders/:id':
         documentWriteResponseSpec(WORK_ORDERS_WIRING),
-    'work-orders/:id/claim': { status: HTTP_NO_CONTENT },
-    'work-orders/:id/transition': { status: HTTP_NO_CONTENT },
-    'work-orders/:id/binding': { status: HTTP_NO_CONTENT },
-    'flows/:id/work-orders/:woid': {
+    'organizations/:id/work-orders/:id/claim': {
+        status: HTTP_NO_CONTENT,
+    },
+    'organizations/:id/work-orders/:id/transition': {
+        status: HTTP_NO_CONTENT,
+    },
+    'organizations/:id/work-orders/:id/binding': {
+        status: HTTP_NO_CONTENT,
+    },
+    'organizations/:id/flows/:id/work-orders/:woid': {
         status: HTTP_OK,
         successBody: (params, body) =>
             flowWorkOrderEntityOf({
-                uriId: param(params, 1),
-                pairId: param(params, 1),
+                uriId: param(params, 2),
+                pairId: param(params, 2),
                 method: 'PUT',
                 body: withoutId(body ?? {}),
             }),
@@ -3402,71 +3426,76 @@ export const WRITE_RESPONSE_SPECS:
             },
         },
     },
-    'flows/:id/records/:frid': {
+    'organizations/:id/flows/:id/records/:frid': {
         status: HTTP_OK,
         successBody: (params, body) =>
             flowRecordEntityOf({
-                uriId: param(params, 1),
-                pairId: param(params, 1),
+                uriId: param(params, 2),
+                pairId: param(params, 2),
                 method: 'PUT',
                 body: withoutId(body ?? {}),
             }),
     },
     // The ONE validation site for a tag PUT (Phase 14 Task 9):
-    // the tag NAME (param 1, the address's own uriId) through
+    // the tag NAME (param 2, the address's own uriId) through
     // validateFlowTagName; the body through flowTagEntityOf.
     // Both run pre-tx while the pair is formed, so a
     // malformed name or body throws BEFORE anything is stored
     // (the ideas/:id/submissions/:sid precedent above). GET/DELETE
     // never re-validate the name (route comment); `flow_id` is
     // stamped from the address here, never a client body key.
-    'flows/:id/tags/:name': {
+    'organizations/:id/flows/:id/tags/:name': {
         status: HTTP_OK,
         successBody: (params, body) =>
-            flowTagEntityOf(param(params, 0), {
-                uriId: validateFlowTagName(param(params, 1)),
-                pairId: param(params, 1),
+            flowTagEntityOf(param(params, 1), {
+                uriId: validateFlowTagName(param(params, 2)),
+                pairId: param(params, 2),
                 method: 'PUT',
                 body: withoutId(body ?? {}),
             }),
     },
-    'objectives/': { status: HTTP_NO_CONTENT },
+    'organizations/:id/objectives/': {
+        status: HTTP_NO_CONTENT,
+    },
     // The generic document-form builder (api/document-family.ts)
     // absorbs the hand-written successBody — see the ideas/:id
     // entry above for the shared rationale. G1: objectives/:id
     // emits objectiveDocumentEntityOf (id first, trio last).
-    'objectives/:id': documentWriteResponseSpec(OBJECTIVES_WIRING),
-    'objectives/:id/revisions/:rid': {
+    'organizations/:id/objectives/:id':
+        documentWriteResponseSpec(OBJECTIVES_WIRING),
+    'organizations/:id/objectives/:id/revisions/:rid': {
         status: HTTP_OK,
         successBody: (params, body) =>
             objectiveRevisionEntityOf({
-                uriId: param(params, 1),
-                pairId: param(params, 1),
+                uriId: param(params, 2),
+                pairId: param(params, 2),
                 method: 'PUT',
                 body: withoutId(body ?? {}),
             }),
     },
-    'projects/:id/objective-baseline-scores/:sid': {
+    ['organizations/:id/projects/:id'
+        + '/objective-baseline-scores/:sid']: {
         status: HTTP_OK,
         successBody: (params, body) => {
             const raw = withoutId(body ?? {});
             validateBaselineScoreEntity(raw);
             return scoreEntityOf({
-                uriId: param(params, 1),
-                pairId: param(params, 1),
+                uriId: param(params, 2),
+                pairId: param(params, 2),
                 method: 'PUT',
                 body: raw,
             });
         },
     },
-    'projects/:id/objective-actual-scores/:sid': {
+    ['organizations/:id/projects/:id'
+        + '/objective-actual-scores/:sid']: {
         status: HTTP_OK,
         successBody: (params, body) => {
             const raw = withoutId(body ?? {});
             validateActualScoreEntity(raw);
             return scoreEntityOf({
-                uriId: param(params, 1),
-                pairId: param(params, 1),
+                uriId: param(params, 2),
+                pairId: param(params, 2),
                 method: 'PUT',
                 body: raw,
             });
@@ -4715,11 +4744,11 @@ export const routes: Route[] = [
     // a fence organization; a below-facade caller with neither
     // (none exists for conversion today) skips all 3+N
     // appends, preserving dual-write discipline.
-    route('ideas/:id/conversion', {
+    route('organizations/:id/ideas/:id/conversion', {
         post: async (
             db, p, body, actor, pair, organization,
         ) => {
-            const ideaId = param(p, 0);
+            const ideaId = param(p, 1);
             const b = validateIdeaConversionBody(body);
             // The document a live PUT /projects/:id would
             // carry: the entity's own fields plus the lifecycle
@@ -4754,8 +4783,9 @@ export const routes: Route[] = [
                 && organization !== undefined
             ) {
                 projectPair = await formDocumentPairFor(db, {
-                    routePattern: 'projects/:id',
-                    params: [b.projectId],
+                    routePattern:
+                        'organizations/:id/projects/:id',
+                    params: [organization, b.projectId],
                     body: projectDocument,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
@@ -4769,8 +4799,9 @@ export const routes: Route[] = [
                 // unlike the project pair above (a fresh address,
                 // genesis).
                 ideaPair = await formDocumentPairFor(db, {
-                    routePattern: 'ideas/:id',
-                    params: [ideaId],
+                    routePattern:
+                        'organizations/:id/ideas/:id',
+                    params: [organization, ideaId],
                     body: ideaDocument,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
@@ -4793,9 +4824,13 @@ export const routes: Route[] = [
                     baselinePairs.push(await formDocumentPairFor(
                         db, {
                             routePattern:
-                                'projects/:id/objective-baseline'
-                                + '-scores/:sid',
-                            params: [b.projectId, baseline.id],
+                                'organizations/:id/projects/:id'
+                                + '/objective-baseline-scores'
+                                + '/:sid',
+                            params: [
+                                organization, b.projectId,
+                                baseline.id,
+                            ],
                             body: baseline.fields,
                             requesterIdentityId: actor,
                             requestAt: pair.requestAt,
@@ -4840,26 +4875,27 @@ export const routes: Route[] = [
     // documentCollectionRoute — wire-identical to the
     // hand-written deriveProjects dispatch it replaces.
     documentCollectionRoute(PROJECTS_WIRING),
-    // Idea submissions nest under their parent idea: the idea id
-    // is param 0, so the SERVER filters the collection to that
-    // idea (the org fence still rides the facade re-entry). GET
-    // is FLIPPED (Phase 2 Task 5): the collection derives from
-    // the message ledger at this idea's submissions address
-    // rather than the old idea_submissions table. The leaf id is
-    // param 1; only PUT is exposed on ideas/:id/submissions/:sid,
-    // exactly as the flat makeIdRoute carried it.
-    route('ideas/:id/submissions/', {
+    // Idea submissions nest under their parent idea: param 0 is
+    // the path org, param 1 is the idea, so the SERVER filters
+    // the collection to that idea (the org fence still rides
+    // the facade re-entry). GET is FLIPPED (Phase 2 Task 5):
+    // the collection derives from the message ledger at this
+    // idea's submissions address rather than the old
+    // idea_submissions table. The leaf id is param 2; only PUT
+    // is exposed on ideas/:id/submissions/:sid, exactly as the
+    // flat makeIdRoute carried it.
+    route('organizations/:id/ideas/:id/submissions/', {
         get: (db, p, _actor, organization) =>
             deriveIdeaSubmissions(
                 db, requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
     }),
-    route('ideas/:id/submissions/:sid', {
+    route('organizations/:id/ideas/:id/submissions/:sid', {
         put: (db, p, body, _actor, pair) =>
-            postIdeaSubmissionOp(db, param(p, 1), body, pair),
+            postIdeaSubmissionOp(db, param(p, 2), body, pair),
     }),
-    route('flows/', {
+    route('organizations/:id/flows/', {
         // GET stays deriveFlows: stamps hasUndoHistory from
         // pair count and omits a state-'deleted' head.
         // POST stays this hand-written create — unlike
@@ -4890,8 +4926,9 @@ export const routes: Route[] = [
                         Record<string, unknown>,
                 );
                 const document = await formDocumentPairFor(db, {
-                    routePattern: 'flows/:id',
-                    params: [b.id],
+                    routePattern:
+                        'organizations/:id/flows/:id',
+                    params: [organization, b.id],
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
@@ -4914,8 +4951,13 @@ export const routes: Route[] = [
                 // address through this task; pinned by the same-
                 // join-id retry test in tests/drift-flows.test.ts).
                 const join = await formDocumentPairFor(db, {
-                    routePattern: 'projects/:id/flows/:pfid',
-                    params: [projectId, b.projectFlowId],
+                    routePattern:
+                        'organizations/:id/projects/:id'
+                        + '/flows/:pfid',
+                    params: [
+                        organization, projectId,
+                        b.projectFlowId,
+                    ],
                     body: b.projectFlow,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
@@ -4935,11 +4977,13 @@ export const routes: Route[] = [
     // graphDelta/revivals ride the pair body (SIDECAR-KEEP).
     // Member-tier PUT.
     {
-        segments: ['flows', ':id'],
+        segments: [
+            'organizations', ':id', 'flows', ':id',
+        ],
         get: (db, p, _actor, organization) =>
             deriveFlow(
                 db, requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
         put: documentPutHandler(FLOWS_WIRING),
     },
@@ -4948,8 +4992,9 @@ export const routes: Route[] = [
     // deriveFlowStateHistory ASC → DESC; empty →
     // missedReadError('flows'). Member-tier GET via
     // matchesOnSegmentBoundary on '/flows'.
-    route('flows/:id/versions', {
+    route('organizations/:id/flows/:id/versions', {
         get: documentStateHistoryHandler(
+            FLOWS_WIRING,
             deriveFlowStateHistory, 'flows',
         ),
     }),
@@ -4963,11 +5008,11 @@ export const routes: Route[] = [
     // row is read or written. Exhaustion appends only the
     // operation pair. A moved lock head → 412 via the
     // in-tx head re-read.
-    route('flows/:id/undo', {
+    route('organizations/:id/flows/:id/undo', {
         post: async (
             db, p, body, actor, pair, organization,
         ) => {
-            const id = param(p, 0);
+            const id = param(p, 1);
             const b = validateFlowUndoBody(body);
             if (pair === undefined || organization === undefined) {
                 // Never live for flows (member-tier POST, always
@@ -4992,30 +5037,31 @@ export const routes: Route[] = [
     }),
     // Pair-chain GET flows/:id/versions[+/:version] is
     // registered above. Old table-backed :vid is a miss.
-    // Project↔flow joins nest under their parent project: the
-    // project id is param 0, so the SERVER filters the collection
-    // to that project (the org fence still rides the facade
-    // re-entry). The leaf id is param 1; PUT and DELETE are
-    // exposed exactly as the flat makeIdRoute carried them. GET is
-    // FLIPPED (Phase 4 Task 8): the join list derives from the
+    // Project↔flow joins nest under their parent project:
+    // param 0 is the path org, param 1 is the project, so the
+    // SERVER filters the collection to that project (the org
+    // fence still rides the facade re-entry). The leaf id is
+    // param 2; PUT and DELETE are exposed exactly as the
+    // flat makeIdRoute carried them. GET is FLIPPED (Phase 4
+    // Task 8): the join list derives from the
     // message ledger at this project's flows address rather than
     // the old project_flows table — deriveProjectFlows is a
     // bespoke derivation (not a DocumentFamilyWiring family; a
     // join row carries no lifecycle trio of its own), so this
     // calls it directly rather than through a generic constructor.
-    route('projects/:id/flows/', {
+    route('organizations/:id/projects/:id/flows/', {
         get: (db, p, _actor, organization) =>
             deriveProjectFlows(
                 db, requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
     }),
-    route('projects/:id/flows/:pfid', {
+    route('organizations/:id/projects/:id/flows/:pfid', {
         // Phase Final Task 2: project_flows ROW half stripped —
         // pure pair-plane write (join derives from the ledger).
         // G6: reconstructed return is projectFlowEntityOf.
         put: (db, p, body, _actor, pair) => {
-            const pfid = param(p, 1);
+            const pfid = param(p, 2);
             const entity = projectFlowEntityOf({
                 uriId: pfid,
                 pairId: pfid,
@@ -5052,7 +5098,7 @@ export const routes: Route[] = [
     // ideas/projects, work-orders never folded genesis into
     // the document PUT (Decision 6), mirroring flows' own
     // precedent, so a separate create verb remains here.
-    route('work-orders/', {
+    route('organizations/:id/work-orders/', {
         get: async (db, p, actor, organization, roles) => {
             const org = requireOrganization(organization);
             const rows = await documentCollectionGetHandler(
@@ -5100,8 +5146,9 @@ export const routes: Route[] = [
                     workOrderCreateDocumentBody(b);
                 validateWorkOrderDocumentBody(documentBody);
                 const document = await formDocumentPairFor(db, {
-                    routePattern: 'work-orders/:id',
-                    params: [b.id],
+                    routePattern:
+                        'organizations/:id/work-orders/:id',
+                    params: [organization, b.id],
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
@@ -5125,8 +5172,13 @@ export const routes: Route[] = [
                 // by the same-join-id retry test in
                 // tests/drift-work-orders.test.ts).
                 const join = await formDocumentPairFor(db, {
-                    routePattern: 'flows/:id/work-orders/:woid',
-                    params: [flowId, b.flowWorkOrderId],
+                    routePattern:
+                        'organizations/:id/flows/:id'
+                        + '/work-orders/:woid',
+                    params: [
+                        organization, flowId,
+                        b.flowWorkOrderId,
+                    ],
                     body: b.flowWorkOrder,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
@@ -5139,8 +5191,10 @@ export const routes: Route[] = [
                 );
                 const claimAt = b.stateEventAts[2]!;
                 const claim = await formDocumentPairFor(db, {
-                    routePattern: 'work-orders/:id/claim',
-                    params: [b.id],
+                    routePattern:
+                        'organizations/:id/work-orders/:id'
+                        + '/claim',
+                    params: [organization, b.id],
                     body: {
                         claimEventId: b.stateEventIds[2]!,
                         claimAt,
@@ -5171,7 +5225,7 @@ export const routes: Route[] = [
     // work-orders/:id so matchRoute's first-match does not
     // capture the literal segment as `:id`. Member-tier GET
     // via matchesOnSegmentBoundary on '/work-orders'.
-    route('work-orders/history', {
+    route('organizations/:id/work-orders/history', {
         get: (db, _p, _actor, organization) =>
             deriveWorkOrderHistories(
                 db, requireOrganization(organization),
@@ -5187,10 +5241,10 @@ export const routes: Route[] = [
     // — 'simple' concurrency, member-tier via
     // MEMBER_VERBS['/work-orders']. Verbs stay {get, put}
     // — no DELETE.
-    route('work-orders/:id', {
+    route('organizations/:id/work-orders/:id', {
         get: async (db, p, actor, organization, roles) => {
             const org = requireOrganization(organization);
-            const id = param(p, 0);
+            const id = param(p, 1);
             const entity = await documentGetHandler(
                 WORK_ORDERS_WIRING,
             )(db, p, actor, organization, roles);
@@ -5213,12 +5267,12 @@ export const routes: Route[] = [
     // unclaimed), DELETE releases (DELETE head =
     // unclaimed). Member-tier via MEMBER_VERBS
     // GET/PUT/DELETE on /work-orders.
-    route('work-orders/:id/claim', {
+    route('organizations/:id/work-orders/:id/claim', {
         get: async (db, p, _actor, organization) => {
             const org = requireOrganization(
                 organization,
             );
-            const workOrderId = param(p, 0);
+            const workOrderId = param(p, 1);
             const claim = await workOrderClaimDocumentFor(
                 db, org, workOrderId,
             );
@@ -5234,12 +5288,12 @@ export const routes: Route[] = [
         },
         put: (db, p, body, actor, pair, organization) =>
             postWorkOrderClaimOp(
-                db, param(p, 0), body, actor,
+                db, param(p, 1), body, actor,
                 requireOrganization(organization), pair,
             ),
         delete: (db, p, actor, pair, organization) =>
             deleteWorkOrderClaimOp(
-                db, param(p, 0), actor,
+                db, param(p, 1), actor,
                 requireOrganization(organization), pair,
             ),
     }),
@@ -5252,7 +5306,7 @@ export const routes: Route[] = [
     // below-facade seed tier (undefined) from the gate.
     // Task 8 CUT: gate rejects the legacy fieldValues key
     // here only; the op stays dual-tolerant for seed.
-    route('work-orders/:id/transition', {
+    route('organizations/:id/work-orders/:id/transition', {
         post: (
             db, p, body, actor, pair,
             organization, roles,
@@ -5265,7 +5319,7 @@ export const routes: Route[] = [
                 );
             }
             return postWorkOrderTransitionOp(
-                db, param(p, 0), body, actor,
+                db, param(p, 1), body, actor,
                 organization, roles, pair,
             );
         },
@@ -5273,10 +5327,10 @@ export const routes: Route[] = [
     // Create-only PUT — first bind 201; rebind 409;
     // no DELETE. POST is gone. Member-tier via
     // MEMBER_VERBS PUT on /work-orders.
-    route('work-orders/:id/binding', {
+    route('organizations/:id/work-orders/:id/binding', {
         put: (db, p, body, actor, pair, organization) =>
             postWorkOrderBindingOp(
-                db, param(p, 0), body, actor,
+                db, param(p, 1), body, actor,
                 requireOrganization(organization), pair,
             ),
     }),
@@ -5287,17 +5341,18 @@ export const routes: Route[] = [
     // derive reads only this org's uri_collection addresses.
     // Member-tier GET via matchesOnSegmentBoundary on
     // '/work-orders'.
-    route('work-orders/:id/history', {
+    route('organizations/:id/work-orders/:id/history', {
         get: (db, p, _actor, organization) =>
             workOrderHistoryFor(
                 db,
                 requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
     }),
-    // Flow work-order joins nest under their parent flow: the
-    // flow id is param 0, so the SERVER filters the collection to
-    // that flow. The leaf id is param 1; only PUT is exposed (the
+    // Flow work-order joins nest under their parent flow:
+    // param 0 is the path org, param 1 is the flow, so the
+    // SERVER filters the collection to that flow. The leaf
+    // id is param 2; only PUT is exposed (the
     // flat route never carried GET/DELETE on the leaf). GET is
     // FLIPPED (Task 7): the join list derives from the message
     // ledger at this flow's work-orders address rather than the
@@ -5306,17 +5361,17 @@ export const routes: Route[] = [
     // join row carries no lifecycle trio of its own), so this
     // calls it directly rather than through a generic
     // constructor, mirroring deriveProjectFlows' own precedent.
-    route('flows/:id/work-orders/', {
+    route('organizations/:id/flows/:id/work-orders/', {
         get: (db, p, _actor, organization) =>
             deriveFlowWorkOrders(
                 db, requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
     }),
-    route('flows/:id/work-orders/:woid', {
+    route('organizations/:id/flows/:id/work-orders/:woid', {
         put: (db, p, body, actor, pair) =>
             postFlowWorkOrderDocumentOp(
-                db, param(p, 1), body, actor, pair,
+                db, param(p, 2), body, actor, pair,
             ),
     }),
     // GET states/:id/field-values RETIRED (states-URI
@@ -5331,9 +5386,10 @@ export const routes: Route[] = [
     // addresses; member GET via MEMBER_VERBS
     // '/organizations/:id/record-types'; mutations stay admin
     // by absence. Handlers are inline (param index 1 is
-    // :record-type-id) rather than the flat document-family
-    // factories — documentPutHandler always takes param 0 as
-    // id. PUT reuses postRecordDocumentOp (same trio body /
+    // :record-type-id) rather than the document-family
+    // factories — documentPutHandler takes param 1 as id
+    // on an org nest (param 0 is the path org). PUT
+    // reuses postRecordDocumentOp (same trio body /
     // pair append). POST reuses formRecordWritePairs +
     // postRecordWriteOp with nested document addresses.
     // DELETE is inline records/:id posture plus type RESTRICT.
@@ -5793,9 +5849,10 @@ export const routes: Route[] = [
             db, p, actor, pair, organization, roles,
         ),
     }),
-    // Flow↔record bindings nest under their parent flow: the flow
-    // id is param 0, so the SERVER filters the collection to that
-    // flow. The leaf id is param 1. GET is FLIPPED (Task 7): both
+    // Flow↔record bindings nest under their parent flow:
+    // param 0 is the path org, param 1 is the flow, so the
+    // SERVER filters the collection to that flow. The leaf
+    // id is param 2. GET is FLIPPED (Task 7): both
     // the collection and the by-id read now ride deriveFlowRecords
     // / deriveFlowRecord — a bespoke derivation (not a
     // DocumentFamilyWiring family; a join row carries no lifecycle
@@ -5803,22 +5860,22 @@ export const routes: Route[] = [
     // through a generic constructor, mirroring deriveFlowWorkOrders'
     // own precedent above. flows/:id/versions table-backed
     // nested read RETIRED Phase 15 Task 7 (zero callers).
-    route('flows/:id/records/', {
+    route('organizations/:id/flows/:id/records/', {
         get: (db, p, _actor, organization) =>
             deriveFlowRecords(
                 db, requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
     }),
-    route('flows/:id/records/:frid', {
+    route('organizations/:id/flows/:id/records/:frid', {
         get: (db, p, _actor, organization) =>
             deriveFlowRecord(
                 db, requireOrganization(organization),
-                param(p, 0), param(p, 1),
+                param(p, 1), param(p, 2),
             ),
         put: (db, p, body, actor, pair) =>
             postFlowRecordDocumentOp(
-                db, param(p, 1), body, actor, pair,
+                db, param(p, 2), body, actor, pair,
             ),
         // Phase Final Task 2: flow_records ROW half stripped —
         // DELETE is a pure pair-plane tombstone append.
@@ -5839,13 +5896,15 @@ export const routes: Route[] = [
     // pairs. Bespoke route() wiring reusing deriveDocumentsAt/
     // documentPairsAt exactly like the identities/:id/pii analog
     // (gate 8), SIMPLE class (a repeat PUT records Supersedes —
-    // 'flows/:id/tags/:name' is registered in message-pair.ts's
-    // DOCUMENT_CLASS_ROUTE_PATTERNS below): the locked class flows
-    // itself rides is structurally MOOT here — api.ts's isLockedWrite
-    // exact-matches routePattern === family + '/:id' ('flows/:id'),
-    // and this pattern is 4 segments, so it never rides that arm
+    // 'organizations/:id/flows/:id/tags/:name' is registered
+    // in message-pair.ts's DOCUMENT_CLASS_ROUTE_PATTERNS):
+    // the locked class flows itself rides is structurally
+    // MOOT here — api.ts's isLockedWrite is routePattern ===
+    // documentEntityPattern(wiring), which for flows is
+    // organizations/:id/flows/:id — this tags address never
+    // equals that entity pattern, so it never rides that arm
     // no matter what family-registry.ts declares for 'flows'. The
-    // tag NAME (param 1) is the address's own uriId — the FIRST
+    // tag NAME (param 2) is the address's own uriId — the FIRST
     // user-authored address segment in this codebase
     // (validateFlowTagName, api/validators.ts), validated ONLY at
     // the write gate below (WRITE_RESPONSE_SPECS), never re-checked
@@ -5865,11 +5924,11 @@ export const routes: Route[] = [
     // Member-tier — '/flows/:id/tags' carries GET/PUT/DELETE in
     // MEMBER_VERBS (api/authorization.ts), mirroring
     // '/flows/:id/records'.
-    route('flows/:id/tags/:name', {
+    route('organizations/:id/flows/:id/tags/:name', {
         get: (db, p, _actor, organization) =>
             deriveFlowTag(
                 db, requireOrganization(organization),
-                param(p, 0), param(p, 1),
+                param(p, 1), param(p, 2),
             ),
         put: (db, _p, _body, _actor, pair) =>
             postFlowTagDocumentOp(db, pair),
@@ -5967,8 +6026,9 @@ export const routes: Route[] = [
     documentEntityRoute(IDEAS_WIRING),
     // GET ideas/:id/versions: deriveIdeaStateHistory ASC
     // → DESC; empty → missedReadError('ideas').
-    route('ideas/:id/versions', {
+    route('organizations/:id/ideas/:id/versions', {
         get: documentStateHistoryHandler(
+            IDEAS_WIRING,
             deriveIdeaStateHistory, 'ideas',
         ),
     }),
@@ -5980,8 +6040,9 @@ export const routes: Route[] = [
     documentEntityRoute(PROJECTS_WIRING),
     // GET projects/:id/versions: deriveProjectStateHistory
     // ASC → DESC; empty → missedReadError('projects').
-    route('projects/:id/versions', {
+    route('organizations/:id/projects/:id/versions', {
         get: documentStateHistoryHandler(
+            PROJECTS_WIRING,
             deriveProjectStateHistory, 'projects',
         ),
     }),
@@ -5995,7 +6056,7 @@ export const routes: Route[] = [
     // its first revision pair in one pass
     // (postObjectiveCreationOp), mirroring records'/work-
     // orders' own precedent.
-    route('objectives/', {
+    route('organizations/:id/objectives/', {
         get: documentCollectionGetHandler(OBJECTIVES_WIRING),
         // Forms the document + revision pairs pre-tx (Task 3)
         // beside the gate's own operation pair — the SAME shape
@@ -6015,8 +6076,9 @@ export const routes: Route[] = [
                 const documentBody = objectiveDocumentBodyOf(b);
                 validateObjectiveDocumentBody(documentBody);
                 const document = await formDocumentPairFor(db, {
-                    routePattern: 'objectives/:id',
-                    params: [b.id],
+                    routePattern:
+                        'organizations/:id/objectives/:id',
+                    params: [organization, b.id],
                     body: documentBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
@@ -6026,8 +6088,12 @@ export const routes: Route[] = [
                 const revisionBody = objectiveRevisionBodyOf(b);
                 validateObjectiveRevisionEntity(revisionBody);
                 const revision = await formDocumentPairFor(db, {
-                    routePattern: 'objectives/:id/revisions/:rid',
-                    params: [b.id, b.revisionId],
+                    routePattern:
+                        'organizations/:id/objectives/:id'
+                        + '/revisions/:rid',
+                    params: [
+                        organization, b.id, b.revisionId,
+                    ],
                     body: revisionBody,
                     requesterIdentityId: actor,
                     requestAt: pair.requestAt,
@@ -6043,7 +6109,7 @@ export const routes: Route[] = [
     // StateEntity rows, (at, id) DESC. Always 200 array.
     // MUST register BEFORE objectives/:id so matchRoute's
     // first-match does not capture the literal as `:id`.
-    route('objectives/versions', {
+    route('organizations/:id/objectives/versions', {
         get: (db, _p, _actor, organization) =>
             deriveObjectiveHistories(
                 db, requireOrganization(organization),
@@ -6062,28 +6128,29 @@ export const routes: Route[] = [
     documentEntityRoute(OBJECTIVES_WIRING),
     // GET objectives/:id/versions: deriveObjectiveStateHistory
     // ASC → DESC; empty → missedReadError('objectives').
-    route('objectives/:id/versions', {
+    route('organizations/:id/objectives/:id/versions', {
         get: documentStateHistoryHandler(
+            OBJECTIVES_WIRING,
             deriveObjectiveStateHistory, 'objectives',
         ),
     }),
     documentVersionRoute(OBJECTIVES_WIRING),
-    // Objective revisions nest under their parent objective: the
-    // objective id is param 0, so the SERVER filters the
-    // collection to that objective (the org fence still rides the
-    // facade re-entry). GET is FLIPPED (Task 7): rides
-    // deriveObjectiveRevisions — a bespoke derivation, not a
-    // DocumentFamilyWiring family (a nested address carries no
-    // lifecycle trio of its own), so this calls it directly
-    // rather than through a generic constructor, mirroring
-    // deriveFlowRecords' own precedent above. The leaf id is
-    // param 1; only PUT is exposed, unchanged from before this
-    // flip.
-    route('objectives/:id/revisions/', {
+    // Objective revisions nest under their parent objective:
+    // param 0 is the path org, param 1 is the objective, so
+    // the SERVER filters the collection to that objective
+    // (the org fence still rides the facade re-entry). GET
+    // is FLIPPED (Task 7): rides deriveObjectiveRevisions —
+    // a bespoke derivation, not a DocumentFamilyWiring family
+    // (a nested address carries no lifecycle trio of its
+    // own), so this calls it directly rather than through a
+    // generic constructor, mirroring deriveFlowRecords' own
+    // precedent above. The leaf id is param 2; only PUT is
+    // exposed, unchanged from before this flip.
+    route('organizations/:id/objectives/:id/revisions/', {
         get: (db, p, _actor, organization) =>
             deriveObjectiveRevisions(
                 db, requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
     }),
     // Hand-written so PUT can append its message pair in the
@@ -6092,9 +6159,9 @@ export const routes: Route[] = [
     // pair-plane write. WRITE_RESPONSE_SPECS successBody forms
     // the wire bytes; the reconstructed return is for type
     // parity with the former store put.
-    route('objectives/:id/revisions/:rid', {
+    route('organizations/:id/objectives/:id/revisions/:rid', {
         put: (db, p, body, _actor, pair) => {
-            const id = param(p, 1);
+            const id = param(p, 2);
             const entity = objectiveRevisionEntityOf({
                 uriId: id,
                 pairId: id,
@@ -6114,44 +6181,58 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Objective baseline scores nest under their parent project:
-    // the project id is param 0, so the SERVER filters the
-    // collection to that project (the org fence still rides the
-    // facade re-entry). GET is FLIPPED (Task 7): rides
+    // Objective baseline scores nest under their parent
+    // project: param 0 is the path org, param 1 is the
+    // project, so the SERVER filters the collection to that
+    // project (the org fence still rides the facade
+    // re-entry). GET is FLIPPED (Task 7): rides
     // deriveBaselineScores — the SAME bespoke-derivation
     // reasoning as deriveObjectiveRevisions above (a project-
     // nested address, not a DocumentFamilyWiring family). The
-    // leaf id is param 1; only PUT is exposed, unchanged from
+    // leaf id is param 2; only PUT is exposed, unchanged from
     // before this flip.
-    route('projects/:id/objective-baseline-scores/', {
+    route(
+        'organizations/:id/projects/:id'
+        + '/objective-baseline-scores/',
+        {
         get: (db, p, _actor, organization) =>
             deriveBaselineScores(
                 db, requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
     }),
-    route('projects/:id/objective-baseline-scores/:sid', {
+    route(
+        'organizations/:id/projects/:id'
+        + '/objective-baseline-scores/:sid',
+        {
         put: (db, p, body, actor, pair) =>
             postBaselineScoreDocumentOp(
-                db, param(p, 1), body, actor, pair,
+                db, param(p, 2), body, actor, pair,
             ),
     }),
     // Objective actual scores nest under their parent project,
-    // identically: project id is param 0 (server filter), leaf id
-    // is param 1, PUT only. GET is FLIPPED (Task 7): rides
+    // identically: param 0 is the path org, param 1 is the
+    // project (server filter), leaf id is param 2, PUT only.
+    // GET is FLIPPED (Task 7): rides
     // deriveActualScores, the actuals byte-twin of
     // deriveBaselineScores above.
-    route('projects/:id/objective-actual-scores/', {
+    route(
+        'organizations/:id/projects/:id'
+        + '/objective-actual-scores/',
+        {
         get: (db, p, _actor, organization) =>
             deriveActualScores(
                 db, requireOrganization(organization),
-                param(p, 0),
+                param(p, 1),
             ),
     }),
-    route('projects/:id/objective-actual-scores/:sid', {
+    route(
+        'organizations/:id/projects/:id'
+        + '/objective-actual-scores/:sid',
+        {
         put: (db, p, body, actor, pair) =>
             postActualScoreDocumentOp(
-                db, param(p, 1), body, actor, pair,
+                db, param(p, 2), body, actor, pair,
             ),
     }),
     // Bulk lifecycle collection RETIRED (states-URI

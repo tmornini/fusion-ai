@@ -364,7 +364,7 @@ test('a recovering context reads through the vessel token,'
     // B); vessel A-only visibility is proven by a1 alone.
     const { organization_id: _organizationId, ...a1Fields } =
         ideaBody('A', 'mine');
-    await ctx.PUT('ideas/a1', {
+    await ctx.PUT('organizations/A/ideas/a1', {
         ...a1Fields,
         state: 'active',
         state_at: '2026-01-01T00:00:00.000000Z',
@@ -372,7 +372,9 @@ test('a recovering context reads through the vessel token,'
     });
     // another tab moves the shared session holder to org B
     putSessionToken(await organizationToken('current', 'B'));
-    const rows = await ctx.GET<{ id: string }[]>('ideas/');
+    const rows = await ctx.GET<{ id: string }[]>(
+        'organizations/A/ideas/',
+    );
     // the read ran in the vessel's org A, not the global's B
     assert.deepEqual(rows.map(r => r.id), ['a1']);
 });
@@ -401,7 +403,7 @@ test('recovery re-scopes to the vessel org claim, not the'
     const ctx = createRecoveringRequestContext(db, deadA);
     // the 401 drives refresh + re-scope; recovery must honor the
     // vessel's own org A, never the preference another tab wrote
-    await ctx.GET('ideas/');
+    await ctx.GET('organizations/A/ideas/');
     const scoped =
         principalFromToken(getSessionToken()).organization;
     // one vessel truth: the recovered session matches the
@@ -427,7 +429,7 @@ test('recovery leaves the cross-tab active-org preference'
     // the foreground tab is viewing org B
     localStorage.setItem(ACTIVE_ORGANIZATION_ID, 'B');
     const ctx = createRecoveringRequestContext(db, deadA);
-    await ctx.GET('ideas/');
+    await ctx.GET('organizations/A/ideas/');
     // the background recovery scopes ITS session to vessel org A...
     assert.equal(
         principalFromToken(getSessionToken()).organization, 'A');

@@ -34,7 +34,8 @@ function pairJsonOf(message: string): {
     };
 }
 
-// Phase 2 Task 2 (Decision 7 state-in-entity): PUT /ideas/:id
+// Phase 2 Task 2 (Decision 7 state-in-entity): PUT
+// /organizations/:id/ideas/:id
 // takes the FULL document — entity fields plus the state trio.
 // G1: stored PUT body is ideaEntityOf of the same chain
 // (trio included). GET streams that stored body.
@@ -87,7 +88,7 @@ test('a document PUT with a new state writes wire entity'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/ideas/doc-1', token,
+        'PUT', '/organizations/1/ideas/doc-1', token,
         ideaDocument(
             'Fresh', 'active',
             '2026-01-01T00:00:00.000000Z', 'ev-doc-1',
@@ -98,7 +99,7 @@ test('a document PUT with a new state writes wire entity'
     assert.equal(putWire.title, 'Fresh');
     assert.equal(putWire.state, 'active');
     const getRes = await handleRequest(
-        db, req('GET', '/ideas/doc-1', token),
+        db, req('GET', '/organizations/1/ideas/doc-1', token),
     );
     assert.equal(getRes.status, 200);
     const getWire = await getRes.json() as {
@@ -118,14 +119,14 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await handleRequest(db, req(
-        'PUT', '/ideas/doc-2', token,
+        'PUT', '/organizations/1/ideas/doc-2', token,
         ideaDocument(
             'First', 'active',
             '2026-01-01T00:00:00.000000Z', 'ev-doc-2',
         ),
     ));
     const edit = await handleRequest(db, req(
-        'PUT', '/ideas/doc-2', token,
+        'PUT', '/organizations/1/ideas/doc-2', token,
         ideaDocument(
             'Second', 'active',
             '2026-01-01T00:00:00.000000Z', 'ev-doc-2',
@@ -135,7 +136,7 @@ async () => {
     const events = await deriveIdeaStateHistory(db, '1', 'doc-2');
     assert.equal(events.length, 1);
     const getRes = await handleRequest(
-        db, req('GET', '/ideas/doc-2', token),
+        db, req('GET', '/organizations/1/ideas/doc-2', token),
     );
     const wire = await getRes.json() as { title: string };
     assert.equal(wire.title, 'Second');
@@ -150,10 +151,10 @@ test('a byte-identical resend converges: one event,'
         '2026-01-01T00:00:00.000000Z', 'ev-doc-3',
     );
     await handleRequest(
-        db, req('PUT', '/ideas/doc-3', token, body),
+        db, req('PUT', '/organizations/1/ideas/doc-3', token, body),
     );
     await handleRequest(
-        db, req('PUT', '/ideas/doc-3', token, body),
+        db, req('PUT', '/organizations/1/ideas/doc-3', token, body),
     );
     const events = await deriveIdeaStateHistory(db, '1', 'doc-3');
     assert.equal(events.length, 1);
@@ -171,7 +172,7 @@ async () => {
         '2026-01-01T00:00:00.000000Z', 'ev-same-1',
     );
     const first = await handleRequest(
-        db, req('PUT', '/ideas/same-1', token, body),
+        db, req('PUT', '/organizations/1/ideas/same-1', token, body),
     );
     assert.equal(first.status, 201);
     const firstEtag = first.headers.get('ETag');
@@ -185,7 +186,7 @@ async () => {
     // so this is same-body, not replay.
     const second = await handleRequest(
         db,
-        new Request('http://localhost/ideas/same-1', {
+        new Request('http://localhost/organizations/1/ideas/same-1', {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
@@ -209,14 +210,14 @@ test('the pair request body carries the lifecycle trio;'
     const db = await freshDb();
     const token = await organizationToken();
     await handleRequest(db, req(
-        'PUT', '/ideas/doc-4', token,
+        'PUT', '/organizations/1/ideas/doc-4', token,
         ideaDocument(
             'Wired', 'in_review',
             '2026-01-01T00:00:00.000000Z', 'ev-doc-4',
         ),
     ));
     const getRes = await handleRequest(
-        db, req('GET', '/ideas/doc-4', token),
+        db, req('GET', '/organizations/1/ideas/doc-4', token),
     );
     const wire = await getRes.json() as {
         title: string;
@@ -260,7 +261,7 @@ test('a same-state edit by a DIFFERENT member never'
     };
 
     const created = await handleRequest(db, req(
-        'PUT', '/ideas/doc-5', tokenA,
+        'PUT', '/organizations/1/ideas/doc-5', tokenA,
         ideaDocument(
             'First', trio.state, trio.stateAt,
             trio.stateEventId,
@@ -269,7 +270,7 @@ test('a same-state edit by a DIFFERENT member never'
     assert.equal(created.status, 201);
 
     const edited = await handleRequest(db, req(
-        'PUT', '/ideas/doc-5', tokenB,
+        'PUT', '/organizations/1/ideas/doc-5', tokenB,
         ideaDocument(
             'Second', trio.state, trio.stateAt,
             trio.stateEventId,
@@ -282,7 +283,7 @@ test('a same-state edit by a DIFFERENT member never'
     assert.equal(events[0]!.member_id, 'current');
 
     const getRes = await handleRequest(
-        db, req('GET', '/ideas/doc-5', tokenA),
+        db, req('GET', '/organizations/1/ideas/doc-5', tokenA),
     );
     const wire = await getRes.json() as { title: string };
     assert.equal(wire.title, 'Second');
@@ -291,7 +292,7 @@ test('a same-state edit by a DIFFERENT member never'
 // Task 19: GET streams the stored PUT. Body octets match the
 // live PUT response JSON; Date is send-time now; no
 // Operation-ID on GET.
-test('GET /ideas/:id body octets equal the live PUT '
+test('GET /organizations/:id/ideas/:id body octets equal the live PUT '
 + 'stored body', async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -301,7 +302,7 @@ test('GET /ideas/:id body octets equal the live PUT '
             () => Date.parse('2026-06-01T00:00:00Z'),
         );
         const put = await handleRequest(db, req(
-            'PUT', '/ideas/stream-1', token,
+            'PUT', '/organizations/1/ideas/stream-1', token,
             ideaDocument(
                 'Streamed', 'active',
                 '2026-01-01T00:00:00.000000Z', 'ev-stream-1',
@@ -320,7 +321,7 @@ test('GET /ideas/:id body octets equal the live PUT '
             () => Date.parse('2026-06-01T00:00:02Z'),
         );
         const getRes = await handleRequest(
-            db, req('GET', '/ideas/stream-1', token),
+            db, req('GET', '/organizations/1/ideas/stream-1', token),
         );
         assert.equal(getRes.status, 200);
         assert.equal(
@@ -348,7 +349,7 @@ async () => {
     const ev = 'ev-g1';
     const body = ideaDocument('Streamed', 'active', at, ev);
     const put = await handleRequest(
-        db, req('PUT', '/ideas/' + id, token, body),
+        db, req('PUT', '/organizations/1/ideas/' + id, token, body),
     );
     assert.equal(put.status, 201);
     const prefix = '/organizations/1/ideas/';
@@ -374,7 +375,7 @@ async () => {
     assert.deepEqual(stored, expected);
     assert.deepEqual(stored, await deriveIdea(db, '1', id));
     const skewed = await handleRequest(db, req(
-        'PUT', '/ideas/' + id, token,
+        'PUT', '/organizations/1/ideas/' + id, token,
         ideaDocument(
             'Skewed', 'in_review',
             '2020-01-01T00:00:00.000000Z', 'ev-g1-skew',

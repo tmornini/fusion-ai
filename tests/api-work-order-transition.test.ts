@@ -32,7 +32,8 @@ import {
 } from '../api/message-pair.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
-// POST work-orders/:id/transition writes the transition state
+// POST organizations/:id/work-orders/:id/transition writes the transition
+// state
 // event and an OPTIONAL claim-release event in ONE transaction.
 // Task 8 CUT: live gate rejects fieldValues; pure-move
 // fixtures use the instance pure-move shape. Legacy
@@ -41,7 +42,7 @@ import { TEST_OPERATION_ID } from './http-fixtures.ts';
 // Task 8.
 
 const LOCK_TIMEOUT_SECONDS = 300;
-const TRANSITION_PATTERN = 'work-orders/:id/transition';
+const TRANSITION_PATTERN = 'organizations/:id/work-orders/:id/transition';
 
 function graphJson(): Record<string, unknown> {
     return {
@@ -59,7 +60,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     await seedAdminSchema(db);
     await seedCurrentMember(db);
     await PUT(
-        db, 'work-orders/wo1', {
+        db, 'organizations/1/work-orders/wo1', {
             display_id: 'abcd',
             flow_graph: graphJson(),
             position: 1,
@@ -83,6 +84,7 @@ async function appendLegacyTransition(
     body: Record<string, unknown>,
 ): Promise<void> {
     const pathSegments = [
+        'organizations', STARK_ORGANIZATION,
         'work-orders', 'wo1', 'transition',
     ];
     const pair = await formWritePair({
@@ -112,7 +114,7 @@ test(
     async () => {
         const db = await seededDb();
         await POST(
-            db, 'work-orders/wo1/transition', {
+            db, 'organizations/1/work-orders/wo1/transition', {
                 transitionEventId: 'te1',
                 targetState: 'n-next',
                 release: null,
@@ -205,7 +207,7 @@ test(
         // Claim rides the named op (states/:id retired).
         const claimAt = nowUtc();
         await PUT(
-            db, 'work-orders/wo1/claim', {
+            db, 'organizations/1/work-orders/wo1/claim', {
                 claimEventId: 'cl-1',
                 claimAt,
                 expireEventId: 'cl-1-exp',
@@ -218,7 +220,7 @@ test(
         const transitionAt = nowUtc();
         const releaseAt = nowUtc();
         await POST(
-            db, 'work-orders/wo1/transition', {
+            db, 'organizations/1/work-orders/wo1/transition', {
                 transitionEventId: 'te1',
                 targetState: 'n-next',
                 release: {
@@ -246,7 +248,7 @@ test(
     async () => {
         const db = await seededDb();
         await POST(
-            db, 'work-orders/wo1/transition', {
+            db, 'organizations/1/work-orders/wo1/transition', {
                 transitionEventId: 'te1',
                 targetState: 'n-next',
                 release: null,
@@ -320,7 +322,7 @@ test(
         const db = await seededDb();
         await assert.rejects(
             () => POST(
-                db, 'work-orders/wo1/transition', {
+                db, 'organizations/1/work-orders/wo1/transition', {
                     transitionEventId: 'te1',
                     targetState: 'n-next',
                     release: null,
@@ -439,7 +441,7 @@ test(
         // from a server-generated nowUtc().
         const callerAt = '2099-01-01T00:00:00.000000Z';
         await POST(
-            db, 'work-orders/wo1/transition', {
+            db, 'organizations/1/work-orders/wo1/transition', {
                 transitionEventId: 'te1',
                 targetState: 'n-next',
                 release: null,
@@ -461,7 +463,7 @@ test(
         // Claim rides the named op (states/:id retired).
         const claimAt = nowUtc();
         await PUT(
-            db, 'work-orders/wo1/claim', {
+            db, 'organizations/1/work-orders/wo1/claim', {
                 claimEventId: 'cl-1',
                 claimAt,
                 expireEventId: 'cl-1-exp',
@@ -474,7 +476,7 @@ test(
         const transitionAt = '2099-01-01T00:00:00.000000Z';
         const releaseAt = '2099-01-01T00:00:01.000000Z';
         await POST(
-            db, 'work-orders/wo1/transition', {
+            db, 'organizations/1/work-orders/wo1/transition', {
                 transitionEventId: 'te1',
                 targetState: 'n-next',
                 release: {

@@ -7,7 +7,7 @@ import {
     createRequestContext,
     type RequestContext,
 } from '../web-app/app/adapters/shared.ts';
-import { devToken } from './token-fixtures.ts';
+import { devToken, organizationToken } from './token-fixtures.ts';
 import { adminContext } from './context-fixtures.ts';
 import {
     getProjectEntities,
@@ -68,7 +68,8 @@ function buildProject(
 // Seeds a project through the SAME document PUT the live route
 // uses (putProject), so a message pair exists at this project's
 // address — required for the flipped GET projects / GET
-// projects/:id routes (Phase 3 Task 6) to derive it. A fixed
+// organizations/:id/projects/:id routes (Phase 3 Task 6) to derive it. A
+// fixed
 // historical stateAt (matching the old raw-postEvent idiom this
 // replaces) rather than a real clock, mirroring
 // tests/adapters-ideas.test.ts's seedIdea precedent.
@@ -250,7 +251,7 @@ test(
             ...entity,
             ...TRIO,
         });
-        const fresh = createRequestContext(db, await devToken());
+        const fresh = createRequestContext(db, await organizationToken());
         const row = await getProjectEntity(fresh, 'p1');
         assert.equal(row.title, 'Persisted');
     },

@@ -66,7 +66,7 @@ function putIdea(
     stateEventId: string,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', '/ideas/' + id, token,
+        'PUT', '/organizations/1/ideas/' + id, token,
         ideaDocument(title, state, stateAt, stateEventId),
     ));
 }

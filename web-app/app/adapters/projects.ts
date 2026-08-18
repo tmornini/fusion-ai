@@ -16,6 +16,8 @@ import {
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
+    organizationCollection,
+    organizationItem,
     withLifecycleTrio,
     withLifecycleTrios,
 } from './shared.ts';
@@ -60,7 +62,9 @@ export async function getProjectEntities(
 ): Promise<ProjectEntity[]> {
     return withLifecycleTrios(
         ctx, 'projects',
-        await ctx.GET<ProjectEntity[]>('projects/'),
+        await ctx.GET<ProjectEntity[]>(
+            organizationCollection(ctx, 'projects'),
+        ),
     );
 }
 
@@ -255,7 +259,9 @@ export async function getProjectEntity(
 ): Promise<ProjectEntity> {
     return withLifecycleTrio(
         ctx, 'projects',
-        await ctx.GET<ProjectEntity>(`projects/${id}`),
+        await ctx.GET<ProjectEntity>(
+            organizationItem(ctx, 'projects', id),
+        ),
     );
 }
 
@@ -289,7 +295,7 @@ export async function putProject(
     const {
         state, stateAt, stateEventId, ...entity
     } = document;
-    await ctx.PUT(`projects/${id}`, {
+    await ctx.PUT(organizationItem(ctx, 'projects', id), {
         ...entity,
         state,
         state_at: stateAt,

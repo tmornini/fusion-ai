@@ -228,10 +228,10 @@ async function headResponseId(
     db: MemoryDbAdapter, token: string, flowId: string,
 ): Promise<string> {
     const got = await handleRequest(
-        db, req('GET', '/flows/' + flowId, token),
+        db, req('GET', '/organizations/1/flows/' + flowId, token),
     );
     const id = got.headers.get('Response-ID');
-    assert.ok(id, 'no Response-ID on GET /flows/' + flowId);
+    assert.ok(id, 'no Response-ID on GET /organizations/1/flows/' + flowId);
     return id!;
 }
 
@@ -277,7 +277,7 @@ function createWorkOrderBody(
 // ---- case 1: collection-history parity (C3 successor) ----
 
 test('case 1: collection history wire equals family derives'
-+ ' — work-orders/history + objectives/history for BOTH'
++ ' — work-orders/history + objectives/versions for BOTH'
 + ' organizations (bulk lifecycle collection retired with C3)',
 async () => {
     const db = await seededDb();
@@ -290,7 +290,10 @@ async () => {
             'current', organization,
         );
         const woRes = await handleRequest(db, req(
-            'GET', '/work-orders/history', token,
+            'GET',
+            '/organizations/' + organization
+                + '/work-orders/history',
+            token,
         ));
         assert.equal(woRes.status, 200);
         const woWire = await woRes.json() as {
@@ -299,7 +302,10 @@ async () => {
         woSeen += woWire.length;
 
         const objRes = await handleRequest(db, req(
-            'GET', '/objectives/versions', token,
+            'GET',
+            '/organizations/' + organization
+                + '/objectives/versions',
+            token,
         ));
         assert.equal(objRes.status, 200);
         const objWire = await objRes.json() as {
@@ -322,11 +328,15 @@ const CASE_2_FAMILY_ENTITY_IDS: readonly {
     readonly id: Id;
 }[] = [
     {
-        family: 'idea', routeFamily: 'ideas',
+        family: 'idea',
+        routeFamily: 'organizations/'
+            + STARK_ORGANIZATION + '/ideas',
         id: buildIdeas()[0]!.id,
     },
     {
-        family: 'project', routeFamily: 'projects',
+        family: 'project',
+        routeFamily: 'organizations/'
+            + STARK_ORGANIZATION + '/projects',
         id: buildProjects()[0]!.id,
     },
     {
@@ -336,16 +346,22 @@ const CASE_2_FAMILY_ENTITY_IDS: readonly {
         id: customerProfileRecordId,
     },
     {
-        family: 'flow', routeFamily: 'flows',
+        family: 'flow',
+        routeFamily: 'organizations/'
+            + STARK_ORGANIZATION + '/flows',
         id: buildFlows()[0]!.id,
     },
     {
-        family: 'work-order', routeFamily: 'work-orders',
+        family: 'work-order',
+        routeFamily: 'organizations/'
+            + STARK_ORGANIZATION + '/work-orders',
         id: buildWorkOrders()[0]!.id,
     },
 
     {
-        family: 'objective', routeFamily: 'objectives',
+        family: 'objective',
+        routeFamily: 'organizations/'
+            + STARK_ORGANIZATION + '/objectives',
         id: OBJECTIVE_SEEDS[0]!.id,
     },
 ];
@@ -461,13 +477,16 @@ async () => {
 
     const ownIdeaId = 'drift-states-fence-own-idea';
     await handleRequest(db, req(
-        'PUT', '/ideas/' + ownIdeaId, tokenStark,
+        'PUT', '/organizations/1/ideas/' + ownIdeaId, tokenStark,
         ideaDocument('Own', ownIdeaId + '-genesis', AT),
     ));
 
     const foreignIdeaId = 'drift-states-fence-foreign-idea';
     const foreignCreated = await handleRequest(db, req(
-        'PUT', '/ideas/' + foreignIdeaId, tokenOrg2,
+        'PUT',
+        '/organizations/' + ORGANIZATION_TWO
+            + '/ideas/' + foreignIdeaId,
+        tokenOrg2,
         ideaDocument('Foreign', foreignIdeaId + '-genesis', AT),
     ));
     assert.equal(foreignCreated.status, 201);
@@ -476,7 +495,10 @@ async () => {
     // pair plane is IMMUNE to deleted filter, so owner still
     // resolves. STARK history is a miss at this address.
     const foreignDeleted = await handleRequest(db, req(
-        'PUT', '/ideas/' + foreignIdeaId, tokenOrg2,
+        'PUT',
+        '/organizations/' + ORGANIZATION_TWO
+            + '/ideas/' + foreignIdeaId,
+        tokenOrg2,
         ideaDocument(
             'Foreign',
             'drift-states-fence-foreign-del-ev',
@@ -488,7 +510,8 @@ async () => {
 
     // Own history 200 with genesis.
     const ownRes = await handleRequest(db, req(
-        'GET', '/ideas/' + ownIdeaId + '/versions', tokenStark,
+        'GET', '/organizations/1/ideas/' + ownIdeaId +
+            '/versions', tokenStark,
     ));
     assert.equal(ownRes.status, 200);
     const ownWire = await ownRes.json() as { id: string }[];
@@ -500,7 +523,7 @@ async () => {
     // after tombstone.
     const foreignRes = await handleRequest(db, req(
         'GET',
-        '/ideas/' + foreignIdeaId + '/versions',
+        '/organizations/1/ideas/' + foreignIdeaId + '/versions',
         tokenStark,
     ));
     assert.equal(foreignRes.status, 404);
@@ -514,7 +537,8 @@ async () => {
     // Org 2 still sees its own genesis + delete on history.
     const org2Res = await handleRequest(db, req(
         'GET',
-        '/ideas/' + foreignIdeaId + '/versions',
+        '/organizations/' + ORGANIZATION_TWO
+            + '/ideas/' + foreignIdeaId + '/versions',
         tokenOrg2,
     ));
     assert.equal(org2Res.status, 200);
@@ -532,7 +556,10 @@ async () => {
 
     // STARK idea absent from org 2 history read (404).
     const ownFromOrg2 = await handleRequest(db, req(
-        'GET', '/ideas/' + ownIdeaId + '/versions', tokenOrg2,
+        'GET',
+        '/organizations/' + ORGANIZATION_TWO
+            + '/ideas/' + ownIdeaId + '/versions',
+        tokenOrg2,
     ));
     assert.equal(ownFromOrg2.status, 404);
 });
@@ -576,7 +603,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
     const tinyLockTimeoutSeconds = 1;
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders/', token,
+        'POST', '/organizations/1/work-orders/', token,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId,
             workOrderFlowGraph(bigLockTimeoutSeconds),
@@ -596,7 +623,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
     await assertHistoryParity(db, STARK_ORGANIZATION, workOrderId);
 
     const transition1 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/transition',
+        'POST', '/organizations/1/work-orders/' + workOrderId + '/transition',
         token, {
             transitionEventId: workOrderId + '-te1',
             targetState: 'n-middle',
@@ -610,7 +637,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
     const transition2At = nowUtc();
     const releaseAt = nowUtc();
     const transition2 = await handleRequest(db, req(
-        'POST', '/work-orders/' + workOrderId + '/transition',
+        'POST', '/organizations/1/work-orders/' + workOrderId + '/transition',
         token, {
             transitionEventId: workOrderId + '-te2',
             targetState: 'n-finish',
@@ -630,7 +657,7 @@ test('case 4b: work-order live-write chain — birth-claimed'
     // FRESH from the document head as of its own moment, never a
     // single cached value.
     const entityPut = await handleRequest(db, req(
-        'PUT', '/work-orders/' + workOrderId, token, {
+        'PUT', '/organizations/1/work-orders/' + workOrderId, token, {
             display_id: 'drift-states-' + workOrderId,
             flow_graph: workOrderFlowGraph(tinyLockTimeoutSeconds),
             position: 2,
@@ -641,7 +668,8 @@ test('case 4b: work-order live-write chain — birth-claimed'
 
     const freshClaimAt = nowUtc();
     const freshClaim = await handleRequest(db, req(
-        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/organizations/1/work-orders/' + workOrderId +
+            '/claim', token, {
             claimEventId: workOrderId + '-ce1',
             claimAt: freshClaimAt,
             expireEventId: workOrderId + '-ee1',
@@ -660,7 +688,8 @@ test('case 4b: work-order live-write chain — birth-claimed'
     ).length;
     const repeatClaimAt = nowUtc();
     const repeatClaim = await handleRequest(db, req(
-        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/organizations/1/work-orders/' + workOrderId +
+            '/claim', token, {
             claimEventId: workOrderId + '-ce2',
             claimAt: repeatClaimAt,
             expireEventId: workOrderId + '-ee2',
@@ -684,7 +713,8 @@ test('case 4b: work-order live-write chain — birth-claimed'
     const takeoverExpireAt = nowUtc();
     const takeoverClaimAt = nowUtc();
     const takeover = await handleRequest(db, req(
-        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/organizations/1/work-orders/' + workOrderId +
+            '/claim', token, {
             claimEventId: workOrderId + '-ce3',
             claimAt: takeoverClaimAt,
             expireEventId: workOrderId + '-ee3',
@@ -715,7 +745,7 @@ async () => {
     const workOrderId = 'drift-states-wo-hybrid-1';
 
     const put = await handleRequest(db, req(
-        'PUT', '/work-orders/' + workOrderId, token, {
+        'PUT', '/organizations/1/work-orders/' + workOrderId, token, {
             display_id: 'drift-states-hybrid',
             flow_graph: workOrderFlowGraph(8 * 60 * 60),
             position: 1,
@@ -725,7 +755,7 @@ async () => {
 
     const genesis = await handleRequest(db, req(
         'POST',
-        '/work-orders/' + workOrderId + '/transition',
+        '/organizations/1/work-orders/' + workOrderId + '/transition',
         token, {
             transitionEventId: workOrderId + '-genesis',
             targetState: 'n-start',
@@ -737,7 +767,8 @@ async () => {
 
     const claimAt = nowUtc();
     const claim = await handleRequest(db, req(
-        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/organizations/1/work-orders/' + workOrderId +
+            '/claim', token, {
             claimEventId: workOrderId + '-ce1',
             claimAt,
             expireEventId: workOrderId + '-ee1',
@@ -756,7 +787,7 @@ async () => {
     );
 });
 
-test('case 4d: claim, release via POST work-orders/:id/'
+test('case 4d: claim, release via POST organizations/:id/work-orders/:id/'
 + 'release (the deleteWorkOrderClaim shape — a claim_released'
 + ' event with no claim/transition op pair beside it), then'
 + ' RE-claim — the replay must see that release as the prior'
@@ -781,7 +812,7 @@ async () => {
     const bigLockTimeoutSeconds = 8 * 60 * 60;
 
     const created = await handleRequest(db, req(
-        'POST', '/work-orders/', token,
+        'POST', '/organizations/1/work-orders/', token,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId,
             workOrderFlowGraph(bigLockTimeoutSeconds),
@@ -802,7 +833,8 @@ async () => {
 
     const claimAt = nowUtc();
     const claim = await handleRequest(db, req(
-        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/organizations/1/work-orders/' + workOrderId +
+            '/claim', token, {
             claimEventId: workOrderId + '-ce1',
             claimAt,
             expireEventId: workOrderId + '-ee1',
@@ -812,10 +844,10 @@ async () => {
     assert.equal(claim.status, 201);
     await assertHistoryParity(db, STARK_ORGANIZATION, workOrderId);
 
-    // The named release: DELETE work-orders/:id/claim.
+    // The named release: DELETE organizations/:id/work-orders/:id/claim.
     const released = await handleRequest(db, req(
         'DELETE',
-        '/work-orders/' + workOrderId + '/claim',
+        '/organizations/1/work-orders/' + workOrderId + '/claim',
         token,
     ));
     assert.equal(released.status, 204);
@@ -837,7 +869,8 @@ async () => {
     // claim-vocabulary event).
     const reclaimAt = nowUtc();
     const reclaimed = await handleRequest(db, req(
-        'PUT', '/work-orders/' + workOrderId + '/claim', token, {
+        'PUT', '/organizations/1/work-orders/' + workOrderId +
+            '/claim', token, {
             claimEventId: workOrderId + '-ce2',
             claimAt: reclaimAt,
             expireEventId: workOrderId + '-ee2',
@@ -881,7 +914,7 @@ async () => {
     const genesisAt = '2026-02-01T00:00:00.000000Z';
 
     const created = await handleRequest(db, req(
-        'POST', '/flows/', token, {
+        'POST', '/organizations/1/flows/', token, {
             id: flowId,
             flow: flowFields('Drift Node Flow'),
             projectFlowId: flowId + '-pf',
@@ -904,7 +937,7 @@ async () => {
     const headId = await headResponseId(db, token, flowId);
     const deleteAt = '2026-02-02T00:00:00.000000Z';
     const deleted = await handleRequest(db, req(
-        'PUT', '/flows/' + flowId, token, {
+        'PUT', '/organizations/1/flows/' + flowId, token, {
             ...flowFields('Drift Node Flow Trimmed'),
             state: 'updated', state_at: deleteAt,
             state_event_id: flowId + '-delete-save',
@@ -920,7 +953,7 @@ async () => {
         },
         { 'if-match': (
             await handleRequest(
-                db, req('GET', '/flows/' + flowId, token),
+                db, req('GET', '/organizations/1/flows/' + flowId, token),
             )
         ).headers.get('ETag')! },
     ));
@@ -928,7 +961,7 @@ async () => {
 
     const undoAt = '2026-02-03T00:00:00.000000Z';
     const undone = await handleRequest(db, req(
-        'POST', '/flows/' + flowId + '/undo', token, {
+        'POST', '/organizations/1/flows/' + flowId + '/undo', token, {
             eventId: flowId + '-undo-ev',
             at: undoAt,
         },
@@ -936,7 +969,7 @@ async () => {
     assert.equal(undone.status, 201);
 
     const prefix = canonicalUriCollection(
-        STARK_ORGANIZATION, '/flows/',
+        STARK_ORGANIZATION, '/organizations/1/flows/',
     );
     const [requests, responses] = await Promise.all([
         db.requests.getAllWhere('uri_collection', prefix),
@@ -1163,7 +1196,7 @@ async () => {
     const ideaId = 'drift-states-idea-chain-1';
 
     const created = await handleRequest(db, req(
-        'PUT', '/ideas/' + ideaId, token,
+        'PUT', '/organizations/1/ideas/' + ideaId, token,
         ideaDocument(
             'Chain Idea', ideaId + '-genesis',
             '2026-04-01T00:00:00.000000Z',
@@ -1173,7 +1206,7 @@ async () => {
     await assertHistoryParity(db, STARK_ORGANIZATION, ideaId);
 
     const transitioned = await handleRequest(db, req(
-        'PUT', '/ideas/' + ideaId, token, {
+        'PUT', '/organizations/1/ideas/' + ideaId, token, {
             ...ideaDocument(
                 'Chain Idea', ideaId + '-transition',
                 '2026-04-02T00:00:00.000000Z',
@@ -1232,9 +1265,9 @@ async () => {
 });
 
 // States-address retirement: archive/reactivate ride PUT
-// /objectives/:id with the lifecycle trio — pair-plane pin.
+// /organizations/:id/objectives/:id with the lifecycle trio — pair-plane pin.
 test('case 7c: live-write chain — objective archive, reactivate'
-+ ' — pair-plane pin via PUT objectives/:id',
++ ' — pair-plane pin via PUT organizations/:id/objectives/:id',
 async () => {
     const db = await seededDb();
     const token = await organizationToken(
@@ -1248,7 +1281,7 @@ async () => {
     // reactivate via the document address — history is
     // [active, archived, active].
     const archived = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token, {
+        'PUT', '/organizations/1/objectives/' + objectiveId, token, {
             position,
             state: 'archived',
             state_at: '2026-04-04T00:00:00.000000Z',
@@ -1265,7 +1298,7 @@ async () => {
     );
 
     const reactivated = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, token, {
+        'PUT', '/organizations/1/objectives/' + objectiveId, token, {
             position,
             state: 'active',
             state_at: '2026-04-04T00:00:00.000001Z',
@@ -1334,7 +1367,10 @@ test('case 8: the tombstone-fix interaction — a FENCED cross-org'
     );
     const foreignIdeaId = 'drift-states-tombstone-foreign-idea';
     const foreignCreated = await handleRequest(db, req(
-        'PUT', '/ideas/' + foreignIdeaId, tokenOrg2,
+        'PUT',
+        '/organizations/' + ORGANIZATION_TWO
+            + '/ideas/' + foreignIdeaId,
+        tokenOrg2,
         ideaDocument(
             'Foreign', foreignIdeaId + '-genesis',
             '2026-05-02T00:00:00.000000Z',

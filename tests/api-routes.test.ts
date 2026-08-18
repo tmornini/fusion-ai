@@ -21,23 +21,25 @@ const COLLECTION_ROUTES: readonly string[] = [
     'identities/any-id/organizations/',
     'organizations/1/members/',
     'ai-agents/',
-    'ideas/',
-    'projects/',
-    'flows/',
-    'projects/any-project/flows/',
-    'work-orders/',
-    'work-orders/history',
-    'flows/any-flow/work-orders/',
+    'organizations/1/ideas/',
+    'organizations/1/projects/',
+    'organizations/1/flows/',
+    'organizations/1/projects/any-project/flows/',
+    'organizations/1/work-orders/',
+    'organizations/1/work-orders/history',
+    'organizations/1/flows/any-flow/work-orders/',
     // GET states/:id/field-values RETIRED (C4); field values
     // fold on work-orders/:id/history.
     'organizations/1/record-types/',
-    'flows/any-flow/records/',
-    'ideas/any-idea/submissions/',
-    'objectives/',
-    'objectives/versions',
-    'objectives/any-objective/revisions/',
-    'projects/any-project/objective-baseline-scores/',
-    'projects/any-project/objective-actual-scores/',
+    'organizations/1/flows/any-flow/records/',
+    'organizations/1/ideas/any-idea/submissions/',
+    'organizations/1/objectives/',
+    'organizations/1/objectives/versions',
+    'organizations/1/objectives/any-objective/revisions/',
+    'organizations/1/projects/any-project'
+        + '/objective-baseline-scores/',
+    'organizations/1/projects/any-project'
+        + '/objective-actual-scores/',
     // Bulk lifecycle collection RETIRED (states-URI
     // elimination C3).
 ];

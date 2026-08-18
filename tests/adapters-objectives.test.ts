@@ -36,7 +36,7 @@ function ctxFor(db: MemoryDbAdapter) {
 }
 
 // Seed an objective document with a lifecycle trio — raw
-// PUT objectives/:id requires state/state_at/state_event_id
+// PUT organizations/:id/objectives/:id requires state/state_at/state_event_id
 // after the states-address retirement gate (Task 1).
 function objectiveDoc(
     position: number,
@@ -57,11 +57,11 @@ test('getObjectives returns all', async () => {
     await seedAdminSchema(db);
     const ctx = ctxFor(db);
     await ctx.PUT(
-        'objectives/o1',
+        'organizations/1/objectives/o1',
         objectiveDoc(0, 'active', 'ev-o1'),
     );
     await ctx.PUT(
-        'objectives/o2',
+        'organizations/1/objectives/o2',
         objectiveDoc(1, 'active', 'ev-o2'),
     );
     const rows = await getObjectives(ctx);
@@ -89,21 +89,21 @@ test(
         await seedAdminSchema(db);
         const ctx = ctxFor(db);
         await ctx.PUT(
-            'objectives/o1/revisions/o1:t0',
+            'organizations/1/objectives/o1/revisions/o1:t0',
             revision(
                 'o1', 'A',
                 '2026-05-14T00:00:00.000000Z',
             ),
         );
         await ctx.PUT(
-            'objectives/o1/revisions/o1:t1',
+            'organizations/1/objectives/o1/revisions/o1:t1',
             revision(
                 'o1', 'B',
                 '2026-05-15T00:00:00.000000Z',
             ),
         );
         await ctx.PUT(
-            'objectives/o2/revisions/o2:t0',
+            'organizations/1/objectives/o2/revisions/o2:t0',
             revision(
                 'o2', 'C',
                 '2026-05-14T00:00:00.000000Z',
@@ -135,21 +135,21 @@ test(
         await seedAdminSchema(db);
         const ctx = ctxFor(db);
         await ctx.PUT(
-            'objectives/o1/revisions/o1:t0',
+            'organizations/1/objectives/o1/revisions/o1:t0',
             revision(
                 'o1', 'Old',
                 '2026-05-14T00:00:00.000000Z',
             ),
         );
         await ctx.PUT(
-            'objectives/o1/revisions/o1:t1',
+            'organizations/1/objectives/o1/revisions/o1:t1',
             revision(
                 'o1', 'New',
                 '2026-05-15T00:00:00.000000Z',
             ),
         );
         await ctx.PUT(
-            'objectives/o2/revisions/o2:t0',
+            'organizations/1/objectives/o2/revisions/o2:t0',
             revision(
                 'o2', 'Other',
                 '2026-05-14T00:00:00.000000Z',
@@ -190,7 +190,7 @@ test('getArchivedObjectiveIds returns a Set', async () => {
     // lifecycle trio — GET objectives stamps state on
     // the row (states-URI elimination B6).
     await ctx.PUT(
-        'objectives/o1',
+        'organizations/1/objectives/o1',
         objectiveDoc(0, 'archived', 'ev-o1-arch'),
     );
     const ids = await getArchivedObjectiveIds(ctx);
@@ -389,7 +389,7 @@ function recordingCtx(
     const calls: RecordedCall[] = [];
     const ctx = {
         requestId: 'r1',
-        identity: { id: 'current' },
+        identity: { id: 'current', organization: '1' },
         GET: async <T>(path: string): Promise<T> => {
             calls.push({ method: 'GET', path });
             if (!handlers.GET) {
@@ -428,7 +428,7 @@ test(
     async () => {
         const { ctx, calls } = recordingCtx({
             GET: async (path) => {
-                assert.equal(path, 'objectives/o1');
+                assert.equal(path, 'organizations/1/objectives/o1');
                 return {
                     id: 'o1',
                     organization_id: '1',
@@ -443,9 +443,9 @@ test(
         await postObjectiveArchival(ctx, 'o1');
         assert.equal(calls.length, 2);
         assert.equal(calls[0]!.method, 'GET');
-        assert.equal(calls[0]!.path, 'objectives/o1');
+        assert.equal(calls[0]!.path, 'organizations/1/objectives/o1');
         assert.equal(calls[1]!.method, 'PUT');
-        assert.equal(calls[1]!.path, 'objectives/o1');
+        assert.equal(calls[1]!.path, 'organizations/1/objectives/o1');
         const body = calls[1]!.body!;
         assert.equal(body['position'], 3);
         assert.equal(body['state'], 'archived');
@@ -479,7 +479,7 @@ test(
         );
         assert.equal(calls.length, 1);
         assert.equal(calls[0]!.method, 'PUT');
-        assert.equal(calls[0]!.path, 'objectives/o1');
+        assert.equal(calls[0]!.path, 'organizations/1/objectives/o1');
         assert.deepEqual(calls[0]!.body, {
             position: 1.5,
             state: 'active',

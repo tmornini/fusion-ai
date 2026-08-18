@@ -16,11 +16,11 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 
-// GET objectives/versions — Phase A5 collection history.
+// GET organizations/1/objectives/versions — Phase A5 collection history.
 // Org-prefix scoped bulk StateEntity rows (no field_values),
 // (at, id) DESC overall. Always 200 array. Route order is
 // load-bearing: literal `history` must win over
-// objectives/:id.
+// organizations/:id/objectives/:id.
 
 const BASE = 'http://localhost';
 
@@ -67,12 +67,14 @@ async function putObjective(
     state: string,
     stateAt: string,
     eventSuffix: string,
+    organization = '1',
 ): Promise<void> {
     const res = await handleRequest(
         db,
         req(
             'PUT',
-            '/objectives/' + id,
+            '/organizations/' + organization
+                + '/objectives/' + id,
             token,
             objectiveBody(
                 state, stateAt, id + '-' + eventSuffix,
@@ -83,7 +85,7 @@ async function putObjective(
 }
 
 test(
-    'GET objectives/versions: archive/reactivate/re-archive'
+    'GET organizations/1/objectives/versions: archive/reactivate/re-archive'
     + ' keeps both archived events; (at, id) DESC',
     async () => {
         const db = memoryDbAdapter();
@@ -109,7 +111,7 @@ test(
 
         const res = await handleRequest(
             db,
-            req('GET', '/objectives/versions', DEV_TOKEN),
+            req('GET', '/organizations/1/objectives/versions', DEV_TOKEN),
         );
         assert.equal(res.status, 200);
         const rows = await res.json() as HistoryEvent[];
@@ -146,7 +148,7 @@ test(
 );
 
 test(
-    'GET objectives/versions: literal history wins over'
+    'GET organizations/1/objectives/versions: literal history wins over'
     + ' :id; real id still resolves entity; empty → 200 []',
     async () => {
         const db = memoryDbAdapter();
@@ -159,7 +161,7 @@ test(
 
         const collection = await handleRequest(
             db,
-            req('GET', '/objectives/versions', DEV_TOKEN),
+            req('GET', '/organizations/1/objectives/versions', DEV_TOKEN),
         );
         assert.equal(collection.status, 200);
         const rows =
@@ -178,10 +180,10 @@ test(
             );
         }
 
-        // objectives/:id still resolves a real document.
+        // organizations/:id/objectives/:id still resolves a real document.
         const entity = await handleRequest(
             db,
-            req('GET', '/objectives/' + id, DEV_TOKEN),
+            req('GET', '/organizations/1/objectives/' + id, DEV_TOKEN),
         );
         assert.equal(entity.status, 200);
         const body = await entity.json() as { id: string };
@@ -192,7 +194,7 @@ test(
         await seedAdminSchema(emptyDb);
         const empty = await handleRequest(
             emptyDb,
-            req('GET', '/objectives/versions', DEV_TOKEN),
+            req('GET', '/organizations/1/objectives/versions', DEV_TOKEN),
         );
         assert.equal(empty.status, 200);
         assert.deepEqual(await empty.json(), []);
@@ -200,7 +202,7 @@ test(
 );
 
 test(
-    'GET objectives/versions org isolation: org B rows'
+    'GET organizations/1/objectives/versions org isolation: org B rows'
     + ' absent',
     async () => {
         const db = await seededMockDb();
@@ -218,11 +220,12 @@ test(
         await putObjective(
             db, twoId, tokenTwo, 'active',
             '2026-04-01T00:00:00.000000Z', 'ev1',
+            ORGANIZATION_TWO,
         );
 
         const starkRes = await handleRequest(
             db,
-            req('GET', '/objectives/versions', DEV_TOKEN),
+            req('GET', '/organizations/1/objectives/versions', DEV_TOKEN),
         );
         assert.equal(starkRes.status, 200);
         const starkRows =
@@ -235,7 +238,12 @@ test(
 
         const twoRes = await handleRequest(
             db,
-            req('GET', '/objectives/versions', tokenTwo),
+            req(
+                'GET',
+                '/organizations/' + ORGANIZATION_TWO
+                    + '/objectives/versions',
+                tokenTwo,
+            ),
         );
         assert.equal(twoRes.status, 200);
         const twoRows =

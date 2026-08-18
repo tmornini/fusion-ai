@@ -16,6 +16,10 @@ import {
     isClaimState,
 } from '../../../api/work-order-claims.ts';
 import type { RequestContext } from './shared.ts';
+import {
+    organizationCollection,
+    organizationItem,
+} from './shared.ts';
 
 export type {
     WorkOrderEntity,
@@ -173,7 +177,10 @@ export async function getWorkOrderHistories(
 ): Promise<Map<Id, WorkOrderHistoryEventEntity[]>> {
     const all = await ctx.GET<
         WorkOrderHistoryEventEntity[]
-    >('work-orders/history');
+    >(
+        organizationCollection(ctx, 'work-orders')
+            + 'history',
+    );
     const byEntity = new Map<
         Id, WorkOrderHistoryEventEntity[]
     >();
@@ -286,7 +293,8 @@ export async function getWorkOrderHistory(
     id: Id,
 ): Promise<WorkOrderHistoryEventEntity[]> {
     return ctx.GET<WorkOrderHistoryEventEntity[]>(
-        `work-orders/${id}/history`,
+        organizationItem(ctx, 'work-orders', id)
+            + '/history',
     );
 }
 
@@ -377,7 +385,7 @@ async function getWorkOrderEntities(
     ctx: RequestContext,
 ): Promise<WorkOrderEntity[]> {
     return ctx.GET<WorkOrderEntity[]>(
-        'work-orders/',
+        organizationCollection(ctx, 'work-orders'),
     );
 }
 
@@ -394,7 +402,10 @@ export async function getFlowWorkOrderEntities(
 ): Promise<FlowWorkOrderEntity[]> {
     return ctx.GET<
         FlowWorkOrderEntity[]
-    >('flows/' + flowId + '/work-orders/');
+    >(
+        organizationItem(ctx, 'flows', flowId)
+            + '/work-orders/',
+    );
 }
 
 export async function getWorkOrder(
@@ -402,7 +413,7 @@ export async function getWorkOrder(
     id: string,
 ): Promise<WorkOrder> {
     const row = await ctx.GET<WorkOrderEntity>(
-        `work-orders/${id}`,
+        organizationItem(ctx, 'work-orders', id),
     );
     return toWorkOrder(row);
 }

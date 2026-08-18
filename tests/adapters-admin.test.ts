@@ -90,7 +90,7 @@ async function seedProject(
 // Seeds an idea through the SAME document PUT the live route
 // uses (putIdea) and its submission through the live
 // submissions PUT, so both message pairs exist — required for
-// the flipped GET ideas / GET ideas/:id/submissions routes
+// the flipped GET ideas / GET organizations/:id/ideas/:id/submissions routes
 // (Phase 2 Task 5), which getIdeas (getOrganizationStats' idea
 // count) reads, to derive them. A fixed historical stateAt
 // (matching the old seedIdeaState idiom this replaces) rather
@@ -110,7 +110,7 @@ async function seedIdea(
         stateAt: '2026-01-01T00:00:00.000000Z',
         stateEventId: 'si-' + id,
     });
-    await ctx.PUT('ideas/' + id + '/submissions/sub-' + id, {
+    await ctx.PUT('organizations/1/ideas/' + id + '/submissions/sub-' + id, {
         idea_id: id,
         member_id: submitter,
         at: '2026-04-01T00:00:00.000000Z',

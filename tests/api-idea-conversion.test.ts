@@ -29,7 +29,8 @@ function pairJsonOf(message: string): {
     };
 }
 
-// POST ideas/:id/conversion is the LONE cross-aggregate write:
+// POST organizations/:id/ideas/:id/conversion is the LONE cross-aggregate
+// write:
 // a new project row, the promoted idea row, TWO state events
 // (the idea's 'promoted' and the project's initial), and N
 // baseline-score rows, all in ONE re-entrant transaction. Both
@@ -85,7 +86,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     // plane, so a raw ideas.put + states.postEvent leaves no
     // pair and history would read empty after a rolled-back
     // conversion.
-    await PUT(db, 'ideas/idea-1', {
+    await PUT(db, 'organizations/1/ideas/idea-1', {
         ...ideaFields('Source Idea'),
         state: 'approved',
         state_at: '2026-01-01T00:00:00.000000Z',
@@ -94,13 +95,13 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     // Phase Final Stage B: objectives table retired — seed
     // through the live document PUT with the lifecycle trio
     // (states-address retirement) so the pair plane owns it.
-    await PUT(db, 'objectives/obj-1', {
+    await PUT(db, 'organizations/1/objectives/obj-1', {
         position: 1,
         state: 'active',
         state_at: '2026-01-01T00:00:00.000000Z',
         state_event_id: 'obj-1-genesis',
     }, DEV_TOKEN);
-    await PUT(db, 'objectives/obj-2', {
+    await PUT(db, 'organizations/1/objectives/obj-2', {
         position: 2,
         state: 'active',
         state_at: '2026-01-01T00:00:00.000000Z',
@@ -110,14 +111,14 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 }
 
 test(
-    'POST ideas/:id/conversion writes the project, the'
+    'POST organizations/:id/ideas/:id/conversion writes the project, the'
     + ' promoted idea, two events, and N baselines in one'
     + ' operation',
     async () => {
         const db = await seededDb();
         // Two distinct timestamps — idea strictly before project —
         // to verify each at routes to its own event and not the other.
-        await POST(db, 'ideas/idea-1/conversion', {
+        await POST(db, 'organizations/1/ideas/idea-1/conversion', {
             projectId: 'p1',
             project: projectFields('Promoted Project'),
             idea: ideaFields('Source Idea'),
@@ -144,7 +145,7 @@ test(
         const project = await GET<{
             title: string;
             organization_id: string;
-        }>(db, 'projects/p1', DEV_TOKEN);
+        }>(db, 'organizations/1/projects/p1', DEV_TOKEN);
         assert.equal(project.title, 'Promoted Project');
         // The fence stamped the bound org — never the body.
         assert.equal(project.organization_id, '1');
@@ -157,7 +158,7 @@ test(
             state: string;
             member_id: string;
             at: string;
-        }[]>(db, 'ideas/idea-1/versions', DEV_TOKEN);
+        }[]>(db, 'organizations/1/ideas/idea-1/versions', DEV_TOKEN);
         // Family history is DESC — index 0 is current.
         const ideaCurrent = ideaHistory[0]!;
         assert.equal(ideaCurrent.state, 'promoted');
@@ -183,7 +184,7 @@ test(
             ProjectObjectiveBaselineScoreEntity[]
         >(
             db,
-            'projects/p1/objective-baseline-scores/',
+            'organizations/1/projects/p1/objective-baseline-scores/',
             DEV_TOKEN,
         );
         assert.equal(mine.length, 2);
@@ -196,11 +197,11 @@ test(
 );
 
 test(
-    'POST ideas/:id/conversion also appends document pairs'
+    'POST organizations/:id/ideas/:id/conversion also appends document pairs'
     + ' at the project\'s and the idea\'s own addresses',
     async () => {
         const db = await seededDb();
-        await POST(db, 'ideas/idea-1/conversion', {
+        await POST(db, 'organizations/1/ideas/idea-1/conversion', {
             projectId: 'p9',
             project: projectFields('Promoted Project'),
             idea: ideaFields('Source Idea'),
@@ -346,7 +347,7 @@ test(
 );
 
 test(
-    'POST ideas/:id/conversion ignores a raw colliding'
+    'POST organizations/:id/ideas/:id/conversion ignores a raw colliding'
     + ' states row (states ROW half stripped)',
     async () => {
         const db = await seededDb();
@@ -354,7 +355,7 @@ test(
         // a raw colliding states row no longer aborts the
         // pair-plane conversion.
     // Phase Final Stage B: states table retired.
-        await POST(db, 'ideas/idea-1/conversion', {
+        await POST(db, 'organizations/1/ideas/idea-1/conversion', {
             projectId: 'p1',
             project: projectFields('Converted'),
             idea: ideaFields('Source Idea'),
@@ -373,11 +374,11 @@ test(
         }, DEV_TOKEN);
 
         const project = await GET<{ id: string }>(
-            db, 'projects/p1', DEV_TOKEN,
+            db, 'organizations/1/projects/p1', DEV_TOKEN,
         );
         assert.equal(project.id, 'p1');
         const ideaHistory = await GET<{ state: string }[]>(
-            db, 'ideas/idea-1/versions', DEV_TOKEN,
+            db, 'organizations/1/ideas/idea-1/versions', DEV_TOKEN,
         );
         // Family history is DESC — index 0 is current.
         const ideaCurrent = ideaHistory[0]!;

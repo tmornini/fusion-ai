@@ -256,7 +256,7 @@ async function createFlowWithNodes(
     flowId: string, nodeIds: readonly string[],
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/flows/', token,
+        'POST', '/organizations/A/flows/', token,
         {
             id: flowId,
             flow: flowFields('Flow ' + flowId),
@@ -283,10 +283,10 @@ async function headResponseId(
     db: MemoryDbAdapter, token: string, flowId: string,
 ): Promise<string> {
     const got = await handleRequest(
-        db, req('GET', '/flows/' + flowId, token),
+        db, req('GET', '/organizations/A/flows/' + flowId, token),
     );
     const id = got.headers.get('Response-ID');
-    assert.ok(id, 'no Response-ID on GET /flows/' + flowId);
+    assert.ok(id, 'no Response-ID on GET /organizations/A/flows/' + flowId);
     return id!;
 }
 
@@ -303,12 +303,12 @@ async function saveFlowWithSidecars(
     stateEventId: string, stateAt: string,
 ): Promise<void> {
     const got = await handleRequest(
-        db, req('GET', '/flows/' + flowId, token),
+        db, req('GET', '/organizations/A/flows/' + flowId, token),
     );
     const etag = got.headers.get('ETag');
-    assert.ok(etag, 'no ETag on GET /flows/' + flowId);
+    assert.ok(etag, 'no ETag on GET /organizations/A/flows/' + flowId);
     const res = await handleRequest(db, req(
-        'PUT', '/flows/' + flowId, token,
+        'PUT', '/organizations/A/flows/' + flowId, token,
         {
             ...flowFields('Flow ' + flowId + ' saved'),
             state: 'active', state_at: stateAt,
@@ -354,7 +354,7 @@ async function createWorkOrder(
     db: MemoryDbAdapter, token: string, id: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/work-orders/', token,
+        'POST', '/organizations/A/work-orders/', token,
         workOrderBody(
             id, id + '-fwo', 'flow-union-wo-placeholder',
             [
@@ -423,7 +423,7 @@ async function buildUnionFixture(): Promise<UnionFixture> {
     // union).
     const ideaId = 'idea-union';
     const ideaRes = await handleRequest(db, req(
-        'PUT', '/ideas/' + ideaId, tokenA,
+        'PUT', '/organizations/A/ideas/' + ideaId, tokenA,
         ideaDocument(
             'Union Idea', ideaId + '-genesis',
             '2026-01-02T00:00:00.000000Z',
@@ -433,7 +433,7 @@ async function buildUnionFixture(): Promise<UnionFixture> {
 
     const foreignIdeaId = 'idea-union-foreign';
     const foreignIdeaRes = await handleRequest(db, req(
-        'PUT', '/ideas/' + foreignIdeaId, tokenB,
+        'PUT', '/organizations/B/ideas/' + foreignIdeaId, tokenB,
         ideaDocument(
             'Foreign Idea', foreignIdeaId + '-genesis',
             '2026-01-02T00:00:00.000001Z',
@@ -443,11 +443,11 @@ async function buildUnionFixture(): Promise<UnionFixture> {
 
     // (a-objective) an objectives document trio — the
     // states/:id orphan leg's replacement in the five-source
-    // union proof (objectives join ideas/projects/records/
-    // flows on the document-trio source).
+    // union proof (objectives join ideas, projects,
+    // records, flows on the document-trio source).
     const objectiveId = 'obj-union';
     const objectiveRes = await handleRequest(db, req(
-        'PUT', '/objectives/' + objectiveId, tokenA, {
+        'PUT', '/organizations/A/objectives/' + objectiveId, tokenA, {
             position: 1,
             state: 'active',
             state_at: '2026-01-02T00:00:00.000002Z',

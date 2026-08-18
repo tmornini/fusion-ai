@@ -245,13 +245,13 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
                 `;
                 raced = Promise.all([
                     handleRequest(db, req(
-                        'PUT', '/flows/' + id, token,
+                        'PUT', '/organizations/1/flows/' + id, token,
                         flowDocument('A', id + '-a'),
                         undefined,
                         generateCryptoSafeBase62(),
                     )),
                     handleRequest(db, req(
-                        'PUT', '/flows/' + id, token,
+                        'PUT', '/organizations/1/flows/' + id, token,
                         flowDocument('B', id + '-b'),
                         undefined,
                         generateCryptoSafeBase62(),
@@ -284,11 +284,11 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         const token = await organizationToken();
         const id = 'race-match';
         const created = await handleRequest(db, req(
-            'POST', '/flows/', token, flowCreate(id),
+            'POST', '/organizations/1/flows/', token, flowCreate(id),
         ));
         assert.equal(created.status, 201);
         const live = await handleRequest(
-            db, req('GET', '/flows/' + id, token),
+            db, req('GET', '/organizations/1/flows/' + id, token),
         );
         assert.equal(live.status, 200);
         const etag = live.headers.get('ETag');
@@ -320,13 +320,13 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
                 `;
                 raced = Promise.all([
                     handleRequest(db, req(
-                        'PUT', '/flows/' + id, token,
+                        'PUT', '/organizations/1/flows/' + id, token,
                         flowDocument('Left', id + '-l'),
                         { 'if-match': etag },
                         generateCryptoSafeBase62(),
                     )),
                     handleRequest(db, req(
-                        'PUT', '/flows/' + id, token,
+                        'PUT', '/organizations/1/flows/' + id, token,
                         flowDocument('Right', id + '-r'),
                         { 'if-match': etag },
                         generateCryptoSafeBase62(),
@@ -358,11 +358,11 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         const op = generateCryptoSafeBase62();
         const [left, right] = await Promise.all([
             handleRequest(db, req(
-                'PUT', '/ideas/race-dedup', token,
+                'PUT', '/organizations/1/ideas/race-dedup', token,
                 body, undefined, op,
             )),
             handleRequest(db, req(
-                'PUT', '/ideas/race-dedup', token,
+                'PUT', '/organizations/1/ideas/race-dedup', token,
                 body, undefined, op,
             )),
         ]);

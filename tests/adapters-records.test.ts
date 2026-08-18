@@ -307,7 +307,7 @@ test(
             attributes: [],
             initialState: 'active',
         });
-        await ctx.PUT('ideas/i1', {
+        await ctx.PUT('organizations/1/ideas/i1', {
             title: 'I',
             position: 1,
             problem_statement: 'p',

@@ -30,14 +30,16 @@ import {
 } from './http-fixtures.ts';
 
 // Objectives are the FIFTH lifecycle-trio family (states-
-// address retirement): PUT /objectives/:id carries the
-// entity's own field ({position}) PLUS the lifecycle trio
-// (state/state_at/state_event_id), exactly as ideas/projects/
-// records/flows do. The absence-as-active covenant (R2) and
-// the genesis dilemma are RETIRED — every objective now has
-// an explicit genesis event minted at create, and archive/
-// reactivate ride this SAME document address. The states/:id
-// event-append path for objectives is dead.
+// address retirement): PUT
+// /organizations/:id/objectives/:id carries the entity's
+// own field ({position}) PLUS the lifecycle trio
+// (state/state_at/state_event_id), exactly as ideas,
+// projects, records, and flows do. The absence-as-active
+// covenant (R2) and the genesis dilemma are RETIRED —
+// every objective now has an explicit genesis event
+// minted at create, and archive/reactivate ride this SAME
+// document address. The states/:id event-append path for
+// objectives is dead.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -146,15 +148,16 @@ test('validateObjectiveDocumentBody rejects a state outside'
     );
 });
 
-// -- 1b. PUT objectives/:id wire trio ------------------------
+// -- 1b. PUT organizations/:id/objectives/:id wire trio
+// ------------------------
 
-test('PUT objectives/:id accepts the lifecycle trio and'
+test('PUT organizations/:id/objectives/:id accepts the lifecycle trio and'
 + ' echoes the entity fields', async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/objectives/obj-trio-1', token, {
+        'PUT', '/organizations/1/objectives/obj-trio-1', token, {
             position: 7,
             state: 'active',
             state_at: nowUtc(),
@@ -171,25 +174,25 @@ test('PUT objectives/:id accepts the lifecycle trio and'
     assert.equal(wire.state_event_id, 'obj-trio-1-ev1');
 });
 
-test('PUT objectives/:id without the trio is 400',
+test('PUT organizations/:id/objectives/:id without the trio is 400',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/objectives/obj-trio-2', token,
+        'PUT', '/organizations/1/objectives/obj-trio-2', token,
         { position: 1 },
     ));
     assert.equal(res.status, 400);
 });
 
-test('PUT objectives/:id rejects a state outside the'
+test('PUT organizations/:id/objectives/:id rejects a state outside the'
 + ' objective alphabet', async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/objectives/obj-trio-3', token, {
+        'PUT', '/organizations/1/objectives/obj-trio-3', token, {
             position: 1,
             state: 'deleted',
             state_at: nowUtc(),
@@ -212,8 +215,8 @@ async () => {
     };
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/objectives/obj-doc-op-1',
-        routePattern: 'objectives/:id',
+        pathname: '/organizations/1/objectives/obj-doc-op-1',
+        routePattern: 'organizations/:id/objectives/:id',
         routeSegments: ['objectives', ':id'],
         pathSegments: ['objectives', 'obj-doc-op-1'],
         headerFields: [], body,
@@ -243,16 +246,17 @@ async () => {
 // .test.ts's own resend case: the fast path lives at the gate
 // (api.ts), agnostic to which op serves the route). ----------
 
-test('a byte-identical PUT resend to objectives/:id converges'
+test('a byte-identical PUT resend to'
+    + ' organizations/:id/objectives/:id converges'
 + ' to one stored request/response pair', async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const body = documentFields();
     const first = await PUT(
-        db, 'objectives/obj-resend-1', body, DEV_TOKEN,
+        db, 'organizations/1/objectives/obj-resend-1', body, DEV_TOKEN,
     );
     const second = await PUT(
-        db, 'objectives/obj-resend-1', body, DEV_TOKEN,
+        db, 'organizations/1/objectives/obj-resend-1', body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
     assert.equal((await db.requests.getAll()).length, 3);
@@ -273,8 +277,8 @@ async function putDocumentPair(
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/objectives/' + id,
-        routePattern: 'objectives/:id',
+        pathname: '/organizations/1/objectives/' + id,
+        routePattern: 'organizations/:id/objectives/:id',
         routeSegments: ['objectives', ':id'],
         pathSegments: ['objectives', id],
         headerFields: [], body,
@@ -297,8 +301,8 @@ async function deleteDocumentPair(
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'DELETE',
-        pathname: '/objectives/' + id,
-        routePattern: 'objectives/:id',
+        pathname: '/organizations/1/objectives/' + id,
+        routePattern: 'organizations/:id/objectives/:id',
         routeSegments: ['objectives', ':id'],
         pathSegments: ['objectives', id],
         headerFields: [], body: {},
@@ -335,7 +339,7 @@ async () => {
     );
     const wiring = documentFamilyWiring('objectives')!;
     const got = await documentGetHandler(wiring)(
-        db, ['obj-chain-1'], 'current', '1',
+        db, ['1', 'obj-chain-1'], 'current', '1',
     );
     // GET stamps lifecycle-current trio from the second
     // event (later state_at wins), not the head body alone.
@@ -365,7 +369,7 @@ test('a DELETE-head derives absent through the generic'
     const wiring = documentFamilyWiring('objectives')!;
     await assert.rejects(
         documentGetHandler(wiring)(
-            db, ['obj-del-1'], 'current', '1',
+            db, ['1', 'obj-del-1'], 'current', '1',
         ),
         (error: unknown) => {
             assert.ok(error instanceof EntityNotFoundError);
@@ -387,7 +391,7 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
     const at = '2026-01-01T00:00:00.000000Z';
     const ev = 'ev-g1';
     const put = await handleRequest(db, req(
-        'PUT', '/objectives/' + id, token,
+        'PUT', '/organizations/1/objectives/' + id, token,
         documentFields(3, 'active', at, ev),
     ));
     assert.equal(put.status, 201);
@@ -406,11 +410,11 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
     assert.deepEqual(stored, expected);
     const wiring = documentFamilyWiring('objectives')!;
     const derived = await documentGetHandler(wiring)(
-        db, [id], 'current', '1',
+        db, ['1', id], 'current', '1',
     );
     assert.deepEqual(stored, derived);
     const skewed = await handleRequest(db, req(
-        'PUT', '/objectives/' + id, token,
+        'PUT', '/organizations/1/objectives/' + id, token,
         documentFields(
             99, 'archived',
             '2020-01-01T00:00:00.000000Z', 'ev-g1-skew',
@@ -423,7 +427,7 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
     assert.deepEqual(
         afterSkew,
         await documentGetHandler(wiring)(
-            db, [id], 'current', '1',
+            db, ['1', id], 'current', '1',
         ),
     );
     assert.equal(afterSkew.state, 'active');

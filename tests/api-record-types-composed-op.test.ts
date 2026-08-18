@@ -161,7 +161,7 @@ async function seedFieldValueReferrer(
     attributeId: string,
 ): Promise<void> {
     await PUT(
-        db, 'work-orders/wo-restrict-fv', {
+        db, 'organizations/1/work-orders/wo-restrict-fv', {
             display_id: 'rfv1',
             flow_graph: {
                 name: 'Restrict FV',
@@ -190,9 +190,10 @@ async function seedFieldValueReferrer(
         transitionAt: AT,
     };
     const pathSegments = [
+        'organizations', STARK_ORGANIZATION,
         'work-orders', 'wo-restrict-fv', 'transition',
     ];
-    const pattern = 'work-orders/:id/transition';
+    const pattern = 'organizations/:id/work-orders/:id/transition';
     const pair = await formWritePair({
         method: 'POST',
         pathname: '/' + pathSegments.join('/'),

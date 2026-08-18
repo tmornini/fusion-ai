@@ -70,7 +70,7 @@ function putProject(
     stateEventId: string,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', '/projects/' + id, token,
+        'PUT', '/organizations/1/projects/' + id, token,
         projectDocument(title, state, stateAt, stateEventId),
     ));
 }

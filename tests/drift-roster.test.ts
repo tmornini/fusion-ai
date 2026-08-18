@@ -77,7 +77,7 @@ import {
 // generic, member-tier-reachable PUT states/:id route is
 // gone. Member lifecycle archive/reactivate rides PUT
 // members/:id (document trio); work-order unclaim rides POST
-// work-orders/:id/release. EntityStore tombstone scans are
+// organizations/:id/work-orders/:id/release. EntityStore tombstone scans are
 // retired with the row plane. Outside that retired path, the
 // deleted-filter is otherwise VACUOUS for
 // every roster family across this entire file (finding 15 as
@@ -120,6 +120,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 
 const MEMBERS_TEST_WIRING: DocumentFamilyWiring = {
     family: 'members',
+    httpNest: 'organization',
     lifecycle: 'trio',
     notFoundTable: 'members',
     validateDocument: validateMemberDocumentBody,
@@ -137,6 +138,7 @@ const MEMBERS_TEST_WIRING: DocumentFamilyWiring = {
 
 const MEMBERSHIPS_TEST_WIRING: DocumentFamilyWiring = {
     family: 'memberships',
+    httpNest: 'organization',
     lifecycle: 'stateless',
     notFoundTable: 'memberships',
     validateDocument: validateMembershipDocumentBody,
@@ -149,6 +151,7 @@ const MEMBERSHIPS_TEST_WIRING: DocumentFamilyWiring = {
 
 const AI_MEMBERS_TEST_WIRING: DocumentFamilyWiring = {
     family: 'ai-members',
+    httpNest: 'organization',
     lifecycle: 'stateless',
     notFoundTable: 'ai_members',
     validateDocument: validateAiMemberDocumentBody,
@@ -161,6 +164,7 @@ const AI_MEMBERS_TEST_WIRING: DocumentFamilyWiring = {
 
 const HUMAN_MEMBERS_TEST_WIRING: DocumentFamilyWiring = {
     family: 'human-members',
+    httpNest: 'organization',
     lifecycle: 'stateless',
     notFoundTable: 'human_members',
     validateDocument: validateHumanMemberDocumentBody,
@@ -215,7 +219,7 @@ async function derivedAiMember(
     db: DbAdapter, organization: Id, id: Id,
 ): Promise<AIMemberEntity> {
     return documentGetHandler(AI_MEMBERS_TEST_WIRING)(
-        db, [id], READER_ACTOR, organization,
+        db, [organization, id], READER_ACTOR, organization,
     ) as Promise<AIMemberEntity>;
 }
 
@@ -231,7 +235,7 @@ async function derivedHumanMember(
     db: DbAdapter, organization: Id, id: Id,
 ): Promise<HumanMemberEntity> {
     return documentGetHandler(HUMAN_MEMBERS_TEST_WIRING)(
-        db, [id], READER_ACTOR, organization,
+        db, [organization, id], READER_ACTOR, organization,
     ) as Promise<HumanMemberEntity>;
 }
 

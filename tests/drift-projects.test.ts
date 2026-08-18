@@ -150,7 +150,11 @@ test('seeded GET /projects wire equals deriveProjects'
             'current', organization,
         );
         const res = await handleRequest(
-            db, req('GET', '/projects/', token),
+            db, req(
+                'GET',
+                '/organizations/' + organization + '/projects/',
+                token,
+            ),
         );
         assert.equal(res.status, 200);
         const prefix = '/organizations/'
@@ -172,7 +176,12 @@ test('per-project GET wire equals deriveProject for'
             'current', seed.organization,
         );
         const res = await handleRequest(
-            db, req('GET', '/projects/' + seed.id, token),
+            db, req(
+                'GET',
+                '/organizations/' + seed.organization
+                    + '/projects/' + seed.id,
+                token,
+            ),
         );
         assert.equal(res.status, 200);
         const prefix = '/organizations/'
@@ -199,7 +208,10 @@ async () => {
     )!;
     const token = await organizationToken('current', '2');
     const res = await handleRequest(
-        db, req('GET', '/projects/' + foreign.id, token),
+        db, req(
+            'GET',
+            '/organizations/2/projects/' + foreign.id, token,
+        ),
     );
     assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
@@ -242,7 +254,7 @@ async () => {
     ];
     for (const f of fixtures) {
         const put = await handleRequest(db, req(
-            'PUT', '/projects/' + f.id, token,
+            'PUT', '/organizations/1/projects/' + f.id, token,
             projectDocument(f.title, 'submitted', f.at, f.ev),
         ));
         assert.equal(put.status, 201);
@@ -254,7 +266,7 @@ async () => {
         );
     }
     const res = await handleRequest(
-        db, req('GET', '/projects/', token),
+        db, req('GET', '/organizations/1/projects/', token),
     );
     assert.equal(res.status, 200);
     const list = await res.json() as { id: string }[];
@@ -271,7 +283,7 @@ async () => {
     const prefix = '/organizations/1/projects/';
     for (const row of added) {
         const single = await handleRequest(
-            db, req('GET', '/projects/' + row.id, token),
+            db, req('GET', '/organizations/1/projects/' + row.id, token),
         );
         assert.equal(single.status, 200);
         assert.equal(
@@ -290,7 +302,7 @@ test('derived history keeps the FIRST arrival\'s authorship'
     const projectId = 'project-drift-authorship-caveat';
 
     await handleRequest(db, req(
-        'PUT', '/projects/' + projectId, tokenA, {
+        'PUT', '/organizations/1/projects/' + projectId, tokenA, {
             ...projectDocument(
                 'First', 'submitted',
                 '2026-04-01T00:00:00.000000Z',
@@ -299,7 +311,7 @@ test('derived history keeps the FIRST arrival\'s authorship'
         },
     ));
     await handleRequest(db, req(
-        'PUT', '/projects/' + projectId, tokenB, {
+        'PUT', '/organizations/1/projects/' + projectId, tokenB, {
             ...projectDocument(
                 'Second', 'submitted',
                 '2026-04-01T00:00:00.000000Z',
@@ -317,7 +329,7 @@ test('derived history keeps the FIRST arrival\'s authorship'
     // Wire entity reflects the SECOND title; authorship of the
     // head event stays on member A; GET trio is the one event.
     const getRes = await handleRequest(
-        db, req('GET', '/projects/' + projectId, tokenA),
+        db, req('GET', '/organizations/1/projects/' + projectId, tokenA),
     );
     assert.equal(getRes.status, 200);
     assert.equal(
@@ -335,7 +347,7 @@ async () => {
     const projectId = 'project-drift-lifecycle';
 
     await handleRequest(db, req(
-        'PUT', '/projects/' + projectId, token, {
+        'PUT', '/organizations/1/projects/' + projectId, token, {
             ...projectDocument(
                 'Lifecycle Project', 'submitted',
                 '2026-03-01T00:00:00.000000Z',
@@ -344,7 +356,7 @@ async () => {
         },
     ));
     await handleRequest(db, req(
-        'PUT', '/projects/' + projectId, token, {
+        'PUT', '/organizations/1/projects/' + projectId, token, {
             title: 'Lifecycle Project Edited',
             description: 'd2',
             progress: 10,
@@ -359,7 +371,7 @@ async () => {
         },
     ));
     await handleRequest(db, req(
-        'PUT', '/projects/' + projectId, token, {
+        'PUT', '/organizations/1/projects/' + projectId, token, {
             title: 'Lifecycle Project Edited',
             description: 'd2',
             progress: 10,
@@ -374,7 +386,7 @@ async () => {
         },
     ));
     const beforeDelete = await handleRequest(
-        db, req('GET', '/projects/' + projectId, token),
+        db, req('GET', '/organizations/1/projects/' + projectId, token),
     );
     assert.equal(beforeDelete.status, 200);
     assert.equal(
@@ -393,7 +405,7 @@ async () => {
     );
 
     await handleRequest(db, req(
-        'PUT', '/projects/' + projectId, token, {
+        'PUT', '/organizations/1/projects/' + projectId, token, {
             title: 'Lifecycle Project Edited',
             description: 'd2',
             progress: 10,
@@ -409,7 +421,7 @@ async () => {
     ));
 
     const deleted = await handleRequest(
-        db, req('GET', '/projects/' + projectId, token),
+        db, req('GET', '/organizations/1/projects/' + projectId, token),
     );
     assert.equal(deleted.status, 200);
     assert.equal(
@@ -423,7 +435,7 @@ async () => {
         EntityNotFoundError,
     );
     const listRes = await handleRequest(
-        db, req('GET', '/projects/', token),
+        db, req('GET', '/organizations/1/projects/', token),
     );
     const list = await listRes.json() as { id: string }[];
     assert.equal(
@@ -446,7 +458,7 @@ test('live conversion case: a converted idea\'s project'
 
     const conv = await handleRequest(db, req(
         'POST',
-        '/ideas/idea-drift-conversion-source/conversion',
+        '/organizations/1/ideas/idea-drift-conversion-source/conversion',
         token,
         {
             projectId,
@@ -481,7 +493,7 @@ test('live conversion case: a converted idea\'s project'
     assert.equal(conv.status, 201);
 
     const getRes = await handleRequest(
-        db, req('GET', '/projects/' + projectId, token),
+        db, req('GET', '/organizations/1/projects/' + projectId, token),
     );
     assert.equal(getRes.status, 200);
     const wireText = await getRes.text();
@@ -496,7 +508,7 @@ test('live conversion case: a converted idea\'s project'
     );
 
     const listRes = await handleRequest(
-        db, req('GET', '/projects/', token),
+        db, req('GET', '/organizations/1/projects/', token),
     );
     const list = await listRes.json() as { id: string }[];
     assert.ok(list.some((p) => p.id === projectId));
@@ -532,7 +544,7 @@ test('GET project trio is lifecycle-current under clock skew'
     const skewedEv = projectId + '-skewed';
 
     const genesis = await handleRequest(db, req(
-        'PUT', '/projects/' + projectId, token,
+        'PUT', '/organizations/1/projects/' + projectId, token,
         projectDocument(
             'Genesis Title', 'submitted',
             genesisAt, genesisEv,
@@ -542,7 +554,7 @@ test('GET project trio is lifecycle-current under clock skew'
 
     // Later arrival, earlier state_at, different state + title.
     const skewed = await handleRequest(db, req(
-        'PUT', '/projects/' + projectId, token,
+        'PUT', '/organizations/1/projects/' + projectId, token,
         projectDocument(
             'Skewed Title', 'under_review',
             skewedAt, skewedEv,
@@ -555,7 +567,7 @@ test('GET project trio is lifecycle-current under clock skew'
         genesisAt, genesisEv,
     );
     const getRes = await handleRequest(
-        db, req('GET', '/projects/' + projectId, token),
+        db, req('GET', '/organizations/1/projects/' + projectId, token),
     );
     assert.equal(getRes.status, 200);
     assert.deepEqual(await getRes.json(), expected);
@@ -576,7 +588,7 @@ test('GET project trio is lifecycle-current under clock skew'
     assert.equal(derived.state_event_id, genesisEv);
 
     const listRes = await handleRequest(
-        db, req('GET', '/projects/', token),
+        db, req('GET', '/organizations/1/projects/', token),
     );
     assert.equal(listRes.status, 200);
     const list = await listRes.json() as { id: string }[];

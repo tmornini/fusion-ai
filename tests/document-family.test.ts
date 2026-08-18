@@ -92,7 +92,7 @@ test('documentWriteResponseSpec produces the ideas'
         state: 'active', state_at: AT, state_event_id: 'ev-1',
     };
     const actual = documentWriteResponseSpec(wiring)
-        .successBody!(['idea-1'], body, 'current', '1');
+        .successBody!(['1', 'idea-1'], body, 'current', '1');
     assert.deepEqual(actual, {
         id: 'idea-1', organization_id: '1',
         title: 'T', position: 1, problem_statement: 'p',
@@ -112,7 +112,9 @@ test('documentWriteResponseSpec produces the projects'
         state: 'submitted', state_at: AT, state_event_id: 'ev-1',
     };
     const actual = documentWriteResponseSpec(wiring)
-        .successBody!(['project-1'], body, 'current', '1');
+        .successBody!(
+            ['1', 'project-1'], body, 'current', '1',
+        );
     assert.deepEqual(actual, {
         id: 'project-1', organization_id: '1',
         title: 'T', description: 'd', progress: 5,
@@ -180,8 +182,8 @@ test('documentEntityRoute (simple arm) PUTs through the'
         organization_id: '1',
     };
     const pair = await formWritePair({
-        method: 'PUT', pathname: '/ideas/idea-9',
-        routePattern: 'ideas/:id',
+        method: 'PUT', pathname: '/organizations/1/ideas/idea-9',
+        routePattern: 'organizations/:id/ideas/:id',
         routeSegments: ['ideas', ':id'],
         pathSegments: ['ideas', 'idea-9'],
         headerFields: [], body, requesterIdentityId: 'current',
@@ -190,12 +192,14 @@ test('documentEntityRoute (simple arm) PUTs through the'
         operationId: TEST_OPERATION_ID,
     });
     const written = await route.put!(
-        db, ['idea-9'], body, 'current', pair,
+        db, ['1', 'idea-9'], body, 'current', pair,
     );
     assert.equal(
         (written as { title: string }).title, 'Generic',
     );
-    const got = await route.get!(db, ['idea-9'], 'current', '1');
+    const got = await route.get!(
+        db, ['1', 'idea-9'], 'current', '1',
+    );
     assert.deepEqual(got, await deriveIdea(db, '1', 'idea-9'));
 });
 
@@ -205,8 +209,10 @@ const TEST_FAMILY = 'locked-test-docs';
 const TEST_PATTERN = TEST_FAMILY + '/:id';
 // A SIBLING document-class route under the SAME family prefix —
 // never served via documentPutHandler, mirroring a real family's
-// own hand-written sub-resource (e.g. flows/:id/versions/:vid
-// beside the locked flows/:id). Proves the gate keys the locked
+// own hand-written sub-resource (e.g.
+// organizations/:id/flows/:id/versions/:vid
+// beside the locked organizations/:id/flows/:id). Proves the gate keys the
+// locked
 // arm off the EXACT entity-route pattern, never the family's
 // first path segment alone — a sibling route must stay 'simple'
 // even though its family registration says 'locked'.
@@ -281,11 +287,12 @@ async function withSyntheticLockedFamily<T>(
     mutableRegistry.push(registration);
     const wiring: DocumentFamilyWiring = {
         family: TEST_FAMILY,
+        httpNest: 'global',
         // Inert for these PUT-dispatch tests (the locked arm
         // never exercises GET), but REQUIRED fields on the
         // interface — this is the fourth DocumentFamilyWiring
-        // construction site (the other three are routes.ts's
-        // ideas/projects/flows rows).
+        // construction site (the other three are
+        // routes.ts's ideas/projects/flows rows).
         lifecycle: 'trio',
         notFoundTable: TEST_FAMILY,
         validateDocument: (body) => body,
@@ -685,6 +692,7 @@ function statelessEntityOf(
 
 const statelessWiring: DocumentFamilyWiring = {
     family: STATELESS_FAMILY,
+    httpNest: 'organization',
     lifecycle: 'stateless',
     notFoundTable: STATELESS_TABLE,
     validateDocument: (body) => body,
@@ -743,7 +751,7 @@ test('stateless lifecycle: a trio-less document PUT derives'
     await db.postSchemaCreation();
     await putStatelessDocumentPair(db, 'sl-1', { v: 'first' });
     const got = await documentGetHandler(statelessWiring)(
-        db, ['sl-1'], 'current', '1',
+        db, ['1', 'sl-1'], 'current', '1',
     );
     assert.deepEqual(got, {
         id: 'sl-1', organization_id: '1', v: 'first',
@@ -771,7 +779,7 @@ test('stateless lifecycle: a DELETE head 404s carrying'
     await deleteStatelessDocumentPair(db, 'sl-3');
     await assert.rejects(
         documentGetHandler(statelessWiring)(
-            db, ['sl-3'], 'current', '1',
+            db, ['1', 'sl-3'], 'current', '1',
         ),
         (error: unknown) => {
             assert.ok(error instanceof EntityNotFoundError);

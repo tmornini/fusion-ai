@@ -28,7 +28,8 @@ function sourceText(relativePath: string): string {
 // patch, or delete. `route()` builds every entry (the
 // `makeIdRoute()` factory that used to build some of them was
 // retired once its last two live callers — members/:id,
-// objectives/:id — were replaced with pair-appending bespoke
+// organizations/:id/objectives/:id — were replaced with pair-appending
+// bespoke
 // routes), so this walks the table generically rather than
 // caring how an entry was built. Task 10: patch joins the
 // alphabet — intentional widen, not weakening.

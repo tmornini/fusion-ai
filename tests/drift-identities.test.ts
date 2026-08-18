@@ -145,6 +145,7 @@ function withoutSecret<T extends { secret: string }>(
 
 const IDENTITIES_TEST_WIRING: DocumentFamilyWiring = {
     family: 'identities',
+    httpNest: 'global',
     lifecycle: 'stateless',
     notFoundTable: 'identities',
     validateDocument: validateIdentityDocumentBody,

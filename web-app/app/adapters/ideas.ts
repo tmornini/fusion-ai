@@ -14,6 +14,8 @@ import {
 import type { IdeaStateDetail } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import {
+    organizationCollection,
+    organizationItem,
     withLifecycleTrio,
     withLifecycleTrios,
 } from './shared.ts';
@@ -61,7 +63,9 @@ export async function getIdeaEntities(
 ): Promise<IdeaEntity[]> {
     return withLifecycleTrios(
         ctx, 'ideas',
-        await ctx.GET<IdeaEntity[]>('ideas/'),
+        await ctx.GET<IdeaEntity[]>(
+            organizationCollection(ctx, 'ideas'),
+        ),
     );
 }
 
@@ -71,7 +75,9 @@ export async function getIdeaEntity(
 ): Promise<IdeaEntity> {
     return withLifecycleTrio(
         ctx, 'ideas',
-        await ctx.GET<IdeaEntity>(`ideas/${id}`),
+        await ctx.GET<IdeaEntity>(
+            organizationItem(ctx, 'ideas', id),
+        ),
     );
 }
 
@@ -82,7 +88,8 @@ async function getIdeaSubmissionsForIdea(
     ideaId: string,
 ): Promise<IdeaSubmissionEntity[]> {
     return ctx.GET<IdeaSubmissionEntity[]>(
-        'ideas/' + ideaId + '/submissions/',
+        organizationItem(ctx, 'ideas', ideaId)
+            + '/submissions/',
     );
 }
 
@@ -246,7 +253,7 @@ export async function putIdea(
     const {
         state, stateAt, stateEventId, ...entity
     } = document;
-    await ctx.PUT(`ideas/${id}`, {
+    await ctx.PUT(organizationItem(ctx, 'ideas', id), {
         ...entity,
         state,
         state_at: stateAt,
@@ -323,8 +330,8 @@ export async function putIdeaSubmission(
 ): Promise<void> {
     const member = await getCurrentHumanMember(ctx);
     await ctx.PUT(
-        'ideas/' + ideaId + '/submissions/'
-            + submissionId,
+        organizationItem(ctx, 'ideas', ideaId)
+            + '/submissions/' + submissionId,
         {
             idea_id: ideaId,
             member_id: member.id,
@@ -401,7 +408,10 @@ export async function postIdeaConversion(
     const ideaStateAt = nowUtc();
     const projectStateAt = nowUtc();
     const member = await getCurrentHumanMember(ctx);
-    await ctx.POST(`ideas/${ideaId}/conversion`, {
+    await ctx.POST(
+        organizationItem(ctx, 'ideas', ideaId)
+            + '/conversion',
+        {
         projectId,
         project: project as unknown as AnyBody,
         idea: promotedIdea as unknown as AnyBody,

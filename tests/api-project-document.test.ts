@@ -33,7 +33,8 @@ function pairJsonOf(message: string): {
 }
 
 // Phase 3 Task 2 (Decision 7 state-in-entity): PUT
-// /projects/:id takes the FULL document — entity fields plus
+// /organizations/:id/projects/:id takes the FULL document — entity fields
+// plus
 // the state trio. G1: stored PUT body is projectEntityOf of
 // the same chain (trio included). GET streams that body.
 
@@ -86,7 +87,7 @@ test('a document PUT with a new state writes wire entity'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/projects/doc-1', token,
+        'PUT', '/organizations/1/projects/doc-1', token,
         projectDocument(
             'Fresh', 'submitted',
             '2026-01-01T00:00:00.000000Z', 'ev-doc-1',
@@ -97,7 +98,7 @@ test('a document PUT with a new state writes wire entity'
     assert.equal(putWire.title, 'Fresh');
     assert.equal(putWire.state, 'submitted');
     const getRes = await handleRequest(
-        db, req('GET', '/projects/doc-1', token),
+        db, req('GET', '/organizations/1/projects/doc-1', token),
     );
     assert.equal(getRes.status, 200);
     const getWire = await getRes.json() as {
@@ -119,14 +120,14 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await handleRequest(db, req(
-        'PUT', '/projects/doc-2', token,
+        'PUT', '/organizations/1/projects/doc-2', token,
         projectDocument(
             'First', 'submitted',
             '2026-01-01T00:00:00.000000Z', 'ev-doc-2',
         ),
     ));
     const edit = await handleRequest(db, req(
-        'PUT', '/projects/doc-2', token,
+        'PUT', '/organizations/1/projects/doc-2', token,
         projectDocument(
             'Second', 'submitted',
             '2026-01-01T00:00:00.000000Z', 'ev-doc-2',
@@ -136,7 +137,7 @@ async () => {
     const events = await deriveProjectStateHistory(db, '1', 'doc-2');
     assert.equal(events.length, 1);
     const getRes = await handleRequest(
-        db, req('GET', '/projects/doc-2', token),
+        db, req('GET', '/organizations/1/projects/doc-2', token),
     );
     const wire = await getRes.json() as { title: string };
     assert.equal(wire.title, 'Second');
@@ -151,10 +152,10 @@ test('a byte-identical resend converges: one event,'
         '2026-01-01T00:00:00.000000Z', 'ev-doc-3',
     );
     await handleRequest(
-        db, req('PUT', '/projects/doc-3', token, body),
+        db, req('PUT', '/organizations/1/projects/doc-3', token, body),
     );
     await handleRequest(
-        db, req('PUT', '/projects/doc-3', token, body),
+        db, req('PUT', '/organizations/1/projects/doc-3', token, body),
     );
     const events = await deriveProjectStateHistory(db, '1', 'doc-3');
     assert.equal(events.length, 1);
@@ -167,14 +168,14 @@ test('the pair request body carries the lifecycle trio;'
     const db = await freshDb();
     const token = await organizationToken();
     await handleRequest(db, req(
-        'PUT', '/projects/doc-4', token,
+        'PUT', '/organizations/1/projects/doc-4', token,
         projectDocument(
             'Wired', 'under_review',
             '2026-01-01T00:00:00.000000Z', 'ev-doc-4',
         ),
     ));
     const getRes = await handleRequest(
-        db, req('GET', '/projects/doc-4', token),
+        db, req('GET', '/organizations/1/projects/doc-4', token),
     );
     const wire = await getRes.json() as {
         title: string;
@@ -218,7 +219,7 @@ test('a same-state edit by a DIFFERENT member never'
     };
 
     const created = await handleRequest(db, req(
-        'PUT', '/projects/doc-5', tokenA,
+        'PUT', '/organizations/1/projects/doc-5', tokenA,
         projectDocument(
             'First', trio.state, trio.stateAt,
             trio.stateEventId,
@@ -227,7 +228,7 @@ test('a same-state edit by a DIFFERENT member never'
     assert.equal(created.status, 201);
 
     const edited = await handleRequest(db, req(
-        'PUT', '/projects/doc-5', tokenB,
+        'PUT', '/organizations/1/projects/doc-5', tokenB,
         projectDocument(
             'Second', trio.state, trio.stateAt,
             trio.stateEventId,
@@ -240,7 +241,7 @@ test('a same-state edit by a DIFFERENT member never'
     assert.equal(events[0]!.member_id, 'current');
 
     const getRes = await handleRequest(
-        db, req('GET', '/projects/doc-5', tokenA),
+        db, req('GET', '/organizations/1/projects/doc-5', tokenA),
     );
     const wire = await getRes.json() as { title: string };
     assert.equal(wire.title, 'Second');
@@ -257,7 +258,7 @@ test('stored PUT body equals projectEntityOf of the same'
         'Streamed', 'submitted', at, ev,
     );
     const put = await handleRequest(
-        db, req('PUT', '/projects/' + id, token, body),
+        db, req('PUT', '/organizations/1/projects/' + id, token, body),
     );
     assert.equal(put.status, 201);
     const prefix = '/organizations/1/projects/';
@@ -285,7 +286,7 @@ test('stored PUT body equals projectEntityOf of the same'
         stored, await deriveProject(db, '1', id),
     );
     const skewed = await handleRequest(db, req(
-        'PUT', '/projects/' + id, token,
+        'PUT', '/organizations/1/projects/' + id, token,
         projectDocument(
             'Skewed', 'under_review',
             '2020-01-01T00:00:00.000000Z', 'ev-g1-skew',
