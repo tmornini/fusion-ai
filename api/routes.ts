@@ -466,8 +466,8 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
 // fenced `organization` argument — picking only
 // `position` closes that off by construction. Head
 // document → wire ObjectiveEntity. Entity fields come
-// from the head body; the lifecycle trio is stamped from
-// the lifecycle-current StateEntity (never re-copied from
+// from the head body; domain `state` is stamped from
+// the lifecycle-current event (never re-copied from
 // the head body — genesis-wins-under-skew). `current` is
 // required on the live trio path (document-family always
 // supplies it after the DELETED filter).
@@ -5349,7 +5349,7 @@ export const routes: Route[] = [
     }),
     // GET states/:id/field-values RETIRED (states-URI
     // elimination C4): field values fold inline on
-    // GET work-orders/:id/history (and bulk history).
+    // GET organizations/:id/work-orders/:id/history.
     // PUT/DELETE states/:id/field-values/:fvid RETIRED
     // (Phase 15 Task 7): live writes ride the transition
     // fold only. WRITE_RESPONSE_SPECS entry + seed address

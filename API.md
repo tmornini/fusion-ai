@@ -2381,9 +2381,9 @@ now declares:
   `'stateless'` wiring (its only tombstone signal is a
   DELETE-method head, already absent via `deriveDocumentsAt`
   — the SAME reduction every family shares). History reads
-  live on `GET work-orders/:id/history` and
-  `GET work-orders/history` (§2.10) with inline
-  `field_values`.
+  live on `GET /organizations/:id/work-orders/:id/history`
+  (§2.10) with inline `field_values`. There is no bulk
+  `GET work-orders/history`.
 - **`notFoundTable`: the identifier the wire 404 body speaks**
   (`EntityNotFoundError`'s table, rendered `Not found:
   <table>/<id>`). Family name for ideas/projects/flows;
@@ -2500,9 +2500,10 @@ genesis is an explicit minted event, and there is no shared
   (`position`) plus `state` / `state_at` / `state_event_id`
   (`validateObjectiveDocumentBody`). PUT **response** still
   returns entity fields only (`{id, organization_id,
-  position}` via the write-response spec). GET embeds the
-  lifecycle trio on the derived row
-  (`objectiveDocumentEntityOf`).
+  position}` via the write-response spec). GET keeps
+  domain `state` on the derived row
+  (`objectiveDocumentEntityOf`) and does **not**
+  embed `state_at` / `state_event_id`.
 - **Concurrency:** `'simple'` (§5.4) — last-writer-wins,
   no `If-Match`. Same-body → 200 no append.
 - **Archived inclusion:** `GET /objectives` INCLUDES archived
@@ -3320,9 +3321,10 @@ pairs. Work-order historical traces reseed as
 with the system-member genesis path accounted in the member
 document plane); field values fold into those transition
 bodies as `fieldValues: [{id, fields}]`. Product reads expose
-them inline on `GET work-orders/:id/history` and
-`GET work-orders/history` as `field_values: [{id,
-attribute_id, value}]` (§2.10). No
+them inline on
+`GET /organizations/:id/work-orders/:id/history` as
+`field_values: [{id, attribute_id, value}]` (§2.10).
+There is no bulk `GET work-orders/history`. No
 `WRITE_RESPONSE_SPECS` leaf entry remains for a field-values
 write address. See §5.19 for the full surviving-route list
 and seed reshape pin.
@@ -3608,9 +3610,10 @@ Phase 15 Task 7 retired zero-caller route families; states-
 address retirement made **every verb** on the shared
 event-append address a router **404** (unauthenticated →
 401 first). Product callers were already zero. Surviving
-live history surfaces (§2.10 — **nine lifecycle + one
+live history surfaces (§2.10 — **seven lifecycle + one
 value-history**, wire `(at, id)` DESC, index 0 =
-current):
+current). There is **no** bulk `GET work-orders/history`
+and **no** bulk `GET objectives/versions`:
 
 1. `GET ideas/:id/versions`
 2. `GET projects/:id/versions`
@@ -3620,11 +3623,7 @@ current):
 5. `GET objectives/:id/versions`
 6. `GET members/:id/versions` (global; absent → 404)
 7. `GET work-orders/:id/history` (inline `field_values`)
-8. `GET work-orders/history` (bulk; always 200; inline
-   `field_values`)
-9. `GET objectives/versions` (bulk; always 200;
-   `StateEntity` only)
-10. (value-history, not lifecycle)
+8. (value-history, not lifecycle)
     `GET .../record-types/:type/instances/:id/versions`
     → `{ at, etag, version, values }[]` projected by
     current read ACL (§5.20). Leaf
@@ -3632,15 +3631,18 @@ current):
 
 Per-entity org-nested legs (1–5, 7) empty →
 `missedReadError` → foreign **403** / absent **404**.
-Bulk legs (8–9) always return an array. Field values have
-no successor GET route — product reads fold them on (7)
-and (8). `stateEventVisibilityFor` remains the RESTRICT /
-ownership 3-tier probe, not a public collection.
+Field values have no successor GET route — product
+reads fold them on (7). `stateEventVisibilityFor`
+remains the RESTRICT / ownership 3-tier probe, not a
+public collection.
 
-Head-state trio (`state`, `state_at`, `state_event_id`)
-embeds on GET rows for ideas / projects / record-types /
-objectives / members (not flows; work-orders stay
-stateless; instances carry `values`, not trio).
+The four families (ideas, projects, record-types,
+objectives) keep domain `state` on GET rows and do
+**not** embed `state_at` / `state_event_id`. Members
+GET still embeds the lifecycle trio. Flows keep
+`StateEntity[]` on the versions list (deferred).
+Work-orders stay stateless; instances carry `values`,
+not trio.
 
 `flow_versions` table and table-backed write routes
 are GONE (Phase 15 retired writes; Phase Final

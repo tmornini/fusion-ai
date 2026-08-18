@@ -231,19 +231,25 @@ Post-Phase-Final + states-address retirement: every
 lifecycle-backed surface (workbox inbox, flow-stats,
 dashboard, members roster, idea/project/record-type/
 objective state badges + history views) reads family-
-scoped and collection history from the message ledger.
-Nine lifecycle GET registrations + one value-history,
-wire `(at, id)` DESC (index 0 = current): per-entity
-`GET ideas|projects|record-types|flows|objectives|
-members|work-orders/:id/history`, plus bulk
-`GET work-orders/history` and `GET objectives/history`
-(bulk always 200 arrays), plus instance value-history at
-`GET .../record-types/:type/instances/:id/history`.
-Work-order history folds `field_values` inline on each
-transition event; claim/birth/release rows carry `[]`.
-Ideas / projects / record-types / objectives / members
-GET rows embed the lifecycle trio (`state`, `state_at`,
-`state_event_id`) — no separate state-detail fetch.
+scoped history from the message ledger. Per-entity
+GET + one value-history, wire `(at, id)` DESC
+(index 0 = current):
+`GET organizations/:id/<family>/:id/versions/` for
+ideas / projects / record-types / flows /
+objectives; work-orders stay
+`GET organizations/:id/work-orders/:id/history`;
+members stay `GET members/:id/versions`; plus
+instance value-history at
+`GET .../record-types/:type/instances/:id/versions`.
+There is no bulk `GET work-orders/history` and no
+bulk `GET objectives/versions`. Work-order history
+folds `field_values` inline on each transition
+event; claim/birth/release rows carry `[]`.
+Ideas / projects / record-types / objectives GET
+rows keep domain `state` and do not embed
+`state_at` / `state_event_id`. Members GET rows
+still embed the lifecycle trio — no separate
+state-detail fetch.
 There is no `states` table and no shared event-append
 write address. Lifecycle writes are document-trio PUTs
 (ideas/projects/record-types/flows/objectives/members)
@@ -269,9 +275,9 @@ unauthenticated 401):
 - per-entity current-state alias → router 404
 - nested field-values write address → router 404
   (and the retired field-values GET; product reads fold
-  values on `GET work-orders/:id/history` /
-  `GET work-orders/history`; live writes ride the
-  transition fold only)
+  values on
+  `GET organizations/:id/work-orders/:id/history`;
+  live writes ride the transition fold only)
 - `GET|POST|PUT|DELETE /flows/:id/versions[...]` → router 404
   (table DELETED at Phase Final; F66 is MOOT — see F66)
 
