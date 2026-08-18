@@ -4077,6 +4077,16 @@ export async function postInstancePatchOp(
     );
 }
 
+// Offer only: the dedicated arm in handleRequest
+// intercepts these patterns before matched.post.
+// Reaching this function is a wiring bug.
+async function authGrantOffered(): Promise<never> {
+    throw new Error(
+        'authentication grant is dispatched by'
+        + ' the dedicated arm',
+    );
+}
+
 export const routes: Route[] = [
     route('identities/', {
         // GET is FLIPPED (Phase 10 Task 8): derived via
@@ -4595,11 +4605,16 @@ export const routes: Route[] = [
     // authentication POST arm (Task 3, C1 discharge): both
     // routes are bearerExempt and form their own pair deep
     // inside postToken/postAuthorize, pre-tx, since only the
-    // grant can resolve the requester identity. The bare
-    // registration survives so matchRoute still 404s an
-    // unknown path and 405s a non-POST verb on either pattern.
-    route('authentication/token', {}),
-    route('authentication/authorize', {}),
+    // grant can resolve the requester identity. The table
+    // offers POST so the generator advertises the verb;
+    // matchRoute still 404s an unknown path and 405s a
+    // non-POST verb on either pattern.
+    route('authentication/token', {
+        post: authGrantOffered,
+    }),
+    route('authentication/authorize', {
+        post: authGrantOffered,
+    }),
     // Create retired into the SAME document PUT ideas/:id
     // already serves (Decision 7, Phase 2 Task 3, R1): genesis
     // is head-presence-defined, so there is no longer a

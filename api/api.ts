@@ -1846,12 +1846,13 @@ export async function handleRequest(
                 // The dedicated authentication arm (Task 3, C1
                 // discharge): both grant routes are bearerExempt,
                 // so the generic pair block above never fires
-                // for them, and neither carries a `post` closure
-                // in routes.ts any more (retired into this arm —
-                // matchRoute still matches both patterns, so an
-                // unknown path still 404s and a non-POST verb
-                // still 405s via the ordinary matched.get/put/
-                // delete checks). The seed carries everything
+                // for them. The table offers `post` so the verb
+                // is visible; this arm still intercepts before
+                // `matched.post` runs (matchRoute still matches
+                // both patterns, so an unknown path still 404s
+                // and a non-POST verb still 405s via the
+                // ordinary matched.get/put/delete checks). The
+                // seed carries everything
                 // WritePairInput needs except the requester
                 // identity and the response — only the grant
                 // itself, deep inside postToken/postAuthorize,
