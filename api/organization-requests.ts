@@ -1,5 +1,5 @@
 import type { DbAdapter } from './db.ts';
-import type { Id } from './types.ts';
+import type { Id, OrganizationEntity } from './types.ts';
 import {
     appendMessagePair,
     type MessagePair,
@@ -13,40 +13,45 @@ import {
     HTTP_FORBIDDEN,
     HTTP_NOT_FOUND,
 } from './http-errors.ts';
-import {
-    authenticateRequest,
-    unauthorizedBearerResponse,
-    callerOrganizationIds,
-} from './request-auth.ts';
-import {
-    type IncomingContext,
-    type AuthenticatedContext,
-} from './request-context.ts';
 import { param } from './document-family.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import {
     deriveDefaultOrganization,
 } from './derive-default-organization.ts';
-import { membershipExistsFor } from './derive-memberships.ts';
+import {
+    deriveMembershipsForIdentity,
+    membershipExistsFor,
+} from './derive-memberships.ts';
 
-// GET /organizations — the caller's reachable orgs, derived
-// fresh from the membership ledger (never the token claim, so
-// it cannot be stale). The authoritative source the embedded
-// `orgs` claim is a snapshot of. The row list itself is now the
-// PAIR-PLANE derivation (Phase 12 Task 5) — tests/drift-
-// organizations.test.ts leg 1 pins this function's own output
-// byte-identical to the row-plane read it replaces; the
-// membership filter below is UNTOUCHED — this flip is the row
-// SOURCE only, never the fence.
-async function enumerateMyOrganizations(
-    ctx: AuthenticatedContext,
-): Promise<Response> {
-    const mine =
-        await callerOrganizationIds(ctx.base, ctx.principal);
-    const organizations = await deriveOrganizations(ctx.base);
-    return Response.json(
-        organizations.filter(o => mine.has(o.id)),
+// GET /identities/:id/organizations/ — the path
+// identity's live seats. Self or admin. Caller
+// claims must not shape another identity's list.
+export async function getIdentityOrganizations(
+    db: DbAdapter,
+    params: string[],
+    actor: Id,
+    _organization: Id | undefined,
+    roles: readonly string[],
+): Promise<OrganizationEntity[]> {
+    const identityId = param(params, 0);
+    if (
+        actor !== identityId
+        && !roles.includes('admin')
+    ) {
+        throw new ApiError(
+            'forbidden: identity organizations'
+            + ' are self or admin',
+            HTTP_FORBIDDEN,
+        );
+    }
+    const memberships = await deriveMembershipsForIdentity(
+        db, identityId,
     );
+    const mine = new Set(
+        memberships.map(m => m.organization_id),
+    );
+    const organizations = await deriveOrganizations(db);
+    return organizations.filter(o => mine.has(o.id));
 }
 
 // PUT/GET /identities/:id/default-organization — a simple
@@ -121,21 +126,4 @@ export async function putIdentityDefaultOrganization(
             }
         },
     );
-}
-
-// GET /organizations enumerates the caller's OWN membership
-// orgs — identity-scoped like /invitations, so it gates on
-// authentication, not a role. enumerateMyOrganizations self-fences to
-// the caller's memberships, so a roleless member sees only
-// their own orgs and can boot the shell.
-export async function organizationsEnumerationRequest(
-    ctx: IncomingContext,
-    request: Request,
-): Promise<Response> {
-    const authed =
-        await authenticateRequest(ctx, request);
-    if (typeof authed === 'string') {
-        return unauthorizedBearerResponse(authed);
-    }
-    return enumerateMyOrganizations(authed);
 }

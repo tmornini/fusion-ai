@@ -133,7 +133,10 @@ const MEMBER_VERBS: Readonly<
     // elimination C3).
     '/ai-agents': ['GET'],
     '/organizations/:id/members': ['GET'],
-    '/organizations': ['GET'],
+    // :id only — the root collection is retired.
+    // The old '/organizations' prefix also matched
+    // GET /organizations/:id; keep that document.
+    '/organizations/:id': ['GET'],
     '/identities/:id/tokens': ['POST'],
     '/identities/:id/token-revocations': ['PUT'],
     // Self-only stays in the handler. This row only
@@ -142,6 +145,7 @@ const MEMBER_VERBS: Readonly<
     // substitute for naming another identity.
     '/identities/:id/default-organization':
         ['GET', 'PUT'],
+    '/identities/:id/organizations': ['GET'],
 };
 
 const MEMBER_TIER: readonly PolicyEntry[] =

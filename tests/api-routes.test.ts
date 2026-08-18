@@ -18,7 +18,7 @@ import { seededMockDb } from './mock-seed.ts';
 // store to exist too — the GET round-trips end
 // to end.
 const COLLECTION_ROUTES: readonly string[] = [
-    'organizations',
+    'identities/any-id/organizations/',
     'organizations/1/members/',
     'ai-agents/',
     'ideas/',
@@ -60,24 +60,18 @@ for (const route of COLLECTION_ROUTES) {
     );
 }
 
-// GET /organizations routes through the pre-matchRoute guard in
-// handleRequest (api.ts), never the route('organizations', {get})
-// table entry — that entry was dead code, unreachable by
-// construction, and is now REMOVED (API.md §5.18 carries the
-// control-flow argument). Proof: a SINGLE-organization caller
-// sees ONLY their own
-// membership org here, never every seeded org — the surviving
-// path (organizationsEnumerationRequest) self-fences to the
-// caller's memberships; the removed table entry's own handler
-// (db.organizations.getAll(), unfenced) would have returned BOTH
-// seeded orgs had it ever been reached.
-test('GET /organizations self-fences to the caller\'s own'
-+ ' memberships — the membership-filtered path, never the'
-+ ' removed unfenced route table entry', async () => {
+// Enumeration lives on the identity nest. A
+// SINGLE-organization caller sees only their own
+// membership org, never every seeded org.
+test('GET /identities/:id/organizations/ self-fences'
++ ' to the path identity\'s own memberships',
+async () => {
     const db = await seededMockDb();
     const singleOrganizationIdentityId = buildMembers()[0]!.id;
     const rows = await GET<OrganizationEntity[]>(
-        db, 'organizations',
+        db,
+        'identities/' + singleOrganizationIdentityId
+            + '/organizations/',
         await devToken(singleOrganizationIdentityId),
     );
     assert.equal(rows.length, 1);

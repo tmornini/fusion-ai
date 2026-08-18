@@ -133,9 +133,6 @@ import {
     invitationsRequest,
 } from './invitations-domain.ts';
 import {
-    organizationsEnumerationRequest,
-} from './organization-requests.ts';
-import {
     incomingContext,
     REQUEST_ID_HEADER,
     type IncomingContext,
@@ -485,15 +482,6 @@ export async function handleRequest(
             ctx, request, pathSegments,
         );
     }
-    // Enumerating one's own orgs is identity-scoped, not
-    // org-owned: it runs above the admin gate so a roleless
-    // member can boot. Only the bare GET — PUT (create) and
-    // /organizations/:id keep the org-scoped route handling.
-    if (pathSegments[0] === 'organizations'
-        && pathSegments.length === 1
-        && method === 'GET') {
-        return organizationsEnumerationRequest(ctx, request);
-    }
     // Match first (pure, no I/O). Authentication runs before
     // the no-match 404 so an unauthenticated caller never maps
     // route topology (unknown path and real route both 401).
@@ -581,12 +569,15 @@ export async function handleRequest(
         try {
             const fence = await fenceRequest(authed);
             if (!fence.ok) {
-                // Org-less GET 404s at the handler;
-                // fence would 403 first.
+                // Org-less identity-scoped GET reaches
+                // the handler; fence would 403 first.
                 if (
                     fencePattern
                         !== 'identities/:id/'
                             + 'default-organization'
+                    && fencePattern
+                        !== 'identities/:id/'
+                            + 'organizations/'
                 ) {
                     return Response.json(
                         { error: fence.error },

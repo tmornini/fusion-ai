@@ -152,7 +152,7 @@ async () => {
     const db = await twoOrganizations();
     // Seeded through the live document PUT (not a raw
     // db.organizations.put) so 'A' has a message pair — the
-    // flipped GET /organizations (Phase 12 Task 5) derives from
+    // GET /identities/:id/organizations/ derives from
     // the ledger, not the old organizations table. 'B' stays a
     // raw row: `current` is never a member of B, so the
     // membership filter excludes it whether or not it derives.
@@ -163,13 +163,14 @@ async () => {
     // Phase Final Stage B: organizations table retired
     // — B need not derive for membership-filter
     // exclusion of non-members.
-    // Enumerate is claim-orgs filtered (mint-time snapshot).
+    // Enumerate is the path identity's live seats.
     const token = await claimToken({
         organizations: ['1', 'A'],
         roles: ['admin:1', 'admin:A'],
     });
     const res = await handleRequest(db, req(
-        'GET', '/organizations', token));
+        'GET', '/identities/current/organizations/',
+        token));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];
     // 'current' is ALSO a member of seedRootAdmin's own org '1'
@@ -187,7 +188,8 @@ test('the facade requires a bearer token', async () => {
 });
 
 // ---- A content-tier member (type:"member") ----
-// Not admin. GET /organizations is claim-orgs filtered;
+// Not admin. GET /identities/:id/organizations/ is
+// the path identity's live seats;
 // admin surfaces (members, memberships, orgs write) stay
 // admin-gated. Content surfaces (ideas) are member-permitted.
 
@@ -195,7 +197,7 @@ async function contentMemberDb(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
     // seedAdminSchema (not bare postSchemaCreation) so `current`
     // can create org A through the live document PUT below —
-    // the flipped GET /organizations (Phase 12 Task 5) derives
+    // GET /identities/:id/organizations/ derives
     // from the ledger, so a raw db.organizations.put would be
     // invisible to it. `current` never appears in an assertion
     // here; it exists only to author the org A document.
@@ -217,7 +219,7 @@ test('a content-tier member enumerates only their member orgs',
 async () => {
     const db = await contentMemberDb();
     const res = await handleRequest(db, req(
-        'GET', '/organizations',
+        'GET', '/identities/sarah/organizations/',
         await organizationToken('sarah', 'A')));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];

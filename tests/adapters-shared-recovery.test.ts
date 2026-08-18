@@ -186,8 +186,9 @@ async function seedOrganizationAdmin(
 
 // The pair-plane counterpart of seedOrganizationAdmin's row-
 // only grant/membership: a real PUT through the route so the
-// org exists on BOTH planes. The flipped GET /organizations
-// (Phase 12 Task 5) derives from the ledger, so the re-scope
+// org exists on BOTH planes. GET
+// /identities/:id/organizations/ derives from the
+// ledger, so the re-scope
 // read below needs this, not a raw db.organizations.put — the
 // admin role seedOrganizationAdmin already grants `current` in
 // `organization` authorizes the write.
@@ -255,7 +256,7 @@ async () => {
     // branded reuse and revoke the fresh chain
     const [members, organizations] = await Promise.all([
         ctx.GET('organizations/1/members/'),
-        ctx.GET('organizations'),
+        ctx.GET('identities/current/organizations/'),
     ]);
     assert.ok(Array.isArray(members));
     assert.ok(Array.isArray(organizations));

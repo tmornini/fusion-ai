@@ -312,6 +312,7 @@ import {
 } from './document-family.ts';
 import {
     getIdentityDefaultOrganization,
+    getIdentityOrganizations,
     putIdentityDefaultOrganization,
 } from './organization-requests.ts';
 import type { DerivedDocument } from './derive-documents.ts';
@@ -4198,6 +4199,9 @@ export const routes: Route[] = [
         get: getIdentityDefaultOrganization,
         put: putIdentityDefaultOrganization,
     }),
+    route('identities/:id/organizations/', {
+        get: getIdentityOrganizations,
+    }),
     documentCollectionRoute(AI_AGENTS_WIRING),
     route('ai-agents/:id', {
         get: documentGetHandler(AI_AGENTS_WIRING),
@@ -6155,9 +6159,15 @@ export function matchRoute(
                     .segments[i]!
                     .startsWith(':')
             ) {
-                params.push(
-                    pathSegments[i]!,
-                );
+                // A trailing / is a collection
+                // segment, never an :id.
+                const captured =
+                    pathSegments[i]!;
+                if (captured === '') {
+                    matched = false;
+                    break;
+                }
+                params.push(captured);
             } else if (
                 routeDefinition.segments[i]
                 !== pathSegments[i]

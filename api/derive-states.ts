@@ -93,8 +93,8 @@ const ORGANIZATIONS_ADDRESS_PREFIX =
     canonicalUriCollection(undefined, '/organizations/');
 
 // ALL-orgs, server-side ownership resolution — distinct from
-// api/organization-requests.ts's enumerateMyOrganizations, which
-// filters to the caller's own memberships. This walk NEVER
+// getIdentityOrganizations, which filters to the path
+// identity's live seats. This walk NEVER
 // filters by caller: it resolves which org OWNS an entity,
 // independent of who is asking (Phase 12 Task 5: the row source
 // flips to the pair-plane derivation; the ALL-orgs, uncaller-
