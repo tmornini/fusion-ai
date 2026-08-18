@@ -386,7 +386,7 @@ test('case 2: GET <family>/:id/history parity — one entity'
         );
         const suffix = family === 'work-order'
             ? '/history'
-            : '/versions';
+            : '/versions/';
         const res = await handleRequest(db, req(
             'GET',
             '/' + routeFamily + '/' + id + suffix,
@@ -511,7 +511,7 @@ async () => {
     // Own history 200 with genesis.
     const ownRes = await handleRequest(db, req(
         'GET', '/organizations/1/ideas/' + ownIdeaId +
-            '/versions', tokenStark,
+            '/versions/', tokenStark,
     ));
     assert.equal(ownRes.status, 200);
     const ownWire = await ownRes.json() as { id: string }[];
@@ -523,7 +523,7 @@ async () => {
     // after tombstone.
     const foreignRes = await handleRequest(db, req(
         'GET',
-        '/organizations/1/ideas/' + foreignIdeaId + '/versions',
+        '/organizations/1/ideas/' + foreignIdeaId + '/versions/',
         tokenStark,
     ));
     assert.equal(foreignRes.status, 404);
@@ -538,7 +538,7 @@ async () => {
     const org2Res = await handleRequest(db, req(
         'GET',
         '/organizations/' + ORGANIZATION_TWO
-            + '/ideas/' + foreignIdeaId + '/versions',
+            + '/ideas/' + foreignIdeaId + '/versions/',
         tokenOrg2,
     ));
     assert.equal(org2Res.status, 200);
@@ -558,7 +558,7 @@ async () => {
     const ownFromOrg2 = await handleRequest(db, req(
         'GET',
         '/organizations/' + ORGANIZATION_TWO
-            + '/ideas/' + ownIdeaId + '/versions',
+            + '/ideas/' + ownIdeaId + '/versions/',
         tokenOrg2,
     ));
     assert.equal(ownFromOrg2.status, 404);

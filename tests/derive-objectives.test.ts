@@ -102,7 +102,7 @@ test('GET organizations/:id/objectives/:id/versions carries the objective'
         },
     ));
     const res = await handleRequest(db, req(
-        'GET', '/organizations/1/objectives/' + id + '/versions', token,
+        'GET', '/organizations/1/objectives/' + id + '/versions/', token,
     ));
     assert.equal(res.status, 200);
     const rows = JSON.parse(await res.text()) as {

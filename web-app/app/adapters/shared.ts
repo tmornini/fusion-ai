@@ -68,7 +68,7 @@ export function filterByField<T, K extends keyof T>(
 }
 
 // G1 stores trio on the PUT; GET streams it. Pre-G1
-// rows still fill lifecycle from GET :id/versions.
+// rows still fill lifecycle from GET :id/versions/.
 interface TrioRow {
     readonly id: string;
     readonly state?: string;
@@ -110,7 +110,7 @@ export async function withLifecycleTrio<T extends TrioRow>(
     if (row.state !== undefined) return row;
     const history = await ctx.GET<readonly VersionRow[]>(
         organizationItem(ctx, family, row.id)
-            + '/versions',
+            + '/versions/',
     );
     const current = history[0];
     if (current === undefined) return row;

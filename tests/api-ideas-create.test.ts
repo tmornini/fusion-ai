@@ -98,7 +98,7 @@ test(
         // (Phase 15 Task 7); post-write check rides
         // surviving /versions.
         const stateRes = await handleRequest(db, req(
-            'GET', '/organizations/1/ideas/idea-1/versions',
+            'GET', '/organizations/1/ideas/idea-1/versions/',
             DEV_TOKEN,
         ));
         const history = await stateRes.json() as {

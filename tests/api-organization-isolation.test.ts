@@ -953,7 +953,7 @@ test('ideas history gates on parent ownership',
 async () => {
     const db = await deepDb();
     const mine = await facadeGet(
-        db, '/ideas/iA/versions');
+        db, '/ideas/iA/versions/');
     assert.equal(mine.status, 200);
     const mineRows = await mine.json() as { id: string }[];
     assert.ok(mineRows.length >= 1);
@@ -966,7 +966,7 @@ async () => {
     ));
     assert.equal(bOwns.status, 200);
     const foreign = await facadeGet(
-        db, '/ideas/iB/versions');
+        db, '/ideas/iB/versions/');
     assert.equal(foreign.status, 404);
     const body = await foreign.json() as { error: string };
     assert.equal(

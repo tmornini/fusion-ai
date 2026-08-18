@@ -63,7 +63,7 @@ async () => {
 
     const index = await handleRequest(
         db,
-        req('GET', '/organizations/1/flows/flow-ver-1/versions', token),
+        req('GET', '/organizations/1/flows/flow-ver-1/versions/', token),
     );
     assert.equal(index.status, 200);
     const rows = await index.json() as { id: string }[];
@@ -86,12 +86,12 @@ async () => {
 
     const missing = await handleRequest(
         db,
-        req('GET', '/organizations/1/flows/missing-flow/versions', token),
+        req('GET', '/organizations/1/flows/missing-flow/versions/', token),
     );
     assert.equal(missing.status, 404);
 
     const writePaths = [
-        '/organizations/1/flows/flow-ver-1/versions',
+        '/organizations/1/flows/flow-ver-1/versions/',
         '/organizations/1/flows/flow-ver-1/versions/vid-1',
     ];
     for (const path of writePaths) {

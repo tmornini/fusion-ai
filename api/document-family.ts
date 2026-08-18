@@ -362,11 +362,13 @@ export function documentEntityRoute(
     };
 }
 
-// GET <family>/:id/versions: wrap a family derive*StateHistory
+// GET <family>/:id/versions/: wrap a family derive*StateHistory
 // (ASC StateEntity[]) with (at, id) DESC so index 0 is
 // current, and empty → missedReadError (403 foreign / 404
 // absent) using the family's table name for an honest body.
 // Does NOT change the derive's own ASC for other callers.
+// Task 9 replaces the StateEntity[] list with entityOf
+// snapshots. Stateless families already return entityOf.
 export type DocumentStateHistoryDerive = (
     db: DbAdapter,
     organization: Id,
@@ -419,18 +421,92 @@ export async function lookupStoredRevision(
     };
 }
 
+export async function storedRevisionDocument(
+    db: DbAdapter,
+    prefix: string,
+    id: Id,
+    etag: string,
+): Promise<DerivedDocument | undefined> {
+    const found = await lookupStoredRevision(
+        db, prefix, id, etag,
+    );
+    if (
+        found === undefined
+        || found.request.method !== PUT_METHOD
+    ) {
+        return undefined;
+    }
+    return {
+        uriId: id,
+        pairId: found.response.id,
+        method: found.request.method,
+        body: requestBodyOf(found.request.message),
+    };
+}
+
+export async function versionSnapshotsAt(
+    db: DbAdapter,
+    prefix: string,
+    id: Id,
+    toEntity: (document: DerivedDocument) => unknown,
+): Promise<unknown[]> {
+    const stored = await messageStore(db).getPairs(
+        prefix, id,
+    );
+    const requests = stored.map((pair) => pair.request);
+    const responses = stored.map((pair) => pair.response);
+    const pairs = documentPairsAt(
+        requests, responses, prefix,
+    ).filter((pair) => pair.uriId === id);
+    const snapshots: unknown[] = [];
+    for (const pair of pairs.toReversed()) {
+        if (pair.method !== PUT_METHOD) continue;
+        snapshots.push(toEntity({
+            uriId: id,
+            pairId: pair.id,
+            method: pair.method,
+            body: pair.body,
+        }));
+    }
+    return snapshots;
+}
+
+async function documentStateHistoryAt(
+    wiring: DocumentFamilyWiring,
+    db: DbAdapter,
+    organization: Id,
+    id: Id,
+): Promise<StateEntity[]> {
+    const prefix = canonicalUriCollection(
+        organization, '/' + wiring.family + '/',
+    );
+    const stored = await messageStore(db).getPairs(
+        prefix, id,
+    );
+    const requests = stored.map((pair) => pair.request);
+    const responses = stored.map((pair) => pair.response);
+    return stateHistoryFrom(
+        documentLifecycleEvents(
+            documentPairsAt(
+                requests, responses, prefix,
+            ).filter((pair) => pair.uriId === id),
+        ),
+        id,
+    );
+}
+
 async function serveDocumentRevision(
     wiring: DocumentFamilyWiring,
     db: DbAdapter,
     organization: Id,
     id: Id,
-    version: string,
+    etag: string,
 ): Promise<unknown> {
     const prefix = canonicalUriCollection(
         organization, '/' + wiring.family + '/',
     );
     const found = await lookupStoredRevision(
-        db, prefix, id, version,
+        db, prefix, id, etag,
     );
     if (
         found === undefined
@@ -466,16 +542,60 @@ async function serveDocumentRevision(
 export function documentVersionGetHandler(
     wiring: DocumentFamilyWiring,
 ): GetHandler {
-    const versionIndex =
-        wiring.httpNest === 'organization' ? 2 : 1;
     return (db, params, _actor, organization) =>
         serveDocumentRevision(
             wiring,
             db,
             requireOrganization(organization),
             entityIdParam(wiring, params),
-            param(params, versionIndex),
+            param(params, params.length - 1),
         );
+}
+
+export function documentVersionListHandler(
+    wiring: DocumentFamilyWiring,
+): GetHandler {
+    if (wiring.lifecycle === 'trio') {
+        return documentStateHistoryHandler(
+            wiring,
+            (db, organization, id) =>
+                documentStateHistoryAt(
+                    wiring, db, organization, id,
+                ),
+            wiring.notFoundTable,
+        );
+    }
+    return async (db, params, _actor, organization) => {
+        const org = requireOrganization(organization);
+        const id = entityIdParam(wiring, params);
+        const prefix = canonicalUriCollection(
+            org, '/' + wiring.family + '/',
+        );
+        const snapshots = await versionSnapshotsAt(
+            db, prefix, id,
+            (document) => wiring.entityOf(
+                document, org,
+            ),
+        );
+        if (snapshots.length === 0) {
+            throw await throwDocumentMiss(
+                wiring, db, org, id,
+            );
+        }
+        return snapshots;
+    };
+}
+
+export function documentVersionListRoute(
+    wiring: DocumentFamilyWiring,
+): Route {
+    return {
+        segments: [
+            ...entitySegments(wiring),
+            'versions', '',
+        ],
+        get: documentVersionListHandler(wiring),
+    };
 }
 
 export function documentVersionRoute(
@@ -484,7 +604,7 @@ export function documentVersionRoute(
     return {
         segments: [
             ...entitySegments(wiring),
-            'versions', ':version',
+            'versions', ':etag',
         ],
         get: documentVersionGetHandler(wiring),
     };

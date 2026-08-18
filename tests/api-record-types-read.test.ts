@@ -288,7 +288,7 @@ async () => {
     );
     const res = await handleRequest(db, req(
         'GET',
-        '/organizations/1/record-types/rt-1/versions',
+        '/organizations/1/record-types/rt-1/versions/',
         token,
     ));
     assert.equal(res.status, 200);
@@ -379,7 +379,7 @@ async () => {
     assert.equal(detail.status, 200);
     const history = await handleRequest(db, req(
         'GET',
-        '/organizations/1/record-types/rt-1/versions',
+        '/organizations/1/record-types/rt-1/versions/',
         token,
     ));
     assert.equal(history.status, 200);

@@ -18,7 +18,7 @@ import {
 const BASE = 'http://localhost';
 const COLLECTION = '/organizations/1/record-types/';
 const DETAIL = COLLECTION + 'rt-1';
-const HISTORY = DETAIL + '/versions';
+const HISTORY = DETAIL + '/versions/';
 
 function req(
     method: string,

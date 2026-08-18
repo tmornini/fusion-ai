@@ -126,9 +126,9 @@ export const RECORD_TYPES_COLLECTION_PATTERN =
 export const RECORD_TYPE_DETAIL_PATTERN =
     RECORD_TYPES_COLLECTION_PATTERN + ':record-type-id';
 export const RECORD_TYPE_VERSIONS_PATTERN =
-    RECORD_TYPE_DETAIL_PATTERN + '/versions';
+    RECORD_TYPE_DETAIL_PATTERN + '/versions/';
 export const RECORD_TYPE_VERSION_PATTERN =
-    RECORD_TYPE_VERSIONS_PATTERN + '/:version';
+    RECORD_TYPE_VERSIONS_PATTERN + ':etag';
 // Nested attributes under a record type (Task 7).
 export const ATTRIBUTES_COLLECTION_PATTERN =
     RECORD_TYPE_DETAIL_PATTERN + '/attributes/';

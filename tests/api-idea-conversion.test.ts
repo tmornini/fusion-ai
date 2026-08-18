@@ -158,7 +158,7 @@ test(
             state: string;
             member_id: string;
             at: string;
-        }[]>(db, 'organizations/1/ideas/idea-1/versions', DEV_TOKEN);
+        }[]>(db, 'organizations/1/ideas/idea-1/versions/', DEV_TOKEN);
         // Family history is DESC — index 0 is current.
         const ideaCurrent = ideaHistory[0]!;
         assert.equal(ideaCurrent.state, 'promoted');
@@ -378,7 +378,7 @@ test(
         );
         assert.equal(project.id, 'p1');
         const ideaHistory = await GET<{ state: string }[]>(
-            db, 'organizations/1/ideas/idea-1/versions', DEV_TOKEN,
+            db, 'organizations/1/ideas/idea-1/versions/', DEV_TOKEN,
         );
         // Family history is DESC — index 0 is current.
         const ideaCurrent = ideaHistory[0]!;

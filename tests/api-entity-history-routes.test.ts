@@ -19,7 +19,7 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 
-// GET <family>/:id/versions — Phase A3 of states-URI
+// GET <family>/:id/versions/ — Phase A3 of states-URI
 // elimination. Per trio family (ideas, projects, records,
 // flows, objectives): document-PUT lifecycle → 200 DESC
 // current-first; foreign miss at this address → 404;
@@ -141,8 +141,8 @@ function versionOf(res: Response): string {
 }
 
 test(
-    'GET organizations/:id/ideas/:id/versions 200 DESC; /history 404; '
-    + '/versions/:version serves that revision',
+    'GET organizations/:id/ideas/:id/versions/ 200 DESC; /history 404; '
+    + '/versions/:etag serves that revision',
     async () => {
         const db = await freshDb();
         const id = 'idea-versions-1';
@@ -183,7 +183,7 @@ test(
         const index = await handleRequest(
             db,
             req('GET', '/organizations/1/ideas/' + id +
-                '/versions', DEV_TOKEN),
+                '/versions/', DEV_TOKEN),
         );
         assert.equal(index.status, 200);
         const rows = await index.json() as HistoryEvent[];
@@ -243,7 +243,7 @@ test(
 );
 
 test(
-    'GET organizations/:id/ideas/:id/versions: 200 DESC current-first',
+    'GET organizations/:id/ideas/:id/versions/: 200 DESC current-first',
     async () => {
         const db = await freshDb();
         const id = 'idea-hist-1';
@@ -251,7 +251,7 @@ test(
         const res = await handleRequest(
             db,
             req('GET', '/organizations/1/ideas/' + id +
-                '/versions', DEV_TOKEN),
+                '/versions/', DEV_TOKEN),
         );
         assert.equal(res.status, 200);
         const rows = await res.json() as HistoryEvent[];
@@ -269,7 +269,7 @@ test(
 );
 
 test(
-    'GET organizations/:id/ideas/:id/versions foreign → 404 at this address',
+    'GET organizations/:id/ideas/:id/versions/ foreign → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
@@ -290,7 +290,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/ideas/' + foreign.id + '/versions',
+                '/organizations/1/ideas/' + foreign.id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -308,7 +308,7 @@ test(
 );
 
 test(
-    'GET organizations/:id/ideas/:id/versions absent → 404',
+    'GET organizations/:id/ideas/:id/versions/ absent → 404',
     async () => {
         const db = await freshDb();
         const missing = 'no-such-idea';
@@ -316,7 +316,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/ideas/' + missing + '/versions',
+                '/organizations/1/ideas/' + missing + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -330,7 +330,7 @@ test(
 );
 
 test(
-    'GET organizations/:id/ideas/:id/versions is 200',
+    'GET organizations/:id/ideas/:id/versions/ is 200',
     async () => {
         const db = await freshDb();
         const id = 'idea-hist-facade';
@@ -340,7 +340,7 @@ test(
             req(
                 'GET',
                 '/organizations/' + STARK_ORGANIZATION
-                    + '/ideas/' + id + '/versions',
+                    + '/ideas/' + id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -422,7 +422,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/projects/' + id + '/versions',
+                '/organizations/1/projects/' + id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -460,7 +460,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/projects/' + foreign.id + '/versions',
+                '/organizations/1/projects/' + foreign.id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -482,7 +482,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/projects/' + missing + '/versions',
+                '/organizations/1/projects/' + missing + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -560,7 +560,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/record-types/' + id + '/versions',
+                '/organizations/1/record-types/' + id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -597,7 +597,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/record-types/' + foreign.id + '/versions',
+                '/organizations/1/record-types/' + foreign.id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -619,7 +619,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/record-types/' + missing + '/versions',
+                '/organizations/1/record-types/' + missing + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -716,7 +716,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/flows/' + id + '/versions',
+                '/organizations/1/flows/' + id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -753,7 +753,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/flows/' + foreign.id + '/versions',
+                '/organizations/1/flows/' + foreign.id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -775,7 +775,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/flows/' + missing + '/versions',
+                '/organizations/1/flows/' + missing + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -848,7 +848,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/objectives/' + id + '/versions',
+                '/organizations/1/objectives/' + id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -886,7 +886,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/objectives/' + foreign.id + '/versions',
+                '/organizations/1/objectives/' + foreign.id + '/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -908,7 +908,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/objectives/' + missing + '/versions',
+                '/organizations/1/objectives/' + missing + '/versions/',
                 DEV_TOKEN,
             ),
         );

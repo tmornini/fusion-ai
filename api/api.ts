@@ -1485,11 +1485,11 @@ export async function handleRequest(
                         }
                     }
                 }
-                // Document /versions/:version: ETag is the
+                // Document /versions/:etag: ETag is the
                 // column hash (same as the path token).
                 if (
                     routePattern.endsWith(
-                        '/versions/:version',
+                        '/versions/:etag',
                     )
                     && routePattern
                         !== INSTANCE_VERSION_PATTERN

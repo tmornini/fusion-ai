@@ -42,7 +42,11 @@ import {
     invitationLifecycleStatesFor,
 } from './derive-states.ts';
 import { membershipExistsFor } from './derive-memberships.ts';
-import { param } from './document-family.ts';
+import {
+    param,
+    storedRevisionDocument,
+    versionSnapshotsAt,
+} from './document-family.ts';
 
 // An invitation's current state: the latest lifecycle event on
 // its id, derived from the pair plane.
@@ -836,4 +840,170 @@ async function loadInvitation(
     const found = (await deriveInvitations(adapter))
         .find(inv => inv.id === id);
     return found === undefined ? null : found;
+}
+
+const INVITATIONS_STORAGE_PREFIX =
+    '/invitations/';
+
+function invitationDocumentEntity(
+    document: { uriId: Id; body: Record<string, unknown> },
+): Record<string, unknown> {
+    return {
+        id: document.uriId,
+        ...document.body,
+    };
+}
+
+async function invitationVersionSnapshots(
+    db: DbAdapter,
+    id: Id,
+): Promise<unknown[]> {
+    return versionSnapshotsAt(
+        db, INVITATIONS_STORAGE_PREFIX, id,
+        invitationDocumentEntity,
+    );
+}
+
+async function invitationVersionSnapshot(
+    db: DbAdapter,
+    id: Id,
+    etag: string,
+): Promise<Record<string, unknown> | undefined> {
+    const document = await storedRevisionDocument(
+        db, INVITATIONS_STORAGE_PREFIX, id, etag,
+    );
+    if (document === undefined) return undefined;
+    return invitationDocumentEntity(document);
+}
+
+// GET /identities/:id/invitations/:id/versions/
+export async function getInvitationVersionsOnIdentityNest(
+    db: DbAdapter,
+    params: string[],
+    actor: Id,
+    _organization: Id | undefined,
+    roles: readonly string[],
+): Promise<unknown> {
+    const identityId = param(params, 0);
+    const id = param(params, 1);
+    requireSelfOrAdmin(
+        actor, identityId, roles,
+        'forbidden: only the invitee or an admin'
+        + ' may read this invitation',
+    );
+    const inv = await loadInvitation(db, id);
+    if (inv === null || inv.identity_id !== identityId) {
+        throw new ApiError(
+            'Not found: /identities/' + identityId
+                + '/invitations/' + id,
+            HTTP_NOT_FOUND,
+        );
+    }
+    return invitationVersionSnapshots(db, id);
+}
+
+// GET /identities/:id/invitations/:id/versions/:etag
+export async function getInvitationVersionOnIdentityNest(
+    db: DbAdapter,
+    params: string[],
+    actor: Id,
+    _organization: Id | undefined,
+    roles: readonly string[],
+): Promise<unknown> {
+    const identityId = param(params, 0);
+    const id = param(params, 1);
+    const etag = param(params, params.length - 1);
+    requireSelfOrAdmin(
+        actor, identityId, roles,
+        'forbidden: only the invitee or an admin'
+        + ' may read this invitation',
+    );
+    const inv = await loadInvitation(db, id);
+    if (inv === null || inv.identity_id !== identityId) {
+        throw new ApiError(
+            'Not found: /identities/' + identityId
+                + '/invitations/' + id,
+            HTTP_NOT_FOUND,
+        );
+    }
+    const snapshot = await invitationVersionSnapshot(
+        db, id, etag,
+    );
+    if (snapshot === undefined) {
+        throw new ApiError(
+            'Not found: /identities/' + identityId
+                + '/invitations/' + id,
+            HTTP_NOT_FOUND,
+        );
+    }
+    return snapshot;
+}
+
+// GET /organizations/:id/invitations/:id/versions/
+export async function getInvitationVersionsOnOrganizationNest(
+    db: DbAdapter,
+    params: string[],
+    _actor: Id,
+    _organization: Id | undefined,
+    roles: readonly string[],
+): Promise<unknown> {
+    requireAdmin(
+        roles,
+        'forbidden: reading an organization invitation'
+        + ' requires an admin role',
+    );
+    const organization = param(params, 0);
+    const id = param(params, 1);
+    const inv = await loadInvitation(db, id);
+    if (
+        inv === null
+        || inv.organization_id !== organization
+    ) {
+        throw new ApiError(
+            'Not found: /organizations/' + organization
+                + '/invitations/' + id,
+            HTTP_NOT_FOUND,
+        );
+    }
+    return invitationVersionSnapshots(db, id);
+}
+
+// GET /organizations/:id/invitations/:id/versions/:etag
+export async function getInvitationVersionOnOrganizationNest(
+    db: DbAdapter,
+    params: string[],
+    _actor: Id,
+    _organization: Id | undefined,
+    roles: readonly string[],
+): Promise<unknown> {
+    requireAdmin(
+        roles,
+        'forbidden: reading an organization invitation'
+        + ' requires an admin role',
+    );
+    const organization = param(params, 0);
+    const id = param(params, 1);
+    const etag = param(params, params.length - 1);
+    const inv = await loadInvitation(db, id);
+    if (
+        inv === null
+        || inv.organization_id !== organization
+    ) {
+        throw new ApiError(
+            'Not found: /organizations/' + organization
+                + '/invitations/' + id,
+            HTTP_NOT_FOUND,
+        );
+    }
+    const snapshot = await invitationVersionSnapshot(
+        db, id, etag,
+    );
+    if (snapshot === undefined) {
+        throw new ApiError(
+            'Not found: /organizations/' + organization
+                + '/invitations/' + id,
+            HTTP_NOT_FOUND,
+        );
+    }
+    return snapshot;
 }

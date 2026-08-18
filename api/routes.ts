@@ -155,12 +155,10 @@ import {
 } from './types.ts';
 import {
     deriveIdeaSubmissions,
-    deriveIdeaStateHistory,
     ideaEntityOf,
     ideaSubmissionEntityOf,
 } from './derive-ideas.ts';
 import {
-    deriveProjectStateHistory,
     projectEntityOf,
 } from './derive-projects.ts';
 import {
@@ -214,7 +212,6 @@ import {
     flowEntityOf,
     deriveFlow,
     deriveFlows,
-    deriveFlowStateHistory,
     resolveFlowUndoTarget,
     type FlowUndoResolution,
 } from './derive-flows.ts';
@@ -245,7 +242,6 @@ import {
     objectiveRevisionEntityOf,
 } from './derive-objective-revisions.ts';
 import {
-    deriveObjectiveStateHistory,
     deriveObjectiveHistories,
 } from './derive-objectives.ts';
 import {
@@ -256,6 +252,8 @@ import {
 import {
     deriveOrganizationMemberSeats,
     deriveOrganizationMemberSeat,
+    seatsPrefixFor,
+    seatEntityOf,
 } from './derive-memberships.ts';
 import {
     deriveIdentityPii,
@@ -301,8 +299,10 @@ import {
     documentEntityRoute,
     documentGetHandler,
     documentPutHandler,
-    documentStateHistoryHandler,
+    documentVersionListRoute,
     documentVersionRoute,
+    storedRevisionDocument,
+    versionSnapshotsAt,
     lookupStoredRevision,
     documentWriteResponseSpec,
     registerDocumentFamilyWiring,
@@ -320,9 +320,13 @@ import {
     postOrganizationInvitationGrant,
     getInvitationOnOrganizationNest,
     putInvitationOnOrganizationNest,
+    getInvitationVersionsOnOrganizationNest,
+    getInvitationVersionOnOrganizationNest,
     getIdentityInvitations,
     getInvitationOnIdentityNest,
     putInvitationOnIdentityNest,
+    getInvitationVersionsOnIdentityNest,
+    getInvitationVersionOnIdentityNest,
 } from './invitations-domain.ts';
 import type { DerivedDocument } from './derive-documents.ts';
 // Re-exported: param/requireOrganization/withoutId moved to
@@ -4254,12 +4258,23 @@ export const routes: Route[] = [
         get: getInvitationOnIdentityNest,
         put: putInvitationOnIdentityNest,
     }),
+    route('identities/:id/invitations/:id/versions/', {
+        get: getInvitationVersionsOnIdentityNest,
+    }),
+    route(
+        'identities/:id/invitations/:id/versions/:etag',
+        {
+            get: getInvitationVersionOnIdentityNest,
+        },
+    ),
     documentCollectionRoute(AI_AGENTS_WIRING),
     route('ai-agents/:id', {
         get: documentGetHandler(AI_AGENTS_WIRING),
         put: documentPutHandler(AI_AGENTS_WIRING),
     }),
+    documentVersionListRoute(IDENTITIES_WIRING),
     documentVersionRoute(IDENTITIES_WIRING),
+    documentVersionListRoute(AI_AGENTS_WIRING),
     documentVersionRoute(AI_AGENTS_WIRING),
     // PII is a facet of the identity's own subtree: GET is
     // self-or-admin, PUT/DELETE self-or-admin (enforced in
@@ -4987,17 +5002,11 @@ export const routes: Route[] = [
             ),
         put: documentPutHandler(FLOWS_WIRING),
     },
-    // GET flows/:id/versions: pair-chain index. Old
+    // GET flows/:id/versions/: pair-chain index. Old
     // table-backed /versions/:vid stays a miss (404).
-    // deriveFlowStateHistory ASC → DESC; empty →
-    // missedReadError('flows'). Member-tier GET via
-    // matchesOnSegmentBoundary on '/flows'.
-    route('organizations/:id/flows/:id/versions', {
-        get: documentStateHistoryHandler(
-            FLOWS_WIRING,
-            deriveFlowStateHistory, 'flows',
-        ),
-    }),
+    // List is StateEntity[] DESC; snapshot is the stored
+    // flow document. Do not change the flow payload.
+    documentVersionListRoute(FLOWS_WIRING),
     documentVersionRoute(FLOWS_WIRING),
     // Undo-as-replay (Phase 14 Task 8). Phase Final Task 2:
     // flows + graph ROW halves stripped; restore writes the
@@ -5035,7 +5044,7 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Pair-chain GET flows/:id/versions[+/:version] is
+    // Pair-chain GET flows/:id/versions[/]:etag is
     // registered above. Old table-backed :vid is a miss.
     // Project↔flow joins nest under their parent project:
     // param 0 is the path org, param 1 is the project, so the
@@ -5483,9 +5492,9 @@ export const routes: Route[] = [
         get: async (db, p, _actor, organization) => {
             const org = requireOrganization(organization);
             const id = param(p, 1);
-            const version = param(p, 2);
+            const etag = param(p, 2);
             const found = await lookupStoredRevision(
-                db, recordTypesUriPrefix(org), id, version,
+                db, recordTypesUriPrefix(org), id, etag,
             );
             if (
                 found === undefined
@@ -5974,6 +5983,43 @@ export const routes: Route[] = [
             );
         },
     }),
+    route('organizations/:id/versions/', {
+        get: async (db, p) => {
+            const id = param(p, 0);
+            const prefix = canonicalUriCollection(
+                undefined, '/organizations/',
+            );
+            const rows = await versionSnapshotsAt(
+                db, prefix, id, organizationEntityOf,
+            );
+            if (rows.length === 0) {
+                throw new EntityNotFoundError(
+                    'organizations', id,
+                );
+            }
+            return rows;
+        },
+    }),
+    route('organizations/:id/versions/:etag', {
+        get: async (db, p) => {
+            const id = param(p, 0);
+            const etag = param(p, p.length - 1);
+            const document = await storedRevisionDocument(
+                db,
+                canonicalUriCollection(
+                    undefined, '/organizations/',
+                ),
+                id,
+                etag,
+            );
+            if (document === undefined) {
+                throw new EntityNotFoundError(
+                    'organizations', id,
+                );
+            }
+            return organizationEntityOf(document);
+        },
+    }),
     // GET is FLIPPED (Task 8): derived via
     // documentCollectionGetHandler — wire-identical to the
     // hand-written db.memberships.getAll() dispatch it replaces
@@ -5990,6 +6036,18 @@ export const routes: Route[] = [
         get: getInvitationOnOrganizationNest,
         put: putInvitationOnOrganizationNest,
     }),
+    route(
+        'organizations/:id/invitations/:id/versions/',
+        {
+            get: getInvitationVersionsOnOrganizationNest,
+        },
+    ),
+    route(
+        'organizations/:id/invitations/:id/versions/:etag',
+        {
+            get: getInvitationVersionOnOrganizationNest,
+        },
+    ),
     route(ORGANIZATION_MEMBERS_COLLECTION_PATTERN, {
         get: (db, _p, _actor, organization) =>
             deriveOrganizationMemberSeats(
@@ -6017,6 +6075,53 @@ export const routes: Route[] = [
             );
         },
     }),
+    route(
+        ORGANIZATION_MEMBER_DETAIL_PATTERN
+            + '/versions/',
+        {
+            get: async (db, p, _actor, organization) => {
+                const org = requireOrganization(
+                    organization,
+                );
+                const id = param(p, 1);
+                const rows = await versionSnapshotsAt(
+                    db, seatsPrefixFor(org), id,
+                    (document) => seatEntityOf(
+                        document, org,
+                    ),
+                );
+                if (rows.length === 0) {
+                    throw new EntityNotFoundError(
+                        'organization_members', id,
+                    );
+                }
+                return rows;
+            },
+        },
+    ),
+    route(
+        ORGANIZATION_MEMBER_DETAIL_PATTERN
+            + '/versions/:etag',
+        {
+            get: async (db, p, _actor, organization) => {
+                const org = requireOrganization(
+                    organization,
+                );
+                const id = param(p, 1);
+                const etag = param(p, p.length - 1);
+                const document =
+                    await storedRevisionDocument(
+                        db, seatsPrefixFor(org), id, etag,
+                    );
+                if (document === undefined) {
+                    throw new EntityNotFoundError(
+                        'organization_members', id,
+                    );
+                }
+                return seatEntityOf(document, org);
+            },
+        },
+    ),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — GET dispatches to the derived
     // entity, PUT to postIdeaDocumentOp, wire-identical to the
@@ -6024,28 +6129,18 @@ export const routes: Route[] = [
     // MEMBER_ID-CAVEAT prose that lived here moved to the
     // IDEAS_WIRING block above.
     documentEntityRoute(IDEAS_WIRING),
-    // GET ideas/:id/versions: deriveIdeaStateHistory ASC
-    // → DESC; empty → missedReadError('ideas').
-    route('organizations/:id/ideas/:id/versions', {
-        get: documentStateHistoryHandler(
-            IDEAS_WIRING,
-            deriveIdeaStateHistory, 'ideas',
-        ),
-    }),
+    // GET ideas/:id/versions/: StateEntity[] DESC;
+    // empty → missedReadError('ideas').
+    documentVersionListRoute(IDEAS_WIRING),
     documentVersionRoute(IDEAS_WIRING),
     // Absorbed (Phase 4 Task 2) into the generic
     // documentEntityRoute — see the ideas/:id entry above for
     // the shared rationale; the Decision-7/MEMBER_ID-CAVEAT
     // prose moved to the PROJECTS_WIRING block above.
     documentEntityRoute(PROJECTS_WIRING),
-    // GET projects/:id/versions: deriveProjectStateHistory
-    // ASC → DESC; empty → missedReadError('projects').
-    route('organizations/:id/projects/:id/versions', {
-        get: documentStateHistoryHandler(
-            PROJECTS_WIRING,
-            deriveProjectStateHistory, 'projects',
-        ),
-    }),
+    // GET projects/:id/versions/: StateEntity[] DESC;
+    // empty → missedReadError('projects').
+    documentVersionListRoute(PROJECTS_WIRING),
     documentVersionRoute(PROJECTS_WIRING),
     // GET is FLIPPED (Task 7): the collection derives from the
     // message ledger rather than the old objectives table. Rides
@@ -6126,14 +6221,9 @@ export const routes: Route[] = [
     // precedent that already rides this same
     // documentEntityRoute shape.
     documentEntityRoute(OBJECTIVES_WIRING),
-    // GET objectives/:id/versions: deriveObjectiveStateHistory
-    // ASC → DESC; empty → missedReadError('objectives').
-    route('organizations/:id/objectives/:id/versions', {
-        get: documentStateHistoryHandler(
-            OBJECTIVES_WIRING,
-            deriveObjectiveStateHistory, 'objectives',
-        ),
-    }),
+    // GET objectives/:id/versions/: StateEntity[] DESC;
+    // empty → missedReadError('objectives').
+    documentVersionListRoute(OBJECTIVES_WIRING),
     documentVersionRoute(OBJECTIVES_WIRING),
     // Objective revisions nest under their parent objective:
     // param 0 is the path org, param 1 is the objective, so
