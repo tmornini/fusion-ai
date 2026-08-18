@@ -73,8 +73,6 @@ export function objectiveStateDetailFromRow(
         state: assertObjectiveState(
             row.state, 'objective ' + row.id,
         ),
-        stateAt: row.state_at,
-        stateEventId: row.state_event_id,
     };
 }
 
@@ -341,8 +339,6 @@ export async function postObjectiveArchival(
         {
         position: current.position,
         state: 'archived',
-        state_at: nowUtc(),
-        state_event_id: generateCryptoSafeBase62(),
     });
     notifyObjectiveChange();
 }
@@ -357,8 +353,6 @@ export async function postObjectiveReactivation(
         {
         position: current.position,
         state: 'active',
-        state_at: nowUtc(),
-        state_event_id: generateCryptoSafeBase62(),
     });
     notifyObjectiveChange();
 }
@@ -374,8 +368,6 @@ export async function putObjectivePosition(
         {
         position,
         state: stateDetail.state,
-        state_at: stateDetail.stateAt,
-        state_event_id: stateDetail.stateEventId,
     });
     notifyObjectiveChange();
 }

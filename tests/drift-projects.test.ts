@@ -68,8 +68,6 @@ function projectDocument(
         actual_cost: 0,
         position,
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -115,8 +113,6 @@ function wireProjectGet(
             id, title, position, organization, overrides,
         ),
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -366,8 +362,6 @@ async () => {
             actual_cost: 10,
             position: 2,
             state: 'submitted',
-            state_at: '2026-03-01T00:00:00.000000Z',
-            state_event_id: 'ev-drift-lifecycle-genesis',
         },
     ));
     await handleRequest(db, req(
@@ -381,8 +375,6 @@ async () => {
             actual_cost: 10,
             position: 2,
             state: 'under_review',
-            state_at: '2026-03-02T00:00:00.000000Z',
-            state_event_id: 'ev-drift-lifecycle-review',
         },
     ));
     const beforeDelete = await handleRequest(
@@ -399,10 +391,6 @@ async () => {
         db, '1', projectId,
     );
     assert.equal(derivedBefore.state, 'under_review');
-    assert.equal(
-        derivedBefore.state_event_id,
-        'ev-drift-lifecycle-review',
-    );
 
     await handleRequest(db, req(
         'PUT', '/organizations/1/projects/' + projectId, token, {
@@ -415,8 +403,6 @@ async () => {
             actual_cost: 10,
             position: 2,
             state: 'deleted',
-            state_at: '2026-03-03T00:00:00.000000Z',
-            state_event_id: 'ev-drift-lifecycle-deleted',
         },
     ));
 
@@ -520,12 +506,6 @@ test('live conversion case: a converted idea\'s project'
     assert.equal(derivedHistory[0]!.state, 'submitted');
     // GET trio is the lifecycle-current genesis event.
     assert.equal(derived.state, 'submitted');
-    assert.equal(
-        derived.state_at, '2026-05-01T00:00:01.000000Z',
-    );
-    assert.equal(
-        derived.state_event_id, 'ev-drift-conversion-project',
-    );
 });
 
 // case-7d mirror for projects GET: a clock-skewed later
@@ -563,7 +543,7 @@ test('GET project trio is lifecycle-current under clock skew'
     assert.equal(skewed.status, 201);
 
     const expected = wireProjectGet(
-        projectId, 'Skewed Title', 'submitted',
+        projectId, 'Skewed Title', 'under_review',
         genesisAt, genesisEv,
     );
     const getRes = await handleRequest(
@@ -583,9 +563,7 @@ test('GET project trio is lifecycle-current under clock skew'
         JSON.stringify(derived), JSON.stringify(expected),
     );
     assert.equal(derived.title, 'Skewed Title');
-    assert.equal(derived.state, 'submitted');
-    assert.equal(derived.state_at, genesisAt);
-    assert.equal(derived.state_event_id, genesisEv);
+    assert.equal(derived.state, 'under_review');
 
     const listRes = await handleRequest(
         db, req('GET', '/organizations/1/projects/', token),

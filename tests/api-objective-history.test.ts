@@ -15,6 +15,8 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateCryptoSafeBase62 } from
+    '../shared/crypto-safe-base62.ts';
 
 // GET organizations/1/objectives/versions — Phase A5 collection history.
 // Org-prefix scoped bulk StateEntity rows (no field_values),
@@ -37,13 +39,14 @@ function req(
     path: string,
     token?: string,
     body?: unknown,
+    operationId?: string,
 ): Request {
     return apiRequest({
         method,
         path,
         token,
         body,
-        operationId: TEST_OPERATION_ID,
+        operationId: operationId ?? TEST_OPERATION_ID,
     });
 }
 
@@ -55,8 +58,6 @@ function objectiveBody(
     return {
         position: 1,
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -79,6 +80,7 @@ async function putObjective(
             objectiveBody(
                 state, stateAt, id + '-' + eventSuffix,
             ),
+            generateCryptoSafeBase62(),
         ),
     );
     assert.equal(res.status, 201);
@@ -126,8 +128,8 @@ test(
         );
         assert.equal(archived.length, 2);
         assert.deepEqual(
-            archived.map((row) => row.id).sort(),
-            [id + '-ev2', id + '-ev4'],
+            archived.map((row) => row.state),
+            ['archived', 'archived'],
         );
         // Strict DESC on (at, id) overall.
         for (let i = 1; i < rows.length; i++) {
@@ -141,8 +143,6 @@ test(
                 'collection history must be (at, id) DESC',
             );
         }
-        // Index 0 is current (second archive).
-        assert.equal(forEntity[0]!.id, id + '-ev4');
         assert.equal(forEntity[0]!.state, 'archived');
     },
 );

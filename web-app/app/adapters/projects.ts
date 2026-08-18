@@ -10,7 +10,6 @@ import {
     projectStateIsNotDeleted,
     assertProjectState,
     msSinceUtc,
-    nowUtc,
     COST_DIVISOR,
     MS_PER_DAY,
 } from '../../../api/types.ts';
@@ -21,9 +20,6 @@ import {
     withLifecycleTrio,
     withLifecycleTrios,
 } from './shared.ts';
-import {
-    generateCryptoSafeBase62,
-} from '../../../shared/crypto-safe-base62.ts';
 import {
     createSubscriptionChannel,
 } from '../channels.ts';
@@ -78,8 +74,6 @@ export function projectStateDetailFromRow(
         state: assertProjectState(
             row.state, 'project ' + row.id,
         ),
-        stateAt: row.state_at,
-        stateEventId: row.state_event_id,
     };
 }
 
@@ -167,21 +161,6 @@ export class ProjectView {
     stateValue(): ProjectState {
         return this.#project
             .stateValue();
-    }
-
-    // Trio echo only — see the DATA-CORRUPTION TRAP note on
-    // Project's other view accessors below (progressPercent,
-    // costActualK): those are display-transformed and MUST
-    // NOT feed a wire body. state/stateAt/stateEventId carry
-    // no such transform, so passing them through is safe.
-    stateAtValue(): string {
-        return this.#project
-            .stateAtValue();
-    }
-
-    stateEventIdValue(): string {
-        return this.#project
-            .stateEventIdValue();
     }
 
     isApproved(): boolean {
@@ -278,28 +257,17 @@ export type ProjectDocumentFields =
         ProjectEntity,
         | 'id'
         | 'organization_id'
-        | 'state'
-        | 'state_at'
-        | 'state_event_id'
-    > & {
-        readonly state: ProjectState;
-        readonly stateAt: string;
-        readonly stateEventId: string;
-    };
+    >;
 
 export async function putProject(
     ctx: RequestContext,
     id: string,
     document: ProjectDocumentFields,
 ): Promise<void> {
-    const {
-        state, stateAt, stateEventId, ...entity
-    } = document;
+    const { state, ...entity } = document;
     await ctx.PUT(organizationItem(ctx, 'projects', id), {
         ...entity,
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     });
     projectChanges.notify();
 }
@@ -318,21 +286,15 @@ async function projectRowFields(
         | 'id'
         | 'organization_id'
         | 'state'
-        | 'state_at'
-        | 'state_event_id'
     >
 > {
     const {
         id: _id,
         organization_id: _org,
         state: _state,
-        state_at: _stateAt,
-        state_event_id: _stateEventId,
         ...fields
     } = await getProjectEntity(ctx, id);
     void _state;
-    void _stateAt;
-    void _stateEventId;
     return fields;
 }
 
@@ -362,8 +324,6 @@ export async function putProjectFields(
         target_end_date: patch.targetEndDate,
         estimated_cost: patch.estimatedCost,
         state: detail.state,
-        stateAt: detail.stateAt,
-        stateEventId: detail.stateEventId,
     });
 }
 
@@ -378,8 +338,6 @@ export async function putProjectPosition(
         ...fields,
         position,
         state: detail.state,
-        stateAt: detail.stateAt,
-        stateEventId: detail.stateEventId,
     });
 }
 
@@ -399,15 +357,11 @@ export async function postProjectStateChange(
         | 'id'
         | 'organization_id'
         | 'state'
-        | 'state_at'
-        | 'state_event_id'
     >,
     state: ProjectState,
 ): Promise<void> {
     await putProject(ctx, id, {
         ...fields,
         state,
-        stateAt: nowUtc(),
-        stateEventId: generateCryptoSafeBase62(),
     });
 }

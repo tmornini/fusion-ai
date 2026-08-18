@@ -91,8 +91,6 @@ async function twoOrganizations(): Promise<MemoryDbAdapter> {
         {
             ...a1Fields,
             state: 'active',
-            state_at: '2020-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-a1',
         },
     ));
     return db;
@@ -126,8 +124,6 @@ async () => {
         {
             id: 'a2', ...ideaBody('B', 'forged'),
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-a2',
         }));
     assert.equal(res.status, 201);
     // Phase Final Task 2: ideas row half stripped — org stamp
@@ -306,8 +302,6 @@ async function seedChain(
         {
             ...ideaFields,
             state: 'active',
-            state_at: T8_AT,
-            state_event_id: 'i' + s + '-genesis',
         },
     ));
     // Phase Final Task 2: projects row half stripped — seed
@@ -323,8 +317,6 @@ async function seedChain(
         {
             ...projectFields,
             state: 'submitted',
-            state_at: T8_AT,
-            state_event_id: 'p' + s + '-genesis',
         },
     ));
     // Phase Final Stage B: flows table retired — seed through
@@ -366,8 +358,6 @@ async function seedChain(
         {
             position: 0,
             state: 'active',
-            state_at: T8_AT,
-            state_event_id: 'o' + s + '-genesis',
         },
     ));
     // Phase Final Stage B: records table retired — seed
@@ -388,8 +378,7 @@ async function seedChain(
         recToken,
         {
             name: 'r', description: 'd', position: 0,
-            state: 'active', state_at: T8_AT,
-            state_event_id: 'r' + s + '-genesis',
+            state: 'active',
         },
     ));
     assert.equal(recWrite.status, 201);

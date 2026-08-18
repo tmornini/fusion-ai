@@ -164,7 +164,6 @@ import {
 import {
     deriveRecordTypeCollection,
     deriveRecordTypeEntity,
-    deriveRecordTypeStateHistory,
     recordTypeEntityOf,
     recordTypesUriPrefix,
     requireRecordTypeExists,
@@ -437,7 +436,7 @@ const FLOWS_WIRING: DocumentFamilyWiring = {
 function workOrderDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
-    _current?: StateEntity,
+    _current?: { readonly state: string },
 ): unknown {
     return {
         id: document.uriId,
@@ -479,15 +478,13 @@ const WORK_ORDERS_WIRING: DocumentFamilyWiring = {
 function objectiveDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
-    current: StateEntity,
+    current: { readonly state: string },
 ): ObjectiveEntity {
     return {
         id: document.uriId,
         organization_id: organization,
         position: pickNumber(document.body, 'position'),
         state: current.state,
-        state_at: current.at,
-        state_event_id: current.id,
     };
 }
 // The objectives wiring row — the seventh family, now the
@@ -523,7 +520,7 @@ const OBJECTIVES_WIRING: DocumentFamilyWiring = {
 export function identityDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
-    _current?: StateEntity,
+    _current?: { readonly state: string },
 ): unknown {
     return {
         id: document.uriId,
@@ -559,7 +556,7 @@ const IDENTITIES_WIRING: DocumentFamilyWiring = {
 export function aiAgentDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
-    _current?: StateEntity,
+    _current?: { readonly state: string },
 ): unknown {
     return {
         id: document.uriId,
@@ -830,14 +827,10 @@ export function recordDocumentBodyOf(
         ? {
             ...entity,
             state: writeBody.initialState,
-            state_at: writeBody.initialStateAt,
-            state_event_id: writeBody.initialStateEventId,
         }
         : {
             ...entity,
             state: writeBody.state,
-            state_at: writeBody.state_at,
-            state_event_id: writeBody.state_event_id,
         };
 }
 
@@ -1651,8 +1644,6 @@ export function objectiveDocumentBodyOf(
     return {
         ...entity,
         state: createBody.initialState,
-        state_at: createBody.initialStateAt,
-        state_event_id: createBody.initialStateEventId,
     };
 }
 
@@ -3359,7 +3350,7 @@ export const WRITE_RESPONSE_SPECS:
     [RECORD_TYPE_DETAIL_PATTERN]: {
         put: {
             status: HTTP_OK,
-            successBody: (params, body, actor) => {
+            successBody: (params, body) => {
                 const raw = withoutId(body ?? {});
                 validateRecordDocumentBody(raw);
                 const id = param(params, 1);
@@ -3372,13 +3363,7 @@ export const WRITE_RESPONSE_SPECS:
                         body: raw,
                     },
                     organization,
-                    {
-                        id: pickString(raw, 'state_event_id'),
-                        entity_id: id,
-                        state: pickString(raw, 'state'),
-                        member_id: actor,
-                        at: pickString(raw, 'state_at'),
-                    },
+                    { state: pickString(raw, 'state') },
                 );
             },
         },
@@ -4774,20 +4759,15 @@ export const routes: Route[] = [
             const projectDocument = {
                 ...b.project,
                 state: b.projectState,
-                state_at: b.projectStateAt,
-                state_event_id: b.projectStateEventId,
             };
             validateProjectDocumentBody(projectDocument);
             // The document a live PUT /ideas/:id would carry for
             // this SAME conversion: the promoted idea's own
-            // fields plus the 'promoted' trio this conversion
-            // assigns. Validated pre-tx, mirroring projectDocument
-            // above.
+            // fields plus domain `state`. Validated pre-tx,
+            // mirroring projectDocument above.
             const ideaDocument = {
                 ...b.idea,
                 state: b.ideaState,
-                state_at: b.ideaStateAt,
-                state_event_id: b.ideaStateEventId,
             };
             validateIdeaDocumentBody(ideaDocument);
             let projectPair: MessagePair | undefined;
@@ -5476,16 +5456,23 @@ export const routes: Route[] = [
         get: async (db, p, _actor, organization) => {
             const org = requireOrganization(organization);
             const id = param(p, 1);
-            const history =
-                await deriveRecordTypeStateHistory(
-                    db, org, id,
-                );
-            if (history.length === 0) {
+            const snapshots = await versionSnapshotsAt(
+                db, recordTypesUriPrefix(org), id,
+                (document) => recordTypeEntityOf(
+                    document, org,
+                    {
+                        state: pickString(
+                            document.body, 'state',
+                        ),
+                    },
+                ),
+            );
+            if (snapshots.length === 0) {
                 throw await missedReadError(
                     db, id, org, 'record_types',
                 );
             }
-            return history.toReversed();
+            return snapshots;
         },
     }),
     route(RECORD_TYPE_VERSION_PATTERN, {
@@ -5515,15 +5502,7 @@ export const routes: Route[] = [
                     body,
                 },
                 org,
-                {
-                    id: pickString(body, 'state_event_id'),
-                    entity_id: id,
-                    state: pickString(body, 'state'),
-                    member_id:
-                        found.request.requester_identity_id,
-                    at: pickString(body, 'state_at'),
-                    version: found.response.version,
-                },
+                { state: pickString(body, 'state') },
             );
         },
     }),

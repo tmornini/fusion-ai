@@ -132,21 +132,15 @@ async function seedTwoApprovedProjects(
         ...projectBody,
         title: 't1', position: 0,
         state: 'approved',
-        stateAt: '2026-01-01T00:00:00.000000Z',
-        stateEventId: 'st-p1',
     });
     await putProject(ctx, 'p2', {
         ...projectBody,
         title: 't2', position: 1,
         state: 'approved',
-        stateAt: '2026-01-01T00:00:01.000000Z',
-        stateEventId: 'st-p2',
     });
     await ctx.PUT('organizations/1/objectives/o1', {
         position: 0,
         state: 'active',
-        state_at: '2026-01-01T00:00:00.000000Z',
-        state_event_id: 'o1-genesis',
     });
     await ctx.PUT('organizations/1/objectives/o1/revisions/o1:t0', {
         objective_id: 'o1', name: 'O', description: 'd',
@@ -339,8 +333,6 @@ test(
         await ctx.PUT('organizations/1/objectives/o1', {
             position: 0,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'o1-genesis',
         });
         await ctx.PUT('organizations/1/objectives/o1/revisions/o1:t0', {
             objective_id: 'o1',

@@ -61,8 +61,6 @@ test('PUT then GET round-trips an entity', async () => {
         expected_outcome: 'o',
         success_metrics: 'm',
         state: 'active',
-        state_at: '2026-01-01T00:00:00.000000Z',
-        state_event_id: 'ev-i1',
     };
     await PUT(db, 'organizations/1/ideas/i1', payload, DEV_TOKEN);
     const fetched =

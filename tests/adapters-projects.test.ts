@@ -85,8 +85,6 @@ async function seedProject(
     await putProject(ctx, id, {
         ...entity,
         state,
-        stateAt: '2026-01-01T00:00:00.000000Z',
-        stateEventId: `st-${id}`,
     });
 }
 
@@ -211,8 +209,6 @@ test(
 
 const TRIO = {
     state: 'approved' as ProjectState,
-    stateAt: '2026-01-01T00:00:00.000000Z',
-    stateEventId: 'ev-p1',
 };
 
 test('putProject persists a new project', async () => {
@@ -358,13 +354,9 @@ test(
             id: _id,
             organization_id: _org,
             state: _priorState,
-            state_at: _priorAt,
-            state_event_id: _priorEventId,
             ...fields
         } = before;
         void _priorState;
-        void _priorAt;
-        void _priorEventId;
 
         await postProjectStateChange(
             ctx, 'p1', fields, 'archived',
@@ -379,20 +371,11 @@ test(
             after.description, before.description,
         );
         assert.equal(after.state, 'archived');
-        assert.notEqual(
-            after.state_event_id, before.state_event_id,
-        );
         const events = await deriveProjectStateHistory(db, '1', 'p1');
         // genesis + transition
         assert.equal(events.length, 2);
         assert.equal(
             events.at(-1)?.state, 'archived',
-        );
-        assert.equal(
-            after.state_event_id, events.at(-1)?.id,
-        );
-        assert.equal(
-            after.state_at, events.at(-1)?.at,
         );
     },
 );

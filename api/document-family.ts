@@ -146,7 +146,7 @@ export interface DocumentFamilyWiring {
     readonly entityOf: (
         document: DerivedDocument,
         organization: Id,
-        current?: StateEntity,
+        current?: { readonly state: string },
     ) => unknown;
 }
 
@@ -524,16 +524,9 @@ async function serveDocumentRevision(
         body,
     };
     if (wiring.lifecycle === 'trio') {
-        const current: StateEntity = {
-            id: pickString(body, 'state_event_id'),
-            entity_id: id,
-            state: pickString(body, 'state'),
-            member_id: found.request.requester_identity_id,
-            at: pickString(body, 'state_at'),
-            version: found.response.version,
-        };
         return wiring.entityOf(
-            document, organization, current,
+            document, organization,
+            stateFromDocument(document),
         );
     }
     return wiring.entityOf(document, organization);
@@ -552,10 +545,22 @@ export function documentVersionGetHandler(
         );
 }
 
+function stateFromDocument(
+    document: DerivedDocument,
+): { readonly state: string } {
+    return { state: pickString(document.body, 'state') };
+}
+
 export function documentVersionListHandler(
     wiring: DocumentFamilyWiring,
 ): GetHandler {
-    if (wiring.lifecycle === 'trio') {
+    // Flow keeps StateEntity[] (deferred). The four
+    // families return entityOf snapshots so list items
+    // match GET collection / GET :id.
+    if (
+        wiring.lifecycle === 'trio'
+        && wiring.family === 'flows'
+    ) {
         return documentStateHistoryHandler(
             wiring,
             (db, organization, id) =>
@@ -573,9 +578,12 @@ export function documentVersionListHandler(
         );
         const snapshots = await versionSnapshotsAt(
             db, prefix, id,
-            (document) => wiring.entityOf(
-                document, org,
-            ),
+            (document) => wiring.lifecycle === 'trio'
+                ? wiring.entityOf(
+                    document, org,
+                    stateFromDocument(document),
+                )
+                : wiring.entityOf(document, org),
         );
         if (snapshots.length === 0) {
             throw await throwDocumentMiss(
@@ -750,17 +758,11 @@ export function idFamilyOf(
 }
 
 function trioCurrentFromBody(
-    id: Id,
+    _id: Id,
     body: Record<string, unknown>,
-    actor: Id,
-): StateEntity {
-    return {
-        id: pickString(body, 'state_event_id'),
-        entity_id: id,
-        state: pickString(body, 'state'),
-        member_id: actor,
-        at: pickString(body, 'state_at'),
-    };
+    _actor: Id,
+): { readonly state: string } {
+    return { state: pickString(body, 'state') };
 }
 
 function trioDocumentFromBody(

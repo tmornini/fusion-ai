@@ -109,8 +109,6 @@ test(
             description: 'second',
             position: 1,
             state: 'active',
-            stateAt: '2026-01-02T00:00:00.000000Z',
-            stateEventId: 'ev-rec-1-b',
         });
         const stored = await getRecord(ctx, 'rec-1');
         assert.equal(stored.name, 'B');
@@ -166,8 +164,6 @@ test(
                 },
             ],
             state: head.stateValue(),
-            stateAt: head.stateAtValue(),
-            stateEventId: head.stateEventIdValue(),
             removedAttributeIds: ['a-old'],
         });
         const attrs = await ctx.GET<
@@ -251,20 +247,14 @@ test(
         assert.equal(after.description, 'orig');
         assert.equal(after.position, before.position);
         assert.equal(after.state, 'archived');
-        assert.notEqual(
-            after.state_event_id, before.state_event_id,
-        );
         const model = await getRecordModel(
             ctx, 'rec-1',
         );
         assert.equal(model.stateValue(), 'archived');
-        const events = await deriveRecordStateHistory(db, '1', 'rec-1');
-        assert.equal(
-            after.state_event_id, events.at(-1)?.id,
+        const events = await deriveRecordStateHistory(
+            db, '1', 'rec-1',
         );
-        assert.equal(
-            after.state_at, events.at(-1)?.at,
-        );
+        assert.equal(events.at(-1)?.state, 'archived');
     },
 );
 
@@ -316,8 +306,6 @@ test(
             expected_outcome: 'o',
             success_metrics: 'm',
             state: 'archived',
-            state_at: '2026-01-01T00:00:01.000000Z',
-            state_event_id: 'ev-i1',
         });
         const rows = await getRecords(ctx);
         const ids = rows.map(

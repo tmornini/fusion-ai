@@ -174,8 +174,7 @@ function ideaDocument(
         problem_statement: '', target_users: '',
         proposed_solution: '', expected_outcome: '',
         success_metrics: '',
-        state, state_at: at,
-        state_event_id: stateEventId,
+        state,
     };
 }
 
@@ -395,28 +394,44 @@ test('case 2: GET <family>/:id/history parity — one entity'
         assert.equal(res.status, 200, family);
         const wire = await res.json() as {
             id: string;
-            entity_id: string;
+            entity_id?: string;
             state: string;
-            member_id: string;
-            at: string;
+            member_id?: string;
+            at?: string;
         }[];
         assert.equal(wire.length, expected.length, family);
+        const trioList = family === 'work-order'
+            || family === 'flow';
         for (let i = 0; i < expected.length; i++) {
             const e = expected[i]!;
             const w = wire[i]!;
-            assert.equal(w.id, e.id, family + ' id@' + i);
-            assert.equal(
-                w.entity_id, e.entity_id,
-                family + ' entity_id@' + i,
-            );
+            if (trioList) {
+                assert.equal(
+                    w.id, e.id, family + ' id@' + i,
+                );
+                assert.equal(
+                    w.entity_id, e.entity_id,
+                    family + ' entity_id@' + i,
+                );
+                assert.equal(
+                    w.member_id, e.member_id,
+                    family + ' member_id@' + i,
+                );
+                assert.equal(
+                    w.at, e.at, family + ' at@' + i,
+                );
+            } else {
+                assert.equal(
+                    w.id, id, family + ' id@' + i,
+                );
+                assert.equal(
+                    'state_at' in w, false,
+                    family + ' no state_at@' + i,
+                );
+            }
             assert.equal(
                 w.state, e.state, family + ' state@' + i,
             );
-            assert.equal(
-                w.member_id, e.member_id,
-                family + ' member_id@' + i,
-            );
-            assert.equal(w.at, e.at, family + ' at@' + i);
         }
         for (let i = 1; i < wire.length; i++) {
             const prev = wire[i - 1]!;
@@ -439,10 +454,6 @@ test('case 2: GET <family>/:id/history parity — one entity'
         db, STARK_ORGANIZATION, objectiveEntry.id,
     );
     assert.equal(objectiveHistory.length, 1);
-    assert.equal(
-        objectiveHistory[0]!.id,
-        'seed-objective-' + objectiveEntry.id + '-active',
-    );
     assert.equal(objectiveHistory[0]!.state, 'active');
     // The work order carries its full 4-event hand-authored
     // trace — a non-vacuous, multi-event leg (case 6 below reuses
@@ -516,7 +527,7 @@ async () => {
     assert.equal(ownRes.status, 200);
     const ownWire = await ownRes.json() as { id: string }[];
     assert.ok(
-        ownWire.some((r) => r.id === ownIdeaId + '-genesis'),
+        ownWire.some((r) => r.id === ownIdeaId),
     );
 
     // Foreign history from STARK → 404; owner still org 2
@@ -542,16 +553,16 @@ async () => {
         tokenOrg2,
     ));
     assert.equal(org2Res.status, 200);
-    const org2Wire = await org2Res.json() as { id: string }[];
+    const org2Wire = await org2Res.json() as {
+        id: string;
+        state: string;
+    }[];
+    assert.equal(org2Wire.length, 2);
     assert.ok(
-        org2Wire.some(
-            (r) => r.id === foreignIdeaId + '-genesis',
-        ),
+        org2Wire.every((r) => r.id === foreignIdeaId),
     );
     assert.ok(
-        org2Wire.some(
-            (r) => r.id === 'drift-states-fence-foreign-del-ev',
-        ),
+        org2Wire.some((r) => r.state === 'deleted'),
     );
 
     // STARK idea absent from org 2 history read (404).
@@ -1265,7 +1276,8 @@ async () => {
 });
 
 // States-address retirement: archive/reactivate ride PUT
-// /organizations/:id/objectives/:id with the lifecycle trio — pair-plane pin.
+// /organizations/:id/objectives/:id with the lifecycle
+// trio — pair-plane pin.
 test('case 7c: live-write chain — objective archive, reactivate'
 + ' — pair-plane pin via PUT organizations/:id/objectives/:id',
 async () => {
@@ -1284,8 +1296,6 @@ async () => {
         'PUT', '/organizations/1/objectives/' + objectiveId, token, {
             position,
             state: 'archived',
-            state_at: '2026-04-04T00:00:00.000000Z',
-            state_event_id: objectiveId + '-drift-archive',
         },
     ));
     assert.equal(archived.status, 201);
@@ -1301,8 +1311,6 @@ async () => {
         'PUT', '/organizations/1/objectives/' + objectiveId, token, {
             position,
             state: 'active',
-            state_at: '2026-04-04T00:00:00.000001Z',
-            state_event_id: objectiveId + '-drift-reactivate',
         },
     ));
     assert.equal(reactivated.status, 201);
@@ -1331,8 +1339,6 @@ test('case 7d: genesis-wins-under-skew — a clock-skewed'
         'PUT', typePath, token, {
             name: 'Genesis Title', description: 'd', position: 1,
             state: 'active',
-            state_at: '2026-05-01T00:00:00.000000Z',
-            state_event_id: recordId + '-genesis',
         },
     ));
     assert.equal(genesis.status, 201);
@@ -1341,8 +1347,6 @@ test('case 7d: genesis-wins-under-skew — a clock-skewed'
         'PUT', typePath, token, {
             name: 'Skewed Title', description: 'd', position: 1,
             state: 'archived',
-            state_at: '2020-01-01T00:00:00.000000Z',
-            state_event_id: recordId + '-skewed',
         },
     ));
     assert.equal(skewed.status, 201);
@@ -1351,8 +1355,8 @@ test('case 7d: genesis-wins-under-skew — a clock-skewed'
         db, STARK_ORGANIZATION, recordId,
     );
     assert.deepEqual(
-        derived.map((row) => row.id),
-        [recordId + '-skewed', recordId + '-genesis'],
+        derived.map((row) => row.state),
+        ['active', 'archived'],
     );
 });
 

@@ -143,8 +143,6 @@ function ideaStateDetailFromRow(
         state: assertIdeaState(
             row.state, 'idea ' + row.id,
         ),
-        stateAt: row.state_at,
-        stateEventId: row.state_event_id,
     };
 }
 
@@ -236,28 +234,17 @@ export type IdeaDocumentFields =
         IdeaEntity,
         | 'id'
         | 'organization_id'
-        | 'state'
-        | 'state_at'
-        | 'state_event_id'
-    > & {
-        readonly state: IdeaState;
-        readonly stateAt: string;
-        readonly stateEventId: string;
-    };
+    >;
 
 export async function putIdea(
     ctx: RequestContext,
     id: string,
     document: IdeaDocumentFields,
 ): Promise<void> {
-    const {
-        state, stateAt, stateEventId, ...entity
-    } = document;
+    const { state, ...entity } = document;
     await ctx.PUT(organizationItem(ctx, 'ideas', id), {
         ...entity,
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     });
     ideaChanges.notify();
 }
@@ -281,16 +268,12 @@ export async function postIdeaCreation(
         | 'id'
         | 'organization_id'
         | 'state'
-        | 'state_at'
-        | 'state_event_id'
     >,
     initialState: IdeaState,
 ): Promise<void> {
     await putIdea(ctx, id, {
         ...entity,
         state: initialState,
-        stateAt: nowUtc(),
-        stateEventId: generateCryptoSafeBase62(),
     });
 }
 
@@ -308,18 +291,12 @@ export async function postIdeaStateChange(
     const {
         id,
         state: _priorState,
-        state_at: _priorAt,
-        state_event_id: _priorEventId,
         ...entity
     } = idea;
     void _priorState;
-    void _priorAt;
-    void _priorEventId;
     await putIdea(ctx, id, {
         ...entity,
         state,
-        stateAt: nowUtc(),
-        stateEventId: generateCryptoSafeBase62(),
     });
 }
 
@@ -379,8 +356,6 @@ export async function postIdeaConversion(
         | 'id'
         | 'organization_id'
         | 'state'
-        | 'state_at'
-        | 'state_event_id'
     >,
     projectState: ProjectState,
     promotedIdea: Omit<
@@ -388,8 +363,6 @@ export async function postIdeaConversion(
         | 'id'
         | 'organization_id'
         | 'state'
-        | 'state_at'
-        | 'state_event_id'
     >,
     baselines: readonly {
         objectiveId: ObjectiveId;

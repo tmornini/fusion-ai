@@ -727,8 +727,6 @@ export function ideaSeedBody(
         ...ideaFields,
         organization_id: assignOrganization(index),
         state: event.state,
-        state_at: event.at,
-        state_event_id: event.id,
     };
 }
 
@@ -769,8 +767,6 @@ export function projectSeedBody(
         ...projectFields,
         organization_id: organization,
         state: event.state,
-        state_at: event.at,
-        state_event_id: event.id,
     };
 }
 

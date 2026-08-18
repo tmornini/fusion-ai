@@ -1309,8 +1309,6 @@ async function transitionWithFieldValue(
             name: 'P15 FV Parent', description: '',
             position: 0,
             state: 'active',
-            state_at: nowUtc(),
-            state_event_id: 'rec-p15-fv-genesis',
         },
     ));
     assert.equal(typePut.status, 201);

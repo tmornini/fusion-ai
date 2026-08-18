@@ -63,8 +63,6 @@ function ideaDocument(
         expected_outcome: 'o',
         success_metrics: 'm',
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -104,8 +102,6 @@ function wireIdeaGet(
     return {
         ...wireIdeaPut(id, title, position, organization),
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -594,7 +590,8 @@ test('GET idea trio is lifecycle-current under clock skew'
     assert.equal(getRes.status, 200);
     const prefix = '/organizations/1/ideas/';
     const expected = wireIdeaGet(
-        ideaId, 'Skewed Title', 'active', genesisAt, genesisEv,
+        ideaId, 'Skewed Title', 'in_review', genesisAt,
+        genesisEv,
     );
     assert.deepEqual(await getRes.json(), expected);
     assert.deepEqual(
@@ -606,7 +603,5 @@ test('GET idea trio is lifecycle-current under clock skew'
         JSON.stringify(derived), JSON.stringify(expected),
     );
     assert.equal(derived.title, 'Skewed Title');
-    assert.equal(derived.state, 'active');
-    assert.equal(derived.state_at, genesisAt);
-    assert.equal(derived.state_event_id, genesisEv);
+    assert.equal(derived.state, 'in_review');
 });

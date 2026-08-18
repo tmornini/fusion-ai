@@ -149,8 +149,6 @@ function editBody(
         },
         attributes: [],
         state: 'active',
-        state_at: AT,
-        state_event_id: typeId + '-genesis',
         removedAttributeIds: [...removedAttributeIds],
     };
 }
@@ -235,15 +233,12 @@ async () => {
         organization_id: string;
         name: string;
         state: string;
-        state_event_id: string;
     };
     assert.equal(typeRow.id, TYPE_ID);
     assert.equal(typeRow.organization_id, ORGANIZATION);
     assert.equal(typeRow.name, 'Composed');
     assert.equal(typeRow.state, 'active');
-    assert.equal(
-        typeRow.state_event_id, TYPE_ID + '-genesis',
-    );
+    assert.equal('state_event_id' in typeRow, false);
 
     const attrGet = await handleRequest(db, req(
         'GET', ATTR_DETAIL, adminToken,

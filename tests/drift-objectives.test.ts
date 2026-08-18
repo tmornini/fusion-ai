@@ -101,8 +101,6 @@ const OBJECTIVES_TEST_WIRING: DocumentFamilyWiring = {
         organization_id: organization,
         position: pickNumber(document.body, 'position'),
         state: current!.state,
-        state_at: current!.at,
-        state_event_id: current!.id,
     }),
 };
 
@@ -153,8 +151,6 @@ function wireObjectiveGet(
     return {
         ...wireObjectivePut(id, position, organization),
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -322,10 +318,6 @@ async () => {
         );
         assert.equal(derived.position, t.position);
         assert.equal(derived.state, 'active');
-        assert.equal(
-            derived.state_event_id,
-            'seed-objective-' + t.id + '-active',
-        );
     }
 
     const foreignId = OBJECTIVE_SEEDS[0]!.id;
@@ -586,12 +578,6 @@ test('live-write chain: create, reposition, revision edit,'
         );
         assert.equal(derived.position, 50);
         assert.equal(derived.state, 'active');
-        assert.equal(
-            derived.state_at, '2026-06-01T00:00:00.000000Z',
-        );
-        assert.equal(
-            derived.state_event_id, objectiveId + '-active',
-        );
         const revRes = await handleRequest(db, req(
             'GET',
             '/organizations/1/objectives/' + objectiveId + '/revisions/',
@@ -613,8 +599,6 @@ test('live-write chain: create, reposition, revision edit,'
         {
             position: 77,
             state: 'active',
-            state_at: '2026-06-01T00:00:00.000000Z',
-            state_event_id: objectiveId + '-active',
         },
     ));
     assert.equal(reposition.status, 201);
@@ -641,9 +625,6 @@ test('live-write chain: create, reposition, revision edit,'
         );
         assert.equal(derived.position, 77);
         assert.equal(derived.state, 'active');
-        assert.equal(
-            derived.state_event_id, objectiveId + '-active',
-        );
         assert.deepEqual(
             await reposition.json(),
             wireObjectiveGet(
@@ -687,8 +668,6 @@ test('live-write chain: create, reposition, revision edit,'
         {
             position: 50,
             state: 'archived',
-            state_at: '2026-06-03T00:00:00.000000Z',
-            state_event_id: objectiveId + '-archived',
         },
     ));
     assert.equal(archived.status, 201);
@@ -713,8 +692,6 @@ test('live-write chain: create, reposition, revision edit,'
         {
             position: 50,
             state: 'active',
-            state_at: '2026-06-04T00:00:00.000000Z',
-            state_event_id: objectiveId + '-reactivated',
         },
     ));
     assert.equal(reactivated.status, 201);
@@ -739,8 +716,6 @@ test('live-write chain: create, reposition, revision edit,'
             proposed_solution: 's', expected_outcome: 'o',
             success_metrics: 'm',
             state: 'approved',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'idea-drift-chain-1-approved',
         },
     ));
     const projectId = 'proj-drift-chain-1';
@@ -1022,8 +997,6 @@ async () => {
     const positionBody = {
         position: 99,
         state: 'active' as const,
-        state_at: '2026-06-11T00:00:00.000000Z',
-        state_event_id: objectiveId + '-active',
     };
     const beforeReposition = (await db.requests.getAll()).length;
     const first = await handleRequest(db, req(
@@ -1087,8 +1060,6 @@ async () => {
         {
             position: 1,
             state: 'archived',
-            state_at: '2026-06-12T00:00:01.000000Z',
-            state_event_id: objectiveId + '-archived',
         },
     ));
     assert.equal(archived.status, 201);
@@ -1151,8 +1122,6 @@ async () => {
             {
                 position: f.position,
                 state: 'active',
-                state_at: '2026-06-13T00:00:00.000000Z',
-                state_event_id: f.id + '-active',
             },
         ));
         assert.equal(put.status, 201);
@@ -1211,8 +1180,6 @@ test('GET objective trio is lifecycle-current under clock skew'
         'PUT', '/organizations/1/objectives/' + objectiveId, token, {
             position: 1,
             state: 'active',
-            state_at: genesisAt,
-            state_event_id: genesisEv,
         },
     ));
     assert.equal(genesis.status, 201);
@@ -1225,14 +1192,12 @@ test('GET objective trio is lifecycle-current under clock skew'
         'PUT', '/organizations/1/objectives/' + objectiveId, token, {
             position: 99,
             state: 'archived',
-            state_at: skewedAt,
-            state_event_id: skewedEv,
         },
     ));
     assert.equal(skewed.status, 201);
 
     const expected = wireObjectiveGet(
-        objectiveId, 99, 'active',
+        objectiveId, 99, 'archived',
         genesisAt, genesisEv,
     );
 
@@ -1258,9 +1223,7 @@ test('GET objective trio is lifecycle-current under clock skew'
         JSON.stringify(derived), JSON.stringify(expected),
     );
     assert.equal(derived.position, 99);
-    assert.equal(derived.state, 'active');
-    assert.equal(derived.state_at, genesisAt);
-    assert.equal(derived.state_event_id, genesisEv);
+    assert.equal(derived.state, 'archived');
 
     const objectives = await derivedObjectives(
         db, STARK_ORGANIZATION,

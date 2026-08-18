@@ -48,8 +48,6 @@ test(
             description: 'A customer record',
             position: 1,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-rec-1',
         }, DEV_TOKEN);
         const stored = await GET<{
             id: string;
@@ -57,17 +55,12 @@ test(
             description: string;
             position: number;
             state: string;
-            state_at: string;
-            state_event_id: string;
         }>(db, TYPE, DEV_TOKEN);
         assert.equal(stored.id, 'rec-1');
         assert.equal(stored.name, 'Customer');
         assert.equal(stored.position, 1);
         assert.equal(stored.state, 'active');
-        assert.equal(
-            stored.state_at, '2026-01-01T00:00:00.000000Z',
-        );
-        assert.equal(stored.state_event_id, 'ev-rec-1');
+        assert.equal('state_at' in stored, false);
     },
 );
 
@@ -82,8 +75,6 @@ test(
             description: '',
             position: 1,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-rec-1',
         }, DEV_TOKEN);
         await DELETE(db, TYPE, DEV_TOKEN);
         await assert.rejects(
@@ -105,8 +96,6 @@ test(
             description: '',
             position: 1,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-rec-1',
         }, DEV_TOKEN);
         const out = await GET<unknown[]>(
             db, ATTRS, DEV_TOKEN,
@@ -126,8 +115,6 @@ test(
             description: '',
             position: 1,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-rec-1',
         }, DEV_TOKEN);
         await PUT(db, ATTR, {
             name: 'Email',
@@ -160,8 +147,6 @@ test(
             description: '',
             position: 1,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-rec-1',
         }, DEV_TOKEN);
         await PUT(db, ATTR, {
             name: 'X',
@@ -177,7 +162,8 @@ test(
     },
 );
 
-// flow-records (nested under organizations/:id/flows/:id/records) — UNTOUCHED
+// flow-records (nested under
+// organizations/:id/flows/:id/records) — UNTOUCHED
 
 test(
     'GET organizations/:id/flows/:id/records returns an empty array',

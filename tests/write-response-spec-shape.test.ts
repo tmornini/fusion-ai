@@ -40,7 +40,6 @@ const DUMMY_BODIES: Readonly<
         problem_statement: 'p', target_users: 't',
         proposed_solution: 's', expected_outcome: 'o',
         success_metrics: 'm', state: 'active',
-        state_at: AT, state_event_id: 'ev-1',
     },
     'organizations/:id/ideas/:id/submissions/:sid': {
         idea_id: 'id', member_id: 'id', at: AT,
@@ -51,7 +50,6 @@ const DUMMY_BODIES: Readonly<
         target_end_date: '2026-02-01',
         estimated_cost: 100, actual_cost: 50,
         position: 1, state: 'submitted',
-        state_at: AT, state_event_id: 'ev-1',
     },
     'organizations/:id/projects/:id/flows/:pfid': {
         project_id: 'id', flow_id: 'id', at: AT,
@@ -77,8 +75,7 @@ const DUMMY_BODIES: Readonly<
     },
     [RECORD_TYPE_DETAIL_PATTERN]: {
         name: 'R', description: 'd', position: 1,
-        state: 'active', state_at: AT,
-        state_event_id: 'ev-1',
+        state: 'active',
     },
     [ATTRIBUTE_DETAIL_PATTERN]: {
         name: 'A', attribute_type: 'text',
@@ -95,7 +92,6 @@ const DUMMY_BODIES: Readonly<
     },
     'organizations/:id/objectives/:id': {
         position: 1, state: 'active',
-        state_at: AT, state_event_id: 'ev-1',
     },
     'organizations/:id/objectives/:id/revisions/:rid': {
         objective_id: 'id', name: 'N',

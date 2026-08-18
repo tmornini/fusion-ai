@@ -207,8 +207,7 @@ function ideaDocument(
         problem_statement: '', target_users: '',
         proposed_solution: '', expected_outcome: '',
         success_metrics: '',
-        state: 'active', state_at: at,
-        state_event_id: stateEventId,
+        state: 'active',
     };
 }
 
@@ -450,8 +449,6 @@ async function buildUnionFixture(): Promise<UnionFixture> {
         'PUT', '/organizations/A/objectives/' + objectiveId, tokenA, {
             position: 1,
             state: 'active',
-            state_at: '2026-01-02T00:00:00.000002Z',
-            state_event_id: objectiveId + '-genesis',
         },
     ));
     assert.equal(objectiveRes.status, 201);
@@ -610,14 +607,14 @@ async () => {
 
     assert.deepEqual(
         (await deriveIdeaStateHistory(fx.db, 'A', fx.ideaId))
-            .map((row) => row.id),
-        [fx.ideaId + '-genesis'],
+            .map((row) => row.state),
+        ['active'],
     );
     assert.deepEqual(
         (await deriveObjectiveStateHistory(
             fx.db, 'A', fx.objectiveId,
-        )).map((row) => row.id),
-        [fx.objectiveId + '-genesis'],
+        )).map((row) => row.state),
+        ['active'],
     );
     const agent = await handleRequest(
         fx.db,

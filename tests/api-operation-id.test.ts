@@ -17,8 +17,6 @@ const validIdea = {
     expected_outcome: 'o',
     success_metrics: 'm',
     state: 'active',
-    state_at: '2026-01-01T00:00:00.000000Z',
-    state_event_id: 'ev-opid',
 };
 
 test('public PUT without Operation-ID is 400',

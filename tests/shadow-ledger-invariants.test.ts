@@ -87,8 +87,6 @@ function ideaPutBody(ideaId: string, title: string) {
     return {
         ...ideaFields(title),
         state: 'active',
-        state_at: AT,
-        state_event_id: 'ev-' + ideaId,
     };
 }
 
@@ -110,8 +108,6 @@ function recordPutBody(
     return {
         ...recordFields(name, organization),
         state: 'active',
-        state_at: AT,
-        state_event_id: 'ev-' + recordId,
     };
 }
 
@@ -256,8 +252,6 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         'PUT', '/organizations/1/ideas/inv-idea-1', org1Token, {
             ...ideaFields('Invariant Idea Reviewed'),
             state: 'in_review',
-            state_at: AT,
-            state_event_id: 'inv-ev-review',
         },
     ));
     assert.equal(stateAppend.status, 201);
@@ -481,18 +475,13 @@ test('a seeded idea\'s create-pair request reproduces its'
     const parsed = pairJsonOf(createRow!.message) as {
         body: {
             state: string;
-            state_event_id: string;
-            state_at: string;
         };
     };
     const history = await deriveIdeaStateHistory(
         db, STARK_ORGANIZATION, idea.id,
     );
-    const genesis = history.find(
-        s => s.id === parsed.body.state_event_id,
-    )!;
+    const genesis = history[0];
     assert.ok(genesis, 'derived state missing');
     assert.equal(genesis.entity_id, idea.id);
     assert.equal(genesis.state, parsed.body.state);
-    assert.equal(genesis.at, parsed.body.state_at);
 });

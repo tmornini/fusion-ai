@@ -144,8 +144,6 @@ test(
                 name: 'WO Parent', description: '',
                 position: 0,
                 state: 'active',
-                state_at: '2026-01-01T00:00:00.000000Z',
-                state_event_id: 'rec-1-genesis',
             },
             DEV_TOKEN,
         );
@@ -355,8 +353,6 @@ test(
                 name: 'WO Parent', description: '',
                 position: 0,
                 state: 'active',
-                state_at: '2026-01-01T00:00:00.000000Z',
-                state_event_id: 'rec-1-genesis',
             },
             DEV_TOKEN,
         );

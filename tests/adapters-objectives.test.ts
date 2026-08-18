@@ -47,8 +47,6 @@ function objectiveDoc(
     return {
         position,
         state,
-        state_at: at,
-        state_event_id: eventId,
     };
 }
 
@@ -207,11 +205,11 @@ test(
         await seedCurrentMember(db);
         const ctx = ctxFor(db);
         await postObjectiveCreation(
-            ctx, 'o1', 'Rev', 'd', 0,
+            ctxFor(db), 'o1', 'Rev', 'd', 0,
         );
-        await postObjectiveArchival(ctx, 'o1');
-        await postObjectiveReactivation(ctx, 'o1');
-        await postObjectiveArchival(ctx, 'o1');
+        await postObjectiveArchival(ctxFor(db), 'o1');
+        await postObjectiveReactivation(ctxFor(db), 'o1');
+        await postObjectiveArchival(ctxFor(db), 'o1');
 
         const histories =
             await getObjectiveHistories(ctx);
@@ -259,15 +257,6 @@ test(
         assert.equal(objectives[0]!.organization_id, '1');
         // GET stamps lifecycle-current genesis trio.
         assert.equal(objectives[0]!.state, 'active');
-        assert.equal(
-            typeof objectives[0]!.state_at, 'string',
-        );
-        assert.equal(
-            typeof objectives[0]!.state_event_id, 'string',
-        );
-        assert.ok(
-            objectives[0]!.state_event_id.length > 0,
-        );
 
         const revisions =
             await getObjectiveRevisionsByObjective(
@@ -434,8 +423,6 @@ test(
                     organization_id: '1',
                     position: 3,
                     state: 'active',
-                    state_at: '2026-01-01T00:00:00.000000Z',
-                    state_event_id: 'ev-o1-prior',
                 };
             },
             PUT: async () => ({}),
@@ -449,17 +436,7 @@ test(
         const body = calls[1]!.body!;
         assert.equal(body['position'], 3);
         assert.equal(body['state'], 'archived');
-        assert.equal(typeof body['state_at'], 'string');
-        assert.match(
-            body['state_at'] as string,
-            /^\d{4}-\d{2}-\d{2}T/,
-        );
-        assert.equal(
-            typeof body['state_event_id'], 'string',
-        );
-        assert.ok(
-            (body['state_event_id'] as string).length > 0,
-        );
+        assert.equal('state_at' in body, false);
     },
 );
 
@@ -473,8 +450,6 @@ test(
         await putObjectivePosition(
             ctx, 'o1', 1.5, {
                 state: 'active',
-                stateAt: '2026-01-01T00:00:00.000000Z',
-                stateEventId: 'ev-fixed',
             },
         );
         assert.equal(calls.length, 1);
@@ -483,8 +458,6 @@ test(
         assert.deepEqual(calls[0]!.body, {
             position: 1.5,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-fixed',
         });
     },
 );

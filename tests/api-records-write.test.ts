@@ -10,6 +10,8 @@ import { DEV_TOKEN } from './token-fixtures.ts';
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { deriveRecordTypeStateHistory } from
+    '../api/derive-record-types.ts';
 
 async function freshDb() {
     const db = memoryDbAdapter();
@@ -102,13 +104,10 @@ test(
         // (Phase 15 Task 7).
         const history = await GET<{
             state: string;
-            member_id: string;
         }[]>(db, 'organizations/1/record-types/rec-2/versions/', DEV_TOKEN);
         assert.equal(history.length, 1);
         assert.equal(history[0]!.state, 'active');
-        assert.equal(
-            history[0]!.member_id, 'current',
-        );
+        assert.equal('member_id' in history[0]!, false);
     },
 );
 
@@ -150,8 +149,6 @@ test(
             // and this edit genuinely proves no state event was
             // emitted.
             state: 'active',
-            state_at: '2025-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-1',
             removedAttributeIds: [],
         }, DEV_TOKEN);
         const record = await GET<{
@@ -162,11 +159,11 @@ test(
         assert.equal(
             record.description, 'updated',
         );
-        const history = await GET<unknown[]>(
-            db, 'organizations/1/record-types/rec-1/versions/', DEV_TOKEN,
+        const events = await deriveRecordTypeStateHistory(
+            db, '1', 'rec-1',
         );
         assert.equal(
-            history.length, 1,
+            events.length, 1,
             'edit must not emit a state event',
         );
     },
@@ -227,8 +224,6 @@ test(
             ],
             // Echoed from the create's own known head above.
             state: 'active',
-            state_at: '2025-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-1',
             removedAttributeIds: ['a-old'],
         }, DEV_TOKEN);
         const all = await GET<{
@@ -294,8 +289,6 @@ test(
             ],
             // Echoed from the create's own known head above.
             state: 'active',
-            state_at: '2025-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-1',
             removedAttributeIds: [],
         }, DEV_TOKEN);
         const stored = await GET<{
@@ -515,20 +508,14 @@ test(
         // bare per-entity current-state alias RETIRED
         // (Phase 15 Task 7).
         const history = await GET<{
+            id: string;
             state: string;
-            member_id: string;
-            at: string;
         }[]>(db, 'organizations/1/record-types/rec-at/versions/', DEV_TOKEN);
         assert.equal(history.length, 1);
         const current = history[0]!;
+        assert.equal(current.id, 'rec-at');
         assert.equal(current.state, 'active');
-        // Authorship is the verified caller, never the body.
-        assert.equal(current.member_id, 'current');
-        // The event carries the caller-supplied at, not server time.
-        assert.equal(
-            current.at,
-            '2099-07-01T00:00:00.000000Z',
-        );
+        assert.equal('state_at' in current, false);
     },
 );
 

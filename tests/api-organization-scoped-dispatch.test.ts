@@ -42,8 +42,6 @@ async function twoOrganizationIdeas(): Promise<MemoryDbAdapter> {
     await PUT(db, 'organizations/1/ideas/a1', {
         ...a1Fields,
         state: 'active',
-        state_at: '2020-01-01T00:00:00.000000Z',
-        state_event_id: 'ev-a1',
     }, await organizationToken('1'));
     return db;
 }

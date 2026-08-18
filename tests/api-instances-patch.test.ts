@@ -134,8 +134,6 @@ function typeBody(): Record<string, unknown> {
         description: 'Rental desc',
         position: 1,
         state: 'active',
-        state_at: AT,
-        state_event_id: TYPE_ID + '-genesis',
     };
 }
 

@@ -82,8 +82,6 @@ async function seedProject(
     await putProject(ctx, id, {
         ...entity,
         state,
-        stateAt: '2026-01-01T00:00:00.000000Z',
-        stateEventId: 'sp-' + id,
     });
 }
 
@@ -107,8 +105,6 @@ async function seedIdea(
     await putIdea(ctx, id, {
         ...entity,
         state,
-        stateAt: '2026-01-01T00:00:00.000000Z',
-        stateEventId: 'si-' + id,
     });
     await ctx.PUT('organizations/1/ideas/' + id + '/submissions/sub-' + id, {
         idea_id: id,
@@ -232,16 +228,12 @@ test(
         await putProject(ctx, 'p1', {
             ...pFields,
             state: 'declined',
-            stateAt: '2026-01-02T00:00:00.000000Z',
-            stateEventId: 'sp1-next',
         });
         const { organization_id: _ideaOrganizationId, ...iFields } =
             buildIdea('i1');
         await putIdea(ctx, 'i1', {
             ...iFields,
             state: 'archived',
-            stateAt: '2026-01-02T00:00:01.000000Z',
-            stateEventId: 'si1-next',
         });
         stats = await getOrganizationStats(ctx);
         assert.equal(stats.projectsCurrent, 0);

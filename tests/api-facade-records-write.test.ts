@@ -51,8 +51,6 @@ function editBody(organization: string) {
         },
         attributes: [],
         state: 'active',
-        state_at: '2020-01-01T00:00:00.000000Z',
-        state_event_id: 'facade-rec-1-active',
         removedAttributeIds: [],
     };
 }

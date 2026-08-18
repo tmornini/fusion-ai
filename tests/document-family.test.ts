@@ -89,7 +89,7 @@ test('documentWriteResponseSpec produces the ideas'
         title: 'T', position: 1, problem_statement: 'p',
         target_users: 't', proposed_solution: 's',
         expected_outcome: 'o', success_metrics: 'm',
-        state: 'active', state_at: AT, state_event_id: 'ev-1',
+        state: 'active',
     };
     const actual = documentWriteResponseSpec(wiring)
         .successBody!(['1', 'idea-1'], body, 'current', '1');
@@ -98,7 +98,7 @@ test('documentWriteResponseSpec produces the ideas'
         title: 'T', position: 1, problem_statement: 'p',
         target_users: 't', proposed_solution: 's',
         expected_outcome: 'o', success_metrics: 'm',
-        state: 'active', state_at: AT, state_event_id: 'ev-1',
+        state: 'active',
     });
 });
 
@@ -109,7 +109,7 @@ test('documentWriteResponseSpec produces the projects'
         title: 'T', description: 'd', progress: 5,
         start_date: '2026-01-01', target_end_date: '2026-02-01',
         estimated_cost: 100, actual_cost: 50, position: 1,
-        state: 'submitted', state_at: AT, state_event_id: 'ev-1',
+        state: 'submitted',
     };
     const actual = documentWriteResponseSpec(wiring)
         .successBody!(
@@ -120,7 +120,7 @@ test('documentWriteResponseSpec produces the projects'
         title: 'T', description: 'd', progress: 5,
         start_date: '2026-01-01', target_end_date: '2026-02-01',
         estimated_cost: 100, actual_cost: 50, position: 1,
-        state: 'submitted', state_at: AT, state_event_id: 'ev-1',
+        state: 'submitted',
     });
 });
 
@@ -178,7 +178,7 @@ test('documentEntityRoute (simple arm) PUTs through the'
         problem_statement: 'p', target_users: 't',
         proposed_solution: 's', expected_outcome: 'o',
         success_metrics: 'm',
-        state: 'active', state_at: AT, state_event_id: 'ev-1',
+        state: 'active',
         organization_id: '1',
     };
     const pair = await formWritePair({

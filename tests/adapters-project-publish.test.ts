@@ -84,8 +84,6 @@ test('postProjectApproval moves state to approved',
         await putProject(ctx, 'p1', {
             ...SAMPLE_PROJECT_BODY,
             state: 'under_review',
-            stateAt: '2026-01-01T00:00:00.000000Z',
-            stateEventId: 'st-init',
         });
         // The objective and its baseline score are seeded the
         // SAME wire-reachable way (Phase 7 Task 7) — a raw
@@ -98,8 +96,6 @@ test('postProjectApproval moves state to approved',
         await ctx.PUT('organizations/1/objectives/o1', {
             position: 0,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'o1-genesis',
         });
         await ctx.PUT(
             'organizations/1/projects/p1/objective-baseline-scores/b1',
@@ -124,14 +120,10 @@ test('postProjectApproval throws when not ready',
         await putProject(ctx, 'p1', {
             ...SAMPLE_PROJECT_BODY,
             state: 'under_review',
-            stateAt: '2026-01-01T00:00:00.000000Z',
-            stateEventId: 'st-init',
         });
         await ctx.PUT('organizations/1/objectives/o1', {
             position: 0,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'o1-genesis',
         });
         await assert.rejects(
             () => postProjectApproval(ctx, 'p1'),
@@ -148,14 +140,10 @@ test('postProjectArchival moves state to archived',
         await putProject(ctx, 'p1', {
             ...SAMPLE_PROJECT_BODY,
             state: 'approved',
-            stateAt: '2026-01-01T00:00:00.000000Z',
-            stateEventId: 'st-init',
         });
         await ctx.PUT('organizations/1/objectives/o1', {
             position: 0,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'o1-genesis',
         });
         await ctx.PUT(
             'organizations/1/projects/p1/objective-baseline-scores/b1',

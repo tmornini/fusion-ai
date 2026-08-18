@@ -83,8 +83,6 @@ async function seed(): Promise<{
             expected_outcome: 'o',
             success_metrics: 'm',
             state: 'active',
-            state_at: AT,
-            state_event_id: 'idea-a-genesis',
         },
     ));
     assert.equal(idea.status, 201);
@@ -97,10 +95,13 @@ test('GET /organizations/:id/ideas/:id/versions/ is 200', async () => {
         'GET', '/organizations/A/ideas/idea-a/versions/', token,
     ));
     assert.equal(res.status, 200);
-    const rows = await res.json() as { id: string }[];
+    const rows = await res.json() as {
+        id: string;
+        state: string;
+    }[];
     assert.ok(
-        rows.some(r => r.id === 'idea-a-genesis'),
-        'own-org history carries the document-trio genesis',
+        rows.some(r => r.id === 'idea-a' && r.state === 'active'),
+        'own-org versions list the idea collection item',
     );
 });
 
@@ -126,8 +127,6 @@ async () => {
             expected_outcome: 'o',
             success_metrics: 'm',
             state: 'active',
-            state_at: AT,
-            state_event_id: 'idea-b-genesis',
         },
     ));
     assert.equal(foreignIdea.status, 201);

@@ -43,8 +43,6 @@ async () => {
         'PUT', '/organizations/1/ideas/i1', token, {
             ...ideaBody('1', 'mine'),
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'ev-i1',
         }));
     assert.equal(put.status, 201);
     const list = await handleRequest(

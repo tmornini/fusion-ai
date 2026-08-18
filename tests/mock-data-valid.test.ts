@@ -185,31 +185,15 @@ async () => {
             // entity-fields only — strip the stamp before gate.
             const {
                 state: _s,
-                state_at: _at,
-                state_event_id: _ev,
                 ...entity
             } = withoutId(idea) as Record<string, unknown> & {
                 state: string;
-                state_at: string;
-                state_event_id: string;
             };
             void _s;
-            void _at;
-            void _ev;
             assert.ok(
                 typeof idea.state === 'string'
                 && idea.state.length > 0,
                 'idea ' + idea.id + ' missing state',
-            );
-            assert.ok(
-                typeof idea.state_at === 'string'
-                && idea.state_at.length > 0,
-                'idea ' + idea.id + ' missing state_at',
-            );
-            assert.ok(
-                typeof idea.state_event_id === 'string'
-                && idea.state_event_id.length > 0,
-                'idea ' + idea.id + ' missing state_event_id',
             );
             assert.doesNotThrow(
                 () => validateIdeaEntity(entity),
@@ -265,34 +249,16 @@ async () => {
             // gate.
             const {
                 state: _s,
-                state_at: _at,
-                state_event_id: _ev,
                 ...entity
             } = withoutId(project) as Record<string, unknown>
                 & {
                     state: string;
-                    state_at: string;
-                    state_event_id: string;
                 };
             void _s;
-            void _at;
-            void _ev;
             assert.ok(
                 typeof project.state === 'string'
                 && project.state.length > 0,
                 'project ' + project.id + ' missing state',
-            );
-            assert.ok(
-                typeof project.state_at === 'string'
-                && project.state_at.length > 0,
-                'project ' + project.id
-                + ' missing state_at',
-            );
-            assert.ok(
-                typeof project.state_event_id === 'string'
-                && project.state_event_id.length > 0,
-                'project ' + project.id
-                + ' missing state_event_id',
             );
             assert.doesNotThrow(
                 () => validateProjectEntity(entity),

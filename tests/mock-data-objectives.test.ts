@@ -65,28 +65,13 @@ async () => {
         const {
             id: _id,
             state: _s,
-            state_at: _at,
-            state_event_id: _ev,
             ...body
         } = r;
         void _s;
-        void _at;
-        void _ev;
         assert.ok(
             typeof r.state === 'string'
             && r.state.length > 0,
             'objective ' + r.id + ' missing state',
-        );
-        assert.ok(
-            typeof r.state_at === 'string'
-            && r.state_at.length > 0,
-            'objective ' + r.id + ' missing state_at',
-        );
-        assert.ok(
-            typeof r.state_event_id === 'string'
-            && r.state_event_id.length > 0,
-            'objective ' + r.id
-            + ' missing state_event_id',
         );
         validateObjectiveEntity(body);
     }

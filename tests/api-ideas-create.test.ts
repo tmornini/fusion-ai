@@ -63,8 +63,6 @@ function ideaGenesisBody(
     return {
         ...ideaFields(title),
         state: 'active',
-        state_at: at,
-        state_event_id: 'ev-' + ideaId,
     };
 }
 
@@ -102,20 +100,16 @@ test(
             DEV_TOKEN,
         ));
         const history = await stateRes.json() as {
+            id: string;
+            title: string;
             state: string;
-            member_id: string;
-            at: string;
         }[];
         assert.equal(history.length, 1);
         const current = history[0]!;
+        assert.equal(current.id, 'idea-1');
+        assert.equal(current.title, 'Fresh Idea');
         assert.equal(current.state, 'active');
-        // Authorship is the verified caller, never the body.
-        assert.equal(current.member_id, 'current');
-        // The event carries the caller-supplied at, not server
-        // time.
-        assert.equal(
-            current.at, '2099-01-01T00:00:00.000000Z',
-        );
+        assert.equal('state_at' in current, false);
     },
 );
 
@@ -133,8 +127,6 @@ test(
             {
                 ...ideaFields('Survives'),
                 state: 'active',
-                state_at: '2099-01-02T00:00:00.000000Z',
-                state_event_id: 'ev-x',
             },
         ));
         assert.equal(res.status, 201);

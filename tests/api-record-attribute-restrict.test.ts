@@ -65,8 +65,6 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     await PUT(db, TYPE_PATH, {
         name: 'Asset', description: 'd', position: 1,
         state: 'active',
-        state_at: AT,
-        state_event_id: 'r1-genesis',
     }, DEV_TOKEN);
     await PUT(db, ATTR1_PATH, {
         name: 'Priority',
@@ -597,8 +595,6 @@ test(
                 // admits this body and the 409 below still
                 // proves the RESTRICT mechanism, not validation.
                 state: 'active',
-                state_at: AT,
-                state_event_id: 'ev1',
                 removedAttributeIds: ['attr1'],
             }, DEV_TOKEN),
             (err: unknown) =>

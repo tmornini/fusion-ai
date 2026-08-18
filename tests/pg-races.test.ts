@@ -97,8 +97,6 @@ function ideaDocument(
         expected_outcome: 'o',
         success_metrics: 'm',
         state: 'active',
-        state_at: AT,
-        state_event_id: stateEventId,
     };
 }
 
@@ -146,8 +144,6 @@ function flowDocument(
     return {
         ...flowFields(name),
         state: 'updated',
-        state_at: AT,
-        state_event_id: stateEventId,
         graph: { nodes: [], edges: [] },
         graphDelta: emptyDelta(),
         revivals: [],

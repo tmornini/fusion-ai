@@ -304,8 +304,6 @@ async function seedLiveType(
             description: '',
             position: 1,
             state: 'active',
-            state_at: AT,
-            state_event_id: TYPE_ID + '-genesis',
         },
     ));
     assert.equal(put.status, 201);

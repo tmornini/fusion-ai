@@ -92,8 +92,6 @@ function ideaBody(
         expected_outcome: 'o',
         success_metrics: 'm',
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -186,15 +184,19 @@ test(
                 '/versions/', DEV_TOKEN),
         );
         assert.equal(index.status, 200);
-        const rows = await index.json() as HistoryEvent[];
+        const rows = await index.json() as {
+            id: string;
+            title: string;
+            state: string;
+        }[];
         assert.equal(rows.length, 2);
-        assert.equal(rows[0]!.id, id + '-ev2');
+        assert.equal(rows[0]!.id, id);
+        assert.equal(rows[0]!.title, 'Hist Idea Revised');
         assert.equal(rows[0]!.state, 'in_review');
-        assert.equal(rows[0]!.version, v2);
-        assert.equal(rows[1]!.id, id + '-ev1');
+        assert.equal(rows[1]!.id, id);
+        assert.equal(rows[1]!.title, 'Hist Idea');
         assert.equal(rows[1]!.state, 'active');
-        assert.equal(rows[1]!.version, v1);
-        assertDesc(rows);
+        assert.equal('state_at' in rows[0]!, false);
 
         const retired = await handleRequest(
             db,
@@ -254,22 +256,22 @@ test(
                 '/versions/', DEV_TOKEN),
         );
         assert.equal(res.status, 200);
-        const rows = await res.json() as HistoryEvent[];
+        const rows = await res.json() as {
+            id: string;
+            state: string;
+        }[];
         assert.equal(rows.length, 2);
-        assert.equal(rows[0]!.id, id + '-ev2');
+        assert.equal(rows[0]!.id, id);
         assert.equal(rows[0]!.state, 'in_review');
-        assert.equal(rows[1]!.id, id + '-ev1');
+        assert.equal(rows[1]!.id, id);
         assert.equal(rows[1]!.state, 'active');
-        for (const row of rows) {
-            assert.equal(row.entity_id, id);
-            assert.equal(row.member_id, 'current');
-        }
-        assertDesc(rows);
+        assert.equal('state_at' in rows[0]!, false);
     },
 );
 
 test(
-    'GET organizations/:id/ideas/:id/versions/ foreign → 404 at this address',
+    'GET organizations/:id/ideas/:id/versions/ foreign'
+    + ' → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
@@ -345,9 +347,12 @@ test(
             ),
         );
         assert.equal(res.status, 200);
-        const rows = await res.json() as HistoryEvent[];
+        const rows = await res.json() as {
+            id: string;
+            state: string;
+        }[];
         assert.equal(rows.length, 2);
-        assert.equal(rows[0]!.id, id + '-ev2');
+        assert.equal(rows[0]!.id, id);
         assert.equal(rows[0]!.state, 'in_review');
     },
 );
@@ -370,8 +375,6 @@ function projectBody(
         actual_cost: 0,
         position: 1,
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -427,13 +430,16 @@ test(
             ),
         );
         assert.equal(res.status, 200);
-        const rows = await res.json() as HistoryEvent[];
+        const rows = await res.json() as {
+            id: string;
+            state: string;
+        }[];
         assert.equal(rows.length, 2);
-        assert.equal(rows[0]!.id, id + '-ev2');
+        assert.equal(rows[0]!.id, id);
         assert.equal(rows[0]!.state, 'under_review');
-        assert.equal(rows[1]!.id, id + '-ev1');
+        assert.equal(rows[1]!.id, id);
         assert.equal(rows[1]!.state, 'submitted');
-        assertDesc(rows);
+        assert.equal('state_at' in rows[0]!, false);
     },
 );
 
@@ -508,8 +514,6 @@ function recordBody(
         description: 'd',
         position: 1,
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -565,13 +569,16 @@ test(
             ),
         );
         assert.equal(res.status, 200);
-        const rows = await res.json() as HistoryEvent[];
+        const rows = await res.json() as {
+            id: string;
+            state: string;
+        }[];
         assert.equal(rows.length, 2);
-        assert.equal(rows[0]!.id, id + '-ev2');
+        assert.equal(rows[0]!.id, id);
         assert.equal(rows[0]!.state, 'archived');
-        assert.equal(rows[1]!.id, id + '-ev1');
+        assert.equal(rows[1]!.id, id);
         assert.equal(rows[1]!.state, 'active');
-        assertDesc(rows);
+        assert.equal('state_at' in rows[0]!, false);
     },
 );
 
@@ -732,7 +739,8 @@ test(
 );
 
 test(
-    'GET organizations/:id/flows/:id/versions foreign → 404 at this address',
+    'GET organizations/:id/flows/:id/versions foreign'
+    + ' → 404 at this address',
     async () => {
         const db = await sharedMockDb();
         const list = await handleRequest(
@@ -798,8 +806,6 @@ function objectiveBody(
     return {
         position: 1,
         state,
-        state_at: stateAt,
-        state_event_id: stateEventId,
     };
 }
 
@@ -853,13 +859,16 @@ test(
             ),
         );
         assert.equal(res.status, 200);
-        const rows = await res.json() as HistoryEvent[];
+        const rows = await res.json() as {
+            id: string;
+            state: string;
+        }[];
         assert.equal(rows.length, 2);
-        assert.equal(rows[0]!.id, id + '-ev2');
+        assert.equal(rows[0]!.id, id);
         assert.equal(rows[0]!.state, 'archived');
-        assert.equal(rows[1]!.id, id + '-ev1');
+        assert.equal(rows[1]!.id, id);
         assert.equal(rows[1]!.state, 'active');
-        assertDesc(rows);
+        assert.equal('state_at' in rows[0]!, false);
     },
 );
 

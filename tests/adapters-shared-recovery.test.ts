@@ -367,8 +367,6 @@ test('a recovering context reads through the vessel token,'
     await ctx.PUT('organizations/A/ideas/a1', {
         ...a1Fields,
         state: 'active',
-        state_at: '2026-01-01T00:00:00.000000Z',
-        state_event_id: 'ev-a1',
     });
     // another tab moves the shared session holder to org B
     putSessionToken(await organizationToken('current', 'B'));

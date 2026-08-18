@@ -187,8 +187,6 @@ test('putIdea persists changes', async () => {
         ...fields,
         title: 'Updated',
         state: 'active',
-        stateAt: '2026-01-01T00:00:00.000000Z',
-        stateEventId: 'ev-i1',
     });
     const stored = await getIdeaEntity(ctx, 'i1');
     assert.equal(stored.title, 'Updated');
@@ -270,21 +268,12 @@ test(
             before.problem_statement,
         );
         assert.equal(after.state, 'approved');
-        assert.notEqual(
-            after.state_event_id, before.state_event_id,
-        );
         const events =
             await deriveIdeaStateHistory(db, '1', 'i1');
         // genesis + transition
         assert.equal(events.length, 2);
         assert.equal(
             events.at(-1)?.state, 'approved',
-        );
-        assert.equal(
-            after.state_event_id, events.at(-1)?.id,
-        );
-        assert.equal(
-            after.state_at, events.at(-1)?.at,
         );
     },
 );

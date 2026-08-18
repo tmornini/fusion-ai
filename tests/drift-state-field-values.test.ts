@@ -85,8 +85,6 @@ async function seededDb(): Promise<MemoryDbAdapter> {
         db, 'organizations/1/record-types/rec-1', {
             name: 'Parent', description: '', position: 0,
             state: 'active',
-            state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'rec-1-genesis',
         },
         DEV_TOKEN,
     );

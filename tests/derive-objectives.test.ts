@@ -55,14 +55,12 @@ test('deriveObjectiveStateHistory returns the trio walk in'
     await handleRequest(db, req(
         'PUT', '/organizations/1/objectives/' + id, token, {
             position: 1, state: 'active',
-            state_at: genesisAt, state_event_id: id + '-ev1',
         },
     ));
     const archiveAt = nowUtc();
     await handleRequest(db, req(
         'PUT', '/organizations/1/objectives/' + id, token, {
             position: 1, state: 'archived',
-            state_at: archiveAt, state_event_id: id + '-ev2',
         },
     ));
     // a byte-identical echo of ev2 (drag-reorder style
@@ -70,15 +68,14 @@ test('deriveObjectiveStateHistory returns the trio walk in'
     await handleRequest(db, req(
         'PUT', '/organizations/1/objectives/' + id, token, {
             position: 2, state: 'archived',
-            state_at: archiveAt, state_event_id: id + '-ev2',
         },
     ));
     const history = await deriveObjectiveStateHistory(
         db, STARK_ORGANIZATION, id,
     );
     assert.deepEqual(
-        history.map((r) => [r.id, r.state]),
-        [[id + '-ev1', 'active'], [id + '-ev2', 'archived']],
+        history.map((r) => r.state),
+        ['active', 'archived'],
     );
 });
 
@@ -91,14 +88,12 @@ test('GET organizations/:id/objectives/:id/versions carries the objective'
     await handleRequest(db, req(
         'PUT', '/organizations/1/objectives/' + id, token, {
             position: 1, state: 'active',
-            state_at: genesisAt, state_event_id: id + '-ev1',
         },
     ));
     const archiveAt = nowUtc();
     await handleRequest(db, req(
         'PUT', '/organizations/1/objectives/' + id, token, {
             position: 1, state: 'archived',
-            state_at: archiveAt, state_event_id: id + '-ev2',
         },
     ));
     const res = await handleRequest(db, req(
@@ -109,9 +104,9 @@ test('GET organizations/:id/objectives/:id/versions carries the objective'
         id: string; state: string;
     }[];
     assert.equal(rows.length, 2);
-    // Family history is DESC — index 0 is current.
-    assert.equal(rows[0]!.id, id + '-ev2');
+    assert.equal(rows[0]!.id, id);
     assert.equal(rows[0]!.state, 'archived');
-    assert.equal(rows[1]!.id, id + '-ev1');
+    assert.equal(rows[1]!.id, id);
     assert.equal(rows[1]!.state, 'active');
+    assert.equal('state_at' in rows[0]!, false);
 });

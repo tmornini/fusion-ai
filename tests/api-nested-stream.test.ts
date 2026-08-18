@@ -83,8 +83,6 @@ function ideaDocument(title: string, ev: string) {
         expected_outcome: 'o',
         success_metrics: 'm',
         state: 'active',
-        state_at: AT,
-        state_event_id: ev,
     };
 }
 
@@ -371,8 +369,6 @@ async () => {
             description: 'd',
             position: 1,
             state: 'active',
-            state_at: AT,
-            state_event_id: typeId + '-genesis',
         },
     ));
     assert.equal(typePut.status, 201);

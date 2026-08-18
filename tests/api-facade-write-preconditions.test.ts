@@ -38,8 +38,6 @@ function ideaPutBody(ideaId: string, title: string) {
     return {
         ...ideaFields(title),
         state: 'active',
-        state_at: '2026-01-01T00:00:00.000000Z',
-        state_event_id: 'ev-' + ideaId,
     };
 }
 

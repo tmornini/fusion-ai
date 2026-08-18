@@ -50,8 +50,6 @@ function ideaDocument(
         expected_outcome: 'o',
         success_metrics: 'm',
         state: 'active',
-        state_at: AT,
-        state_event_id: stateEventId,
     };
 }
 
@@ -80,8 +78,6 @@ function projectDocument(
         actual_cost: 0,
         position: 1,
         state: 'submitted',
-        state_at: AT,
-        state_event_id: stateEventId,
     };
 }
 

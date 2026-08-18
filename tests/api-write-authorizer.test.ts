@@ -52,8 +52,6 @@ function ideaDocument(
         expected_outcome: 'o',
         success_metrics: 'm',
         state: 'active',
-        state_at: '2026-01-01T00:00:00.000000Z',
-        state_event_id: stateEventId,
     };
 }
 
@@ -250,8 +248,6 @@ async () => {
         actual_cost: 0,
         position: 1,
         state: 'submitted',
-        state_at: '2026-01-01T00:00:00.000000Z',
-        state_event_id: 'ev-proj-a',
     };
     const created = await handleRequest(db, req(
         'PUT', '/organizations/1/projects/proj-a', tokenA, projectBody,
@@ -264,7 +260,6 @@ async () => {
         tokenB, {
             ...projectBody,
             title: 'stolen',
-            state_event_id: 'ev-steal-proj',
         },
     ));
     assert.equal(foreign.status, 201);
