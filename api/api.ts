@@ -17,6 +17,7 @@ import {
 } from './types.ts';
 import type { Id } from './types.ts';
 import { messageAddress } from './message-address.ts';
+import { pathSegmentsOf } from './path-segments.ts';
 import {
     formWritePair,
     appendMessagePair,
@@ -454,9 +455,7 @@ export async function handleRequest(
 ): Promise<Response> {
     const ctx = incomingContext(adapter, request);
     const { method, pathname } = ctx;
-    const pathSegments = pathname
-        .split('/')
-        .filter(Boolean);
+    const pathSegments = pathSegmentsOf(pathname);
     if (pathSegments[0] === 'identities'
         && pathSegments.length === 3
         && pathSegments[2] === 'default-organization') {
