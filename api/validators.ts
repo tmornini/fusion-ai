@@ -2200,6 +2200,65 @@ export function validateInvitationEntity(
     };
 }
 
+export interface InvitationTransitionBody {
+    readonly state: 'accepted' | 'declined'
+        | 'revoked';
+    readonly membershipId?: string;
+    readonly eventId: string;
+    readonly at: string;
+}
+
+const INVITATION_TRANSITION_KEYS:
+    readonly string[] = [
+    'state', 'eventId', 'at',
+];
+
+export function validateInvitationTransitionBody(
+    body: Record<string, unknown>,
+): InvitationTransitionBody {
+    assertOnlyKeys(
+        body,
+        INVITATION_TRANSITION_KEYS,
+        'InvitationTransitionBody',
+        ['membershipId'],
+    );
+    const state = pickString(body, 'state');
+    if (
+        state !== 'accepted'
+        && state !== 'declined'
+        && state !== 'revoked'
+    ) {
+        throw new ValidationError(
+            'InvitationTransitionBody.state must'
+            + ' be accepted, declined, or revoked',
+        );
+    }
+    const membershipId = 'membershipId' in body
+        ? pickString(body, 'membershipId')
+        : undefined;
+    if (state === 'accepted') {
+        if (
+            membershipId === undefined
+            || membershipId === ''
+        ) {
+            throw new ValidationError(
+                'membershipId must be non-empty',
+            );
+        }
+    }
+    return {
+        state,
+        ...(membershipId !== undefined
+            ? { membershipId }
+            : {}),
+        eventId: pickString(body, 'eventId'),
+        at: validateTimestampField(
+            body, 'at',
+            'InvitationTransitionBody.at',
+        ),
+    };
+}
+
 const IDEA_SUBMISSION_BODY_KEYS:
     readonly string[] = [
     'idea_id', 'member_id', 'at',

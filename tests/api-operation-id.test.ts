@@ -159,13 +159,16 @@ async () => {
     await seedAdminSchema(db);
     const res = await handleRequest(
         db,
-        new Request('http://localhost/invitations', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
+        new Request(
+            'http://localhost/organizations/1/invitations/',
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({}),
             },
-            body: JSON.stringify({}),
-        }),
+        ),
     );
     assert.equal(res.status, 401);
 });

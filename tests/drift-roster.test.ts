@@ -777,7 +777,10 @@ async () => {
         grantEventId: string, grantAt: string,
     ): Promise<Response> {
         return handleRequest(db, req(
-            'POST', '/invitations', adminToken,
+            'POST',
+            '/organizations/' + organization
+                + '/invitations/',
+            adminToken,
             { email, invitationId, grantEventId, grantAt },
         ));
     }
@@ -788,10 +791,16 @@ async () => {
         acceptAt: string,
     ): Promise<Response> {
         return handleRequest(db, req(
-            'POST',
-            '/invitations/' + invitationId + '/acceptance',
+            'PUT',
+            '/identities/' + invitee
+                + '/invitations/' + invitationId,
             await organizationToken(invitee, STARK_ORGANIZATION),
-            { membershipId, acceptEventId, acceptAt },
+            {
+                state: 'accepted',
+                membershipId,
+                eventId: acceptEventId,
+                at: acceptAt,
+            },
         ));
     }
 
@@ -800,9 +809,15 @@ async () => {
         declineEventId: string, declineAt: string,
     ): Promise<Response> {
         return handleRequest(db, req(
-            'POST', '/invitations/' + invitationId + '/decline',
+            'PUT',
+            '/identities/' + invitee
+                + '/invitations/' + invitationId,
             await organizationToken(invitee, STARK_ORGANIZATION),
-            { declineEventId, declineAt },
+            {
+                state: 'declined',
+                eventId: declineEventId,
+                at: declineAt,
+            },
         ));
     }
 
@@ -811,9 +826,14 @@ async () => {
         revokeAt: string,
     ): Promise<Response> {
         return handleRequest(db, req(
-            'POST',
-            '/invitations/' + invitationId + '/revocation',
-            adminToken, { revokeEventId, revokeAt },
+            'PUT',
+            '/organizations/' + organization
+                + '/invitations/' + invitationId,
+            adminToken, {
+                state: 'revoked',
+                eventId: revokeEventId,
+                at: revokeAt,
+            },
         ));
     }
 
@@ -822,7 +842,7 @@ async () => {
         'inv-roster-sarah', 'sarah.chen@company.com',
         'ev-roster-sarah-grant', '2026-06-01T00:00:00.000000Z',
     );
-    assert.equal(sarahGrant.status, 201);
+    assert.equal(sarahGrant.status, 200);
     const sarahRow = (await deriveInvitations(db)).find(
         (row) => row.id === 'inv-roster-sarah',
     )!;
@@ -835,12 +855,12 @@ async () => {
         'inv-roster-jessica', 'jessica.park@company.com',
         'ev-roster-jessica-grant', '2026-06-01T00:00:01.000000Z',
     );
-    assert.equal(jessicaGrant.status, 201);
+    assert.equal(jessicaGrant.status, 200);
     const jessicaAccept = await acceptAs(
         jessicaId, 'inv-roster-jessica', 'ms-roster-jessica',
         'ev-roster-jessica-accept', '2026-06-01T00:00:02.000000Z',
     );
-    assert.equal(jessicaAccept.status, 201);
+    assert.equal(jessicaAccept.status, 204);
     const jessicaRow = (await deriveInvitations(db)).find(
         (row) => row.id === 'inv-roster-jessica',
     )!;
@@ -861,12 +881,12 @@ async () => {
         'inv-roster-emily', 'emily.rodriguez@company.com',
         'ev-roster-emily-grant', '2026-06-01T00:00:03.000000Z',
     );
-    assert.equal(emilyGrant.status, 201);
+    assert.equal(emilyGrant.status, 200);
     const emilyDecline = await declineAs(
         '53J8h9dr76XFqCjYcNVwIR', 'inv-roster-emily',
         'ev-roster-emily-decline', '2026-06-01T00:00:04.000000Z',
     );
-    assert.equal(emilyDecline.status, 201);
+    assert.equal(emilyDecline.status, 204);
     const emilyRow = (await deriveInvitations(db)).find(
         (row) => row.id === 'inv-roster-emily',
     )!;
@@ -877,12 +897,12 @@ async () => {
         'inv-roster-marcus', 'marcus@acmecorp.com',
         'ev-roster-marcus-grant', '2026-06-01T00:00:05.000000Z',
     );
-    assert.equal(marcusGrant.status, 201);
+    assert.equal(marcusGrant.status, 200);
     const marcusRevoke = await revoke(
         'inv-roster-marcus', 'ev-roster-marcus-revoke',
         '2026-06-01T00:00:06.000000Z',
     );
-    assert.equal(marcusRevoke.status, 201);
+    assert.equal(marcusRevoke.status, 204);
     const marcusRow = (await deriveInvitations(db)).find(
         (row) => row.id === 'inv-roster-marcus',
     )!;
@@ -895,7 +915,7 @@ async () => {
         'inv-roster-sarah-dup', 'sarah.chen@company.com',
         'ev-roster-sarah-dup-grant', '2026-06-01T00:00:07.000000Z',
     );
-    assert.equal(sarahDuplicate.status, 201);
+    assert.equal(sarahDuplicate.status, 200);
     assert.equal(
         (await deriveInvitations(db)).length, beforeDerived,
     );
@@ -915,7 +935,7 @@ async () => {
         'ev-roster-jessica-reaccept',
         '2026-06-01T00:00:08.000000Z',
     );
-    assert.equal(jessicaReaccept.status, 201);
+    assert.equal(jessicaReaccept.status, 409);
     assert.equal(
         0 /* states table retired */,
         statesBefore,

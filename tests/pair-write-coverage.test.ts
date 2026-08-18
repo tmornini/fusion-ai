@@ -51,6 +51,13 @@ function writtenPattern(entry: Route): string | undefined {
 const NAMED_EXEMPT_ROUTE_PATTERNS:
     ReadonlySet<string> = new Set([
         ...AUTHENTICATION_ROUTES,
+        // Invitation writes form their own pairs at
+        // /invitations/ (storage prefix). PAIR_WIRE
+        // would store a second nest document and turn
+        // grant 200 into 201 via sendWriteResponse.
+        'organizations/:id/invitations/',
+        'organizations/:id/invitations/:id',
+        'identities/:id/invitations/:id',
     ]);
 
 test('every write-verb route is pair-wired or named exempt',
@@ -110,28 +117,11 @@ test('AUTHENTICATION_ROUTES ride the dedicated pair arm, so'
     }
 });
 
-// The invitations side channel never appears in the route
-// table (api/api.ts dispatches it by literal path segments
-// before matchRoute ever runs), so it cannot be caught by
-// the enumeration test. Pin it by static source check.
-// default-organization is now a table route and rides
-// PAIR_WIRED_ROUTE_PATTERNS — test 1 covers it.
-//
-// STRUCTURAL LIMIT — for the next author who adds a side
-// channel: this test can only assert what it already knows
-// to list. A future write path dispatched the same way
-// (matched by literal path segments in api.ts BEFORE
-// matchRoute/routes[] ever runs — the /invitations/ shape)
-// is invisible to test 1's enumeration BY CONSTRUCTION,
-// and invisible here too unless someone hand-adds its
-// module below. Even for the file already listed, this
-// only checks that the SUBSTRING 'appendMessagePair' /
-// 'formWritePair' appears somewhere in the file's text —
-// not that EVERY write path inside that file reaches one.
-// A new side channel is a REVIEW obligation, not a
-// mechanical one.
-test('the invitations side channel imports the'
-+ ' pair-formation primitives', () => {
+// Invitation nest writes are named-exempt (test 1). Pair
+// formation still lives in invitations-domain.ts at the
+// /invitations/ storage prefix. Pin the primitives.
+test('invitation writes import pair-formation primitives',
+() => {
     const path = 'api/invitations-domain.ts';
     const text = sourceText(path);
     assert.ok(

@@ -68,14 +68,15 @@ async function grant(
         'current', ORGANIZATION_TWO,
     );
     const res = await handleRequest(db, req(
-        'POST', '/invitations', admin, {
+        'POST', '/organizations/' + ORGANIZATION_TWO
+            + '/invitations/', admin, {
             email,
             invitationId,
             grantEventId: invitationId + '-grant',
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(res.status, 201);
+    assert.equal(res.status, 200);
 }
 
 // -- invitationOpStateFor --------------------------------------
@@ -89,15 +90,17 @@ test('invitationOpStateFor: byte-identical pre-tx (the plain'
     const inviteeId = 'LhfaUUf4IumVsCSGB4xjdK'; // Sarah Chen
     await grant(db, id, 'sarah.chen@company.com');
     const accept = await handleRequest(db, req(
-        'POST', '/invitations/' + id + '/acceptance',
+        'PUT',
+        '/identities/' + inviteeId + '/invitations/' + id,
         await organizationToken(inviteeId, ORGANIZATION_TWO),
         {
+            state: 'accepted',
             membershipId: id + '-ms',
-            acceptEventId: id + '-accept',
-            acceptAt: '2026-06-01T00:00:01.000000Z',
+            eventId: id + '-accept',
+            at: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(accept.status, 201);
+    assert.equal(accept.status, 204);
 
     // Phase Final Task 2: memberships ROW half stripped from
     // acceptInvitation's tx list.
@@ -134,14 +137,17 @@ test('invitationLifecycleStatesFor: byte-identical pre-tx (the'
     const id = 'inv-parity-lifecycle-revoked';
     await grant(db, id, 'emily.rodriguez@company.com');
     const revoke = await handleRequest(db, req(
-        'POST', '/invitations/' + id + '/revocation',
+        'PUT',
+        '/organizations/' + ORGANIZATION_TWO
+            + '/invitations/' + id,
         await organizationToken('current', ORGANIZATION_TWO),
         {
-            revokeEventId: id + '-revoke',
-            revokeAt: '2026-06-01T00:00:01.000000Z',
+            state: 'revoked',
+            eventId: id + '-revoke',
+            at: '2026-06-01T00:00:01.000000Z',
         },
     ));
-    assert.equal(revoke.status, 201);
+    assert.equal(revoke.status, 204);
 
     const revokeTxTables = ['requests', 'responses'];
     const preTx = await invitationLifecycleStatesFor(db, id);

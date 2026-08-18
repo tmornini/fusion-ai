@@ -369,22 +369,33 @@ async function createWorkOrder(
 
 async function grantAndAccept(
     db: MemoryDbAdapter, adminToken: string,
-    inviteeToken: string, inviteeEmail: string,
+    inviteeToken: string, inviteeId: string,
+    inviteeEmail: string,
     invitationId: string, grantEventId: string, grantAt: string,
     membershipId: string, acceptEventId: string, acceptAt: string,
+    organization: string,
 ): Promise<void> {
     const grantRes = await handleRequest(db, req(
-        'POST', '/invitations', adminToken,
+        'POST',
+        '/organizations/' + organization + '/invitations/',
+        adminToken,
         { email: inviteeEmail, invitationId, grantEventId, grantAt },
     ));
-    assert.equal(grantRes.status, 201, 'grant failed');
+    assert.equal(grantRes.status, 200, 'grant failed');
 
     const acceptRes = await handleRequest(db, req(
-        'POST', '/invitations/' + invitationId + '/acceptance',
+        'PUT',
+        '/identities/' + inviteeId
+            + '/invitations/' + invitationId,
         inviteeToken,
-        { membershipId, acceptEventId, acceptAt },
+        {
+            state: 'accepted',
+            membershipId,
+            eventId: acceptEventId,
+            at: acceptAt,
+        },
     ));
-    assert.equal(acceptRes.status, 201, 'accept failed');
+    assert.equal(acceptRes.status, 204, 'accept failed');
 }
 
 interface UnionFixture {
@@ -493,11 +504,13 @@ async function buildUnionFixture(): Promise<UnionFixture> {
     );
     const invitationId = 'inv-union';
     await grantAndAccept(
-        db, tokenA, inviteeToken, 'invitee-union@x.com',
+        db, tokenA, inviteeToken, 'invitee-union',
+        'invitee-union@x.com',
         invitationId, 'ev-union-grant',
         '2026-01-05T00:00:00.000000Z',
         'ms-union-accept', 'ev-union-accept',
         '2026-01-05T00:00:00.000001Z',
+        'A',
     );
 
     return {
@@ -715,7 +728,7 @@ test('deriveInvitationStates: a duplicate grant on the same'
     );
 
     const first = await handleRequest(db, req(
-        'POST', '/invitations', tokenA,
+        'POST', '/organizations/A/invitations/', tokenA,
         {
             email: 'invitee-dup@x.com',
             invitationId: 'inv-dup-a',
@@ -723,10 +736,10 @@ test('deriveInvitationStates: a duplicate grant on the same'
             grantAt: '2026-04-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(first.status, 201, 'first grant failed');
+    assert.equal(first.status, 200, 'first grant failed');
 
     const second = await handleRequest(db, req(
-        'POST', '/invitations', tokenA,
+        'POST', '/organizations/A/invitations/', tokenA,
         {
             email: 'invitee-dup@x.com',
             invitationId: 'inv-dup-b',
@@ -734,7 +747,7 @@ test('deriveInvitationStates: a duplicate grant on the same'
             grantAt: '2026-04-01T00:00:00.000001Z',
         },
     ));
-    assert.equal(second.status, 201, 'duplicate grant failed');
+    assert.equal(second.status, 200, 'duplicate grant failed');
     const secondBody = await second.json() as { id: string };
     // The duplicate echoes the ORIGINAL invitation id, never its
     // own submitted one.
@@ -775,7 +788,7 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
     );
 
     const grantRes = await handleRequest(db, req(
-        'POST', '/invitations', tokenA,
+        'POST', '/organizations/A/invitations/', tokenA,
         {
             email: 'invitee-reaccept@x.com',
             invitationId: 'inv-reaccept',
@@ -783,30 +796,34 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
             grantAt: '2026-04-02T00:00:00.000000Z',
         },
     ));
-    assert.equal(grantRes.status, 201, 'grant failed');
+    assert.equal(grantRes.status, 200, 'grant failed');
 
     const firstAccept = await handleRequest(db, req(
-        'POST', '/invitations/inv-reaccept/acceptance',
+        'PUT',
+        '/identities/invitee-reaccept/invitations/inv-reaccept',
         inviteeToken,
         {
+            state: 'accepted',
             membershipId: 'ms-reaccept-1',
-            acceptEventId: 'ev-reaccept-accept-1',
-            acceptAt: '2026-04-02T00:00:00.000001Z',
+            eventId: 'ev-reaccept-accept-1',
+            at: '2026-04-02T00:00:00.000001Z',
         },
     ));
-    assert.equal(firstAccept.status, 201, 'first accept failed');
+    assert.equal(firstAccept.status, 204, 'first accept failed');
 
     const secondAccept = await handleRequest(db, req(
-        'POST', '/invitations/inv-reaccept/acceptance',
+        'PUT',
+        '/identities/invitee-reaccept/invitations/inv-reaccept',
         inviteeToken,
         {
+            state: 'accepted',
             membershipId: 'ms-reaccept-2',
-            acceptEventId: 'ev-reaccept-accept-2',
-            acceptAt: '2026-04-02T00:00:00.000002Z',
+            eventId: 'ev-reaccept-accept-2',
+            at: '2026-04-02T00:00:00.000002Z',
         },
     ));
     assert.equal(
-        secondAccept.status, 201, 're-accept must stay a no-op',
+        secondAccept.status, 409, 're-accept is not pending',
     );
 
     const rows = await deriveInvitationStates(db);
@@ -836,7 +853,7 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
     );
 
     const grantRes = await handleRequest(db, req(
-        'POST', '/invitations', tokenA,
+        'POST', '/organizations/A/invitations/', tokenA,
         {
             email: 'invitee-redecline@x.com',
             invitationId: 'inv-redecline',
@@ -844,29 +861,35 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
             grantAt: '2026-04-03T00:00:00.000000Z',
         },
     ));
-    assert.equal(grantRes.status, 201, 'grant failed');
+    assert.equal(grantRes.status, 200, 'grant failed');
 
     const firstDecline = await handleRequest(db, req(
-        'POST', '/invitations/inv-redecline/decline',
+        'PUT',
+        '/identities/invitee-redecline/invitations/'
+            + 'inv-redecline',
         inviteeToken,
         {
-            declineEventId: 'ev-redecline-decline-1',
-            declineAt: '2026-04-03T00:00:00.000001Z',
+            state: 'declined',
+            eventId: 'ev-redecline-decline-1',
+            at: '2026-04-03T00:00:00.000001Z',
         },
     ));
-    assert.equal(firstDecline.status, 201, 'first decline failed');
+    assert.equal(firstDecline.status, 204, 'first decline failed');
 
     const secondDecline = await handleRequest(db, req(
-        'POST', '/invitations/inv-redecline/decline',
+        'PUT',
+        '/identities/invitee-redecline/invitations/'
+            + 'inv-redecline',
         inviteeToken,
         {
-            declineEventId: 'ev-redecline-decline-2',
-            declineAt: '2026-04-03T00:00:00.000002Z',
+            state: 'declined',
+            eventId: 'ev-redecline-decline-2',
+            at: '2026-04-03T00:00:00.000002Z',
         },
     ));
     assert.equal(
-        secondDecline.status, 201,
-        're-decline must stay a no-op',
+        secondDecline.status, 409,
+        're-decline is not pending',
     );
 
     const rows = await deriveInvitationStates(db);

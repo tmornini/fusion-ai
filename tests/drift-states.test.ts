@@ -1007,24 +1007,29 @@ test('case 5b: a LIVE invitation grant/accept chain, a LIVE'
         'drift-states-invitee-accept', STARK_ORGANIZATION,
     );
     const acceptGrant = await handleRequest(db, req(
-        'POST', '/invitations', adminToken, {
+        'POST',
+        '/organizations/' + STARK_ORGANIZATION
+            + '/invitations/',
+        adminToken, {
             email: 'drift-states-invitee-accept@x.com',
             invitationId: 'drift-states-inv-accept',
             grantEventId: 'drift-states-inv-accept-grant',
             grantAt: '2026-03-01T00:00:00.000000Z',
         },
     ));
-    assert.equal(acceptGrant.status, 201);
+    assert.equal(acceptGrant.status, 200);
     const accept = await handleRequest(db, req(
-        'POST',
-        '/invitations/drift-states-inv-accept/acceptance',
+        'PUT',
+        '/identities/drift-states-invitee-accept'
+            + '/invitations/drift-states-inv-accept',
         acceptInviteeToken, {
+            state: 'accepted',
             membershipId: 'drift-states-inv-accept-ms',
-            acceptEventId: 'drift-states-inv-accept-accept',
-            acceptAt: '2026-03-01T00:00:00.000001Z',
+            eventId: 'drift-states-inv-accept-accept',
+            at: '2026-03-01T00:00:00.000001Z',
         },
     ));
-    assert.equal(accept.status, 201);
+    assert.equal(accept.status, 204);
     const acceptDerived = await assertHistoryParity(
         db, STARK_ORGANIZATION, 'drift-states-inv-accept',
     );
@@ -1041,23 +1046,28 @@ test('case 5b: a LIVE invitation grant/accept chain, a LIVE'
         'drift-states-invitee-decline', STARK_ORGANIZATION,
     );
     const declineGrant = await handleRequest(db, req(
-        'POST', '/invitations', adminToken, {
+        'POST',
+        '/organizations/' + STARK_ORGANIZATION
+            + '/invitations/',
+        adminToken, {
             email: 'drift-states-invitee-decline@x.com',
             invitationId: 'drift-states-inv-decline',
             grantEventId: 'drift-states-inv-decline-grant',
             grantAt: '2026-03-02T00:00:00.000000Z',
         },
     ));
-    assert.equal(declineGrant.status, 201);
+    assert.equal(declineGrant.status, 200);
     const decline = await handleRequest(db, req(
-        'POST',
-        '/invitations/drift-states-inv-decline/decline',
+        'PUT',
+        '/identities/drift-states-invitee-decline'
+            + '/invitations/drift-states-inv-decline',
         declineInviteeToken, {
-            declineEventId: 'drift-states-inv-decline-decline',
-            declineAt: '2026-03-02T00:00:00.000001Z',
+            state: 'declined',
+            eventId: 'drift-states-inv-decline-decline',
+            at: '2026-03-02T00:00:00.000001Z',
         },
     ));
-    assert.equal(decline.status, 201);
+    assert.equal(decline.status, 204);
     const declineDerived = await assertHistoryParity(
         db, STARK_ORGANIZATION, 'drift-states-inv-decline',
     );
@@ -1075,23 +1085,28 @@ test('case 5b: a LIVE invitation grant/accept chain, a LIVE'
         'drift-states-invitee-revoke@x.com',
     );
     const revokeGrant = await handleRequest(db, req(
-        'POST', '/invitations', adminToken, {
+        'POST',
+        '/organizations/' + STARK_ORGANIZATION
+            + '/invitations/',
+        adminToken, {
             email: 'drift-states-invitee-revoke@x.com',
             invitationId: 'drift-states-inv-revoke',
             grantEventId: 'drift-states-inv-revoke-grant',
             grantAt: '2026-03-03T00:00:00.000000Z',
         },
     ));
-    assert.equal(revokeGrant.status, 201);
+    assert.equal(revokeGrant.status, 200);
     const revoke = await handleRequest(db, req(
-        'POST',
-        '/invitations/drift-states-inv-revoke/revocation',
+        'PUT',
+        '/organizations/' + STARK_ORGANIZATION
+            + '/invitations/drift-states-inv-revoke',
         adminToken, {
-            revokeEventId: 'drift-states-inv-revoke-revoke',
-            revokeAt: '2026-03-03T00:00:00.000001Z',
+            state: 'revoked',
+            eventId: 'drift-states-inv-revoke-revoke',
+            at: '2026-03-03T00:00:00.000001Z',
         },
     ));
-    assert.equal(revoke.status, 201);
+    assert.equal(revoke.status, 204);
     const revokeDerived = await assertHistoryParity(
         db, STARK_ORGANIZATION, 'drift-states-inv-revoke',
     );

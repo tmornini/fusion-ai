@@ -315,6 +315,15 @@ import {
     getIdentityOrganizations,
     putIdentityDefaultOrganization,
 } from './organization-requests.ts';
+import {
+    getOrganizationInvitations,
+    postOrganizationInvitationGrant,
+    getInvitationOnOrganizationNest,
+    putInvitationOnOrganizationNest,
+    getIdentityInvitations,
+    getInvitationOnIdentityNest,
+    putInvitationOnIdentityNest,
+} from './invitations-domain.ts';
 import type { DerivedDocument } from './derive-documents.ts';
 // Re-exported: param/requireOrganization/withoutId moved to
 // document-family.ts (see the import above and its own
@@ -612,6 +621,8 @@ export type PutHandler = (
     pair: MessagePair | undefined,
     organization: Id | undefined,
     roles: readonly string[],
+    requestAt: string,
+    operationId: string,
 ) => Promise<unknown>;
 
 // Task 10: PATCH joins the verb alphabet. No route carries a
@@ -653,6 +664,8 @@ type PostHandler = (
     pair: MessagePair | undefined,
     organization: Id | undefined,
     roles: readonly string[],
+    requestAt: string,
+    operationId: string,
 ) => Promise<unknown>;
 
 export interface Route {
@@ -4202,6 +4215,16 @@ export const routes: Route[] = [
     route('identities/:id/organizations/', {
         get: getIdentityOrganizations,
     }),
+    // Invitation receive nest. Storage prefix stays
+    // /invitations/. Two HTTP nests are filters and
+    // authorization, not two documents.
+    route('identities/:id/invitations/', {
+        get: getIdentityInvitations,
+    }),
+    route('identities/:id/invitations/:id', {
+        get: getInvitationOnIdentityNest,
+        put: putInvitationOnIdentityNest,
+    }),
     documentCollectionRoute(AI_AGENTS_WIRING),
     route('ai-agents/:id', {
         get: documentGetHandler(AI_AGENTS_WIRING),
@@ -5898,6 +5921,16 @@ export const routes: Route[] = [
     // (memberships is organizationNested:true, so the derived
     // prefix fences to the caller's org exactly as the
     // org-scoped adapter already did for the hand-written read).
+    // Invitation send nest. POST grants pending. PUT
+    // revokes. Storage prefix stays /invitations/.
+    route('organizations/:id/invitations/', {
+        get: getOrganizationInvitations,
+        post: postOrganizationInvitationGrant,
+    }),
+    route('organizations/:id/invitations/:id', {
+        get: getInvitationOnOrganizationNest,
+        put: putInvitationOnOrganizationNest,
+    }),
     route(ORGANIZATION_MEMBERS_COLLECTION_PATTERN, {
         get: (db, _p, _actor, organization) =>
             deriveOrganizationMemberSeats(

@@ -129,9 +129,7 @@ import {
     type Route,
     type WriteResponseSpec,
 } from './routes.ts';
-import {
-    invitationsRequest,
-} from './invitations-domain.ts';
+
 import {
     incomingContext,
     REQUEST_ID_HEADER,
@@ -243,6 +241,17 @@ async function facadeRequest(
 // writer's other tabs refresh even when the session is a
 // flat (un-exchanged) token that cannot match on
 // organization.
+function invitationWriteOwnsNotification(
+    routePattern: string,
+): boolean {
+    return routePattern
+            === 'organizations/:id/invitations/'
+        || routePattern
+            === 'organizations/:id/invitations/:id'
+        || routePattern
+            === 'identities/:id/invitations/:id';
+}
+
 function postWriteNotification(
     adapter: GuardedDbAdapter,
     routePattern: string,
@@ -474,14 +483,6 @@ export async function handleRequest(
     const ctx = incomingContext(adapter, request);
     const { method, pathname } = ctx;
     const pathSegments = pathSegmentsOf(pathname);
-    // The invitation surface is identity/org-spanning, so it
-    // runs on the BASE adapter with explicit guards rather than
-    // the org-scoped route table — see invitationsRequest.
-    if (pathSegments[0] === 'invitations') {
-        return invitationsRequest(
-            ctx, request, pathSegments,
-        );
-    }
     // Match first (pure, no I/O). Authentication runs before
     // the no-match 404 so an unauthenticated caller never maps
     // route topology (unknown path and real route both 401).
@@ -578,6 +579,12 @@ export async function handleRequest(
                     && fencePattern
                         !== 'identities/:id/'
                             + 'organizations/'
+                    && fencePattern
+                        !== 'identities/:id/'
+                            + 'invitations/'
+                    && fencePattern
+                        !== 'identities/:id/'
+                            + 'invitations/:id'
                 ) {
                     return Response.json(
                         { error: fence.error },
@@ -1662,6 +1669,10 @@ export async function handleRequest(
                         pair,
                         organization,
                         roles,
+                        ctx.requestAt,
+                        request.headers.get(
+                            OPERATION_ID_HEADER,
+                        ) ?? '',
                     );
                 if (pair !== undefined) {
                     const stored = await storedResponseFor(
@@ -1703,10 +1714,14 @@ export async function handleRequest(
                     }
                     return response;
                 }
-                postWriteNotification(
-                    adapter, routePattern, params,
-                    body, organization, actor,
-                );
+                if (!invitationWriteOwnsNotification(
+                    routePattern,
+                )) {
+                    postWriteNotification(
+                        adapter, routePattern, params,
+                        body, organization, actor,
+                    );
+                }
                 if (result === undefined) {
                     return new Response(null, {
                         status: HTTP_NO_CONTENT,
@@ -1988,6 +2003,10 @@ export async function handleRequest(
                     pair,
                     organization,
                     roles,
+                    ctx.requestAt,
+                    request.headers.get(
+                        OPERATION_ID_HEADER,
+                    ) ?? '',
                 );
                 if (pair !== undefined) {
                     const stored = await storedResponseFor(
@@ -2007,10 +2026,14 @@ export async function handleRequest(
                         stored, 'POST', true,
                     );
                 }
-                postWriteNotification(
-                    adapter, routePattern, params,
-                    body, organization, actor,
-                );
+                if (!invitationWriteOwnsNotification(
+                    routePattern,
+                )) {
+                    postWriteNotification(
+                        adapter, routePattern, params,
+                        body, organization, actor,
+                    );
+                }
                 if (result === undefined) {
                     return new Response(null, {
                         status: HTTP_NO_CONTENT,
