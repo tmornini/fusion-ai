@@ -920,6 +920,7 @@ export const PAIR_WIRED_ROUTE_PATTERNS: Set<string> = new Set([
     'identities/:id/pii',
     'identities/:id/credentials/:cid',
     'identities/:id/registration',
+    'identities/:id/default-organization',
     'identities/:id/tokens/:tid',
     'identities/:id/token-revocations/:rid',
     'identities/:id/tokens/:jti/rotation',
@@ -1019,6 +1020,7 @@ export const DOCUMENT_CLASS_ROUTE_PATTERNS: Set<string> =
         'identities/:id',
         'identities/:id/credentials/:cid',
         'identities/:id/registration',
+        'identities/:id/default-organization',
         'organizations/:id',
         // Nested record-types collection POST (Task 9): same
         // head-read class as flat `records` so op + document

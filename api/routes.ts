@@ -310,6 +310,10 @@ import {
     liveGlobalDocumentIds,
     type DocumentFamilyWiring,
 } from './document-family.ts';
+import {
+    getIdentityDefaultOrganization,
+    putIdentityDefaultOrganization,
+} from './organization-requests.ts';
 import type { DerivedDocument } from './derive-documents.ts';
 // Re-exported: param/requireOrganization/withoutId moved to
 // document-family.ts (see the import above and its own
@@ -3505,6 +3509,11 @@ export const WRITE_RESPONSE_SPECS:
                 body: withoutId(body ?? {}),
             }),
     },
+    // Stored 204 empty; sendWriteResponse maps an
+    // appended PUT to 201.
+    'identities/:id/default-organization': {
+        status: HTTP_NO_CONTENT,
+    },
     // Seat document: path is the relationship. Body is
     // type + at. organization_id / identity_id are
     // reconstructed from the path for the wire entity.
@@ -4180,6 +4189,14 @@ export const routes: Route[] = [
     route('identities/:id', {
         get: documentGetHandler(IDENTITIES_WIRING),
         put: documentPutHandler(IDENTITIES_WIRING),
+    }),
+    // Singleton SET document. Self-only in the handler
+    // (actor === :id); admin-everywhere is not a
+    // substitute. Storage prefix stays
+    // /identities/:id/default-organization/.
+    route('identities/:id/default-organization', {
+        get: getIdentityDefaultOrganization,
+        put: putIdentityDefaultOrganization,
     }),
     documentCollectionRoute(AI_AGENTS_WIRING),
     route('ai-agents/:id', {

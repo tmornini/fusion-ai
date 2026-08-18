@@ -133,7 +133,6 @@ import {
     invitationsRequest,
 } from './invitations-domain.ts';
 import {
-    identityDefaultOrganizationRequest,
     organizationsEnumerationRequest,
 } from './organization-requests.ts';
 import {
@@ -478,13 +477,6 @@ export async function handleRequest(
     const ctx = incomingContext(adapter, request);
     const { method, pathname } = ctx;
     const pathSegments = pathSegmentsOf(pathname);
-    if (pathSegments[0] === 'identities'
-        && pathSegments.length === 3
-        && pathSegments[2] === 'default-organization') {
-        return identityDefaultOrganizationRequest(
-            ctx, request, pathSegments,
-        );
-    }
     // The invitation surface is identity/org-spanning, so it
     // runs on the BASE adapter with explicit guards rather than
     // the org-scoped route table — see invitationsRequest.
@@ -589,89 +581,104 @@ export async function handleRequest(
         try {
             const fence = await fenceRequest(authed);
             if (!fence.ok) {
-                return Response.json(
-                    { error: fence.error },
-                    { status: fence.status },
-                );
+                // Org-less GET 404s at the handler;
+                // fence would 403 first.
+                if (
+                    fencePattern
+                        !== 'identities/:id/'
+                            + 'default-organization'
+                ) {
+                    return Response.json(
+                        { error: fence.error },
+                        { status: fence.status },
+                    );
+                }
+                actor = authed.principal.id;
             }
-            const fenced = fence.ctx;
-            // Nested org path fence: after fenceRequest and
-            // before authorizeRequest. Path org never authorizes
-            // alone — mismatch (incl. nonexistent path org)
-            // is 403 with a fixed body. No auto-exchange.
-            // Bare organizations/:id keeps its own membership
-            // fence below; every other organizations/... match
-            // takes this arm.
-            if (
-                match !== null
-                && match.route.segments[0]
-                    === 'organizations'
-                && fencePattern !== 'organizations/:id'
-                && fenceParams[0]
-                    !== fenced.organization
-            ) {
-                return Response.json(
-                    {
-                        error: 'forbidden: path organization'
-                            + ' does not match the token'
-                            + ' organization',
-                    },
-                    { status: HTTP_FORBIDDEN },
-                );
-            }
-            const authzFailure =
-                fencePattern === 'identities/:id/pii'
-                    ? authorizeIdentityPii(
-                        fenced, param(fenceParams, 0))
-                    : authorizeRequest(fenced);
-            if (authzFailure !== null) {
-                return Response.json(
-                    { error: authzFailure },
-                    { status: HTTP_FORBIDDEN },
-                );
-            }
-            // organizations/:id is global passthrough; fence
-            // READS to the caller's memberships. A real org the
-            // caller is not a member of is 403 (honest); a
-            // genuinely absent id stays 404. PUT is not gated
-            // here — a new org is created before its first
-            // membership exists.
-            if (method === 'GET'
-                && fencePattern === 'organizations/:id'
-                && !fenced.memberOrganizations
-                    .has(param(fenceParams, 0))) {
-                const organizationId =
-                    param(fenceParams, 0);
-                // Orgs self-own (resolveGlobalOwner →
-                // resolveOwningOrganization returns the org
-                // id when the document exists).
-                const owner = await resolveGlobalOwner(
-                    adapter,
-                    organizationId,
-                    fenced.organization,
-                    'organizations',
-                );
-                if (owner !== null) {
+            if (fence.ok) {
+                const fenced = fence.ctx;
+                // Nested org path fence: after fenceRequest and
+                // before authorizeRequest. Path org never
+                // authorizes alone — mismatch (incl.
+                // nonexistent path org) is 403 with a fixed
+                // body. No auto-exchange. Bare
+                // organizations/:id keeps its own membership
+                // fence below; every other organizations/...
+                // match takes this arm.
+                if (
+                    match !== null
+                    && match.route.segments[0]
+                        === 'organizations'
+                    && fencePattern !== 'organizations/:id'
+                    && fenceParams[0]
+                        !== fenced.organization
+                ) {
                     return Response.json(
                         {
-                            error:
-                                foreignOrganizationMessage(
-                                    'organizations',
-                                    organizationId,
-                                ),
+                            error: 'forbidden: path'
+                                + ' organization does not'
+                                + ' match the token'
+                                + ' organization',
                         },
                         { status: HTTP_FORBIDDEN },
                     );
                 }
-                return Response.json(
-                    { error: 'Not found: ' + pathname },
-                    { status: HTTP_NOT_FOUND },
-                );
+                const authzFailure =
+                    fencePattern === 'identities/:id/pii'
+                        ? authorizeIdentityPii(
+                            fenced, param(fenceParams, 0))
+                        : authorizeRequest(fenced);
+                if (authzFailure !== null) {
+                    return Response.json(
+                        { error: authzFailure },
+                        { status: HTTP_FORBIDDEN },
+                    );
+                }
+                // organizations/:id is global passthrough;
+                // fence READS to the caller's memberships.
+                // A real org the caller is not a member of
+                // is 403 (honest); a genuinely absent id
+                // stays 404. PUT is not gated here — a new
+                // org is created before its first membership
+                // exists.
+                if (method === 'GET'
+                    && fencePattern === 'organizations/:id'
+                    && !fenced.memberOrganizations
+                        .has(param(fenceParams, 0))) {
+                    const organizationId =
+                        param(fenceParams, 0);
+                    // Orgs self-own (resolveGlobalOwner →
+                    // resolveOwningOrganization returns the
+                    // org id when the document exists).
+                    const owner = await resolveGlobalOwner(
+                        adapter,
+                        organizationId,
+                        fenced.organization,
+                        'organizations',
+                    );
+                    if (owner !== null) {
+                        return Response.json(
+                            {
+                                error:
+                                    foreignOrganizationMessage(
+                                        'organizations',
+                                        organizationId,
+                                    ),
+                            },
+                            { status: HTTP_FORBIDDEN },
+                        );
+                    }
+                    return Response.json(
+                        { error: 'Not found: ' + pathname },
+                        { status: HTTP_NOT_FOUND },
+                    );
+                }
+                actor = fenced.principal.id;
+                organization = fenced.organization;
+                roles = fenced.roles;
+                callerIsAdmin =
+                    fenced.roles.includes('admin');
             }
-            actor = fenced.principal.id;
-            organization = fenced.organization;
-            roles = fenced.roles;
-            callerIsAdmin = fenced.roles.includes('admin');
         } catch (error) {
             return redactedFenceFailure(ctx, error);
         }

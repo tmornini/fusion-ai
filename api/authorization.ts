@@ -136,6 +136,12 @@ const MEMBER_VERBS: Readonly<
     '/organizations': ['GET'],
     '/identities/:id/tokens': ['POST'],
     '/identities/:id/token-revocations': ['PUT'],
+    // Self-only stays in the handler. This row only
+    // clears the member-tier policy after the
+    // pre-match died; admin-everywhere is not a
+    // substitute for naming another identity.
+    '/identities/:id/default-organization':
+        ['GET', 'PUT'],
 };
 
 const MEMBER_TIER: readonly PolicyEntry[] =
