@@ -54,20 +54,24 @@ function eventForThisTab(): NotificationEvent {
     if (!sessionTokenIsSeeded()) {
         return { kind: 'full' };
     }
-    const principal =
-        principalFromToken(getSessionToken());
-    const organizationIds =
-        principal.organization !== undefined
-            ? [principal.organization]
-            : [...(principal.organizations ?? [])];
-    const identityIds = sessionIsAuthenticated()
-        ? [principal.id]
-        : [];
-    return {
-        kind: 'scoped',
-        organizationIds,
-        identityIds,
-    };
+    try {
+        const principal =
+            principalFromToken(getSessionToken());
+        const organizationIds =
+            principal.organization !== undefined
+                ? [principal.organization]
+                : [...(principal.organizations ?? [])];
+        const identityIds = sessionIsAuthenticated()
+            ? [principal.id]
+            : [];
+        return {
+            kind: 'scoped',
+            organizationIds,
+            identityIds,
+        };
+    } catch {
+        return { kind: 'full' };
+    }
 }
 
 export function createSubscriptionChannel(

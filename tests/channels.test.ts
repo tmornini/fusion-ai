@@ -277,3 +277,19 @@ async () => {
         identityIds: ['current'],
     }]);
 });
+
+test('notify with a non-jwt seed posts full',
+async () => {
+    putSessionToken('reminted-access');
+    const seen: unknown[] = [];
+    const listener = new BroadcastChannel(
+        CHANNEL_NAME,
+    );
+    listener.addEventListener('message', (event) => {
+        seen.push(event.data);
+    });
+    createSubscriptionChannel().notify();
+    await deliver();
+    listener.close();
+    assert.deepEqual(seen, [{ kind: 'full' }]);
+});
