@@ -116,12 +116,13 @@ async function seedWorkOrder(
     });
 }
 
-// NAMED re-pin (Task 7): the flipped GET organizations/:id/flows/:id/records
-// derives from the message ledger too, the SAME reason as
-// seedFlowLink's own organizations/:id/flows/:id/work-orders re-pin above — a
-// raw db.flowRecords.put leaves no pair at this address, so
-// the binding must land through the SAME wire-reachable PUT
-// the live route serves.
+// NAMED re-pin (Task 7): the flipped GET
+// organizations/:id/flows/:id/records derives from the
+// message ledger too, the SAME reason as seedFlowLink's
+// own organizations/:id/flows/:id/work-orders re-pin
+// above — a raw db.flowRecords.put leaves no pair at
+// this address, so the binding must land through the
+// SAME wire-reachable PUT the live route serves.
 async function seedBinding(
     db: MemoryDbAdapter,
     flowId: string,

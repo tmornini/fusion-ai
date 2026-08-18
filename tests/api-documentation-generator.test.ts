@@ -1,5 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { routes } from '../api/routes.ts';
 import {
     roomPathOf,
@@ -8,6 +9,16 @@ import {
 } from '../web-app/app/generate-api-documentation.ts';
 import { offeredVerbs, uriOf } from
     '../api/route-surface.ts';
+
+test('validate runs generate-api-documentation'
+    + ' --check', () => {
+    const src = readFileSync('validate', 'utf8');
+    assert.match(
+        src,
+        /generate-api-documentation --check/,
+    );
+    assert.doesNotMatch(src, /API-TREE\.md/);
+});
 
 test('a known collection is drawn with /',
 () => {

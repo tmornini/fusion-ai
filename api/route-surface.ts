@@ -14,8 +14,9 @@ export function offeredVerbs(
             key !== 'segments'
             && !(HTTP_VERBS as readonly string[])
                 .includes(key)
-            && typeof (row as Record<string, unknown>)
-                [key] === 'function',
+            && typeof (row as unknown as
+                Record<string, unknown>)[key]
+                === 'function',
     );
     if (extra.length > 0) {
         throw new Error(

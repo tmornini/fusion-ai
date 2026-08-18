@@ -70,11 +70,11 @@ pure modules and the `api/`, `adapters/`, and `presenters/`
 layers via `node --test --strip-types`), then enforces a
 78-character maximum line length on all `.ts`, `.html`, and
 `.css` files (excluding `compose.ts`), on every `.md` file
-at the repo root except [TEST-PLAN.md](TEST-PLAN.md) and
-[API-TREE.md](API-TREE.md) — both exempted because their
-entries are meant to scan as one self-contained line — and
-on the root scripts `build`, `serve`, `test`, `validate`,
-and `generate-schema-svg`. It then rejects the `org`
+at the repo root except [TEST-PLAN.md](TEST-PLAN.md)
+(exempted because its entries are meant to scan as one
+self-contained line), and on the root scripts `build`,
+`serve`, `test`, `validate`, `generate-schema-svg`, and
+`generate-api-documentation`. It then rejects the `org`
 abbreviation in identifiers under `api/`, `web-app/`,
 `tests/`, and `shared/` (`.ts`/`.html`/`.css`; `compose.ts`
 exempt) — forms matching `org[A-Z]`, camel/Pascal
@@ -84,7 +84,9 @@ URLs, and CSS class names may keep the short form. Finally
 it runs the
 `generate-schema-svg --check` gate, which fails on
 `SCHEMA.svg` drift from the schema of record (`api/db.ts` +
-`api/types.ts`).
+`api/types.ts`), then the
+`generate-api-documentation --check` gate, which fails on
+`API.svg` / room drift from `routes[]`.
 
 For what each test layer covers, see `## Testing`.
 
@@ -179,7 +181,8 @@ dashboard-design.md`.
 Target: **ES2024** · Strict mode with
 `noUncheckedIndexedAccess`. Config at
 `web-app/app/tsconfig.json`. The `compose.ts`,
-`generate-schema-svg.ts`, `measure.ts`, and
+`generate-schema-svg.ts`,
+`generate-api-documentation.ts`, `measure.ts`, and
 `measure-viz.ts` Node entrypoints are excluded from
 type checking (they run in Node).
 

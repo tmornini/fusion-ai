@@ -209,7 +209,7 @@ async function grantDave(
     assert.equal(res.status, 200);
 }
 
-async function seedMemberOrgs(): Promise<DbAdapter> {
+async function seedMemberOrganizations(): Promise<DbAdapter> {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     await seedOrganizationDocument(db, 'A', 'Acme');
@@ -250,7 +250,7 @@ async () => {
 
 test('member of B GET B versions while fenced to A',
 async () => {
-    const db = await seedMemberOrgs();
+    const db = await seedMemberOrganizations();
     const token = await claimToken({
         organization: 'A',
         organizations: ['A', 'B'],
@@ -284,7 +284,7 @@ async () => {
 
 test('non-member GET B versions is 403 like the document',
 async () => {
-    const db = await seedMemberOrgs();
+    const db = await seedMemberOrganizations();
     const token = await organizationToken('current', 'A');
     const document = await handleRequest(db, req(
         'GET', '/organizations/B', token,
@@ -303,7 +303,7 @@ async () => {
 });
 
 test('absent org versions is 404 not 403', async () => {
-    const db = await seedMemberOrgs();
+    const db = await seedMemberOrganizations();
     const token = await organizationToken('current', 'A');
     const list = await handleRequest(db, req(
         'GET',

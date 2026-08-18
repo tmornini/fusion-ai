@@ -15,11 +15,13 @@ import {
 // Pins the CURRENT status of every deliberate flows-family
 // verb gap, through handleRequest, so the third-family
 // absorption (api/document-family.ts) cannot silently move
-// one — the generic constructors replace organizations/1/ideas/projects route
-// scaffolding, never organizations/:id/flows/:id (Task 3 flips flows), but a
-// gate-level regression could still shift these. A future
-// change to any of these five statuses must re-derive the
-// covenant deliberately, not by accident of refactoring.
+// one — the generic constructors replace
+// organizations/:id/ideas|projects route scaffolding,
+// never organizations/:id/flows/:id (Task 3 flips
+// flows), but a gate-level regression could still
+// shift these. A future change to any of these five
+// statuses must re-derive the covenant deliberately,
+// not by accident of refactoring.
 
 const BASE = 'http://localhost';
 
