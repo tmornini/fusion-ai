@@ -1,8 +1,7 @@
 # API Prefix and Directory Index — Design
 
 Date: 2026-08-18
-Status: draft (brainstorm 2026-08-18; awaiting
-user review)
+Status: accepted
 
 Vocabulary: **organization** (never “org”),
 **collection** (directory GET, trailing `/`),
