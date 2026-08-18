@@ -241,9 +241,6 @@ import {
     objectiveRevisionEntityOf,
 } from './derive-objective-revisions.ts';
 import {
-    deriveObjectiveHistories,
-} from './derive-objectives.ts';
-import {
     deriveBaselineScores,
     deriveActualScores,
     scoreEntityOf,
@@ -269,7 +266,6 @@ import {
     tokenRevocationEntityOf,
 } from './derive-identity-spine.ts';
 import {
-    deriveWorkOrderHistories,
     workOrderBindingFor,
     workOrderClaimDocumentFor,
     workOrderClaimHistoryFor,
@@ -5208,18 +5204,6 @@ export const routes: Route[] = [
             );
         },
     }),
-    // GET work-orders/history (states-URI elimination A2):
-    // org-scoped bulk lifecycle + field_values fold, (at, id)
-    // DESC. Always 200 array. MUST register BEFORE
-    // work-orders/:id so matchRoute's first-match does not
-    // capture the literal segment as `:id`. Member-tier GET
-    // via matchesOnSegmentBoundary on '/work-orders'.
-    route('organizations/:id/work-orders/history', {
-        get: (db, _p, _actor, organization) =>
-            deriveWorkOrderHistories(
-                db, requireOrganization(organization),
-            ),
-    }),
     // work-orders/:id is the fourth family. GET exits the
     // generic documentEntityRoute path deliberately: the
     // derivedDocumentEntity shape (via documentGetHandler)
@@ -6179,16 +6163,6 @@ export const routes: Route[] = [
             return postObjectiveCreationOp(db, body, pairs);
         },
     }),
-    // GET objectives/versions: org-scoped bulk lifecycle
-    // StateEntity rows, (at, id) DESC. Always 200 array.
-    // MUST register BEFORE objectives/:id so matchRoute's
-    // first-match does not capture the literal as `:id`.
-    route('organizations/:id/objectives/versions', {
-        get: (db, _p, _actor, organization) =>
-            deriveObjectiveHistories(
-                db, requireOrganization(organization),
-            ),
-    }),
     // objectives/:id is the seventh family. GET is FLIPPED
     // (Task 7): absorbed into the generic documentEntityRoute —
     // GET dispatches to documentGetHandler(OBJECTIVES_WIRING);
@@ -6306,12 +6280,11 @@ export const routes: Route[] = [
     }),
     // Bulk lifecycle collection RETIRED (states-URI
     // elimination C3): the five-source union is gone.
-    // Per-entity history lives on GET <family>/:id/history;
-    // work-order and objective bulk history live on GET
-    // work-orders/history and GET objectives/history.
-    // Nested field-values collection retired with C4
-    // (inline fold on WO history). bare states/:id is
-    // already a router 404 (states-address retirement
+    // Per-entity history lives on GET <family>/:id/history
+    // (work-orders stay /history; trio families stay
+    // /versions/). Nested field-values collection retired
+    // with C4 (inline fold on WO history). bare states/:id
+    // is already a router 404 (states-address retirement
     // Task 13). Per-entity history alias retired with C2.
 ];
 

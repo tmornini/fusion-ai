@@ -905,12 +905,12 @@ test(
     },
 );
 
-// ── bulk getActiveClaimsByWorkOrder ────
+// ── fan-in getActiveClaimsByWorkOrder ────
 
 test(
     'getActiveClaimsByWorkOrder resolves every '
-    + 'order claim in one read, honoring per-order '
-    + 'lockTimeout and the work-order set',
+    + 'order claim via per-item history, honoring '
+    + 'per-order lockTimeout and the work-order set',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);

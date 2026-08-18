@@ -383,6 +383,5 @@ async () => {
     const bulk = await handleRequest(db, req(
         'GET', '/organizations/1/work-orders/history', token,
     ));
-    assert.equal(bulk.status, 200);
-    assert.ok(Array.isArray(await bulk.json()));
+    assert.equal(bulk.status, 404);
 });

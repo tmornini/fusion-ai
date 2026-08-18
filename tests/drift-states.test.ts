@@ -275,9 +275,8 @@ function createWorkOrderBody(
 
 // ---- case 1: collection-history parity (C3 successor) ----
 
-test('case 1: collection history wire equals family derives'
-+ ' — work-orders/history + objectives/versions for BOTH'
-+ ' organizations (bulk lifecycle collection retired with C3)',
+test('case 1: bulk history doors are absent; per-item'
++ ' history still 200 for BOTH organizations',
 async () => {
     const db = await seededDb();
     let woSeen = 0;
@@ -288,32 +287,76 @@ async () => {
         const token = await organizationToken(
             'current', organization,
         );
-        const woRes = await handleRequest(db, req(
+        const woBulk = await handleRequest(db, req(
             'GET',
             '/organizations/' + organization
                 + '/work-orders/history',
             token,
         ));
-        assert.equal(woRes.status, 200);
-        const woWire = await woRes.json() as {
-            id: string;
-        }[];
-        woSeen += woWire.length;
+        assert.equal(woBulk.status, 404);
 
-        const objRes = await handleRequest(db, req(
+        const objBulk = await handleRequest(db, req(
             'GET',
             '/organizations/' + organization
                 + '/objectives/versions',
             token,
         ));
-        assert.equal(objRes.status, 200);
-        const objWire = await objRes.json() as {
+        assert.equal(objBulk.status, 404);
+
+        const woList = await handleRequest(db, req(
+            'GET',
+            '/organizations/' + organization
+                + '/work-orders/',
+            token,
+        ));
+        assert.equal(woList.status, 200);
+        const workOrders = await woList.json() as {
             id: string;
         }[];
-        objSeen += objWire.length;
+        for (const row of workOrders) {
+            const history = await handleRequest(
+                db, req(
+                    'GET',
+                    '/organizations/' + organization
+                        + '/work-orders/' + row.id
+                        + '/history',
+                    token,
+                ),
+            );
+            assert.equal(history.status, 200);
+            const events = await history.json() as {
+                id: string;
+            }[];
+            woSeen += events.length;
+        }
+
+        const objList = await handleRequest(db, req(
+            'GET',
+            '/organizations/' + organization
+                + '/objectives/',
+            token,
+        ));
+        assert.equal(objList.status, 200);
+        const objectives = await objList.json() as {
+            id: string;
+        }[];
+        for (const row of objectives) {
+            const versions = await handleRequest(
+                db, req(
+                    'GET',
+                    '/organizations/' + organization
+                        + '/objectives/' + row.id
+                        + '/versions/',
+                    token,
+                ),
+            );
+            assert.equal(versions.status, 200);
+            const rows = await versions.json() as {
+                id: string;
+            }[];
+            objSeen += rows.length;
+        }
     }
-    // Seeded work-order traces + objective genesis rows
-    // across both orgs — non-thin after retirement reshape.
     assert.ok(woSeen > 0, 'work-order history thin');
     assert.ok(objSeen > 0, 'objectives history thin');
 });

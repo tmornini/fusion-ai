@@ -4,7 +4,6 @@ import type {
     ObjectiveId,
     ObjectiveRevisionEntity,
     ObjectiveStateDetail,
-    StateEntity,
 } from '../../../api/types.ts';
 import {
     assertObjectiveState,
@@ -105,42 +104,51 @@ export async function getArchivedObjectiveIds(
     );
 }
 
-// Org-scoped bulk lifecycle versions (GET objectives/versions)
-// — StateEntity rows, (at, id) DESC overall. Source for the
-// project score-history archival stream.
+// Parallel GET objectives/:id/versions/ for each live
+// objective. Rows are collection-item shape (state, not
+// StateEntity). Source for the archival stream.
 export async function getObjectiveHistories(
     ctx: RequestContext,
-): Promise<StateEntity[]> {
-    return ctx.GET<StateEntity[]>(
-        organizationCollection(ctx, 'objectives')
-            + 'versions',
+): Promise<Map<Id, ObjectiveEntity[]>> {
+    const rows = await ctx.GET<{ id: Id }[]>(
+        organizationCollection(ctx, 'objectives'),
     );
+    const pairs = await Promise.all(
+        rows.map(async (row) => {
+            const versions = await ctx.GET<
+                ObjectiveEntity[]
+            >(
+                organizationItem(ctx, 'objectives', row.id)
+                    + '/versions/',
+            );
+            return [row.id, versions] as const;
+        }),
+    );
+    return new Map(pairs);
 }
 
 export interface ObjectiveArchivalEvent {
     objectiveId: ObjectiveId;
-    memberId: Id;
-    at: string;
 }
 
-// Streams every `state='archived'` event from the
-// objectives history route — one event per archival,
+// Streams every `state='archived'` version from the
+// per-item versions door — one event per archival,
 // including re-archivals after reactivation. Consumed
-// by the project score-history presenter which renders
-// each event chronologically alongside scoring rows.
-// The history route is objectives-only, so no client
-// id filter is required.
+// by the project score-history presenter. Versions
+// carry no member or at; those facts live on the pair.
 export async function getObjectiveArchivalEvents(
     ctx: RequestContext,
 ): Promise<ObjectiveArchivalEvent[]> {
-    const rows = await getObjectiveHistories(ctx);
-    return rows
-        .filter(r => r.state === 'archived')
-        .map(r => ({
-            objectiveId: r.entity_id as ObjectiveId,
-            memberId: r.member_id,
-            at: r.at,
-        }));
+    const histories = await getObjectiveHistories(ctx);
+    const events: ObjectiveArchivalEvent[] = [];
+    for (const [objectiveId, versions] of histories) {
+        for (const row of versions) {
+            if (row.state === 'archived') {
+                events.push({ objectiveId });
+            }
+        }
+    }
+    return events;
 }
 
 // The camelCase domain shape of an objective revision.

@@ -70,6 +70,50 @@ test('work-order per-item history stays /history',
     );
 });
 
+function hasLiteral(pattern: string): boolean {
+    const want = pattern.split('/');
+    return routes.some((row) =>
+        row.segments.length === want.length
+        && row.segments.every(
+            (seg, i) => seg === want[i],
+        ),
+    );
+}
+
+test('bulk work-order history is absent', () => {
+    assert.equal(
+        hasLiteral(
+            'organizations/:id/work-orders/history',
+        ),
+        false,
+    );
+    const captured = match(
+        '/organizations/1/work-orders/history',
+    );
+    assert.ok(captured);
+    assert.equal(captured.route.segments.at(-1), ':id');
+    assert.equal(match('/work-orders/history'), null);
+});
+
+test('bulk objective versions is absent', () => {
+    assert.equal(
+        hasLiteral(
+            'organizations/:id/objectives/versions',
+        ),
+        false,
+    );
+    assert.equal(
+        match('/organizations/1/objectives/versions/'),
+        null,
+    );
+    const slashless = match(
+        '/organizations/1/objectives/versions',
+    );
+    assert.ok(slashless);
+    assert.equal(slashless.route.segments.at(-1), ':id');
+    assert.equal(match('/objectives/versions'), null);
+});
+
 test('registered families offer versions/ and :etag',
 () => {
     const lists = [

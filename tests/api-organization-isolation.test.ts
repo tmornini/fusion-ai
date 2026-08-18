@@ -877,11 +877,10 @@ for (const c of NESTED_PROJECT_CASES) {
 }
 
 // Bulk lifecycle collection RETIRED (states-URI elimination
-// C3). Org isolation force lives in organizations/1/work-orders/history and
-// organizations/1/objectives/history collection legs (A2/A5). Nested
-// field-values collection retired (C4) — field values fold
-// on work-order history; family history pins ownership
-// below.
+// C3). Org isolation force lives on per-item work-order
+// history and objective versions. Nested field-values
+// collection retired (C4) — field values fold on work-order
+// history; family history pins ownership below.
 
 // C4: field-values fence re-homes onto work-order history
 // (inline field_values on transition rows).
