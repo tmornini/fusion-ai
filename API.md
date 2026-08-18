@@ -1840,8 +1840,9 @@ a seat, not a leftover `/memberships/:id` row.
 
 ### 3.26 Operator seed — mock data (in-process)
 
-`postMockDataLoad` (`api/mock-data.ts`). Operator flag `--seed-mock-data` calls
-it in-process on an empty database and prints credentials once on stderr (A2).
+`postMockDataLoad` (`api/mock-data.ts`). Operator flag
+`--seed-mock-data` calls it in-process on an empty database
+and prints credentials once on stderr (A2).
 There is no HTTP path. The seed forms and appends no pair for itself (none of
 §5.1's headers appear). What it seeds includes **1498** of its own pre-formed
 message pairs (`EXPECTED_PAIR_COUNT`) — see §5.3.
@@ -1864,9 +1865,11 @@ message pairs (`EXPECTED_PAIR_COUNT`) — see §5.3.
 
 ### 3.27 Operator seed — bootstrap (in-process)
 
-`postBootstrap` (`api/mock-data.ts`). Operator flag `--seed-bootstrap` calls
-it in-process on an empty database and prints credentials once on stderr.
-Same four-step shape as §3.26 — no pair for itself, below the ledger — with
+`postBootstrap` (`api/mock-data.ts`). Operator flag
+`--seed-bootstrap` calls it in-process on an empty
+database and prints credentials once on stderr. Same
+four-step shape as §3.26 — no pair for itself, below
+the ledger — with
 `postBootstrapIn` planting only the shell essentials (system actor, current
 user, the singleton org — no Records) and its multi-pair bootstrap set: the
 current-user human-member create bundle (operation + member + detail +
