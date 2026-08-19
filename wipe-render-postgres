@@ -509,3 +509,31 @@ else
 fi
 
 cat "$TMP/table.md"
+
+try_revoke() {
+    local method path code
+    local -a attempts=(
+        'DELETE /api-keys/current'
+        'DELETE /owners/current/api-keys/current'
+        'POST /api-keys/current/revoke'
+        'POST /api-keys/revoke'
+    )
+    for spec in "${attempts[@]}"; do
+        method=${spec%% *}
+        path=${spec#* }
+        code=$(curl -sS -o "$TMP/revoke.json" \
+            -w '%{http_code}' \
+            -X "$method" \
+            -H "Authorization: Bearer ${RENDER_API_KEY}" \
+            -H "Accept: application/json" \
+            "${API}${path}") || code='000'
+        case "$code" in
+            2??) return 0 ;;
+        esac
+    done
+    echo "Warning: could not revoke the API key." \
+        "Revoke it at ${DASHBOARD_KEYS}" >&2
+}
+
+try_revoke
+exit 0
