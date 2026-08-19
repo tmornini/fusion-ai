@@ -65,3 +65,29 @@ test('favicon.svg embeds the PNG and inverts in light',
     assert.doesNotMatch(src, /orbital/);
     assert.doesNotMatch(src, /nucleus/);
 });
+
+test('build copies mark.png next to the favicons', () => {
+    const src = readFileSync('build', 'utf8');
+    assert.match(
+        src,
+        /cp web-app\/assets\/mark\.png/,
+    );
+});
+
+test('server declares image/png for .png', () => {
+    const src = readFileSync(
+        'server/http-server.ts',
+        'utf8',
+    );
+    assert.match(src, /'\.png': 'image\/png'/);
+});
+
+test('auth branding does not invert the mark',
+() => {
+    const src = readFileSync(
+        'web-app/app/styles/components-brand.css',
+        'utf8',
+    );
+    assert.match(src, /\.auth-branding \.brand-mark/);
+    assert.match(src, /filter:\s*none/);
+});
