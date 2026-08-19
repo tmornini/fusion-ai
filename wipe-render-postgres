@@ -1,0 +1,101 @@
+#!/bin/bash
+set -euo pipefail
+
+API='https://api.render.com/v1'
+WIPE_TIMEOUT_SEC=120
+REVEAL_TIMEOUT_SEC=180
+POLL_SEC=5
+REVEAL_HEADER='Save your demo sign-ins — shown once; copy them now.'
+DASHBOARD_KEYS='https://dashboard.render.com/u/settings?add-api-key'
+
+usage() {
+    cat <<'USAGE'
+Usage: ./wipe-render-postgres TOKEN --pristine|--mockdata
+
+Wipe the single Render Postgres instance visible to
+TOKEN, then seed it again. TOKEN is the confirmation.
+No prompt.
+
+Options:
+  --pristine   Seed --seed-bootstrap, then listen
+  --mockdata   Restart so --seed-mock-data runs
+  --help       Show this help message
+
+TOKEN must see exactly one Postgres and one web
+service. HTTP only (curl). Development gun.
+USAGE
+}
+
+TOKEN=''
+PRISTINE=false
+MOCKDATA=false
+
+for arg in "$@"; do
+    case "$arg" in
+        --help|-h)
+            usage
+            exit 0
+            ;;
+        --pristine)
+            PRISTINE=true
+            ;;
+        --mockdata)
+            MOCKDATA=true
+            ;;
+        -*)
+            echo "Error: unknown argument: $arg" >&2
+            usage >&2
+            exit 1
+            ;;
+        *)
+            if [ -n "$TOKEN" ]; then
+                echo "Error: unexpected argument:" \
+                    "$arg" >&2
+                usage >&2
+                exit 1
+            fi
+            TOKEN="$arg"
+            ;;
+    esac
+done
+
+if [ "$PRISTINE" = true ] \
+    && [ "$MOCKDATA" = true ]; then
+    echo "Error: --pristine and --mockdata" \
+        "are exclusive" >&2
+    usage >&2
+    exit 1
+fi
+
+if [ "$PRISTINE" = false ] \
+    && [ "$MOCKDATA" = false ]; then
+    echo "Error: exactly one of --pristine or" \
+        "--mockdata is required" >&2
+    usage >&2
+    exit 1
+fi
+
+if [ -z "$TOKEN" ]; then
+    echo "Error: TOKEN is required" >&2
+    usage >&2
+    exit 1
+fi
+
+if ! command -v curl >/dev/null; then
+    echo "Error: curl is required" >&2
+    exit 1
+fi
+if ! command -v node >/dev/null; then
+    echo "Error: node is required" >&2
+    exit 1
+fi
+
+export RENDER_API_KEY="$TOKEN"
+unset TOKEN
+
+TMP=$(mktemp -d \
+    "${TMPDIR:-/tmp}/fusion-wipe.XXXXXX")
+trap 'rm -rf "$TMP"' EXIT
+
+echo "Error: not implemented" >&2
+exit 1
