@@ -88,6 +88,9 @@ test('auth branding does not invert the mark',
         'web-app/app/styles/components-brand.css',
         'utf8',
     );
-    assert.match(src, /\.auth-branding \.brand-mark/);
+    assert.match(
+        src,
+        /html:not\(\[data-theme="dark"\]\) \.auth-branding \.brand-mark/,
+    );
     assert.match(src, /filter:\s*none/);
 });

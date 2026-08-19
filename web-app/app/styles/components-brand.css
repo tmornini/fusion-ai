@@ -9,6 +9,6 @@ html:not([data-theme="dark"]) .brand-mark {
     filter: invert(1);
 }
 
-.auth-branding .brand-mark {
+html:not([data-theme="dark"]) .auth-branding .brand-mark {
     filter: none;
 }
