@@ -44,7 +44,7 @@ fi
 
 ./validate
 
-echo "Building Fusion AI..."
+echo "Building Fusion Angle..."
 
 if [ "$NO_ZIP" = true ] && [ -n "$DEST" ]; then
     BUILD_DIR="$DEST"
