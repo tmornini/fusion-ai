@@ -97,5 +97,166 @@ TMP=$(mktemp -d \
     "${TMPDIR:-/tmp}/fusion-wipe.XXXXXX")
 trap 'rm -rf "$TMP"' EXIT
 
+fail_http() {
+    local code="$1"
+    local file="$2"
+    local msg
+    msg=$(node --input-type=module -e '
+        import { readFileSync } from "node:fs";
+        const path = process.argv[1];
+        let msg = "";
+        try {
+            const raw = readFileSync(path, "utf8");
+            const json = JSON.parse(raw);
+            if (
+                json
+                && typeof json.message === "string"
+            ) {
+                msg = json.message;
+            }
+        } catch {
+            msg = "";
+        }
+        process.stdout.write(msg);
+    ' "$file")
+    if [ -n "$msg" ]; then
+        echo "Error: Render HTTP ${code}: ${msg}" >&2
+    else
+        echo "Error: Render HTTP ${code}" >&2
+    fi
+    exit 1
+}
+
+# $1 method  $2 path  $3 outfile  $4 optional JSON body
+http_json() {
+    local method="$1"
+    local path="$2"
+    local out="$3"
+    local body="${4:-}"
+    local code
+    local -a curl_args=(
+        -sS
+        -o "$out"
+        -w '%{http_code}'
+        -X "$method"
+        -H "Authorization: Bearer ${RENDER_API_KEY}"
+        -H "Accept: application/json"
+    )
+    if [ -n "$body" ]; then
+        curl_args+=(
+            -H "Content-Type: application/json"
+            --data-binary @"$body"
+        )
+    fi
+    code=$(curl "${curl_args[@]}" "${API}${path}")
+    case "$code" in
+        2??) return 0 ;;
+        *) fail_http "$code" "$out" ;;
+    esac
+}
+
+write_job_body() {
+    local dest="$1"
+    local cmd="$2"
+    node --input-type=module -e '
+        import { writeFileSync } from "node:fs";
+        writeFileSync(
+            process.argv[1],
+            JSON.stringify({
+                startCommand: process.argv[2],
+            }),
+        );
+    ' "$dest" "$cmd"
+}
+
+http_json GET '/postgres?limit=100' \
+    "$TMP/postgres.json"
+http_json GET \
+    '/services?type=web_service&limit=100' \
+    "$TMP/services.json"
+
+node --input-type=module -e '
+    import { readFileSync } from "node:fs";
+    import { argv, stdout, stderr, exit } from
+        "node:process";
+
+    function load(path) {
+        const json = JSON.parse(
+            readFileSync(path, "utf8"),
+        );
+        if (!Array.isArray(json)) {
+            stderr.write(
+                "Error: Render list is not an array\n",
+            );
+            exit(1);
+        }
+        return json;
+    }
+
+    function refuse(kind, lines) {
+        stderr.write(
+            "Error: expected exactly one "
+            + kind
+            + ", found "
+            + String(lines.length)
+            + "\n",
+        );
+        for (const line of lines) {
+            stderr.write("  " + line + "\n");
+        }
+        exit(1);
+    }
+
+    const postgres = load(argv[1]);
+    const services = load(argv[2]);
+    const pgLines = postgres.map((row) => {
+        const item = row && row.postgres;
+        const name = item && item.name;
+        const id = item && item.id;
+        return String(name ?? "?")
+            + " ("
+            + String(id ?? "?")
+            + ")";
+    });
+    const svcLines = services.map((row) => {
+        const item = row && row.service;
+        const name = item && item.name;
+        const id = item && item.id;
+        return String(name ?? "?")
+            + " ("
+            + String(id ?? "?")
+            + ")";
+    });
+    if (postgres.length !== 1) {
+        refuse("Postgres instance", pgLines);
+    }
+    if (services.length !== 1) {
+        refuse("web service", svcLines);
+    }
+    const owner = postgres[0].postgres
+        && postgres[0].postgres.owner
+        && postgres[0].postgres.owner.id;
+    const serviceId = services[0].service
+        && services[0].service.id;
+    if (typeof owner !== "string" || owner === "") {
+        stderr.write(
+            "Error: Postgres owner id missing\n",
+        );
+        exit(1);
+    }
+    if (typeof serviceId !== "string"
+        || serviceId === "") {
+        stderr.write(
+            "Error: web service id missing\n",
+        );
+        exit(1);
+    }
+    stdout.write(owner + "\n" + serviceId + "\n");
+' "$TMP/postgres.json" "$TMP/services.json" \
+    > "$TMP/ids.txt"
+
+OWNER_ID=$(sed -n '1p' "$TMP/ids.txt")
+SERVICE_ID=$(sed -n '2p' "$TMP/ids.txt")
+
 echo "Error: not implemented" >&2
 exit 1
