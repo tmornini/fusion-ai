@@ -150,7 +150,7 @@ if [ "$NO_ZIP" = true ]; then
 else
     SHA=$(git rev-parse --short=7 HEAD)
     DEST_DIR="${DEST:-$HOME/Desktop/}"
-    SERVER_ZIP="${DEST_DIR}fusion-ai-server-${SHA}.zip"
+    SERVER_ZIP="${DEST_DIR}fusion-angle-server-${SHA}.zip"
     (cd "$BUILD_DIR" && zip -r "$SERVER_ZIP" .)
     echo "Distribution: $SERVER_ZIP" \
         "($(wc -c < "$SERVER_ZIP" | xargs) bytes)"
