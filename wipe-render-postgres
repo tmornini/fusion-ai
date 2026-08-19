@@ -169,6 +169,142 @@ write_job_body() {
     ' "$dest" "$cmd"
 }
 
+start_rfc3339() {
+    if date -u -v-5S +'%Y-%m-%dT%H:%M:%SZ' \
+        >/dev/null 2>&1; then
+        date -u -v-5S +'%Y-%m-%dT%H:%M:%SZ'
+        return
+    fi
+    date -u -d '5 seconds ago' \
+        +'%Y-%m-%dT%H:%M:%SZ'
+}
+
+fetch_logs() {
+    local owner="$1"
+    local resource="$2"
+    local start="$3"
+    local out="$4"
+    local code
+    code=$(curl -sS -o "$out" -w '%{http_code}' \
+        --get \
+        --data-urlencode "ownerId=${owner}" \
+        --data-urlencode "resource=${resource}" \
+        --data-urlencode "startTime=${start}" \
+        --data-urlencode "limit=100" \
+        --data-urlencode "direction=forward" \
+        -H "Authorization: Bearer ${RENDER_API_KEY}" \
+        -H "Accept: application/json" \
+        "${API}/logs")
+    case "$code" in
+        2??) return 0 ;;
+        *) fail_http "$code" "$out" ;;
+    esac
+}
+
+# Prints the markdown table to stdout.
+# Exit 10 if the header is absent.
+# Exit 11 if the header is present but no pairs.
+print_credential_table() {
+    local file="$1"
+    node --input-type=module -e '
+        import { readFileSync } from "node:fs";
+        import { argv, stdout, exit } from
+            "node:process";
+        const header = argv[2];
+        const data = JSON.parse(
+            readFileSync(argv[1], "utf8"),
+        );
+        const lines = [];
+        const logs = Array.isArray(data.logs)
+            ? data.logs
+            : [];
+        for (const entry of logs) {
+            const message = entry && entry.message;
+            const text = typeof message === "string"
+                ? message
+                : "";
+            for (const line of text.split("\n")) {
+                lines.push(line);
+            }
+        }
+        const idx = lines.findIndex(
+            (line) => line.includes(header),
+        );
+        if (idx < 0) exit(10);
+        const rows = [];
+        for (const line of lines.slice(idx + 1)) {
+            const tab = line.indexOf("\t");
+            if (tab <= 0) continue;
+            const user = line.slice(0, tab);
+            const pass = line.slice(tab + 1);
+            if (user === "" || pass === "") continue;
+            if (pass.includes("\t")) continue;
+            rows.push([user, pass]);
+        }
+        if (rows.length === 0) exit(11);
+        const cell = (value) =>
+            value.split("|").join("\\|");
+        stdout.write("| username | password |\n");
+        stdout.write("| --- | --- |\n");
+        for (const [user, pass] of rows) {
+            stdout.write(
+                "| "
+                + cell(user)
+                + " | "
+                + cell(pass)
+                + " |\n",
+            );
+        }
+    ' "$file" "$REVEAL_HEADER"
+}
+
+wait_for_reveal() {
+    local resource="$1"
+    local seed_job="${2:-}"
+    local started=$SECONDS
+    local status
+    while [ $((SECONDS - started)) -lt \
+        "$REVEAL_TIMEOUT_SEC" ]; do
+        if [ -n "$seed_job" ]; then
+            http_json GET \
+                "/services/${SERVICE_ID}/jobs/${seed_job}" \
+                "$TMP/seed-status.json"
+            status=$(node --input-type=module -e '
+                import { readFileSync } from
+                    "node:fs";
+                const job = JSON.parse(
+                    readFileSync(
+                        process.argv[1], "utf8",
+                    ),
+                );
+                process.stdout.write(
+                    typeof job.status === "string"
+                        ? job.status
+                        : "",
+                );
+            ' "$TMP/seed-status.json")
+            case "$status" in
+                failed|canceled)
+                    echo "Error: seed job" \
+                        "${seed_job} ${status}" >&2
+                    exit 1
+                    ;;
+            esac
+        fi
+        fetch_logs "$OWNER_ID" "$resource" \
+            "$SEED_START" "$TMP/logs.json"
+        if print_credential_table \
+            "$TMP/logs.json" \
+            > "$TMP/table.md"; then
+            return 0
+        fi
+        sleep "$POLL_SEC"
+    done
+    echo "Error: seed reveal header missing after" \
+        "${REVEAL_TIMEOUT_SEC}s" >&2
+    exit 1
+}
+
 http_json GET '/postgres?limit=100' \
     "$TMP/postgres.json"
 http_json GET \
@@ -332,5 +468,44 @@ if [ "$WIPE_STATUS" != "succeeded" ]; then
     exit 1
 fi
 
-echo "Error: not implemented" >&2
-exit 1
+SEED_START=$(start_rfc3339)
+PRISTINE_START='cd render-out && HTTP_SERVER_PORT=8080'
+PRISTINE_START="${PRISTINE_START} node server.mjs"
+PRISTINE_START="${PRISTINE_START} --seed-bootstrap"
+
+if [ "$MOCKDATA" = true ]; then
+    http_json POST \
+        "/services/${SERVICE_ID}/restart" \
+        "$TMP/restart.json"
+    wait_for_reveal "$SERVICE_ID"
+else
+    write_job_body "$TMP/seed-job.json" \
+        "$PRISTINE_START"
+    http_json POST \
+        "/services/${SERVICE_ID}/jobs" \
+        "$TMP/seed-created.json" \
+        "$TMP/seed-job.json"
+    SEED_JOB_ID=$(node --input-type=module -e '
+        import { readFileSync } from "node:fs";
+        const job = JSON.parse(
+            readFileSync(process.argv[1], "utf8"),
+        );
+        if (typeof job.id !== "string"
+            || job.id === "") {
+            process.stderr.write(
+                "Error: seed job id missing\n",
+            );
+            process.exit(1);
+        }
+        process.stdout.write(job.id);
+    ' "$TMP/seed-created.json")
+    wait_for_reveal "$SEED_JOB_ID" "$SEED_JOB_ID"
+    http_json POST \
+        "/services/${SERVICE_ID}/jobs/${SEED_JOB_ID}/cancel" \
+        "$TMP/seed-cancel.json"
+    http_json POST \
+        "/services/${SERVICE_ID}/restart" \
+        "$TMP/restart.json"
+fi
+
+cat "$TMP/table.md"
