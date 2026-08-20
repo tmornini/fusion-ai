@@ -12,10 +12,11 @@ import {
     formatSeededCredentials,
     isDatabaseEmpty,
     readSeedMode,
-    SEED_BOTH_FLAGS,
     SEED_BOOTSTRAP_FLAG,
+    SEED_EXCLUSIVE_FLAGS,
     SEED_MOCK_DATA_FLAG,
     SEED_NONEMPTY,
+    SEED_TEST_PLAN_SLICES_FLAG,
     SEED_REVEAL_HEADER,
     serialPasswordHasher,
 } from '../server/seed.ts';
@@ -105,8 +106,41 @@ test('readSeedMode refuses both flags', () => {
         ]),
         (error: unknown) =>
             error instanceof Error
-            && error.message === SEED_BOTH_FLAGS,
+            && error.message === SEED_EXCLUSIVE_FLAGS,
     );
+});
+
+test('readSeedMode accepts slices flag', () => {
+    assert.equal(
+        readSeedMode([
+            'node', SEED_TEST_PLAN_SLICES_FLAG,
+        ]),
+        'test-plan-slices',
+    );
+});
+
+test('readSeedMode refuses any two flags',
+() => {
+    const pairs: Array<readonly string[]> = [
+        [SEED_BOOTSTRAP_FLAG, SEED_MOCK_DATA_FLAG],
+        [
+            SEED_BOOTSTRAP_FLAG,
+            SEED_TEST_PLAN_SLICES_FLAG,
+        ],
+        [
+            SEED_MOCK_DATA_FLAG,
+            SEED_TEST_PLAN_SLICES_FLAG,
+        ],
+    ];
+    for (const flags of pairs) {
+        assert.throws(
+            () => readSeedMode([...flags]),
+            (error: unknown) =>
+                error instanceof Error
+                && error.message
+                    === SEED_EXCLUSIVE_FLAGS,
+        );
+    }
 });
 
 test('boot refuses both seed flags before connect',
@@ -118,11 +152,13 @@ async () => {
         ]),
         (error: unknown) =>
             error instanceof Error
-            && error.message === SEED_BOTH_FLAGS,
+            && error.message === SEED_EXCLUSIVE_FLAGS,
     );
     assert.equal(
-        bootErrorMessage(new Error(SEED_BOTH_FLAGS)),
-        SEED_BOTH_FLAGS,
+        bootErrorMessage(
+            new Error(SEED_EXCLUSIVE_FLAGS),
+        ),
+        SEED_EXCLUSIVE_FLAGS,
     );
 });
 

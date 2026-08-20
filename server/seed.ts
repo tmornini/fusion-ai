@@ -15,15 +15,22 @@ import { hashPassword } from
 
 export const SEED_BOOTSTRAP_FLAG = '--seed-bootstrap';
 export const SEED_MOCK_DATA_FLAG = '--seed-mock-data';
+export const SEED_TEST_PLAN_SLICES_FLAG =
+    '--seed-test-plan-slices';
 export const SEED_NONEMPTY =
     'database is not empty; refuse to seed';
-export const SEED_BOTH_FLAGS =
-    'use only one of --seed-bootstrap or --seed-mock-data';
+export const SEED_EXCLUSIVE_FLAGS =
+    'use only one of --seed-bootstrap, '
+    + '--seed-mock-data, or '
+    + '--seed-test-plan-slices';
 export const SEED_REVEAL_HEADER =
     'Save your demo sign-ins — shown once; copy them now.';
 export const SEED_PASSWORD_HASH_CONCURRENCY = 1;
 
-export type SeedMode = 'bootstrap' | 'mock-data';
+export type SeedMode =
+    | 'bootstrap'
+    | 'mock-data'
+    | 'test-plan-slices';
 
 export type SeedPasswordHasher = (
     plaintext: string,
@@ -37,13 +44,22 @@ export type SeedRunOptions = {
 export function readSeedMode(
     argv: readonly string[],
 ): SeedMode | undefined {
-    const bootstrap = argv.includes(SEED_BOOTSTRAP_FLAG);
-    const mockData = argv.includes(SEED_MOCK_DATA_FLAG);
-    if (bootstrap && mockData) {
-        throw new Error(SEED_BOTH_FLAGS);
+    const bootstrap =
+        argv.includes(SEED_BOOTSTRAP_FLAG);
+    const mockData =
+        argv.includes(SEED_MOCK_DATA_FLAG);
+    const slices = argv.includes(
+        SEED_TEST_PLAN_SLICES_FLAG,
+    );
+    const count = Number(bootstrap)
+        + Number(mockData)
+        + Number(slices);
+    if (count > 1) {
+        throw new Error(SEED_EXCLUSIVE_FLAGS);
     }
     if (bootstrap) return 'bootstrap';
     if (mockData) return 'mock-data';
+    if (slices) return 'test-plan-slices';
     return undefined;
 }
 
