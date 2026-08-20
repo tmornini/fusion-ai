@@ -1300,18 +1300,27 @@ function fillPasswords(
                     + row.adminUsername,
             );
         }
+        const seatPassword = passwordFor(
+            passwords, row.seatUsername,
+        );
+        const unseatedPassword = passwordFor(
+            passwords, row.unseatedUsername,
+        );
+        const memberPassword = passwordFor(
+            passwords, row.memberUsername,
+        );
         return {
             ...row,
             adminPassword,
-            seatPassword: passwordFor(
-                passwords, row.seatUsername,
-            ),
-            unseatedPassword: passwordFor(
-                passwords, row.unseatedUsername,
-            ),
-            memberPassword: passwordFor(
-                passwords, row.memberUsername,
-            ),
+            ...(seatPassword === undefined
+                ? {}
+                : { seatPassword }),
+            ...(unseatedPassword === undefined
+                ? {}
+                : { unseatedPassword }),
+            ...(memberPassword === undefined
+                ? {}
+                : { memberPassword }),
         };
     });
 }
