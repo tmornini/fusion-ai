@@ -576,6 +576,11 @@ regression.
 
 ## AT. Automated Test Suite
 
+tenant: none
+parallel: no
+global_lock: none
+depends: —
+
 The automated layer is the gate. Any AT failure aborts the
 run before A1's build. The single canonical invocation is
 `./validate`, which composes all three sub-steps.
@@ -588,6 +593,11 @@ run before A1's build. The single canonical invocation is
 
 ## A. Build & Setup
 
+tenant: none
+parallel: no
+global_lock: none
+depends: AT
+
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-angle-server-${SHA}.zip`.
 - [ ] **A2** Unzip the A1 ZIP (or run `./build --no-zip /tmp/fusion-test/`). PASS: the temp dir contains `server.mjs`, `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 18 page directories (`api-documentation`, `auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `identities`, `identity-providers`, `identity-tokens`, `invitations`, `landing`, `members`, `not-found`, `organization`, `projects`, `records`, `workbox`) with 29 HTML page files (including `api-documentation/index.html`, `flows/stats.html`, `records/detail.html`, `identities/index.html`, `identities/detail.html`, `identity-providers/index.html`, `identity-tokens/index.html`, and `invitations/index.html`), plus root `index.html`. Verb/status rooms under `api-documentation/` are generated, not PAGE_REGISTRY pages — do not count them as the 29.
 - [ ] **A3** From the A2 directory, with `POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`, and `HTTP_SERVER_PORT` set against an **empty** Postgres, run `node server.mjs --seed-mock-data` (or `./serve` after commit). PASS: the process listens; stderr prints `Save your demo sign-ins — shown once; copy them now.` plus one `username<TAB>password` line per seeded human (including `demo@example.com` and `sarah.chen@company.com`); the stdout listen line has no passwords; seed does not travel over HTTP. This pin **is** SV1.
@@ -597,6 +607,11 @@ run before A1's build. The single canonical invocation is
 ---
 
 ## AA. Data Entry Workflow
+
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
 
 AA rebuilds from a bootstrap-only database. Stop the A3
 process. Restart with `node server.mjs --seed-bootstrap`.
@@ -863,6 +878,11 @@ depend on. Run AA3+ in order.
 
 ## B. Entry Pages
 
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
+
 ### Apex (`/`)
 
 - [ ] **B0** With site data deleted and no
@@ -930,6 +950,11 @@ depend on. Run AA3+ in order.
 
 ## C. Core: Dashboard
 
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
+
 - [ ] **C1** Navigate to `dashboard/`. PASS: page loads with sidebar, header, and main content area.
 - [ ] **C2** Sidebar shows flat navigation
   links in this order: Dashboard,
@@ -995,6 +1020,11 @@ depend on. Run AA3+ in order.
 ---
 
 ## D. Core: Ideas Workflow
+
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
 
 ### Ideas List (`ideas/`)
 
@@ -1085,6 +1115,11 @@ depend on. Run AA3+ in order.
 
 ## E. Core: Projects
 
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
+
 ### Projects List (`projects/`)
 
 - [ ] **E1** Navigate to `projects/`. PASS: list shows the active org's projects (≈16 for Stark on the mock seed — the list is org-scoped, so this is a tolerant lower bound, not the old fixed 6; org-scoped reads can take ~4–5s to paint, so wait for the cards before asserting empty) with title, status, and progress. Each project card shows three metrics (time, cost, impact). Em-dash ("—") substitutes for the entire metric when its **baseline (denominator) is missing**; a zero current value over a non-zero baseline renders as `0d / 213d`, `$0k / $120k`, or `0 / 85 pts` — not em-dash. Em-dash signals "no baseline to compare against," not "zero current value." When the current is missing but the baseline is present, the half-em-dash form (e.g. `— / 46 pts`) renders the absent current side only — distinct from full em-dash (both absent) and from `0d / 213d` (zero current over present baseline).
@@ -1134,6 +1169,11 @@ depend on. Run AA3+ in order.
 ---
 
 ## F. Tools
+
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
 
 ### Flow List (`flows/`)
 
@@ -1658,6 +1698,11 @@ designer "tag current" action lands.)
 
 ## F2. Workbox
 
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
+
 ### AA13. Workbox Source Flow
 
 - [ ] **AA-WB-SETUP** Create one Workbox-only flow named `WB Test Flow` with three nodes: Create → Capture (text + select attributes) → Archive (`isArchive: true`). This flow is mutated only by Agent-F2. Agent-F2's WO creation reads from this flow, not from any Agent-F flow.
@@ -1907,6 +1952,11 @@ per-user visibility filter.
 
 ## FS. Flow Statistics (Agent-F2 read-only domain)
 
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
+
 **Mock-data blast radius:** the flow-statistics work added ~38
 work orders to "Customer Onboarding" and ~6 to a second flow,
 plus their flow-work-order join rows and transition chains.
@@ -1986,6 +2036,11 @@ the claude-in-chrome MCP.
 ---
 
 ## G. Admin Pages
+
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
 
 ### Retired pages
 
@@ -2347,12 +2402,22 @@ feature is implemented.
 
 ## H. Reference & System
 
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
+
 - [ ] **H1** Navigate to `design-system/`. PASS: component gallery renders showing buttons, badges, cards, form elements, toasts, and other UI components from the design system.
 - [ ] **H2** Navigate to `not-found/`. PASS: 404 page renders with a message and a link back to the dashboard or landing page.
 
 ---
 
 ## I. Cross-Cutting Concerns
+
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
 
 ### Theme
 
@@ -2419,6 +2484,11 @@ feature is implemented.
 ---
 
 ## K. Objectives & Scoring
+
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
 
 Owner agents: Agent-G (K1–K6 in Phase 2, K8 in Phase 4),
 Agent-E (K7, K9–K23, K30), Agent-CH (K27–K29). Mutation
@@ -2649,6 +2719,11 @@ the prerequisite in time".
 
 ## R. Records
 
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
+
 Sidebar entry plus list/detail pages, attribute editor with
 constraint sub-editor, flow binding, per-node attribute
 panel, and the property-test gate.
@@ -2761,11 +2836,21 @@ every other agent, so no write-domain collision.
 
 ## J. Teardown
 
+tenant: none
+parallel: no
+global_lock: process
+depends: AA, B, C, D, E, F, F2, FS, G, H, I, K, R, SV
+
 - [ ] **J1** Stop the `server.mjs` process started in A3. PASS: process terminates.
 - [ ] **J2** Remove the build directory (`rm -rf /tmp/fusion-test` or equivalent). PASS: directory removed.
 - [ ] **J3** Verify the ZIP file remains on `~/Desktop` for archival. PASS: `fusion-angle-server-${SHA}.zip` exists.
 
 ## SV. Server (Node + Postgres)
+
+tenant: required
+parallel: yes
+global_lock: none
+depends: A
 
 This is the default origin, not a second ceremony. A3
 **is** SV1. B15 / B18 / B19 / B23 pin cookie-session
