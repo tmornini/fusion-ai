@@ -289,6 +289,121 @@ Master never re-dispatches a hunter to retry.
 Document order on one mock tenant. A3 **is** SV1.
 SV6–SV10 run before J as today.
 
+### Historical note (not the scheduler)
+
+The following described the 2026 shared-garden
+parallel run. They are facts about that recipe, not
+edges the master follows now.
+
+- Six-phase protocol: Phase 0 preflight, Phase 1 AA
+  UI rebuild from `--seed-bootstrap`, seven Phase 2
+  agents (B, CH, D, E, F, F2, G) on URI-family
+  ownership, Phase 3 I exclusive, Phase 4 K8,
+  Phase 5 J.
+- Entity mutation-domain table (Agent-B signup,
+  Agent-D ideas, Agent-E projects, Agent-F flows,
+  Agent-F2 work-orders + private flow, Agent-G
+  roster/invitations, Agent-CH read-only).
+- `≥ N` as the default assertion style because
+  siblings appended to one tenant.
+- Sign-out last inside Agent-B; I exclusive after
+  join; K split across G / E / CH / Phase 4; K7
+  waiting on Agent-G's K3 rename.
+
+Still true, and already stated in Protocol:
+
+- Cookie jar = Chrome `isolatedContext`.
+- Operator seed wipes the whole database (why K8
+  is `global_lock: process`).
+- MCP limitation list (gestures, `resize_window`,
+  file I/O, sandbox EPERM, tab-group volatility,
+  CSP-blocked `await`, list paint 5–14s,
+  first-click-focus).
+
+#### Six-phase parallel protocol
+
+> SUPERSEDED by the shared-origin recipe below — see
+> "Shared-origin parallel run — operational recipe."
+> Kept as the phase / agent map only. Phase 2 agents
+> share one Postgres message plane; the mutation-
+> domain table still applies. The retired browser-ZIP
+> origin (`python3 -m http.server` + in-browser
+> IndexedDB) is gone.
+
+The shared-origin recipe named in the blockquote is
+also historical; the scheduler is now `### Protocol`.
+
+Agents execute the plan in six phases to fit within
+context and time budgets while keeping per-entity
+mutation domains disjoint:
+
+1. **Phase 0 — Preflight** (main): `./validate`,
+   `./build` to produce `fusion-angle-server-${SHA}.zip`,
+   unzip or `--no-zip` so `server.mjs` is on disk,
+   start `node server.mjs --seed-mock-data` (A3 /
+   SV1). Covers A1–A5.
+2. **Phase 1 — Data setup** (one agent, serial):
+   AA3–AA42 in tab 0. Rebuilds from a
+   bootstrap-only database, members (humans +
+   AIs), ideas, projects, one flow. Populates
+   the shared database that Phase 2 verifies.
+   A3 already mock-seeded; Phase 1 stops that
+   process and restarts with
+   `--seed-bootstrap`, then rebuilds through
+   the UI.
+3. **Phase 2 — Parallel verification** (7 agents
+   concurrent, each in its own `isolatedContext`, no
+   shared tabs):
+   - Agent-B — Entry pages (EXCLUDING Sidebar
+     Sign-out, which is identity-wide on the server —
+     deferred per "Parallel session & connection
+     isolation")
+   - Agent-CH — Dashboard + Reference (read-only)
+   - Agent-D — Ideas
+   - Agent-E — Projects
+   - Agent-F — Flows (includes hazard severity,
+     flow-publish gate)
+   - Agent-F2 — Workbox (includes Create-Work-Order
+     picker READY / NOT READY split) + Records
+     (section R) + Flow Statistics (FS1–FS9,
+     read-only)
+   - Agent-G — Admin (Members page, Member detail
+     (human + AI), Identities (list + detail +
+     providers + tokens), Organization,
+     Billing). The retired Teams / Roles / Crews /
+     Activity Feed pages have no cases.
+4. **Phase 3 — Cross-cutting** (one agent, alone):
+   I1–I30. Mutates global UI state (theme, sidebar,
+   command palette) — no concurrent agents.
+5. **Phase 4 — Operator re-seed** (one agent,
+   alone): K8. Replaces the shared database via
+   process restart (`--seed-bootstrap`, then
+   restore `--seed-mock-data`) — strictly last
+   before teardown.
+6. **Phase 5 — Teardown** (main): stop `server.mjs`
+   (J1), remove the build directory, verify the
+   distribution ZIP remains, aggregate results.
+
+#### Entity mutation domain scoping
+
+Phase 2 agents share one Postgres (`requests` /
+`responses`); every product write appends pairs
+only. There is no per-agent private ledger.
+Agents own **disjoint pair-address families**
+(URI prefixes), not entity tables — the historical
+table names below name the ADDRESS family each
+agent mutates:
+
+| Agent | Mutation domain (pair-address families) |
+|---|---|
+| Agent-B | creates one human member via signup (identity + PII + seat at `organizations/:id/members`) |
+| Agent-D | `ideas` document + idea lifecycle state pairs |
+| Agent-E | `projects` document pairs (plus one flow via the project-detail New Flow path) |
+| Agent-F | `flows` document + undo operation pairs (graphDelta/revivals live in the flow document body) |
+| Agent-F2 | `work-orders` (claim/transition ops), work-order state pairs, field-values folded into transitions, plus its own private flow document pairs |
+| Agent-G | roster + identity spine + tenancy addresses: seats (`organizations/:id/members`), `ai-agents`, `invitations`, `organizations`, `identities` (+ credentials / pii / registration / token-revocations / default-organization). All GETs derive from the message ledger; invitation accept writes a seat; WP8 self-revoke still inside this agent |
+| Agent-CH | none (read-only) |
+
 ### Execution Order
 
 **AT precedes everything.** Any AT failure aborts
