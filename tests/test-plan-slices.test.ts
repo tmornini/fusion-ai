@@ -10,6 +10,8 @@ import { deriveIdeas } from
     '../api/derive-ideas.ts';
 import { deriveIdentityPii } from
     '../api/derive-identity-spine.ts';
+import { deriveMembershipsForIdentity } from
+    '../api/derive-memberships.ts';
 import { testHashPassword } from
     './mock-seed.ts';
 import { SYSTEM_MEMBER_ID } from
@@ -72,17 +74,22 @@ async () => {
     assert.equal(new Set(ids).size, 14);
 });
 
-test('fourteen organization documents exist',
+test('fifteen organization documents exist',
 async () => {
     const { db, reveal } = await seeded();
     const organizations = await deriveOrganizations(db);
-    assert.equal(organizations.length, 14);
+    assert.equal(organizations.length, 15);
     const stored = new Set(
         organizations.map((row) => row.id),
     );
     const revealed = new Set(
         reveal.map((row) => row.organizationId),
     );
+    for (const row of reveal) {
+        if (row.secondOrganizationId !== undefined) {
+            revealed.add(row.secondOrganizationId);
+        }
+    }
     assert.deepEqual(
         [...stored].sort(),
         [...revealed].sort(),
@@ -150,4 +157,96 @@ async () => {
         && r.uri_id === SYSTEM_MEMBER_ID,
     );
     assert.equal(system.length, 1);
+});
+
+test('B slice has a seated extra member',
+async () => {
+    const { db, reveal } = await seeded();
+    const b = reveal.find(
+        (row) => row.section === 'B',
+    );
+    assert.ok(b);
+    assert.equal(
+        b.seatUsername,
+        'b-member@test-plan.example',
+    );
+    assert.ok(
+        (b.seatPassword ?? '').length >= 16,
+    );
+    const seats =
+        await deriveMembershipsForIdentity(
+            db, 'b-member',
+        );
+    assert.equal(seats.length, 1);
+    assert.equal(seats[0]!.organization_id,
+        b.organizationId);
+});
+
+test('G slice has two organizations and an unseated',
+async () => {
+    const { db, reveal } = await seeded();
+    const g = reveal.find(
+        (row) => row.section === 'G',
+    );
+    assert.ok(g);
+    assert.equal(g.secondOrganizationId, 'g-org-2');
+    assert.equal(
+        g.secondOrganizationName, 'Wayne Enterprises',
+    );
+    const adminSeats =
+        await deriveMembershipsForIdentity(
+            db, 'g-admin',
+        );
+    const organizationIds = new Set(
+        adminSeats.map(
+            (s) => s.organization_id,
+        ),
+    );
+    assert.ok(organizationIds.has(g.organizationId));
+    assert.ok(organizationIds.has('g-org-2'));
+    const unseated =
+        await deriveMembershipsForIdentity(
+            db, 'g-unseated',
+        );
+    assert.equal(unseated.length, 0);
+    const memberSeats =
+        await deriveMembershipsForIdentity(
+            db, 'g-member',
+        );
+    assert.equal(memberSeats.length, 1);
+    assert.equal(
+        memberSeats[0]!.organization_id,
+        g.organizationId,
+    );
+});
+
+test('SV slice has two seated identities',
+async () => {
+    const { db, reveal } = await seeded();
+    const sv = reveal.find(
+        (row) => row.section === 'SV',
+    );
+    assert.ok(sv);
+    assert.equal(
+        sv.seatUsername,
+        'sv-member@test-plan.example',
+    );
+    const adminSeats =
+        await deriveMembershipsForIdentity(
+            db, 'sv-admin',
+        );
+    const memberSeats =
+        await deriveMembershipsForIdentity(
+            db, 'sv-member',
+        );
+    assert.equal(adminSeats.length, 1);
+    assert.equal(memberSeats.length, 1);
+    assert.equal(
+        adminSeats[0]!.organization_id,
+        sv.organizationId,
+    );
+    assert.equal(
+        memberSeats[0]!.organization_id,
+        sv.organizationId,
+    );
 });
