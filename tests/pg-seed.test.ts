@@ -29,6 +29,10 @@ import { PostgresBackend } from
     '../api/backend-postgres.ts';
 import { BackedDbAdapter } from '../api/db-backed.ts';
 import { memoryDbAdapter } from '../api/db-memory.ts';
+import {
+    PARALLEL_SECTIONS,
+    postTestPlanSlices,
+} from '../api/test-plan-slices.ts';
 import { testHashPassword } from './mock-seed.ts';
 
 function fakeClient(
@@ -306,6 +310,82 @@ test('formatTestPlanSliceCredentials is TSV',
         /^G\torg2_name\tWayne Enterprises$/m,
     );
     assert.doesNotMatch(text, /"level":/);
+});
+
+test('slice credential map omits absent extras',
+async () => {
+    const db = memoryDbAdapter();
+    const reveal = await postTestPlanSlices(
+        db, { hashPassword: testHashPassword },
+    );
+    const text = formatTestPlanSliceCredentials(
+        reveal,
+    );
+    assert.ok(text.includes(SEED_REVEAL_HEADER));
+    assert.doesNotMatch(text, /"level":/);
+    for (const section of PARALLEL_SECTIONS) {
+        assert.match(
+            text,
+            new RegExp(
+                '^' + section + '\\t',
+                'm',
+            ),
+            section,
+        );
+    }
+    const extraPasswords = [
+        'seat_password',
+        'unseated_password',
+        'member_password',
+    ] as const;
+    const omitExtras = [
+        'AA', 'C', 'D', 'E', 'F', 'F2',
+        'FS', 'H', 'I', 'K', 'R',
+    ] as const;
+    for (const section of omitExtras) {
+        for (const field of extraPasswords) {
+            assert.doesNotMatch(
+                text,
+                new RegExp(
+                    '^'
+                    + section
+                    + '\\t'
+                    + field
+                    + '\\t',
+                    'm',
+                ),
+                section + ' ' + field,
+            );
+        }
+    }
+    const bSeat = text.match(
+        /^B\tseat_password\t(.+)$/m,
+    );
+    assert.ok(bSeat);
+    assert.ok(
+        (bSeat[1] ?? '').length >= 16,
+    );
+    const gUnseated = text.match(
+        /^G\tunseated_password\t(.+)$/m,
+    );
+    assert.ok(gUnseated);
+    assert.ok(
+        (gUnseated[1] ?? '').length >= 16,
+    );
+    const gMember = text.match(
+        /^G\tmember_password\t(.+)$/m,
+    );
+    assert.ok(gMember);
+    assert.ok(
+        (gMember[1] ?? '').length >= 16,
+    );
+    const svSeat = text.match(
+        /^SV\tseat_password\t(.+)$/m,
+    );
+    assert.ok(svSeat);
+    assert.ok(
+        (svSeat[1] ?? '').length >= 16,
+    );
 });
 
 test('no seed flag writes nothing and seeds nothing',
