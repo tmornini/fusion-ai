@@ -2806,7 +2806,10 @@ Operator prerequisites:
 - `POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`, and
   `HTTP_SERVER_PORT` set (required; no defaults; never
   logged)
-- Empty database; seed with `--seed-mock-data` (A3)
+- Empty database; seed serial A3 with
+  `--seed-mock-data` and parallel A3 with
+  `--seed-test-plan-slices`. The SV hunter
+  still skips SV1 and does not re-seed.
 - Credentials print once on **stderr**, never HTTP
 - One mint process — do not run two `server.mjs`
   replicas
