@@ -315,7 +315,7 @@ run by the master after join.
 | AT. Automated Test Suite | 3 |
 | A. Build & Setup | 5 |
 | AA. Data Entry Workflow | 46 |
-| B. Entry Pages | 29 |
+| B. Entry Pages | 31 |
 | C. Core: Dashboard | 7 |
 | D. Core: Ideas Workflow | 38 |
 | E. Core: Projects | 12 |
@@ -328,8 +328,8 @@ run by the master after join.
 | J. Teardown | 3 |
 | K. Objectives & Scoring | 30 |
 | R. Records | 25 |
-| SV. Server (Node + Postgres) | 9 |
-| **Total** | **393** |
+| SV. Server (Node + Postgres) | 10 |
+| **Total** | **396** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -338,13 +338,13 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |     3262 |
-| Browser regression     |      393 |
-| **Combined TOTAL**     | **3655** |
+| CLI automated tests    |     3320 |
+| Browser regression     |      396 |
+| **Combined TOTAL**     | **3716** |
 
 CLI count = most recent `./validate` (AT2) report — the main
 `tests/*.test.ts` suite plus the `tests/tz/*.test.ts` timezone
-suite (3254 main + 8 tz, including 5 skipped);
+suite (3312 main + 8 tz, including 5 skipped);
 the number grows as tests land in either glob. Browser count =
 the per-section table above. Update both numbers when either
 side changes.
@@ -362,8 +362,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 3655, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (3655).
+`PASS = 3716, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (3716).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -2717,27 +2717,35 @@ Mode: parallel-agents | serial
 ## Manual Browser Regression
 Total: <N> cases — PASS X · BLOCKED Y · FAIL Z
 
-| Phase / Agent | Sections          | Pass | Blocked | Fail |
-|---------------|-------------------|-----:|--------:|-----:|
-| Preflight     | A1–A5 (Node)      |    5 |       0 |    0 |
-| Phase-1       | AA3–AA42+subs     |    X |       Y |    Z |
-| Agent-B       | B1–B29 (less B23–B24) | 27 |       0 |    0 |
-| Agent-CH      | C1–C7 + H1–H2 + K27–K29 | 12 |       0 |    0 |
-| Agent-D       | D1–D37            |    X |       Y |    Z |
-| Agent-E       | E1–E11 + E10a + K7,K9–K26,K30 | 32 | 0 | 0 |
-| Agent-F       | F1–F77            |    X |       Y |    Z |
-| Agent-F2      | WB1–WB22 + subs, FS1–FS9, R1–R21 | X |    0 |    0 |
-| Agent-G       | G9–14,19–26,36–46 + K1–K6 | X | 0 | 0 |
-| Phase-3       | I1–I30            |    X |       Y |    Z |
-| Phase-4       | K8                |    X |       0 |    0 |
-| Teardown      | J1–J3             |    3 |       0 |    0 |
-| Server        | SV2–SV4, SV6–SV10 (A3=SV1) | 8 |       0 |    0 |
+| Section | Cases | Pass | Blocked | Fail |
+|---------|------:|-----:|--------:|-----:|
+| AT | 3 | | | |
+| A | 5 | | | |
+| AA | 46 | | | |
+| B | 31 | | | |
+| C | 7 | | | |
+| D | 38 | | | |
+| E | 12 | | | |
+| F | 77 | | | |
+| F2 | 31 | | | |
+| FS | 9 | | | |
+| G | 38 | | | |
+| H | 2 | | | |
+| I | 29 | | | |
+| K | 29 (skip K8) | | | |
+| R | 25 | | | |
+| SV | 9 (A3=SV1) | | | |
+| K8 | 1 | | | |
+| J | 3 | | | |
 
 ## BLOCKED detail (known MCP limitations — NOT failures)
 - <case ID>: <one-line reason>
 
 ## FAIL detail
 (none) | <case ID>: <one-line symptom>
+
+Mitigation specs:
+- <path> | (none)
 
 ## Drift Candidates
 | Case | Mode | Symptom | Likely cause |
