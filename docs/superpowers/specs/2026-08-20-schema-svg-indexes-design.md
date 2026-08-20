@@ -1,6 +1,8 @@
 # SCHEMA.svg Index Details — Design
 
 Date: 2026-08-20
+Revised: 2026-08-20 (orthogonal id-to-id FK; sidecar
+centered, straight mid-height connector)
 Status: draft (brainstorm 2026-08-20; awaiting user
 review)
 Spec-only. No implementation in this document.
@@ -36,10 +38,11 @@ picture carries them.
    `POSTGRES_INDEXES` (physical), visually
    distinguished.
 2. Sidecar `indexes` box per table, to the right,
-   short connector. Full physical form: method,
-   columns or expression, opclass. Names drop the
-   `{table}_` prefix (`address`, not
-   `requests_address`).
+   vertically centered on the table. One straight
+   horizontal connector through both mid-heights.
+   Full physical form: method, columns or
+   expression, opclass. Names drop the `{table}_`
+   prefix (`address`, not `requests_address`).
 3. Sidecar includes `pk btree` / `id`.
 4. Colored `◆` on the table: one per sidecar index
    that names the column. Same color on the sidecar
@@ -55,9 +58,13 @@ picture carries them.
    lists, and Postgres index lists with a pointer at
    `SCHEMA.svg`. Keep doctrine. Fold table-cell-only
    notes into surrounding prose.
-9. Draw `responses.id → requests.id`. Edge on the
-   **left** of the tables so it does not cross
-   sidecars. Source is parsed `FOREIGN KEY` DDL.
+9. Draw `responses.id → requests.id`. Orthogonal
+   polyline (straight segments, right angles) from
+   the child `id` row to the parent `id` row, on
+   the **left** of the tables so it does not cross
+   sidecars. Arrow at the parent row. Source is
+   parsed `FOREIGN KEY` DDL. Not a bezier, not box
+   midpoints.
 
 ## Picture
 
@@ -121,16 +128,26 @@ not reshuffle.
 
 ### FK edge
 
-Bezier on the left, child (`responses`) to parent
-(`requests`), arrow at the parent. Pad the canvas
-so the curve is inside the viewBox. Sidecar
-connectors stay on the right, table-to-sidecar.
+Orthogonal polyline on the left: child `id` row
+left edge → left rail → parent `id` row left edge.
+Arrow at the parent. Pad the canvas so the rail
+is inside the viewBox. Attach to the column rows
+named by the `FOREIGN KEY`, never to box
+midpoints.
+
+### Sidecar connector
+
+Vertically center the sidecar on its table so both
+halfway points share a Y. One straight horizontal
+line from table right-edge mid-height to sidecar
+left-edge mid-height. No dogleg, no diagonal.
 
 ### Layout
 
 Rank layout unchanged (FK-depth columns, wrap at
 `MAX_PER_COL`). Each slot is table + sidecar.
-Slot height is `max(table, sidecar)`. Table width
+Slot height is `max(table, sidecar)`. Sidecar Y is
+table Y plus half the leftover height. Table width
 grows with the `▸` rail and the `◆` rail count.
 
 ## Parse
