@@ -201,6 +201,35 @@ fetch_logs() {
     esac
 }
 
+# Flatten Render logs JSON to one text line per
+# logs[].message, splitting each message on \n.
+flatten_render_logs() {
+    local src="$1"
+    local dest="$2"
+    node --input-type=module -e '
+        import { readFileSync, writeFileSync } from
+            "node:fs";
+        import { argv } from "node:process";
+        const data = JSON.parse(
+            readFileSync(argv[1], "utf8"),
+        );
+        const logs = Array.isArray(data.logs)
+            ? data.logs
+            : [];
+        const lines = [];
+        for (const entry of logs) {
+            const message = entry && entry.message;
+            const text = typeof message === "string"
+                ? message
+                : "";
+            for (const line of text.split("\n")) {
+                lines.push(line);
+            }
+        }
+        writeFileSync(argv[2], lines.join("\n"));
+    ' "$src" "$dest"
+}
+
 # Prints the markdown table to stdout.
 # Exit 10 if the header is absent.
 # Exit 11 if the header is present but no pairs.
@@ -211,22 +240,8 @@ print_credential_table() {
         import { argv, stdout, exit } from
             "node:process";
         const header = argv[2];
-        const data = JSON.parse(
-            readFileSync(argv[1], "utf8"),
-        );
-        const lines = [];
-        const logs = Array.isArray(data.logs)
-            ? data.logs
-            : [];
-        for (const entry of logs) {
-            const message = entry && entry.message;
-            const text = typeof message === "string"
-                ? message
-                : "";
-            for (const line of text.split("\n")) {
-                lines.push(line);
-            }
-        }
+        const text = readFileSync(argv[1], "utf8");
+        const lines = text.split("\n");
         const idx = lines.findIndex(
             (line) => line.includes(header),
         );
@@ -293,8 +308,10 @@ wait_for_reveal() {
         fi
         fetch_logs "$OWNER_ID" "$resource" \
             "$SEED_START" "$TMP/logs.json"
+        flatten_render_logs \
+            "$TMP/logs.json" "$TMP/logs.txt"
         if print_credential_table \
-            "$TMP/logs.json" \
+            "$TMP/logs.txt" \
             > "$TMP/table.md"; then
             return 0
         fi
