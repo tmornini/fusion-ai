@@ -503,29 +503,85 @@ function computeRanks(tables: Table[]): Map<string, number> {
     return rank;
 }
 
-const BOX_W = 208;
 const HEADER_H = 26;
-const ROW_H = 18;
+const ROW_H = 28;
+const SIDECAR_ROW_H = 18;
 const TEXT_INSET_X = 10;
 const HEADER_BASELINE_Y = 18;
-const ROW_BASELINE_Y = 13;
 const COL_GAP = 96;
 const ROW_GAP = 30;
-const PAD = 40;
+const PAD_LEFT = 56;
+const PAD_RIGHT = 40;
+const PAD_Y = 40;
+const LEFT_RAIL_X = 28;
 const MAX_PER_COL = 6;
+const GETWHERE_W = 22;
+const TYPE_GAP = 8;
+const RAIL_W = 12;
+const RAIL_PAD = 6;
+const CONNECTOR_W = 28;
+const CHAR_W = 7;
+const NAME_PAD = 8;
+const KEYS_GAP = 16;
 
-function boxHeight(t: Table): number {
+function textW(s: string): number {
+    return s.length * CHAR_W;
+}
+
+function indexLeft(idx: IndexRow): string {
+    return idx.opclass
+        ? idx.name + ' ' + idx.method + ' '
+            + idx.opclass
+        : idx.name + ' ' + idx.method;
+}
+
+function tableWidth(t: Table): number {
+    let nameW = 0;
+    let typeW = 0;
+    for (const c of t.columns) {
+        nameW = Math.max(nameW, textW(c.name));
+        typeW = Math.max(typeW, textW(c.type));
+    }
+    const railsW = t.indexes.length * RAIL_W;
+    return TEXT_INSET_X + GETWHERE_W + nameW
+        + TYPE_GAP + typeW + RAIL_PAD + railsW
+        + TEXT_INSET_X;
+}
+
+function sidecarWidth(t: Table): number {
+    let left = 0;
+    let right = 0;
+    for (const idx of t.indexes) {
+        left = Math.max(left, textW(indexLeft(idx)));
+        right = Math.max(right, textW(idx.keysDisplay));
+    }
+    return TEXT_INSET_X + RAIL_W + NAME_PAD
+        + left + KEYS_GAP + right + TEXT_INSET_X;
+}
+
+function tableHeight(t: Table): number {
     return HEADER_H + t.columns.length * ROW_H;
+}
+
+function sidecarHeight(t: Table): number {
+    return HEADER_H + t.indexes.length * SIDECAR_ROW_H;
 }
 
 interface Placed {
     table: Table;
     x: number;
     y: number;
+    w: number;
     h: number;
+    sidecarX: number;
+    sidecarY: number;
+    sidecarW: number;
+    sidecarH: number;
 }
 
-function layout(tables: Table[]): {
+function layout(
+    tables: Table[],
+): {
     placed: Map<string, Placed>;
     width: number;
     height: number;
@@ -535,39 +591,64 @@ function layout(tables: Table[]): {
     for (const t of tables) {
         const r = rank.get(t.name)!;
         const list = byRank.get(r);
-        if (list) {
-            list.push(t);
-        } else {
-            byRank.set(r, [t]);
-        }
+        if (list) list.push(t);
+        else byRank.set(r, [t]);
     }
     for (const list of byRank.values()) {
         list.sort((a, b) => (a.name < b.name ? -1 : 1));
     }
-    const ranks = [...byRank.keys()].sort((a, b) => a - b);
+    const ranks = [...byRank.keys()].sort(
+        (a, b) => a - b,
+    );
     const placed = new Map<string, Placed>();
     let bottom = 0;
+    let x = PAD_LEFT;
     let vcol = 0;
-    // A whole rank can hold many tables; wrap each into stacks of
-    // at most MAX_PER_COL so the diagram stays a balanced
-    // landscape while columns still read left-to-right by FK depth.
     for (const r of ranks) {
         const list = byRank.get(r)!;
         for (let i = 0; i < list.length; i += MAX_PER_COL) {
-            const x = PAD + vcol * (BOX_W + COL_GAP);
-            let y = PAD;
-            for (const t of list.slice(i, i + MAX_PER_COL)) {
-                const h = boxHeight(t);
-                placed.set(t.name, { table: t, x, y, h });
-                y += h + ROW_GAP;
+            const chunk = list.slice(
+                i, i + MAX_PER_COL,
+            );
+            let slotW = 0;
+            for (const t of chunk) {
+                slotW = Math.max(
+                    slotW,
+                    tableWidth(t) + CONNECTOR_W
+                    + sidecarWidth(t),
+                );
+            }
+            let y = PAD_Y;
+            for (const t of chunk) {
+                const w = tableWidth(t);
+                const h = tableHeight(t);
+                const sw = sidecarWidth(t);
+                const sh = sidecarHeight(t);
+                const slotH = Math.max(h, sh);
+                const tableY = y + (slotH - h) / 2;
+                const sidecarY = y + (slotH - sh) / 2;
+                placed.set(t.name, {
+                    table: t,
+                    x,
+                    y: tableY,
+                    w,
+                    h,
+                    sidecarX: x + w + CONNECTOR_W,
+                    sidecarY,
+                    sidecarW: sw,
+                    sidecarH: sh,
+                });
+                y += slotH + ROW_GAP;
             }
             bottom = Math.max(bottom, y - ROW_GAP);
+            x += slotW + COL_GAP;
             vcol++;
         }
     }
-    const width =
-        PAD * 2 + vcol * BOX_W + (vcol - 1) * COL_GAP;
-    return { placed, width, height: bottom + PAD };
+    const width = vcol === 0
+        ? PAD_LEFT + PAD_RIGHT
+        : x - COL_GAP + PAD_RIGHT;
+    return { placed, width, height: bottom + PAD_Y };
 }
 
 function esc(s: string): string {
@@ -577,30 +658,103 @@ function esc(s: string): string {
         .replace(/>/g, '&gt;');
 }
 
+function rowMid(tableY: number, i: number): number {
+    return tableY + HEADER_H + i * ROW_H + ROW_H / 2;
+}
+
 function renderBox(p: Placed, parts: string[]): void {
-    const { table: t, x, y, h } = p;
+    const { table: t, x, y, w, h } = p;
+    const railsW = t.indexes.length * RAIL_W;
+    const railsLeft = x + w - TEXT_INSET_X - railsW;
+    const typeX = railsLeft - RAIL_PAD;
+    const nameX = x + TEXT_INSET_X + GETWHERE_W;
+    const markX = x + TEXT_INSET_X;
     parts.push(
         `  <g class="table">`,
         `    <rect class="box" x="${x}" y="${y}" `
-        + `width="${BOX_W}" height="${h}" rx="6" />`,
+        + `width="${w}" height="${h}" rx="6" />`,
         `    <rect class="head" x="${x}" y="${y}" `
-        + `width="${BOX_W}" height="${HEADER_H}" rx="6" />`,
+        + `width="${w}" height="${HEADER_H}" rx="6" />`,
         `    <text class="thead" x="${x + TEXT_INSET_X}" `
-        + `y="${y + HEADER_BASELINE_Y}">${esc(t.name)}</text>`,
+        + `y="${y + HEADER_BASELINE_Y}">${esc(t.name)}`
+        + `</text>`,
     );
     t.columns.forEach((c, i) => {
-        const cy = y + HEADER_H + i * ROW_H
-            + ROW_BASELINE_Y;
+        const cy = rowMid(y, i);
         const cls = c.pk ? 'pk' : c.fk ? 'fk' : 'col';
+        if (t.getWhere.has(c.name)) {
+            parts.push(
+                `    <text class="getwhere" x="${markX}" `
+                + `y="${cy}">▸</text>`,
+            );
+        }
         parts.push(
-            `    <text class="${cls}" x="${x + TEXT_INSET_X}" `
+            `    <text class="${cls}" x="${nameX}" `
             + `y="${cy}">${esc(c.name)}</text>`,
-            `    <text class="type" x="${x
-            + BOX_W - TEXT_INSET_X}" `
+            `    <text class="type" x="${typeX}" `
             + `y="${cy}">${esc(c.type)}</text>`,
+        );
+        t.indexes.forEach((idx, ri) => {
+            if (!idx.columns.includes(c.name)) return;
+            const dx = railsLeft + ri * RAIL_W
+                + RAIL_W / 2;
+            const wt = idx.name === 'pk'
+                ? ' diamond-pk' : '';
+            parts.push(
+                `    <text class="diamond${wt}" `
+                + `x="${dx}" y="${cy}" fill="`
+                + `${indexFill(idx.name)}">◆</text>`,
+            );
+        });
+    });
+    parts.push(`  </g>`);
+}
+
+function renderSidecar(
+    p: Placed, parts: string[],
+): void {
+    const {
+        table: t, sidecarX: x, sidecarY: y,
+        sidecarW: w, sidecarH: h,
+    } = p;
+    parts.push(
+        `  <g class="sidecar">`,
+        `    <rect class="sbox" x="${x}" y="${y}" `
+        + `width="${w}" height="${h}" rx="6" />`,
+        `    <rect class="shead" x="${x}" y="${y}" `
+        + `width="${w}" height="${HEADER_H}" rx="6" />`,
+        `    <text class="sthead" x="${x + TEXT_INSET_X}" `
+        + `y="${y + HEADER_BASELINE_Y}">indexes</text>`,
+    );
+    t.indexes.forEach((idx, i) => {
+        const cy = y + HEADER_H + i * SIDECAR_ROW_H
+            + SIDECAR_ROW_H / 2;
+        const dx = x + TEXT_INSET_X + RAIL_W / 2;
+        const nx = x + TEXT_INSET_X + RAIL_W + NAME_PAD;
+        const kx = x + w - TEXT_INSET_X;
+        const wt = idx.name === 'pk'
+            ? ' diamond-pk' : '';
+        parts.push(
+            `    <text class="diamond${wt}" x="${dx}" `
+            + `y="${cy}" fill="${indexFill(idx.name)}">`
+            + `◆</text>`,
+            `    <text class="sname" x="${nx}" y="${cy}">`
+            + `${esc(indexLeft(idx))}</text>`,
+            `    <text class="skeys" x="${kx}" y="${cy}">`
+            + `${esc(idx.keysDisplay)}</text>`,
         );
     });
     parts.push(`  </g>`);
+}
+
+function renderConnector(
+    p: Placed, parts: string[],
+): void {
+    const y1 = p.y + p.h / 2;
+    parts.push(
+        `  <path class="slink" d="M ${p.x + p.w} ${y1} `
+        + `H ${p.sidecarX}" />`,
+    );
 }
 
 function renderEdge(
@@ -613,15 +767,15 @@ function renderEdge(
     let dir: number;
     if (to.x < from.x) {
         sx = from.x;
-        tx = to.x + BOX_W;
+        tx = to.x + to.w;
         dir = -1;
     } else if (to.x > from.x) {
-        sx = from.x + BOX_W;
+        sx = from.x + from.w;
         tx = to.x;
         dir = 1;
     } else {
-        sx = from.x + BOX_W;
-        tx = to.x + BOX_W;
+        sx = from.x + from.w;
+        tx = to.x + to.w;
         dir = 1;
     }
     const k = COL_GAP * 0.6 * dir;
@@ -641,7 +795,8 @@ const STYLE = [
     '      .head { fill: hsl(217 36% 46%); }',
     '      .thead { fill: hsl(0 0% 100%); font-size: 12px;',
     '        font-weight: 700; }',
-    '      .col, .pk, .fk, .type { font-size: 11px; }',
+    '      .col, .pk, .fk, .type { font-size: 11px;',
+    '        dominant-baseline: middle; }',
     '      .col { fill: hsl(217 45% 15%); }',
     '      .pk { fill: hsl(217 45% 15%); font-weight: 700; }',
     '      .fk { fill: hsl(217 38% 38%);',
@@ -649,6 +804,23 @@ const STYLE = [
     '      .type { fill: hsl(217 12% 55%);',
     '        text-anchor: end; }',
     '      .edge { fill: none; stroke: hsl(217 34% 60%);',
+    '        stroke-width: 1.5; }',
+    '      .getwhere { font-size: 24px; font-weight: 700;',
+    '        fill: hsl(217 36% 46%);',
+    '        dominant-baseline: middle; }',
+    '      .diamond, .sname, .skeys {',
+    '        dominant-baseline: middle; }',
+    '      .diamond { font-size: 11px; text-anchor: middle; }',
+    '      .diamond-pk { font-weight: 700; }',
+    '      .sbox { fill: hsl(0 0% 100%);',
+    '        stroke: hsl(217 30% 88%); stroke-width: 1; }',
+    '      .shead { fill: hsl(217 28% 62%); }',
+    '      .sthead { fill: hsl(0 0% 100%); font-size: 12px;',
+    '        font-weight: 700; }',
+    '      .sname { fill: hsl(217 45% 15%); font-size: 11px; }',
+    '      .skeys { fill: hsl(217 12% 55%); font-size: 11px;',
+    '        text-anchor: end; }',
+    '      .slink { fill: none; stroke: hsl(217 34% 60%);',
     '        stroke-width: 1.5; }',
     '    </style>',
 ];
@@ -764,7 +936,7 @@ function render(
         typesSrc, dbSrc, schemaSrc,
     );
     void fkEdges;
-    // drawing comes in Task 3 / Task 4
+    void LEFT_RAIL_X;
     const { placed, width, height } = layout(tables);
     const parts: string[] = [];
     parts.push(
@@ -789,7 +961,10 @@ function render(
         }
     }
     for (const t of tables) {
-        renderBox(placed.get(t.name)!, parts);
+        const p = placed.get(t.name)!;
+        renderConnector(p, parts);
+        renderBox(p, parts);
+        renderSidecar(p, parts);
     }
     parts.push('</svg>', '');
     return parts.join('\n');
