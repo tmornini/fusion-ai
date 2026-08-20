@@ -4,34 +4,39 @@
 
 ### How to invoke
 
-When the user says "run the test plan", the agent:
+When the user says "run the test plan", the master
+session:
 
-1. Reads this document's `### Protocol` section — required
-   context, not optional reference. Default parallel path
-   is **Shared-origin parallel run — operational
-   recipe** (below). The six-phase subsection is a
-   SUPERSEDED historical appendix only.
-2. Executes section **AT** as a fail-fast gate; any AT
-   failure aborts the run before A1's build.
-3. Executes A1–A5 preflight (Node + Postgres; A3 is
-   SV1); on success spawns the **shared-origin**
-   parallel recipe (one `server.mjs`, one database;
-   session isolation is Chrome `isolatedContext`, not
-   port — see "Shared-origin parallel run —
-   operational recipe"). Or runs serially if
-   `--serial` is requested.
-4. Emits the run summary in the canonical format
-   documented at the bottom of this file (`## Summary
-   Format`). The summary is the conversational artifact;
-   this document is NOT mutated by the run.
+1. Reads this document's `### Protocol` — required
+   context. Default is the section DAG below. The
+   Historical note is not scheduler law.
+2. Executes **AT** as a fail-fast gate. Any AT
+   failure aborts before A1.
+3. Executes A1–A5. Parallel A3 is
+   `node server.mjs --seed-test-plan-slices` (14
+   disjoint slices, stderr credential map). Serial
+   (`--serial`) A3 is `node server.mjs --seed-mock-data`
+   (SV1).
+4. Grants Chrome origin `http://localhost` **before**
+   dispatch.
+5. Parallel: one hunter per `parallel: yes` section
+   (14), each with that section's `##` body only,
+   that slice's credentials, and `isolatedContext` =
+   section id. Serial: one tenant, document order,
+   headers not consulted.
+6. Joins in document order. Then K8 (process lock),
+   then J. Then the canonical `## Summary Format` plus
+   one mitigation-spec path per FAIL cluster. The
+   master does not patch FAILs and does not
+   re-dispatch.
 
-This document is the complete regression contract — no other
-coordination state is read or written.
+This document is the complete regression contract — no
+other coordination state is read or written.
 
 BLOCKED ≠ FAIL. BLOCKED is reserved for known MCP
 environmental limits (pointer-capture gestures,
-`resize_window`, file I/O) — never used to mask a real
-failure.
+`resize_window`, file I/O, sandbox EPERM) — never used
+to mask a real failure.
 
 ### Sub-agent invocation contract
 
@@ -96,307 +101,54 @@ note pointing at the test file.
 ### Protocol
 
 The automated layer (`## AT`) runs first as a fail-fast
-gate. Abort on red — the browser layer never tests a
-validate-broken tree. On green, the browser regression
-runs against **one Node origin** in one of two modes:
+gate. Abort on red. On green, the browser regression
+runs against **one Node origin** in one of two modes.
 
-- **Serial (single human tester)**: A1 `./build` →
-  `~/Desktop/fusion-angle-server-${SHA}.zip`; A2 unzip
-  (or `./build --no-zip`) to a temp dir that contains
-  `server.mjs`; A3 set `POSTGRES_URL`,
-  `JWT_HMAC_SIGNING_KEY`, `HTTP_SERVER_PORT` against
-  an **empty** database and run
-  `node server.mjs --seed-mock-data` (or `./serve`
-  after commit). One process. Run sections in
-  document order.
-- **Parallel (Claude Code agents)**: the same A1–A3
-  once. Agents **share** that origin. Session
-  isolation is Chrome `isolatedContext` (private
-  cookie jar), not a port per agent. See the
-  operational recipe.
+Parse each `##` section's four fields (`tenant`,
+`parallel`, `global_lock`, `depends`). Nested letter
+prefixes (V inside G, WB* and AA-WB-SETUP inside F2)
+ride the parent hunter. K8 is a process-lock case, not
+a K-hunter case on the parallel path.
 
-#### Six-phase parallel protocol
+- **Serial (`--serial`)**: A1 `./build` → ZIP; A2 unzip
+  or `./build --no-zip`; A3 `node server.mjs --seed-mock-data`
+  on an empty database (this pin **is** SV1). One
+  process, one mock tenant, one cookie jar. Walk
+  document order including K8 inside K, then J. Headers
+  are not consulted. Case text is unchanged.
+- **Parallel (default)**: the same A1–A2. Grant Chrome
+  origin `http://localhost` before anything else. A3
+  `node server.mjs --seed-test-plan-slices`. Capture
+  the stderr credential map. Spawn one hunter per
+  `parallel: yes` section. Join. Then K8 (wipe/reseed
+  of the shared DB; no hunter still running). Then J.
+  Then summary + mitigation paths.
 
-> SUPERSEDED by the shared-origin recipe below — see
-> "Shared-origin parallel run — operational recipe."
-> Kept as the phase / agent map only. Phase 2 agents
-> share one Postgres message plane; the mutation-
-> domain table still applies. The retired browser-ZIP
-> origin (`python3 -m http.server` + in-browser
-> IndexedDB) is gone.
+DAG edges only:
 
-Agents execute the plan in six phases to fit within
-context and time budgets while keeping per-entity
-mutation domains disjoint:
+- `AT` → `A`
+- `A` → every `parallel: yes` section
+- those → `global_lock: process` (K8, then J)
 
-1. **Phase 0 — Preflight** (main): `./validate`,
-   `./build` to produce `fusion-angle-server-${SHA}.zip`,
-   unzip or `--no-zip` so `server.mjs` is on disk,
-   start `node server.mjs --seed-mock-data` (A3 /
-   SV1). Covers A1–A5.
-2. **Phase 1 — Data setup** (one agent, serial):
-   AA3–AA42 in tab 0. Rebuilds from a
-   bootstrap-only database, members (humans +
-   AIs), ideas, projects, one flow. Populates
-   the shared database that Phase 2 verifies.
-   A3 already mock-seeded; Phase 1 stops that
-   process and restarts with
-   `--seed-bootstrap`, then rebuilds through
-   the UI.
-3. **Phase 2 — Parallel verification** (7 agents
-   concurrent, each in its own `isolatedContext`, no
-   shared tabs):
-   - Agent-B — Entry pages (EXCLUDING Sidebar
-     Sign-out, which is identity-wide on the server —
-     deferred per "Parallel session & connection
-     isolation")
-   - Agent-CH — Dashboard + Reference (read-only)
-   - Agent-D — Ideas
-   - Agent-E — Projects
-   - Agent-F — Flows (includes hazard severity,
-     flow-publish gate)
-   - Agent-F2 — Workbox (includes Create-Work-Order
-     picker READY / NOT READY split) + Records
-     (section R) + Flow Statistics (FS1–FS9,
-     read-only)
-   - Agent-G — Admin (Members page, Member detail
-     (human + AI), Identities (list + detail +
-     providers + tokens), Organization,
-     Billing). The retired Teams / Roles / Crews /
-     Activity Feed pages have no cases.
-4. **Phase 3 — Cross-cutting** (one agent, alone):
-   I1–I30. Mutates global UI state (theme, sidebar,
-   command palette) — no concurrent agents.
-5. **Phase 4 — Operator re-seed** (one agent,
-   alone): K8. Replaces the shared database via
-   process restart (`--seed-bootstrap`, then
-   restore `--seed-mock-data`) — strictly last
-   before teardown.
-6. **Phase 5 — Teardown** (main): stop `server.mjs`
-   (J1), remove the build directory, verify the
-   distribution ZIP remains, aggregate results.
+No Phase-1 UI rebuild. Hunters do not create tenants
+and do not re-seed. Sign-out, org-switch, theme,
+sidebar, command palette, and SV two-jar stay inside
+the hunter's tenant and jar. Assertions inside a job
+are exact. Leftover `≥ N` in a case body is doc debt,
+not protocol.
 
-#### Entity mutation domain scoping
+Failure:
 
-Phase 2 agents share one Postgres (`requests` /
-`responses`); every product write appends pairs
-only. There is no per-agent private ledger.
-Agents own **disjoint pair-address families**
-(URI prefixes), not entity tables — the historical
-table names below name the ADDRESS family each
-agent mutates:
-
-| Agent | Mutation domain (pair-address families) |
+| Event | Action |
 |---|---|
-| Agent-B | creates one human member via signup (identity + PII + seat at `organizations/:id/members`) |
-| Agent-D | `ideas` document + idea lifecycle state pairs |
-| Agent-E | `projects` document pairs (plus one flow via the project-detail New Flow path) |
-| Agent-F | `flows` document + undo operation pairs (graphDelta/revivals live in the flow document body) |
-| Agent-F2 | `work-orders` (claim/transition ops), work-order state pairs, field-values folded into transitions, plus its own private flow document pairs |
-| Agent-G | roster + identity spine + tenancy addresses: seats (`organizations/:id/members`), `ai-agents`, `invitations`, `organizations`, `identities` (+ credentials / pii / registration / token-revocations / default-organization). All GETs derive from the message ledger; invitation accept writes a seat; WP8 self-revoke still inside this agent |
-| Agent-CH | none (read-only) |
+| AT red | Abort. No seed, no hunters. |
+| A3 seed fail | Abort. No hunters. |
+| Hunter crash | That section FAIL (MCP BLOCKED as today). Siblings finish. |
+| Hunter FAIL cases | Join continues. Then one mitigation spec per cluster. |
+| K8 fail | Record FAIL; still attempt J; still write earlier mitigations. |
+| J1 sandbox EPERM | J1 BLOCKED, J2 DEFERRED. |
 
-`identity_tokens` addresses stay un-domained: grant,
-rotation, and revocation append message pairs only (row
-store retired Phase 13 Task 9 with `authorization_codes`).
-`identity_default_organizations` stays un-domained because
-its read (`identityDefaultOrganization`) is shared by the
-authz fence itself.
-
-Agent-F2 owns its source flow because `postWorkOrderCreation`
-freezes `flow_graph` into the work-order document pair at
-creation time. If Agent-F edits the shared flow
-concurrently, the captured snapshot reflects mid-edit
-state, not a clean baseline.
-
-Because a sibling tab's commit posts a scoped notification
-event (BroadcastChannel) naming the organization/identity it
-touched — or a full-refresh event — and triggers a refresh,
-cross-boundary assertions use `≥ N` or "displayed-count
-matches the current database at read time" framing rather
-than frozen expected values. Agent-CH's dashboard count
-checks are non-zero + consistency, not numeric equality.
-
-**Shared pair-plane appends are safe.** Several
-agents append to `requests`/`responses` at once —
-Agent-D (idea lifecycle), Agent-E (project
-lifecycle), Agent-G (member lifecycle), and
-Agent-F2 (work-order transitions and claims).
-Postgres commits each pair atomically; concurrent
-appends from sibling sessions both survive.
-Re-read tolerantly (`≥ N`) for timing rather than
-asserting exact pair counts.
-
-Post-Phase-Final + states-address retirement: every
-lifecycle-backed surface (workbox inbox, flow-stats,
-dashboard, members roster, idea/project/record-type/
-objective state badges + history views) reads family-
-scoped history from the message ledger. Per-entity
-GET + one value-history, wire `(at, id)` DESC
-(index 0 = current):
-`GET organizations/:id/<family>/:id/versions/` for
-ideas / projects / record-types / flows /
-objectives; work-orders stay
-`GET organizations/:id/work-orders/:id/history`;
-members stay `GET members/:id/versions`; plus
-instance value-history at
-`GET .../record-types/:type/instances/:id/versions`.
-There is no bulk `GET work-orders/history` and no
-bulk `GET objectives/versions`. Work-order history
-folds `field_values` inline on each transition
-event; claim/birth/release rows carry `[]`.
-Ideas / projects / record-types / objectives GET
-rows keep domain `state` and do not embed
-`state_at` / `state_event_id`. Members GET rows
-still embed the lifecycle trio — no separate
-state-detail fetch.
-There is no `states` table and no shared event-append
-write address. Lifecycle writes are document-trio PUTs
-(ideas/projects/record-types/flows/objectives/members)
-and named ops (work-order create/claim/transition/release,
-invitations); instance values ride PUT genesis / PATCH
-If-Match / DELETE tombstone. The ownership authorizer
-(`resolveOwningOrganization`) makes a foreign org's
-`entity_id` 403 on per-entity family history (members
-global miss is 404). Also closed: WP1 and the records
-hard-delete forgery channel. Write authorizer returns
-foreign-id PUT/DELETE 403 on org-scoped families.
-Unauthenticated callers to any non-bearer-exempt path
-(including retired/unknown routes) get 401 before a
-topology 404.
-
-**Retired routes — no browser cases.** These addresses have
-zero product callers; a manual pass need not open them.
-Automated pins cover the status bytes (authenticated 404;
-unauthenticated 401):
-- every verb on the shared event-append address → router
-  404 (address deleted; the old 405-because-PUT-survives
-  case is gone)
-- per-entity current-state alias → router 404
-- nested field-values write address → router 404
-  (and the retired field-values GET; product reads fold
-  values on
-  `GET organizations/:id/work-orders/:id/history`;
-  live writes ride the transition fold only)
-- `GET|POST|PUT|DELETE /flows/:id/versions[...]` → router 404
-  (table DELETED at Phase Final; F66 is MOOT — see F66)
-
-Browser residual (not a phase abort): full interactive
-chrome for undo/redo visual + cross-tab remains useful
-(Phase 14 lesson); wire contracts covered by the security
-suite + HTTP page smoke.
-
-#### Parallel session & connection isolation
-
-Write-family partitioning (above) keeps *data* writes
-disjoint, but session state is per **cookie jar**, not
-per tab, and the mutation-domain table does not fence
-it. A Phase-2 run that ignores this collapses:
-
-- **Cookie session.** Product access is memory-only;
-  refresh is the HttpOnly `refresh_token` cookie
-  (`Path=/api/authentication`, `SameSite=Strict`).
-  `fusion-angle:authorization` is not the product path
-  (`server-core.ts` calls `setCookieSession(true)`).
-  Two pages in the same Chrome context share that
-  cookie.
-- **`fusion-angle:active-organization-id`** is still one
-  localStorage key per context, so concurrent org
-  switches in the same jar race the same slot.
-- **Sign-out is identity-wide on the server.**
-  `postSessionLogout` calls
-  `postIdentityLogoutEverywhere` — a coarse revoke of
-  EVERY token for the identity, then clears this
-  jar's cookie (`Set-Cookie` `Max-Age=0`). One
-  agent's sign-out evicts every other agent signed in
-  as that identity, even in a different
-  `isolatedContext`.
-- **IndexedDB connection concurrency is gone.** The
-  retired browser-ZIP origin wedged on ~9 concurrent
-  `fusion-angle` IDB connections. One Postgres, one
-  `server.mjs` — that recipe does not apply.
-
-**Primary strategy — one origin, isolated contexts.**
-A1–A3 start one `server.mjs`. Each Phase-2 agent
-opens its page with Chrome `isolatedContext` set to
-a unique name so cookie jars (and that context's
-localStorage) do not clobber each other. They still
-share the database: mutation domains and the
-sign-out rule remain required. A3 (or an
-operator re-seed via `--seed-bootstrap` /
-`--seed-mock-data`) is the seed; there is no
-per-agent private ledger.
-
-**Fallback strategy — serial for session-bound
-sections.** When isolated contexts are impractical,
-run the member/session-dependent sections (D, E, F2,
-G, the command palette, Phase 3, Phase 4) in ONE jar
-serially after Phase 1, keeping parallelism only for
-genuinely independent or read-only work.
-
-**Hard invariants (either mode).**
-
-1. **No concurrent sign-out.** The Sidebar Sign-out
-   case (Agent-B's domain) revokes the identity on
-   the server. Run it last, alone — never while a
-   sibling is signed in as that identity.
-2. **One cookie writer per isolated context.** Only
-   one login (or refresh) may mint into a given
-   jar at a time; `isolatedContext` makes this
-   automatic across agents.
-3. **Schema mutations need exclusive database
-   access.** Any operator seed / K8 restart runs
-   with no sibling mutating the same Postgres.
-   Phase 4 already honors this by running alone;
-   K8 is the exclusive-database case.
-
-#### Shared-origin parallel run — operational recipe
-
-This is THE default protocol. One Node process, one
-Postgres, many isolated Chrome contexts.
-
-1. **AT first.** `./validate`. Abort on red.
-2. **A1.** `./build` from a clean tree →
-   `~/Desktop/fusion-angle-server-${SHA}.zip`.
-3. **A2.** Unzip that ZIP (or
-   `./build --no-zip /tmp/fusion-test/`) to a temp
-   dir that contains `server.mjs`.
-4. **A3 / SV1.** Set `POSTGRES_URL`,
-   `JWT_HMAC_SIGNING_KEY`, and `HTTP_SERVER_PORT`
-   against an **empty** database. Run
-   `node server.mjs --seed-mock-data` (or `./serve`
-   after commit). One process. Capture the stderr
-   seed reveal (SV1 text).
-5. **Agents share that origin.** Do not start a
-   second `server.mjs`. Session isolation is Chrome
-   `isolatedContext`, not port. Tab-scoped tools
-   only (navigate, find, evaluate, snapshot, form
-   fill). NEVER coordinate-based clicks or
-   screenshots — those are display-global and
-   collide across concurrent agents.
-6. **Seed is shared.** A3 already mock-seeded.
-   Re-seed only via operator flags (restart
-   `node server.mjs --seed-bootstrap` or
-   `--seed-mock-data`). That wipe is global. No
-   per-agent private ledger.
-7. **Sign in as the ADMIN for admin-only
-   surfaces.** The stderr reveal lists a password
-   for EVERY login-capable person, including
-   emily.rodriguez@company.com — a seeded
-   `member`-role human who reads org-scoped content
-   fine but 403s on admin-only writes (members,
-   identities, organization;
-   deny-by-default authz). For any section touching
-   those admin surfaces, sign in as
-   `demo@example.com` (Tony Stark, admin in both
-   orgs).
-8. **Mutation-domain table stays.** Sign-out last /
-   alone (identity-wide on the server).
-9. **Grant host permission FIRST.** The Chrome
-   DevTools MCP gates navigation per origin. Before
-   dispatching, grant access to `http://localhost`.
-   This is the single most common cause of a
-   stalled parallel run.
+Master never re-dispatches a hunter to retry.
 
 #### Known MCP limitations
 
@@ -484,34 +236,27 @@ Postgres, many isolated Chrome contexts.
 
 #### Serial single-tester mode
 
-The same TEST-PLAN.md runs serially by one human in one
-browser following document order (A → AA → B → C → D →
-E → F → F2 → FS → G → H → I → K → R → SV6–SV10 → J).
-A3 **is** SV1; SV2–SV4 pin cookie-session
-on this same origin (not a second ceremony). The
-agent-scoped mutation domains and tolerance patterns
-apply only to the parallel run.
+Document order on one mock tenant. A3 **is** SV1.
+SV6–SV10 run before J as today.
 
 ### Execution Order
 
-**AT (automated tests) precedes everything.** Any AT
-failure aborts the run before A1's build — the expensive
-browser layer never tests against a validate-broken tree.
+**AT precedes everything.** Any AT failure aborts
+before A1.
 
-After AT passes, A1–A3 stand up Node + Postgres (A3 is
-SV1). AA may rebuild from a bootstrap-only database
-(stop A3, restart `--seed-bootstrap`).
-Sections B through J then verify every page against
-that origin. SV6–SV10 are the two-jar / two-tab /
-stale-until-nav pins on the **same** process.
+**Parallel (default):** A1–A2 → grant
+`http://localhost` → A3 `--seed-test-plan-slices` →
+14 hunters → join in document order → K8 → J →
+summary.
 
-In the serial run the plan is a single continuous
-regression pass. In the parallel run B–J split across
-seven agents each with its own `isolatedContext` and
-disjoint entity mutation domain; I runs alone (global
-UI state); K8 runs alone last (it still replaces
-the database via process restart). See `CLAUDE.md`
-section `## Testing`.
+**Serial (`--serial`):** A1–A3 `--seed-mock-data` →
+A → AA → B → C → D → E → F → F2 → FS → G → H → I →
+K (including K8 in document order) → R → SV6–SV10 →
+J.
+
+K's product cases on the parallel path run K1–K6,
+K9–K30, K7 last. K8 is skipped by the K hunter and
+run by the master after join.
 
 ## Summary
 
