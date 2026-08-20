@@ -10,6 +10,7 @@ import {
     applySeedFlag,
     assertEmptyDatabase,
     formatSeededCredentials,
+    formatTestPlanSliceCredentials,
     isDatabaseEmpty,
     readSeedMode,
     SEED_BOOTSTRAP_FLAG,
@@ -233,6 +234,77 @@ test('formatSeededCredentials is terminal text', () => {
     });
     assert.ok(text.includes(SEED_REVEAL_HEADER));
     assert.match(text, /demo@example.com\tsecret-once/);
+    assert.doesNotMatch(text, /"level":/);
+});
+
+test('formatTestPlanSliceCredentials is TSV',
+() => {
+    const text = formatTestPlanSliceCredentials([
+        {
+            section: 'AA',
+            organizationId: '1',
+            organizationName: 'Stark Industries',
+            adminUsername: 'demo@example.com',
+            adminPassword: 'secret-aa',
+        },
+        {
+            section: 'B',
+            organizationId: 'b-org',
+            organizationName: 'Stark Industries',
+            adminUsername:
+                'b-admin@test-plan.example',
+            adminPassword: 'secret-b',
+            seatUsername:
+                'b-member@test-plan.example',
+            seatPassword: 'secret-b-seat',
+            flowId: 'b-flow',
+        },
+        {
+            section: 'G',
+            organizationId: 'g-org',
+            organizationName: 'Stark Industries',
+            secondOrganizationId: 'g-org-2',
+            secondOrganizationName: 'Wayne Enterprises',
+            adminUsername:
+                'g-admin@test-plan.example',
+            adminPassword: 'secret-g',
+            unseatedUsername:
+                'g-unseated@test-plan.example',
+            unseatedPassword: 'secret-g-u',
+            memberUsername:
+                'g-member@test-plan.example',
+            memberPassword: 'secret-g-m',
+        },
+    ]);
+    assert.ok(text.includes(SEED_REVEAL_HEADER));
+    assert.match(
+        text,
+        /^AA\torg_id\t1$/m,
+    );
+    assert.match(
+        text,
+        /^AA\tadmin_username\tdemo@example.com$/m,
+    );
+    assert.match(
+        text,
+        /^AA\tadmin_password\tsecret-aa$/m,
+    );
+    assert.match(
+        text,
+        /^B\tseat_username\tb-member@test-plan.example$/m,
+    );
+    assert.match(
+        text,
+        /^B\tflow_id\tb-flow$/m,
+    );
+    assert.match(
+        text,
+        /^G\torg2_id\tg-org-2$/m,
+    );
+    assert.match(
+        text,
+        /^G\torg2_name\tWayne Enterprises$/m,
+    );
     assert.doesNotMatch(text, /"level":/);
 });
 

@@ -8,6 +8,8 @@ import {
     postMockDataLoad,
     type SeededCredentials,
 } from '../api/mock-data.ts';
+import type { TestPlanSliceReveal } from
+    '../api/test-plan-slices.ts';
 import type { SqlClient } from
     '../api/postgres-client.ts';
 import { hashPassword } from
@@ -128,6 +130,55 @@ export function formatSeededCredentials(
             identity.username + '\t' + identity.password,
     );
     return SEED_REVEAL_HEADER + '\n\n' + lines.join('\n');
+}
+
+const SLICE_REVEAL_FIELDS: ReadonlyArray<{
+    readonly key: keyof TestPlanSliceReveal;
+    readonly field: string;
+}> = [
+    { key: 'organizationId', field: 'org_id' },
+    { key: 'organizationName', field: 'org_name' },
+    { key: 'secondOrganizationId', field: 'org2_id' },
+    { key: 'secondOrganizationName', field: 'org2_name' },
+    { key: 'adminUsername',
+        field: 'admin_username' },
+    { key: 'adminPassword',
+        field: 'admin_password' },
+    { key: 'seatUsername',
+        field: 'seat_username' },
+    { key: 'seatPassword',
+        field: 'seat_password' },
+    { key: 'unseatedUsername',
+        field: 'unseated_username' },
+    { key: 'unseatedPassword',
+        field: 'unseated_password' },
+    { key: 'memberUsername',
+        field: 'member_username' },
+    { key: 'memberPassword',
+        field: 'member_password' },
+    { key: 'flowId', field: 'flow_id' },
+];
+
+export function formatTestPlanSliceCredentials(
+    slices: readonly TestPlanSliceReveal[],
+): string {
+    const rows: string[] = [];
+    for (const slice of slices) {
+        for (const { key, field }
+            of SLICE_REVEAL_FIELDS
+        ) {
+            const value = slice[key];
+            if (value === undefined) continue;
+            rows.push(
+                slice.section
+                + '\t' + field
+                + '\t' + value,
+            );
+        }
+    }
+    return SEED_REVEAL_HEADER
+        + '\n\n'
+        + rows.join('\n');
 }
 
 export function writeSeededCredentials(
