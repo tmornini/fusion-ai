@@ -408,6 +408,36 @@ async () => {
     assert.equal(await db.hasSchema(), true);
 });
 
+test('slices seed prints the section map',
+async () => {
+    const db = memoryDbAdapter();
+    const empty = fakeClient([{
+        requests: false,
+        responses: false,
+        marker: false,
+    }]);
+    const chunks: string[] = [];
+    await applySeedFlag(
+        empty.sql, db, 'test-plan-slices', {
+            hashPassword: testHashPassword,
+            write: (chunk) => {
+                chunks.push(chunk);
+            },
+        },
+    );
+    const printed = chunks.join('');
+    assert.ok(
+        printed.includes(SEED_REVEAL_HEADER),
+    );
+    assert.match(printed, /^AA\torg_id\t1$/m);
+    assert.match(
+        printed,
+        /^SV\tadmin_username\tsv-admin@test-plan.example$/m,
+    );
+    assert.equal(await db.hasSchema(), true);
+    assert.equal(chunks.length, 1);
+});
+
 if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
     test(
         'live seed skipped without POSTGRES_URL',

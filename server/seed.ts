@@ -8,8 +8,10 @@ import {
     postMockDataLoad,
     type SeededCredentials,
 } from '../api/mock-data.ts';
-import type { TestPlanSliceReveal } from
-    '../api/test-plan-slices.ts';
+import {
+    postTestPlanSlices,
+    type TestPlanSliceReveal,
+} from '../api/test-plan-slices.ts';
 import type { SqlClient } from
     '../api/postgres-client.ts';
 import { hashPassword } from
@@ -200,6 +202,21 @@ export async function seedEmptyDatabase(
             hashPassword: hash,
         });
     }
+    if (mode === 'test-plan-slices') {
+        const slices = await postTestPlanSlices(
+            adapter, { hashPassword: hash },
+        );
+        return {
+            identities: slices.map((slice) => ({
+                identityId: slice.section === 'AA'
+                    ? 'current'
+                    : slice.section.toLowerCase()
+                        + '-admin',
+                username: slice.adminUsername,
+                password: slice.adminPassword,
+            })),
+        };
+    }
     return postMockDataLoad(adapter, {
         hashPassword: hash,
     });
@@ -213,6 +230,16 @@ export async function applySeedFlag(
 ): Promise<void> {
     if (mode === undefined) return;
     await assertEmptyDatabase(sql);
+    if (mode === 'test-plan-slices') {
+        const slices = await postTestPlanSlices(
+            adapter, options,
+        );
+        options.write(
+            formatTestPlanSliceCredentials(slices)
+            + '\n',
+        );
+        return;
+    }
     const creds = await seedEmptyDatabase(
         adapter, mode, options,
     );

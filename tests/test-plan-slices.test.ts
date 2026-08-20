@@ -44,6 +44,8 @@ async function seeded() {
     return { db, reveal };
 }
 
+const EXPECTED_SLICE_PAIRS = 350;
+
 test('slices stamp schema last and reveal 14',
 async () => {
     const { db, reveal } = await seeded();
@@ -477,4 +479,33 @@ async () => {
             joins.length, 3, section,
         );
     }
+});
+
+test('slice seed pair count is pinned',
+async () => {
+    const { db } = await seeded();
+    const requests =
+        await db.requests.getAll();
+    const responses =
+        await db.responses.getAll();
+    assert.equal(
+        requests.length, responses.length,
+    );
+    assert.equal(
+        requests.length, EXPECTED_SLICE_PAIRS,
+    );
+});
+
+test('slice seed request hashes are unique',
+async () => {
+    const { db } = await seeded();
+    const requests = await db.requests.getAll();
+    const distinctHashes = new Set(
+        requests.map((r) => r.message_hash),
+    );
+    // A collision would silently drop a pair via
+    // appendMessagePair's same-hash dedup skip.
+    assert.equal(
+        distinctHashes.size, requests.length,
+    );
 });
