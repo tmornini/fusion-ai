@@ -15,7 +15,8 @@ when working with code in this repository.
 ./build dir/           # Server ZIP to dir/ instead of ~/Desktop/
 ./build --help         # Show usage
 ./serve [port]         # Build + node server.mjs (default 8080)
-./wipe-postgres TOKEN --pristine|--mockdata  # Wipe Render PG; reseed
+./wipe-postgres --postgres render TOKEN --pristine|--mockdata
+./wipe-postgres --postgres local --pristine|--mockdata
 ./measure              # Full ceremony (record+budgets+25+viz)
 ./measure --help       # Show usage
 ./measure --check      # Fail if medians exceed budgets
