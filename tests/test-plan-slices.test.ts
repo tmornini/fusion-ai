@@ -8,6 +8,8 @@ import { deriveOrganizations } from
     '../api/derive-organizations.ts';
 import { deriveIdeas } from
     '../api/derive-ideas.ts';
+import { deriveFlows } from
+    '../api/derive-flows.ts';
 import { deriveIdentityPii } from
     '../api/derive-identity-spine.ts';
 import { deriveMembershipsForIdentity } from
@@ -180,6 +182,13 @@ async () => {
     assert.equal(seats.length, 1);
     assert.equal(seats[0]!.organization_id,
         b.organizationId);
+    assert.equal(b.flowId, 'b-flow');
+    const flows = await deriveFlows(
+        db, b.organizationId,
+    );
+    assert.equal(flows.length, 1);
+    assert.equal(flows[0]!.id, 'b-flow');
+    assert.equal(flows[0]!.name, 'B Return Flow');
 });
 
 test('G slice has two organizations and an unseated',
@@ -218,6 +227,12 @@ async () => {
         memberSeats[0]!.organization_id,
         g.organizationId,
     );
+    const requests = await db.requests.getAll();
+    const agents = requests.filter((r) =>
+        r.uri_collection === '/ai-agents/'
+        && r.uri_id === 'g-ai',
+    );
+    assert.equal(agents.length, 1);
 });
 
 test('SV slice has two seated identities',
