@@ -10,7 +10,7 @@ DASHBOARD_KEYS='https://dashboard.render.com/u/settings?add-api-key'
 
 usage() {
     cat <<'USAGE'
-Usage: ./wipe-render-postgres TOKEN --pristine|--mockdata
+Usage: ./wipe-postgres TOKEN --pristine|--mockdata
 
 Wipe the single Render Postgres instance visible to
 TOKEN, then seed it again. TOKEN is the confirmation.
