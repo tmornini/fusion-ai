@@ -510,7 +510,40 @@ depends: AT
 
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-angle-server-${SHA}.zip`.
 - [ ] **A2** Unzip the A1 ZIP (or run `./build --no-zip /tmp/fusion-test/`). PASS: the temp dir contains `server.mjs`, `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 18 page directories (`api-documentation`, `auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `identities`, `identity-providers`, `identity-tokens`, `invitations`, `landing`, `members`, `not-found`, `organization`, `projects`, `records`, `workbox`) with 29 HTML page files (including `api-documentation/index.html`, `flows/stats.html`, `records/detail.html`, `identities/index.html`, `identities/detail.html`, `identity-providers/index.html`, `identity-tokens/index.html`, and `invitations/index.html`), plus root `index.html`. Verb/status rooms under `api-documentation/` are generated, not PAGE_REGISTRY pages — do not count them as the 29.
-- [ ] **A3** From the A2 directory, with `POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`, and `HTTP_SERVER_PORT` set against an **empty** Postgres, run `node server.mjs --seed-mock-data` (or `./serve` after commit). PASS: the process listens; stderr prints `Save your demo sign-ins — shown once; copy them now.` plus one `username<TAB>password` line per seeded human (including `demo@example.com` and `sarah.chen@company.com`); the stdout listen line has no passwords; seed does not travel over HTTP. This pin **is** SV1.
+- [ ] **A3** From the A2 directory, with
+  `POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`,
+  and `HTTP_SERVER_PORT` set against an
+  **empty** Postgres:
+
+  - **Serial (`--serial`):**
+    `node server.mjs --seed-mock-data`.
+    PASS: process listens; stderr prints
+    `Save your demo sign-ins — shown
+    once; copy them now.` plus one
+    `username<TAB>password` line per
+    seeded human (including
+    `demo@example.com` and
+    `sarah.chen@company.com`); stdout
+    listen line has no passwords; seed
+    does not travel over HTTP. This pin
+    **is** SV1.
+  - **Parallel (default):**
+    `node server.mjs --seed-test-plan-slices`.
+    PASS: process listens; stderr prints
+    the same reveal header plus TSV
+    `section<TAB>field<TAB>value` rows
+    covering all 14 parallel sections
+    (AA's admin is `demo@example.com`;
+    B names `seat_*` and `flow_id`; G
+    names `org2_*`, `unseated_*`,
+    `member_*`; SV names `seat_*`);
+    stdout has no passwords; seed does
+    not travel over HTTP. If a section
+    cannot run from its minimum
+    fixtures, A3 FAIL — do not dispatch
+    hunters. This pin **is** SV1 on
+    the parallel path (listen + stderr
+    reveal); the SV hunter skips SV1.
 - [ ] **A4** Open `http://localhost:$HTTP_SERVER_PORT/` in the test browser with site data deleted and no `refresh_token` cookie. PASS: unsigned root hops to `landing/index.html` (one hop from the blank root document). Does not open `auth/` and does not open `snapshots/`. Landing remains the public marketing page; it is now also the unsigned root target.
 - [ ] **A5** Open DevTools Console on that load. PASS: no 501; no JSON parse crash. CSP `frame-ancestors` delivered via meta and an anonymous `POST /api/authentication/token` refresh 401 are acceptable.
 
@@ -523,11 +556,12 @@ parallel: yes
 global_lock: none
 depends: A
 
-AA rebuilds from a bootstrap-only database. Stop the A3
-process. Restart with `node server.mjs --seed-bootstrap`.
-Sign in with the stderr admin credential. Then AA3+.
-Each later step creates data that subsequent steps
-depend on. Run AA3+ in order.
+On the parallel path AA's slice is already
+bootstrap-only — do not restart the process. Sign
+in as the AA admin and run AA3+. Serial may restart
+`--seed-bootstrap` if the operator started from
+mock-data. Each later step creates data that
+subsequent steps depend on. Run AA3+ in order.
 
 - [ ] **AA3** Verify bootstrap data exists: user "Tony Stark" (id: `current`), organization "Stark Industries" (domain `acmecorp.com`). `OrganizationEntity` has no plan field — its quota fields are `seats`, `projects_limit`, `ideas_limit`.
 
@@ -2878,3 +2912,26 @@ under 50 lines.
 but one subassertion drifts" is scored PASS with the drift
 noted in the Drift Candidates table — the agent surfaces;
 the user adjudicates.
+
+### Mitigation specs
+
+After join, one markdown file per FAIL cluster under
+`docs/superpowers/test-plan-mitigations/`. Product design
+specs stay in `docs/superpowers/specs/`. Do not create the
+directory until the first cluster exists. The master lists
+paths in the summary. Implementing those specs is a later
+session.
+
+File name:
+`YYYY-MM-DD-{section}-{first-case}.md`
+
+```
+# TEST-PLAN mitigation — {section}
+
+- Section: {id}
+- Cases: {comma-separated ids}
+- Expected: {from the case PASS line}
+- Observed: {hunter note}
+- Suspected layer:
+  UI | adapter | API | seed | MCP
+```
