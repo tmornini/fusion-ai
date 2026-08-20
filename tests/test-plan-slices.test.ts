@@ -72,6 +72,35 @@ async () => {
     assert.equal(new Set(ids).size, 14);
 });
 
+test('fourteen organization documents exist',
+async () => {
+    const { db, reveal } = await seeded();
+    const organizations = await deriveOrganizations(db);
+    assert.equal(organizations.length, 14);
+    const stored = new Set(
+        organizations.map((row) => row.id),
+    );
+    const revealed = new Set(
+        reveal.map((row) => row.organizationId),
+    );
+    assert.deepEqual(
+        [...stored].sort(),
+        [...revealed].sort(),
+    );
+    const b = reveal.find(
+        (row) => row.section === 'B',
+    );
+    assert.ok(b);
+    const pii = await deriveIdentityPii(
+        db, 'b-admin',
+    );
+    assert.equal(pii.name, 'B Admin');
+    assert.equal(
+        pii.email,
+        'b-admin@test-plan.example',
+    );
+});
+
 test('non-AA admin emails are unique',
 async () => {
     const { reveal } = await seeded();
