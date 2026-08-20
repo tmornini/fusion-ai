@@ -20,6 +20,8 @@ import { deriveRecordTypeCollection } from
     '../api/derive-record-types.ts';
 import { deriveFlows } from
     '../api/derive-flows.ts';
+import { deriveFlowWorkOrders } from
+    '../api/derive-flow-work-orders.ts';
 import { deriveIdentityPii } from
     '../api/derive-identity-spine.ts';
 import { deriveMembershipsForIdentity } from
@@ -400,6 +402,79 @@ async () => {
             records[0]!.name,
             'Customer Profile',
             section,
+        );
+    }
+});
+
+test('garden slices seed Customer Onboarding',
+async () => {
+    const { db, reveal } = await seeded();
+    for (const section of GARDEN) {
+        const row = reveal.find(
+            (s) => s.section === section,
+        );
+        assert.ok(row, section);
+        const flows = await deriveFlows(
+            db, row.organizationId,
+        );
+        assert.equal(
+            flows.length, 1, section,
+        );
+        assert.equal(
+            flows[0]!.name,
+            'Customer Onboarding',
+            section,
+        );
+        const nodes = flows[0]!.graph['nodes'];
+        assert.ok(
+            Array.isArray(nodes), section,
+        );
+        const nodeNames = new Set(
+            nodes.map((node) => {
+                assert.ok(
+                    node !== null
+                    && typeof node === 'object',
+                    section,
+                );
+                return String(
+                    (node as { name: string })
+                        .name,
+                );
+            }),
+        );
+        assert.ok(
+            nodeNames.has('Create'), section,
+        );
+        assert.ok(
+            nodeNames.has('Data Capture'),
+            section,
+        );
+        assert.ok(
+            nodeNames.has('Review'), section,
+        );
+        assert.ok(
+            nodeNames.has('Archive'), section,
+        );
+    }
+});
+
+test('garden onboarding has three work orders',
+async () => {
+    const { db, reveal } = await seeded();
+    for (const section of GARDEN) {
+        const row = reveal.find(
+            (s) => s.section === section,
+        );
+        assert.ok(row, section);
+        const flows = await deriveFlows(
+            db, row.organizationId,
+        );
+        const flow = flows[0]!;
+        const joins = await deriveFlowWorkOrders(
+            db, row.organizationId, flow.id,
+        );
+        assert.equal(
+            joins.length, 3, section,
         );
     }
 });

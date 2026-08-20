@@ -11,6 +11,7 @@ import {
 import {
     nowUtc,
     SYSTEM_MEMBER_ID,
+    DEFAULT_LOCK_TIMEOUT,
     type StateEntity,
 } from './types.ts';
 import {
@@ -23,12 +24,18 @@ import {
     postProjectDocumentOp,
     postRecordWriteOp,
     postObjectiveCreationOp,
+    postFlowCreationOp,
+    postWorkOrderDocumentOp,
+    postWorkOrderTransitionOp,
+    postFlowWorkOrderDocumentOp,
     recordDocumentBodyOf,
     recordAttributeDocumentBodyOf,
     objectiveDocumentBodyOf,
     objectiveRevisionBodyOf,
+    flowCreateDocumentBody,
     type RecordWritePairs,
     type ObjectiveCreationPairs,
+    type FlowCreationPairs,
 } from './routes.ts';
 import type { MessagePair } from
     './message-pair.ts';
@@ -45,6 +52,7 @@ import {
     flowOrg2SeedBody,
     projectSeedBody,
     objectiveSeedBody,
+    flowWorkOrderJoinSeedBody,
 } from './mock-data/seed-message-pairs.ts';
 import { daysFromNow } from
     './mock-data/seed-kit.ts';
@@ -71,9 +79,12 @@ import { OBJECTIVE_SEEDS } from
     './mock-data/objectives.ts';
 import { buildRecords } from
     './mock-data/records.ts';
+import { buildFlowGraphRelations } from
+    './mock-data/flows.ts';
 import {
     validateObjectiveCreateBody,
     validateRecordWriteBody,
+    validateFlowCreateBody,
 } from './validators.ts';
 
 export type TestPlanSliceReveal = {
@@ -600,6 +611,12 @@ const PROJECT_GARDEN = [
     { suffix: 'approved-2', state: 'approved' },
 ] as const;
 
+const WORK_ORDER_GARDEN = [
+    { suffix: 'capture', node: 'capture', position: 1 },
+    { suffix: 'review', node: 'review', position: 2 },
+    { suffix: 'archive', node: 'archive', position: 3 },
+] as const;
+
 type GardenIdea = {
     readonly id: string;
     readonly body: Record<string, unknown>;
@@ -622,11 +639,29 @@ type GardenRecord = {
     readonly pairs: RecordWritePairs;
 };
 
+type GardenFlow = {
+    readonly body: Record<string, unknown>;
+    readonly pairs: FlowCreationPairs;
+};
+
+type GardenWorkOrder = {
+    readonly id: string;
+    readonly body: Record<string, unknown>;
+    readonly pair: MessagePair;
+    readonly joinId: string;
+    readonly joinBody: Record<string, unknown>;
+    readonly joinPair: MessagePair;
+    readonly transitionBody: Record<string, unknown>;
+    readonly transitionPair: MessagePair;
+};
+
 type GardenWrites = {
     readonly ideas: readonly GardenIdea[];
     readonly projects: readonly GardenProject[];
     readonly objectives: readonly GardenObjective[];
     readonly record: GardenRecord;
+    readonly flow: GardenFlow;
+    readonly workOrders: readonly GardenWorkOrder[];
 };
 
 async function formGarden(
@@ -871,6 +906,264 @@ async function formGarden(
             requestAt,
         ));
     }
+    const flowId = token + '-flow';
+    const createNodeId = token + '-node-create';
+    const captureNodeId = token + '-node-capture';
+    const reviewNodeId = token + '-node-review';
+    const archiveNodeId = token + '-node-archive';
+    const graph: Record<string, unknown> = {
+        nodes: [
+            {
+                id: createNodeId,
+                name: 'Create',
+                positionX: 40,
+                positionY: 30,
+                isCreate: true,
+                isArchive: false,
+                taskInstructions: '',
+                memberIds: [],
+                attributes: [],
+            },
+            {
+                id: captureNodeId,
+                name: 'Data Capture',
+                positionX: 260,
+                positionY: 140,
+                isCreate: false,
+                isArchive: false,
+                taskInstructions: '',
+                memberIds: [adminId],
+                attributes: [],
+            },
+            {
+                id: reviewNodeId,
+                name: 'Review',
+                positionX: 480,
+                positionY: 250,
+                isCreate: false,
+                isArchive: false,
+                taskInstructions: '',
+                memberIds: [adminId],
+                attributes: [],
+            },
+            {
+                id: archiveNodeId,
+                name: 'Archive',
+                positionX: 680,
+                positionY: 370,
+                isCreate: false,
+                isArchive: true,
+                taskInstructions: '',
+                memberIds: [],
+                attributes: [],
+            },
+        ],
+        edges: [
+            {
+                id: token + '-edge-begin',
+                name: 'begin',
+                fromNodeId: createNodeId,
+                toNodeId: captureNodeId,
+            },
+            {
+                id: token + '-edge-submit',
+                name: 'submit',
+                fromNodeId: captureNodeId,
+                toNodeId: reviewNodeId,
+            },
+            {
+                id: token + '-edge-approve',
+                name: 'approve',
+                fromNodeId: reviewNodeId,
+                toNodeId: archiveNodeId,
+            },
+        ],
+    };
+    const relations = buildFlowGraphRelations(
+        [{ id: flowId, graph }],
+        requestAt,
+    );
+    const projectId = token + '-project-approved';
+    const projectFlowId = token + '-project-flow';
+    const nodeIds = new Set(
+        relations.nodes.map((node) => node.id),
+    );
+    const flowBody: Record<string, unknown> = {
+        id: flowId,
+        flow: {
+            organization_id: organizationId,
+            name: 'Customer Onboarding',
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout: DEFAULT_LOCK_TIMEOUT,
+        },
+        projectFlowId,
+        projectFlow: {
+            project_id: projectId,
+            flow_id: flowId,
+            at: requestAt,
+        },
+        initialState: 'active',
+        initialStateEventId: token + '-state-flow',
+        initialStateAt: requestAt,
+        graphDelta: {
+            nodes: relations.nodes,
+            edges: relations.edges,
+            deletions: [],
+            memberEvents: relations.members.filter(
+                (row) => nodeIds.has(row.flow_node_id),
+            ),
+            attributeEvents: relations.attributes.filter(
+                (row) => nodeIds.has(row.flow_node_id),
+            ),
+        },
+    };
+    const validatedFlow =
+        validateFlowCreateBody(flowBody);
+    const flowOperation = await formSeedPair(
+        {
+            key: seedPairKey('flows', flowId),
+            routePattern: 'organizations/:id/flows/',
+            idParams: [organizationId],
+            op: true,
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: flowBody,
+        },
+        requestAt,
+    );
+    const flowDocument = await formSeedPair(
+        {
+            key: seedPairKey('flows/:id', flowId),
+            routePattern:
+                'organizations/:id/flows/:id',
+            idParams: [organizationId, flowId],
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: flowCreateDocumentBody(
+                validatedFlow,
+            ),
+        },
+        requestAt,
+    );
+    const flowJoin = await formSeedPair(
+        {
+            key: seedPairKey(
+                'projects/:id/flows/:pfid',
+                projectFlowId,
+            ),
+            routePattern:
+                'organizations/:id/projects/:id'
+                + '/flows/:pfid',
+            idParams: [
+                organizationId,
+                projectId,
+                projectFlowId,
+            ],
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: validatedFlow.projectFlow,
+        },
+        requestAt,
+    );
+    const frozenGraph: Record<string, unknown> = {
+        name: 'Customer Onboarding',
+        lockTimeout: DEFAULT_LOCK_TIMEOUT,
+        nodes: graph['nodes'],
+        edges: graph['edges'],
+    };
+    const parkNodeId: Record<string, string> = {
+        capture: captureNodeId,
+        review: reviewNodeId,
+        archive: archiveNodeId,
+    };
+    const workOrders: GardenWorkOrder[] = [];
+    for (const spec of WORK_ORDER_GARDEN) {
+        const id = token + '-wo-' + spec.suffix;
+        const body: Record<string, unknown> = {
+            display_id: token + spec.position,
+            flow_graph: frozenGraph,
+            position: spec.position,
+            organization_id: organizationId,
+        };
+        const pair = await formSeedPair(
+            {
+                key: seedPairKey(
+                    'work-orders/:id', id,
+                ),
+                routePattern:
+                    'organizations/:id/work-orders/:id',
+                idParams: [organizationId, id],
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body,
+            },
+            requestAt,
+        );
+        const joinId = id;
+        const joinBody = flowWorkOrderJoinSeedBody({
+            id: joinId,
+            flow_id: flowId,
+            work_order_id: id,
+            at: requestAt,
+        });
+        const joinPair = await formSeedPair(
+            {
+                key: seedPairKey(
+                    'flows/:id/work-orders/:woid',
+                    joinId,
+                ),
+                routePattern:
+                    'organizations/:id/flows/:id'
+                    + '/work-orders/:woid',
+                idParams: [
+                    organizationId, flowId, joinId,
+                ],
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body: joinBody,
+            },
+            requestAt,
+        );
+        const parkId = parkNodeId[spec.node]!;
+        const transitionEventId =
+            token + '-wo-' + spec.suffix + '-move';
+        const transitionBody: Record<string, unknown> = {
+            transitionEventId,
+            targetState: parkId,
+            fieldValues: [],
+            release: null,
+            transitionAt: requestAt,
+        };
+        const transitionPair = await formSeedPair(
+            {
+                key: seedPairKey(
+                    'work-orders/:id/transition',
+                    transitionEventId,
+                ),
+                routePattern:
+                    'organizations/:id/work-orders/:id'
+                    + '/transition',
+                idParams: [organizationId, id],
+                op: true,
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body: transitionBody,
+            },
+            requestAt,
+        );
+        workOrders.push({
+            id,
+            body,
+            pair,
+            joinId,
+            joinBody,
+            joinPair,
+            transitionBody,
+            transitionPair,
+        });
+    }
     return {
         ideas,
         projects,
@@ -884,6 +1177,15 @@ async function formGarden(
                 attributeDeletes: [],
             },
         },
+        flow: {
+            body: flowBody,
+            pairs: {
+                operation: flowOperation,
+                document: flowDocument,
+                join: flowJoin,
+            },
+        },
+        workOrders,
     };
 }
 
@@ -922,6 +1224,41 @@ async function writeGarden(
             garden.record.body,
             SYSTEM_MEMBER_ID,
             garden.record.pairs,
+        ),
+        postFlowCreationOp(
+            adapter,
+            garden.flow.body,
+            SYSTEM_MEMBER_ID,
+            garden.flow.pairs,
+        ),
+        ...garden.workOrders.map((workOrder) =>
+            postWorkOrderDocumentOp(
+                adapter,
+                workOrder.id,
+                workOrder.body,
+                SYSTEM_MEMBER_ID,
+                workOrder.pair,
+            ),
+        ),
+        ...garden.workOrders.map((workOrder) =>
+            postFlowWorkOrderDocumentOp(
+                adapter,
+                workOrder.joinId,
+                workOrder.joinBody,
+                SYSTEM_MEMBER_ID,
+                workOrder.joinPair,
+            ),
+        ),
+        ...garden.workOrders.map((workOrder) =>
+            postWorkOrderTransitionOp(
+                adapter,
+                workOrder.id,
+                workOrder.transitionBody,
+                SYSTEM_MEMBER_ID,
+                undefined,
+                [],
+                workOrder.transitionPair,
+            ),
         ),
     ]);
 }
