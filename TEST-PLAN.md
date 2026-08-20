@@ -453,13 +453,13 @@ only. Combined with the CLI automated suite:
 
 | Layer                  | Cases    |
 |------------------------|---------:|
-| CLI automated tests    |     3320 |
+| CLI automated tests    |     3321 |
 | Browser regression     |      396 |
-| **Combined TOTAL**     | **3716** |
+| **Combined TOTAL**     | **3717** |
 
 CLI count = most recent `./validate` (AT2) report — the main
 `tests/*.test.ts` suite plus the `tests/tz/*.test.ts` timezone
-suite (3312 main + 8 tz, including 5 skipped);
+suite (3313 main + 8 tz, including 5 skipped);
 the number grows as tests land in either glob. Browser count =
 the per-section table above. Update both numbers when either
 side changes.
@@ -477,8 +477,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 3716, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (3716).
+`PASS = 3717, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (3717).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
