@@ -8,6 +8,16 @@ import { deriveOrganizations } from
     '../api/derive-organizations.ts';
 import { deriveIdeas } from
     '../api/derive-ideas.ts';
+import { deriveProjects } from
+    '../api/derive-projects.ts';
+import { deriveDocumentsAt } from
+    '../api/derive-documents.ts';
+import { canonicalUriCollection } from
+    '../api/message-pair.ts';
+import { deriveObjectiveRevisions } from
+    '../api/derive-objective-revisions.ts';
+import { deriveRecordTypeCollection } from
+    '../api/derive-record-types.ts';
 import { deriveFlows } from
     '../api/derive-flows.ts';
 import { deriveIdentityPii } from
@@ -264,4 +274,132 @@ async () => {
         memberSeats[0]!.organization_id,
         sv.organizationId,
     );
+});
+
+const GARDEN = [
+    'C', 'D', 'E', 'F', 'FS', 'K', 'R',
+] as const;
+
+test('garden slices seed four idea states',
+async () => {
+    const { db, reveal } = await seeded();
+    for (const section of GARDEN) {
+        const row = reveal.find(
+            (s) => s.section === section,
+        );
+        assert.ok(row, section);
+        const ideas = await deriveIdeas(
+            db, row.organizationId,
+        );
+        assert.equal(
+            ideas.length, 4, section,
+        );
+        const states = new Set(
+            ideas.map((idea) => idea.state),
+        );
+        assert.ok(states.has('active'), section);
+        assert.ok(
+            states.has('in_review'), section,
+        );
+        assert.ok(
+            states.has('sent_back'), section,
+        );
+        assert.ok(
+            states.has('approved'), section,
+        );
+    }
+});
+
+test('garden slices seed three projects',
+async () => {
+    const { db, reveal } = await seeded();
+    for (const section of GARDEN) {
+        const row = reveal.find(
+            (s) => s.section === section,
+        );
+        assert.ok(row, section);
+        const projects = await deriveProjects(
+            db, row.organizationId,
+        );
+        assert.equal(
+            projects.length, 3, section,
+        );
+        const approved = projects.filter(
+            (p) => p.state === 'approved',
+        );
+        assert.ok(
+            approved.length >= 2, section,
+        );
+    }
+});
+
+test('garden slices seed four objectives',
+async () => {
+    const { db, reveal } = await seeded();
+    const names = [
+        'Lower expenses',
+        'Increase incomes',
+        'Raise customer NPS',
+        'Improve employee morale',
+    ];
+    for (const section of GARDEN) {
+        const row = reveal.find(
+            (s) => s.section === section,
+        );
+        assert.ok(row, section);
+        const [requests, responses] =
+            await Promise.all([
+                db.requests.getAll(),
+                db.responses.getAll(),
+            ]);
+        const prefix =
+            canonicalUriCollection(
+                row.organizationId, '/objectives/',
+            );
+        const documents = deriveDocumentsAt(
+            requests, responses, prefix,
+        );
+        assert.equal(
+            documents.size, 4, section,
+        );
+        const got: string[] = [];
+        for (const id of documents.keys()) {
+            const revs =
+                await deriveObjectiveRevisions(
+                    db, row.organizationId, id,
+                );
+            assert.equal(
+                revs.length, 1,
+                section + ' ' + id,
+            );
+            got.push(revs[0]!.name);
+        }
+        assert.deepEqual(
+            got.sort(), [...names].sort(),
+            section,
+        );
+    }
+});
+
+test('garden slices seed Customer Profile',
+async () => {
+    const { db, reveal } = await seeded();
+    for (const section of GARDEN) {
+        const row = reveal.find(
+            (s) => s.section === section,
+        );
+        assert.ok(row, section);
+        const records =
+            await deriveRecordTypeCollection(
+                db, row.organizationId,
+            );
+        assert.equal(
+            records.length, 1, section,
+        );
+        assert.equal(
+            records[0]!.name,
+            'Customer Profile',
+            section,
+        );
+    }
 });

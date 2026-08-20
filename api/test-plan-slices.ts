@@ -8,14 +8,27 @@ import {
     TABLE_NAMES,
     type DbAdapter,
 } from './db.ts';
-import { nowUtc, SYSTEM_MEMBER_ID } from
-    './types.ts';
+import {
+    nowUtc,
+    SYSTEM_MEMBER_ID,
+    type StateEntity,
+} from './types.ts';
 import {
     postIdentityDocumentOp,
     postIdentityPiiDocumentOp,
     postMembershipDocumentOp,
     postFlowDocumentOp,
     postAiAgentDocumentOp,
+    postIdeaDocumentOp,
+    postProjectDocumentOp,
+    postRecordWriteOp,
+    postObjectiveCreationOp,
+    recordDocumentBodyOf,
+    recordAttributeDocumentBodyOf,
+    objectiveDocumentBodyOf,
+    objectiveRevisionBodyOf,
+    type RecordWritePairs,
+    type ObjectiveCreationPairs,
 } from './routes.ts';
 import type { MessagePair } from
     './message-pair.ts';
@@ -30,6 +43,8 @@ import {
     seatSeedBody,
     bootstrapCurrentIdentityBody,
     flowOrg2SeedBody,
+    projectSeedBody,
+    objectiveSeedBody,
 } from './mock-data/seed-message-pairs.ts';
 import { daysFromNow } from
     './mock-data/seed-kit.ts';
@@ -40,10 +55,26 @@ import {
     seedHumanCredentials,
     type SeededCredentials,
 } from './mock-data.ts';
-import { ORGANIZATION_MEMBER_DETAIL_PATTERN }
-    from './family-registry.ts';
+import {
+    ORGANIZATION_MEMBER_DETAIL_PATTERN,
+    RECORD_TYPES_COLLECTION_PATTERN,
+    RECORD_TYPE_DETAIL_PATTERN,
+    ATTRIBUTE_DETAIL_PATTERN,
+} from './family-registry.ts';
 import { buildAiMembers } from
     './mock-data/ai-members.ts';
+import { buildIdeas } from
+    './mock-data/ideas.ts';
+import { buildProjects } from
+    './mock-data/projects.ts';
+import { OBJECTIVE_SEEDS } from
+    './mock-data/objectives.ts';
+import { buildRecords } from
+    './mock-data/records.ts';
+import {
+    validateObjectiveCreateBody,
+    validateRecordWriteBody,
+} from './validators.ts';
 
 export type TestPlanSliceReveal = {
     readonly section: string;
@@ -552,6 +583,349 @@ async function writeExtras(
     await Promise.all(writes);
 }
 
+const GARDEN_SECTIONS = [
+    'C', 'D', 'E', 'F', 'FS', 'K', 'R',
+] as const;
+
+const IDEA_GARDEN_STATES = [
+    'active',
+    'in_review',
+    'sent_back',
+    'approved',
+] as const;
+
+const PROJECT_GARDEN = [
+    { suffix: 'submitted', state: 'submitted' },
+    { suffix: 'approved', state: 'approved' },
+    { suffix: 'approved-2', state: 'approved' },
+] as const;
+
+type GardenIdea = {
+    readonly id: string;
+    readonly body: Record<string, unknown>;
+    readonly pair: MessagePair;
+};
+
+type GardenProject = {
+    readonly id: string;
+    readonly body: Record<string, unknown>;
+    readonly pair: MessagePair;
+};
+
+type GardenObjective = {
+    readonly body: Record<string, unknown>;
+    readonly pairs: ObjectiveCreationPairs;
+};
+
+type GardenRecord = {
+    readonly body: Record<string, unknown>;
+    readonly pairs: RecordWritePairs;
+};
+
+type GardenWrites = {
+    readonly ideas: readonly GardenIdea[];
+    readonly projects: readonly GardenProject[];
+    readonly objectives: readonly GardenObjective[];
+    readonly record: GardenRecord;
+};
+
+async function formGarden(
+    token: string,
+    organizationId: string,
+    adminId: string,
+    requestAt: string,
+): Promise<GardenWrites> {
+    const ideaTemplate = buildIdeas()[0]!;
+    const {
+        id: _ideaId,
+        title: ideaTitle,
+        ...ideaFields
+    } = ideaTemplate;
+    const ideas: GardenIdea[] = [];
+    for (const state of IDEA_GARDEN_STATES) {
+        const id = token + '-idea-' + state;
+        const body: Record<string, unknown> = {
+            ...ideaFields,
+            title: ideaTitle + ' (' + state + ')',
+            organization_id: organizationId,
+            state,
+        };
+        const pair = await formSeedPair(
+            {
+                key: seedPairKey('ideas', id),
+                routePattern:
+                    'organizations/:id/ideas/:id',
+                idParams: [organizationId, id],
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body,
+            },
+            requestAt,
+        );
+        ideas.push({ id, body, pair });
+    }
+    const projectTemplate = buildProjects()[0]!;
+    const projects: GardenProject[] = [];
+    let projectPosition = 1;
+    for (const spec of PROJECT_GARDEN) {
+        const id = token + '-project-' + spec.suffix;
+        const project = {
+            ...projectTemplate,
+            id,
+            title: projectTemplate.title
+                + ' (' + spec.suffix + ')',
+            position: projectPosition,
+        };
+        projectPosition += 1;
+        const event: StateEntity = {
+            id: id + '-state',
+            entity_id: id,
+            member_id: adminId,
+            at: requestAt,
+            state: spec.state,
+        };
+        const body = projectSeedBody(
+            project, event, organizationId,
+        );
+        const pair = await formSeedPair(
+            {
+                key: seedPairKey('projects', id),
+                routePattern:
+                    'organizations/:id/projects/:id',
+                idParams: [organizationId, id],
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body,
+            },
+            requestAt,
+        );
+        projects.push({ id, body, pair });
+    }
+    const objectives: GardenObjective[] = [];
+    for (let i = 0; i < OBJECTIVE_SEEDS.length; i++) {
+        const source = OBJECTIVE_SEEDS[i]!;
+        const seed = {
+            ...source,
+            id: token + '-obj-' + (i + 1),
+        };
+        const body = objectiveSeedBody(
+            seed, organizationId, adminId,
+        );
+        const validated =
+            validateObjectiveCreateBody(body);
+        const operation = await formSeedPair(
+            {
+                key: seedPairKey(
+                    'objectives', seed.id,
+                ),
+                routePattern:
+                    'organizations/:id/objectives/',
+                idParams: [organizationId],
+                op: true,
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body,
+            },
+            requestAt,
+        );
+        const document = await formSeedPair(
+            {
+                key: seedPairKey(
+                    'objectives/:id', seed.id,
+                ),
+                routePattern:
+                    'organizations/:id/objectives/:id',
+                idParams: [
+                    organizationId, seed.id,
+                ],
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body: objectiveDocumentBodyOf(
+                    validated,
+                ),
+            },
+            requestAt,
+        );
+        const revision = await formSeedPair(
+            {
+                key: seedPairKey(
+                    'objectives/:id/revisions/:rid',
+                    validated.revisionId,
+                ),
+                routePattern:
+                    'organizations/:id/objectives/:id'
+                    + '/revisions/:rid',
+                idParams: [
+                    organizationId,
+                    seed.id,
+                    validated.revisionId,
+                ],
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body: objectiveRevisionBodyOf(
+                    validated,
+                ),
+            },
+            requestAt,
+        );
+        objectives.push({
+            body,
+            pairs: {
+                operation, document, revision,
+            },
+        });
+    }
+    const profile = buildRecords()[0]!;
+    const recordId = token + '-record-customer';
+    const attributeRows = [
+        {
+            id: token + '-attr-1',
+            record_id: recordId,
+            organization_id: organizationId,
+            name: 'Company Name',
+            attribute_type: 'text',
+            sort_order: 1,
+            options: [] as string[],
+            constraints: [] as unknown[],
+        },
+        {
+            id: token + '-attr-2',
+            record_id: recordId,
+            organization_id: organizationId,
+            name: 'Contact Email',
+            attribute_type: 'text',
+            sort_order: 2,
+            options: [] as string[],
+            constraints: [] as unknown[],
+        },
+    ];
+    const recordBody: Record<string, unknown> = {
+        kind: 'create',
+        id: recordId,
+        record: {
+            organization_id: organizationId,
+            name: profile.name,
+            description: profile.description,
+            position: profile.position,
+        },
+        attributes: attributeRows,
+        initialState: 'active',
+        initialStateEventId:
+            token + '-state-record-customer',
+        initialStateAt: requestAt,
+    };
+    const validatedRecord =
+        validateRecordWriteBody(recordBody);
+    const recordOperation = await formSeedPair(
+        {
+            key: seedPairKey(
+                RECORD_TYPES_COLLECTION_PATTERN,
+                recordId,
+            ),
+            routePattern:
+                RECORD_TYPES_COLLECTION_PATTERN,
+            idParams: [organizationId],
+            op: true,
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: recordBody,
+        },
+        requestAt,
+    );
+    const recordDocument = await formSeedPair(
+        {
+            key: seedPairKey(
+                RECORD_TYPE_DETAIL_PATTERN, recordId,
+            ),
+            routePattern: RECORD_TYPE_DETAIL_PATTERN,
+            idParams: [organizationId, recordId],
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: recordDocumentBodyOf(
+                validatedRecord,
+            ),
+        },
+        requestAt,
+    );
+    const attributePuts: MessagePair[] = [];
+    for (const attribute of attributeRows) {
+        attributePuts.push(await formSeedPair(
+            {
+                key: seedPairKey(
+                    ATTRIBUTE_DETAIL_PATTERN,
+                    attribute.id,
+                ),
+                routePattern: ATTRIBUTE_DETAIL_PATTERN,
+                idParams: [
+                    organizationId,
+                    recordId,
+                    attribute.id,
+                ],
+                organization: organizationId,
+                requesterIdentityId: adminId,
+                body: recordAttributeDocumentBodyOf(
+                    attribute as unknown as
+                        Record<string, unknown>,
+                ),
+            },
+            requestAt,
+        ));
+    }
+    return {
+        ideas,
+        projects,
+        objectives,
+        record: {
+            body: recordBody,
+            pairs: {
+                operation: recordOperation,
+                document: recordDocument,
+                attributePuts,
+                attributeDeletes: [],
+            },
+        },
+    };
+}
+
+async function writeGarden(
+    adapter: DbAdapter,
+    garden: GardenWrites,
+): Promise<void> {
+    await Promise.all([
+        ...garden.ideas.map((idea) =>
+            postIdeaDocumentOp(
+                adapter,
+                idea.id,
+                idea.body,
+                SYSTEM_MEMBER_ID,
+                idea.pair,
+            ),
+        ),
+        ...garden.projects.map((project) =>
+            postProjectDocumentOp(
+                adapter,
+                project.id,
+                project.body,
+                SYSTEM_MEMBER_ID,
+                project.pair,
+            ),
+        ),
+        ...garden.objectives.map((objective) =>
+            postObjectiveCreationOp(
+                adapter,
+                objective.body,
+                objective.pairs,
+            ),
+        ),
+        postRecordWriteOp(
+            adapter,
+            garden.record.body,
+            SYSTEM_MEMBER_ID,
+            garden.record.pairs,
+        ),
+    ]);
+}
+
 function passwordFor(
     passwords: Map<string, string>,
     username: string | undefined,
@@ -631,6 +1005,7 @@ export async function postTestPlanSlices(
     }];
     const formed: TenantAdminPairs[] = [];
     const extras: ExtraWrites[] = [];
+    const gardens: GardenWrites[] = [];
     for (const section of PARALLEL_SECTIONS) {
         if (section === 'AA') continue;
         const slice = await formTenantAdminPairs(
@@ -708,6 +1083,15 @@ export async function postTestPlanSlices(
                 seatPassword: '',
             };
         }
+        if ((GARDEN_SECTIONS as readonly string[])
+            .includes(section)) {
+            gardens.push(await formGarden(
+                sectionToken(section),
+                slice.organizationId,
+                slice.adminId,
+                requestAt,
+            ));
+        }
         reveals.push(reveal);
     }
     await adapter.transaction(
@@ -730,6 +1114,11 @@ export async function postTestPlanSlices(
             await Promise.all(
                 extras.map((extra) =>
                     writeExtras(view, extra),
+                ),
+            );
+            await Promise.all(
+                gardens.map((garden) =>
+                    writeGarden(view, garden),
                 ),
             );
         },
