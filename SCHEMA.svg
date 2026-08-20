@@ -1,5 +1,8 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 610" width="800" height="610">
   <defs>
+    <marker id="fk-arrow" markerWidth="8" markerHeight="8" refX="8" refY="4" orient="auto">
+      <path d="M 0 0 L 8 4 L 0 8 z" fill="hsl(217 34% 60%)" />
+    </marker>
     <style>
       text { font-family: ui-sans-serif, system-ui,
         'Segoe UI', Helvetica, Arial, sans-serif; }
@@ -143,4 +146,5 @@
     <text class="sname" x="356" y="508">body gin jsonb_path_ops</text>
     <text class="skeys" x="750" y="508">message_body(message)</text>
   </g>
+  <path class="edge" marker-end="url(#fk-arrow)" d="M 56 388 H 28 V 80 H 56" />
 </svg>

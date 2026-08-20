@@ -662,6 +662,20 @@ function rowMid(tableY: number, i: number): number {
     return tableY + HEADER_H + i * ROW_H + ROW_H / 2;
 }
 
+function columnIndex(
+    t: Table, col: string,
+): number {
+    const i = t.columns.findIndex(
+        (c) => c.name === col,
+    );
+    if (i < 0) {
+        throw new Error(
+            'FK column missing: ' + t.name + '.' + col,
+        );
+    }
+    return i;
+}
+
 function renderBox(p: Placed, parts: string[]): void {
     const { table: t, x, y, w, h } = p;
     const railsW = t.indexes.length * RAIL_W;
@@ -757,32 +771,23 @@ function renderConnector(
     );
 }
 
-function renderEdge(
-    from: Placed, to: Placed, parts: string[],
+function renderFkEdge(
+    from: Placed,
+    to: Placed,
+    fromCol: string,
+    toCol: string,
+    parts: string[],
 ): void {
-    const fc = from.y + from.h / 2;
-    const tc = to.y + to.h / 2;
-    let sx: number;
-    let tx: number;
-    let dir: number;
-    if (to.x < from.x) {
-        sx = from.x;
-        tx = to.x + to.w;
-        dir = -1;
-    } else if (to.x > from.x) {
-        sx = from.x + from.w;
-        tx = to.x;
-        dir = 1;
-    } else {
-        sx = from.x + from.w;
-        tx = to.x + to.w;
-        dir = 1;
-    }
-    const k = COL_GAP * 0.6 * dir;
+    const y1 = rowMid(
+        from.y, columnIndex(from.table, fromCol),
+    );
+    const y2 = rowMid(
+        to.y, columnIndex(to.table, toCol),
+    );
     parts.push(
-        `  <path class="edge" d="M ${sx} ${fc} `
-        + `C ${sx + k} ${fc}, ${tx - k} ${tc}, `
-        + `${tx} ${tc}" />`,
+        `  <path class="edge" marker-end="url(#fk-arrow)" `
+        + `d="M ${from.x} ${y1} H ${LEFT_RAIL_X} `
+        + `V ${y2} H ${to.x}" />`,
     );
 }
 
@@ -935,8 +940,6 @@ function render(
     const { tables, fkEdges } = buildModel(
         typesSrc, dbSrc, schemaSrc,
     );
-    void fkEdges;
-    void LEFT_RAIL_X;
     const { placed, width, height } = layout(tables);
     const parts: string[] = [];
     parts.push(
@@ -944,27 +947,35 @@ function render(
         + `viewBox="0 0 ${width} ${height}" `
         + `width="${width}" height="${height}">`,
         '  <defs>',
+        '    <marker id="fk-arrow" markerWidth="8" '
+        + 'markerHeight="8" refX="8" refY="4" '
+        + 'orient="auto">',
+        '      <path d="M 0 0 L 8 4 L 0 8 z" '
+        + 'fill="hsl(217 34% 60%)" />',
+        '    </marker>',
         ...STYLE,
         '  </defs>',
         `  <rect x="0" y="0" width="${width}" `
         + `height="${height}" fill="hsl(217 30% 97%)" />`,
     );
     for (const t of tables) {
-        for (const c of t.columns) {
-            if (!c.fk || c.fk === t.name) continue;
-            const to = placed.get(c.fk);
-            if (to) {
-                renderEdge(
-                    placed.get(t.name)!, to, parts,
-                );
-            }
-        }
-    }
-    for (const t of tables) {
         const p = placed.get(t.name)!;
         renderConnector(p, parts);
         renderBox(p, parts);
         renderSidecar(p, parts);
+    }
+    for (const e of fkEdges) {
+        const from = placed.get(e.fromTable);
+        const to = placed.get(e.toTable);
+        if (!from || !to) {
+            throw new Error(
+                'FK edge missing table: '
+                + e.fromTable + ' → ' + e.toTable,
+            );
+        }
+        renderFkEdge(
+            from, to, e.fromCol, e.toCol, parts,
+        );
     }
     parts.push('</svg>', '');
     return parts.join('\n');
