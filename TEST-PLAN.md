@@ -40,21 +40,71 @@ to mask a real failure.
 
 ### Sub-agent invocation contract
 
-Every agent dispatched by the orchestrator — Phase 1
-serial agent, all seven Phase 2 agents, the Phase 3
-cross-cutting agent, and the Phase 4 agent — MUST
-begin its turn by invoking the
-`church-of-code:church-of-code` skill via the Skill tool
-and reading `CHURCH-OF-CODE-medium-context.md` in full.
-Subagents inherit no scripture and read no CLAUDE.md by
-default (see CLAUDE.md § Subagents). The orchestrator's
-dispatch prompt MUST embed this requirement as the first
-line of every sub-agent prompt.
+Every hunter the master dispatches MUST begin its
+turn by invoking the `church-of-code:church-of-code`
+skill and reading `CHURCH-OF-CODE-medium-context.md`
+in full. Subagents inherit no scripture and read no
+CLAUDE.md by default (see CLAUDE.md § Subagents).
+The first line of every hunter prompt is
+`Go to Medium Church!`.
 
-After the scripture, each sub-agent reads
-`/Users/tmornini/code/fusion-angle/CLAUDE.md` in full, then
-begins its assigned case list. The discipline costs
-context; the discipline IS the point.
+After the scripture, the hunter reads
+`/Users/tmornini/code/fusion-angle/CLAUDE.md` in
+full, then **only** its assigned `##` section body
+(G includes V1–V9; F2 includes WB* and AA-WB-SETUP;
+K omits K8). It does not read other sections. It
+does not re-seed.
+
+Sign in as that slice's admin from the credential
+map. Isolated context name = section id. Tab-scoped
+MCP tools only (navigate, find, evaluate, snapshot,
+form fill). Coordinate clicks and screenshots are
+display-global and collide.
+
+Return per-case PASS / FAIL / BLOCKED / DEFERRED /
+DRIFT. "Sign in as demo@…" means this hunter's
+admin. Stark / Wayne names mean this hunter's
+seeded org names from the map.
+
+K runs K1–K6, then K9–K30, then K7 last. K8 is not
+in this hunter.
+
+The master does not drive the product UI after
+preflight.
+
+Hunter prompt:
+
+```
+Go to Medium Church!
+
+Then read CLAUDE.md at
+/Users/tmornini/code/fusion-angle/CLAUDE.md
+in full.
+
+You are the {SECTION} hunter for the
+Fusion Angle TEST-PLAN parallel run.
+
+Origin: http://localhost:{PORT}
+isolatedContext name: {SECTION}
+Admin: {admin_username} / {admin_password}
+Org id: {org_id}
+{extra credential-map fields}
+
+Read TEST-PLAN.md from the `{SECTION}`
+`##` heading through the next `##`
+heading. That body is your entire
+case list. Do not read other
+sections. Do not re-seed. Do not
+patch FAILs.
+
+Sign in as the admin above. Run the
+cases in document order. For K: skip
+K8; run K7 last after K30.
+
+Return one line per case:
+ID PASS|FAIL|BLOCKED|DEFERRED|DRIFT
+— one-line note.
+```
 
 ### Scope
 
