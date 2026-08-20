@@ -34,7 +34,7 @@ interface Table {
     name: string;
     entity: string;
     columns: Column[];
-    getWhere: Set<string>;
+    secondaryIndexes: Set<string>;
     indexes: IndexRow[];
 }
 
@@ -515,7 +515,7 @@ const PAD_RIGHT = 40;
 const PAD_Y = 40;
 const LEFT_RAIL_X = 28;
 const MAX_PER_COL = 6;
-const GETWHERE_W = 22;
+const SECONDARY_INDEX_W = 22;
 const TYPE_GAP = 8;
 const RAIL_W = 12;
 const RAIL_PAD = 6;
@@ -543,7 +543,7 @@ function tableWidth(t: Table): number {
         typeW = Math.max(typeW, textW(c.type));
     }
     const railsW = t.indexes.length * RAIL_W;
-    return TEXT_INSET_X + GETWHERE_W + nameW
+    return TEXT_INSET_X + SECONDARY_INDEX_W + nameW
         + TYPE_GAP + typeW + RAIL_PAD + railsW
         + TEXT_INSET_X;
 }
@@ -681,7 +681,7 @@ function renderBox(p: Placed, parts: string[]): void {
     const railsW = t.indexes.length * RAIL_W;
     const railsLeft = x + w - TEXT_INSET_X - railsW;
     const typeX = railsLeft - RAIL_PAD;
-    const nameX = x + TEXT_INSET_X + GETWHERE_W;
+    const nameX = x + TEXT_INSET_X + SECONDARY_INDEX_W;
     const markX = x + TEXT_INSET_X;
     parts.push(
         `  <g class="table">`,
@@ -696,9 +696,9 @@ function renderBox(p: Placed, parts: string[]): void {
     t.columns.forEach((c, i) => {
         const cy = rowMid(y, i);
         const cls = c.pk ? 'pk' : c.fk ? 'fk' : 'col';
-        if (t.getWhere.has(c.name)) {
+        if (t.secondaryIndexes.has(c.name)) {
             parts.push(
-                `    <text class="getwhere" x="${markX}" `
+                `    <text class="secondary-index" x="${markX}" `
                 + `y="${cy}">▸</text>`,
             );
         }
@@ -810,7 +810,7 @@ const STYLE = [
     '        text-anchor: end; }',
     '      .edge { fill: none; stroke: hsl(217 34% 60%);',
     '        stroke-width: 1.5; }',
-    '      .getwhere { font-size: 24px; font-weight: 700;',
+    '      .secondary-index { font-size: 24px; font-weight: 700;',
     '        fill: hsl(217 36% 46%);',
     '        dominant-baseline: middle; }',
     '      .diamond, .sname, .skeys {',
@@ -857,7 +857,7 @@ function buildModel(
         throw new Error('store/table count mismatch');
     }
 
-    const getWhere = parseTableIndexes(dbSrc);
+    const secondaryIndexes = parseTableIndexes(dbSrc);
     const tableBodies = parseCreateTableBodies(
         schemaSrc,
     );
@@ -923,8 +923,8 @@ function buildModel(
                 ),
                 pk: f.name === 'id',
             })),
-            getWhere: new Set(
-                getWhere.get(s.table) ?? [],
+            secondaryIndexes: new Set(
+                secondaryIndexes.get(s.table) ?? [],
             ),
             indexes,
         };
