@@ -352,6 +352,14 @@ export const TABLE_NAMES = [
     'responses',
 ];
 
+// The pair-plane transaction declaration. Every
+// `transaction` / `readTransaction` that touches
+// the message plane passes this instead of a
+// literal list. Equals TABLE_NAMES for the life
+// of the two-table schema; the merge flips
+// TABLE_NAMES and this follows.
+export const MESSAGE_TABLES = TABLE_NAMES;
+
 // A secondary index is either a plain column name (the
 // existing shape) or an object form declaring `unique: true`
 // — a UNIQUE index. Absent keys are unindexed in IndexedDB,

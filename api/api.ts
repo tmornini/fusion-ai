@@ -8,6 +8,7 @@ import {
     foreignOrganizationMessage,
     MissingTableError,
     UniqueConstraintError,
+    MESSAGE_TABLES,
 } from './db.ts';
 import type { LatencySimulation } from './latency.ts';
 import {
@@ -1287,7 +1288,7 @@ export async function handleRequest(
                     if (octetsEqual(liveOctets, newOctets)) {
                         const raced =
                             await effective.transaction(
-                                ['requests', 'responses'],
+                                MESSAGE_TABLES,
                                 async (view) => {
                                     const latest =
                                         await documentHeadPairId(
@@ -1366,7 +1367,7 @@ export async function handleRequest(
             ) {
                 const emptyPair = pair;
                 await effective.transaction(
-                    ['requests', 'responses'],
+                    MESSAGE_TABLES,
                     async (view) => {
                         const latchedId =
                             emptyPair.latchedHeadPairId;

@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { memoryDbAdapter } from '../api/db-memory.ts';
+import { MESSAGE_TABLES } from '../api/db.ts';
 import { requestMessageHash } from '../api/message-form.ts';
 import {
     formWritePair,
@@ -163,7 +164,7 @@ test('append then head-read round-trips', async () => {
     await db.postSchemaCreation();
     const pair = await formWritePair({ ...INPUT });
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         (view) => appendMessagePair(view, pair),
     );
     assert.equal(
@@ -190,7 +191,7 @@ test('a same-hash re-append writes nothing', async () => {
     const pair = await formWritePair({ ...INPUT });
     const replay = { ...pair, id: 'other-uuid' };
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             await appendMessagePair(view, pair);
             await appendMessagePair(view, replay);

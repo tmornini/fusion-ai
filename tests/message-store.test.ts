@@ -4,6 +4,7 @@ import {
     memoryDbAdapter,
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
+import { MESSAGE_TABLES } from '../api/db.ts';
 import { generateCryptoSafeBase62 } from
     '../shared/crypto-safe-base62.ts';
 import {
@@ -50,7 +51,7 @@ async function writePair(
         operationId: generateCryptoSafeBase62(),
     });
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         (view) => appendMessagePair(view, pair),
     );
     return {

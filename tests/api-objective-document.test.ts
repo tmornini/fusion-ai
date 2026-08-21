@@ -11,7 +11,10 @@ import {
 } from './token-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
 import { ValidationError } from '../api/types.ts';
-import { EntityNotFoundError } from '../api/db.ts';
+import {
+    EntityNotFoundError,
+    MESSAGE_TABLES,
+} from '../api/db.ts';
 import {
     validateObjectiveDocumentBody,
 } from '../api/validators.ts';
@@ -278,7 +281,7 @@ async function putDocumentPair(
         operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         (view) => appendMessagePair(view, pair),
     );
 }
@@ -302,7 +305,7 @@ async function deleteDocumentPair(
         operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         (view) => appendMessagePair(view, pair),
     );
 }

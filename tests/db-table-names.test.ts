@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
-import { TABLE_NAMES } from '../api/db.ts';
+import { TABLE_NAMES, MESSAGE_TABLES } from
+    '../api/db.ts';
 import {
     memoryDbAdapter,
     type MemoryDbAdapter,
@@ -18,6 +19,14 @@ test('TABLE_NAMES keeps the permanent survivors', () => {
             `TABLE_NAMES missing survivor ${name}`,
         );
     }
+});
+
+test('MESSAGE_TABLES is TABLE_NAMES', () => {
+    assert.equal(MESSAGE_TABLES, TABLE_NAMES);
+    assert.deepEqual(
+        [...MESSAGE_TABLES],
+        ['requests', 'responses'],
+    );
 });
 
 test(

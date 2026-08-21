@@ -1,5 +1,8 @@
 import type { DbAdapter } from './db.ts';
-import { EntityNotFoundError } from './db.ts';
+import {
+    EntityNotFoundError,
+    MESSAGE_TABLES,
+} from './db.ts';
 import type { Id, OrganizationEntity } from './types.ts';
 import { validateOrganizationEntity } from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
@@ -50,7 +53,7 @@ import {
 //
 // ONE shared readonly tx per call (Efficiency): both stores
 // read inside the SAME db.readTransaction(
-// ['requests', 'responses'], ...) rather than two independent
+// MESSAGE_TABLES, ...) rather than two independent
 // getAllWhere calls, each of which would open its own
 // transaction. One physical transaction per derivation,
 // mirroring api/derive-identity-spine.ts's own closure —
@@ -83,7 +86,7 @@ export async function deriveOrganizations(
     db: DbAdapter,
 ): Promise<OrganizationEntity[]> {
     return db.readTransaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             const [requests, responses] = await Promise.all([
                 view.requests.getAllWhere(
@@ -114,7 +117,7 @@ export async function deriveOrganization(
     id: Id,
 ): Promise<OrganizationEntity> {
     return db.readTransaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             const [requests, responses] = await Promise.all([
                 view.requests.getAllWhere(

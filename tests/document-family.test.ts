@@ -6,6 +6,7 @@ import {
 } from '../api/db-memory.ts';
 import {
     EntityNotFoundError,
+    MESSAGE_TABLES,
 } from '../api/db.ts';
 import type { DbAdapter } from '../api/db.ts';
 import type { Id } from '../api/types.ts';
@@ -230,7 +231,7 @@ async function testDocumentOp(
     pair?: MessagePair,
 ): Promise<unknown> {
     return db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             if (pair !== undefined) {
                 const latchedId = pair.latchedHeadPairId;
@@ -535,7 +536,7 @@ test('locked arm: two writers racing the SAME echo — the'
         operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         (view) => appendMessagePair(view, genesis),
     );
     // Two writers both observed the SAME head (genesis.id)
@@ -718,7 +719,7 @@ async function putStatelessDocumentPair(
         operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         (view) => appendMessagePair(view, pair),
     );
 }
@@ -740,7 +741,7 @@ async function deleteStatelessDocumentPair(
         operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         (view) => appendMessagePair(view, pair),
     );
 }

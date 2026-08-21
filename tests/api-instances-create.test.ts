@@ -4,6 +4,7 @@ import {
     memoryDbAdapter,
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
+import { MESSAGE_TABLES } from '../api/db.ts';
 import { handleRequest } from '../api/api.ts';
 import {
     organizationToken,
@@ -520,7 +521,7 @@ async () => {
         operationId: TEST_OPERATION_ID,
     });
     await db.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             await appendMessagePair(view, tombstone);
         },

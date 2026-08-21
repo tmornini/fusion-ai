@@ -1,4 +1,5 @@
 import type { DbAdapter } from './db.ts';
+import { MESSAGE_TABLES } from './db.ts';
 import {
     asWorkOrderFlowGraph,
 } from './validators.ts';
@@ -62,10 +63,8 @@ export interface AttributeReferrers {
 // Stage B drops the doomed stores. An in-tx caller must
 // declare the whole ring — IndexedDB throws on any store a
 // transaction did not name.
-export const ATTRIBUTE_RESTRICT_TABLES:
-    readonly string[] = [
-    'requests', 'responses',
-];
+export const ATTRIBUTE_RESTRICT_TABLES =
+    MESSAGE_TABLES;
 
 interface BoundGraph {
     readonly nodes: readonly {

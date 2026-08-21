@@ -1,4 +1,7 @@
-import { EntityNotFoundError } from './db.ts';
+import {
+    EntityNotFoundError,
+    MESSAGE_TABLES,
+} from './db.ts';
 import type {
     DbAdapter,
 } from './db.ts';
@@ -438,7 +441,7 @@ async function issueTokenPair(
         action: 'issued', chain_id: chainId, at,
     }, operationId);
     await adapter.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             await appendMessagePair(view, eventPair);
             if (pair !== undefined) {
@@ -668,7 +671,7 @@ export async function rotateRefreshJti(
         );
         try {
             return await adapter.transaction(
-                ['requests', 'responses'],
+                MESSAGE_TABLES,
                 async (view) => {
                     const { rows } = await readTokenChainFromLedger(
                         view, presentedJti,
@@ -770,7 +773,7 @@ export async function revokeTokenChain(
         );
         try {
             await adapter.transaction(
-                ['requests', 'responses'],
+                MESSAGE_TABLES,
                 async (view) => {
                     const { chainId, identityId, rows } =
                         await readTokenChainFromLedger(
@@ -1082,7 +1085,7 @@ async function grantClientCredentials(
         operationId: pair.operationId,
     });
     const consumed = await adapter.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             const locks = view.writeLocks;
             if (locks !== undefined) {
@@ -1344,7 +1347,7 @@ async function grantAuthorizationCode(
         action: 'issued', chain_id: chainId, at,
     }, pair.operationId);
     const consumed = await adapter.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             if (await authorizationCodeSpent(
                 view, derivedId, issuer.identityId,
@@ -1578,7 +1581,7 @@ async function authorizePassword(
         });
     }
     await adapter.transaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             if (rehashPair !== undefined) {
                 await appendMessagePair(view, rehashPair);

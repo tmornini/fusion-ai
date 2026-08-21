@@ -1,5 +1,8 @@
 import type { DbAdapter } from './db.ts';
-import { EntityNotFoundError } from './db.ts';
+import {
+    EntityNotFoundError,
+    MESSAGE_TABLES,
+} from './db.ts';
 import type {
     Id,
     IdentityPiiEntity,
@@ -57,7 +60,7 @@ import {
 // deriveDocumentsAt's request/response match fails and a LIVE
 // identity spuriously 404s. Both pii derives below close this by
 // reading requests AND responses inside ONE shared readonly
-// db.readTransaction(['requests', 'responses'], ...) —
+// db.readTransaction(MESSAGE_TABLES, ...) —
 // greenfield code, closed at zero cost. No other facet in this
 // module is a delete zone, so none of the other reads need this
 // — Promise.all outside a transaction (the deriveMembers/
@@ -110,7 +113,7 @@ export async function deriveIdentityPiiRows(
     db: DbAdapter,
 ): Promise<IdentityPiiEntity[]> {
     return db.readTransaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             const [requests, responses] = await Promise.all([
                 view.requests.getAll(),
@@ -151,7 +154,7 @@ export async function deriveIdentityPii(
 ): Promise<IdentityPiiEntity> {
     const prefix = piiPrefixFor(id);
     return db.readTransaction(
-        ['requests', 'responses'],
+        MESSAGE_TABLES,
         async (view) => {
             const [requests, responses] = await Promise.all([
                 view.requests.getAllWhere('uri_collection', prefix),
