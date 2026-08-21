@@ -1089,7 +1089,7 @@ async function main(): Promise<void> {
                     logged
                     ?? (seedErr.trim()
                         || e.message
-                        ?? 'seed failed'),
+                        || 'seed failed'),
                 );
             }
             const parsed = passwordFromSeedReveal(
