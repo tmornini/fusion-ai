@@ -263,7 +263,7 @@ async function livePutVersion(
         db, prefix, uriId,
     );
     if (pairId === undefined) return undefined;
-    const stored = await db.responses.getById(pairId);
+    const stored = await db.pairs.getById(pairId);
     if (stored === undefined) return undefined;
     return { pairId, version: stored.version };
 }
@@ -338,15 +338,15 @@ async function revisionPairIdForPatch(
     db: DbAdapter,
     wirePairId: string,
 ): Promise<string | undefined> {
-    const wireReq = await db.requests.getById(wirePairId);
+    const wireReq = await db.pairs.getById(wirePairId);
     if (wireReq === undefined) return undefined;
-    const siblings = await db.requests.getAllWhere(
+    const siblings = await db.pairs.getAllWhere(
         'uri_collection', wireReq.uri_collection,
     );
     const revision = siblings.find(
         (row) =>
             row.uri_id === wireReq.uri_id
-            && row.at === wireReq.at
+            && row.request_at === wireReq.request_at
             && row.id !== wirePairId,
     );
     return revision?.id;
@@ -360,11 +360,11 @@ async function advertisedForRevisionPair(
     roles: readonly string[],
     revisionPairId: string,
 ): Promise<string | undefined> {
-    const request = await db.requests.getById(
+    const stored = await db.pairs.getById(
         revisionPairId,
     );
-    if (request === undefined) return undefined;
-    const model = parseWire(request.message);
+    if (stored === undefined) return undefined;
+    const model = parseWire(stored.request);
     const wireBody = HttpMessage.fromModel(model).body();
     const parsed = wireBody.exists()
         ? JSON.parse(wireBody.toText()) as Record<
@@ -1276,11 +1276,11 @@ export async function handleRequest(
                     || echoMatchesHead
                 )
             ) {
-                const liveReq = await effective.requests
+                const liveReq = await effective.pairs
                     .getById(livePut.pairId);
                 if (liveReq !== undefined) {
                     const liveOctets = bodyOctetsOf(
-                        parseWire(liveReq.message),
+                        parseWire(liveReq.request),
                     );
                     const newOctets = bodyOctetsOf(
                         parseWire(pair.requestMessage),
@@ -1495,7 +1495,7 @@ export async function handleRequest(
                     );
                     if (headPairId !== undefined) {
                         const stored = await effective
-                            .responses.getById(headPairId);
+                            .pairs.getById(headPairId);
                         if (stored !== undefined) {
                             return attachEtag(
                                 Response.json(result, {

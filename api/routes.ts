@@ -997,13 +997,10 @@ export async function loadAttributeSchemaById(
     const prefix = attributesUriPrefix(
         organization, recordTypeId,
     );
-    const [requests, responses] = await Promise.all([
-        db.requests.getAllWhere('uri_collection', prefix),
-        db.responses.getAllWhere('uri_collection', prefix),
-    ]);
-    const documents = deriveDocumentsAt(
-        requests, responses, prefix,
+    const pairs = await db.pairs.getAllWhere(
+        'uri_collection', prefix,
     );
+    const documents = deriveDocumentsAt(pairs, prefix);
     const map = new Map<string, AttributeSchemaRow>();
     for (const [id, document] of documents) {
         map.set(
@@ -3855,16 +3852,11 @@ async function inFlightPlacementBlockersFor(
     const workOrdersPrefix = canonicalUriCollection(
         organization, '/work-orders/',
     );
-    const [woRequests, woResponses] = await Promise.all([
-        view.requests.getAllWhere(
-            'uri_collection', workOrdersPrefix,
-        ),
-        view.responses.getAllWhere(
-            'uri_collection', workOrdersPrefix,
-        ),
-    ]);
+    const woPairs = await view.pairs.getAllWhere(
+        'uri_collection', workOrdersPrefix,
+    );
     const woHeads = deriveDocumentsAt(
-        woRequests, woResponses, workOrdersPrefix,
+        woPairs, workOrdersPrefix,
     );
     const blockers: string[] = [];
     for (const [woId, doc] of woHeads) {
@@ -3906,11 +3898,11 @@ async function instanceAddressSpent(
     prefix: string,
     instanceId: Id,
 ): Promise<boolean> {
-    const responses =
-        await db.responses.getAllAtAddress(
+    const pairs =
+        await db.pairs.getAllAtAddress(
             prefix, instanceId,
         );
-    return responses.length > 0;
+    return pairs.length > 0;
 }
 
 // Instance PATCH create (Task 20): no live PUT, no
@@ -5506,17 +5498,11 @@ export const routes: Route[] = [
             const typeId = param(p, 1);
             await requireRecordTypeExists(db, org, typeId);
             const prefix = attributesUriPrefix(org, typeId);
-            const [requests, responses] =
-                await Promise.all([
-                    db.requests.getAllWhere(
-                        'uri_collection', prefix,
-                    ),
-                    db.responses.getAllWhere(
-                        'uri_collection', prefix,
-                    ),
-                ]);
+            const pairs = await db.pairs.getAllWhere(
+                'uri_collection', prefix,
+            );
             const documents = deriveDocumentsAt(
-                requests, responses, prefix,
+                pairs, prefix,
             );
             const rows: { id: string }[] = [];
             for (const [id, document] of documents) {
@@ -5539,17 +5525,11 @@ export const routes: Route[] = [
             const attrId = param(p, 2);
             await requireRecordTypeExists(db, org, typeId);
             const prefix = attributesUriPrefix(org, typeId);
-            const [requests, responses] =
-                await Promise.all([
-                    db.requests.getAllWhere(
-                        'uri_collection', prefix,
-                    ),
-                    db.responses.getAllWhere(
-                        'uri_collection', prefix,
-                    ),
-                ]);
+            const pairs = await db.pairs.getAllWhere(
+                'uri_collection', prefix,
+            );
             const document = deriveDocumentsAt(
-                requests, responses, prefix,
+                pairs, prefix,
             ).get(attrId);
             if (document === undefined) {
                 throw await missedReadError(
@@ -5566,17 +5546,11 @@ export const routes: Route[] = [
             const attrId = param(p, 2);
             await requireRecordTypeExists(db, org, typeId);
             const prefix = attributesUriPrefix(org, typeId);
-            const [requests, responses] =
-                await Promise.all([
-                    db.requests.getAllWhere(
-                        'uri_collection', prefix,
-                    ),
-                    db.responses.getAllWhere(
-                        'uri_collection', prefix,
-                    ),
-                ]);
+            const pairs = await db.pairs.getAllWhere(
+                'uri_collection', prefix,
+            );
             const hasHead = deriveDocumentsAt(
-                requests, responses, prefix,
+                pairs, prefix,
             ).has(attrId);
             const raw = withoutId(body);
             if (hasHead) {
@@ -5604,17 +5578,11 @@ export const routes: Route[] = [
                 );
             }
             const prefix = attributesUriPrefix(org, typeId);
-            const [requests, responses] =
-                await Promise.all([
-                    db.requests.getAllWhere(
-                        'uri_collection', prefix,
-                    ),
-                    db.responses.getAllWhere(
-                        'uri_collection', prefix,
-                    ),
-                ]);
+            const pairs = await db.pairs.getAllWhere(
+                'uri_collection', prefix,
+            );
             if (!deriveDocumentsAt(
-                requests, responses, prefix,
+                pairs, prefix,
             ).has(attrId)) {
                 throw await missedReadError(
                     db, attrId, org, 'record_attributes',
