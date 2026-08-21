@@ -97,7 +97,7 @@ import {
 // deriveMembershipsForIdentity filtered to one organization —
 // ADAPTER-SHAPED (`dbOrView: DbAdapter`, the SAME type an open
 // db.transaction view carries) so the invitation grant's own open
-// transaction (which already declares 'requests'/'responses'
+// transaction (which already declares MESSAGE_TABLES
 // among its tables) can call it in-tx without opening a nested
 // transaction of its own.
 //

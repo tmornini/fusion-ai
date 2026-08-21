@@ -47,7 +47,7 @@ export interface AttributeReferrers {
 // Every table the referrer scan touches. The state-field-value
 // leg is pair-plane derived (Phase 14 Task 6,
 // deriveStateFieldValueReferrers in api/derive-state-field-
-// values.ts): requests + responses feed the derive, and each
+// values.ts): pairs feed the derive, and each
 // candidate row's visibility is settled by
 // stateEventVisibilityFor (Phase 15 Task 3) on its parent
 // state event — pair-plane, not the row-plane
@@ -57,7 +57,7 @@ export interface AttributeReferrers {
 // work-orders collection prefix, and live node-attribute
 // bindings via flowGraphBindingsFromPairs (graphDelta
 // attributeEvents + nodeFlowIds). Phase Final Task 2:
-// RESTRICT is pair-plane only (requests + responses via
+// RESTRICT is pair-plane only (pairs via
 // derive helpers). The broader table list stays for tx-list
 // compatibility with residual dual-write callers until
 // Stage B drops the doomed stores. An in-tx caller must
@@ -101,7 +101,7 @@ function graphBindsAttribute(
 // snapshots. Frozen work-order referrers walk WO document
 // heads from the organization-scoped collection prefix
 // (deriveDocumentsAt — NEVER whole-plane getAll of
-// requests/responses). Field-value referrers are pair-plane
+// pairs). Field-value referrers are pair-plane
 // derived (Phase 14 Task 6) — ONE
 // deriveStateFieldValueReferrers pass ahead of the loop,
 // keyed by attribute_id.
@@ -117,16 +117,11 @@ export async function collectAttributeReferrers(
     const workOrdersPrefix = canonicalUriCollection(
         boundOrganization, '/work-orders/',
     );
-    const [woRequests, woResponses] = await Promise.all([
-        view.requests.getAllWhere(
-            'uri_collection', workOrdersPrefix,
-        ),
-        view.responses.getAllWhere(
-            'uri_collection', workOrdersPrefix,
-        ),
-    ]);
+    const woPairs = await view.pairs.getAllWhere(
+        'uri_collection', workOrdersPrefix,
+    );
     const woHeads = deriveDocumentsAt(
-        woRequests, woResponses, workOrdersPrefix,
+        woPairs, workOrdersPrefix,
     );
     const workOrderGraphs = [...woHeads.entries()].map(
         ([id, doc]) => ({

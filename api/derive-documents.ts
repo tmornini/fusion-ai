@@ -1,8 +1,6 @@
 import type {
     Id,
     PairEntity,
-    RequestEntity,
-    ResponseEntity,
     StateEntity,
 } from './types.ts';
 import { pickString } from './validators.ts';
@@ -72,69 +70,11 @@ export interface DocumentPair {
 // POST/PATCH rows at the same address are not heads. Only
 // successful writes are stored, so there is no status
 // filter. Method comes from the pair's `method` column.
-// DocumentPair.at is the response stamp. The 3-arg form
-// zips request/response halves then delegates to 2-arg;
-// a response with no stored request is skipped.
-function pairFromHalves(
-    request: RequestEntity,
-    response: ResponseEntity,
-): PairEntity {
-    return {
-        id: request.id,
-        uri_collection: request.uri_collection,
-        uri_id: request.uri_id,
-        requester_identity_id:
-            request.requester_identity_id,
-        method: request.method,
-        request_at: request.at,
-        request_hash: request.message_hash,
-        request: request.message,
-        response_at: response.at,
-        version: response.version,
-        response: response.message,
-        operation_id: request.operation_id,
-    };
-}
-
+// DocumentPair.at is the response stamp.
 export function documentPairsAt(
     pairs: readonly PairEntity[],
     uriCollection: string,
-): readonly DocumentPair[];
-export function documentPairsAt(
-    requests: readonly RequestEntity[],
-    responses: readonly ResponseEntity[],
-    uriCollection: string,
-): readonly DocumentPair[];
-export function documentPairsAt(
-    a: readonly PairEntity[]
-        | readonly RequestEntity[],
-    b: string | readonly ResponseEntity[],
-    c?: string,
 ): readonly DocumentPair[] {
-    if (typeof b !== 'string') {
-        const requests =
-            a as readonly RequestEntity[];
-        const responses = b;
-        const uriCollection = c!;
-        const requestById = new Map(
-            requests.map((row) => [row.id, row]),
-        );
-        const pairs: PairEntity[] = [];
-        for (const response of responses) {
-            const request = requestById.get(
-                response.id,
-            );
-            if (request === undefined) continue;
-            pairs.push(pairFromHalves(
-                request, response,
-            ));
-        }
-        return documentPairsAt(
-            pairs, uriCollection,
-        );
-    }
-    const pairs = a as readonly PairEntity[];
-    const uriCollection = b;
     const out: DocumentPair[] = [];
     for (const pair of pairs) {
         if (pair.uri_collection !== uriCollection) {
@@ -183,29 +123,13 @@ export interface DerivedDocument {
 export function deriveDocumentsAt(
     pairs: readonly PairEntity[],
     uriCollection: string,
-): Map<string, DerivedDocument>;
-export function deriveDocumentsAt(
-    requests: readonly RequestEntity[],
-    responses: readonly ResponseEntity[],
-    uriCollection: string,
-): Map<string, DerivedDocument>;
-export function deriveDocumentsAt(
-    a: readonly PairEntity[]
-        | readonly RequestEntity[],
-    b: string | readonly ResponseEntity[],
-    c?: string,
 ): Map<string, DerivedDocument> {
-    const pairs = typeof b !== 'string'
-        ? documentPairsAt(
-            a as readonly RequestEntity[],
-            b,
-            c!,
-        )
-        : documentPairsAt(
-            a as readonly PairEntity[],
-            b,
-        );
-    const heads = latestByKey(pairs, (pair) => pair.uriId);
+    const documentPairs = documentPairsAt(
+        pairs, uriCollection,
+    );
+    const heads = latestByKey(
+        documentPairs, (pair) => pair.uriId,
+    );
     const documents = new Map<string, DerivedDocument>();
     for (const [uriId, head] of heads) {
         if (head.method === DELETE_METHOD) continue;

@@ -51,8 +51,6 @@ import type {
     ObjectiveRevisionEntity,
     ProjectObjectiveBaselineScoreEntity,
     ProjectObjectiveActualScoreEntity,
-    RequestEntity,
-    ResponseEntity,
     PairEntity,
     StateEntity,
 } from './types.ts';
@@ -2454,114 +2452,13 @@ export function validateActualScoreEntity(
     };
 }
 
-// The two message-plane ledgers (Phase 0 of the
-// message-as-state migration): one row per stored HTTP
-// request/response. Request `message_hash` is the sha256
-// digest (`shared/digest.ts` sha256Hex) of `message`,
-// hex-encoded lowercase. The response row has no hash
-// column and no status column.
+// One stored HTTP pair. `request_hash` is the sha256
+// digest (`shared/digest.ts` sha256Hex) of `request`,
+// hex-encoded lowercase. No status column.
 const MESSAGE_HASH = /^[0-9a-f]{64}$/;
 
 const HTTP_METHOD = /^[A-Z]+$/;
 const OPERATION_ID = /^[0-9A-Za-z]{22}$/;
-
-const REQUEST_BODY_KEYS: readonly string[] = [
-    'uri_collection', 'uri_id', 'at', 'requester_identity_id',
-    'message_hash', 'message', 'method', 'operation_id',
-];
-
-export function validateRequestEntity(
-    body: Record<string, unknown>,
-): Omit<RequestEntity, 'id'> {
-    assertOnlyKeys(
-        body, REQUEST_BODY_KEYS, 'RequestEntity',
-    );
-    const uriCollection = pickString(body, 'uri_collection');
-    if (!uriCollection.endsWith('/')) {
-        throw new ValidationError(
-            'RequestEntity.uri_collection must end with "/"',
-        );
-    }
-    const messageHash = pickString(body, 'message_hash');
-    if (!MESSAGE_HASH.test(messageHash)) {
-        throw new ValidationError(
-            'RequestEntity.message_hash must be a 64-'
-            + 'character lowercase hex sha256 digest',
-        );
-    }
-    const at = validateTimestampField(
-        body, 'at', 'RequestEntity',
-    );
-    const method = pickString(body, 'method');
-    if (!HTTP_METHOD.test(method)) {
-        throw new ValidationError(
-            'RequestEntity.method must match ^[A-Z]+$',
-        );
-    }
-    const operationId = pickString(body, 'operation_id');
-    if (!OPERATION_ID.test(operationId)) {
-        throw new ValidationError(
-            'RequestEntity.operation_id must be a 22-'
-            + 'character id',
-        );
-    }
-    return {
-        uri_collection: uriCollection,
-        uri_id: pickString(body, 'uri_id'),
-        at,
-        requester_identity_id: pickString(
-            body, 'requester_identity_id',
-        ),
-        message_hash: messageHash,
-        message: pickString(body, 'message'),
-        method,
-        operation_id: operationId,
-    };
-}
-
-const RESPONSE_BODY_KEYS: readonly string[] = [
-    'uri_collection', 'uri_id', 'at', 'version',
-    'message', 'operation_id',
-];
-
-export function validateResponseEntity(
-    body: Record<string, unknown>,
-): Omit<ResponseEntity, 'id'> {
-    assertOnlyKeys(
-        body, RESPONSE_BODY_KEYS, 'ResponseEntity',
-    );
-    const uriCollection = pickString(body, 'uri_collection');
-    if (!uriCollection.endsWith('/')) {
-        throw new ValidationError(
-            'ResponseEntity.uri_collection must end with "/"',
-        );
-    }
-    const version = pickString(body, 'version');
-    if (!HEX64.test(version)) {
-        throw new ValidationError(
-            'ResponseEntity.version must be a 64-'
-            + 'character lowercase hex digest',
-        );
-    }
-    const at = validateTimestampField(
-        body, 'at', 'ResponseEntity',
-    );
-    const operationId = pickString(body, 'operation_id');
-    if (!OPERATION_ID.test(operationId)) {
-        throw new ValidationError(
-            'ResponseEntity.operation_id must be a 22-'
-            + 'character id',
-        );
-    }
-    return {
-        uri_collection: uriCollection,
-        uri_id: pickString(body, 'uri_id'),
-        at,
-        version,
-        message: pickString(body, 'message'),
-        operation_id: operationId,
-    };
-}
 
 const PAIR_BODY_KEYS: readonly string[] = [
     'uri_collection', 'uri_id',

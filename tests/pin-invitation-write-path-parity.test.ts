@@ -348,7 +348,7 @@ test('membershipExistsFor: pre-tx vs in-tx (acceptInvitation\'s'
 
     const seatPrefix = '/organizations/'
         + ORGANIZATION_TWO + '/members/';
-    const seatRows = await db.requests.getAllWhere(
+    const seatRows = await db.pairs.getAllWhere(
         'uri_collection', seatPrefix,
     );
     assert.equal(

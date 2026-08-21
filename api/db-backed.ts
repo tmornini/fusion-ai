@@ -14,10 +14,7 @@ import type {
 } from './db.ts';
 import type {
     PairEntity,
-    RequestEntity,
-    ResponseEntity,
 } from './types.ts';
-import { pairsShim } from './pairs-shim.ts';
 import type { LatencySimulation } from './latency.ts';
 import type {
     NotificationEvent,
@@ -26,8 +23,7 @@ import type {
 import { HistoryEntityStore }
     from './store-history-entity.ts';
 import {
-    validateRequestEntity,
-    validateResponseEntity,
+    validatePairEntity,
 } from './validators.ts';
 
 // One adapter over any StorageBackend. The store wiring
@@ -39,7 +35,7 @@ import {
 // before any store op. Schema lifecycle delegates to the
 // backend, which signals "schema exists" its own way.
 //
-// Both surviving stores ride HistoryEntityStore (message
+// The surviving store rides HistoryEntityStore (message
 // plane only — clients table eliminated).
 export class BackedDbAdapter
     implements GuardedDbAdapter, LatencySimulation
@@ -49,8 +45,6 @@ export class BackedDbAdapter
     readonly #open: () => Promise<void>;
     readonly #notify: NotificationPost;
 
-    readonly requests!: EntityStore<RequestEntity>;
-    readonly responses!: EntityStore<ResponseEntity>;
     readonly pairs!: EntityStore<PairEntity>;
 
     constructor(
@@ -66,9 +60,6 @@ export class BackedDbAdapter
         Object.assign(
             this,
             this.#buildStores(backendRunner(backend)),
-        );
-        this.pairs = pairsShim(
-            this.requests, this.responses,
         );
     }
 
@@ -148,9 +139,6 @@ export class BackedDbAdapter
         );
         const view: GuardedDbAdapter = {
             ...stores,
-            pairs: pairsShim(
-                stores.requests, stores.responses,
-            ),
             initialize: () => this.initialize(),
             deleteSchema: () => this.deleteSchema(),
             hasSchema: () => this.hasSchema(),
@@ -185,11 +173,8 @@ export class BackedDbAdapter
 
     #buildStores(run: TxRunner): DbStores {
         return {
-            requests: new HistoryEntityStore(
-                'requests', run, validateRequestEntity,
-            ),
-            responses: new HistoryEntityStore(
-                'responses', run, validateResponseEntity,
+            pairs: new HistoryEntityStore(
+                'pairs', run, validatePairEntity,
             ),
         };
     }

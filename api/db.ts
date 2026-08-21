@@ -1,7 +1,5 @@
 import type {
     PairEntity,
-    RequestEntity,
-    ResponseEntity,
 } from './types.ts';
 import type {
     NotificationEvent,
@@ -264,16 +262,13 @@ export const backendRunner = (
 export const ambientRunner = (tx: Tx): TxRunner =>
     (_tables, _mode, fn) => fn(tx);
 
-// The 2 stores an adapter exposes, factored out of
+// The store an adapter exposes, factored out of
 // DbAdapter so an adapter can build the whole bundle in one
 // place (`#buildStores`) and a transaction can rebuild it
-// bound to an open tx (A9). Both surviving stores ride
+// bound to an open tx (A9). The surviving store rides
 // HistoryEntityStore (message plane only).
 export interface DbStores {
-    requests:
-        EntityStore<RequestEntity>;
-    responses:
-        EntityStore<ResponseEntity>;
+    pairs: EntityStore<PairEntity>;
 }
 
 // Schema/connection lifecycle — the non-row surface every
@@ -300,7 +295,6 @@ export interface DbLifecycle {
 }
 
 export interface DbAdapter extends DbLifecycle, DbStores {
-    readonly pairs: EntityStore<PairEntity>;
     // Run `fn` inside one transaction. The view it receives
     // exposes the same stores bound to the open tx, so every
     // op joins it — GET-modify-PUT and multi-PUT commit
@@ -329,7 +323,6 @@ export interface DbAdapter extends DbLifecycle, DbStores {
 export interface GuardedDbAdapter
     extends DbLifecycle, DbStores
 {
-    readonly pairs: EntityStore<PairEntity>;
     transaction<R>(
         tables: readonly string[],
         fn: (view: GuardedDbAdapter) => Promise<R>,
@@ -351,16 +344,13 @@ export interface GuardedDbAdapter
 // orphans. deleteSchema (a full database delete) is the only
 // cleanup; nothing else needs to reconcile them.
 export const TABLE_NAMES = [
-    'requests',
-    'responses',
+    'pairs',
 ];
 
 // The pair-plane transaction declaration. Every
 // `transaction` / `readTransaction` that touches
 // the message plane passes this instead of a
-// literal list. Equals TABLE_NAMES for the life
-// of the two-table schema; the merge flips
-// TABLE_NAMES and this follows.
+// literal list. Equals TABLE_NAMES.
 export const MESSAGE_TABLES = TABLE_NAMES;
 
 // A secondary index is either a plain column name (the
@@ -400,12 +390,6 @@ export function uniqueColumns(
 // collection IS its rows.
 export const TABLE_INDEXES:
     Record<string, readonly TableIndexSpec[]> = {
-    requests: [
-        'uri_collection', 'message_hash',
-    ],
-    responses: [
-        'uri_collection',
-    ],
     pairs: [
         'uri_collection', 'request_hash',
     ],

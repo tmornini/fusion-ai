@@ -14,7 +14,6 @@ import {
     validateProjectFlowEntity,
     validateRecordAttributeEntity,
     validateFlowDocumentBody,
-    validateResponseEntity,
     validatePairEntity,
     asStoredGraph,
     asConstraint,
@@ -1267,43 +1266,6 @@ test(
                 position: 1,
             }),
             /expected object for flow_graph/,
-        );
-    },
-);
-
-// --- ResponseEntity ---
-
-const validResponse = {
-    uri_collection: '/organizations/1/ideas/',
-    uri_id: '42',
-    at: '2026-01-01T00:00:00.000000Z',
-    version: 'e'.repeat(64),
-    message: '{"kind":"response"}',
-    operation_id: '0123456789ABCDEFGHIJKL',
-};
-
-test(
-    'validateResponseEntity rejects status key',
-    () => {
-        assert.throws(
-            () => validateResponseEntity({
-                ...validResponse,
-                status: 200,
-            }),
-            /unexpected key "status"/,
-        );
-    },
-);
-
-test(
-    'validateResponseEntity rejects message_hash key',
-    () => {
-        assert.throws(
-            () => validateResponseEntity({
-                ...validResponse,
-                message_hash: 'a'.repeat(64),
-            }),
-            /unexpected key "message_hash"/,
         );
     },
 );

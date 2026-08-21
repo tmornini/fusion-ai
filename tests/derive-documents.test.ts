@@ -7,24 +7,19 @@ import {
 import { formWritePair } from '../api/message-pair.ts';
 import type {
     PairEntity,
-    RequestEntity,
-    ResponseEntity,
 } from '../api/types.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 const AT = '2026-01-01T00:00:00.000000Z';
 
-// A stored request/response row pair for a given method, built
-// through the SAME formWritePair every live write uses — never
-// hand-assembled JSON — so the fixture's message shape stays
-// truthful to what appendMessagePair actually persists.
+// A stored pair for a given method, built through the SAME
+// formWritePair every live write uses — never hand-assembled
+// JSON — so the fixture's message shape stays truthful to
+// what appendMessagePair actually persists.
 async function storedPairAt(
     method: string,
     status: number,
-): Promise<{
-    readonly request: RequestEntity;
-    readonly response: ResponseEntity;
-}> {
+): Promise<PairEntity> {
     const pair = await formWritePair({
         method,
         pathname: '/organizations/1/ideas/doc-1',
@@ -41,76 +36,44 @@ async function storedPairAt(
         operationId: TEST_OPERATION_ID,
     });
     return {
-        request: {
-            id: pair.id,
-            uri_collection: pair.uriCollection,
-            uri_id: pair.uriId,
-            at: AT,
-            requester_identity_id: pair.requesterIdentityId,
-            message_hash: pair.requestHash,
-            message: pair.requestMessage,
-            method: pair.method,
-            operation_id: pair.operationId,
-        },
-        response: {
-            id: pair.id,
-            uri_collection: pair.uriCollection,
-            uri_id: pair.uriId,
-            at: AT,
-            version: pair.responseEtag,
-            message: pair.responseMessage,
-            operation_id: pair.operationId,
-        },
-    };
-}
-
-function asPair(
-    request: RequestEntity,
-    response: ResponseEntity,
-): PairEntity {
-    return {
-        id: request.id,
-        uri_collection: request.uri_collection,
-        uri_id: request.uri_id,
-        requester_identity_id:
-            request.requester_identity_id,
-        method: request.method,
-        request_at: request.at,
-        request_hash: request.message_hash,
-        request: request.message,
-        response_at: response.at,
-        version: response.version,
-        response: response.message,
-        operation_id: request.operation_id,
+        id: pair.id,
+        uri_collection: pair.uriCollection,
+        uri_id: pair.uriId,
+        requester_identity_id: pair.requesterIdentityId,
+        method: pair.method,
+        request_at: AT,
+        request_hash: pair.requestHash,
+        request: pair.requestMessage,
+        response_at: AT,
+        version: pair.responseEtag,
+        response: pair.responseMessage,
+        operation_id: pair.operationId,
     };
 }
 
 // design decision 6: a document-address pair's method decides
 // whether it is a DOCUMENT (PUT/DELETE) or an OPERATION (POST,
 // e.g. a create-shaped genesis pair sharing the document's own
-// address). No-op for organizations/1/ideas/projects today (neither ever
-// POSTs
-// at its own document address); load-bearing once a family's
-// create pair shares the document address (flows).
+// address). No-op for organizations/1/ideas/projects today
+// (neither ever POSTs at its own document address);
+// load-bearing once a family's create pair shares the
+// document address (flows).
 
 test('2-arg documentPairsAt decodes a PUT pair',
 async () => {
-    const { request, response } =
-        await storedPairAt('PUT', 200);
+    const pair = await storedPairAt('PUT', 200);
     const prefix = '/organizations/1/ideas/';
-    const fromOne = documentPairsAt(
-        [asPair(request, response)], prefix,
-    );
+    const fromOne = documentPairsAt([pair], prefix);
     assert.equal(fromOne.length, 1);
     assert.equal(fromOne[0]!.method, 'PUT');
-    assert.equal(fromOne[0]!.at, response.at);
+    assert.equal(fromOne[0]!.at, pair.response_at);
 });
 
 test('documentPairsAt excludes a POST pair at a document'
 + ' address', async () => {
-    const { request, response } = await storedPairAt('POST', 200);
+    const pair = await storedPairAt('POST', 200);
     const pairs = documentPairsAt(
-        [asPair(request, response)],
+        [pair],
         '/organizations/1/ideas/',
     );
     assert.equal(pairs.length, 0);
@@ -118,9 +81,9 @@ test('documentPairsAt excludes a POST pair at a document'
 
 test('documentPairsAt includes a PUT pair at a document'
 + ' address', async () => {
-    const { request, response } = await storedPairAt('PUT', 200);
+    const pair = await storedPairAt('PUT', 200);
     const pairs = documentPairsAt(
-        [asPair(request, response)],
+        [pair],
         '/organizations/1/ideas/',
     );
     assert.equal(pairs.length, 1);
@@ -129,11 +92,11 @@ test('documentPairsAt includes a PUT pair at a document'
 
 test('documentPairsAt includes a DELETE pair at a document'
 + ' address', async () => {
-    const { request, response } = await storedPairAt(
+    const pair = await storedPairAt(
         'DELETE', 204,
     );
     const pairs = documentPairsAt(
-        [asPair(request, response)],
+        [pair],
         '/organizations/1/ideas/',
     );
     assert.equal(pairs.length, 1);
@@ -142,9 +105,9 @@ test('documentPairsAt includes a DELETE pair at a document'
 
 test('deriveDocumentsAt never sees a POST-only address',
 async () => {
-    const { request, response } = await storedPairAt('POST', 200);
+    const pair = await storedPairAt('POST', 200);
     const documents = deriveDocumentsAt(
-        [asPair(request, response)],
+        [pair],
         '/organizations/1/ideas/',
     );
     assert.equal(documents.size, 0);

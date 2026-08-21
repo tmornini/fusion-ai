@@ -80,11 +80,10 @@ function humanCreateBody(id: string, eventId: string) {
 async function allMessages(
     db: MemoryDbAdapter,
 ): Promise<string[]> {
-    const requests = await db.requests.getAll();
-    const responses = await db.responses.getAll();
+    const pairs = await db.pairs.getAll();
     return [
-        ...requests.map(r => r.message),
-        ...responses.map(r => r.message),
+        ...pairs.map(r => r.request),
+        ...pairs.map(r => r.response),
     ];
 }
 
