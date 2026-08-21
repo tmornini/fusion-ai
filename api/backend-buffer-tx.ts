@@ -24,10 +24,11 @@ import { parseWire } from
 // NOT-NULL gate runs at `put` time, so a bad row throws
 // inside `fn` and the whole transaction rolls back.
 //
-// Reads hand out shallow copies (rows are flat), matching
-// IndexedDB's structured-clone-per-read value semantics —
-// a caller mutating a fetched row can never reach the
-// buffer or the committed store.
+// Reads hand out copies, never the buffered or committed
+// row objects — the seam's value semantics: Postgres
+// materializes a fresh row per read, and the test backend
+// must not be weaker. A caller mutating a fetched row can
+// never rewrite committed state.
 export function bufferTx(
     buffer: Map<string, { id: string }[]>,
     mode: TxMode,
