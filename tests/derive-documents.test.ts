@@ -93,18 +93,15 @@ function asPair(
 // at its own document address); load-bearing once a family's
 // create pair shares the document address (flows).
 
-test('2-arg documentPairsAt matches 3-arg',
+test('2-arg documentPairsAt decodes a PUT pair',
 async () => {
     const { request, response } =
         await storedPairAt('PUT', 200);
     const prefix = '/organizations/1/ideas/';
-    const fromTwo = documentPairsAt(
-        [request], [response], prefix,
-    );
     const fromOne = documentPairsAt(
         [asPair(request, response)], prefix,
     );
-    assert.deepEqual(fromOne, fromTwo);
+    assert.equal(fromOne.length, 1);
     assert.equal(fromOne[0]!.method, 'PUT');
     assert.equal(fromOne[0]!.at, response.at);
 });
@@ -113,7 +110,8 @@ test('documentPairsAt excludes a POST pair at a document'
 + ' address', async () => {
     const { request, response } = await storedPairAt('POST', 200);
     const pairs = documentPairsAt(
-        [request], [response], '/organizations/1/ideas/',
+        [asPair(request, response)],
+        '/organizations/1/ideas/',
     );
     assert.equal(pairs.length, 0);
 });
@@ -122,7 +120,8 @@ test('documentPairsAt includes a PUT pair at a document'
 + ' address', async () => {
     const { request, response } = await storedPairAt('PUT', 200);
     const pairs = documentPairsAt(
-        [request], [response], '/organizations/1/ideas/',
+        [asPair(request, response)],
+        '/organizations/1/ideas/',
     );
     assert.equal(pairs.length, 1);
     assert.equal(pairs[0]!.method, 'PUT');
@@ -134,7 +133,8 @@ test('documentPairsAt includes a DELETE pair at a document'
         'DELETE', 204,
     );
     const pairs = documentPairsAt(
-        [request], [response], '/organizations/1/ideas/',
+        [asPair(request, response)],
+        '/organizations/1/ideas/',
     );
     assert.equal(pairs.length, 1);
     assert.equal(pairs[0]!.method, 'DELETE');
@@ -144,7 +144,8 @@ test('deriveDocumentsAt never sees a POST-only address',
 async () => {
     const { request, response } = await storedPairAt('POST', 200);
     const documents = deriveDocumentsAt(
-        [request], [response], '/organizations/1/ideas/',
+        [asPair(request, response)],
+        '/organizations/1/ideas/',
     );
     assert.equal(documents.size, 0);
 });

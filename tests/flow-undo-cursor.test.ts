@@ -699,13 +699,11 @@ test(
         assert.equal(undone.status, 201);
 
         const prefix = canonicalUriCollection('1', '/flows/');
-        const [requests, responses] = await Promise.all([
-            db.requests.getAllWhere('uri_collection', prefix),
-            db.responses.getAllWhere('uri_collection', prefix),
-        ]);
-        const pairs = documentPairsAt(
-            requests, responses, prefix,
-        ).filter((p) => p.uriId === flowId);
+        const stored = await db.pairs.getAllWhere(
+            'uri_collection', prefix,
+        );
+        const pairs = documentPairsAt(stored, prefix)
+            .filter((p) => p.uriId === flowId);
         const states: { state: string; at: string }[] = [];
         for (const pair of pairs) {
             const delta = pair.body['graphDelta'];

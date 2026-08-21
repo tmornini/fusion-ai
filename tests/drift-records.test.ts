@@ -1320,11 +1320,8 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     );
     assert.equal(flagshipScan.size, 0);
 
-    const allRequests = await db.requests.getAll();
-    const allResponses = await db.responses.getAll();
-    const sfvRows = stateFieldValuesFrom(
-        allRequests, allResponses,
-    );
+    const allPairs = await db.pairs.getAll();
+    const sfvRows = stateFieldValuesFrom(allPairs);
     const flagshipSfvTally = new Map<string, number>();
     for (const row of sfvRows) {
         if (
