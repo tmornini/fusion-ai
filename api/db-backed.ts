@@ -13,9 +13,11 @@ import type {
     WriteLocks,
 } from './db.ts';
 import type {
+    PairEntity,
     RequestEntity,
     ResponseEntity,
 } from './types.ts';
+import { pairsShim } from './pairs-shim.ts';
 import type { LatencySimulation } from './latency.ts';
 import type {
     NotificationEvent,
@@ -49,6 +51,7 @@ export class BackedDbAdapter
 
     readonly requests!: EntityStore<RequestEntity>;
     readonly responses!: EntityStore<ResponseEntity>;
+    readonly pairs!: EntityStore<PairEntity>;
 
     constructor(
         backend: StorageBackend,
@@ -63,6 +66,9 @@ export class BackedDbAdapter
         Object.assign(
             this,
             this.#buildStores(backendRunner(backend)),
+        );
+        this.pairs = pairsShim(
+            this.requests, this.responses,
         );
     }
 
@@ -137,8 +143,14 @@ export class BackedDbAdapter
             return fn(view);
         };
         const locks = writeLocksOf(tx);
+        const stores = this.#buildStores(
+            ambientRunner(tx),
+        );
         const view: GuardedDbAdapter = {
-            ...this.#buildStores(ambientRunner(tx)),
+            ...stores,
+            pairs: pairsShim(
+                stores.requests, stores.responses,
+            ),
             initialize: () => this.initialize(),
             deleteSchema: () => this.deleteSchema(),
             hasSchema: () => this.hasSchema(),

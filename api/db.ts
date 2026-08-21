@@ -1,4 +1,5 @@
 import type {
+    PairEntity,
     RequestEntity,
     ResponseEntity,
 } from './types.ts';
@@ -299,6 +300,7 @@ export interface DbLifecycle {
 }
 
 export interface DbAdapter extends DbLifecycle, DbStores {
+    readonly pairs: EntityStore<PairEntity>;
     // Run `fn` inside one transaction. The view it receives
     // exposes the same stores bound to the open tx, so every
     // op joins it — GET-modify-PUT and multi-PUT commit
@@ -327,6 +329,7 @@ export interface DbAdapter extends DbLifecycle, DbStores {
 export interface GuardedDbAdapter
     extends DbLifecycle, DbStores
 {
+    readonly pairs: EntityStore<PairEntity>;
     transaction<R>(
         tables: readonly string[],
         fn: (view: GuardedDbAdapter) => Promise<R>,
