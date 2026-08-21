@@ -2060,8 +2060,8 @@ export async function handleRequest(
 
 // What the client verb facade requires of its adapter: the
 // unfenced tier's full contract (handleRequest's gate fences
-// it per request) plus the segregated demo latency shim the
-// facade awaits before each simulated network hop.
+// it per request) plus the latency shim — both presets pass
+// a no-op today.
 export type ClientFacadeAdapter =
     GuardedDbAdapter & LatencySimulation;
 

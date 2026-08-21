@@ -17,10 +17,8 @@ import { parseWire } from
 // of the touched tables. The buffer IS the unit of
 // atomicity: every op mutates only the buffer, so a backend
 // commits by flushing the dirty set and rolls back by
-// discarding it. Backend-agnostic by construction — the two
-// simulated backends (memory, localStorage) differ only in
-// how they fill the buffer (preload) and drain it (flush),
-// never in how the buffer is read or written here. The
+// discarding it. The memory backend fills and drains this
+// buffer; Postgres does not use it. The
 // NOT-NULL gate runs at `put` time, so a bad row throws
 // inside `fn` and the whole transaction rolls back.
 //

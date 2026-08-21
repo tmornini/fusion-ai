@@ -30,15 +30,6 @@ import { appendMessagePair } from './message-pair.ts';
 // `pair` arrives fully formed, all crypto done pre-tx
 // (message-pair.ts).
 //
-// Cross-tab note: the localStorage demo tier flushes a
-// transaction's touched keys as a multi-key buffer, not a single
-// atomic write — the accepted B4 last-writer-wins class this
-// codebase already carries for that tier. Real IndexedDB
-// serializes overlapping-scope readwrite transactions, so two
-// tabs racing the SAME /pii address there still resolve to
-// exactly one genuine winner — the single-slot invariant holds
-// for real, not merely by convention.
-//
 // Concurrency note: under a genuinely concurrent byte-identical
 // PUT/PUT (or DELETE/DELETE) race at one /pii address, the
 // second writer's slot replacement removes the first writer's

@@ -488,8 +488,8 @@ export async function deriveClientRegistration(
 // One identity's document kind, or undefined when no identity
 // document exists — the registration route's kind gate reads
 // this (absent -> 404, person -> 400) before every verb. The
-// whole-family prefix read matches the demo tier's E13
-// posture (deriveIdentityPiiRows reads more).
+// whole-family prefix read is the one
+// `deriveIdentityPiiRows` already makes.
 export async function deriveIdentityKind(
     db: DbAdapter,
     identityId: Id,
