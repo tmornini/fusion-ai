@@ -521,9 +521,8 @@ to a directory (what `./serve` uses). Use `./build --help`
 for options. The build script itself is the source of
 truth for what gets composed, bundled, and copied — read
 it, don't read this section. The client-graph metafile
-must not contain `SIGNING_KEY_MATERIAL`,
-`backend-indexeddb`, or token mint
-(`api/access-token.ts`).
+must not contain `SIGNING_KEY_MATERIAL` or
+token mint (`api/access-token.ts`).
 
 ## Testing
 

@@ -364,9 +364,8 @@ Postgres is the store. The page talks `fetch`. The
 client bundle is the fetch facade (no in-page API, no
 signing key, no IndexedDB). `--no-zip` writes that
 same server-core bundle plus `server.mjs`. A metafile
-test forbids `SIGNING_KEY_MATERIAL`,
-`backend-indexeddb`, and token mint
-(`api/access-token.ts`) in the client graph.
+test forbids `SIGNING_KEY_MATERIAL` and token
+mint (`api/access-token.ts`) in the client graph.
 
 The yank that deleted the in-browser data tier has
 shipped. Memory remains for `./test` / `./validate`.
