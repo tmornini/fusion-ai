@@ -27,6 +27,10 @@ export const SEED_EXCLUSIVE_FLAGS =
     'use only one of --seed-bootstrap, '
     + '--seed-mock-data, or '
     + '--seed-test-plan-slices';
+export const SEED_ARGV_EXCLUSIVE =
+    'use exactly one of --bootstrap, '
+    + '--mock-data, or '
+    + '--test-plan-slices';
 export const SEED_REVEAL_HEADER =
     'Save your demo sign-ins — shown once; copy them now.';
 export const SEED_PASSWORD_HASH_CONCURRENCY = 1;
@@ -35,6 +39,11 @@ export type SeedMode =
     | 'bootstrap'
     | 'mock-data'
     | 'test-plan-slices';
+
+export type ParseSeedResult =
+    | { kind: 'ok'; mode: SeedMode }
+    | { kind: 'help' }
+    | { kind: 'error'; message: string };
 
 export type SeedPasswordHasher = (
     plaintext: string,
@@ -65,6 +74,43 @@ export function readSeedMode(
     if (mockData) return 'mock-data';
     if (slices) return 'test-plan-slices';
     return undefined;
+}
+
+export function parseSeedArgv(
+    argv: readonly string[],
+): ParseSeedResult {
+    let mode: SeedMode | undefined;
+    for (const a of argv) {
+        if (a === '--help' || a === '-h') {
+            return { kind: 'help' };
+        }
+        const next =
+            a === '--bootstrap' ? 'bootstrap'
+            : a === '--mock-data' ? 'mock-data'
+            : a === '--test-plan-slices'
+                ? 'test-plan-slices'
+                : null;
+        if (next === null) {
+            return {
+                kind: 'error',
+                message: 'unknown argument: ' + a,
+            };
+        }
+        if (mode !== undefined) {
+            return {
+                kind: 'error',
+                message: SEED_ARGV_EXCLUSIVE,
+            };
+        }
+        mode = next;
+    }
+    if (mode === undefined) {
+        return {
+            kind: 'error',
+            message: SEED_ARGV_EXCLUSIVE,
+        };
+    }
+    return { kind: 'ok', mode };
 }
 
 export async function isDatabaseEmpty(
@@ -222,13 +268,12 @@ export async function seedEmptyDatabase(
     });
 }
 
-export async function applySeedFlag(
+export async function seedPostgres(
     sql: SqlClient,
     adapter: DbAdapter,
-    mode: SeedMode | undefined,
+    mode: SeedMode,
     options: SeedRunOptions,
 ): Promise<void> {
-    if (mode === undefined) return;
     await assertEmptyDatabase(sql);
     if (mode === 'test-plan-slices') {
         const slices = await postTestPlanSlices(
@@ -244,4 +289,14 @@ export async function applySeedFlag(
         adapter, mode, options,
     );
     writeSeededCredentials(creds, options.write);
+}
+
+export async function applySeedFlag(
+    sql: SqlClient,
+    adapter: DbAdapter,
+    mode: SeedMode | undefined,
+    options: SeedRunOptions,
+): Promise<void> {
+    if (mode === undefined) return;
+    await seedPostgres(sql, adapter, mode, options);
 }

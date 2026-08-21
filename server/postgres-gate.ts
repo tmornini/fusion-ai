@@ -5,6 +5,7 @@
 import type { SqlClient } from
     '../api/postgres-client.ts';
 import {
+    SEED_ARGV_EXCLUSIVE,
     SEED_EXCLUSIVE_FLAGS,
     SEED_NONEMPTY,
 } from './seed.ts';
@@ -70,18 +71,50 @@ const SAFE_BOOT_MESSAGES: ReadonlySet<string> = new Set([
     SEED_EXCLUSIVE_FLAGS,
 ]);
 
+const SAFE_SEED_MESSAGES: ReadonlySet<string> = new Set([
+    UTF8_REQUIRED,
+    SEED_NONEMPTY,
+    SEED_ARGV_EXCLUSIVE,
+]);
+
+export function safeErrorMessage(
+    error: unknown,
+    allowlist: ReadonlySet<string>,
+    fallback: string,
+): string {
+    if (!(error instanceof Error)) return fallback;
+    if (allowlist.has(error.message)) {
+        return error.message;
+    }
+    if (error.message.startsWith(
+        'missing required env ',
+    )) {
+        return error.message;
+    }
+    if (error.message.startsWith(
+        'HTTP_SERVER_PORT ',
+    )) {
+        return error.message;
+    }
+    return fallback;
+}
+
 export function bootErrorMessage(
     error: unknown,
 ): string {
-    if (!(error instanceof Error)) return 'boot failed';
-    if (SAFE_BOOT_MESSAGES.has(error.message)) {
-        return error.message;
-    }
-    if (error.message.startsWith('missing required env ')) {
-        return error.message;
-    }
-    if (error.message.startsWith('HTTP_SERVER_PORT ')) {
-        return error.message;
-    }
-    return 'boot failed';
+    return safeErrorMessage(
+        error,
+        SAFE_BOOT_MESSAGES,
+        'boot failed',
+    );
+}
+
+export function seedErrorMessage(
+    error: unknown,
+): string {
+    return safeErrorMessage(
+        error,
+        SAFE_SEED_MESSAGES,
+        'seed failed',
+    );
 }

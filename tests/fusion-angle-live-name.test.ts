@@ -29,6 +29,7 @@ const ROOT_FILES = [
     'package-lock.json',
     'postgres-wipe',
     'postgres-lib',
+    'postgres-seed',
     'generate-schema-svg',
     'generate-api-documentation',
 ] as const;

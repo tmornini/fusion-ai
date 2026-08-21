@@ -17,6 +17,9 @@ when working with code in this repository.
 ./serve [port]         # Build + node server.mjs (default 8080)
 ./postgres-wipe --postgres render TOKEN --pristine|--mockdata
 ./postgres-wipe --postgres local --pristine|--mockdata
+./postgres-seed --postgres local --bootstrap|--mock-data|--test-plan-slices
+./postgres-seed --postgres render TOKEN \
+    --bootstrap|--mock-data|--test-plan-slices
 ./measure              # Full ceremony (record+budgets+25+viz)
 ./measure --help       # Show usage
 ./measure --check      # Fail if medians exceed budgets

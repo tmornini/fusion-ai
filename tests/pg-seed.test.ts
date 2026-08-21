@@ -12,15 +12,20 @@ import {
     formatSeededCredentials,
     formatTestPlanSliceCredentials,
     isDatabaseEmpty,
+    parseSeedArgv,
     readSeedMode,
+    SEED_ARGV_EXCLUSIVE,
     SEED_BOOTSTRAP_FLAG,
     SEED_EXCLUSIVE_FLAGS,
     SEED_MOCK_DATA_FLAG,
     SEED_NONEMPTY,
     SEED_TEST_PLAN_SLICES_FLAG,
     SEED_REVEAL_HEADER,
+    seedPostgres,
     serialPasswordHasher,
 } from '../server/seed.ts';
+import { seedErrorMessage } from
+    '../server/postgres-gate.ts';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import type { SqlClient } from
@@ -121,6 +126,74 @@ test('readSeedMode accepts slices flag', () => {
             'node', SEED_TEST_PLAN_SLICES_FLAG,
         ]),
         'test-plan-slices',
+    );
+});
+
+test('parseSeedArgv accepts one mode flag', () => {
+    assert.deepEqual(
+        parseSeedArgv(['--bootstrap']),
+        { kind: 'ok', mode: 'bootstrap' },
+    );
+    assert.deepEqual(
+        parseSeedArgv(['--mock-data']),
+        { kind: 'ok', mode: 'mock-data' },
+    );
+    assert.deepEqual(
+        parseSeedArgv(['--test-plan-slices']),
+        { kind: 'ok', mode: 'test-plan-slices' },
+    );
+});
+
+test('parseSeedArgv help is kind help', () => {
+    assert.deepEqual(
+        parseSeedArgv(['--help']),
+        { kind: 'help' },
+    );
+    assert.deepEqual(
+        parseSeedArgv(['-h']),
+        { kind: 'help' },
+    );
+});
+
+test('parseSeedArgv none two unknown', () => {
+    const none = parseSeedArgv([]);
+    assert.equal(none.kind, 'error');
+    if (none.kind !== 'error') return;
+    assert.equal(
+        none.message,
+        SEED_ARGV_EXCLUSIVE,
+    );
+    const two = parseSeedArgv([
+        '--bootstrap', '--mock-data',
+    ]);
+    assert.equal(two.kind, 'error');
+    if (two.kind !== 'error') return;
+    assert.equal(
+        two.message,
+        SEED_ARGV_EXCLUSIVE,
+    );
+    const unknown = parseSeedArgv(['--pristine']);
+    assert.equal(unknown.kind, 'error');
+    if (unknown.kind !== 'error') return;
+    assert.match(unknown.message, /unknown/i);
+});
+
+test('seedErrorMessage never echoes a URL', () => {
+    assert.equal(
+        seedErrorMessage(new Error(
+            'connect postgres://user:pw@h/db',
+        )),
+        'seed failed',
+    );
+    assert.equal(
+        seedErrorMessage(new Error(SEED_NONEMPTY)),
+        SEED_NONEMPTY,
+    );
+    assert.equal(
+        seedErrorMessage(
+            new Error(SEED_ARGV_EXCLUSIVE),
+        ),
+        SEED_ARGV_EXCLUSIVE,
     );
 });
 
@@ -434,6 +507,30 @@ async () => {
     );
     assert.equal(wrote, false);
     assert.equal(await db.hasSchema(), false);
+});
+
+test('seedPostgres seeds when mode is required',
+async () => {
+    const db = memoryDbAdapter();
+    const empty = fakeClient([{
+        requests: false,
+        responses: false,
+        marker: false,
+    }]);
+    const chunks: string[] = [];
+    await seedPostgres(
+        empty.sql, db, 'bootstrap', {
+            hashPassword: testHashPassword,
+            write: (chunk) => {
+                chunks.push(chunk);
+            },
+        },
+    );
+    const printed = chunks.join('');
+    assert.match(printed, /demo@example.com\t/);
+    assert.ok(printed.includes(SEED_REVEAL_HEADER));
+    assert.equal(await db.hasSchema(), true);
+    assert.equal(chunks.length, 1);
 });
 
 test('bootstrap seed prints credentials once',
