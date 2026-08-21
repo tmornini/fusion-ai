@@ -158,10 +158,11 @@ flatten_render_logs() {
     ' "$src" "$dest"
 }
 
-# Prints the markdown table to stdout.
-# Exit 10 if the header is absent.
-# Exit 11 if the header is present but no pairs.
-print_credential_table() {
+# Print the reveal from the header through the last
+# tab-bearing line. Exit 10 if the header is
+# absent. Exit 11 if the header is present but no
+# tab-bearing line follows it.
+print_reveal_lines() {
     local file="$1"
     node --input-type=module -e '
         import { readFileSync } from "node:fs";
@@ -174,30 +175,18 @@ print_credential_table() {
             (line) => line.includes(header),
         );
         if (idx < 0) exit(10);
-        const rows = [];
-        for (const line of lines.slice(idx + 1)) {
-            const tab = line.indexOf("\t");
-            if (tab <= 0) continue;
-            const user = line.slice(0, tab);
-            const pass = line.slice(tab + 1);
-            if (user === "" || pass === "") continue;
-            if (pass.includes("\t")) continue;
-            rows.push([user, pass]);
+        let lastTab = -1;
+        for (let i = idx + 1; i < lines.length;
+            i++) {
+            if (lines[i].includes("\t")) {
+                lastTab = i;
+            }
         }
-        if (rows.length === 0) exit(11);
-        const cell = (value) =>
-            value.split("|").join("\\|");
-        stdout.write("| username | password |\n");
-        stdout.write("| --- | --- |\n");
-        for (const [user, pass] of rows) {
-            stdout.write(
-                "| "
-                + cell(user)
-                + " | "
-                + cell(pass)
-                + " |\n",
-            );
-        }
+        if (lastTab < 0) exit(11);
+        stdout.write(
+            lines.slice(idx, lastTab + 1)
+                .join("\n") + "\n",
+        );
     ' "$file" "$REVEAL_HEADER"
 }
 

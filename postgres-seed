@@ -8,19 +8,24 @@ usage() {
     cat <<'USAGE'
 Usage: ./postgres-seed --postgres local
        --bootstrap|--mock-data|--test-plan-slices
+       ./postgres-seed --postgres render TOKEN
+       --bootstrap|--mock-data|--test-plan-slices
 
 Seed an empty Postgres. --postgres is
-required and has no default. --postgres local
+required and has no default. --postgres render
+needs TOKEN (the confirmation). --postgres local
 uses POSTGRES_URL (loopback only); it takes no
 TOKEN.
 
 Options:
-  --postgres local   Target (required)
+  --postgres render|local   Target (required)
   --bootstrap   Seed bootstrap identities
   --mock-data   Seed mock data
   --test-plan-slices   Seed TEST-PLAN slices
   --help       Show this help message
 
+render: TOKEN must see exactly one Postgres and
+one web service. HTTP only (curl).
 local: assert loopback, then
 node --strip-types server/postgres-seed.ts.
 Development gun.
@@ -135,13 +140,6 @@ if [ "$POSTGRES_TARGET" = "local" ] \
     exit 1
 fi
 
-if [ "$POSTGRES_TARGET" = "render" ]; then
-    echo "Error: --postgres render lands in a" \
-        "later commit" >&2
-    usage >&2
-    exit 1
-fi
-
 if [ "$BOOTSTRAP" = true ]; then
     MODE='--bootstrap'
 elif [ "$MOCK_DATA" = true ]; then
@@ -155,8 +153,51 @@ if ! command -v node >/dev/null; then
     exit 1
 fi
 
-assert_loopback_postgres_url
+if [ "$POSTGRES_TARGET" = "local" ]; then
+    assert_loopback_postgres_url
+    ROOT="$(cd "$(dirname "$0")" && pwd)"
+    exec node --strip-types \
+        "$ROOT/server/postgres-seed.ts" "$MODE"
+fi
 
-ROOT="$(cd "$(dirname "$0")" && pwd)"
-exec node --strip-types \
-    "$ROOT/server/postgres-seed.ts" "$MODE"
+if ! command -v curl >/dev/null; then
+    echo "Error: curl is required" >&2
+    exit 1
+fi
+export RENDER_API_KEY="$TOKEN"
+unset TOKEN
+
+cleanup() {
+    rm -rf "$TMP"
+}
+
+TMP=$(mktemp -d \
+    "${TMPDIR:-/tmp}/fusion-seed.XXXXXX")
+trap cleanup EXIT
+
+discover_render_ids
+
+write_job_body "$TMP/seed-job.json" \
+    "node --strip-types server/postgres-seed.ts ${MODE}"
+http_json POST \
+    "/services/${SERVICE_ID}/jobs" \
+    "$TMP/seed-created.json" \
+    "$TMP/seed-job.json"
+
+JOB_ID=$(job_id_from \
+    "$TMP/seed-created.json" seed)
+SEED_START=$(start_rfc3339)
+wait_for_job "$JOB_ID" "$REVEAL_TIMEOUT_SEC" seed
+
+fetch_logs "$OWNER_ID" "$JOB_ID" "$SEED_START" \
+    "$TMP/logs.json"
+flatten_render_logs "$TMP/logs.json" \
+    "$TMP/logs.txt"
+print_reveal_lines "$TMP/logs.txt"
+
+http_json POST \
+    "/services/${SERVICE_ID}/restart" \
+    "$TMP/restart.json"
+
+echo "Revoke the API key at ${DASHBOARD_KEYS}" >&2
+exit 0
