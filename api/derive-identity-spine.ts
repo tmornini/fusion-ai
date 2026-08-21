@@ -106,8 +106,9 @@ export function piiEntityOf(
     };
 }
 
-// Every LIVE /pii slot, id-lex ordered (byIdAscending, the
-// IndexedDB reference). A DELETE-head slot (an erasure tombstone)
+// Every LIVE /pii slot, id-lex ordered (byIdAscending —
+// the derivation's own order, never the backend's). A
+// DELETE-head slot (an erasure tombstone)
 // is silently absent — deriveDocumentsAt's own head-absence rule,
 // unchanged here.
 export async function deriveIdentityPiiRows(
