@@ -1060,6 +1060,25 @@ export interface ResponseEntity {
     operation_id: string;
 }
 
+// One row per stored HTTP pair. The canonical
+// messages ARE the two BYTEA columns; the
+// columns beside them are addressing and index
+// machinery, never a second truth.
+export interface PairEntity {
+    id: Id;
+    uri_collection: string;
+    uri_id: string;
+    requester_identity_id: Id;
+    method: string;
+    request_at: string;
+    request_hash: string;
+    request: string;
+    response_at: string;
+    version: string;
+    response: string;
+    operation_id: string;
+}
+
 export interface ProjectEntity {
     id: Id;
     organization_id: Id;

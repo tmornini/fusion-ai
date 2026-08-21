@@ -53,6 +53,7 @@ import type {
     ProjectObjectiveActualScoreEntity,
     RequestEntity,
     ResponseEntity,
+    PairEntity,
     StateEntity,
 } from './types.ts';
 import {
@@ -2558,6 +2559,81 @@ export function validateResponseEntity(
         at,
         version,
         message: pickString(body, 'message'),
+        operation_id: operationId,
+    };
+}
+
+const PAIR_BODY_KEYS: readonly string[] = [
+    'uri_collection', 'uri_id',
+    'requester_identity_id', 'method',
+    'request_at', 'request_hash', 'request',
+    'response_at', 'version', 'response',
+    'operation_id',
+];
+
+export function validatePairEntity(
+    body: Record<string, unknown>,
+): Omit<PairEntity, 'id'> {
+    assertOnlyKeys(
+        body, PAIR_BODY_KEYS, 'PairEntity',
+    );
+    const uriCollection = pickString(
+        body, 'uri_collection',
+    );
+    if (!uriCollection.endsWith('/')) {
+        throw new ValidationError(
+            'PairEntity.uri_collection must end'
+            + ' with "/"',
+        );
+    }
+    const requestHash = pickString(
+        body, 'request_hash',
+    );
+    if (!MESSAGE_HASH.test(requestHash)) {
+        throw new ValidationError(
+            'PairEntity.request_hash must be a 64-'
+            + 'character lowercase hex sha256 digest',
+        );
+    }
+    const method = pickString(body, 'method');
+    if (!HTTP_METHOD.test(method)) {
+        throw new ValidationError(
+            'PairEntity.method must match ^[A-Z]+$',
+        );
+    }
+    const version = pickString(body, 'version');
+    if (!HEX64.test(version)) {
+        throw new ValidationError(
+            'PairEntity.version must be a 64-'
+            + 'character lowercase hex digest',
+        );
+    }
+    const operationId = pickString(
+        body, 'operation_id',
+    );
+    if (!OPERATION_ID.test(operationId)) {
+        throw new ValidationError(
+            'PairEntity.operation_id must be a 22-'
+            + 'character id',
+        );
+    }
+    return {
+        uri_collection: uriCollection,
+        uri_id: pickString(body, 'uri_id'),
+        requester_identity_id: pickString(
+            body, 'requester_identity_id',
+        ),
+        method,
+        request_at: validateTimestampField(
+            body, 'request_at', 'PairEntity',
+        ),
+        request_hash: requestHash,
+        request: pickString(body, 'request'),
+        response_at: validateTimestampField(
+            body, 'response_at', 'PairEntity',
+        ),
+        version,
+        response: pickString(body, 'response'),
         operation_id: operationId,
     };
 }
