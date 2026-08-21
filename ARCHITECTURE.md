@@ -542,8 +542,7 @@ product) and memory (`api/backend-memory.ts`, tests).
 Phase Final deleted every entity table and the dual-write
 row halves. `StateStore` and the three scoping decorators
 are GONE; `EntityStore` remains as the store interface
-implemented by `HistoryEntityStore`. The IndexedDB
-orphan-store residual retired with the yank.
+implemented by `HistoryEntityStore`.
 
 `web-app/app/server-core.ts` is the product composition
 root: it installs the fetch facade and calls
@@ -847,8 +846,7 @@ measure). No entity_id index.
 
 Gate 6 **PII leave-inert** still stands on the pair
 plane (erasure completeness is pair-plane only).
-Dual-write mechanics are GONE. The IndexedDB orphan-
-store residual retired with the yank.
+Dual-write mechanics are GONE.
 
 ## Storage tiers
 
