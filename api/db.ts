@@ -406,6 +406,9 @@ export const TABLE_INDEXES:
     responses: [
         'uri_collection',
     ],
+    pairs: [
+        'uri_collection', 'request_hash',
+    ],
 };
 
 export function assertGetWhereColumn(

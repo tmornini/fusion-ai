@@ -25,6 +25,7 @@ const KEYED_READS: ReadonlyArray<{
     { table: 'requests', column: 'message_hash' },
     { table: 'requests', column: 'uri_collection' },
     { table: 'responses', column: 'uri_collection' },
+    { table: 'pairs', column: 'request_hash' },
 ];
 
 test('no caller getAllWhere uri_id', async () => {
