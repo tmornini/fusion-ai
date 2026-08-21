@@ -2,14 +2,16 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     applyDdl,
+    readListenEnv,
+} from '../server/boot.ts';
+import {
     assertSchemaMarker,
     assertUtf8,
     bootErrorMessage,
     hasSchemaMarker,
     MISSING_MARKER,
-    readListenEnv,
     UTF8_REQUIRED,
-} from '../server/boot.ts';
+} from '../server/postgres-gate.ts';
 import {
     SEED_EXCLUSIVE_FLAGS,
     SEED_NONEMPTY,

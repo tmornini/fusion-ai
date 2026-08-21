@@ -18,9 +18,16 @@ import { listenHttp } from './http-server.ts';
 import {
     applySeedFlag,
     readSeedMode,
-    SEED_EXCLUSIVE_FLAGS,
-    SEED_NONEMPTY,
 } from './seed.ts';
+import {
+    STATEMENT_TIMEOUT_MS,
+    POOL_ACQUIRE_TIMEOUT_MS,
+    requiredEnv,
+    assertUtf8,
+    assertSchemaMarker,
+    bootErrorMessage,
+    type EnvBag,
+} from './postgres-gate.ts';
 import {
     setPasswordHasher,
     setScryptDerive,
@@ -30,31 +37,24 @@ import {
     scryptDerive,
 } from './scrypt-hash.ts';
 
-export const STATEMENT_TIMEOUT_MS = 30_000;
-export const POOL_ACQUIRE_TIMEOUT_MS = 5_000;
-export const UTF8_REQUIRED =
-    'Postgres server_encoding must be UTF8';
-export const MISSING_MARKER =
-    'schema_marker is empty; refuse to listen';
-
-export type EnvBag = Record<string, string | undefined>;
+export {
+    STATEMENT_TIMEOUT_MS,
+    POOL_ACQUIRE_TIMEOUT_MS,
+    UTF8_REQUIRED,
+    MISSING_MARKER,
+    requiredEnv,
+    assertUtf8,
+    hasSchemaMarker,
+    assertSchemaMarker,
+    bootErrorMessage,
+    type EnvBag,
+} from './postgres-gate.ts';
 
 export interface ListenEnv {
     readonly postgresUrl: string;
     readonly jwtHmacSigningKey: string;
     readonly port: number;
     readonly trustedProxyHops: string | undefined;
-}
-
-export function requiredEnv(
-    name: string,
-    env: EnvBag = process.env,
-): string {
-    const value = env[name];
-    if (value === undefined || value === '') {
-        throw new Error('missing required env ' + name);
-    }
-    return value;
 }
 
 export function readListenEnv(
@@ -89,73 +89,16 @@ export function readListenEnv(
     };
 }
 
-export async function assertUtf8(
-    sql: SqlClient,
-): Promise<void> {
-    const rows = await sql.query<{
-        server_encoding: string;
-    }>`
-        SHOW server_encoding
-    `;
-    if (rows[0]?.server_encoding !== 'UTF8') {
-        throw new Error(UTF8_REQUIRED);
-    }
-}
-
-// Presence of the marker row, not table existence.
-// No row and no successful seed: do not listen.
-export async function hasSchemaMarker(
-    sql: SqlClient,
-): Promise<boolean> {
-    const rows = await sql.query<{ only: boolean }>`
-        SELECT "only" FROM schema_marker
-        WHERE "only"
-        LIMIT 1
-    `;
-    return rows.length > 0;
-}
-
 export async function applyDdl(
     sql: SqlClient,
 ): Promise<void> {
     await sql.unsafe(POSTGRES_SCHEMA);
 }
 
-export async function assertSchemaMarker(
-    sql: SqlClient,
-): Promise<void> {
-    if (!(await hasSchemaMarker(sql))) {
-        throw new Error(MISSING_MARKER);
-    }
-}
-
 function staticRootFromMeta(): string {
     return resolve(
         fileURLToPath(new URL('.', import.meta.url)),
     );
-}
-
-const SAFE_BOOT_MESSAGES: ReadonlySet<string> = new Set([
-    UTF8_REQUIRED,
-    MISSING_MARKER,
-    SEED_NONEMPTY,
-    SEED_EXCLUSIVE_FLAGS,
-]);
-
-export function bootErrorMessage(
-    error: unknown,
-): string {
-    if (!(error instanceof Error)) return 'boot failed';
-    if (SAFE_BOOT_MESSAGES.has(error.message)) {
-        return error.message;
-    }
-    if (error.message.startsWith('missing required env ')) {
-        return error.message;
-    }
-    if (error.message.startsWith('HTTP_SERVER_PORT ')) {
-        return error.message;
-    }
-    return 'boot failed';
 }
 
 export interface RunningHttp {
