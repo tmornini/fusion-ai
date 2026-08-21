@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     applyDdl,
+    boot,
     readListenEnv,
 } from '../server/boot.ts';
 import {
@@ -10,12 +11,9 @@ import {
     bootErrorMessage,
     hasSchemaMarker,
     MISSING_MARKER,
+    NO_ARGUMENTS,
     UTF8_REQUIRED,
 } from '../server/postgres-gate.ts';
-import {
-    SEED_EXCLUSIVE_FLAGS,
-    SEED_NONEMPTY,
-} from '../server/seed.ts';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import type { SqlClient } from
@@ -173,15 +171,32 @@ test('bootErrorMessage never echoes a URL', () => {
         bootErrorMessage(new Error(MISSING_MARKER)),
         MISSING_MARKER,
     );
-    assert.equal(
-        bootErrorMessage(new Error(SEED_NONEMPTY)),
-        SEED_NONEMPTY,
+});
+
+test('boot refuses argv before connecting', async () => {
+    await assert.rejects(
+        () => boot({
+            POSTGRES_URL: 'postgres://user:pw@h/db',
+            JWT_HMAC_SIGNING_KEY: 'k',
+            HTTP_SERVER_PORT: '8080',
+        }, ['node', 'server.mjs', '--seed-mock-data']),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message === NO_ARGUMENTS,
     );
     assert.equal(
-        bootErrorMessage(
-            new Error(SEED_EXCLUSIVE_FLAGS),
-        ),
-        SEED_EXCLUSIVE_FLAGS,
+        bootErrorMessage(new Error(NO_ARGUMENTS)),
+        NO_ARGUMENTS,
+    );
+});
+
+test('bootErrorMessage maps seed leftovers to boot failed',
+() => {
+    assert.equal(
+        bootErrorMessage(new Error(
+            'database is not empty; refuse to seed',
+        )),
+        'boot failed',
     );
 });
 

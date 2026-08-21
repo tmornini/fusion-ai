@@ -4,11 +4,6 @@
 
 import type { SqlClient } from
     '../api/postgres-client.ts';
-import {
-    SEED_ARGV_EXCLUSIVE,
-    SEED_EXCLUSIVE_FLAGS,
-    SEED_NONEMPTY,
-} from './seed.ts';
 
 export const STATEMENT_TIMEOUT_MS = 30_000;
 export const POOL_ACQUIRE_TIMEOUT_MS = 5_000;
@@ -16,6 +11,9 @@ export const UTF8_REQUIRED =
     'Postgres server_encoding must be UTF8';
 export const MISSING_MARKER =
     'schema_marker is empty; refuse to listen';
+export const NO_ARGUMENTS =
+    'server.mjs takes no arguments; seed with '
+    + './postgres-seed';
 
 export type EnvBag = Record<string, string | undefined>;
 
@@ -67,14 +65,7 @@ export async function assertSchemaMarker(
 const SAFE_BOOT_MESSAGES: ReadonlySet<string> = new Set([
     UTF8_REQUIRED,
     MISSING_MARKER,
-    SEED_NONEMPTY,
-    SEED_EXCLUSIVE_FLAGS,
-]);
-
-const SAFE_SEED_MESSAGES: ReadonlySet<string> = new Set([
-    UTF8_REQUIRED,
-    SEED_NONEMPTY,
-    SEED_ARGV_EXCLUSIVE,
+    NO_ARGUMENTS,
 ]);
 
 export function safeErrorMessage(
@@ -106,15 +97,5 @@ export function bootErrorMessage(
         error,
         SAFE_BOOT_MESSAGES,
         'boot failed',
-    );
-}
-
-export function seedErrorMessage(
-    error: unknown,
-): string {
-    return safeErrorMessage(
-        error,
-        SAFE_SEED_MESSAGES,
-        'seed failed',
     );
 }

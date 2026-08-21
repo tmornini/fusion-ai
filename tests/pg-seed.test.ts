@@ -2,30 +2,21 @@ import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
     applyDdl,
-    boot,
-    bootErrorMessage,
     hasSchemaMarker,
 } from '../server/boot.ts';
 import {
-    applySeedFlag,
     assertEmptyDatabase,
     formatSeededCredentials,
     formatTestPlanSliceCredentials,
     isDatabaseEmpty,
     parseSeedArgv,
-    readSeedMode,
-    SEED_ARGV_EXCLUSIVE,
-    SEED_BOOTSTRAP_FLAG,
     SEED_EXCLUSIVE_FLAGS,
-    SEED_MOCK_DATA_FLAG,
     SEED_NONEMPTY,
-    SEED_TEST_PLAN_SLICES_FLAG,
     SEED_REVEAL_HEADER,
+    seedErrorMessage,
     seedPostgres,
     serialPasswordHasher,
 } from '../server/seed.ts';
-import { seedErrorMessage } from
-    '../server/postgres-gate.ts';
 import { connectPostgres } from
     '../api/postgres-client.ts';
 import type { SqlClient } from
@@ -96,39 +87,6 @@ function urlWithSearchPath(
     return parsed.href;
 }
 
-test('readSeedMode accepts one flag', () => {
-    assert.equal(
-        readSeedMode(['node', SEED_BOOTSTRAP_FLAG]),
-        'bootstrap',
-    );
-    assert.equal(
-        readSeedMode(['node', SEED_MOCK_DATA_FLAG]),
-        'mock-data',
-    );
-    assert.equal(readSeedMode(['node', 'boot.ts']), undefined);
-});
-
-test('readSeedMode refuses both flags', () => {
-    assert.throws(
-        () => readSeedMode([
-            SEED_BOOTSTRAP_FLAG,
-            SEED_MOCK_DATA_FLAG,
-        ]),
-        (error: unknown) =>
-            error instanceof Error
-            && error.message === SEED_EXCLUSIVE_FLAGS,
-    );
-});
-
-test('readSeedMode accepts slices flag', () => {
-    assert.equal(
-        readSeedMode([
-            'node', SEED_TEST_PLAN_SLICES_FLAG,
-        ]),
-        'test-plan-slices',
-    );
-});
-
 test('parseSeedArgv accepts one mode flag', () => {
     assert.deepEqual(
         parseSeedArgv(['--bootstrap']),
@@ -161,7 +119,7 @@ test('parseSeedArgv none two unknown', () => {
     if (none.kind !== 'error') return;
     assert.equal(
         none.message,
-        SEED_ARGV_EXCLUSIVE,
+        SEED_EXCLUSIVE_FLAGS,
     );
     const two = parseSeedArgv([
         '--bootstrap', '--mock-data',
@@ -170,7 +128,7 @@ test('parseSeedArgv none two unknown', () => {
     if (two.kind !== 'error') return;
     assert.equal(
         two.message,
-        SEED_ARGV_EXCLUSIVE,
+        SEED_EXCLUSIVE_FLAGS,
     );
     const unknown = parseSeedArgv(['--pristine']);
     assert.equal(unknown.kind, 'error');
@@ -191,49 +149,6 @@ test('seedErrorMessage never echoes a URL', () => {
     );
     assert.equal(
         seedErrorMessage(
-            new Error(SEED_ARGV_EXCLUSIVE),
-        ),
-        SEED_ARGV_EXCLUSIVE,
-    );
-});
-
-test('readSeedMode refuses any two flags',
-() => {
-    const pairs: Array<readonly string[]> = [
-        [SEED_BOOTSTRAP_FLAG, SEED_MOCK_DATA_FLAG],
-        [
-            SEED_BOOTSTRAP_FLAG,
-            SEED_TEST_PLAN_SLICES_FLAG,
-        ],
-        [
-            SEED_MOCK_DATA_FLAG,
-            SEED_TEST_PLAN_SLICES_FLAG,
-        ],
-    ];
-    for (const flags of pairs) {
-        assert.throws(
-            () => readSeedMode([...flags]),
-            (error: unknown) =>
-                error instanceof Error
-                && error.message
-                    === SEED_EXCLUSIVE_FLAGS,
-        );
-    }
-});
-
-test('boot refuses both seed flags before connect',
-async () => {
-    await assert.rejects(
-        () => boot({}, [
-            SEED_BOOTSTRAP_FLAG,
-            SEED_MOCK_DATA_FLAG,
-        ]),
-        (error: unknown) =>
-            error instanceof Error
-            && error.message === SEED_EXCLUSIVE_FLAGS,
-    );
-    assert.equal(
-        bootErrorMessage(
             new Error(SEED_EXCLUSIVE_FLAGS),
         ),
         SEED_EXCLUSIVE_FLAGS,
@@ -461,28 +376,6 @@ async () => {
     );
 });
 
-test('no seed flag writes nothing and seeds nothing',
-async () => {
-    const db = memoryDbAdapter();
-    const empty = fakeClient([{
-        requests: false,
-        responses: false,
-        marker: false,
-    }]);
-    let wrote = false;
-    await applySeedFlag(
-        empty.sql, db, undefined, {
-            hashPassword: testHashPassword,
-            write: () => {
-                wrote = true;
-            },
-        },
-    );
-    assert.equal(wrote, false);
-    assert.equal(await db.hasSchema(), false);
-    assert.equal(empty.texts.length, 0);
-});
-
 test('non-empty refuses without seeding or printing',
 async () => {
     const db = memoryDbAdapter();
@@ -493,7 +386,7 @@ async () => {
     }]);
     let wrote = false;
     await assert.rejects(
-        () => applySeedFlag(
+        () => seedPostgres(
             nonempty.sql, db, 'bootstrap', {
                 hashPassword: testHashPassword,
                 write: () => {
@@ -542,7 +435,7 @@ async () => {
         marker: false,
     }]);
     const chunks: string[] = [];
-    await applySeedFlag(
+    await seedPostgres(
         empty.sql, db, 'bootstrap', {
             hashPassword: testHashPassword,
             write: (chunk) => {
@@ -566,7 +459,7 @@ async () => {
         marker: false,
     }]);
     const chunks: string[] = [];
-    await applySeedFlag(
+    await seedPostgres(
         empty.sql, db, 'mock-data', {
             hashPassword: testHashPassword,
             write: (chunk) => {
@@ -594,7 +487,7 @@ async () => {
         marker: false,
     }]);
     const chunks: string[] = [];
-    await applySeedFlag(
+    await seedPostgres(
         empty.sql, db, 'test-plan-slices', {
             hashPassword: testHashPassword,
             write: (chunk) => {
@@ -657,7 +550,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
     async () => {
         assert.equal(await isDatabaseEmpty(sql), true);
         const chunks: string[] = [];
-        await applySeedFlag(sql, adapter, 'bootstrap', {
+        await seedPostgres(sql, adapter, 'bootstrap', {
             hashPassword: testHashPassword,
             write: (chunk) => {
                 chunks.push(chunk);
@@ -670,7 +563,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
             /demo@example.com\t/,
         );
         await assert.rejects(
-            () => applySeedFlag(
+            () => seedPostgres(
                 sql, adapter, 'bootstrap', {
                     hashPassword: testHashPassword,
                     write: () => {},

@@ -16,24 +16,40 @@ import type { SqlClient } from
     '../api/postgres-client.ts';
 import { hashPassword } from
     '../shared/password-hash.ts';
+import {
+    UTF8_REQUIRED,
+    safeErrorMessage,
+} from './postgres-gate.ts';
 
-export const SEED_BOOTSTRAP_FLAG = '--seed-bootstrap';
-export const SEED_MOCK_DATA_FLAG = '--seed-mock-data';
+export const SEED_BOOTSTRAP_FLAG = '--bootstrap';
+export const SEED_MOCK_DATA_FLAG = '--mock-data';
 export const SEED_TEST_PLAN_SLICES_FLAG =
-    '--seed-test-plan-slices';
+    '--test-plan-slices';
 export const SEED_NONEMPTY =
     'database is not empty; refuse to seed';
 export const SEED_EXCLUSIVE_FLAGS =
-    'use only one of --seed-bootstrap, '
-    + '--seed-mock-data, or '
-    + '--seed-test-plan-slices';
-export const SEED_ARGV_EXCLUSIVE =
     'use exactly one of --bootstrap, '
     + '--mock-data, or '
     + '--test-plan-slices';
 export const SEED_REVEAL_HEADER =
     'Save your demo sign-ins — shown once; copy them now.';
 export const SEED_PASSWORD_HASH_CONCURRENCY = 1;
+
+const SAFE_SEED_MESSAGES: ReadonlySet<string> = new Set([
+    UTF8_REQUIRED,
+    SEED_NONEMPTY,
+    SEED_EXCLUSIVE_FLAGS,
+]);
+
+export function seedErrorMessage(
+    error: unknown,
+): string {
+    return safeErrorMessage(
+        error,
+        SAFE_SEED_MESSAGES,
+        'seed failed',
+    );
+}
 
 export type SeedMode =
     | 'bootstrap'
@@ -54,28 +70,6 @@ export type SeedRunOptions = {
     readonly write: (chunk: string) => void;
 };
 
-export function readSeedMode(
-    argv: readonly string[],
-): SeedMode | undefined {
-    const bootstrap =
-        argv.includes(SEED_BOOTSTRAP_FLAG);
-    const mockData =
-        argv.includes(SEED_MOCK_DATA_FLAG);
-    const slices = argv.includes(
-        SEED_TEST_PLAN_SLICES_FLAG,
-    );
-    const count = Number(bootstrap)
-        + Number(mockData)
-        + Number(slices);
-    if (count > 1) {
-        throw new Error(SEED_EXCLUSIVE_FLAGS);
-    }
-    if (bootstrap) return 'bootstrap';
-    if (mockData) return 'mock-data';
-    if (slices) return 'test-plan-slices';
-    return undefined;
-}
-
 export function parseSeedArgv(
     argv: readonly string[],
 ): ParseSeedResult {
@@ -85,9 +79,9 @@ export function parseSeedArgv(
             return { kind: 'help' };
         }
         const next =
-            a === '--bootstrap' ? 'bootstrap'
-            : a === '--mock-data' ? 'mock-data'
-            : a === '--test-plan-slices'
+            a === SEED_BOOTSTRAP_FLAG ? 'bootstrap'
+            : a === SEED_MOCK_DATA_FLAG ? 'mock-data'
+            : a === SEED_TEST_PLAN_SLICES_FLAG
                 ? 'test-plan-slices'
                 : null;
         if (next === null) {
@@ -99,7 +93,7 @@ export function parseSeedArgv(
         if (mode !== undefined) {
             return {
                 kind: 'error',
-                message: SEED_ARGV_EXCLUSIVE,
+                message: SEED_EXCLUSIVE_FLAGS,
             };
         }
         mode = next;
@@ -107,7 +101,7 @@ export function parseSeedArgv(
     if (mode === undefined) {
         return {
             kind: 'error',
-            message: SEED_ARGV_EXCLUSIVE,
+            message: SEED_EXCLUSIVE_FLAGS,
         };
     }
     return { kind: 'ok', mode };
@@ -289,14 +283,4 @@ export async function seedPostgres(
         adapter, mode, options,
     );
     writeSeededCredentials(creds, options.write);
-}
-
-export async function applySeedFlag(
-    sql: SqlClient,
-    adapter: DbAdapter,
-    mode: SeedMode | undefined,
-    options: SeedRunOptions,
-): Promise<void> {
-    if (mode === undefined) return;
-    await seedPostgres(sql, adapter, mode, options);
 }

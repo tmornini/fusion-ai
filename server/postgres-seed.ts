@@ -17,10 +17,10 @@ import {
     STATEMENT_TIMEOUT_MS,
     assertUtf8,
     requiredEnv,
-    seedErrorMessage,
 } from './postgres-gate.ts';
 import {
     parseSeedArgv,
+    seedErrorMessage,
     seedPostgres,
     serialPasswordHasher,
 } from './seed.ts';

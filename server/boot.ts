@@ -1,5 +1,5 @@
-// Fail-fast boot. Env → pool → UTF8 → DDL →
-// seed flags → marker → listen.
+// Fail-fast boot. Argv → env → pool → UTF8 →
+// DDL → marker → listen.
 // One mint process: do not run two of these.
 // Node-only; excluded from tsc (no @types/node).
 
@@ -16,12 +16,9 @@ import { POSTGRES_SCHEMA } from
     '../api/schema-postgres.ts';
 import { listenHttp } from './http-server.ts';
 import {
-    applySeedFlag,
-    readSeedMode,
-} from './seed.ts';
-import {
     STATEMENT_TIMEOUT_MS,
     POOL_ACQUIRE_TIMEOUT_MS,
+    NO_ARGUMENTS,
     requiredEnv,
     assertUtf8,
     assertSchemaMarker,
@@ -42,6 +39,7 @@ export {
     POOL_ACQUIRE_TIMEOUT_MS,
     UTF8_REQUIRED,
     MISSING_MARKER,
+    NO_ARGUMENTS,
     requiredEnv,
     assertUtf8,
     hasSchemaMarker,
@@ -110,9 +108,11 @@ export async function boot(
     env: EnvBag = process.env,
     argv: readonly string[] = process.argv,
 ): Promise<RunningHttp> {
+    if (argv.slice(2).length > 0) {
+        throw new Error(NO_ARGUMENTS);
+    }
     setPasswordHasher(scryptHash);
     setScryptDerive(scryptDerive);
-    const seedMode = readSeedMode(argv);
     const listenEnv = readListenEnv(env);
     const sql = connectPostgres(listenEnv.postgresUrl, {
         statementTimeoutMs: STATEMENT_TIMEOUT_MS,
@@ -126,11 +126,6 @@ export async function boot(
         async () => {},
         () => {},
     );
-    await applySeedFlag(sql, adapter, seedMode, {
-        write: (chunk) => {
-            process.stderr.write(chunk);
-        },
-    });
     await assertSchemaMarker(sql);
     const listener = await listenHttp({
         adapter,
