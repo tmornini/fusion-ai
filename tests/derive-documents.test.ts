@@ -5,7 +5,11 @@ import {
     deriveDocumentsAt,
 } from '../api/derive-documents.ts';
 import { formWritePair } from '../api/message-pair.ts';
-import type { RequestEntity, ResponseEntity } from '../api/types.ts';
+import type {
+    PairEntity,
+    RequestEntity,
+    ResponseEntity,
+} from '../api/types.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -60,6 +64,27 @@ async function storedPairAt(
     };
 }
 
+function asPair(
+    request: RequestEntity,
+    response: ResponseEntity,
+): PairEntity {
+    return {
+        id: request.id,
+        uri_collection: request.uri_collection,
+        uri_id: request.uri_id,
+        requester_identity_id:
+            request.requester_identity_id,
+        method: request.method,
+        request_at: request.at,
+        request_hash: request.message_hash,
+        request: request.message,
+        response_at: response.at,
+        version: response.version,
+        response: response.message,
+        operation_id: request.operation_id,
+    };
+}
+
 // design decision 6: a document-address pair's method decides
 // whether it is a DOCUMENT (PUT/DELETE) or an OPERATION (POST,
 // e.g. a create-shaped genesis pair sharing the document's own
@@ -67,6 +92,22 @@ async function storedPairAt(
 // POSTs
 // at its own document address); load-bearing once a family's
 // create pair shares the document address (flows).
+
+test('2-arg documentPairsAt matches 3-arg',
+async () => {
+    const { request, response } =
+        await storedPairAt('PUT', 200);
+    const prefix = '/organizations/1/ideas/';
+    const fromTwo = documentPairsAt(
+        [request], [response], prefix,
+    );
+    const fromOne = documentPairsAt(
+        [asPair(request, response)], prefix,
+    );
+    assert.deepEqual(fromOne, fromTwo);
+    assert.equal(fromOne[0]!.method, 'PUT');
+    assert.equal(fromOne[0]!.at, response.at);
+});
 
 test('documentPairsAt excludes a POST pair at a document'
 + ' address', async () => {
