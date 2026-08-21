@@ -180,5 +180,5 @@ async () => {
     const hits = await messageStore(db)
         .getAllWhereBody(COLLECTION, { code: 'abc' });
     assert.equal(hits.length, 1);
-    assert.equal(hits[0]!.response.uri_id, 'doc-1');
+    assert.equal(hits[0]!.uri_id, 'doc-1');
 });

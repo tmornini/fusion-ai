@@ -1344,7 +1344,7 @@ export async function handleRequest(
                             );
                         }
                         const stored =
-                            await effective.responses
+                            await effective.pairs
                                 .getById(livePut.pairId);
                         if (stored !== undefined) {
                             return attachEtag(
@@ -1545,7 +1545,7 @@ export async function handleRequest(
                         ? undefined
                         : await instanceParentEtag(
                             effective,
-                            found.response.id,
+                            found.id,
                         );
                     const tag =
                         await advertisedInstanceEtag(
@@ -1878,7 +1878,7 @@ export async function handleRequest(
                             + ' pair: ' + routePattern,
                         );
                     }
-                    const authStored = await effective.responses
+                    const authStored = await effective.pairs
                         .getById(dispatched.pairId);
                     // authentication/authorize mints an
                     // authorization code, not a session — no UI

@@ -279,7 +279,7 @@ test('GET /organizations/:id/ideas/:id body octets equal the live PUT '
         );
         assert.ok(stored !== undefined);
         const storedBody = HttpMessage.fromWire(
-            stored.message,
+            stored.response,
         ).body();
         assert.ok(storedBody.exists());
         setClockForTest(

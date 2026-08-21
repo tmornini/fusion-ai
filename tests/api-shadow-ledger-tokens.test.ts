@@ -211,9 +211,8 @@ test('a rotation appends its pair at an operation address:'
     assert.equal(row!.uri_id, '');
     const responses = await db.responses.getAll();
     assert.equal(requests.length, responses.length);
-    const stored = responses.find(r => r.id === row!.id);
-    assert.ok(stored);
-    const storedBody = await responseFromStored(stored!).json();
+    const stored = await db.pairs.getById(row!.id);
+    const storedBody = await responseFromStored(stored).json();
     assert.deepEqual(storedBody, wireBody);
     const rows = await deriveIdentityTokens(db);
     assert.equal(
@@ -435,13 +434,11 @@ async function assertRootEventPair(
     assert.equal(
         eventRequest!.requester_identity_id, root.identity_id,
     );
-    const responses = await db.responses.getAll();
-    const eventResponse = responses.find(
-        r => r.id === eventRequest!.id,
+    const eventResponse = await db.pairs.getById(
+        eventRequest!.id,
     );
-    assert.ok(eventResponse);
     const eventBody =
-        await responseFromStored(eventResponse!).json();
+        await responseFromStored(eventResponse).json();
     assert.deepEqual(eventBody, root satisfies IdentityTokenEntity);
 }
 
@@ -574,13 +571,11 @@ async function assertEventPairForRow(
     assert.equal(
         eventRequest!.requester_identity_id, row.identity_id,
     );
-    const responses = await db.responses.getAll();
-    const eventResponse = responses.find(
-        r => r.id === eventRequest!.id,
+    const eventResponse = await db.pairs.getById(
+        eventRequest!.id,
     );
-    assert.ok(eventResponse);
     const eventBody =
-        await responseFromStored(eventResponse!).json();
+        await responseFromStored(eventResponse).json();
     assert.deepEqual(eventBody, row satisfies IdentityTokenEntity);
 }
 

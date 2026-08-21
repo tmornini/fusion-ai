@@ -1059,8 +1059,8 @@ async function documentPairCount(
         FLOW_PREFIX, flowId,
     );
     return pairs.filter((pair) =>
-        pair.request.method === 'PUT'
-        || pair.request.method === 'DELETE',
+        pair.method === 'PUT'
+        || pair.method === 'DELETE',
     ).length;
 }
 
@@ -1072,12 +1072,12 @@ async function latestPutRequestBody(
         FLOW_PREFIX, flowId,
     );
     const puts = pairs.filter((pair) =>
-        pair.request.method === 'PUT',
+        pair.method === 'PUT',
     );
     const latest = puts[puts.length - 1];
     assert.ok(latest, 'no PUT pair at ' + flowId);
     return decodeRequestMessage(
-        latest.request.message,
+        latest.request,
     ).body;
 }
 

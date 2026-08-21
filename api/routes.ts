@@ -5475,20 +5475,20 @@ export const routes: Route[] = [
             );
             if (
                 found === undefined
-                || found.request.method !== 'PUT'
+                || found.method !== 'PUT'
             ) {
                 throw await missedReadError(
                     db, id, org, 'record_types',
                 );
             }
             const body = requestBodyOf(
-                found.request.message,
+                found.request,
             );
             return recordTypeEntityOf(
                 {
                     uriId: id,
-                    pairId: found.response.id,
-                    method: found.request.method,
+                    pairId: found.id,
+                    method: found.method,
                     body,
                 },
                 org,
@@ -5745,7 +5745,7 @@ export const routes: Route[] = [
             );
             if (
                 found === undefined
-                || found.request.method !== 'PUT'
+                || found.method !== 'PUT'
             ) {
                 throw await missedReadError(
                     db, instanceId, org,
@@ -5758,7 +5758,7 @@ export const routes: Route[] = [
                 );
             const values = projectReadableValues(
                 revisionValuesOf(
-                    requestBodyOf(found.request.message),
+                    requestBodyOf(found.request),
                 ),
                 attributesById,
                 roles,

@@ -1,7 +1,6 @@
 import type { DbAdapter } from './db.ts';
 import type {
     Id, IdentityTokenEntity, PairEntity,
-    ResponseEntity,
 } from './types.ts';
 import { nowUtc } from './types.ts';
 import {
@@ -388,12 +387,12 @@ export async function documentHeadAt(
         method: string;
     } | undefined;
     for (const pair of pairs) {
-        const method = pair.request.method;
+        const method = pair.method;
         if (method !== 'PUT' && method !== 'DELETE') {
             continue;
         }
-        const at = pair.response.at;
-        const id = pair.response.id;
+        const at = pair.response_at;
+        const id = pair.id;
         if (
             head === undefined
             || at > head.at
@@ -534,9 +533,9 @@ export function hoistedHeaderFields(request: Request): FieldLine[] {
 // byte-identical replay — both render from the STORED row,
 // never the in-memory pair, so a concurrent-replay's surviving
 // original pair is what the wire advertises either way.
-export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
+export function wireHeadersFor(stored: PairEntity): HeadersInit {
     const headers: Record<string, string> = {
-        'Date': httpDateOf(stored.at),
+        'Date': httpDateOf(stored.response_at),
         'Response-ID': stored.id,
         'Operation-ID': stored.operation_id,
     };
@@ -547,8 +546,8 @@ export function wireHeadersFor(stored: ResponseEntity): HeadersInit {
 // serializeWire message — the one reconstruction path shared
 // by a fresh write's success return and an idempotent replay's
 // early return.
-export function responseFromStored(stored: ResponseEntity): Response {
-    const model = parseWire(stored.message);
+export function responseFromStored(stored: PairEntity): Response {
+    const model = parseWire(stored.response);
     if (model.startLine.kind !== 'response') {
         throw new Error(
             'stored response message has no status line: '
@@ -569,10 +568,10 @@ export function responseFromStored(stored: ResponseEntity): Response {
 // octets, Date replaced with now, no Operation-ID.
 // ETag and Response-ID are projection headers.
 export function streamGetFromStored(
-    stored: ResponseEntity,
+    stored: PairEntity,
     at: string,
 ): Response {
-    const model = parseWire(stored.message);
+    const model = parseWire(stored.response);
     if (model.startLine.kind !== 'response') {
         throw new Error(
             'stored response message has no status line: '
@@ -604,22 +603,11 @@ export function streamGetFromStored(
 // Operation-ID is added here (wireHeadersFor), never stored
 // on the GET-shaped blob.
 export function sendWriteResponse(
-    stored: ResponseEntity | PairEntity,
+    stored: PairEntity,
     method: string,
     appended: boolean,
 ): Response {
-    const row: ResponseEntity = 'message' in stored
-        ? stored
-        : {
-            id: stored.id,
-            uri_collection: stored.uri_collection,
-            uri_id: stored.uri_id,
-            at: stored.response_at,
-            version: stored.version,
-            message: stored.response,
-            operation_id: stored.operation_id,
-        };
-    const rendered = responseFromStored(row);
+    const rendered = responseFromStored(stored);
     const status = method === 'DELETE'
         ? HTTP_NO_CONTENT
         : appended ? HTTP_CREATED : HTTP_OK;

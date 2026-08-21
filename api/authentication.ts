@@ -1189,10 +1189,9 @@ async function authorizeCodeIssuer(
 ): Promise<AuthorizeCodeIssuer | null> {
     const hits = await messageStore(adapter)
         .getAllWhereBody(AUTHORIZE_PREFIX, { code });
-    const matched = hits[0]?.response;
-    if (matched === undefined) return null;
-    const request = hits[0]!.request;
-    const requestBody = decodedBodyOf(request.message);
+    const pair = hits[0];
+    if (pair === undefined) return null;
+    const requestBody = decodedBodyOf(pair.request);
     // code_challenge is optional on authorize (PKCE only when
     // the client sent one). Soft read — pickString would throw
     // on the password-loop path that omits it.
@@ -1202,12 +1201,12 @@ async function authorizeCodeIssuer(
             ? challenge
             : undefined;
     return {
-        identityId: request.requester_identity_id,
+        identityId: pair.requester_identity_id,
         clientId: pickString(requestBody, 'client_id'),
         // Issue instant = the authorize request pair's `at`
-        // (RequestEntity.at). Both halves of a pair carry `at`;
-        // the request row is already fetched for identity/client.
-        issuedAt: request.at,
+        // (PairEntity.request_at). Both halves of a pair carry
+        // `at`; the pair is already fetched for identity/client.
+        issuedAt: pair.request_at,
         ...(codeChallenge !== undefined
             ? { codeChallenge }
             : {}),
