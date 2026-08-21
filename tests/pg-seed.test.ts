@@ -1,7 +1,6 @@
 import { after, before, test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    applyDdl,
     hasSchemaMarker,
 } from '../server/boot.ts';
 import {
@@ -24,6 +23,7 @@ import type { SqlClient } from
 import { PostgresBackend } from
     '../api/backend-postgres.ts';
 import { BackedDbAdapter } from '../api/db-backed.ts';
+import { TABLE_NAMES } from '../api/db.ts';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 import {
     PARALLEL_SECTIONS,
@@ -531,7 +531,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         await sql.unsafe(
             'CREATE SCHEMA ' + quoteIdent(schema),
         );
-        await applyDdl(sql);
+        await adapter.ensureTables(TABLE_NAMES);
     });
 
     after(async () => {

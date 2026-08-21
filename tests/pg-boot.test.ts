@@ -1,7 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-    applyDdl,
     boot,
     readListenEnv,
 } from '../server/boot.ts';
@@ -18,9 +17,6 @@ import { connectPostgres } from
     '../api/postgres-client.ts';
 import type { SqlClient } from
     '../api/postgres-client.ts';
-import { POSTGRES_SCHEMA } from
-    '../api/schema-postgres.ts';
-
 // Unit pins stay Postgres-free. Live SHOW runs only
 // when POSTGRES_URL is set (./test-postgres).
 
@@ -140,11 +136,17 @@ test('readListenEnv requires the three secrets', () => {
     assert.equal(env.trustedProxyHops, '10.0.0.1');
 });
 
-test('applyDdl runs the compile-time schema',
+test('hasSchemaMarker treats 42P01 as absent',
 async () => {
-    const fake = fakeClient([]);
-    await applyDdl(fake.sql);
-    assert.equal(fake.texts[0], POSTGRES_SCHEMA);
+    const err = new Error('undefined_table');
+    (err as { code: string }).code = '42P01';
+    const sql: SqlClient = {
+        query: () => Promise.reject(err),
+        begin: async (fn) => fn(sql),
+        unsafe: async () => [],
+        end: async () => {},
+    };
+    assert.equal(await hasSchemaMarker(sql), false);
 });
 
 test('assertSchemaMarker refuses an empty marker',
@@ -158,6 +160,21 @@ async () => {
     );
     const marked = fakeClient([{ only: true }]);
     await assertSchemaMarker(marked.sql);
+});
+
+test('assertSchemaMarker re-voices absence',
+async () => {
+    const empty = fakeClient([]);
+    await assert.rejects(
+        () => assertSchemaMarker(empty.sql),
+        (error: unknown) =>
+            error instanceof Error
+            && error.message === MISSING_MARKER,
+    );
+    assert.equal(
+        MISSING_MARKER,
+        'schema_marker absent; seed with ./postgres-seed',
+    );
 });
 
 test('bootErrorMessage never echoes a URL', () => {

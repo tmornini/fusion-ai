@@ -1,5 +1,6 @@
 // Fail-fast boot. Argv → env → pool → UTF8 →
-// DDL → marker → listen.
+// marker → listen. No DDL; seed with
+// ./postgres-seed.
 // One mint process: do not run two of these.
 // Node-only; excluded from tsc (no @types/node).
 
@@ -8,12 +9,8 @@ import { fileURLToPath } from 'node:url';
 import { BackedDbAdapter } from '../api/db-backed.ts';
 import { PostgresBackend } from
     '../api/backend-postgres.ts';
-import {
-    connectPostgres,
-    type SqlClient,
-} from '../api/postgres-client.ts';
-import { POSTGRES_SCHEMA } from
-    '../api/schema-postgres.ts';
+import { connectPostgres } from
+    '../api/postgres-client.ts';
 import { listenHttp } from './http-server.ts';
 import {
     STATEMENT_TIMEOUT_MS,
@@ -87,12 +84,6 @@ export function readListenEnv(
     };
 }
 
-export async function applyDdl(
-    sql: SqlClient,
-): Promise<void> {
-    await sql.unsafe(POSTGRES_SCHEMA);
-}
-
 function staticRootFromMeta(): string {
     return resolve(
         fileURLToPath(new URL('.', import.meta.url)),
@@ -119,14 +110,13 @@ export async function boot(
         acquireTimeoutMs: POOL_ACQUIRE_TIMEOUT_MS,
     });
     await assertUtf8(sql);
-    await applyDdl(sql);
+    await assertSchemaMarker(sql);
     const adapter = new BackedDbAdapter(
         new PostgresBackend(sql),
         async () => {},
         async () => {},
         () => {},
     );
-    await assertSchemaMarker(sql);
     const listener = await listenHttp({
         adapter,
         staticRoot: staticRootFromMeta(),

@@ -2,6 +2,8 @@
 // postgres-seed.ts import this and never
 // import each other.
 
+import { isUndefinedTable } from
+    '../api/errors-postgres.ts';
 import type { SqlClient } from
     '../api/postgres-client.ts';
 
@@ -10,7 +12,7 @@ export const POOL_ACQUIRE_TIMEOUT_MS = 5_000;
 export const UTF8_REQUIRED =
     'Postgres server_encoding must be UTF8';
 export const MISSING_MARKER =
-    'schema_marker is empty; refuse to listen';
+    'schema_marker absent; seed with ./postgres-seed';
 export const NO_ARGUMENTS =
     'server.mjs takes no arguments; seed with '
     + './postgres-seed';
@@ -41,17 +43,24 @@ export async function assertUtf8(
     }
 }
 
-// Presence of the marker row, not table existence.
+// Marker row, or 42P01 (undefined table) as absent.
 // No row and no successful seed: do not listen.
 export async function hasSchemaMarker(
     sql: SqlClient,
 ): Promise<boolean> {
-    const rows = await sql.query<{ only: boolean }>`
-        SELECT "only" FROM schema_marker
-        WHERE "only"
-        LIMIT 1
-    `;
-    return rows.length > 0;
+    try {
+        const rows = await sql.query<{ only: boolean }>`
+            SELECT "only" FROM schema_marker
+            WHERE "only"
+            LIMIT 1
+        `;
+        return rows.length > 0;
+    } catch (error) {
+        if (isUndefinedTable(error)) {
+            return false;
+        }
+        throw error;
+    }
 }
 
 export async function assertSchemaMarker(
