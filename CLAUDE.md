@@ -112,8 +112,9 @@ at the repo root except [TEST-PLAN.md](TEST-PLAN.md)
 self-contained line), and on the root scripts `build`,
 `serve`, `test`, `validate`, `generate-schema-svg`,
 `generate-api-documentation`, `measure`,
-`postgres-lib`, `postgres-seed`, and
-`postgres-wipe`. It then rejects the `org`
+`postgres-lib`, `postgres-seed`,
+`postgres-wipe`, `Dockerfile`, `compose.yaml`,
+and `.dockerignore`. It then rejects the `org`
 abbreviation in identifiers under `api/`, `web-app/`,
 `tests/`, and `shared/` (`.ts`/`.html`/`.css`; `compose.ts`
 exempt) — forms matching `org[A-Z]`, camel/Pascal
