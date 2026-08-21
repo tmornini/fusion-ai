@@ -10,8 +10,8 @@ DASHBOARD_KEYS='https://dashboard.render.com/u/settings?add-api-key'
 
 usage() {
     cat <<'USAGE'
-Usage: ./wipe-postgres --postgres render TOKEN --pristine|--mockdata
-       ./wipe-postgres --postgres local --pristine|--mockdata
+Usage: ./postgres-wipe --postgres render TOKEN --pristine|--mockdata
+       ./postgres-wipe --postgres local --pristine|--mockdata
 
 Wipe Postgres and seed it again. --postgres is
 required and has no default. --postgres render
