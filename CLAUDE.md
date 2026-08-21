@@ -369,8 +369,9 @@ Every page is a standalone HTML file served by
   `POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`,
   `HTTP_SERVER_PORT`. Tests:
   memory (`api/backend-memory.ts` / `api/db-memory.ts`).
-  There is no IndexedDB or localStorage **data**
-  backend. Theme and sidebar still use localStorage.
+  localStorage holds UI preferences only — theme,
+  sidebar, log level, active organization id — never
+  data.
   `TABLE_NAMES` is one: `pairs` — the
   pure message plane, on `HistoryEntityStore`.
   Every store op crosses the `StorageBackend`

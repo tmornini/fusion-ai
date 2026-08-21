@@ -362,14 +362,16 @@ tree required): **`fusion-angle-server-${SHA}.zip`**. Node
 serves composed pages and the API on one origin.
 Postgres is the store. The page talks `fetch`. The
 client bundle is the fetch facade (no in-page API, no
-signing key, no IndexedDB). `--no-zip` writes that
+signing key). `--no-zip` writes that
 same server-core bundle plus `server.mjs`. A metafile
 test forbids `SIGNING_KEY_MATERIAL` and token
 mint (`api/access-token.ts`) in the client graph.
 
-The yank that deleted the in-browser data tier has
-shipped. Memory remains for `./test` / `./validate`.
-Theme and sidebar still use localStorage.
+Storage moved server-side in `b1322740`; memory remains
+for `./test` / `./validate`.
+localStorage holds UI preferences only — theme,
+sidebar, log level, active organization id — never
+data.
 
 ### Server process
 
