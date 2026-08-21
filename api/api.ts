@@ -165,8 +165,8 @@ const routeTable: readonly Route[] = routes;
 const BASE_URL = 'http://localhost';
 
 // The gate-side Decision 5 post: fired once per successful
-// write, AFTER the route handler's promise resolves (so on
-// IndexedDB the commit has already reached `oncomplete`).
+// write, AFTER the route handler's promise resolves — the
+// transaction has committed.
 // Every write posts the fenced organization, identity
 // targets the route/body name, and the actor so the
 // writer's other tabs refresh even when the session is a

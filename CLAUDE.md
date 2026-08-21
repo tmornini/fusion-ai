@@ -697,6 +697,10 @@ apply to it (RED is the audit's first finding).
   run OUTSIDE the tx. Sync compute between row ops is
   fine. Nested `view.transaction` re-enters the same
   tx; its tables must be a subset of the outer set.
+  A transaction holds its pooled connection and its
+  advisory locks for its whole body; the memory backend
+  serializes whole transactions, so a long body stalls
+  every other op.
 - **Field values reference record attributes by id** in the
   pair-plane body (`attribute_id` → a record-attribute
   document id), never a table named `attributes`. See
