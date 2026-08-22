@@ -36,14 +36,27 @@ docker compose down        # stop; the database dies with it
 ```
 
 **Commit before building.** `./build` and `./serve`
-require a clean working directory. `./serve` and a local
-`./measure` need `POSTGRES_URL` and `JWT_HMAC_SIGNING_KEY`.
-`./serve` [port] is `HTTP_SERVER_PORT`. Sandbox:
+(which runs `./build`) require a clean working directory.
+Run `./validate` to catch type errors and lint issues;
+commit; then build or serve.
+
+`./serve` and a local `./measure` sweep need
+`POSTGRES_URL` and `JWT_HMAC_SIGNING_KEY`. `./serve`
+[port] is `HTTP_SERVER_PORT`.
+
+When running under the Claude Code sandbox, the default
+fails because `/tmp/` is not writable. Use this invocation
+instead:
 
 ```bash
 TMPDIR=/tmp/claude ./serve 8080
 # open http://localhost:8080/landing/index.html
 ```
+
+`TMPDIR=/tmp/claude` redirects `./serve`'s temp build dir
+into the sandbox-allowed path.
+`localhost` is reachable from the sandbox, so the Chrome MCP
+tools can drive the page normally.
 
 ## Gates
 
@@ -63,11 +76,12 @@ whether to continue — the bundle is built from the same
 source, so a failing CLI suite makes the browser run
 meaningless. Report the failure, stop, await fix.
 
-`./measure` is not part of `./validate`; it needs Chrome.
-Full ceremony: `--record` + `--write-budgets` + `--runs 25`
-+ `--visualize`. `--check` gates median readyMs against
-`measurements/budgets.json`. `--base-url` hits a running
-origin (needs `--password`). See `./measure --help`.
+`./measure` is not part of `./validate`; it needs
+Chrome. Full ceremony: `--record` + `--write-budgets`
++ `--runs 25` + `--visualize`. `--check` gates
+median readyMs against `measurements/budgets.json`.
+`--base-url` hits a running origin (needs `--password`).
+See `./measure --help` for flags.
 
 ```
 docs/superpowers/specs/2026-07-12-page-performance-measurement-design.md
@@ -154,44 +168,52 @@ Run `ls`.
 
 ### Tenancy and the named covenant
 
-Org rides the VERIFIED claim, never the path. Demotion
-and revocation bite at next mint or access TTL ≤ 15 min.
+Org rides the VERIFIED token claim, never the path.
+De-membership, demotion, and revocation bite at next
+mint, refresh, or exchange, or access TTL (≤ 15 min).
 See [ARCHITECTURE.md](ARCHITECTURE.md) `## Tenancy`.
 
 ### Write authorizer 403s before genesis
 
-`writeAuthorizerFor` 403s a foreign id rather than
-genesis-ing in the caller's namespace (`api/write-authorizer.ts`).
+Org-scoped PUT / DELETE hit `writeAuthorizerFor` so a
+foreign id 403s rather than genesis-ing in the caller's
+namespace. Genuine absence still 404s. See
+`api/write-authorizer.ts`.
 
 ### HTTP only
 
-Relative page URLs; API `/api/…`; one origin. Testing is
-HTTP-only.
+Page URLs use relative paths (`/ideas/` or
+`/ideas/index.html`). The API is `/api/…`. One origin
+(`node server.mjs`). Testing is HTTP-only.
 
 ### Operator seed and wipe
 
-`./postgres-seed` refuses a non-empty database.
-`./postgres-wipe` drops the message plane; it does not seed.
+`./postgres-seed` runs in-process on an empty database
+and refuses a non-empty one. `./postgres-wipe` drops
+the message plane; it does not seed.
 
 ### Same-tab refresh; other browsers stale
 
-Writes notify this tab and same-origin windows
-(`fusion-angle:data`). No LISTEN, no SSE. A second
-browser stays stale until navigation.
+A successful write notifies this tab via pub-sub and
+posts `fusion-angle:data` so other same-origin windows
+refresh. There is no LISTEN and no SSE client. A
+second browser stays stale until navigation.
 
 ### Field values reference attributes by id
 
-Body `attribute_id` is a record-attribute document id
-(`api/derive-state-field-values.ts`).
+The message-plane body stores `attribute_id` as a
+record-attribute document id, never a table named
+`attributes`. See `api/derive-state-field-values.ts`.
 
 ### `noUncheckedIndexedAccess`
 
-Index access returns `T | undefined` — guard or `!`.
+tsconfig enables this — array / object index access
+returns `T | undefined`, requiring a `!` or a guard.
 
 ### Required env is never logged
 
-`POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`,
-`HTTP_SERVER_PORT`. Never log them.
+`POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`, and
+`HTTP_SERVER_PORT` are required. Never log them.
 
 ### Transaction bodies await only row ops
 
@@ -222,4 +244,5 @@ every other op.
 
 This was a Claude-only file that every migration
 appended pins to. It is now a cross-tool router
-behind the `CLAUDE.md` stub.
+behind the `CLAUDE.md` stub: commands, gates, and
+pointers. The maps live in the docs named above.
