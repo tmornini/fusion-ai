@@ -138,7 +138,7 @@ const MANIFEST: Record<string, BootFn> = {
     'idea-detail': async (ctx) => {
         const rows = await getIdeas(ctx);
         for (const row of rows) {
-            await getIdea(ctx, row.idea.id);
+            await getIdea(ctx, row.idea.idForLink());
         }
     },
     'idea-create': async () => {},
@@ -149,7 +149,7 @@ const MANIFEST: Record<string, BootFn> = {
                 === 'approved',
         );
         for (const row of approved) {
-            await getIdea(ctx, row.idea.id);
+            await getIdea(ctx, row.idea.idForLink());
         }
         const active =
             await getActiveObjectives(ctx);
@@ -183,7 +183,7 @@ const MANIFEST: Record<string, BootFn> = {
     'record-detail': async (ctx) => {
         const records = await getRecords(ctx);
         for (const record of records) {
-            const id = record.id;
+            const id = record.record.idForLink();
             await getRecordModel(ctx, id);
             await getRecordAttributesByRecord(
                 ctx, id,
