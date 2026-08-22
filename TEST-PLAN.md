@@ -439,7 +439,7 @@ run by the master after join.
 
 | Section | Tests |
 |---|--:|
-| AT. Automated Test Suite | 3 |
+| AT. Automated Test Suite | 4 |
 | A. Build & Setup | 5 |
 | AA. Data Entry Workflow | 46 |
 | B. Entry Pages | 31 |
@@ -456,7 +456,7 @@ run by the master after join.
 | K. Objectives & Scoring | 30 |
 | R. Records | 25 |
 | SV. Server (Node + Postgres) | 10 |
-| **Total** | **396** |
+| **Total** | **397** |
 
 ### Combined Totals (CLI + Browser)
 
@@ -466,15 +466,17 @@ only. Combined with the CLI automated suite:
 | Layer                  | Cases    |
 |------------------------|---------:|
 | CLI automated tests    |     3321 |
-| Browser regression     |      396 |
-| **Combined TOTAL**     | **3717** |
+| Browser regression     |      397 |
+| **Combined TOTAL**     | **3718** |
 
 CLI count = most recent `./validate` (AT2) report — the main
 `tests/*.test.ts` suite plus the `tests/tz/*.test.ts` timezone
-suite (3313 main + 8 tz, including 5 skipped);
-the number grows as tests land in either glob. Browser count =
-the per-section table above. Update both numbers when either
-side changes.
+suite (3313 main + 8 tz). AT2 without
+`POSTGRES_URL` skips the seven `pg-*.test.ts` /
+`schema-lifecycle.test.ts` stubs; after AT4 those
+seven run. The number grows as tests land in either
+glob. Browser count = the per-section table above.
+Update both numbers when either side changes.
 
 Outcome categories used by run summaries (see `## Summary
 Format` at the bottom of this file):
@@ -489,8 +491,8 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = 3717, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
-where the six status counts sum to **Combined TOTAL** (3717).
+`PASS = 3718, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j, DRIFT = 0`,
+where the six status counts sum to **Combined TOTAL** (3718).
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL` indicates a
 regression.
 
@@ -504,12 +506,20 @@ global_lock: none
 depends: —
 
 The automated layer is the gate. Any AT failure aborts the
-run before A1's build. The single canonical invocation is
-`./validate`, which composes all three sub-steps.
+run before A1's build. AT1–AT3 stay the `./validate`
+gate. AT4 is additional, Postgres-gated, still
+before A1. The automated layer is four cases.
+Abort on any AT red.
 
 - [ ] **AT1** Run `npx tsc --noEmit -p web-app/app/tsconfig.json`. PASS: exits 0; no diagnostics emitted.
 - [ ] **AT2** Run `./test` (delegates to `TZ=UTC node --test --strip-types tests/*.test.ts` for the main suite, then `TZ=Pacific/Honolulu node --test --strip-types tests/tz/*.test.ts` for the timezone suite). PASS: exits 0; the runner's final summary reports `pass N` with `fail 0` for both suites.
 - [ ] **AT3** Run `./validate`. PASS: exits 0 (composes AT1+AT2 plus the 78-char awk lint over `api/`, `web-app/`, `tests/`, `shared/`, the root `.md` files except `TEST-PLAN.md`, and the root scripts `build`, `serve`, `test`, `test-postgres`, `validate`, `generate-schema-svg`, `generate-api-documentation`, `measure`, `postgres-wipe`, `postgres-lib`, and `postgres-seed`; the org-abbreviation identifier lint over `api/`, `web-app/`, `tests/`, `shared/` `*.ts|html|css` with `compose.ts` exempt — reject `org` camel/Pascal/ORG_ identifier forms in favor of `organization`; then the `generate-schema-svg --check` SCHEMA.svg-drift gate; then the `generate-api-documentation --check` API.svg/room-drift gate). Any long-line violation prints `FILE:LINE: N chars` to stderr and fails the script; any org-abbreviation hit prints `FILE:LINE:` and fails.
+- [ ] **AT4** With `POSTGRES_URL` set (A3
+  requires it), run `./test-postgres`. The
+  suite creates and drops its own
+  `fusion_test_*` schema, so it runs against
+  A3's database before A1. PASS: exits 0,
+  `fail 0`. `./validate` stays Postgres-free.
 
 ---
 
