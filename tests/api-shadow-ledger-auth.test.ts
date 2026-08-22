@@ -380,9 +380,9 @@ async () => {
     // Task 8) + seedRootAdmin's 2 fixture pairs + authorize +
     // token (the token hop's own event pair, Phase 13 Task 5,
     // plus pbkdf2 rehash, brings fullLoginFlow's count to 8)
-    // + refresh's own operation pair + refresh's rotate-branch
-    // event pairs (2: the retired root, the issued successor —
-    // Phase 13 Task 5).
+    // + refresh's own operation message pair + refresh's
+    // rotate-branch event pairs (2: the retired root, the
+    // issued successor — Phase 13 Task 5).
     assert.equal(requests.length, 11);
     const refreshRequest = requests.find(
         r => r.uri_collection === '/authentication/token/'
@@ -451,7 +451,7 @@ test('a token-exchange grant stores its own pair with live'
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
 // the client_credentials grant's own admin role check derives
-// from the pair plane once role_grants/memberships flip, so a
+// from the message plane once role_grants/memberships flip, so a
 // raw row here would go derivation-invisible. Every id/field
 // value stays IDENTICAL to the raw puts these replace — only the
 // write mechanism changes.
@@ -514,7 +514,7 @@ test('a client_credentials grant stores its own pair with live'
     // fixture seeds (clients elimination) precede the token
     // grant's spent-jti ticket, its own event pair (Phase 13
     // Task 5: the issued root's pair at the row's address),
-    // and its operation pair.
+    // and its operation message pair.
     assert.equal(requests.length, 7);
     const credRequest = requests.find(
         r => r.uri_collection === '/authentication/token/'
@@ -594,7 +594,7 @@ test('an Authorization header sent alongside the token grant is'
 });
 
 test('a reused (already-rotated-away) refresh token grant is a'
-+ ' 401 that stores NO further operation pair — but its'
++ ' 401 that stores NO further operation message pair — but its'
 + ' replay-branch chain-revocation DOES grow the ledger by its'
 + ' own event pairs (Phase 13 Task 5: revocationAppends is not'
 + ' idempotent, and it now carries a pair per row)', async () => {
@@ -631,11 +631,11 @@ test('a reused (already-rotated-away) refresh token grant is a'
     assert.equal(
         operationMessagePairsAfter,
         operationMessagePairsBefore,
-        'no NEW operation pair for the replay-branch 401',
+        'no NEW operation message pair for the replay-branch 401',
     );
     // +2: the chain's two distinct jtis (the original root, the
     // rotate's successor) each gain a fresh 'revoked' event pair
-    // — the replay branch's own no-operation-pair-but-growing-
-    // event-pairs shape (Phase 13 Task 5).
+    // — the replay branch's own no-operation-message-pair-but-
+    // growing-event-pairs shape (Phase 13 Task 5).
     assert.equal(requests.length, before + 2);
 });

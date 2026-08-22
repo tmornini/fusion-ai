@@ -16,7 +16,7 @@ import {
 // since an invitation's lifecycle never rides the document
 // address (Decision 6 would require a trio the wire body has
 // no room for — the invitations side channel forms its
-// operation pairs at 'invitations/:id/acceptance' etc,
+// operation message pairs at 'invitations/:id/acceptance' etc,
 // api/invitations-domain.ts's formInvitationOperationMessagePair).
 //
 // E13 FULL-SCAN NAMED CLASS: no index can serve "every pair

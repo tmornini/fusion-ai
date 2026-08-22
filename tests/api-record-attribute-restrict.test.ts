@@ -44,11 +44,11 @@ import { TEST_OPERATION_ID } from './http-fixtures.ts';
 // event payloads.
 //
 // NAMED re-pin (Phase 15 Task 4): RESTRICT's three graph legs
-// are pair-plane derived now — a raw
+// are message-plane derived now — a raw
 // db.flowNodeAttributes.put / db.workOrders.put leaves no
-// graphDelta / work-orders document pair, so live flow and
-// work-order referrers must land through the SAME wire-
-// reachable writers the live routes serve.
+// graphDelta / work-orders document message pair, so live
+// flow and work-order referrers must land through the SAME
+// wire-reachable writers the live routes serve.
 
 const TYPE_PATH =
     'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
@@ -75,7 +75,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     await seedAdminSchema(db);
     await seedCurrentMember(db);
     // Phase Final Stage B: records family retired — seed
-    // through live document PUTs so the pair plane owns them.
+    // through live document PUTs so the message plane owns them.
     await PUT(db, TYPE_PATH, {
         name: 'Asset', description: 'd', position: 1,
         state: 'active',
@@ -270,12 +270,12 @@ test(
     },
 );
 
-// Phase Final Task 1(a): pair-plane organization_id re-anchor
+// Phase Final Task 1(a): message-plane organization_id re-anchor
 // for RESTRICT DELETE. Wire-seeded attribute (pairs exist) so
 // the head response body stamps organization_id; DELETE is
 // 204 and wire GET 404s.
 test(
-    'pair-plane organization_id deletes a wire-seeded'
+    'message-plane organization_id deletes a wire-seeded'
     + ' unreferenced attribute (Task 1(a) parity)',
     async () => {
         const db = await seededDb();
@@ -314,7 +314,7 @@ async function seedFieldValueReferrer(
     value: string,
 ): Promise<void> {
     // Phase Final Stage B: work_orders table retired — seed
-    // through the live document PUT so the pair plane owns it.
+    // through the live document PUT so the message plane owns it.
     await PUT(
         db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + WORK_ORDER_ID, {
@@ -389,7 +389,7 @@ test(
                     err.message,
                 ),
         );
-        // RESTRICT 409: attribute still served on pair plane.
+        // RESTRICT 409: attribute still served on message plane.
         const still = await GET<{ id: string }>(
             db, ATTR1_PATH, DEV_TOKEN,
         );
@@ -622,7 +622,7 @@ test(
                 err instanceof RequestError
                 && err.status === 409,
         );
-        // the batch applied NOTHING: pair-plane document
+        // the batch applied NOTHING: message-plane document
         // survives and zero pairs append
         const record = await GET<{ name: string }>(
             db, TYPE_PATH, DEV_TOKEN,

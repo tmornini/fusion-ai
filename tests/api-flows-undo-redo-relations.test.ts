@@ -62,9 +62,9 @@ import { generateIdentifier } from
     '../shared/identifier.ts';
 
 // Phase Final Task 2: graph relation ROW halves stripped.
-// Undo/redo oracles re-home to pair-plane GET graph and
-// graphDelta.deletions / revivals on flow document pairs
-// (SIDECAR-KEEP). deriveFlowGraphStates retired with C3.
+// Undo/redo oracles re-home to message-plane GET graph and
+// graphDelta.deletions / revivals on flow document message
+// pairs (SIDECAR-KEEP). deriveFlowGraphStates retired with C3.
 
 const FLOW_ID = generateIdentifier();
 const NODE_A = generateIdentifier();
@@ -166,9 +166,9 @@ function snapOf(
 }
 
 // Persist `graph` as the CURRENT flow state — a genuine save,
-// so it lands its OWN document pair at organizations/:id/flows/:id.
-// Undo-as-replay
-// resolves its restore target by walking that document-pair
+// so it lands its OWN document message pair at
+// organizations/:id/flows/:id. Undo-as-replay resolves its
+// restore target by walking that document-message-pair
 // history.
 async function saveGraph(
     ctx: RequestContext,
@@ -178,7 +178,7 @@ async function saveGraph(
     await putFlow(ctx, FLOW_ID, save(nodes, edges));
 }
 
-// Pair-plane working graph (GET /organizations/:id/flows/:id).
+// Message-plane working graph (GET /organizations/:id/flows/:id).
 async function messagePairGraph(
     ctx: RequestContext,
 ): Promise<StoredGraph> {
@@ -191,8 +191,8 @@ async function messagePairGraph(
 }
 
 // SIDECAR-KEEP: node/edge deleted|restored lives on the
-// flow document-pair body (graphDelta.deletions / revivals),
-// not a bulk states derive (C3 retired that).
+// flow document-message-pair body (graphDelta.deletions /
+// revivals), not a bulk states derive (C3 retired that).
 async function latestSidecarStateFor(
     db: MemoryDbAdapter,
     entityId: string,
@@ -313,7 +313,7 @@ test(
         if (undo.kind !== 'ok') return;
 
         // KEYSTONE: X and its edge are REVIVED — the
-        // pair-plane graph includes them again.
+        // message-plane graph includes them again.
         const afterUndo = await messagePairGraph(ctx);
         assert.ok(
             afterUndo.nodes.some(n => n.id === NODE_X),

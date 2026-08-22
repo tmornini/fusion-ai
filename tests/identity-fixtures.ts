@@ -249,7 +249,7 @@ export async function seedServiceIdentity(
     );
 }
 
-// One identities/:id/registration document pair — the
+// One identities/:id/registration document message pair — the
 // clients-elimination facet. Chainless below-facade append
 // (headPairId undefined): deriveDocumentsAt's (at, id)
 // reduction decides currency; Supersedes is provenance-only.

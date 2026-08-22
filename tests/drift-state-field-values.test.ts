@@ -45,7 +45,7 @@ const FV_M = generateIdentifier();
 // Phase Final Task 2: state_field_values dual-write stripped.
 // This file no longer compares derive vs row-plane oracles —
 // the SFV table is empty after live transitions. Coverage
-// re-homes to pair-plane derive + wire-byte handleRequest
+// re-homes to message-plane derive + wire-byte handleRequest
 // assertions. Leaf PUT/DELETE routes retired Phase 15 Task 7;
 // GET states/:id/field-values retired (states-URI elimination
 // C4) — product reads fold field values on work-order
@@ -79,7 +79,7 @@ function graphJson(): Record<string, unknown> {
     };
 }
 
-// Seed via REAL PUT so the WO carries a document pair.
+// Seed via REAL PUT so the WO carries a document message pair.
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);

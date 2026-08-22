@@ -25,11 +25,12 @@ const DELETE_METHOD = 'DELETE';
 // projects (neither ever POSTs at its own document address);
 // load-bearing once a family's create-shaped genesis pair
 // shares its document address (the flows family: POST
-// 'flows' mints the create op pair at the SAME uriId a
-// subsequent PUT 'flows/:id' revisits). Defense-in-depth, not
-// the deciding mechanism — appendMessagePair's nowUtc() `at`
-// already orders a synthesized document pair strictly after
-// its sibling operation pair.
+// 'flows' mints the create operation message pair at the
+// SAME uriId a subsequent PUT 'flows/:id' revisits).
+// Defense-in-depth, not the deciding mechanism —
+// appendMessagePair's nowUtc() `at` already orders a
+// synthesized document message pair strictly after its
+// sibling operation message pair.
 const DOCUMENT_METHODS: ReadonlySet<string> =
     new Set([PUT_METHOD, DELETE_METHOD]);
 

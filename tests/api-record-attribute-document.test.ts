@@ -149,7 +149,7 @@ test('postRecordAttributeDocumentOp writes exactly the'
         operationId: TEST_OPERATION_ID,
     });
     // Phase Final Task 2: record_attributes ROW half stripped
-    // — pair plane + op return are the oracles.
+    // — message plane + op return are the oracles.
     const written = await postRecordAttributeDocumentOp(
         db, ATTRIBUTE_ID, body, 'XXZruirZyAOoRpNxaDnpSA',
         messagePair,

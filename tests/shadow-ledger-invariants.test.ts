@@ -164,8 +164,8 @@ function workOrderFields(displayId: string, organization: string) {
 
 // The workOrder facet reuses workOrderFields() — the SAME
 // construction the entity-PUT case above already exercises —
-// so the create's synthesized document pair and this literal
-// are ONE source, never two divergent builds.
+// so the create's synthesized document message pair and this
+// literal are ONE source, never two divergent builds.
 function workOrderCreateBody(
     id: string,
     flowWorkOrderId: string,
@@ -273,9 +273,10 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     assert.equal(stateAppend.status, 201);
 
     // Create POST (records, org 2) — Task 4's bundle: the
-    // operation pair, its synthesized document pair, and one
-    // synthesized attribute-PUT pair (the create balance is now
-    // 2+N, not 1).
+    // operation message pair, its synthesized
+    // document message pair, and one synthesized
+    // attribute-PUT pair (the create balance is now 2+N,
+    // not 1).
     const created = await handleRequest(db, req(
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/record-types/', org2Token,
@@ -355,9 +356,10 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     assert.equal(flowGenesis.status, 201);
 
     // Work-order CREATE (org 1) — a genesis POST, joined to the
-    // flow just created above: three pairs land (the operation
-    // pair, its synthesized document pair, its synthesized join
-    // pair), none of them route-exercised in this mixed batch
+    // flow just created above: three pairs land (the
+    // operation message pair, its synthesized
+    // document message pair, its synthesized join pair),
+    // none of them route-exercised in this mixed batch
     // before now.
     const workOrderCreated = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'

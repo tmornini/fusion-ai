@@ -162,7 +162,7 @@ export async function deriveMembershipsForIdentity(
     return rows.sort(byAtThenIdAscending);
 }
 
-// ONE organization's membership-presence probe, pair-plane —
+// ONE organization's membership-presence probe, message-plane —
 // the organizationHasMemberMessagePair shape
 // (api/derive-states.ts), generalized to accept an
 // already-open transaction view. Returns as soon as a

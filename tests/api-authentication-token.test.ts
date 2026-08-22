@@ -86,7 +86,7 @@ async function seedAuthorizationCodeMessagePair(
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
 // the token-exchange org-scoping tests below authorize through
-// memberships/role_grants once they derive from the pair plane,
+// memberships/role_grants once they derive from the message plane,
 // so a raw row here would go derivation-invisible. Every
 // id/field value stays IDENTICAL to the raw puts these replace —
 // only the write mechanism changes.
@@ -423,7 +423,7 @@ test('an unknown code is a 401', async () => {
 // GATE 3 (Phase 13 Task 7): the code-spend guard's three 401
 // classes — unknown (never issued), spent (replayed), raced
 // (lost a concurrent exchange) — all carry the SAME byte-exact
-// body. The pair-plane guard (authorizeCodeIssuer /
+// body. The message-plane guard (authorizeCodeIssuer /
 // authorizationCodeSpent, api/authentication.ts) makes no
 // distinction between them at the wire, exactly as the retired
 // codeState-driven guard never did either.
@@ -476,7 +476,7 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
         await raced.json(), { error: INVALID_CODE_ERROR });
 
     // The derived id itself: a live-minted spend is visible on
-    // the pair plane by exactly that id, the SAME value the
+    // the message plane by exactly that id, the SAME value the
     // guard above already checked internally.
     const derivedId =
         await deriveAuthorizationCodeId('the-code-spent');

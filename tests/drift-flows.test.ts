@@ -291,7 +291,7 @@ async function createFlow(
 }
 
 // Wire-byte GET helper: handleRequest text must equal
-// JSON.stringify(derive) for pair-plane oracles.
+// JSON.stringify(derive) for message-plane oracles.
 async function wireFlowText(
     db: MemoryDbAdapter,
     organization: string,
@@ -678,7 +678,7 @@ test('live-write chain: create, save, node delete, undo, '
         (derived.graph as { nodes: { id: string }[] })
             .nodes.some((n) => n.id === n2),
         true,
-        'the revived node must be visible on the pair plane',
+        'the revived node must be visible on the message plane',
     );
 
     // Redo-as-save: re-apply the node deletion.
@@ -839,7 +839,7 @@ async () => {
     assert.equal(second.status, 201);
 
     // ONE flow head on wire/derive — the derived head is the
-    // (at, id) winner, the second create's own document pair.
+    // (at, id) winner, the second create's own document message pair.
     const derivedFlow = await deriveFlow(
         db, STARK_ORGANIZATION, flowId,
     );
@@ -878,8 +878,9 @@ async () => {
 
 // -- 9. the create-op POST pair is never the derived head -----
 
-test('the create-op POST pair is not read as a document pair '
-+ '(the method-filter proof at drift altitude)', async () => {
+test('the create-op POST pair is not read as a document'
++ ' message pair (the method-filter proof at drift altitude)',
+async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const flowId = FLOW_DRIFT_METHOD_FILTER;
@@ -1102,7 +1103,7 @@ async () => {
     assertWireEqualsDerived(wireText, derived);
     // Graph content preserves both members/attrs regardless
     // of insertion order (normalizedGraph order-independence
-    // still applies on the pair plane).
+    // still applies on the message plane).
     const nodes = (derived.graph as {
         nodes: {
             id: string;

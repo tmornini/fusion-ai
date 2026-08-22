@@ -50,7 +50,7 @@ import { generateIdentifier } from
 // A hand-built multi-family fixture drives ONE representative
 // event through each surviving source — idea, objective, AI
 // member, work order, flow-node delete/restore sidecars on
-// the pair plane, invitation grant/accept — across TWO
+// the message plane, invitation grant/accept — across TWO
 // organizations. Bulk deriveStates / fence union RETIRED with
 // C3; fence force lives on resolveOwningOrganization + family
 // history routes.
@@ -92,7 +92,7 @@ function req(
 // Below-facade pair formation (the member-fixtures.ts idiom,
 // the derive-states-events.test.ts precedent): every write below
 // authorizes through organizationToken, whose gate check derives
-// from the role_grants/memberships pair plane once they flip, so
+// from the role_grants/memberships message plane once they flip, so
 // a raw row here would go derivation-invisible. Every id/field
 // value stays IDENTICAL to the raw puts these replace — only the
 // write mechanism changes.
@@ -517,7 +517,7 @@ async function buildUnionFixture(): Promise<UnionFixture> {
     // (b) an AI member's document-trio genesis — membered into
     // org A so the fence resolves it there rather than as an
     // orphan (members are GLOBAL plane; ownership rides the
-    // membership pair plane).
+    // membership message plane).
     const aiMemberId = generateIdentifier();
     await createAiMember(
         db, tokenA, aiMemberId, 'active',
@@ -711,7 +711,7 @@ async () => {
         )).map((row) => row.id),
         [...fx.workOrderEventIds],
     );
-    // Graph sidecars on the flow document pairs (C3).
+    // Graph sidecars on the flow document message pairs (C3).
     const prefix = canonicalUriCollection(fx.organizationA, '/flows/');
     const stored = await fx.db.messagePairs.getAllWhere(
         'uri_collection', prefix,
@@ -779,11 +779,12 @@ async () => {
 // ---- 3. invitation phantom-pair regressions (gate 5f) -----------
 
 // deriveInvitationStates cross-references the invitation
-// DOCUMENT plane to exclude a duplicate grant's own operation
-// pair (which forms but writes neither a document nor a states
-// event), and takes only the EARLIEST pair per answering-op
-// address to exclude an idempotent resend's own operation pair
-// (which forms but posts no second lifecycle event). Both
+// DOCUMENT plane to exclude a duplicate grant's own
+// operation message pair (which forms but writes neither a
+// document nor a states event), and takes only the EARLIEST
+// pair per answering-op address to exclude an idempotent
+// resend's own operation message pair (which forms but
+// posts no second lifecycle event). Both
 // exclusions are hand-trace-verified in deriveInvitationStates'
 // own header comment above but had no regression coverage before
 // this section — these three tests drive each phantom shape

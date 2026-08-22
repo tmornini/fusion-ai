@@ -36,7 +36,7 @@ import { WRITE_RESPONSE_SPECS } from '../api/routes.ts';
 // Phase Final Task 2: organizations dual-write stripped. This
 // file no longer compares derive vs old-table oracles — the
 // row plane is empty after seed. Coverage re-homes to
-// wire-byte handleRequest assertions and pair-plane fixtures
+// wire-byte handleRequest assertions and message-plane fixtures
 // (drift-identity-tokens craftsmanship).
 //
 // organizations is GLOBAL plane: it IS the tenant root, never

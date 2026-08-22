@@ -12,12 +12,12 @@
 
 Phase Final deleted the entity row plane. The schema of
 record is the **message plane** — the append-only
-`pairs` table. The table is listed in `api/db.ts` as
-`TABLE_NAMES` (the authoritative count: one). The table
-is `pairs` in Postgres
+`message_pairs` table. The table is listed in `api/db.ts`
+as `TABLE_NAMES` (the authoritative count: one). The
+table is `message_pairs` in Postgres
 (`api/schema-postgres.ts`); the memory backend holds the
 same rows in an in-process Map keyed by table name.
-Column types match `PairEntity`. TypeScript views `id`
+Column types match `MessagePairEntity`. TypeScript views `id`
 and `operation_id` as identifier strings; Postgres
 stores those columns as uuid. `method` is TEXT.
 Postgres stores `request` and `response` as BYTEA
@@ -38,7 +38,7 @@ identity spine, organizations, states, field values, flow
 tags, …) is a **derivation** over message pairs at a URI
 address. There is no per-entity table and no dual-write
 half. Reads reassemble documents and lifecycle state from
-the pair plane (`api/derive-*.ts`); writes append pairs
+the message plane (`api/derive-*.ts`); writes append pairs
 only (`tx` lists `MESSAGE_TABLES` on every
 pair-wired path).
 
@@ -105,7 +105,7 @@ and the write authorizer
 `resolveGlobalOwner`, which may fall back to
 `resolveOwningOrganization`).
 
-### pairs
+### message_pairs
 
 One row per stored canonical HTTP request message and its
 paired response. The request and response texts ARE the
@@ -133,7 +133,7 @@ never mints this header for a public write. GET may
 send it; it is ignored. Seed `formSeedPair` mints one
 id per envelope and copies it onto inner PUTs.
 
-`pairs.version` is the document revision token
+`message_pairs.version` is the document revision token
 (unconditional / genesis: sha256 of response body octets;
 later: sha256 of body octets || matched 64-hex). Wire
 `ETag` / `If-Match` are that same token for documents.
@@ -147,38 +147,38 @@ Write HTTP responses add `Operation-ID` at send time
 from this column. It is not stored on the GET-shaped
 response blob.
 
-Validator: `validatePairEntity` (`api/validators.ts`).
+Validator: `validateMessagePairEntity` (`api/validators.ts`).
 
 ## Derived document families (no table)
 
-Every product family is pair-plane only. The template is
+Every product family is message-plane only. The template is
 **flow tags** — the first family that never had a backing
 table:
 
-### Flow tags (pair-plane only, no table)
+### Flow tags (message-plane only, no table)
 
 `flows/:id/tags/:name` (Phase 14 Task 9) is the FIRST
 document family with no backing table at all: PUT, GET, and
-DELETE all touch only `pairs`, addressed at
+DELETE all touch only `message_pairs`, addressed at
 `flows/<flow-id>/tags/<name>/`. A tag body carries exactly
 one field, `flow_response_id` — the pinned `id` of one of the
-flow's own `flows/:id` document-pair responses — so the tag
-survives every later save of the flow it names (GET replays
-the tag's own stored body, never re-derives against the
-flow's current head). DELETE is a marked tombstone: a
+flow's own `flows/:id` document-message-pair responses — so
+the tag survives every later save of the flow it names (GET
+replays the tag's own stored body, never re-derives against
+the flow's current head). DELETE is a marked tombstone: a
 DELETE-shaped response pair excluded from the head by
 `deriveDocumentsAt`, exactly like every other document
 family's DELETE — there is no row to splice, since there was
 never a row to begin with.
 
-### Work-order instance binding (pair-plane only, no table)
+### Work-order instance binding (message-plane only, no table)
 
 `work-orders/:id/binding` is a create-only PUT family with
 no backing table: first `PUT` appends a binding pair at
 `/work-orders/:id/binding/` (201). Rebind is 409. POST is
 405. The CURRENT bind derives from the WO's own binding
-op-pair prefix — latest `(at, id)` wins (claim-op derive
-precedent). WO GET embeds `instance_id` +
+operation-message-pair prefix — latest `(at, id)` wins
+(claim-op derive precedent). WO GET embeds `instance_id` +
 `record_type_id` at read time (never a document field).
 Transition-driven value writes append instance
 **revision** pairs at the instance's own canonical
@@ -197,7 +197,7 @@ URI-addressed pair family with a derive module
 membership `type` at mint; the role-grants family is
 RETIRED (no live pair family and no route).
 
-### Record types, attributes & instances (pair-plane only)
+### Record types, attributes & instances (message-plane only)
 
 Org-nested wire = storage (no dual-wire flat `/records`):
 
@@ -224,7 +224,7 @@ Org-nested wire = storage (no dual-wire flat `/records`):
 - **instances** — full-state revision heads store
   `{ values: [{ attribute_id, value }] }`. Wire PATCH
   is **operation-plane** (`set` / `clear`); the server
-  merges pre-tx and appends a full-state document pair.
+  merges pre-tx and appends a full-state document message pair.
   GET is one head read. Public PUT is **405**; PATCH
   creates and updates (If-Match 428 / 412 on a live
   head). Same-body PATCH still appends 201. DELETE
@@ -236,7 +236,7 @@ Org-nested wire = storage (no dual-wire flat `/records`):
   `version` is `documentVersion` of the full stored
   body. The two differ by definition.
 
-### Client registration (pair-plane only, no table)
+### Client registration (message-plane only, no table)
 
 `identities/:id/registration` (clients elimination) is the
 client-config facet of a kind-`'service'` identity — the

@@ -40,8 +40,9 @@
 // and a revision invocation per seeded objective. The scores
 // deferral closes (Task 5 of Phase 7), landing WHOLE: baselines
 // AND actuals (broader than "baselines" alone — the handoff's
-// own phrasing) — one document pair per seeded row, closed
-// through postBaselineScoreDocumentOp / postActualScoreDocumentOp.
+// own phrasing) — one document message pair per seeded row,
+// closed through postBaselineScoreDocumentOp /
+// postActualScoreDocumentOp.
 // The human-members/ai-members create-time bundle grows from one
 // pair to three (Phase 8 Task 4, the objectives-family
 // precedent generalized to the roster): the existing operation
@@ -54,30 +55,32 @@
 // each seeded membership row (16 — 11 human-member-organization
 // rows, `current` counted twice for its two-organization
 // membership, + 4 ai-member rows) now folds in its OWN document
-// pair, closed through postMembershipDocumentOp. Leftover
-// members/:id parent documents are gone from the seed.
+// message pair, closed through postMembershipDocumentOp.
+// Leftover members/:id parent documents are gone from the
+// seed.
 // Bootstrap's membership forms this SAME pair via
 // formBootstrapMessagePair. NO whole-slice seed
 // deferral remains; the work-order historical traces stay the
 // one NAMED direct-write carve-out above. The human-member
 // create-time bundle widens once more, human-only (Phase 10 Task
-// 5): a fourth invocation forms the identities/:id document pair
-// — a human member's own identity row, which an AI member never
-// has (finding 10), so the ai-members loop below stays a triple.
+// 5): a fourth invocation forms the identities/:id document
+// message pair — a human member's own identity row, which an
+// AI member never has (finding 10), so the ai-members loop
+// below stays a triple.
 // Bootstrap's lone 'XXZruirZyAOoRpNxaDnpSA' human-member create forms this
 // SAME
 // quadruple via formBootstrapMessagePair. Phase 10 Task 6 closes
 // the identity spine's remaining raw writes: each seeded AI
 // member and the system member ALSO form their OWN identities/:id
-// document pair (a standalone invocation — neither create-time
-// bundle above ever carried one, so this widens no triple/
-// quadruple), and each seeded role grant forms its OWN
-// role-grants/:id document pair. Every invocation here (as
-// always) forms through the SAME formSeedMessagePair
+// document message pair (a standalone invocation — neither
+// create-time bundle above ever carried one, so this widens
+// no triple/quadruple), and each seeded role grant forms its
+// OWN role-grants/:id document message pair. Every invocation
+// here (as always) forms through the SAME formSeedMessagePair
 // pipeline, UNTOUCHED — formSeedMessagePair is genesis
 // by construction. The 12 identity-credential document
-// pairs (11 human passwords + the system client secret)
-// are the ONE exception: a credential's
+// message pairs (11 human passwords + the system client
+// secret) are the ONE exception: a credential's
 // hashed secret is unknown until PBKDF2 resolves inside
 // seedHumanCredentials (api/mock-data.ts), which runs AFTER this
 // file's shared pre-tx pass already completed — so those 12 pairs
@@ -104,11 +107,12 @@
 // (api/derive-organizations.ts), registered ahead of this task
 // (family-registry.ts, Task 2). Its two seeded organizations
 // (Stark Industries, Wayne Enterprises) form their OWN
-// organizations/:id document pair, the SAME per-family
-// onboarding playbook every prior family already rode. Phase
-// Final Task 2 strips the organizations ROW half — pairs alone
-// remain. Bootstrap's own lone STARK_ORGANIZATION pair mirrors
-// this via formBootstrapMessagePair below.
+// organizations/:id document message pair, the SAME
+// per-family onboarding playbook every prior family already
+// rode. Phase Final Task 2 strips the organizations ROW half
+// — pairs alone remain. Bootstrap's own lone
+// STARK_ORGANIZATION pair mirrors this via
+// formBootstrapMessagePair below.
 
 import type {
     Id,
@@ -1237,10 +1241,11 @@ interface ObjectiveSeed {
 
 // The create body for POST /objectives — objective row,
 // first revision, and the genesis lifecycle trio. The trio
-// folds onto the document pair via objectiveDocumentBodyOf
-// (states-address retirement); pair count is unchanged —
-// only body bytes grow. Genesis event id mirrors
-// aiMemberSeedBody's seed-member-${id}-active pattern.
+// folds onto the document message pair via
+// objectiveDocumentBodyOf (states-address retirement); pair
+// count is unchanged — only body bytes grow. Genesis event
+// id mirrors aiMemberSeedBody's seed-member-${id}-active
+// pattern.
 export function objectiveSeedBody(
     seed: ObjectiveSeed,
     organization: Id,
@@ -1450,7 +1455,7 @@ export function buildMockDataInvocations():
         // other human is single-org via assignOrganization — the
         // SAME per-member partition postMockDataLoadIn's own
         // membership loop uses (mock-data.ts). Each row folds in
-        // its OWN document pair, closed through
+        // its OWN document message pair, closed through
         // postMembershipDocumentOp, ordered before the
         // human-member triple below — the SAME write order
         // postMockDataLoadIn uses (memberships land before the
@@ -1483,9 +1488,10 @@ export function buildMockDataInvocations():
             requesterIdentityId: SYSTEM_MEMBER_ID,
             body: identityPersonSeedBody(member),
         });
-        // Phase 10 Task 2: the PII facet's own document pair,
-        // closing the intake decomposition's seed side — its own
-        // address (identities/:id/pii), formed the SAME way
+        // Phase 10 Task 2: the PII facet's own document
+        // message pair, closing the intake decomposition's
+        // seed side — its own address (identities/:id/pii),
+        // formed the SAME way
         // every other per-member invocation above is, over the
         // SAME body humanMemberPiiSeedBody hands the actual write
         // (mock-data.ts) so the two can never drift. ORDERING
@@ -1504,10 +1510,11 @@ export function buildMockDataInvocations():
         });
     });
     // The system identity's OWN identities/:id document
-    // pair — the last raw identities.put site the mock-data seed
-    // still held for the system actor (the human-member loop
-    // above forms this SAME pair per human member already; the
-    // ai-members loop below forms its OWN, per member).
+    // message pair — the last raw identities.put site the
+    // mock-data seed still held for the system actor (the
+    // human-member loop above forms this SAME pair per human
+    // member already; the ai-members loop below forms its
+    // OWN, per member).
     invocations.push({
         key: seedMessagePairKey('identities/:id', SYSTEM_MEMBER_ID),
         routePattern: 'identities/:id',
@@ -1535,7 +1542,7 @@ export function buildMockDataInvocations():
     });
     // Phase 12 Task 3 / Phase Final Task 2: the two seeded
     // organizations form their OWN organizations/:id document
-    // pairs (ROW half stripped — pair-plane only).
+    // message pairs (ROW half stripped — message-plane only).
     invocations.push({
         key: seedMessagePairKey('organizations/:id', STARK_ORGANIZATION),
         routePattern: 'organizations/:id',
@@ -1603,12 +1610,13 @@ export function buildMockDataInvocations():
             body: createBody,
         });
         // Task 5: create appends THREE pairs — the operation
-        // pair above, plus a document pair (at the flow's own
-        // address) and a join pair (at the project_flows
-        // address), each keyed by its OWN deterministic
-        // invocation entry, mirroring the idea-submissions
-        // two-idParams precedent. The document body is built
-        // through flowCreateDocumentBody — the SAME construction
+        // message pair above, plus a document message pair
+        // (at the flow's own address) and a join pair (at the
+        // project_flows address), each keyed by its OWN
+        // deterministic invocation entry, mirroring the
+        // idea-submissions two-idParams precedent. The
+        // document body is built through
+        // flowCreateDocumentBody — the SAME construction
         // api/routes.ts's POST /flows handler uses — never a
         // second, hand-rolled copy.
         const b = validateFlowCreateBody(createBody);
@@ -1655,9 +1663,10 @@ export function buildMockDataInvocations():
         body: flowOrg2SeedBody(),
     });
     // Phase 5 Task 4: the entity/join gap closed — one document
-    // pair per seeded work order (hand-authored + generated) and
-    // one join pair per seeded flow-work-order join, mirroring
-    // the flows family's document-genesis shape. The work-order
+    // message pair per seeded work order (hand-authored +
+    // generated) and one join pair per seeded
+    // flow-work-order join, mirroring the flows family's
+    // document-genesis shape. The work-order
     // HISTORICAL TRACES (states events + state_field_values) stay
     // a direct WRITE — Path A, the fingerprint-critical invariant
     // (op-replay would rearrange the pinned states fingerprint) —
@@ -1697,9 +1706,9 @@ export function buildMockDataInvocations():
             ],
             organization: STARK_ORGANIZATION,
             // The SAME member as the join's own work order's
-            // document pair — the requesting identity is who
-            // brought the work order into being, not a second,
-            // independently-picked author.
+            // document message pair — the requesting identity
+            // is who brought the work order into being, not a
+            // second, independently-picked author.
             requesterIdentityId: workOrderFirstEventMemberId.get(
                 join.work_order_id,
             )!,
@@ -1779,14 +1788,15 @@ export function buildMockDataInvocations():
             requesterIdentityId: event.member_id,
             body: createBody,
         });
-        // Phase 6 Task 4: create appends the document pair (at
-        // the type's own nested address) and one attribute-PUT
-        // pair per seeded attribute, each keyed by its OWN
-        // deterministic invocation entry — the flows document +
-        // join precedent above, generalized from fixed
-        // cardinality to 1+1+N. Bodies via the shared BODY
-        // builders (api/routes.ts) — never a second, hand-rolled
-        // copy. Every seeded attribute is genesis, so no
+        // Phase 6 Task 4: create appends the document message
+        // pair (at the type's own nested address) and one
+        // attribute-PUT pair per seeded attribute, each keyed
+        // by its OWN deterministic invocation entry — the
+        // flows document + join precedent above, generalized
+        // from fixed cardinality to 1+1+N. Bodies via the
+        // shared BODY builders (api/routes.ts) — never a
+        // second, hand-rolled copy. Every seeded attribute
+        // is genesis, so no
         // attribute-DELETE invocation exists here (the seed
         // never removes an attribute it just created).
         const b = validateRecordWriteBody(createBody);
@@ -1859,12 +1869,12 @@ export function buildMockDataInvocations():
             requesterIdentityId: memberId,
             body: createBody,
         });
-        // Task 3: create appends the document pair (at the
-        // objective's own address) and the revision pair (at
-        // its first revision's own address), each keyed by its
-        // OWN deterministic invocation entry — the flows
-        // document + join precedent, objectives' own fixed
-        // 1+1+1. Bodies via the shared BODY builders
+        // Task 3: create appends the document message pair
+        // (at the objective's own address) and the revision
+        // pair (at its first revision's own address), each
+        // keyed by its OWN deterministic invocation entry —
+        // the flows document + join precedent, objectives'
+        // own fixed 1+1+1. Bodies via the shared BODY builders
         // (api/routes.ts) — never a second, hand-rolled copy.
         // The SAME member authors all three invocations (the
         // revision author).
@@ -1938,9 +1948,10 @@ export function buildMockDataInvocations():
     });
     // Phase 7 Task 5: the scores half of the seed deferral closes
     // LAST, landing WHOLE — baselines AND actuals, one document
-    // pair per seeded row, from the SAME buildSeedScoreRows
-    // output mock-data.ts's pass-2 write drives through
-    // postBaselineScoreDocumentOp / postActualScoreDocumentOp.
+    // message pair per seeded row, from the SAME
+    // buildSeedScoreRows output mock-data.ts's pass-2 write
+    // drives through postBaselineScoreDocumentOp /
+    // postActualScoreDocumentOp.
     // `pools` is the SAME pre-tx pool the objectives loop above
     // draws from — every scored project is STARK by construction
     // (the lone org-2 project is seeded 'submitted', so it never
@@ -2156,9 +2167,9 @@ export async function formDefaultOrganizationSeedMessagePair(
 // sequentially. headerFields stays [] for every link
 // — the seed's no-bearer carve-out extends to If-Match
 // on seed revision pairs (never hoist If-Match onto
-// synthetic revisions; the wire op pair's hoisted
-// If-Match is what makes resends distinct messages on
-// the live path).
+// synthetic revisions; the wire operation message pair's
+// hoisted If-Match is what makes resends distinct messages
+// on the live path).
 export async function formInstanceChainMessagePairs():
     Promise<ReadonlyMap<string, MessagePair>>
 {
@@ -2416,12 +2427,13 @@ export async function formMockDataMessagePairs(
 
 // Pass 1 for seedHumanCredentials (mock-data.ts), called for
 // BOTH seed paths: the 12 (mock-data) / 2 (bootstrap) identity-
-// credential document pairs, formed from their OWN post-hash
-// bodies — content unknown until PBKDF2 resolves inside
-// seedHumanCredentials, which runs AFTER formMockDataMessagePairs
-// / formBootstrapMessagePair above already completed, so these
-// pairs can never join either. `requestAt` is minted once by the
-// caller, this credential batch's own arrival moment — the SAME
+// credential document message pairs, formed from their OWN
+// post-hash bodies — content unknown until PBKDF2 resolves
+// inside seedHumanCredentials, which runs AFTER
+// formMockDataMessagePairs / formBootstrapMessagePair above
+// already completed, so these pairs can never join either.
+// `requestAt` is minted once by the caller, this credential
+// batch's own arrival moment — the SAME
 // pattern every other pass 1 shares. Calls the SAME formSeedMessagePair
 // every other family here does — untouched — so a seeded
 // credential pair can never drift from the shape the live PUT
@@ -2486,16 +2498,16 @@ export async function formSeedCredentialMessagePairs(
 // so no stored pair ever drifts from what was actually written.
 // Task 5: ALSO forms bootstrap's own membership pair (its lone
 // 'XXZruirZyAOoRpNxaDnpSA' membership). Phase 10 Task 2: ALSO
-// forms the current member's PII document pair
+// forms the current member's PII document message pair
 // (identities/:id/pii), the SAME facet-split every other
 // seeded human now carries. Phase 10 Task 5: the
 // human-member bundle grows from 1+1+1 to 1+1+1+1 — the
-// current member's own identities/:id document pair, the
-// SAME fourth invocation the mock-data seed's own
+// current member's own identities/:id document message pair,
+// the SAME fourth invocation the mock-data seed's own
 // human-members loop now forms per member. Phase 10 Task 6:
 // ALSO forms the system member's OWN identities/:id
-// document pair. The credential pairs stay OUTSIDE this
-// function — seedHumanCredentials' own local
+// document message pair. The credential pairs stay OUTSIDE
+// this function — seedHumanCredentials' own local
 // pass-1/pass-2 split (formSeedCredentialMessagePairs) forms
 // them, for both seed paths.
 export async function formBootstrapMessagePair(

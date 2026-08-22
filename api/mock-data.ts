@@ -276,10 +276,10 @@ export async function seedHumanCredentials(
         { id: systemCredentialId, secret: systemSecret },
         requestAt,
     );
-    // Pass 2: pair-plane only (Phase Final Task 2 stripped the
-    // identity_credentials ROW half). postIdentityCredential
-    // DocumentOp is the SAME op every live PUT
-    // identities/:id/credentials/:cid rides.
+    // Pass 2: message-plane only (Phase Final Task 2 stripped
+    // the identity_credentials ROW half).
+    // postIdentityCredential DocumentOp is the SAME op
+    // every live PUT identities/:id/credentials/:cid rides.
     await adapter.transaction(
         MESSAGE_TABLES,
         async (view) => {
@@ -487,8 +487,8 @@ async function postMockDataLoadIn(
             );
         }),
         // Phase Final Task 2: organizations ROW half stripped —
-        // pair-plane only (organizationSeedBody still shapes
-        // the pair body in seed-message-pairs.ts).
+        // message-plane only (organizationSeedBody still
+        // shapes the pair body in seed-message-pairs.ts).
         appendMessagePair(
             adapter,
             requireMessagePair(
@@ -630,9 +630,9 @@ async function postMockDataLoadIn(
                 pf => pf.flow_id === flow.id,
             )!;
             // Task 5: create threads the triple — the operation
-            // pair plus its two synthesized siblings, each
-            // pre-formed in pass 1 under its own deterministic
-            // key (seed-message-pairs.ts).
+            // message pair plus its two synthesized siblings,
+            // each pre-formed in pass 1 under its own
+            // deterministic key (seed-message-pairs.ts).
             const flowMessagePairs: FlowCreationMessagePairs = {
                 operation: requireMessagePair(
                     messagePairs, seedMessagePairKey('flows', flow.id),
@@ -933,11 +933,11 @@ async function postMockDataLoadIn(
             objectiveMemberPools, STARK_ORGANIZATION,
             `${seed.id}:revision`,
         );
-        // Create threads the triple — the operation pair plus
-        // its two synthesized siblings (document, revision),
-        // each pre-formed in pass 1 under its own deterministic
-        // key (seed-message-pairs.ts) — fixed 1+1+1. The
-        // revision id is recomputed identically to
+        // Create threads the triple — the operation message
+        // pair plus its two synthesized siblings (document,
+        // revision), each pre-formed in pass 1 under its own
+        // deterministic key (seed-message-pairs.ts) — fixed
+        // 1+1+1. The revision id is recomputed identically to
         // objectiveSeedBody's own construction (deterministic).
         const revisionId = seedIdentifier(
             `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
@@ -967,7 +967,7 @@ async function postMockDataLoadIn(
 
     // Organization 'BBjWJsjYIDkTRKIIPrzWRw' owns one objective so each org
     // owns
-    // at least one (pair plane only after Task 2 strip).
+    // at least one (message plane only after Task 2 strip).
     const org2RevisionId = seedIdentifier(
         `${ORGANIZATION_TWO_OBJECTIVE.id}:${MOCK_SEED_TIMESTAMP}`,
     );
@@ -1008,10 +1008,11 @@ async function postMockDataLoadIn(
     // family already uses. buildScoreSeedProjects resolves each
     // project's organization_id/state PURELY (never a DB read
     // back). This closes the scores half of the Phase 0 seed
-    // deferral WHOLE — baselines AND actuals — one document pair
-    // per row, driven through postBaselineScoreDocumentOp /
-    // postActualScoreDocumentOp exactly as every other seeded
-    // family drives through its own extracted op.
+    // deferral WHOLE — baselines AND actuals — one document
+    // message pair per row, driven through
+    // postBaselineScoreDocumentOp / postActualScoreDocumentOp
+    // exactly as every other seeded family drives through
+    // its own extracted op.
     const baselineScorePattern =
         'projects/:id/objective-baseline-scores/:sid';
     const actualScorePattern =
@@ -1058,16 +1059,17 @@ export async function postBootstrap(
     // bootstrap's own membership pair — closed the SAME way
     // postMockDataLoad's own membership sites are. Phase 10
     // Task 2: ALSO forms the current member's PII document
-    // pair, closing the intake decomposition's bootstrap
-    // side. Task 6: ALSO forms the system member's own
-    // identities/:id document pair — closed the SAME way
-    // postMockDataLoad's own system-identity site is. The
-    // credential pairs are NOT here — seedHumanCredentials
-    // forms those itself, below, since their content is
-    // unknown until PBKDF2 resolves. Phase 11 Task 8: ALSO
-    // forms bootstrap's own default-organization document
-    // pair — the mock-data seed's own per-member precedent,
-    // mirrored here for bootstrap's lone identity.
+    // message pair, closing the intake decomposition's
+    // bootstrap side. Task 6: ALSO forms the system
+    // member's own identities/:id document message pair —
+    // closed the SAME way postMockDataLoad's own
+    // system-identity site is. The credential pairs are
+    // NOT here — seedHumanCredentials forms those itself,
+    // below, since their content is unknown until PBKDF2
+    // resolves. Phase 11 Task 8: ALSO forms bootstrap's
+    // own default-organization document message pair —
+    // the mock-data seed's own per-member
+    // precedent, mirrored here for bootstrap's lone identity.
     const {
         identityMessagePair,
         seatMessagePair,

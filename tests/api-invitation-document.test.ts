@@ -92,7 +92,7 @@ async function person(
 }
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
-// the invitation grant/accept authz below derives from the pair
+// the invitation grant/accept authz below derives from the message
 // plane once role_grants/memberships flip, so a raw row here
 // would go derivation-invisible. Every id/field value stays
 // IDENTICAL to the raw puts these replace — only the write
@@ -115,7 +115,7 @@ async function freshDb(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     // Phase Final Stage B: organizations table retired —
-    // seed the tenant root on the pair plane.
+    // seed the tenant root on the message plane.
     const { seedOrganizationDocument } = await import(
         './root-admin-fixture.ts'
     );
@@ -147,7 +147,7 @@ async function grant(
     ));
 }
 
-// ── grant: the invitation document pair ──
+// ── grant: the invitation document message pair ──
 
 test('a fresh grant appends 2 pairs — the operation and the'
 + ' invitation document, email ABSENT by construction',
@@ -168,7 +168,7 @@ async () => {
     );
     assert.equal(atAddress.length, 2);
     // The document head: the ONE PUT/2xx pair at this address —
-    // documentMessagePairsAt excludes the operation pair's POST
+    // documentMessagePairsAt excludes the operation message pair's POST
     // method by construction (design decision 6), so a match
     // here IS the document.
     const documents = documentMessagePairsAt(
@@ -186,7 +186,7 @@ async () => {
     assert.equal(wire.email, undefined);
 });
 
-test('a duplicate grant appends ONLY its operation pair — no'
+test('a duplicate grant appends ONLY its operation message pair — no'
 + ' phantom document at the duplicate\'s submitted id',
 async () => {
     const db = await freshDb();
@@ -226,7 +226,8 @@ async () => {
     assert.equal((await db.messagePairs.getAll()).length, 5);
 });
 
-// ── accept: the memberships document pair (the B2 closure) ──
+// ── accept: the memberships document message pair
+// (the B2 closure) ──
 // Distinct, strictly-increasing `at` stamps across grant/accept:
 // both share ONE invitation entity_id in the states log, so a
 // tied `at` would fall to the (at, id) reduction's id tie-break

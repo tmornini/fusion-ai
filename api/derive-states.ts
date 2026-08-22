@@ -33,7 +33,7 @@ import {
 import { HttpMessage } from '../shared/http-message/http-message.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
 
-// Pair-plane lifecycle derives and ownership resolution
+// Message-plane lifecycle derives and ownership resolution
 // (Phase 11
 // onward; bulk lifecycle collection retired — states-URI
 // elimination C3). Per-entity history rides GET
@@ -47,7 +47,7 @@ import { parseWire } from '../shared/http-message/wire-codec.ts';
 //       /members/ document-trio history; nothing reads
 //       that collection.
 //   (c) deriveWorkOrderLifecycle / workOrderLifecycleStatesFor /
-//       workOrderHistoryFor — the work-order op-pair replay
+//       workOrderHistoryFor — the work-order operation-message-pair replay
 //       (gate 5d).
 //   (d) flow-graph node/edge sidecars — live on the flow
 //       document-pair body (graphDelta.deletions / revivals);
@@ -60,16 +60,16 @@ import { parseWire } from '../shared/http-message/wire-codec.ts';
 // and nested field-values collection are RETIRED (C3/C4).
 //
 // THE GATE-15 PRECEDENT (Phase 10): an org fence can be
-// reproduced from the MEMBERSHIP PAIR PLANE. This module's
+// reproduced from the MEMBERSHIP MESSAGE PLANE. This module's
 // resolveOwningOrganization / resolveGlobalOwner /
 // stateEventVisibilityFor / missedReadError apply that
 // technique for ownership and event-id fences.
 //
 // IMMUNE TO THE DELETED FILTER: pairs are append-
-// only, so a family's document pair still names its organization
+// only, so a family's document message pair still names its organization
 // forever, regardless of the entity's later lifecycle state.
 
-// ---- resolveOwningOrganization — the PAIR-PLANE fence (gate 4) -
+// ---- resolveOwningOrganization — the MESSAGE-PLANE fence (gate 4) -
 
 // The org-owned, org-nested document families whose OWN id can
 // appear as a states.entity_id — mirrors
@@ -99,7 +99,7 @@ const ORGANIZATIONS_ADDRESS_PREFIX =
 // identity's live seats. This walk NEVER
 // filters by caller: it resolves which org OWNS an entity,
 // independent of who is asking (Phase 12 Task 5: the row source
-// flips to the pair-plane derivation; the ALL-orgs, uncaller-
+// flips to the message-plane derivation; the ALL-orgs, uncaller-
 // filtered shape is untouched).
 async function organizationIds(
     db: DbAdapter,
@@ -300,13 +300,13 @@ async function computeOwningOrganization(
     );
     if (graphOwner !== null) return graphOwner;
 
-    // (b) the membership pair plane: org-less member/identity ids.
+    // (b) the membership message plane: org-less member/identity ids.
     return await resolveViaMembershipPairPlane(
         db, entityId, boundOrganization,
     );
 }
 
-// The PAIR-PLANE fence resolver (gate 4 + Phase 15 gate 3).
+// The MESSAGE-PLANE fence resolver (gate 4 + Phase 15 gate 3).
 // Resolves entityId's owning organization across the five
 // sources above (org-nested, invitations, flow-graph,
 // membership, organizations self-as-owner), or null for a
@@ -322,7 +322,7 @@ async function computeOwningOrganization(
 // unmemoized across calls.
 //
 // boundOrganization is a required argument, not merely
-// fenceStatesByOwner's own concern: the membership-pair-plane leg
+// fenceStatesByOwner's own concern: the membership-message-plane leg
 // is intrinsically asker-relative (see
 // resolveViaMembershipPairPlane's own header), exactly like
 // api/store-parent-scoped.ts's ownerOrganizationOfEntity already
@@ -576,7 +576,7 @@ function bodyNamesStateEvent(
     return false;
 }
 
-// Tier (i)/(ii): does any of this organization's op-pair
+// Tier (i)/(ii): does any of this organization's operation-message-pair
 // families name eventId? Indexed prefix reads only (the
 // workOrderClaimSourcesFor shape) — never a whole-plane
 // getAll of pairs.
@@ -744,13 +744,13 @@ async function organizationHasOpBornEvent(
     return false;
 }
 
-// Tiered pair-plane visibility disposition (successor of the
+// Tiered message-plane visibility disposition (successor of the
 // retired isVisibleStateEvent row-plane fence; live callers
 // re-pointed Phase 15 Task 3). Always view-accepting
 // (dbOrView); opens no nested transaction. The states/:id
 // event-append tier is RETIRED with the address itself —
 // cheapest remaining first:
-//   (i) own-org op-pair family scan — op-born claim /
+//   (i) own-org operation-message-pair family scan — op-born claim /
 //       transition / document-trio ids;
 //   (ii) widen-on-miss cross-org scan — foreign vs nowhere,
 //       only on the rare miss tail.
@@ -784,12 +784,13 @@ export async function stateEventVisibilityFor(
     return 'orphan';
 }
 
-// ---- deriveWorkOrderLifecycle — the op-pair reader (gate 5d) ---
+// ---- deriveWorkOrderLifecycle — the operation-message-pair
+// reader (gate 5d) ---
 
 // Source (c) of the states-log union — the only one that reads
-// work-order CREATE/CLAIM/TRANSITION/RELEASE operation pairs.
+// work-order CREATE/CLAIM/TRANSITION/RELEASE operation message pairs.
 // Seeded work orders (buildWorkOrders/buildLeadToCloseWorkload)
-// form via a bare document PUT with ZERO operation pairs, so
+// form via a bare document PUT with ZERO operation message pairs, so
 // this function emits NOTHING for them; their births ride the
 // work-order document trio (state_event_id on the document
 // body) once the seed stage embeds them there. Output
@@ -1010,9 +1011,9 @@ function lockTimeoutAsOf(
         // A genuine invariant violation, not a defensive
         // fallback: postWorkOrderClaimOp requires the work order
         // to already exist (view.workOrders.getById), and every
-        // path that can create one also writes a document pair
+        // path that can create one also writes a document message pair
         // beside it — so a claim/transition pair can never
-        // legitimately precede every document pair at this id.
+        // legitimately precede every document message pair at this id.
         throw new Error(
             'no document head before ' + momentAt,
         );
@@ -1026,7 +1027,7 @@ function lockTimeoutAsOf(
 // Every candidate event a claim pair's prior-claim decision may
 // draw from: the replay's OWN emitted events so far (create
 // births, prior claims/releases/transitions). Releases ride
-// the release op pair now (postWorkOrderReleaseOp) — the
+// the release operation message pair now (postWorkOrderReleaseOp) — the
 // retired standalone PUT states/:id path is no longer a
 // candidate source. The `replayed` half is already bounded to
 // "earlier" by the caller's own (at, id)-ordered processing;
@@ -1271,7 +1272,7 @@ function replayWorkOrderOperations(
     return events;
 }
 
-// Prefix-filtered pure core of the op-pair reader (gate 5d).
+// Prefix-filtered pure core of the operation-message-pair reader (gate 5d).
 // When `organization` is set, only that org's work-orders
 // uri_collection family is considered (collection + claim/release/
 // transition); when undefined, every org — the whole-plane
@@ -1424,7 +1425,7 @@ function workOrderLifecycleFromPlane(
     };
 }
 
-// The op-pair reader (gate 5d). ONE shared readonly tx over
+// The operation-message-pair reader (gate 5d). ONE shared readonly tx over
 // db.messagePairs (torn-read closure) — every grouping and
 // replay step below is pure over the fetched array, no
 // further db reads. (at, id) ascending overall: these rows are
@@ -1454,7 +1455,7 @@ export async function deriveWorkOrderLifecycle(
 // known (organization, workOrderId) pair, rather than the
 // whole-org scan the multi-work-order reader needs to discover
 // EVERY id at once —
-//   * create + document pairs: address read at the
+//   * create + document message pairs: address read at the
 //     work-orders prefix + this workOrderId (both
 //     a create's response and its later document PUT/DELETE
 //     share ONE uriId — drift-work-orders.test.ts case 8);
@@ -1467,8 +1468,8 @@ export async function deriveWorkOrderLifecycle(
 // WITHIN an already-open write-gate transaction. Phase 14 Task 4
 // wires the claim gate to workOrderClaimHistoryFor below; with
 // the states/:id address retired both siblings return the SAME
-// op-pair replay (releases ride the release op, not a standalone
-// event-append).
+// operation-message-pair replay (releases ride the release op,
+// not a standalone event-append).
 interface WorkOrderClaimSources {
     readonly replayed: readonly StateEntity[];
 }
@@ -1716,15 +1717,15 @@ export async function workOrderHistoryFor(
 }
 
 // THE CLAIM GATE'S OWN SOURCE (Phase 14 Task 4): the work-
-// order op-pair replay, over INDEXED entity-scoped reads
+// order operation-message-pair replay, over INDEXED entity-scoped reads
 // workOrderClaimSourcesFor already performs, rather than
 // deriveStatesFor's own whole-plane getAll (forbidden inside
 // a write-gate transaction — AGENTS.md's tx-body gotcha:
 // entity-scoped in-tx reads only, never a whole-plane getAll of
 // pairs). With the states/:id address retired this
 // is the sole claim-history source — create/claim/transition/
-// release op pairs cover every live writer. postWorkOrderClaimOp
-// (api/routes.ts) is its only live caller.
+// release operation message pairs cover every live writer.
+// postWorkOrderClaimOp (api/routes.ts) is its only live caller.
 export async function workOrderClaimHistoryFor(
     dbOrView: DbAdapter,
     organization: Id,
@@ -1836,7 +1837,7 @@ export async function workOrderClaimDocumentFor(
 
 // Derives the work order's CURRENT document head
 // ({display_id, flow_graph, position, …}) from the entity's
-// OWN document pairs — the pair-plane successor of
+// OWN document message pairs — the message-plane successor of
 // view.workOrders.getById that postWorkOrderClaimOp still
 // reads for flow_graph (Task 2 re-anchors the call site).
 //
@@ -1898,7 +1899,7 @@ export async function workOrderDocumentHeadFor(
 
 // Source (f) of the states-log union. An invitation's own states
 // never ride the states/:id address (source a) — the invitations
-// side channel forms its own operation pairs at the flat
+// side channel forms its own operation message pairs at the flat
 // '/invitations/' collection (the grant) and at
 // 'invitations/:id/<op>/' (the three answering ops), api/
 // invitations-domain.ts's own formWriteMessagePair/
@@ -1912,17 +1913,17 @@ export async function workOrderDocumentHeadFor(
 //
 // THE GRANT'S OWN DUPLICATE-ECHO (grantInvitation, api/invitations-
 // domain.ts): an ALREADY-pending (org, identity) pair still forms
-// its OWN operation pair at whatever invitationId the SECOND
+// its OWN operation message pair at whatever invitationId the SECOND
 // caller submitted (the 'existing' outcome branch) — but writes
 // NEITHER a states event NOR a document there. Cross-referencing
 // against the invitation's DOCUMENT plane (formed ONLY on the
 // 'fresh' outcome, at the SAME invitationId) excludes that phantom
-// pair: a document exists at an id iff its grant operation pair
+// pair: a document exists at an id iff its grant operation message pair
 // genuinely posted 'pending'.
 //
 // THE ANSWERING OPS' OWN NO-OP RESENDS (accept/decline/revoke):
 // each is idempotent on its OWN already-reached terminal state (a
-// re-accept/re-decline/re-revoke still forms an operation pair but
+// re-accept/re-decline/re-revoke still forms an operation message pair but
 // posts NO event) — mutual exclusivity across the three op KINDS
 // is the domain gate's own covenant (derive-invitations.ts's
 // header), so at most one op kind ever succeeds per invitation,
@@ -2044,7 +2045,7 @@ export async function deriveInvitationStates(
 // THE PHANTOM-ECHO EXCLUSION carries over unchanged (deriveInvit-
 // ationStates' own header): the documentIds cross-reference,
 // applied here to the id-scoped read alone, still excludes a
-// duplicate grant's own operation pair when no document was ever
+// duplicate grant's own operation message pair when no document was ever
 // written at this id.
 export async function invitationLifecycleStatesFor(
     dbOrView: DbAdapter,

@@ -55,10 +55,10 @@ export function organizationRow(
 // db.organizations.put, or a membership pair whose
 // organization was never itself given a document, leaves the
 // identity's membership derivation-invisible. Phase Final Task
-// 2: organizations ROW half stripped — pure pair-plane write,
-// mirroring the live PUT organizations/:id route body. GLOBAL
-// plane (organizationNested: false) — `organization` stays
-// undefined throughout. IDEMPOTENT on the PAIR PLANE
+// 2: organizations ROW half stripped — pure message-plane
+// write, mirroring the live PUT organizations/:id route body.
+// GLOBAL plane (organizationNested: false) — `organization`
+// stays undefined throughout. IDEMPOTENT on the MESSAGE PLANE
 // (deriveOrganizations): seedRootAdmin/seedOrganizationMember
 // still avoid a duplicate pair when both run against the same
 // db.

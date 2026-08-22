@@ -31,7 +31,7 @@ async function freshDb() {
 // Below-facade pair formation (the seedDefaultOrganizationEvent
 // precedent just above, applied to memberships): the primary-
 // membership fallback this file's own tests exercise derives
-// from the pair plane once memberships flips, so a raw row here
+// from the message plane once memberships flips, so a raw row here
 // would go derivation-invisible. PLUMBING ONLY: the assertions
 // this helper feeds stay byte-identical.
 async function seedMembershipPair(

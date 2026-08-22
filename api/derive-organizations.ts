@@ -34,7 +34,7 @@ import {
 // organizationEntityOf instead re-runs the head pair's own
 // REQUEST body through validateOrganizationEntity — the SAME
 // validator WRITE_RESPONSE_SPECS['organizations/:id']
-// .successBody already runs (api/routes.ts; pair-plane only
+// .successBody already runs (api/routes.ts; message-plane only
 // since Phase Final Task 2 retired the organizations ROW) —
 // so the derived shape is byte-identical to the STORED wire
 // body, id-LAST, never id-first. GET wins: the writer emits
@@ -64,7 +64,7 @@ import {
 // Reads db.messagePairs ONLY;
 // tests/derive-organizations.test.ts is the proof of parity
 // against the live PUT's own wire body (Phase Final Task 2:
-// organizations ROW half stripped — pair plane is truth).
+// organizations ROW half stripped — message plane is truth).
 
 const ORGANIZATIONS_TABLE = 'organizations';
 

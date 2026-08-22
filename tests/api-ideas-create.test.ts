@@ -124,7 +124,7 @@ test(
         const db = await freshDb();
         // Phase Final Task 2: states ROW half stripped —
         // a raw colliding states row no longer aborts the
-        // pair-plane genesis PUT.
+        // message-plane genesis PUT.
     // Phase Final Stage B: states table retired.
         const res = await handleRequest(db, req(
             'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'

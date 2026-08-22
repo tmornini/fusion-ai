@@ -50,7 +50,7 @@ import {
 } from './document-family.ts';
 
 // An invitation's current state: the latest lifecycle event on
-// its id, derived from the pair plane.
+// its id, derived from the message plane.
 //
 // FLIPPED (Phase 14 Task 2): re-points onto
 // invitationLifecycleStatesFor (api/derive-states.ts, Task 1) —

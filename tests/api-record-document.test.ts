@@ -177,14 +177,15 @@ async () => {
 // 'member-b' as author would 409 against the already-stored
 // (current-authored) row — this proves the op replays the
 // STORED head's member_id rather than the editing actor's.
-// Phase 14 Task 5: the head read is now pair-plane-anchored
+// Phase 14 Task 5: the head read is now message-plane-anchored
 // (documentStateHeadFor), so the FIRST (genesis) call must form
-// a real document pair for the second call's head-read to find
-// it — the below-gate convention this file otherwise follows
-// (its own header comment) omits pairs entirely, which the row-
-// plane read tolerated but the pair-plane one cannot; the
-// pair is formed via formWriteMessagePair, the SAME helper
-// document-family.test.ts's below-facade convention test uses.
+// a real document message pair for the second call's head-read
+// to find it — the below-gate convention this file otherwise
+// follows (its own header comment) omits pairs entirely, which
+// the row-plane read tolerated but the message-plane one
+// cannot; the pair is formed via formWriteMessagePair, the
+// SAME helper document-family.test.ts's below-facade
+// convention test uses.
 test('postRecordDocumentOp with an echoed trio writes NO new'
 + ' event, replaying the stored head\'s member_id',
 async () => {
@@ -231,7 +232,7 @@ test('postRecordDocumentOp with a fresh trio posts a'
 + ' transition authored by the actor', async () => {
     const db = await freshDb();
     // Phase Final Task 2: both writes carry pairs so the
-    // document lifecycle is pair-plane visible.
+    // document lifecycle is message-plane visible.
     const firstBody = {
         ...recordDocument(
             'First', 'active', AT, 'ev-3a',

@@ -1031,7 +1031,7 @@ async () => {
     assert.equal(
         await requestCount(db),
         afterFirstReq,
-        'no second op pair on replay',
+        'no second operation message pair on replay',
     );
 });
 

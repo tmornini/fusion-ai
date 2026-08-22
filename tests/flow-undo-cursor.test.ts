@@ -109,7 +109,7 @@ async function freshDb(): Promise<MemoryDbAdapter> {
 
 // Postgres coordinateWrite 412s an unlatched PUT at a
 // locked address. Memory omits writeLocks, so the undo
-// route's synthesized document pair never hit that gate
+// route's synthesized document message pair never hit that gate
 // in ./test — garden did. This wrapper installs the same
 // latestPutDelete check so the pin fails here too.
 function withWriteGate(
@@ -249,7 +249,7 @@ async function headResponseId(
 }
 
 // A genuine save, echoing the current head — the ONLY way undo-
-// as-replay's document-pair history grows (matches a real
+// as-replay's document-message-pair history grows (matches a real
 // putFlow). `name` becomes both this save's own flow name and
 // its one node's id (see graphOf), so later assertions can name
 // which save undo landed on just by reading the restored graph.
@@ -339,7 +339,7 @@ test(
 
 // -- 2. undo-undo (consecutive) ----------------
 
-// The case a naive "N document pairs back" count gets wrong: a
+// The case a naive "N document message pairs back" count gets wrong: a
 // SECOND consecutive undo must walk FURTHER back (to genesis),
 // never oscillate back to B (the state the FIRST undo just
 // left).
@@ -448,15 +448,15 @@ test(
         const after = await db.messagePairs.getAll();
         assert.equal(
             after.length, before.length + 1,
-            'exhaustion appends exactly the operation pair'
-            + ' — no document pair',
+            'exhaustion appends exactly the operation message'
+            + ' pair — no document message pair',
         );
         assert.equal(
             await currentGraphName(db, token, flowId), 'genesis',
         );
 
         // A SECOND exhausted undo must ALSO no-op (the first
-        // exhausted attempt's own operation pair must not
+        // exhausted attempt's own operation message pair must not
         // desync a later replay).
         const again = await undo(
             db, token, flowId, FLOWID_U2,
@@ -467,7 +467,7 @@ test(
         assert.equal(
             afterAgain.length, after.length + 1,
             'a second exhausted undo ALSO appends only its'
-            + ' own operation pair',
+            + ' own operation message pair',
         );
         assert.equal(
             await currentGraphName(db, token, flowId), 'genesis',
@@ -596,7 +596,7 @@ test(
         const actor = 'XXZruirZyAOoRpNxaDnpSA';
         // Phase Final Task 5: the store decorator is gone;
         // handlers and resolveFlowUndoTarget read the base
-        // adapter. Pair-plane tenancy rides uri_collection.
+        // adapter. Message-plane tenancy rides uri_collection.
         await createFlow(db, token, flowId);
         await save(db, token, flowId, 'A', FLOWID_A);
 
@@ -659,13 +659,15 @@ test(
 
 // -- 6. SIDECAR-KEEP ---------------------------
 
-// graphDelta.deletions / revivals ride the flow document-
-// pair body (including pairs the UNDO route synthesizes).
-// C3 retired deriveFlowGraphStates — pin the pair plane
-// directly: a node deleted by a save, then revived by undo,
-// must leave both sidecar entries on stored pairs.
+// graphDelta.deletions / revivals ride the flow
+// document-message-pair body (including pairs the UNDO
+// route synthesizes).
+// C3 retired deriveFlowGraphStates — pin the message
+// plane directly: a node deleted by a save, then revived
+// by undo, must leave both sidecar entries on stored
+// pairs.
 test(
-    'SIDECAR-KEEP: undo-authored document pairs carry'
+    'SIDECAR-KEEP: undo-authored document message pairs carry'
     + ' deleted/restored sidecars on graphDelta/revivals',
     async () => {
         const db = await freshDb();
@@ -788,7 +790,7 @@ test(
             states.map((s) => s.state),
             ['deleted', 'restored'],
             'the undo-authored pair\'s own revival is'
-            + ' visible on the pair plane',
+            + ' visible on the message plane',
         );
     },
 );
@@ -805,13 +807,14 @@ test(
 // carries server-reconciled positions (performUndo/performRedo
 // build it from getFlowGraph, whose withRenderableLayout ALWAYS
 // recomputes fresh positions for an auto-layout flow, purely
-// client-side). That redundant save landed its own document
-// pair immediately after every undo/redo click — and the cursor
-// (resolveFlowUndoTarget) correctly, BY DESIGN, treats every
-// organizations/:id/flows/:id document pair as a full history step (that's
-// the
-// whole point of undo-as-replay) — so it "ate" the NEXT undo
-// click, which reverted the reconcile noise instead of reaching
+// client-side). That redundant save landed its own
+// document message pair immediately after every
+// undo/redo click — and the cursor
+// (resolveFlowUndoTarget) correctly, BY DESIGN, treats
+// every organizations/:id/flows/:id document message
+// pair as a full history step (that's the whole point
+// of undo-as-replay) — so it "ate" the NEXT undo click,
+// which reverted the reconcile noise instead of reaching
 // the user's actual prior edit. The fix (removing the two
 // commitAndFit(...withLayoutReconciled()) calls,
 // web-app/organizations/AjdvjuECVZEgZoFajaIEkg/flows/detail.ts) is NOT
@@ -858,7 +861,7 @@ test(
         // auto-layout reconcile save with the SAME name (no
         // visible change) immediately after the undo — exactly
         // what commitAndFit(...withLayoutReconciled()) used to
-        // queue. A genuine document pair despite changing
+        // queue. A genuine document message pair despite changing
         // nothing the user perceives.
         await save(
             db, token, flowId, 'A', FLOWID_RECONCILE,

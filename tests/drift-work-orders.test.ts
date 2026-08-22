@@ -740,7 +740,7 @@ async () => {
     // The full chain: create(3) + transition1(1) +
     // transition2(2) + entity PUT(0) + fresh claim(1) +
     // repeat-claim(0) + rejected claim(0) + unclaim(1) = 8.
-    // Release is pair-plane-only — pin via lifecycle derive.
+    // Release is message-plane-only — pin via lifecycle derive.
     assert.equal(
         (await workOrderLifecycleStatesFor(
             db, STARK_ORGANIZATION, workOrderId,
@@ -902,9 +902,10 @@ async () => {
 // -- 8. method-filter: the create's POST pair is never the -----
 // -- derived head (the shape-incompatibility mirror) -----------
 
-test('the create-op POST pair is not read as a document pair —'
-+ ' documentMessagePairsAt returns exactly one pair (the PUT), and the'
-+ ' create/document bodies share zero top-level keys',
+test('the create-op POST pair is not read as a document'
++ ' message pair — documentMessagePairsAt returns exactly one'
++ ' pair (the PUT), and the create/document bodies share zero'
++ ' top-level keys',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
@@ -1009,7 +1010,7 @@ function decodeRequestMessage(message: string): {
 // counterpart of derive-documents.ts's documentMessagePairsAt, which
 // deliberately EXCLUDES POST (the DOCUMENT head is PUT/DELETE
 // only). The create's own 3-slot birth arrays live in the POST
-// operation pair, so this replay needs the unfiltered read the
+// operation message pair, so this replay needs the unfiltered read the
 // production reduction intentionally never exposes — named for
 // its role (every pair, any method) rather than "documentMessagePairsAt
 // without the filter", so no reader mistakes it for a production
@@ -1631,7 +1632,7 @@ async () => {
     );
     // Pin the test-side pair replay against the live
     // production derive (lifecycle) — both read the same
-    // op-pair composition (create/claim/release/transition).
+    // operation-message-pair composition (create/claim/release/transition).
     const derivedHistory = await workOrderLifecycleStatesFor(
         db, STARK_ORGANIZATION, workOrderId,
     );
@@ -1641,7 +1642,7 @@ async () => {
     // + finish-transition(1) + unclaim(1) = 11.
     assert.equal(replay.events.length, 11);
 
-    // Phase Final Task 2: SFV row plane empty; pair-plane
+    // Phase Final Task 2: SFV row plane empty; message-plane
     // transition fold rides work-order history (C4).
     const history = await workOrderHistoryFor(
         db, STARK_ORGANIZATION, workOrderId,

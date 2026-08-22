@@ -54,7 +54,7 @@ import { liveHeadId, messageStore } from
 //     lifecycle-current pair's own snapshot when the two
 //     diverge.
 //   - The LIFECYCLE-current event: the (state_at,
-//     state_event_id) reduction over EVERY document pair's own
+//     state_event_id) reduction over EVERY document message pair's own
 //     trio — never arrival order, never the envelope `at`s
 //     (currentDocumentState, derive-documents.ts). Decides
 //     visibility (a 'deleted' current state excludes/404s)
@@ -244,11 +244,11 @@ export async function deriveFlow(
 // appendMessagePair mints each pair's own response `at`
 // independently via nowUtc(), so two pairs written in the
 // SAME transaction do not share it; the request `at` DOES,
-// since both the operation pair and its synthesized
-// document pair carry the identical
+// since both the operation message pair and its synthesized
+// document message pair carry the identical
 // `messagePair.requestAt`). `target: undefined` means
 // exhaustion (no pair exists before the current head); an
-// undefined RETURN means the flow has no document pairs at
+// undefined RETURN means the flow has no document message pairs at
 // all at this address (should never happen for a routed
 // request against a real flow id — this derivation trusts
 // nothing beyond what it reads, same posture as
@@ -309,7 +309,7 @@ export async function resolveFlowUndoTarget(
 // sequence IS the history, (state_at, id) ascending. Matches
 // states.getAllFor(flowId): node-level 'deleted'/'restored'
 // events carry NODE entity_ids, never the flow's own, so they
-// never appear in a flow's own document pairs either — absent
+// never appear in a flow's own document message pairs either — absent
 // from BOTH sides. NOT routed — drift-proof only.
 export async function deriveFlowStateHistory(
     db: DbAdapter,
@@ -343,7 +343,7 @@ export async function deriveFlowStateHistory(
 // nodeFlowIds is the CURRENT flow_id stamp per node id —
 // graphDelta.nodes upserts set it, graphDelta.deletions drop
 // it when the entityId is still mapped (soft-deleted nodes
-// are no longer current). Pair-plane successor of
+// are no longer current). Message-plane successor of
 // flowNodes.getById(flowNodeId).flow_id that RESTRICT uses to
 // name referring flows. A later pair that re-upserts the
 // node restores the map entry (documentMessagePairsAt
@@ -353,7 +353,7 @@ export async function deriveFlowStateHistory(
 // (unvalidated against the relation ledgers). dbOrView-shaped
 // and opens no nested transaction — callable from WITHIN an
 // already-open write-gate transaction (ATTRIBUTE_RESTRICT_
-// TABLES already lists the pair plane).
+// TABLES already lists the message plane).
 export interface FlowGraphBindingLedgers {
     readonly attributeEvents:
         readonly FlowNodeAttributeEntity[];

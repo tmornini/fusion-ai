@@ -199,7 +199,7 @@ test('PUT identities/:id/token-revocations/:rid appends its'
     );
     assert.equal(requests[2]!.uri_id, 'sVWUntTCtQYFCpONjkzAKg');
     // Phase Final Task 2: identity_token_revocations ROW half
-    // stripped — oracle is the pair plane.
+    // stripped — oracle is the message plane.
     const domainRow = await deriveTokenRevocation(
         db, 'XXZruirZyAOoRpNxaDnpSA', 'sVWUntTCtQYFCpONjkzAKg',
     );
@@ -243,7 +243,7 @@ test('a rotation appends its pair at an operation address:'
 
 test('a byte-identical second rotation of the SAME jti still'
 + ' 409s — the domain guard, NOT a replay of the first'
-+ ' success — and appends NO further OPERATION pair, though'
++ ' success — and appends NO further OPERATION message pair, though'
 + ' its replay-branch revocation DOES grow the ledger by its'
 + ' own event pairs (Phase 13 Task 5: revocationAppends is not'
 + ' idempotent, and it now carries a pair per row)',
@@ -270,9 +270,9 @@ async () => {
 
     // +2: the chain's two distinct jtis (the seeded root, the
     // first rotation's successor) each gain a fresh 'revoked'
-    // event pair on the replay branch — NO new operation pair
-    // (the rotation route's own pair only ever appends on the
-    // 'rotate' branch, unchanged).
+    // event pair on the replay branch — NO new operation
+    // message pair (the rotation route's own pair only ever
+    // appends on the 'rotate' branch, unchanged).
     assert.equal(requests.length, before + 2);
 });
 
@@ -421,8 +421,9 @@ test('request and response counts stay equal across a mix'
 // ── synthesized event pairs: the issued-root writers (Phase 13
 // Task 5, Gate 7) — every identity_tokens row write now appends
 // a matching event pair at 'identity-tokens/:id', in the SAME
-// transaction as the row, distinct from whatever operation pair
-// the grant's own /authentication/token request forms.
+// transaction as the row, distinct from whatever operation
+// message pair the grant's own /authentication/token request
+// forms.
 
 function postToken(
     db: MemoryDbAdapter, body: unknown,
@@ -507,7 +508,7 @@ async function seedAuthorizationCodeMessagePair(
 }
 
 test('an authorization_code grant appends its root\'s own'
-+ ' event pair, distinct from the grant\'s operation pair',
++ ' event pair, distinct from the grant\'s operation message pair',
 async () => {
     const db = await freshDb();
     await seedAuthorizationCodeMessagePair(
@@ -533,7 +534,7 @@ async () => {
     // 3 bootstrap + the seeded authorize pair (Phase 13 Task 7:
     // the pre-tx lookup now needs a real authorize pair, not a
     // raw authorizationCodes row alone) + the root's own event
-    // pair + the grant's own operation pair.
+    // pair + the grant's own operation message pair.
     assert.equal(requests.length, 5);
 });
 
@@ -577,7 +578,7 @@ test('a client_credentials grant appends its root\'s own'
 // ── synthesized event pairs: rotation and revocation (Phase 13
 // Task 5, Gate 7's PRE-FORM + IN-TX VERIFY-OR-RETRY writers) —
 // every row EITHER function writes gets its own event pair,
-// distinct from the wired route's own operation pair.
+// distinct from the wired route's own operation message pair.
 
 // ANY identity_tokens row has its own event pair whose stored
 // response deep-equals the row itself — the SAME shape
@@ -612,7 +613,7 @@ async function assertEventMessagePairForRow(
 test('a rotation\'s ROTATE branch appends an event pair for'
 + ' EACH of its two written rows (the retired presented jti,'
 + ' the issued successor), distinct from the rotation route\'s'
-+ ' OWN operation pair', async () => {
++ ' OWN operation message pair', async () => {
     const db = await seededDb();
     const res = await handleRequest(db, req(
         'POST', tokenOpPath('rotation'),
@@ -668,7 +669,7 @@ test('a rotation\'s REPLAY branch appends an event pair for'
 });
 
 test('a revocation appends an event pair for the revoked row,'
-+ ' distinct from the revocation route\'s OWN operation pair',
++ ' distinct from the revocation route\'s OWN operation message pair',
 async () => {
     const db = await seededDb();
     const res = await handleRequest(db, req(
@@ -685,7 +686,7 @@ async () => {
 });
 
 test('revoking an unknown jti appends NO event pair — only its'
-+ ' own operation pair (the no-op precedent)', async () => {
++ ' own operation message pair (the no-op precedent)', async () => {
     const db = await seededDb();
     const before = (await db.messagePairs.getAll()).length;
     const res = await handleRequest(db, req(
@@ -695,8 +696,8 @@ test('revoking an unknown jti appends NO event pair — only its'
     ));
     assert.equal(res.status, 201);
     const requests = await db.messagePairs.getAll();
-    // +1: only the operation pair — no row written, so no event
-    // pair to match it.
+    // +1: only the operation message pair — no row written, so
+    // no event pair to match it.
     assert.equal(requests.length, before + 1);
     const rows = await deriveIdentityTokens(db);
     assert.equal(rows.length, 1);   // the seeded root, untouched

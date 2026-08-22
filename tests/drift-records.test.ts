@@ -884,7 +884,7 @@ async () => {
     );
 
     // Phase Final Task 2: states ROW half stripped — history
-    // is pair-plane only.
+    // is message-plane only.
     const derivedHistory = await deriveRecordStateHistory(
         db, STARK_ORGANIZATION, recordId,
     );
@@ -921,8 +921,8 @@ async () => {
 
 // -- 6. duplicate-create supersession ----------------------------
 
-test('duplicate-create supersession: second document pair'
-+ ' Supersedes the first document pair; wire equals derive',
+test('duplicate-create supersession: second document message pair'
++ ' Supersedes the first document message pair; wire equals derive',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
@@ -1006,7 +1006,7 @@ async () => {
 
 // -- 7. method-filter --------------------------------------------
 
-test('the create-op POST pair is not read as a document pair —'
+test('the create-op POST pair is not read as a document message pair —'
 + ' create and document bodies share zero top-level keys',
 async () => {
     const db = await seededDb();

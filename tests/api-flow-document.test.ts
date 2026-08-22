@@ -145,11 +145,12 @@ async function createFlow(
     ));
 }
 
-// Task 5: create's own operation pair (204, no body) is no
-// longer the address's head — its synthesized document pair
-// (appended after, so strictly later) is. A save must echo THIS
-// id, read fresh via GET, exactly as the real client
-// (buildFlowPutBody's ctx.GETWithEtag) does.
+// Task 5: create's own operation message pair (204, no
+// body) is no longer the address's head — its synthesized
+// document message pair (appended after, so strictly later)
+// is. A save must echo THIS id, read fresh via GET, exactly
+// as the real client (buildFlowPutBody's ctx.GETWithEtag)
+// does.
 async function headResponseId(
     db: MemoryDbAdapter,
     token: string,
@@ -215,7 +216,7 @@ test('postFlowDocumentOp returns the entity, exactly one'
     const db = await freshDb();
     // Phase Final Task 2: states ROW half stripped — drive
     // create + update through the live PUT so both trios
-    // land on the pair plane.
+    // land on the message plane.
     const token = await organizationToken();
     const createBody = {
         ...flowFields('Original'),
@@ -263,14 +264,14 @@ test('postFlowDocumentOp returns the entity, exactly one'
         events.map(e => e.state), ['active', 'updated'],
     );
     // Phase Final Stage B: flow_nodes + flow_versions tables
-    // retired — pair-plane state events are the residual pin.
+    // retired — message-plane state events are the residual pin.
 });
 
 test('postFlowDocumentOp with revivals posts the restored'
 + ' events (the undo decomposition parity case)', async () => {
     const db = await freshDb();
     const nodeId = generateIdentifier();
-    // Phase Final Task 2: pair plane only — create then update
+    // Phase Final Task 2: message plane only — create then update
     // with a deletion + revival on the document body.
     const token = await organizationToken();
     const createBody = {
@@ -324,7 +325,7 @@ test('postFlowDocumentOp with revivals posts the restored'
     ));
     assert.equal(update.status, 201);
     // SIDECAR-KEEP (C3): pin graphDelta.deletions / revivals
-    // on the flow document pairs — no bulk states derive.
+    // on the flow document message pairs — no bulk states derive.
     const prefix = canonicalUriCollection('AjdvjuECVZEgZoFajaIEkg', '/flows/'
         + '');
     const [requests, responses] = await Promise.all([
@@ -570,15 +571,15 @@ async () => {
     assert.equal(fresh.headers.get('Supersedes'), null);
 });
 
-// Task 5: create's own 204 operation pair and its synthesized
-// document pair are now TWO rows at organizations/:id/flows/:id's address —
-// the
-// GET-attached head is the DOCUMENT pair (appended strictly
+// Task 5: create's own 204 operation message pair and its
+// synthesized document message pair are now TWO rows at
+// organizations/:id/flows/:id's address — the GET-attached
+// head is the DOCUMENT message pair (appended strictly
 // later; a live PUT chains Follows/Supersedes off it), never
 // the create response's own operation Response-ID.
 test('e2e: GET organizations/:id/flows/:id carries'
     + ' Response-ID == the head pair'
-+ ' id — create\'s own synthesized document pair, never its'
++ ' id — create\'s own synthesized document message pair, never its'
 + ' operation response (Task 8: ledger-derived handler)',
 async () => {
     const db = await freshDb();
@@ -704,7 +705,7 @@ async () => {
 
 // --- Task 5: create + undo synthesized second pairs ---
 
-test('e2e: POST flows forms a document pair at the flow\'s'
+test('e2e: POST flows forms a document message pair at the flow\'s'
 + ' own address and a join pair at the project_flows'
 + ' address, all sharing the create\'s requestAt',
 async () => {
@@ -731,7 +732,7 @@ async () => {
     const documentRow = flowAddress.find(
         r => decodeRequestMessage(r.request).method === 'PUT',
     );
-    assert.ok(documentRow, 'no document pair at the flow address');
+    assert.ok(documentRow, 'no document message pair at the flow address');
     const decodedDocument =
         decodeRequestMessage(documentRow!.request);
     const expectedDocument = {
@@ -790,9 +791,9 @@ async () => {
 });
 
 test('e2e: a duplicate POST flows (same id) succeeds — the'
-+ ' create op holds no echo — and its second document pair'
++ ' create op holds no echo — and its second document message pair'
 + ' carries Supersedes to the first, never Follows, while'
-+ ' the first document pair was genesis', async () => {
++ ' the first document message pair was genesis', async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const flowId = generateIdentifier();
@@ -827,7 +828,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
     );
     assert.ok(
         firstDocumentRequest,
-        'no document pair at the flow address after create 1',
+        'no document message pair at the flow address after create 1',
     );
     const firstDocumentResponse = await db.messagePairs.getById(
         firstDocumentRequest!.id,
@@ -873,7 +874,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
     );
     assert.ok(
         secondDocumentRequest,
-        'no second document pair at the flow address',
+        'no second document message pair at the flow address',
     );
     const secondDocumentResponse = await db.messagePairs.getById(
         secondDocumentRequest!.id,
@@ -889,14 +890,16 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
 // NAMED REWRITE (Phase 14 Task 8, undo-as-replay): the old body
 // carried a client-computed target (`flow`/`graph`/`graphDelta`/
 // `revivals`) plus `consumedVersionId`. The restore target is
-// now resolved SERVER-SIDE from the organizations/:id/flows/:id document-pair
+// now resolved SERVER-SIDE from the
+// organizations/:id/flows/:id document-message-pair
 // history, so the setup needs a genuine PRIOR SAVE (the
 // one-node graph) followed by a SECOND save that moves the head
 // away from it — undo must revert exactly that second save,
 // landing back on the first save's own graph, never a
 // client-supplied one.
-test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
-+ ' graph matching the post-undo reassembly', async () => {
+test('e2e: POST organizations/:id/flows/:id/undo forms a'
++ ' document message pair with graph matching the'
++ ' post-undo reassembly', async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await createFlow(db, token, 'cvdqOxjRwvTEYzWTrFDNFw');
@@ -991,7 +994,7 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
     );
     assert.ok(
         undoDocumentResponse,
-        'no new document pair after undo',
+        'no new document message pair after undo',
     );
 
     const requests = await db.messagePairs.getAll();
@@ -1006,7 +1009,7 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
         decoded.body['graph'],
         undoneGraph,
         'the restore write carries the ORIGINAL one-node'
-        + ' graph, resolved from the pair plane — never a'
+        + ' graph, resolved from the message plane — never a'
         + ' client-supplied one',
     );
 
@@ -1026,13 +1029,14 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
 
 // NAMED REWRITE (Phase 14 Task 8, undo-as-replay): no
 // flow_versions row is published or consumed at all any more —
-// undo resolves its target from the organizations/:id/flows/:id document-pair
+// undo resolves its target from the
+// organizations/:id/flows/:id document-message-pair
 // history, so the setup needs a genuine PRIOR SAVE (giving undo
 // a target: genesis) before the race, and the post-race
 // assertions drop every flow_versions check (there is no
 // consumed-or-survives row to inspect).
 test('e2e: an undo racing a save — the loser 412s, storage'
-+ ' shows exactly one new document pair, and the whole'
++ ' shows exactly one new document message pair, and the whole'
 + ' loser transaction lands nothing',
 async () => {
     const db = await freshDb();
@@ -1082,10 +1086,10 @@ async () => {
     // Genesis create + Before Race + exactly one racer.
     assert.ok(
         atFlow.length >= 3,
-        'winner wrote a document pair; loser wrote none extra',
+        'winner wrote a document message pair; loser wrote none extra',
     );
 
-    // Phase Final Task 2: flow name lives on the pair plane.
+    // Phase Final Task 2: flow name lives on the message plane.
     const got = await handleRequest(
         db, req('GET'
             , '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'

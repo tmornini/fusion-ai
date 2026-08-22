@@ -475,7 +475,7 @@ export async function handleRequest(
     // fenceRequest, which completes the vessel: the
     // organization, the live memberships, and the roles.
     // Surviving stores are global (message plane);
-    // pair-plane tenancy rides uri_collection. effective stays
+    // message-plane tenancy rides uri_collection. effective stays
     // the unfenced base adapter.
     let effective: DbAdapter = adapter;
     // The acting member, sourced from the verified token and

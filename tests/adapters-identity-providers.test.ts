@@ -67,7 +67,7 @@ test('rejects an extra key', () => {
 });
 
 // Phase Final Stage B: identity_providers table retired —
-// store append pins live on pair-plane document tests.
+// store append pins live on message-plane document tests.
 
 test('an anonymous principal cannot read providers',
 async () => {

@@ -216,10 +216,11 @@ test('a byte-identical PUT resend to'
 // -- 4. postWorkOrderCreationOp's synthesized create pairs
 // (Phase 5 Task 3, the flow-creation-triple precedent): a live
 // POST /work-orders now forms THREE pairs pre-tx — the gate's
-// own operation pair (shares the WO's document address, per
-// the registry-driven create-address override), a synthesized
-// document pair (PUT-shaped, at the WO's own address), and a
-// synthesized join pair (PUT-shaped, at the
+// own operation message pair (shares the WO's document
+// address, per the registry-driven create-address override),
+// a synthesized document message pair (PUT-shaped, at the
+// WO's own address), and a synthesized join pair
+// (PUT-shaped, at the
 // organizations/:id/flows/:id/work-orders/:woid address).
 // ----------------------
 
@@ -241,12 +242,12 @@ function req(
 // The workOrder facet reuses documentFields() — the SAME
 // {display_id, flow_graph, position} shape section 1 above
 // already validates — so the create body and the synthesized
-// document pair's expected body are ONE construction, never
-// two divergent literals. `displayId` defaults to
+// document message pair's expected body are ONE construction,
+// never two divergent literals. `displayId` defaults to
 // documentFields()'s own value; a duplicate-create test
 // overrides it so the SECOND create's document sub-body
-// genuinely differs from the first's — the document pair's
-// hash covers ONLY {display_id, flow_graph, position}
+// genuinely differs from the first's — the document message
+// pair's hash covers ONLY {display_id, flow_graph, position}
 // (workOrderCreateDocumentBody's own three picked keys), so
 // two creates sharing that sub-body would collide on
 // appendMessagePair's concurrent-retry guard and the second
@@ -336,9 +337,10 @@ function documentRowAt(
 
 const ENTITY_PREFIX = '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/';
 
-test('a work-order create appends a PUT-shaped document pair'
-+ ' at the WO address and a PUT-shaped join pair at the join'
-+ ' address, all three sharing one requestAt', async () => {
+test('a work-order create appends a PUT-shaped document'
++ ' message pair at the WO address and a PUT-shaped join pair'
++ ' at the join address, all three sharing one requestAt',
+async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -351,7 +353,9 @@ test('a work-order create appends a PUT-shaped document pair'
 
     const documentRow =
         documentRowAt(messagePairs, ENTITY_PREFIX, WO_C1);
-    assert.ok(documentRow, 'no document pair at the WO address');
+    assert.ok(
+        documentRow, 'no document message pair at the WO address',
+    );
     assert.deepEqual(
         validateWorkOrderDocumentBody(
             decodeRequestMessage(documentRow!.request).body,
@@ -376,7 +380,7 @@ test('a work-order create appends a PUT-shaped document pair'
 });
 
 test('a duplicate work-order create (same WO id) records'
-+ ' Supersedes on its NEW document pair, never Follows',
++ ' Supersedes on its NEW document message pair, never Follows',
 async () => {
     const db = await freshDb();
     const first = await handleRequest(db, req(
@@ -389,7 +393,7 @@ async () => {
         await db.messagePairs.getAll(), ENTITY_PREFIX, WO_C2,
     );
     assert.ok(
-        firstDocumentRow, 'no document pair on first create',
+        firstDocumentRow, 'no document message pair on first create',
     );
     const firstDocumentId = firstDocumentRow!.id;
 
@@ -405,7 +409,7 @@ async () => {
         await db.messagePairs.getAll(), ENTITY_PREFIX, WO_C2,
         firstDocumentId,
     );
-    assert.ok(secondDocumentRow, 'no second document pair');
+    assert.ok(secondDocumentRow, 'no second document message pair');
     const secondDocumentResponse = await db.messagePairs.getById(
         secondDocumentRow!.id,
     );
@@ -454,7 +458,7 @@ test('a work-order create ignores a raw colliding states'
     const db = await freshDb();
     const flowWorkOrderId = WO_C4_FWO;
     // Phase Final Task 2: states ROW half stripped — raw
-    // collision no longer aborts the pair-plane create.
+    // collision no longer aborts the message-plane create.
     // Phase Final Stage B: states table retired.
     const res = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'

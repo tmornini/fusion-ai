@@ -17,7 +17,7 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 
-// Flow tags: the codebase's FIRST pair-plane-ONLY document
+// Flow tags: the codebase's FIRST message-plane-ONLY document
 // family (Phase 14 Task 9) — no backing table, derived entirely
 // from message pairs at /organizations/:id/flows/:id/tags/:name.
 // PUT/GET/DELETE

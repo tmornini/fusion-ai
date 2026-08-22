@@ -78,9 +78,9 @@ function messagePairJsonOf(message: string): {
 // 11 ideas +
 // 2 organizations documents (Phase 12 Task 3: the tenant root's
 // own family onboards — Stark Industries + Wayne Enterprises,
-// each forming its OWN organizations/:id document pair; Phase
-// Final Task 2 strips the organizations ROW half — pairs alone
-// remain) +
+// each forming its OWN organizations/:id document message pair;
+// Phase Final Task 2 strips the organizations ROW half — pairs
+// alone remain) +
 // 11 idea-submissions (Phase 2 Task 4b: one per seeded idea,
 // closing the prior seed-only gap) + 17 projects (16 Stark +
 // seed-project-org2, Phase 3 Task 3) + 13 flow-family pairs
@@ -104,36 +104,39 @@ function messagePairJsonOf(message: string): {
 // same create/document bodies — pair COUNT unchanged)
 // + 145 work-order documents + 145 flow-work-order joins
 // (Phase 5 Task 4: the entity/join gap closed, one document
-// pair and one join pair per seeded work order) + 49 baseline
-// documents + 92 actual documents (Phase 7 Task 5: the scores
-// half of the Phase 0 seed deferral closes — one document pair
-// per seeded baseline/actual-score row, closed through
+// message pair and one join pair per seeded work order) + 49
+// baseline documents + 92 actual documents (Phase 7 Task 5:
+// the scores half of the Phase 0 seed deferral closes — one
+// document message pair per seeded baseline/actual-score
+// row, closed through
 // postBaselineScoreDocumentOp / postActualScoreDocumentOp) +
-// 11 identity_pii document pairs (Phase 10 Task 2's intake
-// decomposition: each seeded human's PUT identities/:id/pii,
-// formerly folded into the human-members create body, now its
-// own document address, closed through
+// 11 identity_pii document message pairs (Phase 10 Task 2's
+// intake decomposition: each seeded human's PUT
+// identities/:id/pii, formerly folded into the human-members
+// create body, now its own document address, closed through
 // postIdentityPiiDocumentOp) +
-// 11 identities-document pairs (Phase 10 Task 5: each seeded
-// human-member create ALSO forms its own identities/:id document
-// pair — the create-time bundle widens from a triple to a
-// quadruple for human members only; an AI member forms no
-// identities row — finding 10 — so its own bundle stays a
-// triple) + 5 identities-document pairs (Phase 10 Task 6: the
-// 4 AI members + the system member each form their OWN
-// identities/:id document pair too — a standalone invocation,
-// not a bundle-widening, since neither create-time bundle ever
-// carried one) + 12 identity-credential document pairs (Phase 10
-// Task 6: 11 human password credentials + the system client-
-// secret credential, one identities/:id/credentials/:cid pair
-// per row — formed by seedHumanCredentials' OWN local pass-1/
-// pass-2 split, api/mock-data.ts, since a credential's hashed
-// secret is unknown until PBKDF2 resolves and so can never join
-// this file's shared pre-tx pass) + 0 role-grant document pairs
-// (retired: membership type carries privilege; mint bakes
-// claims) + 859 legacy work-order historical-trace transition
-// op pairs (states-address retirement Task 12: 861 traces
-// minus WO01's two value-bearing events, which migrate to the
+// 11 identities-document message pairs (Phase 10 Task 5: each
+// seeded human-member create ALSO forms its own identities/:id
+// document message pair — the create-time bundle widens from a
+// triple to a quadruple for human members only; an AI member
+// forms no identities row — finding 10 — so its own bundle
+// stays a triple) + 5 identities-document message pairs
+// (Phase 10 Task 6: the 4 AI members + the system member each
+// form their OWN identities/:id document message pair too — a
+// standalone invocation, not a bundle-widening, since neither
+// create-time bundle ever carried one) + 12 identity-credential
+// document message pairs (Phase 10 Task 6: 11 human password
+// credentials + the system client-secret credential, one
+// identities/:id/credentials/:cid pair per row — formed by
+// seedHumanCredentials' OWN local pass-1/pass-2 split,
+// api/mock-data.ts, since a credential's hashed secret is
+// unknown until PBKDF2 resolves and so can never join this
+// file's shared pre-tx pass) + 0 role-grant document message
+// pairs (retired: membership type carries privilege; mint
+// bakes claims) + 859 legacy work-order historical-trace
+// transition operation message pairs (states-address
+// retirement Task 12: 861 traces minus WO01's two
+// value-bearing events, which migrate to the
 // instance chain) + 6 WO-instance SoT chain pairs (Task 6:
 // instance genesis + binding + Review/Complete new-shape ops
 // each with a revision — net +4 vs 1494) + 11 identity-default-
@@ -193,7 +196,7 @@ test('a seeded organizations pair sits at the global'
 + ' (non-org-nested) address, its actor is the system member,'
 + ' and its stored body\'s fields equal the derived'
 + ' organization exactly (Phase Final Task 2: organizations'
-+ ' ROW half stripped — pair-plane truth)',
++ ' ROW half stripped — message-plane truth)',
 async () => {
     const db = await sharedMockDb();
     const requests = await db.messagePairs.getAll();
@@ -256,9 +259,9 @@ test('a seeded human member\'s PII intake pair sits at its own'
     );
 });
 
-test('a seeded human member\'s identities-document pair sits at'
-+ ' the shared identities/:id address, its body carrying `kind`'
-+ ' alone (Phase 10 Task 5)', async () => {
+test('a seeded human member\'s identities-document message pair'
++ ' sits at the shared identities/:id address, its body carrying'
++ ' `kind` alone (Phase 10 Task 5)', async () => {
     const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
     const requests = await db.messagePairs.getAll();
@@ -307,7 +310,7 @@ test('a seeded AI agent pair sits at the global'
     );
 });
 
-test('a seeded seat document pair sits at its org-nested'
+test('a seeded seat document message pair sits at its org-nested'
 + ' members address', async () => {
     const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
@@ -371,15 +374,15 @@ test('a seeded record create pair sits at its org-nested'
     );
 });
 
-test('a seeded record\'s document pair sits at its'
+test('a seeded record\'s document message pair sits at its'
 + ' entity address, its body carrying the entity plus the'
 + ' state trio (no id or organization_id key)', async () => {
     const db = await sharedMockDb();
     const requests = await db.messagePairs.getAll();
-    // The document pair shares its address with the operation
-    // pair (records' createBodyIdField collapses both onto the
-    // SAME uri_id) — distinguish it by PUT, the operation
-    // pair being POST.
+    // The document message pair shares its address with the
+    // operation message pair (records' createBodyIdField
+    // collapses both onto the SAME uri_id) — distinguish it
+    // by PUT, the operation message pair being POST.
     const documentRow = requests.find(
         r => r.uri_id === customerProfileRecordId
             && r.uri_collection
@@ -387,7 +390,7 @@ test('a seeded record\'s document pair sits at its'
             && r.method === 'PUT',
     );
     assert.ok(
-        documentRow, 'no document pair for the seeded record',
+        documentRow, 'no document message pair for the seeded record',
     );
     // The id-strip covenant (verification finding, lens 4) made
     // falsifiable: a spurious id/organization_id key riding the
@@ -405,7 +408,7 @@ test('a seeded record\'s document pair sits at its'
     );
 });
 
-test('a seeded record attribute\'s document pair sits at'
+test('a seeded record attribute\'s document message pair sits at'
 + ' its nested type-attributes address, its body carrying'
 + ' no id, organization_id, or record_id key and both ACL'
 + ' arrays', async () => {
@@ -441,9 +444,9 @@ test('a seeded objective create pair sits at its org-nested'
     const db = await sharedMockDb();
     const requests = await db.messagePairs.getAll();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
-    // The document pair now shares this address with the
-    // operation pair (Task 3's create-time bundle), so a
-    // positional/single .find() is unsafe — filter/count
+    // The document message pair now shares this address with
+    // the operation message pair (Task 3's create-time bundle),
+    // so a positional/single .find() is unsafe — filter/count
     // instead (the H7/arrival-order hazard class).
     const starkRows = requests.filter(
         r => r.uri_id === starkSeed.id,
@@ -467,16 +470,16 @@ test('a seeded objective create pair sits at its org-nested'
     }
 });
 
-test('a seeded objective\'s document pair sits at its'
+test('a seeded objective\'s document message pair sits at its'
 + ' entity address, body carrying position plus the'
 + ' lifecycle trio and no organization_id key', async () => {
     const db = await sharedMockDb();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
     const requests = await db.messagePairs.getAll();
-    // The document pair shares its address with the operation
-    // pair (objectives' createBodyIdField collapses both onto
-    // the SAME uri_id) — distinguish it by PUT, the
-    // operation pair being POST.
+    // The document message pair shares its address with the
+    // operation message pair (objectives' createBodyIdField
+    // collapses both onto the SAME uri_id) — distinguish it
+    // by PUT, the operation message pair being POST.
     const documentRow = requests.find(
         r => r.uri_id === starkSeed.id
             && r.uri_collection
@@ -485,7 +488,8 @@ test('a seeded objective\'s document pair sits at its'
             && r.method === 'PUT',
     );
     assert.ok(
-        documentRow, 'no document pair for the seeded objective',
+        documentRow,
+        'no document message pair for the seeded objective',
     );
     const embedded = messagePairJsonOf(documentRow!.request) as {
         body: Record<string, unknown>;
@@ -524,8 +528,9 @@ test('a seeded objective\'s revision pair sits at its own'
     );
 });
 
-test('a seeded work-order document pair sits at its org-nested'
-+ ' entity address, its body carrying no id key', async () => {
+test('a seeded work-order document message pair sits at its'
++ ' org-nested entity address, its body carrying no id key',
+async () => {
     const db = await sharedMockDb();
     const firstWorkOrder = buildWorkOrders()[0]!;
     const requests = await db.messagePairs.getAll();
@@ -830,7 +835,7 @@ test('a seeded actual-score pair sits at its org-nested'
 });
 
 test('every seeded STARK objective pair\'s embedded revision'
-+ ' author matches the revision document pair body',
++ ' author matches the revision document message pair body',
 async () => {
     // Guards the pure pre-tx human-member-pool reconstruction
     // (seed-message-pairs.ts's humanMemberPoolsByOrganization)
@@ -839,7 +844,7 @@ async () => {
     // two MUST already agree on which pool position each seeded
     // human occupies. Phase Final Task 2: objective_revisions
     // ROW half stripped — compare create-op embedded revision
-    // author against the revision document pair body.
+    // author against the revision document message pair body.
     const db = await sharedMockDb();
     const requests = await db.messagePairs.getAll();
     for (const starkSeed of OBJECTIVE_SEEDS) {
@@ -857,11 +862,12 @@ async () => {
         const revisionBody = messagePairJsonOf(
             revisionRow!.request,
         ) as { body: { member_id: string } };
-        // The operation pair alone embeds the full create body
-        // (its own `revision` sub-object) — the document pair
-        // now sharing this address carries `{position}` only,
-        // so select by POST, never a positional first match
-        // (the H7/arrival-order hazard class).
+        // The operation message pair alone embeds the full
+        // create body (its own `revision` sub-object) — the
+        // document message pair now sharing this address
+        // carries `{position}` only, so select by POST, never
+        // a positional first match (the H7/arrival-order
+        // hazard class).
         const row = requests.find(
             r => r.uri_id === starkSeed.id
                 && r.method === 'POST',

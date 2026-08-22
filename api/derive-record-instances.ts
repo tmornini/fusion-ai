@@ -181,7 +181,7 @@ async function fetchInstanceMessagePairs(
 }
 
 // undefined when absent OR tombstoned (DELETE is the last
-// document pair) — tombstone = absent for every read path.
+// document message pair) — tombstone = absent for every read path.
 // Head body: revisionValuesOf(head body) — ONE head pair via
 // deriveDocumentsAt (PUT|DELETE only; no fold across pairs).
 export async function deriveInstanceHead(

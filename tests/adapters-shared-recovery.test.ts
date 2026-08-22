@@ -148,7 +148,7 @@ async function issuePair(db: MemoryDbAdapter): Promise<{
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
 // the recovery/re-scope paths below authorize through
-// role_grants/memberships once they derive from the pair plane,
+// role_grants/memberships once they derive from the message plane,
 // so a raw row here would go derivation-invisible. Every
 // id/field value stays IDENTICAL to the raw puts these replace —
 // only the write mechanism changes.
@@ -189,7 +189,7 @@ async function seedOrganizationAdmin(
     });
 }
 
-// The pair-plane counterpart of seedOrganizationAdmin's row-
+// The message-plane counterpart of seedOrganizationAdmin's row-
 // only grant/membership: a real PUT through the route so the
 // org exists on BOTH planes. GET
 // /identities/:id/organizations/ derives from the
@@ -401,7 +401,7 @@ test('recovery re-scopes to the vessel org claim, not the'
     await seedOrganizationAdmin(db, ORGANIZATION_A);
     await seedOrganizationAdmin(db, ORGANIZATION_B);
     // the enumerate joins derived org documents to memberships,
-    // so both orgs must exist on the pair plane to land in the
+    // so both orgs must exist on the message plane to land in the
     // reachable set (seedOrganizationDocument's own comment)
     await seedOrganizationDocument(db, ORGANIZATION_A);
     await seedOrganizationDocument(db, ORGANIZATION_B);

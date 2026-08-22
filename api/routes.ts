@@ -355,7 +355,7 @@ export { param, requireOrganization, withoutId };
 // validated once at the gate (documentWriteResponseSpec, via
 // validateDocument). Phase Final Task 2: the ideas ROW half is
 // stripped; the pair + states.postEvent land in ONE transaction
-// (states ROW half stripped (pair plane only)). Genesis
+// (states ROW half stripped (message plane only)). Genesis
 // is head-presence-defined — a fresh id's PUT simply finds no
 // head, so it authors like any other transition.
 //
@@ -653,7 +653,7 @@ type DeleteHandler = (
 // for a bearer-exempt or global route. Only the conversion
 // handler consults organization today (to form the created
 // project's OWN document-address pair beside the operation
-// pair above); every other POST handler ignores the extra
+// message pair above); every other POST handler ignores the extra
 // trailing args, the same fewer-parameter-closure precedent
 // `messagePair` already established.
 type PostHandler = (
@@ -722,7 +722,7 @@ function withoutSecret(
 // tests/drift-identities.test.ts's own gate-15 proof
 // (pairPlaneMembershipsAcrossKnownOrganizations), generalized from
 // that test's hardcoded two-org set to deriveOrganizations(db)
-// (Phase 12 Task 5: the pair-plane derivation, api/derive-
+// (Phase 12 Task 5: the message-plane derivation, api/derive-
 // organizations.ts — itself reading only requests/responses, the
 // SAME global passthrough the prior db.organizations.getAll()
 // read rode) so this holds for however many organizations
@@ -767,9 +767,9 @@ function ownerOrganizationViaMembershipPairPlane(
 
 // The bundle a live POST /records forms (Phase 6 Task 4, the
 // migration's first VARIABLE-CARDINALITY synthesis): the gate's
-// own operation pair, the synthesized document pair (at the
+// own operation message pair, the synthesized document message pair (at the
 // record's own records/:id address — the SAME address the
-// operation pair shares, since records' createBodyIdField
+// operation message pair shares, since records' createBodyIdField
 // override collapses the two onto one uri_id, the flows
 // precedent), one synthesized attribute-PUT pair per
 // attributes[] entry, and one synthesized attribute-DELETE pair
@@ -778,10 +778,10 @@ function ownerOrganizationViaMembershipPairPlane(
 // attributeDeletes is always empty). All pairs share ONE
 // requestAt (the write's own origination) yet strictly-later
 // RESPONSE `at` stamps (appendMessagePair's nowUtc() is
-// monotonic), so the document pair — appended after the
-// operation pair — becomes the address's head; a duplicate
+// monotonic), so the document message pair — appended after the
+// operation message pair — becomes the address's head; a duplicate
 // create's Supersedes therefore resolves against the prior
-// DOCUMENT pair, not the prior operation pair (the Phase 5
+// DOCUMENT message pair, not the prior operation message pair (the Phase 5
 // shared-address mechanism, re-pinned here).
 export interface RecordWriteMessagePairs {
     readonly operation: MessagePair;
@@ -806,7 +806,7 @@ export interface RecordWriteMessagePairs {
 // every genuine client PUT — validateRecordDocumentBody's own
 // comment) plus the lifecycle trio. Create maps the trio from
 // initialState*; edit carries the body's own echoed trio
-// verbatim (never re-derived), so a synthesized document pair
+// verbatim (never re-derived), so a synthesized document message pair
 // is byte-indistinguishable from what a live PUT would have
 // stored for the identical write.
 export function recordDocumentBodyOf(
@@ -829,7 +829,7 @@ export function recordDocumentBodyOf(
 // Nested attribute storage body (Task 8): strip id /
 // organization_id / record_id (parentage is the URI under
 // the type) and stamp DEFAULT_ATTRIBUTE_ACL_ROLES so seed
-// and composed-op pairs always carry both ACL arrays.
+// and composed-operation message pairs always carry both ACL arrays.
 export function recordAttributeDocumentBodyOf(
     row: Record<string, unknown>,
 ): Record<string, unknown> {
@@ -1035,7 +1035,7 @@ export function nestedAttributeWireOf(
 // stripped — attributes/record body ride the operation +
 // document + attribute pairs; states.postEvent on create/edit
 // stays until the states-trace group. Removed attributes are
-// RESTRICTED inside the same tx (pair-plane referrers; 409
+// RESTRICTED inside the same tx (message-plane referrers; 409
 // bytes preserved). `messagePairs` is optional so the seed's below-
 // facade call keeps compiling; the route always supplies the
 // bundle.
@@ -1057,8 +1057,8 @@ export async function postRecordWriteOp(
             ? body.removedAttributeIds
             : [];
     // State event + RESTRICT + pairs commit as one
-    // transaction. Attribute bodies live only on the pair
-    // plane (attributePuts/attributeDeletes).
+    // transaction. Attribute bodies live only on the
+    // message plane (attributePuts/attributeDeletes).
     await db.transaction(
         MESSAGE_TABLES,
         async (view) => {
@@ -1091,11 +1091,11 @@ export async function postRecordWriteOp(
                 }
             }
             // The whole bundle or none (Atomicity): the
-            // operation pair, the document pair, N attribute-
+            // operation message pair, the document message pair, N attribute-
             // PUT pairs, and M attribute-DELETE pairs — appended
             // LAST, in that order, so each pair's response `at`
             // strictly follows the one before it (nowUtc
-            // monotonicity) and the document pair becomes the
+            // monotonicity) and the document message pair becomes the
             // shared address's head.
             if (messagePairs !== undefined) {
                 await appendMessagePair(view, messagePairs.operation);
@@ -1145,7 +1145,7 @@ function documentOperationOrganization(
 // falls to `actor`, authoring the birth like any other
 // transition). Phase Final Task 2: the ideas ROW half is
 // stripped — the pair + states.postEvent commit as ONE
-// transaction (states ROW half stripped — pair plane only).
+// transaction (states ROW half stripped — message plane only).
 // WRITE_RESPONSE_SPECS successBody forms the wire
 // bytes; the reconstructed return is for below-facade callers
 // and type parity. `messagePair` is optional so the seed's
@@ -1181,7 +1181,7 @@ export async function postIdeaDocumentOp(
 // ternary below falls to `actor`, authoring the birth like any
 // other transition). Phase Final Task 2: the projects ROW half
 // is stripped — the pair + states.postEvent commit as ONE
-// transaction (states ROW half stripped — pair plane only).
+// transaction (states ROW half stripped — message plane only).
 // WRITE_RESPONSE_SPECS successBody forms the wire
 // bytes; the reconstructed return is for below-facade callers
 // and type parity. `messagePair` is optional so the seed's
@@ -1202,7 +1202,7 @@ export async function postProjectDocumentOp(
     } as unknown as Omit<ProjectEntity, 'id'>;
     return db.transaction(
         // Phase Final Task 2: projects ROW half stripped;
-        // states ROW half stripped (pair plane only).
+        // states ROW half stripped (message plane only).
         MESSAGE_TABLES,
         async (view) => {
             if (messagePair !== undefined) {
@@ -1242,7 +1242,7 @@ export async function postRecordDocumentOp(
     } as unknown as Omit<RecordEntity, 'id'>;
     return db.transaction(
         // Phase Final Task 2: records ROW half stripped;
-        // states ROW half stripped (pair plane only).
+        // states ROW half stripped (message plane only).
         MESSAGE_TABLES,
         async (view) => {
             if (messagePair !== undefined) {
@@ -1256,7 +1256,7 @@ export async function postRecordDocumentOp(
 // Record attribute document write — the sixth family, and the
 // SECOND 'stateless' one (vacuous BY CONSTRUCTION). Phase Final
 // Task 2: the record_attributes ROW half is stripped — pure
-// pair-plane write (postWorkOrderDocumentOp shape).
+// message-plane write (postWorkOrderDocumentOp shape).
 // WRITE_RESPONSE_SPECS successBody forms the wire bytes; the
 // reconstructed return is for below-facade callers and type
 // parity. validateRecordAttributeDocumentBody rejects a body
@@ -1292,7 +1292,7 @@ export async function postRecordAttributeDocumentOp(
 // Idea submission write: a genesis-only document address (an
 // idea is submitted once per sid; no edit/transition case
 // exists for this family). Phase Final Task 2: the
-// idea_submissions ROW half is stripped — pure pair-plane
+// idea_submissions ROW half is stripped — pure message-plane
 // write (postFlowTagDocumentOp shape). WRITE_RESPONSE_SPECS
 // successBody forms the wire bytes via ideaSubmissionEntityOf
 // (GET derive). Exported so the seed can
@@ -1362,7 +1362,7 @@ export function flowCreateDocumentBody(
 }
 
 // The three pairs a live POST /flows forms (Task 5): the gate's
-// own operation pair (204, at the flows/:id address per Task 1's
+// own operation message pair (204, at the flows/:id address per Task 1's
 // createdEntityUriId override — POST 'flows' and PUT 'flows/:id'
 // collapse onto the SAME (uriCollection, uriId), see derive-
 // documents.ts's DOCUMENT_METHODS filter for why the two never
@@ -1370,8 +1370,8 @@ export function flowCreateDocumentBody(
 // route pre-forms below. All three share ONE requestAt (the
 // create's own origination) yet strictly-later RESPONSE `at`
 // stamps (appendMessagePair's nowUtc() is monotonic), so the
-// document pair — appended after the operation pair — becomes
-// the address's head.
+// document message pair — appended after the
+// operation message pair — becomes the address's head.
 export interface FlowCreationMessagePairs {
     readonly operation: MessagePair;
     readonly document: MessagePair;
@@ -1379,11 +1379,11 @@ export interface FlowCreationMessagePairs {
 }
 
 // Flow creation. Phase Final Task 2: flows + graph relation
-// + project_flows ROW halves stripped — pair plane carries
+// + project_flows ROW halves stripped — message plane carries
 // the document (graphDelta SIDECAR-KEEP) and the join; only
 // the initial 'active' states.postEvent remains until the
 // states-trace group. graphDelta is still validated at the
-// HTTP gate and stored on the document pair. Exported so the
+// HTTP gate and stored on the document message pair. Exported so the
 // seed can drive flow creation through the same gate the
 // route uses (Decision 6's below-facade carve-out). `messagePairs`
 // is optional so the seed's below-facade call keeps
@@ -1399,10 +1399,11 @@ export async function postFlowCreationOp(
         MESSAGE_TABLES,
         async (view) => {
             // Three pairs or none (Atomicity): the operation
-            // pair (the gate's own), the synthesized document
-            // pair, and the synthesized join pair — appended in
-            // that order, LAST, so the document pair's response
-            // `at` strictly follows the operation pair's.
+            // message pair (the gate's own), the synthesized
+            // document message pair, and the synthesized join
+            // pair — appended in that order, LAST, so the
+            // document message pair's response `at` strictly
+            // follows the operation message pair's.
             if (messagePairs !== undefined) {
                 await appendMessagePair(view, messagePairs.operation);
                 await appendMessagePair(view, messagePairs.document);
@@ -1455,7 +1456,7 @@ export async function postFlowDocumentOp(
     const latchedId = messagePair?.latchedHeadMessagePairId;
     return db.transaction(
         // Phase Final Task 2: flows + graph ROW halves
-        // stripped; states ROW half stripped (pair plane only).
+        // stripped; states ROW half stripped (message plane only).
         MESSAGE_TABLES,
         async (view) => {
             // Revival states events dual-write until the
@@ -1487,9 +1488,9 @@ export async function postFlowDocumentOp(
 // restore write. Phase Final Task 2: flows + graph ROW
 // halves stripped — the 'updated' state event, revivals
 // states events, and the operation + synthesized document
-// pairs (graphDelta/revivals SIDECAR-KEEP on the document
+// message pairs (graphDelta/revivals SIDECAR-KEEP on the document
 // body) commit as ONE transaction. Exhaustion appends only
-// the operation pair. `current.id` is the in-tx latch so a
+// the operation message pair. `current.id` is the in-tx latch so a
 // racing save 412s when the lock head has moved.
 export async function postFlowUndoOp(
     db: DbAdapter,
@@ -1503,12 +1504,12 @@ export async function postFlowUndoOp(
     const { current, target } = resolution;
     if (target === undefined) {
         // Exhaustion: the gate still requires this wired write's
-        // own operation pair to land (api.ts's post-dispatch
+        // own operation message pair to land (api.ts's post-dispatch
         // "wired write stored no pair" guard, true for every
         // pair-wired route), so it is appended ALONE — no
-        // document pair, no domain writes — a genuine no-op a
+        // document message pair, no domain writes — a genuine no-op a
         // LATER resolution walk correctly ignores (it carries no
-        // correlated document pair to displace anything).
+        // correlated document message pair to displace anything).
         return db.transaction(
             MESSAGE_TABLES,
             async (view) => {
@@ -1592,16 +1593,16 @@ export async function postFlowUndoOp(
 }
 
 // The three pairs a live POST /objectives forms (Task 3): the
-// gate's own operation pair (204, at the objectives/:id address
+// gate's own operation message pair (204, at the objectives/:id address
 // per the create-body-id-field override — POST 'objectives' and
 // PUT 'objectives/:id' collapse onto the SAME (uriCollection,
 // uriId), the flows/records precedent), the synthesized document
-// pair (objectives/:id), and the synthesized revision pair
+// message pair (objectives/:id), and the synthesized revision pair
 // (objectives/:id/revisions/:rid) the route pre-forms below. All
 // three share ONE requestAt (the create's own origination) yet
 // strictly-later RESPONSE `at` stamps (appendMessagePair's
-// nowUtc() is monotonic), so the document pair — appended after
-// the operation pair — becomes the shared address's head; the
+// nowUtc() is monotonic), so the document message pair — appended after
+// the operation message pair — becomes the shared address's head; the
 // revision pair lives at its OWN distinct address (a fresh
 // revision id per create), so it is always genesis there unless
 // a live PUT had already visited that exact revision id.
@@ -1621,7 +1622,7 @@ export interface ObjectiveCreationMessagePairs {
 // this SAME write: the entity field (organization_id
 // STRIPPED — the org rides the address) plus the lifecycle
 // trio mapped from the create body's initialState* — the
-// recordDocumentBodyOf shape, so a synthesized document pair
+// recordDocumentBodyOf shape, so a synthesized document message pair
 // is byte-indistinguishable from what a live PUT would have
 // stored for the identical write.
 export function objectiveDocumentBodyOf(
@@ -1651,8 +1652,8 @@ export function objectiveRevisionBodyOf(
 // Objective creation: operation + document + first-revision
 // pairs commit as ONE transaction. Phase Final Task 2:
 // objectives + objective_revisions ROW halves stripped —
-// pure pair-plane write. The genesis lifecycle trio folds
-// onto the document pair via objectiveDocumentBodyOf
+// pure message-plane write. The genesis lifecycle trio folds
+// onto the document message pair via objectiveDocumentBodyOf
 // (states-address retirement); no separate states/:id event
 // is written. Exported so the seed can drive objective
 // creation through the same gate the route uses (Decision
@@ -1683,7 +1684,7 @@ export async function postObjectiveCreationOp(
 
 // Objective document write — the fifth lifecycle-trio family
 // (states-address retirement). Phase Final Task 2: the
-// objectives ROW half is stripped — pure pair-plane write
+// objectives ROW half is stripped — pure message-plane write
 // (postFlowTagDocumentOp shape). WRITE_RESPONSE_SPECS
 // successBody forms the wire bytes; the reconstructed return
 // is for below-facade callers and type parity.
@@ -1742,12 +1743,12 @@ export function identityDocumentBodyOf(
 
 // Identity creation: Phase Final Task 2 strips the
 // identities + identity_credentials ROW halves — pure
-// pair-plane write. A person's PII enters later via PUT
+// message-plane write. A person's PII enters later via PUT
 // identities/:id/pii. NO state event (an identity carries
 // no lifecycle event at creation). The pairs a live POST
 // /identities forms: operation (204 at identities/:id) +
 // identities/:id document ({kind} alone). A service ALSO
-// forms the credential-document pair at
+// forms the credential-document message pair at
 // identities/:id/credentials/:cid, appended last.
 export type IdentityWriteMessagePairs =
     | {
@@ -1816,7 +1817,7 @@ function workOrderCreateDocumentBody(
 }
 
 // The three pairs a live POST /work-orders forms (Task 3):
-// the gate's own operation pair (204, at the work-orders/:id
+// the gate's own operation message pair (204, at the work-orders/:id
 // address per the registry's createBodyIdField — POST
 // 'work-orders' and PUT 'work-orders/:id' collapse onto the
 // SAME (uriCollection, uriId), exactly as flows/:id did for its
@@ -1824,8 +1825,8 @@ function workOrderCreateDocumentBody(
 // pre-forms below. All three share ONE requestAt (the
 // create's own origination) yet strictly-later RESPONSE `at`
 // stamps (appendMessagePair's nowUtc() is monotonic), so the
-// document pair — appended after the operation pair — becomes
-// the address's head.
+// document message pair — appended after the
+// operation message pair — becomes the address's head.
 export interface WorkOrderCreationMessagePairs {
     readonly operation: MessagePair;
     readonly document: MessagePair;
@@ -1887,7 +1888,7 @@ export async function postWorkOrderCreationOp(
 // on that mismatch).
 //
 // PHASE 14 TASK 4: the prior-claim decision read is re-
-// anchored onto the pair plane (workOrderClaimHistoryFor,
+// anchored onto the message plane (workOrderClaimHistoryFor,
 // api/derive-states.ts) — ENTITY-SCOPED indexed reads inside
 // this SAME transaction, never a nested tx — in place of the
 // row-plane view.states.getAllFor(workOrderId). Author gate 3:
@@ -1895,7 +1896,7 @@ export async function postWorkOrderCreationOp(
 // clock) stay byte-identical — ONLY the event SOURCE flips.
 //
 // PHASE 15 TASK 2: the claim-gate graph read is re-anchored
-// onto workOrderDocumentHeadFor (pair-plane document head)
+// onto workOrderDocumentHeadFor (message-plane document head)
 // in place of view.workOrders.getById. isClaimEventExpired +
 // 409 bytes + EntityNotFoundError mapping stay byte-identical
 // — ONLY the row source flips. Phase Final Task 2: work_orders
@@ -1961,7 +1962,8 @@ export async function postWorkOrderClaimOp(
                 );
             }
             // Phase Final Task 2: states ROW half stripped —
-            // claim_expired + claimed live on the op pair body
+            // claim_expired + claimed live on the
+            // operation message pair body
             // (workOrderClaimHistoryFor reads them back).
             if (messagePair !== undefined) {
                 await appendMessagePair(view, messagePair);
@@ -2467,7 +2469,7 @@ export async function postWorkOrderBindingOp(
 // create/claim/transition ops above and the states/:id unclaim
 // path, never by a document PUT, so this op posts NO states
 // event of its own. Phase Final Task 2: the work_orders ROW
-// half is stripped — pure pair-plane write
+// half is stripped — pure message-plane write
 // (postFlowTagDocumentOp shape). WRITE_RESPONSE_SPECS
 // successBody forms the wire bytes; the reconstructed return
 // is for below-facade callers and type parity.
@@ -2501,7 +2503,7 @@ export async function postWorkOrderDocumentOp(
 }
 
 // Flow work-order join document write. Phase Final Task 2:
-// the flow_work_orders ROW half is stripped — pure pair-plane
+// the flow_work_orders ROW half is stripped — pure message-plane
 // write. WRITE_RESPONSE_SPECS successBody forms the wire
 // bytes; the reconstructed return is for below-facade
 // callers and type parity. `messagePair` is optional. The actor
@@ -2532,7 +2534,7 @@ export async function postFlowWorkOrderDocumentOp(
 }
 
 // Flow record join document write. Phase Final Task 2: the
-// flow_records ROW half is stripped — pure pair-plane write
+// flow_records ROW half is stripped — pure message-plane write
 // (postFlowWorkOrderDocumentOp shape). WRITE_RESPONSE_SPECS
 // successBody forms the wire bytes; the reconstructed return
 // is for below-facade callers and type parity. `messagePair` is
@@ -2563,7 +2565,7 @@ export async function postFlowRecordDocumentOp(
     );
 }
 
-// Flow tag document write — the codebase's FIRST pair-plane-ONLY
+// Flow tag document write — the codebase's FIRST message-plane-ONLY
 // write (Phase 14 Task 9): no table, no row, no dual-write. The
 // pair alone carries everything (uriCollection/uriId encode the
 // address; the stored request's method distinguishes a PUT tag
@@ -2590,7 +2592,7 @@ export async function postFlowTagDocumentOp(
 
 // Objective baseline-score document write. Phase Final Task 2:
 // the project_objective_baseline_scores ROW half is stripped —
-// pure pair-plane write (postIdeaSubmissionOp shape).
+// pure message-plane write (postIdeaSubmissionOp shape).
 // WRITE_RESPONSE_SPECS successBody forms the wire bytes.
 // Exported so the seed can drive the same write path (Decision
 // 6's below-facade carve-out). `messagePair` is optional so a
@@ -2625,7 +2627,7 @@ export async function postBaselineScoreDocumentOp(
 
 // Objective actual-score document write. Phase Final Task 2:
 // the project_objective_actual_scores ROW half is stripped —
-// pure pair-plane write, byte-twin of
+// pure message-plane write, byte-twin of
 // postBaselineScoreDocumentOp. WRITE_RESPONSE_SPECS forms the
 // wire bytes. `_actor` is unused: no state event to author.
 export async function postActualScoreDocumentOp(
@@ -2653,7 +2655,7 @@ export async function postActualScoreDocumentOp(
 }
 
 // Membership document write — Phase Final Task 2: the
-// memberships ROW half is stripped — pure pair-plane write
+// memberships ROW half is stripped — pure message-plane write
 // (postFlowTagDocumentOp shape). No states interaction
 // (memberships never post events). `messagePair` is optional so a
 // below-facade caller keeps compiling; the live route always
@@ -2681,7 +2683,7 @@ export async function postMembershipDocumentOp(
 }
 
 // Member document write — Phase Final Task 2: the members
-// ROW half is stripped — pure pair-plane write. No states
+// ROW half is stripped — pure message-plane write. No states
 // interaction (genesis/archive ride PUT states/:id). `messagePair`
 // is optional so a below-facade caller keeps compiling; the
 // live route always supplies one.
@@ -2707,7 +2709,7 @@ export async function postMemberDocumentOp(
 }
 
 // AI-member document write — Phase Final Task 2: the
-// ai_members ROW half is stripped — pure pair-plane write.
+// ai_members ROW half is stripped — pure message-plane write.
 // No states interaction. The composed POST edit arm at this
 // route sits beside this PUT; verbs stay independent. `messagePair`
 // is optional so a below-facade caller keeps compiling.
@@ -2733,7 +2735,7 @@ export async function postAiMemberDocumentOp(
 }
 
 // Human-member document write — Phase Final Task 2: the
-// human_members ROW half is stripped — pure pair-plane
+// human_members ROW half is stripped — pure message-plane
 // write. NO live PUT exists on human-members/:id (get/post
 // only); this op serves synthesis/seed callers. No states
 // interaction. `messagePair` is optional so a below-facade caller
@@ -2760,7 +2762,7 @@ export async function postHumanMemberDocumentOp(
 }
 
 // Identity PII document write — Phase Final Task 2: the
-// identity_pii ROW half is stripped — pure pair-plane write
+// identity_pii ROW half is stripped — pure message-plane write
 // via replacePiiSlot (hard-delete zone). No states
 // interaction. `messagePair` is optional so a below-facade caller
 // keeps compiling; the live route always supplies one.
@@ -2797,7 +2799,7 @@ export async function postIdentityPiiDocumentOp(
 }
 
 // Identity document write — Phase Final Task 2: the
-// identities ROW half is stripped — pure pair-plane write.
+// identities ROW half is stripped — pure message-plane write.
 // No states interaction. `messagePair` is optional so a below-
 // facade caller keeps compiling; the live route always
 // supplies one.
@@ -2822,7 +2824,7 @@ export async function postIdentityDocumentOp(
     );
 }
 
-// AI-agent document write — pair-plane only. Not a
+// AI-agent document write — message-plane only. Not a
 // member and not an identity. `messagePair` is optional so a
 // below-facade caller keeps compiling.
 export async function postAiAgentDocumentOp(
@@ -2847,7 +2849,7 @@ export async function postAiAgentDocumentOp(
 
 // Identity credential document write — Phase Final Task 2:
 // the identity_credentials ROW half is stripped — pure
-// pair-plane write. No states interaction. `messagePair` is
+// message-plane write. No states interaction. `messagePair` is
 // optional so a below-facade caller keeps compiling.
 export async function postIdentityCredentialDocumentOp(
     db: DbAdapter,
@@ -2872,7 +2874,7 @@ export async function postIdentityCredentialDocumentOp(
 }
 
 // Client-registration document write (clients elimination) —
-// pure pair-plane write, the postIdentityCredentialDocumentOp
+// pure message-plane write, the postIdentityCredentialDocumentOp
 // shape: Supersedes-chained appendMessagePair, never the pii
 // hard-delete zone. `messagePair` is optional so a below-facade
 // caller keeps compiling; the live route always supplies one.
@@ -2930,7 +2932,7 @@ async function requireServiceIdentity(
 
 // Identity provider document write — Phase Final Task 2: the
 // identity_providers ROW half is stripped (gate 1 DEFAULT:
-// DELETE at Stage B) — pure pair-plane write. Extracted so
+// DELETE at Stage B) — pure message-plane write. Extracted so
 // below-facade fixtures form pairs derivation can see.
 export async function postIdentityProviderDocumentOp(
     db: DbAdapter,
@@ -2971,7 +2973,7 @@ export async function postIdentityProviderDocumentOp(
 // The pre-tx response body for each pair-wired write —
 // computed through the SAME validator/stamp its own handler
 // applies, so the gate's precomputed body is byte-identical to
-// the pair plane's stored response (WRITE_RESPONSE_SPECS +
+// the message plane's stored response (WRITE_RESPONSE_SPECS +
 // responseFromStored). A pattern absent here, or present with
 // no successBody, returns 204 with no body. Keyed by route
 // pattern, not verb — but ONLY for the pattern's PUT or POST
@@ -3884,10 +3886,10 @@ export const routes: Route[] = [
         // Admin-only — POST /identities has no member-tier
         // entry, so it falls to the root admin tier in
         // ROUTE_POLICY. Task 5: forms the identities/:id
-        // document pair (+ the credential-document pair for a
-        // service) INLINE PRE-TX, beside the gate's own operation
-        // pair. See postIdentityCreationOp for the transaction
-        // shape.
+        // document message pair (+ the credential-document
+        // message pair for a service) INLINE PRE-TX, beside
+        // the gate's own operation message pair. See
+        // postIdentityCreationOp for the transaction shape.
         post: async (
             db, _p, body, actor, messagePair, organization,
         ) => {
@@ -4058,7 +4060,7 @@ export const routes: Route[] = [
         // G5: DELETE still replacePiiSlot (physical delete).
         delete: (db, _p, _actor, messagePair) => {
             // Phase Final Task 2: identity_pii ROW half
-            // stripped — pair-plane replacePiiSlot only.
+            // stripped — message-plane replacePiiSlot only.
             return db.transaction(
                 MESSAGE_TABLES,
                 async (view) => {
@@ -4460,7 +4462,7 @@ export const routes: Route[] = [
     // isPermitted matches /ideas on the segment prefix, so
     // /ideas/:id/conversion is member-permitted.
     //
-    // Phase 3 Task 4: the operation pair above lives at the
+    // Phase 3 Task 4: the operation message pair above lives at the
     // ideas-family OPERATION address (uri_id '') — a projects-
     // prefix scan finds no pair for a conversion-born project
     // without a SECOND pair at the project's OWN document
@@ -4484,7 +4486,7 @@ export const routes: Route[] = [
     // never run inside an open transaction (AGENTS.md §
     // Transaction bodies await only row ops) — then
     // appended as the tx's LAST acts, beside the operation
-    // pair. Formed ONLY when the gate supplied both a pair and
+    // message pair. Formed ONLY when the gate supplied both a pair and
     // a fence organization; a below-facade caller with neither
     // (none exists for conversion today) skips all 3+N
     // appends, preserving dual-write discipline.
@@ -4531,7 +4533,7 @@ export const routes: Route[] = [
                     operationId: messagePair.operationId,
                     organization,
                 });
-                // The idea's OWN document pair, at its EXISTING
+                // The idea's OWN document message pair, at its EXISTING
                 // address (the idea was created earlier, through
                 // a live PUT /ideas/:id) — this head-read finds
                 // that prior pair, so this one records Supersedes,
@@ -4644,7 +4646,7 @@ export const routes: Route[] = [
             deriveFlows(db, requireOrganization(organization)),
         // Member-tier POST — /flows carries POST in
         // MEMBER_VERBS. Forms the document + join pairs pre-tx
-        // (Task 5) beside the gate's own operation pair — the
+        // (Task 5) beside the gate's own operation message pair — the
         // SAME shape a live genesis PUT /flows/:id and a live
         // PUT /projects/:id/flows/:pfid would each carry — ONLY
         // when the gate supplied both a pair and a fence
@@ -4735,11 +4737,11 @@ export const routes: Route[] = [
     // Undo-as-replay (Phase 14 Task 8). Phase Final Task 2:
     // flows + graph ROW halves stripped; restore writes the
     // 'updated' state event, revival states events, and the
-    // operation + document pairs. graphDelta/revivals are
-    // server-computed into the document pair body
+    // operation + document message pairs. graphDelta/revivals are
+    // server-computed into the document message pair body
     // (SIDECAR-KEEP → deriveFlowGraphStates). No flow_versions
     // row is read or written. Exhaustion appends only the
-    // operation pair. A moved lock head → 412 via the
+    // operation message pair. A moved lock head → 412 via the
     // in-tx head re-read.
     route('organizations/:id/flows/:id/undo', {
         post: async (
@@ -4791,7 +4793,7 @@ export const routes: Route[] = [
     }),
     route('organizations/:id/projects/:id/flows/:pfid', {
         // Phase Final Task 2: project_flows ROW half stripped —
-        // pure pair-plane write (join derives from the ledger).
+        // pure message-plane write (join derives from the ledger).
         // G6: reconstructed return is projectFlowEntityOf.
         put: (db, p, body, _actor, messagePair) => {
             const pfid = param(p, 2);
@@ -4860,7 +4862,7 @@ export const routes: Route[] = [
         // Member-tier POST — /work-orders carries POST in
         // MEMBER_VERBS (the claim sub-route is also a member
         // POST). Forms the document + join pairs pre-tx
-        // (Task 3) beside the gate's own operation pair — the
+        // (Task 3) beside the gate's own operation message pair — the
         // SAME shape a live genesis PUT /work-orders/:id and a
         // live PUT /flows/:id/work-orders/:woid would each
         // carry — ONLY when the gate supplied both a pair and
@@ -5121,7 +5123,7 @@ export const routes: Route[] = [
             ),
         // Admin-only composed create/edit (MEMBER_VERBS has
         // GET only). Same transaction / RESTRICT discipline
-        // as flat POST /records; document pair at the nested
+        // as flat POST /records; document message pair at the nested
         // detail address, attributes at ATTRIBUTE_DETAIL_
         // PATTERN.
         post: async (
@@ -5572,7 +5574,7 @@ export const routes: Route[] = [
                 db, param(p, 2), body, actor, messagePair,
             ),
         // Phase Final Task 2: flow_records ROW half stripped —
-        // DELETE is a pure pair-plane tombstone append.
+        // DELETE is a pure message-plane tombstone append.
         delete: (db, _p, _actor, messagePair) => {
             return db.transaction(
                 MESSAGE_TABLES,
@@ -5584,7 +5586,7 @@ export const routes: Route[] = [
             );
         },
     }),
-    // Flow tags: the codebase's FIRST pair-plane-ONLY document
+    // Flow tags: the codebase's FIRST message-plane-ONLY document
     // family (Phase 14 Task 9, election #2's companion) — no
     // backing table, no dual-write, derived entirely from message
     // pairs. Bespoke route() wiring reusing deriveDocumentsAt/
@@ -5642,7 +5644,7 @@ export const routes: Route[] = [
     // generic documentGetHandler(wiring): that machinery
     // requires a wiring row's documentOp, and organizations has
     // none. Phase Final Task 2: the organizations ROW half is
-    // stripped — pure pair-plane write (postFlowTagDocumentOp
+    // stripped — pure message-plane write (postFlowTagDocumentOp
     // shape). WRITE_RESPONSE_SPECS successBody forms the wire
     // bytes via organizationEntityOf (id-last; GET wins).
     route('organizations/:id', {
@@ -5839,7 +5841,7 @@ export const routes: Route[] = [
     route('organizations/:id/objectives/', {
         get: documentCollectionGetHandler(OBJECTIVES_WIRING),
         // Forms the document + revision pairs pre-tx (Task 3)
-        // beside the gate's own operation pair — the SAME shape
+        // beside the gate's own operation message pair — the SAME shape
         // a live genesis PUT /objectives/:id and a live PUT
         // /objectives/:id/revisions/:rid would each carry — ONLY
         // when the gate supplied both a pair and a fence
@@ -5923,7 +5925,7 @@ export const routes: Route[] = [
     // Hand-written so PUT can append its message pair in the
     // same transaction (see message-pair.ts). Phase Final
     // Task 2: objective_revisions ROW half stripped — pure
-    // pair-plane write. WRITE_RESPONSE_SPECS successBody forms
+    // message-plane write. WRITE_RESPONSE_SPECS successBody forms
     // the wire bytes; the reconstructed return is for type
     // parity with the former store put.
     route('organizations/:id/objectives/:id/revisions/:rid', {

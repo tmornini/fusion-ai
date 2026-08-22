@@ -559,7 +559,7 @@ test('score collection wire equals derive per project: an'
     );
 });
 
-// -- 5. live-write chain on the pair plane ---------------------
+// -- 5. live-write chain on the message plane ------------------
 
 test('live-write chain: create, reposition, revision edit,'
 + ' archive, reactivate, a conversion with 2 baselines, a'
@@ -961,7 +961,7 @@ test('live-write chain: create, reposition, revision edit,'
 
 // -- 6. method-filter: create POST is never the document head -
 
-test('the create-op POST pair is not read as a document pair —'
+test('the create-op POST pair is not read as a document message pair —'
 + ' the create body and the document body share zero top-level'
 + ' keys; exactly one PUT pair lands at the objective address'
 + ' after create', async () => {

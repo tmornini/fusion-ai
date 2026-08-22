@@ -630,14 +630,14 @@ async function planRotationAttempt(
 // route: one truth for the atomic rotate. `messagePair` is
 // optional and appends as the LAST act, ONLY on the
 // 'rotate' branch — a 409
-// (reuse or unknown) stores no OPERATION pair even though the
-// reuse branch still revokes the chain for real. The route is
-// REPLAY_EXEMPT_ROUTE_PATTERNS-wired (message-pair.ts / api.ts):
-// the gate never serves a stored response for a byte-identical
-// resend of this route, so a resent reuse attempt genuinely
-// re-enters this function and re-fails 409 — this function's own
-// re-check IS the guard the exemption relies on; it must stay
-// live on every call.
+// (reuse or unknown) stores no OPERATION message pair even
+// though the reuse branch still revokes the chain for real.
+// The route is REPLAY_EXEMPT_ROUTE_PATTERNS-wired
+// (message-pair.ts / api.ts): the gate never serves a stored
+// response for a byte-identical resend of this route, so a
+// resent reuse attempt genuinely re-enters this function and
+// re-fails 409 — this function's own re-check IS the guard
+// the exemption relies on; it must stay live on every call.
 //
 // PRE-FORM + IN-TX VERIFY-OR-RETRY (Phase 13 Task 5, Gate 7): the
 // pre-tx plan above is provisional — a concurrent sibling can

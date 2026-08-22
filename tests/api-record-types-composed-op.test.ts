@@ -274,14 +274,14 @@ async () => {
             && r.uri_collection === typePrefix
             && r.method === 'POST',
     );
-    assert.ok(opPair, 'operation pair missing');
+    assert.ok(opPair, 'operation message pair missing');
 
     const documentPair = requests.find(
         r => r.uri_id === TYPE_ID
             && r.uri_collection === typePrefix
             && r.method === 'PUT',
     );
-    assert.ok(documentPair, 'document pair missing');
+    assert.ok(documentPair, 'document message pair missing');
 
     const attrPair = requests.find(
         r => r.uri_id === ATTR_ID

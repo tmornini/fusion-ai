@@ -9,7 +9,7 @@ import {
 } from './derive-documents.ts';
 import { missedReadError } from './derive-states.ts';
 
-// Flow tags: the codebase's FIRST pair-plane-ONLY document
+// Flow tags: the codebase's FIRST message-plane-ONLY document
 // family (Phase 14 Task 9) — no backing table, derived entirely
 // from message pairs at /flows/:id/tags/:name. Structurally
 // mirrors deriveFlowRecord (derive-flow-records.ts), re-nested

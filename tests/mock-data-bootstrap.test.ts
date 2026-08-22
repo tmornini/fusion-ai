@@ -26,7 +26,7 @@ async function bootstrappedDb(): Promise<MemoryDbAdapter> {
 
 test('pristine bootstrap seeds no Records', async () => {
     const db = await bootstrappedDb();
-    // Pair plane: no records-family document pairs. Sample
+    // Message plane: no records-family document message pairs. Sample
     // Records are demo content from postMockDataLoad, not
     // bootstrap. Covers records, record-attributes, and
     // flow_records joins (…/organizations/:id/flows/:id/records/).

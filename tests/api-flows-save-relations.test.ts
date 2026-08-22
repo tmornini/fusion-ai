@@ -50,8 +50,8 @@ const ATTR_Z = generateIdentifier();
 const MEMBER_TWO = generateIdentifier();
 
 // Phase Final Task 2: graph relation ROW halves stripped.
-// Save oracles re-home to pair-plane graph (GET) and to
-// document-pair graphDelta member/attribute event ledgers.
+// Save oracles re-home to message-plane graph (GET) and to
+// document-message-pair graphDelta member/attribute event ledgers.
 
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;
@@ -150,7 +150,7 @@ function norm(g: StoredGraph): StoredGraph {
 }
 
 // graphDelta member/attribute events across every document
-// pair at this flow (SIDECAR-KEEP append-only ledger).
+// message pair at this flow (SIDECAR-KEEP append-only ledger).
 async function messagePairGraphDeltaEvents(
     db: MemoryDbAdapter,
     flowId: string,
@@ -307,7 +307,7 @@ async function seedKnownBaseline(
 }
 
 test(
-    'PUT /organizations/:id/flows/:id ROUND-TRIP: pair-plane graph'
+    'PUT /organizations/:id/flows/:id ROUND-TRIP: message-plane graph'
     + ' equals the intended saved graph',
     async () => {
         const { ctx } = await setupMemDb();
@@ -491,7 +491,7 @@ test(
 );
 
 test(
-    'PUT /organizations/:id/flows/:id pair-plane graph equals the'
+    'PUT /organizations/:id/flows/:id message-plane graph equals the'
     + ' intended working graph after save',
     async () => {
         const { ctx } = await setupMemDb();

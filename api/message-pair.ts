@@ -829,9 +829,9 @@ const CREATE_BODY_ID_FIELDS: Record<string, string> = {
     'invitations': 'invitationId',
     // Nested composed POST (Task 9): pattern is not a bare
     // family name, so the registry consult never fires — body
-    // `id` collapses the operation pair onto the type's uri_id
-    // (same supersession collapse the retired flat POST
-    // /records used).
+    // `id` collapses the operation message pair onto the
+    // type's uri_id (same supersession collapse the retired
+    // flat POST /records used).
     [RECORD_TYPES_COLLECTION_PATTERN]: 'id',
 };
 
