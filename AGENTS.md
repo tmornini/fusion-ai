@@ -1,7 +1,8 @@
-# CLAUDE.md
+# AGENTS.md
 
-This file provides guidance to Claude Code (claude.ai/code)
-when working with code in this repository.
+This file guides coding agents working in this repository.
+Claude Code reads it through `CLAUDE.md`, a one-line
+`@AGENTS.md` import stub.
 
 ## Build & Dev Commands
 
@@ -655,7 +656,7 @@ the hunter contract, the Historical
 note (six-phase / mutation-domain /
 `≥ N`), and the known MCP limitations
 live in [TEST-PLAN.md](TEST-PLAN.md)
-§ Protocol — CLAUDE.md does not
+§ Protocol — AGENTS.md does not
 duplicate them.
 
 ### Orchestration
@@ -795,7 +796,7 @@ small focused commits don't already provide.
 
 ## Subagents
 
-Subagents inherit no scripture and read no CLAUDE.md by
+Subagents inherit no scripture and read no AGENTS.md by
 default. Every subagent prompt MUST begin with the literal
 phrase `Go to Medium Church!` — this invokes the
 `church-of-code` skill in the subagent's session and directs
