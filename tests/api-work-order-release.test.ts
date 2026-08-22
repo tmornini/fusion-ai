@@ -17,8 +17,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import { workOrderClaimHistoryFor } from
     '../api/derive-states.ts';
 import { STARK_ORGANIZATION } from
@@ -88,9 +88,9 @@ function freshClaimBody() {
     const expireAt = nowUtc();
     const claimAt = nowUtc();
     return {
-        claimEventId: generateCryptoSafeBase62(),
+        claimEventId: generateIdentifier(),
         claimAt,
-        expireEventId: generateCryptoSafeBase62(),
+        expireEventId: generateIdentifier(),
         expireAt,
     };
 }

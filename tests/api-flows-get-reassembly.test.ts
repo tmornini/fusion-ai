@@ -43,8 +43,8 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;
@@ -200,10 +200,10 @@ test(
 
         // Work-order creation reads the pair-plane graph
         // via GET /organizations/:id/flows/:id.
-        const woId = generateCryptoSafeBase62();
+        const woId = generateIdentifier();
         await postWorkOrderCreation(ctx, {
             workOrderId: woId,
-            flowLinkId: generateCryptoSafeBase62(),
+            flowLinkId: generateIdentifier(),
             flowId,
         });
 

@@ -19,8 +19,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import { workOrderClaimHistoryFor } from
     '../api/derive-states.ts';
 import { STARK_ORGANIZATION } from
@@ -103,9 +103,9 @@ function freshClaimBody() {
     const expireAt = nowUtc();
     const claimAt = nowUtc();
     return {
-        claimEventId: generateCryptoSafeBase62(),
+        claimEventId: generateIdentifier(),
         claimAt,
-        expireEventId: generateCryptoSafeBase62(),
+        expireEventId: generateIdentifier(),
         expireAt,
     };
 }
@@ -180,9 +180,9 @@ test(
         await seedOrganizationMember(db, 'other');
         await PUT(
             db, 'organizations/1/work-orders/wo1/claim', {
-                claimEventId: generateCryptoSafeBase62(),
+                claimEventId: generateIdentifier(),
                 claimAt: '2020-01-01T00:00:00.000000Z',
-                expireEventId: generateCryptoSafeBase62(),
+                expireEventId: generateIdentifier(),
                 expireAt: '2020-01-01T00:00:00.000000Z',
             },
             await devToken('other'),
@@ -247,11 +247,11 @@ test(
     'claim stamps the caller-minted claimed id + at',
     async () => {
         const db = await seededDb();
-        const claimEventId = generateCryptoSafeBase62();
+        const claimEventId = generateIdentifier();
         // far-future at avoids lock-timeout expiry in the
         // test; we want a live claim to assert the exact id.
         const claimAt = '2099-01-01T00:00:01.000000Z';
-        const expireEventId = generateCryptoSafeBase62();
+        const expireEventId = generateIdentifier();
         const expireAt = '2099-01-01T00:00:00.000000Z';
         await PUT(
             db, 'organizations/1/work-orders/wo1/claim', {
@@ -282,16 +282,16 @@ test(
         await seedOrganizationMember(db, 'prior-holder');
         await PUT(
             db, 'organizations/1/work-orders/wo1/claim', {
-                claimEventId: generateCryptoSafeBase62(),
+                claimEventId: generateIdentifier(),
                 claimAt: '2020-01-01T00:00:00.000000Z',
-                expireEventId: generateCryptoSafeBase62(),
+                expireEventId: generateIdentifier(),
                 expireAt: '2020-01-01T00:00:00.000000Z',
             },
             await devToken('prior-holder'),
         );
-        const claimEventId = generateCryptoSafeBase62();
+        const claimEventId = generateIdentifier();
         const claimAt = '2099-01-01T00:00:01.000000Z';
-        const expireEventId = generateCryptoSafeBase62();
+        const expireEventId = generateIdentifier();
         // far-future expireAt; ordering: expireAt < claimAt.
         const expireAt = '2099-01-01T00:00:00.000000Z';
         await PUT(
@@ -439,9 +439,9 @@ async () => {
     );
     await PUT(
         db, 'organizations/1/work-orders/wo2/claim', {
-            claimEventId: generateCryptoSafeBase62(),
+            claimEventId: generateIdentifier(),
             claimAt: '2020-01-01T00:00:00.000000Z',
-            expireEventId: generateCryptoSafeBase62(),
+            expireEventId: generateIdentifier(),
             expireAt: '2020-01-01T00:00:00.000000Z',
             expires_at: '2020-01-01T00:05:00.000000Z',
         },

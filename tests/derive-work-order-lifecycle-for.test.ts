@@ -12,8 +12,8 @@ import {
 import { EntityNotFoundError } from '../api/db.ts';
 import { STARK_ORGANIZATION } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,

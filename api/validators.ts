@@ -4405,7 +4405,7 @@ export interface WorkOrderClaimBody {
 
 // Gate for PUT /work-orders/:id/claim. The caller mints
 // both event ids and timestamps; the route reads them via
-// this validator and never calls generateCryptoSafeBase62
+// this validator and never calls generateIdentifier
 // for the claim events. Authorship is server-derived
 // (actor for 'claimed', prior.member_id for
 // 'claim_expired') — never supplied by the caller.

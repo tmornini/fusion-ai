@@ -139,8 +139,8 @@ import {
 } from '../message-pair.ts';
 import type { MessagePair } from '../message-pair.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../../shared/identifier.ts';
 import {
     HTTP_NO_CONTENT,
     HTTP_OK,
@@ -2022,7 +2022,7 @@ export async function formSeedPair(
     operationId?: string,
 ): Promise<MessagePair> {
     const envelopeId = operationId
-        ?? generateCryptoSafeBase62();
+        ?? generateIdentifier();
     const idParams = inv.idParams;
     const routeSegments = inv.routePattern.split('/');
     let paramIndex = 0;
@@ -2129,7 +2129,7 @@ export async function formDefaultOrganizationSeedPair(
     const pathSegments = [
         'identities', identityId, 'default-organization',
     ];
-    const operationId = generateCryptoSafeBase62();
+    const operationId = generateIdentifier();
     return formWritePair({
         method: 'PUT',
         pathname: '/' + pathSegments.join('/'),
@@ -2198,7 +2198,7 @@ export async function formInstanceChainPairs():
     // Document-plane genesis: the inner PUT a public
     // PATCH create would store. Seed writes this one
     // pair only (1498).
-    const genesisId = generateCryptoSafeBase62();
+    const genesisId = generateIdentifier();
     const genesis = await formWritePair({
         method: 'PUT',
         pathname: instancePathname,
@@ -2215,7 +2215,7 @@ export async function formInstanceChainPairs():
         operationId: genesisId,
     });
 
-    const bindingId = generateCryptoSafeBase62();
+    const bindingId = generateIdentifier();
     const binding = await formWritePair({
         method: 'PUT',
         pathname:
@@ -2244,7 +2244,7 @@ export async function formInstanceChainPairs():
         operationId: bindingId,
     });
 
-    const reviewOpId = generateCryptoSafeBase62();
+    const reviewOpId = generateIdentifier();
     const reviewOp = await formWritePair({
         method: 'POST',
         pathname:
@@ -2290,7 +2290,7 @@ export async function formInstanceChainPairs():
         operationId: reviewOpId,
     });
 
-    const completeOpId = generateCryptoSafeBase62();
+    const completeOpId = generateIdentifier();
     const completeOp = await formWritePair({
         method: 'POST',
         pathname:

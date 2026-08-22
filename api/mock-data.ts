@@ -30,9 +30,8 @@ import {
     SYSTEM_MEMBER_ID,
     nowUtc,
 } from './types.ts';
-import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+import { generateSecret } from
+    '../shared/secret.ts';
 import { hashPassword } from '../shared/password-hash.ts';
 import type { MessagePair } from './message-pair.ts';
 import { appendMessagePair } from './message-pair.ts';
@@ -200,7 +199,7 @@ export async function seedHumanCredentials(
 ): Promise<SeededCredentials> {
     const planned = await Promise.all(
         recipients.map(async recipient => {
-            const password = generateCryptoSafeBase62();
+            const password = generateSecret();
             return {
                 id: 'seed-cred-'
                     + recipient.identityId + '-password',
@@ -213,7 +212,7 @@ export async function seedHumanCredentials(
     const systemCredentialId =
         'seed-cred-system-client-secret';
     const systemSecret = await hashPasswordFn(
-        generateCryptoSafeBase62());
+        generateSecret());
     // Pass 1 (no tx): each credential's message pair, formed from
     // the SAME post-hash secret pass 2 below writes — the row
     // content is unknown until PBKDF2 resolves above, so this

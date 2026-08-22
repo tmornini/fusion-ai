@@ -15,8 +15,8 @@ import { seedAdminSchema } from './test-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 import {
     advisoryKey,
@@ -244,13 +244,13 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
                         'PUT', '/organizations/1/flows/' + id, token,
                         flowDocument('A', id + '-a'),
                         undefined,
-                        generateCryptoSafeBase62(),
+                        generateIdentifier(),
                     )),
                     handleRequest(db, req(
                         'PUT', '/organizations/1/flows/' + id, token,
                         flowDocument('B', id + '-b'),
                         undefined,
-                        generateCryptoSafeBase62(),
+                        generateIdentifier(),
                     )),
                 ]);
                 await delay(300);
@@ -319,13 +319,13 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
                         'PUT', '/organizations/1/flows/' + id, token,
                         flowDocument('Left', id + '-l'),
                         { 'if-match': etag },
-                        generateCryptoSafeBase62(),
+                        generateIdentifier(),
                     )),
                     handleRequest(db, req(
                         'PUT', '/organizations/1/flows/' + id, token,
                         flowDocument('Right', id + '-r'),
                         { 'if-match': etag },
-                        generateCryptoSafeBase62(),
+                        generateIdentifier(),
                     )),
                 ]);
                 await delay(300);
@@ -351,7 +351,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         const body = ideaDocument(
             'Dedup', 'ev-race-dedup',
         );
-        const op = generateCryptoSafeBase62();
+        const op = generateIdentifier();
         const [left, right] = await Promise.all([
             handleRequest(db, req(
                 'PUT', '/organizations/1/ideas/race-dedup', token,

@@ -12,8 +12,8 @@ import {
 } from './test-fixtures.ts';
 import { nowUtc } from '../api/types.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
@@ -97,9 +97,9 @@ test('foreign-org work-order claim is 404', async () => {
         'PUT',
         '/organizations/B/work-orders/wo-foreign-claim/claim',
         tokenB, {
-            claimEventId: generateCryptoSafeBase62(),
+            claimEventId: generateIdentifier(),
             claimAt,
-            expireEventId: generateCryptoSafeBase62(),
+            expireEventId: generateIdentifier(),
             expireAt: claimAt,
         },
     ));
@@ -157,7 +157,7 @@ test('foreign-org work-order transition is 404', async () => {
         '/organizations/B/work-orders/wo-foreign-tx/transition',
         tokenB,
         {
-            transitionEventId: generateCryptoSafeBase62(),
+            transitionEventId: generateIdentifier(),
             targetState: 'n-next',
             release: null,
             transitionAt: nowUtc(),

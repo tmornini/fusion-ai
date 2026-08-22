@@ -156,7 +156,7 @@ test('buildFlowGraphRevivals matches buildRevivals'
         ],
     };
 
-    // Client buildRevivals mints via generateCryptoSafeBase62
+    // Client buildRevivals mints via generateIdentifier
     // internally; server twin takes mint. Compare the
     // structural payload (entityId + at), not eventId bytes.
     const client = buildRevivals(current, target, AT);

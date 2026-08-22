@@ -138,8 +138,8 @@ import {
     type IncomingContext,
 } from './request-context.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 
 export {
     ApiError,
@@ -2135,7 +2135,7 @@ function facadeHeaders(
     }
     if (write) {
         headers[OPERATION_ID_HEADER] =
-            generateCryptoSafeBase62();
+            generateIdentifier();
     }
     return headers;
 }
@@ -2188,7 +2188,7 @@ async function bodyWriteResponse(
     }
     if (headers[OPERATION_ID_HEADER] === undefined) {
         headers[OPERATION_ID_HEADER] =
-            generateCryptoSafeBase62();
+            generateIdentifier();
     }
     return handleRequest(
         adapter,
@@ -2464,7 +2464,7 @@ export async function DELETE(
     }
     if (headers[OPERATION_ID_HEADER] === undefined) {
         headers[OPERATION_ID_HEADER] =
-            generateCryptoSafeBase62();
+            generateIdentifier();
     }
     await unwrapResponse(
         await handleRequest(
@@ -2497,7 +2497,7 @@ export async function POST<T>(
     }
     if (headers[OPERATION_ID_HEADER] === undefined) {
         headers[OPERATION_ID_HEADER] =
-            generateCryptoSafeBase62();
+            generateIdentifier();
     }
     return unwrapResponse<T>(
         await handleRequest(

@@ -19,8 +19,8 @@ import {
     postFlowCreation,
 } from '../web-app/app/adapters/flow-mutations.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import {
     type IdeaEntity,
     type IdeaState,
@@ -142,7 +142,7 @@ async function tombstoneFlow(
             lock_timeout: current.lock_timeout,
             state: 'deleted',
             state_at: nowUtc(),
-            state_event_id: generateCryptoSafeBase62(),
+            state_event_id: generateIdentifier(),
             graph: current.graph,
             graphDelta: {
                 nodes: [], edges: [], deletions: [],

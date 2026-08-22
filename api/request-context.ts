@@ -2,8 +2,8 @@ import type { GuardedDbAdapter } from './db.ts';
 import { nowUtc, type Id } from './types.ts';
 import type { Principal } from './access-token.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 
 // The server half of the request vessel (Office of the
 // Context): one context enters at the gate and rides the
@@ -65,7 +65,7 @@ export function incomingContext(
     return {
         requestId:
             request.headers.get(REQUEST_ID_HEADER)
-                ?? generateCryptoSafeBase62(),
+                ?? generateIdentifier(),
         method: request.method,
         pathname: new URL(request.url).pathname,
         base,

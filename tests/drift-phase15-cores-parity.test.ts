@@ -55,8 +55,8 @@ import {
     isClaimEventExpired,
 } from '../api/work-order-claims.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
@@ -306,9 +306,9 @@ async () => {
         'PUT',
         '/organizations/1/work-orders/' + workOrderId + '/claim',
         token, {
-            claimEventId: generateCryptoSafeBase62(),
+            claimEventId: generateIdentifier(),
             claimAt: nowUtc(),
-            expireEventId: generateCryptoSafeBase62(),
+            expireEventId: generateIdentifier(),
             expireAt: nowUtc(),
         },
     ));

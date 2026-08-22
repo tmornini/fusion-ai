@@ -57,8 +57,8 @@ import {
 import { organizationToken } from './token-fixtures.ts';
 import { seedOrganizationMember } from './root-admin-fixture.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
 import { seededMockDb } from './mock-seed.ts';

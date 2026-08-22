@@ -113,8 +113,8 @@ import type { MessagePair } from './message-pair.ts';
 import type { FieldLine } from '../shared/http-message/types.ts';
 import { replacePiiSlot } from './pii-hard-delete.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import {
     latestClaimEvent,
     isClaimEventExpired,
@@ -1531,11 +1531,11 @@ export async function postFlowUndoOp(
     // graph writer remains after writeFlowGraphDelta's strip.
     const delta = buildFlowGraphDelta(
         currentGraph, targetGraph, id,
-        generateCryptoSafeBase62, b.at,
+        generateIdentifier, b.at,
     );
     const revivals = buildFlowGraphRevivals(
         currentGraph, targetGraph,
-        generateCryptoSafeBase62, b.at,
+        generateIdentifier, b.at,
     );
     const flowFields = {
         name: pickString(target.body, 'name'),
@@ -3599,7 +3599,7 @@ export const WRITE_RESPONSE_SPECS:
     'identities/:id/tokens/:jti/rotation': {
         status: HTTP_OK,
         successBody: () => ({
-            jti: generateCryptoSafeBase62(),
+            jti: generateIdentifier(),
         }),
     },
     'identities/:id/tokens/:jti/revocation': {
@@ -4606,10 +4606,10 @@ export const routes: Route[] = [
                 );
             }
             const newJti = pair === undefined
-                ? generateCryptoSafeBase62()
+                ? generateIdentifier()
                 : (pairResponseBody(pair)?.['jti'] as
                     string | undefined)
-                    ?? generateCryptoSafeBase62();
+                    ?? generateIdentifier();
             const outcome = await rotateRefreshJti(
                 db, presented, newJti, pair,
             );

@@ -4,8 +4,8 @@ import type {
 } from './types.ts';
 import { nowUtc } from './types.ts';
 import {
-    generateCryptoSafeBase62,
-} from '../shared/crypto-safe-base62.ts';
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import { messageAddress } from './message-address.ts';
 import { messageStore } from './message-store.ts';
 import {
@@ -208,7 +208,7 @@ export async function formWritePair(
             'operationId must be a 22-character id',
         );
     }
-    const id = generateCryptoSafeBase62();
+    const id = generateIdentifier();
     const address = messageAddress(
         input.routeSegments, input.pathSegments,
     );
@@ -291,7 +291,7 @@ export async function formAuthPair(
         responseBody,
         operationId: operationId
             ?? hoisted
-            ?? generateCryptoSafeBase62(),
+            ?? generateIdentifier(),
     });
 }
 

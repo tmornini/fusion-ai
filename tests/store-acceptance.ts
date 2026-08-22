@@ -7,8 +7,8 @@ import { seedAdminSchema } from './test-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 
 // Parameterized store acceptance. ./test-postgres will
@@ -215,7 +215,7 @@ export function defineStoreAcceptance(
         );
         const second = await handleRequest(db, req(
             'PUT', '/organizations/1/ideas/sa-same', token, body,
-            undefined, generateCryptoSafeBase62(),
+            undefined, generateIdentifier(),
         ));
         assert.equal(second.status, 200);
         assert.equal(second.headers.get('ETag'), firstEtag);

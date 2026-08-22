@@ -11,8 +11,8 @@ import { seedAdminSchema } from './test-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Bulk GET objectives/versions is deleted. Callers fan-in
 // per-item GET objectives/:id/versions/ (collection-item
@@ -69,7 +69,7 @@ async function putObjective(
             objectiveBody(
                 state, stateAt, id + '-' + eventSuffix,
             ),
-            generateCryptoSafeBase62(),
+            generateIdentifier(),
         ),
     );
     assert.equal(res.status, 201);

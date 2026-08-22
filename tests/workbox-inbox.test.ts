@@ -20,7 +20,7 @@ import {
 '../web-app/app/adapters/flow-mutations.ts';
 import {
     getMemberMap,
-    generateCryptoSafeBase62,
+    generateIdentifier,
     getTransitionEventsByWorkOrder,
     getWorkOrder,
     getWorkOrderActiveClaim,
@@ -184,10 +184,10 @@ async function setupOneWorkOrder(): Promise<{
     await seedHumanMember(db, 'current', 'Demo Test');
     const ctx = createRequestContext(db, await organizationToken());
     await seedFlow(db, 'f1', buildLinearGraph());
-    const woId = generateCryptoSafeBase62();
+    const woId = generateIdentifier();
     await postWorkOrderCreation(ctx, {
         workOrderId: woId,
-        flowLinkId: generateCryptoSafeBase62(),
+        flowLinkId: generateIdentifier(),
         flowId: 'f1',
     });
     const tables = () => collectTables(db);
@@ -342,9 +342,9 @@ test(
         for (let i = 0; i < 3; i++) {
             await postWorkOrderCreation(ctx, {
                 workOrderId:
-                    generateCryptoSafeBase62(),
+                    generateIdentifier(),
                 flowLinkId:
-                    generateCryptoSafeBase62(),
+                    generateIdentifier(),
                 flowId: 'f1',
             });
         }
@@ -438,9 +438,9 @@ test(
         });
         await postWorkOrderCreation(ctx, {
             workOrderId:
-                generateCryptoSafeBase62(),
+                generateIdentifier(),
             flowLinkId:
-                generateCryptoSafeBase62(),
+                generateIdentifier(),
             flowId: 'f1',
         });
         const {

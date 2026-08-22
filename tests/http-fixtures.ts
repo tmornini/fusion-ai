@@ -1,5 +1,5 @@
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import { HttpMessage } from
     '../shared/http-message/http-message.ts';
 import { messageStore } from '../api/message-store.ts';
@@ -56,7 +56,7 @@ export function apiRequest(input: {
     if (write && headers['operation-id'] === undefined) {
         headers['operation-id'] =
             input.operationId
-            ?? generateCryptoSafeBase62();
+            ?? generateIdentifier();
     }
     return new Request(BASE + input.path, {
         method: input.method,

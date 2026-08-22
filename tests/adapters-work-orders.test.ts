@@ -50,9 +50,9 @@ import {
 } from
 '../web-app/app/adapters/flow-mutations.ts';
 import {
-    generateCryptoSafeBase62,
+    generateIdentifier,
 } from
-'../shared/crypto-safe-base62.ts';
+'../shared/identifier.ts';
 import {
     deleteWorkOrderClaim,
 } from
@@ -81,8 +81,8 @@ interface CreateIds {
 
 function mintCreateIds(): CreateIds {
     return {
-        workOrderId: generateCryptoSafeBase62(),
-        flowLinkId: generateCryptoSafeBase62(),
+        workOrderId: generateIdentifier(),
+        flowLinkId: generateIdentifier(),
     };
 }
 
@@ -238,9 +238,9 @@ async function seedClaim(
     claimAt: string,
 ): Promise<void> {
     await ctx.PUT(`organizations/1/work-orders/${workOrderId}/claim`, {
-        claimEventId: generateCryptoSafeBase62(),
+        claimEventId: generateIdentifier(),
         claimAt,
-        expireEventId: generateCryptoSafeBase62(),
+        expireEventId: generateIdentifier(),
         expireAt: claimAt,
     });
 }
@@ -926,7 +926,7 @@ test(
             db, 'current', 'Demo Test',
         );
         const ctx = createRequestContext(db, await organizationToken());
-        const woId = generateCryptoSafeBase62();
+        const woId = generateIdentifier();
         await seedBareWorkOrder(ctx, woId);
         // Backdate ten seconds; lockTimeout=1s
         // means this is past the live window.
@@ -952,7 +952,7 @@ test(
             db, 'current', 'Demo Test',
         );
         const ctx = createRequestContext(db, await organizationToken());
-        const woId = generateCryptoSafeBase62();
+        const woId = generateIdentifier();
         await seedBareWorkOrder(ctx, woId);
         await seedClaim(ctx, woId, nowUtc());
         const claim = await getWorkOrderActiveClaim(
@@ -976,11 +976,11 @@ test(
             db, 'current', 'Demo Test',
         );
         const ctx = createRequestContext(db, await organizationToken());
-        const fresh1 = generateCryptoSafeBase62();
-        const fresh2 = generateCryptoSafeBase62();
-        const stale = generateCryptoSafeBase62();
-        const released = generateCryptoSafeBase62();
-        const orphan = generateCryptoSafeBase62();
+        const fresh1 = generateIdentifier();
+        const fresh2 = generateIdentifier();
+        const stale = generateIdentifier();
+        const released = generateIdentifier();
+        const orphan = generateIdentifier();
         const now = nowUtc();
         const longAgo = new Date(
             Date.now() - 10_000,

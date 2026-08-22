@@ -5,8 +5,8 @@ import {
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import { MESSAGE_TABLES } from '../api/db.ts';
-import { generateCryptoSafeBase62 } from
-    '../shared/crypto-safe-base62.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import {
     appendMessagePair,
     formWritePair,
@@ -48,7 +48,7 @@ async function writePair(
         responseBody: deleted
             ? undefined
             : input.responseBody,
-        operationId: generateCryptoSafeBase62(),
+        operationId: generateIdentifier(),
     });
     await db.transaction(
         MESSAGE_TABLES,
