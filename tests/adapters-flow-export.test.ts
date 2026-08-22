@@ -24,8 +24,24 @@ import {
 import {
     postFlowFromBackup,
     postFlowFromMermaid,
+    getFlowZip,
     type Backup,
 } from '../web-app/app/adapters/flow-export.ts';
+import {
+    postFlowCreation,
+    putFlow,
+} from '../web-app/app/adapters/flow-mutations.ts';
+import {
+    mermaidIdOf,
+} from '../web-app/app/mermaid-generate.ts';
+import {
+    DEFAULT_ZIP_LIMITS,
+    getZipEntries,
+} from '../web-app/app/zip.ts';
+import {
+    encodeIdentifier,
+    generateIdentifier,
+} from '../shared/identifier.ts';
 import {
     DEFAULT_LOCK_TIMEOUT,
 } from '../api/types.ts';
@@ -222,5 +238,110 @@ test(
             graph.edges.length >= 1,
             'at least one edge after auto-wire',
         );
+    },
+);
+
+test(
+    'zip sidecar mermaid ids stay injective',
+    async () => {
+        const { ctx } = await setup();
+        const dashBytes = new Uint8Array(16);
+        dashBytes[0] = 62 << 2;
+        const underBytes = new Uint8Array(16);
+        underBytes[0] = 63 << 2;
+        const dashId = encodeIdentifier(
+            dashBytes,
+        );
+        const underId = encodeIdentifier(
+            underBytes,
+        );
+        const flowId = generateIdentifier();
+        await postFlowCreation(ctx, {
+            flowId,
+            linkId: generateIdentifier(),
+            projectId: 'project-1',
+            name: 'Injective',
+        });
+        await putFlow(ctx, flowId, {
+            name: 'Injective',
+            isLocked: false,
+            isAutoLayout: false,
+            isAutoFit: false,
+            lockTimeout: DEFAULT_LOCK_TIMEOUT,
+            nodes: [
+                {
+                    id: dashId,
+                    name: 'Dash',
+                    positionX: 0,
+                    positionY: 0,
+                    isCreate: true,
+                    isArchive: false,
+                    memberIds: [],
+                    attributes: [],
+                    taskInstructions: '',
+                },
+                {
+                    id: underId,
+                    name: 'Under',
+                    positionX: 200,
+                    positionY: 0,
+                    isCreate: false,
+                    isArchive: true,
+                    memberIds: [],
+                    attributes: [],
+                    taskInstructions: '',
+                },
+            ],
+            edges: [
+                {
+                    id: generateIdentifier(),
+                    name: '',
+                    fromNodeId: dashId,
+                    toNodeId: underId,
+                },
+            ],
+        });
+        const zip = await getFlowZip(
+            ctx, flowId,
+        );
+        const entries = await getZipEntries(
+            zip.data, DEFAULT_ZIP_LIMITS,
+        );
+        const sidecar = entries.find(
+            e => e.name === 'sidecar.json',
+        );
+        assert.ok(sidecar, 'sidecar.json');
+        const parsed = JSON.parse(
+            new TextDecoder().decode(
+                sidecar.data,
+            ),
+        ) as {
+            nodes: { mermaidId: string }[];
+            edges: {
+                mermaidFrom: string;
+                mermaidTo: string;
+            }[];
+        };
+        const dashHex = mermaidIdOf(dashId);
+        const underHex = mermaidIdOf(underId);
+        assert.notEqual(dashHex, underHex);
+        const ids = parsed.nodes.map(
+            n => n.mermaidId,
+        );
+        assert.equal(
+            new Set(ids).size, ids.length,
+        );
+        assert.ok(ids.includes(dashHex));
+        assert.ok(ids.includes(underHex));
+        assert.ok(!ids.includes(dashId));
+        assert.ok(!ids.includes(underId));
+        assert.ok(
+            !ids.includes(
+                dashId.replaceAll('-', '_'),
+            ),
+        );
+        const edge = parsed.edges[0];
+        assert.equal(edge?.mermaidFrom, dashHex);
+        assert.equal(edge?.mermaidTo, underHex);
     },
 );

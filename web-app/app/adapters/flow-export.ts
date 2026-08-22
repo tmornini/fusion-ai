@@ -42,6 +42,7 @@ import {
 } from './shared.ts';
 import {
     generateMermaid,
+    mermaidIdOf,
 } from '../mermaid-generate.ts';
 import { parseMermaid } from '../mermaid-parse.ts';
 import type {
@@ -86,16 +87,12 @@ interface SidecarEdge {
     name: string;
 }
 
-function sanitizeId(id: string): string {
-    return id.replaceAll('-', '_');
-}
-
 function buildSidecar(
     graph: FlowGraph,
 ): string {
     const nodes: SidecarNode[] =
         graph.nodes.map(n => ({
-            mermaidId: sanitizeId(n.id),
+            mermaidId: mermaidIdOf(n.id),
             name: n.name,
             positionX: n.positionX,
             positionY: n.positionY,
@@ -105,9 +102,9 @@ function buildSidecar(
     const edges: SidecarEdge[] =
         graph.edges.map(e => ({
             mermaidFrom:
-                sanitizeId(e.fromNodeId),
+                mermaidIdOf(e.fromNodeId),
             mermaidTo:
-                sanitizeId(e.toNodeId),
+                mermaidIdOf(e.toNodeId),
             name: e.name,
         }));
     return JSON.stringify({
