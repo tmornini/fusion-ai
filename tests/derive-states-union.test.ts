@@ -906,7 +906,7 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
         },
     ));
     assert.equal(
-        secondAccept.status, 409, 're-accept is not pending',
+        secondAccept.status, 204, 're-accept is a no-op',
     );
 
     const rows = await deriveInvitationStates(db);
@@ -976,8 +976,8 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
         },
     ));
     assert.equal(
-        secondDecline.status, 409,
-        're-decline is not pending',
+        secondDecline.status, 204,
+        're-decline is a no-op',
     );
 
     const rows = await deriveInvitationStates(db);

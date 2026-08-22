@@ -960,7 +960,7 @@ async () => {
         EV_ROSTER_JESSICA_REACCEPT,
         '2026-06-01T00:00:08.000000Z',
     );
-    assert.equal(jessicaReaccept.status, 409);
+    assert.equal(jessicaReaccept.status, 204);
     assert.equal(
         0 /* states table retired */,
         statesBefore,
