@@ -455,7 +455,8 @@ async function seedChain(
             + '/ideas/i' + s + '/submissions/is' + s,
         await organizationToken(identity, organization),
         {
-            idea_id: 'i' + s, member_id: 'system', at: T8_AT,
+            idea_id: 'i' + s, member_id: SYSTEM_MEMBER_ID,
+            at: T8_AT,
         },
     ));
     // NAMED re-pin (Task 7 + Phase Final Task 2): the flipped
@@ -471,7 +472,8 @@ async function seedChain(
         await organizationToken(identity, organization),
         {
             objective_id: 'o' + s, name: 'n',
-            description: 'd', member_id: 'system', at: T8_AT,
+            description: 'd', member_id: SYSTEM_MEMBER_ID,
+            at: T8_AT,
         },
     ));
     await handleRequest(db, req(
@@ -482,7 +484,7 @@ async function seedChain(
         await organizationToken(identity, organization),
         {
             project_id: 'p' + s, objective_id: 'o' + s,
-            score: 1, member_id: 'system', at: T8_AT,
+            score: 1, member_id: SYSTEM_MEMBER_ID, at: T8_AT,
         },
     ));
     await handleRequest(db, req(
@@ -493,7 +495,7 @@ async function seedChain(
         await organizationToken(identity, organization),
         {
             project_id: 'p' + s, objective_id: 'o' + s,
-            score: 2, member_id: 'system', at: T8_AT,
+            score: 2, member_id: SYSTEM_MEMBER_ID, at: T8_AT,
         },
     ));
     // Transition op with a fieldValues fold — the sole SFV
@@ -667,7 +669,8 @@ async function deepDb(): Promise<MemoryDbAdapter> {
     await handleRequest(db, req(
         'PUT', '/organizations/A/ideas/iA/submissions/isA',
         await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A'),
-        { idea_id: 'iA', member_id: 'system', at: T8_AT },
+        { idea_id: 'iA', member_id: SYSTEM_MEMBER_ID,
+            at: T8_AT },
     ));
     return db;
 }

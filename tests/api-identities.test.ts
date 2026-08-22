@@ -9,12 +9,18 @@ import {
     type MemoryDbAdapter,
 } from '../api/db-memory.ts';
 import { PUT, GET, DELETE, handleRequest } from '../api/api.ts';
+import { SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { NIL_IDENTIFIER } from '../shared/identifier.ts';
 import { DEV_TOKEN, devToken } from './token-fixtures.ts';
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import { seedPersonIdentity } from './identity-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+
+test('SYSTEM_MEMBER_ID is NIL_IDENTIFIER', () => {
+    assert.equal(SYSTEM_MEMBER_ID, NIL_IDENTIFIER);
+});
 
 test('validateIdentityEntity accepts person/service', () => {
     assert.deepEqual(
@@ -84,7 +90,7 @@ async () => {
         await import('../api/mock-data.ts');
     await postBootstrap(db);
     const sys = await GET<{ kind: string }>(
-        db, 'identities/system', DEV_TOKEN);
+        db, 'identities/' + SYSTEM_MEMBER_ID, DEV_TOKEN);
     assert.equal(sys.kind, 'service');
     const cur = await GET<{ kind: string }>(
         db, 'identities/XXZruirZyAOoRpNxaDnpSA', DEV_TOKEN);

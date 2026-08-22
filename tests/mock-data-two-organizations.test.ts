@@ -525,7 +525,7 @@ async () => {
     const ids = await liveIdentityIds(db);
     let passwordCount = 0;
     for (const id of ids) {
-        if (id === 'system') continue;
+        if (id === SYSTEM_MEMBER_ID) continue;
         const rows = await deriveCredentialsFor(
             db, id,
         );

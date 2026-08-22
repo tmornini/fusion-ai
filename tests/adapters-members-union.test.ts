@@ -73,13 +73,13 @@ test(
         const roster = await getMembers(ctx);
         assert.ok(
             !roster.some(
-                w => w.idForLink() === 'system',
+                w => w.idForLink() === SYSTEM_MEMBER_ID,
             ),
             'roster excludes the system member',
         );
         const map = await getMemberMap(ctx);
         assert.equal(
-            memberName(map, 'system'),
+            memberName(map, SYSTEM_MEMBER_ID),
             SYSTEM_MEMBER_NAME,
         );
     },
