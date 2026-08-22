@@ -82,10 +82,10 @@ function humanCreateBody(id: string, eventId: string) {
 async function allMessages(
     db: MemoryDbAdapter,
 ): Promise<string[]> {
-    const pairs = await db.messagePairs.getAll();
+    const messagePairs = await db.messagePairs.getAll();
     return [
-        ...pairs.map(r => r.request),
-        ...pairs.map(r => r.response),
+        ...messagePairs.map(r => r.request),
+        ...messagePairs.map(r => r.response),
     ];
 }
 
@@ -108,8 +108,8 @@ test('PUT-PUT at one address leaves exactly ONE pair (the'
     // ABSENCE — stated explicitly, not merely the old assertion
     // deleted.
     assert.equal(second.headers.get('Supersedes'), null);
-    const pairs = await db.messagePairs.getAll();
-    const atAddress = pairs.filter(
+    const messagePairs = await db.messagePairs.getAll();
+    const atAddress = messagePairs.filter(
         r => r.uri_collection === '/identities/tyqfBGunVEufdtzApefuyw/pii/',
     );
     assert.equal(atAddress.length, 1);
@@ -142,8 +142,8 @@ async () => {
     // Case 7 (the DELETE half): the tombstone carries no
     // Supersedes either — chainless applies to BOTH verbs.
     assert.equal(del.headers.get('Supersedes'), null);
-    const pairs = await db.messagePairs.getAll();
-    const atAddress = pairs.filter(
+    const messagePairs = await db.messagePairs.getAll();
+    const atAddress = messagePairs.filter(
         r => r.uri_collection === '/identities/uEYoNLWQrgIToJPFkyvdPw/pii/',
     );
     assert.equal(atAddress.length, 1);
@@ -170,8 +170,8 @@ async () => {
     ));
     assert.equal(put.status, 201);
     assert.equal(put.headers.get('Supersedes'), null);
-    const pairs = await db.messagePairs.getAll();
-    const atAddress = pairs.filter(
+    const messagePairs = await db.messagePairs.getAll();
+    const atAddress = messagePairs.filter(
         r => r.uri_collection === '/identities/uFgKFelNjvJcrtefsfZxrA/pii/',
     );
     assert.equal(atAddress.length, 1);
@@ -234,8 +234,8 @@ test('a byte-identical resend AFTER supersession finds no'
     assert.equal(resend.status, 201);
     assert.equal(resend.headers.get('Supersedes'), null);
     assert.notEqual(resend.headers.get('Response-ID'), firstId);
-    const pairs = await db.messagePairs.getAll();
-    const atAddress = pairs.filter(
+    const messagePairs = await db.messagePairs.getAll();
+    const atAddress = messagePairs.filter(
         r => r.uri_collection === '/identities/uLUQPJnlVuzeGqXLYqCItA/pii/',
     );
     assert.equal(atAddress.length, 1);
@@ -349,8 +349,8 @@ test("the zone's confinement: a non-/pii DELETE (a memberships"
     // Unlike /pii, a seat DELETE still APPENDS — the
     // hard-delete zone is confined to identities/:id/pii alone.
     assert.equal(del.headers.get('Supersedes'), null);
-    const pairs = await db.messagePairs.getAll();
-    const atAddress = pairs.filter(
+    const messagePairs = await db.messagePairs.getAll();
+    const atAddress = messagePairs.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'members/'
             && r.uri_id === 'XSNEaxodzAorrAiVBegDGw',
@@ -376,7 +376,7 @@ test('stored PUT body equals piiEntityOf', async () => {
     );
     const expected = piiEntityOf(id, {
         uriId: '',
-        pairId: id,
+        messagePairId: id,
         method: 'PUT',
         body: fields,
     });

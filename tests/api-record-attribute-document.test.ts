@@ -14,7 +14,7 @@ import {
 } from '../api/validators.ts';
 import { postRecordAttributeDocumentOp } from '../api/routes.ts';
 import {
-    formWritePair,
+    formWriteMessagePair,
     appendMessagePair,
 } from '../api/message-pair.ts';
 import {
@@ -130,7 +130,7 @@ test('postRecordAttributeDocumentOp writes exactly the'
         ...documentFields(),
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'PUT',
         pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + RECORD_ID + '/attributes/' + ATTRIBUTE_ID,
@@ -152,7 +152,7 @@ test('postRecordAttributeDocumentOp writes exactly the'
     // — pair plane + op return are the oracles.
     const written = await postRecordAttributeDocumentOp(
         db, ATTRIBUTE_ID, body, 'XXZruirZyAOoRpNxaDnpSA',
-        pair,
+        messagePair,
     );
     assert.deepEqual(written, {
         id: ATTRIBUTE_ID,
@@ -218,7 +218,7 @@ async () => {
 // returns undefined until RECORD_ATTRIBUTES_WIRING registers,
 // so this case stays red until that commit lands). ------------
 
-async function putDocumentPair(
+async function putDocumentMessagePair(
     db: MemoryDbAdapter,
     id: string,
     body: Record<string, unknown>,
@@ -226,7 +226,7 @@ async function putDocumentPair(
     // Nested storage under type (Task 8); type id from
     // body.record_id.
     const typeId = body['record_id'] as string;
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'PUT',
         pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + typeId + '/attributes/' + id,
@@ -252,16 +252,16 @@ async function putDocumentPair(
     });
     await db.transaction(
         MESSAGE_TABLES,
-        (view) => appendMessagePair(view, pair),
+        (view) => appendMessagePair(view, messagePair),
     );
 }
 
-async function deleteDocumentPair(
+async function deleteDocumentMessagePair(
     db: MemoryDbAdapter,
     id: string,
     typeId: string,
 ): Promise<void> {
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'DELETE',
         pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + typeId + '/attributes/' + id,
@@ -287,7 +287,7 @@ async function deleteDocumentPair(
     });
     await db.transaction(
         MESSAGE_TABLES,
-        (view) => appendMessagePair(view, pair),
+        (view) => appendMessagePair(view, messagePair),
     );
 }
 
@@ -297,8 +297,8 @@ test('a DELETE-head derives absent on the nested attributes'
     await db.postSchemaCreation();
     const typeId = documentFields().record_id;
     const deletedId = generateIdentifier();
-    await putDocumentPair(db, deletedId, documentFields());
-    await deleteDocumentPair(db, deletedId, typeId);
+    await putDocumentMessagePair(db, deletedId, documentFields());
+    await deleteDocumentMessagePair(db, deletedId, typeId);
     const prefix = '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
         + typeId + '/attributes/';
     const [requests, responses] = await Promise.all([

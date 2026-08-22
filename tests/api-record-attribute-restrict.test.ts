@@ -29,7 +29,7 @@ import {
     postWorkOrderTransitionOp,
 } from '../api/routes.ts';
 import {
-    formWritePair,
+    formWriteMessagePair,
 } from '../api/message-pair.ts';
 import { STARK_ORGANIZATION } from
     '../api/mock-data/seed-constants.ts';
@@ -348,7 +348,7 @@ async function seedFieldValueReferrer(
         'work-orders', WORK_ORDER_ID, 'transition',
     ];
     const pattern = 'organizations/:id/work-orders/:id/transition';
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'POST',
         pathname: '/' + pathSegments.join('/'),
         routePattern: pattern,
@@ -365,7 +365,7 @@ async function seedFieldValueReferrer(
     });
     await postWorkOrderTransitionOp(
         db, WORK_ORDER_ID, body, SYSTEM_MEMBER_ID,
-        undefined, [], pair,
+        undefined, [], messagePair,
     );
 }
 

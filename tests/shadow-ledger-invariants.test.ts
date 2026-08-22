@@ -36,7 +36,7 @@ const INV_FLOW_1_EV = generateIdentifier();
 const INV_WO_CREATE_1 = generateIdentifier();
 const INV_WO_CREATE_1_FWO = generateIdentifier();
 
-function pairJsonOf(message: string): {
+function messagePairJsonOf(message: string): {
     readonly body: Record<string, unknown>;
 } {
     const body = HttpMessage.fromWire(message).body();
@@ -220,10 +220,11 @@ function createRecordBody(
     };
 }
 
-// A mock-data seed (EXPECTED_PAIR_COUNT pre-formed pairs, see
-// mock-data-pairs.test.ts) plus one live-write batch layered on
-// top via handleRequest: one document PUT (Supersedes minted,
-// ideas), one idea state-change trio PUT (states/:id retired),
+// A mock-data seed (EXPECTED_MESSAGE_PAIR_COUNT pre-formed
+// pairs, see mock-data-pairs.test.ts) plus one live-write
+// batch layered on top via handleRequest: one document PUT
+// (Supersedes minted, ideas), one idea state-change trio PUT
+// (states/:id retired),
 // one FAILED write (work-order claim conflict 409), one create
 // POST (records — Phase 6 Task 4's own bundle: operation +
 // document + one attribute pair, not a single pair), one entity
@@ -470,7 +471,7 @@ test('a seeded idea\'s create-pair request reproduces its'
                     + '/ideas/',
     );
     assert.ok(createRow, 'no create pair for the seeded idea');
-    const parsed = pairJsonOf(createRow!.request) as {
+    const parsed = messagePairJsonOf(createRow!.request) as {
         body: {
             state: string;
         };

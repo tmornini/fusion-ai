@@ -613,7 +613,7 @@ async () => {
         getEtag !== null
         && HEX64.test(getEtag.slice(1, -1)),
     );
-    assert.notEqual(getEtag, strongEtagOf(head.pairId));
+    assert.notEqual(getEtag, strongEtagOf(head.messagePairId));
     assert.notEqual(
         get.headers.get('ETag'),
         etag,

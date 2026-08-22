@@ -15,7 +15,7 @@ import type {
 import { nowUtc } from
     '../api/types.ts';
 import { canonicalUriCollection } from '../api/message-pair.ts';
-import { documentPairsAt } from '../api/derive-documents.ts';
+import { documentMessagePairsAt } from '../api/derive-documents.ts';
 import {
     documentGetHandler,
     documentCollectionGetHandler,

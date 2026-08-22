@@ -22,7 +22,7 @@ import {
     storedPutBodyText,
 } from './http-fixtures.ts';
 import {
-    seatDocumentPair,
+    seatDocumentMessagePair,
 } from './root-admin-fixture.ts';
 
 // Seat document body is type + at. Privilege type (admin|
@@ -109,12 +109,13 @@ async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     const body = { type: 'member', at: documentFields().at };
-    const pair = await seatDocumentPair(
+    const messagePair = await seatDocumentMessagePair(
         'AjdvjuECVZEgZoFajaIEkg', 'toccYYkLEABmlbpHJalgtQ', body,
         '2026-01-01T00:00:00.000000Z',
     );
     const written = await postMembershipDocumentOp(
-        db, 'toccYYkLEABmlbpHJalgtQ', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
+        db, 'toccYYkLEABmlbpHJalgtQ', body,
+        'XXZruirZyAOoRpNxaDnpSA', messagePair,
     );
     assert.deepEqual(written, body);
     assert.equal((await db.messagePairs.getAll()).length, 1);

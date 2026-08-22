@@ -205,7 +205,7 @@ async () => {
     );
     const expected = organizationEntityOf({
         uriId: id,
-        pairId: id,
+        messagePairId: id,
         method: 'PUT',
         body: fields,
     });

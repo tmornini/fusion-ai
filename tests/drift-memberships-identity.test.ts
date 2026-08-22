@@ -345,7 +345,7 @@ async () => {
 // -- leg 9: the ECHOED-id regression (Fable review, Critical) -----
 //
 // The fetch-edit-PUT client pattern echoes a GET response's own
-// `id` field back into a later PUT body. formWritePair stores the
+// `id` field back into a later PUT body. formWriteMessagePair stores the
 // RAW wire body verbatim in the ledger (api/api.ts) — it is
 // documentWriteResponseSpec's OWN validateDocument call that
 // tolerates (strips) a stray id, and ONLY for the write's

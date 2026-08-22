@@ -12,14 +12,14 @@ import {
 import { handleRequest, RequestError } from '../api/api.ts';
 import { postFlowUndoOp } from '../api/routes.ts';
 import {
-    documentPairsAt,
+    documentMessagePairsAt,
 } from '../api/derive-documents.ts';
 import {
     resolveFlowUndoTarget,
 } from '../api/derive-flows.ts';
 import type { GuardedDbAdapter } from '../api/db.ts';
 import {
-    formWritePair, canonicalUriCollection,
+    formWriteMessagePair, canonicalUriCollection,
     documentHeadAt,
 } from '../api/message-pair.ts';
 import {
@@ -622,7 +622,7 @@ test(
         // Drive the write with the STALE resolution. The
         // in-tx head re-read sees B as the live lock head
         // and 412s — it must never silently discard B.
-        const pair = await formWritePair({
+        const messagePair = await formWriteMessagePair({
             method: 'POST',
             pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
                 + flowId + '/undo',
@@ -640,7 +640,7 @@ test(
         });
         await assert.rejects(
             () => postFlowUndoOp(
-                db, flowId, actor, organization, pair,
+                db, flowId, actor, organization, messagePair,
                 staleResolution!,
                 { eventId: FLOWID_STALE_EV, at: AT },
             ),
@@ -740,11 +740,13 @@ test(
         const stored = await db.messagePairs.getAllWhere(
             'uri_collection', prefix,
         );
-        const pairs = documentPairsAt(stored, prefix)
+        const messagePairs = documentMessagePairsAt(
+            stored, prefix,
+        )
             .filter((p) => p.uriId === flowId);
         const states: { state: string; at: string }[] = [];
-        for (const pair of pairs) {
-            const delta = pair.body['graphDelta'];
+        for (const messagePair of messagePairs) {
+            const delta = messagePair.body['graphDelta'];
             const deletions =
                 typeof delta === 'object' && delta !== null
                     ? (delta as Record<string, unknown>)[
@@ -765,7 +767,7 @@ test(
                     });
                 }
             }
-            const revivals = pair.body['revivals'];
+            const revivals = messagePair.body['revivals'];
             if (Array.isArray(revivals)) {
                 for (const entry of revivals) {
                     if (

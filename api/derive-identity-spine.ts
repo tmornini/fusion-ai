@@ -118,13 +118,15 @@ export async function deriveIdentityPiiRows(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.messagePairs.getAll();
+            const messagePairs = await view.messagePairs.getAll();
             const prefixes = new Set<string>();
-            for (const pair of pairs) {
+            for (const messagePair of messagePairs) {
                 if (
-                    PII_ADDRESS_PATTERN.test(pair.uri_collection)
+                    PII_ADDRESS_PATTERN.test(
+                        messagePair.uri_collection,
+                    )
                 ) {
-                    prefixes.add(pair.uri_collection);
+                    prefixes.add(messagePair.uri_collection);
                 }
             }
             const rows: IdentityPiiEntity[] = [];
@@ -132,7 +134,7 @@ export async function deriveIdentityPiiRows(
                 const match = PII_ADDRESS_PATTERN.exec(prefix)!;
                 const identityId = match[1]!;
                 const document = deriveDocumentsAt(
-                    pairs, prefix,
+                    messagePairs, prefix,
                 ).get('');
                 if (document === undefined) continue;
                 rows.push(piiEntityOf(identityId, document));
@@ -156,11 +158,12 @@ export async function deriveIdentityPii(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.messagePairs.getAllWhere(
-                'uri_collection', prefix,
-            );
+            const messagePairs =
+                await view.messagePairs.getAllWhere(
+                    'uri_collection', prefix,
+                );
             const document = deriveDocumentsAt(
-                pairs, prefix,
+                messagePairs, prefix,
             ).get('');
             if (document === undefined) {
                 throw new EntityNotFoundError(
@@ -206,10 +209,10 @@ async function fetchCredentialDocuments(
     identityId: Id,
 ): Promise<Map<string, DerivedDocument>> {
     const prefix = credentialsPrefixFor(identityId);
-    const pairs = await db.messagePairs.getAllWhere(
+    const messagePairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
-    return deriveDocumentsAt(pairs, prefix);
+    return deriveDocumentsAt(messagePairs, prefix);
 }
 
 // id-lex ordered. Pairs at the exact credentials prefix;
@@ -287,10 +290,10 @@ async function fetchProviderDocumentsAt(
     db: DbAdapter,
     prefix: string,
 ): Promise<Map<string, DerivedDocument>> {
-    const pairs = await db.messagePairs.getAllWhere(
+    const messagePairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
-    return deriveDocumentsAt(pairs, prefix);
+    return deriveDocumentsAt(messagePairs, prefix);
 }
 
 // Nested docs plus old-flat docs whose identity_id matches.
@@ -394,10 +397,10 @@ async function fetchRevocationDocumentsFor(
     identityId: Id,
 ): Promise<Map<string, DerivedDocument>> {
     const prefix = tokenRevocationsPrefixFor(identityId);
-    const pairs = await db.messagePairs.getAllWhere(
+    const messagePairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
-    return deriveDocumentsAt(pairs, prefix);
+    return deriveDocumentsAt(messagePairs, prefix);
 }
 
 export async function deriveTokenRevocationsFor(
@@ -472,11 +475,11 @@ export async function deriveClientRegistration(
     identityId: Id,
 ): Promise<ClientRegistrationEntity> {
     const prefix = registrationPrefixFor(identityId);
-    const pairs = await db.messagePairs.getAllWhere(
+    const messagePairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const document = deriveDocumentsAt(
-        pairs, prefix,
+        messagePairs, prefix,
     ).get('');
     if (document === undefined) {
         throw new EntityNotFoundError(
@@ -498,11 +501,11 @@ export async function deriveIdentityKind(
     const prefix = canonicalUriCollection(
         undefined, '/identities/',
     );
-    const pairs = await db.messagePairs.getAllWhere(
+    const messagePairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const document = deriveDocumentsAt(
-        pairs, prefix,
+        messagePairs, prefix,
     ).get(identityId);
     return document === undefined
         ? undefined

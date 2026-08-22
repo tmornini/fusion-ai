@@ -29,7 +29,7 @@ import {
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import {
-    formWritePair,
+    formWriteMessagePair,
     appendMessagePair,
     type MessagePair,
 } from '../api/message-pair.ts';
@@ -605,7 +605,7 @@ async function seedChain(
         'work-orders', woId, 'transition',
     ];
     const pattern = 'organizations/:id/work-orders/:id/transition';
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'POST',
         pathname: '/' + pathSegments.join('/'),
         routePattern: pattern,
@@ -622,7 +622,7 @@ async function seedChain(
     });
     await postWorkOrderTransitionOp(
         db, woId, body, identity,
-        undefined, [], pair,
+        undefined, [], messagePair,
     );
     return ids;
 }

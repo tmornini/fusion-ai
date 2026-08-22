@@ -13,14 +13,14 @@ import {
 } from '../api/types.ts';
 import type {
     WorkOrderFlowGraph,
-    PairEntity,
+    MessagePairEntity,
 } from '../api/types.ts';
 import { ValidationError } from '../api/types.ts';
 import {
     validateWorkOrderDocumentBody,
 } from '../api/validators.ts';
 import { postWorkOrderDocumentOp } from '../api/routes.ts';
-import { formWritePair } from '../api/message-pair.ts';
+import { formWriteMessagePair } from '../api/message-pair.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
 import { HttpMessage } from '../shared/http-message/http-message.ts';
 import {
@@ -157,7 +157,7 @@ test('postWorkOrderDocumentOp returns the entity and the'
         ...documentFields(),
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'PUT',
         pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + 'yAhMcJGxllmQkLemOQjCmA',
@@ -172,7 +172,8 @@ test('postWorkOrderDocumentOp returns the entity and the'
         operationId: TEST_OPERATION_ID,
     });
     const written = await postWorkOrderDocumentOp(
-        db, 'yAhMcJGxllmQkLemOQjCmA', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
+        db, 'yAhMcJGxllmQkLemOQjCmA', body,
+        'XXZruirZyAOoRpNxaDnpSA', messagePair,
     );
     assert.deepEqual(written, {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
@@ -319,12 +320,12 @@ function decodeRequestMessage(message: string): {
 // arrival-order dependency, the H7 hazard class): filter by
 // address AND method instead.
 function documentRowAt(
-    pairs: readonly PairEntity[],
+    messagePairs: readonly MessagePairEntity[],
     prefix: string,
     uriId: string,
     excludeId?: string,
-): PairEntity | undefined {
-    return pairs.find(
+): MessagePairEntity | undefined {
+    return messagePairs.find(
         r => r.uri_collection === prefix
             && r.uri_id === uriId
             && r.id !== excludeId
@@ -345,11 +346,11 @@ test('a work-order create appends a PUT-shaped document pair'
         workOrderCreateBody(WO_C1, WO_C1_FWO, 'aNoIDzecmwfawmsLSsDsPw'),
     ));
     assert.equal(res.status, 201);
-    const pairs = await db.messagePairs.getAll();
-    assert.equal(pairs.length, 6);
+    const messagePairs = await db.messagePairs.getAll();
+    assert.equal(messagePairs.length, 6);
 
     const documentRow =
-        documentRowAt(pairs, ENTITY_PREFIX, WO_C1);
+        documentRowAt(messagePairs, ENTITY_PREFIX, WO_C1);
     assert.ok(documentRow, 'no document pair at the WO address');
     assert.deepEqual(
         validateWorkOrderDocumentBody(
@@ -362,14 +363,14 @@ test('a work-order create appends a PUT-shaped document pair'
         '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/aNoIDzecmwfawmsLSsDsPw/'
             + 'work-orders/';
     const joinRow =
-        documentRowAt(pairs, joinPrefix, WO_C1_FWO);
+        documentRowAt(messagePairs, joinPrefix, WO_C1_FWO);
     assert.ok(joinRow, 'no join pair at the join address');
 
     // slice(3): the fixture's own root-admin pairs (organization
     // document + role grant + membership, Phase 13 Tasks 1 and 3)
     // precede every test write and carry their OWN requestAt.
     const requestAts = new Set(
-        pairs.slice(3).map(r => r.request_at),
+        messagePairs.slice(3).map(r => r.request_at),
     );
     assert.equal(requestAts.size, 1);
 });

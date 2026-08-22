@@ -15,7 +15,7 @@ import {
     deriveStateFieldValueReferrers,
 } from './derive-state-field-values.ts';
 import {
-    flowGraphBindingsFromPairs,
+    flowGraphBindingsFromMessagePairs,
 } from './derive-flows.ts';
 import { deriveDocumentsAt } from './derive-documents.ts';
 import { canonicalUriCollection } from './message-pair.ts';
@@ -55,7 +55,7 @@ export interface AttributeReferrers {
 // Task 4, Author gate 5) also read the pair plane:
 // work-order document heads via the organization-scoped
 // work-orders collection prefix, and live node-attribute
-// bindings via flowGraphBindingsFromPairs (graphDelta
+// bindings via flowGraphBindingsFromMessagePairs (graphDelta
 // attributeEvents + nodeFlowIds). RESTRICT is pair-plane
 // only (`pairs` via derive helpers). An in-tx caller must
 // declare every table it touches — the transaction scope
@@ -93,7 +93,7 @@ function graphBindsAttribute(
 // Live-flow referrers REPLAY the flow document pair
 // history's graphDelta attributeEvents with the same
 // latestByKey/fail-closed reduction the row plane used
-// (flowGraphBindingsFromPairs — Phase 15 Task 1);
+// (flowGraphBindingsFromMessagePairs — Phase 15 Task 1);
 // node→flow naming rides nodeFlowIds from the same binding
 // result, NEVER client-authored flow document graph
 // snapshots. Frozen work-order referrers walk WO document
@@ -115,11 +115,11 @@ export async function collectAttributeReferrers(
     const workOrdersPrefix = canonicalUriCollection(
         boundOrganization, '/work-orders/',
     );
-    const woPairs = await view.messagePairs.getAllWhere(
+    const woMessagePairs = await view.messagePairs.getAllWhere(
         'uri_collection', workOrdersPrefix,
     );
     const woHeads = deriveDocumentsAt(
-        woPairs, workOrdersPrefix,
+        woMessagePairs, workOrdersPrefix,
     );
     const workOrderGraphs = [...woHeads.entries()].map(
         ([id, doc]) => ({
@@ -132,7 +132,7 @@ export async function collectAttributeReferrers(
     );
     // ONE org-wide graphDelta replay serves every attribute
     // id the caller's loop asks about (no per-id pair scan).
-    const bindings = await flowGraphBindingsFromPairs(
+    const bindings = await flowGraphBindingsFromMessagePairs(
         view, boundOrganization,
     );
     const sfvReferrersByAttribute =

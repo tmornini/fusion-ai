@@ -17,7 +17,7 @@ import {
 // address (Decision 6 would require a trio the wire body has
 // no room for — the invitations side channel forms its
 // operation pairs at 'invitations/:id/acceptance' etc,
-// api/invitations-domain.ts's formInvitationOpPair).
+// api/invitations-domain.ts's formInvitationOperationMessagePair).
 //
 // E13 FULL-SCAN NAMED CLASS: no index can serve "every pair
 // whose uri_collection has the shape /invitations/<id>/<op>/"
@@ -67,9 +67,9 @@ async function invitationOpStates(
     db: DbAdapter,
 ): Promise<Map<Id, InvitationState>> {
     const states = new Map<Id, InvitationState>();
-    for (const pair of await db.messagePairs.getAll()) {
+    for (const messagePair of await db.messagePairs.getAll()) {
         const match = OP_ADDRESS_PATTERN.exec(
-            pair.uri_collection,
+            messagePair.uri_collection,
         );
         if (match === null) continue;
         const state = OP_STATES[match[2]!];
@@ -116,11 +116,11 @@ export async function invitationOpStateFor(
 export async function deriveInvitations(
     db: DbAdapter,
 ): Promise<DerivedInvitationRow[]> {
-    const pairs = await db.messagePairs.getAllWhere(
+    const messagePairs = await db.messagePairs.getAllWhere(
         'uri_collection', INVITATIONS_PREFIX,
     );
     const documents = deriveDocumentsAt(
-        pairs, INVITATIONS_PREFIX,
+        messagePairs, INVITATIONS_PREFIX,
     );
     const opStates = await invitationOpStates(db);
     const rows: DerivedInvitationRow[] = [];

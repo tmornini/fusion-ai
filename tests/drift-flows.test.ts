@@ -364,7 +364,7 @@ function assertWireEqualsDerived(
 // documents.ts's deriveDocumentsAt), exposed here so case 11 can
 // assert the Follows-chain terminal reaches EXACTLY this pair
 // id, not merely "a flow that looks right".
-async function derivedHeadPairId(
+async function derivedHeadMessagePairId(
     db: MemoryDbAdapter, organization: string, flowId: string,
 ): Promise<string> {
     const prefix = canonicalUriCollection(organization, '/flows/');
@@ -375,7 +375,7 @@ async function derivedHeadPairId(
     const documents = deriveDocumentsAt(requests, prefix);
     const document = documents.get(flowId);
     assert.ok(document, 'no derived document for ' + flowId);
-    return document!.pairId;
+    return document!.messagePairId;
 }
 
 // Every seeded flow's own id, paired with the org the seed
@@ -1017,10 +1017,10 @@ test('the lock-head terminal reaches exactly the derived '
         headId = saved.headers.get('Response-ID')!;
     }
 
-    const headPairId = await derivedHeadPairId(
+    const headMessagePairId = await derivedHeadMessagePairId(
         db, STARK_ORGANIZATION, flowId,
     );
-    assert.equal(headId, headPairId);
+    assert.equal(headId, headMessagePairId);
 
     const derived = await deriveFlow(
         db, STARK_ORGANIZATION, flowId,

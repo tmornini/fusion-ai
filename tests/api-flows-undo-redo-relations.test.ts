@@ -50,7 +50,7 @@ import {
     asStoredGraph,
 } from '../api/validators.ts';
 import {
-    documentPairsAt,
+    documentMessagePairsAt,
 } from '../api/derive-documents.ts';
 import {
     seedHumanMember,
@@ -179,7 +179,7 @@ async function saveGraph(
 }
 
 // Pair-plane working graph (GET /organizations/:id/flows/:id).
-async function pairGraph(
+async function messagePairGraph(
     ctx: RequestContext,
 ): Promise<StoredGraph> {
     const flow = await ctx.GET<FlowWithGraph>(
@@ -212,10 +212,10 @@ async function latestSidecarStateFor(
         id: string;
     }[] = [];
     for (const prefix of prefixes) {
-        for (const pair of documentPairsAt(
+        for (const messagePair of documentMessagePairsAt(
         requests, prefix,
     )) {
-            const delta = pair.body['graphDelta'];
+            const delta = messagePair.body['graphDelta'];
             const deletions =
                 typeof delta === 'object' && delta !== null
                     ? (delta as Record<string, unknown>)[
@@ -237,7 +237,7 @@ async function latestSidecarStateFor(
                     });
                 }
             }
-            const revivals = pair.body['revivals'];
+            const revivals = messagePair.body['revivals'];
             if (Array.isArray(revivals)) {
                 for (const entry of revivals) {
                     if (
@@ -292,7 +292,7 @@ test(
         // tombstoned by the save delta).
         await putFlow(ctx, FLOW_ID, save([a], []));
 
-        const afterDelete = await pairGraph(ctx);
+        const afterDelete = await messagePairGraph(ctx);
         assert.ok(
             !afterDelete.nodes.some(n => n.id === NODE_X),
             'X is tombstoned after the deleting save',
@@ -314,7 +314,7 @@ test(
 
         // KEYSTONE: X and its edge are REVIVED — the
         // pair-plane graph includes them again.
-        const afterUndo = await pairGraph(ctx);
+        const afterUndo = await messagePairGraph(ctx);
         assert.ok(
             afterUndo.nodes.some(n => n.id === NODE_X),
             'undo REVIVES the deleted node X',
@@ -349,7 +349,7 @@ test(
         // Then save the graph WITH X (X added).
         await putFlow(ctx, FLOW_ID, save([a, x], []));
 
-        const afterAdd = await pairGraph(ctx);
+        const afterAdd = await messagePairGraph(ctx);
         assert.ok(afterAdd.nodes.some(n => n.id === NODE_X));
 
         // Undo the add -> X is in current-not-target, so it
@@ -360,7 +360,7 @@ test(
         assert.equal(undo.kind, 'ok');
         if (undo.kind !== 'ok') return;
 
-        const afterUndo = await pairGraph(ctx);
+        const afterUndo = await messagePairGraph(ctx);
         assert.ok(
             !afterUndo.nodes.some(n => n.id === NODE_X),
             'undo of an add deletes the added node',
@@ -386,7 +386,7 @@ test(
         // Then save the graph where a gains member mFNSxZqywTSMXhgUTdTqtA.
         await putFlow(ctx, FLOW_ID, save([aWithMember], []));
 
-        const afterAdd = await pairGraph(ctx);
+        const afterAdd = await messagePairGraph(ctx);
         assert.ok(
             afterAdd.nodes.find(n => n.id === NODE_A)!
                 .memberIds.includes('mFNSxZqywTSMXhgUTdTqtA'),
@@ -399,7 +399,7 @@ test(
         assert.equal(undo.kind, 'ok');
         if (undo.kind !== 'ok') return;
 
-        const afterUndo = await pairGraph(ctx);
+        const afterUndo = await messagePairGraph(ctx);
         assert.ok(
             !afterUndo.nodes.find(n => n.id === NODE_A)!
                 .memberIds.includes('mFNSxZqywTSMXhgUTdTqtA'),
@@ -428,7 +428,7 @@ test(
         );
         assert.equal(undo.kind, 'ok');
         if (undo.kind !== 'ok') return;
-        const afterUndo = await pairGraph(ctx);
+        const afterUndo = await messagePairGraph(ctx);
         assert.ok(afterUndo.nodes.some(n => n.id === NODE_X));
 
         // Redo -> re-apply the delete (X tombstoned again).
@@ -438,7 +438,7 @@ test(
         assert.equal(redo.kind, 'ok');
         if (redo.kind !== 'ok') return;
 
-        const afterRedo = await pairGraph(ctx);
+        const afterRedo = await messagePairGraph(ctx);
         assert.ok(
             !afterRedo.nodes.some(n => n.id === NODE_X),
             'redo re-applies the delete: X tombstoned again',

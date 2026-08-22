@@ -24,7 +24,7 @@ import { setClockForTest, resetClock } from '../api/types.ts';
 import { generateIdentifier } from
     '../shared/identifier.ts';
 
-function pairJsonOf(message: string): {
+function messagePairJsonOf(message: string): {
     readonly body: Record<string, unknown>;
 } {
     const body = HttpMessage.fromWire(message).body();
@@ -232,7 +232,7 @@ test('the pair request body carries domain state;'
     const requests = await db.messagePairs.getAll();
     // seedRootAdmin 2 + idea PUT 1
     assert.equal(requests.length, 3);
-    const parsed = pairJsonOf(requests[2]!.request) as {
+    const parsed = messagePairJsonOf(requests[2]!.request) as {
         body: { state: string };
     };
     assert.equal(parsed.body.state, 'in_review');
@@ -355,7 +355,7 @@ async () => {
     const expected = ideaEntityOf(
         {
             uriId: id,
-            pairId: id,
+            messagePairId: id,
             method: 'PUT',
             body,
         },

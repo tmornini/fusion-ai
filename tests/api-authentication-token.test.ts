@@ -17,9 +17,9 @@ import {
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import {
-    putMessagePair, formAuthPair, formWritePair,
+    putMessagePair, formAuthMessagePair, formWriteMessagePair,
 } from '../api/message-pair.ts';
-import type { AuthPairSeed } from '../api/message-pair.ts';
+import type { AuthMessagePairSeed } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
 import {
@@ -55,14 +55,14 @@ async function freshDb() {
 // code, so a bare pair — the SAME shape a real login forms
 // (Phase 13 Task 9: the authorization_codes row half retired) —
 // is all a seed needs.
-async function seedAuthorizationCodePair(
+async function seedAuthorizationCodeMessagePair(
     db: MemoryDbAdapter,
     code: string,
     identityId: string,
     clientId: string,
     extras: { code_challenge?: string } = {},
 ): Promise<void> {
-    const seed: AuthPairSeed = {
+    const seed: AuthMessagePairSeed = {
         requestAt: nowUtc(),
         headerFields: [],
         method: 'POST',
@@ -78,10 +78,10 @@ async function seedAuthorizationCodePair(
     if (extras.code_challenge !== undefined) {
         requestBody.code_challenge = extras.code_challenge;
     }
-    const pair = await formAuthPair(
+    const messagePair = await formAuthMessagePair(
         seed, requestBody, identityId, 200, { code },
     );
-    await putMessagePair(db, pair);
+    await putMessagePair(db, messagePair);
 }
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
@@ -90,7 +90,7 @@ async function seedAuthorizationCodePair(
 // so a raw row here would go derivation-invisible. Every
 // id/field value stays IDENTICAL to the raw puts these replace —
 // only the write mechanism changes.
-async function seedMembershipPair(
+async function seedMembershipMessagePair(
     db: MemoryDbAdapter,
     id: string,
     body: Record<string, unknown>,
@@ -184,9 +184,9 @@ test('an authorization code is bound to its issuing client',
 async () => {
     const db = await freshDb();
     await seedRootAdmin(db);
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'code-for-a', 'XXZruirZyAOoRpNxaDnpSA', 'client-a');
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'code-for-match', 'XXZruirZyAOoRpNxaDnpSA', 'client-a');
     const mismatch = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code',
@@ -223,7 +223,7 @@ async () => {
     await seedRootAdmin(db);
     const verifier = 'pkce-verifier-correct-value';
     const challenge = await s256Challenge(verifier);
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'pkce-code-ok', 'XXZruirZyAOoRpNxaDnpSA', 'web',
         { code_challenge: challenge },
     );
@@ -243,7 +243,7 @@ async () => {
     const challenge = await s256Challenge(
         'pkce-verifier-correct-value',
     );
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'pkce-code-bad', 'XXZruirZyAOoRpNxaDnpSA', 'web',
         { code_challenge: challenge },
     );
@@ -267,7 +267,7 @@ async () => {
     const challenge = await s256Challenge(
         'pkce-verifier-correct-value',
     );
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'pkce-code-none', 'XXZruirZyAOoRpNxaDnpSA', 'web',
         { code_challenge: challenge },
     );
@@ -306,7 +306,7 @@ test('token JSON has no refresh_token; Set-Cookie is HttpOnly',
 async () => {
     const db = await freshDb();
     await seedRootAdmin(db);
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'the-code', 'XXZruirZyAOoRpNxaDnpSA', 'web');
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
@@ -327,7 +327,7 @@ test('authorization_code grant issues a gate-valid token pair',
 async () => {
     const db = await freshDb();
     await seedRootAdmin(db);   // 'XXZruirZyAOoRpNxaDnpSA' is admin
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'the-code', 'XXZruirZyAOoRpNxaDnpSA', 'web');
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
@@ -364,7 +364,7 @@ async () => {
 
 test('replaying a consumed code is a 401 no-op', async () => {
     const db = await freshDb();
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'the-code', 'XXZruirZyAOoRpNxaDnpSA', 'web');
     const first = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
@@ -388,7 +388,7 @@ test(
     async () => {
         const db = await freshDb();
         await seedRootAdmin(db);
-        await seedAuthorizationCodePair(
+        await seedAuthorizationCodeMessagePair(
             db, 'the-code', 'XXZruirZyAOoRpNxaDnpSA', 'web');
         const [a, b] = await Promise.all([
             handleRequest(db, tokenRequest({
@@ -439,7 +439,7 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
     assert.deepEqual(
         await unknown.json(), { error: INVALID_CODE_ERROR });
 
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'the-code-spent', 'XXZruirZyAOoRpNxaDnpSA', 'web');
     const first = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code',
@@ -456,7 +456,7 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
     assert.deepEqual(
         await spent.json(), { error: INVALID_CODE_ERROR });
 
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'the-code-raced', 'XXZruirZyAOoRpNxaDnpSA', 'web');
     const [a, b] = await Promise.all([
         handleRequest(db, tokenRequest({
@@ -488,7 +488,7 @@ test('GATE 3: unknown / spent / raced code all 401 with the'
 async function initialPair(
     db: MemoryDbAdapter,
 ): Promise<{ access_token: string; refresh_token: string }> {
-    await seedAuthorizationCodePair(
+    await seedAuthorizationCodeMessagePair(
         db, 'the-code', 'XXZruirZyAOoRpNxaDnpSA', 'web');
     const res = await handleRequest(db, tokenRequest({
         grant_type: 'authorization_code', code: 'the-code',
@@ -703,7 +703,7 @@ async () => {
 test('token-exchange into a member org carries org + orgs',
 async () => {
     const db = await freshDb();
-    await seedMembershipPair(db, 'm-current', {
+    await seedMembershipMessagePair(db, 'm-current', {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
@@ -726,7 +726,7 @@ test('token-exchange into a non-member org is 403',
 async () => {
     const db = await freshDb();
     // current is a member of 'AjdvjuECVZEgZoFajaIEkg' but not org '7'
-    await seedMembershipPair(db, 'm-current', {
+    await seedMembershipMessagePair(db, 'm-current', {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
@@ -749,7 +749,7 @@ async () => {
 test('a flat exchange carries orgs but no active org',
 async () => {
     const db = await freshDb();
-    await seedMembershipPair(db, 'm-current', {
+    await seedMembershipMessagePair(db, 'm-current', {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
@@ -792,7 +792,7 @@ async function signedClientSetup() {
 test('client_credentials issues a gate-valid token', async () => {
     const db = await freshDb();
     // the service principal (client id) holds an admin role
-    await seedMembershipPair(db, 'm-svc', {
+    await seedMembershipMessagePair(db, 'm-svc', {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: 'uYaHKbNeVUcsFjuooOjMew',
         type: 'member',
@@ -819,7 +819,7 @@ test('client_credentials issues a gate-valid token', async () => {
 test('a second client_credentials grant with the same jti'
 + ' is 401 invalid_grant and mints nothing', async () => {
     const db = await freshDb();
-    await seedMembershipPair(db, 'm-svc-replay', {
+    await seedMembershipMessagePair(db, 'm-svc-replay', {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: 'uYaHKbNeVUcsFjuooOjMew',
         type: 'member',
@@ -870,7 +870,7 @@ test('a second client_credentials grant with the same jti'
 test('an expired assertion-jti ticket is still spent',
 async () => {
     const db = await freshDb();
-    await seedMembershipPair(db, 'm-svc-expired', {
+    await seedMembershipMessagePair(db, 'm-svc-expired', {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: 'uYaHKbNeVUcsFjuooOjMew',
         type: 'member',
@@ -882,7 +882,7 @@ async () => {
     await seedClientRegistration(db, 'uYaHKbNeVUcsFjuooOjMew', {
         ...activeClient, jwks: signer.jwks,
     });
-    const ticket = await formWritePair({
+    const ticket = await formWriteMessagePair({
         method: 'PUT',
         pathname:
             '/authentication/VOoVnUGteBpVZJqRqWZolw/' + jti,

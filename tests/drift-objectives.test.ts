@@ -15,7 +15,7 @@ import type {
     ObjectiveRevisionEntity,
 } from '../api/types.ts';
 import { canonicalUriCollection } from '../api/message-pair.ts';
-import { documentPairsAt } from '../api/derive-documents.ts';
+import { documentMessagePairsAt } from '../api/derive-documents.ts';
 import {
     documentGetHandler,
     documentCollectionGetHandler,
@@ -924,15 +924,16 @@ test('live-write chain: create, reposition, revision edit,'
     for (const row of newRows) {
         assert.equal('supersedes' in row, false);
     }
-    const documentPairsAfter = documentPairsAt(
+    const documentMessagePairsAfter = documentMessagePairsAt(
         afterRequests, objectivesPrefix,
-    ).filter((pair) => pair.uriId === objectiveId);
+    ).filter((messagePair) => messagePair.uriId === objectiveId);
     // create doc + reposition + archive + reactivate +
     // duplicate create's document = 5
-    assert.equal(documentPairsAfter.length, 5);
-    const newestDocumentPair = documentPairsAfter.at(-1)!;
+    assert.equal(documentMessagePairsAfter.length, 5);
+    const newestDocumentMessagePair =
+        documentMessagePairsAfter.at(-1)!;
     const newestDocumentResponseRow = afterAtAddress.find(
-        (r) => r.id === newestDocumentPair.id,
+        (r) => r.id === newestDocumentMessagePair.id,
     )!;
     assert.equal(
         'supersedes' in newestDocumentResponseRow,
@@ -991,11 +992,11 @@ test('the create-op POST pair is not read as a document pair —'
     );
     assert.equal(atAddress.length, 2);
 
-    const documentPairs = documentPairsAt(
+    const documentMessagePairs = documentMessagePairsAt(
         requests, prefix,
-    ).filter((pair) => pair.uriId === objectiveId);
-    assert.equal(documentPairs.length, 1);
-    assert.equal(documentPairs[0]!.method, 'PUT');
+    ).filter((messagePair) => messagePair.uriId === objectiveId);
+    assert.equal(documentMessagePairs.length, 1);
+    assert.equal(documentMessagePairs[0]!.method, 'PUT');
 
     const postRow = atAddress.find(
         (r) => decodeRequestMessage(r.request).method === 'POST',
@@ -1004,7 +1005,7 @@ test('the create-op POST pair is not read as a document pair —'
         Object.keys(decodeRequestMessage(postRow.request).body),
     );
     const documentBodyKeys = new Set(
-        Object.keys(documentPairs[0]!.body),
+        Object.keys(documentMessagePairs[0]!.body),
     );
     const overlap = [...createBodyKeys].filter(
         (key) => documentBodyKeys.has(key),

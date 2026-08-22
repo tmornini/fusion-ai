@@ -939,7 +939,7 @@ export interface ProjectObjectiveActualScoreEntity {
 // messages ARE the two BYTEA columns; the
 // columns beside them are addressing and index
 // machinery, never a second truth.
-export interface PairEntity {
+export interface MessagePairEntity {
     id: Id;
     uri_collection: string;
     uri_id: string;

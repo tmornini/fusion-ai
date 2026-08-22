@@ -24,10 +24,10 @@ import { deriveIdeaStateHistory } from
 import { deriveObjectiveStateHistory } from
     '../api/derive-objectives.ts';
 import {
-    documentPairsAt,
+    documentMessagePairsAt,
 } from '../api/derive-documents.ts';
 import {
-    formWritePair,
+    formWriteMessagePair,
     canonicalUriCollection,
 } from '../api/message-pair.ts';
 import {
@@ -96,13 +96,13 @@ function req(
 // a raw row here would go derivation-invisible. Every id/field
 // value stays IDENTICAL to the raw puts these replace — only the
 // write mechanism changes.
-async function leftoverMembershipPair(
+async function leftoverMembershipMessagePair(
     db: MemoryDbAdapter,
     id: string,
     body: Record<string, unknown>,
 ): Promise<void> {
     const organization = body.organization_id as string;
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'PUT',
         pathname: '/memberships/' + id,
         routePattern: 'memberships/:id',
@@ -118,7 +118,7 @@ async function leftoverMembershipPair(
         operationId: TEST_OPERATION_ID,
     });
     await postMembershipDocumentOp(
-        db, id, body, SYSTEM_MEMBER_ID, pair,
+        db, id, body, SYSTEM_MEMBER_ID, messagePair,
     );
 }
 
@@ -132,7 +132,7 @@ async function leftoverMemberParent(
         state_at: AT,
         state_event_id: generateIdentifier(),
     };
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'PUT',
         pathname: '/members/' + id,
         routePattern: 'members/:id',
@@ -148,11 +148,11 @@ async function leftoverMemberParent(
         operationId: TEST_OPERATION_ID,
     });
     await postMemberDocumentOp(
-        db, id, body, SYSTEM_MEMBER_ID, pair,
+        db, id, body, SYSTEM_MEMBER_ID, messagePair,
     );
 }
 
-async function seedMembershipPair(
+async function seedMembershipMessagePair(
     db: MemoryDbAdapter,
     _id: string,
     body: Record<string, unknown>,
@@ -189,11 +189,11 @@ async function seed(): Promise<{
     // enumerate-then-probe (via deriveOrganizations).
     await seedOrganizationDocument(db, organizationA, 'Acme');
     await seedOrganizationDocument(db, organizationB, 'Beta');
-    await seedMembershipPair(db, generateIdentifier(), {
+    await seedMembershipMessagePair(db, generateIdentifier(), {
         organization_id: organizationA, identity_id: adminA,
         type: 'admin', at: AT,
     });
-    await seedMembershipPair(db, generateIdentifier(), {
+    await seedMembershipMessagePair(db, generateIdentifier(), {
         organization_id: organizationB, identity_id: adminB,
         type: 'admin', at: AT,
     });
@@ -600,7 +600,7 @@ async () => {
     const ghost = generateIdentifier();
     await db.postSchemaCreation();
     await seedOrganizationDocument(db, organizationA, 'Acme');
-    await leftoverMembershipPair(db, generateIdentifier(), {
+    await leftoverMembershipMessagePair(db, generateIdentifier(), {
         organization_id: organizationA, identity_id: ghost,
         type: 'member', at: AT,
     });
@@ -619,7 +619,7 @@ async () => {
     await db.postSchemaCreation();
     await seedOrganizationDocument(db, organizationA, 'Acme');
     await leftoverMemberParent(db, ghost);
-    await leftoverMembershipPair(db, generateIdentifier(), {
+    await leftoverMembershipMessagePair(db, generateIdentifier(), {
         organization_id: organizationA, identity_id: ghost,
         type: 'member', at: AT,
     });
@@ -717,8 +717,10 @@ async () => {
         'uri_collection', prefix,
     );
     const sidecarIds: string[] = [];
-    for (const pair of documentPairsAt(stored, prefix)) {
-        const delta = pair.body['graphDelta'];
+    for (const messagePair of documentMessagePairsAt(
+        stored, prefix,
+    )) {
+        const delta = messagePair.body['graphDelta'];
         const deletions =
             typeof delta === 'object' && delta !== null
                 ? (delta as Record<string, unknown>)[
@@ -741,7 +743,7 @@ async () => {
                 }
             }
         }
-        const revivals = pair.body['revivals'];
+        const revivals = messagePair.body['revivals'];
         if (Array.isArray(revivals)) {
             for (const entry of revivals) {
                 if (

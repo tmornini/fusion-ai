@@ -49,7 +49,7 @@ import { STORAGE_KEY_AUTHORIZATION } from
     '../web-app/app/storage-keys.ts';
 import {
     ideaBody, organizationRow, seedAdminSchema,
-    seedOrganizationDocument as seedOrganizationDocumentPair,
+    seedOrganizationDocument as seedOrganizationDocumentMessagePair,
 } from './test-fixtures.ts';
 import {
     devToken, expiredToken, organizationToken,
@@ -71,9 +71,9 @@ import {
     WRITE_RESPONSE_SPECS,
 } from '../api/routes.ts';
 import {
-    putMessagePair, formAuthPair, formWritePair,
+    putMessagePair, formAuthMessagePair, formWriteMessagePair,
 } from '../api/message-pair.ts';
-import type { AuthPairSeed } from '../api/message-pair.ts';
+import type { AuthMessagePairSeed } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import {
     deriveIdentityTokens,
@@ -102,11 +102,11 @@ async function freshDb() {
 // code, so a bare pair — the SAME shape a real login forms
 // (Phase 13 Task 9: the authorization_codes row half retired) —
 // is all a seed needs.
-async function seedAuthorizationCodePair(
+async function seedAuthorizationCodeMessagePair(
     db: MemoryDbAdapter,
     code: string,
 ): Promise<void> {
-    const seed: AuthPairSeed = {
+    const seed: AuthMessagePairSeed = {
         requestAt: nowUtc(),
         headerFields: [],
         method: 'POST',
@@ -119,16 +119,16 @@ async function seedAuthorizationCodePair(
         method: 'password', username: 'seed@example.com',
         password: 'seed-password', client_id: 'web',
     };
-    const pair = await formAuthPair(
+    const messagePair = await formAuthMessagePair(
         seed, requestBody, 'XXZruirZyAOoRpNxaDnpSA', 200, { code },
     );
-    await putMessagePair(db, pair);
+    await putMessagePair(db, messagePair);
 }
 
 async function issuePair(db: MemoryDbAdapter): Promise<{
     access_token: string; refresh_token: string;
 }> {
-    await seedAuthorizationCodePair(db, 'the-code');
+    await seedAuthorizationCodeMessagePair(db, 'the-code');
     const res = await handleRequest(db, new Request(
         `${BASE}/authentication/token`, {
             method: 'POST',
@@ -152,7 +152,7 @@ async function issuePair(db: MemoryDbAdapter): Promise<{
 // so a raw row here would go derivation-invisible. Every
 // id/field value stays IDENTICAL to the raw puts these replace —
 // only the write mechanism changes.
-async function seedMembershipPair(
+async function seedMembershipMessagePair(
     db: MemoryDbAdapter,
     _id: string,
     body: Record<string, unknown>,
@@ -180,9 +180,9 @@ async function seedOrganizationAdmin(
     // deriveOrganizations) needs `organization` to already be
     // derivable before the role-grant/membership pairs below can
     // resolve.
-    await seedOrganizationDocumentPair(
+    await seedOrganizationDocumentMessagePair(
         db, organization, organization);
-    await seedMembershipPair(db, generateIdentifier(), {
+    await seedMembershipMessagePair(db, generateIdentifier(), {
         organization_id: organization, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: '2026-06-04T00:00:00.000000Z',

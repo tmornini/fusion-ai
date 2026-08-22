@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
 import { memoryDbAdapter } from '../api/db-memory.ts';
 
-const aPair = {
+const aMessagePair = {
     uri_collection: '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/',
     uri_id: '42',
     requester_identity_id: 'XXZruirZyAOoRpNxaDnpSA',
@@ -25,12 +25,14 @@ test(
             ['message_pairs'],
             async (view) => {
                 await view.messagePairs.put(
-                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                    'syWUUcdBSbBgMwBiCrgbDw', aMessagePair,
                 );
             },
         );
-        const pair = await db.messagePairs.getById('syWUUcdBSbBgMwBiCrgbDw');
-        assert.equal(pair.id, 'syWUUcdBSbBgMwBiCrgbDw');
+        const messagePair = await db.messagePairs.getById(
+            'syWUUcdBSbBgMwBiCrgbDw',
+        );
+        assert.equal(messagePair.id, 'syWUUcdBSbBgMwBiCrgbDw');
     },
 );
 
@@ -44,15 +46,15 @@ test(
                 ['message_pairs'],
                 async (view) => {
                     await view.messagePairs.put(
-                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                    'syWUUcdBSbBgMwBiCrgbDw', aMessagePair,
                 );
                     throw new Error('boom');
                 },
             ),
             /boom/,
         );
-        const pairs = await db.messagePairs.getAll();
-        assert.deepEqual(pairs, []);
+        const messagePairs = await db.messagePairs.getAll();
+        assert.deepEqual(messagePairs, []);
     },
 );
 
@@ -65,7 +67,7 @@ test(
             ['message_pairs'],
             async (view) => {
                 await view.messagePairs.put(
-                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                    'syWUUcdBSbBgMwBiCrgbDw', aMessagePair,
                 );
                 // Read back inside the same tx — the put is
                 // visible before commit.
@@ -89,14 +91,16 @@ test(
                     ['message_pairs'],
                     async (inner) => {
                         await inner.messagePairs.put(
-                            'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                            'syWUUcdBSbBgMwBiCrgbDw', aMessagePair,
                         );
                     },
                 );
             },
         );
-        const pair = await db.messagePairs.getById('syWUUcdBSbBgMwBiCrgbDw');
-        assert.equal(pair.id, 'syWUUcdBSbBgMwBiCrgbDw');
+        const messagePair = await db.messagePairs.getById(
+            'syWUUcdBSbBgMwBiCrgbDw',
+        );
+        assert.equal(messagePair.id, 'syWUUcdBSbBgMwBiCrgbDw');
     },
 );
 
@@ -113,7 +117,7 @@ test(
                         ['message_pairs'],
                         async (inner) => {
                             await inner.messagePairs.put(
-                                'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                                'syWUUcdBSbBgMwBiCrgbDw', aMessagePair,
                             );
                         },
                     );
@@ -153,7 +157,7 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await db.postSchemaCreation();
-        await db.messagePairs.put('syWUUcdBSbBgMwBiCrgbDw', aPair);
+        await db.messagePairs.put('syWUUcdBSbBgMwBiCrgbDw', aMessagePair);
         const seen = await db.readTransaction(
             ['message_pairs'],
             (view) => view.messagePairs.getAll(),
@@ -172,7 +176,7 @@ test(
             () => db.readTransaction(
                 ['message_pairs'],
                 (view) => view.messagePairs.put(
-                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                    'syWUUcdBSbBgMwBiCrgbDw', aMessagePair,
                 ),
             ),
             /readonly transaction/,
@@ -192,7 +196,7 @@ test(
             ['message_pairs'],
             async (view) => {
                 await view.messagePairs.put(
-                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                    'syWUUcdBSbBgMwBiCrgbDw', aMessagePair,
                 );
                 // Nested read joins the open write tx so the
                 // uncommitted put is visible (read-your-writes).

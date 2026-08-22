@@ -45,7 +45,7 @@ import {
 // strips a stray `id` FIRST — the fetch-edit-PUT client
 // pattern echoes the GET body's own `id` right back into
 // the PUT payload, and the STORED request body is the raw
-// wire body, echoed id and all (formWritePair stores the
+// wire body, echoed id and all (formWriteMessagePair stores the
 // caller's body verbatim; successBody's withoutId(body)
 // strips it before validating). Mirroring that same strip
 // here is what keeps assertOnlyKeys from rejecting a head
@@ -88,11 +88,11 @@ export async function deriveOrganizations(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.messagePairs.getAllWhere(
+            const messagePairs = await view.messagePairs.getAllWhere(
                 'uri_collection', ORGANIZATIONS_PREFIX,
             );
             const documents = deriveDocumentsAt(
-                pairs, ORGANIZATIONS_PREFIX,
+                messagePairs, ORGANIZATIONS_PREFIX,
             );
             const rows: OrganizationEntity[] = [];
             for (const document of documents.values()) {
@@ -114,11 +114,11 @@ export async function deriveOrganization(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.messagePairs.getAllWhere(
+            const messagePairs = await view.messagePairs.getAllWhere(
                 'uri_collection', ORGANIZATIONS_PREFIX,
             );
             const document = deriveDocumentsAt(
-                pairs, ORGANIZATIONS_PREFIX,
+                messagePairs, ORGANIZATIONS_PREFIX,
             ).get(id);
             if (document === undefined) {
                 throw new EntityNotFoundError(

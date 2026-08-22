@@ -281,7 +281,7 @@ async () => {
     );
     const expected = tokenRevocationEntityOf({
         uriId: id,
-        pairId: id,
+        messagePairId: id,
         method: 'PUT',
         body: fields,
     });

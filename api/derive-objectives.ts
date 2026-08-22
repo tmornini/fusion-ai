@@ -2,7 +2,7 @@ import type { DbAdapter } from './db.ts';
 import type { Id, StateEntity } from './types.ts';
 import { canonicalUriCollection } from './message-pair.ts';
 import {
-    documentPairsAt,
+    documentMessagePairsAt,
     documentLifecycleEvents,
     stateHistoryFrom,
 } from './derive-documents.ts';
@@ -32,10 +32,12 @@ export async function deriveObjectiveStateHistory(
     const stored = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
-    const pairs = documentPairsAt(
+    const messagePairs = documentMessagePairsAt(
         stored, prefix,
-    ).filter((pair) => pair.uriId === objectiveId);
+    ).filter((messagePair) =>
+        messagePair.uriId === objectiveId);
     return stateHistoryFrom(
-        documentLifecycleEvents(pairs), objectiveId,
+        documentLifecycleEvents(messagePairs),
+        objectiveId,
     );
 }

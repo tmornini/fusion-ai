@@ -1,6 +1,6 @@
 // Operator seed below HTTP. Flags seed an empty
 // database and print credentials once. Non-empty
-// refuses. formSeedPair already mints operation_id.
+// refuses. formSeedMessagePair already mints operation_id.
 
 import type { DbAdapter } from '../api/db.ts';
 import {

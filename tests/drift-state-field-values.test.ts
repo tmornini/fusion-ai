@@ -28,7 +28,7 @@ import {
     postWorkOrderTransitionOp,
 } from '../api/routes.ts';
 import {
-    formWritePair,
+    formWriteMessagePair,
 } from '../api/message-pair.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
@@ -124,7 +124,7 @@ async function appendLegacyTransition(
         'organizations', STARK_ORGANIZATION,
         'work-orders', 'yNSSnbrpacodQTzUEcdEVA', 'transition',
     ];
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'POST',
         pathname: '/' + pathSegments.join('/'),
         routePattern: TRANSITION_PATTERN,
@@ -141,7 +141,7 @@ async function appendLegacyTransition(
     });
     await postWorkOrderTransitionOp(
         db, 'yNSSnbrpacodQTzUEcdEVA', body, SYSTEM_MEMBER_ID,
-        undefined, [], pair,
+        undefined, [], messagePair,
     );
 }
 

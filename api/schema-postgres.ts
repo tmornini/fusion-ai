@@ -1,7 +1,7 @@
 // Compile-time Postgres DDL. The only input to sql.unsafe.
 // Never concatenate request identifiers into these strings.
 
-export const POSTGRES_PAIRS_TABLE =
+export const POSTGRES_MESSAGE_PAIRS_TABLE =
     String.raw`CREATE TABLE IF NOT EXISTS message_pairs (
     id uuid PRIMARY KEY,
     uri_collection text COLLATE "C" NOT NULL
@@ -68,14 +68,14 @@ CREATE INDEX IF NOT EXISTS message_pairs_body
     USING gin (message_body(response) jsonb_path_ops);`;
 
 export const POSTGRES_SCHEMA_STATEMENTS = [
-    POSTGRES_PAIRS_TABLE,
+    POSTGRES_MESSAGE_PAIRS_TABLE,
     POSTGRES_SCHEMA_MARKER_TABLE,
     POSTGRES_MESSAGE_BODY_FUNCTION,
     POSTGRES_INDEXES,
 ] as const;
 
 export const POSTGRES_SCHEMA =
-    POSTGRES_PAIRS_TABLE
+    POSTGRES_MESSAGE_PAIRS_TABLE
     + '\n\n'
     + POSTGRES_SCHEMA_MARKER_TABLE
     + '\n\n'

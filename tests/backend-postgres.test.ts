@@ -80,7 +80,7 @@ function fakeClient(): {
     return state;
 }
 
-const PAIR_ROW = {
+const MESSAGE_PAIR_ROW = {
     id: 'UuPWIGbUyaAgmEgGDRfnvA',
     uri_collection: '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/',
     uri_id: '42',
@@ -328,7 +328,7 @@ async () => {
     await backend.transaction(
         ['message_pairs'],
         'readwrite',
-        (tx) => tx.put('message_pairs', PAIR_ROW),
+        (tx) => tx.put('message_pairs', MESSAGE_PAIR_ROW),
     );
     const values = fake.calls[0]!.values;
     const bytes = values.filter(
@@ -337,21 +337,21 @@ async () => {
     assert.equal(bytes.length, 2);
     assert.deepEqual(
         bytes[0],
-        Octets.fromLatin1(PAIR_ROW.request).asBytes(),
+        Octets.fromLatin1(MESSAGE_PAIR_ROW.request).asBytes(),
     );
     assert.deepEqual(
         bytes[1],
-        Octets.fromLatin1(PAIR_ROW.response).asBytes(),
+        Octets.fromLatin1(MESSAGE_PAIR_ROW.response).asBytes(),
     );
 });
 
 test('get reads BYTEA via latin1, not TextDecoder',
 async () => {
     const fake = fakeClient();
-    const wire = PAIR_ROW.request;
+    const wire = MESSAGE_PAIR_ROW.request;
     const bytes = Octets.fromLatin1(wire).asBytes();
     fake.rows = [{
-        ...PAIR_ROW,
+        ...MESSAGE_PAIR_ROW,
         request: Buffer.from(bytes),
         response: Buffer.from(bytes),
     }];
@@ -359,8 +359,8 @@ async () => {
     const row = await backend.transaction(
         ['message_pairs'],
         'readonly',
-        (tx) => tx.get<typeof PAIR_ROW>(
-            'message_pairs', PAIR_ROW.id,
+        (tx) => tx.get<typeof MESSAGE_PAIR_ROW>(
+            'message_pairs', MESSAGE_PAIR_ROW.id,
         ),
     );
     assert.equal(row?.request, wire);

@@ -7,7 +7,7 @@ import {
     flowStoredEntityOf,
 } from '../api/derive-flows.ts';
 import {
-    documentPairsAt,
+    documentMessagePairsAt,
 } from '../api/derive-documents.ts';
 import assert from 'node:assert/strict';
 import {
@@ -22,7 +22,7 @@ import {
     validateFlowDocumentBody,
 } from '../api/validators.ts';
 import {
-    headPairIdAt,
+    headMessagePairIdAt,
     canonicalUriCollection,
     strongEtagOf,
 } from '../api/message-pair.ts';
@@ -331,12 +331,12 @@ test('postFlowDocumentOp with revivals posts the restored'
         db.messagePairs.getAllWhere('uri_collection', prefix),
         db.messagePairs.getAllWhere('uri_collection', prefix),
     ]);
-    const pairs = documentPairsAt(
+    const messagePairs = documentMessagePairsAt(
         requests, prefix,
     ).filter((p) => p.uriId === 'biDOZCyZATKcAVVOCbegTw');
     const states: string[] = [];
-    for (const pair of pairs) {
-        const delta = pair.body['graphDelta'];
+    for (const messagePair of messagePairs) {
+        const delta = messagePair.body['graphDelta'];
         const deletions =
             typeof delta === 'object' && delta !== null
                 ? (delta as Record<string, unknown>)[
@@ -356,7 +356,7 @@ test('postFlowDocumentOp with revivals posts the restored'
                 }
             }
         }
-        const revivals = pair.body['revivals'];
+        const revivals = messagePair.body['revivals'];
         if (Array.isArray(revivals)) {
             for (const entry of revivals) {
                 if (
@@ -611,17 +611,17 @@ async () => {
 
 // Task 8: the organizations/:id/flows/:id GET's Response-ID source switched
 // from
-// headPairIdAt (message-pair.ts's ANY-method LOCK head) to
-// documentHeadPairId (document-family.ts's DOCUMENT head — the
+// headMessagePairIdAt (message-pair.ts's ANY-method LOCK head) to
+// documentHeadMessagePairId (document-family.ts's DOCUMENT head — the
 // SAME deriveDocumentsAt reduction the GET already runs to build
 // the entity). Design decision 6 means only PUT ever writes at a
 // document address, so the two reductions agree for a live flow
-// — this proves the wire Response-ID equals headPairIdAt's own,
+// — this proves the wire Response-ID equals headMessagePairIdAt's own,
 // independently computed value, not merely that the route
 // returns SOME header.
 test('e2e: the organizations/:id/flows/:id Response-ID'
-    + ' equals headPairIdAt\'s own'
-+ ' reduction over the same address (documentHeadPairId parity)',
+    + ' equals headMessagePairIdAt\'s own'
++ ' reduction over the same address (documentHeadMessagePairId parity)',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
@@ -634,7 +634,7 @@ async () => {
     assert.equal(got.status, 200);
     const headId = got.headers.get('Response-ID');
     assert.ok(headId);
-    const lockHead = await headPairIdAt(
+    const lockHead = await headMessagePairIdAt(
         db,
         canonicalUriCollection('AjdvjuECVZEgZoFajaIEkg', '/flows/'),
         'biSFoHVEGnaArklDDblCXQ',
@@ -719,10 +719,10 @@ async () => {
     });
     assert.equal(created.status, 201);
 
-    const pairs = await db.messagePairs.getAll();
-    assert.equal(pairs.length, 5);
+    const messagePairs = await db.messagePairs.getAll();
+    assert.equal(messagePairs.length, 5);
 
-    const flowAddress = pairs.filter(
+    const flowAddress = messagePairs.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
             && r.uri_id === flowId,
@@ -764,7 +764,7 @@ async () => {
     const joinPrefix =
         '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
             + 'qfhFObbtDfxUZwEGxySBoQ/flows/';
-    const joinAddress = pairs.filter(
+    const joinAddress = messagePairs.filter(
         r => r.uri_collection === joinPrefix
             && r.uri_id === projectFlowId,
     );
@@ -784,7 +784,7 @@ async () => {
     // Tasks 1 and 3) precede every test write and carry their
     // OWN requestAt.
     const ats = new Set(
-        pairs.slice(3).map(r => r.request_at),
+        messagePairs.slice(3).map(r => r.request_at),
     );
     assert.equal(ats.size, 1);
 });
@@ -1118,16 +1118,15 @@ async () => {
 
 const FLOW_PREFIX = '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/';
 
-async function documentPairCount(
+async function documentMessagePairCount(
     db: MemoryDbAdapter,
     flowId: string,
 ): Promise<number> {
-    const pairs = await messageStore(db).getPairs(
-        FLOW_PREFIX, flowId,
-    );
-    return pairs.filter((pair) =>
-        pair.method === 'PUT'
-        || pair.method === 'DELETE',
+    const messagePairs = await messageStore(db)
+        .getMessagePairs(FLOW_PREFIX, flowId);
+    return messagePairs.filter((messagePair) =>
+        messagePair.method === 'PUT'
+        || messagePair.method === 'DELETE',
     ).length;
 }
 
@@ -1135,11 +1134,10 @@ async function latestPutRequestBody(
     db: MemoryDbAdapter,
     flowId: string,
 ): Promise<Record<string, unknown>> {
-    const pairs = await messageStore(db).getPairs(
-        FLOW_PREFIX, flowId,
-    );
-    const puts = pairs.filter((pair) =>
-        pair.method === 'PUT',
+    const messagePairs = await messageStore(db)
+        .getMessagePairs(FLOW_PREFIX, flowId);
+    const puts = messagePairs.filter((messagePair) =>
+        messagePair.method === 'PUT',
     );
     const latest = puts[puts.length - 1];
     assert.ok(latest, 'no PUT pair at ' + flowId);
@@ -1151,7 +1149,7 @@ async function latestPutRequestBody(
 async function assertStoredPutOmitsUndoHistory(
     db: MemoryDbAdapter,
     flowId: string,
-    pairCount: number,
+    messagePairCount: number,
     token: string,
 ): Promise<void> {
     const stored = JSON.parse(
@@ -1167,7 +1165,7 @@ async function assertStoredPutOmitsUndoHistory(
     const expected = flowStoredEntityOf(
         {
             uriId: flowId,
-            pairId: flowId,
+            messagePairId: flowId,
             method: 'PUT',
             body: requestBody,
         },
@@ -1181,7 +1179,7 @@ async function assertStoredPutOmitsUndoHistory(
     assert.equal(got.status, 200);
     const wire = await got.json() as Record<string, unknown>;
     assert.equal(
-        wire['hasUndoHistory'], pairCount > 1,
+        wire['hasUndoHistory'], messagePairCount > 1,
         'GET stamps hasUndoHistory when COUNT(*) > 1',
     );
     const { hasUndoHistory: _flag, ...fromGet } = wire;
@@ -1191,12 +1189,12 @@ async function assertStoredPutOmitsUndoHistory(
         flowEntityOf(
             {
                 uriId: flowId,
-                pairId: flowId,
+                messagePairId: flowId,
                 method: 'PUT',
                 body: requestBody,
             },
             'AjdvjuECVZEgZoFajaIEkg',
-            pairCount,
+            messagePairCount,
         ),
     );
 }
@@ -1212,7 +1210,7 @@ async () => {
     const flowId = generateIdentifier();
     const created = await createFlow(db, token, flowId);
     assert.equal(created.status, 201);
-    assert.equal(await documentPairCount(db, flowId), 1);
+    assert.equal(await documentMessagePairCount(db, flowId), 1);
     await assertStoredPutOmitsUndoHistory(
         db, flowId, 1, token,
     );
@@ -1238,7 +1236,7 @@ async () => {
         { 'if-match': await headEtag(db, token, flowId) },
     ));
     assert.equal(saved.status, 201);
-    assert.equal(await documentPairCount(db, flowId), 2);
+    assert.equal(await documentMessagePairCount(db, flowId), 2);
     await assertStoredPutOmitsUndoHistory(
         db, flowId, 2, token,
     );
@@ -1257,7 +1255,7 @@ async () => {
         },
     ));
     assert.equal(undone.status, 201);
-    assert.equal(await documentPairCount(db, flowId), 3);
+    assert.equal(await documentMessagePairCount(db, flowId), 3);
     await assertStoredPutOmitsUndoHistory(
         db, flowId, 3, token,
     );

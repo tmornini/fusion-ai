@@ -13,7 +13,7 @@ import type {
 import { nowUtc } from
     '../api/types.ts';
 import { canonicalUriCollection } from '../api/message-pair.ts';
-import { documentPairsAt } from '../api/derive-documents.ts';
+import { documentMessagePairsAt } from '../api/derive-documents.ts';
 import {
     documentGetHandler,
     documentCollectionGetHandler,
@@ -879,11 +879,11 @@ async () => {
         db.messagePairs.getAllWhere('uri_collection', aiPrefix),
         db.messagePairs.getAllWhere('uri_collection', aiPrefix),
     ]);
-    const aiDocumentPairs = documentPairsAt(
+    const aiDocumentMessagePairs = documentMessagePairsAt(
         aiRequests, aiPrefix,
-    ).filter((pair) => pair.uriId === aiId);
-    assert.equal(aiDocumentPairs.length, 1);
-    assert.equal(aiDocumentPairs[0]!.method, 'PUT');
+    ).filter((messagePair) => messagePair.uriId === aiId);
+    assert.equal(aiDocumentMessagePairs.length, 1);
+    assert.equal(aiDocumentMessagePairs[0]!.method, 'PUT');
 
     const humanCreated = await handleRequest(db, req(
         'PUT', '/identities/' + humanId, token, {
@@ -903,11 +903,11 @@ async () => {
         db.messagePairs.getAllWhere('uri_collection', humanPrefix),
         db.messagePairs.getAllWhere('uri_collection', humanPrefix),
     ]);
-    const humanDocumentPairs = documentPairsAt(
+    const humanDocumentMessagePairs = documentMessagePairsAt(
         humanRequests, humanPrefix,
-    ).filter((pair) => pair.uriId === humanId);
-    assert.equal(humanDocumentPairs.length, 1);
-    assert.equal(humanDocumentPairs[0]!.method, 'PUT');
+    ).filter((messagePair) => messagePair.uriId === humanId);
+    assert.equal(humanDocumentMessagePairs.length, 1);
+    assert.equal(humanDocumentMessagePairs[0]!.method, 'PUT');
 });
 
 // -- 8. resend idempotency at drift altitude --------------------

@@ -1,14 +1,14 @@
 import type { DbAdapter } from './db.ts';
 import type {
-    Id, PairEntity, StateFieldValueEntity,
+    Id, MessagePairEntity, StateFieldValueEntity,
 } from './types.ts';
 import { pickString } from './validators.ts';
 import { latestByKey } from '../shared/ledger-reduction.ts';
 import {
-    byIdAscending, type DocumentPair,
+    byIdAscending, type DocumentMessagePair,
 } from './derive-documents.ts';
 import {
-    operationPairsAt,
+    operationMessagePairsAt,
     WORK_ORDER_TRANSITION_PATTERN,
     stateEventVisibilityFor,
 } from './derive-states.ts';
@@ -28,13 +28,13 @@ import {
 // forms transition op pairs that carry the same fold.
 
 function matchingPrefixes(
-    pairs: readonly PairEntity[],
+    messagePairs: readonly MessagePairEntity[],
     pattern: RegExp,
 ): ReadonlySet<string> {
     const prefixes = new Set<string>();
-    for (const pair of pairs) {
-        if (pattern.test(pair.uri_collection)) {
-            prefixes.add(pair.uri_collection);
+    for (const messagePair of messagePairs) {
+        if (pattern.test(messagePair.uri_collection)) {
+            prefixes.add(messagePair.uri_collection);
         }
     }
     return prefixes;
@@ -46,7 +46,7 @@ interface TransitionFieldValue {
 }
 
 // One transition pair's fieldValues fold, reshaped into the
-// DocumentPair shape so head-reduction below shares latestByKey
+// DocumentMessagePair shape so head-reduction below shares latestByKey
 // with every other derive. `id`/`at` are the TRANSITION pair's
 // OWN envelope (every row it folds landed inside that ONE
 // atomic write, so they share one order-key); `uriId` is the
@@ -54,14 +54,14 @@ interface TransitionFieldValue {
 // ever CREATES a row (validateWorkOrderTransitionBody carries
 // no delete arm), never tombstones one.
 function transitionFieldValueCandidates(
-    pairs: readonly PairEntity[],
-): DocumentPair[] {
-    const candidates: DocumentPair[] = [];
+    messagePairs: readonly MessagePairEntity[],
+): DocumentMessagePair[] {
+    const candidates: DocumentMessagePair[] = [];
     for (const prefix of matchingPrefixes(
-        pairs, WORK_ORDER_TRANSITION_PATTERN,
+        messagePairs, WORK_ORDER_TRANSITION_PATTERN,
     )) {
-        for (const transition of operationPairsAt(
-            pairs, prefix,
+        for (const transition of operationMessagePairsAt(
+            messagePairs, prefix,
         )) {
             // New-shape pairs (no fieldValues bag) contribute
             // nothing to the legacy SFV census (RESTRICT legs
@@ -97,10 +97,14 @@ function transitionFieldValueCandidates(
 // folds via fieldValuesByTransitionEvent on entity-scoped
 // transition pairs), never before this fold runs.
 export function stateFieldValuesFrom(
-    pairs: readonly PairEntity[],
+    messagePairs: readonly MessagePairEntity[],
 ): StateFieldValueEntity[] {
-    const candidates = transitionFieldValueCandidates(pairs);
-    const heads = latestByKey(candidates, (pair) => pair.uriId);
+    const candidates = transitionFieldValueCandidates(
+        messagePairs,
+    );
+    const heads = latestByKey(
+        candidates, (messagePair) => messagePair.uriId,
+    );
     const rows: StateFieldValueEntity[] = [];
     for (const [uriId, head] of heads) {
         if (head.method === 'DELETE') continue;
@@ -172,17 +176,17 @@ async function isVisibleStateEvent(
 // Task 4 re-anchored the three GRAPH legs of
 // collectAttributeReferrers onto organization-scoped pair
 // prefixes (WO document heads) and graphDelta replay
-// (flowGraphBindingsFromPairs) — those legs are no longer a
-// whole-plane scan. This SFV comment's scope is the field-value
-// count alone.
+// (flowGraphBindingsFromMessagePairs) — those legs are no
+// longer a whole-plane scan. This SFV comment's scope is
+// the field-value count alone.
 export async function deriveStateFieldValueReferrers(
     view: DbAdapter,
     boundOrganization: Id,
     attributeIds: readonly Id[],
 ): Promise<Map<Id, readonly StateFieldValueEntity[]>> {
-    const pairs = await view.messagePairs.getAll();
+    const messagePairs = await view.messagePairs.getAll();
     const wanted = new Set(attributeIds);
-    const candidates = stateFieldValuesFrom(pairs)
+    const candidates = stateFieldValuesFrom(messagePairs)
         .filter((row) => wanted.has(row.attribute_id));
 
     // IMPORTANT 3 (fix wave): resolve visibility ONCE per

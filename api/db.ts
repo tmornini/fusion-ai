@@ -1,5 +1,5 @@
 import type {
-    PairEntity,
+    MessagePairEntity,
 } from './types.ts';
 import type {
     NotificationEvent,
@@ -265,7 +265,7 @@ export const ambientRunner = (tx: Tx): TxRunner =>
 // bound to an open tx (A9). The surviving store rides
 // HistoryEntityStore (message plane only).
 export interface DbStores {
-    messagePairs: EntityStore<PairEntity>;
+    messagePairs: EntityStore<MessagePairEntity>;
 }
 
 // Schema/connection lifecycle — the non-row surface every

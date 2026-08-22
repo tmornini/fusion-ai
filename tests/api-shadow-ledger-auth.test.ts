@@ -455,7 +455,7 @@ test('a token-exchange grant stores its own pair with live'
 // raw row here would go derivation-invisible. Every id/field
 // value stays IDENTICAL to the raw puts these replace — only the
 // write mechanism changes.
-async function seedMembershipPair(
+async function seedMembershipMessagePair(
     db: GuardedDbAdapter,
     _id: string,
     body: Record<string, unknown>,
@@ -473,7 +473,7 @@ async function seedMembershipPair(
 test('a client_credentials grant stores its own pair with live'
 + ' secrets', async () => {
     const db = await dbWithPasswordUser();
-    await seedMembershipPair(db, 'm-svc', {
+    await seedMembershipMessagePair(db, 'm-svc', {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: 'uYaHKbNeVUcsFjuooOjMew',
         type: 'member',
@@ -606,7 +606,8 @@ test('a reused (already-rotated-away) refresh token grant is a'
         refresh_token: first.refresh_token,
     }));
     const before = (await db.messagePairs.getAll()).length;
-    const opPairsBefore = (await db.messagePairs.getAll()).filter(
+    const operationMessagePairsBefore =
+        (await db.messagePairs.getAll()).filter(
         r => r.uri_collection === '/authentication/token/'
             && r.uri_id === '',
     ).length;
@@ -623,12 +624,13 @@ test('a reused (already-rotated-away) refresh token grant is a'
     const requests = await db.messagePairs.getAll();
     const responses = await db.messagePairs.getAll();
 
-    const opPairsAfter = requests.filter(
+    const operationMessagePairsAfter = requests.filter(
         r => r.uri_collection === '/authentication/token/'
             && r.uri_id === '',
     ).length;
     assert.equal(
-        opPairsAfter, opPairsBefore,
+        operationMessagePairsAfter,
+        operationMessagePairsBefore,
         'no NEW operation pair for the replay-branch 401',
     );
     // +2: the chain's two distinct jtis (the original root, the

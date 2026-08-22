@@ -13,7 +13,7 @@ import type {
     WriteLocks,
 } from './db.ts';
 import type {
-    PairEntity,
+    MessagePairEntity,
 } from './types.ts';
 import type { LatencySimulation } from './latency.ts';
 import type {
@@ -23,7 +23,7 @@ import type {
 import { HistoryEntityStore }
     from './store-history-entity.ts';
 import {
-    validatePairEntity,
+    validateMessagePairEntity,
 } from './validators.ts';
 
 // One adapter over any StorageBackend. The per-backend
@@ -42,7 +42,7 @@ export class BackedDbAdapter
     readonly #open: () => Promise<void>;
     readonly #notify: NotificationPost;
 
-    readonly messagePairs!: EntityStore<PairEntity>;
+    readonly messagePairs!: EntityStore<MessagePairEntity>;
 
     constructor(
         backend: StorageBackend,
@@ -171,7 +171,7 @@ export class BackedDbAdapter
     #buildStores(run: TxRunner): DbStores {
         return {
             messagePairs: new HistoryEntityStore(
-                'message_pairs', run, validatePairEntity,
+                'message_pairs', run, validateMessagePairEntity,
             ),
         };
     }

@@ -22,7 +22,7 @@ import { HttpMessage } from
 import { generateIdentifier } from
     '../shared/identifier.ts';
 
-function pairJsonOf(message: string): {
+function messagePairJsonOf(message: string): {
     readonly body: Record<string, unknown>;
 } {
     const body = HttpMessage.fromWire(message).body();
@@ -187,7 +187,7 @@ test('the pair request body carries domain state;'
     const requests = await db.messagePairs.getAll();
     // seedRootAdmin 2 + project PUT 1
     assert.equal(requests.length, 3);
-    const parsed = pairJsonOf(requests[2]!.request) as {
+    const parsed = messagePairJsonOf(requests[2]!.request) as {
         body: { state: string };
     };
     assert.equal(parsed.body.state, 'under_review');
@@ -258,7 +258,7 @@ test('stored PUT body equals projectEntityOf of the same'
     const expected = projectEntityOf(
         {
             uriId: id,
-            pairId: id,
+            messagePairId: id,
             method: 'PUT',
             body,
         },

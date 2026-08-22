@@ -250,7 +250,7 @@ async () => {
         identityDocumentEntityOf(
             {
                 uriId: id,
-                pairId: id,
+                messagePairId: id,
                 method: 'PUT',
                 body: { kind: 'person' },
             },

@@ -50,7 +50,7 @@ import type {
     ObjectiveRevisionEntity,
     ProjectObjectiveBaselineScoreEntity,
     ProjectObjectiveActualScoreEntity,
-    PairEntity,
+    MessagePairEntity,
     StateEntity,
 } from './types.ts';
 import {
@@ -2359,7 +2359,7 @@ const MESSAGE_HASH = /^[0-9a-f]{64}$/;
 
 const HTTP_METHOD = /^[A-Z]+$/;
 
-const PAIR_BODY_KEYS: readonly string[] = [
+const MESSAGE_PAIR_BODY_KEYS: readonly string[] = [
     'uri_collection', 'uri_id',
     'requester_identity_id', 'method',
     'request_at', 'request_hash', 'request',
@@ -2367,18 +2367,18 @@ const PAIR_BODY_KEYS: readonly string[] = [
     'operation_id',
 ];
 
-export function validatePairEntity(
+export function validateMessagePairEntity(
     body: Record<string, unknown>,
-): Omit<PairEntity, 'id'> {
+): Omit<MessagePairEntity, 'id'> {
     assertOnlyKeys(
-        body, PAIR_BODY_KEYS, 'PairEntity',
+        body, MESSAGE_PAIR_BODY_KEYS, 'MessagePairEntity',
     );
     const uriCollection = pickString(
         body, 'uri_collection',
     );
     if (!uriCollection.endsWith('/')) {
         throw new ValidationError(
-            'PairEntity.uri_collection must end'
+            'MessagePairEntity.uri_collection must end'
             + ' with "/"',
         );
     }
@@ -2387,20 +2387,20 @@ export function validatePairEntity(
     );
     if (!MESSAGE_HASH.test(requestHash)) {
         throw new ValidationError(
-            'PairEntity.request_hash must be a 64-'
+            'MessagePairEntity.request_hash must be a 64-'
             + 'character lowercase hex sha256 digest',
         );
     }
     const method = pickString(body, 'method');
     if (!HTTP_METHOD.test(method)) {
         throw new ValidationError(
-            'PairEntity.method must match ^[A-Z]+$',
+            'MessagePairEntity.method must match ^[A-Z]+$',
         );
     }
     const version = pickString(body, 'version');
     if (!HEX64.test(version)) {
         throw new ValidationError(
-            'PairEntity.version must be a 64-'
+            'MessagePairEntity.version must be a 64-'
             + 'character lowercase hex digest',
         );
     }
@@ -2415,12 +2415,12 @@ export function validatePairEntity(
         ),
         method,
         request_at: validateTimestampField(
-            body, 'request_at', 'PairEntity',
+            body, 'request_at', 'MessagePairEntity',
         ),
         request_hash: requestHash,
         request: pickString(body, 'request'),
         response_at: validateTimestampField(
-            body, 'response_at', 'PairEntity',
+            body, 'response_at', 'MessagePairEntity',
         ),
         version,
         response: pickString(body, 'response'),

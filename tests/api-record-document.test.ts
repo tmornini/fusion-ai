@@ -10,12 +10,12 @@ import { handleRequest } from '../api/api.ts';
 import { postRecordDocumentOp } from '../api/routes.ts';
 import { validateRecordDocumentBody } from '../api/validators.ts';
 import { ValidationError } from '../api/types.ts';
-import type { PairEntity } from '../api/types.ts';
+import type { MessagePairEntity } from '../api/types.ts';
 import {
-    documentPairsAt,
+    documentMessagePairsAt,
     documentLifecycleEvents,
 } from '../api/derive-documents.ts';
-import { formWritePair } from '../api/message-pair.ts';
+import { formWriteMessagePair } from '../api/message-pair.ts';
 import {
     RECORD_TYPE_DETAIL_PATTERN,
 } from '../api/family-registry.ts';
@@ -142,7 +142,7 @@ async () => {
         ...recordDocument('Fresh', 'active', AT, 'ev-1'),
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
-    const pair = await formWritePair({
+    const messagePair = await formWriteMessagePair({
         method: 'PUT'
             , pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + 'rbfHGatkwQzGZJVXKJEeyw',
@@ -157,7 +157,8 @@ async () => {
         operationId: TEST_OPERATION_ID,
     });
     const written = await postRecordDocumentOp(
-        db, 'rbfHGatkwQzGZJVXKJEeyw', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
+        db, 'rbfHGatkwQzGZJVXKJEeyw', body,
+        'XXZruirZyAOoRpNxaDnpSA', messagePair,
     );
     assert.equal(written.name, 'Fresh');
     assert.equal(written.organization_id, 'AjdvjuECVZEgZoFajaIEkg');
@@ -182,7 +183,7 @@ async () => {
 // it — the below-gate convention this file otherwise follows
 // (its own header comment) omits pairs entirely, which the row-
 // plane read tolerated but the pair-plane one cannot; the
-// pair is formed via formWritePair, the SAME helper
+// pair is formed via formWriteMessagePair, the SAME helper
 // document-family.test.ts's below-facade convention test uses.
 test('postRecordDocumentOp with an echoed trio writes NO new'
 + ' event, replaying the stored head\'s member_id',
@@ -192,7 +193,7 @@ async () => {
         ...recordDocument('First', 'active', AT, 'ev-2'),
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
-    const firstPair = await formWritePair({
+    const firstMessagePair = await formWriteMessagePair({
         method: 'PUT'
             , pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + 'rcaSzEaORBkezCxyhLhecA',
@@ -208,7 +209,7 @@ async () => {
     });
     await postRecordDocumentOp(
         db, 'rcaSzEaORBkezCxyhLhecA', firstBody, 'XXZruirZyAOoRpNxaDnpSA'
-            , firstPair,
+            , firstMessagePair,
     );
     const second = await postRecordDocumentOp(
         db, 'rcaSzEaORBkezCxyhLhecA',
@@ -237,7 +238,7 @@ test('postRecordDocumentOp with a fresh trio posts a'
         ),
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
-    const firstPair = await formWritePair({
+    const firstMessagePair = await formWriteMessagePair({
         method: 'PUT'
             , pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + 'rlBnfIvzDVVZeVSjBECxGg',
@@ -253,7 +254,7 @@ test('postRecordDocumentOp with a fresh trio posts a'
     });
     await postRecordDocumentOp(
         db, 'rlBnfIvzDVVZeVSjBECxGg', firstBody, 'XXZruirZyAOoRpNxaDnpSA'
-            , firstPair,
+            , firstMessagePair,
     );
     const secondBody = {
         ...recordDocument(
@@ -262,7 +263,7 @@ test('postRecordDocumentOp with a fresh trio posts a'
         ),
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
-    const secondPair = await formWritePair({
+    const secondMessagePair = await formWriteMessagePair({
         method: 'PUT'
             , pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + 'rlBnfIvzDVVZeVSjBECxGg',
@@ -279,7 +280,7 @@ test('postRecordDocumentOp with a fresh trio posts a'
     });
     await postRecordDocumentOp(
         db, 'rlBnfIvzDVVZeVSjBECxGg', secondBody, 'XXZruirZyAOoRpNxaDnpSA'
-            , secondPair,
+            , secondMessagePair,
     );
     const events = await deriveRecordStateHistory(db
         , 'AjdvjuECVZEgZoFajaIEkg', 'rlBnfIvzDVVZeVSjBECxGg');
@@ -341,13 +342,13 @@ test('a byte-identical resend replays the stored response:'
 // so this pins the shared derive-documents.ts fix directly
 // against fabricated pairs — below-gate, family-agnostic.
 
-async function storedPairAt(
+async function storedMessagePairAt(
     method: string,
     uriId: string,
     at: string,
     body: Record<string, unknown> | undefined,
-): Promise<PairEntity> {
-    const pair = await formWritePair({
+): Promise<MessagePairEntity> {
+    const messagePair = await formWriteMessagePair({
         method,
         pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + uriId,
@@ -365,18 +366,18 @@ async function storedPairAt(
         operationId: TEST_OPERATION_ID,
     });
     return {
-        id: pair.id,
-        uri_collection: pair.uriCollection,
-        uri_id: pair.uriId,
-        requester_identity_id: pair.requesterIdentityId,
-        method: pair.method,
+        id: messagePair.id,
+        uri_collection: messagePair.uriCollection,
+        uri_id: messagePair.uriId,
+        requester_identity_id: messagePair.requesterIdentityId,
+        method: messagePair.method,
         request_at: at,
-        request_hash: pair.requestHash,
-        request: pair.requestMessage,
+        request_hash: messagePair.requestHash,
+        request: messagePair.requestMessage,
         response_at: at,
-        version: pair.responseEtag,
-        response: pair.responseMessage,
-        operation_id: pair.operationId,
+        version: messagePair.responseEtag,
+        response: messagePair.responseMessage,
+        operation_id: messagePair.operationId,
     };
 }
 
@@ -384,27 +385,27 @@ test('documentLifecycleEvents skips a DELETE-method pair,'
 + ' yielding the two PUT trios across a delete-then-recreate'
 + ' history', async () => {
     const prefix = '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/';
-    const first = await storedPairAt(
+    const first = await storedMessagePairAt(
         'PUT', 'rec-x', '2026-01-01T00:00:00.000000Z',
         recordDocument('First', 'active', AT, 'ev-x1'),
     );
-    const deleted = await storedPairAt(
+    const deleted = await storedMessagePairAt(
         'DELETE', 'rec-x', '2026-01-02T00:00:00.000000Z',
         undefined,
     );
-    const second = await storedPairAt(
+    const second = await storedMessagePairAt(
         'PUT', 'rec-x', '2026-01-03T00:00:00.000000Z',
         recordDocument(
             'Second', 'active',
             '2026-01-03T00:00:00.000000Z', 'ev-x2',
         ),
     );
-    const pairs = documentPairsAt(
+    const messagePairs = documentMessagePairsAt(
         [first, deleted, second], prefix,
     )
-        .filter(pair => pair.uriId === 'rec-x');
-    assert.equal(pairs.length, 3);
-    const events = documentLifecycleEvents(pairs);
+        .filter(messagePair => messagePair.uriId === 'rec-x');
+    assert.equal(messagePairs.length, 3);
+    const events = documentLifecycleEvents(messagePairs);
     assert.deepEqual(
         events.map(e => e.state),
         ['active', 'active'],

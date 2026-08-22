@@ -30,7 +30,7 @@ import { HttpMessage } from
 import { parseWire } from
     '../shared/http-message/wire-codec.ts';
 
-function pairJsonOf(message: string): {
+function messagePairJsonOf(message: string): {
     readonly body: Record<string, unknown>;
 } {
     const body = HttpMessage.fromWire(message).body();
@@ -188,7 +188,9 @@ async () => {
     );
     assert.ok(otherReqs.length > 0);
     for (const request of otherReqs) {
-        const embedded = pairJsonOf(request.request) as {
+        const embedded = messagePairJsonOf(
+            request.request,
+        ) as {
             body: Record<string, unknown>;
         };
         assert.ok(

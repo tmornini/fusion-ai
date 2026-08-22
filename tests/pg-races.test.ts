@@ -150,7 +150,7 @@ function flowDocument(
     };
 }
 
-async function pairsAt(
+async function messagePairsAt(
     db: DbAdapter,
     collection: string,
     uriId: string,
@@ -373,7 +373,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         assert.equal(left.status, 201);
         assert.equal(right.status, 201);
         assert.equal(
-            await pairsAt(db, IDEA_PREFIX, 'rZrIDSkakoKzerGHZzJnJw'),
+            await messagePairsAt(db, IDEA_PREFIX, 'rZrIDSkakoKzerGHZzJnJw'),
             1,
         );
     });

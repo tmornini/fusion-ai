@@ -20,7 +20,7 @@ import {
     resolveOwningOrganization,
 } from '../api/derive-states.ts';
 import {
-    documentPairsAt,
+    documentMessagePairsAt,
 } from '../api/derive-documents.ts';
 import {
     canonicalUriCollection,
@@ -1096,12 +1096,12 @@ async () => {
         db.messagePairs.getAllWhere('uri_collection', prefix),
         db.messagePairs.getAllWhere('uri_collection', prefix),
     ]);
-    const pairs = documentPairsAt(
+    const messagePairs = documentMessagePairsAt(
         requests, prefix,
     ).filter((p) => p.uriId === flowId);
     const states: { state: string; at: string }[] = [];
-    for (const pair of pairs) {
-        const delta = pair.body['graphDelta'];
+    for (const messagePair of messagePairs) {
+        const delta = messagePair.body['graphDelta'];
         const deletions =
             typeof delta === 'object' && delta !== null
                 ? (delta as Record<string, unknown>)[
@@ -1122,7 +1122,7 @@ async () => {
                 });
             }
         }
-        const revivals = pair.body['revivals'];
+        const revivals = messagePair.body['revivals'];
         if (Array.isArray(revivals)) {
             for (const entry of revivals) {
                 if (

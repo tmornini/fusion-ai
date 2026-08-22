@@ -12,9 +12,9 @@ import { seedAdminSchema } from './test-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
 import { latestActionForJti } from '../api/identity-tokens.ts';
 import {
-    putMessagePair, formAuthPair, responseFromStored,
+    putMessagePair, formAuthMessagePair, responseFromStored,
 } from '../api/message-pair.ts';
-import type { AuthPairSeed } from '../api/message-pair.ts';
+import type { AuthMessagePairSeed } from '../api/message-pair.ts';
 import {
     exchangeBearerForOrganization,
     rotateRefreshJti,
@@ -441,7 +441,7 @@ function postToken(
 // (identity-tokens/:id carries no DOCUMENT_CLASS entry, so no
 // head-read ever chains it), whose stored response deep-equals
 // the derived event itself.
-async function assertRootEventPair(
+async function assertRootEventMessagePair(
     db: MemoryDbAdapter,
 ): Promise<void> {
     const rows = await deriveIdentityTokens(db);
@@ -456,9 +456,10 @@ async function assertRootEventPair(
     );
     assert.ok(eventRequest, 'no event pair for the issued root');
     // requesterIdentityId is the event's OWN identity_id (the
-    // affected identity) — the NAMED convention formTokenEventPair
-    // implements, since no authenticated actor is in view at this
-    // depth (message-pair.ts).
+    // affected identity) — the NAMED convention
+    // formTokenEventMessagePair implements, since no
+    // authenticated actor is in view at this depth
+    // (message-pair.ts).
     assert.equal(
         eventRequest!.requester_identity_id, root.identity_id,
     );
@@ -478,7 +479,7 @@ async function assertRootEventPair(
 // presented code, so a bare pair — the SAME
 // shape a real login forms (Phase 13 Task 9: the authorization_
 // codes row half retired) — is all a seed needs.
-async function seedAuthorizationCodePair(
+async function seedAuthorizationCodeMessagePair(
     db: MemoryDbAdapter,
     code: string,
     identityId: string,
@@ -486,7 +487,7 @@ async function seedAuthorizationCodePair(
 ): Promise<void> {
     // Fresh `at` (nowUtc): authorization_code TTL is 10 min;
     // a fixed historical AT would expire before the grant.
-    const seed: AuthPairSeed = {
+    const seed: AuthMessagePairSeed = {
         requestAt: nowUtc(),
         headerFields: [],
         method: 'POST',
@@ -499,36 +500,36 @@ async function seedAuthorizationCodePair(
         method: 'password', username: 'seed@example.com',
         password: 'seed-password', client_id: clientId,
     };
-    const pair = await formAuthPair(
+    const messagePair = await formAuthMessagePair(
         seed, requestBody, identityId, 200, { code },
     );
-    await putMessagePair(db, pair);
+    await putMessagePair(db, messagePair);
 }
 
 test('an authorization_code grant appends its root\'s own'
 + ' event pair, distinct from the grant\'s operation pair',
 async () => {
     const db = await freshDb();
-    await seedAuthorizationCodePair(db, AUTH_CODE, 'XXZruirZyAOoRpNxaDnpSA'
-        , 'web');
+    await seedAuthorizationCodeMessagePair(
+        db, AUTH_CODE, 'XXZruirZyAOoRpNxaDnpSA', 'web');
     const res = await postToken(db, {
         grant_type: 'authorization_code', code: AUTH_CODE,
         client_id: 'web',
     });
     assert.equal(res.status, 201);
-    await assertRootEventPair(db);
+    await assertRootEventMessagePair(db);
     // KEY-BY-ANCHOR (Phase 13 Task 7, gate 3): the issued root's
     // row id is now the code's OWN sha256 digest, not a fresh
     // mint — the same value the SAME address's event pair uri_id
-    // carries (assertRootEventPair's own uri_id match above).
+    // carries (assertRootEventMessagePair's own uri_id match above).
     const [root] = await deriveIdentityTokens(db);
     assert.equal(root!.id, await sha256Hex(AUTH_CODE));
     const requests = await db.messagePairs.getAll();
-    const opPair = requests.find(
+    const operationMessagePair = requests.find(
         r => r.uri_collection === '/authentication/token/',
     );
-    assert.ok(opPair);
-    assert.equal(opPair!.uri_id, '');
+    assert.ok(operationMessagePair);
+    assert.equal(operationMessagePair!.uri_id, '');
     // 3 bootstrap + the seeded authorize pair (Phase 13 Task 7:
     // the pre-tx lookup now needs a real authorize pair, not a
     // raw authorizationCodes row alone) + the root's own event
@@ -546,7 +547,7 @@ test('a token-exchange grant (a real /authentication/token'
         subject_token: subject, actor_token: subject,
     });
     assert.equal(res.status, 201);
-    await assertRootEventPair(db);
+    await assertRootEventMessagePair(db);
 });
 
 test('a client_credentials grant appends its root\'s own'
@@ -570,7 +571,7 @@ test('a client_credentials grant appends its root\'s own'
         client_id: CLIENT_ID, client_assertion: assertion,
     });
     assert.equal(res.status, 201);
-    await assertRootEventPair(db);
+    await assertRootEventMessagePair(db);
 });
 
 // ── synthesized event pairs: rotation and revocation (Phase 13
@@ -580,10 +581,10 @@ test('a client_credentials grant appends its root\'s own'
 
 // ANY identity_tokens row has its own event pair whose stored
 // response deep-equals the row itself — the SAME shape
-// assertRootEventPair checks for a bare issuance, generalized to
+// assertRootEventMessagePair checks for a bare issuance, generalized to
 // an arbitrary row id (rotation and revocation can write more
 // than one row per call).
-async function assertEventPairForRow(
+async function assertEventMessagePairForRow(
     db: MemoryDbAdapter, rowId: string,
 ): Promise<void> {
     const row = await deriveIdentityToken(
@@ -596,7 +597,7 @@ async function assertEventPairForRow(
     );
     assert.ok(eventRequest, 'no event pair for row ' + rowId);
     // requesterIdentityId is the event's OWN identity_id — same
-    // NAMED convention as assertRootEventPair above.
+    // NAMED convention as assertRootEventMessagePair above.
     assert.equal(
         eventRequest!.requester_identity_id, row.identity_id,
     );
@@ -628,15 +629,15 @@ test('a rotation\'s ROTATE branch appends an event pair for'
     );
     assert.ok(retired);
     assert.ok(issued);
-    await assertEventPairForRow(db, retired!.id);
-    await assertEventPairForRow(db, issued!.id);
+    await assertEventMessagePairForRow(db, retired!.id);
+    await assertEventMessagePairForRow(db, issued!.id);
     const requests = await db.messagePairs.getAll();
-    const opPair = requests.find(
+    const operationMessagePair = requests.find(
         r => r.uri_collection
             === tokenOpPath('rotation', '/'),
     );
-    assert.ok(opPair);
-    assert.equal(opPair!.uri_id, '');
+    assert.ok(operationMessagePair);
+    assert.equal(operationMessagePair!.uri_id, '');
 });
 
 test('a rotation\'s REPLAY branch appends an event pair for'
@@ -662,8 +663,8 @@ test('a rotation\'s REPLAY branch appends an event pair for'
     );
     assert.ok(revokedRoot);
     assert.ok(revokedSuccessor);
-    await assertEventPairForRow(db, revokedRoot!.id);
-    await assertEventPairForRow(db, revokedSuccessor!.id);
+    await assertEventMessagePairForRow(db, revokedRoot!.id);
+    await assertEventMessagePairForRow(db, revokedSuccessor!.id);
 });
 
 test('a revocation appends an event pair for the revoked row,'
@@ -680,7 +681,7 @@ async () => {
         r => r.jti === ROOT_JTI && r.action === 'revoked',
     );
     assert.ok(revoked);
-    await assertEventPairForRow(db, revoked!.id);
+    await assertEventMessagePairForRow(db, revoked!.id);
 });
 
 test('revoking an unknown jti appends NO event pair — only its'
@@ -737,7 +738,7 @@ test('two concurrent rotations of one jti: exactly one'
     const newRows = rows.filter(r => !beforeIds.has(r.id));
     assert.equal(newRows.length, 4);
     for (const row of newRows) {
-        await assertEventPairForRow(db, row.id);
+        await assertEventMessagePairForRow(db, row.id);
     }
     const requests = await db.messagePairs.getAll();
     const responses = await db.messagePairs.getAll();
@@ -767,7 +768,7 @@ async () => {
     const after = await deriveIdentityTokens(db);
     const newRows = after.filter(r => !beforeIds.has(r.id));
     assert.equal(newRows.length, 1);
-    await assertEventPairForRow(db, newRows[0]!.id);
+    await assertEventMessagePairForRow(db, newRows[0]!.id);
     // NO auth pair: the exchange hop is an internal, non-route
     // hop — /authentication/token was never requested.
     const requests = await db.messagePairs.getAll();

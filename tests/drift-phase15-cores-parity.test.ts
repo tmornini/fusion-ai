@@ -22,7 +22,7 @@ import {
 } from './legacy-transition-fixture.ts';
 import { buildIdeas } from '../api/mock-data/ideas.ts';
 import {
-    flowGraphBindingsFromPairs,
+    flowGraphBindingsFromMessagePairs,
     deriveFlows,
 } from '../api/derive-flows.ts';
 import {
@@ -610,7 +610,7 @@ async () => {
     );
 });
 
-// -- flowGraphBindingsFromPairs ----------------------------------
+// -- flowGraphBindingsFromMessagePairs ----------------------------------
 
 function sortById<T extends { id: string }>(
     rows: readonly T[],
@@ -620,18 +620,18 @@ function sortById<T extends { id: string }>(
 }
 
 // Phase Final Task 2: graph relation ROW halves stripped —
-// pair plane (flowGraphBindingsFromPairs) is sole oracle.
-test('flowGraphBindingsFromPairs: seed attribute + member'
+// pair plane (flowGraphBindingsFromMessagePairs) is sole oracle.
+test('flowGraphBindingsFromMessagePairs: seed attribute + member'
 + ' ledgers non-empty; pre-tx vs in-tx parity; nodeFlowIds'
 + ' cover every bound node', async () => {
     const db = await seededDb();
     const txTables = MESSAGE_TABLES;
-    const preTx = await flowGraphBindingsFromPairs(
+    const preTx = await flowGraphBindingsFromMessagePairs(
         db, STARK_ORGANIZATION,
     );
     const inTx = await db.transaction(
         txTables,
-        (view) => flowGraphBindingsFromPairs(
+        (view) => flowGraphBindingsFromMessagePairs(
             view, STARK_ORGANIZATION,
         ),
     );
@@ -968,7 +968,7 @@ async () => {
 
 // Phase Final Task 2: graph ROW half stripped — pair plane
 // alone tracks the live attribute add/remove ledger.
-test('residual pin: flowGraphBindingsFromPairs tracks a'
+test('residual pin: flowGraphBindingsFromMessagePairs tracks a'
 + ' live attribute add then remove (fail-closed) on the'
 + ' pair plane', async () => {
     const db = await seededDb();
@@ -1039,7 +1039,7 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
     ));
     assert.equal(created.status, 201);
 
-    const afterAdd = await flowGraphBindingsFromPairs(
+    const afterAdd = await flowGraphBindingsFromMessagePairs(
         db, STARK_ORGANIZATION,
     );
     const addRow = afterAdd.attributeEvents.find(
@@ -1115,7 +1115,7 @@ test('residual pin: flowGraphBindingsFromPairs tracks a'
     ));
     assert.equal(putRemove.status, 201);
 
-    const afterRm = await flowGraphBindingsFromPairs(
+    const afterRm = await flowGraphBindingsFromMessagePairs(
         db, STARK_ORGANIZATION,
     );
     const rmRow = afterRm.attributeEvents.find(
@@ -1207,7 +1207,7 @@ test('residual pin: soft-deleted node drops from'
     ));
     assert.equal(created.status, 201);
 
-    const afterAdd = await flowGraphBindingsFromPairs(
+    const afterAdd = await flowGraphBindingsFromMessagePairs(
         db, STARK_ORGANIZATION,
     );
     assert.equal(
@@ -1262,7 +1262,7 @@ test('residual pin: soft-deleted node drops from'
     ));
     assert.equal(putDelete.status, 201);
 
-    const afterDel = await flowGraphBindingsFromPairs(
+    const afterDel = await flowGraphBindingsFromMessagePairs(
         db, STARK_ORGANIZATION,
     );
     assert.equal(
@@ -1593,7 +1593,7 @@ async () => {
     const db = await seededDb();
     // Seed attributes from pair-plane graph bindings + WO
     // frozen graphs.
-    const bindings = await flowGraphBindingsFromPairs(
+    const bindings = await flowGraphBindingsFromMessagePairs(
         db, STARK_ORGANIZATION,
     );
     const attrFromRelations = new Set(
