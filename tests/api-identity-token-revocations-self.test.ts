@@ -53,16 +53,16 @@ function nestedPath(
 async function freshDb(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedOrganizationMember(db, 'member1');
+    await seedOrganizationMember(db, 'nkgaOHZISTQrILTfPThWCA');
     return db;
 }
 
 test('admin GET nested revocation 200s after PUT',
 async () => {
     const db = await freshDb();
-    const token = await organizationToken('current');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const at = '2026-01-01T00:00:00.000000Z';
-    const path = nestedPath('member1', 'admin-get-1');
+    const path = nestedPath('nkgaOHZISTQrILTfPThWCA', 'admin-get-1');
     const put = await handleRequest(db, req(
         'PUT', path, token, { at },
     ));
@@ -72,19 +72,19 @@ async () => {
     );
     assert.equal(get.status, 200);
     assert.deepEqual(await get.json(), {
-        id: 'admin-get-1', identity_id: 'member1', at,
+        id: 'admin-get-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
     });
 });
 
 test('PUT /identity-token-revocations/:rid is retired'
 + ' (router 404)', async () => {
     const db = await freshDb();
-    const token = await organizationToken('current');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const res = await handleRequest(db, req(
-        'PUT', '/identity-token-revocations/flat-rid',
+        'PUT', '/identity-token-revocations/ZvdHDQyBmhARRFlOirQLwg',
         token,
         {
-            identity_id: 'member1',
+            identity_id: 'nkgaOHZISTQrILTfPThWCA',
             at: '2026-01-01T00:00:00.000000Z',
         },
     ));
@@ -92,29 +92,29 @@ test('PUT /identity-token-revocations/:rid is retired'
     const body = await res.json() as { error: string };
     assert.equal(
         body.error,
-        'Not found: /identity-token-revocations/flat-rid',
+        'Not found: /identity-token-revocations/ZvdHDQyBmhARRFlOirQLwg',
     );
 });
 
 test('GET /identity-token-revocations/:rid is retired'
 + ' (router 404)', async () => {
     const db = await freshDb();
-    const token = await organizationToken('current');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const at = '2026-01-01T00:00:00.000000Z';
     const put = await handleRequest(db, req(
-        'PUT', nestedPath('member1', 'flat-get-1'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'ZtxCJjftJTLNZUfZXpgpSA'),
         token, { at },
     ));
     assert.equal(put.status, 201);
     const res = await handleRequest(db, req(
-        'GET', '/identity-token-revocations/flat-get-1',
+        'GET', '/identity-token-revocations/ZtxCJjftJTLNZUfZXpgpSA',
         token,
     ));
     assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
     assert.equal(
         body.error,
-        'Not found: /identity-token-revocations/flat-get-1',
+        'Not found: /identity-token-revocations/ZtxCJjftJTLNZUfZXpgpSA',
     );
 });
 
@@ -123,33 +123,33 @@ test('a member PUT identities/:id/token-revocations/:rid'
 + ' exact success shape, and lands both the row and its'
 + ' pair', async () => {
     const db = await freshDb();
-    const token = await organizationToken('member1');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const at = '2026-01-01T00:00:00.000000Z';
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('member1', 'self-rev-1'), token,
-        { identity_id: 'member1', at },
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'self-rev-1'), token,
+        { identity_id: 'nkgaOHZISTQrILTfPThWCA', at },
     ));
     assert.equal(res.status, 201);
     assert.deepEqual(await res.json(), {
-        id: 'self-rev-1', identity_id: 'member1', at,
+        id: 'self-rev-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
     });
     const row = await deriveTokenRevocation(
-        db, 'member1', 'self-rev-1',
+        db, 'nkgaOHZISTQrILTfPThWCA', 'self-rev-1',
     );
     assert.deepEqual(
-        row, { id: 'self-rev-1', identity_id: 'member1', at },
+        row, { id: 'self-rev-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at },
     );
     const requests = await db.pairs.getAll();
     const own = requests.find(
         r => r.uri_collection
-            === '/identities/member1/token-revocations/'
+            === '/identities/nkgaOHZISTQrILTfPThWCA/token-revocations/'
             && r.uri_id === 'self-rev-1',
     );
     assert.ok(own);
     const responses = await db.pairs.getAll();
     const ownResponse = responses.find(
         r => r.uri_collection
-            === '/identities/member1/token-revocations/'
+            === '/identities/nkgaOHZISTQrILTfPThWCA/token-revocations/'
             && r.uri_id === 'self-rev-1',
     );
     assert.ok(ownResponse);
@@ -158,13 +158,13 @@ test('a member PUT identities/:id/token-revocations/:rid'
 test('logout-everywhere success clears the refresh cookie',
 async () => {
     const db = await freshDb();
-    const token = await organizationToken('member1');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const res = await handleRequest(db, req(
         'PUT',
-        nestedPath('member1', 'self-rev-cookie'),
+        nestedPath('nkgaOHZISTQrILTfPThWCA', 'self-rev-cookie'),
         token,
         {
-            identity_id: 'member1',
+            identity_id: 'nkgaOHZISTQrILTfPThWCA',
             at: '2026-01-01T00:00:00.000000Z',
         },
     ));
@@ -189,23 +189,24 @@ async () => {
     const iat = Math.floor(Date.parse(revokeAt) / 1000) - 60;
     const memberToken = await mintAccessToken({
         aud: TOKEN_AUDIENCE,
-        sub: 'member1',
-        roles: ['member:1'],
+        sub: 'nkgaOHZISTQrILTfPThWCA',
+        roles: ['member:AjdvjuECVZEgZoFajaIEkg'],
         name: 'Demo',
-        organization: '1',
-        organizations: ['1'],
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
+        organizations: ['AjdvjuECVZEgZoFajaIEkg'],
         iat,
         ttlSeconds: 10_000_000_000,
         jti: 'self-rev-2-jti',
     });
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('member1', 'self-rev-2'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'self-rev-2'),
         memberToken,
-        { identity_id: 'member1', at: revokeAt },
+        { identity_id: 'nkgaOHZISTQrILTfPThWCA', at: revokeAt },
     ));
     assert.equal(res.status, 201);
     const still = await handleRequest(
-        db, req('GET', '/organizations/1/members/', memberToken),
+        db, req('GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+            , memberToken),
     );
     assert.equal(still.status, 200);
     const refresh = await handleRequest(
@@ -231,12 +232,12 @@ test('a member PUT naming ANOTHER identity 403s, byte-pinned'
 + ' to the SAME wording authorizeRequest returned, and'
 + ' writes no row', async () => {
     const db = await freshDb();
-    const token = await organizationToken('member1');
-    const path = nestedPath('someone-else', 'foreign-rev-1');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
+    const path = nestedPath('uTGrEpVpODbNhDhDVdWeqQ', 'foreign-rev-1');
     const res = await handleRequest(db, req(
         'PUT', path, token,
         {
-            identity_id: 'someone-else',
+            identity_id: 'uTGrEpVpODbNhDhDVdWeqQ',
             at: '2026-01-01T00:00:00.000000Z',
         },
     ));
@@ -257,19 +258,19 @@ test('a member PUT naming ANOTHER identity 403s, byte-pinned'
 test('stored PUT body equals tokenRevocationEntityOf',
 async () => {
     const db = await freshDb();
-    const token = await organizationToken('current');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const id = 'rev-g4';
     const fields = {
-        identity_id: 'member1',
+        identity_id: 'nkgaOHZISTQrILTfPThWCA',
         at: '2026-01-01T00:00:00.000000Z',
     };
     const put = await handleRequest(db, req(
-        'PUT', nestedPath('member1', id), token, fields,
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', id), token, fields,
     ));
     assert.equal(put.status, 201);
     const stored = JSON.parse(
         await storedPutBodyText(
-            db, '/identities/member1/token-revocations/', id,
+            db, '/identities/nkgaOHZISTQrILTfPThWCA/token-revocations/', id,
         ),
     );
     const expected = tokenRevocationEntityOf({
@@ -282,7 +283,7 @@ async () => {
     assert.deepEqual(stored, expected);
     assert.deepEqual(
         stored,
-        await deriveTokenRevocation(db, 'member1', id),
+        await deriveTokenRevocation(db, 'nkgaOHZISTQrILTfPThWCA', id),
     );
     assert.deepEqual(stored, await put.json());
 });
@@ -290,40 +291,40 @@ async () => {
 test('the admin path is unchanged: an admin PUT naming'
 + ' ANOTHER identity still succeeds 2xx', async () => {
     const db = await freshDb();
-    const adminToken = await organizationToken('current');
+    const adminToken = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const at = '2026-01-01T00:00:00.000000Z';
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('member1', 'admin-rev-1'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'admin-rev-1'),
         adminToken,
-        { identity_id: 'member1', at },
+        { identity_id: 'nkgaOHZISTQrILTfPThWCA', at },
     ));
     assert.equal(res.status, 201);
     assert.deepEqual(await res.json(), {
-        id: 'admin-rev-1', identity_id: 'member1', at,
+        id: 'admin-rev-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
     });
 });
 
 test('PUT stamps identity_id from the path when omitted',
 async () => {
     const db = await freshDb();
-    const token = await organizationToken('current');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const at = '2026-01-01T00:00:00.000000Z';
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('member1', 'stamp-1'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'stamp-1'),
         token, { at },
     ));
     assert.equal(res.status, 201);
     assert.deepEqual(await res.json(), {
-        id: 'stamp-1', identity_id: 'member1', at,
+        id: 'stamp-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
     });
 });
 
 test('PUT identity_id that disagrees with the path 400s',
 async () => {
     const db = await freshDb();
-    const token = await organizationToken('current');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('member1', 'mismatch-1'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'mismatch-1'),
         token,
         {
             identity_id: 'other',

@@ -66,7 +66,7 @@ async function grant(
     email: string,
 ): Promise<void> {
     const admin = await organizationToken(
-        'current', ORGANIZATION_TWO,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
     );
     const res = await handleRequest(db, req(
         'POST', '/organizations/' + ORGANIZATION_TWO
@@ -88,7 +88,7 @@ test('invitationOpStateFor: byte-identical pre-tx (the plain'
 + ' precedent', async () => {
     const db = await seededDb();
     const id = 'inv-parity-opstate-accepted';
-    const inviteeId = 'LhfaUUf4IumVsCSGB4xjdK'; // Sarah Chen
+    const inviteeId = 'MQFcPtrZPIGjMCRAXtZUnA'; // Sarah Chen
     await grant(db, id, 'sarah.chen@company.com');
     const accept = await handleRequest(db, req(
         'PUT',
@@ -139,7 +139,7 @@ test('invitationLifecycleStatesFor: byte-identical pre-tx (the'
         'PUT',
         '/organizations/' + ORGANIZATION_TWO
             + '/invitations/' + id,
-        await organizationToken('current', ORGANIZATION_TWO),
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO),
         {
             state: 'revoked',
             eventId: id + '-revoke',
@@ -204,7 +204,7 @@ function workOrderFlowGraph(
         ],
         edges: [
             {
-                id: 'e1', name: '',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
                 fromNodeId: 'n-start', toNodeId: 'n-middle',
             },
             {
@@ -215,7 +215,7 @@ function workOrderFlowGraph(
     };
 }
 
-const EMPTY_FLOW_ID = 'E2BnBlZyrriqsQYkmS4usb';
+const EMPTY_FLOW_ID = 'GgfDbXOJUvvaCekCTcvhuw';
 
 test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
 + ' plain adapter) vs in-tx (an open db.transaction view sharing'
@@ -226,7 +226,7 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token, {
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token, {
             id: workOrderId,
             workOrder: {
                 display_id: 'parity-' + workOrderId,
@@ -263,12 +263,12 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
     assert.equal(preTx.length, 3);
 
     const preTxMissing = await workOrderLifecycleStatesFor(
-        db, STARK_ORGANIZATION, 'no-such-work-order',
+        db, STARK_ORGANIZATION, 'oYnbiWXzroVnyolOhmkBIQ',
     );
     const inTxMissing = await db.transaction(
         claimTxTables,
         (view) => workOrderLifecycleStatesFor(
-            view, STARK_ORGANIZATION, 'no-such-work-order',
+            view, STARK_ORGANIZATION, 'oYnbiWXzroVnyolOhmkBIQ',
         ),
     );
     assert.deepEqual(inTxMissing, preTxMissing);
@@ -290,7 +290,7 @@ test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token, {
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token, {
             id: workOrderId,
             workOrder: {
                 display_id: 'parity-' + workOrderId,
@@ -327,12 +327,12 @@ test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
     assert.equal(preTx.length, 3);
 
     const preTxMissing = await workOrderClaimHistoryFor(
-        db, STARK_ORGANIZATION, 'no-such-work-order',
+        db, STARK_ORGANIZATION, 'oYnbiWXzroVnyolOhmkBIQ',
     );
     const inTxMissing = await db.transaction(
         claimTxTables,
         (view) => workOrderClaimHistoryFor(
-            view, STARK_ORGANIZATION, 'no-such-work-order',
+            view, STARK_ORGANIZATION, 'oYnbiWXzroVnyolOhmkBIQ',
         ),
     );
     assert.deepEqual(inTxMissing, preTxMissing);

@@ -13,7 +13,7 @@ test(
     'validateRecordEntity accepts a valid payload',
     () => {
         const out = validateRecordEntity({
-            organization_id: '1',
+            organization_id: 'AjdvjuECVZEgZoFajaIEkg',
             name: 'Customer',
             description: 'Customer record',
             position: 1,
@@ -31,7 +31,7 @@ test(
     () => {
         assert.throws(
             () => validateRecordEntity({
-                organization_id: '1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 name: '',
                 description: 'x',
                 position: 1,
@@ -86,7 +86,7 @@ test(
     () => {
         assert.throws(
             () => validateRecordEntity({
-                organization_id: '1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 name: 7,
                 description: 'd',
                 position: 1,
@@ -101,7 +101,7 @@ test(
     () => {
         assert.throws(
             () => validateRecordEntity({
-                organization_id: '1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 name: 'C',
                 description: 'd',
                 position: 'first',
@@ -117,15 +117,15 @@ test(
     + ' valid payload',
     () => {
         const out = validateRecordAttributeEntity({
-            organization_id: '1',
-            record_id: 'rec-1',
+            organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+            record_id: 'rbfHGatkwQzGZJVXKJEeyw',
             name: 'Email',
             attribute_type: 'text',
             sort_order: 1,
             options: [],
             constraints: [],
         });
-        assert.equal(out.record_id, 'rec-1');
+        assert.equal(out.record_id, 'rbfHGatkwQzGZJVXKJEeyw');
         assert.equal(out.name, 'Email');
         assert.equal(out.attribute_type, 'text');
     },
@@ -137,8 +137,8 @@ test(
     () => {
         assert.throws(
             () => validateRecordAttributeEntity({
-                organization_id: '1',
-                record_id: 'rec-1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+                record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: '',
                 attribute_type: 'text',
                 sort_order: 1,
@@ -156,8 +156,8 @@ test(
     () => {
         assert.throws(
             () => validateRecordAttributeEntity({
-                organization_id: '1',
-                record_id: 'rec-1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+                record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'X',
                 attribute_type: 'multi_select',
                 sort_order: 1,
@@ -175,7 +175,7 @@ test(
     () => {
         assert.throws(
             () => validateRecordAttributeEntity({
-                record_id: 'rec-1',
+                record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'X',
                 attribute_type: 'text',
                 sort_order: 1,
@@ -192,7 +192,7 @@ test(
     () => {
         assert.throws(
             () => validateRecordAttributeEntity({
-                record_id: 'rec-1',
+                record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'X',
                 attribute_type: 'text',
                 sort_order: 1,
@@ -211,8 +211,8 @@ test(
     () => {
         assert.throws(
             () => validateRecordAttributeEntity({
-                organization_id: '1',
-                record_id: 'rec-1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+                record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'Count',
                 attribute_type: 'number',
                 sort_order: 1,
@@ -234,8 +234,8 @@ test(
     () => {
         assert.throws(
             () => validateRecordAttributeEntity({
-                organization_id: '1',
-                record_id: 'rec-1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+                record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'X',
                 attribute_type: 'text',
                 sort_order: 1,
@@ -254,8 +254,8 @@ test(
     + ' attribute_type',
     () => {
         const out = validateRecordAttributeEntity({
-            organization_id: '1',
-            record_id: 'rec-1',
+            organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+            record_id: 'rbfHGatkwQzGZJVXKJEeyw',
             name: 'When',
             attribute_type: 'date',
             sort_order: 1,
@@ -276,12 +276,12 @@ test(
     + ' payload',
     () => {
         const out = validateFlowRecordEntity({
-            flow_id: 'flow-1',
-            record_id: 'rec-1',
+            flow_id: 'aEsGMmBEFaVdWihhHXwCbw',
+            record_id: 'rbfHGatkwQzGZJVXKJEeyw',
             at: '2026-05-01T00:00:00.000000Z',
         });
-        assert.equal(out.flow_id, 'flow-1');
-        assert.equal(out.record_id, 'rec-1');
+        assert.equal(out.flow_id, 'aEsGMmBEFaVdWihhHXwCbw');
+        assert.equal(out.record_id, 'rbfHGatkwQzGZJVXKJEeyw');
     },
 );
 
@@ -336,18 +336,18 @@ test(
     () => {
         const out = validateRecordWriteBody({
             kind: 'create',
-            id: 'rec-1',
+            id: 'rbfHGatkwQzGZJVXKJEeyw',
             record: {
-                organization_id: '1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 name: 'R',
                 description: 'd',
                 position: 1,
             },
             attributes: [
                 {
-                    id: 'a-1',
-                    organization_id: '1',
-                    record_id: 'rec-1',
+                    id: 'UQBiHFcwJeCDSnmkPBoYRA',
+                    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+                    record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                     name: 'X',
                     attribute_type: 'text',
                     sort_order: 0,
@@ -361,7 +361,7 @@ test(
                 '2025-01-01T00:00:00.000000Z',
         });
         assert.equal(out.kind, 'create');
-        assert.equal(out.id, 'rec-1');
+        assert.equal(out.id, 'rbfHGatkwQzGZJVXKJEeyw');
         if (out.kind === 'create') {
             assert.equal(
                 out.initialState, 'active',
@@ -385,16 +385,16 @@ test(
         assert.throws(
             () => validateRecordWriteBody({
                 kind: 'create',
-                id: 'rec-1',
+                id: 'rbfHGatkwQzGZJVXKJEeyw',
                 record: {
-                    organization_id: '1',
+                    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                     name: 'R', description: '',
                     position: 1,
                 },
                 attributes: [
                     {
-                        id: 'a-1',
-                        organization_id: '1',
+                        id: 'UQBiHFcwJeCDSnmkPBoYRA',
+                        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                         record_id: 'rec-other',
                         name: 'X',
                         attribute_type: 'text',
@@ -420,9 +420,9 @@ test(
         assert.throws(
             () => validateRecordWriteBody({
                 kind: 'create',
-                id: 'rec-1',
+                id: 'rbfHGatkwQzGZJVXKJEeyw',
                 record: {
-                    organization_id: '1',
+                    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                     name: 'R', description: '',
                     position: 1,
                 },
@@ -444,9 +444,9 @@ test(
         assert.throws(
             () => validateRecordWriteBody({
                 kind: 'create',
-                id: 'rec-1',
+                id: 'rbfHGatkwQzGZJVXKJEeyw',
                 record: {
-                    organization_id: '1',
+                    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                     name: 'R', description: '',
                     position: 1,
                 },
@@ -466,9 +466,9 @@ test(
     () => {
         const out = validateRecordWriteBody({
             kind: 'edit',
-            id: 'rec-1',
+            id: 'rbfHGatkwQzGZJVXKJEeyw',
             record: {
-                organization_id: '1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 name: 'R',
                 description: '',
                 position: 1,
@@ -496,9 +496,9 @@ test(
         assert.throws(
             () => validateRecordWriteBody({
                 kind: 'edit',
-                id: 'rec-1',
+                id: 'rbfHGatkwQzGZJVXKJEeyw',
                 record: {
-                    organization_id: '1',
+                    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                     name: 'R', description: '',
                     position: 1,
                 },
@@ -520,9 +520,9 @@ test(
         assert.throws(
             () => validateRecordWriteBody({
                 kind: 'destroy',
-                id: 'rec-1',
+                id: 'rbfHGatkwQzGZJVXKJEeyw',
                 record: {
-                    organization_id: '1',
+                    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                     name: 'R', description: '',
                     position: 1,
                 },
@@ -539,9 +539,9 @@ test(
     () => {
         assert.throws(
             () => validateRecordWriteBody({
-                id: 'rec-1',
+                id: 'rbfHGatkwQzGZJVXKJEeyw',
                 record: {
-                    organization_id: '1',
+                    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                     name: 'R', description: '',
                     position: 1,
                 },
@@ -558,7 +558,7 @@ test(
         const entity =
             validateRecordAttributeEntity({
                 organization_id: 'org-1',
-                record_id: 'rec-1',
+                record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'Severity',
                 attribute_type: 'select',
                 sort_order: 0,
@@ -579,7 +579,7 @@ test(
         assert.throws(
             () => validateRecordAttributeEntity({
                 organization_id: 'org-1',
-                record_id: 'rec-1',
+                record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'Severity',
                 attribute_type: 'select',
                 sort_order: 0,

@@ -44,9 +44,9 @@ async function setup(): Promise<{
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     await seedHumanMember(
-        db, 'current', 'Demo User',
+        db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User',
     );
-    await seedHumanMember(db, 'm1', 'Member One');
+    await seedHumanMember(db, 'mFNSxZqywTSMXhgUTdTqtA', 'Member One');
     const ctx = createRequestContext(
         db, await organizationToken(),
     );
@@ -74,7 +74,7 @@ function buildBackupWithMembersAndAttrs(
                         positionY: 0,
                         isCreate: true,
                         isArchive: false,
-                        memberIds: ['m1'],
+                        memberIds: ['mFNSxZqywTSMXhgUTdTqtA'],
                         attributes: [
                             {
                                 attributeId: 'attr-x',
@@ -116,7 +116,7 @@ async function readPairGraph(
     flowId: string,
 ): Promise<StoredGraph> {
     const flow = await ctx.GET<FlowWithGraph>(
-        'organizations/1/flows/' + flowId,
+        'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId,
     );
     return asStoredGraph(
         flow.graph, 'flow.graph',
@@ -160,7 +160,7 @@ test(
         // Members preserved
         assert.deepEqual(
             startNode.memberIds,
-            ['m1'],
+            ['mFNSxZqywTSMXhgUTdTqtA'],
             'memberIds must be preserved',
         );
 

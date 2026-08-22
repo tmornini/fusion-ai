@@ -68,7 +68,7 @@ function flowGraph(): Record<string, unknown> {
         ],
         edges: [
             {
-                id: 'e1', name: '',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
                 fromNodeId: 'n-start', toNodeId: 'n-finish',
             },
         ],
@@ -90,7 +90,7 @@ test('validateWorkOrderDocumentBody accepts the entity fields'
 + ' plus an optional organization_id', () => {
     const doc = validateWorkOrderDocumentBody({
         ...documentFields(),
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     });
     assert.deepEqual(doc.entity, documentFields());
 });
@@ -136,26 +136,27 @@ test('postWorkOrderDocumentOp returns the entity and the'
     await db.postSchemaCreation();
     const body = {
         ...documentFields(),
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/organizations/1/work-orders/wo-doc-op-1',
+        pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + 'yAhMcJGxllmQkLemOQjCmA',
         routePattern: 'organizations/:id/work-orders/:id',
         routeSegments: ['work-orders', ':id'],
-        pathSegments: ['work-orders', 'wo-doc-op-1'],
+        pathSegments: ['work-orders', 'yAhMcJGxllmQkLemOQjCmA'],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-01T00:00:00.000000Z',
-        organization: '1',
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
     const written = await postWorkOrderDocumentOp(
-        db, 'wo-doc-op-1', body, 'current', pair,
+        db, 'yAhMcJGxllmQkLemOQjCmA', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
     );
     assert.deepEqual(written, {
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         ...documentFields(),
     });
     // Phase Final Stage B: work_orders table retired.
@@ -179,10 +180,12 @@ test('a byte-identical PUT resend to'
     const db = await freshDb();
     const body = documentFields();
     const first = await PUT(
-        db, 'organizations/1/work-orders/wo-resend-1', body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/wo-resend-1'
+            , body, DEV_TOKEN,
     );
     const second = await PUT(
-        db, 'organizations/1/work-orders/wo-resend-1', body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/wo-resend-1'
+            , body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
     assert.equal((await db.pairs.getAll()).length, 3);
@@ -291,7 +294,8 @@ function decodeRequestMessage(message: string): {
 }
 
 // The PUT-shaped row at a given address, excluding a prior
-// id — never positional (an index-0/1 read is an implicit
+// id — never positional (an index-0/AjdvjuECVZEgZoFajaIEkg read is an
+// implicit
 // arrival-order dependency, the H7 hazard class): filter by
 // address AND method instead.
 function documentRowAt(
@@ -309,15 +313,16 @@ function documentRowAt(
     );
 }
 
-const ENTITY_PREFIX = '/organizations/1/work-orders/';
+const ENTITY_PREFIX = '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/';
 
 test('a work-order create appends a PUT-shaped document pair'
 + ' at the WO address and a PUT-shaped join pair at the join'
 + ' address, all three sharing one requestAt', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', DEV_TOKEN,
-        workOrderCreateBody('wo-c1', 'wo-c1-fwo', 'flow-c1'),
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , DEV_TOKEN,
+        workOrderCreateBody('wo-c1', 'wo-c1-fwo', 'aNoIDzecmwfawmsLSsDsPw'),
     ));
     assert.equal(res.status, 201);
     const pairs = await db.pairs.getAll();
@@ -334,7 +339,8 @@ test('a work-order create appends a PUT-shaped document pair'
     );
 
     const joinPrefix =
-        '/organizations/1/flows/flow-c1/work-orders/';
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/aNoIDzecmwfawmsLSsDsPw/'
+            + 'work-orders/';
     const joinRow =
         documentRowAt(pairs, joinPrefix, 'wo-c1-fwo');
     assert.ok(joinRow, 'no join pair at the join address');
@@ -353,7 +359,8 @@ test('a duplicate work-order create (same WO id) records'
 async () => {
     const db = await freshDb();
     const first = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', DEV_TOKEN,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , DEV_TOKEN,
         workOrderCreateBody('wo-c2', 'wo-c2-fwo-a', 'flow-c2'),
     ));
     assert.equal(first.status, 201);
@@ -366,7 +373,8 @@ async () => {
     const firstDocumentId = firstDocumentRow!.id;
 
     const second = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', DEV_TOKEN,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , DEV_TOKEN,
         workOrderCreateBody(
             'wo-c2', 'wo-c2-fwo-b', 'flow-c2', 'wo-c2-revised',
         ),
@@ -393,7 +401,8 @@ test('a duplicate work-order create\'s own OPERATION pair'
 + ' stores no predecessor column', async () => {
     const db = await freshDb();
     const first = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', DEV_TOKEN,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , DEV_TOKEN,
         workOrderCreateBody('wo-c3', 'wo-c3-fwo-a', 'flow-c3'),
     ));
     assert.equal(first.status, 201);
@@ -404,7 +413,8 @@ test('a duplicate work-order create\'s own OPERATION pair'
     const firstDocumentId = firstDocumentRow!.id;
 
     const second = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', DEV_TOKEN,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , DEV_TOKEN,
         workOrderCreateBody('wo-c3', 'wo-c3-fwo-b', 'flow-c3'),
     ));
     assert.equal(second.status, 201);
@@ -426,7 +436,8 @@ test('a work-order create ignores a raw colliding states'
     // collision no longer aborts the pair-plane create.
     // Phase Final Stage B: states table retired.
     const res = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', DEV_TOKEN,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , DEV_TOKEN,
         workOrderCreateBody(
             'wo-c4-survives', flowWorkOrderId, 'flow-c4',
         ),

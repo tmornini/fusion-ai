@@ -44,12 +44,14 @@ test(
                 'http://example.test',
             );
             await facade.PUT(
-                'organizations/1/ideas/1', { name: 'x' }, 'tok',
+                'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                    + 'AjdvjuECVZEgZoFajaIEkg', { name: 'x' }, 'tok',
             );
         });
         assert.equal(
             url,
-            'http://example.test/api/organizations/1/ideas/1',
+            'http://example.test/api/organizations/AjdvjuECVZEgZoFajaIEkg/'
+                + 'ideas/AjdvjuECVZEgZoFajaIEkg',
         );
         assert.equal(credentials, 'same-origin');
         assert.ok(operationId !== null);
@@ -85,14 +87,15 @@ test(
             );
             await assert.rejects(
                 () => facade.GET(
-                    'organizations/1/ideas/', 'dead',
+                    'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/', 'dead',
                 ),
                 UnauthorizedError,
             );
         });
         assert.equal(
             urls[0],
-            'http://example.test/api/organizations/1/ideas/',
+            'http://example.test/api/organizations/AjdvjuECVZEgZoFajaIEkg/'
+                + 'ideas/',
         );
         assert.equal(
             urls[1],
@@ -114,7 +117,8 @@ test(
                 createHttpFacade('http://example.test'),
                 DEV_TOKEN,
             );
-            await ctx.PUT('organizations/1/ideas/1', { name: 'x' });
+            await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                + 'AjdvjuECVZEgZoFajaIEkg', { name: 'x' });
         });
         assert.ok(operationId !== null);
         assert.match(operationId, OPERATION_ID);
@@ -140,7 +144,8 @@ test(
                 'http://example.test',
             );
             await assert.rejects(
-                () => facade.GET('organizations/1/members/', 'tok'),
+                () => facade.GET('organizations/AjdvjuECVZEgZoFajaIEkg/'
+                    + 'members/', 'tok'),
                 (err: unknown) => {
                     assert.ok(
                         err instanceof UnauthorizedError,

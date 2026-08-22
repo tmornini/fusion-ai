@@ -53,7 +53,7 @@ function makeNode(
 ): Record<string, unknown> {
     return {
         id,
-        flow_id: 'flow-1',
+        flow_id: 'aEsGMmBEFaVdWihhHXwCbw',
         name: 'Draft',
         position_x: 0,
         position_y: 0,
@@ -72,7 +72,7 @@ test('well-formed node round-trips', () => {
     const result = validateFlowGraphDelta(delta);
     assert.equal(result.nodes.length, 1);
     assert.equal(result.nodes[0]!.id, 'n1');
-    assert.equal(result.nodes[0]!.flow_id, 'flow-1');
+    assert.equal(result.nodes[0]!.flow_id, 'aEsGMmBEFaVdWihhHXwCbw');
 });
 
 test('node with markup id throws ValidationError', () => {
@@ -99,8 +99,8 @@ test('node with bad at throws ValidationError', () => {
 
 function makeEdge(): Record<string, unknown> {
     return {
-        id: 'e1',
-        flow_id: 'flow-1',
+        id: 'YiJPbufDpkyrZcZCYbUJpg',
+        flow_id: 'aEsGMmBEFaVdWihhHXwCbw',
         name: 'next',
         from_node_id: 'n1',
         to_node_id: 'n2',
@@ -115,7 +115,7 @@ test('well-formed edge round-trips', () => {
     };
     const result = validateFlowGraphDelta(delta);
     assert.equal(result.edges.length, 1);
-    assert.equal(result.edges[0]!.id, 'e1');
+    assert.equal(result.edges[0]!.id, 'YiJPbufDpkyrZcZCYbUJpg');
     assert.equal(result.edges[0]!.from_node_id, 'n1');
 });
 
@@ -191,7 +191,7 @@ function makeMemberEvent(): Record<string, unknown> {
     return {
         id: 'mev-1',
         flow_node_id: 'n1',
-        member_id: 'm1',
+        member_id: 'mFNSxZqywTSMXhgUTdTqtA',
         action: 'added',
         at: AT,
     };
@@ -209,7 +209,7 @@ test('well-formed memberEvent round-trips', () => {
         result.memberEvents[0]!.flow_node_id, 'n1',
     );
     assert.equal(
-        result.memberEvents[0]!.member_id, 'm1',
+        result.memberEvents[0]!.member_id, 'mFNSxZqywTSMXhgUTdTqtA',
     );
     assert.equal(
         result.memberEvents[0]!.action, 'added',
@@ -249,7 +249,7 @@ function makeAttrEvent(): Record<string, unknown> {
     return {
         id: 'aev-1',
         flow_node_id: 'n1',
-        attribute_id: 'a1',
+        attribute_id: 'UQTJZvCoKlFjEoDlDUwekw',
         mode: 'editable',
         is_required: false,
         action: 'added',
@@ -266,7 +266,7 @@ test('well-formed attributeEvent round-trips', () => {
     assert.equal(result.attributeEvents.length, 1);
     assert.equal(result.attributeEvents[0]!.id, 'aev-1');
     assert.equal(
-        result.attributeEvents[0]!.attribute_id, 'a1',
+        result.attributeEvents[0]!.attribute_id, 'UQTJZvCoKlFjEoDlDUwekw',
     );
     assert.equal(
         result.attributeEvents[0]!.mode, 'editable',

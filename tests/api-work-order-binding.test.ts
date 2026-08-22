@@ -30,7 +30,7 @@ import { seedSeat } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
-const ORGANIZATION = '1';
+const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const ORGANIZATION_B = 'B';
 const FLOW_ID = 'flow-bind-1';
 const WO_ID = 'wo-bind-1';
@@ -51,7 +51,7 @@ const ATTRS = TYPE_DETAIL + '/attributes/';
 const INSTANCES = TYPE_DETAIL + '/instances/';
 const INSTANCE_DETAIL = INSTANCES + INSTANCE_ID;
 const BINDING =
-    '/organizations/1/work-orders/' + WO_ID + '/binding';
+    '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID + '/binding';
 
 function req(
     method: string,
@@ -103,7 +103,7 @@ async function seedOrganizationB(
     );
     const memBody = {
         organization_id: ORGANIZATION_B,
-        identity_id: 'current',
+        identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: AT,
     };
@@ -122,7 +122,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/organizations/1/flows/', token, {
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Bind Flow',
@@ -159,7 +159,8 @@ async function seedWorkOrder(
     fwoId: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + woId, token, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+            , token, {
             display_id: 'abcd',
             flow_graph: graphJson(),
             position: 1,
@@ -168,7 +169,8 @@ async function seedWorkOrder(
     assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/flows/' + FLOW_ID + '/work-orders/' + fwoId,
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID
+            + '/work-orders/' + fwoId,
         token,
         {
             flow_id: FLOW_ID,
@@ -243,7 +245,8 @@ async function seedFlowTypeJoin(
 ): Promise<void> {
     const put = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/flows/' + FLOW_ID + '/records/' + frId,
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID + '/records/'
+            + '' + frId,
         token,
         {
             id: frId,
@@ -265,10 +268,10 @@ async function seededDb(): Promise<{
     await seedCurrentMember(db);
     await seedOrganizationB(db);
     const token = await organizationToken(
-        'current', ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION,
     );
     const tokenB = await organizationToken(
-        'current', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
     );
     await seedFlow(db, token);
     await seedWorkOrder(db, token, WO_ID, FWO_ID);
@@ -306,7 +309,8 @@ test('absent WO bind → 404',
 async () => {
     const { db, token } = await seededDb();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/wo-absent/binding',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + 'xuMWXmMtPdenikPwsAUujg/binding',
         token, bindBody(),
     ));
     assert.equal(res.status, 404);
@@ -506,7 +510,8 @@ async () => {
     assert.equal(res.status, 201);
 
     const detail = await handleRequest(db, req(
-        'GET', '/organizations/1/work-orders/' + WO_ID, token,
+        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+            , token,
     ));
     assert.equal(detail.status, 200);
     const d = await detail.json() as Record<
@@ -516,7 +521,7 @@ async () => {
     assert.equal(d['record_type_id'], TYPE_ID);
 
     const list = await handleRequest(db, req(
-        'GET', '/organizations/1/work-orders/', token,
+        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
     ));
     assert.equal(list.status, 200);
     const rows = await list.json() as Record<

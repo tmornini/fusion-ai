@@ -44,7 +44,7 @@ function req(
 function editBody(organization: string) {
     return {
         kind: 'edit',
-        id: 'rec-1',
+        id: 'rbfHGatkwQzGZJVXKJEeyw',
         record: {
             organization_id: organization,
             name: 'rec', description: 'd', position: 0,
@@ -78,7 +78,7 @@ async function oneOrganization(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     await seedMembershipPair(db, 'm-a', {
-        organization_id: 'A', identity_id: 'current',
+        organization_id: 'A', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: '2026-06-04T00:00:00.000000Z',
     });
@@ -88,7 +88,7 @@ async function oneOrganization(): Promise<MemoryDbAdapter> {
 test('nested record-types write stamps the bound org'
     + ' over a forged record', async () => {
     const db = await oneOrganization();
-    const token = await organizationToken('current', 'A');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A');
     const res = await handleRequest(db, req(
         'POST', '/organizations/A/record-types/',
         token,
@@ -96,7 +96,7 @@ test('nested record-types write stamps the bound org'
     assert.equal(res.status, 201);
     const get = await handleRequest(db, req(
         'GET',
-        '/organizations/A/record-types/rec-1',
+        '/organizations/A/record-types/rbfHGatkwQzGZJVXKJEeyw',
         token,
     ));
     assert.equal(get.status, 200);
@@ -110,7 +110,7 @@ test('nested record-types write into a non-member org'
     + ' is 403', async () => {
     const db = await oneOrganization();
     // Token scoped to A cannot use path org B (org-match).
-    const token = await organizationToken('current', 'A');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A');
     const res = await handleRequest(db, req(
         'POST', '/organizations/B/record-types/',
         token,
@@ -121,7 +121,7 @@ test('nested record-types write into a non-member org'
 test('authenticated flat GET /records → 404',
 async () => {
     const db = await oneOrganization();
-    const token = await organizationToken('current', 'A');
+    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A');
     const res = await handleRequest(
         db, req('GET', '/records', token),
     );

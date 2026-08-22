@@ -82,7 +82,7 @@ test('validateObjectiveDocumentBody accepts the entity field'
 () => {
     const doc = validateObjectiveDocumentBody({
         ...documentFields(),
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     });
     assert.deepEqual(doc.entity, entityFields());
     assert.equal(doc.state, 'active');
@@ -153,15 +153,16 @@ test('PUT organizations/:id/objectives/:id accepts state and'
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/1/objectives/obj-trio-1', token, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+            + 'pSZRYqLDXMzjAeMTNhjdng', token, {
             position: 7,
             state: 'active',
         },
     ));
     assert.equal(res.status, 201);
     const wire = await res.json() as Record<string, unknown>;
-    assert.equal(wire.id, 'obj-trio-1');
-    assert.equal(wire.organization_id, '1');
+    assert.equal(wire.id, 'pSZRYqLDXMzjAeMTNhjdng');
+    assert.equal(wire.organization_id, 'AjdvjuECVZEgZoFajaIEkg');
     assert.equal(wire.position, 7);
     assert.equal(wire.state, 'active');
     assert.equal('state_at' in wire, false);
@@ -174,7 +175,8 @@ async () => {
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/1/objectives/obj-trio-2', token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+            + 'pSrXXWazOYSiAhkQARWgfw', token,
         { position: 1 },
     ));
     assert.equal(res.status, 400);
@@ -186,7 +188,8 @@ test('PUT organizations/:id/objectives/:id rejects a state outside the'
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/1/objectives/obj-trio-3', token, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+            + 'pVfejvZpqZyysULfKUqYrA', token, {
             position: 1,
             state: 'deleted',
         },
@@ -203,29 +206,30 @@ async () => {
     await db.postSchemaCreation();
     const body = {
         ...documentFields(),
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/organizations/1/objectives/obj-doc-op-1',
+        pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+            + 'pPvOknZUChYizyOOiXWBVg',
         routePattern: 'organizations/:id/objectives/:id',
         routeSegments: ['objectives', ':id'],
-        pathSegments: ['objectives', 'obj-doc-op-1'],
+        pathSegments: ['objectives', 'pPvOknZUChYizyOOiXWBVg'],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-01T00:00:00.000000Z',
-        organization: '1',
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
     // Phase Final Task 2: objectives ROW half stripped —
     // op returns the reconstructed entity; only pairs land.
     const written = await postObjectiveDocumentOp(
-        db, 'obj-doc-op-1', body, 'current', pair,
+        db, 'pPvOknZUChYizyOOiXWBVg', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
     );
     assert.deepEqual(written, {
-        id: 'obj-doc-op-1',
-        organization_id: '1',
+        id: 'pPvOknZUChYizyOOiXWBVg',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         ...entityFields(),
     });
     // Phase Final Stage B: objectives table retired.
@@ -245,10 +249,12 @@ test('a byte-identical PUT resend to'
     await seedAdminSchema(db);
     const body = documentFields();
     const first = await PUT(
-        db, 'organizations/1/objectives/obj-resend-1', body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-resend-1'
+            , body, DEV_TOKEN,
     );
     const second = await PUT(
-        db, 'organizations/1/objectives/obj-resend-1', body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-resend-1'
+            , body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
     assert.equal((await db.pairs.getAll()).length, 3);
@@ -269,14 +275,14 @@ async function putDocumentPair(
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/organizations/1/objectives/' + id,
+        pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id,
         routePattern: 'organizations/:id/objectives/:id',
         routeSegments: ['objectives', ':id'],
         pathSegments: ['objectives', id],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: at,
-        organization: '1',
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
@@ -293,14 +299,14 @@ async function deleteDocumentPair(
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'DELETE',
-        pathname: '/organizations/1/objectives/' + id,
+        pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id,
         routePattern: 'organizations/:id/objectives/:id',
         routeSegments: ['objectives', ':id'],
         pathSegments: ['objectives', id],
         headerFields: [], body: {},
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: at,
-        organization: '1',
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
@@ -327,11 +333,12 @@ async () => {
     );
     const wiring = documentFamilyWiring('objectives')!;
     const got = await documentGetHandler(wiring)(
-        db, ['1', 'obj-chain-1'], 'current', '1',
+        db, ['AjdvjuECVZEgZoFajaIEkg', 'obj-chain-1']
+            , 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg',
     );
     assert.deepEqual(got, {
         id: 'obj-chain-1',
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         position: 2,
         state: 'active',
     });
@@ -353,7 +360,8 @@ test('a DELETE-head derives absent through the generic'
     const wiring = documentFamilyWiring('objectives')!;
     await assert.rejects(
         documentGetHandler(wiring)(
-            db, ['1', 'obj-del-1'], 'current', '1',
+            db, ['AjdvjuECVZEgZoFajaIEkg', 'obj-del-1']
+                , 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg',
         ),
         (error: unknown) => {
             assert.ok(error instanceof EntityNotFoundError);
@@ -373,28 +381,31 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
     const token = await organizationToken();
     const id = 'obj-g1-stream';
     const put = await handleRequest(db, req(
-        'PUT', '/organizations/1/objectives/' + id, token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id
+            , token,
         documentFields(3, 'active'),
     ));
     assert.equal(put.status, 201);
-    const prefix = '/organizations/1/objectives/';
+    const prefix = '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/';
     const stored = JSON.parse(
         await storedPutBodyText(db, prefix, id),
     );
     const expected = {
         id,
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         position: 3,
         state: 'active',
     };
     assert.deepEqual(stored, expected);
     const wiring = documentFamilyWiring('objectives')!;
     const derived = await documentGetHandler(wiring)(
-        db, ['1', id], 'current', '1',
+        db, ['AjdvjuECVZEgZoFajaIEkg', id], 'XXZruirZyAOoRpNxaDnpSA'
+            , 'AjdvjuECVZEgZoFajaIEkg',
     );
     assert.deepEqual(stored, derived);
     const later = await handleRequest(db, req(
-        'PUT', '/organizations/1/objectives/' + id, token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id
+            , token,
         documentFields(99, 'archived'),
     ));
     assert.equal(later.status, 201);
@@ -404,7 +415,8 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
     assert.deepEqual(
         after,
         await documentGetHandler(wiring)(
-            db, ['1', id], 'current', '1',
+            db, ['AjdvjuECVZEgZoFajaIEkg', id], 'XXZruirZyAOoRpNxaDnpSA'
+                , 'AjdvjuECVZEgZoFajaIEkg',
         ),
     );
     assert.equal(after.state, 'archived');

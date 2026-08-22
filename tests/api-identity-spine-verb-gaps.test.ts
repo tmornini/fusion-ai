@@ -118,7 +118,7 @@ test('PATCH identities/:id 405s (no patch handler'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PATCH', '/identities/i1', token, {},
+        'PATCH', '/identities/fndCYAsXazdzMUlEGMNIZw', token, {},
     ));
     assert.equal(res.status, 405);
 });
@@ -147,7 +147,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('POST', '/identities/i1', token, {}),
+        db, req('POST', '/identities/fndCYAsXazdzMUlEGMNIZw', token, {}),
     );
     assert.equal(res.status, 405);
 });
@@ -157,7 +157,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/identities/i1', token),
+        db, req('DELETE', '/identities/fndCYAsXazdzMUlEGMNIZw', token),
     );
     assert.equal(res.status, 405);
 });
@@ -167,7 +167,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('POST', '/identities/i1/pii', token, {}),
+        db, req('POST', '/identities/fndCYAsXazdzMUlEGMNIZw/pii', token, {}),
     );
     assert.equal(res.status, 405);
 });
@@ -207,7 +207,8 @@ test('PUT identities/:id/credentials 405s (no put handler'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'PUT', '/identities/i1/credentials/', token, {},
+            'PUT', '/identities/fndCYAsXazdzMUlEGMNIZw/credentials/', token
+                , {},
         ),
     );
     assert.equal(res.status, 405);
@@ -219,7 +220,8 @@ test('POST identities/:id/credentials 405s (no post handler'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'POST', '/identities/i1/credentials/', token, {},
+            'POST', '/identities/fndCYAsXazdzMUlEGMNIZw/credentials/', token
+                , {},
         ),
     );
     assert.equal(res.status, 405);
@@ -230,7 +232,8 @@ test('DELETE identities/:id/credentials 405s (no delete'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/identities/i1/credentials/', token),
+        db, req('DELETE', '/identities/fndCYAsXazdzMUlEGMNIZw/credentials/'
+            , token),
     );
     assert.equal(res.status, 405);
 });
@@ -241,7 +244,8 @@ test('POST identities/:id/credentials/:cid 405s (no post'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'POST', '/identities/i1/credentials/c1', token, {},
+            'POST', '/identities/fndCYAsXazdzMUlEGMNIZw/credentials/'
+                + 'WeXjAaAxGSpLpamfEuvcww', token, {},
         ),
     );
     assert.equal(res.status, 405);
@@ -253,7 +257,8 @@ test('DELETE identities/:id/credentials/:cid 405s (no delete'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'DELETE', '/identities/i1/credentials/c1', token,
+            'DELETE', '/identities/fndCYAsXazdzMUlEGMNIZw/credentials/'
+                + 'WeXjAaAxGSpLpamfEuvcww', token,
         ),
     );
     assert.equal(res.status, 405);
@@ -265,7 +270,10 @@ test('POST identity-token-revocations/:id 404s'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'POST', '/identity-token-revocations/r1', token, {},
+            'POST',
+            '/identity-token-revocations/'
+                + 'rOEPOcVMQdJiiiMuiiEhlg',
+            token, {},
         ),
     );
     assert.equal(res.status, 404);
@@ -276,7 +284,12 @@ test('DELETE identity-token-revocations/:id 404s'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/identity-token-revocations/r1', token),
+        db, req(
+            'DELETE',
+            '/identity-token-revocations/'
+                + 'rOEPOcVMQdJiiiMuiiEhlg',
+            token,
+        ),
     );
     assert.equal(res.status, 404);
 });
@@ -287,8 +300,11 @@ test('PUT identity-token-revocations/:id 404s'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'PUT', '/identity-token-revocations/r1', token, {
-                identity_id: 'current',
+            'PUT',
+            '/identity-token-revocations/'
+                + 'rOEPOcVMQdJiiiMuiiEhlg',
+            token, {
+                identity_id: 'XXZruirZyAOoRpNxaDnpSA',
                 at: '2026-01-01T00:00:00.000000Z',
             },
         ),
@@ -301,7 +317,8 @@ test('GET identity-token-revocations/:id 404s'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('GET', '/identity-token-revocations/r1', token),
+        db, req('GET', '/identity-token-revocations/rOEPOcVMQdJiiiMuiiEhlg'
+            , token),
     );
     assert.equal(res.status, 404);
 });
@@ -313,7 +330,8 @@ test('POST identities/:id/token-revocations/:rid 405s'
     const res = await handleRequest(
         db, req(
             'POST',
-            '/identities/current/token-revocations/r1',
+            '/identities/XXZruirZyAOoRpNxaDnpSA/token-revocations/'
+                + 'rOEPOcVMQdJiiiMuiiEhlg',
             token, {},
         ),
     );
@@ -327,7 +345,8 @@ test('DELETE identities/:id/token-revocations/:rid 405s'
     const res = await handleRequest(
         db, req(
             'DELETE',
-            '/identities/current/token-revocations/r1',
+            '/identities/XXZruirZyAOoRpNxaDnpSA/token-revocations/'
+                + 'rOEPOcVMQdJiiiMuiiEhlg',
             token,
         ),
     );
@@ -368,7 +387,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('POST', '/role-grants/rg1', token, {}),
+        db, req('POST', '/role-grants/sbGBwBHGVUqXkSLISjksUg', token, {}),
     );
     assert.equal(res.status, 404);
 });
@@ -378,7 +397,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/role-grants/rg1', token),
+        db, req('DELETE', '/role-grants/sbGBwBHGVUqXkSLISjksUg', token),
     );
     assert.equal(res.status, 404);
 });
@@ -418,7 +437,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('POST', '/identity-tokens/it1', token, {}),
+        db, req('POST', '/identity-tokens/jSajolWDMnlgnKMObjGMqA', token, {}),
     );
     assert.equal(res.status, 404);
 });
@@ -428,7 +447,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/identity-tokens/it1', token),
+        db, req('DELETE', '/identity-tokens/jSajolWDMnlgnKMObjGMqA', token),
     );
     assert.equal(res.status, 404);
 });
@@ -439,7 +458,7 @@ async () => {
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'GET', '/identity-tokens/jti1/rotation', token,
+            'GET', '/identity-tokens/kMxUUYCSpGsfuBpyHiIZqA/rotation', token,
         ),
     );
     assert.equal(res.status, 404);
@@ -451,7 +470,8 @@ async () => {
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'PUT', '/identity-tokens/jti1/rotation', token, {},
+            'PUT', '/identity-tokens/kMxUUYCSpGsfuBpyHiIZqA/rotation', token
+                , {},
         ),
     );
     assert.equal(res.status, 404);
@@ -463,7 +483,8 @@ test('DELETE identity-tokens/:jti/rotation 404s'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'DELETE', '/identity-tokens/jti1/rotation', token,
+            'DELETE', '/identity-tokens/kMxUUYCSpGsfuBpyHiIZqA/rotation'
+                , token,
         ),
     );
     assert.equal(res.status, 404);
@@ -475,7 +496,8 @@ test('GET identity-tokens/:jti/revocation 404s'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'GET', '/identity-tokens/jti1/revocation', token,
+            'GET', '/identity-tokens/kMxUUYCSpGsfuBpyHiIZqA/revocation'
+                , token,
         ),
     );
     assert.equal(res.status, 404);
@@ -487,7 +509,8 @@ test('PUT identity-tokens/:jti/revocation 404s'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'PUT', '/identity-tokens/jti1/revocation', token, {},
+            'PUT', '/identity-tokens/kMxUUYCSpGsfuBpyHiIZqA/revocation'
+                , token, {},
         ),
     );
     assert.equal(res.status, 404);
@@ -499,14 +522,15 @@ test('DELETE identity-tokens/:jti/revocation 404s'
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'DELETE', '/identity-tokens/jti1/revocation', token,
+            'DELETE', '/identity-tokens/kMxUUYCSpGsfuBpyHiIZqA/revocation'
+                , token,
         ),
     );
     assert.equal(res.status, 404);
 });
 
 const SARAH_PROVIDER = {
-    identity_id: 'sarah',
+    identity_id: 'toccYYkLEABmlbpHJalgtQ',
     provider: 'google',
     provider_subject: 'sub-sarah',
     action: 'linked',
@@ -518,10 +542,11 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await seedIdentityProvider(
-        db, 'sarah', 'ip-sarah-1', SARAH_PROVIDER,
+        db, 'toccYYkLEABmlbpHJalgtQ', 'ip-sarah-1', SARAH_PROVIDER,
     );
     const res = await handleRequest(
-        db, req('GET', '/identities/sarah/providers/', token),
+        db, req('GET', '/identities/toccYYkLEABmlbpHJalgtQ/providers/'
+            , token),
     );
     assert.equal(res.status, 200);
     const rows = await res.json() as readonly {
@@ -539,11 +564,11 @@ test('GET /identities/:id/providers 403s for a member'
 + ' naming another identity (absent from MEMBER_VERBS)',
 async () => {
     const db = await freshDb();
-    await seedOrganizationMember(db, 'sarah');
-    const token = await devToken('sarah');
+    await seedOrganizationMember(db, 'toccYYkLEABmlbpHJalgtQ');
+    const token = await devToken('toccYYkLEABmlbpHJalgtQ');
     const res = await handleRequest(
         db, req(
-            'GET', '/identities/current/providers/', token,
+            'GET', '/identities/XXZruirZyAOoRpNxaDnpSA/providers/', token,
         ),
     );
     assert.equal(res.status, 403);
@@ -564,10 +589,11 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await seedIdentityProvider(
-        db, 'sarah', 'ip1', SARAH_PROVIDER,
+        db, 'toccYYkLEABmlbpHJalgtQ', 'jQHkoHmSUDmFPStSQgYTdA'
+            , SARAH_PROVIDER,
     );
     const res = await handleRequest(
-        db, req('GET', '/identity-providers/ip1', token),
+        db, req('GET', '/identity-providers/jQHkoHmSUDmFPStSQgYTdA', token),
     );
     assert.equal(res.status, 404);
 });
@@ -578,7 +604,7 @@ async () => {
     const token = await organizationToken();
     const res = await handleRequest(
         db, req(
-            'PUT', '/identity-providers/ip1', token,
+            'PUT', '/identity-providers/jQHkoHmSUDmFPStSQgYTdA', token,
             SARAH_PROVIDER,
         ),
     );
@@ -620,7 +646,8 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('POST', '/identity-providers/ip1', token, {}),
+        db, req('POST', '/identity-providers/jQHkoHmSUDmFPStSQgYTdA', token
+            , {}),
     );
     assert.equal(res.status, 404);
 });
@@ -630,7 +657,8 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('DELETE', '/identity-providers/ip1', token),
+        db, req('DELETE', '/identity-providers/jQHkoHmSUDmFPStSQgYTdA'
+            , token),
     );
     assert.equal(res.status, 404);
 });
@@ -641,11 +669,11 @@ async () => {
 test('POST identities/:id/default-organization 405s (side'
 + ' channel never matches routes)', async () => {
     const db = await freshDb();
-    const token = await devToken('current');
+    const token = await devToken('XXZruirZyAOoRpNxaDnpSA');
     const res = await handleRequest(
         db, req(
             'POST',
-            '/identities/current/default-organization',
+            '/identities/XXZruirZyAOoRpNxaDnpSA/default-organization',
             token, {},
         ),
     );
@@ -655,11 +683,11 @@ test('POST identities/:id/default-organization 405s (side'
 test('DELETE identities/:id/default-organization 405s (side'
 + ' channel never matches routes)', async () => {
     const db = await freshDb();
-    const token = await devToken('current');
+    const token = await devToken('XXZruirZyAOoRpNxaDnpSA');
     const res = await handleRequest(
         db, req(
             'DELETE',
-            '/identities/current/default-organization',
+            '/identities/XXZruirZyAOoRpNxaDnpSA/default-organization',
             token,
         ),
     );
@@ -676,16 +704,17 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     const put = await handleRequest(db, req(
-        'PUT', '/identities/current/tokens/tok-list',
+        'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+            + 'wLQNiqsEnyBvOQwlbvBXwA',
         token, {
-            jti: 'jti-list', identity_id: 'current',
+            jti: 'jti-list', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             action: 'issued', chain_id: 'chain-list',
             at: TOKEN_AT,
         },
     ));
     assert.ok(put.status === 200 || put.status === 201);
     const res = await handleRequest(
-        db, req('GET', '/identities/current/tokens/', token),
+        db, req('GET', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/', token),
     );
     assert.equal(res.status, 200);
     const rows = await res.json() as readonly {
@@ -695,7 +724,7 @@ async () => {
     }[];
     assert.equal(rows.length, 1);
     assert.equal(rows[0]!.jti, 'jti-list');
-    assert.equal(rows[0]!.identity_id, 'current');
+    assert.equal(rows[0]!.identity_id, 'XXZruirZyAOoRpNxaDnpSA');
     assert.equal(rows[0]!.action, 'issued');
 });
 
@@ -713,10 +742,10 @@ test('GET /identities/:id/tokens 403s for a member-tier'
 + ' token (admin-only; absent from MEMBER_VERBS GET)',
 async () => {
     const db = await freshDb();
-    await seedOrganizationMember(db, 'member1');
-    const token = await organizationToken('member1');
+    await seedOrganizationMember(db, 'nkgaOHZISTQrILTfPThWCA');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const res = await handleRequest(
-        db, req('GET', '/identities/current/tokens/', token),
+        db, req('GET', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/', token),
     );
     assert.equal(res.status, 403);
 });
@@ -726,12 +755,14 @@ test('POST /identities/:id/tokens/:jti/rotation clears'
 + ' /identities/:id/tokens POST) and 409s on domain terms'
 + ' for an unknown jti', async () => {
     const db = await freshDb();
-    await seedOrganizationMember(db, 'member1');
-    const token = await organizationToken('member1');
+    await seedOrganizationMember(db, 'nkgaOHZISTQrILTfPThWCA');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const res = await handleRequest(
         db, req(
             'POST',
-            '/identities/current/tokens/bogus-jti/rotation',
+            '/identities/XXZruirZyAOoRpNxaDnpSA/'
+                + 'tokens/WXubsOcLOMVSdMBzlNkAxQ/'
+                + 'rotation',
             token, {},
         ),
     );
@@ -741,11 +772,11 @@ test('POST /identities/:id/tokens/:jti/rotation clears'
 test('POST /identity-tokens/:jti/rotation is retired'
 + ' (router 404)', async () => {
     const db = await freshDb();
-    await seedOrganizationMember(db, 'member1');
-    const token = await organizationToken('member1');
+    await seedOrganizationMember(db, 'nkgaOHZISTQrILTfPThWCA');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const res = await handleRequest(
         db, req(
-            'POST', '/identity-tokens/bogus-jti/rotation',
+            'POST', '/identity-tokens/WXubsOcLOMVSdMBzlNkAxQ/rotation',
             token, {},
         ),
     );
@@ -757,12 +788,14 @@ test('POST /identities/:id/tokens/:jti/revocation clears'
 + ' /identities/:id/tokens POST) and no-ops 204 for an'
 + ' unknown jti', async () => {
     const db = await freshDb();
-    await seedOrganizationMember(db, 'member1');
-    const token = await organizationToken('member1');
+    await seedOrganizationMember(db, 'nkgaOHZISTQrILTfPThWCA');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const res = await handleRequest(
         db, req(
             'POST',
-            '/identities/current/tokens/bogus-jti/revocation',
+            '/identities/XXZruirZyAOoRpNxaDnpSA/'
+                + 'tokens/WXubsOcLOMVSdMBzlNkAxQ/'
+                + 'revocation',
             token, {},
         ),
     );
@@ -772,11 +805,11 @@ test('POST /identities/:id/tokens/:jti/revocation clears'
 test('POST /identity-tokens/:jti/revocation is retired'
 + ' (router 404)', async () => {
     const db = await freshDb();
-    await seedOrganizationMember(db, 'member1');
-    const token = await organizationToken('member1');
+    await seedOrganizationMember(db, 'nkgaOHZISTQrILTfPThWCA');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const res = await handleRequest(
         db, req(
-            'POST', '/identity-tokens/bogus-jti/revocation',
+            'POST', '/identity-tokens/WXubsOcLOMVSdMBzlNkAxQ/revocation',
             token, {},
         ),
     );
@@ -788,9 +821,11 @@ test('POST rotation 403s when path identity is not the'
     const db = await freshDb();
     const token = await organizationToken();
     const put = await handleRequest(db, req(
-        'PUT', '/identities/current/tokens/tok-owned',
+        'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+            + 'wTpHaplkXlJqajbBNhnkbg',
         token, {
-            jti: 'jti-owned', identity_id: 'current',
+            jti: 'kGolXBkfDPCBVKcZzZIHnQ'
+                , identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             action: 'issued', chain_id: 'chain-owned',
             at: TOKEN_AT,
         },
@@ -798,7 +833,8 @@ test('POST rotation 403s when path identity is not the'
     assert.ok(put.status === 200 || put.status === 201);
     const res = await handleRequest(db, req(
         'POST',
-        '/identities/sarah/tokens/jti-owned/rotation',
+        '/identities/toccYYkLEABmlbpHJalgtQ/tokens/kGolXBkfDPCBVKcZzZIHnQ/'
+            + 'rotation',
         token, {},
     ));
     assert.equal(res.status, 403);
@@ -810,14 +846,14 @@ test('GET /identities/:id/tokens/:tid 404s for an absent'
     const token = await organizationToken();
     const res = await handleRequest(db, req(
         'GET',
-        '/identities/current/tokens/no-such-token',
+        '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/oSBUDvuXylWVkqvrVHkJtA',
         token,
     ));
     assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
     assert.equal(
         body.error,
-        'Not found: identity_tokens/no-such-token',
+        'Not found: identity_tokens/oSBUDvuXylWVkqvrVHkJtA',
     );
 });
 
@@ -832,15 +868,16 @@ test('PUT identities/:id/token-revocations/:rid clears'
 + ' tests/api-identity-token-revocations-self.test.ts, not'
 + ' here', async () => {
     const db = await freshDb();
-    await seedOrganizationMember(db, 'member1');
-    const token = await organizationToken('member1');
+    await seedOrganizationMember(db, 'nkgaOHZISTQrILTfPThWCA');
+    const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const res = await handleRequest(
         db, req(
             'PUT',
-            '/identities/member1/token-revocations/regime4-1',
+            '/identities/nkgaOHZISTQrILTfPThWCA/token-revocations/'
+                + 'sUfNoilqdwesUzYTfjCaDA',
             token,
             {
-                identity_id: 'member1',
+                identity_id: 'nkgaOHZISTQrILTfPThWCA',
                 at: '2026-01-01T00:00:00.000000Z',
             },
         ),

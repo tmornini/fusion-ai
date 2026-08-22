@@ -25,7 +25,7 @@ import { STARK_ORGANIZATION } from
     '../api/mock-data/seed-constants.ts';
 
 const BASE = 'http://localhost';
-const WO_ID = 'wo1';
+const WO_ID = 'yNSSnbrpacodQTzUEcdEVA';
 
 function req(
     method: string,
@@ -53,7 +53,8 @@ function graphJson(): Record<string, unknown> {
     };
 }
 
-// wo1 is seeded via a REAL PUT (never a raw db.workOrders.put)
+// yNSSnbrpacodQTzUEcdEVA is seeded via a REAL PUT (never a raw
+// db.workOrders.put)
 // so it carries a genuine organizations/:id/work-orders/:id document pair —
 // same fixture posture as api-work-order-claim.test.ts.
 async function seededDb(): Promise<MemoryDbAdapter> {
@@ -61,7 +62,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     await seedAdminSchema(db);
     await seedCurrentMember(db);
     await PUT(
-        db, 'organizations/1/work-orders/' + WO_ID, {
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID, {
             display_id: 'abcd',
             flow_graph: graphJson(),
             position: 1,
@@ -105,12 +106,14 @@ test(
     async () => {
         const db = await seededDb();
         await PUT(
-            db, 'organizations/1/work-orders/' + WO_ID + '/claim',
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+                + '/claim',
             freshClaimBody(), DEV_TOKEN,
         );
         const res = await handleRequest(db, req(
             'DELETE',
-            '/organizations/1/work-orders/' + WO_ID + '/claim',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+                + '/claim',
             DEV_TOKEN,
         ));
         assert.equal(res.status, 204);
@@ -119,7 +122,7 @@ test(
             (ev) => ev.state === 'claim_released',
         );
         assert.ok(released !== undefined);
-        assert.equal(released!.member_id, 'current');
+        assert.equal(released!.member_id, 'XXZruirZyAOoRpNxaDnpSA');
     },
 );
 
@@ -130,23 +133,27 @@ test(
         const db = await seededDb();
         const missing = await handleRequest(db, req(
             'DELETE',
-            '/organizations/1/work-orders/' + WO_ID + '/claim',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+                + '/claim',
             DEV_TOKEN,
         ));
         assert.equal(missing.status, 404);
         await PUT(
-            db, 'organizations/1/work-orders/' + WO_ID + '/claim',
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+                + '/claim',
             freshClaimBody(), DEV_TOKEN,
         );
         const first = await handleRequest(db, req(
             'DELETE',
-            '/organizations/1/work-orders/' + WO_ID + '/claim',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+                + '/claim',
             DEV_TOKEN,
         ));
         assert.equal(first.status, 204);
         const second = await handleRequest(db, req(
             'DELETE',
-            '/organizations/1/work-orders/' + WO_ID + '/claim',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+                + '/claim',
             DEV_TOKEN,
         ));
         assert.equal(second.status, 204);
@@ -167,12 +174,14 @@ test(
         const db = await seededDb();
         await seedOrganizationMember(db, 'other');
         await PUT(
-            db, 'organizations/1/work-orders/' + WO_ID + '/claim',
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+                + '/claim',
             freshClaimBody(), await devToken('other'),
         );
         const res = await handleRequest(db, req(
             'DELETE',
-            '/organizations/1/work-orders/' + WO_ID + '/claim',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+                + '/claim',
             DEV_TOKEN,
         ));
         assert.equal(res.status, 204);
@@ -183,7 +192,7 @@ test(
             (ev) => ev.state === 'claim_released',
         );
         assert.ok(released !== undefined);
-        assert.equal(released!.member_id, 'current');
+        assert.equal(released!.member_id, 'XXZruirZyAOoRpNxaDnpSA');
     },
 );
 
@@ -193,7 +202,8 @@ test(
         const db = await seededDb();
         const res = await handleRequest(db, req(
             'DELETE',
-            '/organizations/1/work-orders/no-such-wo/claim',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+                + 'oWslHMRoFMtRnPHtccdMeA/claim',
             DEV_TOKEN,
         ));
         assert.equal(res.status, 404);

@@ -105,7 +105,7 @@ test('PUT /ai-agents/:id writes the four fields; GET'
     const db = await freshDb();
     const body = agentFields('Drafting agent');
     const put = await handleRequest(db, req(
-        'PUT', '/ai-agents/agent-1', DEV_TOKEN, body,
+        'PUT', '/ai-agents/UuvoBhQJUSEsiJwscXPkUg', DEV_TOKEN, body,
     ));
     assert.ok(
         put.status === 201 || put.status === 200,
@@ -118,7 +118,7 @@ test('PUT /ai-agents/:id writes the four fields; GET'
         skill_focus: string;
         model: string;
     };
-    assert.equal(written.id, 'agent-1');
+    assert.equal(written.id, 'UuvoBhQJUSEsiJwscXPkUg');
     assert.equal(written.name, body.name);
     assert.equal(written.description, body.description);
     assert.equal(written.skill_focus, body.skill_focus);
@@ -129,7 +129,7 @@ test('PUT /ai-agents/:id writes the four fields; GET'
         description: string;
         skill_focus: string;
         model: string;
-    }>(db, 'ai-agents/agent-1', DEV_TOKEN);
+    }>(db, 'ai-agents/UuvoBhQJUSEsiJwscXPkUg', DEV_TOKEN);
     assert.deepEqual(got, written);
 });
 
@@ -144,7 +144,8 @@ test('a flow write with an AI member id in memberIds'
     }, DEV_TOKEN);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/1/flows/flow-ai-member', token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+            + 'aMyiZpZbsEboXnIrwnEjNA', token,
         flowDocument(
             'Blocked',
             'ev-flow-1',
@@ -162,7 +163,7 @@ test('a flow write with agentIds naming a live'
     const db = await freshDb();
     const agent = agentFields('Live agent');
     const minted = await handleRequest(db, req(
-        'PUT', '/ai-agents/agent-live', DEV_TOKEN,
+        'PUT', '/ai-agents/UxpkDaNMmbWLvCTkyrFfGA', DEV_TOKEN,
         agent,
     ));
     assert.ok(
@@ -170,12 +171,13 @@ test('a flow write with agentIds naming a live'
     );
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/1/flows/flow-agent', token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+            + 'aJJKPwIzmbFseMhGUrFyFQ', token,
         flowDocument(
             'With agent',
             'ev-flow-2',
             {
-                nodes: [graphNode([], ['agent-live'])],
+                nodes: [graphNode([], ['UxpkDaNMmbWLvCTkyrFfGA'])],
                 edges: [],
             },
         ),
@@ -188,7 +190,8 @@ test('a flow write with agentIds naming a live'
         graph: {
             nodes: { agentIds?: string[] }[];
         };
-    }>(db, 'organizations/1/flows/flow-agent', token);
+    }>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+        + 'aJJKPwIzmbFseMhGUrFyFQ', token);
     const node = flow.graph.nodes[0]!;
-    assert.deepEqual(node.agentIds, ['agent-live']);
+    assert.deepEqual(node.agentIds, ['UxpkDaNMmbWLvCTkyrFfGA']);
 });

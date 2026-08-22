@@ -42,7 +42,7 @@ function flowGraph(): Record<string, unknown> {
                 id: 'n-middle', name: 'Doing work',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: false,
-                memberIds: ['current'], attributes: [],
+                memberIds: ['XXZruirZyAOoRpNxaDnpSA'], attributes: [],
                 taskInstructions: '',
             },
             {
@@ -55,7 +55,7 @@ function flowGraph(): Record<string, unknown> {
         ],
         edges: [
             {
-                id: 'e1', name: '',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
                 fromNodeId: 'n-start', toNodeId: 'n-middle',
             },
             {
@@ -83,7 +83,7 @@ function createBody() {
         workOrder: workOrderFields(),
         flowWorkOrderId: 'fwo-1',
         flowWorkOrder: {
-            flow_id: 'f1',
+            flow_id: 'ZOousbbnzpqlxJExVAruYQ',
             work_order_id: 'wo-1',
             at: nowUtc(),
         },
@@ -110,7 +110,8 @@ test(
     + 'plane document + join in one operation',
     async () => {
         const db = await freshDb();
-        await POST(db, 'organizations/1/work-orders/', createBody(),
+        await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , createBody(),
             DEV_TOKEN);
 
         const wo = await GET<{
@@ -118,11 +119,12 @@ test(
             display_id: string;
             position: number;
             organization_id: string;
-        }>(db, 'organizations/1/work-orders/wo-1', DEV_TOKEN);
+        }>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/wo-1'
+            , DEV_TOKEN);
         assert.equal(wo.display_id, 'abcd');
         assert.equal(wo.position, 1);
         // The fence stamped the bound org — never the body.
-        assert.equal(wo.organization_id, '1');
+        assert.equal(wo.organization_id, 'AjdvjuECVZEgZoFajaIEkg');
 
         // Row plane empty; join lives on the pair plane.
         // Phase Final Stage B: work_orders +
@@ -131,13 +133,15 @@ test(
             id: string;
             flow_id: string;
             work_order_id: string;
-        }[]>(db, 'organizations/1/flows/f1/work-orders/', DEV_TOKEN);
+        }[]>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+            + 'ZOousbbnzpqlxJExVAruYQ/work-orders/', DEV_TOKEN);
         assert.equal(links.length, 1);
         assert.equal(links[0]!.id, 'fwo-1');
-        assert.equal(links[0]!.flow_id, 'f1');
+        assert.equal(links[0]!.flow_id, 'ZOousbbnzpqlxJExVAruYQ');
         assert.equal(links[0]!.work_order_id, 'wo-1');
 
-        const events = await workOrderLifecycleStatesFor(db, '1', 'wo-1');
+        const events = await workOrderLifecycleStatesFor(db
+            , 'AjdvjuECVZEgZoFajaIEkg', 'wo-1');
         // Phase Final Stage B: states table retired.
         assert.equal(events.length, 3);
         // The three events land IN ORDER: start, post-start,
@@ -149,7 +153,7 @@ test(
         // Every event is authored by the verified caller, never
         // the body.
         for (const ev of events as StateEntity[]) {
-            assert.equal(ev.member_id, 'current');
+            assert.equal(ev.member_id, 'XXZruirZyAOoRpNxaDnpSA');
         }
     },
 );
@@ -159,10 +163,12 @@ test(
     + ' each state event',
     async () => {
         const db = await freshDb();
-        await POST(db, 'organizations/1/work-orders/', createBody(),
+        await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , createBody(),
             DEV_TOKEN);
 
-        const events = await workOrderLifecycleStatesFor(db, '1', 'wo-1');
+        const events = await workOrderLifecycleStatesFor(db
+            , 'AjdvjuECVZEgZoFajaIEkg', 'wo-1');
         // Phase Final Stage B: states table retired.
         assert.equal(events.length, 3);
         const byId = new Map(
@@ -195,14 +201,16 @@ test(
         // pair-plane create.
     // Phase Final Stage B: states table retired.
         await POST(
-            db, 'organizations/1/work-orders/', createBody(), DEV_TOKEN,
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+                , createBody(), DEV_TOKEN,
         );
         const wo = await GET<{ id: string }>(
-            db, 'organizations/1/work-orders/wo-1', DEV_TOKEN,
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/wo-1'
+                , DEV_TOKEN,
         );
         assert.equal(wo.id, 'wo-1');
         const woEvents = await workOrderLifecycleStatesFor(
-            db, '1', 'wo-1',
+            db, 'AjdvjuECVZEgZoFajaIEkg', 'wo-1',
         );
         assert.equal(woEvents.length, 3);
     },

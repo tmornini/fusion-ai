@@ -30,7 +30,7 @@ async () => {
     const db = await freshDb();
     const res = await handleRequest(
         db, new Request(
-            `${BASE}/organizations/1/members/`));
+            `${BASE}/organizations/AjdvjuECVZEgZoFajaIEkg/members/`));
     assert.equal(res.status, 401);
     const body = await res.json() as { error: string };
     assert.equal(body.error, 'invalid_token');
@@ -38,14 +38,16 @@ async () => {
 
 test('protected route accepts a valid token', async () => {
     const db = await freshDb();
-    const rows = await GET(db, 'organizations/1/members/', await devToken());
+    const rows = await GET(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+        + '', await devToken());
     assert.ok(Array.isArray(rows));
 });
 
 test('rejects an expired token', async () => {
     const db = await freshDb();
     await assert.rejects(
-        async () => GET(db, 'organizations/1/members/', await expiredToken()),
+        async () => GET(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+            , await expiredToken()),
         /invalid_token/);
 });
 
@@ -53,7 +55,7 @@ test('rejects a not-yet-valid token', async () => {
     const db = await freshDb();
     await assert.rejects(
         async () => GET(
-            db, 'organizations/1/members/',
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/',
             await notYetValidToken(),
         ),
         /invalid_token/);
@@ -69,7 +71,8 @@ async () => {
         jti: 'anon',
     });
     await assert.rejects(
-        () => GET(db, 'organizations/1/members/', anon), /invalid_token/);
+        () => GET(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/', anon)
+            , /invalid_token/);
 });
 
 // Per-request access-token revocation is RETIRED. Mint /
@@ -85,25 +88,27 @@ async () => {
     // not the revocation ledger.
     const live = await mintAccessToken({
         aud: TOKEN_AUDIENCE,
-        sub: 'current',
-        roles: ['admin:1'],
+        sub: 'XXZruirZyAOoRpNxaDnpSA',
+        roles: ['admin:AjdvjuECVZEgZoFajaIEkg'],
         name: 'Demo',
-        organizations: ['1'],
+        organizations: ['AjdvjuECVZEgZoFajaIEkg'],
         iat: 1_600_000_000, ttlSeconds: 10_000_000_000,
         jti: 'stale-but-live',
     });
     await PUT(
-        db, 'identities/current/token-revocations/r1',
+        db, 'identities/XXZruirZyAOoRpNxaDnpSA/token-revocations/'
+            + 'rOEPOcVMQdJiiiMuiiEhlg',
         {
-            identity_id: 'current',
+            identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             at: '2021-01-01T00:00:00.000000Z',
         },
         await devToken(),
     );
     // Still admitted — revocation bites at next mint/exchange.
     assert.deepEqual(
-        await GET(db, 'organizations/1/members/', live),
-        await GET(db, 'organizations/1/members/', await devToken()),
+        await GET(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/', live),
+        await GET(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+            , await devToken()),
     );
 });
 
@@ -113,21 +118,22 @@ test('a token minted within a revocation second still'
     const revokedAt = '2021-01-01T00:00:00.900000Z';
     const sameSecond = await mintAccessToken({
         aud: TOKEN_AUDIENCE,
-        sub: 'current',
-        roles: ['admin:1'],
+        sub: 'XXZruirZyAOoRpNxaDnpSA',
+        roles: ['admin:AjdvjuECVZEgZoFajaIEkg'],
         name: 'Demo',
-        organizations: ['1'],
+        organizations: ['AjdvjuECVZEgZoFajaIEkg'],
         iat: Math.floor(Date.parse(revokedAt) / 1000),
         ttlSeconds: 10_000_000_000,
         jti: 'same-second',
     });
     await PUT(
-        db, 'identities/current/token-revocations/r1',
-        { identity_id: 'current', at: revokedAt },
+        db, 'identities/XXZruirZyAOoRpNxaDnpSA/token-revocations/'
+            + 'rOEPOcVMQdJiiiMuiiEhlg',
+        { identity_id: 'XXZruirZyAOoRpNxaDnpSA', at: revokedAt },
         await devToken(),
     );
     const rows = await GET<unknown[]>(
-        db, 'organizations/1/members/', sameSecond,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/', sameSecond,
     );
     assert.ok(Array.isArray(rows));
 });
@@ -136,25 +142,25 @@ test('a jti revoked in the ledger still admits the access'
 + ' token until exp', async () => {
     const db = await freshDb();
     await PUT(
-        db, 'identities/current/tokens/e1',
+        db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/YiJPbufDpkyrZcZCYbUJpg',
         {
-            jti: 'dev-current', identity_id: 'current',
-            action: 'issued', chain_id: 'c1',
+            jti: 'dev-current', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            action: 'issued', chain_id: 'WeXjAaAxGSpLpamfEuvcww',
             at: '2026-01-01T00:00:00.000000Z',
         },
         await devToken(),
     );
     await PUT(
-        db, 'identities/current/tokens/e2',
+        db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/e2',
         {
-            jti: 'dev-current', identity_id: 'current',
-            action: 'revoked', chain_id: 'c1',
+            jti: 'dev-current', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            action: 'revoked', chain_id: 'WeXjAaAxGSpLpamfEuvcww',
             at: '2026-02-01T00:00:00.000000Z',
         },
         await devToken(),
     );
     const rows = await GET<unknown[]>(
-        db, 'organizations/1/members/', await devToken(),
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/', await devToken(),
     );
     assert.ok(Array.isArray(rows));
 });

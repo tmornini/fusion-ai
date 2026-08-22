@@ -8,7 +8,7 @@ import {
 } from '../web-app/app/mermaid-parse.ts';
 
 const minimalGraph = {
-    id: 'f1',
+    id: 'ZOousbbnzpqlxJExVAruYQ',
     name: 'Flow',
     isLocked: false,
     isAutoLayout: true,
@@ -109,7 +109,7 @@ test('generateMermaid emits labeled edges', () => {
         ],
         edges: [
             {
-                id: 'e1', fromNodeId: 'a',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', fromNodeId: 'a',
                 toNodeId: 'b', name: 'go',
             },
         ],
@@ -143,7 +143,7 @@ test('generateMermaid emits unlabeled edges', () => {
         ],
         edges: [
             {
-                id: 'e1', fromNodeId: 'a',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', fromNodeId: 'a',
                 toNodeId: 'b', name: '',
             },
         ],
@@ -255,7 +255,7 @@ test('mermaid round-trip preserves structure', () => {
         ],
         edges: [
             {
-                id: 'e1', fromNodeId: 's',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', fromNodeId: 's',
                 toNodeId: 'm', name: '',
             },
             {

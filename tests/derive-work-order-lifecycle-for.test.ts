@@ -44,7 +44,7 @@ const BASE = 'http://localhost';
 // orders.test.ts's own EMPTY_FLOW_ID) — the join itself is
 // irrelevant to a states-log replay, but the create route
 // validates the flow id, so a genuine seeded id is required.
-const EMPTY_FLOW_ID = 'E2BnBlZyrriqsQYkmS4usb';
+const EMPTY_FLOW_ID = 'GgfDbXOJUvvaCekCTcvhuw';
 
 function req(
     method: string,
@@ -107,7 +107,7 @@ function workOrderFlowGraph(
         ],
         edges: [
             {
-                id: 'e1', name: '',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
                 fromNodeId: 'n-start', toNodeId: 'n-middle',
             },
             {
@@ -165,7 +165,7 @@ test('workOrderLifecycleStatesFor: birth-claimed create alone'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             workOrderId, workOrderId + '-fwo', graph,
             {
@@ -204,7 +204,7 @@ async () => {
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             workOrderId, workOrderId + '-fwo', graph,
             {
@@ -245,7 +245,8 @@ async () => {
     const transition2At = nowUtc();
     const transition2ReleaseAt = nowUtc();
     const transition2 = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/' + workOrderId + '/transition',
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/transition',
         token, {
             transitionEventId: workOrderId + '-te2',
             targetState: 'n-finish',
@@ -260,7 +261,8 @@ async () => {
     assert.equal(transition2.status, 201);
 
     const entityPut = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId, token, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId, token, {
             display_id: 'task1-' + workOrderId,
             flow_graph: graph,
             position: 2,
@@ -270,7 +272,8 @@ async () => {
 
     const claimFreshAt = nowUtc();
     const claimFresh = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         token, {
             claimEventId: workOrderId + '-ce1',
             claimAt: claimFreshAt,
@@ -282,7 +285,8 @@ async () => {
 
     const claimRepeatAt = nowUtc();
     const claimRepeat = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         token, {
             claimEventId: workOrderId + '-ce2',
             claimAt: claimRepeatAt,
@@ -322,7 +326,7 @@ test('workOrderLifecycleStatesFor: a release op\'s'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             workOrderId, workOrderId + '-fwo', graph,
             {
@@ -341,7 +345,8 @@ test('workOrderLifecycleStatesFor: a release op\'s'
 
     const release = await handleRequest(db, req(
         'DELETE',
-        '/organizations/1/work-orders/' + workOrderId + '/claim',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/claim',
         token,
     ));
     assert.equal(release.status, 204);
@@ -357,7 +362,7 @@ test('workOrderLifecycleStatesFor: a release op\'s'
         (row) => row.state === 'claim_released',
     );
     assert.ok(released !== undefined);
-    assert.equal(released!.member_id, 'current');
+    assert.equal(released!.member_id, 'XXZruirZyAOoRpNxaDnpSA');
     const claimHistory = sortByAtId(
         await workOrderClaimHistoryFor(
             db, STARK_ORGANIZATION, workOrderId,
@@ -384,7 +389,7 @@ async () => {
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             workOrderId, workOrderId + '-fwo', graph,
             {
@@ -403,7 +408,8 @@ async () => {
 
     const release = await handleRequest(db, req(
         'DELETE',
-        '/organizations/1/work-orders/' + workOrderId + '/claim',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/claim',
         token,
     ));
     assert.equal(release.status, 204);
@@ -423,11 +429,12 @@ async () => {
         ],
     );
     assert.equal(afterRelease.at(-1)?.state, 'claim_released');
-    assert.equal(afterRelease.at(-1)?.member_id, 'current');
+    assert.equal(afterRelease.at(-1)?.member_id, 'XXZruirZyAOoRpNxaDnpSA');
 
     const claimAt = nowUtc();
     const reclaim = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         token, {
             claimEventId: workOrderId + '-ce1',
             claimAt,
@@ -456,12 +463,12 @@ test('workOrderLifecycleStatesFor: a never-created work-order id'
     const db = await seededDb();
     await assert.doesNotReject(
         () => workOrderLifecycleStatesFor(
-            db, STARK_ORGANIZATION, 'no-such-work-order',
+            db, STARK_ORGANIZATION, 'oYnbiWXzroVnyolOhmkBIQ',
         ),
     );
     assert.deepEqual(
         await workOrderLifecycleStatesFor(
-            db, STARK_ORGANIZATION, 'no-such-work-order',
+            db, STARK_ORGANIZATION, 'oYnbiWXzroVnyolOhmkBIQ',
         ),
         [],
     );
@@ -480,7 +487,7 @@ async () => {
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             workOrderId, workOrderId + '-fwo', graph,
             {
@@ -528,7 +535,8 @@ async () => {
 
     const release = await handleRequest(db, req(
         'DELETE',
-        '/organizations/1/work-orders/' + workOrderId + '/claim',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/claim',
         token,
     ));
     assert.equal(release.status, 204);
@@ -592,11 +600,11 @@ test('workOrderHistoryFor: empty lifecycle throws'
     const db = await seededDb();
     await assert.rejects(
         () => workOrderHistoryFor(
-            db, STARK_ORGANIZATION, 'no-such-work-order',
+            db, STARK_ORGANIZATION, 'oYnbiWXzroVnyolOhmkBIQ',
         ),
         (err: unknown) =>
             err instanceof EntityNotFoundError
             && err.message
-                === 'Not found: work_orders/no-such-work-order',
+                === 'Not found: work_orders/oYnbiWXzroVnyolOhmkBIQ',
     );
 });

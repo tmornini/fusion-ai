@@ -19,24 +19,25 @@ import { seededMockDb } from './mock-seed.ts';
 // to end.
 const COLLECTION_ROUTES: readonly string[] = [
     'identities/any-id/organizations/',
-    'organizations/1/members/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/members/',
     'ai-agents/',
-    'organizations/1/ideas/',
-    'organizations/1/projects/',
-    'organizations/1/flows/',
-    'organizations/1/projects/any-project/flows/',
-    'organizations/1/work-orders/',
-    'organizations/1/flows/any-flow/work-orders/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/projects/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/flows/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/projects/any-project/flows/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/flows/any-flow/work-orders/',
     // GET states/:id/field-values RETIRED (C4); field values
     // fold on work-orders/:id/history.
-    'organizations/1/record-types/',
-    'organizations/1/flows/any-flow/records/',
-    'organizations/1/ideas/any-idea/submissions/',
-    'organizations/1/objectives/',
-    'organizations/1/objectives/any-objective/revisions/',
-    'organizations/1/projects/any-project'
+    'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/flows/any-flow/records/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/any-idea/submissions/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/any-objective/revisions/'
+        + '',
+    'organizations/AjdvjuECVZEgZoFajaIEkg/projects/any-project'
         + '/objective-baseline-scores/',
-    'organizations/1/projects/any-project'
+    'organizations/AjdvjuECVZEgZoFajaIEkg/projects/any-project'
         + '/objective-actual-scores/',
     // Bulk lifecycle collection RETIRED (states-URI
     // elimination C3).

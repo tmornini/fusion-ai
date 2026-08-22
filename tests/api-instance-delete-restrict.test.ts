@@ -28,7 +28,7 @@ import {
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
-const ORGANIZATION = '1';
+const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const FLOW_ID = 'flow-del-restrict-1';
 const WO_A = 'wo-del-a';
 const WO_B = 'wo-del-b';
@@ -112,7 +112,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/organizations/1/flows/', token, {
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Delete Restrict Flow',
@@ -149,7 +149,8 @@ async function seedWorkOrder(
     fwoId: string,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + woId, token, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+            , token, {
             display_id: 'abcd',
             flow_graph: flowGraph(),
             position: 1,
@@ -158,7 +159,8 @@ async function seedWorkOrder(
     assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/flows/' + FLOW_ID + '/work-orders/' + fwoId,
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID
+            + '/work-orders/' + fwoId,
         token,
         {
             flow_id: FLOW_ID,
@@ -227,7 +229,8 @@ async function seedFlowTypeJoin(
 ): Promise<void> {
     const put = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/flows/' + FLOW_ID + '/records/' + FR_ID,
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID + '/records/'
+            + '' + FR_ID,
         token,
         {
             id: FR_ID,
@@ -247,7 +250,8 @@ async function bindInstance(
 ): Promise<void> {
     const res = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/work-orders/' + woId + '/binding',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+            + '/binding',
         token,
         {
             instance_id: instanceId,
@@ -266,7 +270,8 @@ async function transitionTo(
 ): Promise<void> {
     const res = await handleRequest(db, req(
         'POST',
-        '/organizations/1/work-orders/' + woId + '/transition',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+            + '/transition',
         token,
         {
             transitionEventId: eventId,
@@ -288,7 +293,7 @@ async function seededInFlightDb(): Promise<{
     await seedAdminSchema(db);
     await seedCurrentMember(db);
     const token = await organizationToken(
-        'current', ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION,
     );
     await seedFlow(db, token);
     await seedWorkOrder(db, token, WO_A, 'fwo-del-a');
@@ -386,7 +391,8 @@ async () => {
     assert.equal(del.status, 204);
     const bind = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/work-orders/' + WO_UNBOUND + '/binding',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_UNBOUND
+            + '/binding',
         token,
         {
             instance_id: INSTANCE_ID,

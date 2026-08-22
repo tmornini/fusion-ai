@@ -27,7 +27,7 @@ function revisionFields(id: string, name: string) {
         objective_id: id,
         name,
         description: 'd',
-        member_id: 'current',
+        member_id: 'XXZruirZyAOoRpNxaDnpSA',
         at: '2026-05-14T00:00:00.000000Z',
     };
 }
@@ -45,10 +45,10 @@ test(
     + ' revision on the pair plane in one operation',
     async () => {
         const db = await freshDb();
-        await POST(db, 'organizations/1/objectives/', {
+        await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/', {
             id: 'obj-1',
             objective: objectiveFields(),
-            revisionId: 'rev-1',
+            revisionId: 'sVWUntTCtQYFCpONjkzAKg',
             revision: revisionFields('obj-1', 'Revenue'),
             ...genesisTrio('obj-1'),
         }, DEV_TOKEN);
@@ -59,10 +59,11 @@ test(
             position: number;
             organization_id: string;
             state?: string;
-        }>(db, 'organizations/1/objectives/obj-1', DEV_TOKEN);
+        }>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-1'
+            , DEV_TOKEN);
         assert.equal(objective.position, 1);
         // The fence stamped the bound org — never the body.
-        assert.equal(objective.organization_id, '1');
+        assert.equal(objective.organization_id, 'AjdvjuECVZEgZoFajaIEkg');
         // GET streams the stored PUT (G1: trio included).
         assert.equal(objective.state, 'active');
         // The leaf revision route is PUT-only; read the nested
@@ -72,8 +73,10 @@ test(
             id: string;
             objective_id: string;
             name: string;
-        }>>(db, 'organizations/1/objectives/obj-1/revisions/', DEV_TOKEN);
-        const revision = revisions.find(r => r.id === 'rev-1');
+        }>>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-1/'
+            + 'revisions/', DEV_TOKEN);
+        const revision = revisions.find(
+            r => r.id === 'sVWUntTCtQYFCpONjkzAKg');
         assert.ok(revision);
         assert.equal(revision.objective_id, 'obj-1');
         assert.equal(revision.name, 'Revenue');
@@ -91,7 +94,8 @@ test(
         // pre-tx (pair formation), so no pairs land and
         // GET cannot derive the objective.
         await assert.rejects(
-            () => POST(db, 'organizations/1/objectives/', {
+            () => POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+                + '', {
                 id: 'obj-rollback',
                 objective: objectiveFields(),
                 revisionId: 'rev-rollback',
@@ -101,7 +105,8 @@ test(
         );
         await assert.rejects(
             () => GET(
-                db, 'organizations/1/objectives/obj-rollback', DEV_TOKEN,
+                db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+                    + 'obj-rollback', DEV_TOKEN,
             ),
         );
     },

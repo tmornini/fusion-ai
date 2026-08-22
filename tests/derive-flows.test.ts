@@ -22,11 +22,12 @@ import {
 // class (Decision 7) — a SECOND PUT to an existing flow is
 // non-genesis and must thread If-Match via a header-
 // capable req helper (echo the first PUT's 64-hex ETag),
-// unlike the bare-req idiom the organizations/1/ideas/projects skew tests
+// unlike the bare-req idiom the
+// organizations/AjdvjuECVZEgZoFajaIEkg/ideas/projects skew tests
 // use.
 
 const BASE = 'http://localhost';
-const STARK_ORGANIZATION = '1';
+const STARK_ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const AT = '2026-01-01T00:00:00.000000Z';
 
 function req(
@@ -112,7 +113,7 @@ function putFlow(
     headers?: Record<string, string>,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', '/organizations/1/flows/' + id, token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + id, token,
         flowDocument(name, state, stateAt, stateEventId, graph),
         headers,
     ));
@@ -139,14 +140,17 @@ test(
         );
         assert.equal(genesis.status, 201);
         const head = await handleRequest(db, req(
-            'GET', '/organizations/1/flows/' + id, token,
+            'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + id, token,
         ));
         const etag = head.headers.get('ETag');
-        assert.ok(etag, 'no ETag on GET /organizations/1/flows/' + id);
+        assert.ok(etag
+            , 'no ETag on GET /organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+            + id);
 
         // The locked class: this second PUT is non-genesis, so
         // it must echo the current head's ETag rather
-        // than the bare-req idiom the organizations/1/ideas/projects skew
+        // than the bare-req idiom the
+        // organizations/AjdvjuECVZEgZoFajaIEkg/ideas/projects skew
         // tests
         // use — a save with no echo 412s outright.
         const skewedGraph = graphWithNode(

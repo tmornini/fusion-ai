@@ -48,7 +48,7 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await PUT(
-        db, 'organizations/1/ideas/idea-hdr-1',
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/idea-hdr-1',
         ideaPutBody('idea-hdr-1', 'Headers'), token,
         [['if-match', '"probe-value-123"']],
     );
@@ -67,7 +67,7 @@ test('PUT with no headerFields behaves exactly as before —'
     const db = await freshDb();
     const token = await organizationToken();
     const written = await PUT<{ id: string; title: string }>(
-        db, 'organizations/1/ideas/idea-hdr-2',
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/idea-hdr-2',
         ideaPutBody('idea-hdr-2', 'No Headers'), token,
     );
     assert.equal(written.title, 'No Headers');
@@ -79,13 +79,14 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await PUT(
-        db, 'organizations/1/ideas/idea-hdr-3',
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/idea-hdr-3',
         ideaPutBody('idea-hdr-3', 'Plain'), token,
     );
     const { body, etag } =
         await GETWithEtag<{
             id: string; title: string;
-        }>(db, 'organizations/1/ideas/idea-hdr-3', token);
+        }>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/idea-hdr-3'
+            , token);
     assert.equal(body.title, 'Plain');
     assert.ok(etag !== undefined && HEX64.test(etag));
 });
@@ -96,16 +97,17 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await PUT(
-        db, 'organizations/1/ideas/idea-hdr-4',
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/idea-hdr-4',
         ideaPutBody('idea-hdr-4', 'Agree'), token,
     );
     const viaGet = await GET<{ id: string; title: string }>(
-        db, 'organizations/1/ideas/idea-hdr-4', token,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/idea-hdr-4', token,
     );
     const { body: viaGetWithEtag } =
         await GETWithEtag<{
             id: string; title: string;
-        }>(db, 'organizations/1/ideas/idea-hdr-4', token);
+        }>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/idea-hdr-4'
+            , token);
     assert.deepEqual(viaGetWithEtag, viaGet);
 });
 

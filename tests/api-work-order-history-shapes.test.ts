@@ -84,7 +84,7 @@ function flowGraph(): Record<string, unknown> {
         ],
         edges: [
             {
-                id: 'e1', name: '',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
                 fromNodeId: 'n-start',
                 toNodeId: 'n-middle',
             },
@@ -140,7 +140,7 @@ async function createWorkOrder(
         db,
         req(
             'POST',
-            '/organizations/1/work-orders/',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/',
             DEV_TOKEN,
             createBody(workOrderId),
         ),
@@ -299,8 +299,8 @@ async () => {
             transitionEventId: teNew,
             targetState: 'n-finish',
             set: [
-                { attribute_id: 'a2', value: 'x' },
-                { attribute_id: 'a1', value: 'y' },
+                { attribute_id: 'UZgNCkZlSJcSaAmAJuSkcw', value: 'x' },
+                { attribute_id: 'UQTJZvCoKlFjEoDlDUwekw', value: 'y' },
             ],
             clear: ['a3'],
             release: null,
@@ -319,8 +319,10 @@ async () => {
     assert.ok(row !== undefined);
     assert.deepEqual(other!.field_values, []);
     assert.deepEqual(row!.field_values, [
-        { id: 'a1', attribute_id: 'a1', value: 'y' },
-        { id: 'a2', attribute_id: 'a2', value: 'x' },
+        { id: 'UQTJZvCoKlFjEoDlDUwekw'
+            , attribute_id: 'UQTJZvCoKlFjEoDlDUwekw', value: 'y' },
+        { id: 'UZgNCkZlSJcSaAmAJuSkcw'
+            , attribute_id: 'UZgNCkZlSJcSaAmAJuSkcw', value: 'x' },
         { id: 'a3', attribute_id: 'a3', cleared: true },
     ]);
     const cleared = row!.field_values.find(
@@ -416,7 +418,7 @@ async () => {
             transitionEventId: workOrderId + '-te1',
             targetState: 'n-middle',
             set: [
-                { attribute_id: 'c1', value: 'v' },
+                { attribute_id: 'WeXjAaAxGSpLpamfEuvcww', value: 'v' },
             ],
             clear: [],
             release: null,

@@ -42,8 +42,8 @@ test('Step 0: pendingInvitationFor over live grant/decline/'
 async () => {
     const db = await seededMockDb();
     const admin = await organizationToken(
-        'current', ORGANIZATION_TWO);
-    const inviteeId = 'LhfaUUf4IumVsCSGB4xjdK'; // Sarah Chen
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO);
+    const inviteeId = 'MQFcPtrZPIGjMCRAXtZUnA'; // Sarah Chen
     const inviteeEmail = 'sarah.chen@company.com';
 
     // Nothing granted yet: no pending.
@@ -59,7 +59,7 @@ async () => {
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {
             email: inviteeEmail,
-            invitationId: 'inv-dedup-step0-first',
+            invitationId: 'hhLDowecKAZZsoTcnjSQrg',
             grantEventId: 'inv-dedup-step0-first-grant',
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
@@ -67,7 +67,7 @@ async () => {
     assert.equal(grant.status, 200);
     const afterGrant = await pendingInvitationFor(
         db, ORGANIZATION_TWO, inviteeId);
-    assert.equal(afterGrant?.id, 'inv-dedup-step0-first');
+    assert.equal(afterGrant?.id, 'hhLDowecKAZZsoTcnjSQrg');
 
     // Decline: no longer pending — declined is terminal.
     const invitee = await organizationToken(
@@ -75,7 +75,7 @@ async () => {
     const decline = await handleRequest(db, req(
         'PUT',
         '/identities/' + inviteeId
-            + '/invitations/inv-dedup-step0-first',
+            + '/invitations/hhLDowecKAZZsoTcnjSQrg',
         invitee,
         {
             state: 'declined',
@@ -99,7 +99,7 @@ async () => {
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {
             email: inviteeEmail,
-            invitationId: 'inv-dedup-step0-second',
+            invitationId: 'hjPGoZqbkGJVvYQFoLWXCA',
             grantEventId: 'inv-dedup-step0-second-grant',
             grantAt: '2026-06-01T00:00:02.000000Z',
         },
@@ -111,13 +111,13 @@ async () => {
     assert.equal(candidates.length, 2);   // both documents
     const afterRegrant = await pendingInvitationFor(
         db, ORGANIZATION_TWO, inviteeId);
-    assert.equal(afterRegrant?.id, 'inv-dedup-step0-second');
+    assert.equal(afterRegrant?.id, 'hjPGoZqbkGJVvYQFoLWXCA');
 
     // Accept the fresh one: no pending again.
     const accept = await handleRequest(db, req(
         'PUT',
         '/identities/' + inviteeId
-            + '/invitations/inv-dedup-step0-second',
+            + '/invitations/hjPGoZqbkGJVvYQFoLWXCA',
         invitee,
         {
             state: 'accepted',

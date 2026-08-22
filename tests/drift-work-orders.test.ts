@@ -143,7 +143,7 @@ function workOrderFlowGraph(
         ],
         edges: [
             {
-                id: 'e1', name: '',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
                 fromNodeId: 'n-start', toNodeId: 'n-middle',
             },
             {
@@ -241,21 +241,21 @@ async function derivedWorkOrder(
 // (buildWorkOrders — 39 Customer Onboarding + 6 Proposal Review
 // Cycle) plus the 100 generated Lead-to-Close rows. All 145 land
 // in STARK_ORGANIZATION (mock-data.ts: "The whole work-order
-// graph stays in org '1'").
+// graph stays in org 'AjdvjuECVZEgZoFajaIEkg'").
 const SEEDED_WORK_ORDER_IDS = [
     ...buildWorkOrders().map((wo) => wo.id),
     ...buildLeadToCloseWorkload().workOrders.map((wo) => wo.id),
 ];
 
 // The three flows carrying seeded joins, paired with their own
-// join count (the 39/6/100 split) — 'E2BnBlZyrriqsQYkmS4usb'
+// join count (the 39/6/100 split) — 'GgfDbXOJUvvaCekCTcvhuw'
 // (Fusion Angle Flow) carries none, the empty case
 const SEEDED_JOIN_FLOWS = [
-    { flowId: 'h5mErVBQhwdMKwi1co30jB', count: 39 },
-    { flowId: '7COt7Kf4OaOBg6AjaNO04s', count: 6 },
+    { flowId: 'esKujtyQFYUJaVSXWwavzA', count: 39 },
+    { flowId: 'DDUhYDIRInXtIrRraxcyHQ', count: 6 },
     { flowId: l2cFlowId, count: 100 },
 ];
-const EMPTY_FLOW_ID = 'E2BnBlZyrriqsQYkmS4usb';
+const EMPTY_FLOW_ID = 'GgfDbXOJUvvaCekCTcvhuw';
 
 // -- 1. work-orders collection wire equals derive -------------
 
@@ -263,10 +263,11 @@ test('seeded GET /work-orders wire equals derived collection,'
 + ' Stark org', async () => {
     const db = await seededDb();
     const token = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
     const res = await handleRequest(
-        db, req('GET', '/organizations/1/work-orders/', token),
+        db, req('GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , token),
     );
     assert.equal(res.status, 200);
     const wireText = await res.text();
@@ -284,7 +285,7 @@ test('org-2 carries no work orders; a foreign-org GET 404s'
 + ' on wire and on derive', async () => {
     const db = await seededDb();
     const tokenTwo = await organizationToken(
-        'current', ORGANIZATION_TWO,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
     );
     const emptyRes = await handleRequest(
         db, req(
@@ -329,11 +330,13 @@ test('per-work-order GET wire equals derive for every seed,'
     const db = await seededDb();
     assert.equal(SEEDED_WORK_ORDER_IDS.length, 145);
     const token = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
     for (const id of SEEDED_WORK_ORDER_IDS) {
         const res = await handleRequest(
-            db, req('GET', '/organizations/1/work-orders/' + id, token),
+            db, req('GET'
+                , '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + id
+                , token),
         );
         assert.equal(res.status, 200);
         const wireText = await res.text();
@@ -355,14 +358,15 @@ test('flow-work-order join wire equals derive across every'
 + ' seeded flow (the 39/6/100 split)', async () => {
     const db = await seededDb();
     const token = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
     for (const { flowId, count } of SEEDED_JOIN_FLOWS) {
         const res = await handleRequest(
             db,
             req(
                 'GET',
-                '/organizations/1/flows/' + flowId + '/work-orders/',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+                    + '/work-orders/',
                 token,
             ),
         );
@@ -381,13 +385,14 @@ test('a flow with no work orders derives an empty join list'
 + ' on wire and on derive', async () => {
     const db = await seededDb();
     const token = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
     const res = await handleRequest(
         db,
         req(
             'GET',
-            '/organizations/1/flows/' + EMPTY_FLOW_ID + '/work-orders/',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + EMPTY_FLOW_ID
+                + '/work-orders/',
             token,
         ),
     );
@@ -440,10 +445,11 @@ async function assertEntityAndJoinParity(
     db: MemoryDbAdapter, workOrderId: string, flowId: string,
 ): Promise<void> {
     const token = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
     const entityRes = await handleRequest(
-        db, req('GET', '/organizations/1/work-orders/' + workOrderId, token),
+        db, req('GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId, token),
     );
     assert.equal(entityRes.status, 200);
     const entityText = await entityRes.text();
@@ -455,7 +461,7 @@ async function assertEntityAndJoinParity(
     const joinRes = await handleRequest(
         db,
         req(
-            'GET', '/organizations/1/flows/' + flowId +
+            'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId +
                 '/work-orders/', token,
         ),
     );
@@ -475,7 +481,7 @@ test('live-write chain: birth-claimed create, two transitions'
 + ' and an unclaim — wire equals derive at every step',
 async () => {
     const db = await seededDb();
-    const tokenA = await organizationToken('current');
+    const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     await seedOrganizationMember(db, 'member-b');
     const tokenB = await organizationToken('member-b');
 
@@ -499,7 +505,7 @@ async () => {
     // Create by A: birth-claimed — the third event IS 'claimed'
     // by the creator (verification finding, lens 3).
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', tokenA,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', tokenA,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId, graph,
             {
@@ -554,7 +560,8 @@ async () => {
     const transition2At = nowUtc();
     const transition2ReleaseAt = nowUtc();
     const transition2 = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/' + workOrderId + '/transition',
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/transition',
         tokenA, {
             transitionEventId: 'wo-drift-chain-1-te2',
             targetState: 'n-finish',
@@ -588,7 +595,8 @@ async () => {
             .body['workOrder'] as { flow_graph: Record<string, unknown> }
     ).flow_graph;
     const entityPut = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId, tokenA, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId, tokenA, {
             display_id: 'drift-' + workOrderId,
             flow_graph: graph,
             position: 2,
@@ -604,7 +612,8 @@ async () => {
     // Claim by A — fresh: prior is 'claim_released', not live.
     const claimFreshAt = nowUtc();
     const claimFresh = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         tokenA, {
             claimEventId: 'wo-drift-chain-1-ce1',
             claimAt: claimFreshAt,
@@ -624,7 +633,8 @@ async () => {
         0 /* states table retired */;
     const claimRepeatAt = nowUtc();
     const claimRepeat = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         tokenA, {
             claimEventId: 'wo-drift-chain-1-ce2',
             claimAt: claimRepeatAt,
@@ -644,7 +654,8 @@ async () => {
         (await db.pairs.getAll()).length;
     const claimRejectAt = nowUtc();
     const claimReject = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         tokenB, {
             claimEventId: 'wo-drift-chain-1-ce3',
             claimAt: claimRejectAt,
@@ -662,7 +673,8 @@ async () => {
     // DELETE organizations/:id/work-orders/:id/claim.
     const unclaim = await handleRequest(db, req(
         'DELETE',
-        '/organizations/1/work-orders/' + workOrderId + '/claim',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/claim',
         tokenA,
     ));
     assert.equal(unclaim.status, 204);
@@ -694,7 +706,7 @@ test('duplicate-create: two creates, same work-order id, fresh'
     const pfidB = 'wo-drift-dup-1-fwo-b';
 
     const first = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             workOrderId, pfidA, flowId, graph,
             {
@@ -716,7 +728,7 @@ test('duplicate-create: two creates, same work-order id, fresh'
     assert.equal(first.status, 201);
 
     const second = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             workOrderId, pfidB, flowId, graph,
             {
@@ -740,7 +752,8 @@ test('duplicate-create: two creates, same work-order id, fresh'
     assert.equal(second.status, 201);
 
     const entityRes = await handleRequest(
-        db, req('GET', '/organizations/1/work-orders/' + workOrderId, token),
+        db, req('GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId, token),
     );
     assert.equal(entityRes.status, 200);
     const derivedEntity = await derivedWorkOrder(
@@ -791,7 +804,8 @@ async () => {
     const workOrderId = 'wo-drift-supersede-1';
 
     const first = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId, token, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId, token, {
             display_id: 'first',
             flow_graph: workOrderFlowGraph(8 * 60 * 60),
             position: 1,
@@ -802,7 +816,8 @@ async () => {
     assert.ok(firstId);
 
     const second = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId, token, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId, token, {
             display_id: 'second',
             flow_graph: workOrderFlowGraph(4 * 60 * 60),
             position: 2,
@@ -812,7 +827,8 @@ async () => {
     assert.equal(second.headers.get('Supersedes'), null);
 
     const getRes = await handleRequest(
-        db, req('GET', '/organizations/1/work-orders/' + workOrderId, token),
+        db, req('GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId, token),
     );
     assert.equal(getRes.status, 200);
     const derived = await derivedWorkOrder(
@@ -841,7 +857,7 @@ async () => {
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId, graph,
             {
@@ -863,7 +879,8 @@ async () => {
     assert.equal(created.status, 201);
 
     const prefix = canonicalUriCollection(
-        STARK_ORGANIZATION, '/organizations/1/work-orders/',
+        STARK_ORGANIZATION
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/',
     );
     const [requests, responses] = await Promise.all([
         db.pairs.getAllWhere('uri_collection', prefix),
@@ -1034,7 +1051,8 @@ interface FieldValueTriple {
     readonly value: string;
 }
 
-// Each claim pair re-runs the 0/1/2-event decision with the
+// Each claim pair re-runs the 0/AjdvjuECVZEgZoFajaIEkg/2-event decision with
+// the
 // pair BODY's claimAt as the reference clock. PRIOR state
 // reduces from the REPLAYED events so far (never old-plane
 // rows) via latestClaimEvent's own CLAIM_STATES filter + (at,
@@ -1209,7 +1227,7 @@ async function replayWorkOrderStates(
     workOrderId: string,
 ): Promise<ReplayResult> {
     const woPrefix = canonicalUriCollection(
-        organization, '/organizations/1/work-orders/',
+        organization, '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/',
     );
     const [woRequests, woResponses] = await Promise.all([
         db.pairs.getAllWhere('uri_collection', woPrefix),
@@ -1230,7 +1248,8 @@ async function replayWorkOrderStates(
 
     const claimPrefix = canonicalUriCollection(
         organization,
-        '/organizations/1/work-orders/' + workOrderId + '/claim/',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/claim/',
     );
     const [claimRequests, claimResponses] = await Promise.all([
         db.pairs.getAllWhere('uri_collection', claimPrefix),
@@ -1247,7 +1266,8 @@ async function replayWorkOrderStates(
 
     const releasePrefix = canonicalUriCollection(
         organization,
-        '/organizations/1/work-orders/' + workOrderId + '/release/',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/release/',
     );
     const [releaseRequests, releaseResponses] =
         await Promise.all([
@@ -1267,7 +1287,8 @@ async function replayWorkOrderStates(
 
     const transitionPrefix = canonicalUriCollection(
         organization,
-        '/organizations/1/work-orders/' + workOrderId + '/transition/',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/transition/',
     );
     const [
         transitionRequests, transitionResponses,
@@ -1338,7 +1359,7 @@ test('THE TRACE-REPLAY PROOF: a test-side replay of a live'
 + ' states history, event-for-event and (at, id)-ordered',
 async () => {
     const db = await seededDb();
-    const tokenA = await organizationToken('current');
+    const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     await seedOrganizationMember(db, 'member-b');
     const tokenB = await organizationToken('member-b');
 
@@ -1358,7 +1379,7 @@ async () => {
 
     // Leg 1: birth-claimed create by A.
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', tokenA,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', tokenA,
         createWorkOrderBody(
             workOrderId, flowWorkOrderId, flowId, graph,
             {
@@ -1382,7 +1403,8 @@ async () => {
     const releaseTransitionAt = nowUtc();
     const releaseAt = nowUtc();
     const release = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/' + workOrderId + '/transition',
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/transition',
         tokenA, {
             transitionEventId: 'wo-drift-trace-1-te1',
             targetState: 'n-middle',
@@ -1417,7 +1439,8 @@ async () => {
             .body['workOrder'] as { flow_graph: Record<string, unknown> }
     ).flow_graph;
     const entityPut = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId, tokenA, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId, tokenA, {
             display_id: 'drift-' + workOrderId,
             flow_graph: graph,
             position: 2,
@@ -1432,7 +1455,8 @@ async () => {
     // Leg 3: re-claim by A — fresh (prior is 'claim_released').
     const reclaimAt = nowUtc();
     const reclaim = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         tokenA, {
             claimEventId: 'wo-drift-trace-1-ce1',
             claimAt: reclaimAt,
@@ -1447,7 +1471,8 @@ async () => {
     // events.
     const idempotentAt = nowUtc();
     const idempotent = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         tokenA, {
             claimEventId: 'wo-drift-trace-1-ce2',
             claimAt: idempotentAt,
@@ -1469,7 +1494,8 @@ async () => {
     const takeoverExpireAt = nowUtc();
     const takeoverClaimAt = nowUtc();
     const takeover = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + workOrderId + '/claim',
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/claim',
         tokenB, {
             claimEventId: 'wo-drift-trace-1-ce3',
             claimAt: takeoverClaimAt,
@@ -1507,7 +1533,7 @@ async () => {
             release: null,
             transitionAt: withValuesAt,
         },
-        { actor: 'current', requestAt: withValuesAt },
+        { actor: 'XXZruirZyAOoRpNxaDnpSA', requestAt: withValuesAt },
     );
 
     // Leg 7: transition to finish by B — claim stays live so
@@ -1515,7 +1541,8 @@ async () => {
     // (distinct from Leg 2's embedded transition+release).
     const finishTransitionAt = nowUtc();
     const finish = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/' + workOrderId + '/transition',
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + workOrderId + '/transition',
         tokenB, {
             transitionEventId: 'wo-drift-trace-1-te3',
             targetState: 'n-finish',
@@ -1529,7 +1556,8 @@ async () => {
     // (deleteWorkOrderClaim's wire path), by A.
     const unclaim = await handleRequest(db, req(
         'DELETE',
-        '/organizations/1/work-orders/' + workOrderId + '/claim',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/claim',
         tokenA,
     ));
     assert.equal(unclaim.status, 204);
@@ -1599,7 +1627,7 @@ test('same-join-id retry: two different work-order creates '
     const sharedFwoId = 'wo-drift-retry-fwo-shared';
 
     const first = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             'wo-drift-retry-a', sharedFwoId, flowId, graph,
             {
@@ -1624,7 +1652,7 @@ test('same-join-id retry: two different work-order creates '
     // ids) — not a byte-identical resend, which would replay via
     // the E6 fast path and append no second pair at all.
     const second = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
             'wo-drift-retry-b', sharedFwoId, flowId, graph,
             {
@@ -1647,7 +1675,8 @@ test('same-join-id retry: two different work-order creates '
 
     const joinPrefix = canonicalUriCollection(
         STARK_ORGANIZATION,
-        '/organizations/1/flows/' + flowId + '/work-orders/',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+            + '/work-orders/',
     );
     const joinResponses = await db.pairs.getAllAtAddress(
         joinPrefix, sharedFwoId,

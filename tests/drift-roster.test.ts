@@ -276,7 +276,7 @@ function aiMemberCreateBody(
             name,
             description: 'd',
             skill_focus: 'sf',
-            model: 'mnte677fU2G1V2B9vJp9z7',
+            model: 'nqNVXnBkUBLoKlenbyPIZQ',
         },
         initialState: 'active',
         initialStateEventId: stateEventId,
@@ -294,7 +294,7 @@ function aiMemberEditBody(
             name,
             description: 'd2',
             skill_focus: 'sf2',
-            model: 'mnte677fU2G1V2B9vJp9z7',
+            model: 'nqNVXnBkUBLoKlenbyPIZQ',
         },
         state: 'active',
         stateAt,
@@ -309,7 +309,7 @@ function aiMemberDocumentBody(
         name,
         description: 'd3',
         skill_focus: 'sf3',
-        model: 'mnte677fU2G1V2B9vJp9z7',
+        model: 'nqNVXnBkUBLoKlenbyPIZQ',
     };
 }
 
@@ -362,7 +362,7 @@ async () => {
     const db = await seededDb();
 
     const tokenStark = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
     const resStark = await handleRequest(
         db, req(
@@ -383,7 +383,7 @@ async () => {
     assert.equal(stark.length, 6);
 
     const tokenTwo = await organizationToken(
-        'current', ORGANIZATION_TWO,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
     );
     const resTwo = await handleRequest(
         db, req(
@@ -425,7 +425,7 @@ test('per-seat GET wire equals derive (all 12); missing-'
 
     for (const membership of allMemberships) {
         const token = await organizationToken(
-            'current', membership.organization_id,
+            'XXZruirZyAOoRpNxaDnpSA', membership.organization_id,
         );
         const path = '/organizations/'
             + membership.organization_id
@@ -464,7 +464,7 @@ test('per-seat GET wire equals derive (all 12); missing-'
             '/organizations/' + STARK_ORGANIZATION
                 + '/members/' + missingId,
             await organizationToken(
-                'current', STARK_ORGANIZATION,
+                'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
             ),
         ),
     );
@@ -480,7 +480,7 @@ test('per-seat GET wire equals derive (all 12); missing-'
         '/organizations/' + target.organization_id
             + '/members/' + target.id,
         await organizationToken(
-            'current', target.organization_id,
+            'XXZruirZyAOoRpNxaDnpSA', target.organization_id,
         ),
     ));
     assert.equal(deleteResponse.status, 204);
@@ -499,7 +499,7 @@ test('per-seat GET wire equals derive (all 12); missing-'
         '/organizations/' + target.organization_id
             + '/members/' + target.id,
         await organizationToken(
-            'current', target.organization_id,
+            'XXZruirZyAOoRpNxaDnpSA', target.organization_id,
         ),
     ));
     assert.equal(tombstoneRes.status, 404);
@@ -588,7 +588,7 @@ test('seat collection counts per org; current identity;'
     const resMembers = await handleRequest(
         db, req(
             'GET',
-            '/organizations/1/members/',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/members/',
             token,
         ),
     );
@@ -609,7 +609,7 @@ test('seat collection counts per org; current identity;'
             '/organizations/' + STARK_ORGANIZATION
                 + '/members/',
             await organizationToken(
-                'current', STARK_ORGANIZATION,
+                'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
             ),
         ),
     );
@@ -622,7 +622,7 @@ test('seat collection counts per org; current identity;'
     const resCurrent = await handleRequest(
         db, req(
             'GET',
-            '/identities/current',
+            '/identities/XXZruirZyAOoRpNxaDnpSA',
             token,
         ),
     );
@@ -631,7 +631,7 @@ test('seat collection counts per org; current identity;'
         id: string;
         kind: string;
     };
-    assert.equal(current.id, 'current');
+    assert.equal(current.id, 'XXZruirZyAOoRpNxaDnpSA');
     assert.equal(current.kind, 'person');
 
     const missingId = 'no-such-member';
@@ -773,7 +773,7 @@ async () => {
     const db = await seededDb();
     const organization = ORGANIZATION_TWO;
     const adminToken = await organizationToken(
-        'current', organization,
+        'XXZruirZyAOoRpNxaDnpSA', organization,
     );
 
     async function grantTo(
@@ -854,7 +854,7 @@ async () => {
     // Phase Final Stage B: roster tables retired.
 
     // B: accept — accepted + the membership on the pair plane.
-    const jessicaId = 'zyTbfbjcGEfbpCsNTP0XjX';
+    const jessicaId = 'zyGBRshxOnKHUfcyFRqowg';
     const jessicaGrant = await grantTo(
         'inv-roster-jessica', 'jessica.park@company.com',
         'ev-roster-jessica-grant', '2026-06-01T00:00:01.000000Z',
@@ -887,7 +887,7 @@ async () => {
     );
     assert.equal(emilyGrant.status, 200);
     const emilyDecline = await declineAs(
-        '53J8h9dr76XFqCjYcNVwIR', 'inv-roster-emily',
+        'CJrglMsNBxOWWfbihHQSeg', 'inv-roster-emily',
         'ev-roster-emily-decline', '2026-06-01T00:00:04.000000Z',
     );
     assert.equal(emilyDecline.status, 204);
@@ -926,7 +926,7 @@ async () => {
     const derivedAfterDuplicate = await deriveInvitations(db);
     assert.equal(
         derivedAfterDuplicate.filter(
-            (row) => row.identity_id === 'LhfaUUf4IumVsCSGB4xjdK'
+            (row) => row.identity_id === 'MQFcPtrZPIGjMCRAXtZUnA'
                 && row.organization_id === organization,
         ).length, 1,
     );
@@ -1111,7 +1111,7 @@ test('plain PUT-supersession at a seat address — a'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const identityId = 'zyTbfbjcGEfbpCsNTP0XjX'; // Jessica Park
+    const identityId = 'zyGBRshxOnKHUfcyFRqowg'; // Jessica Park
 
     const first = await handleRequest(db, req(
         'PUT',

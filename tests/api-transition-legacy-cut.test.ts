@@ -45,7 +45,8 @@ const BASE = 'http://localhost';
 const ORGANIZATION = STARK_ORGANIZATION;
 const WO_ID = 'wo-legacy-cut-1';
 const TRANSITION =
-    '/organizations/1/work-orders/' + WO_ID + '/transition';
+    '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+        + '/transition';
 const TRANSITION_PATTERN = 'organizations/:id/work-orders/:id/transition';
 const RETIRED_MESSAGE =
     'WorkOrderTransitionBody.fieldValues'
@@ -101,7 +102,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     await seedAdminSchema(db);
     await seedCurrentMember(db);
     await PUT(
-        db, 'organizations/1/work-orders/' + WO_ID, {
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID, {
             display_id: 'cut1',
             flow_graph: graphJson(),
             position: 1,
@@ -167,16 +168,16 @@ async () => {
                     id: 'fv-1',
                     fields: {
                         state_event_id: 'te-cut-1',
-                        attribute_id: 'attr-1',
+                        attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                         value: 'high',
                     },
                 }],
                 set: [{
-                    attribute_id: 'attr-1',
+                    attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                     value: 'high',
                 }],
                 instance_id: 'inst-1',
-                record_type_id: 'rt-1',
+                record_type_id: 'sjWcXwYGlgxxJOHxzMoUow',
             }),
         ),
     );

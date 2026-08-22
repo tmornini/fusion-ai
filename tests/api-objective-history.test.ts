@@ -57,7 +57,7 @@ async function putObjective(
     state: string,
     stateAt: string,
     eventSuffix: string,
-    organization = '1',
+    organization = 'AjdvjuECVZEgZoFajaIEkg',
 ): Promise<void> {
     const res = await handleRequest(
         db,
@@ -76,7 +76,7 @@ async function putObjective(
 }
 
 test(
-    'GET organizations/1/objectives/versions is 404',
+    'GET organizations/AjdvjuECVZEgZoFajaIEkg/objectives/versions is 404',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
@@ -90,7 +90,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/objectives/versions',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/versions',
                 DEV_TOKEN,
             ),
         );
@@ -100,7 +100,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/objectives/versions/',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -137,7 +137,7 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/objectives/' + id
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id
                     + '/versions/',
                 DEV_TOKEN,
             ),

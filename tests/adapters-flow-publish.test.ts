@@ -74,7 +74,7 @@ function buildFlowEntity(
 ): FlowWithGraph {
     return {
         id,
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         name: 'Flow ' + id,
         is_locked: false,
         is_auto_layout: true,
@@ -131,7 +131,7 @@ function readyGraph(prefix = ''): StoredGraph {
             buildNode(n('done'), { isArchive: true }),
         ],
         edges: [
-            buildEdge(n('e1'), n('start'), n('mid')),
+            buildEdge(n('YiJPbufDpkyrZcZCYbUJpg'), n('start'), n('mid')),
             buildEdge(n('e2'), n('mid'), n('done')),
         ],
     };
@@ -143,7 +143,7 @@ test(
     + ' outgoing edge',
     () => {
         const flow = buildFlowEntity(
-            'f1', readyGraph(),
+            'ZOousbbnzpqlxJExVAruYQ', readyGraph(),
         );
         const r = validateFlowForCreation(flow);
         assert.equal(r.ready, true);
@@ -166,11 +166,11 @@ test(
                 }),
             ],
             edges: [
-                buildEdge('e1', 'start', 'mid'),
+                buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'start', 'mid'),
                 buildEdge('e2', 'mid', 'done'),
             ],
         };
-        const flow = buildFlowEntity('f1', graph);
+        const flow = buildFlowEntity('ZOousbbnzpqlxJExVAruYQ', graph);
         const r = validateFlowForCreation(flow);
         assert.equal(r.ready, false);
         assert.equal(r.problems.length, 1);
@@ -204,11 +204,11 @@ test(
             ],
             // orphan has no outgoing edge
             edges: [
-                buildEdge('e1', 'start', 'mid'),
+                buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'start', 'mid'),
                 buildEdge('e2', 'mid', 'done'),
             ],
         };
-        const flow = buildFlowEntity('f1', graph);
+        const flow = buildFlowEntity('ZOousbbnzpqlxJExVAruYQ', graph);
         const r = validateFlowForCreation(flow);
         assert.equal(r.ready, false);
         const problem = r.problems.find(
@@ -238,11 +238,11 @@ test(
                 }),
             ],
             edges: [
-                buildEdge('e1', 'start', 'mid'),
+                buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'start', 'mid'),
                 buildEdge('e2', 'mid', 'done'),
             ],
         };
-        const flow = buildFlowEntity('f1', graph);
+        const flow = buildFlowEntity('ZOousbbnzpqlxJExVAruYQ', graph);
         const r = validateFlowForCreation(flow);
         assert.equal(r.ready, true);
     },

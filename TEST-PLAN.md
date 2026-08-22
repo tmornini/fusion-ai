@@ -1091,7 +1091,7 @@ depends: A
 - [ ] **E4** Page loads with project summary
   card (description, dates, progress bar) and
   baseline vs. current metrics. PASS: all cards
-  render with data. Baseline/current metrics
+  render with data. Baseline/XXZruirZyAOoRpNxaDnpSA metrics
   show em dash when values are zero or missing.
 - [ ] **E5** Sidebar shows the Flows section
   (Team card has been retired with the team

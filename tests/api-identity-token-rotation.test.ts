@@ -36,8 +36,9 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     // (Phase 13 Task 6/9a), so a pair-less event is invisible to
     // them — the PUT route forms the SAME event pair a live write
     // uses (Phase 13 Task 9: pair-only, no row).
-    await PUT(db, 'identities/current/tokens/t-root', {
-        jti: ROOT_JTI, identity_id: 'current',
+    await PUT(db
+        , 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/udpCrXJSdUfkFbImFbBsWw', {
+        jti: ROOT_JTI, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         action: 'issued', chain_id: 'chain-1',
         at: '2026-06-01T00:00:00.000000Z',
     }, DEV_TOKEN);
@@ -49,7 +50,7 @@ function rotate(
     jti: string,
 ): Promise<{ jti: string }> {
     return POST(
-        db, `identities/current/tokens/${jti}/rotation`, {},
+        db, `identities/XXZruirZyAOoRpNxaDnpSA/tokens/${jti}/rotation`, {},
         DEV_TOKEN,
     );
 }
@@ -111,7 +112,7 @@ test(
         const db = await seededDb();
         const { jti: next } = await rotate(db, ROOT_JTI);
         await POST(
-            db, `identities/current/tokens/${next}/revocation`,
+            db, `identities/XXZruirZyAOoRpNxaDnpSA/tokens/${next}/revocation`,
             {},
             DEV_TOKEN,
         );
@@ -128,7 +129,7 @@ test(
     async () => {
         const db = await seededDb();
         await POST(
-            db, 'identities/current/tokens/ghost/revocation',
+            db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/ghost/revocation',
             {},
             DEV_TOKEN,
         );

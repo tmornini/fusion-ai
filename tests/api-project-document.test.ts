@@ -83,7 +83,8 @@ test('a document PUT with a new state writes wire entity'
     const db = await freshDb();
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/1/projects/doc-1', token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'XufQcWIKhZshfJYOVNeUSw', token,
         projectDocument('Fresh', 'submitted'),
     ));
     assert.equal(res.status, 201);
@@ -91,7 +92,9 @@ test('a document PUT with a new state writes wire entity'
     assert.equal(putWire.title, 'Fresh');
     assert.equal(putWire.state, 'submitted');
     const getRes = await handleRequest(
-        db, req('GET', '/organizations/1/projects/doc-1', token),
+        db, req('GET'
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'XufQcWIKhZshfJYOVNeUSw', token),
     );
     assert.equal(getRes.status, 200);
     const getWire = await getRes.json() as {
@@ -102,10 +105,11 @@ test('a document PUT with a new state writes wire entity'
     };
     assert.equal(getWire.title, 'Fresh');
     assert.equal(getWire.state, 'submitted');
-    const events = await deriveProjectStateHistory(db, '1', 'doc-1');
+    const events = await deriveProjectStateHistory(db
+        , 'AjdvjuECVZEgZoFajaIEkg', 'XufQcWIKhZshfJYOVNeUSw');
     assert.equal(events.length, 1);
     assert.equal(events[0]!.state, 'submitted');
-    assert.equal(events[0]!.member_id, 'current');
+    assert.equal(events[0]!.member_id, 'XXZruirZyAOoRpNxaDnpSA');
 });
 
 test('a state-unchanged edit writes no second event',
@@ -113,18 +117,23 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await handleRequest(db, req(
-        'PUT', '/organizations/1/projects/doc-2', token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YHvbnJSZHECuziaHXcsKpw', token,
         projectDocument('First', 'submitted'),
     ));
     const edit = await handleRequest(db, req(
-        'PUT', '/organizations/1/projects/doc-2', token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YHvbnJSZHECuziaHXcsKpw', token,
         projectDocument('Second', 'submitted'),
     ));
     assert.equal(edit.status, 201);
-    const events = await deriveProjectStateHistory(db, '1', 'doc-2');
+    const events = await deriveProjectStateHistory(db
+        , 'AjdvjuECVZEgZoFajaIEkg', 'YHvbnJSZHECuziaHXcsKpw');
     assert.equal(events.length, 1);
     const getRes = await handleRequest(
-        db, req('GET', '/organizations/1/projects/doc-2', token),
+        db, req('GET'
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YHvbnJSZHECuziaHXcsKpw', token),
     );
     const wire = await getRes.json() as { title: string };
     assert.equal(wire.title, 'Second');
@@ -136,12 +145,17 @@ test('a byte-identical resend converges: one event,'
     const token = await organizationToken();
     const body = projectDocument('Idempotent', 'submitted');
     await handleRequest(
-        db, req('PUT', '/organizations/1/projects/doc-3', token, body),
+        db, req('PUT'
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YIuEjXvCwXAgrpyvcvLJjg', token, body),
     );
     await handleRequest(
-        db, req('PUT', '/organizations/1/projects/doc-3', token, body),
+        db, req('PUT'
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YIuEjXvCwXAgrpyvcvLJjg', token, body),
     );
-    const events = await deriveProjectStateHistory(db, '1', 'doc-3');
+    const events = await deriveProjectStateHistory(db
+        , 'AjdvjuECVZEgZoFajaIEkg', 'YIuEjXvCwXAgrpyvcvLJjg');
     assert.equal(events.length, 1);
     assert.equal((await db.pairs.getAll()).length, 3);
     assert.equal((await db.pairs.getAll()).length, 3);
@@ -152,11 +166,14 @@ test('the pair request body carries domain state;'
     const db = await freshDb();
     const token = await organizationToken();
     await handleRequest(db, req(
-        'PUT', '/organizations/1/projects/doc-4', token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YKtyCizelcaUAaHGwetojA', token,
         projectDocument('Wired', 'under_review'),
     ));
     const getRes = await handleRequest(
-        db, req('GET', '/organizations/1/projects/doc-4', token),
+        db, req('GET'
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YKtyCizelcaUAaHGwetojA', token),
     );
     const wire = await getRes.json() as {
         title: string;
@@ -190,26 +207,31 @@ test('a same-state edit by a DIFFERENT member never'
 + ' reattributes the head event\'s authorship', async () => {
     const db = await freshDb();
     await seedOrganizationMember(db, 'member-b');
-    const tokenA = await organizationToken('current');
+    const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const tokenB = await organizationToken('member-b');
     const created = await handleRequest(db, req(
-        'PUT', '/organizations/1/projects/doc-5', tokenA,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YLbPBVpBLImxPQRqLKPKLw', tokenA,
         projectDocument('First', 'submitted'),
     ));
     assert.equal(created.status, 201);
 
     const edited = await handleRequest(db, req(
-        'PUT', '/organizations/1/projects/doc-5', tokenB,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YLbPBVpBLImxPQRqLKPKLw', tokenB,
         projectDocument('Second', 'submitted'),
     ));
     assert.equal(edited.status, 201);
 
-    const events = await deriveProjectStateHistory(db, '1', 'doc-5');
+    const events = await deriveProjectStateHistory(db
+        , 'AjdvjuECVZEgZoFajaIEkg', 'YLbPBVpBLImxPQRqLKPKLw');
     assert.equal(events.length, 1);
-    assert.equal(events[0]!.member_id, 'current');
+    assert.equal(events[0]!.member_id, 'XXZruirZyAOoRpNxaDnpSA');
 
     const getRes = await handleRequest(
-        db, req('GET', '/organizations/1/projects/doc-5', tokenA),
+        db, req('GET'
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'YLbPBVpBLImxPQRqLKPKLw', tokenA),
     );
     const wire = await getRes.json() as { title: string };
     assert.equal(wire.title, 'Second');
@@ -222,10 +244,11 @@ test('stored PUT body equals projectEntityOf of the same'
     const id = 'project-g1-stream';
     const body = projectDocument('Streamed', 'submitted');
     const put = await handleRequest(
-        db, req('PUT', '/organizations/1/projects/' + id, token, body),
+        db, req('PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + id, token, body),
     );
     assert.equal(put.status, 201);
-    const prefix = '/organizations/1/projects/';
+    const prefix = '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/';
     const stored = JSON.parse(
         await storedPutBodyText(db, prefix, id),
     );
@@ -236,15 +259,15 @@ test('stored PUT body equals projectEntityOf of the same'
             method: 'PUT',
             body,
         },
-        '1',
+        'AjdvjuECVZEgZoFajaIEkg',
         { state: 'submitted' },
     );
     assert.deepEqual(stored, expected);
     assert.deepEqual(
-        stored, await deriveProject(db, '1', id),
+        stored, await deriveProject(db, 'AjdvjuECVZEgZoFajaIEkg', id),
     );
     const later = await handleRequest(db, req(
-        'PUT', '/organizations/1/projects/' + id, token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/' + id, token,
         projectDocument('Revised', 'under_review'),
     ));
     assert.equal(later.status, 201);
@@ -253,7 +276,7 @@ test('stored PUT body equals projectEntityOf of the same'
     );
     assert.deepEqual(
         after,
-        await deriveProject(db, '1', id),
+        await deriveProject(db, 'AjdvjuECVZEgZoFajaIEkg', id),
     );
     assert.equal(after.state, 'under_review');
     assert.equal(after.title, 'Revised');

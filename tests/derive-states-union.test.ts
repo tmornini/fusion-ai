@@ -58,7 +58,7 @@ const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 
 // Non-current admins need explicit claim roles — organizationToken
-// only bakes admin for sub === 'current'.
+// only bakes admin for sub === 'XXZruirZyAOoRpNxaDnpSA'.
 async function adminToken(
     sub: string, organization: string,
 ): Promise<string> {
@@ -774,18 +774,18 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
     const db = await seed();
     const tokenA = await adminToken('adminA', 'A');
     await person(
-        db, 'invitee-reaccept', 'Reaccept Invitee',
+        db, 'jLMftvmIlvkHfyyIXYElhQ', 'Reaccept Invitee',
         'invitee-reaccept@x.com',
     );
     const inviteeToken = await organizationToken(
-        'invitee-reaccept', 'A',
+        'jLMftvmIlvkHfyyIXYElhQ', 'A',
     );
 
     const grantRes = await handleRequest(db, req(
         'POST', '/organizations/A/invitations/', tokenA,
         {
             email: 'invitee-reaccept@x.com',
-            invitationId: 'inv-reaccept',
+            invitationId: 'ientwuGyocqieLhpxdHZNA',
             grantEventId: 'ev-reaccept-grant',
             grantAt: '2026-04-02T00:00:00.000000Z',
         },
@@ -794,7 +794,8 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
 
     const firstAccept = await handleRequest(db, req(
         'PUT',
-        '/identities/invitee-reaccept/invitations/inv-reaccept',
+        '/identities/jLMftvmIlvkHfyyIXYElhQ/invitations/'
+            + 'ientwuGyocqieLhpxdHZNA',
         inviteeToken,
         {
             state: 'accepted',
@@ -807,7 +808,8 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
 
     const secondAccept = await handleRequest(db, req(
         'PUT',
-        '/identities/invitee-reaccept/invitations/inv-reaccept',
+        '/identities/jLMftvmIlvkHfyyIXYElhQ/invitations/'
+            + 'ientwuGyocqieLhpxdHZNA',
         inviteeToken,
         {
             state: 'accepted',
@@ -822,7 +824,7 @@ test('deriveInvitationStates: a re-accept (idempotent resend)'
 
     const rows = await deriveInvitationStates(db);
     const accepted = rows.filter(
-        (row) => row.entity_id === 'inv-reaccept'
+        (row) => row.entity_id === 'ientwuGyocqieLhpxdHZNA'
             && row.state === 'accepted',
     );
     assert.equal(accepted.length, 1);
@@ -839,11 +841,11 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
     const db = await seed();
     const tokenA = await adminToken('adminA', 'A');
     await person(
-        db, 'invitee-redecline', 'Redecline Invitee',
+        db, 'jLwvLbZCGaiaFioqVNEetA', 'Redecline Invitee',
         'invitee-redecline@x.com',
     );
     const inviteeToken = await organizationToken(
-        'invitee-redecline', 'A',
+        'jLwvLbZCGaiaFioqVNEetA', 'A',
     );
 
     const grantRes = await handleRequest(db, req(
@@ -859,7 +861,7 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
 
     const firstDecline = await handleRequest(db, req(
         'PUT',
-        '/identities/invitee-redecline/invitations/'
+        '/identities/jLwvLbZCGaiaFioqVNEetA/invitations/'
             + 'inv-redecline',
         inviteeToken,
         {
@@ -872,7 +874,7 @@ test('deriveInvitationStates: a re-decline (idempotent resend)'
 
     const secondDecline = await handleRequest(db, req(
         'PUT',
-        '/identities/invitee-redecline/invitations/'
+        '/identities/jLwvLbZCGaiaFioqVNEetA/invitations/'
             + 'inv-redecline',
         inviteeToken,
         {

@@ -19,11 +19,11 @@ import { deriveTokenRevocationsFor } from
 test('validates a revocation body', () => {
     assert.deepEqual(
         validateIdentityTokenRevocationEntity({
-            identity_id: 'current',
+            identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             at: '2026-06-03T00:00:00.000000Z',
         }),
         {
-            identity_id: 'current',
+            identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             at: '2026-06-03T00:00:00.000000Z',
         },
     );
@@ -54,7 +54,7 @@ async function setup() {
 
 test('logout-everywhere appends, never splices',
 async () => {
-    // Revoke a subject OTHER than the writer's ('current',
+    // Revoke a subject OTHER than the writer's ('XXZruirZyAOoRpNxaDnpSA',
     // via devToken) so the second append's own Bearer is not
     // self-revoked by the first — the gate correctly revokes
     // the actor's stale token when it logs ITSELF out

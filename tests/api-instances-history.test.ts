@@ -42,7 +42,7 @@ import { seedSeat } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
-const ORGANIZATION = '1';
+const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const TYPE_ID = 'rt-hist-1';
 const ATTR_PUBLIC = 'attr-hist-pub';
 const ATTR_SECRET = 'attr-hist-sec';
@@ -96,17 +96,17 @@ async function adminDb(): Promise<{
     await seedAdminSchema(db);
     await seedMembershipPair(db, 'm-member1', {
         organization_id: ORGANIZATION,
-        identity_id: 'member1',
+        identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
         at: AT,
     });
     return {
         db,
         adminToken: await organizationToken(
-            'current', ORGANIZATION,
+            'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION,
         ),
         memberToken: await organizationToken(
-            'member1', ORGANIZATION,
+            'nkgaOHZISTQrILTfPThWCA', ORGANIZATION,
         ),
     };
 }
@@ -259,7 +259,7 @@ async () => {
             set: [
                 {
                     attribute_id: ATTR_PUBLIC,
-                    value: 'v1',
+                    value: 'xDyDkxEPwtcNmJVknUHDsg',
                 },
             ],
         },
@@ -306,7 +306,7 @@ async () => {
         { attribute_id: ATTR_PUBLIC, value: 'v2' },
     ]);
     assert.deepEqual(entries[1]!.values, [
-        { attribute_id: ATTR_PUBLIC, value: 'v1' },
+        { attribute_id: ATTR_PUBLIC, value: 'xDyDkxEPwtcNmJVknUHDsg' },
     ]);
     assert.deepEqual(entries[2]!.values, [
         { attribute_id: ATTR_PUBLIC, value: 'v0' },
@@ -513,12 +513,12 @@ async () => {
     const res = await handleRequest(db, req(
         'GET',
         '/organizations/' + ORGANIZATION
-            + '/record-types/no-type/instances/'
+            + '/record-types/oZjfWriXLxoqurdbwfBnpA/instances/'
             + INSTANCE_ID + '/versions',
         memberToken,
     ));
     assert.equal(res.status, 404);
     assert.deepEqual(await res.json(), {
-        error: 'Not found: record_types/no-type',
+        error: 'Not found: record_types/oZjfWriXLxoqurdbwfBnpA',
     });
 });

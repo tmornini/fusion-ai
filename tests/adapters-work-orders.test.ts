@@ -140,7 +140,7 @@ function buildLinearGraph(): StoredGraph {
             buildNode(
                 'n-middle',
                 'Doing work',
-                { memberIds: ['current'] },
+                { memberIds: ['XXZruirZyAOoRpNxaDnpSA'] },
             ),
             buildNode(
                 'n-finish',
@@ -150,7 +150,7 @@ function buildLinearGraph(): StoredGraph {
         ],
         edges: [
             buildEdge(
-                'e1',
+                'YiJPbufDpkyrZcZCYbUJpg',
                 'n-start',
                 'n-middle',
             ),
@@ -173,7 +173,8 @@ function buildLinearGraph(): StoredGraph {
 // default start/complete graph; the immediate putFlow overwrites
 // it with the caller's own graph); a REPEAT call on the same
 // flowId (the "freezes flow_graph against subsequent flow
-// edits" case re-seeds 'f1' to simulate an edit) instead saves
+// edits" case re-seeds 'ZOousbbnzpqlxJExVAruYQ' to simulate an edit) instead
+// saves
 // straight over the existing flow via putFlow alone — postFlowCreation
 // is genesis-only.
 async function seedFlow(
@@ -194,7 +195,7 @@ async function seedFlow(
     // Phase Final Stage B: flows table retired — probe
     // existence via GET; create on miss.
     try {
-        await ctx.GET('organizations/1/flows/' + flowId);
+        await ctx.GET('organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId);
         await putFlow(ctx, flowId, save);
         return;
     } catch {
@@ -215,7 +216,7 @@ async function setupDb(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedHumanMember(db, 'current', 'Demo Test');
+    await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo Test');
     const ctx = createRequestContext(db, await organizationToken());
     return { db, ctx };
 }
@@ -237,7 +238,10 @@ async function seedClaim(
     workOrderId: string,
     claimAt: string,
 ): Promise<void> {
-    await ctx.PUT(`organizations/1/work-orders/${workOrderId}/claim`, {
+    await ctx.PUT(
+        'organizations/AjdvjuECVZEgZoFajaIEkg'
+        + '/work-orders/' + workOrderId + '/claim',
+        {
         claimEventId: generateIdentifier(),
         claimAt,
         expireEventId: generateIdentifier(),
@@ -251,7 +255,8 @@ async function seedRelease(
     _releaseAt: string,
 ): Promise<void> {
     await ctx.DELETE(
-        `organizations/1/work-orders/${workOrderId}/claim`,
+        'organizations/AjdvjuECVZEgZoFajaIEkg'
+        + '/work-orders/' + workOrderId + '/claim',
     );
 }
 
@@ -280,11 +285,11 @@ test(
     async () => {
         const { db, ctx } = await setupDb();
         const graph = buildLinearGraph();
-        await seedFlow(db, 'f1', graph);
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', graph);
 
         const woId =
             await createWorkOrder(
-                ctx, 'f1',
+                ctx, 'ZOousbbnzpqlxJExVAruYQ',
             );
 
         // Phase Final Task 2: WO + join on pair plane.
@@ -296,7 +301,8 @@ test(
         // is residual pin.
 
         const events =
-            await workOrderLifecycleStatesFor(db, '1', woId);
+            await workOrderLifecycleStatesFor(db, 'AjdvjuECVZEgZoFajaIEkg'
+                , woId);
         // start node, post-start, claimed
         assert.equal(events.length, 3);
         const nonClaim = events.filter(
@@ -316,7 +322,7 @@ test(
         );
         assert.equal(claims.length, 1);
         assert.equal(
-            claims[0]!.member_id, 'current',
+            claims[0]!.member_id, 'XXZruirZyAOoRpNxaDnpSA',
         );
     },
 );
@@ -327,10 +333,10 @@ test(
     async () => {
         const { db, ctx } = await setupDb();
         const graph = buildLinearGraph();
-        await seedFlow(db, 'f1', graph);
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', graph);
 
         const firstId =
-            await createWorkOrder(ctx, 'f1');
+            await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         // NAMED re-pin (Task 7): putWorkOrder is the wire
         // PUT — it takes the DOMAIN shape ({displayId,
         // flowGraph, position} with flowGraph PARSED), not
@@ -343,7 +349,7 @@ test(
             position: 7.5,
         });
 
-        const secondId = await createWorkOrder(ctx, 'f1');
+        const secondId = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
 
         // Phase Final Task 2: position from pair-plane GET.
         const second = await getWorkOrder(ctx, secondId);
@@ -359,7 +365,7 @@ test(
         const graph: StoredGraph = {
             nodes: [
                 buildNode('a', 'A', {
-                    memberIds: ['current'],
+                    memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
                 }),
                 buildNode('b', 'B', {
                     isArchive: true,
@@ -369,11 +375,11 @@ test(
                 buildEdge('e', 'a', 'b'),
             ],
         };
-        await seedFlow(db, 'f1', graph);
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', graph);
         await assert.rejects(
             () =>
                 createWorkOrder(
-                    ctx, 'f1',
+                    ctx, 'ZOousbbnzpqlxJExVAruYQ',
                 ),
             /no start node/,
         );
@@ -393,24 +399,24 @@ test(
                     { isCreate: true },
                 ),
                 buildNode('a', 'A', {
-                    memberIds: ['current'],
+                    memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
                     isArchive: true,
                 }),
                 buildNode('b', 'B', {
-                    memberIds: ['current'],
+                    memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
                     isArchive: true,
                 }),
             ],
             edges: [
-                buildEdge('e1', 's', 'a'),
+                buildEdge('YiJPbufDpkyrZcZCYbUJpg', 's', 'a'),
                 buildEdge('e2', 's', 'b'),
             ],
         };
-        await seedFlow(db, 'f1', graph);
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', graph);
         await assert.rejects(
             () =>
                 createWorkOrder(
-                    ctx, 'f1',
+                    ctx, 'ZOousbbnzpqlxJExVAruYQ',
                 ),
             /exactly one outgoing edge/,
         );
@@ -422,9 +428,9 @@ test(
     + 'position across calls',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
-        const a = await createWorkOrder(ctx, 'f1');
-        const b = await createWorkOrder(ctx, 'f1');
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
+        const a = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
+        const b = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         // Phase Final Task 2: positions from pair-plane GET.
         const positions = [
             (await getWorkOrder(ctx, a)).position,
@@ -442,8 +448,8 @@ test(
     + 'flow edits',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
-        const woId = await createWorkOrder(ctx, 'f1');
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
+        const woId = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
 
         // Mutate source flow AFTER the
         // work order captured its
@@ -452,7 +458,7 @@ test(
         // the read source, not just the blob.
         const mutated = buildLinearGraph();
         mutated.nodes[1]!.name = 'EDITED';
-        await seedFlow(db, 'f1', mutated);
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', mutated);
 
         // Phase Final Task 2: frozen graph on pair-plane GET.
         const wo = await getWorkOrder(ctx, woId);
@@ -474,10 +480,10 @@ test(
     + 'claim',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
         const woId =
             await createWorkOrder(
-                ctx, 'f1',
+                ctx, 'ZOousbbnzpqlxJExVAruYQ',
             );
         await pause(2);
 
@@ -516,10 +522,10 @@ test(
     + 'when no live claim exists',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
         const woId =
             await createWorkOrder(
-                ctx, 'f1',
+                ctx, 'ZOousbbnzpqlxJExVAruYQ',
             );
         await pause(2);
         // Record an explicit release so no live
@@ -550,10 +556,10 @@ test(
     + 'when edge id does not exist',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
         const woId =
             await createWorkOrder(
-                ctx, 'f1',
+                ctx, 'ZOousbbnzpqlxJExVAruYQ',
             );
         await assert.rejects(
             () =>
@@ -583,7 +589,7 @@ async function setupScopedDb(): Promise<{
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     await seedHumanMember(
-        db, 'current', 'Demo Test',
+        db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo Test',
     );
     const ctx = createRequestContext(
         db, await organizationToken(),
@@ -625,7 +631,8 @@ async function seedTypeInstanceAndJoin(
         ],
     );
     await ctx.PUT(
-        'organizations/1/flows/' + flowId + '/records/fr-'
+        'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+            + '/records/czzvKtivgBDCjBzNShRbqA'
         + flowId,
         {
             flow_id: flowId,
@@ -640,9 +647,9 @@ test(
     + ' only changed values on the instance head',
     async () => {
         const { db, ctx } = await setupScopedDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
-        await seedTypeInstanceAndJoin(ctx, 'f1', 'v0');
-        const woId = await createWorkOrder(ctx, 'f1');
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
+        await seedTypeInstanceAndJoin(ctx, 'ZOousbbnzpqlxJExVAruYQ', 'v0');
+        const woId = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         await putWorkOrderBinding(
             ctx, woId, INST_ID, RT_ID,
         );
@@ -652,14 +659,14 @@ test(
             workOrderId: woId,
             edgeId: 'e2',
             // ATTR changed; no other keys → set only.
-            values: { [ATTR_ID]: 'v1' },
+            values: { [ATTR_ID]: 'xDyDkxEPwtcNmJVknUHDsg' },
         });
 
         const head = await getRecordInstance(
             ctx, RT_ID, INST_ID,
         );
         assert.equal(
-            head.values.get(ATTR_ID), 'v1',
+            head.values.get(ATTR_ID), 'xDyDkxEPwtcNmJVknUHDsg',
         );
         assert.equal(
             await getWorkOrderCurrentNodeId(
@@ -675,9 +682,9 @@ test(
     + ' etag is stale against a concurrent PATCH',
     async () => {
         const { db, ctx } = await setupScopedDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
-        await seedTypeInstanceAndJoin(ctx, 'f1', 'v0');
-        const woId = await createWorkOrder(ctx, 'f1');
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
+        await seedTypeInstanceAndJoin(ctx, 'ZOousbbnzpqlxJExVAruYQ', 'v0');
+        const woId = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         await putWorkOrderBinding(
             ctx, woId, INST_ID, RT_ID,
         );
@@ -728,9 +735,9 @@ test(
     + ' a set head value',
     async () => {
         const { db, ctx } = await setupScopedDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
-        await seedTypeInstanceAndJoin(ctx, 'f1', 'v0');
-        const woId = await createWorkOrder(ctx, 'f1');
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
+        await seedTypeInstanceAndJoin(ctx, 'ZOousbbnzpqlxJExVAruYQ', 'v0');
+        const woId = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         await putWorkOrderBinding(
             ctx, woId, INST_ID, RT_ID,
         );
@@ -756,9 +763,9 @@ test(
     + ' pending equals head omits set/clear',
     async () => {
         const { db, ctx } = await setupScopedDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
-        await seedTypeInstanceAndJoin(ctx, 'f1', 'v0');
-        const woId = await createWorkOrder(ctx, 'f1');
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
+        await seedTypeInstanceAndJoin(ctx, 'ZOousbbnzpqlxJExVAruYQ', 'v0');
+        const woId = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         await putWorkOrderBinding(
             ctx, woId, INST_ID, RT_ID,
         );
@@ -796,9 +803,9 @@ test(
     + ' the work-order GET',
     async () => {
         const { db, ctx } = await setupScopedDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
-        await seedTypeInstanceAndJoin(ctx, 'f1');
-        const woId = await createWorkOrder(ctx, 'f1');
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
+        await seedTypeInstanceAndJoin(ctx, 'ZOousbbnzpqlxJExVAruYQ');
+        const woId = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         await putWorkOrderBinding(
             ctx, woId, INST_ID, RT_ID,
         );
@@ -815,9 +822,9 @@ test(
     + 'claimed state event',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
         const woId =
-            await createWorkOrder(ctx, 'f1');
+            await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         // Release the creation-time claim so this
         // test exercises pure claim-creation
         // without the expiration-notice branch.
@@ -830,7 +837,7 @@ test(
                 ctx, woId, DEFAULT_LOCK_TIMEOUT,
             );
         assert.ok(claim !== null);
-        assert.equal(claim.memberId, 'current');
+        assert.equal(claim.memberId, 'XXZruirZyAOoRpNxaDnpSA');
     },
 );
 
@@ -839,9 +846,9 @@ test(
     + 'claim by the holder appends no duplicate',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
         const woId =
-            await createWorkOrder(ctx, 'f1');
+            await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         // Release the creation-time claim so the
         // two explicit claim calls below are the
         // only contributors to the count.
@@ -851,7 +858,8 @@ test(
         await pause(2);
         await putWorkOrderClaim(ctx, woId);
         const events =
-            await workOrderLifecycleStatesFor(db, '1', woId);
+            await workOrderLifecycleStatesFor(db, 'AjdvjuECVZEgZoFajaIEkg'
+                , woId);
         const claimed = events.filter(
             (e: StateEntity) =>
                 e.state === 'claimed',
@@ -891,14 +899,16 @@ test(
         // a raw db.flowWorkOrders.put leaves no pair at this
         // address, so each join must land through the SAME
         // wire-reachable PUT the live route serves.
-        await ctx.PUT('organizations/1/flows/flow1/work-orders/fwo1', {
+        await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/flows/flow1/'
+            + 'work-orders/fwo1', {
             flow_id: 'flow1',
-            work_order_id: 'wo1',
+            work_order_id: 'yNSSnbrpacodQTzUEcdEVA',
             at: '2024-01-01T00:00:00.000000Z',
         });
-        await ctx.PUT('organizations/1/flows/flow2/work-orders/fwo2', {
+        await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/flows/flow2/'
+            + 'work-orders/fwo2', {
             flow_id: 'flow2',
-            work_order_id: 'wo2',
+            work_order_id: 'yNXXsTEwShOozlQCEWKIIw',
             at: '2024-01-01T00:00:00.000000Z',
         });
         // The server now filters the nested collection to its
@@ -906,11 +916,11 @@ test(
         const flow1 =
             await getFlowWorkOrderEntities(ctx, 'flow1');
         assert.equal(flow1.length, 1);
-        assert.equal(flow1[0]!.work_order_id, 'wo1');
+        assert.equal(flow1[0]!.work_order_id, 'yNSSnbrpacodQTzUEcdEVA');
         const flow2 =
             await getFlowWorkOrderEntities(ctx, 'flow2');
         assert.equal(flow2.length, 1);
-        assert.equal(flow2[0]!.work_order_id, 'wo2');
+        assert.equal(flow2[0]!.work_order_id, 'yNXXsTEwShOozlQCEWKIIw');
     },
 );
 
@@ -923,7 +933,7 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         await seedHumanMember(
-            db, 'current', 'Demo Test',
+            db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo Test',
         );
         const ctx = createRequestContext(db, await organizationToken());
         const woId = generateIdentifier();
@@ -949,7 +959,7 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         await seedHumanMember(
-            db, 'current', 'Demo Test',
+            db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo Test',
         );
         const ctx = createRequestContext(db, await organizationToken());
         const woId = generateIdentifier();
@@ -959,7 +969,7 @@ test(
             ctx, woId, DEFAULT_LOCK_TIMEOUT,
         );
         assert.ok(claim !== null);
-        assert.equal(claim.memberId, 'current');
+        assert.equal(claim.memberId, 'XXZruirZyAOoRpNxaDnpSA');
     },
 );
 
@@ -973,7 +983,7 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         await seedHumanMember(
-            db, 'current', 'Demo Test',
+            db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo Test',
         );
         const ctx = createRequestContext(db, await organizationToken());
         const fresh1 = generateIdentifier();
@@ -1014,7 +1024,7 @@ test(
             );
         assert.equal(claims.size, 2);
         assert.equal(
-            claims.get(fresh1)!.memberId, 'current',
+            claims.get(fresh1)!.memberId, 'XXZruirZyAOoRpNxaDnpSA',
         );
         assert.ok(claims.has(fresh2));
         // Stale claim past its lockTimeout: excluded.
@@ -1032,13 +1042,14 @@ test(
     + 'derives claim_released',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
         // Birth create leaves a live claim; DELETE
         // on the claim address ends it.
-        const woId = await createWorkOrder(ctx, 'f1');
+        const woId = await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         await deleteWorkOrderClaim(ctx, woId);
         const events = await ctx.GET<StateEntity[]>(
-            'organizations/1/work-orders/' + woId + '/history',
+            'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+                + '/history',
         );
         const released = events.filter(
             (e) => e.state === 'claim_released',
@@ -1057,9 +1068,9 @@ test(
     + 'release.at — latest by at is claim_released',
     async () => {
         const { db, ctx } = await setupDb();
-        await seedFlow(db, 'f1', buildLinearGraph());
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
         const woId =
-            await createWorkOrder(ctx, 'f1');
+            await createWorkOrder(ctx, 'ZOousbbnzpqlxJExVAruYQ');
         await pause(2);
 
         // Verify a live claim exists before transition.
@@ -1079,7 +1090,8 @@ test(
         });
 
         const allEvents =
-            await workOrderLifecycleStatesFor(db, '1', woId);
+            await workOrderLifecycleStatesFor(db, 'AjdvjuECVZEgZoFajaIEkg'
+                , woId);
         const transitionEvt = allEvents.find(
             (e: StateEntity) =>
                 e.state === 'n-finish',

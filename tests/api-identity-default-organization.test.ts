@@ -76,62 +76,70 @@ function getDefaultOrganization(token: string, identityId: string) {
 test('PUT default-organization sets it and GET returns it',
 async () => {
     const db = await freshDb();
-    await seedMembership(db, 'current', '1');
+    await seedMembership(db, 'XXZruirZyAOoRpNxaDnpSA'
+        , 'AjdvjuECVZEgZoFajaIEkg');
     const token = await devToken();
     const put = await handleRequest(
-        db, putDefaultOrganization(token, 'current', '1'));
+        db, putDefaultOrganization(token, 'XXZruirZyAOoRpNxaDnpSA'
+            , 'AjdvjuECVZEgZoFajaIEkg'));
     assert.equal(put.status, 201);
     const got = await handleRequest(
-        db, getDefaultOrganization(token, 'current'));
+        db, getDefaultOrganization(token, 'XXZruirZyAOoRpNxaDnpSA'));
     assert.equal(got.status, 200);
     const body = await got.json() as
         { organization_id: string };
-    assert.equal(body.organization_id, '1');
+    assert.equal(body.organization_id, 'AjdvjuECVZEgZoFajaIEkg');
 });
 
 test('PUT a non-seat organization is 400', async () => {
     const db = await freshDb();
-    await seedMembership(db, 'current', '1');
+    await seedMembership(db, 'XXZruirZyAOoRpNxaDnpSA'
+        , 'AjdvjuECVZEgZoFajaIEkg');
     const token = await devToken();
     const res = await handleRequest(
-        db, putDefaultOrganization(token, 'current', '2'));
+        db, putDefaultOrganization(token, 'XXZruirZyAOoRpNxaDnpSA'
+            , 'BBjWJsjYIDkTRKIIPrzWRw'));
     assert.equal(res.status, 400);
 });
 
 test('PUT to another identity tree is forbidden', async () => {
     const db = await freshDb();
-    await seedMembership(db, 'other', '1');
+    await seedMembership(db, 'other', 'AjdvjuECVZEgZoFajaIEkg');
     const token = await devToken();   // sub = current
     const res = await handleRequest(
-        db, putDefaultOrganization(token, 'other', '1'));
+        db, putDefaultOrganization(token, 'other', 'AjdvjuECVZEgZoFajaIEkg'));
     assert.equal(res.status, 403);
 });
 
 test('PUT the same organization twice is one document',
 async () => {
     const db = await freshDb();
-    await seedMembership(db, 'current', '1');
+    await seedMembership(db, 'XXZruirZyAOoRpNxaDnpSA'
+        , 'AjdvjuECVZEgZoFajaIEkg');
     const token = await devToken();
     await handleRequest(
-        db, putDefaultOrganization(token, 'current', '1'));
+        db, putDefaultOrganization(token, 'XXZruirZyAOoRpNxaDnpSA'
+            , 'AjdvjuECVZEgZoFajaIEkg'));
     await handleRequest(
-        db, putDefaultOrganization(token, 'current', '1'));
+        db, putDefaultOrganization(token, 'XXZruirZyAOoRpNxaDnpSA'
+            , 'AjdvjuECVZEgZoFajaIEkg'));
     const { deriveDefaultOrganization } = await import(
         '../api/derive-default-organization.ts'
     );
     const rows = await deriveDefaultOrganization(
-        db, 'current',
+        db, 'XXZruirZyAOoRpNxaDnpSA',
     );
     assert.equal(rows.length, 1);
-    assert.equal(rows[0]!.organization_id, '1');
+    assert.equal(rows[0]!.organization_id, 'AjdvjuECVZEgZoFajaIEkg');
 });
 
 test('GET 404s when never SET', async () => {
     const db = await freshDb();
-    await seedMembership(db, 'current', '1');
+    await seedMembership(db, 'XXZruirZyAOoRpNxaDnpSA'
+        , 'AjdvjuECVZEgZoFajaIEkg');
     const token = await devToken();
     const got = await handleRequest(
-        db, getDefaultOrganization(token, 'current'));
+        db, getDefaultOrganization(token, 'XXZruirZyAOoRpNxaDnpSA'));
     assert.equal(got.status, 404);
 });
 
@@ -139,17 +147,19 @@ test('GET 404s for an organization-less identity', async () => {
     const db = await freshDb();
     const token = await devToken();
     const got = await handleRequest(
-        db, getDefaultOrganization(token, 'current'));
+        db, getDefaultOrganization(token, 'XXZruirZyAOoRpNxaDnpSA'));
     assert.equal(got.status, 404);
 });
 
 test('PUT without organization_id returns 400', async () => {
     const db = await freshDb();
-    await seedMembership(db, 'current', '1');
+    await seedMembership(db, 'XXZruirZyAOoRpNxaDnpSA'
+        , 'AjdvjuECVZEgZoFajaIEkg');
     const token = await devToken();
     const res = await handleRequest(
         db, new Request(
-            `${BASE}/identities/current/default-organization`, {
+            `${BASE}/identities/XXZruirZyAOoRpNxaDnpSA/default-organization`
+                , {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -166,12 +176,15 @@ test('PUT without organization_id returns 400', async () => {
 test('revoke leaves the SET default-organization document',
 async () => {
     const db = await freshDb();
-    await seedMembership(db, 'current', '1');
-    await seedMembership(db, 'current', '2');
+    await seedMembership(db, 'XXZruirZyAOoRpNxaDnpSA'
+        , 'AjdvjuECVZEgZoFajaIEkg');
+    await seedMembership(db, 'XXZruirZyAOoRpNxaDnpSA'
+        , 'BBjWJsjYIDkTRKIIPrzWRw');
     const token = await devToken();
     const put = await handleRequest(
         db, new Request(
-            `${BASE}/identities/current/default-organization`, {
+            `${BASE}/identities/XXZruirZyAOoRpNxaDnpSA/default-organization`
+                , {
                 method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
@@ -179,7 +192,7 @@ async () => {
                     'operation-id': TEST_OPERATION_ID,
                 },
                 body: JSON.stringify({
-                    organization_id: '2',
+                    organization_id: 'BBjWJsjYIDkTRKIIPrzWRw',
                 }),
             },
         ),
@@ -187,12 +200,15 @@ async () => {
     assert.equal(put.status, 201);
     const revoked = await handleRequest(
         db, new Request(
-            `${BASE}/organizations/2/members/current`, {
+            `${BASE}/organizations/`
+                + 'BBjWJsjYIDkTRKIIPrzWRw/members/'
+                + 'XXZruirZyAOoRpNxaDnpSA', {
                 method: 'DELETE',
                 headers: {
                     'Authorization': 'Bearer '
                         + await organizationToken(
-                            'current', '2',
+                            'XXZruirZyAOoRpNxaDnpSA'
+                                , 'BBjWJsjYIDkTRKIIPrzWRw',
                         ),
                     'operation-id': TEST_OPERATION_ID,
                 },
@@ -202,7 +218,8 @@ async () => {
     assert.equal(revoked.status, 204);
     const got = await handleRequest(
         db, new Request(
-            `${BASE}/identities/current/default-organization`, {
+            `${BASE}/identities/XXZruirZyAOoRpNxaDnpSA/default-organization`
+                , {
                 headers: {
                     'Authorization': 'Bearer ' + token,
                 },
@@ -213,7 +230,7 @@ async () => {
     const body = await got.json() as {
         organization_id: string;
     };
-    assert.equal(body.organization_id, '2');
+    assert.equal(body.organization_id, 'BBjWJsjYIDkTRKIIPrzWRw');
 });
 
 test('GET identities/:id/default-organization'

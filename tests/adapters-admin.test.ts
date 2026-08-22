@@ -39,7 +39,7 @@ function buildProject(
     id: string,
 ): Omit<ProjectEntity, 'id'> {
     return {
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         title: 'P-' + id,
         description: 'desc',
         progress: 25,
@@ -55,7 +55,7 @@ function buildIdea(
     id: string,
 ): Omit<IdeaEntity, 'id'> {
     return {
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         title: 'I-' + id,
         position: 1,
         problem_statement: 'p',
@@ -106,7 +106,8 @@ async function seedIdea(
         ...entity,
         state,
     });
-    await ctx.PUT('organizations/1/ideas/' + id + '/submissions/sub-' + id, {
+    await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/ideas/' + id
+        + '/submissions/uUOcdPLOGxYyIcuyDTzQxA' + id, {
         idea_id: id,
         member_id: submitter,
         at: '2026-04-01T00:00:00.000000Z',
@@ -132,9 +133,9 @@ async function seedMembership(
     id: string, identityId: string, at: string,
 ): Promise<void> {
     const body = {
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: identityId,
-        type: identityId === 'current' ? 'admin' : 'member',
+        type: identityId === 'XXZruirZyAOoRpNxaDnpSA' ? 'admin' : 'member',
         at,
     };
     await seedSeat(
@@ -152,11 +153,11 @@ test(
     + ' are not deleted or declined',
     async () => {
         const { ctx } = await adminContext();
-        await seedProject(ctx, 'p1', 'submitted');
+        await seedProject(ctx, 'pnXmXrxOWayANgDLdCjuBw', 'submitted');
         await seedProject(
-            ctx, 'p2', 'under_review',
+            ctx, 'prBESZPjJDiuXCeZLmbiVw', 'under_review',
         );
-        await seedProject(ctx, 'p3', 'approved');
+        await seedProject(ctx, 'psEaaErZDHeKCbdAnrwbDQ', 'approved');
         await seedProject(ctx, 'p4', 'archived');
         await seedProject(ctx, 'p5', 'declined');
         await seedProject(ctx, 'p6', 'deleted');
@@ -173,12 +174,12 @@ test(
         const { db, ctx } = await adminContext();
         await seedMember(db, 'u1', 'active');
         await seedIdea(
-            ctx, 'i1', 'active', 'u1',
+            ctx, 'fndCYAsXazdzMUlEGMNIZw', 'active', 'u1',
         );
         await seedIdea(
-            ctx, 'i2', 'in_review', 'u1',
+            ctx, 'fxysGbBPBsnCwJNJsyZnkA', 'in_review', 'u1',
         );
-        await seedIdea(ctx, 'i3', 'approved', 'u1');
+        await seedIdea(ctx, 'gBbNAWlPwMfXZvevoUPhFQ', 'approved', 'u1');
         await seedIdea(ctx, 'i4', 'promoted', 'u1');
         await seedIdea(ctx, 'i5', 'archived', 'u1');
         await seedIdea(ctx, 'i6', 'deleted', 'u1');
@@ -209,9 +210,9 @@ test(
     async () => {
         const { db, ctx } = await adminContext();
         await seedMember(db, 'u1', 'active');
-        await seedProject(ctx, 'p1', 'approved');
+        await seedProject(ctx, 'pnXmXrxOWayANgDLdCjuBw', 'approved');
         await seedIdea(
-            ctx, 'i1', 'active', 'u1',
+            ctx, 'fndCYAsXazdzMUlEGMNIZw', 'active', 'u1',
         );
         let stats =
             await getOrganizationStats(ctx);
@@ -224,14 +225,14 @@ test(
         // retired; project/idea/member lifecycle rides each
         // family's own document address.
         const { organization_id: _projectOrganizationId, ...pFields } =
-            buildProject('p1');
-        await putProject(ctx, 'p1', {
+            buildProject('pnXmXrxOWayANgDLdCjuBw');
+        await putProject(ctx, 'pnXmXrxOWayANgDLdCjuBw', {
             ...pFields,
             state: 'declined',
         });
         const { organization_id: _ideaOrganizationId, ...iFields } =
-            buildIdea('i1');
-        await putIdea(ctx, 'i1', {
+            buildIdea('fndCYAsXazdzMUlEGMNIZw');
+        await putIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', {
             ...iFields,
             state: 'archived',
         });
@@ -254,11 +255,12 @@ test(
         // The flipped GET organizations/:id (Phase 12 Task 5)
         // derives from the ledger, so the row needs a message
         // pair — a raw db.organizations.put would be invisible.
-        await ctx.PUT('organizations/1', organizationRow('Acme'));
+        await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg'
+            , organizationRow('Acme'));
         const { seedSeat } = await import(
             './root-admin-fixture.ts'
         );
-        await seedSeat(db, '1', 'other', 'member');
+        await seedSeat(db, 'AjdvjuECVZEgZoFajaIEkg', 'other', 'member');
         const organization = await getOrganization(ctx);
         assert.equal(organization.usedSeats(), 2);
     },

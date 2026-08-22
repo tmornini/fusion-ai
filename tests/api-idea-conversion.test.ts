@@ -69,10 +69,10 @@ function baselineFields(
     objectiveId: string, score: number,
 ) {
     return {
-        project_id: 'p1',
+        project_id: 'pnXmXrxOWayANgDLdCjuBw',
         objective_id: objectiveId,
         score,
-        member_id: 'current',
+        member_id: 'XXZruirZyAOoRpNxaDnpSA',
         at: '2026-04-01T00:00:00.000000Z',
     };
 }
@@ -86,18 +86,20 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     // plane, so a raw ideas.put + states.postEvent leaves no
     // pair and history would read empty after a rolled-back
     // conversion.
-    await PUT(db, 'organizations/1/ideas/idea-1', {
+    await PUT(db
+        , 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+        + 'gVvtDIaqhnkXZQcxZeSuiw', {
         ...ideaFields('Source Idea'),
         state: 'approved',
     }, DEV_TOKEN);
     // Phase Final Stage B: objectives table retired — seed
     // through the live document PUT with the lifecycle trio
     // (states-address retirement) so the pair plane owns it.
-    await PUT(db, 'organizations/1/objectives/obj-1', {
+    await PUT(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-1', {
         position: 1,
         state: 'active',
     }, DEV_TOKEN);
-    await PUT(db, 'organizations/1/objectives/obj-2', {
+    await PUT(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-2', {
         position: 2,
         state: 'active',
     }, DEV_TOKEN);
@@ -112,8 +114,10 @@ test(
         const db = await seededDb();
         // Two distinct timestamps — idea strictly before project —
         // to verify each at routes to its own event and not the other.
-        await POST(db, 'organizations/1/ideas/idea-1/conversion', {
-            projectId: 'p1',
+        await POST(db
+            , 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+            + 'gVvtDIaqhnkXZQcxZeSuiw/conversion', {
+            projectId: 'pnXmXrxOWayANgDLdCjuBw',
             project: projectFields('Promoted Project'),
             idea: ideaFields('Source Idea'),
             ideaStateEventId: 'ev-idea-promoted',
@@ -139,10 +143,11 @@ test(
         const project = await GET<{
             title: string;
             organization_id: string;
-        }>(db, 'organizations/1/projects/p1', DEV_TOKEN);
+        }>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+            + 'pnXmXrxOWayANgDLdCjuBw', DEV_TOKEN);
         assert.equal(project.title, 'Promoted Project');
         // The fence stamped the bound org — never the body.
-        assert.equal(project.organization_id, '1');
+        assert.equal(project.organization_id, 'AjdvjuECVZEgZoFajaIEkg');
 
         // The idea moved to 'promoted', authored by the actor.
         // bare per-entity current-state alias RETIRED
@@ -151,23 +156,26 @@ test(
         const ideaHistory = await GET<{
             id: string;
             state: string;
-        }[]>(db, 'organizations/1/ideas/idea-1/versions/', DEV_TOKEN);
+        }[]>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+            + 'gVvtDIaqhnkXZQcxZeSuiw/versions/', DEV_TOKEN);
         const ideaCurrent = ideaHistory[0]!;
-        assert.equal(ideaCurrent.id, 'idea-1');
+        assert.equal(ideaCurrent.id, 'gVvtDIaqhnkXZQcxZeSuiw');
         assert.equal(ideaCurrent.state, 'promoted');
 
         // The new project entered at its initial state, also
         // authored by the actor.
-        const projectEvents = await deriveProjectStateHistory(db, '1', 'p1');
+        const projectEvents = await deriveProjectStateHistory(db
+            , 'AjdvjuECVZEgZoFajaIEkg', 'pnXmXrxOWayANgDLdCjuBw');
         assert.equal(projectEvents.length, 1);
         assert.equal(projectEvents[0]!.state, 'submitted');
-        assert.equal(projectEvents[0]!.member_id, 'current');
+        assert.equal(projectEvents[0]!.member_id, 'XXZruirZyAOoRpNxaDnpSA');
 
         const mine = await GET<
             ProjectObjectiveBaselineScoreEntity[]
         >(
             db,
-            'organizations/1/projects/p1/objective-baseline-scores/',
+            'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+                + 'pnXmXrxOWayANgDLdCjuBw/objective-baseline-scores/',
             DEV_TOKEN,
         );
         assert.equal(mine.length, 2);
@@ -184,8 +192,10 @@ test(
     + ' at the project\'s and the idea\'s own addresses',
     async () => {
         const db = await seededDb();
-        await POST(db, 'organizations/1/ideas/idea-1/conversion', {
-            projectId: 'p9',
+        await POST(db
+            , 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+            + 'gVvtDIaqhnkXZQcxZeSuiw/conversion', {
+            projectId: 'psZcIMMgiSomMHzDxcUnYQ',
             project: projectFields('Promoted Project'),
             idea: ideaFields('Source Idea'),
             ideaStateEventId: 'ev-idea-promoted-9',
@@ -222,20 +232,22 @@ test(
 
         const atProjectAddress = allRequests.filter(
             (r) =>
-                r.uri_collection === '/organizations/1/projects/'
-                && r.uri_id === 'p9',
+                r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
+                    + 'projects/'
+                && r.uri_id === 'psZcIMMgiSomMHzDxcUnYQ',
         );
         assert.equal(atProjectAddress.length, 1);
         const responsesAtProjectAddress = allResponses.filter(
             (r) =>
-                r.uri_collection === '/organizations/1/projects/'
-                && r.uri_id === 'p9',
+                r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
+                    + 'projects/'
+                && r.uri_id === 'psZcIMMgiSomMHzDxcUnYQ',
         );
         assert.equal(responsesAtProjectAddress.length, 1);
 
         const request = atProjectAddress[0]!;
         // The requester is the caller, never the idea's author.
-        assert.equal(request.requester_identity_id, 'current');
+        assert.equal(request.requester_identity_id, 'XXZruirZyAOoRpNxaDnpSA');
 
         const parsed = pairJsonOf(request.request) as {
             body: Record<string, unknown>;
@@ -246,17 +258,19 @@ test(
         });
 
         // Seed genesis PUT + conversion's synthesized idea
-        // document pair both land at idea-1's address.
+        // document pair both land at gVvtDIaqhnkXZQcxZeSuiw's address.
         const atIdeaAddress = allRequests.filter(
             (r) =>
-                r.uri_collection === '/organizations/1/ideas/'
-                && r.uri_id === 'idea-1',
+                r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
+                    + 'ideas/'
+                && r.uri_id === 'gVvtDIaqhnkXZQcxZeSuiw',
         );
         assert.equal(atIdeaAddress.length, 2);
         const responsesAtIdeaAddress = allResponses.filter(
             (r) =>
-                r.uri_collection === '/organizations/1/ideas/'
-                && r.uri_id === 'idea-1',
+                r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
+                    + 'ideas/'
+                && r.uri_id === 'gVvtDIaqhnkXZQcxZeSuiw',
         );
         assert.equal(responsesAtIdeaAddress.length, 2);
 
@@ -271,7 +285,7 @@ test(
         assert.ok(ideaRequest);
         // The requester is the caller, never the idea's author.
         assert.equal(
-            ideaRequest.requester_identity_id, 'current',
+            ideaRequest.requester_identity_id, 'XXZruirZyAOoRpNxaDnpSA',
         );
 
         const ideaParsed = pairJsonOf(ideaRequest.request) as {
@@ -287,7 +301,8 @@ test(
         // every baseline id is client-minted FRESH for this
         // conversion, so each pair is genesis there.
         const baselinesPrefix =
-            '/organizations/1/projects/p9'
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+                + 'psZcIMMgiSomMHzDxcUnYQ'
             + '/objective-baseline-scores/';
         const baselineCases = [
             { id: 'bl-9a', fields: baselineFields('obj-1', 10) },
@@ -311,7 +326,7 @@ test(
             const baselineRequest = atBaselineAddress[0]!;
             assert.equal(
                 baselineRequest.requester_identity_id,
-                'current',
+                'XXZruirZyAOoRpNxaDnpSA',
             );
             const baselineParsed = pairJsonOf(
                 baselineRequest.request,
@@ -334,8 +349,10 @@ test(
         // a raw colliding states row no longer aborts the
         // pair-plane conversion.
     // Phase Final Stage B: states table retired.
-        await POST(db, 'organizations/1/ideas/idea-1/conversion', {
-            projectId: 'p1',
+        await POST(db
+            , 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+            + 'gVvtDIaqhnkXZQcxZeSuiw/conversion', {
+            projectId: 'pnXmXrxOWayANgDLdCjuBw',
             project: projectFields('Converted'),
             idea: ideaFields('Source Idea'),
             ideaStateEventId: 'ev-idea-promoted',
@@ -353,11 +370,13 @@ test(
         }, DEV_TOKEN);
 
         const project = await GET<{ id: string }>(
-            db, 'organizations/1/projects/p1', DEV_TOKEN,
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+                + 'pnXmXrxOWayANgDLdCjuBw', DEV_TOKEN,
         );
-        assert.equal(project.id, 'p1');
+        assert.equal(project.id, 'pnXmXrxOWayANgDLdCjuBw');
         const ideaHistory = await GET<{ state: string }[]>(
-            db, 'organizations/1/ideas/idea-1/versions/', DEV_TOKEN,
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                + 'gVvtDIaqhnkXZQcxZeSuiw/versions/', DEV_TOKEN,
         );
         // Family history is DESC — index 0 is current.
         const ideaCurrent = ideaHistory[0]!;

@@ -23,7 +23,7 @@ async function adminCtx() {
 
 const goodRow = {
     jti: 'jti-1',
-    identity_id: 'current',
+    identity_id: 'XXZruirZyAOoRpNxaDnpSA',
     action: 'issued',
     chain_id: 'chain-1',
     at: '2026-06-03T00:00:00.000000Z',

@@ -141,19 +141,19 @@ async () => {
     const body = identityFields();
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/identities/id-doc-op-1',
+        pathname: '/identities/gTMDzYjclgPKfPUYsUdtoQ',
         routePattern: 'identities/:id',
         routeSegments: ['identities', ':id'],
-        pathSegments: ['identities', 'id-doc-op-1'],
+        pathSegments: ['identities', 'gTMDzYjclgPKfPUYsUdtoQ'],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
     const written = await postIdentityDocumentOp(
-        db, 'id-doc-op-1', body, 'current', pair,
+        db, 'gTMDzYjclgPKfPUYsUdtoQ', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
     );
     assert.deepEqual(written, body);
     // Phase Final Stage B: identity spine tables retired.
@@ -202,7 +202,7 @@ async function putDocumentPair(
         routeSegments: ['identities', ':id'],
         pathSegments: ['identities', id],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt,
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
@@ -227,7 +227,7 @@ async function deleteDocumentPair(
         routeSegments: ['identities', ':id'],
         pathSegments: ['identities', id],
         headerFields: [], body: {},
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt,
         organization: undefined,
         responseStatus: 204, responseBody: undefined,
@@ -251,7 +251,7 @@ test('a PUT chain Supersedes-chains and the head derives the'
         '2026-02-01T00:00:00.000000Z',
     );
     const headAfterFirst = await documentGetHandler(wiring)(
-        db, ['identities-chain-1'], 'current', 'ignored',
+        db, ['identities-chain-1'], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
     );
     assert.deepEqual(headAfterFirst, {
         id: 'identities-chain-1', ...first,
@@ -266,7 +266,7 @@ test('a PUT chain Supersedes-chains and the head derives the'
     assert.equal('supersedes' in secondResponse, false);
 
     const headAfterSecond = await documentGetHandler(wiring)(
-        db, ['identities-chain-1'], 'current', 'ignored',
+        db, ['identities-chain-1'], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
     );
     assert.deepEqual(headAfterSecond, {
         id: 'identities-chain-1', ...second,
@@ -287,7 +287,7 @@ test('a DELETE-head derives absent through the generic document'
     );
     await assert.rejects(
         documentGetHandler(wiring)(
-            db, ['identities-del-1'], 'current', 'ignored',
+            db, ['identities-del-1'], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
         ),
         (error: unknown) => {
             assert.ok(error instanceof EntityNotFoundError);
@@ -377,7 +377,7 @@ test('PUT service identity with title is 400', async () => {
         db,
         apiRequest({
             method: 'PUT',
-            path: '/identities/svc-title-1',
+            path: '/identities/uYxxmcHuFJghfKLveLDneg',
             token: DEV_TOKEN,
             body: { kind: 'service', title: 'Bot' },
             operationId: TEST_OPERATION_ID,
@@ -393,7 +393,7 @@ test('PUT person identity with title is 201', async () => {
         db,
         apiRequest({
             method: 'PUT',
-            path: '/identities/person-title-1',
+            path: '/identities/qUceZILomWDFIEtnAaLHKg',
             token: DEV_TOKEN,
             body: { kind: 'person', title: 'Engineer' },
             operationId: TEST_OPERATION_ID,
@@ -405,7 +405,7 @@ test('PUT person identity with title is 201', async () => {
         kind: string;
         title?: string;
     };
-    assert.equal(written.id, 'person-title-1');
+    assert.equal(written.id, 'qUceZILomWDFIEtnAaLHKg');
     assert.equal(written.kind, 'person');
     assert.equal(written.title, 'Engineer');
 });
@@ -444,7 +444,7 @@ async () => {
         db,
         apiRequest({
             method: 'PUT',
-            path: '/identities/current',
+            path: '/identities/XXZruirZyAOoRpNxaDnpSA',
             token: DEV_TOKEN,
             body: { kind: 'person', title: 'CEO' },
             operationId: TEST_OPERATION_ID,
@@ -457,7 +457,7 @@ async () => {
         db,
         apiRequest({
             method: 'PUT',
-            path: '/identities/current/pii',
+            path: '/identities/XXZruirZyAOoRpNxaDnpSA/pii',
             token: DEV_TOKEN,
             body: PII_FACET,
             operationId: TEST_OPERATION_ID,
@@ -467,12 +467,12 @@ async () => {
         piiPut.status === 201 || piiPut.status === 200,
     );
     const pii = await GET<Record<string, unknown>>(
-        db, 'identities/current/pii', DEV_TOKEN,
+        db, 'identities/XXZruirZyAOoRpNxaDnpSA/pii', DEV_TOKEN,
     );
     assert.equal(pii['name'], 'Ada');
     assert.equal('title' in pii, false);
     const identity = await GET<Record<string, unknown>>(
-        db, 'identities/current', DEV_TOKEN,
+        db, 'identities/XXZruirZyAOoRpNxaDnpSA', DEV_TOKEN,
     );
     assert.equal(identity['title'], 'CEO');
     assert.equal('name' in identity, false);

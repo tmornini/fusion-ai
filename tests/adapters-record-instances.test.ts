@@ -108,7 +108,7 @@ test(
                 set: [
                     {
                         attributeId: ATTR_ID,
-                        value: 'v1',
+                        value: 'xDyDkxEPwtcNmJVknUHDsg',
                     },
                 ],
             },

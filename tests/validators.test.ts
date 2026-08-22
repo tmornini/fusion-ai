@@ -279,7 +279,7 @@ test(
 // --- IdeaEntity ---
 
 const validIdea = {
-    organization_id: '1',
+    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     title: 'Idea One',
     position: 1,
     problem_statement: 'A problem',
@@ -347,7 +347,7 @@ test(
 // --- ProjectEntity ---
 
 const validProject = {
-    organization_id: '1',
+    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     title: 'Proj',
     description: 'Desc',
     progress: 0,
@@ -405,7 +405,7 @@ test(
 // document body as native nested JSON (validateFlowDocumentBody
 // / asStoredGraph). validateFlowEntity accepts only scalars.
 const validFlow = {
-    organization_id: '1',
+    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     name: 'Flow A',
     is_locked: false,
     is_auto_layout: true,
@@ -467,7 +467,7 @@ const minimalWoGraph = {
 };
 
 const validWorkOrder = {
-    organization_id: '1',
+    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     display_id: 'WO-001',
     flow_graph: minimalWoGraph,
     position: 1,
@@ -697,7 +697,7 @@ test(
 // --- ProjectFlowEntity ---
 
 const validProjectFlow = {
-    project_id: 'p-1',
+    project_id: 'pjQzgITAPDQVyvCVpzpIfQ',
     flow_id: 'f-1',
     at: '2024-01-01T00:00:00.000000Z',
 };
@@ -709,7 +709,7 @@ test(
         validateProjectFlowEntity(
             validProjectFlow,
         );
-    assert.equal(result.project_id, 'p-1');
+    assert.equal(result.project_id, 'pjQzgITAPDQVyvCVpzpIfQ');
 });
 
 test(
@@ -718,7 +718,7 @@ test(
     () => {
     assert.throws(
         () => validateProjectFlowEntity({
-            project_id: 'p-1',
+            project_id: 'pjQzgITAPDQVyvCVpzpIfQ',
             at: '2024-01-01T00:00:00.000000Z',
         }),
         /missing required key "flow_id"/,
@@ -827,7 +827,7 @@ test(
                     {
                         ...baseNode,
                         memberIds: [],
-                        agentIds: ['agent-1'],
+                        agentIds: ['UuvoBhQJUSEsiJwscXPkUg'],
                     },
                 ],
                 edges: [],
@@ -835,7 +835,7 @@ test(
             'graph',
         );
         const n = result.nodes[0]!;
-        assert.deepEqual(n.agentIds, ['agent-1']);
+        assert.deepEqual(n.agentIds, ['UuvoBhQJUSEsiJwscXPkUg']);
     },
 );
 
@@ -874,7 +874,7 @@ test(
                     {
                         ...baseNode,
                         memberIds: ['person-1'],
-                        agentIds: ['agent-1'],
+                        agentIds: ['UuvoBhQJUSEsiJwscXPkUg'],
                     },
                 ],
                 edges: [],
@@ -883,7 +883,7 @@ test(
         );
         assert.doesNotThrow(() =>
             assertFlowGraphWriteLaw(
-                graph, new Set(['agent-1']),
+                graph, new Set(['UuvoBhQJUSEsiJwscXPkUg']),
             ),
         );
     },
@@ -1009,7 +1009,7 @@ test(
 // --- RecordAttributeEntity ---
 
 const validSelectAttribute = {
-    organization_id: '1',
+    organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     record_id: 'r-1',
     name: 'Priority',
     attribute_type: 'select',
@@ -1273,9 +1273,9 @@ test(
 // --- PairEntity ---
 
 const validPair = {
-    uri_collection: '/organizations/1/ideas/',
+    uri_collection: '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/',
     uri_id: '42',
-    requester_identity_id: 'current',
+    requester_identity_id: 'XXZruirZyAOoRpNxaDnpSA',
     method: 'PUT',
     request_at: '2026-01-01T00:00:00.000000Z',
     request_hash: 'a'.repeat(64),
@@ -1283,7 +1283,7 @@ const validPair = {
     response_at: '2026-01-01T00:00:00.000001Z',
     version: 'e'.repeat(64),
     response: '{"kind":"response"}',
-    operation_id: '0123456789ABCDEFGHIJKL',
+    operation_id: '0123456789ABCDEFGHIJKw',
 };
 
 test(

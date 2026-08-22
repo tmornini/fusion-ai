@@ -32,22 +32,22 @@ test(
         await adapter.postSchemaCreation();
         await adapter.pairs.put('u1', {
             uri_collection:
-                '/organizations/1/ideas/',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/',
             uri_id: '42',
-            requester_identity_id: 'current',
+            requester_identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             method: 'PUT',
             request_at:
                 '2026-01-01T00:00:00.000000Z',
             request_hash: 'a'.repeat(64),
             request:
-                'PUT /organizations/1/ideas/42'
+                'PUT /organizations/AjdvjuECVZEgZoFajaIEkg/ideas/42'
                 + ' HTTP/1.1\r\n\r\n',
             response_at:
                 '2026-01-01T00:00:00.000001Z',
             version: 'e'.repeat(64),
             response:
                 'HTTP/1.1 200 OK\r\n\r\n',
-            operation_id: '0123456789ABCDEFGHIJKL',
+            operation_id: '0123456789ABCDEFGHIJKw',
         });
         await adapter.postSchemaCreation();
         const requests =

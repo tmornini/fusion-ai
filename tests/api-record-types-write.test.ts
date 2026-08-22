@@ -43,7 +43,7 @@ import { seedSeat } from './root-admin-fixture.ts';
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const AT2 = '2026-01-02T00:00:00.000000Z';
-const ORGANIZATION = '1';
+const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 
 interface RecordTypePutEcho {
     id: string;
@@ -151,17 +151,17 @@ async function adminDb(): Promise<{
     await seedAdminSchema(db);
     await seedMembershipPair(db, 'm-member1', {
         organization_id: ORGANIZATION,
-        identity_id: 'member1',
+        identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
         at: AT,
     });
     return {
         db,
         adminToken: await organizationToken(
-            'current', ORGANIZATION,
+            'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION,
         ),
         memberToken: await organizationToken(
-            'member1', ORGANIZATION,
+            'nkgaOHZISTQrILTfPThWCA', ORGANIZATION,
         ),
     };
 }
@@ -179,12 +179,12 @@ async () => {
         'Rental', 1, 'active', AT, 'rt-1-genesis',
     );
     const put = await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-1', adminToken, body,
+        'PUT', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken, body,
     ));
     assert.equal(put.status, 201);
     const echo = await put.json() as RecordTypePutEcho;
     assert.deepEqual(echo, {
-        id: 'rt-1',
+        id: 'sjWcXwYGlgxxJOHxzMoUow',
         organization_id: ORGANIZATION,
         name: 'Rental',
         description: 'Rental desc',
@@ -192,7 +192,7 @@ async () => {
         state: 'active',
     });
     const get = await handleRequest(db, req(
-        'GET', DETAIL + 'rt-1', adminToken,
+        'GET', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
     ));
     assert.equal(get.status, 200);
     const row = await get.json() as RecordTypeGetRow;
@@ -203,7 +203,7 @@ test('PUT .../record-types/:id member token → 403',
 async () => {
     const { db, memberToken } = await adminDb();
     const put = await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-1', memberToken,
+        'PUT', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', memberToken,
         typeBody(
             'Rental', 1, 'active', AT, 'rt-1-genesis',
         ),
@@ -242,18 +242,18 @@ test('DELETE unreferenced type, admin → 204; detail 404; '
 async () => {
     const { db, adminToken } = await adminDb();
     const put = await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-1', adminToken,
+        'PUT', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
         typeBody(
             'Rental', 1, 'active', AT, 'rt-1-genesis',
         ),
     ));
     assert.equal(put.status, 201);
     const del = await handleRequest(db, req(
-        'DELETE', DETAIL + 'rt-1', adminToken,
+        'DELETE', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
     ));
     assert.equal(del.status, 204);
     const detail = await handleRequest(db, req(
-        'GET', DETAIL + 'rt-1', adminToken,
+        'GET', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
     ));
     assert.equal(detail.status, 404);
     const collection = await handleRequest(db, req(
@@ -268,13 +268,13 @@ async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
     await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-1', adminToken,
+        'PUT', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
         typeBody(
             'Rental', 1, 'active', AT, 'rt-1-genesis',
         ),
     ));
     const del = await handleRequest(db, req(
-        'DELETE', DETAIL + 'rt-1', memberToken,
+        'DELETE', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', memberToken,
     ));
     assert.equal(del.status, 403);
 });
@@ -284,14 +284,14 @@ test('DELETE type with a live flow join → 409 naming '
 async () => {
     const { db, adminToken } = await adminDb();
     await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-1', adminToken,
+        'PUT', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
         typeBody(
             'Rental', 1, 'active', AT, 'rt-1-genesis',
         ),
     ));
     const flowCreate = await handleRequest(db, req(
-        'POST', '/organizations/1/flows/', adminToken, {
-            id: 'flow-restrict-1',
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', adminToken, {
+            id: 'bkFJmupdSmbjaPnvwFKnbA',
             flow: {
                 name: 'Intake',
                 is_locked: false,
@@ -302,7 +302,7 @@ async () => {
             projectFlowId: 'flow-restrict-1-pf',
             projectFlow: {
                 project_id: 'proj-restrict-1',
-                flow_id: 'flow-restrict-1',
+                flow_id: 'bkFJmupdSmbjaPnvwFKnbA',
                 at: AT,
             },
             initialState: 'active',
@@ -320,32 +320,33 @@ async () => {
     assert.equal(flowCreate.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/flows/flow-restrict-1/records/fr-1',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/bkFJmupdSmbjaPnvwFKnbA/'
+            + 'records/dCnpryxCNwuTnCrBBDIMOw',
         adminToken,
         {
-            id: 'fr-1',
-            flow_id: 'flow-restrict-1',
-            record_id: 'rt-1',
+            id: 'dCnpryxCNwuTnCrBBDIMOw',
+            flow_id: 'bkFJmupdSmbjaPnvwFKnbA',
+            record_id: 'sjWcXwYGlgxxJOHxzMoUow',
             at: AT,
         },
     ));
     assert.equal(join.status, 201);
     const del = await handleRequest(db, req(
-        'DELETE', DETAIL + 'rt-1', adminToken,
+        'DELETE', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
     ));
     assert.equal(del.status, 409);
     const body = await del.json() as { error: string };
     assert.match(
         body.error,
-        /flow\(s\) flow-restrict-1/,
+        /flow\(s\) bkFJmupdSmbjaPnvwFKnbA/,
     );
     assert.match(
         body.error,
-        /record type rt-1 is referenced by/,
+        /record type sjWcXwYGlgxxJOHxzMoUow is referenced by/,
     );
     // Type still live after restricted DELETE.
     const still = await handleRequest(db, req(
-        'GET', DETAIL + 'rt-1', adminToken,
+        'GET', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
     ));
     assert.equal(still.status, 200);
 });
@@ -354,17 +355,17 @@ test('DELETE replay (byte-identical) → 204',
 async () => {
     const { db, adminToken } = await adminDb();
     await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-1', adminToken,
+        'PUT', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
         typeBody(
             'Rental', 1, 'active', AT, 'rt-1-genesis',
         ),
     ));
     const first = await handleRequest(db, req(
-        'DELETE', DETAIL + 'rt-1', adminToken,
+        'DELETE', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
     ));
     assert.equal(first.status, 204);
     const second = await handleRequest(db, req(
-        'DELETE', DETAIL + 'rt-1', adminToken,
+        'DELETE', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
     ));
     assert.equal(second.status, 204);
 });
@@ -374,14 +375,14 @@ test('PUT over existing head with NO precondition '
 async () => {
     const { db, adminToken } = await adminDb();
     const first = await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-1', adminToken,
+        'PUT', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
         typeBody(
             'Before', 1, 'active', AT, 'rt-1-genesis',
         ),
     ));
     assert.equal(first.status, 201);
     const second = await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-1', adminToken,
+        'PUT', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
         typeBody(
             'After', 2, 'active', AT2, 'rt-1-genesis',
             'updated',
@@ -393,7 +394,7 @@ async () => {
     assert.equal(echo.position, 2);
     assert.equal(echo.description, 'updated');
     const get = await handleRequest(db, req(
-        'GET', DETAIL + 'rt-1', adminToken,
+        'GET', DETAIL + 'sjWcXwYGlgxxJOHxzMoUow', adminToken,
     ));
     assert.equal(get.status, 200);
     const row = await get.json() as RecordTypeGetRow;

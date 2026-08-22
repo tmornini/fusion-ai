@@ -266,8 +266,8 @@ export function stateHistoryFrom(
 export function currentLifecycleEvent(
     history: readonly StateEntity[],
 ): StateEntity | undefined {
-    return latestByKey(history, () => 'current')
-        .get('current');
+    return latestByKey(history, () => 'XXZruirZyAOoRpNxaDnpSA')
+        .get('XXZruirZyAOoRpNxaDnpSA');
 }
 
 export function currentDocumentState(

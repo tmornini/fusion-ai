@@ -42,7 +42,7 @@ async function setupMemDb(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedHumanMember(db, 'current', 'Demo User');
+    await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
     const ctx = createRequestContext(db, await organizationToken());
     return { db, ctx };
 }
@@ -52,7 +52,7 @@ async function getFlowGraph(
     flowId: string,
 ): Promise<StoredGraph> {
     const flow = await ctx.GET<FlowWithGraph>(
-        'organizations/1/flows/' + flowId,
+        'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId,
     );
     return asStoredGraph(
         flow.graph, 'flow.graph',
@@ -155,7 +155,8 @@ test(
             name: 'State Event Test Flow',
         });
         const events = await ctx.GET<StateEntity[]>(
-            'organizations/1/flows/' + flowId + '/versions/',
+            'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+                + '/versions/',
         );
         assert.equal(events.length, 1);
         const ev = events[0]!;
@@ -163,7 +164,7 @@ test(
         assert.equal(ev.state, 'active');
         // author is server-derived, not client body
         assert.equal(
-            ev.member_id, 'current',
+            ev.member_id, 'XXZruirZyAOoRpNxaDnpSA',
             'state event must be authored by the verified actor',
         );
     },

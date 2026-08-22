@@ -35,7 +35,7 @@ test('baseline validator accepts valid boundary scores',
             assert.doesNotThrow(() =>
                 validateBaselineScoreEntity({
                     project_id: 'p', objective_id: 'o',
-                    score, member_id: 'w1', at: AT,
+                    score, member_id: 'xdaJyuuPyHfffCGLhqDrOQ', at: AT,
                 }),
             );
         }
@@ -48,7 +48,7 @@ test('baseline validator rejects out-of-range scores',
                 () => validateBaselineScoreEntity({
                     project_id: 'p',
                     objective_id: 'o',
-                    score, member_id: 'w1', at: AT,
+                    score, member_id: 'xdaJyuuPyHfffCGLhqDrOQ', at: AT,
                 }),
                 RANGE_MSG,
             );
@@ -61,7 +61,7 @@ test('actual validator accepts valid boundary scores',
             assert.doesNotThrow(() =>
                 validateActualScoreEntity({
                     project_id: 'p', objective_id: 'o',
-                    score, member_id: 'w1', at: AT,
+                    score, member_id: 'xdaJyuuPyHfffCGLhqDrOQ', at: AT,
                 }),
             );
         }
@@ -74,7 +74,7 @@ test('actual validator rejects out-of-range scores',
                 () => validateActualScoreEntity({
                     project_id: 'p',
                     objective_id: 'o',
-                    score, member_id: 'w1', at: AT,
+                    score, member_id: 'xdaJyuuPyHfffCGLhqDrOQ', at: AT,
                 }),
                 RANGE_MSG,
             );
@@ -87,12 +87,13 @@ test('ctx.PUT rejects out-of-range baseline scores',
         for (const score of INVALID) {
             await assert.rejects(
                 () => ctx.PUT(
-                    `organizations/1/projects/p/objective-baseline-scores`
+                    `organizations/AjdvjuECVZEgZoFajaIEkg/projects/p/
+                        objective-baseline-scores`
                     + `/p:o:${score}`,
                     {
                         project_id: 'p',
                         objective_id: 'o',
-                        score, member_id: 'w1', at: AT,
+                        score, member_id: 'xdaJyuuPyHfffCGLhqDrOQ', at: AT,
                     },
                 ),
             );
@@ -105,12 +106,13 @@ test('ctx.PUT leaves no baseline score on a bad score',
         for (const score of INVALID) {
             await assert.rejects(
                 () => ctx.PUT(
-                    `organizations/1/projects/p/objective-baseline-scores`
+                    `organizations/AjdvjuECVZEgZoFajaIEkg/projects/p/
+                        objective-baseline-scores`
                     + `/p:o:${score}`,
                     {
                         project_id: 'p',
                         objective_id: 'o',
-                        score, member_id: 'w1', at: AT,
+                        score, member_id: 'xdaJyuuPyHfffCGLhqDrOQ', at: AT,
                     },
                 ),
             );
@@ -127,12 +129,13 @@ test('ctx.PUT rejects out-of-range actual scores',
         for (const score of INVALID) {
             await assert.rejects(
                 () => ctx.PUT(
-                    `organizations/1/projects/p/objective-actual-scores`
+                    `organizations/AjdvjuECVZEgZoFajaIEkg/projects/p/
+                        objective-actual-scores`
                     + `/p:o:${score}`,
                     {
                         project_id: 'p',
                         objective_id: 'o',
-                        score, member_id: 'w1', at: AT,
+                        score, member_id: 'xdaJyuuPyHfffCGLhqDrOQ', at: AT,
                     },
                 ),
             );
@@ -143,7 +146,7 @@ test('postProjectBaselineScoring rejects bad scores',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        await seedHumanMember(db, 'current', 'Demo User');
+        await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
         const ctx = createRequestContext(db, await organizationToken());
         for (const score of INVALID) {
             await assert.rejects(
@@ -164,7 +167,7 @@ test('postProjectActualMeasurement rejects bad scores',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        await seedHumanMember(db, 'current', 'Demo User');
+        await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
         const ctx = createRequestContext(db, await organizationToken());
         for (const score of INVALID) {
             await assert.rejects(
@@ -181,7 +184,7 @@ test('postProjectBaselineScoring accepts valid scores',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        await seedHumanMember(db, 'current', 'Demo User');
+        await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
         const ctx = createRequestContext(db, await organizationToken());
         await postProjectBaselineScoring(
             ctx, 'p', VALID.map(score => ({

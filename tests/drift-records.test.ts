@@ -143,7 +143,7 @@ async function derivedRecordAttributes(
     db: DbAdapter, organization: Id,
 ): Promise<RecordAttributeEntity[]> {
     const token = await organizationToken(
-        'current', organization,
+        'XXZruirZyAOoRpNxaDnpSA', organization,
     );
     const typesRes = await handleRequest(
         db,
@@ -217,7 +217,7 @@ async function derivedRecordAttribute(
     db: DbAdapter, organization: Id, id: Id,
 ): Promise<RecordAttributeEntity> {
     const token = await organizationToken(
-        'current', organization,
+        'XXZruirZyAOoRpNxaDnpSA', organization,
     );
     const path = await resolveAttributePath(
         db, organization, id,
@@ -351,13 +351,15 @@ function decodeRequestMessage(message: string): {
 // -- 1. records collection wire equals derive --------------------
 
 test('seeded GET nested record-types wire equals derived'
-+ ' collection, both orgs (the 1/1 split)', async () => {
++ ' collection'
+    + ', both orgs (the AjdvjuECVZEgZoFajaIEkg/'
+    + 'AjdvjuECVZEgZoFajaIEkg split)', async () => {
     const db = await seededDb();
     for (const organization of [
         STARK_ORGANIZATION, ORGANIZATION_TWO,
     ]) {
         const token = await organizationToken(
-            'current', organization,
+            'XXZruirZyAOoRpNxaDnpSA', organization,
         );
         const res = await handleRequest(
             db, req(
@@ -388,7 +390,7 @@ test('a foreign-org GET 404s on wire and on derive, for'
 async () => {
     const db = await seededDb();
     const tokenTwo = await organizationToken(
-        'current', ORGANIZATION_TWO,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
     );
 
     // Nested path org = token org (TWO); foreign id was
@@ -418,7 +420,7 @@ async () => {
             && err.message === expectedRecordMessage,
     );
 
-    const attributeId = '5JZ0LeKdPCa4QMtg1RsF1M';
+    const attributeId = 'CPJmMPXRaBIiNdGBofUPVg';
     // Nested GET probes the parent type first — miss at
     // this org's record-types address → 404.
     const expectedTypeMessage =
@@ -449,8 +451,8 @@ async () => {
             && err.message === expectedAttributeMessage,
     );
 
-    const joinId = 'frb01CustOnbCustProfA1';
-    const flowId = 'h5mErVBQhwdMKwi1co30jB';
+    const joinId = 'dDmnfQddFbigpThjftUlWg';
+    const flowId = 'esKujtyQFYUJaVSXWwavzA';
     const expectedJoinMessage =
         'Not found: flow_records/' + joinId;
     const joinRes = await handleRequest(
@@ -493,7 +495,7 @@ async () => {
     ];
     for (const { id, organization } of records) {
         const token = await organizationToken(
-            'current', organization,
+            'XXZruirZyAOoRpNxaDnpSA', organization,
         );
         const res = await handleRequest(
             db, req(
@@ -524,7 +526,7 @@ async () => {
                 attribute.record_id
             ]!;
         const token = await organizationToken(
-            'current', organization,
+            'XXZruirZyAOoRpNxaDnpSA', organization,
         );
         const res = await handleRequest(
             db,
@@ -559,35 +561,36 @@ async () => {
 
 // -- 4. flow_records join wire equals derive ---------------------
 
-const EMPTY_FLOW_ID = '7COt7Kf4OaOBg6AjaNO04s'; // Layout Test
+const EMPTY_FLOW_ID = 'DDUhYDIRInXtIrRraxcyHQ'; // Layout Test
 
 const SEEDED_JOIN_FLOWS = [
     {
-        flowId: 'h5mErVBQhwdMKwi1co30jB', // Customer Onboarding
+        flowId: 'esKujtyQFYUJaVSXWwavzA', // Customer Onboarding
         organization: STARK_ORGANIZATION,
-        joinId: 'frb01CustOnbCustProfA1',
+        joinId: 'dDmnfQddFbigpThjftUlWg',
     },
     {
         flowId: l2cFlowId, // Lead-to-Close
         organization: STARK_ORGANIZATION,
-        joinId: 'frb02L3adt0ClCustProf2',
+        joinId: 'dEOBUSXWcOtSmtDXJpVNuQ',
     },
     {
         flowId: 'seed-flow-org2',
         organization: ORGANIZATION_TWO,
-        joinId: 'frb03Fus10nPr0jBri3f03',
+        joinId: 'dGFWxGmaxtWWawferGBezQ',
     },
 ];
 
 test('flow_records join wire equals derive across every'
-+ ' seeded flow (the 1/1/1 split) + empty + :frid',
++ ' seeded flow (the AjdvjuECVZEgZoFajaIEkg/AjdvjuECVZEgZoFajaIEkg/'
+    + 'AjdvjuECVZEgZoFajaIEkg split) + empty + :frid',
 async () => {
     const db = await seededDb();
     for (const { flowId, organization, joinId } of
         SEEDED_JOIN_FLOWS
     ) {
         const token = await organizationToken(
-            'current', organization,
+            'XXZruirZyAOoRpNxaDnpSA', organization,
         );
         const listRes = await handleRequest(
             db,
@@ -628,7 +631,8 @@ async () => {
         db,
         req(
             'GET',
-            '/organizations/1/flows/' + EMPTY_FLOW_ID + '/records/',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + EMPTY_FLOW_ID
+                + '/records/',
             token,
         ),
     );
@@ -754,7 +758,7 @@ async () => {
             + '/record-types/', token,
         editRecordBody(
             recordId, STARK_ORGANIZATION, 'Chain Record',
-            [], ['5JZ0LeKdPCa4QMtg1RsF1M'],
+            [], ['CPJmMPXRaBIiNdGBofUPVg'],
             'active', nowUtc(), 'rec-drift-chain-1-rejected',
         ),
     ));
@@ -1233,7 +1237,8 @@ async function transitionFieldValueCounts(
 ): Promise<Map<string, number>> {
     const prefix = canonicalUriCollection(
         organization,
-        '/organizations/1/work-orders/' + workOrderId + '/transition/',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + workOrderId
+            + '/transition/',
     );
     const [requests, responses] = await Promise.all([
         db.pairs.getAllWhere('uri_collection', prefix),
@@ -1303,15 +1308,15 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     // Seeded flagship WO: value-bearing transitions migrate to
     // instance-head SoT (Task 6) — legacy bags gone; instance
     // head holds the seven-value union.
-    const flagshipWorkOrderId = 'wg25b0R2gwy5kYPIhQB6cS';
+    const flagshipWorkOrderId = 'xqcXYHXBJJXcLkRYkRngKA';
     const flagshipAttributeIds = [
-        '5JZ0LeKdPCa4QMtg1RsF1M', // Company Name
-        'nplTIh0qXNtAyoWSwRaBYe', // Contact Email
-        'kzHpMw9f1thq79VoBYeIX3', // Contact Phone
-        'QsmqiOmPtoMLGpSjHOqdHA', // Industry
-        '0TyjQRcygn3DIyXTe6x1F6', // Annual Revenue
-        '8Z62tcRHBpwCRH1kBffx0G', // Number of Employees
-        'AdQlKf43JV6yrhQbyskDkR', // Reviewer Notes
+        'CPJmMPXRaBIiNdGBofUPVg', // Company Name
+        'oeqelDVElwxHYWkWRVTCYw', // Contact Email
+        'kxbdVhmkaEzkJvghWKFzkw', // Contact Phone
+        'QHzHnEAmqGSgiEfkXoWMTw', // Industry
+        'AXxvHyKNpNYXYKOorywqRQ', // Annual Revenue
+        'DfkwfBiyfyCyRHvsHnDiqQ', // Number of Employees
+        'ElVKgkCreTEHQXJZPBJDKw', // Reviewer Notes
     ];
     assert.equal(flagshipAttributeIds.length, 7);
 
@@ -1379,7 +1384,7 @@ test('THE VALUE-COUNT DERIVABILITY PROOF: a per-attribute'
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/work-orders/', token, {
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token, {
             id: liveWorkOrderId,
             workOrder: {
                 display_id: 'drift-valuecount-1',

@@ -118,7 +118,8 @@ test(
         const ctx = createRequestContext(
             db, await organizationToken(),
         );
-        await ctx.PUT('organizations/1/ideas/i1', {
+        await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+            + 'fndCYAsXazdzMUlEGMNIZw', {
             title: 'I',
             position: 1,
             problem_statement: 'p',
@@ -133,7 +134,7 @@ test(
         assert.ok(ids.includes('hw_sarah_chen'));
         assert.ok(ids.includes('ai_claude_opus'));
         assert.ok(
-            !ids.includes('i1'),
+            !ids.includes('fndCYAsXazdzMUlEGMNIZw'),
             'idea must not leak into members',
         );
     },
@@ -212,7 +213,7 @@ test(
         const members = await getMembers(ctx);
         assert.equal(members.length, 1);
         assert.equal(
-            members[0]?.idForLink(), 'current',
+            members[0]?.idForLink(), 'XXZruirZyAOoRpNxaDnpSA',
         );
         assert.ok(
             members[0] !== undefined
@@ -220,7 +221,7 @@ test(
         );
         assert.equal(
             memberName(
-                await getMemberMap(ctx), 'current',
+                await getMemberMap(ctx), 'XXZruirZyAOoRpNxaDnpSA',
             ),
             MEMBER_WITHOUT_PII_NAME,
         );
@@ -277,7 +278,7 @@ test(
             SYSTEM_MEMBER_ID, pair,
         );
         await seedSeat(
-            db, '1', 'member_without_pii', 'member',
+            db, 'AjdvjuECVZEgZoFajaIEkg', 'member_without_pii', 'member',
         );
         const ctx = createRequestContext(db, await organizationToken());
         const map = await getMemberMap(ctx);

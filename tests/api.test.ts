@@ -36,14 +36,17 @@ test('GET on unknown route throws', async () => {
 test('GET ideas returns array', async () => {
     const db = await freshDb();
     const ideas =
-        await GET<unknown[]>(db, 'organizations/1/ideas/', DEV_TOKEN);
+        await GET<unknown[]>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+            + '', DEV_TOKEN);
     assert.deepEqual(ideas, []);
 });
 
 test('GET organizations/:id/ideas/:id throws on missing', async () => {
     const db = await freshDb();
     await assert.rejects(
-        () => GET(db, 'organizations/1/ideas/missing-id', DEV_TOKEN),
+        () => GET(db
+            , 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/missing-id'
+            , DEV_TOKEN),
         /Not found|404/,
     );
 });
@@ -51,8 +54,8 @@ test('GET organizations/:id/ideas/:id throws on missing', async () => {
 test('PUT then GET round-trips an entity', async () => {
     const db = await freshDb();
     const payload = {
-        id: 'i1',
-        organization_id: '1',
+        id: 'fndCYAsXazdzMUlEGMNIZw',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         title: 'Test',
         position: 1,
         problem_statement: 'p',
@@ -62,10 +65,13 @@ test('PUT then GET round-trips an entity', async () => {
         success_metrics: 'm',
         state: 'active',
     };
-    await PUT(db, 'organizations/1/ideas/i1', payload, DEV_TOKEN);
+    await PUT(db
+        , 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+        + 'fndCYAsXazdzMUlEGMNIZw', payload, DEV_TOKEN);
     const fetched =
         await GET<{ title: string }>(
-            db, 'organizations/1/ideas/i1', DEV_TOKEN,
+            db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                + 'fndCYAsXazdzMUlEGMNIZw', DEV_TOKEN,
         );
     assert.equal(fetched.title, 'Test');
 });
@@ -78,8 +84,8 @@ test(
     async () => {
         const db = await freshDb();
         await assert.rejects(
-            () => PUT(db, 'no-such-route/x1', {
-                entity_id: 'e1',
+            () => PUT(db, 'oRAKQvKtOmSHMZEjhEXaRw/x1', {
+                entity_id: 'YiJPbufDpkyrZcZCYbUJpg',
                 state: 'active',
                 at: '2026-01-01T00:00:00.000000Z',
             }, DEV_TOKEN),
@@ -90,10 +96,12 @@ test(
     },
 );
 
-test('GET organizations/1/ideas/ normalizes to collection', async () => {
+test('GET organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+    + ' normalizes to collection', async () => {
     const db = await freshDb();
     const result =
-        await GET<unknown[]>(db, 'organizations/1/ideas/', DEV_TOKEN);
+        await GET<unknown[]>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+            + '', DEV_TOKEN);
     assert.deepEqual(result, []);
 });
 
@@ -104,7 +112,7 @@ test(
         await seedHumanMember(db, 'hw_1', 'Sarah Chen');
         const members =
             await GET<{ id: string }[]>(
-                db, 'organizations/1/members/',
+                db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/',
                 await organizationToken());
         assert.ok(
             members.some(row => row.id === 'hw_1'),
@@ -143,7 +151,8 @@ test(
     async () => {
         const db = await freshDb();
         await assert.rejects(
-            () => POST(db, 'organizations/1/projects/', {}, DEV_TOKEN),
+            () => POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+                , {}, DEV_TOKEN),
             /not allowed/i,
         );
     },
@@ -182,7 +191,8 @@ test(
         const response = await handleRequest(
             db,
             new Request(
-                'http://localhost/organizations/1/ideas/i1',
+                'http://localhost/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                    + 'fndCYAsXazdzMUlEGMNIZw',
                 {
                     method: 'PUT',
                     headers: {
@@ -260,7 +270,7 @@ test(
                 column: string, key: string,
             ) => ReturnType<typeof original>;
         }).getAllWhere = async (column, key) => {
-            if (key === '/organizations/1/ideas/') {
+            if (key === '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/') {
                 throw new Error('secret fault detail');
             }
             return original(column, key);
@@ -270,7 +280,8 @@ test(
                 'error',
                 () => handleRequest(
                     db,
-                    new Request('http://localhost/organizations/1/ideas/', {
+                    new Request('http://localhost/organizations/'
+                        + 'AjdvjuECVZEgZoFajaIEkg/ideas/', {
                         headers: {
                             'Authorization':
                                 'Bearer ' + DEV_TOKEN,
@@ -304,7 +315,8 @@ test(
             const response = await handleRequest(
                 db,
                 new Request(
-                    'http://localhost/organizations/1/ideas/i1',
+                    'http://localhost/organizations/AjdvjuECVZEgZoFajaIEkg/'
+                        + 'ideas/fndCYAsXazdzMUlEGMNIZw',
                     {
                         method: 'PUT',
                         headers: {

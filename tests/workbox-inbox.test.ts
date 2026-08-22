@@ -96,14 +96,14 @@ function buildLinearGraph(): StoredGraph {
                 isCreate: true,
             }),
             buildNode('n-middle', 'Doing work', {
-                memberIds: ['current'],
+                memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
             }),
             buildNode('n-finish', 'Done', {
                 isArchive: true,
             }),
         ],
         edges: [
-            buildEdge('e1', 'n-start', 'n-middle'),
+            buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'n-start', 'n-middle'),
             buildEdge('e2', 'n-middle', 'n-finish'),
         ],
     };
@@ -181,14 +181,14 @@ async function setupOneWorkOrder(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedHumanMember(db, 'current', 'Demo Test');
+    await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo Test');
     const ctx = createRequestContext(db, await organizationToken());
-    await seedFlow(db, 'f1', buildLinearGraph());
+    await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
     const woId = generateIdentifier();
     await postWorkOrderCreation(ctx, {
         workOrderId: woId,
         flowLinkId: generateIdentifier(),
-        flowId: 'f1',
+        flowId: 'ZOousbbnzpqlxJExVAruYQ',
     });
     const tables = () => collectTables(db);
     return { db, ctx, woId, tables };
@@ -301,7 +301,8 @@ test(
         // via the named op (states/:id retired). Dated after
         // the create events so the inbox sees a finished WO.
         await ctx.POST(
-            'organizations/1/work-orders/' + woId + '/transition', {
+            'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+                + '/transition', {
                 transitionEventId: 'extra',
                 targetState: 'n-finish',
                 release: null,
@@ -335,17 +336,17 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         await seedHumanMember(
-            db, 'current', 'Demo Test',
+            db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo Test',
         );
         const ctx = createRequestContext(db, await organizationToken());
-        await seedFlow(db, 'f1', buildLinearGraph());
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', buildLinearGraph());
         for (let i = 0; i < 3; i++) {
             await postWorkOrderCreation(ctx, {
                 workOrderId:
                     generateIdentifier(),
                 flowLinkId:
                     generateIdentifier(),
-                flowId: 'f1',
+                flowId: 'ZOousbbnzpqlxJExVAruYQ',
             });
         }
         // Mutate to explicit non-creation-order
@@ -408,17 +409,17 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         await seedHumanMember(
-            db, 'current', 'Demo Test',
+            db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo Test',
         );
         const ctx = createRequestContext(db, await organizationToken());
-        await seedFlow(db, 'f1', {
+        await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', {
             nodes: [
                 buildNode('n-start', 'Start', {
                     isCreate: true,
                 }),
                 buildNode(
                     'n-middle', 'Doing work', {
-                        memberIds: ['current'],
+                        memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
                         taskInstructions:
                             '# Verify totals',
                     },
@@ -429,7 +430,7 @@ test(
             ],
             edges: [
                 buildEdge(
-                    'e1', 'n-start', 'n-middle',
+                    'YiJPbufDpkyrZcZCYbUJpg', 'n-start', 'n-middle',
                 ),
                 buildEdge(
                     'e2', 'n-middle', 'n-finish',
@@ -441,7 +442,7 @@ test(
                 generateIdentifier(),
             flowLinkId:
                 generateIdentifier(),
-            flowId: 'f1',
+            flowId: 'ZOousbbnzpqlxJExVAruYQ',
         });
         const {
             workOrders, transitionsByWo, memberMap,

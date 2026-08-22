@@ -39,7 +39,7 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        await seedHumanMember(db, 'current', 'Demo User');
+        await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
         const ctx = createRequestContext(db, await devToken());
 
         await postAIMemberCreation(
@@ -60,7 +60,7 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        await seedHumanMember(db, 'current', 'Demo User');
+        await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
         await seedAIMember(db, 'ai1', 'Claude');
         const ctx = createRequestContext(db, await devToken());
 

@@ -87,13 +87,14 @@ async function freshDb(): Promise<MemoryDbAdapter> {
     const { seedOrganizationDocument } = await import(
         './root-admin-fixture.ts'
     );
-    await seedOrganizationDocument(db, '1', 'Stark');
+    await seedOrganizationDocument(db, 'AjdvjuECVZEgZoFajaIEkg', 'Stark');
     await seedMembershipPair(db, 'm-current-1', {
-        organization_id: '1', identity_id: 'current',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg'
+            , identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin', at: AT,
     });
-    await person(db, 'current', 'Tony', 'demo@example.com');
-    await person(db, 'sarah', 'Sarah', 'sarah@x.com');
+    await person(db, 'XXZruirZyAOoRpNxaDnpSA', 'Tony', 'demo@example.com');
+    await person(db, 'toccYYkLEABmlbpHJalgtQ', 'Sarah', 'sarah@x.com');
     return db;
 }
 
@@ -103,7 +104,7 @@ async function grant(
     email = 'sarah@x.com',
 ): Promise<Response> {
     return handleRequest(db, req(
-        'POST', '/organizations/1/invitations/',
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/invitations/',
         await organizationToken(),
         {
             email,
@@ -147,8 +148,8 @@ async () => {
         Object.keys(wire).sort(),
         ['at', 'identity_id', 'organization_id'],
     );
-    assert.equal(wire.organization_id, '1');
-    assert.equal(wire.identity_id, 'sarah');
+    assert.equal(wire.organization_id, 'AjdvjuECVZEgZoFajaIEkg');
+    assert.equal(wire.identity_id, 'toccYYkLEABmlbpHJalgtQ');
     assert.equal(wire.at, AT);
     assert.equal(wire.email, undefined);
 });
@@ -178,14 +179,15 @@ test('a failed (member-conflict) grant appends nothing',
 async () => {
     const db = await freshDb();
     await seedMembershipPair(db, 'm-sarah-conflict', {
-        organization_id: '1', identity_id: 'sarah',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg'
+            , identity_id: 'toccYYkLEABmlbpHJalgtQ',
         type: 'member', at: AT,
     });
     const res = await grant(db, 'inv-doc-fail');
     assert.equal(res.status, 409);
     // 5: the fixture's own membership pair, two
     // identities/:id/pii pairs (Phase 15 gate 6), the
-    // organizations/:id document (Stage B), plus sarah's own
+    // organizations/:id document (Stage B), plus toccYYkLEABmlbpHJalgtQ's own
     // conflicting membership pair (Phase 13 Task 1) — the
     // failed grant appends nothing further. Role-grant retired.
     assert.equal((await db.pairs.getAll()).length, 5);
@@ -207,8 +209,9 @@ async function accept(
 ): Promise<Response> {
     return handleRequest(db, req(
         'PUT',
-        '/identities/sarah/invitations/' + invitationId,
-        await organizationToken('sarah', '1'),
+        '/identities/toccYYkLEABmlbpHJalgtQ/invitations/' + invitationId,
+        await organizationToken('toccYYkLEABmlbpHJalgtQ'
+            , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
             membershipId,
@@ -230,29 +233,32 @@ test('a fresh accept appends its seat document at the'
     const requests = await db.pairs.getAll();
     const responses = await db.pairs.getAll();
     const documents = documentPairsAt(
-        requests, '/organizations/1/members/',
-    ).filter(pair => pair.uriId === 'sarah');
+        requests, '/organizations/AjdvjuECVZEgZoFajaIEkg/members/',
+    ).filter(pair => pair.uriId === 'toccYYkLEABmlbpHJalgtQ');
     assert.equal(documents.length, 1);
     assert.deepEqual(documents[0]!.body, {
         type: 'member',
         at: '2026-01-01T00:00:01.000000Z',
     });
     const got = await handleRequest(db, req(
-        'GET', '/organizations/1/members/sarah',
-        await organizationToken('current', '1'),
+        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+            + 'toccYYkLEABmlbpHJalgtQ',
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA'
+            , 'AjdvjuECVZEgZoFajaIEkg'),
     ));
     assert.equal(got.status, 200);
     const acceptBody = {
-        id: 'sarah',
-        organization_id: '1',
-        identity_id: 'sarah',
+        id: 'toccYYkLEABmlbpHJalgtQ',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+        identity_id: 'toccYYkLEABmlbpHJalgtQ',
         type: 'member',
         at: '2026-01-01T00:00:01.000000Z',
     };
     assert.deepEqual(await got.json(), acceptBody);
     const stored = JSON.parse(
         await storedPutBodyText(
-            db, '/organizations/1/members/', 'sarah',
+            db, '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+                , 'toccYYkLEABmlbpHJalgtQ',
         ),
     );
     assert.deepEqual(stored, acceptBody);
@@ -273,8 +279,9 @@ async () => {
     );
     assert.equal(second.status, 409);
     const documents = (await db.pairs.getAll()).filter(
-        r => r.uri_collection === '/organizations/1/members/'
-            && r.uri_id === 'sarah',
+        r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
+            + 'members/'
+            && r.uri_id === 'toccYYkLEABmlbpHJalgtQ',
     );
     assert.equal(documents.length, 1);
 });
@@ -292,7 +299,7 @@ async function declineFor(
         'PUT',
         '/identities/' + invitee
             + '/invitations/' + invitationId,
-        await organizationToken(invitee, '1'),
+        await organizationToken(invitee, 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'declined',
             eventId,
@@ -309,7 +316,7 @@ async function revokeFor(
 ): Promise<Response> {
     return handleRequest(db, req(
         'PUT',
-        '/organizations/1/invitations/' + invitationId,
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/invitations/' + invitationId,
         await organizationToken(),
         {
             state: 'revoked',
@@ -329,11 +336,11 @@ test('deriveInvitations round-trips every terminal state:'
 
     await grant(db, 'inv-derive-pending', 'sarah@x.com');
 
-    await grant(db, 'inv-derive-accept', 'bruce@x.com');
+    await grant(db, 'hkbiAljVBMHiLoGwiWjaaw', 'bruce@x.com');
     await handleRequest(db, req(
         'PUT',
-        '/identities/bruce/invitations/inv-derive-accept',
-        await organizationToken('bruce', '1'),
+        '/identities/bruce/invitations/hkbiAljVBMHiLoGwiWjaaw',
+        await organizationToken('bruce', 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
             membershipId: 'ms-derive-bruce',
@@ -359,7 +366,7 @@ test('deriveInvitations round-trips every terminal state:'
     assert.equal(
         byId.get('inv-derive-pending')?.state, 'pending');
     assert.equal(
-        byId.get('inv-derive-accept')?.state, 'accepted');
+        byId.get('hkbiAljVBMHiLoGwiWjaaw')?.state, 'accepted');
     assert.equal(
         byId.get('inv-derive-decline')?.state, 'declined');
     assert.equal(
@@ -387,11 +394,11 @@ test('every stored invitation-family message verifies against'
     await person(db, 'bruce', 'Bruce', 'bruce@x.com');
     await person(db, 'clark', 'Clark', 'clark@x.com');
     await grant(db, 'inv-balance-1', 'sarah@x.com');
-    await grant(db, 'inv-balance-2', 'bruce@x.com');
+    await grant(db, 'hdlRpVJZrTkuMAnTASJNnA', 'bruce@x.com');
     await handleRequest(db, req(
         'PUT',
-        '/identities/bruce/invitations/inv-balance-2',
-        await organizationToken('bruce', '1'),
+        '/identities/bruce/invitations/hdlRpVJZrTkuMAnTASJNnA',
+        await organizationToken('bruce', 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
             membershipId: 'ms-balance-2',
@@ -410,7 +417,8 @@ test('every stored invitation-family message verifies against'
     // (operation only — decline synthesizes no document) = 9,
     // plus the fixture's own membership pair (Phase 13
     // Task 1; role-grant retired), four identities/:id/pii
-    // pairs (current, sarah, bruce, clark — Phase 15 gate 6),
+    // pairs (current, toccYYkLEABmlbpHJalgtQ, bruce, clark — Phase 15 gate
+    // 6),
     // and the organizations/:id document (Stage B) = 15.
     assert.equal(pairs.length, 15);
     for (const row of pairs) {

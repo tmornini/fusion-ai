@@ -58,13 +58,13 @@ async function memberOfBothAdminInA(): Promise<MemoryDbAdapter> {
     await db.postSchemaCreation();
     await seedMembershipPair(db, 'm-a', {
         organization_id: 'A',
-        identity_id: 'current',
+        identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: '2026-06-04T00:00:00.000000Z',
     });
     await seedMembershipPair(db, 'm-b', {
         organization_id: 'B',
-        identity_id: 'current',
+        identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'member',
         at: '2026-06-04T00:00:00.000000Z',
     });
@@ -111,12 +111,13 @@ async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     await seedMembershipPair(db, 'm', {
-        organization_id: '1',
-        identity_id: 'current',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+        identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: '2026-06-04T00:00:00.000000Z',
     });
     const res = await handleRequest(db, req(
-        'GET', '/organizations/1/members/', await devToken('current')));
+        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+            , await devToken('XXZruirZyAOoRpNxaDnpSA')));
     assert.equal(res.status, 200);
 });

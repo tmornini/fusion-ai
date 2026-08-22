@@ -72,22 +72,24 @@ test(
     async () => {
         const db = await freshDb();
         await POST(db, 'identities/', {
-            id: 'p1',
+            id: 'pnXmXrxOWayANgDLdCjuBw',
             kind: 'person',
         }, DEV_TOKEN);
         const identity = await GET<{ kind: string }>(
-            db, 'identities/p1', DEV_TOKEN);
+            db, 'identities/pnXmXrxOWayANgDLdCjuBw', DEV_TOKEN);
         assert.equal(identity.kind, 'person');
         // No PII yet — create body no longer carries pii.
         // Phase Final Task 2: identity spine ROW halves stripped.
         await assert.rejects(
-            () => deriveIdentityPii(db, 'p1'));
+            () => deriveIdentityPii(db, 'pnXmXrxOWayANgDLdCjuBw'));
         await PUT(
-            db, 'identities/p1/pii', pii('Alice'), DEV_TOKEN);
-        const piiRow = await deriveIdentityPii(db, 'p1');
+            db, 'identities/pnXmXrxOWayANgDLdCjuBw/pii', pii('Alice')
+                , DEV_TOKEN);
+        const piiRow = await deriveIdentityPii(db, 'pnXmXrxOWayANgDLdCjuBw');
         assert.equal(piiRow.name, 'Alice');
         // A person carries no credential.
-        const creds = await deriveCredentialsFor(db, 'p1');
+        const creds = await deriveCredentialsFor(db
+            , 'pnXmXrxOWayANgDLdCjuBw');
         assert.equal(creds.length, 0);
         // Phase Final Stage B: identity spine tables retired.
     },
@@ -99,20 +101,21 @@ test(
     async () => {
         const db = await freshDb();
         await POST(db, 'identities/', {
-            id: 's1',
+            id: 'syWUUcdBSbBgMwBiCrgbDw',
             kind: 'service',
-            credential: credential('s1'),
+            credential: credential('syWUUcdBSbBgMwBiCrgbDw'),
         }, DEV_TOKEN);
         const identity = await GET<{ kind: string }>(
-            db, 'identities/s1', DEV_TOKEN);
+            db, 'identities/syWUUcdBSbBgMwBiCrgbDw', DEV_TOKEN);
         assert.equal(identity.kind, 'service');
-        const creds = await deriveCredentialsFor(db, 's1');
+        const creds = await deriveCredentialsFor(db
+            , 'syWUUcdBSbBgMwBiCrgbDw');
         const cred = creds.find(c => c.kind === 'client_secret');
         assert.ok(cred, 'credential exists on pair plane');
         assert.equal(cred.status, 'set');
         // A service carries no PII.
         await assert.rejects(
-            () => deriveIdentityPii(db, 's1'));
+            () => deriveIdentityPii(db, 'syWUUcdBSbBgMwBiCrgbDw'));
         // Phase Final Stage B: identity spine tables retired.
     },
 );
@@ -203,7 +206,7 @@ test(
         const adminDb = await freshDb();
         const create = await handleRequest(adminDb, req(
             'POST', '/identities/', DEV_TOKEN, {
-                id: 'p1',
+                id: 'pnXmXrxOWayANgDLdCjuBw',
                 kind: 'person',
             }));
         assert.equal(create.status, 201);
@@ -214,14 +217,14 @@ test(
         const token = await devToken(MEMBER);
         const denied = await handleRequest(
             memberDb, req('POST', '/identities/', token, {
-                id: 'p2',
+                id: 'prBESZPjJDiuXCeZLmbiVw',
                 kind: 'person',
             }));
         assert.equal(denied.status, 403);
         // The denied member wrote nothing on the pair plane
-        // — no identities/p2 document.
+        // — no identities/prBESZPjJDiuXCeZLmbiVw document.
         await assert.rejects(
-            () => GET(memberDb, 'identities/p2', token),
+            () => GET(memberDb, 'identities/prBESZPjJDiuXCeZLmbiVw', token),
         );
     },
 );

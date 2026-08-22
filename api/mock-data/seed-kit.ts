@@ -186,7 +186,7 @@ export function deterministicScore(
 // pair before any transaction opens, so it has nothing to read
 // back; this computes the identical pool straight from the
 // seed's own membership assignment (member -> assignOrganization
-// (index), 'current' -> both orgs — see postMockDataLoadIn's
+// (index), 'XXZruirZyAOoRpNxaDnpSA' -> both orgs — see postMockDataLoadIn's
 // membership Promise.all) instead of a DB round trip.
 //
 // The two computations are proven to agree: the buffered-tx
@@ -204,7 +204,7 @@ export function humanMemberPoolsByOrganization(
 ): ReadonlyMap<Id, readonly Id[]> {
     const pools = new Map<Id, Id[]>();
     members.forEach((member, index) => {
-        const organizations = member.id === 'current'
+        const organizations = member.id === 'XXZruirZyAOoRpNxaDnpSA'
             ? [STARK_ORGANIZATION, ORGANIZATION_TWO]
             : [assignOrganization(index)];
         for (const organization of organizations) {

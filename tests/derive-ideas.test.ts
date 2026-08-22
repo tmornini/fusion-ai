@@ -15,7 +15,7 @@ import {
 } from './http-fixtures.ts';
 
 const BASE = 'http://localhost';
-const STARK_ORGANIZATION = '1';
+const STARK_ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 
 function req(
     method: string,
@@ -60,7 +60,7 @@ function putIdea(
     state: string,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', '/organizations/1/ideas/' + id, token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/' + id, token,
         ideaDocument(title, state),
     ));
 }
@@ -196,10 +196,11 @@ test(
     + 'row field-for-field',
     async () => {
         const db = await seededDb();
-        // A seeded idea (org '1' by assignOrganization(0)) whose
+        // A seeded idea (org 'AjdvjuECVZEgZoFajaIEkg' by
+        // assignOrganization(0)) whose
         // ONLY event is its own creation — no post-genesis
         // transitions in the mock data.
-        const ideaId = 'eT5xdKjzLDmuRn3r7XMX4R';
+        const ideaId = 'YvOylAxOjQcgmNmsSoVBPQ';
         const derivedHistory = await deriveIdeaStateHistory(
             db, STARK_ORGANIZATION, ideaId,
         );

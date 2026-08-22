@@ -53,7 +53,7 @@ test('validateRecordAttributeDocumentBody accepts the entity'
 + ' defaults', () => {
     const doc = validateRecordAttributeDocumentBody({
         ...documentFields(),
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     });
     assert.deepEqual(doc.entity, {
         ...documentFields(),
@@ -123,34 +123,34 @@ test('postRecordAttributeDocumentOp writes exactly the'
     await db.postSchemaCreation();
     const body = {
         ...documentFields(),
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/organizations/1/record-types/'
+        pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + 'rec-fixture-1/attributes/ra-doc-op-1',
         routePattern: ATTRIBUTE_DETAIL_PATTERN,
         routeSegments: ATTRIBUTE_DETAIL_PATTERN.split('/'),
         pathSegments: [
-            'organizations', '1', 'record-types',
+            'organizations', 'AjdvjuECVZEgZoFajaIEkg', 'record-types',
             'rec-fixture-1', 'attributes',
             'ra-doc-op-1',
         ],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-01T00:00:00.000000Z',
-        organization: '1',
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
     // Phase Final Task 2: record_attributes ROW half stripped
     // — pair plane + op return are the oracles.
     const written = await postRecordAttributeDocumentOp(
-        db, 'ra-doc-op-1', body, 'current', pair,
+        db, 'ra-doc-op-1', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
     );
     assert.deepEqual(written, {
         id: 'ra-doc-op-1',
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         ...documentFields(),
         read_roles: ['member', 'admin'],
         write_roles: ['member', 'admin'],
@@ -172,7 +172,8 @@ async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     // Parent type must exist for nested attribute PUT.
-    await PUT(db, 'organizations/1/record-types/rec-fixture-1', {
+    await PUT(db
+        , 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/rec-fixture-1', {
         name: 'Fixture', description: '', position: 1,
         state: 'active',
     }, DEV_TOKEN);
@@ -186,13 +187,13 @@ async () => {
     const opHeaders: readonly (readonly [string, string])[] =
         [['operation-id', TEST_OPERATION_ID]];
     const first = await PUT(
-        db, 'organizations/1/record-types/rec-fixture-1'
-        + '/attributes/ra-resend-1', body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/rec-fixture-1'
+        + '/attributes/rTiMgnMtYSIDYKegGxixMA', body, DEV_TOKEN,
         opHeaders,
     );
     const second = await PUT(
-        db, 'organizations/1/record-types/rec-fixture-1'
-        + '/attributes/ra-resend-1', body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/rec-fixture-1'
+        + '/attributes/rTiMgnMtYSIDYKegGxixMA', body, DEV_TOKEN,
         opHeaders,
     );
     assert.deepEqual(first, second);
@@ -218,7 +219,7 @@ async function putDocumentPair(
     const typeId = body['record_id'] as string;
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/organizations/1/record-types/'
+        pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + typeId + '/attributes/' + id,
         routePattern:
             'organizations/:organization-id/record-types/'
@@ -229,14 +230,14 @@ async function putDocumentPair(
             'attributes', ':attribute-id',
         ],
         pathSegments: [
-            'organizations', '1',
+            'organizations', 'AjdvjuECVZEgZoFajaIEkg',
             'record-types', typeId,
             'attributes', id,
         ],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-01T00:00:00.000000Z',
-        organization: '1',
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
@@ -253,7 +254,7 @@ async function deleteDocumentPair(
 ): Promise<void> {
     const pair = await formWritePair({
         method: 'DELETE',
-        pathname: '/organizations/1/record-types/'
+        pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + typeId + '/attributes/' + id,
         routePattern:
             'organizations/:organization-id/record-types/'
@@ -264,14 +265,14 @@ async function deleteDocumentPair(
             'attributes', ':attribute-id',
         ],
         pathSegments: [
-            'organizations', '1',
+            'organizations', 'AjdvjuECVZEgZoFajaIEkg',
             'record-types', typeId,
             'attributes', id,
         ],
         headerFields: [], body: {},
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-02T00:00:00.000000Z',
-        organization: '1',
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
@@ -288,7 +289,7 @@ test('a DELETE-head derives absent on the nested attributes'
     const typeId = documentFields().record_id;
     await putDocumentPair(db, 'ra-del-1', documentFields());
     await deleteDocumentPair(db, 'ra-del-1', typeId);
-    const prefix = '/organizations/1/record-types/'
+    const prefix = '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
         + typeId + '/attributes/';
     const [requests, responses] = await Promise.all([
         db.pairs.getAllWhere('uri_collection', prefix),

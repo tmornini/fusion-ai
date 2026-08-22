@@ -194,12 +194,12 @@ async function createFlow(
     flowId: string,
 ): Promise<void> {
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/flows/', token, {
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token, {
             id: flowId,
             flow: flowFields('genesis'),
             projectFlowId: flowId + '-pf',
             projectFlow: {
-                project_id: 'proj-1',
+                project_id: 'qfhFObbtDfxUZwEGxySBoQ',
                 flow_id: flowId, at: AT,
             },
             initialState: 'active',
@@ -215,10 +215,12 @@ async function headResponseId(
     db: MemoryDbAdapter, token: string, flowId: string,
 ): Promise<string> {
     const got = await handleRequest(db, req(
-        'GET', '/organizations/1/flows/' + flowId, token,
+        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId, token,
     ));
     const id = got.headers.get('Response-ID');
-    assert.ok(id, 'no Response-ID on GET /organizations/1/flows/' + flowId);
+    assert.ok(id
+        , 'no Response-ID on GET /organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+        + '' + flowId);
     return id!;
 }
 
@@ -232,12 +234,14 @@ async function save(
     name: string, eventId: string,
 ): Promise<void> {
     const got = await handleRequest(db, req(
-        'GET', '/organizations/1/flows/' + flowId, token,
+        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId, token,
     ));
     const etag = got.headers.get('ETag');
-    assert.ok(etag, 'no ETag on GET /organizations/1/flows/' + flowId);
+    assert.ok(etag
+        , 'no ETag on GET /organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+        + flowId);
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/1/flows/' + flowId, token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId, token,
         documentBody(name, eventId),
         { 'if-match': etag },
     ));
@@ -249,7 +253,8 @@ async function undo(
     eventId: string, at: string,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'POST', '/organizations/1/flows/' + flowId + '/undo', token,
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+            + '/undo', token,
         { eventId, at },
     ));
 }
@@ -258,7 +263,7 @@ async function currentGraphName(
     db: MemoryDbAdapter, token: string, flowId: string,
 ): Promise<string> {
     const got = await handleRequest(db, req(
-        'GET', '/organizations/1/flows/' + flowId, token,
+        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId, token,
     ));
     const body = await got.json() as { name: string };
     return body.name;
@@ -485,7 +490,8 @@ test(
                 resource: string,
                 body: Record<string, unknown>,
             ): Promise<T> => {
-                if (resource === 'organizations/1/flows/' + flowId +
+                if (resource === 'organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                    + '' + flowId +
                     '/undo') {
                     posts += 1;
                     if (posts === 1) {
@@ -561,8 +567,8 @@ test(
         const db = await freshDb();
         const token = await organizationToken();
         const flowId = 'stale-basis';
-        const organization = '1';
-        const actor = 'current';
+        const organization = 'AjdvjuECVZEgZoFajaIEkg';
+        const actor = 'XXZruirZyAOoRpNxaDnpSA';
         // Phase Final Task 5: the store decorator is gone;
         // handlers and resolveFlowUndoTarget read the base
         // adapter. Pair-plane tenancy rides uri_collection.
@@ -575,7 +581,8 @@ test(
         // the live route, at the instant a concurrent write
         // could still race it.
         const undoUriPrefix = canonicalUriCollection(
-            organization, '/organizations/1/flows/' + flowId + '/undo/',
+            organization, '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                + flowId + '/undo/',
         );
         const staleResolution = await resolveFlowUndoTarget(
             db, organization, flowId, undoUriPrefix,
@@ -592,7 +599,8 @@ test(
         // and 412s — it must never silently discard B.
         const pair = await formWritePair({
             method: 'POST',
-            pathname: '/organizations/1/flows/' + flowId + '/undo',
+            pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                + flowId + '/undo',
             routePattern: 'organizations/:id/flows/:id/undo',
             routeSegments: ['flows', ':id', 'undo'],
             pathSegments: ['flows', flowId, 'undo'],
@@ -641,12 +649,12 @@ test(
         const nodeId = 'sidecar-node';
 
         const created = await handleRequest(db, req(
-            'POST', '/organizations/1/flows/', token, {
+            'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token, {
                 id: flowId,
                 flow: flowFields('Sidecar Flow'),
                 projectFlowId: flowId + '-pf',
                 projectFlow: {
-                    project_id: 'proj-1',
+                    project_id: 'qfhFObbtDfxUZwEGxySBoQ',
                     flow_id: flowId, at: AT,
                 },
                 initialState: 'active',
@@ -668,13 +676,17 @@ test(
         assert.equal(created.status, 201);
 
         const got = await handleRequest(db, req(
-            'GET', '/organizations/1/flows/' + flowId, token,
+            'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+                , token,
         ));
         const etag = got.headers.get('ETag');
-        assert.ok(etag, 'no ETag on GET /organizations/1/flows/' + flowId);
+        assert.ok(etag
+            , 'no ETag on GET /organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+            + flowId);
         const deleteAt = '2026-01-01T00:00:01.000000Z';
         const deleted = await handleRequest(db, req(
-            'PUT', '/organizations/1/flows/' + flowId, token,
+            'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+                , token,
             documentBody(
                 'Sidecar Trimmed', flowId + '-del', {
                     state_at: deleteAt,
@@ -698,7 +710,8 @@ test(
         );
         assert.equal(undone.status, 201);
 
-        const prefix = canonicalUriCollection('1', '/flows/');
+        const prefix = canonicalUriCollection('AjdvjuECVZEgZoFajaIEkg'
+            , '/flows/');
         const stored = await db.pairs.getAllWhere(
             'uri_collection', prefix,
         );
@@ -758,7 +771,7 @@ test(
 // ROOT CAUSE, wire evidence, and the two fixes are narrated in
 // full in .superpowers/sdd/phase14-task-8-report.md's
 // "Fix wave 2" section. Short version:
-// web-app/organizations/1/flows/detail.ts's
+// web-app/organizations/AjdvjuECVZEgZoFajaIEkg/flows/detail.ts's
 // handleUndo/handleRedo used to follow their OWN commit with
 // commitAndFit(pageState.presenter().withLayoutReconciled()) —
 // a SAVE-TRIGGERING call, even though op.freshSnap already
@@ -774,7 +787,8 @@ test(
 // click, which reverted the reconcile noise instead of reaching
 // the user's actual prior edit. The fix (removing the two
 // commitAndFit(...withLayoutReconciled()) calls,
-// web-app/organizations/1/flows/detail.ts) is NOT reachable from this test
+// web-app/organizations/AjdvjuECVZEgZoFajaIEkg/flows/detail.ts) is NOT
+// reachable from this test
 // file:
 // it is a page-level DOM change with no automated seam
 // (FlowDesignerPresenter#queueSave calls sessionContext()

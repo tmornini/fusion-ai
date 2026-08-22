@@ -72,8 +72,8 @@ async function setupMemDb(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedHumanMember(db, 'current', 'Demo User');
-    await seedHumanMember(db, 'm1', 'Member One');
+    await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
+    await seedHumanMember(db, 'mFNSxZqywTSMXhgUTdTqtA', 'Member One');
     const ctx = createRequestContext(db, await organizationToken());
     await postFlowCreation(ctx, {
         flowId: FLOW_ID,
@@ -178,7 +178,7 @@ async function pairGraph(
     ctx: RequestContext,
 ): Promise<StoredGraph> {
     const flow = await ctx.GET<FlowWithGraph>(
-        'organizations/1/flows/' + FLOW_ID,
+        'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID,
     );
     return asStoredGraph(
         flow.graph, 'flow.graph',
@@ -373,18 +373,18 @@ test(
         const aBare = buildNode('a', { isCreate: true });
         const aWithMember = buildNode('a', {
             isCreate: true,
-            memberIds: ['m1'],
+            memberIds: ['mFNSxZqywTSMXhgUTdTqtA'],
         });
 
         // Save the graph whose node a has NO member — undo's target.
         await saveGraph(ctx, [aBare], []);
-        // Then save the graph where a gains member m1.
+        // Then save the graph where a gains member mFNSxZqywTSMXhgUTdTqtA.
         await putFlow(ctx, FLOW_ID, save([aWithMember], []));
 
         const afterAdd = await pairGraph(ctx);
         assert.ok(
             afterAdd.nodes.find(n => n.id === 'a')!
-                .memberIds.includes('m1'),
+                .memberIds.includes('mFNSxZqywTSMXhgUTdTqtA'),
         );
 
         // Undo -> revert to the no-member version.
@@ -397,7 +397,7 @@ test(
         const afterUndo = await pairGraph(ctx);
         assert.ok(
             !afterUndo.nodes.find(n => n.id === 'a')!
-                .memberIds.includes('m1'),
+                .memberIds.includes('mFNSxZqywTSMXhgUTdTqtA'),
             'undo removes the added member',
         );
     },

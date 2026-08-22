@@ -62,10 +62,12 @@ function req(
 }
 
 // `current` holds admin in org A (the administered org) and
-// in org '1' (seedRootAdmin), and is a member of both. Ideas
+// in org 'AjdvjuECVZEgZoFajaIEkg' (seedRootAdmin), and is a member of both.
+// Ideas
 // exist in both A and B. Roles are per-org since Phase 3, so
 // the org-A grant authorizes the facade tests; seedRootAdmin's
-// org '1' grant + membership keep the flat-token enumerate
+// org 'AjdvjuECVZEgZoFajaIEkg' grant + membership keep the flat-token
+// enumerate
 // test authorized.
 async function twoOrganizations(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
@@ -76,18 +78,19 @@ async function twoOrganizations(): Promise<MemoryDbAdapter> {
     // prefix, so an org referenced only by a membership/role-grant
     // pair stays derivation-invisible without its own document.
     await seedOrganizationDocument(db, 'A', 'Acme');
-    await seedMembershipPair(db, 'm-a', 'A', 'current');
-    // Seeded through the live document PUT so a1's message
+    await seedMembershipPair(db, 'm-a', 'A', 'XXZruirZyAOoRpNxaDnpSA');
+    // Seeded through the live document PUT so UQTJZvCoKlFjEoDlDUwekw's
+    // message
     // pair exists — GET ideas / GET organizations/:id/ideas/:id derive from
     // the
     // ledger. No foreign b1 seed: ideas table is retired
     // (Phase Final Stage B); A-only visibility is proven by
-    // a1 alone (current is never a member of B).
+    // UQTJZvCoKlFjEoDlDUwekw alone (current is never a member of B).
     const { organization_id: _organizationId, ...a1Fields } =
         ideaBody('A', 'mine');
     await handleRequest(db, req(
-        'PUT', '/organizations/A/ideas/a1',
-        await organizationToken('current', 'A'),
+        'PUT', '/organizations/A/ideas/UQTJZvCoKlFjEoDlDUwekw',
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A'),
         {
             ...a1Fields,
             state: 'active',
@@ -101,17 +104,17 @@ async () => {
     const db = await twoOrganizations();
     const res = await handleRequest(db, req(
         'GET', '/organizations/A/ideas/',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];
-    assert.deepEqual(rows.map(r => r.id), ['a1']);
+    assert.deepEqual(rows.map(r => r.id), ['UQTJZvCoKlFjEoDlDUwekw']);
 });
 
 test('a facade into a non-member org is 403', async () => {
     const db = await twoOrganizations();
     const res = await handleRequest(db, req(
         'GET', '/organizations/B/ideas/',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(res.status, 403);
 });
 
@@ -119,10 +122,10 @@ test('a facade PUT stamps the bound org over a forged body',
 async () => {
     const db = await twoOrganizations();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/A/ideas/a2',
-        await organizationToken('current', 'A'),
+        'PUT', '/organizations/A/ideas/UZgNCkZlSJcSaAmAJuSkcw',
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A'),
         {
-            id: 'a2', ...ideaBody('B', 'forged'),
+            id: 'UZgNCkZlSJcSaAmAJuSkcw', ...ideaBody('B', 'forged'),
             state: 'active',
         }));
     assert.equal(res.status, 201);
@@ -134,8 +137,8 @@ async () => {
     };
     assert.equal(wire.organization_id, 'A');
     const getRes = await handleRequest(db, req(
-        'GET', '/organizations/A/ideas/a2',
-        await organizationToken('current', 'A'),
+        'GET', '/organizations/A/ideas/UZgNCkZlSJcSaAmAJuSkcw',
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A'),
     ));
     assert.equal(getRes.status, 200);
     const got = await getRes.json() as {
@@ -154,7 +157,7 @@ async () => {
     // raw row: `current` is never a member of B, so the
     // membership filter excludes it whether or not it derives.
     await handleRequest(db, req(
-        'PUT', '/organizations/A', await devToken('current'),
+        'PUT', '/organizations/A', await devToken('XXZruirZyAOoRpNxaDnpSA'),
         organizationRow('Acme'),
     ));
     // Phase Final Stage B: organizations table retired
@@ -162,19 +165,23 @@ async () => {
     // exclusion of non-members.
     // Enumerate is the path identity's live seats.
     const token = await claimToken({
-        organizations: ['1', 'A'],
-        roles: ['admin:1', 'admin:A'],
+        organizations: ['AjdvjuECVZEgZoFajaIEkg', 'A'],
+        roles: ['admin:AjdvjuECVZEgZoFajaIEkg', 'admin:A'],
     });
     const res = await handleRequest(db, req(
-        'GET', '/identities/current/organizations/',
+        'GET', '/identities/XXZruirZyAOoRpNxaDnpSA/organizations/',
         token));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];
-    // 'current' is ALSO a member of seedRootAdmin's own org '1'
+    // 'XXZruirZyAOoRpNxaDnpSA' is ALSO a member of seedRootAdmin's own org
+    // 'AjdvjuECVZEgZoFajaIEkg'
     // (Phase 13 Task 3's fixture prerequisite gave it a real,
     // derivable organizations/:id document) — fixture-faithful,
     // not a narrowing of what this case proves.
-    assert.deepEqual(rows.map(r => r.id), ['1', 'A']);
+    assert.deepEqual(
+        rows.map(r => r.id),
+        ['A', 'AjdvjuECVZEgZoFajaIEkg'],
+    );
 });
 
 test('the facade requires a bearer token', async () => {
@@ -200,15 +207,16 @@ async function contentMemberDb(): Promise<MemoryDbAdapter> {
     // here; it exists only to author the org A document.
     await seedAdminSchema(db);
     await handleRequest(db, req(
-        'PUT', '/organizations/A', await devToken('current'),
+        'PUT', '/organizations/A', await devToken('XXZruirZyAOoRpNxaDnpSA'),
         organizationRow('Acme'),
     ));
-    // B stays a raw row: sarah is never a member of B, so the
+    // B stays a raw row: toccYYkLEABmlbpHJalgtQ is never a member of B, so
+    // the
     // membership filter excludes it whether or not it derives.
     // Phase Final Stage B: organizations table retired
     // — B need not derive for membership-filter
     // exclusion of non-members.
-    await seedMembershipPair(db, 'm-sarah-a', 'A', 'sarah');
+    await seedMembershipPair(db, 'm-sarah-a', 'A', 'toccYYkLEABmlbpHJalgtQ');
     return db;
 }
 
@@ -216,8 +224,8 @@ test('a content-tier member enumerates only their member orgs',
 async () => {
     const db = await contentMemberDb();
     const res = await handleRequest(db, req(
-        'GET', '/identities/sarah/organizations/',
-        await organizationToken('sarah', 'A')));
+        'GET', '/identities/toccYYkLEABmlbpHJalgtQ/organizations/',
+        await organizationToken('toccYYkLEABmlbpHJalgtQ', 'A')));
     assert.equal(res.status, 200);
     const rows = await res.json() as { id: string }[];
     assert.deepEqual(rows.map(r => r.id), ['A']);
@@ -230,7 +238,7 @@ async () => {
     // is the admin-only surface.
     const res = await handleRequest(db, req(
         'GET', '/memberships',
-        await organizationToken('sarah', 'A')));
+        await organizationToken('toccYYkLEABmlbpHJalgtQ', 'A')));
     assert.equal(res.status, 404);
 });
 
@@ -239,7 +247,7 @@ async () => {
     const db = await contentMemberDb();
     const res = await handleRequest(db, req(
         'PUT', '/organizations/A',
-        await organizationToken('sarah', 'A'),
+        await organizationToken('toccYYkLEABmlbpHJalgtQ', 'A'),
         organizationRow('Hijack')));
     assert.equal(res.status, 403);
 });
@@ -279,7 +287,7 @@ function workOrderBody(organization: string) {
 // Seed a full parent→leaf chain in `org`, ids suffixed `s`.
 // `identity` authors the ONE seed write that now rides the wire
 // (the project-flow join, below) — it must hold a role in
-// `organization` (deepDb grants 'current' admin in A and 'pb'
+// `organization` (deepDb grants 'XXZruirZyAOoRpNxaDnpSA' admin in A and 'pb'
 // admin in B, solely for this).
 async function seedChain(
     db: MemoryDbAdapter, organization: string, s: string,
@@ -293,7 +301,7 @@ async function seedChain(
     // state event would resolve as a visible ORPHAN, not a
     // fenced-hidden foreign row, once the bulk lifecycle
     // collection is flipped), mirroring twoOrganizations()'s
-    // own a1 precedent above.
+    // own UQTJZvCoKlFjEoDlDUwekw precedent above.
     const { organization_id: _organizationId, ...ideaFields } =
         ideaBody(organization, 'idea');
     await handleRequest(db, req(
@@ -363,7 +371,7 @@ async function seedChain(
     // Phase Final Stage B: records table retired — seed
     // through nested record-types PUT (admin-only schema
     // mutation; claimToken when identity is not `current`).
-    const recToken = identity === 'current'
+    const recToken = identity === 'XXZruirZyAOoRpNxaDnpSA'
         ? await organizationToken(identity, organization)
         : await claimToken({
             sub: identity,
@@ -558,7 +566,7 @@ async function seedMembershipPair(
     identityId: string,
 ): Promise<void> {
     const type =
-        identityId === 'current' || identityId === 'pb'
+        identityId === 'XXZruirZyAOoRpNxaDnpSA' || identityId === 'pb'
             ? 'admin'
             : 'member';
     const { seedSeat } = await import(
@@ -581,12 +589,14 @@ async function deepDb(): Promise<MemoryDbAdapter> {
     // with a token ALREADY scoped to the org it is creating —
     // leaves both derivation-invisible; deriveMembershipsForIdentity
     // enumerates via deriveOrganizations before probing an org's
-    // own membership prefix, so 'current'/'pb's membership/role-
+    // own membership prefix, so 'XXZruirZyAOoRpNxaDnpSA'/'pb's
+    // membership/role-
     // grant pairs below need A/B to already be derivable, not the
     // other way around.
     await seedOrganizationDocument(db, 'A', 'Acme');
     await seedOrganizationDocument(db, 'B', 'Beta');
-    await seedMembershipPair(db, 'mem-current-a', 'A', 'current');
+    await seedMembershipPair(db, 'mem-current-a', 'A'
+        , 'XXZruirZyAOoRpNxaDnpSA');
     for (const [id, organization] of [
         ['pa', 'A'], ['pb', 'B'],
     ] as const) {
@@ -600,7 +610,12 @@ async function deepDb(): Promise<MemoryDbAdapter> {
             name: id, email: id + '@x.com',
             phone: '', bio: '',
         });
-        await seedIdentityCredential(db, id, 'cred-' + id, {
+        await seedIdentityCredential(
+            db, id,
+            id === 'pa'
+                ? 'XWKijniEuoqRNhnRQdJHEA'
+                : 'XWjyCmjaGkYOFYNSanBvhg',
+            {
             identity_id: id, kind: 'password',
             status: 'set', secret: 'HASH-' + id, at: T8_AT,
         });
@@ -617,11 +632,11 @@ async function deepDb(): Promise<MemoryDbAdapter> {
     // stable. Members are global-plane; ownership rides the
     // membership pairs already seeded above.
     for (const [id, organization, author] of [
-        ['pa', 'A', 'current'], ['pb', 'B', 'pb'],
+        ['pa', 'A', 'XXZruirZyAOoRpNxaDnpSA'], ['pb', 'B', 'pb'],
     ] as const) {
         // author is admin of the target org — claim roles must
         // say so (organizationToken only admins `current`).
-        const authorToken = author === 'current'
+        const authorToken = author === 'XXZruirZyAOoRpNxaDnpSA'
             ? await organizationToken(author, organization)
             : await claimToken({
                 sub: author,
@@ -639,7 +654,7 @@ async function deepDb(): Promise<MemoryDbAdapter> {
             || memberWrite.status === 200,
         );
     }
-    await seedChain(db, 'A', 'A', 'current');
+    await seedChain(db, 'A', 'A', 'XXZruirZyAOoRpNxaDnpSA');
     await seedChain(db, 'B', 'B', 'pb');
     // isA's message pair, on top of the raw row seedChain already
     // wrote above: the flipped GET organizations/:id/ideas/:id/submissions
@@ -651,7 +666,7 @@ async function deepDb(): Promise<MemoryDbAdapter> {
     // way.
     await handleRequest(db, req(
         'PUT', '/organizations/A/ideas/iA/submissions/isA',
-        await organizationToken('current', 'A'),
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A'),
         { idea_id: 'iA', member_id: 'system', at: T8_AT },
     ));
     return db;
@@ -662,7 +677,7 @@ async function facadeGet(
 ): Promise<Response> {
     return handleRequest(db, req(
         'GET', '/organizations/A' + path,
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
 }
 
 // The two entity-subordinate resources nest under their parent
@@ -729,9 +744,11 @@ for (const c of LEAF_CASES) {
 
 // The three flow-subordinate resources nest under
 // organizations/:id/flows/:id.
-// The collection is fetched at organizations/1/flows/fA/<seg> — the SERVER
+// The collection is fetched at
+// organizations/AjdvjuECVZEgZoFajaIEkg/flows/fA/<seg> — the SERVER
 // filters to the parent flow — and the leaf at
-// organizations/1/flows/fA/<seg>/<id>. The org fence still rides the facade
+// organizations/AjdvjuECVZEgZoFajaIEkg/flows/fA/<seg>/<id>. The org fence
+// still rides the facade
 // re-entry, so a foreign leaf 404s through its parent flow's org.
 // Phase Final Task 2: work-orders + flow_records foreign
 // presence is proven via B-org wire GET (row plane empty).
@@ -800,7 +817,7 @@ for (const c of NESTED_FLOW_CASES) {
 // fB belongs to org B (seeded via seedChain(db, 'B', 'B', 'pb')
 // in deepDb()), so a tag written there through 'pb's org-B token
 // lands at the '/organizations/B/flows/fB/tags/' address; a read
-// of the SAME path with 'current's org-A-scoped token resolves
+// of the SAME path with 'XXZruirZyAOoRpNxaDnpSA's org-A-scoped token resolves
 // an entirely different '/organizations/A/...' prefix — the
 // same structural fence every org-nested address rides, with no
 // tag-specific code of its own.
@@ -808,27 +825,27 @@ test('nested organizations/:id/flows/:id/tags 404s a foreign-org flow',
     async () => {
     const db = await deepDb();
     const tagged = await handleRequest(db, req(
-        'PUT', '/organizations/B/flows/fB/tags/v1',
+        'PUT', '/organizations/B/flows/fB/tags/xDyDkxEPwtcNmJVknUHDsg',
         await organizationToken('pb', 'B'),
         { flow_response_id: 'r-b-1' },
     ));
     assert.equal(tagged.status, 201);
 
     const res = await handleRequest(db, req(
-        'GET', '/organizations/A/flows/fB/tags/v1',
-        await organizationToken('current', 'A'),
+        'GET', '/organizations/A/flows/fB/tags/xDyDkxEPwtcNmJVknUHDsg',
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A'),
     ));
     assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
     assert.equal(
         body.error,
-        'Not found: flow_tags/v1',
+        'Not found: flow_tags/xDyDkxEPwtcNmJVknUHDsg',
     );
 });
 
 // The three project-subordinate resources nest under
 // organizations/:id/projects/:id. The collection is fetched at
-// organizations/1/projects/pA/<seg> —
+// organizations/AjdvjuECVZEgZoFajaIEkg/projects/pA/<seg> —
 // the SERVER filters to the parent project — so the foreign
 // row, bound to project pB, is excluded. The org fence still
 // rides the facade re-entry. None exposes a leaf GET /:id (the
@@ -968,7 +985,7 @@ async () => {
     const db = await deepDb();
     const res = await handleRequest(db, req(
         'GET', '/identity-pii',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(res.status, 404);
     // Pair plane proves pb's pii still exists while the
     // collection is gone. Nested GET of a FOREIGN-org
@@ -978,7 +995,7 @@ async () => {
         (await deriveIdentityPii(db, 'pb')).id, 'pb');
     const foreign = await handleRequest(db, req(
         'GET', '/identities/pb/pii',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(foreign.status, 403);
     const foreignBody =
         await foreign.json() as { error: string };
@@ -996,14 +1013,14 @@ async () => {
     // credential with the secret projected out.
     const res = await handleRequest(db, req(
         'GET', '/identities/pa/credentials/',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(res.status, 200);
     const rows = await res.json() as Array<{
         id: string;
         identity_id: string;
         secret?: string;
     }>;
-    assert.deepEqual(rows.map(r => r.id), ['cred-pa']);
+    assert.deepEqual(rows.map(r => r.id), ['XWKijniEuoqRNhnRQdJHEA']);
     for (const r of rows) {
         assert.equal(r.secret, undefined);
     }
@@ -1012,12 +1029,12 @@ async () => {
     // Phase Final Task 2: pair plane proves pb's credential
     // exists while fence 403s under A.
     assert.equal(
-        (await deriveCredential(db, 'pb', 'cred-pb')).id,
-        'cred-pb');
+        (await deriveCredential(db, 'pb', 'XWjyCmjaGkYOFYNSanBvhg')).id,
+        'XWjyCmjaGkYOFYNSanBvhg');
     // Phase Final Stage B: identity spine tables retired.
     const other = await handleRequest(db, req(
         'GET', '/identities/pb/credentials/',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(other.status, 403);
     const otherBody = await other.json() as { error: string };
     assert.equal(
@@ -1027,22 +1044,22 @@ async () => {
     );
     // a single read projects secret out too
     const one = await handleRequest(db, req(
-        'GET', '/identities/pa/credentials/cred-pa',
-        await organizationToken('current', 'A')));
+        'GET', '/identities/pa/credentials/XWKijniEuoqRNhnRQdJHEA',
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(one.status, 200);
     assert.equal(
         (await one.json() as { secret?: string }).secret,
         undefined);
     // a non-member credential 403s
     const foreign = await handleRequest(db, req(
-        'GET', '/identities/pb/credentials/cred-pb',
-        await organizationToken('current', 'A')));
+        'GET', '/identities/pb/credentials/XWjyCmjaGkYOFYNSanBvhg',
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(foreign.status, 403);
     const foreignBody =
         await foreign.json() as { error: string };
     assert.equal(
         foreignBody.error,
-        'forbidden: identity_credentials/cred-pb belongs to'
+        'forbidden: identity_credentials/XWjyCmjaGkYOFYNSanBvhg belongs to'
         + ' a different organization',
     );
 });
@@ -1059,7 +1076,7 @@ async () => {
     // via organizationToken — admin surface stays denied.
     const asAdmin = await handleRequest(db, req(
         'GET', '/identities/pa/credentials/',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(asAdmin.status, 200);
     const asMember = await handleRequest(db, req(
         'GET', '/identities/pa/credentials/',
@@ -1071,7 +1088,7 @@ test('organizations/:id 403s a non-member org', async () => {
     const db = await deepDb();
     const mine = await handleRequest(db, req(
         'GET', '/organizations/A',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(mine.status, 200);
     // Phase Final Task 2: organizations ROW half stripped —
     // B still has a pair (seedOrganizationDocument), so
@@ -1080,7 +1097,7 @@ test('organizations/:id 403s a non-member org', async () => {
         (await deriveOrganization(db, 'B')).id, 'B');
     const foreign = await handleRequest(db, req(
         'GET', '/organizations/B',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(foreign.status, 403);
     const body = await foreign.json() as { error: string };
     assert.equal(
@@ -1094,12 +1111,12 @@ test('organizations/:id 404s a genuinely absent org',
 async () => {
     const db = await deepDb();
     const res = await handleRequest(db, req(
-        'GET', '/organizations/no-such-org',
-        await organizationToken('current', 'A')));
+        'GET', '/organizations/oLbQcDdzGHmpcoUKyvlTnQ',
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(res.status, 404);
     const body = await res.json() as { error: string };
     assert.equal(
-        body.error, 'Not found: /organizations/no-such-org',
+        body.error, 'Not found: /organizations/oLbQcDdzGHmpcoUKyvlTnQ',
     );
 });
 
@@ -1123,7 +1140,7 @@ async () => {
     });
     const retired = await handleRequest(db, req(
         'GET', '/identity-pii',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(retired.status, 404);
     const ids = new Set(
         (await deriveIdentityPiiRows(db)).map(r => r.id));
@@ -1133,7 +1150,7 @@ async () => {
         'orphan');
     const res = await handleRequest(db, req(
         'GET', '/identities/orphan/pii',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(res.status, 200);
 });
 
@@ -1148,7 +1165,7 @@ async () => {
     // its own nested collection, read through the A facade.
     const res = await handleRequest(db, req(
         'GET', '/identities/orphan/credentials/',
-        await organizationToken('current', 'A')));
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A')));
     assert.equal(res.status, 200);
     const ids = (await res.json() as Array<{
         identity_id: string;
@@ -1166,7 +1183,7 @@ test('states/:id orphan write is router 404', async () => {
     const retiredAppend = ['', 'states', 'seGhost'].join('/');
     const ghost = await handleRequest(db, req(
         'PUT', retiredAppend,
-        await organizationToken('current', 'A'),
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A'),
         { entity_id: 'ghost', state: 'active', at: T8_AT },
     ));
     assert.equal(ghost.status, 404);

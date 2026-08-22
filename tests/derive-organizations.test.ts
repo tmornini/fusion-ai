@@ -77,7 +77,7 @@ async () => {
 test('deriveOrganizations mirrors every PUT wire body,'
 + ' id-lex ordered', async () => {
     const db = await freshDb();
-    // seedAdminSchema plants org '1'; these two PUTs add
+    // seedAdminSchema plants org 'AjdvjuECVZEgZoFajaIEkg'; these two PUTs add
     // more heads — derive is id-lex over the full set.
     const beta = await putOrganization(db, 'org-b', 'Beta');
     const alpha = await putOrganization(db, 'org-a', 'Alpha');
@@ -86,7 +86,7 @@ test('deriveOrganizations mirrors every PUT wire body,'
     const derived = await deriveOrganizations(db);
     assert.deepEqual(
         derived.map((o) => o.id),
-        ['1', 'org-a', 'org-b'],
+        ['AjdvjuECVZEgZoFajaIEkg', 'org-a', 'org-b'],
     );
     assert.equal(
         derived.find((o) => o.id === 'org-a')!.name, 'Alpha',
@@ -161,18 +161,18 @@ test('a PUT whose body echoes id round-trips through'
 + ' withoutId(body) strip', async () => {
     const db = await freshDb();
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/org-echo', DEV_TOKEN,
-        { id: 'org-echo', ...organizationRow('Echo') },
+        'PUT', '/organizations/pcOGAHXkUUQAIuXHzKMGnw', DEV_TOKEN,
+        { id: 'pcOGAHXkUUQAIuXHzKMGnw', ...organizationRow('Echo') },
     ));
     assert.equal(res.status, 201);
     const wire = await res.json();
 
-    const derived = await deriveOrganization(db, 'org-echo');
+    const derived = await deriveOrganization(db, 'pcOGAHXkUUQAIuXHzKMGnw');
     assert.deepEqual(derived, wire);
 
     const all = await deriveOrganizations(db);
     assert.deepEqual(
-        all.find((org) => org.id === 'org-echo'), wire,
+        all.find((org) => org.id === 'pcOGAHXkUUQAIuXHzKMGnw'), wire,
     );
     // Phase Final Stage B: organizations table retired.
 });

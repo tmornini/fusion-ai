@@ -52,7 +52,7 @@ async function grant(
     email: string,
 ): Promise<void> {
     const admin = await organizationToken(
-        'current', ORGANIZATION_TWO,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
     );
     const res = await handleRequest(db, req(
         'POST', '/organizations/' + ORGANIZATION_TWO
@@ -93,7 +93,7 @@ test('invitationLifecycleStatesFor: accepted carries both the'
 async () => {
     const db = await seededDb();
     const id = 'inv-lifecycle-accepted';
-    const inviteeId = 'LhfaUUf4IumVsCSGB4xjdK'; // Sarah Chen
+    const inviteeId = 'MQFcPtrZPIGjMCRAXtZUnA'; // Sarah Chen
     await grant(db, id, 'sarah.chen@company.com');
 
     const accept = await handleRequest(db, req(
@@ -123,7 +123,7 @@ test('invitationLifecycleStatesFor: declined carries both the'
 async () => {
     const db = await seededDb();
     const id = 'inv-lifecycle-declined';
-    const inviteeId = 'zyTbfbjcGEfbpCsNTP0XjX'; // Jessica Park
+    const inviteeId = 'zyGBRshxOnKHUfcyFRqowg'; // Jessica Park
     await grant(db, id, 'jessica.park@company.com');
 
     const decline = await handleRequest(db, req(
@@ -158,7 +158,7 @@ async () => {
         'PUT',
         '/organizations/' + ORGANIZATION_TWO
             + '/invitations/' + id,
-        await organizationToken('current', ORGANIZATION_TWO),
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO),
         {
             state: 'revoked',
             eventId: id + '-revoke',
@@ -204,7 +204,7 @@ test('invitationLifecycleStatesFor: a duplicate-grant\'s'
     // own header).
     const echoId = 'inv-lifecycle-phantom-echo';
     const admin = await organizationToken(
-        'current', ORGANIZATION_TWO,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
     );
     const echoRes = await handleRequest(db, req(
         'POST', '/organizations/' + ORGANIZATION_TWO

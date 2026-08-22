@@ -1067,15 +1067,15 @@ async function grantClientCredentials(
     const ticketBody = { exp: verdict.exp };
     const ticketPair = await formWritePair({
         method: 'PUT',
-        pathname: '/authentication/assertion-jtis/'
+        pathname: '/authentication/VOoVnUGteBpVZJqRqWZolw/'
             + verdict.jti,
         routePattern:
-            'authentication/assertion-jtis/:jti',
+            'authentication/VOoVnUGteBpVZJqRqWZolw/:jti',
         routeSegments: [
-            'authentication', 'assertion-jtis', ':jti',
+            'authentication', 'VOoVnUGteBpVZJqRqWZolw', ':jti',
         ],
         pathSegments: [
-            'authentication', 'assertion-jtis',
+            'authentication', 'VOoVnUGteBpVZJqRqWZolw',
             verdict.jti,
         ],
         headerFields: [],
@@ -1093,12 +1093,12 @@ async function grantClientCredentials(
             const locks = view.writeLocks;
             if (locks !== undefined) {
                 await locks.lockAddress(
-                    '/authentication/assertion-jtis/',
+                    '/authentication/VOoVnUGteBpVZJqRqWZolw/',
                     verdict.jti,
                 );
             }
             const existing = await messageStore(view).get(
-                '/authentication/assertion-jtis/',
+                '/authentication/VOoVnUGteBpVZJqRqWZolw/',
                 verdict.jti,
             );
             if (existing !== undefined) {

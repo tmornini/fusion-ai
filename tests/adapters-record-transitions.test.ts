@@ -108,7 +108,8 @@ async function seedWorkOrder(
     });
     // Genesis transition via the named op (states/:id
     // retired). pure-move instance shape; no claim release.
-    await ctx.POST('organizations/1/work-orders/' + id + '/transition', {
+    await ctx.POST('organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + id
+        + '/transition', {
         transitionEventId: 't-create-' + id,
         targetState: currentNodeId,
         release: null,
@@ -130,7 +131,8 @@ async function seedBinding(
 ): Promise<void> {
     const ctx = createRequestContext(db, await organizationToken());
     await ctx.PUT(
-        'organizations/1/flows/' + flowId + '/records/fr-' + flowId,
+        'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+            + '/records/czzvKtivgBDCjBzNShRbqA' + flowId,
         {
             flow_id: flowId,
             record_id: recordId,
@@ -168,7 +170,8 @@ async function seedFlowLink(
     // pair at this address, so the join must land through the
     // SAME wire-reachable PUT the live route serves.
     await ctx.PUT(
-        'organizations/1/flows/' + flowId + '/work-orders/fwo-' + workOrderId,
+        'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
+            + '/work-orders/dTTlFfPlPlCDQWBsshUFsA' + workOrderId,
         {
             flow_id: flowId,
             work_order_id: workOrderId,
@@ -197,7 +200,7 @@ async function seedAttribute(
     );
     try {
         await ctx.GET(
-            'organizations/1/record-types/'
+            'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + recordId,
         );
     } catch {
@@ -213,7 +216,7 @@ async function seedAttribute(
         });
     }
     await ctx.PUT(
-        'organizations/1/record-types/'
+        'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
         + recordId
         + '/attributes/'
         + id,
@@ -269,7 +272,7 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-step', [{
-                    attributeId: 'a-1',
+                    attributeId: 'UQBiHFcwJeCDSnmkPBoYRA',
                     mode: 'editable',
                     isRequired: true,
                 }]),
@@ -286,9 +289,11 @@ test(
         await seedWorkOrder(
             db, 'wo-1', flowGraph, 'n-step',
         );
-        await seedBinding(db, 'flow-1', 'rec-1');
-        await seedFlowLink(db, 'flow-1', 'wo-1');
-        await seedAttribute(db, 'a-1', 'rec-1', {
+        await seedBinding(db, 'aEsGMmBEFaVdWihhHXwCbw'
+            , 'rbfHGatkwQzGZJVXKJEeyw');
+        await seedFlowLink(db, 'aEsGMmBEFaVdWihhHXwCbw', 'wo-1');
+        await seedAttribute(db, 'UQBiHFcwJeCDSnmkPBoYRA'
+            , 'rbfHGatkwQzGZJVXKJEeyw', {
             name: 'Email',
         });
         const ctx = createRequestContext(db, await organizationToken());
@@ -316,7 +321,7 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-step', [{
-                    attributeId: 'a-1',
+                    attributeId: 'UQBiHFcwJeCDSnmkPBoYRA',
                     mode: 'editable',
                     isRequired: true,
                 }]),
@@ -330,9 +335,11 @@ test(
         await seedWorkOrder(
             db, 'wo-1', flowGraph, 'n-step',
         );
-        await seedBinding(db, 'flow-1', 'rec-1');
-        await seedFlowLink(db, 'flow-1', 'wo-1');
-        await seedAttribute(db, 'a-1', 'rec-1', {
+        await seedBinding(db, 'aEsGMmBEFaVdWihhHXwCbw'
+            , 'rbfHGatkwQzGZJVXKJEeyw');
+        await seedFlowLink(db, 'aEsGMmBEFaVdWihhHXwCbw', 'wo-1');
+        await seedAttribute(db, 'UQBiHFcwJeCDSnmkPBoYRA'
+            , 'rbfHGatkwQzGZJVXKJEeyw', {
             name: 'Email',
         });
         const ctx = createRequestContext(
@@ -362,7 +369,7 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-target', [{
-                    attributeId: 'a-1',
+                    attributeId: 'UQBiHFcwJeCDSnmkPBoYRA',
                     mode: 'editable',
                     isRequired: true,
                 }]),
@@ -375,9 +382,11 @@ test(
         await seedWorkOrder(
             db, 'wo-1', flowGraph, 'n-create',
         );
-        await seedBinding(db, 'flow-1', 'rec-1');
-        await seedFlowLink(db, 'flow-1', 'wo-1');
-        await seedAttribute(db, 'a-1', 'rec-1', {
+        await seedBinding(db, 'aEsGMmBEFaVdWihhHXwCbw'
+            , 'rbfHGatkwQzGZJVXKJEeyw');
+        await seedFlowLink(db, 'aEsGMmBEFaVdWihhHXwCbw', 'wo-1');
+        await seedAttribute(db, 'UQBiHFcwJeCDSnmkPBoYRA'
+            , 'rbfHGatkwQzGZJVXKJEeyw', {
             name: 'Email',
         });
         const ctx = createRequestContext(db, await organizationToken());
@@ -402,12 +411,12 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-step', [{
-                    attributeId: 'a-1',
+                    attributeId: 'UQBiHFcwJeCDSnmkPBoYRA',
                     mode: 'editable',
                     isRequired: true,
                 }]),
                 buildNode('n-target', [{
-                    attributeId: 'a-1',
+                    attributeId: 'UQBiHFcwJeCDSnmkPBoYRA',
                     mode: 'readonly',
                     isRequired: true,
                 }]),
@@ -420,9 +429,11 @@ test(
         await seedWorkOrder(
             db, 'wo-1', flowGraph, 'n-step',
         );
-        await seedBinding(db, 'flow-1', 'rec-1');
-        await seedFlowLink(db, 'flow-1', 'wo-1');
-        await seedAttribute(db, 'a-1', 'rec-1', {
+        await seedBinding(db, 'aEsGMmBEFaVdWihhHXwCbw'
+            , 'rbfHGatkwQzGZJVXKJEeyw');
+        await seedFlowLink(db, 'aEsGMmBEFaVdWihhHXwCbw', 'wo-1');
+        await seedAttribute(db, 'UQBiHFcwJeCDSnmkPBoYRA'
+            , 'rbfHGatkwQzGZJVXKJEeyw', {
             name: 'Email',
         });
         const ctx = createRequestContext(
@@ -432,7 +443,7 @@ test(
         // directly; no history fold.
         const out = await validateRecordTransition(
             ctx, 'wo-1', new Map(),
-            new Map([['a-1', 'me@example.com']]),
+            new Map([['UQBiHFcwJeCDSnmkPBoYRA', 'me@example.com']]),
         );
         assert.deepEqual(out, []);
     },
@@ -452,7 +463,7 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-step', [{
-                    attributeId: 'a-1',
+                    attributeId: 'UQBiHFcwJeCDSnmkPBoYRA',
                     mode: 'editable',
                     isRequired: true,
                 }]),
@@ -466,15 +477,17 @@ test(
         await seedWorkOrder(
             db, 'wo-1', flowGraph, 'n-step',
         );
-        await seedBinding(db, 'flow-1', 'rec-1');
-        await seedFlowLink(db, 'flow-1', 'wo-1');
-        await seedAttribute(db, 'a-1', 'rec-1', {
+        await seedBinding(db, 'aEsGMmBEFaVdWihhHXwCbw'
+            , 'rbfHGatkwQzGZJVXKJEeyw');
+        await seedFlowLink(db, 'aEsGMmBEFaVdWihhHXwCbw', 'wo-1');
+        await seedAttribute(db, 'UQBiHFcwJeCDSnmkPBoYRA'
+            , 'rbfHGatkwQzGZJVXKJEeyw', {
             name: 'Code',
         });
         const ctx = createRequestContext(db, await organizationToken());
         const out = await validateRecordTransition(
             ctx, 'wo-1',
-            new Map([['a-1', 'ABC']]),
+            new Map([['UQBiHFcwJeCDSnmkPBoYRA', 'ABC']]),
             new Map(),
         );
         assert.deepEqual(out, []);
@@ -494,7 +507,7 @@ test(
                     isCreate: true,
                 }),
                 buildNode('n-step', [{
-                    attributeId: 'a-1',
+                    attributeId: 'UQBiHFcwJeCDSnmkPBoYRA',
                     mode: 'editable',
                     isRequired: false,
                 }]),
@@ -508,9 +521,11 @@ test(
         await seedWorkOrder(
             db, 'wo-1', flowGraph, 'n-step',
         );
-        await seedBinding(db, 'flow-1', 'rec-1');
-        await seedFlowLink(db, 'flow-1', 'wo-1');
-        await seedAttribute(db, 'a-1', 'rec-1', {
+        await seedBinding(db, 'aEsGMmBEFaVdWihhHXwCbw'
+            , 'rbfHGatkwQzGZJVXKJEeyw');
+        await seedFlowLink(db, 'aEsGMmBEFaVdWihhHXwCbw', 'wo-1');
+        await seedAttribute(db, 'UQBiHFcwJeCDSnmkPBoYRA'
+            , 'rbfHGatkwQzGZJVXKJEeyw', {
             name: 'Email',
             attribute_type: 'text',
             constraints: [{
@@ -522,7 +537,7 @@ test(
         const ctx = createRequestContext(db, await organizationToken());
         const out = await validateRecordTransition(
             ctx, 'wo-1',
-            new Map([['a-1', 'not-an-email']]),
+            new Map([['UQBiHFcwJeCDSnmkPBoYRA', 'not-an-email']]),
             new Map(),
         );
         assert.equal(out.length, 1);

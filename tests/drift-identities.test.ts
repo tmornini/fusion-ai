@@ -292,7 +292,7 @@ test('identities collection wire equals derive (12 incl.'
     );
     assert.equal(derived.length, 12);
     const token = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
     const res = await handleRequest(
         db, req('GET', '/identities/', token),
@@ -371,13 +371,15 @@ test('identity-pii derive (11 seeded slots) fenced both'
 
     // -- THE THREE-WAY FENCE LEGS (gate 15) --
     const adminToken = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
 
-    // co-member leg: 'current' is a Stark member (seeded) with a
+    // co-member leg: 'XXZruirZyAOoRpNxaDnpSA' is a Stark member (seeded) with
+    // a
     // seeded pii row — visible from STARK on both planes.
     assert.equal(
-        await assertPiiFenceLeg(db, STARK_ORGANIZATION, 'current'),
+        await assertPiiFenceLeg(db, STARK_ORGANIZATION
+            , 'XXZruirZyAOoRpNxaDnpSA'),
         true,
     );
 
@@ -402,7 +404,7 @@ test('identity-pii derive (11 seeded slots) fenced both'
         'PUT',
         '/organizations/' + ORGANIZATION_TWO
             + '/members/' + foreignId,
-        await organizationToken('current', ORGANIZATION_TWO),
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO),
         { type: 'member', at: nowUtc() },
     ));
     assert.equal(
@@ -524,7 +526,7 @@ test('credentials fence-input fix: a mismatched write (address'
 + ' of org; the secret never rides either plane', async () => {
     const db = await seededDb();
     const adminToken = await organizationToken(
-        'current', STARK_ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION,
     );
     const identityA = 'cred-mismatch-a';
     const identityB = 'cred-mismatch-b';
@@ -548,7 +550,7 @@ test('credentials fence-input fix: a mismatched write (address'
         'PUT',
         '/organizations/' + ORGANIZATION_TWO
             + '/members/' + identityB,
-        await organizationToken('current', ORGANIZATION_TWO),
+        await organizationToken('XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO),
         { type: 'member', at: nowUtc() },
     ));
 
@@ -647,7 +649,7 @@ test('invitations enrichment parity: the personName/'
     ));
 
     const invitations = [
-        { id: 'inv-a', identity_id: 'current' },
+        { id: 'inv-a', identity_id: 'XXZruirZyAOoRpNxaDnpSA' },
         { id: 'inv-b', identity_id: eraseeId },
     ] as const;
 

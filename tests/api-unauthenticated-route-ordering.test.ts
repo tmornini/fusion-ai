@@ -28,7 +28,7 @@ test('no token + unknown nested path → 401', async () => {
     await seedAdminSchema(db);
     const res = await handleRequest(
         db,
-        new Request(`${BASE}/no-such-route/x1`),
+        new Request(`${BASE}/oRAKQvKtOmSHMZEjhEXaRw/x1`),
     );
     assert.equal(res.status, 401);
     const body = await res.json() as { error: string };

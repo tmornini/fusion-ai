@@ -52,8 +52,8 @@ async function setupMemDb(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedHumanMember(db, 'current', 'Demo User');
-    await seedHumanMember(db, 'm1', 'Member One');
+    await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
+    await seedHumanMember(db, 'mFNSxZqywTSMXhgUTdTqtA', 'Member One');
     const ctx = createRequestContext(db, await organizationToken());
     return { db, ctx };
 }
@@ -117,7 +117,7 @@ function buildNonTrivialGraph(): StoredGraph {
         nodes: [
             buildNode('start', { isCreate: true }),
             buildNode('mid', {
-                memberIds: ['m1'],
+                memberIds: ['mFNSxZqywTSMXhgUTdTqtA'],
                 attributes: [{
                     attributeId: 'attr-x',
                     mode: 'editable',
@@ -127,7 +127,7 @@ function buildNonTrivialGraph(): StoredGraph {
             buildNode('end', { isArchive: true }),
         ],
         edges: [
-            buildEdge('e1', 'start', 'mid'),
+            buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'start', 'mid'),
             buildEdge('e2', 'mid', 'end'),
         ],
     };
@@ -141,7 +141,7 @@ async function seedFlowWithGraph(
     await postFlowCreation(ctx, {
         flowId,
         linkId: flowId + '-link',
-        projectId: 'proj-1',
+        projectId: 'qfhFObbtDfxUZwEGxySBoQ',
         name: 'Reassembly Test Flow',
     });
     await putFlow(ctx, flowId, {
@@ -169,7 +169,8 @@ test(
         // GET must return the intended graph from the
         // document pair's graph field (pair-plane truth).
         const fetched =
-            await ctx.GET<FlowWithGraph>('organizations/1/flows/' + flowId);
+            await ctx.GET<FlowWithGraph>('organizations/'
+                + 'AjdvjuECVZEgZoFajaIEkg/flows/' + flowId);
         const got = asStoredGraph(
             fetched.graph, 'flow.graph',
         );
@@ -242,7 +243,7 @@ test(
         await postFlowCreation(ctx, {
             flowId,
             linkId: flowId + '-link',
-            projectId: 'proj-1',
+            projectId: 'qfhFObbtDfxUZwEGxySBoQ',
             name: 'Undo Test Flow',
         });
 
@@ -282,14 +283,16 @@ test(
         // graphDelta/revivals from CURRENT (advancedGraph) vs
         // TARGET, re-introducing what the advance dropped and
         // deleting what it added.
-        await ctx.POST('organizations/1/flows/' + flowId + '/undo', {
+        await ctx.POST('organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+            + flowId + '/undo', {
             eventId: 'undo-ev-1',
             at: nowUtc(),
         });
 
         // Step 5: GET must return the target (undone) graph.
         const fetched =
-            await ctx.GET<FlowWithGraph>('organizations/1/flows/' + flowId);
+            await ctx.GET<FlowWithGraph>('organizations/'
+                + 'AjdvjuECVZEgZoFajaIEkg/flows/' + flowId);
         const got = asStoredGraph(
             fetched.graph, 'flow.graph',
         );

@@ -18,7 +18,7 @@ import {
 // (parity-against-old-plane only) does not exercise.
 
 const BASE = 'http://localhost';
-const STARK_ORGANIZATION = '1';
+const STARK_ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 
 function req(
     method: string,
@@ -68,7 +68,7 @@ function putProject(
     stateEventId: string,
 ): Promise<Response> {
     return handleRequest(db, req(
-        'PUT', '/organizations/1/projects/' + id, token,
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/' + id, token,
         projectDocument(title, state, stateAt, stateEventId),
     ));
 }

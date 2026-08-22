@@ -24,7 +24,7 @@ import { seedSeat } from './root-admin-fixture.ts';
 // POSTs; a miss at this address is 404.
 
 const BASE = 'http://localhost';
-const ORGANIZATION_A = '1';
+const ORGANIZATION_A = 'AjdvjuECVZEgZoFajaIEkg';
 const ORGANIZATION_B = 'B';
 const AT = '2020-01-01T00:00:00.000000Z';
 
@@ -51,7 +51,7 @@ async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
     await seedOrganizationDocument(db, ORGANIZATION_B, 'Beta');
     const memBody = {
         organization_id: ORGANIZATION_B,
-        identity_id: 'current',
+        identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: AT,
     };
@@ -78,13 +78,14 @@ function graphJson(): Record<string, unknown> {
 test('foreign-org work-order claim is 404', async () => {
     const db = await twoOrganizationDb();
     const tokenA = await organizationToken(
-        'current', ORGANIZATION_A,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
     );
     const tokenB = await organizationToken(
-        'current', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
     );
     const created = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/wo-foreign-claim', tokenA, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + 'yCFjxREVDLjycQDxFIsqIg', tokenA, {
             display_id: 'abcd',
             flow_graph: graphJson(),
             position: 1,
@@ -95,7 +96,7 @@ test('foreign-org work-order claim is 404', async () => {
     const claimAt = nowUtc();
     const foreign = await handleRequest(db, req(
         'PUT',
-        '/organizations/B/work-orders/wo-foreign-claim/claim',
+        '/organizations/B/work-orders/yCFjxREVDLjycQDxFIsqIg/claim',
         tokenB, {
             claimEventId: generateIdentifier(),
             claimAt,
@@ -106,20 +107,21 @@ test('foreign-org work-order claim is 404', async () => {
     assert.equal(foreign.status, 404);
     assert.deepEqual(await foreign.json(), {
         error:
-            'Not found: work_orders/wo-foreign-claim',
+            'Not found: work_orders/yCFjxREVDLjycQDxFIsqIg',
     });
 });
 
 test('foreign-org work-order release is 404', async () => {
     const db = await twoOrganizationDb();
     const tokenA = await organizationToken(
-        'current', ORGANIZATION_A,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
     );
     const tokenB = await organizationToken(
-        'current', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
     );
     const created = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/wo-foreign-rel', tokenA, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + 'yDEYnDEKhTTMRnyKdusvCw', tokenA, {
             display_id: 'efgh',
             flow_graph: graphJson(),
             position: 2,
@@ -129,7 +131,7 @@ test('foreign-org work-order release is 404', async () => {
 
     const foreign = await handleRequest(db, req(
         'DELETE',
-        '/organizations/B/work-orders/wo-foreign-rel/claim',
+        '/organizations/B/work-orders/yDEYnDEKhTTMRnyKdusvCw/claim',
         tokenB,
     ));
     assert.equal(foreign.status, 404);
@@ -138,13 +140,14 @@ test('foreign-org work-order release is 404', async () => {
 test('foreign-org work-order transition is 404', async () => {
     const db = await twoOrganizationDb();
     const tokenA = await organizationToken(
-        'current', ORGANIZATION_A,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
     );
     const tokenB = await organizationToken(
-        'current', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
     );
     const created = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/wo-foreign-tx', tokenA, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + 'yHJmosJCPJCTxoRaPwKdQA', tokenA, {
             display_id: 'ijkl',
             flow_graph: graphJson(),
             position: 3,
@@ -154,7 +157,7 @@ test('foreign-org work-order transition is 404', async () => {
 
     const foreign = await handleRequest(db, req(
         'POST',
-        '/organizations/B/work-orders/wo-foreign-tx/transition',
+        '/organizations/B/work-orders/yHJmosJCPJCTxoRaPwKdQA/transition',
         tokenB,
         {
             transitionEventId: generateIdentifier(),
@@ -166,21 +169,21 @@ test('foreign-org work-order transition is 404', async () => {
     assert.equal(foreign.status, 404);
     assert.deepEqual(await foreign.json(), {
         error:
-            'Not found: work_orders/wo-foreign-tx',
+            'Not found: work_orders/yHJmosJCPJCTxoRaPwKdQA',
     });
 });
 
 test('foreign-org flow undo is 404', async () => {
     const db = await twoOrganizationDb();
     const tokenA = await organizationToken(
-        'current', ORGANIZATION_A,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
     );
     const tokenB = await organizationToken(
-        'current', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
     );
     const created = await handleRequest(db, req(
-        'POST', '/organizations/1/flows/', tokenA, {
-            id: 'flow-foreign-undo',
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', tokenA, {
+            id: 'aRKhwTupsfXtczSCmaJMGQ',
             flow: {
                 name: 'Foreign Undo',
                 is_locked: false,
@@ -191,7 +194,7 @@ test('foreign-org flow undo is 404', async () => {
             projectFlowId: 'pf-foreign-undo',
             projectFlow: {
                 project_id: 'proj-foreign-undo',
-                flow_id: 'flow-foreign-undo',
+                flow_id: 'aRKhwTupsfXtczSCmaJMGQ',
                 at: AT,
             },
             initialState: 'active',
@@ -210,7 +213,7 @@ test('foreign-org flow undo is 404', async () => {
 
     const foreign = await handleRequest(db, req(
         'POST',
-        '/organizations/B/flows/flow-foreign-undo/undo',
+        '/organizations/B/flows/aRKhwTupsfXtczSCmaJMGQ/undo',
         tokenB, {
             eventId: 'flow-foreign-undo-undo-ev',
             at: AT,
@@ -218,7 +221,7 @@ test('foreign-org flow undo is 404', async () => {
     ));
     assert.equal(foreign.status, 404);
     assert.deepEqual(await foreign.json(), {
-        error: 'Not found: flows/flow-foreign-undo',
+        error: 'Not found: flows/aRKhwTupsfXtczSCmaJMGQ',
     });
 });
 

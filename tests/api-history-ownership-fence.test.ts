@@ -74,7 +74,7 @@ async function seed(): Promise<{
     // Own-org idea document — family-history reads target it.
     const token = await organizationToken('memberA', 'A');
     const idea = await handleRequest(db, req(
-        'PUT', '/organizations/A/ideas/idea-a', token, {
+        'PUT', '/organizations/A/ideas/gfwcurTzrfssEsWJyNeUyQ', token, {
             title: 'Idea A',
             position: 1,
             problem_statement: 'p',
@@ -92,7 +92,8 @@ async function seed(): Promise<{
 test('GET /organizations/:id/ideas/:id/versions/ is 200', async () => {
     const { db, token } = await seed();
     const res = await handleRequest(db, req(
-        'GET', '/organizations/A/ideas/idea-a/versions/', token,
+        'GET', '/organizations/A/ideas/gfwcurTzrfssEsWJyNeUyQ/versions/'
+            , token,
     ));
     assert.equal(res.status, 200);
     const rows = await res.json() as {
@@ -100,7 +101,8 @@ test('GET /organizations/:id/ideas/:id/versions/ is 200', async () => {
         state: string;
     }[];
     assert.ok(
-        rows.some(r => r.id === 'idea-a' && r.state === 'active'),
+        rows.some(r => r.id === 'gfwcurTzrfssEsWJyNeUyQ'
+            && r.state === 'active'),
         'own-org versions list the idea collection item',
     );
 });
@@ -118,7 +120,7 @@ async () => {
     });
     const tokenB = await organizationToken('memberB', 'B');
     const foreignIdea = await handleRequest(db, req(
-        'PUT', '/organizations/B/ideas/idea-b', tokenB, {
+        'PUT', '/organizations/B/ideas/glHawNZBNrzAmZIaCDGpJQ', tokenB, {
             title: 'Idea B',
             position: 1,
             problem_statement: 'p',
@@ -131,13 +133,14 @@ async () => {
     ));
     assert.equal(foreignIdea.status, 201);
     const res = await handleRequest(db, req(
-        'GET', '/organizations/A/ideas/idea-b/versions/', token,
+        'GET', '/organizations/A/ideas/glHawNZBNrzAmZIaCDGpJQ/versions/'
+            , token,
     ));
     assert.equal(res.status, 404);
     assert.deepEqual(
         await res.json(),
         {
-            error: 'Not found: ideas/idea-b',
+            error: 'Not found: ideas/glHawNZBNrzAmZIaCDGpJQ',
         },
     );
 });

@@ -34,7 +34,7 @@ import { seedSeat } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
-const ORGANIZATION = '1';
+const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const FLOW_ID = 'flow-req-exit-1';
 const WO_ID = 'wo-req-exit-1';
 const WO_FREE = 'wo-req-exit-free';
@@ -54,9 +54,11 @@ const ATTRS = TYPE_DETAIL + '/attributes/';
 const INSTANCES = TYPE_DETAIL + '/instances/';
 const INSTANCE_DETAIL = INSTANCES + INSTANCE_ID;
 const TRANSITION =
-    '/organizations/1/work-orders/' + WO_ID + '/transition';
+    '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
+        + '/transition';
 const TRANSITION_FREE =
-    '/organizations/1/work-orders/' + WO_FREE + '/transition';
+    '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_FREE
+        + '/transition';
 
 function req(
     method: string,
@@ -217,7 +219,7 @@ async function seedMember1(
 ): Promise<void> {
     const memBody = {
         organization_id: ORGANIZATION,
-        identity_id: 'member1',
+        identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
         at: AT,
     };
@@ -236,7 +238,7 @@ async function seedFlow(
     token: string,
 ): Promise<void> {
     const res = await handleRequest(db, req(
-        'POST', '/organizations/1/flows/', token, {
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token, {
             id: FLOW_ID,
             flow: {
                 name: 'Req Exit Flow',
@@ -274,7 +276,8 @@ async function seedWorkOrder(
     flowGraph: Record<string, unknown>,
 ): Promise<void> {
     const put = await handleRequest(db, req(
-        'PUT', '/organizations/1/work-orders/' + woId, token, {
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+            , token, {
             display_id: 'abcd',
             flow_graph: flowGraph,
             position: 1,
@@ -283,7 +286,8 @@ async function seedWorkOrder(
     assert.equal(put.status, 201);
     const join = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/flows/' + FLOW_ID + '/work-orders/' + fwoId,
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID
+            + '/work-orders/' + fwoId,
         token,
         {
             flow_id: FLOW_ID,
@@ -358,7 +362,8 @@ async function seedFlowTypeJoin(
 ): Promise<void> {
     const put = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/flows/' + FLOW_ID + '/records/' + FR_ID,
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID + '/records/'
+            + '' + FR_ID,
         token,
         {
             id: FR_ID,
@@ -377,7 +382,8 @@ async function bindInstance(
 ): Promise<void> {
     const res = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/work-orders/' + woId + '/binding',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+            + '/binding',
         token,
         {
             instance_id: INSTANCE_ID,
@@ -396,7 +402,8 @@ async function placeOnStep(
 ): Promise<void> {
     const res = await handleRequest(db, req(
         'POST',
-        '/organizations/1/work-orders/' + woId + '/transition',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
+            + '/transition',
         token,
         pureMoveBody(eventId, 'n-step'),
     ));
@@ -413,10 +420,10 @@ async function baseSeed(): Promise<{
     await seedCurrentMember(db);
     await seedMember1(db);
     const adminToken = await organizationToken(
-        'current', ORGANIZATION,
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION,
     );
     const memberToken = await organizationToken(
-        'member1', ORGANIZATION,
+        'nkgaOHZISTQrILTfPThWCA', ORGANIZATION,
     );
     await seedFlow(db, adminToken);
     await seedLiveType(db, adminToken);

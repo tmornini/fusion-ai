@@ -37,7 +37,7 @@ import { seedSeat } from './root-admin-fixture.ts';
 // write authorizer 403s a foreign path org.
 
 const AT = '2026-01-01T00:00:00.000000Z';
-const SARAH_ID = 'LhfaUUf4IumVsCSGB4xjdK';
+const SARAH_ID = 'MQFcPtrZPIGjMCRAXtZUnA';
 const SEAT_DETAIL =
     'organizations/:organization-id/members/'
     + ':identity-id';
@@ -66,12 +66,12 @@ test('accept writes the seat at the invitation'
 + ' organization, copying Operation-ID', async () => {
     const db = await seededMockDb();
     const admin = await organizationToken(
-        'current', ORGANIZATION_TWO);
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO);
     const grant = await handleRequest(db, req(
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
-            invitationId: 'inv-seat-accept',
+            invitationId: 'ixyIgeiKspwtanaBXyAGpg',
             grantEventId: 'inv-seat-accept-grant',
             grantAt: '2026-06-05T00:00:00.000000Z',
         },
@@ -81,7 +81,7 @@ test('accept writes the seat at the invitation'
     const accept = await handleRequest(db, req(
         'PUT',
         '/identities/' + SARAH_ID
-            + '/invitations/inv-seat-accept',
+            + '/invitations/ixyIgeiKspwtanaBXyAGpg',
         await organizationToken(
             SARAH_ID, ORGANIZATION_TWO),
         {
@@ -127,33 +127,34 @@ test('mint bakes claim roles from a seat, not a'
 + ' memberships/:id row', async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
-    await seedOrganizationDocument(db, '1', 'Stark');
+    await seedOrganizationDocument(db, 'AjdvjuECVZEgZoFajaIEkg', 'Stark');
     const body = { type: 'admin', at: AT };
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/organizations/1/members/current',
+        pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+            + 'XXZruirZyAOoRpNxaDnpSA',
         routePattern: SEAT_DETAIL,
         routeSegments: SEAT_DETAIL.split('/'),
         pathSegments: [
-            'organizations', '1', 'members',
-            'current',
+            'organizations', 'AjdvjuECVZEgZoFajaIEkg', 'members',
+            'XXZruirZyAOoRpNxaDnpSA',
         ],
         headerFields: [],
         body,
         requesterIdentityId: SYSTEM_MEMBER_ID,
         requestAt: nowUtc(),
-        organization: '1',
+        organization: 'AjdvjuECVZEgZoFajaIEkg',
         responseStatus: 200,
         responseBody: {
-            id: 'current',
-            organization_id: '1',
-            identity_id: 'current',
+            id: 'XXZruirZyAOoRpNxaDnpSA',
+            organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+            identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             ...body,
         },
         operationId: TEST_OPERATION_ID,
     });
     await postMembershipDocumentOp(
-        db, 'current', body, SYSTEM_MEMBER_ID, pair,
+        db, 'XXZruirZyAOoRpNxaDnpSA', body, SYSTEM_MEMBER_ID, pair,
     );
 
     const tokenRequest = new Request(
@@ -165,10 +166,10 @@ test('mint bakes claim roles from a seat, not a'
             body: JSON.stringify({
                 grant_type: 'token-exchange',
                 subject_token: await devToken(
-                    'current'),
+                    'XXZruirZyAOoRpNxaDnpSA'),
                 actor_token: await devToken(
-                    'current'),
-                organization: '1',
+                    'XXZruirZyAOoRpNxaDnpSA'),
+                organization: 'AjdvjuECVZEgZoFajaIEkg',
             }),
         },
     );
@@ -180,19 +181,22 @@ test('mint bakes claim roles from a seat, not a'
     };
     const claims = decodeAccessToken(
         payload.access_token);
-    assert.deepEqual(claims.roles, ['admin:1']);
-    assert.deepEqual(claims.organizations, ['1']);
+    assert.deepEqual(
+        claims.roles,
+        ['admin:AjdvjuECVZEgZoFajaIEkg'],
+    );
+    assert.deepEqual(claims.organizations, ['AjdvjuECVZEgZoFajaIEkg']);
 });
 
 test('write authorizer 403s a foreign seat path',
 async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
-    await seedOrganizationDocument(db, '1', 'Alpha');
+    await seedOrganizationDocument(db, 'AjdvjuECVZEgZoFajaIEkg', 'Alpha');
     await seedOrganizationDocument(db, 'B', 'Beta');
     const memBody = {
         organization_id: 'B',
-        identity_id: 'current',
+        identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: AT,
     };
@@ -204,10 +208,10 @@ async () => {
         String(memBody['at'] ?? memBody.at),
     );
     const tokenB = await organizationToken(
-        'current', 'B');
+        'XXZruirZyAOoRpNxaDnpSA', 'B');
     const foreign = await handleRequest(db, req(
         'PUT',
-        '/organizations/1/members/someone',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/members/someone',
         tokenB, { type: 'member', at: AT },
     ));
     assert.equal(foreign.status, 403);
@@ -261,9 +265,9 @@ async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const admin = await organizationToken(
-        'current', '1');
+        'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg');
     const identity = 'seat-put';
-    const path = '/organizations/1/members/'
+    const path = '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
         + identity;
     const body = { type: 'member', at: AT };
     const created = await handleRequest(db, req(
@@ -276,13 +280,13 @@ async () => {
     assert.equal(got.status, 200);
     assert.deepEqual(await got.json(), {
         id: identity,
-        organization_id: '1',
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         identity_id: identity,
         ...body,
     });
     assert.deepEqual(
         await mintedOrganizations(db, identity),
-        ['1'],
+        ['AjdvjuECVZEgZoFajaIEkg'],
     );
     const removed = await handleRequest(db, req(
         'DELETE', path, admin,

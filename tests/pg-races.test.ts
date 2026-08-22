@@ -35,8 +35,8 @@ import {
 const POSTGRES_URL = process.env['POSTGRES_URL'];
 const IDENT = /^[A-Za-z_][A-Za-z0-9_]*$/;
 const AT = '2026-01-01T00:00:00.000000Z';
-const IDEA_PREFIX = '/organizations/1/ideas/';
-const FLOW_PREFIX = '/organizations/1/flows/';
+const IDEA_PREFIX = '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/';
+const FLOW_PREFIX = '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/';
 
 function schemaName(): string {
     const base = process.env['SCHEMA_NAME']
@@ -241,13 +241,15 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
                 `;
                 raced = Promise.all([
                     handleRequest(db, req(
-                        'PUT', '/organizations/1/flows/' + id, token,
+                        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                            + '' + id, token,
                         flowDocument('A', id + '-a'),
                         undefined,
                         generateIdentifier(),
                     )),
                     handleRequest(db, req(
-                        'PUT', '/organizations/1/flows/' + id, token,
+                        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                            + '' + id, token,
                         flowDocument('B', id + '-b'),
                         undefined,
                         generateIdentifier(),
@@ -280,11 +282,13 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         const token = await organizationToken();
         const id = 'race-match';
         const created = await handleRequest(db, req(
-            'POST', '/organizations/1/flows/', token, flowCreate(id),
+            'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token
+                , flowCreate(id),
         ));
         assert.equal(created.status, 201);
         const live = await handleRequest(
-            db, req('GET', '/organizations/1/flows/' + id, token),
+            db, req('GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                + id, token),
         );
         assert.equal(live.status, 200);
         const etag = live.headers.get('ETag');
@@ -316,13 +320,15 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
                 `;
                 raced = Promise.all([
                     handleRequest(db, req(
-                        'PUT', '/organizations/1/flows/' + id, token,
+                        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                            + '' + id, token,
                         flowDocument('Left', id + '-l'),
                         { 'if-match': etag },
                         generateIdentifier(),
                     )),
                     handleRequest(db, req(
-                        'PUT', '/organizations/1/flows/' + id, token,
+                        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                            + '' + id, token,
                         flowDocument('Right', id + '-r'),
                         { 'if-match': etag },
                         generateIdentifier(),
@@ -354,18 +360,20 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         const op = generateIdentifier();
         const [left, right] = await Promise.all([
             handleRequest(db, req(
-                'PUT', '/organizations/1/ideas/race-dedup', token,
+                'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                    + 'rZrIDSkakoKzerGHZzJnJw', token,
                 body, undefined, op,
             )),
             handleRequest(db, req(
-                'PUT', '/organizations/1/ideas/race-dedup', token,
+                'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                    + 'rZrIDSkakoKzerGHZzJnJw', token,
                 body, undefined, op,
             )),
         ]);
         assert.equal(left.status, 201);
         assert.equal(right.status, 201);
         assert.equal(
-            await pairsAt(db, IDEA_PREFIX, 'race-dedup'),
+            await pairsAt(db, IDEA_PREFIX, 'rZrIDSkakoKzerGHZzJnJw'),
             1,
         );
     });

@@ -21,7 +21,7 @@ import {
 // organizations/members/identities' GLOBAL plane, so there is no
 // single flat prefix to scan for "every membership an identity
 // holds" — an identity can join MULTIPLE organizations at once
-// (the seed's own 'current', both STARK and ORGANIZATION_TWO).
+// (the seed's own 'XXZruirZyAOoRpNxaDnpSA', both STARK and ORGANIZATION_TWO).
 // deriveMembershipsForIdentity is therefore ENUMERATE-THEN-PROBE:
 // deriveOrganizations(db) (api/derive-organizations.ts) enumerates
 // every LIVE organization, then this walks each organization's

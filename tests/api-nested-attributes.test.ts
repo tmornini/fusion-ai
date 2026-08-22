@@ -38,7 +38,7 @@ import { seedSeat } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
-const ORGANIZATION = '1';
+const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const TYPE_ID = 'rt-attr-1';
 const ATTR_ID = 'attr-nested-1';
 const INSTANCE_ID = 'inst-attr-restrict-1';
@@ -106,17 +106,17 @@ async function adminDb(): Promise<{
     await seedAdminSchema(db);
     await seedMembershipPair(db, 'm-member1', {
         organization_id: ORGANIZATION,
-        identity_id: 'member1',
+        identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
         at: AT,
     });
     return {
         db,
         adminToken: await organizationToken(
-            'current', ORGANIZATION,
+            'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION,
         ),
         memberToken: await organizationToken(
-            'member1', ORGANIZATION,
+            'nkgaOHZISTQrILTfPThWCA', ORGANIZATION,
         ),
     };
 }
@@ -328,7 +328,7 @@ async () => {
         'PUT', ATTR_DETAIL, adminToken, attrCore(),
     ));
     const flowCreate = await handleRequest(db, req(
-        'POST', '/organizations/1/flows/', adminToken, {
+        'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', adminToken, {
             id: 'flow-attr-restrict-1',
             flow: {
                 name: 'Intake',

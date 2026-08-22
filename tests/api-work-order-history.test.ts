@@ -84,7 +84,7 @@ function flowGraph(): Record<string, unknown> {
         ],
         edges: [
             {
-                id: 'e1', name: '',
+                id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
                 fromNodeId: 'n-start', toNodeId: 'n-middle',
             },
             {
@@ -148,7 +148,8 @@ async function seededChainDb(): Promise<MemoryDbAdapter> {
 
     const created = await handleRequest(
         db,
-        req('POST', '/organizations/1/work-orders/', DEV_TOKEN, createBody()),
+        req('POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            , DEV_TOKEN, createBody()),
     );
     assert.equal(created.status, 201);
 
@@ -184,7 +185,7 @@ async function seededChainDb(): Promise<MemoryDbAdapter> {
         pathSegments,
         headerFields: [],
         body: transitionBody,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: nowUtc(),
         organization: STARK_ORGANIZATION,
         responseStatus: 204,
@@ -193,14 +194,15 @@ async function seededChainDb(): Promise<MemoryDbAdapter> {
     });
     await postWorkOrderTransitionOp(
         db, WORK_ORDER_ID, transitionBody,
-        'current', undefined, [], pair,
+        'XXZruirZyAOoRpNxaDnpSA', undefined, [], pair,
     );
 
     const release = await handleRequest(
         db,
         req(
             'DELETE',
-            '/organizations/1/work-orders/' + WORK_ORDER_ID + '/claim',
+            '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+                + WORK_ORDER_ID + '/claim',
             DEV_TOKEN,
         ),
     );
@@ -219,7 +221,8 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/work-orders/' + WORK_ORDER_ID + '/history',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+                    + WORK_ORDER_ID + '/history',
                 DEV_TOKEN,
             ),
         );
@@ -262,7 +265,7 @@ test(
         // Every row names this work order.
         for (const row of rows) {
             assert.equal(row.entity_id, WORK_ORDER_ID);
-            assert.equal(row.member_id, 'current');
+            assert.equal(row.member_id, 'XXZruirZyAOoRpNxaDnpSA');
             assert.ok(Array.isArray(row.field_values));
         }
 
@@ -287,7 +290,7 @@ test(
         const db = await seededMockDb();
         const foreignId = buildWorkOrders()[0]!.id;
         const tokenTwo = await organizationToken(
-            'current', ORGANIZATION_TWO,
+            'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
         );
         const res = await handleRequest(
             db,
@@ -317,12 +320,13 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        const missingId = 'no-such-work-order';
+        const missingId = 'oYnbiWXzroVnyolOhmkBIQ';
         const res = await handleRequest(
             db,
             req(
                 'GET',
-                '/organizations/1/work-orders/' + missingId + '/history',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+                    + missingId + '/history',
                 DEV_TOKEN,
             ),
         );
@@ -344,7 +348,8 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/1/work-orders/' + WORK_ORDER_ID + '/history',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+                    + WORK_ORDER_ID + '/history',
             ),
         );
         assert.equal(res.status, 401);
@@ -357,14 +362,14 @@ test(
 // per-item GET work-orders/:id/history.
 
 test(
-    'GET organizations/1/work-orders/history is 404',
+    'GET organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/history is 404',
     async () => {
         const db = await seededChainDb();
         const collection = await handleRequest(
             db,
             req(
                 'GET',
-                '/organizations/1/work-orders/history',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/history',
                 DEV_TOKEN,
             ),
         );
@@ -376,7 +381,7 @@ test(
             emptyDb,
             req(
                 'GET',
-                '/organizations/1/work-orders/history',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/history',
                 DEV_TOKEN,
             ),
         );

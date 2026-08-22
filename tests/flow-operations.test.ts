@@ -69,7 +69,7 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 
-const FLOW_ID = 'flow-1';
+const FLOW_ID = 'aEsGMmBEFaVdWihhHXwCbw';
 
 // -- Builders ---------------------------------
 
@@ -208,7 +208,7 @@ async function setupFlow(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedHumanMember(db, 'current', 'Demo User');
+    await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
     const ctx = createRequestContext(db, DEV_TOKEN);
     await postFlowCreation(ctx, {
         flowId: FLOW_ID,
@@ -221,7 +221,9 @@ async function setupFlow(): Promise<{
 
 // A db with NO flow row: commitFlowMutation's / putFlow's own
 // baseline read (buildFlowPutBody's ctx.GETWithEtag)
-// does ctx.GET('organizations/1/flows/flow-1') which 404s, driving the catch
+// does
+// ctx.GET('organizations/AjdvjuECVZEgZoFajaIEkg/flows/aEsGMmBEFaVdWihhHXwCbw'
+// ) which 404s, driving the catch
 // → failOp(...).
 async function setupNoFlow(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
@@ -234,7 +236,7 @@ async function persistedGraph(
 ): Promise<StoredGraph> {
     const flow = await createRequestContext(db, DEV_TOKEN)
         .GET<{ graph: Record<string, unknown> }>(
-            'organizations/1/flows/' + FLOW_ID,
+            'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID,
         );
     return flow.graph as unknown as StoredGraph;
 }
@@ -407,7 +409,7 @@ test(
         const { db } = await setupFlow();
         const snap = snapFrom(buildGraph(
             [buildNode('a'), buildNode('b')],
-            [buildEdge('e1', 'a', 'b')],
+            [buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'a', 'b')],
         ));
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, 'a', 'b',
@@ -428,7 +430,7 @@ test(
                 buildNode('s', { isCreate: true }),
                 buildNode('a'), buildNode('b'),
             ],
-            [buildEdge('e1', 's', 'a')],
+            [buildEdge('YiJPbufDpkyrZcZCYbUJpg', 's', 'a')],
         ));
         const op = await performAddEdge(
             createRequestContext(db, DEV_TOKEN), snap, 's', 'b',
@@ -558,7 +560,7 @@ test(
                 buildNode('s', { isCreate: true }),
                 buildNode('a'),
             ],
-            [buildEdge('e1', 's', 'a')],
+            [buildEdge('YiJPbufDpkyrZcZCYbUJpg', 's', 'a')],
         ));
         const op = await performAddNodeAtPosition(
             createRequestContext(db, DEV_TOKEN), snap, 's', 0, 0,
@@ -674,12 +676,12 @@ test(
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph(
             [buildNode('a'), buildNode('b')],
-            [buildEdge('e1', 'a', 'b')],
+            [buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'a', 'b')],
         ));
         const op =
             await performDeleteSelectedNodes(
                 createRequestContext(db, DEV_TOKEN),
-                withEdgeSelection(base, 'e1'),
+                withEdgeSelection(base, 'YiJPbufDpkyrZcZCYbUJpg'),
             );
         assert.equal(op.kind, 'noop');
     },
@@ -736,16 +738,16 @@ test(
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph(
             [buildNode('a'), buildNode('b')],
-            [buildEdge('e1', 'a', 'b')],
+            [buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'a', 'b')],
         ));
         const op =
             await performDeleteSelectedEdge(
                 createRequestContext(db, DEV_TOKEN),
-                withEdgeSelection(base, 'e1'),
+                withEdgeSelection(base, 'YiJPbufDpkyrZcZCYbUJpg'),
             );
         assert.equal(op.kind, 'ok');
         if (op.kind !== 'ok') return;
-        assert.equal(op.edgeId, 'e1');
+        assert.equal(op.edgeId, 'YiJPbufDpkyrZcZCYbUJpg');
         assert.equal(op.advanceHistory, true);
         const g = await persistedGraph(db);
         assert.equal(g.edges.length, 0);
@@ -759,13 +761,13 @@ test(
         const { db } = await setupFlow();
         const base = snapFrom(buildGraph(
             [buildNode('a'), buildNode('b')],
-            [buildEdge('e1', 'a', 'b')],
+            [buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'a', 'b')],
         ));
         const op =
             await performDeleteSelectedEdge(
                 createRequestContext(db, DEV_TOKEN),
                 locked(
-                    withEdgeSelection(base, 'e1'),
+                    withEdgeSelection(base, 'YiJPbufDpkyrZcZCYbUJpg'),
                 ),
             );
         assert.equal(op.kind, 'fail');
@@ -796,13 +798,13 @@ test(
         const db = await setupNoFlow();
         const base = snapFrom(buildGraph(
             [buildNode('a'), buildNode('b')],
-            [buildEdge('e1', 'a', 'b')],
+            [buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'a', 'b')],
         ));
         const { result: op } = await captureConsole(
             'error',
             () => performDeleteSelectedEdge(
                 createRequestContext(db, DEV_TOKEN),
-                withEdgeSelection(base, 'e1'),
+                withEdgeSelection(base, 'YiJPbufDpkyrZcZCYbUJpg'),
             ),
         );
         const settled = await op;
@@ -828,13 +830,13 @@ test(
         const op = await performAddAttributeRef(
             createRequestContext(db, DEV_TOKEN),
             withNodeSelection(base, 'a'),
-            'attr-1', 'editable', true,
+            'VPckAwjJsTGCEkKaOOGRGw', 'editable', true,
         );
         assert.equal(op.kind, 'ok');
         if (op.kind !== 'ok') return;
         assert.equal(op.nodeId, 'a');
         assert.equal(
-            op.ref.attributeId, 'attr-1',
+            op.ref.attributeId, 'VPckAwjJsTGCEkKaOOGRGw',
         );
         assert.equal(op.ref.mode, 'editable');
         assert.equal(op.ref.isRequired, true);
@@ -852,7 +854,7 @@ test(
         const op = await performAddAttributeRef(
             createRequestContext(db, DEV_TOKEN),
             locked(withNodeSelection(base, 'a')),
-            'attr-1', 'editable', false,
+            'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
         assert.equal(op.kind, 'fail');
     },
@@ -868,13 +870,13 @@ test(
         ]));
         const noneOp = await performAddAttributeRef(
             createRequestContext(db, DEV_TOKEN), withNoSelection(base),
-            'attr-1', 'editable', false,
+            'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
         assert.equal(noneOp.kind, 'noop');
         const manyOp = await performAddAttributeRef(
             createRequestContext(db, DEV_TOKEN),
             withNodeSelection(base, 'a', 'b'),
-            'attr-1', 'editable', false,
+            'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
         assert.equal(manyOp.kind, 'noop');
     },
@@ -891,7 +893,7 @@ test(
         const op = await performAddAttributeRef(
             createRequestContext(db, DEV_TOKEN),
             withNodeSelection(base, 'ghost'),
-            'attr-1', 'editable', false,
+            'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
         );
         assert.equal(op.kind, 'noop');
     },
@@ -910,7 +912,7 @@ test(
             () => performAddAttributeRef(
                 createRequestContext(db, DEV_TOKEN),
                 withNodeSelection(base, 'a'),
-                'attr-1', 'editable', false,
+                'VPckAwjJsTGCEkKaOOGRGw', 'editable', false,
             ),
         );
         const settled = await op;
@@ -933,19 +935,19 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1'),
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw'),
                 ],
             }),
         ]));
         const op = await performRemoveAttributeRef(
             createRequestContext(db, DEV_TOKEN),
             withNodeSelection(base, 'a'),
-            'attr-1',
+            'VPckAwjJsTGCEkKaOOGRGw',
         );
         assert.equal(op.kind, 'ok');
         if (op.kind !== 'ok') return;
         assert.equal(op.nodeId, 'a');
-        assert.equal(op.attributeId, 'attr-1');
+        assert.equal(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
         assert.equal(op.advanceHistory, true);
     },
 );
@@ -957,14 +959,14 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1'),
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw'),
                 ],
             }),
         ]));
         const op = await performRemoveAttributeRef(
             createRequestContext(db, DEV_TOKEN),
             locked(withNodeSelection(base, 'a')),
-            'attr-1',
+            'VPckAwjJsTGCEkKaOOGRGw',
         );
         assert.equal(op.kind, 'fail');
     },
@@ -978,13 +980,13 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1'),
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw'),
                 ],
             }),
         ]));
         const op = await performRemoveAttributeRef(
             createRequestContext(db, DEV_TOKEN),
-            withNoSelection(base), 'attr-1',
+            withNoSelection(base), 'VPckAwjJsTGCEkKaOOGRGw',
         );
         assert.equal(op.kind, 'noop');
     },
@@ -998,7 +1000,7 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1'),
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw'),
                 ],
             }),
         ]));
@@ -1007,7 +1009,7 @@ test(
             () => performRemoveAttributeRef(
                 createRequestContext(db, DEV_TOKEN),
                 withNodeSelection(base, 'a'),
-                'attr-1',
+                'VPckAwjJsTGCEkKaOOGRGw',
             ),
         );
         const settled = await op;
@@ -1030,7 +1032,7 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1', {
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw', {
                         mode: 'editable',
                     }),
                 ],
@@ -1039,12 +1041,12 @@ test(
         const op = await performUpdateAttributeMode(
             createRequestContext(db, DEV_TOKEN),
             withNodeSelection(base, 'a'),
-            'attr-1', 'readonly',
+            'VPckAwjJsTGCEkKaOOGRGw', 'readonly',
         );
         assert.equal(op.kind, 'ok');
         if (op.kind !== 'ok') return;
         assert.equal(op.nodeId, 'a');
-        assert.equal(op.attributeId, 'attr-1');
+        assert.equal(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
         assert.equal(op.mode, 'readonly');
         assert.equal(op.advanceHistory, true);
     },
@@ -1057,14 +1059,14 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1'),
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw'),
                 ],
             }),
         ]));
         const op = await performUpdateAttributeMode(
             createRequestContext(db, DEV_TOKEN),
             locked(withNodeSelection(base, 'a')),
-            'attr-1', 'readonly',
+            'VPckAwjJsTGCEkKaOOGRGw', 'readonly',
         );
         assert.equal(op.kind, 'fail');
     },
@@ -1078,13 +1080,13 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1'),
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw'),
                 ],
             }),
         ]));
         const op = await performUpdateAttributeMode(
             createRequestContext(db, DEV_TOKEN), withNoSelection(base),
-            'attr-1', 'readonly',
+            'VPckAwjJsTGCEkKaOOGRGw', 'readonly',
         );
         assert.equal(op.kind, 'noop');
     },
@@ -1100,7 +1102,7 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1', {
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw', {
                         isRequired: false,
                     }),
                 ],
@@ -1110,12 +1112,12 @@ test(
             await performUpdateAttributeRequired(
                 createRequestContext(db, DEV_TOKEN),
                 withNodeSelection(base, 'a'),
-                'attr-1', true,
+                'VPckAwjJsTGCEkKaOOGRGw', true,
             );
         assert.equal(op.kind, 'ok');
         if (op.kind !== 'ok') return;
         assert.equal(op.nodeId, 'a');
-        assert.equal(op.attributeId, 'attr-1');
+        assert.equal(op.attributeId, 'VPckAwjJsTGCEkKaOOGRGw');
         assert.equal(op.isRequired, true);
         assert.equal(op.advanceHistory, true);
     },
@@ -1129,7 +1131,7 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1'),
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw'),
                 ],
             }),
         ]));
@@ -1139,7 +1141,7 @@ test(
                 locked(
                     withNodeSelection(base, 'a'),
                 ),
-                'attr-1', true,
+                'VPckAwjJsTGCEkKaOOGRGw', true,
             );
         assert.equal(op.kind, 'fail');
     },
@@ -1153,14 +1155,14 @@ test(
         const base = snapFrom(buildGraph([
             buildNode('a', {
                 attributes: [
-                    buildAttributeRef('attr-1'),
+                    buildAttributeRef('VPckAwjJsTGCEkKaOOGRGw'),
                 ],
             }),
         ]));
         const op =
             await performUpdateAttributeRequired(
                 createRequestContext(db, DEV_TOKEN), withNoSelection(base),
-                'attr-1', true,
+                'VPckAwjJsTGCEkKaOOGRGw', true,
             );
         assert.equal(op.kind, 'noop');
     },
@@ -1485,7 +1487,8 @@ test(
             buildNode('c'),
         ]));
         const faulting = faultingPostCtx(
-            ctx, 'organizations/1/flows/' + FLOW_ID + '/undo',
+            ctx, 'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID
+                + '/undo',
         );
         const { result: op } = await captureConsole(
             'error',
@@ -1548,7 +1551,7 @@ test(
             }),
         );
         const faulting = faultingPutCtx(
-            ctx, 'organizations/1/flows/' + FLOW_ID,
+            ctx, 'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + FLOW_ID,
         );
         const { result: op } = await captureConsole(
             'error',

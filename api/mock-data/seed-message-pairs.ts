@@ -49,7 +49,7 @@
 // member-document invocation (the shared members/:id address
 // every member kind writes through) and a detail-document
 // invocation (ai-members/:id or human-members/:id) per seeded
-// member. Bootstrap's lone 'current' human-member create forms
+// member. Bootstrap's lone 'XXZruirZyAOoRpNxaDnpSA' human-member create forms
 // this SAME triple via formBootstrapMessagePair. Memberships
 // closed the LAST whole-slice seed deferral (Phase 8 Task 5):
 // each seeded membership row (16 — 11 human-member-organization
@@ -67,7 +67,8 @@
 // 5): a fourth invocation forms the identities/:id document pair
 // — a human member's own identity row, which an AI member never
 // has (finding 10), so the ai-members loop below stays a triple.
-// Bootstrap's lone 'current' human-member create forms this SAME
+// Bootstrap's lone 'XXZruirZyAOoRpNxaDnpSA' human-member create forms this
+// SAME
 // quadruple via formBootstrapMessagePair. Phase 10 Task 6 closes
 // the identity spine's remaining raw writes: each seeded AI
 // member and the system member ALSO form their OWN identities/:id
@@ -228,80 +229,80 @@ export const wfTimestamp = daysFromNow(-60, 9, 0);
 // genesis-state input.
 export const ideaStateEvents: StateEntity[] = [
     {
-        id: 'qJoFXyzUUaq0vEpHL5e34l',
-        entity_id: 'eT5xdKjzLDmuRn3r7XMX4R',
+        id: 'qsmyPbkaUgaWdrMXqSjoKw',
+        entity_id: 'YvOylAxOjQcgmNmsSoVBPQ',
         state: 'in_review',
-        member_id: 'LhfaUUf4IumVsCSGB4xjdK',
+        member_id: 'MQFcPtrZPIGjMCRAXtZUnA',
         at: daysFromNow(-75, 9, 30),
     },
     {
-        id: 'tIcL6f8KJoyG2YN9NofOMo',
-        entity_id: 'cbTuSs0Ex84PeFGSvoAEFZ',
+        id: 'uumGafmpNksyqbIylOBVHA',
+        entity_id: 'WurwPqXxGtLhRAoCEcPzfQ',
         state: 'approved',
-        member_id: 'bLP3X1hb1mSz8gY9neogU3',
+        member_id: 'VvzFEpfYONDAsCCwNlIFCQ',
         at: daysFromNow(-70, 9, 0),
     },
     {
-        id: 'mGfBLqA7lScpEKxc5w0Yt2',
-        entity_id: 'wuCMQqo4IkEksx7MYmu8g2',
+        id: 'nMUREhBfGuUoGoBYGdomHw',
+        entity_id: 'yrDiezFyhDHGgXzGeIWoSQ',
         state: 'active',
-        member_id: '53J8h9dr76XFqCjYcNVwIR',
+        member_id: 'CJrglMsNBxOWWfbihHQSeg',
         at: daysFromNow(-65, 9, 0),
     },
     {
-        id: 'BvBRvDQ8b5l5Tg7iZSGyHF',
-        entity_id: 'ojOEXtdzdtTZtpM81TxVca',
+        id: 'FGHwVyemAMHQwocmsPhoQA',
+        entity_id: 'pYmalQFqpoXdbpYAJfOswA',
         state: 'in_review',
-        member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+        member_id: 'jrMOZzVdWXvLgMpcHoyBTw',
         at: daysFromNow(-55, 9, 0),
     },
     {
-        id: 'BMS9TmTKR0DZ41vTUSpvxX',
-        entity_id: 'T2vAafLDcshDONlYxpzPLc',
+        id: 'EyIVnDozimafEKMIoWBGmw',
+        entity_id: 'RAHAvUqwVABJnzTniWhUTQ',
         state: 'active',
-        member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+        member_id: 'RPzLGrWcstxLaHoBcViPLQ',
         at: daysFromNow(-50, 9, 0),
     },
     {
-        id: 'XX2EXrIUcQVTnzGo0YO2Iw',
-        entity_id: 'HRYrImq1rBJ5ZRe1T9TAVk',
+        id: 'SybZHKZVpQTaNphnAoeEDw',
+        entity_id: 'IjrYiSuRyjkQaqiRLhadAg',
         state: 'sent_back',
-        member_id: 'zyTbfbjcGEfbpCsNTP0XjX',
+        member_id: 'zyGBRshxOnKHUfcyFRqowg',
         at: daysFromNow(-45, 9, 0),
     },
     {
-        id: 'fxlbcnsAmCWp4j8B2NkDKM',
-        entity_id: 'MCxK0hzT9CPjJx1ZV5unfr',
+        id: 'dYrdYYDGrEAmVRZqHzcusw',
+        entity_id: 'MmMKBsQBLxNfbMAOlAaKkQ',
         state: 'in_review',
-        member_id: 'LhfaUUf4IumVsCSGB4xjdK',
+        member_id: 'MQFcPtrZPIGjMCRAXtZUnA',
         at: daysFromNow(-75, 10, 0),
     },
     {
-        id: 'JjkkkkrZw4FvOWBpJYE2J7',
-        entity_id: 'SUb4gKXsZ1OsEauzqszg0t',
+        id: 'JoKIkijcCGJaSVAiVcyabA',
+        entity_id: 'QtpzfPiJsMdmoDpPaHvtVQ',
         state: 'in_review',
-        member_id: 'WxQn4LVWb76YkmqK5B0EPp',
+        member_id: 'SsVAZghfSzMZRZmxNKIizw',
         at: daysFromNow(-35, 9, 0),
     },
     {
-        id: '4nzdNB97hgD1GZ7CjA2EwS',
-        entity_id: 'gxa84W9KvEgD0wT1F4TOM9',
+        id: 'CCxJyXOAOnFKfaatOVIBJA',
+        entity_id: 'eizcntIrQMWrajcGkQZvUA',
         state: 'in_review',
-        member_id: '53J8h9dr76XFqCjYcNVwIR',
+        member_id: 'CJrglMsNBxOWWfbihHQSeg',
         at: daysFromNow(-30, 9, 0),
     },
     {
-        id: 'wmCY9xZdrk0XlydyABZqXY',
-        entity_id: '1Z68gROMrlTAfPEGiyJJAY',
+        id: 'xtwxaKPVjEpchKhgkbWVzw',
+        entity_id: 'AzSBhumyEAkdkFSUBaJrpA',
         state: 'in_review',
-        member_id: 'jBoWiyWxj7pp4sG3JgX5l2',
+        member_id: 'jrMOZzVdWXvLgMpcHoyBTw',
         at: daysFromNow(-25, 9, 0),
     },
     {
-        id: 'OWGsZqEi1bnWUetzS2sURr',
-        entity_id: 'Q2On2xwMpFdzOklBQJXrni',
+        id: 'OHpSABWAwjJOyTuaFeAxBg',
+        entity_id: 'PkrEwSLQlrldLRwlAMVhRA',
         state: 'in_review',
-        member_id: 'Trf1Up2jMsPhEnjbW4Ji1n',
+        member_id: 'RPzLGrWcstxLaHoBcViPLQ',
         at: daysFromNow(-20, 9, 0),
     },
 ];
@@ -312,8 +313,9 @@ export const ideaStateEvents: StateEntity[] = [
 // genesis-state input.
 export const projectStateEvents: StateEntity[] = [
     {
-        // 'submitted' so the scoring loop skips this org-'2'
-        // project — no cross-org score against org-'1'
+        // 'submitted' so the scoring loop skips this
+        // org-'BBjWJsjYIDkTRKIIPrzWRw'
+        // project — no cross-org score against org-'AjdvjuECVZEgZoFajaIEkg'
         // objectives.
         id: 'seed-state-project-org2',
         entity_id: 'seed-project-org2',
@@ -323,14 +325,14 @@ export const projectStateEvents: StateEntity[] = [
     },
     {
         id: 'pSe01Cu5tSegmAi5pEv01',
-        entity_id: 'u6YkHhlGc91oDMkr3x0isa',
+        entity_id: 'wqGTTFdYUGnmBxWCppmkOQ',
         state: 'approved',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-60, 9, 0),
     },
     {
         id: 'pSe02Aut0Rep0rtComp02',
-        entity_id: 'jRE2Tj32NHsFGZIeEADp0p',
+        entity_id: 'kAxUZTXdcMCAttuoyCdSYA',
         state: 'archived',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-110, 9, 0),
@@ -344,91 +346,91 @@ export const projectStateEvents: StateEntity[] = [
     },
     {
         id: 'pSe04PredMa1ntRev04AB',
-        entity_id: 'P04PredMa1ntzyXY010203',
+        entity_id: 'ORXAfsQvNowpmJfBwQAtWg',
         state: 'under_review',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-18, 9, 0),
     },
     {
         id: 'pSe05RtAna1ytComp05CD',
-        entity_id: 'P05RtAna1ytcsXY010203Z',
+        entity_id: 'OTmPQEfeyDzqGNOmlFSUMw',
         state: 'archived',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-95, 9, 0),
     },
     {
         id: 'pSe06SmInvOptSnt06EF',
-        entity_id: 'P06SmInvOptZyXY010203A',
+        entity_id: 'OXxlaOFaAWfVofOqOHeTrQ',
         state: 'sent_back',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-38, 9, 0),
     },
     {
         id: 'pSe07Empl0yTraRev07GH',
-        entity_id: 'P07Empl0yTrainZyXY00B0',
+        entity_id: 'ObmAspkIgRMWsTRDWpkSUw',
         state: 'under_review',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-12, 9, 0),
     },
     {
         id: 'pSe08CustSuppApp08IJ',
-        entity_id: 'P08CustSuppKn0wXY01C0D',
+        entity_id: 'OfgrTrJuepfpmOSjtBhrYA',
         state: 'approved',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-48, 9, 0),
     },
     {
         id: 'pSe09C0mp1AudApp09KL',
-        entity_id: 'P09C0mp1AudAut0mXY01E0',
+        entity_id: 'OjDbHdsCibzUBZCSRSqucw',
         state: 'approved',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-72, 9, 0),
     },
     {
         id: 'pSe10MlRgD1s4App10MN',
-        entity_id: 'P10MlRgD1s4stRc1XY01FG',
+        entity_id: 'OmGoTHQFHRevqlrGWPgtKA',
         state: 'approved',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-82, 9, 0),
     },
     {
         id: 'pSe11V0iceField11OPQ',
-        entity_id: 'P11V0iceField0psXY01HJ',
+        entity_id: 'OtSStAjEiIerCMcUwNgMbQ',
         state: 'approved',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-40, 9, 0),
     },
     {
         id: 'pSe12CarbF00tCmp12RS',
-        entity_id: 'P12CarbF00tprXY01K0L0M',
+        entity_id: 'OvIEhORMAYZxBcQZKkgkow',
         state: 'archived',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-120, 9, 0),
     },
     {
         id: 'pSe13W0rk4rcRev13TU',
-        entity_id: 'P13W0rk4rcF0r3castsXY1',
+        entity_id: 'OvJSmafViYCdfyAIdgzJTQ',
         state: 'under_review',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-22, 9, 0),
     },
     {
         id: 'pSe14SmartD0cAp14VWX',
-        entity_id: 'P14SmartD0cumtR0utngX1',
+        entity_id: 'PGtnaoTOuWCcbADPrancjA',
         state: 'approved',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-65, 9, 0),
     },
     {
         id: 'pSe15Inv3st0rAp15YZA',
-        entity_id: 'P15Inv3st0rRep0rtP1Y00',
+        entity_id: 'PIImLccwpnfvbBBMsIKoMA',
         state: 'approved',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-58, 9, 0),
     },
     {
         id: 'pSe16MktSentSubmt16BC',
-        entity_id: 'P16MktSent1mentXY01020',
+        entity_id: 'PIfhHMLQQxTxKFDdabXbOw',
         state: 'submitted',
         member_id: SYSTEM_MEMBER_ID,
         at: daysFromNow(-5, 9, 0),
@@ -442,21 +444,21 @@ export const projectStateEvents: StateEntity[] = [
 export const flowStateEvents: StateEntity[] = [
     {
         id: 'fSe01CustomerOnboard0aA',
-        entity_id: 'h5mErVBQhwdMKwi1co30jB',
+        entity_id: 'esKujtyQFYUJaVSXWwavzA',
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
         at: wfTimestamp,
     },
     {
-        id: 'fSe02FusionFl0w0aActiv',
-        entity_id: 'E2BnBlZyrriqsQYkmS4usb',
+        id: 'ZjCZiapaGHxuAHZxkpZTDw',
+        entity_id: 'GgfDbXOJUvvaCekCTcvhuw',
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
         at: wfTimestamp,
     },
     {
-        id: 'fSe03Lay0utTest0aActiv',
-        entity_id: '7COt7Kf4OaOBg6AjaNO04s',
+        id: 'ZjChxNVgjmPgusJXkTxEXA',
+        entity_id: 'DDUhYDIRInXtIrRraxcyHQ',
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
         at: wfTimestamp,
@@ -475,14 +477,14 @@ export const flowStateEvents: StateEntity[] = [
 // initial-state input.
 export const recordStateEvents: StateEntity[] = [
     {
-        id: 'rSe01CustPr0fact1ve01A',
+        id: 'rRUEoKtGRZWwFoRtqQCICQ',
         entity_id: customerProfileRecordId,
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
         at: wfTimestamp,
     },
     {
-        id: 'rSe02Pr0jBri3fact1ve02',
+        id: 'rSQsPfJUwbWduxxswfPuqg',
         entity_id: projectBriefRecordId,
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
@@ -499,22 +501,22 @@ export const recordStateEvents: StateEntity[] = [
 // new-shape set[] + instance revision chain; seedSetFor maps
 // these rows (fv row ids retire — new-shape ids are attribute
 // ids). Other transitions keep legacy fieldValues forever.
-const fCompanyName = '5JZ0LeKdPCa4QMtg1RsF1M';
-const fEmail = 'nplTIh0qXNtAyoWSwRaBYe';
-const fPhone = 'kzHpMw9f1thq79VoBYeIX3';
-const fIndustry = 'QsmqiOmPtoMLGpSjHOqdHA';
-const fRevenue = '0TyjQRcygn3DIyXTe6x1F6';
-const fEmployees = '8Z62tcRHBpwCRH1kBffx0G';
-const fReviewerNotes = 'AdQlKf43JV6yrhQbyskDkR';
+const fCompanyName = 'CPJmMPXRaBIiNdGBofUPVg';
+const fEmail = 'oeqelDVElwxHYWkWRVTCYw';
+const fPhone = 'kxbdVhmkaEzkJvghWKFzkw';
+const fIndustry = 'QHzHnEAmqGSgiEfkXoWMTw';
+const fRevenue = 'AXxvHyKNpNYXYKOorywqRQ';
+const fEmployees = 'DfkwfBiyfyCyRHvsHnDiqQ';
+const fReviewerNotes = 'ElVKgkCreTEHQXJZPBJDKw';
 
 // WO01 Review / Complete event ids — the only value-bearing
 // seed transitions (formInstanceChainPairs + transitionSeedBody
 // value-branch). Dropped from the op-driven loop to avoid
 // double-append.
 export const WO01_REVIEW_EVENT_ID =
-    'eJEybxfXaf3sjwFilZnunU';
+    'YiTfnydHjXVkotLACabXeQ';
 export const WO01_COMPLETE_EVENT_ID =
-    'C2xb2bbjyHD11WfLayh8Om';
+    'FIGqMByLITfUxFFGaBEePw';
 export const VALUE_BEARING_TRANSITION_EVENT_IDS:
     ReadonlySet<string> = new Set([
         WO01_REVIEW_EVENT_ID,
@@ -526,47 +528,47 @@ export const SEED_INSTANCE_ID =
     'inst01W001CustProfAcme1';
 export const SEED_RECORD_TYPE_ID =
     customerProfileRecordId;
-export const WO01_ID = 'wg25b0R2gwy5kYPIhQB6cS';
+export const WO01_ID = 'xqcXYHXBJJXcLkRYkRngKA';
 
 export const mockStateFieldValues: StateFieldValueEntity[] = [
     {
-        id: '4izDJCuygAL7iqjeHdephl',
+        id: 'CCiZyMeJtKzkjmIqUpDgmA',
         state_event_id: WO01_REVIEW_EVENT_ID,
         attribute_id: fCompanyName,
         value: 'Acme Corp',
     },
     {
-        id: 'NBmVbZMOWPSMZ11zhTpzEQ',
+        id: 'NgDFoYnvUQUoXHdTgLHqVA',
         state_event_id: WO01_REVIEW_EVENT_ID,
         attribute_id: fEmail,
         value: 'onboard@acme.com',
     },
     {
-        id: 'lxSMfOtoXk89FTuxLj895r',
+        id: 'lZYDJpDRuccNsrUiAPLxSA',
         state_event_id: WO01_REVIEW_EVENT_ID,
         attribute_id: fPhone,
         value: '+1-555-0100',
     },
     {
-        id: 'F8Cagh2PlkwHakidXqGEXq',
+        id: 'HDDxSrEmdWbcVdxwhTTuLQ',
         state_event_id: WO01_REVIEW_EVENT_ID,
         attribute_id: fIndustry,
         value: 'Technology',
     },
     {
-        id: '57xrfe07Pqj38qvutRJk2N',
+        id: 'CLkNjzdqMkndamDaVKQOHA',
         state_event_id: WO01_REVIEW_EVENT_ID,
         attribute_id: fRevenue,
         value: '5000000',
     },
     {
-        id: 'juYwNY2S35qCJqT3SAnwyW',
+        id: 'kVSbxwrbAWOttfrHxYpXEg',
         state_event_id: WO01_REVIEW_EVENT_ID,
         attribute_id: fEmployees,
         value: '250',
     },
     {
-        id: 'vtXOj3CjsGIYGlnds0FSJd',
+        id: 'xcWYWIwHMleaIMKDLhblGg',
         state_event_id: WO01_COMPLETE_EVENT_ID,
         attribute_id: fReviewerNotes,
         value: 'Approved. Strong fit.',
@@ -577,21 +579,21 @@ export const mockStateFieldValues: StateFieldValueEntity[] = [
 // alongside each flow it creates.
 export const mockProjectFlows: ProjectFlowEntity[] = [
     {
-        id: 'noogjofVfg6jFxYOVbdAnC',
-        project_id: 'u6YkHhlGc91oDMkr3x0isa',
-        flow_id: 'h5mErVBQhwdMKwi1co30jB',
+        id: 'odduyeNIUVDwJRwKajtzsw',
+        project_id: 'wqGTTFdYUGnmBxWCppmkOQ',
+        flow_id: 'esKujtyQFYUJaVSXWwavzA',
         at: wfTimestamp,
     },
     {
-        id: '5ddqhtwd3qcdodXLcsDdyt',
-        project_id: 'jRE2Tj32NHsFGZIeEADp0p',
-        flow_id: 'E2BnBlZyrriqsQYkmS4usb',
+        id: 'CQBaDoaiAXVHpJztllIDOA',
+        project_id: 'kAxUZTXdcMCAttuoyCdSYA',
+        flow_id: 'GgfDbXOJUvvaCekCTcvhuw',
         at: wfTimestamp,
     },
     {
-        id: '9YX7ZU4br6zxrHyVcmRjJP',
-        project_id: 'u6YkHhlGc91oDMkr3x0isa',
-        flow_id: '7COt7Kf4OaOBg6AjaNO04s',
+        id: 'ECsMuhiPqBaILNBzyRlVqQ',
+        project_id: 'wqGTTFdYUGnmBxWCppmkOQ',
+        flow_id: 'DDUhYDIRInXtIrRraxcyHQ',
         at: wfTimestamp,
     },
     {
@@ -602,9 +604,12 @@ export const mockProjectFlows: ProjectFlowEntity[] = [
     },
 ];
 
-// Flow ↔ Record bindings. Customer Profile (org '1') is bound
+// Flow ↔ Record bindings. Customer Profile
+// (org 'AjdvjuECVZEgZoFajaIEkg') is
+// bound
 // to two flows (Customer Onboarding and Lead-to-Close); Project
-// Brief (org '2') is bound to the org-'2' flow so every binding
+// Brief (org 'BBjWJsjYIDkTRKIIPrzWRw') is bound to the
+// org-'BBjWJsjYIDkTRKIIPrzWRw' flow so every binding
 // stays within one org. The Layout Test flow is left unbound —
 // it exists to exercise Auto Layout. Shared with mock-data.ts's
 // own pass-2 write of the SAME rows (through
@@ -612,24 +617,24 @@ export const mockProjectFlows: ProjectFlowEntity[] = [
 // is exactly one declaration, not two.
 export const mockFlowRecords: FlowRecordEntity[] = [
     {
-        id: 'frb01CustOnbCustProfA1',
-        flow_id: 'h5mErVBQhwdMKwi1co30jB',
+        id: 'dDmnfQddFbigpThjftUlWg',
+        flow_id: 'esKujtyQFYUJaVSXWwavzA',
         record_id: customerProfileRecordId,
         at: wfTimestamp,
     },
     {
-        id: 'frb02L3adt0ClCustProf2',
+        id: 'dEOBUSXWcOtSmtDXJpVNuQ',
         flow_id: l2cFlowId,
         record_id: customerProfileRecordId,
         at: wfTimestamp,
     },
     {
-        // Project Brief lives in org '2'
+        // Project Brief lives in org 'BBjWJsjYIDkTRKIIPrzWRw'
         // (assignOrganization(index 1)), so it binds to
-        // the org-'2' flow — flowOrganization ===
+        // the org-'BBjWJsjYIDkTRKIIPrzWRw' flow — flowOrganization ===
         // recordOrganization keeps the binding visible
         // behind the org fence.
-        id: 'frb03Fus10nPr0jBri3f03',
+        id: 'dGFWxGmaxtWWawferGBezQ',
         flow_id: 'seed-flow-org2',
         record_id: projectBriefRecordId,
         at: wfTimestamp,
@@ -771,7 +776,8 @@ export function projectSeedBody(
     };
 }
 
-// The 17th seeded project: organization '2' owns a small,
+// The 17th seeded project: organization 'BBjWJsjYIDkTRKIIPrzWRw' owns a
+// small,
 // self-contained slice so each org owns at least one (mirrors
 // ORGANIZATION_TWO_OBJECTIVE). A near-copy of the first Stark
 // project under its own id and title — the ONE shared
@@ -920,12 +926,14 @@ export function flowSeedBody(
 }
 
 // The genesis case of the document PUT flows/:id for
-// organization '2's own flow (Task 6): mirrors ideaSeedBody/
+// organization 'BBjWJsjYIDkTRKIIPrzWRw's own flow (Task 6): mirrors
+// ideaSeedBody/
 // projectSeedBody's shape — the flat entity fields plus the
 // lifecycle trio — but for the flows family, which also
 // carries the client-authored graph snapshot and the two
 // transitional decomposition sidecars (validateFlowDocumentBody).
-// This flow has no project_flows join row (org '2' gets a
+// This flow has no project_flows join row (org 'BBjWJsjYIDkTRKIIPrzWRw' gets
+// a
 // flow-free project and a work-order-free flow — no cross-org
 // coupling), so it drives through postFlowDocumentOp rather
 // than postFlowCreationOp (which requires a join row).
@@ -1063,7 +1071,8 @@ export function flowRecordJoinSeedBody(
 // Every seeded flow-record join binds within one org (mirrors
 // mockFlowRecords' own comment: flowOrganization ===
 // recordOrganization keeps the binding visible behind the org
-// fence). Only 'seed-flow-org2' sits in org '2'; every other
+// fence). Only 'seed-flow-org2' sits in org 'BBjWJsjYIDkTRKIIPrzWRw'; every
+// other
 // seeded flow is Stark — mirrors projectOrganizationFor's own
 // single-override shape above.
 export function flowRecordOrganizationFor(
@@ -1277,7 +1286,8 @@ export function objectiveSeedBody(
     };
 }
 
-// Org '2' owns one objective so each org owns at least one —
+// Org 'BBjWJsjYIDkTRKIIPrzWRw' owns one objective so each org owns at least
+// one —
 // mirrors the STARK OBJECTIVE_SEEDS shape without a seed entry.
 // Exported so mock-data.ts's pass-2 write uses this SAME
 // literal rather than a second, independently maintained copy.
@@ -1308,7 +1318,7 @@ export const bootstrapSystemStateEventId = 'bootstrap-system-active';
 
 
 
-// Every member's PRIMARY organization: 'current' orders Stark
+// Every member's PRIMARY organization: 'XXZruirZyAOoRpNxaDnpSA' orders Stark
 // first (alongside org Two, in postMockDataLoadIn's own
 // membership loop); every other human has exactly one, via
 // assignOrganization. The identity_default_organizations seed
@@ -1318,7 +1328,7 @@ export const bootstrapSystemStateEventId = 'bootstrap-system-active';
 export function memberPrimaryOrganization(
     memberId: Id, index: number,
 ): Id {
-    return memberId === 'current'
+    return memberId === 'XXZruirZyAOoRpNxaDnpSA'
         ? STARK_ORGANIZATION
         : assignOrganization(index);
 }
@@ -1327,7 +1337,7 @@ export function bootstrapCurrentMemberBody(
     initialStateAt: string,
 ): Record<string, unknown> {
     return {
-        id: 'current',
+        id: 'XXZruirZyAOoRpNxaDnpSA',
         detail: {
             title: 'Admin',
             department: 'Product',
@@ -1349,7 +1359,7 @@ export function bootstrapCurrentMemberBody(
     };
 }
 
-// The bootstrap current-member's PII facet, split into its own
+// The bootstrap XeNICvLNKhXddnTKnszfpQ's PII facet, split into its own
 // PUT identities/:id/pii write (Phase 10 Task 2's intake
 // decomposition) — the SAME fields bootstrapCurrentMemberBody
 // once embedded in its own `pii` key. The ONE construction both
@@ -1459,7 +1469,7 @@ export function buildMockDataInvocations():
     const invocations: MockDataInvocation[] = [];
 
     members.forEach((member, index) => {
-        // Task 5: 'current' (the admin) joins BOTH orgs; every
+        // Task 5: 'XXZruirZyAOoRpNxaDnpSA' (the admin) joins BOTH orgs; every
         // other human is single-org via assignOrganization — the
         // SAME per-member partition postMockDataLoadIn's own
         // membership loop uses (mock-data.ts). Each row folds in
@@ -1468,11 +1478,11 @@ export function buildMockDataInvocations():
         // human-member triple below — the SAME write order
         // postMockDataLoadIn uses (memberships land before the
         // member they join is created).
-        const organizations = member.id === 'current'
+        const organizations = member.id === 'XXZruirZyAOoRpNxaDnpSA'
             ? [STARK_ORGANIZATION, ORGANIZATION_TWO]
             : [assignOrganization(index)];
         organizations.forEach((organization, n) => {
-            const type = member.id === 'current'
+            const type = member.id === 'XXZruirZyAOoRpNxaDnpSA'
                 ? 'admin' as const
                 : 'member' as const;
             invocations.push({
@@ -1648,7 +1658,9 @@ export function buildMockDataInvocations():
             body: b.projectFlow,
         });
     }
-    // Task 6: the fifth seeded flow — organization '2's own —
+    // Task 6: the fifth seeded flow — organization
+    // 'BBjWJsjYIDkTRKIIPrzWRw's
+    // own —
     // has no project_flows join row, so it drives through
     // postFlowDocumentOp's genesis document PUT instead of the
     // four-above's postFlowCreationOp.
@@ -2481,7 +2493,7 @@ export async function formSeedCredentialPairs(
     return pairs;
 }
 
-// Pass 1 for postBootstrap: the lone 'current' human-member
+// Pass 1 for postBootstrap: the lone 'XXZruirZyAOoRpNxaDnpSA' human-member
 // create. Its body embeds nowUtc() (bootstrap has no fixed
 // seed timestamp), so it is minted ONCE here and returned
 // alongside the bundle it was hashed from — postBootstrapIn
@@ -2491,7 +2503,8 @@ export async function formSeedCredentialPairs(
 // human-members loop forms per member — operation, member
 // document, detail document — sharing this ONE requestAt. Task
 // 5: ALSO forms bootstrap's own membership pair (its lone
-// 'current' membership) and the system member's own members/:id
+// 'XXZruirZyAOoRpNxaDnpSA' membership) and the system member's own
+// members/:id
 // document pair — the SAME two families postMockDataLoad's own
 // invocation list now covers, closing bootstrap's last two raw
 // writes (Path A, Phase 8 Task 5). Phase 10 Task 2: ALSO forms
@@ -2524,9 +2537,9 @@ export async function formBootstrapMessagePair(
 }> {
     const identityPair = await formSeedPair(
         {
-            key: seedPairKey('identities/:id', 'current'),
+            key: seedPairKey('identities/:id', 'XXZruirZyAOoRpNxaDnpSA'),
             routePattern: 'identities/:id',
-            idParams: ['current'],
+            idParams: ['XXZruirZyAOoRpNxaDnpSA'],
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
             body: bootstrapCurrentIdentityBody(),
@@ -2541,7 +2554,7 @@ export async function formBootstrapMessagePair(
             ),
             routePattern:
                 ORGANIZATION_MEMBER_DETAIL_PATTERN,
-            idParams: [STARK_ORGANIZATION, 'current'],
+            idParams: [STARK_ORGANIZATION, 'XXZruirZyAOoRpNxaDnpSA'],
             organization: STARK_ORGANIZATION,
             requesterIdentityId: SYSTEM_MEMBER_ID,
             body: seatSeedBody('admin', requestAt),
@@ -2550,9 +2563,9 @@ export async function formBootstrapMessagePair(
     );
     const piiPair = await formSeedPair(
         {
-            key: seedPairKey('identities/:id/pii', 'current'),
+            key: seedPairKey('identities/:id/pii', 'XXZruirZyAOoRpNxaDnpSA'),
             routePattern: 'identities/:id/pii',
-            idParams: ['current'],
+            idParams: ['XXZruirZyAOoRpNxaDnpSA'],
             organization: undefined,
             requesterIdentityId: SYSTEM_MEMBER_ID,
             body: bootstrapCurrentMemberPiiBody(),
@@ -2572,7 +2585,7 @@ export async function formBootstrapMessagePair(
     );
     const defaultOrganizationPair =
         await formDefaultOrganizationSeedPair(
-            'current', STARK_ORGANIZATION, requestAt,
+            'XXZruirZyAOoRpNxaDnpSA', STARK_ORGANIZATION, requestAt,
         );
     const organizationPair = await formSeedPair(
         {

@@ -41,7 +41,7 @@ const STORED_FLOW_GRAPH = {
             memberIds: ['m-1', 'm-2'],
             attributes: [
                 {
-                    attribute_id: 'a-1',
+                    attribute_id: 'UQBiHFcwJeCDSnmkPBoYRA',
                     mode: 'editable',
                     isRequired: true,
                 },
@@ -107,7 +107,7 @@ test(
             STORED_FLOW_GRAPH, 'graph',
         );
         const ref = parsed.nodes[1]!.attributes[0]!;
-        assert.equal(ref.attributeId, 'a-1');
+        assert.equal(ref.attributeId, 'UQBiHFcwJeCDSnmkPBoYRA');
         assert.equal('attribute_id' in ref, false);
     },
 );

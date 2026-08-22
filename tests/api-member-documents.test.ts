@@ -196,7 +196,7 @@ test('PUT members/:id is retired 404', async () => {
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/members/mem-trio-1', token, {
+        'PUT', '/members/nXdwGKWtevpvniAfAbiPFA', token, {
             type: 'human',
             state: 'active',
             state_at: nowUtc(),
@@ -212,7 +212,7 @@ async () => {
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/members/mem-trio-2', token,
+        'PUT', '/members/nXmQQMgTtocYOzXpxijKBg', token,
         { type: 'human' },
     ));
     assert.equal(res.status, 404);
@@ -224,7 +224,7 @@ async () => {
     await seedAdminSchema(db);
     const token = await organizationToken();
     const res = await handleRequest(db, req(
-        'PUT', '/members/mem-trio-3', token, {
+        'PUT', '/members/nkcPXYSSUNrGJnmjSaxYig', token, {
             type: 'human',
             state: 'deleted',
             state_at: nowUtc(),
@@ -395,12 +395,12 @@ async () => {
     const body = memberFields();
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/members/mem-doc-op-1',
+        pathname: '/members/nVpWUxfKrqvVXWgWENWhbA',
         routePattern: 'members/:id',
         routeSegments: ['members', ':id'],
-        pathSegments: ['members', 'mem-doc-op-1'],
+        pathSegments: ['members', 'nVpWUxfKrqvVXWgWENWhbA'],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
@@ -411,7 +411,7 @@ async () => {
     // Mid-stage: body still includes the trio (Task 6 may
     // thin the op return to entity fields alone).
     const written = await postMemberDocumentOp(
-        db, 'mem-doc-op-1', body, 'current', pair,
+        db, 'nVpWUxfKrqvVXWgWENWhbA', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
     );
     assert.deepEqual(written, body);
     // Phase Final Stage B: roster tables retired.
@@ -427,19 +427,19 @@ async () => {
     const body = aiMemberFields();
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/ai-members/ai-doc-op-1',
+        pathname: '/ai-members/VLoTvOKjXoNVDjLLBotQXA',
         routePattern: 'ai-members/:id',
         routeSegments: ['ai-members', ':id'],
-        pathSegments: ['ai-members', 'ai-doc-op-1'],
+        pathSegments: ['ai-members', 'VLoTvOKjXoNVDjLLBotQXA'],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
     const written = await postAiMemberDocumentOp(
-        db, 'ai-doc-op-1', body, 'current', pair,
+        db, 'VLoTvOKjXoNVDjLLBotQXA', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
     );
     assert.deepEqual(written, body);
     // Phase Final Stage B: roster tables retired.
@@ -455,19 +455,19 @@ test('postHumanMemberDocumentOp writes exactly the pair and'
     const body = humanMemberFields();
     const pair = await formWritePair({
         method: 'PUT',
-        pathname: '/human-members/hm-doc-op-1',
+        pathname: '/human-members/fVrMeaOxbnDcSKMPwtIEZg',
         routePattern: 'human-members/:id',
         routeSegments: ['human-members', ':id'],
-        pathSegments: ['human-members', 'hm-doc-op-1'],
+        pathSegments: ['human-members', 'fVrMeaOxbnDcSKMPwtIEZg'],
         headerFields: [], body,
-        requesterIdentityId: 'current',
+        requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
         requestAt: '2026-01-01T00:00:00.000000Z',
         organization: undefined,
         responseStatus: 200, responseBody: undefined,
         operationId: TEST_OPERATION_ID,
     });
     const written = await postHumanMemberDocumentOp(
-        db, 'hm-doc-op-1', body, 'current', pair,
+        db, 'fVrMeaOxbnDcSKMPwtIEZg', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
     );
     assert.deepEqual(written, body);
     // Phase Final Stage B: roster tables retired.
@@ -555,7 +555,7 @@ async () => {
         db,
         req(
             'PUT',
-            '/human-members/hm-g3-stream',
+            '/human-members/fWFpBifFNXqlKbbxpCUcDw',
             DEV_TOKEN,
             humanMemberFields(),
         ),

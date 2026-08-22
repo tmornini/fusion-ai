@@ -73,7 +73,8 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     await seedAdminSchema(db);
     await seedCurrentMember(db);
     await PUT(
-        db, 'organizations/1/work-orders/wo1', {
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + 'yNSSnbrpacodQTzUEcdEVA', {
             display_id: 'abcd',
             flow_graph: graphJson(),
             position: 1,
@@ -82,15 +83,17 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     );
     // Phase Final Stage B: record_attributes retired.
     await PUT(
-        db, 'organizations/1/record-types/rec-1', {
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
+            + 'rbfHGatkwQzGZJVXKJEeyw', {
             name: 'Parent', description: '', position: 0,
             state: 'active',
         },
         DEV_TOKEN,
     );
     await PUT(
-        db, 'organizations/1/record-types/rec-1'
-        + '/attributes/attr-1', {
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
+            + 'rbfHGatkwQzGZJVXKJEeyw'
+        + '/attributes/VPckAwjJsTGCEkKaOOGRGw', {
             name: 'Severity', attribute_type: 'text',
             sort_order: 0, options: [], constraints: [],
         },
@@ -107,7 +110,7 @@ async function appendLegacyTransition(
 ): Promise<void> {
     const pathSegments = [
         'organizations', STARK_ORGANIZATION,
-        'work-orders', 'wo1', 'transition',
+        'work-orders', 'yNSSnbrpacodQTzUEcdEVA', 'transition',
     ];
     const pair = await formWritePair({
         method: 'POST',
@@ -125,7 +128,7 @@ async function appendLegacyTransition(
         operationId: TEST_OPERATION_ID,
     });
     await postWorkOrderTransitionOp(
-        db, 'wo1', body, SYSTEM_MEMBER_ID,
+        db, 'yNSSnbrpacodQTzUEcdEVA', body, SYSTEM_MEMBER_ID,
         undefined, [], pair,
     );
 }
@@ -142,7 +145,7 @@ async () => {
             id: 'fv-1',
             fields: {
                 state_event_id: 'te1',
-                attribute_id: 'attr-1',
+                attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                 value: 'high',
             },
         }],
@@ -152,12 +155,12 @@ async () => {
 
     const derived =
         await deriveStateFieldValueReferrers(
-            db, STARK_ORGANIZATION, ['attr-1'],
+            db, STARK_ORGANIZATION, ['VPckAwjJsTGCEkKaOOGRGw'],
         );
-    const rows = derived.get('attr-1') ?? [];
+    const rows = derived.get('VPckAwjJsTGCEkKaOOGRGw') ?? [];
     assert.equal(rows.length, 1);
     assert.equal(rows[0]!.id, 'fv-1');
-    assert.equal(rows[0]!.attribute_id, 'attr-1');
+    assert.equal(rows[0]!.attribute_id, 'VPckAwjJsTGCEkKaOOGRGw');
     // Phase Final Stage B: state_field_values table retired.
 });
 
@@ -174,7 +177,7 @@ async () => {
             id: 'fv-1',
             fields: {
                 state_event_id: 'te1',
-                attribute_id: 'attr-1',
+                attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                 value: 'high',
             },
         }],
@@ -184,19 +187,21 @@ async () => {
 
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('GET', '/organizations/1/work-orders/wo1/history', token),
+        db, req('GET'
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + 'yNSSnbrpacodQTzUEcdEVA/history', token),
     );
     assert.equal(res.status, 200);
     const wireText = await res.text();
     const derived = await workOrderHistoryFor(
-        db, STARK_ORGANIZATION, 'wo1',
+        db, STARK_ORGANIZATION, 'yNSSnbrpacodQTzUEcdEVA',
     );
     assert.equal(wireText, JSON.stringify(derived));
     const transition = derived.find((row) => row.id === 'te1');
     assert.ok(transition !== undefined);
     assert.deepEqual(transition!.field_values, [{
         id: 'fv-1',
-        attribute_id: 'attr-1',
+        attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
         value: 'high',
     }]);
 });
@@ -214,7 +219,7 @@ test('work-order history field_values are id-lex ordered'
                 id: 'fv-z',
                 fields: {
                     state_event_id: 'te-lex',
-                    attribute_id: 'attr-1',
+                    attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                     value: 'z',
                 },
             },
@@ -222,7 +227,7 @@ test('work-order history field_values are id-lex ordered'
                 id: 'fv-a',
                 fields: {
                     state_event_id: 'te-lex',
-                    attribute_id: 'attr-1',
+                    attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                     value: 'a',
                 },
             },
@@ -230,7 +235,7 @@ test('work-order history field_values are id-lex ordered'
                 id: 'fv-m',
                 fields: {
                     state_event_id: 'te-lex',
-                    attribute_id: 'attr-1',
+                    attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                     value: 'm',
                 },
             },
@@ -240,7 +245,9 @@ test('work-order history field_values are id-lex ordered'
     });
     const token = await organizationToken();
     const res = await handleRequest(
-        db, req('GET', '/organizations/1/work-orders/wo1/history', token),
+        db, req('GET'
+            , '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + 'yNSSnbrpacodQTzUEcdEVA/history', token),
     );
     assert.equal(res.status, 200);
     const list = await res.json() as {

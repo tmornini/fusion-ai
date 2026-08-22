@@ -73,16 +73,16 @@ test('Fresh ctx re-fetches each call', async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     await seedHumanMember(db, 'u1', 'Alice Adams');
-    const m1 = await getHumanMemberMap(
+    const mFNSxZqywTSMXhgUTdTqtA = await getHumanMemberMap(
         createRequestContext(db, DEV_TOKEN),
     );
     await seedHumanMember(db, 'u2', 'Bob Brown');
     const m2 = await getHumanMemberMap(
         createRequestContext(db, DEV_TOKEN),
     );
-    assert.notEqual(m1, m2);
-    assert.ok(m1.has('u1'));
-    assert.ok(!m1.has('u2'));
+    assert.notEqual(mFNSxZqywTSMXhgUTdTqtA, m2);
+    assert.ok(mFNSxZqywTSMXhgUTdTqtA.has('u1'));
+    assert.ok(!mFNSxZqywTSMXhgUTdTqtA.has('u2'));
     assert.ok(m2.has('u1'));
     assert.ok(m2.has('u2'));
 });
@@ -93,12 +93,12 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         await seedHumanMember(
-            db, 'current', 'Alice Adams',
+            db, 'XXZruirZyAOoRpNxaDnpSA', 'Alice Adams',
         );
         const row = await getCurrentHumanMember(
             createRequestContext(db, DEV_TOKEN),
         );
-        assert.equal(row.id, 'current');
+        assert.equal(row.id, 'XXZruirZyAOoRpNxaDnpSA');
     },
 );
 

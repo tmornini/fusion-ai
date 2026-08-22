@@ -52,7 +52,7 @@ async function seedMembershipPair(
     const body = {
         organization_id: organization,
         identity_id: identityId,
-        type: identityId === 'current' ? 'admin' : 'member',
+        type: identityId === 'XXZruirZyAOoRpNxaDnpSA' ? 'admin' : 'member',
         at,
     };
     await seedSeat(
@@ -72,7 +72,7 @@ async function seedMembershipPair(
 // revocation invisible to deriveTokenRevocationsFor once the
 // coarse gate reads it, silently admitting a signed-out
 // session. Nested PUT is admin-or-self (ROUTE_POLICY +
-// Region B); the writer is seedRootAdmin's 'current'.
+// Region B); the writer is seedRootAdmin's 'XXZruirZyAOoRpNxaDnpSA'.
 async function seedTokenRevocationPair(
     db: MemoryDbAdapter,
     id: string,
@@ -96,7 +96,8 @@ async function revokedDb(): Promise<MemoryDbAdapter> {
     );
     // logout-everywhere as of now: every u1 token minted
     // before this stamp is dead.
-    await seedTokenRevocationPair(db, 'r1', 'u1', nowUtc());
+    await seedTokenRevocationPair(db, 'rOEPOcVMQdJiiiMuiiEhlg', 'u1'
+        , nowUtc());
     return db;
 }
 
@@ -152,10 +153,11 @@ test('refresh on a logged-out but live jti is the'
     // branch — pinning that branch, not the reuse path. Seeded
     // via the PUT route (not a raw store write, Phase 13 Task 9:
     // the row plane no longer receives writes at all) — revokedDb
-    // already grants 'current' admin, the role this route needs.
+    // already grants 'XXZruirZyAOoRpNxaDnpSA' admin, the role this route
+    // needs.
     await PUT(db, 'identities/u1/tokens/t-live', {
         jti: 'live-jti', identity_id: 'u1',
-        action: 'issued', chain_id: 'c1',
+        action: 'issued', chain_id: 'WeXjAaAxGSpLpamfEuvcww',
         at: '2019-01-01T00:00:00.000000Z',
     }, await devToken());
     const iat = Math.floor(

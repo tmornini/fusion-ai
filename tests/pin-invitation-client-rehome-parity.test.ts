@@ -79,8 +79,8 @@ test('pendingInvitationFor lifecycle on the pair plane'
 + ' (grant/decline/reinvite)', async () => {
     const db = await seededDb();
     const admin = await organizationToken(
-        'current', ORGANIZATION_TWO);
-    const inviteeId = 'LhfaUUf4IumVsCSGB4xjdK';
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO);
+    const inviteeId = 'MQFcPtrZPIGjMCRAXtZUnA';
     const inviteeToken = await organizationToken(
         inviteeId, ORGANIZATION_TWO);
 
@@ -108,7 +108,7 @@ test('pendingInvitationFor lifecycle on the pair plane'
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
-            invitationId: 'inv-rehome-parity-1',
+            invitationId: 'iqtxKmWMdfYjxphbQhAJnw',
             grantEventId: 'inv-rehome-parity-1-grant',
             grantAt: '2026-06-02T00:00:00.000000Z',
         },
@@ -116,13 +116,13 @@ test('pendingInvitationFor lifecycle on the pair plane'
     assert.equal(grant.status, 200);
     assert.equal(
         (await assertPending())?.id,
-        'inv-rehome-parity-1',
+        'iqtxKmWMdfYjxphbQhAJnw',
     );
 
     const decline = await handleRequest(db, req(
         'PUT',
         '/identities/' + inviteeId
-            + '/invitations/inv-rehome-parity-1',
+            + '/invitations/iqtxKmWMdfYjxphbQhAJnw',
         inviteeToken, {
             state: 'declined',
             eventId: 'inv-rehome-parity-1-decline',
@@ -155,7 +155,7 @@ test('loadInvitation shape: deriveInvitations find-by-id'
 + ' for a live grant, absent for missing', async () => {
     const db = await seededDb();
     const admin = await organizationToken(
-        'current', ORGANIZATION_TWO);
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO);
     const grant = await handleRequest(db, req(
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {

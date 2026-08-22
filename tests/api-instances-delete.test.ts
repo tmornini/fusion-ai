@@ -52,7 +52,7 @@ import { seedSeat } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
-const ORGANIZATION = '1';
+const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const TYPE_ID = 'rt-del-1';
 const ATTR_ID = 'attr-del-1';
 const ATTR_LOCKED = 'attr-del-locked';
@@ -107,17 +107,17 @@ async function adminDb(): Promise<{
     await seedAdminSchema(db);
     await seedMembershipPair(db, 'm-member1', {
         organization_id: ORGANIZATION,
-        identity_id: 'member1',
+        identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
         at: AT,
     });
     return {
         db,
         adminToken: await organizationToken(
-            'current', ORGANIZATION,
+            'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION,
         ),
         memberToken: await organizationToken(
-            'member1', ORGANIZATION,
+            'nkgaOHZISTQrILTfPThWCA', ORGANIZATION,
         ),
     };
 }
@@ -449,7 +449,7 @@ async () => {
             },
         ],
         body: patchBody,
-        requesterIdentityId: 'member1',
+        requesterIdentityId: 'nkgaOHZISTQrILTfPThWCA',
         requestAt: nowUtc(),
         organization: ORGANIZATION,
         responseStatus: 200,
@@ -478,7 +478,7 @@ async () => {
             db,
             [ORGANIZATION, TYPE_ID, INSTANCE_ID],
             patchBody,
-            'member1',
+            'nkgaOHZISTQrILTfPThWCA',
             stalePair,
             ORGANIZATION,
             ['member'],

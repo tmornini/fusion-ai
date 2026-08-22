@@ -20,10 +20,11 @@ import { seedSeat } from './root-admin-fixture.ts';
 test('putOrganization then getOrganization round-trips',
 async () => {
     const { ctx } = await adminContext();
-    await putOrganization(ctx, '1', organizationRow('Acme'));
-    const organization = await getOrganization(ctx, '1');
+    await putOrganization(ctx, 'AjdvjuECVZEgZoFajaIEkg'
+        , organizationRow('Acme'));
+    const organization = await getOrganization(ctx, 'AjdvjuECVZEgZoFajaIEkg');
     assert.equal(organization.name, 'Acme');
-    assert.equal(organization.id, '1');
+    assert.equal(organization.id, 'AjdvjuECVZEgZoFajaIEkg');
 });
 
 // Below-facade pair formation (the member-fixtures.ts idiom):
@@ -42,7 +43,7 @@ async function seedMembershipPair(
         db,
         organization,
         identityId,
-        identityId === 'current' ? 'admin' : 'member',
+        identityId === 'XXZruirZyAOoRpNxaDnpSA' ? 'admin' : 'member',
         at,
     );
 }
@@ -50,12 +51,14 @@ async function seedMembershipPair(
 test('getOrganizations returns only the caller member orgs',
 async () => {
     const { db, ctx } = await adminContext();
-    await putOrganization(ctx, '1', organizationRow('Acme'));
+    await putOrganization(ctx, 'AjdvjuECVZEgZoFajaIEkg'
+        , organizationRow('Acme'));
     await putOrganization(ctx, '7', organizationRow('Beta'));
     await seedMembershipPair(
-        db, 'm', '1', 'current',
+        db, 'm', 'AjdvjuECVZEgZoFajaIEkg', 'XXZruirZyAOoRpNxaDnpSA',
         '2026-06-04T00:00:00.000000Z',
     );
     const organizations = await getOrganizations(ctx);
-    assert.deepEqual(organizations.map(o => o.id), ['1']);
+    assert.deepEqual(organizations.map(o => o.id)
+        , ['AjdvjuECVZEgZoFajaIEkg']);
 });
