@@ -31,11 +31,6 @@ import {
     postIdentityCreationOp,
 } from '../api/routes.ts';
 import {
-    deriveMemberParents,
-    deriveMemberParent,
-    deriveMembers,
-} from '../api/derive-members.ts';
-import {
     deriveOrganizationMemberSeat,
     deriveOrganizationMemberSeats,
 } from '../api/derive-memberships.ts';
