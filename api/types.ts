@@ -57,14 +57,6 @@ export interface NodeAttribute {
     isRequired: boolean;
 }
 
-export const MEMBER_STATES = [
-    'active',
-    'pending',
-    'archived',
-] as const;
-
-export type MemberState = typeof MEMBER_STATES[number];
-
 export const IDEA_STATES = [
     'active',
     'in_review',
@@ -261,21 +253,6 @@ export function assertIdeaState(
 ): IdeaState {
     return assertInAlphabet(
         IDEA_STATES, 'IdeaState', v, label,
-    );
-}
-
-export function isMemberState(
-    v: string,
-): v is MemberState {
-    return includes(MEMBER_STATES, v);
-}
-
-export function assertMemberState(
-    v: string,
-    label: string,
-): MemberState {
-    return assertInAlphabet(
-        MEMBER_STATES, 'MemberState', v, label,
     );
 }
 

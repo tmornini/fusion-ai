@@ -5,7 +5,6 @@ import {
     SYSTEM_MEMBER_ID,
     nowUtc,
     type Id,
-    type MemberState,
 } from '../api/types.ts';
 import {
     getModelsByProvider,
@@ -63,7 +62,6 @@ function memberParentEntity(
 export function makeHumanMember(
     id: string,
     name: string,
-    _state: MemberState = 'active',
 ): HumanMember {
     return new HumanMember(
         memberParentEntity(id, 'human'),
@@ -81,7 +79,6 @@ export function makeHumanMember(
 export function makeAIMember(
     id: string,
     name: string,
-    _state: MemberState = 'active',
 ): AIMember {
     return new AIMember(
         memberParentEntity(id, 'ai'),
@@ -186,7 +183,6 @@ export async function seedHumanMember(
     db: MemoryDbAdapter,
     id: string,
     name: string,
-    _state: MemberState = 'active',
 ): Promise<void> {
     const requestAt = nowUtc();
     const detail = humanDetail();
@@ -216,7 +212,6 @@ export async function seedAIMember(
     db: MemoryDbAdapter,
     id: string,
     name: string,
-    _state: MemberState = 'active',
 ): Promise<void> {
     const requestAt = nowUtc();
     const body = { name, ...aiDetail() };

@@ -95,9 +95,9 @@ const HUMAN_DRIFT_METHOD_FILTER_1 = generateIdentifier();
 // deleted-filter is otherwise VACUOUS for
 // every roster family across this entire file (finding 15 as
 // corrected) — no shipped route ever posts a 'deleted' state for
-// a member/membership/ai_member/human_member id (MEMBER_STATES is
-// ['active', 'pending', 'archived'] — 'deleted' is not even in
-// the alphabet), so old-plane and derived-plane parity holds
+// a member/membership/ai_member/human_member id — 'deleted'
+// is not a member lifecycle value — so old-plane and
+// derived-plane parity holds
 // throughout every case below.
 
 const BASE = 'http://localhost';

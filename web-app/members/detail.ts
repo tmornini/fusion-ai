@@ -479,8 +479,7 @@ async function saveHumanMember(
     );
     try {
         await putHumanMember(
-            ctx, memberId, nextDetail, 'active',
-            piiPatch,
+            ctx, memberId, nextDetail, piiPatch,
         );
     } catch (err) {
         reportFault(
@@ -523,7 +522,6 @@ async function saveAIMember(
         await putAIMember(
             ctx, memberId,
             { ...rest, ...patch },
-            'active',
         );
     } catch (err) {
         reportFault(

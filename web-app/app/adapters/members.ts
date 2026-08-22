@@ -5,7 +5,6 @@ import type {
     IdentityEntity,
     IdentityPiiEntity,
     MembershipEntity,
-    MemberState,
 } from '../../../api/types.ts';
 import {
     HumanMember,
@@ -18,13 +17,11 @@ import {
 } from '../channels.ts';
 export {
     HumanMember,
-    isMemberState,
     isDimensionKey,
 } from '../../../api/types.ts';
 export type {
     MemberId,
     HumanMemberEntity,
-    MemberState,
     DimensionKey,
 } from '../../../api/types.ts';
 
@@ -204,7 +201,6 @@ export async function putHumanMember(
     ctx: RequestContext,
     id: string,
     detail: Omit<HumanMemberEntity, 'id'>,
-    _stateEcho: MemberState,
     pii?: Omit<IdentityPiiEntity, 'id'>,
 ): Promise<void> {
     await ctx.PUT(`identities/${id}`, {
@@ -224,7 +220,6 @@ export async function postHumanMemberCreation(
     ctx: RequestContext,
     id: string,
     input: HumanMemberDraft,
-    _initialState: MemberState,
 ): Promise<void> {
     const { name, email, phone, bio, ...detail } =
         input;
@@ -246,13 +241,5 @@ export async function postHumanMemberCreation(
         seatsCollection(ctx) + id,
         { type: 'member', at: nowUtc() },
     );
-    humanMemberChanges.notify();
-}
-
-export async function postHumanMemberStateChange(
-    _ctx: RequestContext,
-    _id: string,
-    _state: MemberState,
-): Promise<void> {
     humanMemberChanges.notify();
 }

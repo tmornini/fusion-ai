@@ -2,7 +2,6 @@ import type {
     MemberId,
     MemberEntity,
     AIAgentEntity,
-    MemberState,
 } from '../../../api/types.ts';
 import { AIMember } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
@@ -135,7 +134,6 @@ export async function putAIMember(
     ctx: RequestContext,
     id: MemberId,
     input: AIMemberDraft,
-    _stateEcho: MemberState,
 ): Promise<void> {
     await ctx.PUT(`ai-agents/${id}`, {
         name: input.name,
@@ -157,13 +155,5 @@ export async function postAIMemberCreation(
         skill_focus: input.skill_focus,
         model: input.model,
     });
-    aiMemberChanges.notify();
-}
-
-export async function postAIMemberStateChange(
-    _ctx: RequestContext,
-    _id: MemberId,
-    _state: MemberState,
-): Promise<void> {
     aiMemberChanges.notify();
 }
