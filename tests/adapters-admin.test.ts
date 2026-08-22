@@ -34,6 +34,8 @@ import {
 import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 function buildProject(
     id: string,
@@ -107,7 +109,7 @@ async function seedIdea(
         state,
     });
     await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/ideas/' + id
-        + '/submissions/uUOcdPLOGxYyIcuyDTzQxA' + id, {
+        + '/submissions/' + generateIdentifier(), {
         idea_id: id,
         member_id: submitter,
         at: '2026-04-01T00:00:00.000000Z',
@@ -153,14 +155,14 @@ test(
     + ' are not deleted or declined',
     async () => {
         const { ctx } = await adminContext();
-        await seedProject(ctx, 'pnXmXrxOWayANgDLdCjuBw', 'submitted');
+        await seedProject(ctx, generateIdentifier(), 'submitted');
         await seedProject(
-            ctx, 'prBESZPjJDiuXCeZLmbiVw', 'under_review',
+            ctx, generateIdentifier(), 'under_review',
         );
-        await seedProject(ctx, 'psEaaErZDHeKCbdAnrwbDQ', 'approved');
-        await seedProject(ctx, 'p4', 'archived');
-        await seedProject(ctx, 'p5', 'declined');
-        await seedProject(ctx, 'p6', 'deleted');
+        await seedProject(ctx, generateIdentifier(), 'approved');
+        await seedProject(ctx, generateIdentifier(), 'archived');
+        await seedProject(ctx, generateIdentifier(), 'declined');
+        await seedProject(ctx, generateIdentifier(), 'deleted');
         const stats =
             await getOrganizationStats(ctx);
         assert.equal(stats.projectsCurrent, 4);
@@ -172,17 +174,26 @@ test(
     + ' not archived or deleted',
     async () => {
         const { db, ctx } = await adminContext();
-        await seedMember(db, 'u1', 'active');
+        const submitter = generateIdentifier();
+        await seedMember(db, submitter, 'active');
         await seedIdea(
-            ctx, 'fndCYAsXazdzMUlEGMNIZw', 'active', 'u1',
+            ctx, generateIdentifier(), 'active', submitter,
         );
         await seedIdea(
-            ctx, 'fxysGbBPBsnCwJNJsyZnkA', 'in_review', 'u1',
+            ctx, generateIdentifier(), 'in_review', submitter,
         );
-        await seedIdea(ctx, 'gBbNAWlPwMfXZvevoUPhFQ', 'approved', 'u1');
-        await seedIdea(ctx, 'i4', 'promoted', 'u1');
-        await seedIdea(ctx, 'i5', 'archived', 'u1');
-        await seedIdea(ctx, 'i6', 'deleted', 'u1');
+        await seedIdea(
+            ctx, generateIdentifier(), 'approved', submitter,
+        );
+        await seedIdea(
+            ctx, generateIdentifier(), 'promoted', submitter,
+        );
+        await seedIdea(
+            ctx, generateIdentifier(), 'archived', submitter,
+        );
+        await seedIdea(
+            ctx, generateIdentifier(), 'deleted', submitter,
+        );
         const stats =
             await getOrganizationStats(ctx);
         assert.equal(stats.ideasCurrent, 4);
@@ -194,10 +205,10 @@ test(
     + ' human members',
     async () => {
         const { db, ctx } = await adminContext();
-        await seedMember(db, 'u1', 'active');
-        await seedMember(db, 'u2', 'active');
-        await seedMember(db, 'u3', 'pending');
-        await seedMember(db, 'u4', 'archived');
+        await seedMember(db, generateIdentifier(), 'active');
+        await seedMember(db, generateIdentifier(), 'active');
+        await seedMember(db, generateIdentifier(), 'pending');
+        await seedMember(db, generateIdentifier(), 'archived');
         const stats =
             await getOrganizationStats(ctx);
         assert.equal(stats.activePeopleCount, 5);
@@ -209,10 +220,13 @@ test(
     + ' event when entities transition',
     async () => {
         const { db, ctx } = await adminContext();
-        await seedMember(db, 'u1', 'active');
-        await seedProject(ctx, 'pnXmXrxOWayANgDLdCjuBw', 'approved');
+        const submitter = generateIdentifier();
+        const projectId = generateIdentifier();
+        const ideaId = generateIdentifier();
+        await seedMember(db, submitter, 'active');
+        await seedProject(ctx, projectId, 'approved');
         await seedIdea(
-            ctx, 'fndCYAsXazdzMUlEGMNIZw', 'active', 'u1',
+            ctx, ideaId, 'active', submitter,
         );
         let stats =
             await getOrganizationStats(ctx);
@@ -225,14 +239,14 @@ test(
         // retired; project/idea/member lifecycle rides each
         // family's own document address.
         const { organization_id: _projectOrganizationId, ...pFields } =
-            buildProject('pnXmXrxOWayANgDLdCjuBw');
-        await putProject(ctx, 'pnXmXrxOWayANgDLdCjuBw', {
+            buildProject(projectId);
+        await putProject(ctx, projectId, {
             ...pFields,
             state: 'declined',
         });
         const { organization_id: _ideaOrganizationId, ...iFields } =
-            buildIdea('fndCYAsXazdzMUlEGMNIZw');
-        await putIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', {
+            buildIdea(ideaId);
+        await putIdea(ctx, ideaId, {
             ...iFields,
             state: 'archived',
         });
@@ -260,7 +274,10 @@ test(
         const { seedSeat } = await import(
             './root-admin-fixture.ts'
         );
-        await seedSeat(db, 'AjdvjuECVZEgZoFajaIEkg', 'other', 'member');
+        await seedSeat(
+            db, 'AjdvjuECVZEgZoFajaIEkg',
+            generateIdentifier(), 'member',
+        );
         const organization = await getOrganization(ctx);
         assert.equal(organization.usedSeats(), 2);
     },

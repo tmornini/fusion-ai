@@ -13,6 +13,8 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 
 // The flows sibling of tests/derive-ideas.test.ts/derive-
@@ -125,9 +127,11 @@ test(
     async () => {
         const db = await seededDb();
         const token = await organizationToken();
-        const id = 'flow-drv-skew';
+        const id = generateIdentifier();
+        const genesisEventId = generateIdentifier();
+        const laterEventId = generateIdentifier();
         const genesisGraph = graphWithNode(
-            'n-genesis', 'Genesis Node',
+            generateIdentifier(), 'Genesis Node',
         );
 
         // Genesis claims a LATER state_at than the skewed
@@ -135,7 +139,7 @@ test(
         // the (state_at, id) reduction must resist.
         const genesis = await putFlow(
             db, token, id, 'Genesis Title', 'active',
-            '2026-06-01T00:00:00.000000Z', 'ev-drv-skew-genesis',
+            '2026-06-01T00:00:00.000000Z', genesisEventId,
             genesisGraph,
         );
         assert.equal(genesis.status, 201);
@@ -154,11 +158,11 @@ test(
         // tests
         // use — a save with no echo 412s outright.
         const skewedGraph = graphWithNode(
-            'n-skewed', 'Skewed Node',
+            generateIdentifier(), 'Skewed Node',
         );
         const res = await putFlow(
             db, token, id, 'Skewed Title', 'deleted',
-            '2020-01-01T00:00:00.000000Z', 'ev-drv-skew-later',
+            '2020-01-01T00:00:00.000000Z', laterEventId,
             skewedGraph, { 'if-match': etag },
         );
         assert.equal(res.status, 201);
@@ -205,13 +209,13 @@ test(
             })),
             [
                 {
-                    id: 'ev-drv-skew-later',
+                    id: laterEventId,
                     entity_id: id,
                     state: 'deleted',
                     at: '2020-01-01T00:00:00.000000Z',
                 },
                 {
-                    id: 'ev-drv-skew-genesis',
+                    id: genesisEventId,
                     entity_id: id,
                     state: 'active',
                     at: '2026-06-01T00:00:00.000000Z',
@@ -225,12 +229,14 @@ test('ordering is oldest live head (at, id)', async () => {
     const db = await seededDb();
     const token = await organizationToken();
     const ids = [
-        'zz-order-flow', 'aa-order-flow', 'mm-order-flow',
+        generateIdentifier(),
+        generateIdentifier(),
+        generateIdentifier(),
     ];
     for (const id of ids) {
         const res = await putFlow(
             db, token, id, 'Order ' + id, 'active',
-            AT, 'ev-' + id, emptyGraph(),
+            AT, generateIdentifier(), emptyGraph(),
         );
         assert.equal(res.status, 201);
     }

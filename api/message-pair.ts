@@ -5,6 +5,7 @@ import type {
 import { nowUtc } from './types.ts';
 import {
     generateIdentifier,
+    isIdentifier,
 } from '../shared/identifier.ts';
 import { messageAddress } from './message-address.ts';
 import { messageStore } from './message-store.ts';
@@ -175,11 +176,11 @@ export function requireOperationId(
             { status: HTTP_BAD_REQUEST },
         );
     }
-    if (!/^[A-Za-z0-9_-]{22}$/.test(value)) {
+    if (!isIdentifier(value)) {
         return Response.json(
             {
                 error: 'Operation-ID must be a 22-'
-                    + 'character id',
+                    + 'character identifier',
             },
             { status: HTTP_BAD_REQUEST },
         );
@@ -203,9 +204,10 @@ function headerFieldsWithOperationId(
 export async function formWritePair(
     input: WritePairInput,
 ): Promise<MessagePair> {
-    if (!/^[A-Za-z0-9_-]{22}$/.test(input.operationId)) {
+    if (!isIdentifier(input.operationId)) {
         throw new Error(
-            'operationId must be a 22-character id',
+            'operationId must be a 22-character'
+                + ' identifier',
         );
     }
     const id = generateIdentifier();

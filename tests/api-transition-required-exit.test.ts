@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -35,17 +37,21 @@ import { seedSeat } from './root-admin-fixture.ts';
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
-const FLOW_ID = 'flow-req-exit-1';
-const WO_ID = 'wo-req-exit-1';
-const WO_FREE = 'wo-req-exit-free';
-const TYPE_ID = 'rt-req-exit-1';
-const ATTR_ID = 'attr-req-exit-1';
-const ATTR_LOCKED = 'attr-req-exit-locked';
-const ATTR_FOREIGN = 'attr-req-exit-foreign';
-const INSTANCE_ID = 'inst-req-exit-1';
-const FR_ID = 'fr-req-exit-1';
-const FWO_ID = 'fwo-req-exit-1';
-const FWO_FREE = 'fwo-req-exit-free';
+const FLOW_ID = generateIdentifier();
+const WO_ID = generateIdentifier();
+const WO_FREE = generateIdentifier();
+const TYPE_ID = generateIdentifier();
+const ATTR_ID = generateIdentifier();
+const ATTR_LOCKED = generateIdentifier();
+const ATTR_FOREIGN = generateIdentifier();
+const INSTANCE_ID = generateIdentifier();
+const FR_ID = generateIdentifier();
+const FWO_ID = generateIdentifier();
+const FWO_FREE = generateIdentifier();
+const NODE_CREATE = generateIdentifier();
+const NODE_STEP = generateIdentifier();
+const NODE_TARGET = generateIdentifier();
+const NODE_FREE = generateIdentifier();
 
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
@@ -135,15 +141,15 @@ function requiredStepGraph(
         name: 'Req Exit Flow',
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes: [
-            nodeJson('n-create', { isCreate: true }),
-            nodeJson('n-step', {
+            nodeJson(NODE_CREATE, { isCreate: true }),
+            nodeJson(NODE_STEP, {
                 required: requiredAttrIds,
             }),
-            nodeJson('n-target'),
+            nodeJson(NODE_TARGET),
         ],
         edges: [
-            edgeJson('e-1', 'n-create', 'n-step'),
-            edgeJson('e-2', 'n-step', 'n-target'),
+            edgeJson(generateIdentifier(), NODE_CREATE, NODE_STEP),
+            edgeJson(generateIdentifier(), NODE_STEP, NODE_TARGET),
         ],
     };
 }
@@ -154,11 +160,11 @@ function freeGraph(): Record<string, unknown> {
         name: 'Free Exit Flow',
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes: [
-            nodeJson('n-create', { isCreate: true }),
-            nodeJson('n-free'),
+            nodeJson(NODE_CREATE, { isCreate: true }),
+            nodeJson(NODE_FREE),
         ],
         edges: [
-            edgeJson('e-1', 'n-create', 'n-free'),
+            edgeJson(generateIdentifier(), NODE_CREATE, NODE_FREE),
         ],
     };
 }
@@ -190,7 +196,7 @@ function valueBody(
 ): Record<string, unknown> {
     const body: Record<string, unknown> = {
         transitionEventId: opts.eventId ?? 'te-val',
-        targetState: opts.targetState ?? 'n-target',
+        targetState: opts.targetState ?? NODE_TARGET,
         release: null,
         transitionAt: nowUtc(),
         instance_id: INSTANCE_ID,
@@ -247,14 +253,14 @@ async function seedFlow(
                 is_auto_fit: false,
                 lock_timeout: DEFAULT_LOCK_TIMEOUT,
             },
-            projectFlowId: FLOW_ID + '-pf',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
-                project_id: 'proj-req-exit-1',
+                project_id: generateIdentifier(),
                 flow_id: FLOW_ID,
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: FLOW_ID + '-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: {
                 nodes: [],
@@ -405,7 +411,7 @@ async function placeOnStep(
         '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
             + '/transition',
         token,
-        pureMoveBody(eventId, 'n-step'),
+        pureMoveBody(eventId, NODE_STEP),
     ));
     assert.equal(res.status, 201);
 }
@@ -447,7 +453,7 @@ test(
         );
         const res = await handleRequest(db, req(
             'POST', TRANSITION, adminToken,
-            pureMoveBody('te-unbound', 'n-target'),
+            pureMoveBody('te-unbound', NODE_TARGET),
         ));
         assert.equal(res.status, 400);
         assert.deepEqual(await res.json(), {
@@ -474,7 +480,7 @@ test(
         );
         const res = await handleRequest(db, req(
             'POST', TRANSITION, adminToken,
-            pureMoveBody('te-ok', 'n-target'),
+            pureMoveBody('te-ok', NODE_TARGET),
         ));
         assert.equal(res.status, 201);
     },
@@ -496,7 +502,7 @@ test(
         );
         const res = await handleRequest(db, req(
             'POST', TRANSITION, adminToken,
-            pureMoveBody('te-miss', 'n-target'),
+            pureMoveBody('te-miss', NODE_TARGET),
         ));
         assert.equal(res.status, 400);
         const err = await res.json() as {
@@ -596,7 +602,7 @@ test(
         // At n-create (no required). Unbound pure move.
         const res = await handleRequest(db, req(
             'POST', TRANSITION_FREE, adminToken,
-            pureMoveBody('te-free', 'n-free'),
+            pureMoveBody('te-free', NODE_FREE),
         ));
         assert.equal(res.status, 201);
     },
@@ -678,7 +684,7 @@ test(
         );
         const res = await handleRequest(db, req(
             'POST', TRANSITION, adminToken,
-            pureMoveBody('te-foreign', 'n-target'),
+            pureMoveBody('te-foreign', NODE_TARGET),
         ));
         assert.equal(res.status, 400);
         const err = await res.json() as {

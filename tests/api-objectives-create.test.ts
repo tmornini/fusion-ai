@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import { strict as assert } from 'node:assert';
 import { GET, POST } from '../api/api.ts';
 import { memoryDbAdapter } from '../api/db-memory.ts';
@@ -35,7 +37,7 @@ function revisionFields(id: string, name: string) {
 function genesisTrio(id: string) {
     return {
         initialState: 'active',
-        initialStateEventId: id + '-active',
+        initialStateEventId: generateIdentifier(),
         initialStateAt: '2026-05-14T00:00:00.000000Z',
     };
 }
@@ -45,12 +47,13 @@ test(
     + ' revision on the pair plane in one operation',
     async () => {
         const db = await freshDb();
+        const id = generateIdentifier();
         await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/', {
-            id: 'obj-1',
+            id,
             objective: objectiveFields(),
             revisionId: 'sVWUntTCtQYFCpONjkzAKg',
-            revision: revisionFields('obj-1', 'Revenue'),
-            ...genesisTrio('obj-1'),
+            revision: revisionFields(id, 'Revenue'),
+            ...genesisTrio(id),
         }, DEV_TOKEN);
         // Phase Final Task 2: row halves stripped — GET is
         // pair-derived.
@@ -59,7 +62,7 @@ test(
             position: number;
             organization_id: string;
             state?: string;
-        }>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-1'
+        }>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id
             , DEV_TOKEN);
         assert.equal(objective.position, 1);
         // The fence stamped the bound org — never the body.
@@ -68,17 +71,17 @@ test(
         assert.equal(objective.state, 'active');
         // The leaf revision route is PUT-only; read the nested
         // per-objective collection and find the revision the
-        // create synthesized (the server filters to obj-1).
+        // create synthesized (the server filters to this id).
         const revisions = await GET<Array<{
             id: string;
             objective_id: string;
             name: string;
-        }>>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-1/'
-            + 'revisions/', DEV_TOKEN);
+        }>>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id
+            + '/revisions/', DEV_TOKEN);
         const revision = revisions.find(
             r => r.id === 'sVWUntTCtQYFCpONjkzAKg');
         assert.ok(revision);
-        assert.equal(revision.objective_id, 'obj-1');
+        assert.equal(revision.objective_id, id);
         assert.equal(revision.name, 'Revenue');
         // Phase Final Stage B: objectives tables retired.
     },
@@ -93,20 +96,21 @@ test(
         // validateObjectiveRevisionEntity at the route
         // pre-tx (pair formation), so no pairs land and
         // GET cannot derive the objective.
+        const id = generateIdentifier();
         await assert.rejects(
             () => POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
                 + '', {
-                id: 'obj-rollback',
+                id,
                 objective: objectiveFields(),
-                revisionId: 'rev-rollback',
-                revision: revisionFields('obj-rollback', ''),
-                ...genesisTrio('obj-rollback'),
+                revisionId: generateIdentifier(),
+                revision: revisionFields(id, ''),
+                ...genesisTrio(id),
             }, DEV_TOKEN),
         );
         await assert.rejects(
             () => GET(
                 db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
-                    + 'obj-rollback', DEV_TOKEN,
+                    + id, DEV_TOKEN,
             ),
         );
     },

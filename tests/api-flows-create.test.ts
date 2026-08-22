@@ -15,6 +15,8 @@ import {
 import type {
     StateEntity,
 } from '../api/types.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 async function freshDb() {
     const db = memoryDbAdapter();
@@ -42,19 +44,19 @@ function createBody() {
     return {
         id: 'aEsGMmBEFaVdWihhHXwCbw',
         flow: flowFields(),
-        projectFlowId: 'pf-1',
+        projectFlowId: generateIdentifier(),
         projectFlow: {
             project_id: 'pnXmXrxOWayANgDLdCjuBw',
             flow_id: 'aEsGMmBEFaVdWihhHXwCbw',
             at: CREATE_AT,
         },
         initialState: 'active',
-        initialStateEventId: 'ev-1',
+        initialStateEventId: generateIdentifier(),
         initialStateAt: CREATE_AT,
         graphDelta: {
             nodes: [
                 {
-                    id: 'n-start',
+                    id: generateIdentifier(),
                     flow_id: 'aEsGMmBEFaVdWihhHXwCbw',
                     name: 'Start',
                     position_x: 0,
@@ -65,7 +67,7 @@ function createBody() {
                     at: CREATE_AT,
                 },
                 {
-                    id: 'n-finish',
+                    id: generateIdentifier(),
                     flow_id: 'aEsGMmBEFaVdWihhHXwCbw',
                     name: 'Done',
                     position_x: 0,
@@ -89,8 +91,9 @@ test(
     + " 'active' state event in one operation",
     async () => {
         const db = await freshDb();
+        const body = createBody();
         await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
-            , createBody(), DEV_TOKEN);
+            , body, DEV_TOKEN);
 
         const flow = await GET<{
             id: string;
@@ -111,7 +114,7 @@ test(
         }[]>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
             + 'pnXmXrxOWayANgDLdCjuBw/flows/', DEV_TOKEN);
         assert.equal(links.length, 1);
-        assert.equal(links[0]!.id, 'pf-1');
+        assert.equal(links[0]!.id, body.projectFlowId);
         assert.equal(links[0]!.project_id, 'pnXmXrxOWayANgDLdCjuBw');
         assert.equal(links[0]!.flow_id, 'aEsGMmBEFaVdWihhHXwCbw');
 
@@ -120,7 +123,7 @@ test(
         // Phase Final Stage B: states table retired.
         assert.equal(events.length, 1);
         const ev = events[0]! as StateEntity;
-        assert.equal(ev.id, 'ev-1');
+        assert.equal(ev.id, body.initialStateEventId);
         assert.equal(ev.state, 'active');
         // The event is authored by the verified caller, never
         // the body.

@@ -38,6 +38,7 @@ import { appendMessagePair } from './message-pair.ts';
 import {
     humanMemberPoolsByOrganization,
     pickHumanMember,
+    seedIdentifier,
 } from './mock-data/seed-kit.ts';
 import {
     MOCK_SEED_TIMESTAMP,
@@ -673,12 +674,15 @@ async function postMockDataLoadIn(
         // postFlowCreationOp, which requires one.
         postFlowDocumentOp(
             adapter,
-            'seed-flow-org2',
+            seedIdentifier('seed-flow-org2'),
             flowOrg2SeedBody(),
             SYSTEM_MEMBER_ID,
             requirePair(
                 pairs,
-                seedPairKey('flows/:id', 'seed-flow-org2'),
+                seedPairKey(
+                    'flows/:id',
+                    seedIdentifier('seed-flow-org2'),
+                ),
             ),
         ),
     ]);
@@ -933,7 +937,9 @@ async function postMockDataLoadIn(
         // key (seed-message-pairs.ts) — fixed 1+1+1. The
         // revision id is recomputed identically to
         // objectiveSeedBody's own construction (deterministic).
-        const revisionId = `${seed.id}:${MOCK_SEED_TIMESTAMP}`;
+        const revisionId = seedIdentifier(
+            `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
+        );
         const objectivePairs: ObjectiveCreationPairs = {
             operation: requirePair(
                 pairs, seedPairKey('objectives', seed.id),
@@ -960,8 +966,9 @@ async function postMockDataLoadIn(
     // Organization 'BBjWJsjYIDkTRKIIPrzWRw' owns one objective so each org
     // owns
     // at least one (pair plane only after Task 2 strip).
-    const org2RevisionId =
-        `${ORGANIZATION_TWO_OBJECTIVE.id}:${MOCK_SEED_TIMESTAMP}`;
+    const org2RevisionId = seedIdentifier(
+        `${ORGANIZATION_TWO_OBJECTIVE.id}:${MOCK_SEED_TIMESTAMP}`,
+    );
     await postObjectiveCreationOp(
         adapter,
         objectiveSeedBody(

@@ -21,6 +21,8 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 test(
     'postRecordChange create writes the row and'
@@ -125,6 +127,8 @@ test(
         await seedAdminSchema(db);
         await seedCurrentMember(db);
         const ctx = createRequestContext(db, await organizationToken());
+        const oldAttrId = generateIdentifier();
+        const newAttrId = generateIdentifier();
         await postRecordChange(ctx, 'rbfHGatkwQzGZJVXKJEeyw', {
             kind: 'create',
             record: {
@@ -133,7 +137,7 @@ test(
             },
             attributes: [
                 {
-                    id: 'a-old',
+                    id: oldAttrId,
                     record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                     name: 'Old',
                     attribute_type: 'text',
@@ -155,7 +159,7 @@ test(
             },
             attributes: [
                 {
-                    id: 'a-new',
+                    id: newAttrId,
                     record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                     name: 'New',
                     attribute_type: 'text',
@@ -165,7 +169,7 @@ test(
                 },
             ],
             state: head.stateValue(),
-            removedAttributeIds: ['a-old'],
+            removedAttributeIds: [oldAttrId],
         });
         const attrs = await ctx.GET<
             { id: string }[]
@@ -175,7 +179,7 @@ test(
             + '/attributes/',
         );
         assert.equal(attrs.length, 1);
-        assert.equal(attrs[0]!.id, 'a-new');
+        assert.equal(attrs[0]!.id, newAttrId);
     },
 );
 
@@ -271,7 +275,7 @@ test(
         await seedAdminSchema(db);
         const ctx = createRequestContext(db, await organizationToken());
         await assert.rejects(
-            () => getRecordModel(ctx, 'rec-missing'),
+            () => getRecordModel(ctx, generateIdentifier()),
             /Not found/,
         );
     },

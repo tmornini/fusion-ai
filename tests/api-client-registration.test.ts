@@ -21,6 +21,8 @@ import {
     deriveClientRegistration,
     registrationEntityOf,
 } from '../api/derive-identity-spine.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 const REGISTRATION = {
     grant_types: 'client_credentials',
@@ -47,8 +49,12 @@ test('unauthenticated registration access is 401,'
 async () => {
     const db = await freshDb();
     await assert.rejects(
-        () => GET(db, 'identities/ghost/registration',
-            'not-a-token'),
+        () => GET(
+            db,
+            'identities/' + generateIdentifier()
+                + '/registration',
+            'not-a-token',
+        ),
         UnauthorizedError,
     );
 });
@@ -57,8 +63,9 @@ test('a member-tier caller is 403 (admin realm)',
 async () => {
     const db = await freshDb();
     await seedServiceIdentity(db, 'uWzjNIEeEtVWqZoJMLeYpw');
-    await seedOrganizationMember(db, 'peon');
-    const memberToken = await devToken('peon');
+    const peonId = generateIdentifier();
+    await seedOrganizationMember(db, peonId);
+    const memberToken = await devToken(peonId);
     await assert.rejects(
         () => PUT(db, 'identities/uWzjNIEeEtVWqZoJMLeYpw/registration',
             { ...REGISTRATION }, memberToken),
@@ -69,8 +76,12 @@ async () => {
 test('an absent identity is 404', async () => {
     const db = await freshDb();
     await assert.rejects(
-        () => PUT(db, 'identities/ghost/registration',
-            { ...REGISTRATION }, DEV_TOKEN),
+        () => PUT(
+            db,
+            'identities/' + generateIdentifier()
+                + '/registration',
+            { ...REGISTRATION }, DEV_TOKEN,
+        ),
         rejectsWithStatus(404),
     );
 });

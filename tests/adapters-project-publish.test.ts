@@ -20,6 +20,8 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // organization_id EXCLUDED — the client never supplies it (the
 // org fence stamps it downstream); see ProjectDocumentFields.
@@ -36,7 +38,7 @@ test('validator: not ready when objectives unscored',
     () => {
         const r = validateProjectForApproval(
             [{ id: 'ohqxgUBEaFQwYbXsonRPmg', position: 0 },
-             { id: 'o2', position: 1 }],
+             { id: generateIdentifier(), position: 1 }],
             [],
         );
         assert.equal(r.ready, false);
@@ -46,7 +48,8 @@ test('validator: not ready when objectives unscored',
 test('validator: ready when all scored', () => {
     const r = validateProjectForApproval(
         [{ id: 'ohqxgUBEaFQwYbXsonRPmg', position: 0 }],
-        [{ id: 'b1', projectId: 'pnXmXrxOWayANgDLdCjuBw',
+        [{ id: generateIdentifier(),
+           projectId: 'pnXmXrxOWayANgDLdCjuBw',
            objectiveId: 'ohqxgUBEaFQwYbXsonRPmg', score: 50,
            memberId: 'xdaJyuuPyHfffCGLhqDrOQ',
            at: '2026-05-14T00:00:00.000000Z' }],
@@ -58,7 +61,8 @@ test('validator: ready when all scored', () => {
 test('archival validator: not ready when actuals missing',
     () => {
         const r = validateProjectForArchival(
-            [{ id: 'b1', projectId: 'pnXmXrxOWayANgDLdCjuBw',
+            [{ id: generateIdentifier(),
+               projectId: 'pnXmXrxOWayANgDLdCjuBw',
                objectiveId: 'ohqxgUBEaFQwYbXsonRPmg', score: 50,
                memberId: 'xdaJyuuPyHfffCGLhqDrOQ',
                at: '2026-05-14T00:00:00.000000Z' }],
@@ -100,7 +104,8 @@ test('postProjectApproval moves state to approved',
         });
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
-                + 'pnXmXrxOWayANgDLdCjuBw/objective-baseline-scores/b1',
+                + 'pnXmXrxOWayANgDLdCjuBw/objective-baseline-scores/'
+                + generateIdentifier(),
             { project_id: 'pnXmXrxOWayANgDLdCjuBw'
                 , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
               score: 50,
@@ -152,7 +157,8 @@ test('postProjectArchival moves state to archived',
         });
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
-                + 'pnXmXrxOWayANgDLdCjuBw/objective-baseline-scores/b1',
+                + 'pnXmXrxOWayANgDLdCjuBw/objective-baseline-scores/'
+                + generateIdentifier(),
             { project_id: 'pnXmXrxOWayANgDLdCjuBw'
                 , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
               score: 50,

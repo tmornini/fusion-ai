@@ -29,6 +29,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Task 20 covenant suite — 12-step status ladder (earlier
 // step answers) + If-Match / ETag cross-pins. Each pin is
@@ -38,11 +40,13 @@ import { seedSeat } from './root-admin-fixture.ts';
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
-const TYPE_ID = 'rt-prec-1';
-const ATTR_ID = 'attr-prec-1';
-const ATTR_NUM = 'attr-prec-num';
-const ATTR_LOCKED = 'attr-prec-locked';
-const INSTANCE_ID = 'inst-prec-1';
+const TYPE_ID = generateIdentifier();
+const ATTR_ID = generateIdentifier();
+const ATTR_NUM = generateIdentifier();
+const ATTR_LOCKED = generateIdentifier();
+const INSTANCE_ID = generateIdentifier();
+const ORGANIZATION_B = generateIdentifier();
+const ATTR_UNKNOWN = generateIdentifier();
 
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
@@ -51,7 +55,7 @@ const ATTRS = TYPE_DETAIL + '/attributes/';
 const INSTANCES = TYPE_DETAIL + '/instances/';
 const INSTANCE_DETAIL = INSTANCES + INSTANCE_ID;
 const FOREIGN_TYPE =
-    '/organizations/B/record-types/' + TYPE_ID;
+    '/organizations/' + ORGANIZATION_B + '/record-types/' + TYPE_ID;
 
 function req(
     method: string,
@@ -91,7 +95,7 @@ async function adminDb(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedMembershipPair(db, 'm-member1', {
+    await seedMembershipPair(db, generateIdentifier(), {
         organization_id: ORGANIZATION,
         identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
@@ -356,7 +360,7 @@ async () => {
         {
             set: [
                 {
-                    attribute_id: 'attr-unknown',
+                    attribute_id: ATTR_UNKNOWN,
                     value: 'x',
                 },
             ],

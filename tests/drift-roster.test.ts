@@ -56,6 +56,27 @@ import {
     storedPutBodyText,
     storedCollectionText,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const INV_ROSTER_SARAH = generateIdentifier();
+const EV_ROSTER_SARAH_GRANT = generateIdentifier();
+const INV_ROSTER_JESSICA = generateIdentifier();
+const EV_ROSTER_JESSICA_GRANT = generateIdentifier();
+const MS_ROSTER_JESSICA = generateIdentifier();
+const EV_ROSTER_JESSICA_ACCEPT = generateIdentifier();
+const INV_ROSTER_EMILY = generateIdentifier();
+const EV_ROSTER_EMILY_GRANT = generateIdentifier();
+const EV_ROSTER_EMILY_DECLINE = generateIdentifier();
+const INV_ROSTER_MARCUS = generateIdentifier();
+const EV_ROSTER_MARCUS_GRANT = generateIdentifier();
+const EV_ROSTER_MARCUS_REVOKE = generateIdentifier();
+const INV_ROSTER_SARAH_DUP = generateIdentifier();
+const EV_ROSTER_SARAH_DUP_GRANT = generateIdentifier();
+const MS_ROSTER_JESSICA_2 = generateIdentifier();
+const EV_ROSTER_JESSICA_REACCEPT = generateIdentifier();
+const AI_DRIFT_METHOD_FILTER_1 = generateIdentifier();
+const HUMAN_DRIFT_METHOD_FILTER_1 = generateIdentifier();
 
 // Phase Final Task 2: roster (members / human_members /
 // ai_members / memberships / invitations) dual-write stripped.
@@ -177,7 +198,7 @@ const HUMAN_MEMBERS_TEST_WIRING: DocumentFamilyWiring = {
 
 // Any Id works here — every generic read path ignores its
 // `actor` argument entirely.
-const READER_ACTOR: Id = 'drift-reader';
+const READER_ACTOR: Id = generateIdentifier();
 
 // members/ai-members/human-members are GLOBAL plane (family-
 // registry.ts: organizationNested:false) — canonicalUriCollection
@@ -446,7 +467,7 @@ test('per-seat GET wire equals derive (all 12); missing-'
         assert.equal(wire.identity_id, derived.identity_id);
     }
 
-    const missingId = 'no-such-membership';
+    const missingId = generateIdentifier();
     const expectedMessage =
         'Not found: organization_members/' + missingId;
     await assert.rejects(
@@ -554,7 +575,7 @@ test('ai-agents + identities wire equals GET (GLOBAL)'
         assert.equal(got.id, row.id);
     }
 
-    const missingId = 'no-such-detail';
+    const missingId = generateIdentifier();
     const expectedAiMessage =
         'Not found: ai-agents/' + missingId;
     const aiMissingRes = await handleRequest(
@@ -634,7 +655,7 @@ test('seat collection counts per org; current identity;'
     assert.equal(current.id, 'XXZruirZyAOoRpNxaDnpSA');
     assert.equal(current.kind, 'person');
 
-    const missingId = 'no-such-member';
+    const missingId = generateIdentifier();
     const expectedMessage =
         'Not found: organization_members/' + missingId;
     await assert.rejects(
@@ -654,7 +675,7 @@ test('live-write chain: PUT ai-agents, PUT identity, PUT'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const aiId = 'ai-drift-chain-1';
+    const aiId = generateIdentifier();
 
     const beforeCreate = (await db.pairs.getAll()).length;
     const created = await handleRequest(db, req(
@@ -687,7 +708,7 @@ async () => {
         'Chain AI Facet',
     );
 
-    const humanId = 'human-drift-chain-1';
+    const humanId = generateIdentifier();
     const beforeHumanCreate = (await db.pairs.getAll()).length;
     const humanCreated = await handleRequest(db, req(
         'PUT', '/identities/' + humanId, token, {
@@ -843,12 +864,12 @@ async () => {
 
     // A: fresh grant — pending.
     const sarahGrant = await grantTo(
-        'inv-roster-sarah', 'sarah.chen@company.com',
-        'ev-roster-sarah-grant', '2026-06-01T00:00:00.000000Z',
+        INV_ROSTER_SARAH, 'sarah.chen@company.com',
+        EV_ROSTER_SARAH_GRANT, '2026-06-01T00:00:00.000000Z',
     );
     assert.equal(sarahGrant.status, 200);
     const sarahRow = (await deriveInvitations(db)).find(
-        (row) => row.id === 'inv-roster-sarah',
+        (row) => row.id === INV_ROSTER_SARAH,
     )!;
     assert.equal(sarahRow.state, 'pending');
     // Phase Final Stage B: roster tables retired.
@@ -856,17 +877,17 @@ async () => {
     // B: accept — accepted + the membership on the pair plane.
     const jessicaId = 'zyGBRshxOnKHUfcyFRqowg';
     const jessicaGrant = await grantTo(
-        'inv-roster-jessica', 'jessica.park@company.com',
-        'ev-roster-jessica-grant', '2026-06-01T00:00:01.000000Z',
+        INV_ROSTER_JESSICA, 'jessica.park@company.com',
+        EV_ROSTER_JESSICA_GRANT, '2026-06-01T00:00:01.000000Z',
     );
     assert.equal(jessicaGrant.status, 200);
     const jessicaAccept = await acceptAs(
-        jessicaId, 'inv-roster-jessica', 'ms-roster-jessica',
-        'ev-roster-jessica-accept', '2026-06-01T00:00:02.000000Z',
+        jessicaId, INV_ROSTER_JESSICA, MS_ROSTER_JESSICA,
+        EV_ROSTER_JESSICA_ACCEPT, '2026-06-01T00:00:02.000000Z',
     );
     assert.equal(jessicaAccept.status, 204);
     const jessicaRow = (await deriveInvitations(db)).find(
-        (row) => row.id === 'inv-roster-jessica',
+        (row) => row.id === INV_ROSTER_JESSICA,
     )!;
     assert.equal(jessicaRow.state, 'accepted');
     const derivedJessicaMembership =
@@ -882,33 +903,33 @@ async () => {
 
     // C: decline.
     const emilyGrant = await grantTo(
-        'inv-roster-emily', 'emily.rodriguez@company.com',
-        'ev-roster-emily-grant', '2026-06-01T00:00:03.000000Z',
+        INV_ROSTER_EMILY, 'emily.rodriguez@company.com',
+        EV_ROSTER_EMILY_GRANT, '2026-06-01T00:00:03.000000Z',
     );
     assert.equal(emilyGrant.status, 200);
     const emilyDecline = await declineAs(
-        'CJrglMsNBxOWWfbihHQSeg', 'inv-roster-emily',
-        'ev-roster-emily-decline', '2026-06-01T00:00:04.000000Z',
+        'CJrglMsNBxOWWfbihHQSeg', INV_ROSTER_EMILY,
+        EV_ROSTER_EMILY_DECLINE, '2026-06-01T00:00:04.000000Z',
     );
     assert.equal(emilyDecline.status, 204);
     const emilyRow = (await deriveInvitations(db)).find(
-        (row) => row.id === 'inv-roster-emily',
+        (row) => row.id === INV_ROSTER_EMILY,
     )!;
     assert.equal(emilyRow.state, 'declined');
 
     // D: revoke.
     const marcusGrant = await grantTo(
-        'inv-roster-marcus', 'marcus@acmecorp.com',
-        'ev-roster-marcus-grant', '2026-06-01T00:00:05.000000Z',
+        INV_ROSTER_MARCUS, 'marcus@acmecorp.com',
+        EV_ROSTER_MARCUS_GRANT, '2026-06-01T00:00:05.000000Z',
     );
     assert.equal(marcusGrant.status, 200);
     const marcusRevoke = await revoke(
-        'inv-roster-marcus', 'ev-roster-marcus-revoke',
+        INV_ROSTER_MARCUS, EV_ROSTER_MARCUS_REVOKE,
         '2026-06-01T00:00:06.000000Z',
     );
     assert.equal(marcusRevoke.status, 204);
     const marcusRow = (await deriveInvitations(db)).find(
-        (row) => row.id === 'inv-roster-marcus',
+        (row) => row.id === INV_ROSTER_MARCUS,
     )!;
     assert.equal(marcusRow.state, 'revoked');
 
@@ -916,8 +937,8 @@ async () => {
     // NO phantom invitation document.
     const beforeDerived = (await deriveInvitations(db)).length;
     const sarahDuplicate = await grantTo(
-        'inv-roster-sarah-dup', 'sarah.chen@company.com',
-        'ev-roster-sarah-dup-grant', '2026-06-01T00:00:07.000000Z',
+        INV_ROSTER_SARAH_DUP, 'sarah.chen@company.com',
+        EV_ROSTER_SARAH_DUP_GRANT, '2026-06-01T00:00:07.000000Z',
     );
     assert.equal(sarahDuplicate.status, 200);
     assert.equal(
@@ -935,8 +956,8 @@ async () => {
     const statesBefore =
         0 /* states table retired */;
     const jessicaReaccept = await acceptAs(
-        jessicaId, 'inv-roster-jessica', 'ms-roster-jessica-2',
-        'ev-roster-jessica-reaccept',
+        jessicaId, INV_ROSTER_JESSICA, MS_ROSTER_JESSICA_2,
+        EV_ROSTER_JESSICA_REACCEPT,
         '2026-06-01T00:00:08.000000Z',
     );
     assert.equal(jessicaReaccept.status, 409);
@@ -955,8 +976,8 @@ test('PUT ai-agents and PUT identities land exactly one'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const aiId = 'ai-drift-method-filter-1';
-    const humanId = 'human-drift-method-filter-1';
+    const aiId = AI_DRIFT_METHOD_FILTER_1;
+    const humanId = HUMAN_DRIFT_METHOD_FILTER_1;
 
     const aiCreated = await handleRequest(db, req(
         'PUT', '/ai-agents/' + aiId, token,
@@ -1009,7 +1030,7 @@ test('resend idempotency: a byte-identical ai-agents/:id PUT'
 + ' pair (the E6 fast-path at drift altitude)', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const aiId = 'ai-drift-resend-1';
+    const aiId = generateIdentifier();
 
     const beforeCount = (await db.pairs.getAll()).length;
     const body = aiMemberDocumentBody('Resend AI Facet');
@@ -1054,7 +1075,7 @@ test('GET identity is the latest PUT under clock-skewed'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const memberId = 'mem-drift-skew-1';
+    const memberId = generateIdentifier();
 
     const genesis = await handleRequest(db, req(
         'PUT', '/identities/' + memberId, token, {
@@ -1160,7 +1181,7 @@ test('THE UNSEATED-IDENTITY CASE: an identity created via'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const orphanId = 'orphan-drift-1';
+    const orphanId = generateIdentifier();
 
     const created = await handleRequest(db, req(
         'PUT', '/identities/' + orphanId, token, {

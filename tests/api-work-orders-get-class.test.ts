@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -27,14 +29,17 @@ import {
 
 const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const AT = '2026-01-01T00:00:00.000000Z';
-const FLOW_ID = 'flow-class-1';
-const WO_ID = 'wo-class-1';
-const WO_UNBOUND = 'wo-class-unbound';
-const TYPE_ID = 'rt-class-1';
-const ATTR_ID = 'attr-class-1';
-const INSTANCE_ID = 'inst-class-1';
-const FR_ID = 'fr-class-1';
-const FWO_ID = 'fwo-class-1';
+const FLOW_ID = generateIdentifier();
+const WO_ID = generateIdentifier();
+const WO_UNBOUND = generateIdentifier();
+const TYPE_ID = generateIdentifier();
+const ATTR_ID = generateIdentifier();
+const INSTANCE_ID = generateIdentifier();
+const FR_ID = generateIdentifier();
+const FWO_ID = generateIdentifier();
+const FWO_UNBOUND = generateIdentifier();
+const NODE_START = generateIdentifier();
+const NODE_FINISH = generateIdentifier();
 
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
@@ -91,14 +96,14 @@ async function seedFlow(
                 is_auto_fit: false,
                 lock_timeout: DEFAULT_LOCK_TIMEOUT,
             },
-            projectFlowId: FLOW_ID + '-pf',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
-                project_id: 'proj-class-1',
+                project_id: generateIdentifier(),
                 flow_id: FLOW_ID,
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: FLOW_ID + '-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: {
                 nodes: [],
@@ -224,7 +229,7 @@ async function seededDb(): Promise<{
     await seedFlow(db, token);
     await seedWorkOrder(db, token, WO_ID, FWO_ID);
     await seedWorkOrder(
-        db, token, WO_UNBOUND, 'fwo-class-unbound',
+        db, token, WO_UNBOUND, FWO_UNBOUND,
     );
     await seedLiveType(db, token);
     await seedAttribute(db, token);
@@ -349,16 +354,18 @@ function createBody(id: string) {
             flow_graph: graphJson(),
             position: 1,
         },
-        flowWorkOrderId: id + '-fwo',
+        flowWorkOrderId: generateIdentifier(),
         flowWorkOrder: {
-            flow_id: 'f-class-hist',
+            flow_id: generateIdentifier(),
             work_order_id: id,
             at: nowUtc(),
         },
         stateEventIds: [
-            id + '-ev1', id + '-ev2', id + '-ev3',
+            generateIdentifier(),
+            generateIdentifier(),
+            generateIdentifier(),
         ],
-        states: ['n-start', 'n-finish', 'claimed'],
+        states: [NODE_START, NODE_FINISH, 'claimed'],
         stateEventAts: [t0, t1, t2],
     };
 }
@@ -390,8 +397,8 @@ async () => {
     assert.equal(versions.status, 404);
 
     const bulk = await handleRequest(db, req(
-        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/history'
-            , token,
+        'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
+            + generateIdentifier(), token,
     ));
     assert.equal(bulk.status, 404);
 });

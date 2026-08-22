@@ -7,6 +7,10 @@
 import type { Id } from '../types.ts';
 import { SYSTEM_MEMBER_ID } from '../types.ts';
 import {
+    encodeIdentifier,
+    NIL_IDENTIFIER,
+} from '../../shared/identifier.ts';
+import {
     STARK_ORGANIZATION,
     ORGANIZATION_TWO,
     assignOrganization,
@@ -144,6 +148,26 @@ export function b62Id(
         s += B62_ALPHABET[idx];
     }
     return s;
+}
+
+// Deterministic identifier for seed bodies. The mnemonic is
+// the hash preimage, never the stored id.
+export function seedIdentifier(mnemonic: string): string {
+    const encoded = new TextEncoder().encode(mnemonic);
+    const bytes = new Uint8Array(16);
+    let mix = mnemonic.length * 0x9e3779b9;
+    for (let i = 0; i < encoded.length; i++) {
+        mix = Math.imul(mix ^ encoded[i]!, 0x01000193);
+        bytes[i % 16]! ^= mix & 0xff;
+        bytes[(i * 7) % 16]! ^= (mix >>> 8) & 0xff;
+        bytes[(i * 13) % 16]! ^= (mix >>> 16) & 0xff;
+    }
+    let text = encodeIdentifier(bytes);
+    if (text === NIL_IDENTIFIER) {
+        bytes[15] = (bytes[15]! + 1) & 0xff;
+        text = encodeIdentifier(bytes);
+    }
+    return text;
 }
 
 export function isoFromMs(ms: number): string {

@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import {
     deriveFlowStateHistory,
     flowEntityOf,
@@ -117,20 +119,26 @@ async function createFlow(
     db: MemoryDbAdapter,
     token: string,
     flowId: string,
+    ids?: {
+        readonly projectFlowId?: string;
+        readonly initialStateEventId?: string;
+    },
 ): Promise<Response> {
     return handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token,
         {
             id: flowId,
             flow: flowFields('Fresh Flow'),
-            projectFlowId: flowId + '-pf',
+            projectFlowId: ids?.projectFlowId
+                ?? generateIdentifier(),
             projectFlow: {
                 project_id: 'qfhFObbtDfxUZwEGxySBoQ',
                 flow_id: flowId,
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: flowId + '-ev',
+            initialStateEventId: ids?.initialStateEventId
+                ?? generateIdentifier(),
             initialStateAt: AT,
             graphDelta: emptyDelta(),
         },
@@ -213,7 +221,7 @@ test('postFlowDocumentOp returns the entity, exactly one'
         ...flowFields('Original'),
         state: 'active',
         state_at: AT,
-        state_event_id: 'flow-op-1-create',
+        state_event_id: generateIdentifier(),
         graph: emptyGraph(),
         graphDelta: emptyDelta(),
         revivals: [],
@@ -227,11 +235,12 @@ test('postFlowDocumentOp returns the entity, exactly one'
     const update = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'bgwNLywXomEwlIMSFlkukQ', token,
-        documentBody('Renamed', 'flow-op-1-upd', {
+        documentBody('Renamed', generateIdentifier(), {
+            state_at: '2026-01-01T00:00:01.000000Z',
             graphDelta: {
                 ...emptyDelta(),
                 nodes: [{
-                    id: 'n1',
+                    id: generateIdentifier(),
                     flow_id: 'bgwNLywXomEwlIMSFlkukQ',
                     name: 'N1',
                     position_x: 0,
@@ -260,6 +269,7 @@ test('postFlowDocumentOp returns the entity, exactly one'
 test('postFlowDocumentOp with revivals posts the restored'
 + ' events (the undo decomposition parity case)', async () => {
     const db = await freshDb();
+    const nodeId = generateIdentifier();
     // Phase Final Task 2: pair plane only — create then update
     // with a deletion + revival on the document body.
     const token = await organizationToken();
@@ -267,12 +277,12 @@ test('postFlowDocumentOp with revivals posts the restored'
         ...flowFields('Original'),
         state: 'active',
         state_at: AT,
-        state_event_id: 'flow-op-2-create',
+        state_event_id: generateIdentifier(),
         graph: emptyGraph(),
         graphDelta: {
             ...emptyDelta(),
             nodes: [{
-                id: 'node-x',
+                id: nodeId,
                 flow_id: 'biDOZCyZATKcAVVOCbegTw',
                 name: 'X',
                 position_x: 0,
@@ -283,8 +293,8 @@ test('postFlowDocumentOp with revivals posts the restored'
                 at: AT,
             }],
             deletions: [{
-                eventId: 'node-x-delete',
-                entityId: 'node-x',
+                eventId: generateIdentifier(),
+                entityId: nodeId,
                 entityKind: 'node',
                 at: AT,
             }],
@@ -301,11 +311,11 @@ test('postFlowDocumentOp with revivals posts the restored'
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'biDOZCyZATKcAVVOCbegTw', token,
         {
-            ...documentBody('Revived', 'flow-op-2-upd'),
+            ...documentBody('Revived', generateIdentifier()),
             revivals: [
                 {
-                    eventId: 'node-x-restore',
-                    entityId: 'node-x',
+                    eventId: generateIdentifier(),
+                    entityId: nodeId,
                     at: AT,
                 },
             ],
@@ -340,7 +350,7 @@ test('postFlowDocumentOp with revivals posts the restored'
                     && entry !== null
                     && (entry as Record<string, unknown>)[
                         'entityId'
-                    ] === 'node-x'
+                    ] === nodeId
                 ) {
                     states.push('deleted');
                 }
@@ -354,7 +364,7 @@ test('postFlowDocumentOp with revivals posts the restored'
                     && entry !== null
                     && (entry as Record<string, unknown>)[
                         'entityId'
-                    ] === 'node-x'
+                    ] === nodeId
                 ) {
                     states.push('restored');
                 }
@@ -368,7 +378,7 @@ test('the document body carries state/state_at/graph while'
 + ' the reconstructed entity carries none of them', async () => {
     const db = await freshDb();
     const body = {
-        ...documentBody('Doc Shape', 'flow-op-4-upd'),
+        ...documentBody('Doc Shape', generateIdentifier()),
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
     };
     for (const key of ['state', 'state_at', 'graph']) {
@@ -377,7 +387,7 @@ test('the document body carries state/state_at/graph while'
     // Phase Final Task 2: below-facade without a pair still
     // reconstructs the return entity from the body.
     const flow = await postFlowDocumentOp(
-        db, 'flow-op-4', body, 'XXZruirZyAOoRpNxaDnpSA',
+        db, generateIdentifier(), body, 'XXZruirZyAOoRpNxaDnpSA',
     );
     for (const key of [
         'state', 'state_at', 'state_event_id',
@@ -402,7 +412,7 @@ async () => {
     const res = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'ajKMlszDvGpoUWXASHPNEg', token,
-        documentBody('No Match', 'flow-if-match-428-a'),
+        documentBody('No Match', generateIdentifier()),
     ));
     assert.equal(res.status, 428);
     const body = await res.json() as {
@@ -424,7 +434,7 @@ async () => {
         const res = await handleRequest(db, req(
             'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
                 + 'aVuvRoPHPHSNWPovkYhZqw', token,
-            documentBody('Bad Match', 'flow-if-match-400-a'),
+            documentBody('Bad Match', generateIdentifier()),
             { 'if-match': bad },
         ));
         assert.equal(res.status, 400, bad);
@@ -444,7 +454,7 @@ async () => {
     const res = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'aYDQdfcyFUkOqCLKIIvnww', token,
-        documentBody('Stale Match', 'flow-if-match-412-a'),
+        documentBody('Stale Match', generateIdentifier()),
         { 'if-match': '"' + 'b'.repeat(64) + '"' },
     ));
     assert.equal(res.status, 412);
@@ -465,7 +475,7 @@ async () => {
     const res = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'awMkvSKFOHJymfXEpFypPw', token,
-        documentBody('Ghost', 'flow-if-match-none-a'),
+        documentBody('Ghost', generateIdentifier()),
         { 'if-match': '"' + 'b'.repeat(64) + '"' },
     ));
     assert.equal(res.status, 412);
@@ -483,7 +493,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     const token = await organizationToken();
     await createFlow(db, token, 'bZXXOWeDHCowVkWMhrZGgg');
     const headId = await headResponseId(db, token, 'bZXXOWeDHCowVkWMhrZGgg');
-    const body = documentBody('Resend', 'flow-locked-3-a');
+    const body = documentBody('Resend', generateIdentifier());
     const headers = {
         'if-match': await headEtag(db, token, 'bZXXOWeDHCowVkWMhrZGgg'),
     };
@@ -535,14 +545,14 @@ async () => {
     const noEcho = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'bACksPDpiYvefaEzSXoaZg', token,
-        documentBody('No Echo', 'flow-locked-1-a'),
+        documentBody('No Echo', generateIdentifier()),
     ));
     assert.equal(noEcho.status, 428);
 
     const staleEcho = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'bACksPDpiYvefaEzSXoaZg', token,
-        documentBody('Stale Echo', 'flow-locked-1-b'),
+        documentBody('Stale Echo', generateIdentifier()),
         { 'if-match': '"' + 'b'.repeat(64) + '"' },
     ));
     assert.equal(staleEcho.status, 412);
@@ -550,7 +560,7 @@ async () => {
     const fresh = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'bACksPDpiYvefaEzSXoaZg', token,
-        documentBody('Fresh Echo', 'flow-locked-1-c'),
+        documentBody('Fresh Echo', generateIdentifier()),
         { 'if-match': await headEtag(
             db, token, 'bACksPDpiYvefaEzSXoaZg',
         ) },
@@ -642,7 +652,7 @@ test('e2e: an old-shape PUT body 400s (validateFlowPutBody'
             + 'bZzeCdjzbfoAExMKEafrVA', token,
         {
             flow: flowFields('Old Shape'),
-            eventId: 'ev-1',
+            eventId: generateIdentifier(),
             at: AT,
             history: { kind: 'none' },
             graphDelta: emptyDelta(),
@@ -672,7 +682,7 @@ async () => {
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'cnRwmsMXKOgLWsMVIjtubQ/undo', token, {
             flow: flowFields('Old Shape Undo'),
-            eventId: 'flow-undo-old-shape-undo-ev',
+            eventId: generateIdentifier(),
             at: AT,
             graphDelta: emptyDelta(),
             revivals: [],
@@ -700,7 +710,13 @@ test('e2e: POST flows forms a document pair at the flow\'s'
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const created = await createFlow(db, token, 'flow-pairs-1');
+    const flowId = generateIdentifier();
+    const projectFlowId = generateIdentifier();
+    const initialStateEventId = generateIdentifier();
+    const created = await createFlow(db, token, flowId, {
+        projectFlowId,
+        initialStateEventId,
+    });
     assert.equal(created.status, 201);
 
     const pairs = await db.pairs.getAll();
@@ -709,7 +725,7 @@ async () => {
     const flowAddress = pairs.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
-            && r.uri_id === 'flow-pairs-1',
+            && r.uri_id === flowId,
     );
     assert.equal(flowAddress.length, 2);
     const documentRow = flowAddress.find(
@@ -726,7 +742,7 @@ async () => {
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
         state: 'active',
         state_at: AT,
-        state_event_id: 'flow-pairs-1-ev',
+        state_event_id: initialStateEventId,
         graph: emptyGraph(),
         graphDelta: emptyDelta(),
         revivals: [],
@@ -750,7 +766,7 @@ async () => {
             + 'qfhFObbtDfxUZwEGxySBoQ/flows/';
     const joinAddress = pairs.filter(
         r => r.uri_collection === joinPrefix
-            && r.uri_id === 'flow-pairs-1-pf',
+            && r.uri_id === projectFlowId,
     );
     assert.equal(joinAddress.length, 1);
     const decodedJoin =
@@ -758,7 +774,7 @@ async () => {
     assert.equal(decodedJoin.method, 'PUT');
     assert.deepEqual(decodedJoin.body, {
         project_id: 'qfhFObbtDfxUZwEGxySBoQ',
-        flow_id: 'flow-pairs-1',
+        flow_id: flowId,
         at: AT,
     });
 
@@ -779,20 +795,21 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
 + ' the first document pair was genesis', async () => {
     const db = await freshDb();
     const token = await organizationToken();
+    const flowId = generateIdentifier();
 
     const first = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token,
         {
-            id: 'flow-dup-1',
+            id: flowId,
             flow: flowFields('Fresh Flow'),
-            projectFlowId: 'flow-dup-1-pf-a',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
                 project_id: 'qfhFObbtDfxUZwEGxySBoQ',
-                flow_id: 'flow-dup-1',
+                flow_id: flowId,
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: 'flow-dup-1-ev-a',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: emptyDelta(),
         },
@@ -803,7 +820,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
     const flowAddressAfterFirst = requestsAfterFirst.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
-            && r.uri_id === 'flow-dup-1',
+            && r.uri_id === flowId,
     );
     const firstDocumentRequest = flowAddressAfterFirst.find(
         r => decodeRequestMessage(r.request).method === 'PUT',
@@ -822,16 +839,16 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
     const second = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token,
         {
-            id: 'flow-dup-1',
+            id: flowId,
             flow: flowFields('Fresh Flow'),
-            projectFlowId: 'flow-dup-1-pf-b',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
                 project_id: 'qfhFObbtDfxUZwEGxySBoQ',
-                flow_id: 'flow-dup-1',
+                flow_id: flowId,
                 at: SECOND_AT,
             },
             initialState: 'active',
-            initialStateEventId: 'flow-dup-1-ev-b',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: SECOND_AT,
             graphDelta: emptyDelta(),
         },
@@ -845,7 +862,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
     const flowAddressAfterSecond = requestsAfterSecond.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
-            && r.uri_id === 'flow-dup-1',
+            && r.uri_id === flowId,
     );
     const documentRequests = flowAddressAfterSecond.filter(
         r => decodeRequestMessage(r.request).method === 'PUT',
@@ -887,9 +904,10 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
     // A non-trivial undo TARGET (one node) — so the graph
     // comparison below actually exercises the mechanism rather
     // than trivially equating two empty graphs.
+    const nodeId = generateIdentifier();
     const undoneGraph = {
         nodes: [{
-            id: 'n-undo', name: 'N',
+            id: nodeId, name: 'N',
             positionX: 0, positionY: 0,
             isCreate: false, isArchive: false,
             memberIds: [], attributes: [],
@@ -900,11 +918,11 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
     const firstSave = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'cvdqOxjRwvTEYzWTrFDNFw', token,
-        documentBody('One Node', 'flow-undo-pairs-1-ev-1', {
+        documentBody('One Node', generateIdentifier(), {
             graph: undoneGraph,
             graphDelta: {
                 nodes: [{
-                    id: 'n-undo',
+                    id: nodeId,
                     flow_id: 'cvdqOxjRwvTEYzWTrFDNFw',
                     name: 'N',
                     position_x: 0, position_y: 0,
@@ -927,7 +945,7 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
     const secondSave = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'cvdqOxjRwvTEYzWTrFDNFw', token,
-        documentBody('Back To Empty', 'flow-undo-pairs-1-ev-2'),
+        documentBody('Back To Empty', generateIdentifier()),
         { 'if-match': await headEtag(
             db, token, 'cvdqOxjRwvTEYzWTrFDNFw',
         ) },
@@ -940,7 +958,7 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
     const undone = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'cvdqOxjRwvTEYzWTrFDNFw/undo', token, {
-            eventId: 'flow-undo-pairs-1-undo-ev',
+            eventId: generateIdentifier(),
             at: AT,
         },
     ));
@@ -1023,7 +1041,7 @@ async () => {
     const before = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'biakjMJqdIlFhfVZBGhpKw', token,
-        documentBody('Before Race', 'flow-race-1-ev-1'),
+        documentBody('Before Race', generateIdentifier()),
         { 'if-match': await headEtag(
             db, token, 'biakjMJqdIlFhfVZBGhpKw',
         ) },
@@ -1033,18 +1051,19 @@ async () => {
         db, token, 'biakjMJqdIlFhfVZBGhpKw',
     );
 
+    const undoEventId = generateIdentifier();
     const [undo, save] = await Promise.all([
         handleRequest(db, req(
             'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
                 + 'biakjMJqdIlFhfVZBGhpKw/undo', token, {
-                eventId: 'flow-race-1-undo-ev',
+                eventId: undoEventId,
                 at: AT,
             },
         )),
         handleRequest(db, req(
             'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
                 + 'biakjMJqdIlFhfVZBGhpKw', token,
-            documentBody('Saved', 'flow-race-1-save-ev'),
+            documentBody('Saved', generateIdentifier()),
             { 'if-match': headEtagValue },
         )),
     ]);
@@ -1090,7 +1109,7 @@ async () => {
             , 'AjdvjuECVZEgZoFajaIEkg', 'biakjMJqdIlFhfVZBGhpKw');
         assert.ok(
             !events.some(
-                e => e.id === 'flow-race-1-undo-ev',
+                e => e.id === undoEventId,
             ),
             'the losing undo must not have posted its event',
         );
@@ -1190,7 +1209,7 @@ test('hasUndoHistory is absent from the stored PUT and '
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const flowId = 'flow-g2-stream';
+    const flowId = generateIdentifier();
     const created = await createFlow(db, token, flowId);
     assert.equal(created.status, 201);
     assert.equal(await documentPairCount(db, flowId), 1);
@@ -1199,11 +1218,11 @@ async () => {
     );
 
     const saveBody = documentBody(
-        'Saved Graph', flowId + '-save',
+        'Saved Graph', generateIdentifier(),
         {
             graph: {
                 nodes: [{
-                    id: 'n-g2', name: 'N',
+                    id: generateIdentifier(), name: 'N',
                     positionX: 0, positionY: 0,
                     isCreate: false, isArchive: false,
                     memberIds: [], attributes: [],
@@ -1233,7 +1252,7 @@ async () => {
     const undone = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
             + '/undo', token, {
-            eventId: flowId + '-undo',
+            eventId: generateIdentifier(),
             at: AT,
         },
     ));

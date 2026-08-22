@@ -19,6 +19,25 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const INV_PARITY_OPSTATE_ACCEPTED = generateIdentifier();
+const NO_SUCH_INVITATION = generateIdentifier();
+const INV_PARITY_LIFECYCLE_REVOKED = generateIdentifier();
+const N_START = generateIdentifier();
+const N_MIDDLE = generateIdentifier();
+const N_FINISH = generateIdentifier();
+const EDGE_2 = generateIdentifier();
+const WO_PARITY_CLAIM_HISTORY = generateIdentifier();
+const INVITATIONID_GRANT = generateIdentifier();
+const ID_MS = generateIdentifier();
+const ID_ACCEPT = generateIdentifier();
+const ID_REVOKE = generateIdentifier();
+const WORKORDERID_FWO = generateIdentifier();
+const WORKORDERID_EV1 = generateIdentifier();
+const WORKORDERID_EV2 = generateIdentifier();
+const WORKORDERID_EV3 = generateIdentifier();
 
 // The Author gate 1 rule (e) pre-tx-vs-in-tx PARITY pins for the
 // three Phase 14 Task 1 cores (invitationOpStateFor,
@@ -73,7 +92,7 @@ async function grant(
             + '/invitations/', admin, {
             email,
             invitationId,
-            grantEventId: invitationId + '-grant',
+            grantEventId: INVITATIONID_GRANT,
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
@@ -87,7 +106,7 @@ test('invitationOpStateFor: byte-identical pre-tx (the plain'
 + ' acceptInvitation\'s own table list) — the membershipExistsFor'
 + ' precedent', async () => {
     const db = await seededDb();
-    const id = 'inv-parity-opstate-accepted';
+    const id = INV_PARITY_OPSTATE_ACCEPTED;
     const inviteeId = 'MQFcPtrZPIGjMCRAXtZUnA'; // Sarah Chen
     await grant(db, id, 'sarah.chen@company.com');
     const accept = await handleRequest(db, req(
@@ -96,8 +115,8 @@ test('invitationOpStateFor: byte-identical pre-tx (the plain'
         await organizationToken(inviteeId, ORGANIZATION_TWO),
         {
             state: 'accepted',
-            membershipId: id + '-ms',
-            eventId: id + '-accept',
+            membershipId: ID_MS,
+            eventId: ID_ACCEPT,
             at: '2026-06-01T00:00:01.000000Z',
         },
     ));
@@ -116,12 +135,12 @@ test('invitationOpStateFor: byte-identical pre-tx (the plain'
 
     // A never-granted id, same parity.
     const preTxMissing = await invitationOpStateFor(
-        db, 'no-such-invitation',
+        db, NO_SUCH_INVITATION,
     );
     const inTxMissing = await db.transaction(
         acceptTxTables,
         (view) =>
-            invitationOpStateFor(view, 'no-such-invitation'),
+            invitationOpStateFor(view, NO_SUCH_INVITATION),
     );
     assert.equal(inTxMissing, preTxMissing);
     assert.equal(preTxMissing, undefined);
@@ -133,7 +152,7 @@ test('invitationLifecycleStatesFor: byte-identical pre-tx (the'
 + ' plain adapter) vs in-tx (an open db.transaction view sharing'
 + ' revokeInvitation\'s own table list)', async () => {
     const db = await seededDb();
-    const id = 'inv-parity-lifecycle-revoked';
+    const id = INV_PARITY_LIFECYCLE_REVOKED;
     await grant(db, id, 'emily.rodriguez@company.com');
     const revoke = await handleRequest(db, req(
         'PUT',
@@ -142,7 +161,7 @@ test('invitationLifecycleStatesFor: byte-identical pre-tx (the'
         await organizationToken('XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO),
         {
             state: 'revoked',
-            eventId: id + '-revoke',
+            eventId: ID_REVOKE,
             at: '2026-06-01T00:00:01.000000Z',
         },
     ));
@@ -158,13 +177,13 @@ test('invitationLifecycleStatesFor: byte-identical pre-tx (the'
     assert.equal(preTx.length, 2);
 
     const preTxMissing = await invitationLifecycleStatesFor(
-        db, 'no-such-invitation',
+        db, NO_SUCH_INVITATION,
     );
     const inTxMissing = await db.transaction(
         revokeTxTables,
         (view) =>
             invitationLifecycleStatesFor(
-                view, 'no-such-invitation',
+                view, NO_SUCH_INVITATION,
             ),
     );
     assert.deepEqual(inTxMissing, preTxMissing);
@@ -181,21 +200,21 @@ function workOrderFlowGraph(
         lockTimeout: lockTimeoutSeconds,
         nodes: [
             {
-                id: 'n-start', name: 'Start',
+                id: N_START, name: 'Start',
                 positionX: 0, positionY: 0,
                 isCreate: true, isArchive: false,
                 memberIds: [], attributes: [],
                 taskInstructions: '',
             },
             {
-                id: 'n-middle', name: 'Middle',
+                id: N_MIDDLE, name: 'Middle',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: false,
                 memberIds: [], attributes: [],
                 taskInstructions: '',
             },
             {
-                id: 'n-finish', name: 'Finish',
+                id: N_FINISH, name: 'Finish',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: true,
                 memberIds: [], attributes: [],
@@ -205,11 +224,11 @@ function workOrderFlowGraph(
         edges: [
             {
                 id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
-                fromNodeId: 'n-start', toNodeId: 'n-middle',
+                fromNodeId: N_START, toNodeId: N_MIDDLE,
             },
             {
-                id: 'e2', name: '',
-                fromNodeId: 'n-middle', toNodeId: 'n-finish',
+                id: EDGE_2, name: '',
+                fromNodeId: N_MIDDLE, toNodeId: N_FINISH,
             },
         ],
     };
@@ -222,7 +241,7 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
 + ' postWorkOrderClaimOp\'s own table list)', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-parity-chain';
+    const workOrderId = generateIdentifier();
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
@@ -232,18 +251,18 @@ test('workOrderLifecycleStatesFor: byte-identical pre-tx (the'
                 display_id: 'parity-' + workOrderId,
                 flow_graph: graph, position: 1,
             },
-            flowWorkOrderId: workOrderId + '-fwo',
+            flowWorkOrderId: WORKORDERID_FWO,
             flowWorkOrder: {
                 flow_id: EMPTY_FLOW_ID,
                 work_order_id: workOrderId, at: nowUtc(),
             },
             stateEventIds: [
-                workOrderId + '-ev1',
-                workOrderId + '-ev2',
-                workOrderId + '-ev3',
+                WORKORDERID_EV1,
+                WORKORDERID_EV2,
+                WORKORDERID_EV3,
             ],
             stateEventAts: [nowUtc(), nowUtc(), nowUtc()],
-            states: ['n-start', 'n-middle', 'claimed'],
+            states: [N_START, N_MIDDLE, 'claimed'],
         },
     ));
     assert.equal(created.status, 201);
@@ -286,7 +305,7 @@ test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
 + ' postWorkOrderClaimOp\'s own table list)', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-parity-claim-history';
+    const workOrderId = WO_PARITY_CLAIM_HISTORY;
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
@@ -296,18 +315,18 @@ test('workOrderClaimHistoryFor: byte-identical pre-tx (the'
                 display_id: 'parity-' + workOrderId,
                 flow_graph: graph, position: 1,
             },
-            flowWorkOrderId: workOrderId + '-fwo',
+            flowWorkOrderId: WORKORDERID_FWO,
             flowWorkOrder: {
                 flow_id: EMPTY_FLOW_ID,
                 work_order_id: workOrderId, at: nowUtc(),
             },
             stateEventIds: [
-                workOrderId + '-ev1',
-                workOrderId + '-ev2',
-                workOrderId + '-ev3',
+                WORKORDERID_EV1,
+                WORKORDERID_EV2,
+                WORKORDERID_EV3,
             ],
             stateEventAts: [nowUtc(), nowUtc(), nowUtc()],
-            states: ['n-start', 'n-middle', 'claimed'],
+            states: [N_START, N_MIDDLE, 'claimed'],
         },
     ));
     assert.equal(created.status, 201);

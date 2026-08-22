@@ -22,6 +22,26 @@ import {
     appendLegacyTransition,
 } from './legacy-transition-fixture.ts';
 
+const N_START = generateIdentifier();
+const N_MIDDLE = generateIdentifier();
+const ATTR_SEVERITY = generateIdentifier();
+const N_FINISH = generateIdentifier();
+const ATTR_NOTE = generateIdentifier();
+const EDGE_2 = generateIdentifier();
+const WORKORDERID_FWO = generateIdentifier();
+const WORKORDERID_EV1 = generateIdentifier();
+const WORKORDERID_EV2 = generateIdentifier();
+const WORKORDERID_EV3 = generateIdentifier();
+const WORKORDERID_TE1 = generateIdentifier();
+const WORKORDERID_FV1 = generateIdentifier();
+const WORKORDERID_TE2 = generateIdentifier();
+const WORKORDERID_REL1 = generateIdentifier();
+const WORKORDERID_CE1 = generateIdentifier();
+const WORKORDERID_EE1 = generateIdentifier();
+const WORKORDERID_CE2 = generateIdentifier();
+const WORKORDERID_EE2 = generateIdentifier();
+const WORKORDERID_FV2 = generateIdentifier();
+
 // The Phase 14 Task 1 core: workOrderLifecycleStatesFor is the
 // ENTITY-SCOPED sibling of deriveWorkOrderLifecycle — it reuses
 // the SAME pure replay core (replayWorkOrderOperations, private
@@ -84,21 +104,21 @@ function workOrderFlowGraph(
         lockTimeout: lockTimeoutSeconds,
         nodes: [
             {
-                id: 'n-start', name: 'Start',
+                id: N_START, name: 'Start',
                 positionX: 0, positionY: 0,
                 isCreate: true, isArchive: false,
                 memberIds: [], attributes: [],
                 taskInstructions: '',
             },
             {
-                id: 'n-middle', name: 'Middle',
+                id: N_MIDDLE, name: 'Middle',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: false,
                 memberIds: [], attributes: [],
                 taskInstructions: '',
             },
             {
-                id: 'n-finish', name: 'Finish',
+                id: N_FINISH, name: 'Finish',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: true,
                 memberIds: [], attributes: [],
@@ -108,11 +128,11 @@ function workOrderFlowGraph(
         edges: [
             {
                 id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
-                fromNodeId: 'n-start', toNodeId: 'n-middle',
+                fromNodeId: N_START, toNodeId: N_MIDDLE,
             },
             {
-                id: 'e2', name: '',
-                fromNodeId: 'n-middle', toNodeId: 'n-finish',
+                id: EDGE_2, name: '',
+                fromNodeId: N_MIDDLE, toNodeId: N_FINISH,
             },
         ],
     };
@@ -161,21 +181,21 @@ test('workOrderLifecycleStatesFor: birth-claimed create alone'
 + ' matches the bulk subset AND the row-plane oracle', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-task1-birth';
+    const workOrderId = generateIdentifier();
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
-            workOrderId, workOrderId + '-fwo', graph,
+            workOrderId, WORKORDERID_FWO, graph,
             {
                 ids: [
-                    workOrderId + '-ev1',
-                    workOrderId + '-ev2',
-                    workOrderId + '-ev3',
+                    WORKORDERID_EV1,
+                    WORKORDERID_EV2,
+                    WORKORDERID_EV3,
                 ],
                 ats: [nowUtc(), nowUtc(), nowUtc()],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             nowUtc(),
         ),
@@ -200,21 +220,21 @@ test('workOrderLifecycleStatesFor: a full chain — birth, a'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-task1-chain';
+    const workOrderId = generateIdentifier();
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
-            workOrderId, workOrderId + '-fwo', graph,
+            workOrderId, WORKORDERID_FWO, graph,
             {
                 ids: [
-                    workOrderId + '-ev1',
-                    workOrderId + '-ev2',
-                    workOrderId + '-ev3',
+                    WORKORDERID_EV1,
+                    WORKORDERID_EV2,
+                    WORKORDERID_EV3,
                 ],
                 ats: [nowUtc(), nowUtc(), nowUtc()],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             nowUtc(),
         ),
@@ -225,14 +245,14 @@ async () => {
     // (stored-data fold; live wire rejects the key).
     await appendLegacyTransition(
         db, STARK_ORGANIZATION, workOrderId, {
-            transitionEventId: workOrderId + '-te1',
-            targetState: 'n-middle',
+            transitionEventId: WORKORDERID_TE1,
+            targetState: N_MIDDLE,
             fieldValues: [
                 {
-                    id: workOrderId + '-fv1',
+                    id: WORKORDERID_FV1,
                     fields: {
-                        state_event_id: workOrderId + '-te1',
-                        attribute_id: 'attr-severity',
+                        state_event_id: WORKORDERID_TE1,
+                        attribute_id: ATTR_SEVERITY,
                         value: 'high',
                     },
                 },
@@ -248,10 +268,10 @@ async () => {
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/transition',
         token, {
-            transitionEventId: workOrderId + '-te2',
-            targetState: 'n-finish',
+            transitionEventId: WORKORDERID_TE2,
+            targetState: N_FINISH,
             release: {
-                id: workOrderId + '-rel1',
+                id: WORKORDERID_REL1,
                 state: 'claim_released',
                 at: transition2ReleaseAt,
             },
@@ -275,9 +295,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         token, {
-            claimEventId: workOrderId + '-ce1',
+            claimEventId: WORKORDERID_CE1,
             claimAt: claimFreshAt,
-            expireEventId: workOrderId + '-ee1',
+            expireEventId: WORKORDERID_EE1,
             expireAt: claimFreshAt,
         },
     ));
@@ -288,9 +308,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         token, {
-            claimEventId: workOrderId + '-ce2',
+            claimEventId: WORKORDERID_CE2,
             claimAt: claimRepeatAt,
-            expireEventId: workOrderId + '-ee2',
+            expireEventId: WORKORDERID_EE2,
             expireAt: claimRepeatAt,
         },
     ));
@@ -322,21 +342,21 @@ test('workOrderLifecycleStatesFor: a release op\'s'
 + ' sees it too', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-task1-unclaim';
+    const workOrderId = generateIdentifier();
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
-            workOrderId, workOrderId + '-fwo', graph,
+            workOrderId, WORKORDERID_FWO, graph,
             {
                 ids: [
-                    workOrderId + '-ev1',
-                    workOrderId + '-ev2',
-                    workOrderId + '-ev3',
+                    WORKORDERID_EV1,
+                    WORKORDERID_EV2,
+                    WORKORDERID_EV3,
                 ],
                 ats: [nowUtc(), nowUtc(), nowUtc()],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             nowUtc(),
         ),
@@ -385,21 +405,21 @@ test('workOrderClaimHistoryFor: a release op\'s claim_released'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-task4-unclaim';
+    const workOrderId = generateIdentifier();
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
-            workOrderId, workOrderId + '-fwo', graph,
+            workOrderId, WORKORDERID_FWO, graph,
             {
                 ids: [
-                    workOrderId + '-ev1',
-                    workOrderId + '-ev2',
-                    workOrderId + '-ev3',
+                    WORKORDERID_EV1,
+                    WORKORDERID_EV2,
+                    WORKORDERID_EV3,
                 ],
                 ats: [nowUtc(), nowUtc(), nowUtc()],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             nowUtc(),
         ),
@@ -423,9 +443,9 @@ async () => {
     assert.deepEqual(
         afterRelease.slice(0, 3).map((row) => row.id),
         [
-            workOrderId + '-ev1',
-            workOrderId + '-ev2',
-            workOrderId + '-ev3',
+            WORKORDERID_EV1,
+            WORKORDERID_EV2,
+            WORKORDERID_EV3,
         ],
     );
     assert.equal(afterRelease.at(-1)?.state, 'claim_released');
@@ -436,9 +456,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         token, {
-            claimEventId: workOrderId + '-ce1',
+            claimEventId: WORKORDERID_CE1,
             claimAt,
-            expireEventId: workOrderId + '-ee1',
+            expireEventId: WORKORDERID_EE1,
             expireAt: claimAt,
         },
     ));
@@ -452,7 +472,7 @@ async () => {
     assert.deepEqual(
         afterReclaim.map((row) => row.state),
         [
-            'n-start', 'n-middle', 'claimed',
+            N_START, N_MIDDLE, 'claimed',
             'claim_released', 'claimed',
         ],
     );
@@ -483,21 +503,21 @@ test('workOrderHistoryFor: folds field_values onto transition'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-task1-history-fold';
+    const workOrderId = generateIdentifier();
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
     const created = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
-            workOrderId, workOrderId + '-fwo', graph,
+            workOrderId, WORKORDERID_FWO, graph,
             {
                 ids: [
-                    workOrderId + '-ev1',
-                    workOrderId + '-ev2',
-                    workOrderId + '-ev3',
+                    WORKORDERID_EV1,
+                    WORKORDERID_EV2,
+                    WORKORDERID_EV3,
                 ],
                 ats: [nowUtc(), nowUtc(), nowUtc()],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             nowUtc(),
         ),
@@ -508,22 +528,22 @@ async () => {
     const transitionAt = nowUtc();
     await appendLegacyTransition(
         db, STARK_ORGANIZATION, workOrderId, {
-            transitionEventId: workOrderId + '-te1',
-            targetState: 'n-middle',
+            transitionEventId: WORKORDERID_TE1,
+            targetState: N_MIDDLE,
             fieldValues: [
                 {
-                    id: workOrderId + '-fv1',
+                    id: WORKORDERID_FV1,
                     fields: {
-                        state_event_id: workOrderId + '-te1',
-                        attribute_id: 'attr-severity',
+                        state_event_id: WORKORDERID_TE1,
+                        attribute_id: ATTR_SEVERITY,
                         value: 'high',
                     },
                 },
                 {
-                    id: workOrderId + '-fv2',
+                    id: WORKORDERID_FV2,
                     fields: {
-                        state_event_id: workOrderId + '-te1',
-                        attribute_id: 'attr-note',
+                        state_event_id: WORKORDERID_TE1,
+                        attribute_id: ATTR_NOTE,
                         value: 'checked',
                     },
                 },
@@ -550,27 +570,29 @@ async () => {
     assert.deepEqual(history[0]!.field_values, []);
 
     const transitionRow = history.find(
-        (row) => row.id === workOrderId + '-te1',
+        (row) => row.id === WORKORDERID_TE1,
     );
     assert.ok(transitionRow !== undefined);
-    assert.equal(transitionRow!.state, 'n-middle');
+    assert.equal(transitionRow!.state, N_MIDDLE);
     // Field values sorted by id ascending (stateFieldValuesFrom
     // parity).
     assert.deepEqual(transitionRow!.field_values, [
         {
-            id: workOrderId + '-fv1',
-            attribute_id: 'attr-severity',
+            id: WORKORDERID_FV1,
+            attribute_id: ATTR_SEVERITY,
             value: 'high',
         },
         {
-            id: workOrderId + '-fv2',
-            attribute_id: 'attr-note',
+            id: WORKORDERID_FV2,
+            attribute_id: ATTR_NOTE,
             value: 'checked',
         },
-    ]);
+    ].sort((a, b) =>
+        a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+    ));
 
     const claimed = history.find(
-        (row) => row.id === workOrderId + '-ev3',
+        (row) => row.id === WORKORDERID_EV3,
     );
     assert.ok(claimed !== undefined);
     assert.equal(claimed!.state, 'claimed');

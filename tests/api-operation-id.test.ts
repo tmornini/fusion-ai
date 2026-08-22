@@ -56,8 +56,8 @@ async () => {
     assert.equal(res.status, 400);
 });
 
-test('public PUT with dash/underscore Operation-ID'
-+ ' is not 400',
+test('public PUT with non-canonical Operation-ID'
++ ' is 400',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
@@ -72,7 +72,9 @@ async () => {
             operationId: 'AAAAAAAAAAAAAAAAAAAA-B',
         }),
     );
-    assert.notEqual(res.status, 400);
+    assert.equal(res.status, 400);
+    const body = await res.json() as { error: string };
+    assert.match(body.error, /identifier/);
 });
 
 test('GET without Operation-ID is not 400',
@@ -138,7 +140,7 @@ async () => {
                 jti: 'kHAXckusBqJjgcJLEuEurg',
                 identity_id: 'XXZruirZyAOoRpNxaDnpSA',
                 action: 'issued',
-                chain_id: 'chain-1',
+                chain_id: 'RotationChainId000000w',
                 at: '2026-01-01T00:00:00.000000Z',
             },
         }),

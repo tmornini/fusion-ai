@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -41,17 +43,20 @@ import { seedSeat } from './root-admin-fixture.ts';
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
-const ORGANIZATION_B = 'B';
-const FLOW_ID = 'flow-tx-inst-1';
-const WO_ID = 'wo-tx-inst-1';
-const WO_UNBOUND = 'wo-tx-inst-unbound';
-const TYPE_ID = 'rt-tx-inst-1';
-const ATTR_ID = 'attr-tx-inst-1';
-const ATTR_LOCKED = 'attr-tx-inst-locked';
-const ATTR_NUM = 'attr-tx-inst-num';
-const INSTANCE_ID = 'inst-tx-inst-1';
-const FR_ID = 'fr-tx-inst-1';
-const FWO_ID = 'fwo-tx-inst-1';
+const ORGANIZATION_B = generateIdentifier();
+const FLOW_ID = generateIdentifier();
+const WO_ID = generateIdentifier();
+const WO_UNBOUND = generateIdentifier();
+const TYPE_ID = generateIdentifier();
+const ATTR_ID = generateIdentifier();
+const ATTR_LOCKED = generateIdentifier();
+const ATTR_NUM = generateIdentifier();
+const INSTANCE_ID = generateIdentifier();
+const FR_ID = generateIdentifier();
+const FWO_ID = generateIdentifier();
+const FWO_UNBOUND = generateIdentifier();
+const NODE_NEXT = generateIdentifier();
+const INSTANCE_OTHER = generateIdentifier();
 
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
@@ -114,7 +119,7 @@ function pureMoveBody(
 ): Record<string, unknown> {
     return {
         transitionEventId: eventId,
-        targetState: 'n-next',
+        targetState: NODE_NEXT,
         release: null,
         transitionAt: nowUtc(),
     };
@@ -138,7 +143,7 @@ function valueBody(
 ): Record<string, unknown> {
     const body: Record<string, unknown> = {
         transitionEventId: opts.eventId ?? 'te-val',
-        targetState: 'n-next',
+        targetState: NODE_NEXT,
         release: null,
         transitionAt: nowUtc(),
     };
@@ -227,14 +232,14 @@ async function seedFlow(
                 is_auto_fit: false,
                 lock_timeout: DEFAULT_LOCK_TIMEOUT,
             },
-            projectFlowId: FLOW_ID + '-pf',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
-                project_id: 'proj-tx-inst-1',
+                project_id: generateIdentifier(),
                 flow_id: FLOW_ID,
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: FLOW_ID + '-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: {
                 nodes: [],
@@ -402,7 +407,7 @@ async function seededBound(): Promise<{
         db, adminToken, WO_ID, FWO_ID,
     );
     await seedWorkOrder(
-        db, adminToken, WO_UNBOUND, 'fwo-tx-unbound',
+        db, adminToken, WO_UNBOUND, FWO_UNBOUND,
     );
     await seedLiveType(db, adminToken);
     await seedWritableText(db, adminToken);
@@ -700,7 +705,7 @@ async () => {
     const { db, adminToken, etag } = await seededBound();
     const res = await handleRequest(db, req(
         'POST', TRANSITION, adminToken,
-        valueBody({ instanceId: 'inst-other' }),
+        valueBody({ instanceId: INSTANCE_OTHER }),
         { [IF_MATCH_HEADER]: etag },
     ));
     assert.equal(res.status, 400);

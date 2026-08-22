@@ -30,6 +30,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Task 52: the seat document is the membership
 // relationship. Accept writes the inner PUT;
@@ -72,7 +74,7 @@ test('accept writes the seat at the invitation'
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
             invitationId: 'ixyIgeiKspwtanaBXyAGpg',
-            grantEventId: 'inv-seat-accept-grant',
+            grantEventId: generateIdentifier(),
             grantAt: '2026-06-05T00:00:00.000000Z',
         },
     ));
@@ -86,8 +88,8 @@ test('accept writes the seat at the invitation'
             SARAH_ID, ORGANIZATION_TWO),
         {
             state: 'accepted',
-            membershipId: 'inv-seat-accept-ms',
-            eventId: 'inv-seat-accept-event',
+            membershipId: generateIdentifier(),
+            eventId: generateIdentifier(),
             at: '2026-06-05T00:00:01.000000Z',
         },
     ));
@@ -193,9 +195,10 @@ async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     await seedOrganizationDocument(db, 'AjdvjuECVZEgZoFajaIEkg', 'Alpha');
-    await seedOrganizationDocument(db, 'B', 'Beta');
+    const organizationB = generateIdentifier();
+    await seedOrganizationDocument(db, organizationB, 'Beta');
     const memBody = {
-        organization_id: 'B',
+        organization_id: organizationB,
         identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: AT,
@@ -208,10 +211,11 @@ async () => {
         String(memBody['at'] ?? memBody.at),
     );
     const tokenB = await organizationToken(
-        'XXZruirZyAOoRpNxaDnpSA', 'B');
+        'XXZruirZyAOoRpNxaDnpSA', organizationB);
     const foreign = await handleRequest(db, req(
         'PUT',
-        '/organizations/AjdvjuECVZEgZoFajaIEkg/members/someone',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
+            + generateIdentifier(),
         tokenB, { type: 'member', at: AT },
     ));
     assert.equal(foreign.status, 403);
@@ -266,7 +270,7 @@ async () => {
     await seedAdminSchema(db);
     const admin = await organizationToken(
         'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg');
-    const identity = 'seat-put';
+    const identity = generateIdentifier();
     const path = '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
         + identity;
     const body = { type: 'member', at: AT };

@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -149,7 +151,7 @@ async function adminDb(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedMembershipPair(db, 'm-member1', {
+    await seedMembershipPair(db, generateIdentifier(), {
         organization_id: ORGANIZATION,
         identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
@@ -215,22 +217,26 @@ test('PUT foreign type id under own org path geneses '
 + '(write authorizer)',
 async () => {
     const { db, adminToken } = await adminDb();
-    await seedOrganizationDocument(db, 'B', 'Beta');
+    const organizationB = generateIdentifier();
+    const foreignId = generateIdentifier();
+    await seedOrganizationDocument(db, organizationB, 'Beta');
     await seedRecordTypeBelowGate(
-        db, 'B', 'rt-foreign',
+        db, organizationB, foreignId,
         typeBody(
-            'Foreign', 0, 'active', AT, 'rt-foreign-g',
+            'Foreign', 0, 'active', AT,
+            generateIdentifier(),
         ),
     );
     const put = await handleRequest(db, req(
-        'PUT', DETAIL + 'rt-foreign', adminToken,
+        'PUT', DETAIL + foreignId, adminToken,
         typeBody(
-            'Stolen', 0, 'active', AT, 'rt-stolen-g',
+            'Stolen', 0, 'active', AT,
+            generateIdentifier(),
         ),
     ));
     assert.equal(put.status, 201);
     const got = await handleRequest(db, req(
-        'GET', DETAIL + 'rt-foreign', adminToken,
+        'GET', DETAIL + foreignId, adminToken,
     ));
     assert.equal(got.status, 200);
     const wire = await got.json() as { name: string };
@@ -299,14 +305,14 @@ async () => {
                 is_auto_fit: false,
                 lock_timeout: 0,
             },
-            projectFlowId: 'flow-restrict-1-pf',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
-                project_id: 'proj-restrict-1',
+                project_id: generateIdentifier(),
                 flow_id: 'bkFJmupdSmbjaPnvwFKnbA',
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: 'flow-restrict-1-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: {
                 nodes: [],
@@ -406,7 +412,7 @@ async () => {
 test('stored PUT body equals recordTypeEntityOf of the'
 + ' same chain', async () => {
     const { db, adminToken } = await adminDb();
-    const id = 'rt-g1-stream';
+    const id = generateIdentifier();
     const body = typeBody(
         'Streamed', 1, 'active', AT, 'ev-g1',
     );

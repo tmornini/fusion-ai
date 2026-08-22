@@ -24,6 +24,8 @@ import { deriveDocumentsAt } from
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 function match(path: string) {
     return matchRoute(
@@ -79,13 +81,14 @@ test('organization nest offers GET POST on /'
 test('identity nest offers GET on / and'
     + ' GET PUT on the item', () => {
     const col = match(
-        '/identities/abc/invitations/',
+        '/identities/' + generateIdentifier() + '/invitations/',
     );
     assert.ok(col);
     assert.equal(typeof col.route.get, 'function');
     assert.equal(col.route.post, undefined);
     const item = match(
-        '/identities/abc/invitations/fndCYAsXazdzMUlEGMNIZw',
+        '/identities/' + generateIdentifier()
+            + '/invitations/fndCYAsXazdzMUlEGMNIZw',
     );
     assert.ok(item);
     assert.equal(typeof item.route.get, 'function');
@@ -93,6 +96,21 @@ test('identity nest offers GET on / and'
 });
 
 const AT = '2026-01-01T00:00:00.000000Z';
+const DAVE = generateIdentifier();
+const INV_GRANT = generateIdentifier();
+const MS_ACC = generateIdentifier();
+const EV_ACC = generateIdentifier();
+const EV_DEC = generateIdentifier();
+const EV_REV = generateIdentifier();
+const EV_BAD = generateIdentifier();
+const MS_ADM = generateIdentifier();
+const EV_ADM = generateIdentifier();
+const MS_409 = generateIdentifier();
+const EV_409 = generateIdentifier();
+const MS_409B = generateIdentifier();
+const EV_409B = generateIdentifier();
+const MS_HOLE = generateIdentifier();
+const EV_HOLE = generateIdentifier();
 
 async function seedPerson(
     db: DbAdapter,
@@ -124,7 +142,7 @@ async function seedWorld(): Promise<DbAdapter> {
     );
     await seedSeat(db, 'AjdvjuECVZEgZoFajaIEkg', 'toccYYkLEABmlbpHJalgtQ'
         , 'member', AT);
-    await seedPerson(db, 'dave', 'Dave', 'dave@x.com');
+    await seedPerson(db, DAVE, 'Dave', 'dave@x.com');
     return db;
 }
 
@@ -195,7 +213,7 @@ test('admin POST org nest grants pending',
 async () => {
     const db = await seedWorld();
     const res = await grantWayne(
-        db, 'sarah@x.com', 'inv-grant',
+        db, 'sarah@x.com', INV_GRANT,
     );
     assert.equal(res.status, 200);
     const body = await res.json() as {
@@ -204,7 +222,7 @@ async () => {
         organization_id: string;
         identity_id: string;
     };
-    assert.equal(body.id, 'inv-grant');
+    assert.equal(body.id, INV_GRANT);
     assert.equal(body.state, 'pending');
     assert.equal(body.organization_id, 'BBjWJsjYIDkTRKIIPrzWRw');
     assert.equal(body.identity_id, 'toccYYkLEABmlbpHJalgtQ');
@@ -224,8 +242,8 @@ test('invitee PUT identity nest accepted writes'
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-acc',
-            eventId: 'ev-acc',
+            membershipId: MS_ACC,
+            eventId: EV_ACC,
             at: '2026-01-01T00:00:01.000000Z',
         },
     ));
@@ -244,11 +262,12 @@ test('invitee PUT declined', async () => {
     await grantWayne(db, 'dave@x.com', 'hgFLbVZKltowuLSHmjQVKw');
     const res = await handleRequest(db, req(
         'PUT',
-        '/identities/dave/invitations/hgFLbVZKltowuLSHmjQVKw',
-        await organizationToken('dave', 'AjdvjuECVZEgZoFajaIEkg'),
+        '/identities/' + DAVE
+            + '/invitations/hgFLbVZKltowuLSHmjQVKw',
+        await organizationToken(DAVE, 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'declined',
-            eventId: 'ev-dec',
+            eventId: EV_DEC,
             at: '2026-01-01T00:00:01.000000Z',
         },
     ));
@@ -257,7 +276,7 @@ test('invitee PUT declined', async () => {
         .find(inv => inv.id === 'hgFLbVZKltowuLSHmjQVKw')!;
     assert.equal(row.state, 'declined');
     assert.deepEqual(
-        await membershipsFor(db, 'dave'),
+        await membershipsFor(db, DAVE),
         [],
     );
 });
@@ -273,7 +292,7 @@ test('admin PUT org nest revoked', async () => {
             , 'BBjWJsjYIDkTRKIIPrzWRw'),
         {
             state: 'revoked',
-            eventId: 'ev-rev',
+            eventId: EV_REV,
             at: '2026-01-01T00:00:01.000000Z',
         },
     ));
@@ -294,7 +313,7 @@ test('invitee PUT revoked is 403', async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'revoked',
-            eventId: 'ev-bad',
+            eventId: EV_BAD,
             at: '2026-01-01T00:00:01.000000Z',
         },
     ));
@@ -312,8 +331,8 @@ test('admin PUT accepted is 403', async () => {
             , 'BBjWJsjYIDkTRKIIPrzWRw'),
         {
             state: 'accepted',
-            membershipId: 'ms-adm',
-            eventId: 'ev-adm',
+            membershipId: MS_ADM,
+            eventId: EV_ADM,
             at: '2026-01-01T00:00:01.000000Z',
         },
     ));
@@ -331,8 +350,8 @@ test('PUT from accepted is 409', async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-409',
-            eventId: 'ev-409',
+            membershipId: MS_409,
+            eventId: EV_409,
             at: '2026-01-01T00:00:01.000000Z',
         },
     ));
@@ -345,8 +364,8 @@ test('PUT from accepted is 409', async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-409b',
-            eventId: 'ev-409b',
+            membershipId: MS_409B,
+            eventId: EV_409B,
             at: '2026-01-01T00:00:02.000000Z',
         },
     ));
@@ -357,10 +376,10 @@ test('org-less invitee reaches identity nest',
 async () => {
     const db = await seedWorld();
     await grantWayne(db, 'dave@x.com', 'hvIFfMMXNtqRPYXnChCzug');
-    const token = await reachableToken('dave', []);
+    const token = await reachableToken(DAVE, []);
     const list = await handleRequest(db, req(
         'GET',
-        '/identities/dave/invitations/',
+        '/identities/' + DAVE + '/invitations/',
         token,
     ));
     assert.equal(list.status, 200);
@@ -372,18 +391,19 @@ async () => {
     assert.equal(rows[0]!.state, 'pending');
     const acc = await handleRequest(db, req(
         'PUT',
-        '/identities/dave/invitations/hvIFfMMXNtqRPYXnChCzug',
+        '/identities/' + DAVE
+            + '/invitations/hvIFfMMXNtqRPYXnChCzug',
         token,
         {
             state: 'accepted',
-            membershipId: 'ms-hole',
-            eventId: 'ev-hole',
+            membershipId: MS_HOLE,
+            eventId: EV_HOLE,
             at: '2026-01-01T00:00:01.000000Z',
         },
     ));
     assert.equal(acc.status, 204);
     assert.deepEqual(
-        await membershipsFor(db, 'dave'),
+        await membershipsFor(db, DAVE),
         ['BBjWJsjYIDkTRKIIPrzWRw'],
     );
 });

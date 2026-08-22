@@ -3,6 +3,7 @@ import { nowUtc, type Id } from './types.ts';
 import type { Principal } from './access-token.ts';
 import {
     generateIdentifier,
+    isIdentifier,
 } from '../shared/identifier.ts';
 
 // The server half of the request vessel (Office of the
@@ -62,10 +63,12 @@ export function incomingContext(
     base: GuardedDbAdapter,
     request: Request,
 ): IncomingContext {
+    const raw = request.headers.get(REQUEST_ID_HEADER);
     return {
         requestId:
-            request.headers.get(REQUEST_ID_HEADER)
-                ?? generateIdentifier(),
+            raw !== null && isIdentifier(raw)
+                ? raw
+                : generateIdentifier(),
         method: request.method,
         pathname: new URL(request.url).pathname,
         base,

@@ -31,6 +31,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
     storedPutBodyText,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Objectives are the FIFTH lifecycle-trio family (states-
 // address retirement): PUT
@@ -247,13 +249,15 @@ test('a byte-identical PUT resend to'
 + ' to one stored request/response pair', async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
+    const id = generateIdentifier();
     const body = documentFields();
     const first = await PUT(
-        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-resend-1'
-            , body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+            + id, body, DEV_TOKEN,
     );
     const second = await PUT(
-        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/obj-resend-1'
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+            + id
             , body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
@@ -321,23 +325,24 @@ test('a PUT chain at one objective address Supersedes-chains,'
 async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
+    const id = generateIdentifier();
     await putDocumentPair(
-        db, 'obj-chain-1',
+        db, id,
         documentFields(1, 'active'),
         '2026-01-01T00:00:00.000000Z',
     );
     await putDocumentPair(
-        db, 'obj-chain-1',
+        db, id,
         documentFields(2, 'active'),
         '2026-01-02T00:00:00.000000Z',
     );
     const wiring = documentFamilyWiring('objectives')!;
     const got = await documentGetHandler(wiring)(
-        db, ['AjdvjuECVZEgZoFajaIEkg', 'obj-chain-1']
+        db, ['AjdvjuECVZEgZoFajaIEkg', id]
             , 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg',
     );
     assert.deepEqual(got, {
-        id: 'obj-chain-1',
+        id,
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         position: 2,
         state: 'active',
@@ -349,18 +354,19 @@ test('a DELETE-head derives absent through the generic'
 + ' family', async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
+    const id = generateIdentifier();
     await putDocumentPair(
-        db, 'obj-del-1',
+        db, id,
         documentFields(1, 'active'),
         '2026-01-01T00:00:00.000000Z',
     );
     await deleteDocumentPair(
-        db, 'obj-del-1', '2026-01-02T00:00:00.000000Z',
+        db, id, '2026-01-02T00:00:00.000000Z',
     );
     const wiring = documentFamilyWiring('objectives')!;
     await assert.rejects(
         documentGetHandler(wiring)(
-            db, ['AjdvjuECVZEgZoFajaIEkg', 'obj-del-1']
+            db, ['AjdvjuECVZEgZoFajaIEkg', id]
                 , 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg',
         ),
         (error: unknown) => {
@@ -379,7 +385,7 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const token = await organizationToken();
-    const id = 'obj-g1-stream';
+    const id = generateIdentifier();
     const put = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id
             , token,

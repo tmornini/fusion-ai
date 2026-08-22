@@ -21,6 +21,10 @@ import {
 import {
     generateIdentifier,
 } from '../shared/identifier.ts';
+
+const OTHER = generateIdentifier();
+const PRIOR_HOLDER = generateIdentifier();
+const STALE = generateIdentifier();
 import { workOrderClaimHistoryFor } from
     '../api/derive-states.ts';
 import { STARK_ORGANIZATION } from
@@ -153,11 +157,11 @@ test(
         // a raw row poke: the gate's own decision read now
         // sources the pair plane (Phase 14 Task 4), which a
         // row-only write leaves no trace in.
-        await seedOrganizationMember(db, 'other');
+        await seedOrganizationMember(db, OTHER);
         await PUT(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
                 + 'yNSSnbrpacodQTzUEcdEVA/claim',
-            freshClaimBody(), await devToken('other'),
+            freshClaimBody(), await devToken(OTHER),
         );
         await assert.rejects(
             () => PUT(
@@ -171,7 +175,7 @@ test(
         );
         const events = await claimEventsFor(db);
         assert.equal(events.length, 1);
-        assert.equal(events[0]!.member_id, 'other');
+        assert.equal(events[0]!.member_id, OTHER);
     },
 );
 
@@ -184,7 +188,7 @@ test(
         // POST with a caller-minted past claimAt (see the test
         // above for why a raw row poke no longer reaches the
         // gate).
-        await seedOrganizationMember(db, 'other');
+        await seedOrganizationMember(db, OTHER);
         await PUT(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
                 + 'yNSSnbrpacodQTzUEcdEVA/claim', {
@@ -193,7 +197,7 @@ test(
                 expireEventId: generateIdentifier(),
                 expireAt: '2020-01-01T00:00:00.000000Z',
             },
-            await devToken('other'),
+            await devToken(OTHER),
         );
         await PUT(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -207,7 +211,7 @@ test(
         );
         // claim_expired names the PRIOR claimant; the new
         // claimed names the caller.
-        assert.equal(events[1]!.member_id, 'other');
+        assert.equal(events[1]!.member_id, OTHER);
         assert.equal(events[2]!.member_id, 'XXZruirZyAOoRpNxaDnpSA');
     },
 );
@@ -225,16 +229,16 @@ test(
         // the hazard-closure scenario itself, driven through
         // postWorkOrderClaimOp end to end, not just at the
         // derive layer.
-        await seedOrganizationMember(db, 'other');
+        await seedOrganizationMember(db, OTHER);
         await PUT(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
                 + 'yNSSnbrpacodQTzUEcdEVA/claim',
-            freshClaimBody(), await devToken('other'),
+            freshClaimBody(), await devToken(OTHER),
         );
         await DELETE(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
                 + 'yNSSnbrpacodQTzUEcdEVA/claim',
-            await devToken('other'),
+            await devToken(OTHER),
         );
         // 'XXZruirZyAOoRpNxaDnpSA's fresh claim succeeds THROUGH THE LIVE
         // GATE — a foreign live claim would 409 here (see the
@@ -250,7 +254,7 @@ test(
             events.map(ev => ev.state),
             ['claimed', 'claim_released', 'claimed'],
         );
-        assert.equal(events[0]!.member_id, 'other');
+        assert.equal(events[0]!.member_id, OTHER);
         assert.equal(events[2]!.member_id, 'XXZruirZyAOoRpNxaDnpSA');
     },
 );
@@ -292,7 +296,7 @@ test(
         // have expired relative to lockTimeout — via a REAL
         // claim POST (see the expired-claim test above for why
         // a raw row poke no longer reaches the gate).
-        await seedOrganizationMember(db, 'prior-holder');
+        await seedOrganizationMember(db, PRIOR_HOLDER);
         await PUT(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
                 + 'yNSSnbrpacodQTzUEcdEVA/claim', {
@@ -301,7 +305,7 @@ test(
                 expireEventId: generateIdentifier(),
                 expireAt: '2020-01-01T00:00:00.000000Z',
             },
-            await devToken('prior-holder'),
+            await devToken(PRIOR_HOLDER),
         );
         const claimEventId = generateIdentifier();
         const claimAt = '2099-01-01T00:00:01.000000Z';
@@ -326,7 +330,7 @@ test(
         assert.equal(expireEv.at, expireAt);
         assert.equal(expireEv.state, 'claim_expired');
         // Author of expire = prior claimant, not the caller.
-        assert.equal(expireEv.member_id, 'prior-holder');
+        assert.equal(expireEv.member_id, PRIOR_HOLDER);
         const claimEv = events[2]!;
         assert.equal(claimEv.id, claimEventId);
         assert.equal(claimEv.at, claimAt);
@@ -360,8 +364,8 @@ test(
     + ' which actor wins',
     async () => {
         const db = await seededDb();
-        await seedOrganizationMember(db, 'other');
-        const tokenOther = await devToken('other');
+        await seedOrganizationMember(db, OTHER);
+        const tokenOther = await devToken(OTHER);
         const [a, b] = await Promise.all([
             handleRequest(db, req(
                 'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -449,7 +453,7 @@ async () => {
         expires_at: expiresAt,
     });
 
-    await seedOrganizationMember(db, 'stale');
+    await seedOrganizationMember(db, STALE);
     await PUT(
         db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + 'yNXXsTEwShOozlQCEWKIIw', {
@@ -468,7 +472,7 @@ async () => {
             expireAt: '2020-01-01T00:00:00.000000Z',
             expires_at: '2020-01-01T00:05:00.000000Z',
         },
-        await devToken('stale'),
+        await devToken(STALE),
     );
     const expired = await handleRequest(db, req(
         'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -479,7 +483,7 @@ async () => {
         member_id: string;
         expires_at: string;
     };
-    assert.equal(body.member_id, 'stale');
+    assert.equal(body.member_id, STALE);
     assert.equal(
         body.expires_at, '2020-01-01T00:05:00.000000Z',
     );

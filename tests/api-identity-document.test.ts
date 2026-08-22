@@ -33,6 +33,8 @@ import {
     apiRequest,
     storedPutBodyText,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Phase 10 Task 4 (twelfth registered family): PUT
 // /identities/:id takes `kind` plus, for a person, the
@@ -168,11 +170,12 @@ test('a byte-identical PUT resend to identities/:id converges'
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const body = identityFields();
+    const id = generateIdentifier();
     const first = await PUT(
-        db, 'identities/id-resend-1', body, DEV_TOKEN,
+        db, 'identities/' + id, body, DEV_TOKEN,
     );
     const second = await PUT(
-        db, 'identities/id-resend-1', body, DEV_TOKEN,
+        db, 'identities/' + id, body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
     assert.equal((await db.pairs.getAll()).length, 3);
@@ -246,30 +249,31 @@ test('a PUT chain Supersedes-chains and the head derives the'
     await db.postSchemaCreation();
     const wiring = documentFamilyWiring('identities')!;
     const first = identityFields();
+    const id = generateIdentifier();
     const firstId = await putDocumentPair(
-        db, 'identities-chain-1', first,
+        db, id, first,
         '2026-02-01T00:00:00.000000Z',
     );
     const headAfterFirst = await documentGetHandler(wiring)(
-        db, ['identities-chain-1'], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
+        db, [id], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
     );
     assert.deepEqual(headAfterFirst, {
-        id: 'identities-chain-1', ...first,
+        id, ...first,
     });
 
     const second = { kind: 'service' as const };
     const secondId = await putDocumentPair(
-        db, 'identities-chain-1', second,
+        db, id, second,
         '2026-02-02T00:00:00.000000Z', firstId,
     );
     const secondResponse = await db.pairs.getById(secondId);
     assert.equal('supersedes' in secondResponse, false);
 
     const headAfterSecond = await documentGetHandler(wiring)(
-        db, ['identities-chain-1'], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
+        db, [id], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
     );
     assert.deepEqual(headAfterSecond, {
-        id: 'identities-chain-1', ...second,
+        id, ...second,
     });
 });
 
@@ -278,16 +282,17 @@ test('a DELETE-head derives absent through the generic document'
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     const wiring = documentFamilyWiring('identities')!;
+    const id = generateIdentifier();
     await putDocumentPair(
-        db, 'identities-del-1', identityFields(),
+        db, id, identityFields(),
         '2026-02-01T00:00:00.000000Z',
     );
     await deleteDocumentPair(
-        db, 'identities-del-1', '2026-02-02T00:00:00.000000Z',
+        db, id, '2026-02-02T00:00:00.000000Z',
     );
     await assert.rejects(
         documentGetHandler(wiring)(
-            db, ['identities-del-1'], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
+            db, [id], 'XXZruirZyAOoRpNxaDnpSA', 'ignored',
         ),
         (error: unknown) => {
             assert.ok(error instanceof EntityNotFoundError);
@@ -297,7 +302,7 @@ test('a DELETE-head derives absent through the generic document'
             );
             assert.equal(
                 (error as EntityNotFoundError).message,
-                'Not found: identities/identities-del-1',
+                'Not found: identities/' + id,
             );
             return true;
         },
@@ -314,14 +319,15 @@ test('documentWriteResponseSpec(IDENTITIES_WIRING) emits'
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const body = identityFields();
+    const id = generateIdentifier();
     const written = await PUT<Record<string, unknown>>(
-        db, 'identities/id-resp-1', body, DEV_TOKEN,
+        db, 'identities/' + id, body, DEV_TOKEN,
     );
     assert.deepEqual(
         Object.keys(written).sort(),
         ['id', 'kind'],
     );
-    assert.equal(written['id'], 'id-resp-1');
+    assert.equal(written['id'], id);
     assert.equal(written['kind'], 'person');
 });
 
@@ -329,7 +335,7 @@ test('stored PUT body equals identityDocumentEntityOf',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const id = 'id-g3-stream';
+    const id = generateIdentifier();
     const body = identityFields();
     const put = await handleRequest(
         db,
@@ -414,7 +420,7 @@ test('GET identity returns title for that person',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const id = 'person-title-get';
+    const id = generateIdentifier();
     const put = await handleRequest(
         db,
         apiRequest({

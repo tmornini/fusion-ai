@@ -25,6 +25,8 @@ import type {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // -- Fixture helpers --------------------------
 
@@ -75,8 +77,8 @@ async function seedFlow(
 ): Promise<void> {
     await postFlowCreation(ctx, {
         flowId,
-        linkId: flowId + '-link',
-        projectId: 'p-' + flowId,
+        linkId: generateIdentifier(),
+        projectId: generateIdentifier(),
         name,
     });
     await putFlow(ctx, flowId, {
@@ -125,21 +127,40 @@ async function transitionWorkOrder(
 }
 
 // c→a→z graph: c isCreate, z isArchive, a regular
-function buildTestGraph(): StoredGraph {
+function buildTestGraph(): {
+    graph: StoredGraph;
+    createId: string;
+    activeId: string;
+    doneId: string;
+} {
+    const createId = generateIdentifier();
+    const activeId = generateIdentifier();
+    const doneId = generateIdentifier();
     return {
-        nodes: [
-            buildNode('c', 'Create', {
-                isCreate: true,
-            }),
-            buildNode('a', 'Active'),
-            buildNode('z', 'Done', {
-                isArchive: true,
-            }),
-        ],
-        edges: [
-            buildEdge('e-ca', 'c', 'a'),
-            buildEdge('e-az', 'a', 'z'),
-        ],
+        createId,
+        activeId,
+        doneId,
+        graph: {
+            nodes: [
+                buildNode(createId, 'Create', {
+                    isCreate: true,
+                }),
+                buildNode(activeId, 'Active'),
+                buildNode(doneId, 'Done', {
+                    isArchive: true,
+                }),
+            ],
+            edges: [
+                buildEdge(
+                    generateIdentifier(),
+                    createId, activeId,
+                ),
+                buildEdge(
+                    generateIdentifier(),
+                    activeId, doneId,
+                ),
+            ],
+        },
     };
 }
 
@@ -157,7 +178,10 @@ test(
         // through the
         // gate-driven create/document-PUT idiom.
         const f1Graph = buildTestGraph();
-        await seedFlow(ctx, 'ZOousbbnzpqlxJExVAruYQ', 'Onboarding', f1Graph);
+        await seedFlow(
+            ctx, 'ZOousbbnzpqlxJExVAruYQ', 'Onboarding',
+            f1Graph.graph,
+        );
 
         // Minimal VALID work-order graphs — the gate
         // demands shape, but getFlowStats reads from
@@ -189,33 +213,46 @@ test(
         // (Task 7): getFlowStats reads
         // organizations/:id/flows/:id/work-orders
         // through the flipped GET.
+        const otherFlow = generateIdentifier();
         await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
-            + 'ZOousbbnzpqlxJExVAruYQ/work-orders/fwo1', {
+            + 'ZOousbbnzpqlxJExVAruYQ/work-orders/'
+            + generateIdentifier(), {
             flow_id: 'ZOousbbnzpqlxJExVAruYQ',
             work_order_id: 'yNSSnbrpacodQTzUEcdEVA',
             at: daysAgo(45),
         });
-        await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/flows/OTHER/'
-            + 'work-orders/fwo2', {
-            flow_id: 'OTHER',
+        await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+            + otherFlow + '/work-orders/'
+            + generateIdentifier(), {
+            flow_id: otherFlow,
             work_order_id: 'yNXXsTEwShOozlQCEWKIIw',
             at: daysAgo(45),
         });
 
-        // yNSSnbrpacodQTzUEcdEVA: '' → c (daysAgo(40)), c → a
-        // (daysAgo(40)), a → z (daysAgo(5))
-        // ~35 days in node 'a', well within 90-day window
-        await transitionWorkOrder(ctx, 'yNSSnbrpacodQTzUEcdEVA', 't1a', 'c'
-            , daysAgo(40));
-        await transitionWorkOrder(ctx, 'yNSSnbrpacodQTzUEcdEVA', 't1b', 'a'
-            , daysAgo(40));
-        await transitionWorkOrder(ctx, 'yNSSnbrpacodQTzUEcdEVA', 't1c', 'z'
-            , daysAgo(5));
+        // yNSSnbrpacodQTzUEcdEVA: '' → create → active → done
+        // ~35 days in the active node, within 90-day window
+        await transitionWorkOrder(
+            ctx, 'yNSSnbrpacodQTzUEcdEVA',
+            generateIdentifier(), f1Graph.createId,
+            daysAgo(40),
+        );
+        await transitionWorkOrder(
+            ctx, 'yNSSnbrpacodQTzUEcdEVA',
+            generateIdentifier(), f1Graph.activeId,
+            daysAgo(40),
+        );
+        await transitionWorkOrder(
+            ctx, 'yNSSnbrpacodQTzUEcdEVA',
+            generateIdentifier(), f1Graph.doneId,
+            daysAgo(5),
+        );
 
-        // yNXXsTEwShOozlQCEWKIIw (OTHER flow): '' → c (daysAgo(40))
-        // Must not affect ZOousbbnzpqlxJExVAruYQ stats
-        await transitionWorkOrder(ctx, 'yNXXsTEwShOozlQCEWKIIw', 't2a', 'c'
-            , daysAgo(40));
+        // Other flow: '' → create. Must not affect stats.
+        await transitionWorkOrder(
+            ctx, 'yNXXsTEwShOozlQCEWKIIw',
+            generateIdentifier(), f1Graph.createId,
+            daysAgo(40),
+        );
 
         const { model, graph } =
             await getFlowStats(ctx, 'ZOousbbnzpqlxJExVAruYQ', Date.now());
@@ -228,10 +265,12 @@ test(
             model.incompleteWorkOrderCount, 0,
         );
         const a =
-            model.nodes.find(n => n.id === 'a')!;
+            model.nodes.find(
+                n => n.id === f1Graph.activeId,
+            )!;
         assert.ok(
             a !== undefined,
-            'node a must be present',
+            'active node must be present',
         );
         assert.ok(
             a.heatPct > 0,
@@ -246,7 +285,9 @@ test(
     async () => {
         const { ctx } = await adminContext();
         await assert.rejects(
-            () => getFlowStats(ctx, 'nope', Date.now()),
+            () => getFlowStats(
+                ctx, generateIdentifier(), Date.now(),
+            ),
         );
     },
 );
@@ -262,7 +303,7 @@ test(
         // seeds c→a→z all at (0,0).
         const autoGraph = buildTestGraph();
         await seedFlow(ctx, 'ZOousbbnzpqlxJExVAruYQ', 'AutoLayout'
-            , autoGraph);
+            , autoGraph.graph);
         // Phase Final Stage B: work_orders table retired.
         await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + 'yNSSnbrpacodQTzUEcdEVA', {
@@ -275,13 +316,17 @@ test(
         });
         // NAMED re-pin (Task 7): same reason as above.
         await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
-            + 'ZOousbbnzpqlxJExVAruYQ/work-orders/fwo1', {
+            + 'ZOousbbnzpqlxJExVAruYQ/work-orders/'
+            + generateIdentifier(), {
             flow_id: 'ZOousbbnzpqlxJExVAruYQ',
             work_order_id: 'yNSSnbrpacodQTzUEcdEVA',
             at: daysAgo(10),
         });
-        await transitionWorkOrder(ctx, 'yNSSnbrpacodQTzUEcdEVA', 't1', 'c'
-            , daysAgo(10));
+        await transitionWorkOrder(
+            ctx, 'yNSSnbrpacodQTzUEcdEVA',
+            generateIdentifier(), autoGraph.createId,
+            daysAgo(10),
+        );
         const { model, graph } =
             await getFlowStats(ctx, 'ZOousbbnzpqlxJExVAruYQ', Date.now());
         const graphPos = new Set(
@@ -290,8 +335,12 @@ test(
             ),
         );
         assert.equal(graphPos.size, 3);
-        const c = graph.nodes.find(n => n.id === 'c')!;
-        const z = graph.nodes.find(n => n.id === 'z')!;
+        const c = graph.nodes.find(
+            n => n.id === autoGraph.createId,
+        )!;
+        const z = graph.nodes.find(
+            n => n.id === autoGraph.doneId,
+        )!;
         assert.ok(c.positionX < z.positionX);
         const modelPos = new Set(
             model.nodes.map(

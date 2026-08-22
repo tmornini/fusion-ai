@@ -26,6 +26,8 @@ import {
 import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 async function setup() {
     const db = memoryDbAdapter();
@@ -81,12 +83,13 @@ test('getIdentityRoster leaves a service unnamed'
 + ' (agents are not identities)',
 async () => {
     const { db, ctx } = await setup();
-    await postIdentityCreation(ctx, 's2', {
+    const serviceId = generateIdentifier();
+    await postIdentityCreation(ctx, serviceId, {
         kind: 'service', secret: 'shh',
     });
     const roster = await getIdentityRoster(ctx);
-    const row = roster.find(r => r.id === 's2');
-    assert.ok(row, 'roster row for s2 exists');
+    const row = roster.find(r => r.id === serviceId);
+    assert.ok(row, 'roster row for service exists');
     assert.equal(row.kind, 'service');
     if (row.kind === 'service') {
         assert.equal(row.service.named, false);
@@ -122,13 +125,16 @@ async () => {
         provider_subject: 'g-1', action: 'linked',
         at: '2026-01-01T00:00:00.000000Z',
     });
-    await ctx.PUT('identities/pnXmXrxOWayANgDLdCjuBw/providers/e2', {
+    await ctx.PUT('identities/pnXmXrxOWayANgDLdCjuBw/providers/'
+        + generateIdentifier(), {
         identity_id: 'pnXmXrxOWayANgDLdCjuBw', provider: 'google',
         provider_subject: 'g-1', action: 'unlinked',
         at: '2026-01-02T00:00:00.000000Z',
     });
-    await ctx.PUT('identities/other/providers/e3', {
-        identity_id: 'other', provider: 'github',
+    const otherId = generateIdentifier();
+    await ctx.PUT('identities/' + otherId + '/providers/'
+        + generateIdentifier(), {
+        identity_id: otherId, provider: 'github',
         provider_subject: 'h-1', action: 'linked',
         at: '2026-01-03T00:00:00.000000Z',
     });
@@ -143,25 +149,34 @@ async () => {
 test('getTokenChainsFor groups one identity\'s tokens',
 async () => {
     const { ctx } = await setup();
-    await ctx.PUT('identities/pnXmXrxOWayANgDLdCjuBw/tokens/t1', {
+    const chain2 = generateIdentifier();
+    const otherId = generateIdentifier();
+    await ctx.PUT('identities/pnXmXrxOWayANgDLdCjuBw/tokens/'
+        + generateIdentifier(), {
         jti: 'jmvogLnzTmiQlAkVvDHrvQ', identity_id: 'pnXmXrxOWayANgDLdCjuBw'
             , action: 'issued',
         chain_id: 'WeXjAaAxGSpLpamfEuvcww',
         at: '2026-01-01T00:00:00.000000Z',
     });
-    await ctx.PUT('identities/pnXmXrxOWayANgDLdCjuBw/tokens/t2', {
-        jti: 'j2', identity_id: 'pnXmXrxOWayANgDLdCjuBw', action: 'issued',
+    await ctx.PUT('identities/pnXmXrxOWayANgDLdCjuBw/tokens/'
+        + generateIdentifier(), {
+        jti: generateIdentifier(),
+        identity_id: 'pnXmXrxOWayANgDLdCjuBw', action: 'issued',
         chain_id: 'WeXjAaAxGSpLpamfEuvcww',
         at: '2026-01-02T00:00:00.000000Z',
     });
-    await ctx.PUT('identities/pnXmXrxOWayANgDLdCjuBw/tokens/t3', {
-        jti: 'j3', identity_id: 'pnXmXrxOWayANgDLdCjuBw', action: 'issued',
-        chain_id: 'c2',
+    await ctx.PUT('identities/pnXmXrxOWayANgDLdCjuBw/tokens/'
+        + generateIdentifier(), {
+        jti: generateIdentifier(),
+        identity_id: 'pnXmXrxOWayANgDLdCjuBw', action: 'issued',
+        chain_id: chain2,
         at: '2026-01-03T00:00:00.000000Z',
     });
-    await ctx.PUT('identities/other/tokens/t4', {
-        jti: 'j4', identity_id: 'other', action: 'issued',
-        chain_id: 'c3',
+    await ctx.PUT('identities/' + otherId + '/tokens/'
+        + generateIdentifier(), {
+        jti: generateIdentifier(),
+        identity_id: otherId, action: 'issued',
+        chain_id: generateIdentifier(),
         at: '2026-01-04T00:00:00.000000Z',
     });
     const chains = await getTokenChainsFor(ctx, 'pnXmXrxOWayANgDLdCjuBw');
@@ -170,7 +185,7 @@ async () => {
         c => c.chainId === 'WeXjAaAxGSpLpamfEuvcww');
     assert.ok(WeXjAaAxGSpLpamfEuvcww, 'chain WeXjAaAxGSpLpamfEuvcww present');
     assert.equal(WeXjAaAxGSpLpamfEuvcww.events.length, 2);
-    const c2 = chains.find(c => c.chainId === 'c2');
-    assert.ok(c2, 'chain c2 present');
-    assert.equal(c2.events.length, 1);
+    const second = chains.find(c => c.chainId === chain2);
+    assert.ok(second, 'second chain present');
+    assert.equal(second.events.length, 1);
 });

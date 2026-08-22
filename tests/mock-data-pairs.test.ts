@@ -25,9 +25,12 @@ import {
     mockFlowRecords,
     mockStateFieldValues,
     buildScoreSeedProjects,
+    ORGANIZATION_TWO_OBJECTIVE,
 } from '../api/mock-data/seed-message-pairs.ts';
-import { humanMemberPoolsByOrganization }
-    from '../api/mock-data/seed-kit.ts';
+import {
+    humanMemberPoolsByOrganization,
+    seedIdentifier,
+} from '../api/mock-data/seed-kit.ts';
 import { buildMembers } from '../api/mock-data/members.ts';
 import { buildSeedScoreRows } from '../api/mock-data/scores.ts';
 import {
@@ -452,7 +455,7 @@ test('a seeded objective create pair sits at its org-nested'
         );
     }
     const org2Rows = requests.filter(
-        r => r.uri_id === 'seed-objective-org2',
+        r => r.uri_id === ORGANIZATION_TWO_OBJECTIVE.id,
     );
     assert.equal(org2Rows.length, 2);
     for (const row of org2Rows) {
@@ -498,7 +501,9 @@ test('a seeded objective\'s revision pair sits at its own'
 + ' keys', async () => {
     const db = await sharedMockDb();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
-    const revisionId = `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`;
+    const revisionId = seedIdentifier(
+        `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`,
+    );
     const requests = await db.pairs.getAll();
     const revisionRow = requests.find(
         r => r.uri_id === revisionId
@@ -837,8 +842,9 @@ async () => {
     const db = await sharedMockDb();
     const requests = await db.pairs.getAll();
     for (const starkSeed of OBJECTIVE_SEEDS) {
-        const revisionId =
-            `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`;
+        const revisionId = seedIdentifier(
+            `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`,
+        );
         const revisionRow = requests.find(
             r => r.uri_id === revisionId
                 && r.uri_collection.includes('/revisions/'),

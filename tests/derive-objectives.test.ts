@@ -15,6 +15,8 @@ import {
 } from './http-fixtures.ts';
 import { STARK_ORGANIZATION } from
     '../api/mock-data/seed-constants.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Objectives' own state-history reduction (states-address
 // retirement): unit-level trio walk + echo dedup, and the
@@ -50,7 +52,7 @@ test('deriveObjectiveStateHistory returns the trio walk in'
 + ' (state_at, id) order with echo dedup', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const id = 'obj-derive-1';
+    const id = generateIdentifier();
     const genesisAt = nowUtc();
     await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id
@@ -86,7 +88,7 @@ test('GET organizations/:id/objectives/:id/versions carries the objective'
 + ' trio rows (DESC current-first)', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const id = 'obj-derive-history-1';
+    const id = generateIdentifier();
     const genesisAt = nowUtc();
     await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/' + id

@@ -12,6 +12,14 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const INV_DEDUP_STEP0_FIRST_GRANT = generateIdentifier();
+const INV_DEDUP_STEP0_FIRST_DECLINE = generateIdentifier();
+const INV_DEDUP_STEP0_SECOND_GRANT = generateIdentifier();
+const INV_DEDUP_STEP0_SECOND_MS = generateIdentifier();
+const INV_DEDUP_STEP0_SECOND_ACCEPT = generateIdentifier();
 
 // Phase Final Task 2: invitations ROW half stripped — the
 // row-plus-lifecycle dual-write oracle is retired.
@@ -60,7 +68,7 @@ async () => {
             + '/invitations/', admin, {
             email: inviteeEmail,
             invitationId: 'hhLDowecKAZZsoTcnjSQrg',
-            grantEventId: 'inv-dedup-step0-first-grant',
+            grantEventId: INV_DEDUP_STEP0_FIRST_GRANT,
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
@@ -79,7 +87,7 @@ async () => {
         invitee,
         {
             state: 'declined',
-            eventId: 'inv-dedup-step0-first-decline',
+            eventId: INV_DEDUP_STEP0_FIRST_DECLINE,
             at: '2026-06-01T00:00:01.000000Z',
         },
     ));
@@ -100,7 +108,7 @@ async () => {
             + '/invitations/', admin, {
             email: inviteeEmail,
             invitationId: 'hjPGoZqbkGJVvYQFoLWXCA',
-            grantEventId: 'inv-dedup-step0-second-grant',
+            grantEventId: INV_DEDUP_STEP0_SECOND_GRANT,
             grantAt: '2026-06-01T00:00:02.000000Z',
         },
     ));
@@ -121,8 +129,8 @@ async () => {
         invitee,
         {
             state: 'accepted',
-            membershipId: 'inv-dedup-step0-second-ms',
-            eventId: 'inv-dedup-step0-second-accept',
+            membershipId: INV_DEDUP_STEP0_SECOND_MS,
+            eventId: INV_DEDUP_STEP0_SECOND_ACCEPT,
             at: '2026-06-01T00:00:03.000000Z',
         },
     ));

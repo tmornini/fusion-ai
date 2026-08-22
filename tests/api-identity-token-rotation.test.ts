@@ -17,6 +17,8 @@ import {
 import {
     deriveIdentityTokens,
 } from '../api/derive-identity-tokens.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // POST identity-tokens/:jti/rotation decides and appends in
 // ONE transaction: a live jti returns its successor; a
@@ -26,7 +28,8 @@ import {
 // revokes the whole chain in one transaction; an unknown jti
 // is an idempotent no-op.
 
-const ROOT_JTI = 'jti-1';
+const ROOT_JTI = generateIdentifier();
+const ROOT_CHAIN = generateIdentifier();
 
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
@@ -37,9 +40,9 @@ async function seededDb(): Promise<MemoryDbAdapter> {
     // them — the PUT route forms the SAME event pair a live write
     // uses (Phase 13 Task 9: pair-only, no row).
     await PUT(db
-        , 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/udpCrXJSdUfkFbImFbBsWw', {
+        , 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/' + ROOT_JTI, {
         jti: ROOT_JTI, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'issued', chain_id: 'chain-1',
+        action: 'issued', chain_id: ROOT_CHAIN,
         at: '2026-06-01T00:00:00.000000Z',
     }, DEV_TOKEN);
     return db;
@@ -96,7 +99,7 @@ test(
     async () => {
         const db = await seededDb();
         await assert.rejects(
-            () => rotate(db, 'ghost'),
+            () => rotate(db, generateIdentifier()),
             (err: unknown) =>
                 err instanceof RequestError
                 && err.status === 409,
@@ -129,7 +132,8 @@ test(
     async () => {
         const db = await seededDb();
         await POST(
-            db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/ghost/revocation',
+            db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+                + generateIdentifier() + '/revocation',
             {},
             DEV_TOKEN,
         );

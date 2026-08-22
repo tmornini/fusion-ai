@@ -11,9 +11,11 @@ import { ideaBody, seedAdminSchema } from './test-fixtures.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 const BASE = 'http://localhost';
-const MEMBER = 'walt';
+const MEMBER = generateIdentifier();
 
 function req(
     method: string, path: string, token: string,

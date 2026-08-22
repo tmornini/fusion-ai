@@ -17,6 +17,16 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const INV_REHOME_PARITY_1_GRANT = generateIdentifier();
+const INV_REHOME_PARITY_1_DECLINE = generateIdentifier();
+const INV_REHOME_PARITY_2 = generateIdentifier();
+const INV_REHOME_PARITY_2_GRANT = generateIdentifier();
+const INV_REHOME_LOAD_1 = generateIdentifier();
+const INV_REHOME_LOAD_1_GRANT = generateIdentifier();
+const INV_GHOST = generateIdentifier();
 
 // Phase 15 gate 6 parity pins: the re-homes that close
 // Author gate 6 for the exit census.
@@ -109,7 +119,7 @@ test('pendingInvitationFor lifecycle on the pair plane'
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
             invitationId: 'iqtxKmWMdfYjxphbQhAJnw',
-            grantEventId: 'inv-rehome-parity-1-grant',
+            grantEventId: INV_REHOME_PARITY_1_GRANT,
             grantAt: '2026-06-02T00:00:00.000000Z',
         },
     ));
@@ -125,7 +135,7 @@ test('pendingInvitationFor lifecycle on the pair plane'
             + '/invitations/iqtxKmWMdfYjxphbQhAJnw',
         inviteeToken, {
             state: 'declined',
-            eventId: 'inv-rehome-parity-1-decline',
+            eventId: INV_REHOME_PARITY_1_DECLINE,
             at: '2026-06-02T00:00:01.000000Z',
         },
     ));
@@ -138,15 +148,15 @@ test('pendingInvitationFor lifecycle on the pair plane'
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
-            invitationId: 'inv-rehome-parity-2',
-            grantEventId: 'inv-rehome-parity-2-grant',
+            invitationId: INV_REHOME_PARITY_2,
+            grantEventId: INV_REHOME_PARITY_2_GRANT,
             grantAt: '2026-06-02T00:00:02.000000Z',
         },
     ));
     assert.equal(regrant.status, 200);
     assert.equal(
         (await assertPending())?.id,
-        'inv-rehome-parity-2',
+        INV_REHOME_PARITY_2,
     );
     // Phase Final Stage B: roster tables retired.
 });
@@ -160,8 +170,8 @@ test('loadInvitation shape: deriveInvitations find-by-id'
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
-            invitationId: 'inv-rehome-load-1',
-            grantEventId: 'inv-rehome-load-1-grant',
+            invitationId: INV_REHOME_LOAD_1,
+            grantEventId: INV_REHOME_LOAD_1_GRANT,
             grantAt: '2026-06-02T00:00:00.000000Z',
         },
     ));
@@ -169,16 +179,16 @@ test('loadInvitation shape: deriveInvitations find-by-id'
 
     // Phase Final Task 2: invitations ROW half stripped.
     const derived = (await deriveInvitations(db))
-        .find(r => r.id === 'inv-rehome-load-1');
+        .find(r => r.id === INV_REHOME_LOAD_1);
     assert.ok(derived !== undefined);
-    assert.equal(derived.id, 'inv-rehome-load-1');
+    assert.equal(derived.id, INV_REHOME_LOAD_1);
     assert.equal(derived.organization_id, ORGANIZATION_TWO);
     assert.equal(derived.state, 'pending');
 
     // Missing id: pair plane absent.
     assert.equal(
         (await deriveInvitations(db))
-            .find(r => r.id === 'inv-ghost'),
+            .find(r => r.id === INV_GHOST),
         undefined,
     );
     // Phase Final Stage B: roster tables retired.

@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import {
     readdirSync,
@@ -43,7 +45,11 @@ import {
 
 const BASE = 'http://localhost';
 const ORGANIZATION = STARK_ORGANIZATION;
-const WO_ID = 'wo-legacy-cut-1';
+const WO_ID = generateIdentifier();
+const NODE_NEXT = generateIdentifier();
+const FIELD_VALUE_ID = generateIdentifier();
+const INSTANCE_ID = generateIdentifier();
+const TRANSITION_EVENT_ID = generateIdentifier();
 const TRANSITION =
     '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
         + '/transition';
@@ -116,8 +122,8 @@ function legacyBody(
     extras: Record<string, unknown> = {},
 ): Record<string, unknown> {
     return {
-        transitionEventId: 'te-cut-1',
-        targetState: 'n-next',
+        transitionEventId: TRANSITION_EVENT_ID,
+        targetState: NODE_NEXT,
         fieldValues: [],
         release: null,
         transitionAt: nowUtc(),
@@ -165,9 +171,9 @@ async () => {
             DEV_TOKEN,
             legacyBody({
                 fieldValues: [{
-                    id: 'fv-1',
+                    id: FIELD_VALUE_ID,
                     fields: {
-                        state_event_id: 'te-cut-1',
+                        state_event_id: TRANSITION_EVENT_ID,
                         attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                         value: 'high',
                     },
@@ -176,7 +182,7 @@ async () => {
                     attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                     value: 'high',
                 }],
-                instance_id: 'inst-1',
+                instance_id: INSTANCE_ID,
                 record_type_id: 'sjWcXwYGlgxxJOHxzMoUow',
             }),
         ),

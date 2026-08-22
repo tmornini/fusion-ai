@@ -14,6 +14,23 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const INV_PARITY_WRITE_FIRST_GRANT = generateIdentifier();
+const INV_PARITY_WRITE_FIRST_DECLINE = generateIdentifier();
+const INV_PARITY_WRITE_SECOND = generateIdentifier();
+const INV_PARITY_WRITE_SECOND_GRANT = generateIdentifier();
+const INV_PARITY_WRITE_PENDING = generateIdentifier();
+const INV_PARITY_WRITE_ACCEPTED_MS = generateIdentifier();
+const INV_PARITY_WRITE_ACCEPTED_ACCEPT = generateIdentifier();
+const INV_PARITY_WRITE_DECLINED_DECLINE = generateIdentifier();
+const INV_PARITY_WRITE_REVOKED_REVOKE = generateIdentifier();
+const NO_SUCH_INVITATION = generateIdentifier();
+const INV_PARITY_MEMBERSHIP_EXISTS_GRANT = generateIdentifier();
+const INV_PARITY_MEMBERSHIP_EXISTS_MS = generateIdentifier();
+const INV_PARITY_MEMBERSHIP_EXISTS_ACCEPT = generateIdentifier();
+const ID_GRANT = generateIdentifier();
 
 // Phase 14 Task 2 commit 3: the write-path pre-tx-vs-in-tx
 // parity pin. grantInvitation calls pendingInvitationFor (via
@@ -105,7 +122,7 @@ test('pendingInvitationFor: pre-tx vs in-tx (grantInvitation\'s'
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
             invitationId: 'iUFAcBfktmuASnGGNrPCKw',
-            grantEventId: 'inv-parity-write-first-grant',
+            grantEventId: INV_PARITY_WRITE_FIRST_GRANT,
             grantAt: '2026-06-02T00:00:00.000000Z',
         },
     ));
@@ -120,7 +137,7 @@ test('pendingInvitationFor: pre-tx vs in-tx (grantInvitation\'s'
             + '/invitations/iUFAcBfktmuASnGGNrPCKw',
         inviteeToken, {
             state: 'declined',
-            eventId: 'inv-parity-write-first-decline',
+            eventId: INV_PARITY_WRITE_FIRST_DECLINE,
             at: '2026-06-02T00:00:01.000000Z',
         },
     ));
@@ -139,15 +156,15 @@ test('pendingInvitationFor: pre-tx vs in-tx (grantInvitation\'s'
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
-            invitationId: 'inv-parity-write-second',
-            grantEventId: 'inv-parity-write-second-grant',
+            invitationId: INV_PARITY_WRITE_SECOND,
+            grantEventId: INV_PARITY_WRITE_SECOND_GRANT,
             grantAt: '2026-06-02T00:00:02.000000Z',
         },
     ));
     assert.equal(regrant.status, 200);
     const afterRegrant = await assertPendingWritePathParity(
         db, ORGANIZATION_TWO, inviteeId);
-    assert.equal(afterRegrant?.id, 'inv-parity-write-second');
+    assert.equal(afterRegrant?.id, INV_PARITY_WRITE_SECOND);
 });
 
 test('currentInvitationState: pre-tx vs in-tx agree across'
@@ -164,7 +181,7 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
             'POST', '/organizations/' + ORGANIZATION_TWO
             + '/invitations/', admin, {
                 email, invitationId: id,
-                grantEventId: id + '-grant', grantAt: at,
+                grantEventId: ID_GRANT, grantAt: at,
             },
         ));
         assert.equal(res.status, 200);
@@ -184,12 +201,12 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
 
     // pending — Sarah Chen, granted, left untouched.
     await grant(
-        'inv-parity-write-pending', 'sarah.chen@company.com',
+        INV_PARITY_WRITE_PENDING, 'sarah.chen@company.com',
         '2026-06-03T00:00:00.000000Z',
     );
     assert.equal(
         await assertStateWritePathParity(
-            'inv-parity-write-pending', ACCEPT_TX_TABLES,
+            INV_PARITY_WRITE_PENDING, ACCEPT_TX_TABLES,
         ),
         'pending',
     );
@@ -208,8 +225,8 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
             + '/invitations/iOhteLyCdhnLqTaeGYCoYQ',
         jessicaToken, {
             state: 'accepted',
-            membershipId: 'inv-parity-write-accepted-ms',
-            eventId: 'inv-parity-write-accepted-accept',
+            membershipId: INV_PARITY_WRITE_ACCEPTED_MS,
+            eventId: INV_PARITY_WRITE_ACCEPTED_ACCEPT,
             at: '2026-06-03T00:00:02.000000Z',
         },
     ));
@@ -236,7 +253,7 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
             + '/invitations/iPxNOWCigMcIYgqchAefWA',
         emilyToken, {
             state: 'declined',
-            eventId: 'inv-parity-write-declined-decline',
+            eventId: INV_PARITY_WRITE_DECLINED_DECLINE,
             at: '2026-06-03T00:00:04.000000Z',
         },
     ));
@@ -260,7 +277,7 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
             + '/invitations/iZisVMKVGRGkyLzjwyTjow',
         admin, {
             state: 'revoked',
-            eventId: 'inv-parity-write-revoked-revoke',
+            eventId: INV_PARITY_WRITE_REVOKED_REVOKE,
             at: '2026-06-03T00:00:06.000000Z',
         },
     ));
@@ -276,7 +293,7 @@ test('currentInvitationState: pre-tx vs in-tx agree across'
     // A never-granted id, same parity.
     assert.equal(
         await assertStateWritePathParity(
-            'no-such-invitation', ACCEPT_TX_TABLES,
+            NO_SUCH_INVITATION, ACCEPT_TX_TABLES,
         ),
         null,
     );
@@ -320,7 +337,7 @@ test('membershipExistsFor: pre-tx vs in-tx (acceptInvitation\'s'
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
             invitationId: 'iJbzDBDkWJrjxankczlJEQ',
-            grantEventId: 'inv-parity-membership-exists-grant',
+            grantEventId: INV_PARITY_MEMBERSHIP_EXISTS_GRANT,
             grantAt: '2026-06-04T00:00:00.000000Z',
         },
     ));
@@ -332,8 +349,8 @@ test('membershipExistsFor: pre-tx vs in-tx (acceptInvitation\'s'
             + '/invitations/iJbzDBDkWJrjxankczlJEQ',
         inviteeToken, {
             state: 'accepted',
-            membershipId: 'inv-parity-membership-exists-ms',
-            eventId: 'inv-parity-membership-exists-accept',
+            membershipId: INV_PARITY_MEMBERSHIP_EXISTS_MS,
+            eventId: INV_PARITY_MEMBERSHIP_EXISTS_ACCEPT,
             at: '2026-06-04T00:00:01.000000Z',
         },
     ));

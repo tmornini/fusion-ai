@@ -28,6 +28,8 @@ import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import {
     apiRequest, TEST_OPERATION_ID, storedPutBodyText,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 async function adminCtx() {
     const db = memoryDbAdapter();
@@ -85,11 +87,13 @@ async () => {
     // array-order "last wins" would wrongly drop it.
     //
     // getProvidersFor reads GET /identities/:id/providers.
-    await seedIdentityProvider(db, 'prBESZPjJDiuXCeZLmbiVw', 'pl', {
+    await seedIdentityProvider(
+        db, 'prBESZPjJDiuXCeZLmbiVw', generateIdentifier(), {
         ...goodRow, identity_id: 'prBESZPjJDiuXCeZLmbiVw', action: 'linked',
         at: '2026-02-01T00:00:00.000000Z',
     });
-    await seedIdentityProvider(db, 'prBESZPjJDiuXCeZLmbiVw', 'pe', {
+    await seedIdentityProvider(
+        db, 'prBESZPjJDiuXCeZLmbiVw', generateIdentifier(), {
         ...goodRow, identity_id: 'prBESZPjJDiuXCeZLmbiVw', action: 'unlinked',
         at: '2026-01-01T00:00:00.000000Z',
     });
@@ -102,7 +106,7 @@ test('stored PUT body equals identityProviderEntityOf',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const id = 'ip-g4';
+    const id = generateIdentifier();
     const put = await handleRequest(db, apiRequest({
         method: 'PUT',
         path: '/identities/XXZruirZyAOoRpNxaDnpSA/providers/' + id,
@@ -135,7 +139,7 @@ test('GET stamps identity_id from the path when PUT omits it',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const id = 'ip-omit';
+    const id = generateIdentifier();
     const withoutIdentity = {
         provider: goodRow.provider,
         provider_subject: goodRow.provider_subject,
@@ -186,7 +190,10 @@ async () => {
         path: '/identities/XXZruirZyAOoRpNxaDnpSA/providers/'
             + 'jMOAEoFPMIDxqTAtmGvVIg',
         token: DEV_TOKEN,
-        body: { ...goodRow, identity_id: 'other' },
+        body: {
+            ...goodRow,
+            identity_id: generateIdentifier(),
+        },
         operationId: TEST_OPERATION_ID,
     }));
     assert.equal(res.status, 400);
@@ -196,7 +203,7 @@ test('derive dual-reads leftover flat provider pairs',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const id = 'old-flat-1';
+    const id = generateIdentifier();
     const body = { ...goodRow, identity_id: 'prBESZPjJDiuXCeZLmbiVw' };
     const pair = await formWritePair({
         method: 'PUT',
@@ -238,7 +245,7 @@ test('same event id on both planes — nested wins',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    const id = 'same-eid';
+    const id = generateIdentifier();
     const flatBody = {
         ...goodRow, identity_id: 'prBESZPjJDiuXCeZLmbiVw',
         provider: 'flat-google',

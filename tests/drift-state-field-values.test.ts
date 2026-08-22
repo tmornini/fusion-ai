@@ -29,6 +29,16 @@ import {
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const N_NEXT = generateIdentifier();
+const TE_1 = generateIdentifier();
+const FV_1 = generateIdentifier();
+const TE_LEX = generateIdentifier();
+const FV_Z = generateIdentifier();
+const FV_A = generateIdentifier();
+const FV_M = generateIdentifier();
 
 // Phase Final Task 2: state_field_values dual-write stripped.
 // This file no longer compares derive vs row-plane oracles —
@@ -139,12 +149,12 @@ async () => {
     const db = await seededDb();
 
     await appendLegacyTransition(db, {
-        transitionEventId: 'te1',
-        targetState: 'n-next',
+        transitionEventId: TE_1,
+        targetState: N_NEXT,
         fieldValues: [{
-            id: 'fv-1',
+            id: FV_1,
             fields: {
-                state_event_id: 'te1',
+                state_event_id: TE_1,
                 attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                 value: 'high',
             },
@@ -159,7 +169,7 @@ async () => {
         );
     const rows = derived.get('VPckAwjJsTGCEkKaOOGRGw') ?? [];
     assert.equal(rows.length, 1);
-    assert.equal(rows[0]!.id, 'fv-1');
+    assert.equal(rows[0]!.id, FV_1);
     assert.equal(rows[0]!.attribute_id, 'VPckAwjJsTGCEkKaOOGRGw');
     // Phase Final Stage B: state_field_values table retired.
 });
@@ -171,12 +181,12 @@ test('GET organizations/:id/work-orders/:id/history wire equals'
 async () => {
     const db = await seededDb();
     await appendLegacyTransition(db, {
-        transitionEventId: 'te1',
-        targetState: 'n-next',
+        transitionEventId: TE_1,
+        targetState: N_NEXT,
         fieldValues: [{
-            id: 'fv-1',
+            id: FV_1,
             fields: {
-                state_event_id: 'te1',
+                state_event_id: TE_1,
                 attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                 value: 'high',
             },
@@ -197,10 +207,10 @@ async () => {
         db, STARK_ORGANIZATION, 'yNSSnbrpacodQTzUEcdEVA',
     );
     assert.equal(wireText, JSON.stringify(derived));
-    const transition = derived.find((row) => row.id === 'te1');
+    const transition = derived.find((row) => row.id === TE_1);
     assert.ok(transition !== undefined);
     assert.deepEqual(transition!.field_values, [{
-        id: 'fv-1',
+        id: FV_1,
         attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
         value: 'high',
     }]);
@@ -212,29 +222,29 @@ test('work-order history field_values are id-lex ordered'
 + ' after non-lex transition fold', async () => {
     const db = await seededDb();
     await appendLegacyTransition(db, {
-        transitionEventId: 'te-lex',
-        targetState: 'n-next',
+        transitionEventId: TE_LEX,
+        targetState: N_NEXT,
         fieldValues: [
             {
-                id: 'fv-z',
+                id: FV_Z,
                 fields: {
-                    state_event_id: 'te-lex',
+                    state_event_id: TE_LEX,
                     attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                     value: 'z',
                 },
             },
             {
-                id: 'fv-a',
+                id: FV_A,
                 fields: {
-                    state_event_id: 'te-lex',
+                    state_event_id: TE_LEX,
                     attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                     value: 'a',
                 },
             },
             {
-                id: 'fv-m',
+                id: FV_M,
                 fields: {
-                    state_event_id: 'te-lex',
+                    state_event_id: TE_LEX,
                     attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                     value: 'm',
                 },
@@ -254,10 +264,10 @@ test('work-order history field_values are id-lex ordered'
         id: string;
         field_values: { id: string }[];
     }[];
-    const transition = list.find((row) => row.id === 'te-lex');
+    const transition = list.find((row) => row.id === TE_LEX);
     assert.ok(transition !== undefined);
     assert.deepEqual(
         transition!.field_values.map(r => r.id),
-        ['fv-a', 'fv-m', 'fv-z'],
+        [FV_A, FV_M, FV_Z].sort(),
     );
 });

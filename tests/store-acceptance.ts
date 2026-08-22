@@ -105,14 +105,14 @@ function flowCreate(id: string): Record<string, unknown> {
     return {
         id,
         flow: flowFields('Acceptance'),
-        projectFlowId: id + '-pf',
+        projectFlowId: generateIdentifier(),
         projectFlow: {
-            project_id: 'sa-project',
+            project_id: generateIdentifier(),
             flow_id: id,
             at: AT,
         },
         initialState: 'active',
-        initialStateEventId: id + '-ev',
+        initialStateEventId: generateIdentifier(),
         initialStateAt: AT,
         graphDelta: emptyDelta(),
     };
@@ -305,7 +305,7 @@ export function defineStoreAcceptance(
         const stale = await handleRequest(db, req(
             'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
                 + 'tYhGBKEoBjBYeqTcJWMNVQ', token,
-            flowDocument('Stale', 'sa-flow-a'),
+            flowDocument('Stale', generateIdentifier()),
             { 'if-match': '"' + 'b'.repeat(64) + '"' },
         ));
         assert.equal(stale.status, 412);

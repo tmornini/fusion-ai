@@ -46,6 +46,14 @@ import {
     generateIdentifier,
 } from '../shared/identifier.ts';
 
+const NODE_START = generateIdentifier();
+const NODE_MID = generateIdentifier();
+const NODE_END = generateIdentifier();
+const EDGE_START_MID = generateIdentifier();
+const EDGE_MID_END = generateIdentifier();
+const EDGE_START_END = generateIdentifier();
+const ATTR_X = generateIdentifier();
+
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;
     ctx: RequestContext;
@@ -115,20 +123,20 @@ function norm(g: StoredGraph): StoredGraph {
 function buildNonTrivialGraph(): StoredGraph {
     return {
         nodes: [
-            buildNode('start', { isCreate: true }),
-            buildNode('mid', {
+            buildNode(NODE_START, { isCreate: true }),
+            buildNode(NODE_MID, {
                 memberIds: ['mFNSxZqywTSMXhgUTdTqtA'],
                 attributes: [{
-                    attributeId: 'attr-x',
+                    attributeId: ATTR_X,
                     mode: 'editable',
                     isRequired: true,
                 }],
             }),
-            buildNode('end', { isArchive: true }),
+            buildNode(NODE_END, { isArchive: true }),
         ],
         edges: [
-            buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'start', 'mid'),
-            buildEdge('e2', 'mid', 'end'),
+            buildEdge(EDGE_START_MID, NODE_START, NODE_MID),
+            buildEdge(EDGE_MID_END, NODE_MID, NODE_END),
         ],
     };
 }
@@ -140,8 +148,8 @@ async function seedFlowWithGraph(
 ): Promise<void> {
     await postFlowCreation(ctx, {
         flowId,
-        linkId: flowId + '-link',
-        projectId: 'qfhFObbtDfxUZwEGxySBoQ',
+        linkId: generateIdentifier(),
+        projectId: generateIdentifier(),
         name: 'Reassembly Test Flow',
     });
     await putFlow(ctx, flowId, {
@@ -162,7 +170,7 @@ test(
     + ' document pair plane',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-get-rt';
+        const flowId = generateIdentifier();
         const intended = buildNonTrivialGraph();
         await seedFlowWithGraph(ctx, flowId, intended);
 
@@ -193,7 +201,7 @@ test(
     + ' from the pair-plane GET graph',
     async () => {
         const { db, ctx } = await setupMemDb();
-        const flowId = 'flow-wo-rt';
+        const flowId = generateIdentifier();
         // Use a graph that satisfies work-order readiness
         // (has isCreate, a post-start node, one outgoing edge).
         const graph = buildNonTrivialGraph();
@@ -237,13 +245,13 @@ test(
     + ' target (undone) graph from the pair plane',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-undo-rt';
+        const flowId = generateIdentifier();
 
         // Step 1: create flow with an empty graph.
         await postFlowCreation(ctx, {
             flowId,
-            linkId: flowId + '-link',
-            projectId: 'qfhFObbtDfxUZwEGxySBoQ',
+            linkId: generateIdentifier(),
+            projectId: generateIdentifier(),
             name: 'Undo Test Flow',
         });
 
@@ -263,10 +271,10 @@ test(
         // Step 3: advance to a different (smaller) graph.
         const advancedGraph: StoredGraph = {
             nodes: [
-                buildNode('start', { isCreate: true }),
-                buildNode('end', { isArchive: true }),
+                buildNode(NODE_START, { isCreate: true }),
+                buildNode(NODE_END, { isArchive: true }),
             ],
-            edges: [buildEdge('ex1', 'start', 'end')],
+            edges: [buildEdge(EDGE_START_END, NODE_START, NODE_END)],
         };
         await putFlow(ctx, flowId, {
             name: 'Undo Test Flow',
@@ -285,7 +293,7 @@ test(
         // deleting what it added.
         await ctx.POST('organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + flowId + '/undo', {
-            eventId: 'undo-ev-1',
+            eventId: generateIdentifier(),
             at: nowUtc(),
         });
 
@@ -305,15 +313,15 @@ test(
         // see the target shape again (start, mid, end).
         const nodeIds = got.nodes.map(n => n.id).sort();
         assert.ok(
-            nodeIds.includes('mid'),
+            nodeIds.includes(NODE_MID),
             'undone graph contains mid node',
         );
         assert.ok(
-            nodeIds.includes('start'),
+            nodeIds.includes(NODE_START),
             'undone graph contains start node',
         );
         assert.ok(
-            nodeIds.includes('end'),
+            nodeIds.includes(NODE_END),
             'undone graph contains end node',
         );
     },

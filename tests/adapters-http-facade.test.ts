@@ -11,8 +11,7 @@ import { OPERATION_ID_HEADER } from
 import { UnauthorizedError } from
     '../api/http-errors.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
-
-const OPERATION_ID = /^[A-Za-z0-9_-]{22}$/;
+import { isIdentifier } from '../shared/identifier.ts';
 
 async function withMockFetch(
     handler: typeof fetch,
@@ -55,7 +54,7 @@ test(
         );
         assert.equal(credentials, 'same-origin');
         assert.ok(operationId !== null);
-        assert.match(operationId, OPERATION_ID);
+        assert.equal(isIdentifier(operationId), true);
     },
 );
 
@@ -121,7 +120,7 @@ test(
                 + 'AjdvjuECVZEgZoFajaIEkg', { name: 'x' });
         });
         assert.ok(operationId !== null);
-        assert.match(operationId, OPERATION_ID);
+        assert.equal(isIdentifier(operationId), true);
     },
 );
 

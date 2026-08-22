@@ -25,6 +25,31 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const INV_SARAH = generateIdentifier();
+const EV_GRANT = generateIdentifier();
+const INV_X = generateIdentifier();
+const EV_X = generateIdentifier();
+const MS_SARAH = generateIdentifier();
+const EV_ACC = generateIdentifier();
+const MS_SARAH_2 = generateIdentifier();
+const EV_ACC_2 = generateIdentifier();
+const INV_IDEM = generateIdentifier();
+const EV_G_IDEM = generateIdentifier();
+const EV_GAI = generateIdentifier();
+const MS_IDEM = generateIdentifier();
+const EV_A_IDEM = generateIdentifier();
+const EV_GDI = generateIdentifier();
+const EV_D_IDEM = generateIdentifier();
+const EV_GRI = generateIdentifier();
+const EV_R_IDEM = generateIdentifier();
+const MS_X = generateIdentifier();
+const MS_SARAH_REMOVED = generateIdentifier();
+const EV_ACC_REMOVED = generateIdentifier();
+const MS_SARAH_AGAIN = generateIdentifier();
+const EV_ACC_AGAIN = generateIdentifier();
 
 // Phase Final Task 2: memberships on the pair plane.
 async function allMemberships(db: MemoryDbAdapter) {
@@ -118,7 +143,7 @@ async function seed(): Promise<MemoryDbAdapter> {
     await seedOrganizationDocument(db, 'BBjWJsjYIDkTRKIIPrzWRw', 'Wayne');
     for (const organization of ['AjdvjuECVZEgZoFajaIEkg'
         , 'BBjWJsjYIDkTRKIIPrzWRw']) {
-        await seedMembershipPair(db, 'm-current-' + organization, {
+        await seedMembershipPair(db, generateIdentifier(), {
             organization_id: organization
                 , identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
@@ -127,7 +152,7 @@ async function seed(): Promise<MemoryDbAdapter> {
     }
     await person(db, 'XXZruirZyAOoRpNxaDnpSA', 'Tony', 'demo@example.com');
     await person(db, 'toccYYkLEABmlbpHJalgtQ', 'Sarah', 'sarah@x.com');
-    await seedMembershipPair(db, 'm-sarah-1', {
+    await seedMembershipPair(db, generateIdentifier(), {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg'
             , identity_id: 'toccYYkLEABmlbpHJalgtQ',
         type: 'member', at: AT,
@@ -159,8 +184,8 @@ async function grantSarahToWayne(
             , 'BBjWJsjYIDkTRKIIPrzWRw'),
         {
             email: 'sarah@x.com',
-            invitationId: 'inv-sarah',
-            grantEventId: 'ev-grant',
+            invitationId: INV_SARAH,
+            grantEventId: EV_GRANT,
             grantAt: AT,
         }));
     assert.equal(res.status, 200);
@@ -191,7 +216,7 @@ test('a non-admin is forbidden from granting', async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             email: 'demo@example.com',
-            invitationId: 'inv-x', grantEventId: 'ev-x',
+            invitationId: INV_X, grantEventId: EV_X,
             grantAt: AT,
         }));
     assert.equal(res.status, 403);
@@ -221,7 +246,7 @@ test('a pending invitee is absent from the roster', async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-sarah', eventId: 'ev-acc',
+            membershipId: MS_SARAH, eventId: EV_ACC,
             at: AT,
         }));
     assert.equal(acc.status, 204);
@@ -250,8 +275,8 @@ test('accept makes the invitation org reachable', async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-sarah-2',
-            eventId: 'ev-acc-2',
+            membershipId: MS_SARAH_2,
+            eventId: EV_ACC_2,
             at: AT,
         }));
     const sarahOrganizations = (await allMemberships(db))
@@ -302,8 +327,8 @@ async () => {
     const db = await seed();
     const body = {
         email: 'sarah@x.com',
-        invitationId: 'inv-idem',
-        grantEventId: 'ev-g-idem',
+        invitationId: INV_IDEM,
+        grantEventId: EV_G_IDEM,
         grantAt: GRANT_AT,
     };
     const tok = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
@@ -318,11 +343,11 @@ async () => {
     assert.equal(r2.status, 200);
     assert.equal((await deriveInvitations(db)).length, 1);
     assert.equal(
-        (await invitationLifecycleStatesFor(db, 'inv-idem')).length, 1,
+        (await invitationLifecycleStatesFor(db, INV_IDEM)).length, 1,
     );
     // Event carries the caller-supplied at.
     const life = await invitationLifecycleStatesFor(
-        db, 'inv-idem',
+        db, INV_IDEM,
     );
     const ev = [...life].sort((a, b) =>
         a.at < b.at ? -1
@@ -331,7 +356,7 @@ async () => {
             : a.id > b.id ? 1 : 0,
     ).at(-1)!;
     assert.equal(ev.at, GRANT_AT);
-    assert.equal(ev.id, 'ev-g-idem');
+    assert.equal(ev.id, EV_G_IDEM);
 });
 
 test('accept: replay of fixed body is a no-op (two events total)',
@@ -345,13 +370,13 @@ async () => {
         'POST', '/organizations/BBjWJsjYIDkTRKIIPrzWRw/invitations/', tok, {
         email: 'sarah@x.com',
         invitationId: 'hasVDnGjEylAnJDTPjnZuQ',
-        grantEventId: 'ev-gai',
+        grantEventId: EV_GAI,
         grantAt: GRANT_AT,
     }));
     const accBody = {
         state: 'accepted',
-        membershipId: 'ms-idem',
-        eventId: 'ev-a-idem',
+        membershipId: MS_IDEM,
+        eventId: EV_A_IDEM,
         at: ACCEPT_AT,
     };
     const sTok = await organizationToken('toccYYkLEABmlbpHJalgtQ'
@@ -381,7 +406,7 @@ async () => {
             : a.id > b.id ? 1 : 0,
     ).at(-1)!;
     assert.equal(ev.at, ACCEPT_AT);
-    assert.equal(ev.id, 'ev-a-idem');
+    assert.equal(ev.id, EV_A_IDEM);
     assert.equal(ev.member_id, 'toccYYkLEABmlbpHJalgtQ');
 });
 
@@ -396,12 +421,12 @@ async () => {
         'POST', '/organizations/BBjWJsjYIDkTRKIIPrzWRw/invitations/', tok, {
         email: 'sarah@x.com',
         invitationId: 'hlmIVMfGBbdTSoChNYsQkQ',
-        grantEventId: 'ev-gdi',
+        grantEventId: EV_GDI,
         grantAt: GRANT_AT,
     }));
     const decBody = {
         state: 'declined',
-        eventId: 'ev-d-idem',
+        eventId: EV_D_IDEM,
         at: DECLINE_AT,
     };
     const sTok = await organizationToken('toccYYkLEABmlbpHJalgtQ'
@@ -431,7 +456,7 @@ async () => {
             : a.id > b.id ? 1 : 0,
     ).at(-1)!;
     assert.equal(ev.at, DECLINE_AT);
-    assert.equal(ev.id, 'ev-d-idem');
+    assert.equal(ev.id, EV_D_IDEM);
 });
 
 test('revoke: replay of fixed body is a no-op (two events total)',
@@ -445,12 +470,12 @@ async () => {
         'POST', '/organizations/BBjWJsjYIDkTRKIIPrzWRw/invitations/', tok, {
         email: 'sarah@x.com',
         invitationId: 'itekPiJIBiPQhcZveiqTKw',
-        grantEventId: 'ev-gri',
+        grantEventId: EV_GRI,
         grantAt: GRANT_AT,
     }));
     const revBody = {
         state: 'revoked',
-        eventId: 'ev-r-idem',
+        eventId: EV_R_IDEM,
         at: REVOKE_AT,
     };
     const rOEPOcVMQdJiiiMuiiEhlg = await handleRequest(db, req(
@@ -478,7 +503,7 @@ async () => {
             : a.id > b.id ? 1 : 0,
     ).at(-1)!;
     assert.equal(ev.at, REVOKE_AT);
-    assert.equal(ev.id, 'ev-r-idem');
+    assert.equal(ev.id, EV_R_IDEM);
     assert.equal(ev.member_id, 'XXZruirZyAOoRpNxaDnpSA');
 });
 
@@ -493,7 +518,7 @@ test('grant: empty invitationId is rejected (400)', async () => {
         {
             email: 'sarah@x.com',
             invitationId: '',
-            grantEventId: 'ev-x',
+            grantEventId: EV_X,
             grantAt: AT,
         }));
     assert.equal(res.status, 400);
@@ -507,7 +532,7 @@ test('grant: empty grantEventId is rejected (400)', async () => {
             , 'BBjWJsjYIDkTRKIIPrzWRw'),
         {
             email: 'sarah@x.com',
-            invitationId: 'inv-x',
+            invitationId: INV_X,
             grantEventId: '',
             grantAt: AT,
         }));
@@ -525,7 +550,7 @@ test('accept: empty membershipId is rejected (400)', async () => {
         {
             state: 'accepted',
             membershipId: '',
-            eventId: 'ev-x',
+            eventId: EV_X,
             at: AT,
         }));
     assert.equal(res.status, 400);
@@ -578,7 +603,7 @@ test('grant: missing invitationId is rejected (400)', async () => {
         {
             email: 'sarah@x.com',
             // invitationId intentionally absent
-            grantEventId: 'ev-x',
+            grantEventId: EV_X,
             grantAt: AT,
         }));
     assert.equal(res.status, 400);
@@ -592,8 +617,8 @@ test('grant: non-string grantAt is rejected (400)', async () => {
             , 'BBjWJsjYIDkTRKIIPrzWRw'),
         {
             email: 'sarah@x.com',
-            invitationId: 'inv-x',
-            grantEventId: 'ev-x',
+            invitationId: INV_X,
+            grantEventId: EV_X,
             grantAt: 42,   // non-string
         }));
     assert.equal(res.status, 400);
@@ -610,7 +635,7 @@ async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-x',
+            membershipId: MS_X,
             // eventId intentionally absent
             at: AT,
         }));
@@ -628,8 +653,8 @@ async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-x',
-            eventId: 'ev-x',
+            membershipId: MS_X,
+            eventId: EV_X,
             at: 42,   // non-string
         }));
     assert.equal(res.status, 400);
@@ -645,7 +670,7 @@ test('decline: missing declineAt is rejected (400)', async () => {
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'declined',
-            eventId: 'ev-x',
+            eventId: EV_X,
             // at intentionally absent
         }));
     assert.equal(res.status, 400);
@@ -673,8 +698,8 @@ test('a removed member who re-accepts gets a no-op — not a'
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-sarah-removed',
-            eventId: 'ev-acc-removed',
+            membershipId: MS_SARAH_REMOVED,
+            eventId: EV_ACC_REMOVED,
             at: '2026-01-01T00:00:01.000000Z',
         }));
     assert.equal(accept.status, 204);
@@ -691,8 +716,8 @@ test('a removed member who re-accepts gets a no-op — not a'
             , 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-sarah-again',
-            eventId: 'ev-acc-again',
+            membershipId: MS_SARAH_AGAIN,
+            eventId: EV_ACC_AGAIN,
             at: '2026-01-01T00:00:02.000000Z',
         }));
     assert.equal(reaccept.status, 409);
@@ -715,7 +740,7 @@ test('revoke: missing revokeAt is rejected (400)', async () => {
             , 'BBjWJsjYIDkTRKIIPrzWRw'),
         {
             state: 'revoked',
-            eventId: 'ev-x',
+            eventId: EV_X,
             // at intentionally absent
         }));
     assert.equal(res.status, 400);

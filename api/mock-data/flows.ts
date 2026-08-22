@@ -16,6 +16,7 @@ import {
     buildLeadToCloseNodes,
     buildLeadToCloseEdges,
 } from './lead-to-close-flow.ts';
+import { seedIdentifier } from './seed-kit.ts';
 
 // A build-time flow seed: the storage row's scalar fields PLUS
 // the AUTHORED graph literal. `graph` is NOT a stored column
@@ -1080,8 +1081,10 @@ export function buildFlowGraphRelations(
             });
             for (const memberId of node.memberIds) {
                 members.push({
-                    id: 'seed-fnm-' + node.id
-                        + '-' + memberId,
+                    id: seedIdentifier(
+                        'seed-fnm-' + node.id
+                            + '-' + memberId,
+                    ),
                     flow_node_id: node.id,
                     member_id: memberId,
                     action: 'added',
@@ -1090,8 +1093,10 @@ export function buildFlowGraphRelations(
             }
             for (const attribute of node.attributes) {
                 attributes.push({
-                    id: 'seed-fna-' + node.id
-                        + '-' + attribute.attributeId,
+                    id: seedIdentifier(
+                        'seed-fna-' + node.id
+                            + '-' + attribute.attributeId,
+                    ),
                     flow_node_id: node.id,
                     attribute_id: attribute.attributeId,
                     mode: attribute.mode,

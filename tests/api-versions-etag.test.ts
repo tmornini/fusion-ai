@@ -24,6 +24,12 @@ import { messageStore } from '../api/message-store.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const ORGANIZATION_A = generateIdentifier();
+const ORGANIZATION_B = generateIdentifier();
+const DAVE = generateIdentifier();
 
 function match(path: string) {
     return matchRoute(
@@ -209,7 +215,11 @@ async function seedInviteeWorld(): Promise<DbAdapter> {
         name: 'Tony', email: 'demo@example.com',
         phone: '', bio: '',
     });
-    await seedIdentityPii(db, 'dave', {
+    await seedPersonIdentity(db, DAVE, {
+        name: 'Dave', email: 'dave@x.com',
+        phone: '', bio: '',
+    });
+    await seedIdentityPii(db, DAVE, {
         name: 'Dave', email: 'dave@x.com',
         phone: '', bio: '',
     });
@@ -228,7 +238,7 @@ async function grantDave(
         {
             email: 'dave@x.com',
             invitationId,
-            grantEventId: 'ev-' + invitationId,
+            grantEventId: generateIdentifier(),
             grantAt: AT,
         },
     ));
@@ -238,10 +248,14 @@ async function grantDave(
 async function seedMemberOrganizations(): Promise<DbAdapter> {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
-    await seedOrganizationDocument(db, 'A', 'Acme');
-    await seedOrganizationDocument(db, 'B', 'Wayne');
-    await seedSeat(db, 'A', 'XXZruirZyAOoRpNxaDnpSA', 'admin', AT);
-    await seedSeat(db, 'B', 'XXZruirZyAOoRpNxaDnpSA', 'admin', AT);
+    await seedOrganizationDocument(db, ORGANIZATION_A, 'Acme');
+    await seedOrganizationDocument(db, ORGANIZATION_B, 'Wayne');
+    await seedSeat(
+        db, ORGANIZATION_A, 'XXZruirZyAOoRpNxaDnpSA', 'admin', AT,
+    );
+    await seedSeat(
+        db, ORGANIZATION_B, 'XXZruirZyAOoRpNxaDnpSA', 'admin', AT,
+    );
     return db;
 }
 
@@ -249,16 +263,18 @@ test('org-less invitee GET identity-nest versions is 200',
 async () => {
     const db = await seedInviteeWorld();
     await grantDave(db, 'hvIFfMMXNtqRPYXnChCzug');
-    const token = await reachableToken('dave', []);
+    const token = await reachableToken(DAVE, []);
     const item = await handleRequest(db, req(
         'GET',
-        '/identities/dave/invitations/hvIFfMMXNtqRPYXnChCzug',
+        '/identities/' + DAVE
+            + '/invitations/hvIFfMMXNtqRPYXnChCzug',
         token,
     ));
     assert.equal(item.status, 200);
     const list = await handleRequest(db, req(
         'GET',
-        '/identities/dave/invitations/hvIFfMMXNtqRPYXnChCzug'
+        '/identities/' + DAVE
+            + '/invitations/hvIFfMMXNtqRPYXnChCzug'
             + '/versions/',
         token,
     ));
@@ -267,7 +283,8 @@ async () => {
     assert.ok(rows.length >= 1);
     const snapshot = await handleRequest(db, req(
         'GET',
-        '/identities/dave/invitations/hvIFfMMXNtqRPYXnChCzug'
+        '/identities/' + DAVE
+            + '/invitations/hvIFfMMXNtqRPYXnChCzug'
             + '/versions/nmPWmjhGfSUcdaEGaCyMZg',
         token,
     ));
@@ -278,32 +295,35 @@ test('member of B GET B versions while fenced to A',
 async () => {
     const db = await seedMemberOrganizations();
     const token = await claimToken({
-        organization: 'A',
-        organizations: ['A', 'B'],
-        roles: ['admin:A', 'admin:B'],
+        organization: ORGANIZATION_A,
+        organizations: [ORGANIZATION_A, ORGANIZATION_B],
+        roles: ['admin:' + ORGANIZATION_A, 'admin:' + ORGANIZATION_B],
     });
     const document = await handleRequest(db, req(
-        'GET', '/organizations/B', token,
+        'GET', '/organizations/' + ORGANIZATION_B, token,
     ));
     assert.equal(document.status, 200);
     const list = await handleRequest(db, req(
-        'GET', '/organizations/B/versions/', token,
+        'GET', '/organizations/' + ORGANIZATION_B + '/versions/',
+        token,
     ));
     assert.equal(list.status, 200);
     const rows = await list.json() as unknown[];
     assert.ok(rows.length >= 1);
     const stored = await messageStore(db).get(
-        '/organizations/', 'B',
+        '/organizations/', ORGANIZATION_B,
     );
     assert.ok(stored);
     const snapshot = await handleRequest(db, req(
         'GET',
-        '/organizations/B/versions/' + stored.version,
+        '/organizations/' + ORGANIZATION_B + '/versions/'
+            + stored.version,
         token,
     ));
     assert.equal(snapshot.status, 200);
     const ideas = await handleRequest(db, req(
-        'GET', '/organizations/B/ideas/', token,
+        'GET', '/organizations/' + ORGANIZATION_B + '/ideas/',
+        token,
     ));
     assert.equal(ideas.status, 403);
 });
@@ -311,18 +331,22 @@ async () => {
 test('non-member GET B versions is 403 like the document',
 async () => {
     const db = await seedMemberOrganizations();
-    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A');
+    const token = await organizationToken(
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
+    );
     const document = await handleRequest(db, req(
-        'GET', '/organizations/B', token,
+        'GET', '/organizations/' + ORGANIZATION_B, token,
     ));
     assert.equal(document.status, 403);
     const list = await handleRequest(db, req(
-        'GET', '/organizations/B/versions/', token,
+        'GET', '/organizations/' + ORGANIZATION_B + '/versions/',
+        token,
     ));
     assert.equal(list.status, 403);
     const snapshot = await handleRequest(db, req(
         'GET',
-        '/organizations/B/versions/nmPWmjhGfSUcdaEGaCyMZg',
+        '/organizations/' + ORGANIZATION_B
+            + '/versions/nmPWmjhGfSUcdaEGaCyMZg',
         token,
     ));
     assert.equal(snapshot.status, 403);
@@ -330,7 +354,9 @@ async () => {
 
 test('absent org versions is 404 not 403', async () => {
     const db = await seedMemberOrganizations();
-    const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA', 'A');
+    const token = await organizationToken(
+        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
+    );
     const list = await handleRequest(db, req(
         'GET',
         '/organizations/oLbQcDdzGHmpcoUKyvlTnQ/versions/',
@@ -357,7 +383,8 @@ async () => {
         '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'members/XXZruirZyAOoRpNxaDnpSA/'
             + 'versions/',
-        '/identities/dave/invitations/iBSjaSPKkHorkvpwZBBNFg/versions/',
+        '/identities/' + DAVE
+            + '/invitations/iBSjaSPKkHorkvpwZBBNFg/versions/',
     ];
     for (const path of paths) {
         const res = await handleRequest(

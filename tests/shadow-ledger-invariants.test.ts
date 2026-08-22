@@ -23,6 +23,18 @@ import {
 } from './http-fixtures.ts';
 import { HttpMessage } from
     '../shared/http-message/http-message.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const N_START = generateIdentifier();
+const N_FINISH = generateIdentifier();
+const INV_REC_1 = generateIdentifier();
+const INV_REC_1_EV = generateIdentifier();
+const INV_REC_1_ATTR = generateIdentifier();
+const INV_CHAIN_1 = generateIdentifier();
+const INV_FLOW_1_EV = generateIdentifier();
+const INV_WO_CREATE_1 = generateIdentifier();
+const INV_WO_CREATE_1_FWO = generateIdentifier();
 
 function pairJsonOf(message: string): {
     readonly body: Record<string, unknown>;
@@ -174,7 +186,7 @@ function workOrderCreateBody(
             'ev-2-' + flowWorkOrderId,
             'ev-3-' + flowWorkOrderId,
         ],
-        states: ['n-start', 'n-finish', 'claimed'],
+        states: [N_START, N_FINISH, 'claimed'],
         stateEventAts: [
             '2026-02-01T00:00:02.000000Z',
             '2026-02-01T00:00:03.000000Z',
@@ -267,11 +279,11 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         'POST', '/organizations/' + ORGANIZATION_TWO
             + '/record-types/', org2Token,
         createRecordBody(
-            'inv-rec-1', 'inv-rec-1-ev', ORGANIZATION_TWO,
+            INV_REC_1, INV_REC_1_EV, ORGANIZATION_TWO,
             [{
-                id: 'inv-rec-1-attr',
+                id: INV_REC_1_ATTR,
                 organization_id: ORGANIZATION_TWO,
-                record_id: 'inv-rec-1',
+                record_id: INV_REC_1,
                 name: 'Field',
                 attribute_type: 'text',
                 sort_order: 0,
@@ -320,7 +332,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         org1Token, {
             jti: 'hwrugEJrEVicRwurEJxFvw'
                 , identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-            action: 'issued', chain_id: 'inv-chain-1', at: AT,
+            action: 'issued', chain_id: INV_CHAIN_1, at: AT,
         },
     ));
     assert.equal(tokenRootPut.status, 201);
@@ -337,7 +349,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
     const flowGenesis = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'hoKOMoVEGhFjVEMIIFBbOQ', org1Token,
-        flowDocumentBody('Invariant Flow', 'inv-flow-1-ev'),
+        flowDocumentBody('Invariant Flow', INV_FLOW_1_EV),
     ));
     assert.equal(flowGenesis.status, 201);
 
@@ -350,7 +362,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             , org1Token,
         workOrderCreateBody(
-            'inv-wo-create-1', 'inv-wo-create-1-fwo',
+            INV_WO_CREATE_1, INV_WO_CREATE_1_FWO,
             'hoKOMoVEGhFjVEMIIFBbOQ', STARK_ORGANIZATION,
         ),
     ));

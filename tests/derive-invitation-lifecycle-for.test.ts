@@ -14,6 +14,8 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // The Phase 14 Task 1 core: invitationLifecycleStatesFor is the
 // ENTITY-SCOPED sibling of deriveInvitationStates — INDEXED
@@ -50,7 +52,8 @@ async function grant(
     db: MemoryDbAdapter,
     invitationId: string,
     email: string,
-): Promise<void> {
+    grantEventId: string = generateIdentifier(),
+): Promise<string> {
     const admin = await organizationToken(
         'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
     );
@@ -59,11 +62,12 @@ async function grant(
             + '/invitations/', admin, {
             email,
             invitationId,
-            grantEventId: invitationId + '-grant',
+            grantEventId,
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
     assert.equal(res.status, 200);
+    return grantEventId;
 }
 
 async function bulkRowsFor(
@@ -78,13 +82,14 @@ test('invitationLifecycleStatesFor: pending-only (granted,'
 + ' unanswered) matches deriveInvitationStates\'s own subset',
 async () => {
     const db = await seededDb();
-    const id = 'inv-lifecycle-pending';
-    await grant(db, id, 'sarah.chen@company.com');
+    const id = generateIdentifier();
+    const grantEventId = generateIdentifier();
+    await grant(db, id, 'sarah.chen@company.com', grantEventId);
 
     const scoped = await invitationLifecycleStatesFor(db, id);
     assert.equal(scoped.length, 1);
     assert.equal(scoped[0]!.state, 'pending');
-    assert.equal(scoped[0]!.id, id + '-grant');
+    assert.equal(scoped[0]!.id, grantEventId);
     assert.deepEqual(scoped, await bulkRowsFor(db, id));
 });
 
@@ -92,7 +97,7 @@ test('invitationLifecycleStatesFor: accepted carries both the'
 + ' pending and accepted rows, matching the bulk subset',
 async () => {
     const db = await seededDb();
-    const id = 'inv-lifecycle-accepted';
+    const id = generateIdentifier();
     const inviteeId = 'MQFcPtrZPIGjMCRAXtZUnA'; // Sarah Chen
     await grant(db, id, 'sarah.chen@company.com');
 
@@ -102,8 +107,8 @@ async () => {
         await organizationToken(inviteeId, ORGANIZATION_TWO),
         {
             state: 'accepted',
-            membershipId: id + '-ms',
-            eventId: id + '-accept',
+            membershipId: generateIdentifier(),
+            eventId: generateIdentifier(),
             at: '2026-06-01T00:00:01.000000Z',
         },
     ));
@@ -122,7 +127,7 @@ test('invitationLifecycleStatesFor: declined carries both the'
 + ' pending and declined rows, matching the bulk subset',
 async () => {
     const db = await seededDb();
-    const id = 'inv-lifecycle-declined';
+    const id = generateIdentifier();
     const inviteeId = 'zyGBRshxOnKHUfcyFRqowg'; // Jessica Park
     await grant(db, id, 'jessica.park@company.com');
 
@@ -132,7 +137,7 @@ async () => {
         await organizationToken(inviteeId, ORGANIZATION_TWO),
         {
             state: 'declined',
-            eventId: id + '-decline',
+            eventId: generateIdentifier(),
             at: '2026-06-01T00:00:01.000000Z',
         },
     ));
@@ -151,7 +156,7 @@ test('invitationLifecycleStatesFor: revoked carries both the'
 + ' pending and revoked rows, matching the bulk subset',
 async () => {
     const db = await seededDb();
-    const id = 'inv-lifecycle-revoked';
+    const id = generateIdentifier();
     await grant(db, id, 'emily.rodriguez@company.com');
 
     const revoke = await handleRequest(db, req(
@@ -161,7 +166,7 @@ async () => {
         await organizationToken('XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO),
         {
             state: 'revoked',
-            eventId: id + '-revoke',
+            eventId: generateIdentifier(),
             at: '2026-06-01T00:00:01.000000Z',
         },
     ));
@@ -180,10 +185,13 @@ test('invitationLifecycleStatesFor: a never-granted id derives'
 + ' an empty array, no throw', async () => {
     const db = await seededDb();
     await assert.doesNotReject(
-        () => invitationLifecycleStatesFor(db, 'no-such-invite'),
+        () => invitationLifecycleStatesFor(
+            db, generateIdentifier(),
+        ),
     );
+    const missingId = generateIdentifier();
     assert.deepEqual(
-        await invitationLifecycleStatesFor(db, 'no-such-invite'),
+        await invitationLifecycleStatesFor(db, missingId),
         [],
     );
 });
@@ -195,14 +203,14 @@ test('invitationLifecycleStatesFor: a duplicate-grant\'s'
 + ' PHANTOM echo id (an operation pair with no document) derives'
 + ' an EMPTY array — never a false \'pending\' row', async () => {
     const db = await seededDb();
-    const freshId = 'inv-lifecycle-phantom-fresh';
+    const freshId = generateIdentifier();
     await grant(db, freshId, 'sarah.chen@company.com');
 
     // A second grant for the SAME (org, identity) pair, submitted
     // with a DIFFERENT invitationId — the 'existing' outcome:
     // 200, but no document at the submitted id (grantInvitation's
     // own header).
-    const echoId = 'inv-lifecycle-phantom-echo';
+    const echoId = generateIdentifier();
     const admin = await organizationToken(
         'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_TWO,
     );
@@ -211,7 +219,7 @@ test('invitationLifecycleStatesFor: a duplicate-grant\'s'
             + '/invitations/', admin, {
             email: 'sarah.chen@company.com',
             invitationId: echoId,
-            grantEventId: echoId + '-grant',
+            grantEventId: generateIdentifier(),
             grantAt: '2026-06-01T00:00:02.000000Z',
         },
     ));

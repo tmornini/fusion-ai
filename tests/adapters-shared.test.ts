@@ -23,18 +23,21 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 test(
     'memberName returns name for known human id',
     () => {
+        const u1 = generateIdentifier();
         const map = new Map<MemberId, Member>([
             [
-                'u1',
-                makeHumanMember('u1', 'Alice Adams'),
+                u1,
+                makeHumanMember(u1, 'Alice Adams'),
             ],
         ]);
         assert.equal(
-            memberName(map, 'u1'),
+            memberName(map, u1),
             'Alice Adams',
         );
     },
@@ -43,7 +46,7 @@ test(
 test('memberName throws for unknown id', () => {
     const map = new Map<MemberId, Member>();
     assert.throws(
-        () => memberName(map, 'missing'),
+        () => memberName(map, generateIdentifier()),
         /unknown member/,
     );
 });
@@ -53,17 +56,18 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        await seedHumanMember(db, 'u1', 'Alice Adams');
+        const u1 = generateIdentifier();
+        await seedHumanMember(db, u1, 'Alice Adams');
         const ctx = createRequestContext(db, DEV_TOKEN);
         const map = await getHumanMemberMap(ctx);
-        assert.ok(map.has('u1'));
-        const pii = map.get('u1')?.pii();
+        assert.ok(map.has(u1));
+        const pii = map.get(u1)?.pii();
         assert.ok(pii !== undefined && !pii.erased);
         if (pii !== undefined && !pii.erased) {
             assert.equal(pii.name, 'Alice Adams');
         }
         assert.equal(
-            memberName(map, 'u1'),
+            memberName(map, u1),
             'Alice Adams',
         );
     },
@@ -72,19 +76,21 @@ test(
 test('Fresh ctx re-fetches each call', async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedHumanMember(db, 'u1', 'Alice Adams');
+    const u1 = generateIdentifier();
+    const u2 = generateIdentifier();
+    await seedHumanMember(db, u1, 'Alice Adams');
     const mFNSxZqywTSMXhgUTdTqtA = await getHumanMemberMap(
         createRequestContext(db, DEV_TOKEN),
     );
-    await seedHumanMember(db, 'u2', 'Bob Brown');
+    await seedHumanMember(db, u2, 'Bob Brown');
     const m2 = await getHumanMemberMap(
         createRequestContext(db, DEV_TOKEN),
     );
     assert.notEqual(mFNSxZqywTSMXhgUTdTqtA, m2);
-    assert.ok(mFNSxZqywTSMXhgUTdTqtA.has('u1'));
-    assert.ok(!mFNSxZqywTSMXhgUTdTqtA.has('u2'));
-    assert.ok(m2.has('u1'));
-    assert.ok(m2.has('u2'));
+    assert.ok(mFNSxZqywTSMXhgUTdTqtA.has(u1));
+    assert.ok(!mFNSxZqywTSMXhgUTdTqtA.has(u2));
+    assert.ok(m2.has(u1));
+    assert.ok(m2.has(u2));
 });
 
 test(
@@ -130,7 +136,7 @@ test(
         await seedAdminSchema(db);
         const ctx = createRequestContext(db, DEV_TOKEN);
         await ctx.PUT(
-            'identities/trace-me',
+            'identities/' + generateIdentifier(),
             { kind: 'person' },
         );
         const rows = await db.pairs.getAll();

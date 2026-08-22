@@ -11,9 +11,14 @@ import { SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 const T1 = '2026-01-01T00:00:00.000000Z';
 const T2 = '2026-02-01T00:00:00.000000Z';
+const IDENTITY_ID = generateIdentifier();
+const STARK_ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
+const ORGANIZATION_TWO = 'BBjWJsjYIDkTRKIIPrzWRw';
 
 async function freshDb() {
     const db = memoryDbAdapter();
@@ -87,14 +92,23 @@ test(
     'identityDefaultOrganization returns the set default when present',
     async () => {
         const db = await freshDb();
-        await seedMembershipPair(db, 'mFNSxZqywTSMXhgUTdTqtA'
-            , 'AjdvjuECVZEgZoFajaIEkg', 'me', T1);
-        await seedMembershipPair(db, 'm2', 'BBjWJsjYIDkTRKIIPrzWRw', 'me'
-            , T2);
-        await seedDefaultOrganizationEvent(db, 'me'
-            , 'BBjWJsjYIDkTRKIIPrzWRw', T2);
-        assert.equal(await identityDefaultOrganization(db, 'me')
-            , 'BBjWJsjYIDkTRKIIPrzWRw');
+        await seedMembershipPair(
+            db, generateIdentifier(),
+            STARK_ORGANIZATION, IDENTITY_ID, T1,
+        );
+        await seedMembershipPair(
+            db, generateIdentifier(),
+            ORGANIZATION_TWO, IDENTITY_ID, T2,
+        );
+        await seedDefaultOrganizationEvent(
+            db, IDENTITY_ID, ORGANIZATION_TWO, T2,
+        );
+        assert.equal(
+            await identityDefaultOrganization(
+                db, IDENTITY_ID,
+            ),
+            ORGANIZATION_TWO,
+        );
     },
 );
 
@@ -102,10 +116,21 @@ test(
     'identityDefaultOrganization falls back to earliest membership',
     async () => {
         const db = await freshDb();
-        await seedMembershipPair(db, 'mFNSxZqywTSMXhgUTdTqtA'
-            , 'BBjWJsjYIDkTRKIIPrzWRw', 'me', T2);
-        await seedMembershipPair(db, 'm2', '3', 'me', T1);
-        assert.equal(await identityDefaultOrganization(db, 'me'), '3');
+        const earliestOrganization = generateIdentifier();
+        await seedMembershipPair(
+            db, generateIdentifier(),
+            ORGANIZATION_TWO, IDENTITY_ID, T2,
+        );
+        await seedMembershipPair(
+            db, generateIdentifier(),
+            earliestOrganization, IDENTITY_ID, T1,
+        );
+        assert.equal(
+            await identityDefaultOrganization(
+                db, IDENTITY_ID,
+            ),
+            earliestOrganization,
+        );
     },
 );
 
@@ -114,13 +139,19 @@ test(
     async () => {
         const db = await freshDb();
         await seedMembershipPair(
-            db, 'mFNSxZqywTSMXhgUTdTqtA',
-            'CaaaaaaaaaaaaaaaaaaAw', 'me', T1,
+            db, generateIdentifier(),
+            'CaaaaaaaaaaaaaaaaaaAw', IDENTITY_ID, T1,
         );
-        await seedMembershipPair(db, 'm2', 'BBjWJsjYIDkTRKIIPrzWRw', 'me'
-            , T1);
-        assert.equal(await identityDefaultOrganization(db, 'me')
-            , 'BBjWJsjYIDkTRKIIPrzWRw');
+        await seedMembershipPair(
+            db, generateIdentifier(),
+            ORGANIZATION_TWO, IDENTITY_ID, T1,
+        );
+        assert.equal(
+            await identityDefaultOrganization(
+                db, IDENTITY_ID,
+            ),
+            ORGANIZATION_TWO,
+        );
     },
 );
 
@@ -128,7 +159,12 @@ test(
     'identityDefaultOrganization is null with no default and no member',
     async () => {
         const db = await freshDb();
-        assert.equal(await identityDefaultOrganization(db, 'me'), null);
+        assert.equal(
+            await identityDefaultOrganization(
+                db, IDENTITY_ID,
+            ),
+            null,
+        );
     },
 );
 
@@ -137,16 +173,22 @@ test(
     + ' live seat',
     async () => {
         const db = await freshDb();
-        await seedMembershipPair(db, 'mFNSxZqywTSMXhgUTdTqtA'
-            , 'AjdvjuECVZEgZoFajaIEkg', 'me', T1);
-        await seedMembershipPair(db, 'm2', 'BBjWJsjYIDkTRKIIPrzWRw', 'me'
-            , T2);
+        await seedMembershipPair(
+            db, generateIdentifier(),
+            STARK_ORGANIZATION, IDENTITY_ID, T1,
+        );
+        await seedMembershipPair(
+            db, generateIdentifier(),
+            ORGANIZATION_TWO, IDENTITY_ID, T2,
+        );
         await seedDefaultOrganizationEvent(
-            db, 'me', 'BBjWJsjYIDkTRKIIPrzWRw', T2,
+            db, IDENTITY_ID, ORGANIZATION_TWO, T2,
         );
         const tombstone = await formWritePair({
             method: 'DELETE',
-            pathname: '/organizations/BBjWJsjYIDkTRKIIPrzWRw/members/me',
+            pathname: '/organizations/'
+                + ORGANIZATION_TWO
+                + '/members/' + IDENTITY_ID,
             routePattern:
                 'organizations/:organization-id/members'
                 + '/:identity-id',
@@ -155,13 +197,14 @@ test(
                 'members', ':identity-id',
             ],
             pathSegments: [
-                'organizations', 'BBjWJsjYIDkTRKIIPrzWRw', 'members', 'me',
+                'organizations', ORGANIZATION_TWO,
+                'members', IDENTITY_ID,
             ],
             headerFields: [],
             body: {},
             requesterIdentityId: SYSTEM_MEMBER_ID,
             requestAt: T2,
-            organization: 'BBjWJsjYIDkTRKIIPrzWRw',
+            organization: ORGANIZATION_TWO,
             responseStatus: 204,
             responseBody: undefined,
             operationId: TEST_OPERATION_ID,
@@ -173,8 +216,10 @@ test(
             },
         );
         assert.equal(
-            await identityDefaultOrganization(db, 'me'),
-            'AjdvjuECVZEgZoFajaIEkg',
+            await identityDefaultOrganization(
+                db, IDENTITY_ID,
+            ),
+            STARK_ORGANIZATION,
         );
     },
 );

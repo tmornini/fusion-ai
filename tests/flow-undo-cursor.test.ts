@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import { strict as assert } from 'node:assert';
 import {
     memoryDbAdapter,
@@ -45,6 +47,21 @@ import type { GraphNode } from '../api/types.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+
+const PROJECT_1 = generateIdentifier();
+const CURSOR_RECONCILE_NOISE = generateIdentifier();
+const FLOWID_A = generateIdentifier();
+const FLOWID_B = generateIdentifier();
+const FLOWID_U1 = generateIdentifier();
+const FLOWID_U2 = generateIdentifier();
+const FLOWID_D = generateIdentifier();
+const FLOWID_U3 = generateIdentifier();
+const FLOWID_LINK = generateIdentifier();
+const FLOWID_STALE_EV = generateIdentifier();
+const FLOWID_DEL = generateIdentifier();
+const FLOWID_NODE_DEL = generateIdentifier();
+const FLOWID_UNDO_EV = generateIdentifier();
+const FLOWID_RECONCILE = generateIdentifier();
 
 // Phase 14 Task 8 (undo-as-replay): the hard constraint's FIVE
 // pinned sequences, plus the SIDECAR-KEEP proof — see the PINNED
@@ -153,10 +170,17 @@ function emptyDelta() {
     };
 }
 
+const NODE_ID_BY_NAME = new Map<string, string>();
+
 function graphOf(name: string) {
+    let nodeId = NODE_ID_BY_NAME.get(name);
+    if (nodeId === undefined) {
+        nodeId = generateIdentifier();
+        NODE_ID_BY_NAME.set(name, nodeId);
+    }
     return {
         nodes: [{
-            id: 'n-' + name,
+            id: nodeId,
             name,
             positionX: 0, positionY: 0,
             isCreate: false, isArchive: false,
@@ -197,13 +221,13 @@ async function createFlow(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token, {
             id: flowId,
             flow: flowFields('genesis'),
-            projectFlowId: flowId + '-pf',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
                 project_id: 'qfhFObbtDfxUZwEGxySBoQ',
                 flow_id: flowId, at: AT,
             },
             initialState: 'active',
-            initialStateEventId: flowId + '-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: emptyDelta(),
         },
@@ -277,13 +301,13 @@ test(
     async () => {
         const db = await freshDb();
         const token = await organizationToken();
-        const flowId = 'cursor-single';
+        const flowId = generateIdentifier();
         await createFlow(db, token, flowId);
-        await save(db, token, flowId, 'A', flowId + '-a');
-        await save(db, token, flowId, 'B', flowId + '-b');
+        await save(db, token, flowId, 'A', FLOWID_A);
+        await save(db, token, flowId, 'B', FLOWID_B);
 
         const res = await undo(
-            db, token, flowId, flowId + '-u1', AT,
+            db, token, flowId, FLOWID_U1, AT,
         );
         assert.equal(res.status, 201);
         assert.equal(
@@ -298,13 +322,13 @@ test(
     async () => {
         const db = withWriteGate(await freshDb());
         const token = await organizationToken();
-        const flowId = 'cursor-write-gate';
+        const flowId = generateIdentifier();
         await createFlow(db, token, flowId);
-        await save(db, token, flowId, 'A', flowId + '-a');
-        await save(db, token, flowId, 'B', flowId + '-b');
+        await save(db, token, flowId, 'A', FLOWID_A);
+        await save(db, token, flowId, 'B', FLOWID_B);
 
         const res = await undo(
-            db, token, flowId, flowId + '-u1', AT,
+            db, token, flowId, FLOWID_U1, AT,
         );
         assert.equal(res.status, 201);
         assert.equal(
@@ -325,13 +349,13 @@ test(
     async () => {
         const db = await freshDb();
         const token = await organizationToken();
-        const flowId = 'cursor-undo-undo';
+        const flowId = generateIdentifier();
         await createFlow(db, token, flowId);
-        await save(db, token, flowId, 'A', flowId + '-a');
-        await save(db, token, flowId, 'B', flowId + '-b');
+        await save(db, token, flowId, 'A', FLOWID_A);
+        await save(db, token, flowId, 'B', FLOWID_B);
 
         const first = await undo(
-            db, token, flowId, flowId + '-u1', AT,
+            db, token, flowId, FLOWID_U1, AT,
         );
         assert.equal(first.status, 201);
         assert.equal(
@@ -340,7 +364,7 @@ test(
         );
 
         const second = await undo(
-            db, token, flowId, flowId + '-u2',
+            db, token, flowId, FLOWID_U2,
             '2026-01-01T00:00:01.000000Z',
         );
         assert.equal(second.status, 201);
@@ -368,14 +392,14 @@ test(
     async () => {
         const db = await freshDb();
         const token = await organizationToken();
-        const flowId = 'cursor-branch';
+        const flowId = generateIdentifier();
         await createFlow(db, token, flowId);
-        await save(db, token, flowId, 'A', flowId + '-a');
-        await save(db, token, flowId, 'B', flowId + '-b');
+        await save(db, token, flowId, 'A', FLOWID_A);
+        await save(db, token, flowId, 'B', FLOWID_B);
 
-        await undo(db, token, flowId, flowId + '-u1', AT);
+        await undo(db, token, flowId, FLOWID_U1, AT);
         await undo(
-            db, token, flowId, flowId + '-u2',
+            db, token, flowId, FLOWID_U2,
             '2026-01-01T00:00:01.000000Z',
         );
         assert.equal(
@@ -385,13 +409,13 @@ test(
 
         // A NEW edit, made from the genesis baseline — A and B
         // are now an abandoned branch.
-        await save(db, token, flowId, 'D', flowId + '-d');
+        await save(db, token, flowId, 'D', FLOWID_D);
         assert.equal(
             await currentGraphName(db, token, flowId), 'D',
         );
 
         const third = await undo(
-            db, token, flowId, flowId + '-u3',
+            db, token, flowId, FLOWID_U3,
             '2026-01-01T00:00:02.000000Z',
         );
         assert.equal(third.status, 201);
@@ -412,12 +436,12 @@ test(
     async () => {
         const db = await freshDb();
         const token = await organizationToken();
-        const flowId = 'cursor-exhausted';
+        const flowId = generateIdentifier();
         await createFlow(db, token, flowId);
 
         const before = await db.pairs.getAll();
         const res = await undo(
-            db, token, flowId, flowId + '-u1', AT,
+            db, token, flowId, FLOWID_U1, AT,
         );
         assert.equal(res.status, 201);
 
@@ -435,7 +459,7 @@ test(
         // exhausted attempt's own operation pair must not
         // desync a later replay).
         const again = await undo(
-            db, token, flowId, flowId + '-u2',
+            db, token, flowId, FLOWID_U2,
             '2026-01-01T00:00:01.000000Z',
         );
         assert.equal(again.status, 201);
@@ -465,12 +489,13 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        const flowId = 'cursor-retry';
+        const flowId = generateIdentifier();
+        const nodeId = generateIdentifier();
         const ctx = createRequestContext(db, DEV_TOKEN);
         await postFlowCreation(ctx, {
             flowId,
-            linkId: flowId + '-link',
-            projectId: 'project-1',
+            linkId: FLOWID_LINK,
+            projectId: PROJECT_1,
             name: 'Retry Flow',
         });
         await putFlow(ctx, flowId, {
@@ -479,7 +504,7 @@ test(
             isAutoLayout: false,
             isAutoFit: false,
             lockTimeout: DEFAULT_LOCK_TIMEOUT,
-            nodes: [buildNode('a')],
+            nodes: [buildNode(nodeId)],
             edges: [],
         });
 
@@ -507,7 +532,7 @@ test(
         };
 
         const snap = snapOf(flowId, [
-            buildNode('a'),
+            buildNode(nodeId),
         ]);
         const op = await performUndo(
             flaky, snap, buildFlowHistorySnapshot(true),
@@ -566,14 +591,14 @@ test(
     async () => {
         const db = await freshDb();
         const token = await organizationToken();
-        const flowId = 'stale-basis';
+        const flowId = generateIdentifier();
         const organization = 'AjdvjuECVZEgZoFajaIEkg';
         const actor = 'XXZruirZyAOoRpNxaDnpSA';
         // Phase Final Task 5: the store decorator is gone;
         // handlers and resolveFlowUndoTarget read the base
         // adapter. Pair-plane tenancy rides uri_collection.
         await createFlow(db, token, flowId);
-        await save(db, token, flowId, 'A', flowId + '-a');
+        await save(db, token, flowId, 'A', FLOWID_A);
 
         // Capture the resolution snapshot BEFORE the fresh save
         // below lands — this is EXACTLY what
@@ -592,7 +617,7 @@ test(
         // A FRESH save lands through the LIVE route — moves the
         // real head forward, so staleResolution's own `current`
         // is now stale.
-        await save(db, token, flowId, 'B', flowId + '-b');
+        await save(db, token, flowId, 'B', FLOWID_B);
 
         // Drive the write with the STALE resolution. The
         // in-tx head re-read sees B as the live lock head
@@ -605,7 +630,7 @@ test(
             routeSegments: ['flows', ':id', 'undo'],
             pathSegments: ['flows', flowId, 'undo'],
             headerFields: [],
-            body: { eventId: flowId + '-stale-ev', at: AT },
+            body: { eventId: FLOWID_STALE_EV, at: AT },
             requesterIdentityId: actor,
             requestAt: AT,
             organization,
@@ -617,7 +642,7 @@ test(
             () => postFlowUndoOp(
                 db, flowId, actor, organization, pair,
                 staleResolution!,
-                { eventId: flowId + '-stale-ev', at: AT },
+                { eventId: FLOWID_STALE_EV, at: AT },
             ),
             (err: unknown) =>
                 err instanceof ApiError
@@ -645,20 +670,20 @@ test(
     async () => {
         const db = await freshDb();
         const token = await organizationToken();
-        const flowId = 'sidecar-undo';
-        const nodeId = 'sidecar-node';
+        const flowId = generateIdentifier();
+        const nodeId = generateIdentifier();
 
         const created = await handleRequest(db, req(
             'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', token, {
                 id: flowId,
                 flow: flowFields('Sidecar Flow'),
-                projectFlowId: flowId + '-pf',
+                projectFlowId: generateIdentifier(),
                 projectFlow: {
                     project_id: 'qfhFObbtDfxUZwEGxySBoQ',
                     flow_id: flowId, at: AT,
                 },
                 initialState: 'active',
-                initialStateEventId: flowId + '-ev',
+                initialStateEventId: generateIdentifier(),
                 initialStateAt: AT,
                 graphDelta: {
                     nodes: [{
@@ -688,13 +713,13 @@ test(
             'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
                 , token,
             documentBody(
-                'Sidecar Trimmed', flowId + '-del', {
+                'Sidecar Trimmed', FLOWID_DEL, {
                     state_at: deleteAt,
                     graph: { nodes: [], edges: [] },
                     graphDelta: {
                         ...emptyDelta(),
                         deletions: [{
-                            eventId: flowId + '-node-del',
+                            eventId: FLOWID_NODE_DEL,
                             entityId: nodeId, at: deleteAt,
                         }],
                     },
@@ -706,7 +731,7 @@ test(
 
         const undoAt = '2026-01-01T00:00:02.000000Z';
         const undone = await undo(
-            db, token, flowId, flowId + '-undo-ev', undoAt,
+            db, token, flowId, FLOWID_UNDO_EV, undoAt,
         );
         assert.equal(undone.status, 201);
 
@@ -813,14 +838,14 @@ test(
     async () => {
         const db = await freshDb();
         const token = await organizationToken();
-        const flowId = 'cursor-reconcile-noise';
+        const flowId = CURSOR_RECONCILE_NOISE;
         await createFlow(db, token, flowId);
-        await save(db, token, flowId, 'A', flowId + '-a');
-        await save(db, token, flowId, 'B', flowId + '-b');
+        await save(db, token, flowId, 'A', FLOWID_A);
+        await save(db, token, flowId, 'B', FLOWID_B);
 
         // Undo #1 (the user's first click): reverts B -> A.
         const first = await undo(
-            db, token, flowId, flowId + '-u1', AT,
+            db, token, flowId, FLOWID_U1, AT,
         );
         assert.equal(first.status, 201);
         assert.equal(
@@ -834,7 +859,7 @@ test(
         // queue. A genuine document pair despite changing
         // nothing the user perceives.
         await save(
-            db, token, flowId, 'A', flowId + '-reconcile',
+            db, token, flowId, 'A', FLOWID_RECONCILE,
         );
 
         // Undo #2 (the user's second click): with the reconcile
@@ -844,7 +869,7 @@ test(
         // browser report's "Undo flips the toolbar but the
         // canvas never visibly changes."
         const second = await undo(
-            db, token, flowId, flowId + '-u2',
+            db, token, flowId, FLOWID_U2,
             '2026-01-01T00:00:01.000000Z',
         );
         assert.equal(second.status, 201);

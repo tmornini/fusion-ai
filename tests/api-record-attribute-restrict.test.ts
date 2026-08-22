@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import { strict as assert } from 'node:assert';
 import {
     DELETE,
@@ -56,6 +58,17 @@ const ATTR_PAIR_PATH =
     TYPE_PATH + '/attributes/VQIOxpHjDOwLkDSFuazQVw';
 const AT = '2026-06-01T00:00:00.000000Z';
 const AT2 = '2026-06-02T00:00:00.000000Z';
+const WORK_ORDER_ID = generateIdentifier();
+const TRANSITION_EVENT_ID = generateIdentifier();
+const FIELD_VALUE_ID = generateIdentifier();
+const NODE_1 = generateIdentifier();
+const NODE_2 = generateIdentifier();
+const NODE_HOST = generateIdentifier();
+const NODE_NEXT = generateIdentifier();
+const FNA_1 = generateIdentifier();
+const FNA_2 = generateIdentifier();
+const FLOW_HOST = generateIdentifier();
+const PROJECT_ID = generateIdentifier();
 
 async function seededDb(): Promise<MemoryDbAdapter> {
     const db = memoryDbAdapter();
@@ -98,7 +111,7 @@ async function seedFlowNodeAttribute(
 ): Promise<void> {
     const {
         flowId, nodeId, attributeId,
-        action = 'added', rowId = 'fna1',
+        action = 'added', rowId = FNA_1,
         extraAttributeEvents = [],
         extraNodes = [],
     } = opts;
@@ -111,14 +124,14 @@ async function seedFlowNodeAttribute(
             is_auto_fit: false,
             lock_timeout: 0,
         },
-        projectFlowId: flowId + '-pf',
+        projectFlowId: generateIdentifier(),
         projectFlow: {
-            project_id: 'proj-restrict-1',
+            project_id: PROJECT_ID,
             flow_id: flowId,
             at: AT,
         },
         initialState: 'active',
-        initialStateEventId: flowId + '-ev',
+        initialStateEventId: generateIdentifier(),
         initialStateAt: AT,
         graphDelta: {
             nodes: [
@@ -154,7 +167,7 @@ function workOrderNodeBinding(
     attributeId: string,
 ): Record<string, unknown> {
     return {
-        id: 'n1', name: 'Step', positionX: 0,
+        id: NODE_1, name: 'Step', positionX: 0,
         positionY: 0, isCreate: false,
         isArchive: false, memberIds: [],
         attributes: [{
@@ -304,7 +317,7 @@ async function seedFieldValueReferrer(
     // through the live document PUT so the pair plane owns it.
     await PUT(
         db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
-            + 'wo-restrict-fv', {
+            + WORK_ORDER_ID, {
             display_id: 'rfv1',
             flow_graph: {
                 name: 'Restrict FV',
@@ -317,12 +330,12 @@ async function seedFieldValueReferrer(
         DEV_TOKEN,
     );
     const body: Record<string, unknown> = {
-        transitionEventId: 'te-restrict-1',
-        targetState: 'n-next',
+        transitionEventId: TRANSITION_EVENT_ID,
+        targetState: NODE_NEXT,
         fieldValues: [{
             id: sfvId,
             fields: {
-                state_event_id: 'te-restrict-1',
+                state_event_id: TRANSITION_EVENT_ID,
                 attribute_id: attributeId,
                 value,
             },
@@ -332,7 +345,7 @@ async function seedFieldValueReferrer(
     };
     const pathSegments = [
         'organizations', STARK_ORGANIZATION,
-        'work-orders', 'wo-restrict-fv', 'transition',
+        'work-orders', WORK_ORDER_ID, 'transition',
     ];
     const pattern = 'organizations/:id/work-orders/:id/transition';
     const pair = await formWritePair({
@@ -351,7 +364,7 @@ async function seedFieldValueReferrer(
         operationId: TEST_OPERATION_ID,
     });
     await postWorkOrderTransitionOp(
-        db, 'wo-restrict-fv', body, SYSTEM_MEMBER_ID,
+        db, WORK_ORDER_ID, body, SYSTEM_MEMBER_ID,
         undefined, [], pair,
     );
 }
@@ -361,7 +374,8 @@ test(
     async () => {
         const db = await seededDb();
         await seedFieldValueReferrer(
-            db, 'VXTdVVRluJDRBqbXWZBntA', 'sfv1', 'High',
+            db, 'VXTdVVRluJDRBqbXWZBntA', FIELD_VALUE_ID,
+            'High',
         );
         await assert.rejects(
             () => DELETE(
@@ -389,7 +403,7 @@ test(
     async () => {
         const db = await seededDb();
         await seedFlowNodeAttribute(db, {
-            flowId: 'ZOousbbnzpqlxJExVAruYQ', nodeId: 'n1',
+            flowId: 'ZOousbbnzpqlxJExVAruYQ', nodeId: NODE_1,
             attributeId: 'VXTdVVRluJDRBqbXWZBntA',
         });
         await assert.rejects(
@@ -414,12 +428,12 @@ test(
         // (both events ride the same create graphDelta; the
         // later `at` wins under latestByKey/fail-closed).
         await seedFlowNodeAttribute(db, {
-            flowId: 'ZOousbbnzpqlxJExVAruYQ', nodeId: 'n1',
+            flowId: 'ZOousbbnzpqlxJExVAruYQ', nodeId: NODE_1,
             attributeId: 'VXTdVVRluJDRBqbXWZBntA',
-            action: 'added', rowId: 'fna1',
+            action: 'added', rowId: FNA_1,
             extraAttributeEvents: [{
-                id: 'fna2',
-                flow_node_id: 'n1',
+                id: FNA_2,
+                flow_node_id: NODE_1,
                 attribute_id: 'VXTdVVRluJDRBqbXWZBntA',
                 mode: 'editable',
                 is_required: false,
@@ -450,18 +464,18 @@ test(
         const db = await seededDb();
         // two nodes in same flow, both bind VXTdVVRluJDRBqbXWZBntA
         await seedFlowNodeAttribute(db, {
-            flowId: 'ZOousbbnzpqlxJExVAruYQ', nodeId: 'n1',
-            attributeId: 'VXTdVVRluJDRBqbXWZBntA', rowId: 'fna1',
+            flowId: 'ZOousbbnzpqlxJExVAruYQ', nodeId: NODE_1,
+            attributeId: 'VXTdVVRluJDRBqbXWZBntA', rowId: FNA_1,
             extraNodes: [{
-                id: 'n2', flow_id: 'ZOousbbnzpqlxJExVAruYQ',
+                id: NODE_2, flow_id: 'ZOousbbnzpqlxJExVAruYQ',
                 name: 'Review',
                 position_x: 1, position_y: 0,
                 is_create: false, is_archive: false,
                 task_instructions: '', at: AT,
             }],
             extraAttributeEvents: [{
-                id: 'fna2',
-                flow_node_id: 'n2',
+                id: FNA_2,
+                flow_node_id: NODE_2,
                 attribute_id: 'VXTdVVRluJDRBqbXWZBntA',
                 mode: 'editable',
                 is_required: false,
@@ -496,7 +510,7 @@ test(
         // Bare host flow (no attribute binding) for the WO
         // join — WO referrers ride the frozen flow_graph head.
         await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/flows/', {
-            id: 'f-wo-host',
+            id: FLOW_HOST,
             flow: {
                 name: 'Host',
                 is_locked: false,
@@ -504,18 +518,18 @@ test(
                 is_auto_fit: false,
                 lock_timeout: 0,
             },
-            projectFlowId: 'f-wo-host-pf',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
-                project_id: 'proj-restrict-1',
-                flow_id: 'f-wo-host',
+                project_id: PROJECT_ID,
+                flow_id: FLOW_HOST,
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: 'f-wo-host-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: {
                 nodes: [{
-                    id: 'n-host', flow_id: 'f-wo-host',
+                    id: NODE_HOST, flow_id: FLOW_HOST,
                     name: 'Host',
                     position_x: 0, position_y: 0,
                     is_create: true, is_archive: false,
@@ -541,17 +555,19 @@ test(
                 },
                 position: 1,
             },
-            flowWorkOrderId: 'wo1-fwo',
+            flowWorkOrderId: generateIdentifier(),
             flowWorkOrder: {
-                flow_id: 'f-wo-host',
+                flow_id: FLOW_HOST,
                 work_order_id: 'yNSSnbrpacodQTzUEcdEVA',
                 at: AT,
             },
             stateEventIds: [
-                'wo1-ev1', 'wo1-ev2', 'wo1-ev3',
+                generateIdentifier(),
+                generateIdentifier(),
+                generateIdentifier(),
             ],
             stateEventAts: [AT, AT, AT],
-            states: ['n-host', 'n-host', 'claimed'],
+            states: [NODE_HOST, NODE_HOST, 'claimed'],
         }, DEV_TOKEN);
         await assert.rejects(
             () => DELETE(
@@ -579,7 +595,8 @@ test(
         // 15 Task 7) — leaf PUT retires.
     // Phase Final Stage B: states table retired.
         await seedFieldValueReferrer(
-            db, 'VXTdVVRluJDRBqbXWZBntA', 'sfv1', 'High',
+            db, 'VXTdVVRluJDRBqbXWZBntA', FIELD_VALUE_ID,
+            'High',
         );
         const requestsBefore = await db.pairs.getAll();
         const responsesBefore = await db.pairs.getAll();

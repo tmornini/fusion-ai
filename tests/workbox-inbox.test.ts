@@ -20,7 +20,6 @@ import {
 '../web-app/app/adapters/flow-mutations.ts';
 import {
     getMemberMap,
-    generateIdentifier,
     getTransitionEventsByWorkOrder,
     getWorkOrder,
     getWorkOrderActiveClaim,
@@ -51,6 +50,13 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const N_START = generateIdentifier();
+const N_MIDDLE = generateIdentifier();
+const N_FINISH = generateIdentifier();
+const E2 = generateIdentifier();
 
 // -- Fixtures ---------------------------------
 
@@ -92,19 +98,19 @@ function buildLinearGraph(): StoredGraph {
     // would mark the flow Not Ready).
     return {
         nodes: [
-            buildNode('n-start', 'Start', {
+            buildNode(N_START, 'Start', {
                 isCreate: true,
             }),
-            buildNode('n-middle', 'Doing work', {
+            buildNode(N_MIDDLE, 'Doing work', {
                 memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
             }),
-            buildNode('n-finish', 'Done', {
+            buildNode(N_FINISH, 'Done', {
                 isArchive: true,
             }),
         ],
         edges: [
-            buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'n-start', 'n-middle'),
-            buildEdge('e2', 'n-middle', 'n-finish'),
+            buildEdge('YiJPbufDpkyrZcZCYbUJpg', N_START, N_MIDDLE),
+            buildEdge(E2, N_MIDDLE, N_FINISH),
         ],
     };
 }
@@ -125,8 +131,8 @@ async function seedFlow(
     const ctx = createRequestContext(db, await organizationToken());
     await postFlowCreation(ctx, {
         flowId,
-        linkId: flowId + '-link',
-        projectId: 'p-' + flowId,
+        linkId: generateIdentifier(),
+        projectId: generateIdentifier(),
         name: 'Test flow',
     });
     await putFlow(ctx, flowId, {
@@ -304,7 +310,7 @@ test(
             'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + woId
                 + '/transition', {
                 transitionEventId: 'extra',
-                targetState: 'n-finish',
+                targetState: N_FINISH,
                 release: null,
                 transitionAt: '2030-01-01T00:00:00.000000Z',
             },
@@ -414,26 +420,26 @@ test(
         const ctx = createRequestContext(db, await organizationToken());
         await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', {
             nodes: [
-                buildNode('n-start', 'Start', {
+                buildNode(N_START, 'Start', {
                     isCreate: true,
                 }),
                 buildNode(
-                    'n-middle', 'Doing work', {
+                    N_MIDDLE, 'Doing work', {
                         memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
                         taskInstructions:
                             '# Verify totals',
                     },
                 ),
-                buildNode('n-finish', 'Done', {
+                buildNode(N_FINISH, 'Done', {
                     isArchive: true,
                 }),
             ],
             edges: [
                 buildEdge(
-                    'YiJPbufDpkyrZcZCYbUJpg', 'n-start', 'n-middle',
+                    'YiJPbufDpkyrZcZCYbUJpg', N_START, N_MIDDLE,
                 ),
                 buildEdge(
-                    'e2', 'n-middle', 'n-finish',
+                    E2, N_MIDDLE, N_FINISH,
                 ),
             ],
         });

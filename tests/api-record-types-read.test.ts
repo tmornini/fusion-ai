@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -149,7 +151,7 @@ async () => {
     await db.postSchemaCreation();
     const token = await seedOrganizationWithMember(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'nkgaOHZISTQrILTfPThWCA', 'Org One'
-            , 'm-1', 'member',
+            , generateIdentifier(), 'member',
     );
     const res = await handleRequest(db, req(
         'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/', token,
@@ -165,15 +167,17 @@ async () => {
     await db.postSchemaCreation();
     const token = await seedOrganizationWithMember(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'nkgaOHZISTQrILTfPThWCA', 'Org One'
-            , 'm-1', 'member',
+            , generateIdentifier(), 'member',
     );
     // Seed out of id-lex order so (at, id) is observable.
+    const typeB = generateIdentifier();
+    const typeA = generateIdentifier();
     await seedRecordTypePair(
-        db, 'AjdvjuECVZEgZoFajaIEkg', 'rt-b',
+        db, 'AjdvjuECVZEgZoFajaIEkg', typeB,
         recordTypeBody('Beta', 2, 'active'),
     );
     await seedRecordTypePair(
-        db, 'AjdvjuECVZEgZoFajaIEkg', 'rt-a',
+        db, 'AjdvjuECVZEgZoFajaIEkg', typeA,
         recordTypeBody('Alpha', 1, 'active'),
     );
     const res = await handleRequest(db, req(
@@ -182,10 +186,10 @@ async () => {
     assert.equal(res.status, 200);
     const rows = await res.json() as RecordTypeWireRow[];
     assert.equal(rows.length, 2);
-    assert.equal(rows[0]!.id, 'rt-b');
-    assert.equal(rows[1]!.id, 'rt-a');
+    assert.equal(rows[0]!.id, typeB);
+    assert.equal(rows[1]!.id, typeA);
     assert.deepEqual(rows[0], {
-        id: 'rt-b',
+        id: typeB,
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         name: 'Beta',
         description: 'Beta desc',
@@ -200,7 +204,7 @@ async () => {
     await db.postSchemaCreation();
     const token = await seedOrganizationWithMember(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'nkgaOHZISTQrILTfPThWCA', 'Org One'
-            , 'm-1', 'member',
+            , generateIdentifier(), 'member',
     );
     await seedRecordTypePair(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'sjWcXwYGlgxxJOHxzMoUow',
@@ -234,7 +238,7 @@ async () => {
     await db.postSchemaCreation();
     const token = await seedOrganizationWithMember(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'nkgaOHZISTQrILTfPThWCA', 'Org One'
-            , 'm-1', 'member',
+            , generateIdentifier(), 'member',
     );
     const res = await handleRequest(db, req(
         'GET',
@@ -255,7 +259,7 @@ async () => {
     await db.postSchemaCreation();
     const token = await seedOrganizationWithMember(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'nkgaOHZISTQrILTfPThWCA', 'Org One'
-            , 'm-1', 'member',
+            , generateIdentifier(), 'member',
     );
     await seedRecordTypePair(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'sjWcXwYGlgxxJOHxzMoUow',
@@ -286,19 +290,23 @@ test('GET path org ≠ token org → 403 (member of A '
 async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
+    const organizationA = generateIdentifier();
+    const organizationB = generateIdentifier();
     const tokenA = await seedOrganizationWithMember(
-        db, 'A', 'memberA', 'Acme', 'm-a', 'member',
+        db, organizationA, generateIdentifier(), 'Acme',
+        generateIdentifier(), 'member',
     );
     await seedOrganizationWithMember(
-        db, 'B', 'memberB', 'Beta', 'm-b', 'admin',
+        db, organizationB, generateIdentifier(), 'Beta',
+        generateIdentifier(), 'admin',
     );
     await seedRecordTypePair(
-        db, 'B', 'rt-b',
+        db, organizationB, generateIdentifier(),
         recordTypeBody('Foreign', 0, 'active'),
     );
     const res = await handleRequest(db, req(
         'GET',
-        '/organizations/B/record-types/',
+        '/organizations/' + organizationB + '/record-types/',
         tokenA,
     ));
     assert.equal(res.status, 403);
@@ -312,7 +320,8 @@ async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     const token = await seedOrganizationWithMember(
-        db, 'A', 'memberA', 'Acme', 'm-a', 'member',
+        db, generateIdentifier(), generateIdentifier(),
+        'Acme', generateIdentifier(), 'member',
     );
     const res = await handleRequest(db, req(
         'GET',
@@ -331,7 +340,7 @@ async () => {
     await db.postSchemaCreation();
     const token = await seedOrganizationWithMember(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'nkgaOHZISTQrILTfPThWCA', 'Org One'
-            , 'm-1', 'member',
+            , generateIdentifier(), 'member',
     );
     await seedRecordTypePair(
         db, 'AjdvjuECVZEgZoFajaIEkg', 'sjWcXwYGlgxxJOHxzMoUow',

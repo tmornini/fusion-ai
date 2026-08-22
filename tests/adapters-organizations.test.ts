@@ -16,6 +16,8 @@ import { formWritePair } from '../api/message-pair.ts';
 import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 test('putOrganization then getOrganization round-trips',
 async () => {
@@ -53,9 +55,12 @@ async () => {
     const { db, ctx } = await adminContext();
     await putOrganization(ctx, 'AjdvjuECVZEgZoFajaIEkg'
         , organizationRow('Acme'));
-    await putOrganization(ctx, '7', organizationRow('Beta'));
+    await putOrganization(
+        ctx, generateIdentifier(), organizationRow('Beta'),
+    );
     await seedMembershipPair(
-        db, 'm', 'AjdvjuECVZEgZoFajaIEkg', 'XXZruirZyAOoRpNxaDnpSA',
+        db, generateIdentifier(),
+        'AjdvjuECVZEgZoFajaIEkg', 'XXZruirZyAOoRpNxaDnpSA',
         '2026-06-04T00:00:00.000000Z',
     );
     const organizations = await getOrganizations(ctx);

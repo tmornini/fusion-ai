@@ -29,6 +29,8 @@ import {
     seedHumanMember,
 } from './member-fixtures.ts';
 import { seededMockDb } from './mock-seed.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // PUT/create body: no lifecycle trio — postIdeaCreation mints
 // state/stateAt/stateEventId. GET IdeaEntity carries the
@@ -95,15 +97,17 @@ async function seedIdeaSubmission(
 test('getIdeas as member lists a co-member idea',
 async () => {
     const { db, ctx } = await adminContext();
-    await seedHumanMember(db, 'u1', 'Alice Test');
-    await seedIdea(ctx, 'i-member', 'Member list',
+    const aliceId = generateIdentifier();
+    const ideaId = generateIdentifier();
+    await seedHumanMember(db, aliceId, 'Alice Test');
+    await seedIdea(ctx, ideaId, 'Member list',
         'active');
     await seedIdeaSubmission(
-        ctx, 's-member', 'i-member', 'u1',
+        ctx, generateIdentifier(), ideaId, aliceId,
         '2026-04-01T00:00:00.000000Z',
     );
     const memberCtx = createRequestContext(
-        db, await organizationToken('u1'),
+        db, await organizationToken(aliceId),
     );
     const result = await getIdeas(memberCtx);
     const hit = result.find(
@@ -114,10 +118,11 @@ async () => {
 
 test('getIdeas returns ideas with submitter', async () => {
     const { db, ctx } = await adminContext();
-    await seedHumanMember(db, 'u1', 'Alice Test');
+    const aliceId = generateIdentifier();
+    await seedHumanMember(db, aliceId, 'Alice Test');
     await seedIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', 'First idea', 'active');
     await seedIdeaSubmission(
-        ctx, 'syWUUcdBSbBgMwBiCrgbDw', 'fndCYAsXazdzMUlEGMNIZw', 'u1',
+        ctx, 'syWUUcdBSbBgMwBiCrgbDw', 'fndCYAsXazdzMUlEGMNIZw', aliceId,
         '2026-04-01T00:00:00.000000Z',
     );
     const result = await getIdeas(ctx);
@@ -138,7 +143,7 @@ test('getIdeas returns ideas with submitter', async () => {
 
 test('getIdeas throws when idea has no submission', async () => {
     const { db, ctx } = await adminContext();
-    await seedHumanMember(db, 'u1', 'Alice Test');
+    await seedHumanMember(db, generateIdentifier(), 'Alice Test');
     await seedIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', 'Orphan', 'active');
     // No submission for fndCYAsXazdzMUlEGMNIZw
     await assert.rejects(
@@ -149,10 +154,11 @@ test('getIdeas throws when idea has no submission', async () => {
 
 test('getIdea finds submission for one idea', async () => {
     const { db, ctx } = await adminContext();
-    await seedHumanMember(db, 'u1', 'Alice Test');
+    const aliceId = generateIdentifier();
+    await seedHumanMember(db, aliceId, 'Alice Test');
     await seedIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', 'A', 'active');
     await seedIdeaSubmission(
-        ctx, 'syWUUcdBSbBgMwBiCrgbDw', 'fndCYAsXazdzMUlEGMNIZw', 'u1',
+        ctx, 'syWUUcdBSbBgMwBiCrgbDw', 'fndCYAsXazdzMUlEGMNIZw', aliceId,
         '2026-04-01T00:00:00.000000Z',
     );
     const result = await getIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw');
@@ -164,7 +170,7 @@ test('getIdea finds submission for one idea', async () => {
 
 test('getIdea throws on missing submission', async () => {
     const { db, ctx } = await adminContext();
-    await seedHumanMember(db, 'u1', 'Alice Test');
+    await seedHumanMember(db, generateIdentifier(), 'Alice Test');
     await seedIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', 'A', 'active');
     await assert.rejects(
         () => getIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw'),
@@ -192,15 +198,16 @@ test('putIdea persists changes', async () => {
 
 test('archived ideas are filtered from getIdeas', async () => {
     const { db, ctx } = await adminContext();
-    await seedHumanMember(db, 'u1', 'Alice Test');
+    const aliceId = generateIdentifier();
+    await seedHumanMember(db, aliceId, 'Alice Test');
     await seedIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', 'Keep', 'active');
     await seedIdeaSubmission(
-        ctx, 'syWUUcdBSbBgMwBiCrgbDw', 'fndCYAsXazdzMUlEGMNIZw', 'u1',
+        ctx, 'syWUUcdBSbBgMwBiCrgbDw', 'fndCYAsXazdzMUlEGMNIZw', aliceId,
         '2026-04-01T00:00:00.000000Z',
     );
     await seedIdea(ctx, 'fxysGbBPBsnCwJNJsyZnkA', 'Hide me', 'archived');
     await seedIdeaSubmission(
-        ctx, 's2', 'fxysGbBPBsnCwJNJsyZnkA', 'u1',
+        ctx, generateIdentifier(), 'fxysGbBPBsnCwJNJsyZnkA', aliceId,
         '2026-04-01T00:00:00.000000Z',
     );
     const result = await getIdeas(ctx);
@@ -289,6 +296,8 @@ test(
             db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User',
         );
         await seedIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', 'First', 'approved');
+        const obj1 = generateIdentifier();
+        const obj2 = generateIdentifier();
 
         const projectEntity:
             Omit<ProjectEntity, 'id'> = {
@@ -313,10 +322,10 @@ test(
             'submitted',
             promotedIdea,
             [
-                { objectiveId: 'obj-1', score: 50 },
-                { objectiveId: 'obj-2', score: -25 },
+                { objectiveId: obj1, score: 50 },
+                { objectiveId: obj2, score: -25 },
             ],
-            ['obj-1', 'obj-2'],
+            [obj1, obj2],
         );
 
         // Phase Final Task 2: projects row half stripped —
@@ -356,8 +365,8 @@ test(
                 b.objective_id, b.score,
             ]),
         );
-        assert.equal(byObj.get('obj-1'), 50);
-        assert.equal(byObj.get('obj-2'), -25);
+        assert.equal(byObj.get(obj1), 50);
+        assert.equal(byObj.get(obj2), -25);
     },
 );
 
@@ -381,6 +390,8 @@ test(
         };
         const { organization_id: _o, ...promotedIdea } =
             buildIdea('fndCYAsXazdzMUlEGMNIZw', 'First');
+        const obj1 = generateIdentifier();
+        const obj2 = generateIdentifier();
         await assert.rejects(
             () => postIdeaConversion(
                 ctx,
@@ -390,9 +401,9 @@ test(
                 'submitted',
                 promotedIdea,
                 [
-                    { objectiveId: 'obj-1', score: 5 },
+                    { objectiveId: obj1, score: 5 },
                 ],
-                ['obj-1', 'obj-2'],
+                [obj1, obj2],
             ),
             /every active objective/,
         );
@@ -401,15 +412,16 @@ test(
 
 test('deleted ideas are filtered from getIdeas', async () => {
     const { db, ctx } = await adminContext();
-    await seedHumanMember(db, 'u1', 'Alice Test');
+    const aliceId = generateIdentifier();
+    await seedHumanMember(db, aliceId, 'Alice Test');
     await seedIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', 'Keep', 'active');
     await seedIdeaSubmission(
-        ctx, 'syWUUcdBSbBgMwBiCrgbDw', 'fndCYAsXazdzMUlEGMNIZw', 'u1',
+        ctx, 'syWUUcdBSbBgMwBiCrgbDw', 'fndCYAsXazdzMUlEGMNIZw', aliceId,
         '2026-04-01T00:00:00.000000Z',
     );
     await seedIdea(ctx, 'fxysGbBPBsnCwJNJsyZnkA', 'Delete me', 'active');
     await seedIdeaSubmission(
-        ctx, 's2', 'fxysGbBPBsnCwJNJsyZnkA', 'u1',
+        ctx, generateIdentifier(), 'fxysGbBPBsnCwJNJsyZnkA', aliceId,
         '2026-04-01T00:00:00.000000Z',
     );
     // A transition to 'deleted' (ideas has no DELETE route) —

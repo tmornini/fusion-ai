@@ -86,6 +86,11 @@ function mintCreateIds(): CreateIds {
     };
 }
 
+const START_NODE = generateIdentifier();
+const MIDDLE_NODE = generateIdentifier();
+const FINISH_NODE = generateIdentifier();
+const EDGE_MIDDLE_FINISH = generateIdentifier();
+
 async function createWorkOrder(
     ctx: RequestContext,
     flowId: string,
@@ -133,17 +138,17 @@ function buildLinearGraph(): StoredGraph {
     return {
         nodes: [
             buildNode(
-                'n-start',
+                START_NODE,
                 'Start',
                 { isCreate: true },
             ),
             buildNode(
-                'n-middle',
+                MIDDLE_NODE,
                 'Doing work',
                 { memberIds: ['XXZruirZyAOoRpNxaDnpSA'] },
             ),
             buildNode(
-                'n-finish',
+                FINISH_NODE,
                 'Done',
                 { isArchive: true },
             ),
@@ -151,13 +156,13 @@ function buildLinearGraph(): StoredGraph {
         edges: [
             buildEdge(
                 'YiJPbufDpkyrZcZCYbUJpg',
-                'n-start',
-                'n-middle',
+                START_NODE,
+                MIDDLE_NODE,
             ),
             buildEdge(
-                'e2',
-                'n-middle',
-                'n-finish',
+                EDGE_MIDDLE_FINISH,
+                MIDDLE_NODE,
+                FINISH_NODE,
             ),
         ],
     };
@@ -203,8 +208,8 @@ async function seedFlow(
     }
     await postFlowCreation(ctx, {
         flowId,
-        linkId: flowId + '-link',
-        projectId: 'p-' + flowId,
+        linkId: generateIdentifier(),
+        projectId: generateIdentifier(),
         name: save.name,
     });
     await putFlow(ctx, flowId, save);
@@ -311,10 +316,10 @@ test(
         );
         assert.equal(nonClaim.length, 2);
         assert.equal(
-            nonClaim[0]!.state, 'n-start',
+            nonClaim[0]!.state, START_NODE,
         );
         assert.equal(
-            nonClaim[1]!.state, 'n-middle',
+            nonClaim[1]!.state, MIDDLE_NODE,
         );
         const claims = events.filter(
             (e: StateEntity) =>
@@ -362,17 +367,19 @@ test(
     + 'when flow has no start node',
     async () => {
         const { db, ctx } = await setupDb();
+        const nodeA = generateIdentifier();
+        const nodeB = generateIdentifier();
         const graph: StoredGraph = {
             nodes: [
-                buildNode('a', 'A', {
+                buildNode(nodeA, 'A', {
                     memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
                 }),
-                buildNode('b', 'B', {
+                buildNode(nodeB, 'B', {
                     isArchive: true,
                 }),
             ],
             edges: [
-                buildEdge('e', 'a', 'b'),
+                buildEdge(generateIdentifier(), nodeA, nodeB),
             ],
         };
         await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', graph);
@@ -392,24 +399,31 @@ test(
     + 'outgoing edges',
     async () => {
         const { db, ctx } = await setupDb();
+        const startId = generateIdentifier();
+        const nodeA = generateIdentifier();
+        const nodeB = generateIdentifier();
         const graph: StoredGraph = {
             nodes: [
                 buildNode(
-                    's', 'Start',
+                    startId, 'Start',
                     { isCreate: true },
                 ),
-                buildNode('a', 'A', {
+                buildNode(nodeA, 'A', {
                     memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
                     isArchive: true,
                 }),
-                buildNode('b', 'B', {
+                buildNode(nodeB, 'B', {
                     memberIds: ['XXZruirZyAOoRpNxaDnpSA'],
                     isArchive: true,
                 }),
             ],
             edges: [
-                buildEdge('YiJPbufDpkyrZcZCYbUJpg', 's', 'a'),
-                buildEdge('e2', 's', 'b'),
+                buildEdge(
+                    'YiJPbufDpkyrZcZCYbUJpg', startId, nodeA,
+                ),
+                buildEdge(
+                    generateIdentifier(), startId, nodeB,
+                ),
             ],
         };
         await seedFlow(db, 'ZOousbbnzpqlxJExVAruYQ', graph);
@@ -462,12 +476,11 @@ test(
 
         // Phase Final Task 2: frozen graph on pair-plane GET.
         const wo = await getWorkOrder(ctx, woId);
-        assert.equal(
-            wo.flowGraph.nodes[1]!.name, 'Doing work',
+        const middle = wo.flowGraph.nodes.find(
+            n => n.id === MIDDLE_NODE,
         );
-        assert.notEqual(
-            wo.flowGraph.nodes[1]!.name, 'EDITED',
-        );
+        assert.equal(middle!.name, 'Doing work');
+        assert.notEqual(middle!.name, 'EDITED');
         assert.equal('flowId' in wo.flowGraph, false);
     },
 );
@@ -491,7 +504,7 @@ test(
             await getWorkOrderCurrentNodeId(
                 ctx, woId,
             );
-        assert.equal(beforeNode, 'n-middle');
+        assert.equal(beforeNode, MIDDLE_NODE);
         const beforeClaim =
             await getWorkOrderActiveClaim(
                 ctx, woId, DEFAULT_LOCK_TIMEOUT,
@@ -500,7 +513,7 @@ test(
 
         await postWorkOrderTransition(ctx, {
             workOrderId: woId,
-            edgeId: 'e2',
+            edgeId: EDGE_MIDDLE_FINISH,
             values: {},
         });
 
@@ -508,7 +521,7 @@ test(
             await getWorkOrderCurrentNodeId(
                 ctx, woId,
             );
-        assert.equal(afterNode, 'n-finish');
+        assert.equal(afterNode, FINISH_NODE);
         const afterClaim =
             await getWorkOrderActiveClaim(
                 ctx, woId, DEFAULT_LOCK_TIMEOUT,
@@ -535,7 +548,7 @@ test(
 
         await postWorkOrderTransition(ctx, {
             workOrderId: woId,
-            edgeId: 'e2',
+            edgeId: EDGE_MIDDLE_FINISH,
             values: {},
         });
 
@@ -546,7 +559,7 @@ test(
         // start, post-start, after-transition
         assert.equal(events.length, 3);
         assert.equal(
-            events.at(-1)!.toNodeId, 'n-finish',
+            events.at(-1)!.toNodeId, FINISH_NODE,
         );
     },
 );
@@ -565,7 +578,7 @@ test(
             () =>
                 postWorkOrderTransition(ctx, {
                     workOrderId: woId,
-                    edgeId: 'no-such-edge',
+                    edgeId: generateIdentifier(),
                     values: {},
                 }),
             /Edge not found/,
@@ -576,9 +589,9 @@ test(
 // Value-bearing instance-head transitions: seed a
 // record type + instance, join the flow, bind the
 // WO, then assert set/clear/omit and pure-move.
-const RT_ID = 'rt-wo-adapter';
-const ATTR_ID = 'attr-wo-adapter';
-const INST_ID = 'inst-wo-adapter';
+const RT_ID = generateIdentifier();
+const ATTR_ID = generateIdentifier();
+const INST_ID = generateIdentifier();
 
 // Instance adapters need an org-scoped token
 // (activeOrganization on the vessel).
@@ -632,8 +645,7 @@ async function seedTypeInstanceAndJoin(
     );
     await ctx.PUT(
         'organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
-            + '/records/czzvKtivgBDCjBzNShRbqA'
-        + flowId,
+            + '/records/' + generateIdentifier(),
         {
             flow_id: flowId,
             record_id: RT_ID,
@@ -657,7 +669,7 @@ test(
 
         await postWorkOrderTransition(ctx, {
             workOrderId: woId,
-            edgeId: 'e2',
+            edgeId: EDGE_MIDDLE_FINISH,
             // ATTR changed; no other keys → set only.
             values: { [ATTR_ID]: 'xDyDkxEPwtcNmJVknUHDsg' },
         });
@@ -672,7 +684,7 @@ test(
             await getWorkOrderCurrentNodeId(
                 ctx, woId,
             ),
-            'n-finish',
+            FINISH_NODE,
         );
     },
 );
@@ -706,7 +718,7 @@ test(
         await assert.rejects(
             () => postWorkOrderTransition(ctx, {
                 workOrderId: woId,
-                edgeId: 'e2',
+                edgeId: EDGE_MIDDLE_FINISH,
                 values: { [ATTR_ID]: 'vStale' },
                 instanceEtag: loaded.etag,
             }),
@@ -745,7 +757,7 @@ test(
 
         await postWorkOrderTransition(ctx, {
             workOrderId: woId,
-            edgeId: 'e2',
+            edgeId: EDGE_MIDDLE_FINISH,
             values: { [ATTR_ID]: '' },
         });
 
@@ -778,7 +790,7 @@ test(
         // path; instance etag must not advance).
         await postWorkOrderTransition(ctx, {
             workOrderId: woId,
-            edgeId: 'e2',
+            edgeId: EDGE_MIDDLE_FINISH,
             values: { [ATTR_ID]: 'v0' },
         });
 
@@ -793,7 +805,7 @@ test(
             await getWorkOrderCurrentNodeId(
                 ctx, woId,
             ),
-            'n-finish',
+            FINISH_NODE,
         );
     },
 );
@@ -899,28 +911,40 @@ test(
         // a raw db.flowWorkOrders.put leaves no pair at this
         // address, so each join must land through the SAME
         // wire-reachable PUT the live route serves.
-        await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/flows/flow1/'
-            + 'work-orders/fwo1', {
-            flow_id: 'flow1',
+        const flow1 = generateIdentifier();
+        const flow2 = generateIdentifier();
+        await ctx.PUT(
+            'organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                + flow1 + '/work-orders/'
+                + generateIdentifier(),
+            {
+            flow_id: flow1,
             work_order_id: 'yNSSnbrpacodQTzUEcdEVA',
             at: '2024-01-01T00:00:00.000000Z',
         });
-        await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/flows/flow2/'
-            + 'work-orders/fwo2', {
-            flow_id: 'flow2',
+        await ctx.PUT(
+            'organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+                + flow2 + '/work-orders/'
+                + generateIdentifier(),
+            {
+            flow_id: flow2,
             work_order_id: 'yNXXsTEwShOozlQCEWKIIw',
             at: '2024-01-01T00:00:00.000000Z',
         });
         // The server now filters the nested collection to its
         // parent flow — each flow surfaces only its own join.
-        const flow1 =
-            await getFlowWorkOrderEntities(ctx, 'flow1');
-        assert.equal(flow1.length, 1);
-        assert.equal(flow1[0]!.work_order_id, 'yNSSnbrpacodQTzUEcdEVA');
-        const flow2 =
-            await getFlowWorkOrderEntities(ctx, 'flow2');
-        assert.equal(flow2.length, 1);
-        assert.equal(flow2[0]!.work_order_id, 'yNXXsTEwShOozlQCEWKIIw');
+        const flow1Rows =
+            await getFlowWorkOrderEntities(ctx, flow1);
+        assert.equal(flow1Rows.length, 1);
+        assert.equal(
+            flow1Rows[0]!.work_order_id, 'yNSSnbrpacodQTzUEcdEVA',
+        );
+        const flow2Rows =
+            await getFlowWorkOrderEntities(ctx, flow2);
+        assert.equal(flow2Rows.length, 1);
+        assert.equal(
+            flow2Rows[0]!.work_order_id, 'yNXXsTEwShOozlQCEWKIIw',
+        );
     },
 );
 
@@ -1085,7 +1109,7 @@ test(
 
         await postWorkOrderTransition(ctx, {
             workOrderId: woId,
-            edgeId: 'e2',
+            edgeId: EDGE_MIDDLE_FINISH,
             values: {},
         });
 
@@ -1094,7 +1118,7 @@ test(
                 , woId);
         const transitionEvt = allEvents.find(
             (e: StateEntity) =>
-                e.state === 'n-finish',
+                e.state === FINISH_NODE,
         );
         const releaseEvt = allEvents.find(
             (e: StateEntity) =>
@@ -1102,7 +1126,7 @@ test(
         );
         assert.ok(
             transitionEvt !== undefined,
-            'expected a transition (n-finish) event',
+            'expected a transition (finish) event',
         );
         assert.ok(
             releaseEvt !== undefined,

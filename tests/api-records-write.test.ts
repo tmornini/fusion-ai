@@ -12,6 +12,8 @@ import {
 } from './test-fixtures.ts';
 import { deriveRecordTypeStateHistory } from
     '../api/derive-record-types.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 async function freshDb() {
     const db = memoryDbAdapter();
@@ -50,7 +52,7 @@ test(
                 },
             ],
             initialState: 'active',
-            initialStateEventId: 'ev-1',
+            initialStateEventId: generateIdentifier(),
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
@@ -95,7 +97,7 @@ test(
             },
             attributes: [],
             initialState: 'active',
-            initialStateEventId: 'ev-2',
+            initialStateEventId: generateIdentifier(),
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
@@ -135,7 +137,7 @@ test(
             },
             attributes: [],
             initialState: 'active',
-            initialStateEventId: 'ev-1',
+            initialStateEventId: generateIdentifier(),
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
@@ -180,6 +182,8 @@ test(
     + ' attributes by id and adds new ones',
     async () => {
         const db = await freshDb();
+        const oldAttrId = generateIdentifier();
+        const newAttrId = generateIdentifier();
         await seedCurrentMember(db);
         await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/', {
             kind: 'create',
@@ -192,7 +196,7 @@ test(
             },
             attributes: [
                 {
-                    id: 'a-old',
+                    id: oldAttrId,
                     organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                     record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                     name: 'Old',
@@ -203,7 +207,7 @@ test(
                 },
             ],
             initialState: 'active',
-            initialStateEventId: 'ev-1',
+            initialStateEventId: generateIdentifier(),
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
@@ -218,7 +222,7 @@ test(
             },
             attributes: [
                 {
-                    id: 'a-new',
+                    id: newAttrId,
                     organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                     record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                     name: 'New',
@@ -230,7 +234,7 @@ test(
             ],
             // Echoed from the create's own known head above.
             state: 'active',
-            removedAttributeIds: ['a-old'],
+            removedAttributeIds: [oldAttrId],
         }, DEV_TOKEN);
         const all = await GET<{
             id: string;
@@ -238,7 +242,7 @@ test(
         }[]>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
             + 'rbfHGatkwQzGZJVXKJEeyw/attributes/', DEV_TOKEN);
         assert.equal(all.length, 1);
-        assert.equal(all[0]!.id, 'a-new');
+        assert.equal(all[0]!.id, newAttrId);
         assert.equal(all[0]!.name, 'New');
     },
 );
@@ -270,7 +274,7 @@ test(
                 },
             ],
             initialState: 'active',
-            initialStateEventId: 'ev-1',
+            initialStateEventId: generateIdentifier(),
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         }, DEV_TOKEN);
@@ -346,7 +350,7 @@ test(
                     },
                 ],
                 initialState: 'active',
-                initialStateEventId: 'ev-1',
+                initialStateEventId: generateIdentifier(),
                 initialStateAt:
                     '2025-01-01T00:00:00.000000Z',
             }, DEV_TOKEN),
@@ -376,7 +380,7 @@ test(
                     {
                         id: 'UQBiHFcwJeCDSnmkPBoYRA',
                         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
-                        record_id: 'rec-other',
+                        record_id: generateIdentifier(),
                         name: 'X',
                         attribute_type: 'text',
                         sort_order: 0,
@@ -385,7 +389,7 @@ test(
                     },
                 ],
                 initialState: 'active',
-                initialStateEventId: 'ev-1',
+                initialStateEventId: generateIdentifier(),
                 initialStateAt:
                     '2025-01-01T00:00:00.000000Z',
             }, DEV_TOKEN),
@@ -435,7 +439,7 @@ test(
                 },
                 attributes: [],
                 initialState: 'pending',
-                initialStateEventId: 'ev-1',
+                initialStateEventId: generateIdentifier(),
                 initialStateAt:
                     '2025-01-01T00:00:00.000000Z',
             }, DEV_TOKEN),
@@ -462,7 +466,7 @@ test(
                 },
                 attributes: [],
                 initialState: 'active',
-                initialStateEventId: 'ev-1',
+                initialStateEventId: generateIdentifier(),
                 initialStateAt:
                     '2025-01-01T00:00:00.000000Z',
                 extra: 'forbidden',
@@ -500,10 +504,11 @@ test(
     + ' initialStateAt to the initial state event',
     async () => {
         const db = await freshDb();
+        const recId = generateIdentifier();
         await seedCurrentMember(db);
         await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/', {
             kind: 'create',
-            id: 'rec-at',
+            id: recId,
             record: {
                 organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 name: 'Timed Record',
@@ -512,7 +517,7 @@ test(
             },
             attributes: [],
             initialState: 'active',
-            initialStateEventId: 'ev-at',
+            initialStateEventId: generateIdentifier(),
             // Far-future timestamp forces a distinct, verifiable
             // at value so the test can confirm the caller's time
             // was threaded to the event — not a server nowUtc().
@@ -524,11 +529,11 @@ test(
         const history = await GET<{
             id: string;
             state: string;
-        }[]>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/rec-at/'
-            + 'versions/', DEV_TOKEN);
+        }[]>(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
+            + recId + '/versions/', DEV_TOKEN);
         assert.equal(history.length, 1);
         const current = history[0]!;
-        assert.equal(current.id, 'rec-at');
+        assert.equal(current.id, recId);
         assert.equal(current.state, 'active');
         assert.equal('state_at' in current, false);
     },
@@ -543,9 +548,10 @@ test(
         // a raw colliding states row no longer aborts the
         // pair-plane create.
     // Phase Final Stage B: states table retired.
+        const recId = generateIdentifier();
         await POST(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/', {
             kind: 'create',
-            id: 'rec-survives',
+            id: recId,
             record: {
                 organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 name: 'Survives', description: '',
@@ -553,14 +559,14 @@ test(
             },
             attributes: [],
             initialState: 'active',
-            initialStateEventId: 'ev-x',
+            initialStateEventId: generateIdentifier(),
             initialStateAt:
                 '2099-07-01T00:00:00.000000Z',
         }, DEV_TOKEN);
         const rec = await GET<{ id: string }>(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
-                + 'rec-survives', DEV_TOKEN,
+                + recId, DEV_TOKEN,
         );
-        assert.equal(rec.id, 'rec-survives');
+        assert.equal(rec.id, recId);
     },
 );

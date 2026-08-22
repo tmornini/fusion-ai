@@ -51,6 +51,17 @@ import { ApiError, HTTP_PRECONDITION_FAILED } from
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const PROJECT_1 = generateIdentifier();
+const ID_1 = generateIdentifier();
+const AG_1 = generateIdentifier();
+const DOC_CHILD = generateIdentifier();
+const SL_1 = generateIdentifier();
+const SL_2 = generateIdentifier();
+const SL_3 = generateIdentifier();
+const SL_4 = generateIdentifier();
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -116,11 +127,11 @@ test('documentWriteResponseSpec produces the projects'
     };
     const actual = documentWriteResponseSpec(wiring)
         .successBody!(
-            ['AjdvjuECVZEgZoFajaIEkg', 'project-1'], body
+            ['AjdvjuECVZEgZoFajaIEkg', PROJECT_1], body
                 , 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg',
         );
     assert.deepEqual(actual, {
-        id: 'project-1', organization_id: 'AjdvjuECVZEgZoFajaIEkg',
+        id: PROJECT_1, organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         title: 'T', description: 'd', progress: 5,
         start_date: '2026-01-01', target_end_date: '2026-02-01',
         estimated_cost: 100, actual_cost: 50, position: 1,
@@ -133,9 +144,9 @@ test('documentWriteResponseSpec produces the identities'
     const wiring = documentFamilyWiring('identities')!;
     const body = { kind: 'person' };
     const actual = documentWriteResponseSpec(wiring)
-        .successBody!(['id-1'], body, 'XXZruirZyAOoRpNxaDnpSA'
+        .successBody!([ID_1], body, 'XXZruirZyAOoRpNxaDnpSA'
             , 'AjdvjuECVZEgZoFajaIEkg');
-    assert.deepEqual(actual, { id: 'id-1', kind: 'person' });
+    assert.deepEqual(actual, { id: ID_1, kind: 'person' });
 });
 
 test('leftover roster families have no document wiring',
@@ -161,9 +172,9 @@ test('documentWriteResponseSpec produces the ai-agents'
         skill_focus: 's',
     };
     const actual = documentWriteResponseSpec(wiring)
-        .successBody!(['ag-1'], body, 'XXZruirZyAOoRpNxaDnpSA'
+        .successBody!([AG_1], body, 'XXZruirZyAOoRpNxaDnpSA'
             , 'AjdvjuECVZEgZoFajaIEkg');
-    assert.deepEqual(actual, { id: 'ag-1', ...body });
+    assert.deepEqual(actual, { id: AG_1, ...body });
 });
 
 // -- (b) documentEntityRoute('simple') dispatches PUT to the
@@ -377,7 +388,7 @@ test('locked arm: a sibling route under the SAME family'
         const db = await freshDb();
         const token = await organizationToken();
         const path = '/' + CHILD_PATTERN
-            .replace(':id', 'doc-child');
+            .replace(':id', DOC_CHILD);
         const first = await handleRequest(db, req(
             'PUT', path, token, { v: 'first' },
         ));
@@ -760,13 +771,13 @@ test('stateless lifecycle: a trio-less document PUT derives'
 + ' through documentGetHandler with no throw', async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
-    await putStatelessDocumentPair(db, 'sl-1', { v: 'first' });
+    await putStatelessDocumentPair(db, SL_1, { v: 'first' });
     const got = await documentGetHandler(statelessWiring)(
-        db, ['AjdvjuECVZEgZoFajaIEkg', 'sl-1'], 'XXZruirZyAOoRpNxaDnpSA'
+        db, ['AjdvjuECVZEgZoFajaIEkg', SL_1], 'XXZruirZyAOoRpNxaDnpSA'
             , 'AjdvjuECVZEgZoFajaIEkg',
     );
     assert.deepEqual(got, {
-        id: 'sl-1', organization_id: 'AjdvjuECVZEgZoFajaIEkg', v: 'first',
+        id: SL_1, organization_id: 'AjdvjuECVZEgZoFajaIEkg', v: 'first',
     });
 });
 
@@ -774,12 +785,12 @@ test('stateless lifecycle: documentCollectionGetHandler skips'
 + ' the per-document history walk too', async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
-    await putStatelessDocumentPair(db, 'sl-2', { v: 'listed' });
+    await putStatelessDocumentPair(db, SL_2, { v: 'listed' });
     const rows = await documentCollectionGetHandler(
         statelessWiring,
     )(db, [], 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg');
     assert.deepEqual(rows, [
-        { id: 'sl-2', organization_id: 'AjdvjuECVZEgZoFajaIEkg'
+        { id: SL_2, organization_id: 'AjdvjuECVZEgZoFajaIEkg'
             , v: 'listed' },
     ]);
 });
@@ -788,11 +799,11 @@ test('stateless lifecycle: a DELETE head 404s carrying'
 + ' notFoundTable, never the family', async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
-    await putStatelessDocumentPair(db, 'sl-3', { v: 'first' });
-    await deleteStatelessDocumentPair(db, 'sl-3');
+    await putStatelessDocumentPair(db, SL_3, { v: 'first' });
+    await deleteStatelessDocumentPair(db, SL_3);
     await assert.rejects(
         documentGetHandler(statelessWiring)(
-            db, ['AjdvjuECVZEgZoFajaIEkg', 'sl-3'], 'XXZruirZyAOoRpNxaDnpSA'
+            db, ['AjdvjuECVZEgZoFajaIEkg', SL_3], 'XXZruirZyAOoRpNxaDnpSA'
                 , 'AjdvjuECVZEgZoFajaIEkg',
         ),
         (error: unknown) => {
@@ -810,8 +821,8 @@ test('stateless lifecycle: a DELETE head is absent from the'
 + ' collection too', async () => {
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
-    await putStatelessDocumentPair(db, 'sl-4', { v: 'first' });
-    await deleteStatelessDocumentPair(db, 'sl-4');
+    await putStatelessDocumentPair(db, SL_4, { v: 'first' });
+    await deleteStatelessDocumentPair(db, SL_4);
     const rows = await documentCollectionGetHandler(
         statelessWiring,
     )(db, [], 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg');

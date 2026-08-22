@@ -10,6 +10,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 const AT = '2026-01-01T00:00:00.000000Z';
 
@@ -56,7 +58,7 @@ function graphNode(
     agentIds?: string[],
 ) {
     return {
-        id: 'n-step',
+        id: generateIdentifier(),
         name: 'Step',
         positionX: 0,
         positionY: 0,
@@ -136,7 +138,8 @@ test('PUT /ai-agents/:id writes the four fields; GET'
 test('a flow write with an AI member id in memberIds'
 + ' is 400', async () => {
     const db = await freshDb();
-    await PUT(db, 'ai-agents/ai-bot-1', {
+    const agentId = generateIdentifier();
+    await PUT(db, 'ai-agents/' + agentId, {
         name: 'Bot',
         description: '',
         skill_focus: '',
@@ -148,9 +151,9 @@ test('a flow write with an AI member id in memberIds'
             + 'aMyiZpZbsEboXnIrwnEjNA', token,
         flowDocument(
             'Blocked',
-            'ev-flow-1',
+            generateIdentifier(),
             {
-                nodes: [graphNode(['ai-bot-1'])],
+                nodes: [graphNode([agentId])],
                 edges: [],
             },
         ),
@@ -175,7 +178,7 @@ test('a flow write with agentIds naming a live'
             + 'aJJKPwIzmbFseMhGUrFyFQ', token,
         flowDocument(
             'With agent',
-            'ev-flow-2',
+            generateIdentifier(),
             {
                 nodes: [graphNode([], ['UxpkDaNMmbWLvCTkyrFfGA'])],
                 edges: [],

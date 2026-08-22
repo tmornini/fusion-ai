@@ -25,6 +25,23 @@ import {
 import {
     firstProviderModel,
 } from './member-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const F_LEGACY = generateIdentifier();
+const F_1 = generateIdentifier();
+const WO_1 = generateIdentifier();
+const EVT_1 = generateIdentifier();
+const I_1 = generateIdentifier();
+const U_1 = generateIdentifier();
+const AI_1 = generateIdentifier();
+const PERSON_1 = generateIdentifier();
+const R_1 = generateIdentifier();
+const ORGANIZATION_1 = generateIdentifier();
+const NODE_ID = generateIdentifier();
+const MEMBER_SARAH = generateIdentifier();
+const MEMBER_CLAUDE = generateIdentifier();
+const UNKNOWN_MODEL = generateIdentifier();
 
 // --- HumanMemberEntity ---
 
@@ -231,7 +248,7 @@ test(
         assert.throws(
             () => validateAIMemberEntity({
                 ...validAIMember,
-                model: 'not-a-real-model-id',
+                model: UNKNOWN_MODEL,
             }),
             /model must be a known provider/,
         );
@@ -501,7 +518,7 @@ test(
     const result = validateWorkOrderEntity({
         ...validWorkOrder,
         flow_graph: {
-            flowId: 'f-legacy',
+            flowId: F_LEGACY,
             name: 'WO Flow',
             lockTimeout: DEFAULT_LOCK_TIMEOUT,
             nodes: [], edges: [],
@@ -513,8 +530,8 @@ test(
 // --- FlowWorkOrderEntity ---
 
 const validFlowWorkOrder = {
-    flow_id: 'f-1',
-    work_order_id: 'wo-1',
+    flow_id: F_1,
+    work_order_id: WO_1,
     at: '2024-01-01T00:00:00.000000Z',
 };
 
@@ -525,7 +542,7 @@ test(
         validateFlowWorkOrderEntity(
             validFlowWorkOrder,
         );
-    assert.equal(result.flow_id, 'f-1');
+    assert.equal(result.flow_id, F_1);
 });
 
 test(
@@ -534,7 +551,7 @@ test(
     () => {
     assert.throws(
         () => validateFlowWorkOrderEntity({
-            flow_id: 'f-1',
+            flow_id: F_1,
             at: '2024-01-01T00:00:00.000000Z',
         }),
         /missing required key "work_order_id"/,
@@ -544,8 +561,8 @@ test(
 // --- StateFieldValueEntity ---
 
 const validStateFieldValue = {
-    state_event_id: 'evt-1',
-    attribute_id: 'f-1',
+    state_event_id: EVT_1,
+    attribute_id: F_1,
     value: 'Acme Corp',
 };
 
@@ -557,7 +574,7 @@ test(
         validateStateFieldValueEntity(
             validStateFieldValue,
         );
-    assert.equal(result.state_event_id, 'evt-1');
+    assert.equal(result.state_event_id, EVT_1);
 });
 
 test(
@@ -566,7 +583,7 @@ test(
     () => {
     assert.throws(
         () => validateStateFieldValueEntity({
-            attribute_id: 'f-1',
+            attribute_id: F_1,
             value: 'x',
         }),
         /missing required key "state_event_id"/,
@@ -665,8 +682,8 @@ test(
 // --- IdeaSubmissionEntity ---
 
 const validIdeaSubmission = {
-    idea_id: 'i-1',
-    member_id: 'u-1',
+    idea_id: I_1,
+    member_id: U_1,
     at: '2024-01-01T00:00:00.000000Z',
 };
 
@@ -678,7 +695,7 @@ test(
         validateIdeaSubmissionEntity(
             validIdeaSubmission,
         );
-    assert.equal(result.idea_id, 'i-1');
+    assert.equal(result.idea_id, I_1);
 });
 
 test(
@@ -687,7 +704,7 @@ test(
     () => {
     assert.throws(
         () => validateIdeaSubmissionEntity({
-            member_id: 'u-1',
+            member_id: U_1,
             at: '2024-01-01T00:00:00.000000Z',
         }),
         /missing required key "idea_id"/,
@@ -698,7 +715,7 @@ test(
 
 const validProjectFlow = {
     project_id: 'pjQzgITAPDQVyvCVpzpIfQ',
-    flow_id: 'f-1',
+    flow_id: F_1,
     at: '2024-01-01T00:00:00.000000Z',
 };
 
@@ -728,7 +745,7 @@ test(
 // --- asStoredGraph (memberIds shape) ---
 
 const baseNode = {
-    id: 'n1',
+    id: NODE_ID,
     name: 'N',
     positionX: 0,
     positionY: 0,
@@ -780,8 +797,8 @@ test(
                     {
                         ...baseNode,
                         memberIds: [
-                            'hw_sarah_chen',
-                            'ai_claude_opus',
+                            MEMBER_SARAH,
+                            MEMBER_CLAUDE,
                         ],
                     },
                 ],
@@ -792,7 +809,7 @@ test(
         const n = result.nodes[0]!;
         assert.deepEqual(
             n.memberIds,
-            ['hw_sarah_chen', 'ai_claude_opus'],
+            [MEMBER_SARAH, MEMBER_CLAUDE],
         );
     },
 );
@@ -848,7 +865,7 @@ test(
                 nodes: [
                     {
                         ...baseNode,
-                        memberIds: ['ai-1'],
+                        memberIds: [AI_1],
                     },
                 ],
                 edges: [],
@@ -857,7 +874,7 @@ test(
         );
         assert.throws(
             () => assertFlowGraphWriteLaw(
-                graph, new Set(['ai-1']),
+                graph, new Set([AI_1]),
             ),
             /not AI agents/,
         );
@@ -873,7 +890,7 @@ test(
                 nodes: [
                     {
                         ...baseNode,
-                        memberIds: ['person-1'],
+                        memberIds: [PERSON_1],
                         agentIds: ['UuvoBhQJUSEsiJwscXPkUg'],
                     },
                 ],
@@ -1010,7 +1027,7 @@ test(
 
 const validSelectAttribute = {
     organization_id: 'AjdvjuECVZEgZoFajaIEkg',
-    record_id: 'r-1',
+    record_id: R_1,
     name: 'Priority',
     attribute_type: 'select',
     sort_order: 0,
@@ -1180,7 +1197,7 @@ test(
             lock_timeout: 28800,
             state: 'active',
             state_at: '2026-07-12T00:00:00.000000Z',
-            state_event_id: 'evt-1',
+            state_event_id: EVT_1,
             graph: { nodes: [], edges: [] },
             graphDelta: {
                 nodes: [], edges: [],
@@ -1210,7 +1227,7 @@ test(
                 state: 'active',
                 state_at:
                     '2026-07-12T00:00:00.000000Z',
-                state_event_id: 'evt-1',
+                state_event_id: EVT_1,
                 graph: '{"nodes":[],"edges":[]}',
                 graphDelta: {
                     nodes: [], edges: [],
@@ -1230,7 +1247,7 @@ test(
     + ' flow_graph object',
     () => {
         const entity = validateWorkOrderEntity({
-            organization_id: 'org-1',
+            organization_id: ORGANIZATION_1,
             display_id: 'a7c3e1f9',
             flow_graph: {
                 name: 'Onboarding',
@@ -1258,7 +1275,7 @@ test(
     () => {
         assert.throws(
             () => validateWorkOrderEntity({
-                organization_id: 'org-1',
+                organization_id: ORGANIZATION_1,
                 display_id: 'a7c3e1f9',
                 flow_graph:
                     '{"name":"x","lockTimeout":1,'

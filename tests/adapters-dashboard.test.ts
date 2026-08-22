@@ -110,8 +110,8 @@ async function seedFlow(
 ): Promise<void> {
     await postFlowCreation(ctx, {
         flowId: id,
-        linkId: id + '-link',
-        projectId: 'p-' + id,
+        linkId: generateIdentifier(),
+        projectId: generateIdentifier(),
         name: 'Flow ' + id,
     });
 }
@@ -187,8 +187,8 @@ test(
         await seedIdea(ctx, 'fndCYAsXazdzMUlEGMNIZw', 'active');
         await seedIdea(ctx, 'fxysGbBPBsnCwJNJsyZnkA', 'in_review');
         await seedProject(ctx, 'pnXmXrxOWayANgDLdCjuBw', 'approved');
-        await seedFlow(ctx, 'ZOousbbnzpqlxJExVAruYQ');
-        await seedFlow(ctx, 'f2');
+        await seedFlow(ctx, generateIdentifier());
+        await seedFlow(ctx, generateIdentifier());
         const stats = await getDashboardStats(ctx);
         assert.deepEqual(
             stats.map(s => s.value),

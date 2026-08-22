@@ -6,6 +6,8 @@ import {
     validateFlowRecordEntity,
     validateRecordWriteBody,
 } from '../api/validators.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // validateRecordEntity
 
@@ -334,6 +336,7 @@ test(
     'validateRecordWriteBody accepts a valid'
     + ' create body',
     () => {
+        const eventId = generateIdentifier();
         const out = validateRecordWriteBody({
             kind: 'create',
             id: 'rbfHGatkwQzGZJVXKJEeyw',
@@ -356,7 +359,7 @@ test(
                 },
             ],
             initialState: 'active',
-            initialStateEventId: 'ev-1',
+            initialStateEventId: eventId,
             initialStateAt:
                 '2025-01-01T00:00:00.000000Z',
         });
@@ -367,7 +370,7 @@ test(
                 out.initialState, 'active',
             );
             assert.equal(
-                out.initialStateEventId, 'ev-1',
+                out.initialStateEventId, eventId,
             );
             assert.equal(
                 out.initialStateAt,
@@ -395,7 +398,7 @@ test(
                     {
                         id: 'UQBiHFcwJeCDSnmkPBoYRA',
                         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
-                        record_id: 'rec-other',
+                        record_id: generateIdentifier(),
                         name: 'X',
                         attribute_type: 'text',
                         sort_order: 0,
@@ -404,7 +407,7 @@ test(
                     },
                 ],
                 initialState: 'active',
-                initialStateEventId: 'ev-1',
+                initialStateEventId: generateIdentifier(),
                 initialStateAt:
                     '2025-01-01T00:00:00.000000Z',
             }),
@@ -428,7 +431,7 @@ test(
                 },
                 attributes: [],
                 initialState: 'in-progress',
-                initialStateEventId: 'ev-1',
+                initialStateEventId: generateIdentifier(),
                 initialStateAt:
                     '2025-01-01T00:00:00.000000Z',
             }),
@@ -557,7 +560,7 @@ test(
     () => {
         const entity =
             validateRecordAttributeEntity({
-                organization_id: 'org-1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'Severity',
                 attribute_type: 'select',
@@ -578,7 +581,7 @@ test(
     () => {
         assert.throws(
             () => validateRecordAttributeEntity({
-                organization_id: 'org-1',
+                organization_id: 'AjdvjuECVZEgZoFajaIEkg',
                 record_id: 'rbfHGatkwQzGZJVXKJEeyw',
                 name: 'Severity',
                 attribute_type: 'select',

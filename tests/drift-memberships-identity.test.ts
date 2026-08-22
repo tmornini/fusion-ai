@@ -19,6 +19,13 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const EV_MS_DRIFT_IDENTITY_SARAH_GRANT = generateIdentifier();
+const MS_DRIFT_IDENTITY_SARAH = generateIdentifier();
+const EV_MS_DRIFT_IDENTITY_SARAH_ACCEPT = generateIdentifier();
+const NO_SUCH_IDENTITY = generateIdentifier();
 
 // Phase Final Task 2: memberships dual-write stripped. This
 // file no longer compares derive vs row-plane oracles — the
@@ -244,13 +251,13 @@ test('leg 6: LIVE accept — grant + accept an invitation through'
             + '/invitations/', adminToken, {
             email: 'sarah.chen@company.com',
             invitationId: 'iHfMDzumeGtJONHzPjOjWQ',
-            grantEventId: 'ev-ms-drift-identity-sarah-grant',
+            grantEventId: EV_MS_DRIFT_IDENTITY_SARAH_GRANT,
             grantAt: '2026-06-01T00:00:00.000000Z',
         },
     ));
     assert.equal(grant.status, 200);
 
-    const membershipId = 'ms-drift-identity-sarah';
+    const membershipId = MS_DRIFT_IDENTITY_SARAH;
     const accept = await handleRequest(db, req(
         'PUT',
         '/identities/' + sarahId
@@ -259,7 +266,7 @@ test('leg 6: LIVE accept — grant + accept an invitation through'
         {
             state: 'accepted',
             membershipId,
-            eventId: 'ev-ms-drift-identity-sarah-accept',
+            eventId: EV_MS_DRIFT_IDENTITY_SARAH_ACCEPT,
             at: '2026-06-01T00:00:01.000000Z',
         },
     ));
@@ -323,10 +330,10 @@ test('leg 8: zero-membership identity — an UNKNOWN identity id'
 async () => {
     const db = await seededDb();
     await assert.doesNotReject(
-        () => deriveMembershipsForIdentity(db, 'no-such-identity'),
+        () => deriveMembershipsForIdentity(db, NO_SUCH_IDENTITY),
     );
     assert.deepEqual(
-        await deriveMembershipsForIdentity(db, 'no-such-identity'),
+        await deriveMembershipsForIdentity(db, NO_SUCH_IDENTITY),
         [],
     );
     assert.deepEqual(

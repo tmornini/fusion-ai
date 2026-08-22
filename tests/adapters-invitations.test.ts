@@ -45,6 +45,8 @@ import { deriveOrganizations } from
 import { deriveDocumentsAt } from
     '../api/derive-documents.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 const AT = '2026-01-01T00:00:00.000000Z';
 
@@ -75,7 +77,9 @@ async function seedMembershipPair(
 // Tony ('XXZruirZyAOoRpNxaDnpSA') is admin
 // and member of both. Sarah is a Stark-only member. Dave is an
 // identity with no membership anywhere (a fresh invitee).
-async function seedRows(db: DbAdapter): Promise<void> {
+async function seedRows(
+    db: DbAdapter,
+): Promise<{ daveId: string }> {
     await db.postSchemaCreation();
     // Message pairs, not raw rows: getInvitations' own
     // organization_name join (Phase 12 Task 5,
@@ -90,7 +94,7 @@ async function seedRows(db: DbAdapter): Promise<void> {
     await seedOrganizationDocument(db, 'BBjWJsjYIDkTRKIIPrzWRw', 'Wayne');
     for (const organization of ['AjdvjuECVZEgZoFajaIEkg'
         , 'BBjWJsjYIDkTRKIIPrzWRw']) {
-        await seedMembershipPair(db, 'm-current-' + organization, {
+        await seedMembershipPair(db, generateIdentifier(), {
             organization_id: organization
                 , identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
@@ -100,18 +104,23 @@ async function seedRows(db: DbAdapter): Promise<void> {
     await seedPerson(db, 'XXZruirZyAOoRpNxaDnpSA', 'Tony'
         , 'demo@example.com');
     await seedPerson(db, 'toccYYkLEABmlbpHJalgtQ', 'Sarah', 'sarah@x.com');
-    await seedMembershipPair(db, 'm-sarah-1', {
+    await seedMembershipPair(db, generateIdentifier(), {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg'
             , identity_id: 'toccYYkLEABmlbpHJalgtQ',
         type: 'member', at: AT,
     });
-    await seedPerson(db, 'dave', 'Dave', 'dave@x.com');
+    const daveId = generateIdentifier();
+    await seedPerson(db, daveId, 'Dave', 'dave@x.com');
+    return { daveId };
 }
 
-async function seed(): Promise<MemoryDbAdapter> {
+async function seed(): Promise<{
+    db: MemoryDbAdapter;
+    daveId: string;
+}> {
     const db = memoryDbAdapter();
-    await seedRows(db);
-    return db;
+    const { daveId } = await seedRows(db);
+    return { db, daveId };
 }
 
 // The same world, over a BackedDbAdapter constructed directly
@@ -119,15 +128,15 @@ async function seed(): Promise<MemoryDbAdapter> {
 // MemoryDbAdapter's preset always wires a no-op there.
 async function seedWithNotify(
     notify: (event: NotificationEvent) => void,
-): Promise<BackedDbAdapter> {
+): Promise<{ db: BackedDbAdapter; daveId: string }> {
     const db = new BackedDbAdapter(
         new MemoryStorageBackend(),
         async () => {},
         async () => {},
         notify,
     );
-    await seedRows(db);
-    return db;
+    const { daveId } = await seedRows(db);
+    return { db, daveId };
 }
 
 // identities stays a raw put — no GET /identities (or
@@ -187,11 +196,11 @@ async function deriveMembershipsAll(db: DbAdapter) {
 }
 
 async function ctxFor(sub: string, organization: string) {
-    const db = await seed();
+    const { db, daveId } = await seed();
     const ctx = createRequestContext(
         db, await organizationToken(sub, organization),
     );
-    return { db, ctx };
+    return { db, ctx, daveId };
 }
 
 // A context bound to an existing db (for two actors in one test).
@@ -362,11 +371,15 @@ async () => {
     // on BOTH planes).
     const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
-    await seedMembershipPair(db, 'm-current-3', {
-        organization_id: '3', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+    const missingOrganization = generateIdentifier();
+    await seedMembershipPair(db, generateIdentifier(), {
+        organization_id: missingOrganization,
+        identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin', at: AT,
     });
-    const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA', '3');
+    const tony = await ctxOn(
+        db, 'XXZruirZyAOoRpNxaDnpSA', missingOrganization,
+    );
     await postInvitationGrant(tony, 'sarah@x.com');
     const toccYYkLEABmlbpHJalgtQ = await ctxOn(db, 'toccYYkLEABmlbpHJalgtQ'
         , 'AjdvjuECVZEgZoFajaIEkg');
@@ -399,21 +412,21 @@ async () => {
 });
 
 test('accept by a non-invitee is rejected', async () => {
-    const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
+    const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'sarah@x.com');
     const inv = (await deriveInvitations(db))[0]!;
     // Dave tries to accept Sarah's invitation.
-    const dave = await ctxOn(db, 'dave', 'AjdvjuECVZEgZoFajaIEkg');
+    const dave = await ctxOn(db, daveId, 'AjdvjuECVZEgZoFajaIEkg');
     await assert.rejects(
         postInvitationAcceptance(dave, inv.id));
 });
 
 test('decline records declined and writes no membership',
 async () => {
-    const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
+    const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
@@ -421,13 +434,13 @@ async () => {
     const inv = (await deriveInvitations(db))[0]!;
     // Decline is identity-gated, not org-gated: Dave acts on his
     // own invitation regardless of any active org.
-    const dave = await ctxOn(db, 'dave', 'AjdvjuECVZEgZoFajaIEkg');
+    const dave = await ctxOn(db, daveId, 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationDecline(dave, inv.id);
     const views = await getInvitations(dave);
     assert.equal(
         views.find(v => v.id === inv.id)?.state, 'declined');
     const memberships = (await deriveMembershipsAll(db))
-        .filter(m => m.identity_id === 'dave');
+        .filter(m => m.identity_id === daveId);
     assert.equal(memberships.length, 0);
 });
 
@@ -642,13 +655,13 @@ async () => {
 });
 
 test('decline: event author is server-derived', async () => {
-    const { db } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
+    const { db, daveId } = await ctxFor('XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'dave@x.com');
     const inv = (await deriveInvitations(db))[0]!;
-    const dave = await ctxOn(db, 'dave', 'AjdvjuECVZEgZoFajaIEkg');
+    const dave = await ctxOn(db, daveId, 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationDecline(dave, inv.id);
     const life = await invitationLifecycleStatesFor(
         db, inv.id,
@@ -661,7 +674,7 @@ test('decline: event author is server-derived', async () => {
     ).at(-1)!;
     assert.ok(ev.id !== '');
     assert.ok(ev.at !== '');
-    assert.equal(ev.member_id, 'dave');
+    assert.equal(ev.member_id, daveId);
 });
 
 test('revoke: event author is server-derived', async () => {
@@ -692,7 +705,7 @@ test('revoke: event author is server-derived', async () => {
 test('a repeated grant (existing pending) posts no notification',
 async () => {
     const posted: NotificationEvent[] = [];
-    const db = await seedWithNotify(e => posted.push(e));
+    const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'sarah@x.com');
@@ -703,7 +716,7 @@ async () => {
 
 test('a repeated accept posts no notification', async () => {
     const posted: NotificationEvent[] = [];
-    const db = await seedWithNotify(e => posted.push(e));
+    const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'sarah@x.com');
@@ -720,12 +733,14 @@ test('a repeated accept posts no notification', async () => {
 
 test('a repeated decline posts no notification', async () => {
     const posted: NotificationEvent[] = [];
-    const db = await seedWithNotify(e => posted.push(e));
+    const { db, daveId } = await seedWithNotify(
+        e => posted.push(e),
+    );
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'dave@x.com');
     const inv = (await deriveInvitations(db))[0]!;
-    const dave = await ctxOn(db, 'dave', 'AjdvjuECVZEgZoFajaIEkg');
+    const dave = await ctxOn(db, daveId, 'AjdvjuECVZEgZoFajaIEkg');
     await postInvitationDecline(dave, inv.id);
     assert.equal(posted.length, 2);   // grant, decline
     await assert.rejects(
@@ -736,7 +751,7 @@ test('a repeated decline posts no notification', async () => {
 
 test('a repeated revoke posts no notification', async () => {
     const posted: NotificationEvent[] = [];
-    const db = await seedWithNotify(e => posted.push(e));
+    const { db } = await seedWithNotify(e => posted.push(e));
     const tony = await ctxOn(db, 'XXZruirZyAOoRpNxaDnpSA'
         , 'BBjWJsjYIDkTRKIIPrzWRw');
     await postInvitationGrant(tony, 'sarah@x.com');

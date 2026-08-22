@@ -19,6 +19,8 @@ import {
 import {
     generateIdentifier,
 } from '../shared/identifier.ts';
+
+const OTHER = generateIdentifier();
 import { workOrderClaimHistoryFor } from
     '../api/derive-states.ts';
 import { STARK_ORGANIZATION } from
@@ -172,11 +174,11 @@ test(
     + ' (member-tier, today\'s open-release posture)',
     async () => {
         const db = await seededDb();
-        await seedOrganizationMember(db, 'other');
+        await seedOrganizationMember(db, OTHER);
         await PUT(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/' + WO_ID
                 + '/claim',
-            freshClaimBody(), await devToken('other'),
+            freshClaimBody(), await devToken(OTHER),
         );
         const res = await handleRequest(db, req(
             'DELETE',

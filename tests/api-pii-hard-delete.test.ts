@@ -17,6 +17,8 @@ import {
     seedAdminSchema,
     organizationRow,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Phase 10 Task 3: the /pii message-plane HARD-DELETE ZONE — the
 // sanctioned non-append-only exception (gate 4's chainless
@@ -254,7 +256,7 @@ test('grant -> accept -> human-member create -> edit -> erase'
 + ' leaves ZERO stored-server-plane trace of the erased PII'
 + ' (gate 5, the erasure-completeness theorem)', async () => {
     const db = await freshDb();
-    const id = 'erasee-1';
+    const id = generateIdentifier();
     const create = await handleRequest(db, req(
         'PUT', '/identities/' + id, DEV_TOKEN,
         { kind: 'person', ...humanDetail() },
@@ -272,8 +274,9 @@ test('grant -> accept -> human-member create -> edit -> erase'
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/invitations/',
         await organizationToken(),
         {
-            email: ERASED_EMAIL, invitationId: 'inv-erasee-1',
-            grantEventId: 'ev-grant-erasee-1', grantAt: AT,
+            email: ERASED_EMAIL,
+            invitationId: generateIdentifier(),
+            grantEventId: generateIdentifier(), grantAt: AT,
         },
     ));
     assert.equal(grantRes.status, 200);
@@ -285,8 +288,8 @@ test('grant -> accept -> human-member create -> edit -> erase'
         await organizationToken(id, 'AjdvjuECVZEgZoFajaIEkg'),
         {
             state: 'accepted',
-            membershipId: 'ms-erasee-1',
-            eventId: 'ev-accept-erasee-1', at: AT,
+            membershipId: generateIdentifier(),
+            eventId: generateIdentifier(), at: AT,
         },
     ));
     assert.equal(acceptRes.status, 204);

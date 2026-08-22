@@ -76,11 +76,12 @@ async function putObjective(
 }
 
 test(
-    'GET organizations/AjdvjuECVZEgZoFajaIEkg/objectives/versions is 404',
+    'GET organizations/.../objectives/versions is 400;'
+    + ' trailing slash is 404',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        const id = 'obj-coll-hist-1';
+        const id = generateIdentifier();
         await putObjective(
             db, id, DEV_TOKEN, 'active',
             '2026-04-01T00:00:00.000000Z', 'ev1',
@@ -90,17 +91,26 @@ test(
             db,
             req(
                 'GET',
-                '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/versions',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg'
+                    + '/objectives/versions',
                 DEV_TOKEN,
             ),
         );
-        assert.equal(slashless.status, 404);
+        assert.equal(slashless.status, 400);
+        const slashlessBody = await slashless.json() as {
+            error: string;
+        };
+        assert.equal(
+            slashlessBody.error,
+            'id must be a 22-character identifier',
+        );
 
         const slashed = await handleRequest(
             db,
             req(
                 'GET',
-                '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/versions/',
+                '/organizations/AjdvjuECVZEgZoFajaIEkg'
+                    + '/objectives/versions/',
                 DEV_TOKEN,
             ),
         );
@@ -114,7 +124,7 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
-        const id = 'obj-coll-hist-1';
+        const id = generateIdentifier();
 
         await putObjective(
             db, id, DEV_TOKEN, 'active',

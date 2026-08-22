@@ -31,6 +31,14 @@ import {
     formWritePair,
 } from '../api/message-pair.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const FIELD_VALUE_ID = generateIdentifier();
+const CLAIM_EVENT_ID = generateIdentifier();
+const EXPIRE_EVENT_ID = generateIdentifier();
+const RELEASE_EVENT_ID = generateIdentifier();
+const TRANSITION_EVENT_ID = generateIdentifier();
 
 // POST organizations/:id/work-orders/:id/transition writes the transition
 // state
@@ -164,13 +172,13 @@ test(
             DEV_TOKEN,
         );
         await appendLegacyTransition(db, {
-            transitionEventId: 'te1',
+            transitionEventId: TRANSITION_EVENT_ID,
             targetState: 'n-next',
             fieldValues: [
                 {
-                    id: 'fv-1',
+                    id: FIELD_VALUE_ID,
                     fields: {
-                        state_event_id: 'te1',
+                        state_event_id: TRANSITION_EVENT_ID,
                         attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                         value: 'high',
                     },
@@ -189,11 +197,11 @@ test(
             db, STARK_ORGANIZATION, 'yNSSnbrpacodQTzUEcdEVA',
         );
         const transition = history.find(
-            (row) => row.id === 'te1',
+            (row) => row.id === TRANSITION_EVENT_ID,
         );
         assert.ok(transition !== undefined);
         assert.deepEqual(transition!.field_values, [{
-            id: 'fv-1',
+            id: FIELD_VALUE_ID,
             attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
             value: 'high',
         }]);
@@ -212,9 +220,9 @@ test(
         await PUT(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
                 + 'yNSSnbrpacodQTzUEcdEVA/claim', {
-                claimEventId: 'cl-1',
+                claimEventId: CLAIM_EVENT_ID,
                 claimAt,
-                expireEventId: 'cl-1-exp',
+                expireEventId: EXPIRE_EVENT_ID,
                 expireAt: claimAt,
             },
             DEV_TOKEN,
@@ -229,7 +237,7 @@ test(
                 transitionEventId: 'te1',
                 targetState: 'n-next',
                 release: {
-                    id: 'rel-1',
+                    id: RELEASE_EVENT_ID,
                     state: 'claim_released',
                     at: releaseAt,
                 },
@@ -287,7 +295,7 @@ test(
                 targetState: 'n-next',
                 fieldValues: [
                     {
-                        id: 'fv-1',
+                        id: FIELD_VALUE_ID,
                         fields: {
                             state_event_id: 'te1',
                             attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
@@ -295,7 +303,7 @@ test(
                         },
                     },
                     {
-                        id: 'fv-2',
+                        id: generateIdentifier(),
                         fields: {
                             state_event_id: 'te1',
                             value: 'low',
@@ -384,7 +392,7 @@ test(
                 targetState: 'n-next',
                 fieldValues: [
                     {
-                        id: 'fv-1',
+                        id: FIELD_VALUE_ID,
                         fields: {
                             state_event_id: 'other-event',
                             attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
@@ -418,7 +426,7 @@ test(
                 targetState: 'n-next',
                 fieldValues: [
                     {
-                        id: 'fv-1',
+                        id: FIELD_VALUE_ID,
                         fields: {
                             attribute_id: 'VPckAwjJsTGCEkKaOOGRGw',
                             value: 'high',
@@ -473,9 +481,9 @@ test(
         await PUT(
             db, 'organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
                 + 'yNSSnbrpacodQTzUEcdEVA/claim', {
-                claimEventId: 'cl-1',
+                claimEventId: CLAIM_EVENT_ID,
                 claimAt,
-                expireEventId: 'cl-1-exp',
+                expireEventId: EXPIRE_EVENT_ID,
                 expireAt: claimAt,
             },
             DEV_TOKEN,
@@ -490,7 +498,7 @@ test(
                 transitionEventId: 'te1',
                 targetState: 'n-next',
                 release: {
-                    id: 'rel-1',
+                    id: RELEASE_EVENT_ID,
                     state: 'claim_released',
                     at: releaseAt,
                 },

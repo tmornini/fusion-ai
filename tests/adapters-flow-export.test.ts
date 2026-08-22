@@ -70,56 +70,64 @@ async function setup(): Promise<{
 }
 
 function buildBackupWithMembersAndAttrs(
-): Backup {
+): { backup: Backup; attributeId: string } {
+    const n1 = generateIdentifier();
+    const n2 = generateIdentifier();
+    const attributeId = generateIdentifier();
     return {
-        exportedAt: '2026-01-01T00:00:00.000000Z',
-        projectId: 'project-1',
-        flow: {
-            id: 'backup-flow-1',
-            name: 'Backup Flow',
-            isLocked: false,
-            isAutoLayout: false,
-            isAutoFit: false,
-            lockTimeout: DEFAULT_LOCK_TIMEOUT,
-            graph: {
-                nodes: [
-                    {
-                        id: 'orig-n1',
-                        name: 'Start',
-                        positionX: 0,
-                        positionY: 0,
-                        isCreate: true,
-                        isArchive: false,
-                        memberIds: ['mFNSxZqywTSMXhgUTdTqtA'],
-                        attributes: [
-                            {
-                                attributeId: 'attr-x',
-                                mode: 'readonly',
-                                isRequired: true,
-                            },
-                        ],
-                        taskInstructions: '',
-                    },
-                    {
-                        id: 'orig-n2',
-                        name: 'Done',
-                        positionX: 200,
-                        positionY: 0,
-                        isCreate: false,
-                        isArchive: true,
-                        memberIds: [],
-                        attributes: [],
-                        taskInstructions: '',
-                    },
-                ],
-                edges: [
-                    {
-                        id: 'orig-e1',
-                        name: 'Approve',
-                        fromNodeId: 'orig-n1',
-                        toNodeId: 'orig-n2',
-                    },
-                ],
+        attributeId,
+        backup: {
+            exportedAt: '2026-01-01T00:00:00.000000Z',
+            projectId: generateIdentifier(),
+            flow: {
+                id: generateIdentifier(),
+                name: 'Backup Flow',
+                isLocked: false,
+                isAutoLayout: false,
+                isAutoFit: false,
+                lockTimeout: DEFAULT_LOCK_TIMEOUT,
+                graph: {
+                    nodes: [
+                        {
+                            id: n1,
+                            name: 'Start',
+                            positionX: 0,
+                            positionY: 0,
+                            isCreate: true,
+                            isArchive: false,
+                            memberIds: [
+                                'mFNSxZqywTSMXhgUTdTqtA',
+                            ],
+                            attributes: [
+                                {
+                                    attributeId,
+                                    mode: 'readonly',
+                                    isRequired: true,
+                                },
+                            ],
+                            taskInstructions: '',
+                        },
+                        {
+                            id: n2,
+                            name: 'Done',
+                            positionX: 200,
+                            positionY: 0,
+                            isCreate: false,
+                            isArchive: true,
+                            memberIds: [],
+                            attributes: [],
+                            taskInstructions: '',
+                        },
+                    ],
+                    edges: [
+                        {
+                            id: generateIdentifier(),
+                            name: 'Approve',
+                            fromNodeId: n1,
+                            toNodeId: n2,
+                        },
+                    ],
+                },
             },
         },
     };
@@ -144,14 +152,16 @@ test(
     + ' node members AND attributes',
     async () => {
         const { ctx } = await setup();
-        const newFlowId = 'imported-flow-1';
-        const backup = buildBackupWithMembersAndAttrs();
+        const newFlowId = generateIdentifier();
+        const projectId = generateIdentifier();
+        const { backup, attributeId } =
+            buildBackupWithMembersAndAttrs();
 
         await postFlowFromBackup(
             ctx,
             newFlowId,
             backup,
-            'project-1',
+            projectId,
         );
 
         const graph = await readPairGraph(
@@ -187,7 +197,7 @@ test(
         );
         const attr = startNode.attributes[0]!;
         assert.equal(
-            attr.attributeId, 'attr-x',
+            attr.attributeId, attributeId,
         );
         assert.equal(
             attr.mode, 'readonly',
@@ -207,7 +217,7 @@ test(
     + ' a pair-plane graph from simple .mmd',
     async () => {
         const { ctx } = await setup();
-        const flowId = 'mermaid-import-1';
+        const flowId = generateIdentifier();
         const mmd = [
             'stateDiagram-v2',
             '[*] --> Draft',
@@ -215,7 +225,7 @@ test(
         ].join('\n');
 
         const result = await postFlowFromMermaid(
-            ctx, flowId, mmd, 'project-1',
+            ctx, flowId, mmd, generateIdentifier(),
         );
         assert.equal(result.flowId, flowId);
 
@@ -259,7 +269,7 @@ test(
         await postFlowCreation(ctx, {
             flowId,
             linkId: generateIdentifier(),
-            projectId: 'project-1',
+            projectId: generateIdentifier(),
             name: 'Injective',
         });
         await putFlow(ctx, flowId, {

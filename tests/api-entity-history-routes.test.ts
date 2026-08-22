@@ -18,6 +18,8 @@ import { sharedMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // GET <family>/:id/versions/ — Phase A3 of states-URI
 // elimination. Per trio family (ideas, projects, records,
@@ -110,7 +112,7 @@ async function seedIdeaLifecycle(
                 'Hist Idea',
                 'active',
                 '2026-03-01T00:00:00.000000Z',
-                id + '-ev1',
+                generateIdentifier(),
             ),
         ),
     );
@@ -125,7 +127,7 @@ async function seedIdeaLifecycle(
                 'Hist Idea',
                 'in_review',
                 '2026-03-02T00:00:00.000000Z',
-                id + '-ev2',
+                generateIdentifier(),
             ),
         ),
     );
@@ -143,7 +145,7 @@ test(
     + '/versions/:etag serves that revision',
     async () => {
         const db = await freshDb();
-        const id = 'idea-versions-1';
+        const id = generateIdentifier();
         const genesis = await handleRequest(
             db,
             req(
@@ -154,7 +156,7 @@ test(
                     'Hist Idea',
                     'active',
                     '2026-03-01T00:00:00.000000Z',
-                    id + '-ev1',
+                    generateIdentifier(),
                 ),
             ),
         );
@@ -170,7 +172,7 @@ test(
                     'Hist Idea Revised',
                     'in_review',
                     '2026-03-02T00:00:00.000000Z',
-                    id + '-ev2',
+                    generateIdentifier(),
                 ),
             ),
         );
@@ -250,7 +252,7 @@ test(
     'GET organizations/:id/ideas/:id/versions/: 200 DESC current-first',
     async () => {
         const db = await freshDb();
-        const id = 'idea-hist-1';
+        const id = generateIdentifier();
         await seedIdeaLifecycle(db, id, DEV_TOKEN);
         const res = await handleRequest(
             db,
@@ -316,7 +318,7 @@ test(
     'GET organizations/:id/ideas/:id/versions/ absent → 404',
     async () => {
         const db = await freshDb();
-        const missing = 'no-such-idea';
+        const missing = generateIdentifier();
         const res = await handleRequest(
             db,
             req(
@@ -339,7 +341,7 @@ test(
     'GET organizations/:id/ideas/:id/versions/ is 200',
     async () => {
         const db = await freshDb();
-        const id = 'idea-hist-facade';
+        const id = generateIdentifier();
         await seedIdeaLifecycle(db, id, DEV_TOKEN);
         const res = await handleRequest(
             db,
@@ -397,7 +399,7 @@ async function seedProjectLifecycle(
                 'Hist Project',
                 'submitted',
                 '2026-03-01T00:00:00.000000Z',
-                id + '-ev1',
+                generateIdentifier(),
             ),
         ),
     );
@@ -412,7 +414,7 @@ async function seedProjectLifecycle(
                 'Hist Project',
                 'under_review',
                 '2026-03-02T00:00:00.000000Z',
-                id + '-ev2',
+                generateIdentifier(),
             ),
         ),
     );
@@ -423,7 +425,7 @@ test(
     'GET organizations/:id/projects/:id/versions: 200 DESC current-first',
     async () => {
         const db = await freshDb();
-        const id = 'project-hist-1';
+        const id = generateIdentifier();
         await seedProjectLifecycle(db, id, DEV_TOKEN);
         const res = await handleRequest(
             db,
@@ -489,7 +491,7 @@ test(
     'GET organizations/:id/projects/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
-        const missing = 'no-such-project';
+        const missing = generateIdentifier();
         const res = await handleRequest(
             db,
             req(
@@ -539,7 +541,7 @@ async function seedRecordLifecycle(
                 'Hist Record',
                 'active',
                 '2026-03-01T00:00:00.000000Z',
-                id + '-ev1',
+                generateIdentifier(),
             ),
         ),
     );
@@ -554,7 +556,7 @@ async function seedRecordLifecycle(
                 'Hist Record',
                 'archived',
                 '2026-03-02T00:00:00.000000Z',
-                id + '-ev2',
+                generateIdentifier(),
             ),
         ),
     );
@@ -565,7 +567,7 @@ test(
     'GET nested record-types/:id/versions: 200 DESC current-first',
     async () => {
         const db = await freshDb();
-        const id = 'record-hist-1';
+        const id = generateIdentifier();
         await seedRecordLifecycle(db, id, DEV_TOKEN);
         const res = await handleRequest(
             db,
@@ -630,7 +632,7 @@ test(
     'GET nested record-types/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
-        const missing = 'no-such-record';
+        const missing = generateIdentifier();
         const res = await handleRequest(
             db,
             req(
@@ -682,7 +684,9 @@ async function seedFlowLifecycle(
     db: MemoryDbAdapter,
     id: string,
     token: string,
-): Promise<void> {
+): Promise<{ ev1: string; ev2: string }> {
+    const ev1 = generateIdentifier();
+    const ev2 = generateIdentifier();
     const g = await handleRequest(
         db,
         req(
@@ -693,7 +697,7 @@ async function seedFlowLifecycle(
                 'Hist Flow',
                 'active',
                 '2026-03-01T00:00:00.000000Z',
-                id + '-ev1',
+                ev1,
             ),
         ),
     );
@@ -710,7 +714,7 @@ async function seedFlowLifecycle(
                 'Hist Flow',
                 'updated',
                 '2026-03-02T00:00:00.000000Z',
-                id + '-ev2',
+                ev2,
             ),
             { 'if-match': (
                 await handleRequest(
@@ -722,14 +726,17 @@ async function seedFlowLifecycle(
         ),
     );
     assert.equal(t.status, 201);
+    return { ev1, ev2 };
 }
 
 test(
     'GET organizations/:id/flows/:id/versions: 200 DESC current-first',
     async () => {
         const db = await freshDb();
-        const id = 'flow-hist-1';
-        await seedFlowLifecycle(db, id, DEV_TOKEN);
+        const id = generateIdentifier();
+        const { ev1, ev2 } = await seedFlowLifecycle(
+            db, id, DEV_TOKEN,
+        );
         const res = await handleRequest(
             db,
             req(
@@ -742,9 +749,9 @@ test(
         assert.equal(res.status, 200);
         const rows = await res.json() as HistoryEvent[];
         assert.equal(rows.length, 2);
-        assert.equal(rows[0]!.id, id + '-ev2');
+        assert.equal(rows[0]!.id, ev2);
         assert.equal(rows[0]!.state, 'updated');
-        assert.equal(rows[1]!.id, id + '-ev1');
+        assert.equal(rows[1]!.id, ev1);
         assert.equal(rows[1]!.state, 'active');
         assertDesc(rows);
     },
@@ -791,7 +798,7 @@ test(
     'GET organizations/:id/flows/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
-        const missing = 'no-such-flow';
+        const missing = generateIdentifier();
         const res = await handleRequest(
             db,
             req(
@@ -837,7 +844,7 @@ async function seedObjectiveLifecycle(
             objectiveBody(
                 'active',
                 '2026-03-01T00:00:00.000000Z',
-                id + '-ev1',
+                generateIdentifier(),
             ),
         ),
     );
@@ -851,7 +858,7 @@ async function seedObjectiveLifecycle(
             objectiveBody(
                 'archived',
                 '2026-03-02T00:00:00.000000Z',
-                id + '-ev2',
+                generateIdentifier(),
             ),
         ),
     );
@@ -862,7 +869,7 @@ test(
     'GET organizations/:id/objectives/:id/versions: 200 DESC current-first',
     async () => {
         const db = await freshDb();
-        const id = 'objective-hist-1';
+        const id = generateIdentifier();
         await seedObjectiveLifecycle(db, id, DEV_TOKEN);
         const res = await handleRequest(
             db,
@@ -928,7 +935,7 @@ test(
     'GET organizations/:id/objectives/:id/versions absent → 404',
     async () => {
         const db = await freshDb();
-        const missing = 'no-such-objective';
+        const missing = generateIdentifier();
         const res = await handleRequest(
             db,
             req(

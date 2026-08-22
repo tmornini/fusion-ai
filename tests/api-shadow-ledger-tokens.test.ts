@@ -40,6 +40,13 @@ import { deriveTokenRevocation } from
 import {
     seedClientRegistration,
 } from './identity-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const CHAIN_ID = generateIdentifier();
+const CLIENT_ID = generateIdentifier();
+const AUTH_CODE = generateIdentifier();
+const UNKNOWN_JTI = generateIdentifier();
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -83,7 +90,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'udpCrXJSdUfkFbImFbBsWw', DEV_TOKEN, {
             jti: ROOT_JTI, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-            action: 'issued', chain_id: 'chain-1', at: AT,
+            action: 'issued', chain_id: CHAIN_ID, at: AT,
         },
     ));
     return db;
@@ -92,7 +99,7 @@ async function seededDb(): Promise<MemoryDbAdapter> {
 function tokenFields(jti: string) {
     return {
         jti, identity_id: 'XXZruirZyAOoRpNxaDnpSA', action: 'issued',
-        chain_id: 'chain-x', at: AT,
+        chain_id: CHAIN_ID, at: AT,
     };
 }
 
@@ -108,7 +115,7 @@ test('PUT identity-tokens/:id appends its pair at the entity'
     const res = await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'vNIIMoezHOyoUeTsbqSzCA', DEV_TOKEN,
-        tokenFields('jti-1'),
+        tokenFields(generateIdentifier()),
     ));
     assert.equal(res.status, 201);
     const requests = await db.pairs.getAll();
@@ -129,12 +136,12 @@ test('two PUTs to DIFFERENT identity-tokens/:id ids each'
     const first = await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'vsxvgdODnVqhbIthTouQXw', DEV_TOKEN,
-        tokenFields('jti-2a'),
+        tokenFields(generateIdentifier()),
     ));
     const second = await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'vwxtxVdVgndfJUdQHRgVTA', DEV_TOKEN,
-        tokenFields('jti-2b'),
+        tokenFields(generateIdentifier()),
     ));
     assert.equal(first.status, 201);
     assert.equal(second.status, 201);
@@ -151,15 +158,16 @@ test('a second PUT to the SAME identity-tokens/:id id forms'
     const first = await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'wFKZmVsOBJcqYFjJjxrlMw', DEV_TOKEN,
-        tokenFields('jti-3'),
+        tokenFields(generateIdentifier()),
     ));
     assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
     assert.equal(first.headers.get('Supersedes'), null);
+    const laterJti = generateIdentifier();
     const second = await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'wFKZmVsOBJcqYFjJjxrlMw', DEV_TOKEN,
-        tokenFields('jti-3-again'),
+        tokenFields(laterJti),
     ));
     assert.equal(second.status, 201);
     assert.notEqual(second.headers.get('Response-ID'), firstId);
@@ -167,7 +175,7 @@ test('a second PUT to the SAME identity-tokens/:id id forms'
     const domainRow = await deriveIdentityToken(
         db, 'XXZruirZyAOoRpNxaDnpSA', 'wFKZmVsOBJcqYFjJjxrlMw',
     );
-    assert.equal(domainRow.jti, 'jti-3-again');
+    assert.equal(domainRow.jti, laterJti);
 });
 
 // ── identities/:id/token-revocations/:rid — EVENT-APPEND ──
@@ -272,7 +280,8 @@ test('rotating an unknown jti is a 409 that appends nothing',
 async () => {
     const db = await seededDb();
     const res = await handleRequest(db, req(
-        'POST', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/ghost/rotation',
+        'POST', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+            + UNKNOWN_JTI + '/rotation',
         DEV_TOKEN, {},
     ));
     assert.equal(res.status, 409);
@@ -309,14 +318,16 @@ test('revoking an unknown jti is an idempotent 2xx no-op that'
 async () => {
     const db = await seededDb();
     const res = await handleRequest(db, req(
-        'POST', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/ghost/revocation',
+        'POST', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+            + UNKNOWN_JTI + '/revocation',
         DEV_TOKEN, {},
     ));
     assert.equal(res.status, 201);
     const requests = await db.pairs.getAll();
     const row = requests.find(
         r => r.uri_collection
-            === '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/ghost/revocation/',
+            === '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+                + UNKNOWN_JTI + '/revocation/',
     );
     assert.ok(row);
     // The domain ledger stays untouched by the no-op — only
@@ -358,7 +369,7 @@ async () => {
     await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'wIaoeaYyeYsvGvfewbCmLQ', DEV_TOKEN,
-        tokenFields('jti-9'),
+        tokenFields(generateIdentifier()),
     ));
     await handleRequest(db, req(
         'POST', tokenOpPath('rotation'),
@@ -383,7 +394,7 @@ test('request and response counts stay equal across a mix'
     await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'vQieDXOxEzKAgYYRecEQuA', DEV_TOKEN,
-        tokenFields('jti-10'),
+        tokenFields(generateIdentifier()),
     ));
     await handleRequest(db, req(
         'POST', tokenOpPath('rotation'),
@@ -498,10 +509,10 @@ test('an authorization_code grant appends its root\'s own'
 + ' event pair, distinct from the grant\'s operation pair',
 async () => {
     const db = await freshDb();
-    await seedAuthorizationCodePair(db, 'the-code', 'XXZruirZyAOoRpNxaDnpSA'
+    await seedAuthorizationCodePair(db, AUTH_CODE, 'XXZruirZyAOoRpNxaDnpSA'
         , 'web');
     const res = await postToken(db, {
-        grant_type: 'authorization_code', code: 'the-code',
+        grant_type: 'authorization_code', code: AUTH_CODE,
         client_id: 'web',
     });
     assert.equal(res.status, 201);
@@ -511,7 +522,7 @@ async () => {
     // mint — the same value the SAME address's event pair uri_id
     // carries (assertRootEventPair's own uri_id match above).
     const [root] = await deriveIdentityTokens(db);
-    assert.equal(root!.id, await sha256Hex('the-code'));
+    assert.equal(root!.id, await sha256Hex(AUTH_CODE));
     const requests = await db.pairs.getAll();
     const opPair = requests.find(
         r => r.uri_collection === '/authentication/token/',
@@ -544,19 +555,19 @@ test('a client_credentials grant appends its root\'s own'
     const signer = await makeAssertionSigner('ES256');
     const now = Math.floor(Date.now() / 1000);
     const assertion = await signer.sign({
-        iss: 'svc-shadow', sub: 'svc-shadow',
+        iss: CLIENT_ID, sub: CLIENT_ID,
         aud: 'fusion-angle',
         exp: now + 300, iat: now,
         jti: 'assert-shadow-tokens-1',
     });
-    await seedClientRegistration(db, 'svc-shadow', {
+    await seedClientRegistration(db, CLIENT_ID, {
         grant_types: 'client_credentials',
         redirect_uris: '', jwks: signer.jwks,
         aud: 'fusion-angle', status: 'active',
     });
     const res = await postToken(db, {
         grant_type: 'client_credentials',
-        client_id: 'svc-shadow', client_assertion: assertion,
+        client_id: CLIENT_ID, client_assertion: assertion,
     });
     assert.equal(res.status, 201);
     await assertRootEventPair(db);
@@ -677,7 +688,8 @@ test('revoking an unknown jti appends NO event pair — only its'
     const db = await seededDb();
     const before = (await db.pairs.getAll()).length;
     const res = await handleRequest(db, req(
-        'POST', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/ghost/revocation',
+        'POST', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+            + UNKNOWN_JTI + '/revocation',
         DEV_TOKEN, {},
     ));
     assert.equal(res.status, 201);
@@ -799,8 +811,8 @@ test('revokeTokenChain racing a concurrent rotateRefreshJti on'
             DEV_TOKEN, {},
         )),
         handleRequest(db, req(
-            'POST', `/identities/XXZruirZyAOoRpNxaDnpSA/tokens/
-                ${liveSuccessor}/rotation`,
+            'POST', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+                + liveSuccessor + '/rotation',
             DEV_TOKEN, {},
         )),
     ]);
@@ -870,7 +882,7 @@ test('rotateRefreshJti propagates a non-divergence transaction'
     const faulting = adapterWithFaultingTransaction(db, fault);
     await assert.rejects(
         () => rotateRefreshJti(
-            faulting.adapter, ROOT_JTI, 'newjti-fault',
+            faulting.adapter, ROOT_JTI, generateIdentifier(),
         ),
         /store exploded/,
     );

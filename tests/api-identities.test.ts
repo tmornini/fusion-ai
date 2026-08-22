@@ -10,7 +10,9 @@ import {
 } from '../api/db-memory.ts';
 import { PUT, GET, DELETE, handleRequest } from '../api/api.ts';
 import { SYSTEM_MEMBER_ID } from '../api/types.ts';
-import { NIL_IDENTIFIER } from '../shared/identifier.ts';
+import {
+    generateIdentifier, NIL_IDENTIFIER,
+} from '../shared/identifier.ts';
 import { DEV_TOKEN, devToken } from './token-fixtures.ts';
 import {
     seedAdminSchema,
@@ -75,12 +77,13 @@ async function freshDb() {
 
 test('PUT then GET an identity round-trips', async () => {
     const db = await freshDb();
+    const id = generateIdentifier();
     await PUT(
-        db, 'identities/abc', { kind: 'person' }, DEV_TOKEN);
+        db, 'identities/' + id, { kind: 'person' }, DEV_TOKEN);
     const got = await GET<{ id: string; kind: string }>(
-        db, 'identities/abc', DEV_TOKEN,
+        db, 'identities/' + id, DEV_TOKEN,
     );
-    assert.deepEqual(got, { id: 'abc', kind: 'person' });
+    assert.deepEqual(got, { id, kind: 'person' });
 });
 
 test('bootstrap seeds an identity per member, id-equal',
@@ -139,7 +142,8 @@ async function dbWithMember() {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     await seedMembershipPair(
-        db, 'm-sarah', 'AjdvjuECVZEgZoFajaIEkg', 'toccYYkLEABmlbpHJalgtQ',
+        db, generateIdentifier(), 'AjdvjuECVZEgZoFajaIEkg',
+        'toccYYkLEABmlbpHJalgtQ',
         '2026-06-08T00:00:00.000000Z',
     );
     await seedPersonIdentity(db, 'toccYYkLEABmlbpHJalgtQ', PII);

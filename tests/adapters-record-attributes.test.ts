@@ -19,6 +19,8 @@ import {
     getRecordAttributesByRecord,
 } from
 '../web-app/app/adapters/record-attributes.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Nested attributes via the flipped adapter (Task 21):
 // getRecordAttributesByRecord GETs the per-type collection;
@@ -96,19 +98,22 @@ test(
     + ' attributes for the given recordId',
     async () => {
         const { ctx } = await seededCtx();
+        const a2 = generateIdentifier();
         await seedTypeWithAttrs(ctx, 'rbfHGatkwQzGZJVXKJEeyw', [
             { id: 'UQBiHFcwJeCDSnmkPBoYRA', name: 'A1', sort_order: 1 },
-            { id: 'a-2', name: 'A2', sort_order: 2 },
+            { id: a2, name: 'A2', sort_order: 2 },
         ]);
         await seedTypeWithAttrs(ctx, 'rcaSzEaORBkezCxyhLhecA', [
-            { id: 'b-1', name: 'B1', sort_order: 1 },
+            { id: generateIdentifier(), name: 'B1', sort_order: 1 },
         ]);
         const sRqRSyldQDFbqkDYSObDqw = await
             getRecordAttributesByRecord(
                 ctx, 'rbfHGatkwQzGZJVXKJEeyw',
             );
         const ids = sRqRSyldQDFbqkDYSObDqw.map(a => a.id).sort();
-        assert.deepEqual(ids, ['UQBiHFcwJeCDSnmkPBoYRA', 'a-2']);
+        assert.deepEqual(
+            ids, ['UQBiHFcwJeCDSnmkPBoYRA', a2].sort(),
+        );
     },
 );
 
@@ -117,17 +122,20 @@ test(
     + ' sortOrder ascending',
     async () => {
         const { ctx } = await seededCtx();
+        const midId = generateIdentifier();
+        const firstId = generateIdentifier();
+        const lastId = generateIdentifier();
         await seedTypeWithAttrs(ctx, 'rbfHGatkwQzGZJVXKJEeyw', [
             {
-                id: 'a-mid', name: 'middle',
+                id: midId, name: 'middle',
                 sort_order: 5,
             },
             {
-                id: 'a-first', name: 'first',
+                id: firstId, name: 'first',
                 sort_order: 1,
             },
             {
-                id: 'a-last', name: 'last',
+                id: lastId, name: 'last',
                 sort_order: 10,
             },
         ]);
@@ -137,7 +145,7 @@ test(
             );
         assert.deepEqual(
             rows.map(r => r.id),
-            ['a-first', 'a-mid', 'a-last'],
+            [firstId, midId, lastId],
         );
     },
 );

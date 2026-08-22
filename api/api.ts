@@ -139,6 +139,7 @@ import {
 } from './request-context.ts';
 import {
     generateIdentifier,
+    isIdentifier,
 } from '../shared/identifier.ts';
 
 export {
@@ -418,6 +419,34 @@ function redactedFenceFailure(
     );
 }
 
+const NON_IDENTIFIER_PARAMS = new Set([
+    'etag', 'version', 'name',
+]);
+
+function rejectMalformedIdentifierParams(
+    route: Route,
+    pathSegments: readonly string[],
+): Response | undefined {
+    for (let i = 0; i < route.segments.length; i++) {
+        const seg = route.segments[i]!;
+        if (!seg.startsWith(':')) continue;
+        const name = seg.slice(1);
+        if (NON_IDENTIFIER_PARAMS.has(name)) continue;
+        const value = pathSegments[i]!;
+        if (!isIdentifier(value)) {
+            return Response.json(
+                {
+                    error: name
+                        + ' must be a 22-character'
+                        + ' identifier',
+                },
+                { status: HTTP_BAD_REQUEST },
+            );
+        }
+    }
+    return undefined;
+}
+
 export async function handleRequest(
     adapter: GuardedDbAdapter,
     request: Request,
@@ -474,6 +503,20 @@ export async function handleRequest(
         if (typeof authed === 'string') {
             return unauthorizedBearerResponse(authed);
         }
+        const rawRequestId =
+            request.headers.get(REQUEST_ID_HEADER);
+        if (
+            rawRequestId !== null
+            && !isIdentifier(rawRequestId)
+        ) {
+            return Response.json(
+                {
+                    error: 'Request-ID must be a 22-'
+                        + 'character identifier',
+                },
+                { status: HTTP_BAD_REQUEST },
+            );
+        }
         // Auth first; only then admit an unmatched path as
         // 404 (bytes unchanged for authenticated callers).
         if (match === null) {
@@ -484,6 +527,13 @@ export async function handleRequest(
                 },
                 { status: HTTP_NOT_FOUND },
             );
+        }
+        const rejectedIds =
+            rejectMalformedIdentifierParams(
+                match.route, pathSegments,
+            );
+        if (rejectedIds !== undefined) {
+            return rejectedIds;
         }
         const { params: fenceParams } = match;
         const fencePattern = matchedRoutePattern!;

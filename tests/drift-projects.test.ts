@@ -26,6 +26,22 @@ import {
     storedPutBodyText,
     storedCollectionText,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const PROJECT_DRIFT_Z = generateIdentifier();
+const EV_DRIFT_Z = generateIdentifier();
+const PROJECT_DRIFT_A = generateIdentifier();
+const EV_DRIFT_A = generateIdentifier();
+const PROJECT_DRIFT_M = generateIdentifier();
+const EV_DRIFT_M = generateIdentifier();
+const MEMBER_B = generateIdentifier();
+const PROJECT_DRIFT_AUTHORSHIP_CAVEAT = generateIdentifier();
+const EV_DRIFT_AUTHORSHIP_CAVEAT = generateIdentifier();
+const PROJECT_DRIFT_LIFECYCLE = generateIdentifier();
+const EV_DRIFT_LIFECYCLE_GENESIS = generateIdentifier();
+const PROJECT_DRIFT_CONVERSION = generateIdentifier();
+const EV_DRIFT_CONVERSION_IDEA = generateIdentifier();
 
 // Phase Final Task 2: projects(+project_flows+scores)
 // dual-write stripped. This file no longer compares derive
@@ -33,6 +49,9 @@ import {
 // Coverage re-homes to wire-byte handleRequest assertions
 // and non-lexical live fixtures (byIdAscending must diverge
 // from insertion order; never function-vs-function only).
+const EV_DRIFT_CONVERSION_PROJECT = generateIdentifier();
+const PROJECTID_GENESIS = generateIdentifier();
+const PROJECTID_SKEWED = generateIdentifier();
 
 const BASE = 'http://localhost';
 
@@ -233,22 +252,22 @@ async () => {
     const token = await organizationToken();
     const fixtures = [
         {
-            id: 'project-drift-z',
+            id: PROJECT_DRIFT_Z,
             title: 'Zulu',
             at: '2026-07-01T00:00:00.000000Z',
-            ev: 'ev-drift-z',
+            ev: EV_DRIFT_Z,
         },
         {
-            id: 'project-drift-a',
+            id: PROJECT_DRIFT_A,
             title: 'Alpha',
             at: '2026-07-01T00:00:01.000000Z',
-            ev: 'ev-drift-a',
+            ev: EV_DRIFT_A,
         },
         {
-            id: 'project-drift-m',
+            id: PROJECT_DRIFT_M,
             title: 'Mike',
             at: '2026-07-01T00:00:02.000000Z',
-            ev: 'ev-drift-m',
+            ev: EV_DRIFT_M,
         },
     ];
     for (const f of fixtures) {
@@ -272,13 +291,17 @@ async () => {
     assert.equal(res.status, 200);
     const list = await res.json() as { id: string }[];
     const added = list.filter((row) =>
-        row.id.startsWith('project-drift-'));
+        [
+            PROJECT_DRIFT_Z,
+            PROJECT_DRIFT_A,
+            PROJECT_DRIFT_M,
+        ].includes(row.id));
     assert.deepEqual(
         added.map((row) => row.id),
         [
-            'project-drift-z',
-            'project-drift-a',
-            'project-drift-m',
+            PROJECT_DRIFT_Z,
+            PROJECT_DRIFT_A,
+            PROJECT_DRIFT_M,
         ],
     );
     const prefix = '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/';
@@ -298,10 +321,10 @@ async () => {
 test('derived history keeps the FIRST arrival\'s authorship'
 + ' on a same-trio resend by a different member', async () => {
     const db = await seededDb();
-    await seedOrganizationMember(db, 'member-b');
+    await seedOrganizationMember(db, MEMBER_B);
     const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
-    const tokenB = await organizationToken('member-b');
-    const projectId = 'project-drift-authorship-caveat';
+    const tokenB = await organizationToken(MEMBER_B);
+    const projectId = PROJECT_DRIFT_AUTHORSHIP_CAVEAT;
 
     await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/' + projectId
@@ -309,7 +332,7 @@ test('derived history keeps the FIRST arrival\'s authorship'
             ...projectDocument(
                 'First', 'submitted',
                 '2026-04-01T00:00:00.000000Z',
-                'ev-drift-authorship-caveat',
+                EV_DRIFT_AUTHORSHIP_CAVEAT,
             ),
         },
     ));
@@ -319,7 +342,7 @@ test('derived history keeps the FIRST arrival\'s authorship'
             ...projectDocument(
                 'Second', 'submitted',
                 '2026-04-01T00:00:00.000000Z',
-                'ev-drift-authorship-caveat',
+                EV_DRIFT_AUTHORSHIP_CAVEAT,
             ),
         },
     ));
@@ -349,7 +372,7 @@ test('live-write case: create + edit + transition + delete',
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const projectId = 'project-drift-lifecycle';
+    const projectId = PROJECT_DRIFT_LIFECYCLE;
 
     await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/' + projectId
@@ -357,7 +380,7 @@ async () => {
             ...projectDocument(
                 'Lifecycle Project', 'submitted',
                 '2026-03-01T00:00:00.000000Z',
-                'ev-drift-lifecycle-genesis',
+                EV_DRIFT_LIFECYCLE_GENESIS,
             ),
         },
     ));
@@ -456,7 +479,7 @@ test('live conversion case: a converted idea\'s project'
 + ' is wire-visible like a PUT-born one', async () => {
     const db = await seededDb();
     const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
-    const projectId = 'project-drift-conversion';
+    const projectId = PROJECT_DRIFT_CONVERSION;
 
     const conv = await handleRequest(db, req(
         'POST',
@@ -484,9 +507,9 @@ test('live conversion case: a converted idea\'s project'
                 expected_outcome: 'o',
                 success_metrics: 'm',
             },
-            ideaStateEventId: 'ev-drift-conversion-idea',
+            ideaStateEventId: EV_DRIFT_CONVERSION_IDEA,
             ideaState: 'promoted',
-            projectStateEventId: 'ev-drift-conversion-project',
+            projectStateEventId: EV_DRIFT_CONVERSION_PROJECT,
             projectState: 'submitted',
             ideaStateAt: '2026-05-01T00:00:00.000000Z',
             projectStateAt: '2026-05-01T00:00:01.000000Z',
@@ -537,11 +560,11 @@ test('GET project trio is lifecycle-current under clock skew'
 + ' (genesis-wins-under-skew, case 7d)', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const projectId = 'project-drift-skew-1';
+    const projectId = generateIdentifier();
     const genesisAt = '2026-05-01T00:00:00.000000Z';
-    const genesisEv = projectId + '-genesis';
+    const genesisEv = PROJECTID_GENESIS;
     const skewedAt = '2020-01-01T00:00:00.000000Z';
-    const skewedEv = projectId + '-skewed';
+    const skewedEv = PROJECTID_SKEWED;
 
     const genesis = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/' + projectId

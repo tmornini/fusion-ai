@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -98,14 +100,14 @@ async function createFlow(
         {
             id: flowId,
             flow: flowFields('Fresh Flow'),
-            projectFlowId: flowId + '-pf',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
                 project_id: 'qfhFObbtDfxUZwEGxySBoQ',
                 flow_id: flowId,
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: flowId + '-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: emptyDelta(),
         },
@@ -199,7 +201,7 @@ test('e2e: a re-PUT of the same tag name (pinning a DIFFERENT'
     const saved = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'cGVtCERtMGxhyNGAsQBBuQ', token,
-        documentBody('Second Save', 'flow-tag-3-ev-2'),
+        documentBody('Second Save', generateIdentifier()),
         { 'if-match': (
             await handleRequest(
                 db, req('GET'
@@ -296,13 +298,16 @@ test('e2e: a malformed tag name (disallowed characters) 400s'
 + ' and stores nothing', async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    await createFlow(db, token, 'flow-tag-6');
-    const rOEPOcVMQdJiiiMuiiEhlg = await headResponseId(db, token
-        , 'flow-tag-6');
+    const flowId = generateIdentifier();
+    await createFlow(db, token, flowId);
+    const rOEPOcVMQdJiiiMuiiEhlg = await headResponseId(
+        db, token, flowId,
+    );
     const before = await db.pairs.getAll();
 
     const res = await handleRequest(db, req(
-        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/flow-tag-6/tags/'
+        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
+            + flowId + '/tags/'
             + 'not%20ok', token,
         { flow_response_id: rOEPOcVMQdJiiiMuiiEhlg },
     ));
@@ -411,7 +416,7 @@ test('e2e: a tag written once still resolves to the EXACT'
     const save2 = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'cadVHBQlvTvWsTriyDUeTQ', token,
-        documentBody('Second Save', 'flow-tag-pin-1-ev-2'),
+        documentBody('Second Save', generateIdentifier()),
         { 'if-match': (
             await handleRequest(
                 db,
@@ -427,7 +432,7 @@ test('e2e: a tag written once still resolves to the EXACT'
     const save3 = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'cadVHBQlvTvWsTriyDUeTQ', token,
-        documentBody('Third Save', 'flow-tag-pin-1-ev-3'),
+        documentBody('Third Save', generateIdentifier()),
         { 'if-match': (
             await handleRequest(
                 db,

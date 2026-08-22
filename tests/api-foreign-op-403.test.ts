@@ -25,7 +25,6 @@ import { seedSeat } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 const ORGANIZATION_A = 'AjdvjuECVZEgZoFajaIEkg';
-const ORGANIZATION_B = 'B';
 const AT = '2020-01-01T00:00:00.000000Z';
 
 function req(
@@ -45,12 +44,16 @@ function req(
     });
 }
 
-async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
+async function twoOrganizationDb(): Promise<{
+    db: MemoryDbAdapter;
+    organizationB: string;
+}> {
     const db = memoryDbAdapter();
+    const organizationB = generateIdentifier();
     await seedAdminSchema(db);
-    await seedOrganizationDocument(db, ORGANIZATION_B, 'Beta');
+    await seedOrganizationDocument(db, organizationB, 'Beta');
     const memBody = {
-        organization_id: ORGANIZATION_B,
+        organization_id: organizationB,
         identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: AT,
@@ -63,7 +66,7 @@ async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
         String(memBody['at'] ?? memBody.at),
     );
 
-    return db;
+    return { db, organizationB };
 }
 
 function graphJson(): Record<string, unknown> {
@@ -76,12 +79,12 @@ function graphJson(): Record<string, unknown> {
 }
 
 test('foreign-org work-order claim is 404', async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenA = await organizationToken(
         'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
     );
     const tokenB = await organizationToken(
-        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', organizationB,
     );
     const created = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -96,7 +99,8 @@ test('foreign-org work-order claim is 404', async () => {
     const claimAt = nowUtc();
     const foreign = await handleRequest(db, req(
         'PUT',
-        '/organizations/B/work-orders/yCFjxREVDLjycQDxFIsqIg/claim',
+        '/organizations/' + organizationB
+            + '/work-orders/yCFjxREVDLjycQDxFIsqIg/claim',
         tokenB, {
             claimEventId: generateIdentifier(),
             claimAt,
@@ -112,12 +116,12 @@ test('foreign-org work-order claim is 404', async () => {
 });
 
 test('foreign-org work-order release is 404', async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenA = await organizationToken(
         'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
     );
     const tokenB = await organizationToken(
-        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', organizationB,
     );
     const created = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -131,19 +135,20 @@ test('foreign-org work-order release is 404', async () => {
 
     const foreign = await handleRequest(db, req(
         'DELETE',
-        '/organizations/B/work-orders/yDEYnDEKhTTMRnyKdusvCw/claim',
+        '/organizations/' + organizationB
+            + '/work-orders/yDEYnDEKhTTMRnyKdusvCw/claim',
         tokenB,
     ));
     assert.equal(foreign.status, 404);
 });
 
 test('foreign-org work-order transition is 404', async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenA = await organizationToken(
         'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
     );
     const tokenB = await organizationToken(
-        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', organizationB,
     );
     const created = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -157,7 +162,8 @@ test('foreign-org work-order transition is 404', async () => {
 
     const foreign = await handleRequest(db, req(
         'POST',
-        '/organizations/B/work-orders/yHJmosJCPJCTxoRaPwKdQA/transition',
+        '/organizations/' + organizationB
+            + '/work-orders/yHJmosJCPJCTxoRaPwKdQA/transition',
         tokenB,
         {
             transitionEventId: generateIdentifier(),
@@ -174,12 +180,12 @@ test('foreign-org work-order transition is 404', async () => {
 });
 
 test('foreign-org flow undo is 404', async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenA = await organizationToken(
         'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_A,
     );
     const tokenB = await organizationToken(
-        'XXZruirZyAOoRpNxaDnpSA', ORGANIZATION_B,
+        'XXZruirZyAOoRpNxaDnpSA', organizationB,
     );
     const created = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/', tokenA, {
@@ -191,14 +197,14 @@ test('foreign-org flow undo is 404', async () => {
                 is_auto_fit: false,
                 lock_timeout: 300,
             },
-            projectFlowId: 'pf-foreign-undo',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
-                project_id: 'proj-foreign-undo',
+                project_id: generateIdentifier(),
                 flow_id: 'aRKhwTupsfXtczSCmaJMGQ',
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: 'flow-foreign-undo-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: {
                 nodes: [], edges: [], deletions: [],
@@ -213,9 +219,10 @@ test('foreign-org flow undo is 404', async () => {
 
     const foreign = await handleRequest(db, req(
         'POST',
-        '/organizations/B/flows/aRKhwTupsfXtczSCmaJMGQ/undo',
+        '/organizations/' + organizationB
+            + '/flows/aRKhwTupsfXtczSCmaJMGQ/undo',
         tokenB, {
-            eventId: 'flow-foreign-undo-undo-ev',
+            eventId: generateIdentifier(),
             at: AT,
         },
     ));

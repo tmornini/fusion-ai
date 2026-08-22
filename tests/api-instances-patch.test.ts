@@ -47,6 +47,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Instance PATCH — If-Match + full-state revision (R5).
 // Two pairs per PATCH: wire delta + PUT {values} revision.
@@ -57,12 +59,15 @@ const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const AT2 = '2026-01-02T00:00:00.000000Z';
 const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
-const TYPE_ID = 'rt-patch-1';
-const ATTR_ID = 'attr-patch-1';
-const ATTR_NUM = 'attr-patch-num';
-const ATTR_LOCKED = 'attr-patch-locked';
-const ATTR_SUBMIT = 'attr-patch-submit';
-const INSTANCE_ID = 'inst-patch-1';
+const TYPE_ID = generateIdentifier();
+const ATTR_ID = generateIdentifier();
+const ATTR_NUM = generateIdentifier();
+const ATTR_LOCKED = generateIdentifier();
+const ATTR_SUBMIT = generateIdentifier();
+const INSTANCE_ID = generateIdentifier();
+const ORGANIZATION_B = generateIdentifier();
+const FOREIGN_TYPE_ID = generateIdentifier();
+const ATTR_UNKNOWN = generateIdentifier();
 
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
@@ -112,7 +117,7 @@ async function adminDb(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedMembershipPair(db, 'm-member1', {
+    await seedMembershipPair(db, generateIdentifier(), {
         organization_id: ORGANIZATION,
         identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
@@ -482,9 +487,9 @@ async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
     await putLiveType(db, adminToken);
-    await seedOrganizationDocument(db, 'B', 'Beta');
+    await seedOrganizationDocument(db, ORGANIZATION_B, 'Beta');
     await appendInstancePair(
-        db, 'B', 'rt-foreign', INSTANCE_ID,
+        db, ORGANIZATION_B, FOREIGN_TYPE_ID, INSTANCE_ID,
         'PUT', {
             set: [
                 {
@@ -625,7 +630,7 @@ async () => {
         {
             set: [
                 {
-                    attribute_id: 'attr-unknown',
+                    attribute_id: ATTR_UNKNOWN,
                     value: 'x',
                 },
             ],

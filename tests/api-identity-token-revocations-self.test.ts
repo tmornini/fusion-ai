@@ -19,6 +19,8 @@ import {
     deriveTokenRevocation,
     tokenRevocationEntityOf,
 } from '../api/derive-identity-spine.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Nested under the identity: GET|PUT
 // /identities/:id/token-revocations/:rid. Path identity is
@@ -62,7 +64,8 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const at = '2026-01-01T00:00:00.000000Z';
-    const path = nestedPath('nkgaOHZISTQrILTfPThWCA', 'admin-get-1');
+    const rid = generateIdentifier();
+    const path = nestedPath('nkgaOHZISTQrILTfPThWCA', rid);
     const put = await handleRequest(db, req(
         'PUT', path, token, { at },
     ));
@@ -72,7 +75,7 @@ async () => {
     );
     assert.equal(get.status, 200);
     assert.deepEqual(await get.json(), {
-        id: 'admin-get-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
+        id: rid, identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
     });
 });
 
@@ -125,32 +128,33 @@ test('a member PUT identities/:id/token-revocations/:rid'
     const db = await freshDb();
     const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const at = '2026-01-01T00:00:00.000000Z';
+    const rid = generateIdentifier();
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'self-rev-1'), token,
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', rid), token,
         { identity_id: 'nkgaOHZISTQrILTfPThWCA', at },
     ));
     assert.equal(res.status, 201);
     assert.deepEqual(await res.json(), {
-        id: 'self-rev-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
+        id: rid, identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
     });
     const row = await deriveTokenRevocation(
-        db, 'nkgaOHZISTQrILTfPThWCA', 'self-rev-1',
+        db, 'nkgaOHZISTQrILTfPThWCA', rid,
     );
     assert.deepEqual(
-        row, { id: 'self-rev-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at },
+        row, { id: rid, identity_id: 'nkgaOHZISTQrILTfPThWCA', at },
     );
     const requests = await db.pairs.getAll();
     const own = requests.find(
         r => r.uri_collection
             === '/identities/nkgaOHZISTQrILTfPThWCA/token-revocations/'
-            && r.uri_id === 'self-rev-1',
+            && r.uri_id === rid,
     );
     assert.ok(own);
     const responses = await db.pairs.getAll();
     const ownResponse = responses.find(
         r => r.uri_collection
             === '/identities/nkgaOHZISTQrILTfPThWCA/token-revocations/'
-            && r.uri_id === 'self-rev-1',
+            && r.uri_id === rid,
     );
     assert.ok(ownResponse);
 });
@@ -161,7 +165,7 @@ async () => {
     const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
     const res = await handleRequest(db, req(
         'PUT',
-        nestedPath('nkgaOHZISTQrILTfPThWCA', 'self-rev-cookie'),
+        nestedPath('nkgaOHZISTQrILTfPThWCA', generateIdentifier()),
         token,
         {
             identity_id: 'nkgaOHZISTQrILTfPThWCA',
@@ -196,10 +200,11 @@ async () => {
         organizations: ['AjdvjuECVZEgZoFajaIEkg'],
         iat,
         ttlSeconds: 10_000_000_000,
-        jti: 'self-rev-2-jti',
+        jti: generateIdentifier(),
     });
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'self-rev-2'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA',
+            generateIdentifier()),
         memberToken,
         { identity_id: 'nkgaOHZISTQrILTfPThWCA', at: revokeAt },
     ));
@@ -233,7 +238,8 @@ test('a member PUT naming ANOTHER identity 403s, byte-pinned'
 + ' writes no row', async () => {
     const db = await freshDb();
     const token = await organizationToken('nkgaOHZISTQrILTfPThWCA');
-    const path = nestedPath('uTGrEpVpODbNhDhDVdWeqQ', 'foreign-rev-1');
+    const rid = generateIdentifier();
+    const path = nestedPath('uTGrEpVpODbNhDhDVdWeqQ', rid);
     const res = await handleRequest(db, req(
         'PUT', path, token,
         {
@@ -249,7 +255,7 @@ test('a member PUT naming ANOTHER identity 403s, byte-pinned'
     const requests = await db.pairs.getAll();
     assert.equal(
         requests.filter(
-            r => r.uri_id === 'foreign-rev-1',
+            r => r.uri_id === rid,
         ).length,
         0,
     );
@@ -259,7 +265,7 @@ test('stored PUT body equals tokenRevocationEntityOf',
 async () => {
     const db = await freshDb();
     const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
-    const id = 'rev-g4';
+    const id = generateIdentifier();
     const fields = {
         identity_id: 'nkgaOHZISTQrILTfPThWCA',
         at: '2026-01-01T00:00:00.000000Z',
@@ -293,14 +299,15 @@ test('the admin path is unchanged: an admin PUT naming'
     const db = await freshDb();
     const adminToken = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const at = '2026-01-01T00:00:00.000000Z';
+    const rid = generateIdentifier();
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'admin-rev-1'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', rid),
         adminToken,
         { identity_id: 'nkgaOHZISTQrILTfPThWCA', at },
     ));
     assert.equal(res.status, 201);
     assert.deepEqual(await res.json(), {
-        id: 'admin-rev-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
+        id: rid, identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
     });
 });
 
@@ -309,13 +316,14 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const at = '2026-01-01T00:00:00.000000Z';
+    const rid = generateIdentifier();
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'stamp-1'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', rid),
         token, { at },
     ));
     assert.equal(res.status, 201);
     assert.deepEqual(await res.json(), {
-        id: 'stamp-1', identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
+        id: rid, identity_id: 'nkgaOHZISTQrILTfPThWCA', at,
     });
 });
 
@@ -324,10 +332,11 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
     const res = await handleRequest(db, req(
-        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA', 'mismatch-1'),
+        'PUT', nestedPath('nkgaOHZISTQrILTfPThWCA',
+            generateIdentifier()),
         token,
         {
-            identity_id: 'other',
+            identity_id: generateIdentifier(),
             at: '2026-01-01T00:00:00.000000Z',
         },
     ));

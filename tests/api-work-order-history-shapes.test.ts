@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import { handleRequest } from '../api/api.ts';
 import {
@@ -39,6 +41,14 @@ import {
 const BASE = 'http://localhost';
 const ORGANIZATION = STARK_ORGANIZATION;
 const TRANSITION_PATTERN = 'organizations/:id/work-orders/:id/transition';
+const NODE_START = generateIdentifier();
+const NODE_MIDDLE = generateIdentifier();
+const NODE_FINISH = generateIdentifier();
+const EDGE_2 = generateIdentifier();
+const ATTR_SEVERITY = generateIdentifier();
+const ATTR_X = generateIdentifier();
+const ATTR_RESTRICT = generateIdentifier();
+const ATTR_OTHER = generateIdentifier();
 
 function req(
     method: string,
@@ -61,21 +71,21 @@ function flowGraph(): Record<string, unknown> {
         lockTimeout: DEFAULT_LOCK_TIMEOUT,
         nodes: [
             {
-                id: 'n-start', name: 'Start',
+                id: NODE_START, name: 'Start',
                 positionX: 0, positionY: 0,
                 isCreate: true, isArchive: false,
                 memberIds: [], attributes: [],
                 taskInstructions: '',
             },
             {
-                id: 'n-middle', name: 'Middle',
+                id: NODE_MIDDLE, name: 'Middle',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: false,
                 memberIds: [], attributes: [],
                 taskInstructions: '',
             },
             {
-                id: 'n-finish', name: 'Finish',
+                id: NODE_FINISH, name: 'Finish',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: true,
                 memberIds: [], attributes: [],
@@ -85,13 +95,13 @@ function flowGraph(): Record<string, unknown> {
         edges: [
             {
                 id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
-                fromNodeId: 'n-start',
-                toNodeId: 'n-middle',
+                fromNodeId: NODE_START,
+                toNodeId: NODE_MIDDLE,
             },
             {
-                id: 'e2', name: '',
-                fromNodeId: 'n-middle',
-                toNodeId: 'n-finish',
+                id: EDGE_2, name: '',
+                fromNodeId: NODE_MIDDLE,
+                toNodeId: NODE_FINISH,
             },
         ],
     };
@@ -109,18 +119,18 @@ function createBody(workOrderId: string) {
             flow_graph: flowGraph(),
             position: 1,
         },
-        flowWorkOrderId: workOrderId + '-fwo',
+        flowWorkOrderId: generateIdentifier(),
         flowWorkOrder: {
-            flow_id: 'f-shapes',
+            flow_id: generateIdentifier(),
             work_order_id: workOrderId,
             at: nowUtc(),
         },
         stateEventIds: [
-            workOrderId + '-ev1',
-            workOrderId + '-ev2',
-            workOrderId + '-ev3',
+            generateIdentifier(),
+            generateIdentifier(),
+            generateIdentifier(),
         ],
-        states: ['n-start', 'n-middle', 'claimed'],
+        states: [NODE_START, NODE_MIDDLE, 'claimed'],
         stateEventAts: [t0, t1, t2],
     };
 }
@@ -207,23 +217,23 @@ test('legacy-only WO: fold pools by fv id; later event'
 + ' owns the head',
 async () => {
     const db = await seedBaseDb();
-    const workOrderId = 'wo-shape-legacy';
+    const workOrderId = generateIdentifier();
     await createWorkOrder(db, workOrderId);
 
-    const teEarly = workOrderId + '-te-early';
-    const teLate = workOrderId + '-te-late';
-    const fvShared = workOrderId + '-fv-shared';
+    const teEarly = generateIdentifier();
+    const teLate = generateIdentifier();
+    const fvShared = generateIdentifier();
 
     await appendTransitionPair(
         db, ORGANIZATION, workOrderId,
         {
             transitionEventId: teEarly,
-            targetState: 'n-middle',
+            targetState: NODE_MIDDLE,
             fieldValues: [{
                 id: fvShared,
                 fields: {
                     state_event_id: teEarly,
-                    attribute_id: 'attr-x',
+                    attribute_id: ATTR_X,
                     value: 'old',
                 },
             }],
@@ -241,7 +251,7 @@ async () => {
                 id: fvShared,
                 fields: {
                     state_event_id: teLate,
-                    attribute_id: 'attr-x',
+                    attribute_id: ATTR_X,
                     value: 'new',
                 },
             }],
@@ -264,7 +274,7 @@ async () => {
     assert.deepEqual(early!.field_values, []);
     assert.deepEqual(late!.field_values, [{
         id: fvShared,
-        attribute_id: 'attr-x',
+        attribute_id: ATTR_X,
         value: 'new',
     }]);
 });
@@ -275,18 +285,18 @@ test('new-shape-only WO: set/clear rows id-ascending;'
 + ' cleared has no value key',
 async () => {
     const db = await seedBaseDb();
-    const workOrderId = 'wo-shape-new';
+    const workOrderId = generateIdentifier();
     await createWorkOrder(db, workOrderId);
 
-    const teNew = workOrderId + '-te-new';
-    const teOther = workOrderId + '-te-other';
+    const teNew = generateIdentifier();
+    const teOther = generateIdentifier();
 
     // Sibling event with empty legacy bag — must stay [].
     await appendTransitionPair(
         db, ORGANIZATION, workOrderId,
         {
             transitionEventId: teOther,
-            targetState: 'n-middle',
+            targetState: NODE_MIDDLE,
             fieldValues: [],
             release: null,
             transitionAt: nowUtc(),
@@ -338,23 +348,23 @@ test('mixed WO: legacy bag + new-shape set/clear each'
 + ' under own rule',
 async () => {
     const db = await seedBaseDb();
-    const workOrderId = 'wo-shape-mixed';
+    const workOrderId = generateIdentifier();
     await createWorkOrder(db, workOrderId);
 
-    const teLegacy = workOrderId + '-te-leg';
-    const teNew = workOrderId + '-te-new';
-    const fvId = workOrderId + '-fv1';
+    const teLegacy = generateIdentifier();
+    const teNew = generateIdentifier();
+    const fvId = generateIdentifier();
 
     await appendTransitionPair(
         db, ORGANIZATION, workOrderId,
         {
             transitionEventId: teLegacy,
-            targetState: 'n-middle',
+            targetState: NODE_MIDDLE,
             fieldValues: [{
                 id: fvId,
                 fields: {
                     state_event_id: teLegacy,
-                    attribute_id: 'attr-severity',
+                    attribute_id: ATTR_SEVERITY,
                     value: 'high',
                 },
             }],
@@ -390,7 +400,7 @@ async () => {
     // Legacy bytes: fv row id, attribute_id, value only.
     assert.deepEqual(legacy!.field_values, [{
         id: fvId,
-        attribute_id: 'attr-severity',
+        attribute_id: ATTR_SEVERITY,
         value: 'high',
     }]);
     assert.equal(
@@ -409,14 +419,14 @@ test('claim rows field_values []; history is (at, id)'
 + ' DESC',
 async () => {
     const db = await seedBaseDb();
-    const workOrderId = 'wo-shape-claim';
+    const workOrderId = generateIdentifier();
     await createWorkOrder(db, workOrderId);
 
     await appendTransitionPair(
         db, ORGANIZATION, workOrderId,
         {
-            transitionEventId: workOrderId + '-te1',
-            targetState: 'n-middle',
+            transitionEventId: generateIdentifier(),
+            targetState: NODE_MIDDLE,
             set: [
                 { attribute_id: 'WeXjAaAxGSpLpamfEuvcww', value: 'v' },
             ],
@@ -457,19 +467,19 @@ test('deriveStateFieldValueReferrers counts legacy only;'
 + ' new-shape pairs do not crash',
 async () => {
     const db = await seedBaseDb();
-    const workOrderId = 'wo-shape-restrict';
+    const workOrderId = generateIdentifier();
     await createWorkOrder(db, workOrderId);
 
-    const teLegacy = workOrderId + '-te-leg';
-    const teNew = workOrderId + '-te-new';
-    const fvId = workOrderId + '-fv-r';
-    const attrId = 'attr-restrict-shape';
+    const teLegacy = generateIdentifier();
+    const teNew = generateIdentifier();
+    const fvId = generateIdentifier();
+    const attrId = ATTR_RESTRICT;
 
     await appendTransitionPair(
         db, ORGANIZATION, workOrderId,
         {
             transitionEventId: teLegacy,
-            targetState: 'n-middle',
+            targetState: NODE_MIDDLE,
             fieldValues: [{
                 id: fvId,
                 fields: {
@@ -491,7 +501,7 @@ async () => {
             set: [
                 { attribute_id: attrId, value: 'ignored' },
             ],
-            clear: ['other-attr'],
+            clear: [ATTR_OTHER],
             release: null,
             transitionAt: nowUtc(),
         },

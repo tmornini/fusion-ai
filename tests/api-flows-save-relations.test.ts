@@ -36,6 +36,18 @@ import {
 import {
     documentPairsAt,
 } from '../api/derive-documents.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const NODE_A = generateIdentifier();
+const NODE_B = generateIdentifier();
+const NODE_C = generateIdentifier();
+const EDGE_AB = generateIdentifier();
+const EDGE_AC = generateIdentifier();
+const ATTR_X = generateIdentifier();
+const ATTR_Y = generateIdentifier();
+const ATTR_Z = generateIdentifier();
+const MEMBER_TWO = generateIdentifier();
 
 // Phase Final Task 2: graph relation ROW halves stripped.
 // Save oracles re-home to pair-plane graph (GET) and to
@@ -49,7 +61,7 @@ async function setupMemDb(): Promise<{
     await seedAdminSchema(db);
     await seedHumanMember(db, 'XXZruirZyAOoRpNxaDnpSA', 'Demo User');
     await seedHumanMember(db, 'mFNSxZqywTSMXhgUTdTqtA', 'Member One');
-    await seedHumanMember(db, 'm2', 'Member Two');
+    await seedHumanMember(db, MEMBER_TWO, 'Member Two');
     const ctx = createRequestContext(db, await organizationToken());
     return { db, ctx };
 }
@@ -218,28 +230,27 @@ function buildBaselineGraph(): {
     nodes: GraphNode[];
     edges: GraphEdge[];
 } {
-    const a = buildNode('a', {
+    const a = buildNode(NODE_A, {
         isCreate: true,
-        memberIds: ['mFNSxZqywTSMXhgUTdTqtA', 'm2'],
+        memberIds: ['mFNSxZqywTSMXhgUTdTqtA', MEMBER_TWO],
         attributes: [
             {
-                attributeId: 'x',
+                attributeId: ATTR_X,
                 mode: 'editable',
                 isRequired: false,
             },
             {
-                attributeId: 'y',
+                attributeId: ATTR_Y,
                 mode: 'readonly',
                 isRequired: true,
             },
         ],
     });
-    const b = buildNode('b', { isArchive: true });
-    const c = buildNode('c');
-    const YiJPbufDpkyrZcZCYbUJpg = buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'a'
-        , 'b');
-    const e2 = buildEdge('e2', 'a', 'c');
-    return { nodes: [a, b, c], edges: [YiJPbufDpkyrZcZCYbUJpg, e2] };
+    const b = buildNode(NODE_B, { isArchive: true });
+    const c = buildNode(NODE_C);
+    const edgeAb = buildEdge(EDGE_AB, NODE_A, NODE_B);
+    const edgeAc = buildEdge(EDGE_AC, NODE_A, NODE_C);
+    return { nodes: [a, b, c], edges: [edgeAb, edgeAc] };
 }
 
 // Save #2 working graph: add member m2→removed and m? ; the
@@ -250,36 +261,35 @@ function buildWorkingGraph(): {
     nodes: GraphNode[];
     edges: GraphEdge[];
 } {
-    const a = buildNode('a', {
+    const a = buildNode(NODE_A, {
         isCreate: true,
         positionX: 999, // moved
         positionY: 888,
-        // m2 removed, mFNSxZqywTSMXhgUTdTqtA kept; nothing added on a
+        // MEMBER_TWO removed, mFNSxZqywTSMXhgUTdTqtA kept
         memberIds: ['mFNSxZqywTSMXhgUTdTqtA'],
         attributes: [
-            // x mode changed editable -> readonly
+            // ATTR_X mode changed editable -> readonly
             {
-                attributeId: 'x',
+                attributeId: ATTR_X,
                 mode: 'readonly',
                 isRequired: false,
             },
-            // y removed; z added
+            // ATTR_Y removed; ATTR_Z added
             {
-                attributeId: 'z',
+                attributeId: ATTR_Z,
                 mode: 'editable',
                 isRequired: true,
             },
         ],
     });
-    // b gains member m2 (add a member)
-    const b = buildNode('b', {
+    // b gains MEMBER_TWO (add a member)
+    const b = buildNode(NODE_B, {
         isArchive: true,
-        memberIds: ['m2'],
+        memberIds: [MEMBER_TWO],
     });
-    // c is deleted; edge e2 (a->c) is deleted with it
-    const YiJPbufDpkyrZcZCYbUJpg = buildEdge('YiJPbufDpkyrZcZCYbUJpg', 'a'
-        , 'b');
-    return { nodes: [a, b], edges: [YiJPbufDpkyrZcZCYbUJpg] };
+    // NODE_C is deleted; EDGE_AC (a->c) is deleted with it
+    const edgeAb = buildEdge(EDGE_AB, NODE_A, NODE_B);
+    return { nodes: [a, b], edges: [edgeAb] };
 }
 
 async function seedKnownBaseline(
@@ -288,8 +298,8 @@ async function seedKnownBaseline(
 ): Promise<void> {
     await postFlowCreation(ctx, {
         flowId,
-        linkId: flowId + '-link',
-        projectId: 'project-1',
+        linkId: generateIdentifier(),
+        projectId: generateIdentifier(),
         name: 'Rel Save Flow',
     });
     const base = buildBaselineGraph();
@@ -301,7 +311,7 @@ test(
     + ' equals the intended saved graph',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-save-rt';
+        const flowId = generateIdentifier();
         await seedKnownBaseline(ctx, flowId);
 
         const working = buildWorkingGraph();
@@ -314,12 +324,14 @@ test(
         // node c deleted, edge e2 deleted
         const nodeIds = graph.nodes
             .map(n => n.id).sort();
-        assert.deepEqual(nodeIds, ['a', 'b']);
+        assert.deepEqual(
+            nodeIds, [NODE_A, NODE_B].sort(),
+        );
         const edgeIds = graph.edges.map(e => e.id);
-        assert.deepEqual(edgeIds, ['YiJPbufDpkyrZcZCYbUJpg']);
+        assert.deepEqual(edgeIds, [EDGE_AB]);
 
         const a = graph.nodes
-            .find(n => n.id === 'a')!;
+            .find(n => n.id === NODE_A)!;
         // node a moved
         assert.equal(a.positionX, 999);
         assert.equal(a.positionY, 888);
@@ -333,22 +345,23 @@ test(
             aAttrs,
             [
                 {
-                    attributeId: 'x',
+                    attributeId: ATTR_X,
                     mode: 'readonly',
                     isRequired: false,
                 },
                 {
-                    attributeId: 'z',
+                    attributeId: ATTR_Z,
                     mode: 'editable',
                     isRequired: true,
                 },
-            ],
+            ].sort((p, q) =>
+                p.attributeId.localeCompare(q.attributeId)),
         );
 
         const b = graph.nodes
-            .find(n => n.id === 'b')!;
-        // member m2 added to b
-        assert.deepEqual(b.memberIds.sort(), ['m2']);
+            .find(n => n.id === NODE_B)!;
+        // MEMBER_TWO added to b
+        assert.deepEqual(b.memberIds.sort(), [MEMBER_TWO]);
     },
 );
 
@@ -357,7 +370,7 @@ test(
     + 'changed leave new graphDelta events, never splice',
     async () => {
         const { db, ctx } = await setupMemDb();
-        const flowId = 'flow-save-ledger';
+        const flowId = generateIdentifier();
         await seedKnownBaseline(ctx, flowId);
 
         const working = buildWorkingGraph();
@@ -370,8 +383,8 @@ test(
         // m2 on node a: an 'added' (baseline) then a
         // 'removed' (save #2). The 'added' is never spliced.
         const aM2 = memberEvents.filter(
-            row => row.flow_node_id === 'a'
-                && row.member_id === 'm2',
+            row => row.flow_node_id === NODE_A
+                && row.member_id === MEMBER_TWO,
         );
         const aM2Actions = aM2.map(r => r.action).sort();
         assert.deepEqual(
@@ -381,8 +394,8 @@ test(
         );
         // m2 re-added on node b: a NEW 'added' event
         const bM2 = memberEvents.filter(
-            row => row.flow_node_id === 'b'
-                && row.member_id === 'm2',
+            row => row.flow_node_id === NODE_B
+                && row.member_id === MEMBER_TWO,
         );
         assert.equal(bM2.length, 1);
         assert.equal(bM2[0]!.action, 'added');
@@ -390,8 +403,8 @@ test(
         // x on a: baseline 'added' (editable) then a NEW
         // 'added' (readonly) — prior event UNMUTATED.
         const aX = attributeEvents.filter(
-            row => row.flow_node_id === 'a'
-                && row.attribute_id === 'x',
+            row => row.flow_node_id === NODE_A
+                && row.attribute_id === ATTR_X,
         );
         assert.equal(
             aX.length, 2,
@@ -410,8 +423,8 @@ test(
         assert.ok(readonlyRow);
         // y on a removed: an 'added' then a 'removed'
         const aY = attributeEvents.filter(
-            row => row.flow_node_id === 'a'
-                && row.attribute_id === 'y',
+            row => row.flow_node_id === NODE_A
+                && row.attribute_id === ATTR_Y,
         );
         assert.deepEqual(
             aY.map(r => r.action).sort(),
@@ -425,7 +438,7 @@ test(
     + ' body twice leaves pair graph unchanged',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-save-idem';
+        const flowId = generateIdentifier();
         await seedKnownBaseline(ctx, flowId);
 
         const working = buildWorkingGraph();
@@ -482,7 +495,7 @@ test(
     + ' intended working graph after save',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-save-dual';
+        const flowId = generateIdentifier();
         await seedKnownBaseline(ctx, flowId);
 
         const working = buildWorkingGraph();
@@ -509,7 +522,7 @@ test(
     + ' (existing covenant intact)',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-save-event';
+        const flowId = generateIdentifier();
         await seedKnownBaseline(ctx, flowId);
         const working = buildWorkingGraph();
         await putFlow(ctx, flowId, save(

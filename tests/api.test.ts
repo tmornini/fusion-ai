@@ -18,6 +18,8 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 async function freshDb() {
     const db = memoryDbAdapter();
@@ -45,7 +47,8 @@ test('GET organizations/:id/ideas/:id throws on missing', async () => {
     const db = await freshDb();
     await assert.rejects(
         () => GET(db
-            , 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/missing-id'
+            , 'organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
+                + generateIdentifier()
             , DEV_TOKEN),
         /Not found|404/,
     );
@@ -109,13 +112,14 @@ test(
     'GET seats returns the persisted humans',
     async () => {
         const db = await freshDb();
-        await seedHumanMember(db, 'hw_1', 'Sarah Chen');
+        const humanId = generateIdentifier();
+        await seedHumanMember(db, humanId, 'Sarah Chen');
         const members =
             await GET<{ id: string }[]>(
                 db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/',
                 await organizationToken());
         assert.ok(
-            members.some(row => row.id === 'hw_1'),
+            members.some(row => row.id === humanId),
         );
     },
 );
@@ -124,7 +128,9 @@ test(
     'GET ai-agents returns persisted agents',
     async () => {
         const db = await freshDb();
-        await seedAIMember(db, 'ai_1', 'Opus');
+        await seedAIMember(
+            db, generateIdentifier(), 'Opus',
+        );
         const ais =
             await GET<unknown[]>(
                 db, 'ai-agents/', DEV_TOKEN);
@@ -137,7 +143,8 @@ test(
     async () => {
         const db = await freshDb();
         await assert.rejects(
-            () => PUT(db, 'ai-agents/ai_1', {
+            () => PUT(db, 'ai-agents/'
+                + generateIdentifier(), {
                 rogue_field: 'extra',
             }, DEV_TOKEN),
             /unexpected key|missing/,
@@ -177,7 +184,12 @@ test(
     async () => {
         const db = await freshDb();
         await assert.rejects(
-            () => GET(db, 'members/w-1/extra', DEV_TOKEN),
+            () => GET(
+                db,
+                'members/' + generateIdentifier()
+                    + '/extra',
+                DEV_TOKEN,
+            ),
             /not found|404/i,
         );
     },

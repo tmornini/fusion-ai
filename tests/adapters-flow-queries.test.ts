@@ -41,6 +41,8 @@ import {
     seedAdminSchema,
 } from './test-fixtures.ts';
 import { seededMockDb } from './mock-seed.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;
@@ -91,7 +93,7 @@ async function createBaseFlow(
 ): Promise<void> {
     await postFlowCreation(ctx, {
         flowId,
-        linkId: flowId + '-link',
+        linkId: generateIdentifier(),
         projectId,
         name: 'Flow ' + flowId,
     });
@@ -148,18 +150,22 @@ test(
             createRequestContext(db, await organizationToken()),
             'aEsGMmBEFaVdWihhHXwCbw', 'pnXmXrxOWayANgDLdCjuBw',
         );
-        const start = buildNode('start', {
+        const startId = generateIdentifier();
+        const midId = generateIdentifier();
+        const endId = generateIdentifier();
+        const edge2Id = generateIdentifier();
+        const start = buildNode(startId, {
             isCreate: true,
         });
-        const mid = buildNode('mid');
-        const end = buildNode('end', {
+        const mid = buildNode(midId);
+        const end = buildNode(endId, {
             isArchive: true,
         });
         const YiJPbufDpkyrZcZCYbUJpg = buildEdge(
-            'YiJPbufDpkyrZcZCYbUJpg', 'start', 'mid',
+            generateIdentifier(), startId, midId,
         );
         const e2 = buildEdge(
-            'e2', 'mid', 'end',
+            edge2Id, midId, endId,
         );
         await saveGraph(
             createRequestContext(db, await organizationToken())
@@ -181,10 +187,10 @@ test(
         assert.equal(g.nodes.length, 3);
         assert.equal(g.edges.length, 2);
         assert.ok(
-            g.nodes.some(n => n.id === 'mid'),
+            g.nodes.some(n => n.id === midId),
         );
         assert.ok(
-            g.edges.some(e => e.id === 'e2'),
+            g.edges.some(e => e.id === edge2Id),
         );
     },
 );
@@ -207,7 +213,7 @@ test(
                 isAutoLayout: true,
                 isAutoFit: true,
                 lockTimeout: 900,
-                nodes: [buildNode('a')],
+                nodes: [buildNode(generateIdentifier())],
                 edges: [],
             },
         );
@@ -234,11 +240,13 @@ test(
             , 'Project One');
         await seedProject(WeXjAaAxGSpLpamfEuvcww, 'prBESZPjJDiuXCeZLmbiVw'
             , 'Project Two');
+        const flow2 = generateIdentifier();
+        const flow3 = generateIdentifier();
         await createBaseFlow(WeXjAaAxGSpLpamfEuvcww
             , 'aEsGMmBEFaVdWihhHXwCbw', 'pnXmXrxOWayANgDLdCjuBw');
-        await createBaseFlow(WeXjAaAxGSpLpamfEuvcww, 'flow-2'
+        await createBaseFlow(WeXjAaAxGSpLpamfEuvcww, flow2
             , 'pnXmXrxOWayANgDLdCjuBw');
-        await createBaseFlow(WeXjAaAxGSpLpamfEuvcww, 'flow-3'
+        await createBaseFlow(WeXjAaAxGSpLpamfEuvcww, flow3
             , 'prBESZPjJDiuXCeZLmbiVw');
         const p1Flows = await getFlowsByProject(
             createRequestContext(db, await organizationToken())
@@ -251,10 +259,12 @@ test(
         const p1Ids = p1Flows
             .map(f => f.id).sort();
         assert.deepEqual(
-            p1Ids, ['aEsGMmBEFaVdWihhHXwCbw', 'flow-2'],
+            p1Ids, [
+                'aEsGMmBEFaVdWihhHXwCbw', flow2,
+            ].sort(),
         );
         assert.equal(p2Flows.length, 1);
-        assert.equal(p2Flows[0]!.id, 'flow-3');
+        assert.equal(p2Flows[0]!.id, flow3);
     },
 );
 
@@ -269,7 +279,9 @@ test(
             'aEsGMmBEFaVdWihhHXwCbw', 'pnXmXrxOWayANgDLdCjuBw',
         );
         const rows = await getFlowsByProject(
-            createRequestContext(db, await organizationToken()), 'p-empty',
+            createRequestContext(
+                db, await organizationToken(),
+            ), generateIdentifier(),
         );
         assert.deepEqual(rows, []);
     },
@@ -285,13 +297,13 @@ test(
             createRequestContext(db, await organizationToken()),
             'aEsGMmBEFaVdWihhHXwCbw', 'pnXmXrxOWayANgDLdCjuBw',
         );
+        const a = generateIdentifier();
+        const b = generateIdentifier();
         await saveGraph(
             createRequestContext(db, await organizationToken())
                 , 'aEsGMmBEFaVdWihhHXwCbw',
-            [
-                buildNode('a'), buildNode('b'),
-            ],
-            [buildEdge('ab', 'a', 'b')],
+            [buildNode(a), buildNode(b)],
+            [buildEdge(generateIdentifier(), a, b)],
         );
         const rows = await getFlowsByProject(
             createRequestContext(db, await organizationToken())
@@ -314,9 +326,10 @@ test(
             , 'Project One');
         await seedProject(WeXjAaAxGSpLpamfEuvcww, 'prBESZPjJDiuXCeZLmbiVw'
             , 'Project Two');
+        const flow2 = generateIdentifier();
         await createBaseFlow(WeXjAaAxGSpLpamfEuvcww
             , 'aEsGMmBEFaVdWihhHXwCbw', 'pnXmXrxOWayANgDLdCjuBw');
-        await createBaseFlow(WeXjAaAxGSpLpamfEuvcww, 'flow-2'
+        await createBaseFlow(WeXjAaAxGSpLpamfEuvcww, flow2
             , 'prBESZPjJDiuXCeZLmbiVw');
         const pairs = await getFlowsWithProjectNames(
             createRequestContext(db, await organizationToken()),
@@ -331,7 +344,7 @@ test(
             byFlow.get('aEsGMmBEFaVdWihhHXwCbw'), 'Project One',
         );
         assert.equal(
-            byFlow.get('flow-2'), 'Project Two',
+            byFlow.get(flow2), 'Project Two',
         );
     },
 );
@@ -343,7 +356,7 @@ test(
         const { db } = await setupMemDb();
         await createBaseFlow(
             createRequestContext(db, await organizationToken()),
-            'aEsGMmBEFaVdWihhHXwCbw', 'ghost-project',
+            'aEsGMmBEFaVdWihhHXwCbw', generateIdentifier(),
         );
         const pairs = await getFlowsWithProjectNames(
             createRequestContext(db, await organizationToken()),
@@ -366,16 +379,19 @@ test(
             createRequestContext(db, await organizationToken()),
             'aEsGMmBEFaVdWihhHXwCbw', 'pnXmXrxOWayANgDLdCjuBw',
         );
+        const a = generateIdentifier();
+        const b = generateIdentifier();
+        const c = generateIdentifier();
         await saveGraph(
             createRequestContext(db, await organizationToken())
                 , 'aEsGMmBEFaVdWihhHXwCbw',
             [
-                buildNode('a'), buildNode('b'),
-                buildNode('c'),
+                buildNode(a), buildNode(b),
+                buildNode(c),
             ],
             [
-                buildEdge('ab', 'a', 'b'),
-                buildEdge('bc', 'b', 'c'),
+                buildEdge(generateIdentifier(), a, b),
+                buildEdge(generateIdentifier(), b, c),
             ],
         );
         const pairs = await getFlowsWithProjectNames(
@@ -404,9 +420,10 @@ test(
             , 'Project pnXmXrxOWayANgDLdCjuBw');
         await seedProject(WeXjAaAxGSpLpamfEuvcww, 'prBESZPjJDiuXCeZLmbiVw'
             , 'Project prBESZPjJDiuXCeZLmbiVw');
+        const flow2 = generateIdentifier();
         await createBaseFlow(WeXjAaAxGSpLpamfEuvcww
             , 'aEsGMmBEFaVdWihhHXwCbw', 'pnXmXrxOWayANgDLdCjuBw');
-        await createBaseFlow(WeXjAaAxGSpLpamfEuvcww, 'flow-2'
+        await createBaseFlow(WeXjAaAxGSpLpamfEuvcww, flow2
             , 'prBESZPjJDiuXCeZLmbiVw');
         const rows: ProjectFlowEntity[] =
             await getProjectFlowEntities(
@@ -418,7 +435,7 @@ test(
         )!;
         assert.equal(link1.project_id, 'pnXmXrxOWayANgDLdCjuBw');
         const link2 = rows.find(
-            r => r.flow_id === 'flow-2',
+            r => r.flow_id === flow2,
         )!;
         assert.equal(link2.project_id, 'prBESZPjJDiuXCeZLmbiVw');
     },
@@ -454,7 +471,8 @@ test(
         // this address, so the link must land through the SAME
         // wire-reachable PUT the live route serves.
         await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
-            + 'psZcIMMgiSomMHzDxcUnYQ/flows/extra-link', {
+            + 'psZcIMMgiSomMHzDxcUnYQ/flows/'
+            + generateIdentifier(), {
             project_id: 'psZcIMMgiSomMHzDxcUnYQ',
             flow_id: 'aEsGMmBEFaVdWihhHXwCbw',
             at: '2026-01-01T00:00:00.000000Z',

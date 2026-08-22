@@ -24,6 +24,8 @@ import {
 import { putProject } from '../web-app/app/adapters/projects.ts';
 import { seedHumanMember } from './member-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 test('getBaselineScoresForProject returns project rows',
     async () => {
@@ -33,7 +35,7 @@ test('getBaselineScoresForProject returns project rows',
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'pnXmXrxOWayANgDLdCjuBw/objective-baseline-scores/'
-                + 'pnXmXrxOWayANgDLdCjuBw:ohqxgUBEaFQwYbXsonRPmg:t1',
+                + generateIdentifier(),
             {
                 project_id: 'pnXmXrxOWayANgDLdCjuBw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -45,7 +47,7 @@ test('getBaselineScoresForProject returns project rows',
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'prBESZPjJDiuXCeZLmbiVw/objective-baseline-scores/'
-                + 'prBESZPjJDiuXCeZLmbiVw:ohqxgUBEaFQwYbXsonRPmg:t1',
+                + generateIdentifier(),
             {
                 project_id: 'prBESZPjJDiuXCeZLmbiVw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -69,7 +71,7 @@ test('getActualScoresForProject returns project rows',
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'pnXmXrxOWayANgDLdCjuBw/objective-actual-scores/'
-                + 'pnXmXrxOWayANgDLdCjuBw:ohqxgUBEaFQwYbXsonRPmg:t1',
+                + generateIdentifier(),
             {
                 project_id: 'pnXmXrxOWayANgDLdCjuBw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -93,7 +95,7 @@ test('getProjectScoring returns both lists',
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'pnXmXrxOWayANgDLdCjuBw/objective-baseline-scores/'
-                + 'pnXmXrxOWayANgDLdCjuBw:ohqxgUBEaFQwYbXsonRPmg:t1',
+                + generateIdentifier(),
             {
                 project_id: 'pnXmXrxOWayANgDLdCjuBw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -105,7 +107,7 @@ test('getProjectScoring returns both lists',
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'pnXmXrxOWayANgDLdCjuBw/objective-actual-scores/'
-                + 'pnXmXrxOWayANgDLdCjuBw:ohqxgUBEaFQwYbXsonRPmg:t2',
+                + generateIdentifier(),
             {
                 project_id: 'pnXmXrxOWayANgDLdCjuBw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -159,7 +161,8 @@ async function seedTwoApprovedProjects(
         state: 'active',
     });
     await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
-        + 'ohqxgUBEaFQwYbXsonRPmg/revisions/ohqxgUBEaFQwYbXsonRPmg:t0', {
+        + 'ohqxgUBEaFQwYbXsonRPmg/revisions/'
+        + generateIdentifier(), {
         objective_id: 'ohqxgUBEaFQwYbXsonRPmg', name: 'O', description: 'd',
         member_id: 'xdaJyuuPyHfffCGLhqDrOQ',
         at: '2026-05-14T00:00:00.000000Z',
@@ -168,7 +171,7 @@ async function seedTwoApprovedProjects(
         'organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'projects/pnXmXrxOWayANgDLdCjuBw/'
             + 'objective-baseline-scores/'
-            + 'pnXmXrxOWayANgDLdCjuBw:ohqxgUBEaFQwYbXsonRPmg:t1',
+            + generateIdentifier(),
         {
             project_id: 'pnXmXrxOWayANgDLdCjuBw'
                 , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -181,7 +184,7 @@ async function seedTwoApprovedProjects(
         'organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'projects/prBESZPjJDiuXCeZLmbiVw/'
             + 'objective-baseline-scores/'
-            + 'prBESZPjJDiuXCeZLmbiVw:ohqxgUBEaFQwYbXsonRPmg:t1',
+            + generateIdentifier(),
         {
             project_id: 'prBESZPjJDiuXCeZLmbiVw'
                 , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -242,8 +245,7 @@ test(
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'pnXmXrxOWayANgDLdCjuBw/objective-actual-scores/'
-                + 'pnXmXrxOWayANgDLdCjuBw:'
-                    + 'ohqxgUBEaFQwYbXsonRPmg:UQTJZvCoKlFjEoDlDUwekw',
+                + generateIdentifier(),
             {
                 project_id: 'pnXmXrxOWayANgDLdCjuBw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -255,8 +257,7 @@ test(
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'prBESZPjJDiuXCeZLmbiVw/objective-actual-scores/'
-                + 'prBESZPjJDiuXCeZLmbiVw:'
-                    + 'ohqxgUBEaFQwYbXsonRPmg:UQTJZvCoKlFjEoDlDUwekw',
+                + generateIdentifier(),
             {
                 project_id: 'prBESZPjJDiuXCeZLmbiVw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -299,8 +300,7 @@ test(
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'pnXmXrxOWayANgDLdCjuBw/objective-actual-scores/'
-                + 'pnXmXrxOWayANgDLdCjuBw:'
-                    + 'ohqxgUBEaFQwYbXsonRPmg:UQTJZvCoKlFjEoDlDUwekw',
+                + generateIdentifier(),
             {
                 project_id: 'pnXmXrxOWayANgDLdCjuBw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -333,8 +333,7 @@ test(
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'pnXmXrxOWayANgDLdCjuBw/objective-actual-scores/'
-                + 'pnXmXrxOWayANgDLdCjuBw:'
-                    + 'ohqxgUBEaFQwYbXsonRPmg:UQTJZvCoKlFjEoDlDUwekw',
+                + generateIdentifier(),
             {
                 project_id: 'pnXmXrxOWayANgDLdCjuBw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -346,8 +345,7 @@ test(
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
                 + 'prBESZPjJDiuXCeZLmbiVw/objective-actual-scores/'
-                + 'prBESZPjJDiuXCeZLmbiVw:'
-                    + 'ohqxgUBEaFQwYbXsonRPmg:UQTJZvCoKlFjEoDlDUwekw',
+                + generateIdentifier(),
             {
                 project_id: 'prBESZPjJDiuXCeZLmbiVw'
                     , objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
@@ -382,7 +380,8 @@ test(
             state: 'active',
         });
         await ctx.PUT('organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
-            + 'ohqxgUBEaFQwYbXsonRPmg/revisions/ohqxgUBEaFQwYbXsonRPmg:t0', {
+            + 'ohqxgUBEaFQwYbXsonRPmg/revisions/'
+        + generateIdentifier(), {
             objective_id: 'ohqxgUBEaFQwYbXsonRPmg',
             name: 'O', description: 'd',
             member_id: 'xdaJyuuPyHfffCGLhqDrOQ',
@@ -403,7 +402,7 @@ test('postProjectBaselineScoring appends via GET scores',
         const ctx = createRequestContext(db, await organizationToken());
         await postProjectBaselineScoring(ctx, 'pnXmXrxOWayANgDLdCjuBw', [
             { objectiveId: 'ohqxgUBEaFQwYbXsonRPmg', score: 50 },
-            { objectiveId: 'o2', score: -30 },
+            { objectiveId: generateIdentifier(), score: -30 },
         ]);
         // Phase Final Task 2: score row half stripped —
         // adapter read derives from the pair plane.
@@ -433,8 +432,8 @@ test(
         );
         await postProjectBaselineScoring(ctx, 'pnXmXrxOWayANgDLdCjuBw', [
             { objectiveId: 'ohqxgUBEaFQwYbXsonRPmg', score: 10 },
-            { objectiveId: 'o2', score: 20 },
-            { objectiveId: 'o3', score: 30 },
+            { objectiveId: generateIdentifier(), score: 20 },
+            { objectiveId: generateIdentifier(), score: 30 },
         ]);
         const rows = await getBaselineScoresForProject(
             ctx, 'pnXmXrxOWayANgDLdCjuBw',

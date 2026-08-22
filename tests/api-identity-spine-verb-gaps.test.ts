@@ -12,6 +12,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedIdentityProvider } from './identity-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Pins the CURRENT status of every deliberate identity-spine
 // verb gap, through handleRequest, so Task 4's document-wiring
@@ -542,7 +544,8 @@ async () => {
     const db = await freshDb();
     const token = await organizationToken();
     await seedIdentityProvider(
-        db, 'toccYYkLEABmlbpHJalgtQ', 'ip-sarah-1', SARAH_PROVIDER,
+        db, 'toccYYkLEABmlbpHJalgtQ', generateIdentifier(),
+        SARAH_PROVIDER,
     );
     const res = await handleRequest(
         db, req('GET', '/identities/toccYYkLEABmlbpHJalgtQ/providers/'
@@ -698,6 +701,8 @@ test('DELETE identities/:id/default-organization 405s (side'
 // asymmetry (nested under the identity; flat RETIRED) ──
 
 const TOKEN_AT = '2026-01-01T00:00:00.000000Z';
+const TOKEN_JTI = generateIdentifier();
+const TOKEN_CHAIN = generateIdentifier();
 
 test('GET /identities/:id/tokens lists that identity',
 async () => {
@@ -707,8 +712,8 @@ async () => {
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
             + 'wLQNiqsEnyBvOQwlbvBXwA',
         token, {
-            jti: 'jti-list', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-            action: 'issued', chain_id: 'chain-list',
+            jti: TOKEN_JTI, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            action: 'issued', chain_id: TOKEN_CHAIN,
             at: TOKEN_AT,
         },
     ));
@@ -723,7 +728,7 @@ async () => {
         readonly action: string;
     }[];
     assert.equal(rows.length, 1);
-    assert.equal(rows[0]!.jti, 'jti-list');
+    assert.equal(rows[0]!.jti, TOKEN_JTI);
     assert.equal(rows[0]!.identity_id, 'XXZruirZyAOoRpNxaDnpSA');
     assert.equal(rows[0]!.action, 'issued');
 });
@@ -826,7 +831,7 @@ test('POST rotation 403s when path identity is not the'
         token, {
             jti: 'kGolXBkfDPCBVKcZzZIHnQ'
                 , identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-            action: 'issued', chain_id: 'chain-owned',
+            action: 'issued', chain_id: generateIdentifier(),
             at: TOKEN_AT,
         },
     ));

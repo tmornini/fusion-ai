@@ -31,6 +31,8 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 async function setupMemDb(): Promise<{
     db: MemoryDbAdapter;
@@ -102,11 +104,12 @@ function buildEdge(
 async function createBaseFlow(
     ctx: RequestContext,
     flowId: string,
+    projectId = generateIdentifier(),
 ): Promise<void> {
     await postFlowCreation(ctx, {
         flowId,
-        linkId: flowId + '-link',
-        projectId: 'project-1',
+        linkId: generateIdentifier(),
+        projectId,
         name: 'Test Flow',
     });
 }
@@ -115,7 +118,10 @@ test(
     'postFlowCreation creates flow plus link',
     async () => {
         const { ctx } = await setupMemDb();
-        await createBaseFlow(ctx, 'aEsGMmBEFaVdWihhHXwCbw');
+        const projectId = generateIdentifier();
+        await createBaseFlow(
+            ctx, 'aEsGMmBEFaVdWihhHXwCbw', projectId,
+        );
         const flow = await ctx.GET<FlowWithGraph>(
             'organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
                 + 'aEsGMmBEFaVdWihhHXwCbw',
@@ -132,15 +138,15 @@ test(
                 project_id: string;
                 flow_id: string;
             }[]>(
-                'organizations/AjdvjuECVZEgZoFajaIEkg/projects/project-1/'
-                    + 'flows/',
+                'organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
+                    + projectId + '/flows/',
             );
         const link = links.find(
             l => l.flow_id === 'aEsGMmBEFaVdWihhHXwCbw',
         );
         assert.ok(link);
         assert.equal(
-            link.project_id, 'project-1',
+            link.project_id, projectId,
         );
     },
 );
@@ -195,15 +201,19 @@ test(
     async () => {
         const { ctx } = await setupMemDb();
         await createBaseFlow(ctx, 'aEsGMmBEFaVdWihhHXwCbw');
-        const start = buildNode('start', {
+        const startId = generateIdentifier();
+        const endId = generateIdentifier();
+        const midId = generateIdentifier();
+        const edgeId = generateIdentifier();
+        const start = buildNode(startId, {
             isCreate: true,
         });
-        const complete = buildNode('end', {
+        const complete = buildNode(endId, {
             isArchive: true,
         });
-        const middle = buildNode('mid');
+        const middle = buildNode(midId);
         const edge = buildEdge(
-            'YiJPbufDpkyrZcZCYbUJpg', 'start', 'mid',
+            edgeId, startId, midId,
         );
         await putFlow(ctx, 'aEsGMmBEFaVdWihhHXwCbw', {
             name: 'Renamed',
@@ -228,7 +238,7 @@ test(
         assert.equal(graph.nodes.length, 3);
         assert.equal(graph.edges.length, 1);
         assert.equal(
-            graph.edges[0]!.id, 'YiJPbufDpkyrZcZCYbUJpg',
+            graph.edges[0]!.id, edgeId,
         );
     },
 );
@@ -239,9 +249,13 @@ test(
     async () => {
         const { ctx } = await setupMemDb();
         await createBaseFlow(ctx, 'aEsGMmBEFaVdWihhHXwCbw');
-        const a = buildNode('a');
-        const b = buildNode('b');
-        const ab = buildEdge('ab', 'a', 'b');
+        const aId = generateIdentifier();
+        const bId = generateIdentifier();
+        const a = buildNode(aId);
+        const b = buildNode(bId);
+        const ab = buildEdge(
+            generateIdentifier(), aId, bId,
+        );
         await putFlow(ctx, 'aEsGMmBEFaVdWihhHXwCbw', {
             name: 'xDyDkxEPwtcNmJVknUHDsg',
             isLocked: false,
@@ -267,7 +281,7 @@ test(
         const graph =
             flow.graph as unknown as StoredGraph;
         assert.equal(graph.nodes.length, 1);
-        assert.equal(graph.nodes[0]!.id, 'a');
+        assert.equal(graph.nodes[0]!.id, aId);
         assert.equal(graph.edges.length, 0);
     },
 );
@@ -278,12 +292,14 @@ test(
     async () => {
         const { ctx } = await setupMemDb();
         await createBaseFlow(ctx, 'aEsGMmBEFaVdWihhHXwCbw');
-        const baseNode = buildNode('base');
+        const aAdded = generateIdentifier();
+        const bAdded = generateIdentifier();
+        const baseNode = buildNode(generateIdentifier());
         const callerANodes = [
-            baseNode, buildNode('a-added'),
+            baseNode, buildNode(aAdded),
         ];
         const callerBNodes = [
-            baseNode, buildNode('b-added'),
+            baseNode, buildNode(bAdded),
         ];
         await putFlow(ctx, 'aEsGMmBEFaVdWihhHXwCbw', {
             name: 'caller-A',
@@ -313,12 +329,12 @@ test(
         assert.equal(graph.nodes.length, 2);
         assert.ok(
             graph.nodes.some(
-                n => n.id === 'b-added',
+                n => n.id === bAdded,
             ),
         );
         assert.ok(
             !graph.nodes.some(
-                n => n.id === 'a-added',
+                n => n.id === aAdded,
             ),
         );
     },
@@ -350,7 +366,7 @@ test(
             }),
             state: 'updated',
             state_at: '2026-01-01T00:00:00.000000Z',
-            state_event_id: 'fixed-ev',
+            state_event_id: generateIdentifier(),
             graph: { nodes: [], edges: [] },
             graphDelta: EMPTY_GRAPH_DELTA,
             revivals: [],
@@ -395,7 +411,7 @@ test(
         });
         await ctx.POST('organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
             + 'aEsGMmBEFaVdWihhHXwCbw/undo', {
-            eventId: 'undo-ev',
+            eventId: generateIdentifier(),
             at: '2099-01-02T00:00:00.000000Z',
         });
         const events = await ctx.GET<StateEntity[]>(
@@ -438,7 +454,7 @@ test(
                 }),
                 state: 'updated',
                 state_at: '2099-01-03T00:00:00.000000Z',
-                state_event_id: 'redo-ev',
+                state_event_id: generateIdentifier(),
                 graph: { nodes: [], edges: [] },
                 graphDelta: EMPTY_GRAPH_DELTA,
                 revivals: [],
@@ -496,7 +512,8 @@ test(
         const complete = baseline0.nodes.find(
             n => n.isArchive,
         )!;
-        const mid = buildNode('mid');
+        const midId = generateIdentifier();
+        const mid = buildNode(midId);
 
         // 'mid' starts alive — an ordinary edit, no race yet.
         await putFlow(ctx, 'aEsGMmBEFaVdWihhHXwCbw', {
@@ -573,7 +590,7 @@ test(
             secondBody as Record<string, unknown>
         ).revivals as { entityId: string }[];
         assert.ok(
-            revivals.some(r => r.entityId === 'mid'),
+            revivals.some(r => r.entityId === midId),
             'the recomputed retry restores the node the'
             + ' race just tombstoned — a revivals list'
             + ' captured once (before the race) would'
@@ -588,7 +605,7 @@ test(
         const graph =
             flow.graph as unknown as StoredGraph;
         assert.ok(
-            graph.nodes.some(n => n.id === 'mid'),
+            graph.nodes.some(n => n.id === midId),
             'mid reappears once its restore rides the'
             + ' retry that actually lands',
         );

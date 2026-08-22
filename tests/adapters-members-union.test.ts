@@ -46,18 +46,24 @@ import {
 import {
     formWritePair,
 } from '../api/message-pair.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 async function setupSeeded(): Promise<{
     db: MemoryDbAdapter;
+    humanId: string;
+    aiId: string;
 }> {
     const db = memoryDbAdapter();
+    const humanId = generateIdentifier();
+    const aiId = generateIdentifier();
     await seedAdminSchema(db);
     await seedHumanMember(
-        db, 'hw_sarah_chen', 'Sarah Test',
+        db, humanId, 'Sarah Test',
     );
     await seedAIMember(
-        db, 'ai_claude_opus', 'Claude Opus',
+        db, aiId, 'Claude Opus',
     );
-    return { db };
+    return { db, humanId, aiId };
 }
 
 test(
@@ -67,7 +73,7 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         await seedHumanMember(
-            db, 'hw_sarah', 'Sarah Chen',
+            db, generateIdentifier(), 'Sarah Chen',
         );
         const ctx = createRequestContext(db, await organizationToken());
         const roster = await getMembers(ctx);
@@ -89,12 +95,12 @@ test(
     'getMembers returns humans and AIs unioned'
     + ' with correct kind discriminator',
     async () => {
-        const { db } = await setupSeeded();
+        const { db, humanId, aiId } = await setupSeeded();
         const ctx = createRequestContext(db, await organizationToken());
         const members = await getMembers(ctx);
         assert.equal(members.length, 3);
         const human = members.find(
-            m => m.idForLink() === 'hw_sarah_chen',
+            m => m.idForLink() === humanId,
         );
         const ai = members.find(isAIMember)!;
         assert.ok(human);
@@ -103,7 +109,7 @@ test(
         assert.equal(human.kind, 'human');
         assert.equal(ai.kind, 'ai');
         assert.equal(
-            ai.idForLink(), 'ai_claude_opus',
+            ai.idForLink(), aiId,
         );
     },
 );
@@ -114,7 +120,7 @@ test(
 test(
     'getMembers spans kinds and excludes an idea',
     async () => {
-        const { db } = await setupSeeded();
+        const { db, humanId, aiId } = await setupSeeded();
         const ctx = createRequestContext(
             db, await organizationToken(),
         );
@@ -131,8 +137,8 @@ test(
         });
         const members = await getMembers(ctx);
         const ids = members.map(m => m.idForLink());
-        assert.ok(ids.includes('hw_sarah_chen'));
-        assert.ok(ids.includes('ai_claude_opus'));
+        assert.ok(ids.includes(humanId));
+        assert.ok(ids.includes(aiId));
         assert.ok(
             !ids.includes('fndCYAsXazdzMUlEGMNIZw'),
             'idea must not leak into members',
@@ -144,12 +150,12 @@ test(
     'getMemberMap keys by id with both kinds'
     + ' present',
     async () => {
-        const { db } = await setupSeeded();
+        const { db, humanId, aiId } = await setupSeeded();
         const ctx = createRequestContext(db, await organizationToken());
         const map = await getMemberMap(ctx);
         assert.equal(map.size, 4);
-        const human = map.get('hw_sarah_chen')!;
-        const ai = map.get('ai_claude_opus')!;
+        const human = map.get(humanId)!;
+        const ai = map.get(aiId)!;
         assert.ok(human);
         assert.ok(ai);
         assert.equal(human.kind, 'human');
@@ -161,15 +167,15 @@ test(
     'memberName returns the display name for'
     + ' both human and AI kinds',
     async () => {
-        const { db } = await setupSeeded();
+        const { db, humanId, aiId } = await setupSeeded();
         const ctx = createRequestContext(db, await organizationToken());
         const map = await getMemberMap(ctx);
         assert.equal(
-            memberName(map, 'hw_sarah_chen'),
+            memberName(map, humanId),
             'Sarah Test',
         );
         assert.equal(
-            memberName(map, 'ai_claude_opus'),
+            memberName(map, aiId),
             'Claude Opus',
         );
     },
@@ -179,15 +185,15 @@ test(
     'memberName is polymorphic across human'
     + ' and AI kinds',
     async () => {
-        const { db } = await setupSeeded();
+        const { db, humanId, aiId } = await setupSeeded();
         const ctx = createRequestContext(db, await organizationToken());
         const map = await getMemberMap(ctx);
         assert.equal(
-            memberName(map, 'hw_sarah_chen'),
+            memberName(map, humanId),
             'Sarah Test',
         );
         assert.equal(
-            memberName(map, 'ai_claude_opus'),
+            memberName(map, aiId),
             'Claude Opus',
         );
     },
@@ -253,13 +259,14 @@ test(
         if (spec === undefined || !('status' in spec)) {
             throw new Error('no identities/:id spec');
         }
+        const memberId = generateIdentifier();
         const pair = await formWritePair({
             method: 'PUT',
-            pathname: '/identities/member_without_pii',
+            pathname: '/identities/' + memberId,
             routePattern: 'identities/:id',
             routeSegments: ['identities', ':id'],
             pathSegments: [
-                'identities', 'member_without_pii',
+                'identities', memberId,
             ],
             headerFields: [],
             body: identityBody,
@@ -268,22 +275,22 @@ test(
             organization: undefined,
             responseStatus: spec.status,
             responseBody: spec.successBody?.(
-                ['member_without_pii'], identityBody,
+                [memberId], identityBody,
                 SYSTEM_MEMBER_ID, undefined,
             ),
             operationId: TEST_OPERATION_ID,
         });
         await postIdentityDocumentOp(
-            db, 'member_without_pii', identityBody,
+            db, memberId, identityBody,
             SYSTEM_MEMBER_ID, pair,
         );
         await seedSeat(
-            db, 'AjdvjuECVZEgZoFajaIEkg', 'member_without_pii', 'member',
+            db, 'AjdvjuECVZEgZoFajaIEkg', memberId, 'member',
         );
         const ctx = createRequestContext(db, await organizationToken());
         const map = await getMemberMap(ctx);
         assert.equal(
-            memberName(map, 'member_without_pii'),
+            memberName(map, memberId),
             MEMBER_WITHOUT_PII_NAME,
         );
     },
@@ -294,15 +301,17 @@ test(
     + ' slot stays Member without PII',
     async () => {
         const { db, ctx } = await adminContext();
+        const aliceId = generateIdentifier();
+        const agentId = generateIdentifier();
         await seedHumanMember(
-            db, 'u1', 'Alice Test',
+            db, aliceId, 'Alice Test',
         );
         await seedAIMember(
-            db, 'ai1', 'Claude Opus',
+            db, agentId, 'Claude Opus',
         );
         const members = await getMembers(ctx);
         const alice = members.find(
-            m => m.idForLink() === 'u1',
+            m => m.idForLink() === aliceId,
         );
         assert.ok(alice && isHumanMember(alice));
         const pii = alice.pii();
@@ -311,13 +320,13 @@ test(
             assert.equal(pii.name, 'Alice Test');
         }
         const agent = members.find(
-            m => m.idForLink() === 'ai1',
+            m => m.idForLink() === agentId,
         );
         assert.ok(agent && isAIMember(agent));
         assert.equal(agent.name(), 'Claude Opus');
         const map = await getMemberMap(ctx);
         assert.equal(
-            memberName(map, 'u1'), 'Alice Test',
+            memberName(map, aliceId), 'Alice Test',
         );
     },
 );

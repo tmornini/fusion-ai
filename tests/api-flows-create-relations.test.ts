@@ -31,6 +31,8 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Phase Final Task 2: graph relation ROW halves stripped.
 // Create still seeds graph on the document pair; oracles
@@ -64,11 +66,11 @@ test(
     + ' on the pair plane',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-rel-1';
+        const flowId = generateIdentifier();
         await postFlowCreation(ctx, {
             flowId,
-            linkId: flowId + '-link',
-            projectId: 'project-1',
+            linkId: generateIdentifier(),
+            projectId: generateIdentifier(),
             name: 'Rel Test Flow',
         });
         const graph = await getFlowGraph(ctx, flowId);
@@ -85,11 +87,11 @@ test(
     + ' equals the default graph',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-rel-2';
+        const flowId = generateIdentifier();
         await postFlowCreation(ctx, {
             flowId,
-            linkId: flowId + '-link',
-            projectId: 'project-1',
+            linkId: generateIdentifier(),
+            projectId: generateIdentifier(),
             name: 'Rel Test Flow 2',
         });
 
@@ -147,11 +149,11 @@ test(
     + ' still lands',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-rel-3';
+        const flowId = generateIdentifier();
         await postFlowCreation(ctx, {
             flowId,
-            linkId: flowId + '-link',
-            projectId: 'project-1',
+            linkId: generateIdentifier(),
+            projectId: generateIdentifier(),
             name: 'State Event Test Flow',
         });
         const events = await ctx.GET<StateEntity[]>(
@@ -175,11 +177,11 @@ test(
     + ' edges for the default graph',
     async () => {
         const { ctx } = await setupMemDb();
-        const flowId = 'flow-rel-4';
+        const flowId = generateIdentifier();
         await postFlowCreation(ctx, {
             flowId,
-            linkId: flowId + '-link',
-            projectId: 'project-1',
+            linkId: generateIdentifier(),
+            projectId: generateIdentifier(),
             name: 'Edge Test Flow',
         });
         const graph = await getFlowGraph(ctx, flowId);

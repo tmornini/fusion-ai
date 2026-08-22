@@ -8,6 +8,8 @@ import { DEFAULT_LOCK_TIMEOUT } from '../api/types.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Succession pin: pair-chain GET /organizations/:id/flows/:id/versions is
 // 200/404 by document existence. Old table-backed :vid
@@ -37,7 +39,7 @@ function flowBody() {
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
         state: 'active',
         state_at: '2026-03-01T00:00:00.000000Z',
-        state_event_id: 'flow-ver-1-ev1',
+        state_event_id: generateIdentifier(),
         graph: { nodes: [], edges: [] },
         revivals: [],
         graphDelta: {

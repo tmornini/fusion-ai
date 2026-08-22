@@ -14,6 +14,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Pre-write authorizer: probe this address. Same id at two
 // collections is two documents. Foreign-id PUT geneses here;
@@ -22,7 +24,6 @@ import { seedSeat } from './root-admin-fixture.ts';
 
 const BASE = 'http://localhost';
 const ORGANIZATION_A = 'AjdvjuECVZEgZoFajaIEkg';
-const ORGANIZATION_B = 'B';
 
 function req(
     method: string,
@@ -60,12 +61,16 @@ function ideaDocument(
 // `current` also administers — foreign-id probes always use the
 // B token against an A-owned document. Privilege is membership
 // type:"admin" (claim roles bake at mint).
-async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
+async function twoOrganizationDb(): Promise<{
+    db: MemoryDbAdapter;
+    organizationB: string;
+}> {
     const db = memoryDbAdapter();
+    const organizationB = generateIdentifier();
     await seedAdminSchema(db);
-    await seedOrganizationDocument(db, ORGANIZATION_B, 'Beta');
+    await seedOrganizationDocument(db, organizationB, 'Beta');
     const memBody = {
-        organization_id: ORGANIZATION_B,
+        organization_id: organizationB,
         identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         type: 'admin',
         at: '2020-01-01T00:00:00.000000Z',
@@ -78,16 +83,16 @@ async function twoOrganizationDb(): Promise<MemoryDbAdapter> {
         String(memBody['at'] ?? memBody.at),
     );
 
-    return db;
+    return { db, organizationB };
 }
 
 test('foreign-id PUT organizations/:id/ideas/:id geneses at this address',
 async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
         , ORGANIZATION_A);
     const tokenB = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
-        , ORGANIZATION_B);
+        , organizationB);
     const created = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
             + 'gfwcurTzrfssEsWJyNeUyQ', tokenA,
@@ -97,14 +102,14 @@ async () => {
 
     const foreign = await handleRequest(db, req(
         'PUT',
-        '/organizations/' + ORGANIZATION_B + '/ideas/gfwcurTzrfssEsWJyNeUyQ',
+        '/organizations/' + organizationB + '/ideas/gfwcurTzrfssEsWJyNeUyQ',
         tokenB,
         ideaDocument('stolen', 'ev-steal'),
     ));
     assert.equal(foreign.status, 201);
     const gotB = await handleRequest(db, req(
         'GET',
-        '/organizations/' + ORGANIZATION_B + '/ideas/gfwcurTzrfssEsWJyNeUyQ',
+        '/organizations/' + organizationB + '/ideas/gfwcurTzrfssEsWJyNeUyQ',
         tokenB,
     ));
     assert.equal(gotB.status, 200);
@@ -113,7 +118,7 @@ async () => {
         organization_id: string;
     };
     assert.equal(wireB.title, 'stolen');
-    assert.equal(wireB.organization_id, ORGANIZATION_B);
+    assert.equal(wireB.organization_id, organizationB);
     const gotA = await handleRequest(db, req(
         'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
             + 'gfwcurTzrfssEsWJyNeUyQ', tokenA,
@@ -130,12 +135,12 @@ async () => {
 test('genesis PUT organizations/:id/ideas/:id in the'
     + ' caller org is unaffected',
 async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenB = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
-        , ORGANIZATION_B);
+        , organizationB);
     const res = await handleRequest(db, req(
         'PUT',
-        '/organizations/' + ORGANIZATION_B
+        '/organizations/' + organizationB
             + '/ideas/gmdHxjEYmxOsDKfNPlGSig',
         tokenB,
         ideaDocument('B-new', 'ev-idea-b'),
@@ -145,7 +150,7 @@ async () => {
     // rides WRITE_RESPONSE_SPECS / derive GET, not the row.
     const getRes = await handleRequest(db, req(
         'GET',
-        '/organizations/' + ORGANIZATION_B
+        '/organizations/' + organizationB
             + '/ideas/gmdHxjEYmxOsDKfNPlGSig',
         tokenB,
     ));
@@ -153,16 +158,16 @@ async () => {
     const wire = await getRes.json() as {
         organization_id: string;
     };
-    assert.equal(wire.organization_id, ORGANIZATION_B);
+    assert.equal(wire.organization_id, organizationB);
 });
 
 test('foreign-id DELETE nested record-types is 204',
 async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
         , ORGANIZATION_A);
     const tokenB = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
-        , ORGANIZATION_B);
+        , organizationB);
     const created = await handleRequest(db, req(
         'POST',
         '/organizations/' + ORGANIZATION_A
@@ -177,7 +182,7 @@ async () => {
                 position: 1,
             },
             attributes: [],
-            initialStateEventId: 'ev-rec-a',
+            initialStateEventId: generateIdentifier(),
             initialState: 'active',
             initialStateAt: '2026-01-01T00:00:00.000000Z',
         },
@@ -186,7 +191,7 @@ async () => {
 
     const foreign = await handleRequest(db, req(
         'DELETE',
-        '/organizations/' + ORGANIZATION_B
+        '/organizations/' + organizationB
             + '/record-types/rlzgSSwpqXVHTYfBzjWFWQ',
         tokenB,
     ));
@@ -206,11 +211,11 @@ async () => {
 
 test('foreign-id DELETE seat is a miss in the caller org',
 async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
         , ORGANIZATION_A);
     const tokenB = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
-        , ORGANIZATION_B);
+        , organizationB);
     const created = await handleRequest(db, req(
         'PUT',
         '/organizations/' + ORGANIZATION_A
@@ -225,7 +230,7 @@ async () => {
 
     const foreign = await handleRequest(db, req(
         'DELETE',
-        '/organizations/' + ORGANIZATION_B
+        '/organizations/' + organizationB
             + '/members/uTGrEpVpODbNhDhDVdWeqQ',
         tokenB,
     ));
@@ -245,11 +250,11 @@ async () => {
 
 test('foreign-id PUT organizations/:id/projects/:id geneses at this address',
 async () => {
-    const db = await twoOrganizationDb();
+    const { db, organizationB } = await twoOrganizationDb();
     const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
         , ORGANIZATION_A);
     const tokenB = await organizationToken('XXZruirZyAOoRpNxaDnpSA'
-        , ORGANIZATION_B);
+        , organizationB);
     const projectBody = {
         title: 'A project',
         description: 'd',
@@ -269,7 +274,7 @@ async () => {
 
     const foreign = await handleRequest(db, req(
         'PUT',
-        '/organizations/' + ORGANIZATION_B
+        '/organizations/' + organizationB
             + '/projects/qizdVmLlnGCvMsomvBDqmw',
         tokenB, {
             ...projectBody,
@@ -279,7 +284,7 @@ async () => {
     assert.equal(foreign.status, 201);
     const gotB = await handleRequest(db, req(
         'GET',
-        '/organizations/' + ORGANIZATION_B
+        '/organizations/' + organizationB
             + '/projects/qizdVmLlnGCvMsomvBDqmw',
         tokenB,
     ));
@@ -289,7 +294,7 @@ async () => {
         organization_id: string;
     };
     assert.equal(wireB.title, 'stolen');
-    assert.equal(wireB.organization_id, ORGANIZATION_B);
+    assert.equal(wireB.organization_id, organizationB);
     const gotA = await handleRequest(db, req(
         'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/'
             + 'qizdVmLlnGCvMsomvBDqmw', tokenA,

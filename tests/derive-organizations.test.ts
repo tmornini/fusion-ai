@@ -20,6 +20,8 @@ import {
     deriveOrganizations,
     organizationEntityOf,
 } from '../api/derive-organizations.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Phase Final Task 2: organizations dual-write stripped. This
 // file no longer compares derive vs row-plane oracles — the
@@ -66,10 +68,11 @@ function putOrganization(
 test('deriveOrganization mirrors the PUT wire body exactly',
 async () => {
     const db = await freshDb();
-    const res = await putOrganization(db, 'org-a', 'Acme');
+    const organizationId = generateIdentifier();
+    const res = await putOrganization(db, organizationId, 'Acme');
     assert.equal(res.status, 201);
     const wire = await res.json();
-    const derived = await deriveOrganization(db, 'org-a');
+    const derived = await deriveOrganization(db, organizationId);
     assert.deepEqual(derived, wire);
     // Phase Final Stage B: organizations table retired.
 });
@@ -79,20 +82,22 @@ test('deriveOrganizations mirrors every PUT wire body,'
     const db = await freshDb();
     // seedAdminSchema plants org 'AjdvjuECVZEgZoFajaIEkg'; these two PUTs add
     // more heads — derive is id-lex over the full set.
-    const beta = await putOrganization(db, 'org-b', 'Beta');
-    const alpha = await putOrganization(db, 'org-a', 'Alpha');
+    const organizationB = generateIdentifier();
+    const organizationA = generateIdentifier();
+    const beta = await putOrganization(db, organizationB, 'Beta');
+    const alpha = await putOrganization(db, organizationA, 'Alpha');
     assert.equal(beta.status, 201);
     assert.equal(alpha.status, 201);
     const derived = await deriveOrganizations(db);
     assert.deepEqual(
         derived.map((o) => o.id),
-        ['AjdvjuECVZEgZoFajaIEkg', 'org-a', 'org-b'],
+        ['AjdvjuECVZEgZoFajaIEkg', organizationA, organizationB].sort(),
     );
     assert.equal(
-        derived.find((o) => o.id === 'org-a')!.name, 'Alpha',
+        derived.find((o) => o.id === organizationA)!.name, 'Alpha',
     );
     assert.equal(
-        derived.find((o) => o.id === 'org-b')!.name, 'Beta',
+        derived.find((o) => o.id === organizationB)!.name, 'Beta',
     );
     // Phase Final Stage B: organizations table retired.
 });
@@ -100,13 +105,14 @@ test('deriveOrganizations mirrors every PUT wire body,'
 test('deriveOrganization 404s with store-shaped'
 + ' EntityNotFoundError on an absent id', async () => {
     const db = await freshDb();
+    const missingId = generateIdentifier();
     await assert.rejects(
-        () => deriveOrganization(db, 'org-missing'),
+        () => deriveOrganization(db, missingId),
         (error: unknown) => {
             assert.ok(error instanceof EntityNotFoundError);
             assert.equal(
                 (error as { message: string }).message,
-                'Not found: organizations/org-missing',
+                'Not found: organizations/' + missingId,
             );
             return true;
         },
@@ -118,20 +124,21 @@ test('deriveOrganization 404s with store-shaped'
 test('a second live PUT supersedes the first; derive sees the'
 + ' NEW head, not the genesis body', async () => {
     const db = await freshDb();
-    const first = await putOrganization(db, 'org-c', 'First');
+    const organizationId = generateIdentifier();
+    const first = await putOrganization(db, organizationId, 'First');
     const firstId = first.headers.get('Response-ID');
     assert.ok(firstId);
-    const second = await putOrganization(db, 'org-c', 'Second');
+    const second = await putOrganization(db, organizationId, 'Second');
     assert.equal(second.headers.get('Supersedes'), null);
 
-    const derived = await deriveOrganization(db, 'org-c');
+    const derived = await deriveOrganization(db, organizationId);
     assert.equal(derived.name, 'Second');
     const wire = await second.json();
     assert.deepEqual(derived, wire);
 
     const all = await deriveOrganizations(db);
     assert.equal(
-        all.filter((org) => org.id === 'org-c').length, 1,
+        all.filter((org) => org.id === organizationId).length, 1,
     );
     // Phase Final Stage B: organizations table retired.
 });
@@ -142,16 +149,17 @@ test('the pair lives at the flat /organizations/ prefix, no'
 + ' organization segment — derive takes no org argument',
 async () => {
     const db = await freshDb();
-    await putOrganization(db, 'org-d', 'Flat');
+    const organizationId = generateIdentifier();
+    await putOrganization(db, organizationId, 'Flat');
     const requests = await db.pairs.getAll();
     // seedAdminSchema forms 2 pairs (role-grants retired);
     // this PUT is the 3rd.
     assert.equal(requests.length, 3);
     assert.equal(requests[2]!.uri_collection, '/organizations/');
-    assert.equal(requests[2]!.uri_id, 'org-d');
+    assert.equal(requests[2]!.uri_id, organizationId);
 
-    const derived = await deriveOrganization(db, 'org-d');
-    assert.equal(derived.id, 'org-d');
+    const derived = await deriveOrganization(db, organizationId);
+    assert.equal(derived.id, organizationId);
 });
 
 // -- the id-echo roundtrip ----------------------------------------
@@ -182,7 +190,7 @@ test('a PUT whose body echoes id round-trips through'
 test('stored PUT body equals organizationEntityOf id-last',
 async () => {
     const db = await freshDb();
-    const id = 'org-g3';
+    const id = generateIdentifier();
     const fields = organizationRow('Streamed');
     const put = await putOrganization(db, id, 'Streamed');
     assert.equal(put.status, 201);

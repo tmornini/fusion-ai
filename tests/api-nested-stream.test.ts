@@ -1,4 +1,6 @@
 import { test } from 'node:test';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 import assert from 'node:assert/strict';
 import {
     memoryDbAdapter,
@@ -113,14 +115,14 @@ async function createFlow(
                 is_auto_fit: false,
                 lock_timeout: DEFAULT_LOCK_TIMEOUT,
             },
-            projectFlowId: flowId + '-pf',
+            projectFlowId: generateIdentifier(),
             projectFlow: {
                 project_id: projectId,
                 flow_id: flowId,
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: flowId + '-ev',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
             graphDelta: emptyDelta(),
         },
@@ -143,8 +145,8 @@ function storedDoc(
 test('stored PUT body equals ideaSubmissionEntityOf',
 async () => {
     const { db, token } = await freshDb();
-    const ideaId = 'idea-g6';
-    const sid = 'sub-g6';
+    const ideaId = generateIdentifier();
+    const sid = generateIdentifier();
     const putIdea = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/' + ideaId, token,
         ideaDocument('G6 Idea', 'ev-g6'),
@@ -188,11 +190,11 @@ async () => {
 test('stored PUT body equals projectFlowEntityOf',
 async () => {
     const { db, token } = await freshDb();
-    const projectId = 'proj-g6';
-    const pfid = 'pf-g6';
+    const projectId = generateIdentifier();
+    const pfid = generateIdentifier();
     const fields = {
         project_id: projectId,
-        flow_id: 'flow-g6-join',
+        flow_id: generateIdentifier(),
         at: AT,
     };
     const put = await handleRequest(db, req(
@@ -228,12 +230,12 @@ async () => {
 test('stored PUT body equals flowWorkOrderEntityOf',
 async () => {
     const { db, token } = await freshDb();
-    const flowId = 'flow-g6-wo';
-    const woid = 'fwo-g6';
-    await createFlow(db, token, flowId, 'proj-g6-wo');
+    const flowId = generateIdentifier();
+    const woid = generateIdentifier();
+    await createFlow(db, token, flowId, generateIdentifier());
     const fields = {
         flow_id: flowId,
-        work_order_id: 'wo-g6',
+        work_order_id: generateIdentifier(),
         at: AT,
     };
     const put = await handleRequest(db, req(
@@ -269,12 +271,12 @@ async () => {
 test('stored PUT body equals flowRecordEntityOf',
 async () => {
     const { db, token } = await freshDb();
-    const flowId = 'flow-g6-rec';
-    const frid = 'fr-g6';
-    await createFlow(db, token, flowId, 'proj-g6-rec');
+    const flowId = generateIdentifier();
+    const frid = generateIdentifier();
+    await createFlow(db, token, flowId, generateIdentifier());
     const fields = {
         flow_id: flowId,
-        record_id: 'rt-g6',
+        record_id: generateIdentifier(),
         at: AT,
     };
     const put = await handleRequest(db, req(
@@ -324,8 +326,8 @@ async () => {
 test('stored PUT body equals flowTagEntityOf',
 async () => {
     const { db, token } = await freshDb();
-    const flowId = 'flow-g6-tag';
-    await createFlow(db, token, flowId, 'proj-g6-tag');
+    const flowId = generateIdentifier();
+    await createFlow(db, token, flowId, generateIdentifier());
     const head = await handleRequest(db, req(
         'GET', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId, token,
     ));
@@ -368,8 +370,8 @@ async () => {
 test('stored PUT body equals nestedAttributeWireOf',
 async () => {
     const { db, token } = await freshDb();
-    const typeId = 'rt-g6';
-    const attrId = 'attr-g6';
+    const typeId = generateIdentifier();
+    const attrId = generateIdentifier();
     const typePut = await handleRequest(db, req(
         'PUT',
         '/organizations/' + ORGANIZATION
@@ -426,8 +428,8 @@ async () => {
 test('stored PUT body equals objectiveRevisionEntityOf',
 async () => {
     const { db, token } = await freshDb();
-    const objectiveId = 'obj-g6';
-    const rid = 'rev-g6';
+    const objectiveId = generateIdentifier();
+    const rid = generateIdentifier();
     const created = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/objectives/', token,
         {
@@ -442,7 +444,7 @@ async () => {
                 at: AT,
             },
             initialState: 'active',
-            initialStateEventId: objectiveId + '-active',
+            initialStateEventId: generateIdentifier(),
             initialStateAt: AT,
         },
     ));
@@ -481,11 +483,11 @@ async () => {
 test('stored PUT body equals scoreEntityOf (baseline)',
 async () => {
     const { db, token } = await freshDb();
-    const projectId = 'proj-g6-score';
-    const sid = 'base-g6';
+    const projectId = generateIdentifier();
+    const sid = generateIdentifier();
     const fields = {
         project_id: projectId,
-        objective_id: 'obj-g6-score',
+        objective_id: generateIdentifier(),
         score: 3,
         member_id: 'XXZruirZyAOoRpNxaDnpSA',
         at: AT,
@@ -524,11 +526,11 @@ async () => {
 test('stored PUT body equals scoreEntityOf (actual)',
 async () => {
     const { db, token } = await freshDb();
-    const projectId = 'proj-g6-score';
-    const sid = 'act-g6';
+    const projectId = generateIdentifier();
+    const sid = generateIdentifier();
     const fields = {
         project_id: projectId,
-        objective_id: 'obj-g6-score',
+        objective_id: generateIdentifier(),
         score: 4,
         member_id: 'XXZruirZyAOoRpNxaDnpSA',
         at: AT,

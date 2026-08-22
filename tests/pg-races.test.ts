@@ -131,7 +131,7 @@ function flowCreate(id: string): Record<string, unknown> {
             at: AT,
         },
         initialState: 'active',
-        initialStateEventId: id + '-ev',
+        initialStateEventId: generateIdentifier(),
         initialStateAt: AT,
         graphDelta: emptyDelta(),
     };

@@ -21,6 +21,8 @@ import { HttpMessage } from
     '../shared/http-message/http-message.ts';
 import { messageStore } from '../api/message-store.ts';
 import { setClockForTest, resetClock } from '../api/types.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 function pairJsonOf(message: string): {
     readonly body: Record<string, unknown>;
@@ -251,9 +253,10 @@ test('the pair request body carries domain state;'
 test('a same-state edit by a DIFFERENT member never'
 + ' reattributes the head event\'s authorship', async () => {
     const db = await freshDb();
-    await seedOrganizationMember(db, 'member-b');
+    const memberB = generateIdentifier();
+    await seedOrganizationMember(db, memberB);
     const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
-    const tokenB = await organizationToken('member-b');
+    const tokenB = await organizationToken(memberB);
     const created = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/'
             + 'YLbPBVpBLImxPQRqLKPKLw', tokenA,
@@ -338,7 +341,7 @@ test('stored PUT body equals ideaEntityOf of the same chain',
 async () => {
     const db = await freshDb();
     const token = await organizationToken();
-    const id = 'idea-g1-stream';
+    const id = generateIdentifier();
     const body = ideaDocument('Streamed', 'active');
     const put = await handleRequest(
         db, req('PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/ideas/' + id

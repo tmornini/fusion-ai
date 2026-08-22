@@ -30,6 +30,8 @@ import {
     seedCurrentMember,
 } from './member-fixtures.ts';
 import { seedAdminSchema } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 function ctxFor(db: MemoryDbAdapter) {
     return createRequestContext(db, DEV_TOKEN);
@@ -54,13 +56,15 @@ test('getObjectives returns all', async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
     const ctx = ctxFor(db);
+    const o2 = generateIdentifier();
     await ctx.PUT(
         'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
             + 'ohqxgUBEaFQwYbXsonRPmg',
         objectiveDoc(0, 'active', 'ev-o1'),
     );
     await ctx.PUT(
-        'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/o2',
+        'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+            + o2,
         objectiveDoc(1, 'active', 'ev-o2'),
     );
     const rows = await getObjectives(ctx);
@@ -87,10 +91,14 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         const ctx = ctxFor(db);
+        const o2 = generateIdentifier();
+        const r1t0 = generateIdentifier();
+        const r1t1 = generateIdentifier();
+        const r2t0 = generateIdentifier();
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
                 + 'ohqxgUBEaFQwYbXsonRPmg/revisions/'
-                + 'ohqxgUBEaFQwYbXsonRPmg:t0',
+                + r1t0,
             revision(
                 'ohqxgUBEaFQwYbXsonRPmg', 'A',
                 '2026-05-14T00:00:00.000000Z',
@@ -99,30 +107,32 @@ test(
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
                 + 'ohqxgUBEaFQwYbXsonRPmg/revisions/'
-                + 'ohqxgUBEaFQwYbXsonRPmg:t1',
+                + r1t1,
             revision(
                 'ohqxgUBEaFQwYbXsonRPmg', 'B',
                 '2026-05-15T00:00:00.000000Z',
             ),
         );
         await ctx.PUT(
-            'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/o2/revisions/'
-                + 'o2:t0',
+            'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+                + o2 + '/revisions/' + r2t0,
             revision(
-                'o2', 'C',
+                o2, 'C',
                 '2026-05-14T00:00:00.000000Z',
             ),
         );
         const grouped =
             await getObjectiveRevisionsByObjective(
-                ctx, ['ohqxgUBEaFQwYbXsonRPmg', 'o2'],
+                ctx, ['ohqxgUBEaFQwYbXsonRPmg', o2],
             );
         assert.equal(grouped.size, 2);
-        assert.equal(grouped.get('ohqxgUBEaFQwYbXsonRPmg')!.length, 2);
-        assert.equal(grouped.get('o2')!.length, 1);
-        assert.deepEqual(grouped.get('o2')![0], {
-            id: 'o2:t0',
-            objectiveId: 'o2',
+        assert.equal(
+            grouped.get('ohqxgUBEaFQwYbXsonRPmg')!.length, 2,
+        );
+        assert.equal(grouped.get(o2)!.length, 1);
+        assert.deepEqual(grouped.get(o2)![0], {
+            id: r2t0,
+            objectiveId: o2,
             name: 'C',
             description: 'd:C',
             memberId: 'xdaJyuuPyHfffCGLhqDrOQ',
@@ -138,10 +148,11 @@ test(
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
         const ctx = ctxFor(db);
+        const o2 = generateIdentifier();
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
                 + 'ohqxgUBEaFQwYbXsonRPmg/revisions/'
-                + 'ohqxgUBEaFQwYbXsonRPmg:t0',
+                + generateIdentifier(),
             revision(
                 'ohqxgUBEaFQwYbXsonRPmg', 'Old',
                 '2026-05-14T00:00:00.000000Z',
@@ -150,29 +161,30 @@ test(
         await ctx.PUT(
             'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
                 + 'ohqxgUBEaFQwYbXsonRPmg/revisions/'
-                + 'ohqxgUBEaFQwYbXsonRPmg:t1',
+                + generateIdentifier(),
             revision(
                 'ohqxgUBEaFQwYbXsonRPmg', 'New',
                 '2026-05-15T00:00:00.000000Z',
             ),
         );
         await ctx.PUT(
-            'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/o2/revisions/'
-                + 'o2:t0',
+            'organizations/AjdvjuECVZEgZoFajaIEkg/objectives/'
+                + o2 + '/revisions/'
+                + generateIdentifier(),
             revision(
-                'o2', 'Other',
+                o2, 'Other',
                 '2026-05-14T00:00:00.000000Z',
             ),
         );
         const defs =
             await getCurrentObjectiveDefinitions(
-                ctx, ['ohqxgUBEaFQwYbXsonRPmg', 'o2'],
+                ctx, ['ohqxgUBEaFQwYbXsonRPmg', o2],
             );
         assert.equal(defs.get('ohqxgUBEaFQwYbXsonRPmg')!.name, 'New');
         assert.equal(
             defs.get('ohqxgUBEaFQwYbXsonRPmg')!.description, 'd:New',
         );
-        assert.equal(defs.get('o2')!.name, 'Other');
+        assert.equal(defs.get(o2)!.name, 'Other');
     },
 );
 
@@ -182,11 +194,19 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
+        const ghost = generateIdentifier();
         await assert.rejects(
             getCurrentObjectiveDefinitions(
-                ctxFor(db), ['ghost'],
+                ctxFor(db), [ghost],
             ),
-            /no revisions for objective ghost/,
+            (err: unknown) => {
+                assert.ok(err instanceof Error);
+                assert.equal(
+                    err.message,
+                    'no revisions for objective ' + ghost,
+                );
+                return true;
+            },
         );
     },
 );
@@ -298,16 +318,18 @@ test(
         await postObjectiveCreation(
             ctx, 'ohqxgUBEaFQwYbXsonRPmg', 'A', 'd', 1,
         );
+        const o2 = generateIdentifier();
+        const o3 = generateIdentifier();
         await postObjectiveCreation(
-            ctx, 'o2', 'B', 'd', 2,
+            ctx, o2, 'B', 'd', 2,
         );
         await postObjectiveCreation(
-            ctx, 'o3', 'C', 'd', 3,
+            ctx, o3, 'C', 'd', 3,
         );
 
         const active = await getActiveObjectives(ctx);
         const others = active.filter(
-            o => o.id !== 'o3',
+            o => o.id !== o3,
         );
         const newPos = computeNewPosition(
             others.map(o => o.position),
@@ -315,7 +337,7 @@ test(
         );
         const details = await getObjectiveStateDetails(ctx);
         await putObjectivePosition(
-            ctx, 'o3', newPos, details.get('o3')!,
+            ctx, o3, newPos, details.get(o3)!,
         );
 
         // Phase Final Task 2: positions from GET (pair plane).
@@ -323,9 +345,9 @@ test(
         const map = new Map(
             all.map(o => [o.id, o.position]),
         );
-        assert.equal(map.get('o3'), 1.5);
+        assert.equal(map.get(o3), 1.5);
         assert.equal(map.get('ohqxgUBEaFQwYbXsonRPmg'), 1);
-        assert.equal(map.get('o2'), 2);
+        assert.equal(map.get(o2), 2);
     },
 );
 
@@ -341,19 +363,21 @@ test(
         await postObjectiveCreation(
             ctx, 'ohqxgUBEaFQwYbXsonRPmg', 'A', 'd', 1,
         );
+        const o2 = generateIdentifier();
+        const o3 = generateIdentifier();
         await postObjectiveCreation(
-            ctx, 'o2', 'B', 'd', 2,
+            ctx, o2, 'B', 'd', 2,
         );
         await postObjectiveCreation(
-            ctx, 'o3', 'C', 'd', 3,
+            ctx, o3, 'C', 'd', 3,
         );
 
         const details = await getObjectiveStateDetails(ctx);
         await putObjectivePosition(
-            ctx, 'o2', 1.5, details.get('o2')!,
+            ctx, o2, 1.5, details.get(o2)!,
         );
         await putObjectivePosition(
-            ctx, 'o3', 1.25, details.get('o3')!,
+            ctx, o3, 1.25, details.get(o3)!,
         );
 
         // Phase Final Task 2: positions from GET (pair plane).
@@ -362,8 +386,8 @@ test(
             all.map(o => [o.id, o.position]),
         );
         assert.equal(map.get('ohqxgUBEaFQwYbXsonRPmg'), 1);
-        assert.equal(map.get('o3'), 1.25);
-        assert.equal(map.get('o2'), 1.5);
+        assert.equal(map.get(o3), 1.25);
+        assert.equal(map.get(o2), 1.5);
     },
 );
 

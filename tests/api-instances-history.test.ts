@@ -35,6 +35,8 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // Instance GET history — full-state revision chain (Task 19).
 // Wire DESC; each entry full state projected by CURRENT read
@@ -43,10 +45,12 @@ import { seedSeat } from './root-admin-fixture.ts';
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
-const TYPE_ID = 'rt-hist-1';
-const ATTR_PUBLIC = 'attr-hist-pub';
-const ATTR_SECRET = 'attr-hist-sec';
-const INSTANCE_ID = 'inst-hist-1';
+const TYPE_ID = generateIdentifier();
+const ATTR_PUBLIC = generateIdentifier();
+const ATTR_SECRET = generateIdentifier();
+const INSTANCE_ID = generateIdentifier();
+const ORGANIZATION_B = generateIdentifier();
+const FOREIGN_TYPE_ID = generateIdentifier();
 
 const TYPE_DETAIL =
     '/organizations/' + ORGANIZATION
@@ -94,7 +98,7 @@ async function adminDb(): Promise<{
 }> {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
-    await seedMembershipPair(db, 'm-member1', {
+    await seedMembershipPair(db, generateIdentifier(), {
         organization_id: ORGANIZATION,
         identity_id: 'nkgaOHZISTQrILTfPThWCA',
         type: 'member',
@@ -433,15 +437,16 @@ async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
     await putLiveType(db, adminToken);
+    const missing = generateIdentifier();
     const res = await handleRequest(db, req(
         'GET',
-        INSTANCES + 'inst-missing/versions',
+        INSTANCES + missing + '/versions',
         memberToken,
     ));
     assert.equal(res.status, 404);
     assert.deepEqual(await res.json(), {
         error:
-            'Not found: record_instances/inst-missing',
+            'Not found: record_instances/' + missing,
     });
 });
 
@@ -484,9 +489,9 @@ async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
     await putLiveType(db, adminToken);
-    await seedOrganizationDocument(db, 'B', 'Beta');
+    await seedOrganizationDocument(db, ORGANIZATION_B, 'Beta');
     await appendInstancePair(
-        db, 'B', 'rt-foreign', INSTANCE_ID,
+        db, ORGANIZATION_B, FOREIGN_TYPE_ID, INSTANCE_ID,
         'PUT', {
             set: [
                 {

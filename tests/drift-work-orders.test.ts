@@ -66,6 +66,63 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 
+const N_START = generateIdentifier();
+const MEMBER_B = generateIdentifier();
+const WO_DRIFT_CHAIN_1_EV1 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_EV2 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_EV3 = generateIdentifier();
+const N_MIDDLE = generateIdentifier();
+const WO_DRIFT_CHAIN_1_TE1 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_FV1 = generateIdentifier();
+const ATTR_SEVERITY = generateIdentifier();
+const WO_DRIFT_CHAIN_1_FV2 = generateIdentifier();
+const ATTR_NOTES = generateIdentifier();
+const WO_DRIFT_CHAIN_1_TE2 = generateIdentifier();
+const N_FINISH = generateIdentifier();
+const EDGE_2 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_REL1 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_CE1 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_EE1 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_CE2 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_EE2 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_CE3 = generateIdentifier();
+const WO_DRIFT_CHAIN_1_EE3 = generateIdentifier();
+const WO_DRIFT_DUP_1_A_EV1 = generateIdentifier();
+const WO_DRIFT_DUP_1_A_EV2 = generateIdentifier();
+const WO_DRIFT_DUP_1_A_EV3 = generateIdentifier();
+const WO_DRIFT_DUP_1_B_EV1 = generateIdentifier();
+const WO_DRIFT_DUP_1_B_EV2 = generateIdentifier();
+const WO_DRIFT_DUP_1_B_EV3 = generateIdentifier();
+const WO_DRIFT_METHOD_FILTER_1 = generateIdentifier();
+const WO_DRIFT_METHOD_FILTER_1_FWO = generateIdentifier();
+const WO_DRIFT_METHOD_FILTER_1_EV1 = generateIdentifier();
+const WO_DRIFT_METHOD_FILTER_1_EV2 = generateIdentifier();
+const WO_DRIFT_METHOD_FILTER_1_EV3 = generateIdentifier();
+const WO_DRIFT_TRACE_1_EV1 = generateIdentifier();
+const WO_DRIFT_TRACE_1_EV2 = generateIdentifier();
+const WO_DRIFT_TRACE_1_EV3 = generateIdentifier();
+const WO_DRIFT_TRACE_1_TE1 = generateIdentifier();
+const WO_DRIFT_TRACE_1_REL1 = generateIdentifier();
+const WO_DRIFT_TRACE_1_CE1 = generateIdentifier();
+const WO_DRIFT_TRACE_1_EE1 = generateIdentifier();
+const WO_DRIFT_TRACE_1_CE2 = generateIdentifier();
+const WO_DRIFT_TRACE_1_EE2 = generateIdentifier();
+const WO_DRIFT_TRACE_1_CE3 = generateIdentifier();
+const WO_DRIFT_TRACE_1_EE3 = generateIdentifier();
+const WO_DRIFT_TRACE_1_TE2 = generateIdentifier();
+const WO_DRIFT_TRACE_1_FV1 = generateIdentifier();
+const WO_DRIFT_TRACE_1_FV2 = generateIdentifier();
+const WO_DRIFT_TRACE_1_TE3 = generateIdentifier();
+const WO_DRIFT_RETRY_FWO_SHARED = generateIdentifier();
+const WO_DRIFT_RETRY_A = generateIdentifier();
+const WO_DRIFT_RETRY_A_EV1 = generateIdentifier();
+const WO_DRIFT_RETRY_A_EV2 = generateIdentifier();
+const WO_DRIFT_RETRY_A_EV3 = generateIdentifier();
+const WO_DRIFT_RETRY_B = generateIdentifier();
+const WO_DRIFT_RETRY_B_EV1 = generateIdentifier();
+const WO_DRIFT_RETRY_B_EV2 = generateIdentifier();
+const WO_DRIFT_RETRY_B_EV3 = generateIdentifier();
+
 // Phase Final Task 2: work_orders(+flow_work_orders+
 // state_field_values) dual-write stripped. This file no longer
 // compares derive vs old-table oracles — the row plane is empty
@@ -120,21 +177,21 @@ function workOrderFlowGraph(
         lockTimeout: lockTimeoutSeconds,
         nodes: [
             {
-                id: 'n-start', name: 'Start',
+                id: N_START, name: 'Start',
                 positionX: 0, positionY: 0,
                 isCreate: true, isArchive: false,
                 memberIds: [], attributes: [],
                 taskInstructions: '',
             },
             {
-                id: 'n-middle', name: 'Middle',
+                id: N_MIDDLE, name: 'Middle',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: false,
                 memberIds: [], attributes: [],
                 taskInstructions: '',
             },
             {
-                id: 'n-finish', name: 'Finish',
+                id: N_FINISH, name: 'Finish',
                 positionX: 0, positionY: 0,
                 isCreate: false, isArchive: true,
                 memberIds: [], attributes: [],
@@ -144,11 +201,11 @@ function workOrderFlowGraph(
         edges: [
             {
                 id: 'YiJPbufDpkyrZcZCYbUJpg', name: '',
-                fromNodeId: 'n-start', toNodeId: 'n-middle',
+                fromNodeId: N_START, toNodeId: N_MIDDLE,
             },
             {
-                id: 'e2', name: '',
-                fromNodeId: 'n-middle', toNodeId: 'n-finish',
+                id: EDGE_2, name: '',
+                fromNodeId: N_MIDDLE, toNodeId: N_FINISH,
             },
         ],
     };
@@ -177,7 +234,7 @@ const WORK_ORDERS_TEST_WIRING: DocumentFamilyWiring = {
 
 // Any Id works here — both generic read paths ignore their
 // `actor` argument entirely.
-const READER_ACTOR: Id = 'drift-reader';
+const READER_ACTOR: Id = generateIdentifier();
 
 // Mirror the live list/detail GET attach (routes.ts): bind
 // keys ride the wire when present and stay ABSENT when not.
@@ -482,11 +539,11 @@ test('live-write chain: birth-claimed create, two transitions'
 async () => {
     const db = await seededDb();
     const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
-    await seedOrganizationMember(db, 'member-b');
-    const tokenB = await organizationToken('member-b');
+    await seedOrganizationMember(db, MEMBER_B);
+    const tokenB = await organizationToken(MEMBER_B);
 
-    const workOrderId = 'wo-drift-chain-1';
-    const flowWorkOrderId = 'wo-drift-chain-1-fwo';
+    const workOrderId = generateIdentifier();
+    const flowWorkOrderId = generateIdentifier();
     const flowId = EMPTY_FLOW_ID;
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
@@ -510,12 +567,12 @@ async () => {
             workOrderId, flowWorkOrderId, flowId, graph,
             {
                 ids: [
-                    'wo-drift-chain-1-ev1',
-                    'wo-drift-chain-1-ev2',
-                    'wo-drift-chain-1-ev3',
+                    WO_DRIFT_CHAIN_1_EV1,
+                    WO_DRIFT_CHAIN_1_EV2,
+                    WO_DRIFT_CHAIN_1_EV3,
                 ],
                 ats: [nowUtc(), nowUtc(), nowUtc()],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             nowUtc(),
         ),
@@ -527,22 +584,22 @@ async () => {
     // Task 8 CUT: legacy fieldValues below the gate.
     await appendLegacyTransition(
         db, STARK_ORGANIZATION, workOrderId, {
-            transitionEventId: 'wo-drift-chain-1-te1',
-            targetState: 'n-middle',
+            transitionEventId: WO_DRIFT_CHAIN_1_TE1,
+            targetState: N_MIDDLE,
             fieldValues: [
                 {
-                    id: 'wo-drift-chain-1-fv1',
+                    id: WO_DRIFT_CHAIN_1_FV1,
                     fields: {
-                        state_event_id: 'wo-drift-chain-1-te1',
-                        attribute_id: 'attr-severity',
+                        state_event_id: WO_DRIFT_CHAIN_1_TE1,
+                        attribute_id: ATTR_SEVERITY,
                         value: 'high',
                     },
                 },
                 {
-                    id: 'wo-drift-chain-1-fv2',
+                    id: WO_DRIFT_CHAIN_1_FV2,
                     fields: {
-                        state_event_id: 'wo-drift-chain-1-te1',
-                        attribute_id: 'attr-notes',
+                        state_event_id: WO_DRIFT_CHAIN_1_TE1,
+                        attribute_id: ATTR_NOTES,
                         value: 'looks fine',
                     },
                 },
@@ -563,10 +620,10 @@ async () => {
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/transition',
         tokenA, {
-            transitionEventId: 'wo-drift-chain-1-te2',
-            targetState: 'n-finish',
+            transitionEventId: WO_DRIFT_CHAIN_1_TE2,
+            targetState: N_FINISH,
             release: {
-                id: 'wo-drift-chain-1-rel1',
+                id: WO_DRIFT_CHAIN_1_REL1,
                 state: 'claim_released',
                 at: transition2ReleaseAt,
             },
@@ -615,9 +672,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         tokenA, {
-            claimEventId: 'wo-drift-chain-1-ce1',
+            claimEventId: WO_DRIFT_CHAIN_1_CE1,
             claimAt: claimFreshAt,
-            expireEventId: 'wo-drift-chain-1-ee1',
+            expireEventId: WO_DRIFT_CHAIN_1_EE1,
             expireAt: claimFreshAt,
         },
     ));
@@ -636,9 +693,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         tokenA, {
-            claimEventId: 'wo-drift-chain-1-ce2',
+            claimEventId: WO_DRIFT_CHAIN_1_CE2,
             claimAt: claimRepeatAt,
-            expireEventId: 'wo-drift-chain-1-ee2',
+            expireEventId: WO_DRIFT_CHAIN_1_EE2,
             expireAt: claimRepeatAt,
         },
     ));
@@ -657,9 +714,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         tokenB, {
-            claimEventId: 'wo-drift-chain-1-ce3',
+            claimEventId: WO_DRIFT_CHAIN_1_CE3,
             claimAt: claimRejectAt,
-            expireEventId: 'wo-drift-chain-1-ee3',
+            expireEventId: WO_DRIFT_CHAIN_1_EE3,
             expireAt: claimRejectAt,
         },
     ));
@@ -699,11 +756,11 @@ test('duplicate-create: two creates, same work-order id, fresh'
 + ' head; TWO join pairs; SIX birth state events', async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-drift-dup-1';
+    const workOrderId = generateIdentifier();
     const flowId = EMPTY_FLOW_ID;
     const graph = workOrderFlowGraph(8 * 60 * 60);
-    const pfidA = 'wo-drift-dup-1-fwo-a';
-    const pfidB = 'wo-drift-dup-1-fwo-b';
+    const pfidA = generateIdentifier();
+    const pfidB = generateIdentifier();
 
     const first = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
@@ -711,16 +768,16 @@ test('duplicate-create: two creates, same work-order id, fresh'
             workOrderId, pfidA, flowId, graph,
             {
                 ids: [
-                    'wo-drift-dup-1-a-ev1',
-                    'wo-drift-dup-1-a-ev2',
-                    'wo-drift-dup-1-a-ev3',
+                    WO_DRIFT_DUP_1_A_EV1,
+                    WO_DRIFT_DUP_1_A_EV2,
+                    WO_DRIFT_DUP_1_A_EV3,
                 ],
                 ats: [
                     '2026-05-02T00:00:00.000000Z',
                     '2026-05-02T00:00:00.000001Z',
                     '2026-05-02T00:00:00.000002Z',
                 ],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             '2026-05-02T00:00:00.000000Z',
         ),
@@ -733,16 +790,16 @@ test('duplicate-create: two creates, same work-order id, fresh'
             workOrderId, pfidB, flowId, graph,
             {
                 ids: [
-                    'wo-drift-dup-1-b-ev1',
-                    'wo-drift-dup-1-b-ev2',
-                    'wo-drift-dup-1-b-ev3',
+                    WO_DRIFT_DUP_1_B_EV1,
+                    WO_DRIFT_DUP_1_B_EV2,
+                    WO_DRIFT_DUP_1_B_EV3,
                 ],
                 ats: [
                     '2026-05-02T00:00:01.000000Z',
                     '2026-05-02T00:00:01.000001Z',
                     '2026-05-02T00:00:01.000002Z',
                 ],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             '2026-05-02T00:00:01.000000Z',
         ),
@@ -801,7 +858,7 @@ test('document supersession: PUT #2 (byte-divergent body)'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-drift-supersede-1';
+    const workOrderId = generateIdentifier();
 
     const first = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -851,8 +908,8 @@ test('the create-op POST pair is not read as a document pair —'
 async () => {
     const db = await seededDb();
     const token = await organizationToken();
-    const workOrderId = 'wo-drift-method-filter-1';
-    const flowWorkOrderId = 'wo-drift-method-filter-1-fwo';
+    const workOrderId = WO_DRIFT_METHOD_FILTER_1;
+    const flowWorkOrderId = WO_DRIFT_METHOD_FILTER_1_FWO;
     const flowId = EMPTY_FLOW_ID;
     const graph = workOrderFlowGraph(8 * 60 * 60);
 
@@ -862,16 +919,16 @@ async () => {
             workOrderId, flowWorkOrderId, flowId, graph,
             {
                 ids: [
-                    'wo-drift-method-filter-1-ev1',
-                    'wo-drift-method-filter-1-ev2',
-                    'wo-drift-method-filter-1-ev3',
+                    WO_DRIFT_METHOD_FILTER_1_EV1,
+                    WO_DRIFT_METHOD_FILTER_1_EV2,
+                    WO_DRIFT_METHOD_FILTER_1_EV3,
                 ],
                 ats: [
                     '2026-05-03T00:00:00.000000Z',
                     '2026-05-03T00:00:00.000001Z',
                     '2026-05-03T00:00:00.000002Z',
                 ],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             '2026-05-03T00:00:00.000000Z',
         ),
@@ -1360,11 +1417,11 @@ test('THE TRACE-REPLAY PROOF: a test-side replay of a live'
 async () => {
     const db = await seededDb();
     const tokenA = await organizationToken('XXZruirZyAOoRpNxaDnpSA');
-    await seedOrganizationMember(db, 'member-b');
-    const tokenB = await organizationToken('member-b');
+    await seedOrganizationMember(db, MEMBER_B);
+    const tokenB = await organizationToken(MEMBER_B);
 
-    const workOrderId = 'wo-drift-trace-1';
-    const flowWorkOrderId = 'wo-drift-trace-1-fwo';
+    const workOrderId = generateIdentifier();
+    const flowWorkOrderId = generateIdentifier();
     const flowId = EMPTY_FLOW_ID;
     // A TINY lockTimeout: isClaimEventExpired checks the LIVE
     // route's decision via msSinceUtc (the clock seam), never a
@@ -1384,12 +1441,12 @@ async () => {
             workOrderId, flowWorkOrderId, flowId, graph,
             {
                 ids: [
-                    'wo-drift-trace-1-ev1',
-                    'wo-drift-trace-1-ev2',
-                    'wo-drift-trace-1-ev3',
+                    WO_DRIFT_TRACE_1_EV1,
+                    WO_DRIFT_TRACE_1_EV2,
+                    WO_DRIFT_TRACE_1_EV3,
                 ],
                 ats: [nowUtc(), nowUtc(), nowUtc()],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             nowUtc(),
         ),
@@ -1406,10 +1463,10 @@ async () => {
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/transition',
         tokenA, {
-            transitionEventId: 'wo-drift-trace-1-te1',
-            targetState: 'n-middle',
+            transitionEventId: WO_DRIFT_TRACE_1_TE1,
+            targetState: N_MIDDLE,
             release: {
-                id: 'wo-drift-trace-1-rel1',
+                id: WO_DRIFT_TRACE_1_REL1,
                 state: 'claim_released',
                 at: releaseAt,
             },
@@ -1458,9 +1515,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         tokenA, {
-            claimEventId: 'wo-drift-trace-1-ce1',
+            claimEventId: WO_DRIFT_TRACE_1_CE1,
             claimAt: reclaimAt,
-            expireEventId: 'wo-drift-trace-1-ee1',
+            expireEventId: WO_DRIFT_TRACE_1_EE1,
             expireAt: reclaimAt,
         },
     ));
@@ -1474,9 +1531,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         tokenA, {
-            claimEventId: 'wo-drift-trace-1-ce2',
+            claimEventId: WO_DRIFT_TRACE_1_CE2,
             claimAt: idempotentAt,
-            expireEventId: 'wo-drift-trace-1-ee2',
+            expireEventId: WO_DRIFT_TRACE_1_EE2,
             expireAt: idempotentAt,
         },
     ));
@@ -1497,9 +1554,9 @@ async () => {
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/claim',
         tokenB, {
-            claimEventId: 'wo-drift-trace-1-ce3',
+            claimEventId: WO_DRIFT_TRACE_1_CE3,
             claimAt: takeoverClaimAt,
-            expireEventId: 'wo-drift-trace-1-ee3',
+            expireEventId: WO_DRIFT_TRACE_1_EE3,
             expireAt: takeoverExpireAt,
         },
     ));
@@ -1510,22 +1567,22 @@ async () => {
     const withValuesAt = nowUtc();
     await appendLegacyTransition(
         db, STARK_ORGANIZATION, workOrderId, {
-            transitionEventId: 'wo-drift-trace-1-te2',
-            targetState: 'n-middle',
+            transitionEventId: WO_DRIFT_TRACE_1_TE2,
+            targetState: N_MIDDLE,
             fieldValues: [
                 {
-                    id: 'wo-drift-trace-1-fv1',
+                    id: WO_DRIFT_TRACE_1_FV1,
                     fields: {
-                        state_event_id: 'wo-drift-trace-1-te2',
-                        attribute_id: 'attr-severity',
+                        state_event_id: WO_DRIFT_TRACE_1_TE2,
+                        attribute_id: ATTR_SEVERITY,
                         value: 'medium',
                     },
                 },
                 {
-                    id: 'wo-drift-trace-1-fv2',
+                    id: WO_DRIFT_TRACE_1_FV2,
                     fields: {
-                        state_event_id: 'wo-drift-trace-1-te2',
-                        attribute_id: 'attr-notes',
+                        state_event_id: WO_DRIFT_TRACE_1_TE2,
+                        attribute_id: ATTR_NOTES,
                         value: 'reviewed',
                     },
                 },
@@ -1544,8 +1601,8 @@ async () => {
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
             + workOrderId + '/transition',
         tokenB, {
-            transitionEventId: 'wo-drift-trace-1-te3',
-            targetState: 'n-finish',
+            transitionEventId: WO_DRIFT_TRACE_1_TE3,
+            targetState: N_FINISH,
             release: null,
             transitionAt: finishTransitionAt,
         },
@@ -1624,24 +1681,24 @@ test('same-join-id retry: two different work-order creates '
     const token = await organizationToken();
     const flowId = EMPTY_FLOW_ID;
     const graph = workOrderFlowGraph(8 * 60 * 60);
-    const sharedFwoId = 'wo-drift-retry-fwo-shared';
+    const sharedFwoId = WO_DRIFT_RETRY_FWO_SHARED;
 
     const first = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
-            'wo-drift-retry-a', sharedFwoId, flowId, graph,
+            WO_DRIFT_RETRY_A, sharedFwoId, flowId, graph,
             {
                 ids: [
-                    'wo-drift-retry-a-ev1',
-                    'wo-drift-retry-a-ev2',
-                    'wo-drift-retry-a-ev3',
+                    WO_DRIFT_RETRY_A_EV1,
+                    WO_DRIFT_RETRY_A_EV2,
+                    WO_DRIFT_RETRY_A_EV3,
                 ],
                 ats: [
                     '2026-05-03T00:00:00.000000Z',
                     '2026-05-03T00:00:00.000001Z',
                     '2026-05-03T00:00:00.000002Z',
                 ],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             '2026-05-03T00:00:00.000000Z',
         ),
@@ -1654,19 +1711,19 @@ test('same-join-id retry: two different work-order creates '
     const second = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/', token,
         createWorkOrderBody(
-            'wo-drift-retry-b', sharedFwoId, flowId, graph,
+            WO_DRIFT_RETRY_B, sharedFwoId, flowId, graph,
             {
                 ids: [
-                    'wo-drift-retry-b-ev1',
-                    'wo-drift-retry-b-ev2',
-                    'wo-drift-retry-b-ev3',
+                    WO_DRIFT_RETRY_B_EV1,
+                    WO_DRIFT_RETRY_B_EV2,
+                    WO_DRIFT_RETRY_B_EV3,
                 ],
                 ats: [
                     '2026-05-03T00:00:01.000000Z',
                     '2026-05-03T00:00:01.000001Z',
                     '2026-05-03T00:00:01.000002Z',
                 ],
-                states: ['n-start', 'n-middle', 'claimed'],
+                states: [N_START, N_MIDDLE, 'claimed'],
             },
             '2026-05-03T00:00:01.000000Z',
         ),

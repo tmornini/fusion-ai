@@ -31,6 +31,8 @@ import {
     seedCurrentMember,
     seedHumanMember,
 } from './member-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 // PUT body entity fields only — seed/put supply the lifecycle
 // trio (state/stateAt/stateEventId). GET ProjectEntity carries
@@ -118,7 +120,7 @@ test(
     async () => {
         const { ctx } = await adminContext();
         await assert.rejects(
-            () => getProjectEntity(ctx, 'nope'),
+            () => getProjectEntity(ctx, generateIdentifier()),
             /Not found/,
         );
     },
@@ -169,9 +171,11 @@ test(
     'getProjects excludes deleted-state rows',
     async () => {
         const { ctx } = await adminContext();
-        await seedProject(ctx, 'keep', 'Keep');
+        const keepId = generateIdentifier();
+        const goneId = generateIdentifier();
+        await seedProject(ctx, keepId, 'Keep');
         await seedProject(
-            ctx, 'gone', 'Gone', 'deleted',
+            ctx, goneId, 'Gone', 'deleted',
         );
         const projects = await getProjects(ctx);
         assert.equal(projects.length, 1);
@@ -185,15 +189,17 @@ test(
     'getProjects excludes tombstoned rows',
     async () => {
         const { ctx } = await adminContext();
-        await seedProject(ctx, 'keep', 'Keep');
-        await seedProject(ctx, 'gone', 'Gone');
+        const keepId = generateIdentifier();
+        const goneId = generateIdentifier();
+        await seedProject(ctx, keepId, 'Keep');
+        await seedProject(ctx, goneId, 'Gone');
         // Tombstone lands as a state-'deleted' document PUT
         // (Phase Final Task 2: no projects row plane).
         const {
             id: _id, organization_id: _org, ...fields
-        } = await getProjectEntity(ctx, 'gone');
+        } = await getProjectEntity(ctx, goneId);
         await postProjectStateChange(
-            ctx, 'gone', fields, 'deleted',
+            ctx, goneId, fields, 'deleted',
         );
         const projects = await getProjects(ctx);
         assert.equal(projects.length, 1);

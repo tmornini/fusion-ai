@@ -25,6 +25,11 @@ import {
     deriveDocumentsAt,
 } from '../api/derive-documents.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const RECORD_ID = generateIdentifier();
+const ATTRIBUTE_ID = generateIdentifier();
 
 // Phase 6 Task 3 (sixth family, 'stateless' evidence #2): PUT
 // /record-attributes/:id takes the entity's OWN fields only —
@@ -37,7 +42,7 @@ import { TEST_OPERATION_ID } from './http-fixtures.ts';
 
 function documentFields() {
     return {
-        record_id: 'rec-fixture-1',
+        record_id: RECORD_ID,
         name: 'Priority',
         attribute_type: 'text',
         sort_order: 1,
@@ -128,13 +133,13 @@ test('postRecordAttributeDocumentOp writes exactly the'
     const pair = await formWritePair({
         method: 'PUT',
         pathname: '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
-            + 'rec-fixture-1/attributes/ra-doc-op-1',
+            + RECORD_ID + '/attributes/' + ATTRIBUTE_ID,
         routePattern: ATTRIBUTE_DETAIL_PATTERN,
         routeSegments: ATTRIBUTE_DETAIL_PATTERN.split('/'),
         pathSegments: [
-            'organizations', 'AjdvjuECVZEgZoFajaIEkg', 'record-types',
-            'rec-fixture-1', 'attributes',
-            'ra-doc-op-1',
+            'organizations', 'AjdvjuECVZEgZoFajaIEkg',
+            'record-types', RECORD_ID, 'attributes',
+            ATTRIBUTE_ID,
         ],
         headerFields: [], body,
         requesterIdentityId: 'XXZruirZyAOoRpNxaDnpSA',
@@ -146,10 +151,11 @@ test('postRecordAttributeDocumentOp writes exactly the'
     // Phase Final Task 2: record_attributes ROW half stripped
     // — pair plane + op return are the oracles.
     const written = await postRecordAttributeDocumentOp(
-        db, 'ra-doc-op-1', body, 'XXZruirZyAOoRpNxaDnpSA', pair,
+        db, ATTRIBUTE_ID, body, 'XXZruirZyAOoRpNxaDnpSA',
+        pair,
     );
     assert.deepEqual(written, {
-        id: 'ra-doc-op-1',
+        id: ATTRIBUTE_ID,
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         ...documentFields(),
         read_roles: ['member', 'admin'],
@@ -173,7 +179,8 @@ async () => {
     await seedAdminSchema(db);
     // Parent type must exist for nested attribute PUT.
     await PUT(db
-        , 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/rec-fixture-1', {
+        , 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
+            + RECORD_ID, {
         name: 'Fixture', description: '', position: 1,
         state: 'active',
     }, DEV_TOKEN);
@@ -187,13 +194,15 @@ async () => {
     const opHeaders: readonly (readonly [string, string])[] =
         [['operation-id', TEST_OPERATION_ID]];
     const first = await PUT(
-        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/rec-fixture-1'
-        + '/attributes/rTiMgnMtYSIDYKegGxixMA', body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
+            + RECORD_ID + '/attributes/rTiMgnMtYSIDYKegGxixMA',
+        body, DEV_TOKEN,
         opHeaders,
     );
     const second = await PUT(
-        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/rec-fixture-1'
-        + '/attributes/rTiMgnMtYSIDYKegGxixMA', body, DEV_TOKEN,
+        db, 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
+            + RECORD_ID + '/attributes/rTiMgnMtYSIDYKegGxixMA',
+        body, DEV_TOKEN,
         opHeaders,
     );
     assert.deepEqual(first, second);
@@ -287,15 +296,18 @@ test('a DELETE-head derives absent on the nested attributes'
     const db = memoryDbAdapter();
     await db.postSchemaCreation();
     const typeId = documentFields().record_id;
-    await putDocumentPair(db, 'ra-del-1', documentFields());
-    await deleteDocumentPair(db, 'ra-del-1', typeId);
+    const deletedId = generateIdentifier();
+    await putDocumentPair(db, deletedId, documentFields());
+    await deleteDocumentPair(db, deletedId, typeId);
     const prefix = '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
         + typeId + '/attributes/';
     const [requests, responses] = await Promise.all([
         db.pairs.getAllWhere('uri_collection', prefix),
         db.pairs.getAllWhere('uri_collection', prefix),
     ]);
-    const head = deriveDocumentsAt(requests, prefix).get('ra-del-1');
+    const head = deriveDocumentsAt(requests, prefix).get(
+        deletedId,
+    );
     assert.equal(
         head, undefined,
         'DELETE head must exclude the attribute',

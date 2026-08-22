@@ -13,6 +13,8 @@ import { devToken, organizationToken } from './token-fixtures.ts';
 import { seedOrganizationDocument } from './test-fixtures.ts';
 import { TEST_OPERATION_ID } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 const BASE = 'http://localhost';
 const AT = '2026-06-04T00:00:00.000000Z';
@@ -104,10 +106,11 @@ test('PUT a non-seat organization is 400', async () => {
 
 test('PUT to another identity tree is forbidden', async () => {
     const db = await freshDb();
-    await seedMembership(db, 'other', 'AjdvjuECVZEgZoFajaIEkg');
+    const other = generateIdentifier();
+    await seedMembership(db, other, 'AjdvjuECVZEgZoFajaIEkg');
     const token = await devToken();   // sub = current
     const res = await handleRequest(
-        db, putDefaultOrganization(token, 'other', 'AjdvjuECVZEgZoFajaIEkg'));
+        db, putDefaultOrganization(token, other, 'AjdvjuECVZEgZoFajaIEkg'));
     assert.equal(res.status, 403);
 });
 
@@ -238,7 +241,8 @@ test('GET identities/:id/default-organization'
     const match = matchRoute(
         routes,
         pathSegmentsOf(
-            '/identities/abc/default-organization',
+            '/identities/' + generateIdentifier()
+                + '/default-organization',
         ),
     );
     assert.ok(match);

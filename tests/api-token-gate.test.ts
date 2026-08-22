@@ -14,6 +14,8 @@ import {
 import {
     seedAdminSchema,
 } from './test-fixtures.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 const BASE = 'http://localhost';
 
@@ -68,7 +70,7 @@ async () => {
         aud: TOKEN_AUDIENCE,
         sub: ANONYMOUS_ID, roles: [], name: 'Anonymous',
         iat: 1_700_000_000, ttlSeconds: 10_000_000_000,
-        jti: 'anon',
+        jti: generateIdentifier(),
     });
     await assert.rejects(
         () => GET(db, 'organizations/AjdvjuECVZEgZoFajaIEkg/members/', anon)
@@ -93,7 +95,7 @@ async () => {
         name: 'Demo',
         organizations: ['AjdvjuECVZEgZoFajaIEkg'],
         iat: 1_600_000_000, ttlSeconds: 10_000_000_000,
-        jti: 'stale-but-live',
+        jti: generateIdentifier(),
     });
     await PUT(
         db, 'identities/XXZruirZyAOoRpNxaDnpSA/token-revocations/'
@@ -124,7 +126,7 @@ test('a token minted within a revocation second still'
         organizations: ['AjdvjuECVZEgZoFajaIEkg'],
         iat: Math.floor(Date.parse(revokedAt) / 1000),
         ttlSeconds: 10_000_000_000,
-        jti: 'same-second',
+        jti: generateIdentifier(),
     });
     await PUT(
         db, 'identities/XXZruirZyAOoRpNxaDnpSA/token-revocations/'
@@ -142,18 +144,22 @@ test('a jti revoked in the ledger still admits the access'
 + ' token until exp', async () => {
     const db = await freshDb();
     await PUT(
-        db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/YiJPbufDpkyrZcZCYbUJpg',
+        db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+            + 'YiJPbufDpkyrZcZCYbUJpg',
         {
-            jti: 'dev-current', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            jti: generateIdentifier(),
+            identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             action: 'issued', chain_id: 'WeXjAaAxGSpLpamfEuvcww',
             at: '2026-01-01T00:00:00.000000Z',
         },
         await devToken(),
     );
     await PUT(
-        db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/e2',
+        db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+            + generateIdentifier(),
         {
-            jti: 'dev-current', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            jti: generateIdentifier(),
+            identity_id: 'XXZruirZyAOoRpNxaDnpSA',
             action: 'revoked', chain_id: 'WeXjAaAxGSpLpamfEuvcww',
             at: '2026-02-01T00:00:00.000000Z',
         },

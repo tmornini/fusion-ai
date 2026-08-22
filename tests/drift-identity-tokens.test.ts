@@ -40,6 +40,33 @@ import {
     authorizationCodeSpent,
     deriveAuthorizationCodeId,
 } from '../api/authentication.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+
+const JTI_ORDER = generateIdentifier();
+const CHAIN_ORDER = generateIdentifier();
+const TOK_ORDER = generateIdentifier();
+const JTI_G4 = generateIdentifier();
+const CHAIN_G4 = generateIdentifier();
+const JTI_G4_SYNTH = generateIdentifier();
+const CHAIN_G4_SYNTH = generateIdentifier();
+const TOK_G4 = generateIdentifier();
+const JTI_W3 = generateIdentifier();
+const CHAIN_W3 = generateIdentifier();
+const JTI_W1 = generateIdentifier();
+const CHAIN_W = generateIdentifier();
+const TOK_W1 = generateIdentifier();
+const TOK_W2 = generateIdentifier();
+const TOK_W3 = generateIdentifier();
+const TOK_TX1 = generateIdentifier();
+const TOK_TX2 = generateIdentifier();
+const JTI_TX = generateIdentifier();
+const CHAIN_TX = generateIdentifier();
+const GHOST_JTI = generateIdentifier();
+const JTI_OMIT = generateIdentifier();
+const CHAIN_OMIT = generateIdentifier();
+const JTI_FLAT = generateIdentifier();
+const CHAIN_FLAT = generateIdentifier();
 
 // Phase 13 Task 6/7 shipped two ledger-derived reads that replace
 // row-plane lookups on Commandment II hot paths: the by-jti fold
@@ -145,13 +172,14 @@ test('KEY ORDER: the derived row is id-LAST — matching'
 + ' validateIdentityTokenEntity\'s own return-literal order',
 async () => {
     const db = await freshDb();
-    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/tok-order', {
-        jti: 'jti-order', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'issued', chain_id: 'chain-order', at: AT,
+    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+        + TOK_ORDER, {
+        jti: JTI_ORDER, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        action: 'issued', chain_id: CHAIN_ORDER, at: AT,
     }, DEV_TOKEN);
 
     const derived = await deriveIdentityToken(
-        db, 'XXZruirZyAOoRpNxaDnpSA', 'tok-order',
+        db, 'XXZruirZyAOoRpNxaDnpSA', TOK_ORDER,
     );
     const expectedOrder = [
         'jti', 'identity_id', 'action', 'chain_id', 'at', 'id',
@@ -164,10 +192,10 @@ async () => {
 test('stored PUT body equals identityTokenEntityOf id-last',
 async () => {
     const db = await freshDb();
-    const id = 'tok-g4';
+    const id = generateIdentifier();
     const fields = {
-        jti: 'jti-g4', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'issued', chain_id: 'chain-g4', at: AT,
+        jti: JTI_G4, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        action: 'issued', chain_id: CHAIN_G4, at: AT,
     };
     const put = await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/' + id,
@@ -197,11 +225,11 @@ async () => {
 
 test('formTokenEventPair stored body equals '
 + 'identityTokenEntityOf id-last', async () => {
-    const id = 'tok-g4-synth';
+    const id = generateIdentifier();
     const event = {
-        jti: 'jti-g4-synth', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        jti: JTI_G4_SYNTH, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
         action: 'issued' as const,
-        chain_id: 'chain-g4-synth', at: AT,
+        chain_id: CHAIN_G4_SYNTH, at: AT,
     };
     const pair = await formTokenEventPair(
         id, event, TEST_OPERATION_ID,
@@ -227,16 +255,16 @@ test('identities/:id/tokens/:tid successBody is id-last',
         WRITE_RESPONSE_SPECS['identities/:id/tokens/:tid'];
     assert.ok(entry !== undefined && 'successBody' in entry);
     const body = entry.successBody!(
-        ['XXZruirZyAOoRpNxaDnpSA', 'tok-g4'],
+        ['XXZruirZyAOoRpNxaDnpSA', TOK_G4],
         {
-            jti: 'j', identity_id: 'id',
-            action: 'issued', chain_id: 'c', at: AT,
+            jti: JTI_G4, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            action: 'issued', chain_id: CHAIN_G4, at: AT,
         },
         'XXZruirZyAOoRpNxaDnpSA',
         undefined,
     ) as { id: string };
     assert.equal(Object.keys(body).at(-1), 'id');
-    assert.equal(body.id, 'tok-g4');
+    assert.equal(body.id, TOK_G4);
 });
 
 // -- 2: GET wire byte-parity — the ACTUAL flipped route against --
@@ -255,17 +283,20 @@ async () => {
     // byIdAscending order genuinely diverge — a test that
     // inserted in lex order already would pass by ACCIDENT of
     // insertion order, never by the property it claims to prove.
-    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/tok-w3', {
-        jti: 'jti-w3', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'issued', chain_id: 'chain-w3', at: AT,
+    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+        + TOK_W3, {
+        jti: JTI_W3, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        action: 'issued', chain_id: CHAIN_W3, at: AT,
     }, DEV_TOKEN);
-    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/tok-w1', {
-        jti: 'jti-w1', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'issued', chain_id: 'chain-w', at: AT,
+    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+        + TOK_W1, {
+        jti: JTI_W1, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        action: 'issued', chain_id: CHAIN_W, at: AT,
     }, DEV_TOKEN);
-    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/tok-w2', {
-        jti: 'jti-w1', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'rotated', chain_id: 'chain-w', at: AT2,
+    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+        + TOK_W2, {
+        jti: JTI_W1, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        action: 'rotated', chain_id: CHAIN_W, at: AT2,
     }, DEV_TOKEN);
 
     // The literal id-LAST reconstruction of each PUT body,
@@ -274,21 +305,23 @@ async () => {
     // independent of any stored row.
     const expected = [
         {
-            jti: 'jti-w1', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-            action: 'issued', chain_id: 'chain-w', at: AT,
-            id: 'tok-w1',
+            jti: JTI_W1, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            action: 'issued', chain_id: CHAIN_W, at: AT,
+            id: TOK_W1,
         },
         {
-            jti: 'jti-w1', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-            action: 'rotated', chain_id: 'chain-w', at: AT2,
-            id: 'tok-w2',
+            jti: JTI_W1, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            action: 'rotated', chain_id: CHAIN_W, at: AT2,
+            id: TOK_W2,
         },
         {
-            jti: 'jti-w3', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-            action: 'issued', chain_id: 'chain-w3', at: AT,
-            id: 'tok-w3',
+            jti: JTI_W3, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+            action: 'issued', chain_id: CHAIN_W3, at: AT,
+            id: TOK_W3,
         },
-    ];
+    ].sort((a, b) =>
+        a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
+    );
 
     const collectionRes = await handleRequest(
         db, req(
@@ -335,33 +368,35 @@ test('deriveIdentityTokenEventsForJti: byte-identical pre-tx'
 + ' sharing rotateRefreshJti/revokeTokenChain\'s own table'
 + ' list) — the membershipExistsFor precedent', async () => {
     const db = await freshDb();
-    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/tok-tx1', {
-        jti: 'jti-tx', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'issued', chain_id: 'chain-tx', at: AT,
+    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+        + TOK_TX1, {
+        jti: JTI_TX, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        action: 'issued', chain_id: CHAIN_TX, at: AT,
     }, DEV_TOKEN);
-    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/tok-tx2', {
-        jti: 'jti-tx', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'rotated', chain_id: 'chain-tx', at: AT2,
+    await PUT(db, 'identities/XXZruirZyAOoRpNxaDnpSA/tokens/'
+        + TOK_TX2, {
+        jti: JTI_TX, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        action: 'rotated', chain_id: CHAIN_TX, at: AT2,
     }, DEV_TOKEN);
 
     const tokenTxTables = MESSAGE_TABLES;
 
     const preTx =
-        await deriveIdentityTokenEventsForJti(db, 'jti-tx');
+        await deriveIdentityTokenEventsForJti(db, JTI_TX);
     const inTx = await db.transaction(
         tokenTxTables,
         (view) =>
-            deriveIdentityTokenEventsForJti(view, 'jti-tx'),
+            deriveIdentityTokenEventsForJti(view, JTI_TX),
     );
     assert.deepEqual(inTx, preTx);
     assert.equal(preTx.length, 2);
 
     const preTxMissing =
-        await deriveIdentityTokenEventsForJti(db, 'ghost-jti');
+        await deriveIdentityTokenEventsForJti(db, GHOST_JTI);
     const inTxMissing = await db.transaction(
         tokenTxTables,
         (view) =>
-            deriveIdentityTokenEventsForJti(view, 'ghost-jti'),
+            deriveIdentityTokenEventsForJti(view, GHOST_JTI),
     );
     assert.deepEqual(inTxMissing, preTxMissing);
     assert.deepEqual(preTxMissing, []);
@@ -548,10 +583,10 @@ async () => {
 test('GET stamps identity_id from the path when PUT omits it',
 async () => {
     const db = await freshDb();
-    const id = 'tok-omit';
+    const id = generateIdentifier();
     const withoutIdentity = {
-        jti: 'jti-omit', action: 'issued',
-        chain_id: 'chain-omit', at: AT,
+        jti: JTI_OMIT, action: 'issued',
+        chain_id: CHAIN_OMIT, at: AT,
     };
     const put = await handleRequest(db, req(
         'PUT', '/identities/XXZruirZyAOoRpNxaDnpSA/tokens/' + id,
@@ -583,10 +618,10 @@ async () => {
 test('GET /identities/:id/tokens dual-reads leftover flat',
 async () => {
     const db = await freshDb();
-    const id = 'old-flat-tok';
+    const id = generateIdentifier();
     const fields = {
-        jti: 'jti-flat', identity_id: 'XXZruirZyAOoRpNxaDnpSA',
-        action: 'issued', chain_id: 'chain-flat', at: AT,
+        jti: JTI_FLAT, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
+        action: 'issued', chain_id: CHAIN_FLAT, at: AT,
     };
     const flatPair = await formWritePair({
         method: 'PUT',

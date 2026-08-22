@@ -184,6 +184,7 @@ import {
     daysFromNow,
     humanMemberPoolsByOrganization,
     pickHumanMember,
+    seedIdentifier,
 } from './seed-kit.ts';
 import { buildMembers } from './members.ts';
 import type { SeedHumanMember } from './members.ts';
@@ -317,8 +318,8 @@ export const projectStateEvents: StateEntity[] = [
         // org-'BBjWJsjYIDkTRKIIPrzWRw'
         // project — no cross-org score against org-'AjdvjuECVZEgZoFajaIEkg'
         // objectives.
-        id: 'seed-state-project-org2',
-        entity_id: 'seed-project-org2',
+        id: seedIdentifier('seed-state-project-org2'),
+        entity_id: seedIdentifier('seed-project-org2'),
         state: 'submitted',
         member_id: SYSTEM_MEMBER_ID,
         at: MOCK_SEED_TIMESTAMP,
@@ -443,7 +444,7 @@ export const projectStateEvents: StateEntity[] = [
 // shared wfTimestamp moment.
 export const flowStateEvents: StateEntity[] = [
     {
-        id: 'fSe01CustomerOnboard0aA',
+        id: seedIdentifier('fSe01CustomerOnboard0aA'),
         entity_id: 'esKujtyQFYUJaVSXWwavzA',
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
@@ -464,7 +465,7 @@ export const flowStateEvents: StateEntity[] = [
         at: wfTimestamp,
     },
     {
-        id: 'fSe04L3adt0Cl0se0aActiv',
+        id: seedIdentifier('fSe04L3adt0Cl0se0aActiv'),
         entity_id: l2cFlowId,
         state: 'active',
         member_id: SYSTEM_MEMBER_ID,
@@ -525,7 +526,7 @@ export const VALUE_BEARING_TRANSITION_EVENT_IDS:
 
 // Seeded Customer-Profile instance bound to WO01.
 export const SEED_INSTANCE_ID =
-    'inst01W001CustProfAcme1';
+    seedIdentifier('inst01W001CustProfAcme1');
 export const SEED_RECORD_TYPE_ID =
     customerProfileRecordId;
 export const WO01_ID = 'xqcXYHXBJJXcLkRYkRngKA';
@@ -635,7 +636,7 @@ export const mockFlowRecords: FlowRecordEntity[] = [
         // recordOrganization keeps the binding visible
         // behind the org fence.
         id: 'dGFWxGmaxtWWawferGBezQ',
-        flow_id: 'seed-flow-org2',
+        flow_id: seedIdentifier('seed-flow-org2'),
         record_id: projectBriefRecordId,
         at: wfTimestamp,
     },
@@ -691,8 +692,9 @@ export function humanMemberSeedBody(
             team_dimensions,
         },
         initialState: state,
-        initialStateEventId:
+        initialStateEventId: seedIdentifier(
             `seed-member-${member.id}-${state}`,
+        ),
         initialStateAt: MOCK_SEED_TIMESTAMP,
     };
 }
@@ -787,7 +789,8 @@ export function projectSeedBody(
 // the sibling 'seed-flow-org2' / 'seed-state-flow-org2' sentinels
 // above) is exported so both files compare against the SAME
 // string rather than each re-typing it.
-export const secondOrganizationProjectId = 'seed-project-org2';
+export const secondOrganizationProjectId =
+    seedIdentifier('seed-project-org2');
 
 type ProjectSeedFields = Omit<
     ProjectEntity,
@@ -952,7 +955,9 @@ export function flowOrg2SeedBody(): Record<string, unknown> {
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
         state: 'active',
         state_at: MOCK_SEED_TIMESTAMP,
-        state_event_id: 'seed-state-flow-org2',
+        state_event_id: seedIdentifier(
+            'seed-state-flow-org2',
+        ),
         graph: { nodes: [], edges: [] },
         graphDelta: {
             nodes: [],
@@ -1078,7 +1083,7 @@ export function flowRecordJoinSeedBody(
 export function flowRecordOrganizationFor(
     join: FlowRecordEntity,
 ): Id {
-    return join.flow_id === 'seed-flow-org2'
+    return join.flow_id === seedIdentifier('seed-flow-org2')
         ? ORGANIZATION_TWO
         : STARK_ORGANIZATION;
 }
@@ -1091,7 +1096,9 @@ export function aiMemberSeedBody(
         id: m.id,
         detail,
         initialState: 'active',
-        initialStateEventId: `seed-member-${m.id}-active`,
+        initialStateEventId: seedIdentifier(
+            `seed-member-${m.id}-active`,
+        ),
         initialStateAt: MOCK_SEED_TIMESTAMP,
     };
 }
@@ -1271,7 +1278,9 @@ export function objectiveSeedBody(
             organization_id: organization,
             position: seed.position,
         },
-        revisionId: `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
+        revisionId: seedIdentifier(
+            `${seed.id}:${MOCK_SEED_TIMESTAMP}`,
+        ),
         revision: {
             objective_id: seed.id,
             name: seed.name,
@@ -1280,8 +1289,9 @@ export function objectiveSeedBody(
             at: MOCK_SEED_TIMESTAMP,
         },
         initialState: 'active',
-        initialStateEventId:
+        initialStateEventId: seedIdentifier(
             `seed-objective-${seed.id}-active`,
+        ),
         initialStateAt: MOCK_SEED_TIMESTAMP,
     };
 }
@@ -1292,7 +1302,7 @@ export function objectiveSeedBody(
 // Exported so mock-data.ts's pass-2 write uses this SAME
 // literal rather than a second, independently maintained copy.
 export const ORGANIZATION_TWO_OBJECTIVE: ObjectiveSeed = {
-    id: 'seed-objective-org2',
+    id: seedIdentifier('seed-objective-org2'),
     position: 0,
     name: 'Wayne demo objective',
     description: 'Second-org demo objective.',
@@ -1354,7 +1364,9 @@ export function bootstrapCurrentMemberBody(
             },
         },
         initialState: 'active',
-        initialStateEventId: 'bootstrap-current-active',
+        initialStateEventId: seedIdentifier(
+            'bootstrap-current-active',
+        ),
         initialStateAt,
     };
 }
@@ -1665,9 +1677,14 @@ export function buildMockDataInvocations():
     // postFlowDocumentOp's genesis document PUT instead of the
     // four-above's postFlowCreationOp.
     invocations.push({
-        key: seedPairKey('flows/:id', 'seed-flow-org2'),
+        key: seedPairKey(
+            'flows/:id', seedIdentifier('seed-flow-org2'),
+        ),
         routePattern: 'organizations/:id/flows/:id',
-        idParams: [ORGANIZATION_TWO, 'seed-flow-org2'],
+        idParams: [
+            ORGANIZATION_TWO,
+            seedIdentifier('seed-flow-org2'),
+        ],
         organization: ORGANIZATION_TWO,
         requesterIdentityId: SYSTEM_MEMBER_ID,
         body: flowOrg2SeedBody(),

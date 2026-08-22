@@ -16,9 +16,11 @@ import {
     deriveIdentityPii,
     deriveCredentialsFor,
 } from '../api/derive-identity-spine.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
 
 const BASE = 'http://localhost';
-const MEMBER = 'walt';
+const MEMBER = generateIdentifier();
 
 async function freshDb() {
     const db = memoryDbAdapter();
@@ -128,9 +130,10 @@ test(
     + ' exercised)',
     async () => {
         const db = await freshDb();
+        const doomed = generateIdentifier();
         await assert.rejects(
             () => POST(db, 'identities/', {
-                id: 'doomed',
+                id: doomed,
                 kind: 'person',
                 pii: {
                     name: 'Doomed',
@@ -141,9 +144,9 @@ test(
         );
         // The unexpected `pii` key 400s before any facet lands.
         await assert.rejects(
-            () => GET(db, 'identities/doomed', DEV_TOKEN));
+            () => GET(db, 'identities/' + doomed, DEV_TOKEN));
         await assert.rejects(
-            () => deriveIdentityPii(db, 'doomed'));
+            () => deriveIdentityPii(db, doomed));
     },
 );
 
@@ -153,12 +156,13 @@ test(
     + ' acceptance the intake decomposition names',
     async () => {
         const db = await freshDb();
+        const torn = generateIdentifier();
         await POST(db, 'identities/', {
-            id: 'torn', kind: 'person',
+            id: torn, kind: 'person',
         }, DEV_TOKEN);
         await assert.rejects(
             // PII missing the required `bio` key.
-            () => PUT(db, 'identities/torn/pii', {
+            () => PUT(db, 'identities/' + torn + '/pii', {
                 name: 'Torn',
                 email: 'torn@example.com',
                 phone: '',
@@ -166,10 +170,10 @@ test(
         );
         // The identity survives; it simply carries no PII yet.
         const identity = await GET<{ kind: string }>(
-            db, 'identities/torn', DEV_TOKEN);
+            db, 'identities/' + torn, DEV_TOKEN);
         assert.equal(identity.kind, 'person');
         await assert.rejects(
-            () => deriveIdentityPii(db, 'torn'));
+            () => deriveIdentityPii(db, torn));
     },
 );
 
@@ -178,23 +182,24 @@ test(
     + ' its credential sub-object is invalid',
     async () => {
         const db = await freshDb();
+        const doomed = generateIdentifier();
         await assert.rejects(
             // Credential with a malformed `at` — the
             // identity_credentials store rejects it mid-tx,
             // AFTER the identities put has landed, so both must
             // roll back.
             () => POST(db, 'identities/', {
-                id: 'doomed',
+                id: doomed,
                 kind: 'service',
                 credential: {
-                    ...credential('doomed'),
+                    ...credential(doomed),
                     at: 'not-a-timestamp',
                 },
             }, DEV_TOKEN),
         );
         await assert.rejects(
-            () => GET(db, 'identities/doomed', DEV_TOKEN));
-        const creds = await deriveCredentialsFor(db, 'doomed');
+            () => GET(db, 'identities/' + doomed, DEV_TOKEN));
+        const creds = await deriveCredentialsFor(db, doomed);
         assert.equal(creds.length, 0);
     },
 );
@@ -232,7 +237,7 @@ test(
 test('identity creation stores identityDocumentEntityOf',
 async () => {
     const db = await freshDb();
-    const id = 'id-g3-create';
+    const id = generateIdentifier();
     await POST(db, 'identities/', {
         id,
         kind: 'person',
