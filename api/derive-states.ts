@@ -25,6 +25,8 @@ import {
     type DocumentPair,
 } from './derive-documents.ts';
 import { latestByKey } from '../shared/ledger-reduction.ts';
+import { compareIdentifiers } from
+    '../shared/identifier.ts';
 import { deriveOrganizations } from './derive-organizations.ts';
 import {
     latestClaimEvent,
@@ -895,9 +897,7 @@ function atIdCompare(
 ): number {
     return a.at < b.at ? -1
         : a.at > b.at ? 1
-            : a.id < b.id ? -1
-                : a.id > b.id ? 1
-                    : 0;
+            : compareIdentifiers(a.id, b.id);
 }
 
 // Every successful (2xx) POST pair at `uriCollection`, (at, id)

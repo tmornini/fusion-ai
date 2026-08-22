@@ -15,6 +15,7 @@ import {
     revokedThroughSeconds,
 } from './access-token.ts';
 import {
+    compareIdentifiers,
     generateIdentifier,
 } from '../shared/identifier.ts';
 import { generateSecret } from
@@ -312,8 +313,8 @@ export async function identityDefaultOrganization(
 }
 
 // The earliest org an identity joined. Equal join moments
-// tie-break to the lexically lowest org id, so resolution is
-// deterministic.
+// tie-break to the lowest org id by identifier order, so
+// resolution is deterministic.
 async function primaryMembershipOrganization(
     adapter: DbAdapter,
     identityId: Id,
@@ -327,7 +328,9 @@ async function primaryMembershipOrganization(
         if (best === null
             || row.at < best.at
             || (row.at === best.at
-                && row.organization_id < best.organization)) {
+                && compareIdentifiers(
+                    row.organization_id,
+                    best.organization) < 0)) {
             best = { organization: row.organization_id, at: row.at };
         }
     }

@@ -10,6 +10,10 @@ import { DEV_TOKEN, organizationToken } from
 import { seedAdminSchema } from './test-fixtures.ts';
 import { seedCurrentMember } from './member-fixtures.ts';
 import {
+    compareIdentifiers,
+    generateIdentifier,
+} from '../shared/identifier.ts';
+import {
     nowUtc,
     SYSTEM_MEMBER_ID,
 } from '../api/types.ts';
@@ -29,8 +33,6 @@ import {
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
-import { generateIdentifier } from
-    '../shared/identifier.ts';
 
 const N_NEXT = generateIdentifier();
 const TE_1 = generateIdentifier();
@@ -218,8 +220,8 @@ async () => {
 
 // Non-lex field-value ids so collection order is not
 // insertion order (byIdAscending craftsmanship).
-test('work-order history field_values are id-lex ordered'
-+ ' after non-lex transition fold', async () => {
+test('work-order history field_values are identifier-'
++ 'ordered after non-lex transition fold', async () => {
     const db = await seededDb();
     await appendLegacyTransition(db, {
         transitionEventId: TE_LEX,
@@ -268,6 +270,6 @@ test('work-order history field_values are id-lex ordered'
     assert.ok(transition !== undefined);
     assert.deepEqual(
         transition!.field_values.map(r => r.id),
-        [FV_A, FV_M, FV_Z].sort(),
+        [FV_A, FV_M, FV_Z].sort(compareIdentifiers),
     );
 });

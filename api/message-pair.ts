@@ -4,6 +4,7 @@ import type {
 } from './types.ts';
 import { nowUtc } from './types.ts';
 import {
+    compareIdentifiers,
     generateIdentifier,
     isIdentifier,
 } from '../shared/identifier.ts';
@@ -398,7 +399,8 @@ export async function documentHeadAt(
         if (
             head === undefined
             || at > head.at
-            || (at === head.at && id > head.id)
+            || (at === head.at
+                && compareIdentifiers(id, head.id) > 0)
         ) {
             head = { at, id, method };
         }

@@ -12,8 +12,10 @@ import {
 import { EntityNotFoundError } from '../api/db.ts';
 import { STARK_ORGANIZATION } from '../api/mock-data/seed-constants.ts';
 import { organizationToken } from './token-fixtures.ts';
-import { generateIdentifier } from
-    '../shared/identifier.ts';
+import {
+    generateIdentifier,
+    compareIdentifiers,
+} from '../shared/identifier.ts';
 import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
@@ -91,9 +93,7 @@ function sortByAtId<T extends { at: string; id: string }>(
     return [...rows].sort((a, b) =>
         a.at < b.at ? -1
             : a.at > b.at ? 1
-                : a.id < b.id ? -1
-                    : a.id > b.id ? 1
-                        : 0);
+                : compareIdentifiers(a.id, b.id));
 }
 
 function workOrderFlowGraph(
@@ -587,9 +587,7 @@ async () => {
             attribute_id: ATTR_NOTE,
             value: 'checked',
         },
-    ].sort((a, b) =>
-        a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
-    ));
+    ].sort((a, b) => compareIdentifiers(a.id, b.id)));
 
     const claimed = history.find(
         (row) => row.id === WORKORDERID_EV3,

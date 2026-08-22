@@ -21,6 +21,10 @@ import {
 } from './identity-fixtures.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
 import {
+    compareIdentifiers,
+    generateIdentifier,
+} from '../shared/identifier.ts';
+import {
     apiRequest, TEST_OPERATION_ID,
     storedMessageBodyText, storedPutBodyText,
     refreshTokenFromSetCookie,
@@ -40,8 +44,6 @@ import {
     authorizationCodeSpent,
     deriveAuthorizationCodeId,
 } from '../api/authentication.ts';
-import { generateIdentifier } from
-    '../shared/identifier.ts';
 
 const JTI_ORDER = generateIdentifier();
 const CHAIN_ORDER = generateIdentifier();
@@ -300,9 +302,9 @@ async () => {
     }, DEV_TOKEN);
 
     // The literal id-LAST reconstruction of each PUT body,
-    // id-lex ordered (byIdAscending — the derivation's own
-    // order, never the backend's) — the expected wire text,
-    // independent of any stored row.
+    // identifier order (byIdAscending — the derivation's
+    // own order, never the backend's) — the expected wire
+    // text, independent of any stored row.
     const expected = [
         {
             jti: JTI_W1, identity_id: 'XXZruirZyAOoRpNxaDnpSA',
@@ -319,9 +321,7 @@ async () => {
             action: 'issued', chain_id: CHAIN_W3, at: AT,
             id: TOK_W3,
         },
-    ].sort((a, b) =>
-        a.id < b.id ? -1 : a.id > b.id ? 1 : 0,
-    );
+    ].sort((a, b) => compareIdentifiers(a.id, b.id));
 
     const collectionRes = await handleRequest(
         db, req(

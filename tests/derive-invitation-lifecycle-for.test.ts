@@ -14,8 +14,10 @@ import { seededMockDb } from './mock-seed.ts';
 import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
-import { generateIdentifier } from
-    '../shared/identifier.ts';
+import {
+    generateIdentifier,
+    compareIdentifiers,
+} from '../shared/identifier.ts';
 
 // The Phase 14 Task 1 core: invitationLifecycleStatesFor is the
 // ENTITY-SCOPED sibling of deriveInvitationStates — INDEXED
@@ -75,7 +77,7 @@ async function bulkRowsFor(
 ): Promise<unknown[]> {
     return (await deriveInvitationStates(db))
         .filter((row) => row.entity_id === id)
-        .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+        .sort((a, b) => compareIdentifiers(a.id, b.id));
 }
 
 test('invitationLifecycleStatesFor: pending-only (granted,'

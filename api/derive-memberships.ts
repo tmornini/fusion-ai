@@ -10,6 +10,8 @@ import {
     deriveDocumentsAt,
     type DerivedDocument,
 } from './derive-documents.ts';
+import { compareIdentifiers } from
+    '../shared/identifier.ts';
 
 // The membership ledger's own reduction — Phase 13 Task 2, the
 // auth/authz/session spine's membership derivation. NOTHING reads
@@ -129,9 +131,7 @@ function byAtThenIdAscending(
 ): number {
     return a.at < b.at ? -1
         : a.at > b.at ? 1
-            : a.id < b.id ? -1
-                : a.id > b.id ? 1
-                    : 0;
+            : compareIdentifiers(a.id, b.id);
 }
 
 // Every LIVE membership row naming `identityId`, across EVERY

@@ -15,8 +15,10 @@ import {
     storedPutBodyText,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
-import { generateIdentifier } from
-    '../shared/identifier.ts';
+import {
+    generateIdentifier,
+    compareIdentifiers,
+} from '../shared/identifier.ts';
 
 // Phase 8 Task 6: the invitation document plane — the grant's
 // PUT-shaped invitation document (the entity minus id, NO email
@@ -402,10 +404,13 @@ test('deriveInvitations round-trips every terminal state:'
         byId.get(INV_DERIVE_DECLINE)?.state, 'declined');
     assert.equal(
         byId.get(INV_DERIVE_REVOKE)?.state, 'revoked');
-    // id-lex ordered (byIdAscending — the derivation's own
-    // order, never the backend's).
+    // Identifier order (byIdAscending — the derivation's
+    // own order, never the backend's).
     const ids = derived.map(row => row.id);
-    assert.deepEqual(ids, [...ids].sort());
+    assert.deepEqual(
+        ids,
+        [...ids].sort(compareIdentifiers),
+    );
 });
 
 test('a no-op replay changes nothing deriveInvitations reads',
