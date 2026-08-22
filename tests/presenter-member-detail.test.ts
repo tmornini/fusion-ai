@@ -30,6 +30,8 @@ const {
 
 const {
     HumanMemberDetailPresenter,
+    HumanMemberDetailEditPresenter,
+    humanMemberDraftFromMember,
 } = await import(
     '../web-app/app/presenters/human-member-detail.ts'
 );
@@ -177,6 +179,8 @@ test(
         assert.equal(
             out.includes('Unknown'), false,
         );
+        // No lifecycle state badge.
+        assert.equal(out.includes('Active'), false);
     },
 );
 
@@ -202,15 +206,40 @@ test(
         assert.equal(
             out.includes('Auth Token'), false,
         );
-        // The lifecycle state badge surfaces.
-        assert.match(out, /Active/);
+        // No lifecycle state badge.
+        assert.equal(out.includes('Active'), false);
     },
 );
 
 test(
-    'AIMemberDetailEditPresenter renders a State'
-    + ' select hooked to the member-field, with the'
-    + ' current state pre-selected',
+    'HumanMemberDetailEditPresenter renders no'
+    + ' State select',
+    () => {
+        const rec = makeRecordingContainer();
+        const member = makeHumanMember();
+        new HumanMemberDetailEditPresenter(
+            member,
+            humanMemberDraftFromMember(member),
+        ).renderShell(rec.container);
+        const out = rec.allHtml();
+        assert.equal(
+            out.includes('id="member-state"'),
+            false,
+        );
+        assert.equal(
+            out.includes('data-member-field="state"'),
+            false,
+        );
+        assert.equal(out.includes('Active'), false);
+        assert.match(
+            out, /data-member-action="save"/,
+        );
+    },
+);
+
+test(
+    'AIMemberDetailEditPresenter renders no State'
+    + ' select',
     () => {
         const rec = makeRecordingContainer();
         const member = makeAIMember();
@@ -219,12 +248,18 @@ test(
             aiMemberDraftFromMember(member),
         ).renderShell(rec.container);
         const out = rec.allHtml();
-        assert.match(out, /id="ai-state"/);
-        assert.match(
-            out, /data-member-field="state"/,
+        assert.equal(
+            out.includes('id="ai-state"'), false,
         );
-        assert.match(
-            out, /value="active"[\s\S]*?selected/,
+        assert.equal(
+            out.includes('data-member-field="state"'),
+            false,
+        );
+        assert.equal(
+            /value="active"[\s\S]*?selected/.test(
+                out,
+            ),
+            false,
         );
         // Save affordance present in edit mode.
         assert.match(
