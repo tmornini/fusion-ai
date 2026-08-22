@@ -124,7 +124,7 @@ test(
 // message carries the header) instead of minting a second
 // unrelated trace that reportFault cannot correlate.
 test(
-    'client requestId rides the wire as x-request-id',
+    'client requestId rides the wire as request-id',
     async () => {
         const db = memoryDbAdapter();
         await seedAdminSchema(db);
@@ -136,7 +136,9 @@ test(
         const rows = await db.pairs.getAll();
         assert.ok(
             rows.some(
-                r => r.request.includes(ctx.requestId),
+                r => r.request.includes(
+                    '\nrequest-id: ' + ctx.requestId,
+                ),
             ),
             'stored pair must carry the client requestId',
         );

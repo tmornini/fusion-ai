@@ -21,7 +21,7 @@ import {
 // rewrite re-enters handleRequest with this header so the
 // inner hop keeps the outer request's id — one user request,
 // one trace.
-export const REQUEST_ID_HEADER = 'x-request-id';
+export const REQUEST_ID_HEADER = 'request-id';
 
 export interface IncomingContext {
     readonly requestId: string;
