@@ -6,12 +6,10 @@ import type {
     IdentityPiiEntity,
     MembershipEntity,
     MemberState,
-    MemberStateDetail,
 } from '../../../api/types.ts';
 import {
     HumanMember,
     nowUtc,
-    assertMemberState,
 } from '../../../api/types.ts';
 import type { RequestContext } from './shared.ts';
 import { getMemberPii } from './identities.ts';
@@ -27,7 +25,6 @@ export type {
     MemberId,
     HumanMemberEntity,
     MemberState,
-    MemberStateDetail,
     DimensionKey,
 } from '../../../api/types.ts';
 
@@ -58,18 +55,6 @@ function emptyPersonProfile(
         department: '',
         strengths: [],
         team_dimensions: {},
-    };
-}
-
-export function memberStateDetailFromRow(
-    row: MemberEntity,
-): MemberStateDetail {
-    return {
-        state: assertMemberState(
-            row.state, 'member ' + row.id,
-        ),
-        stateAt: row.state_at,
-        stateEventId: row.state_event_id,
     };
 }
 
@@ -104,15 +89,8 @@ function profileOf(
 
 function seatedHumanParent(
     id: MemberId,
-    at: string,
 ): MemberEntity {
-    return {
-        id,
-        type: 'human',
-        state: 'active',
-        state_at: at,
-        state_event_id: id,
-    };
+    return { id, type: 'human' };
 }
 
 export function buildHumanMemberMap(
@@ -123,16 +101,9 @@ export function buildHumanMemberMap(
         map.set(
             seat.identity_id,
             new HumanMember(
-                seatedHumanParent(
-                    seat.identity_id, seat.at,
-                ),
+                seatedHumanParent(seat.identity_id),
                 emptyPersonProfile(seat.identity_id),
                 { erased: true },
-                {
-                    state: 'active',
-                    stateAt: seat.at,
-                    stateEventId: seat.id,
-                },
             ),
         );
     }
@@ -147,22 +118,14 @@ export async function getHumanMemberMap(
     );
     const map = buildHumanMemberMap(seats);
     const filled = await Promise.all(
-        [...map.entries()].map(async ([id, human]) => {
+        [...map.entries()].map(async ([id]) => {
             const pii = await getMemberPii(ctx, id);
             return [
                 id,
                 new HumanMember(
-                    seatedHumanParent(
-                        id, human.stateAtValue(),
-                    ),
+                    seatedHumanParent(id),
                     emptyPersonProfile(id),
                     pii,
-                    {
-                        state: 'active',
-                        stateAt: human.stateAtValue(),
-                        stateEventId:
-                            human.stateEventIdValue(),
-                    },
                 ),
             ] as const;
         }),
@@ -197,7 +160,7 @@ export async function getHumanMember(
     ctx: RequestContext,
     id: string,
 ): Promise<HumanMember> {
-    const [seat, identity, pii] =
+    const [, identity, pii] =
         await Promise.all([
             ctx.GET<MembershipEntity>(
                 seatsCollection(ctx) + id,
@@ -208,14 +171,9 @@ export async function getHumanMember(
             getMemberPii(ctx, id),
         ]);
     return new HumanMember(
-        seatedHumanParent(id, seat.at),
+        seatedHumanParent(id),
         profileOf(identity),
         pii,
-        {
-            state: 'active',
-            stateAt: seat.at,
-            stateEventId: seat.id,
-        },
     );
 }
 
@@ -246,7 +204,7 @@ export async function putHumanMember(
     ctx: RequestContext,
     id: string,
     detail: Omit<HumanMemberEntity, 'id'>,
-    _stateEcho: MemberStateDetail,
+    _stateEcho: MemberState,
     pii?: Omit<IdentityPiiEntity, 'id'>,
 ): Promise<void> {
     await ctx.PUT(`identities/${id}`, {

@@ -754,7 +754,7 @@ const MEMBER_BODY_KEYS: readonly string[] = [
 // document-body, never part of this validator's key set.
 export type MemberEntityFields = Omit<
     MemberEntity,
-    'id' | 'state' | 'state_at' | 'state_event_id'
+    'id'
 >;
 
 export function validateMemberEntity(

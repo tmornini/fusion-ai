@@ -307,11 +307,11 @@ uses `stateFieldValuesFrom` /
 
 **Head-state trio.** Ideas / projects / record-types /
 objectives GET rows keep domain `state` and do not
-embed `state_at` / `state_event_id`. Members GET
-rows still embed the lifecycle trio. Flows keep
-`StateEntity[]` on the versions list; work-orders
-stay `'stateless'`; instances carry full-state
-`values`.
+embed `state_at` / `state_event_id`. Member seats
+GET `{ id, organization_id, identity_id, type, at }`.
+Flows keep `StateEntity[]` on the versions list;
+work-orders stay `'stateless'`; instances carry
+full-state `values`.
 
 The bulk lifecycle collection, bare event-append
 address, per-entity current-state alias, nested

@@ -1,6 +1,6 @@
 import type { DbAdapter } from './db.ts';
 import { EntityNotFoundError } from './db.ts';
-import type { Id, MemberEntity, StateEntity } from './types.ts';
+import type { Id, MemberEntity } from './types.ts';
 import { pickString } from './validators.ts';
 import { canonicalUriCollection } from './message-pair.ts';
 import {
@@ -9,7 +9,6 @@ import {
     documentLifecycleEvents,
     stateHistoryFrom,
     currentDocumentState,
-    currentLifecycleEvent,
     byIdAscending,
     DELETED_STATE,
     type DerivedDocument,
@@ -34,22 +33,14 @@ const MEMBERS_PREFIX = canonicalUriCollection(undefined, '/members/');
 // (validateMemberDocumentBody) — trusted here, not re-checked,
 // per the Article of Faith: once data has crossed validation,
 // trust it completely. Head document → wire MemberEntity:
-// entity field (`type`) from the head body; the lifecycle trio
-// is stamped from the lifecycle-current StateEntity (never
-// re-copied from the head body — genesis-wins-under-skew).
-// `current` is required: every live member GET builds history
-// first and passes the lifecycle-current event.
+// entity field (`type`) from the head body.
 export function memberParentOf(
     document: DerivedDocument,
-    current: StateEntity,
 ): MemberEntity {
     return {
         id: document.uriId,
         type: pickString(document.body, 'type') as
             MemberEntity['type'],
-        state: current.state,
-        state_at: current.at,
-        state_event_id: current.id,
     };
 }
 
@@ -77,17 +68,13 @@ function memberRowsFrom(
         if (currentDocumentState(history) === DELETED_STATE) {
             continue;
         }
-        // After DELETED filter history is non-empty for every
-        // live trio document (genesis always mints an event).
-        const current = currentLifecycleEvent(history)!;
-        rows.push(memberParentOf(document, current));
+        rows.push(memberParentOf(document));
     }
     return rows;
 }
 
 // Every member-parent head, id-lex ordered (byIdAscending —
-// the derivation's own order, never the backend's). Trio
-// stamped from lifecycle-current (genesis-wins-under-skew).
+// the derivation's own order, never the backend's).
 export async function deriveMemberParents(
     db: DbAdapter,
 ): Promise<MemberEntity[]> {
@@ -108,8 +95,7 @@ export async function deriveMemberParents(
 // on absence — the 404-byte parity anchor ('Not found:
 // members/<id>') tests/drift-roster.test.ts pins byte-for-byte
 // against the old plane. Lifecycle-deleted heads 404 the same
-// way (DELETED filter; members alphabet has no 'deleted' today,
-// but the generic trio path still walks it).
+// way (DELETED filter).
 export async function deriveMemberParent(
     db: DbAdapter,
     id: Id,
@@ -132,8 +118,7 @@ export async function deriveMemberParent(
     if (currentDocumentState(history) === DELETED_STATE) {
         throw new EntityNotFoundError('members', id);
     }
-    const current = currentLifecycleEvent(history)!;
-    return memberParentOf(document, current);
+    return memberParentOf(document);
 }
 
 const IDENTITIES_PREFIX = canonicalUriCollection(
@@ -142,14 +127,10 @@ const IDENTITIES_PREFIX = canonicalUriCollection(
 
 function seatedHumanOf(
     identityId: Id,
-    at: string,
 ): MemberEntity {
     return {
         id: identityId,
         type: 'human',
-        state: 'active',
-        state_at: at,
-        state_event_id: identityId,
     };
 }
 
@@ -175,7 +156,7 @@ export async function deriveMembers(
         if (pickString(identity.body, 'kind') !== 'person') {
             continue;
         }
-        rows.push(seatedHumanOf(seat.identity_id, seat.at));
+        rows.push(seatedHumanOf(seat.identity_id));
     }
     return rows.sort(byIdAscending);
 }

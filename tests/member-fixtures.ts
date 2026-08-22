@@ -53,43 +53,20 @@ function aiDetail() {
     };
 }
 
-// Default trio for in-memory domain fixtures — mirrors the
-// seed's initialState* so a make*Member and a seed*Member
-// for the same id share event id / at when a test cares.
-function memberStateDetailOf(
-    id: string,
-    state: MemberState,
-) {
-    return {
-        state,
-        stateAt: '2026-01-01T00:00:00.000000Z',
-        stateEventId: `st-${id}`,
-    };
-}
-
 function memberParentEntity(
     id: string,
     type: 'human' | 'ai',
-    state: MemberState,
 ) {
-    const detail = memberStateDetailOf(id, state);
-    return {
-        id,
-        type,
-        state: detail.state,
-        state_at: detail.stateAt,
-        state_event_id: detail.stateEventId,
-    };
+    return { id, type };
 }
 
 export function makeHumanMember(
     id: string,
     name: string,
-    state: MemberState = 'active',
+    _state: MemberState = 'active',
 ): HumanMember {
-    const stateDetail = memberStateDetailOf(id, state);
     return new HumanMember(
-        memberParentEntity(id, 'human', state),
+        memberParentEntity(id, 'human'),
         { id, ...humanDetail() },
         {
             erased: false,
@@ -98,20 +75,17 @@ export function makeHumanMember(
             phone: '',
             bio: '',
         },
-        stateDetail,
     );
 }
 
 export function makeAIMember(
     id: string,
     name: string,
-    state: MemberState = 'active',
+    _state: MemberState = 'active',
 ): AIMember {
-    const stateDetail = memberStateDetailOf(id, state);
     return new AIMember(
-        memberParentEntity(id, 'ai', state),
+        memberParentEntity(id, 'ai'),
         { id, name, ...aiDetail() },
-        stateDetail,
     );
 }
 

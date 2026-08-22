@@ -79,11 +79,7 @@ test(
                 department: 'Product',
                 strengths: [],
                 team_dimensions: {},
-            }, {
-                state: 'active',
-                stateAt: '2026-01-01T00:00:00.000000Z',
-                stateEventId: 'st-w1',
-            },
+            }, 'active',
         );
         const after = await ctx.GET<{
             id: string; title: string;

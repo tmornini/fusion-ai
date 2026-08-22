@@ -479,12 +479,8 @@ async function saveHumanMember(
     );
     try {
         await putHumanMember(
-            ctx, memberId, nextDetail, {
-                state: s.member.stateValue(),
-                stateAt: s.member.stateAtValue(),
-                stateEventId:
-                    s.member.stateEventIdValue(),
-            }, piiPatch,
+            ctx, memberId, nextDetail, 'active',
+            piiPatch,
         );
     } catch (err) {
         reportFault(
@@ -527,12 +523,7 @@ async function saveAIMember(
         await putAIMember(
             ctx, memberId,
             { ...rest, ...patch },
-            {
-                state: s.member.stateValue(),
-                stateAt: s.member.stateAtValue(),
-                stateEventId:
-                    s.member.stateEventIdValue(),
-            },
+            'active',
         );
     } catch (err) {
         reportFault(
