@@ -392,6 +392,9 @@ const SLICE_ENTITY_IDS: Readonly<
     'f2-edge-begin': 'nBTaOvBuUzsCMvOLOWqHrQ',
     'f2-edge-submit': 'FPkWtsaHGXddJVKpPDaRnA',
     'f2-edge-approve': 'SEjfnAIqgAgGukqncOiooA',
+    'f2-node-capture-attr-text': 'dL4p4z_U-8XNsYJp-H94xw',
+    'f2-node-capture-attr-select': 'o1yYjA882AU1i4TyB3a40A',
+    'f2-edge-capture-archive': 'KmbpGLs7xhDmJhwwqtEtKQ',
     'f2-project-flow': 'DwppKTRaYbyjeAvtIHwbrg',
     'f2-state-flow': 'wBQxSNLEXSWbbSOpOMflHQ',
     'f2-wo-capture': 'oLSsqdIHyZrxtdYMwsalPA',
@@ -1068,6 +1071,182 @@ async function formSvExtras(
         organizationId,
     );
     return { identities: [identity] };
+}
+
+type F2FlowWrites = {
+    readonly flowId: string;
+    readonly body: Record<string, unknown>;
+    readonly operation: MessagePair;
+    readonly document: MessagePair;
+};
+
+async function formF2Extras(
+    organizationId: string,
+    adminId: string,
+    requestAt: string,
+): Promise<F2FlowWrites> {
+    const token = 'f2';
+    const flowId = sliceEntityId(token + '-flow');
+    const createNodeId = sliceEntityId(
+        token + '-node-create',
+    );
+    const captureNodeId = sliceEntityId(
+        token + '-node-capture',
+    );
+    const archiveNodeId = sliceEntityId(
+        token + '-node-archive',
+    );
+    const graph: Record<string, unknown> = {
+        nodes: [
+            {
+                id: createNodeId,
+                name: 'Create',
+                positionX: 40,
+                positionY: 30,
+                isCreate: true,
+                isArchive: false,
+                taskInstructions: '',
+                memberIds: [],
+                attributes: [],
+            },
+            {
+                id: captureNodeId,
+                name: 'Capture',
+                positionX: 260,
+                positionY: 140,
+                isCreate: false,
+                isArchive: false,
+                taskInstructions: '',
+                memberIds: [adminId],
+                attributes: [
+                    {
+                        attribute_id: sliceEntityId(
+                            'f2-node-capture-attr-text',
+                        ),
+                        mode: 'editable',
+                        isRequired: true,
+                    },
+                    {
+                        attribute_id: sliceEntityId(
+                            'f2-node-capture-attr-select',
+                        ),
+                        mode: 'editable',
+                        isRequired: true,
+                    },
+                ],
+            },
+            {
+                id: archiveNodeId,
+                name: 'Archive',
+                positionX: 480,
+                positionY: 250,
+                isCreate: false,
+                isArchive: true,
+                taskInstructions: '',
+                memberIds: [],
+                attributes: [],
+            },
+        ],
+        edges: [
+            {
+                id: sliceEntityId(
+                    token + '-edge-begin',
+                ),
+                name: 'begin',
+                fromNodeId: createNodeId,
+                toNodeId: captureNodeId,
+            },
+            {
+                id: sliceEntityId(
+                    'f2-edge-capture-archive',
+                ),
+                name: 'archive',
+                fromNodeId: captureNodeId,
+                toNodeId: archiveNodeId,
+            },
+        ],
+    };
+    const relations = buildFlowGraphRelations(
+        [{ id: flowId, graph }],
+        requestAt,
+    );
+    const nodeIds = new Set(
+        relations.nodes.map((n) => n.id),
+    );
+    const flowBody: Record<string, unknown> = {
+        id: flowId,
+        flow: {
+            organization_id: organizationId,
+            name: 'WB Test Flow',
+            is_locked: false,
+            is_auto_layout: true,
+            is_auto_fit: true,
+            lock_timeout: DEFAULT_LOCK_TIMEOUT,
+        },
+        projectFlowId: sliceEntityId(
+            token + '-project-flow',
+        ),
+        projectFlow: {
+            project_id: sliceEntityId(
+                token + '-project-approved',
+            ),
+            flow_id: flowId,
+            at: requestAt,
+        },
+        initialState: 'active',
+        initialStateEventId: sliceEntityId(
+            token + '-state-flow',
+        ),
+        initialStateAt: requestAt,
+        graphDelta: {
+            nodes: relations.nodes,
+            edges: relations.edges,
+            deletions: [],
+            memberEvents: relations.members.filter(
+                (row) => nodeIds.has(
+                    row.flow_node_id,
+                ),
+            ),
+            attributeEvents:
+                relations.attributes.filter(
+                    (row) => nodeIds.has(
+                        row.flow_node_id,
+                    ),
+                ),
+        },
+    };
+    const validated =
+        validateFlowCreateBody(flowBody);
+    const operation = await formSeedPair(
+        {
+            key: seedPairKey('flows', flowId),
+            routePattern:
+                'organizations/:id/flows/',
+            idParams: [organizationId],
+            op: true,
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: flowBody,
+        },
+        requestAt,
+    );
+    const document = await formSeedPair(
+        {
+            key: seedPairKey('flows/:id', flowId),
+            routePattern:
+                'organizations/:id/flows/:id',
+            idParams: [organizationId, flowId],
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: flowCreateDocumentBody(
+                validated,
+            ),
+        },
+        requestAt,
+    );
+    return {
+        flowId, body: flowBody, operation, document,
+    };
 }
 
 async function writeExtraIdentity(
@@ -1960,6 +2139,7 @@ export async function postTestPlanSlices(
     const formed: TenantAdminPairs[] = [];
     const extras: ExtraWrites[] = [];
     const gardens: GardenWrites[] = [];
+    const f2Flows: F2FlowWrites[] = [];
     for (const section of PARALLEL_SECTIONS) {
         if (section === 'AA') continue;
         const slice = await formTenantAdminPairs(
@@ -2036,6 +2216,17 @@ export async function postTestPlanSlices(
                     'sv-member@test-plan.example',
                 seatPassword: '',
             };
+        } else if (section === 'F2') {
+            const extra = await formF2Extras(
+                slice.organizationId,
+                slice.adminId,
+                requestAt,
+            );
+            f2Flows.push(extra);
+            reveal = {
+                ...reveal,
+                flowId: extra.flowId,
+            };
         }
         if ((GARDEN_SECTIONS as readonly string[])
             .includes(section)) {
@@ -2075,6 +2266,14 @@ export async function postTestPlanSlices(
                     writeGarden(view, garden),
                 ),
             );
+            for (const extra of f2Flows) {
+                await appendMessagePair(
+                    view, extra.operation,
+                );
+                await appendMessagePair(
+                    view, extra.document,
+                );
+            }
         },
     );
     const creds = await seedHumanCredentials(
