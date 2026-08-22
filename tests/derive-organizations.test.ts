@@ -20,8 +20,10 @@ import {
     deriveOrganizations,
     organizationEntityOf,
 } from '../api/derive-organizations.ts';
-import { generateIdentifier } from
-    '../shared/identifier.ts';
+import {
+    compareIdentifiers,
+    generateIdentifier,
+} from '../shared/identifier.ts';
 
 // Phase Final Task 2: organizations dual-write stripped. This
 // file no longer compares derive vs row-plane oracles — the
@@ -91,7 +93,11 @@ test('deriveOrganizations mirrors every PUT wire body,'
     const derived = await deriveOrganizations(db);
     assert.deepEqual(
         derived.map((o) => o.id),
-        ['AjdvjuECVZEgZoFajaIEkg', organizationA, organizationB].sort(),
+        [
+            'AjdvjuECVZEgZoFajaIEkg',
+            organizationA,
+            organizationB,
+        ].sort(compareIdentifiers),
     );
     assert.equal(
         derived.find((o) => o.id === organizationA)!.name, 'Alpha',

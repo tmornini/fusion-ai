@@ -9,6 +9,8 @@ import { serializeWire } from
     '../shared/http-message/wire-codec.ts';
 import { Octets } from
     '../shared/http-message/octets.ts';
+import { decodeIdentifier } from
+    '../shared/identifier.ts';
 
 // Live EXPLAIN pins for schema indexes. ./validate stays
 // Postgres-free: skip when POSTGRES_URL is unset. Private
@@ -65,7 +67,22 @@ function urlWithSearchPath(
 }
 
 function id22(n: number): string {
-    return n.toString(10).padStart(22, 'a');
+    return n.toString(10).padStart(21, 'a') + 'A';
+}
+
+function uuidTextOfIdentifier(id: string): string {
+    const bytes = decodeIdentifier(id);
+    let hex = '';
+    for (const b of bytes) {
+        hex += b.toString(16).padStart(2, '0');
+    }
+    return (
+        hex.slice(0, 8) + '-'
+        + hex.slice(8, 12) + '-'
+        + hex.slice(12, 16) + '-'
+        + hex.slice(16, 20) + '-'
+        + hex.slice(20)
+    );
 }
 
 function hex64(n: number): string {
@@ -298,7 +315,7 @@ if (POSTGRES_URL === undefined || POSTGRES_URL === '') {
         >`
             EXPLAIN
             SELECT * FROM pairs
-            WHERE id = ${ideaId}
+            WHERE id = ${uuidTextOfIdentifier(ideaId)}
         `;
         assertIndexPlan(
             explainText(plans),
