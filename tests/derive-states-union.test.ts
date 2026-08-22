@@ -33,7 +33,6 @@ import {
 import {
     postMembershipDocumentOp,
     postMemberDocumentOp,
-    memberDocumentBodyOf,
 } from '../api/routes.ts';
 import { deriveMembers } from '../api/derive-members.ts';
 import {
@@ -127,11 +126,12 @@ async function leftoverMemberParent(
     db: MemoryDbAdapter,
     id: string,
 ): Promise<void> {
-    const body = memberDocumentBodyOf('human', {
+    const body = {
+        type: 'human',
         state: 'active',
-        stateAt: AT,
-        stateEventId: generateIdentifier(),
-    });
+        state_at: AT,
+        state_event_id: generateIdentifier(),
+    };
     const pair = await formWritePair({
         method: 'PUT',
         pathname: '/members/' + id,

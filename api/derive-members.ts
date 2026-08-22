@@ -30,7 +30,7 @@ const MEMBERS_PREFIX = canonicalUriCollection(undefined, '/members/');
 // operation-pair body reaching this construction throws loudly
 // rather than silently mis-deriving. `type`'s validated alphabet
 // ('human' | 'ai' | 'system') was enforced at write time
-// (validateMemberDocumentBody) — trusted here, not re-checked,
+// (validateMemberEntity) — trusted here, not re-checked,
 // per the Article of Faith: once data has crossed validation,
 // trust it completely. Head document → wire MemberEntity:
 // entity field (`type`) from the head body.
