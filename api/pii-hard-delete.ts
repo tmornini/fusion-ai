@@ -43,11 +43,11 @@ export async function replacePiiSlot(
     uriCollection: string,
     pair: MessagePair,
 ): Promise<void> {
-    const prior = await view.pairs.getAllWhere(
+    const prior = await view.messagePairs.getAllWhere(
         'uri_collection', uriCollection,
     );
     for (const row of prior) {
-        await view.pairs.delete(row.id);
+        await view.messagePairs.delete(row.id);
     }
     await appendMessagePair(view, pair);
 }

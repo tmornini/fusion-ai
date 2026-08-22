@@ -159,8 +159,8 @@ async () => {
     );
     assert.deepEqual(written, body);
     // Phase Final Stage B: identity spine tables retired.
-    assert.equal((await db.pairs.getAll()).length, 1);
-    assert.equal((await db.pairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
 });
 
 // -- 3. byte-identical resend (the E6 fast-path sibling pin) --
@@ -178,8 +178,8 @@ test('a byte-identical PUT resend to identities/:id converges'
         db, 'identities/' + id, body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
-    assert.equal((await db.pairs.getAll()).length, 3);
-    assert.equal((await db.pairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
 });
 
 // -- 4. below-route via the generic handlers (the drift-file
@@ -266,7 +266,7 @@ test('a PUT chain Supersedes-chains and the head derives the'
         db, id, second,
         '2026-02-02T00:00:00.000000Z', firstId,
     );
-    const secondResponse = await db.pairs.getById(secondId);
+    const secondResponse = await db.messagePairs.getById(secondId);
     assert.equal('supersedes' in secondResponse, false);
 
     const headAfterSecond = await documentGetHandler(wiring)(

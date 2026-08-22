@@ -235,8 +235,8 @@ async () => {
         ...entityFields(),
     });
     // Phase Final Stage B: objectives table retired.
-    assert.equal((await db.pairs.getAll()).length, 1);
-    assert.equal((await db.pairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
 });
 
 // -- 3. byte-identical resend (the shadow-ledger pin's sibling
@@ -261,8 +261,8 @@ test('a byte-identical PUT resend to'
             , body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
-    assert.equal((await db.pairs.getAll()).length, 3);
-    assert.equal((await db.pairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
 });
 
 // -- 4. below-route via the generic handlers, against the REAL

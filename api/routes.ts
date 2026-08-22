@@ -993,7 +993,7 @@ export async function loadAttributeSchemaById(
     const prefix = attributesUriPrefix(
         organization, recordTypeId,
     );
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const documents = deriveDocumentsAt(pairs, prefix);
@@ -3595,7 +3595,7 @@ async function inFlightPlacementBlockersFor(
     const workOrdersPrefix = canonicalUriCollection(
         organization, '/work-orders/',
     );
-    const woPairs = await view.pairs.getAllWhere(
+    const woPairs = await view.messagePairs.getAllWhere(
         'uri_collection', workOrdersPrefix,
     );
     const woHeads = deriveDocumentsAt(
@@ -3642,7 +3642,7 @@ async function instanceAddressSpent(
     instanceId: Id,
 ): Promise<boolean> {
     const pairs =
-        await db.pairs.getAllAtAddress(
+        await db.messagePairs.getAllAtAddress(
             prefix, instanceId,
         );
     return pairs.length > 0;
@@ -5243,7 +5243,7 @@ export const routes: Route[] = [
             const typeId = param(p, 1);
             await requireRecordTypeExists(db, org, typeId);
             const prefix = attributesUriPrefix(org, typeId);
-            const pairs = await db.pairs.getAllWhere(
+            const pairs = await db.messagePairs.getAllWhere(
                 'uri_collection', prefix,
             );
             const documents = deriveDocumentsAt(
@@ -5270,7 +5270,7 @@ export const routes: Route[] = [
             const attrId = param(p, 2);
             await requireRecordTypeExists(db, org, typeId);
             const prefix = attributesUriPrefix(org, typeId);
-            const pairs = await db.pairs.getAllWhere(
+            const pairs = await db.messagePairs.getAllWhere(
                 'uri_collection', prefix,
             );
             const document = deriveDocumentsAt(
@@ -5291,7 +5291,7 @@ export const routes: Route[] = [
             const attrId = param(p, 2);
             await requireRecordTypeExists(db, org, typeId);
             const prefix = attributesUriPrefix(org, typeId);
-            const pairs = await db.pairs.getAllWhere(
+            const pairs = await db.messagePairs.getAllWhere(
                 'uri_collection', prefix,
             );
             const hasHead = deriveDocumentsAt(
@@ -5323,7 +5323,7 @@ export const routes: Route[] = [
                 );
             }
             const prefix = attributesUriPrefix(org, typeId);
-            const pairs = await db.pairs.getAllWhere(
+            const pairs = await db.messagePairs.getAllWhere(
                 'uri_collection', prefix,
             );
             if (!deriveDocumentsAt(

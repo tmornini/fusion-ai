@@ -39,7 +39,7 @@ import {
 import type { NotificationEvent } from
     './notifications.ts';
 
-// The shadow-ledger message pair: one `pairs` put. Formed
+// The shadow-ledger message pair: one `message_pairs` put. Formed
 // pre-tx — crypto, hashing, and timers never run
 // inside an open transaction (AGENTS.md § Transaction
 // bodies await only row ops). Then appended as the LAST
@@ -417,7 +417,7 @@ export async function storedResponseFor(
     db: DbAdapter,
     requestHash: string,
 ): Promise<PairEntity | undefined> {
-    const prior = await db.pairs.getAllWhere(
+    const prior = await db.messagePairs.getAllWhere(
         'request_hash', requestHash,
     );
     return prior[0];
@@ -691,7 +691,7 @@ export async function appendMessagePair(
     pair: MessagePair,
 ): Promise<void> {
     await coordinateWrite(view, pair, true);
-    const replay = await view.pairs.getAllWhere(
+    const replay = await view.messagePairs.getAllWhere(
         'request_hash', pair.requestHash,
     );
     if (replay.length > 0) return;
@@ -703,7 +703,7 @@ async function writePairRows(
     view: DbAdapter,
     pair: MessagePair,
 ): Promise<void> {
-    await view.pairs.put(pair.id, {
+    await view.messagePairs.put(pair.id, {
         uri_collection: pair.uriCollection,
         uri_id: pair.uriId,
         requester_identity_id:

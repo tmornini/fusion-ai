@@ -570,7 +570,7 @@ async () => {
         originalEtag,
     );
     assert.deepEqual(await second.json(), originalBody);
-    const responses = await db.pairs.getAllWhere(
+    const responses = await db.messagePairs.getAllWhere(
         'uri_collection',
         '/organizations/' + ORGANIZATION
             + '/record-types/' + TYPE_ID
@@ -607,7 +607,7 @@ async () => {
         [a.status, b.status].sort(),
         [201, 428],
     );
-    const responses = await db.pairs.getAllWhere(
+    const responses = await db.messagePairs.getAllWhere(
         'uri_collection',
         '/organizations/' + ORGANIZATION
             + '/record-types/' + TYPE_ID

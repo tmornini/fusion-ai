@@ -173,10 +173,10 @@ async function deriveMembershipsAll(db: DbAdapter) {
             + organization.id + '/members/';
         const [seatRequests, seatResponses] =
             await Promise.all([
-                db.pairs.getAllWhere(
+                db.messagePairs.getAllWhere(
                     'uri_collection', seatPrefix,
                 ),
-                db.pairs.getAllWhere(
+                db.messagePairs.getAllWhere(
                     'uri_collection', seatPrefix,
                 ),
             ]);

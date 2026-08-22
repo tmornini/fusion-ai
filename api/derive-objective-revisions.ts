@@ -86,7 +86,7 @@ export async function deriveObjectiveRevisions(
     const prefix = objectiveRevisionsUriPrefix(
         organization, objectiveId,
     );
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const documents = deriveDocumentsAt(pairs, prefix);

@@ -174,10 +174,10 @@ async function liveIdentityIds(
     db: MemoryDbAdapter,
 ): Promise<string[]> {
     const [requests, responses] = await Promise.all([
-        db.pairs.getAllWhere(
+        db.messagePairs.getAllWhere(
             'uri_collection', '/identities/',
         ),
-        db.pairs.getAllWhere(
+        db.messagePairs.getAllWhere(
             'uri_collection', '/identities/',
         ),
     ]);

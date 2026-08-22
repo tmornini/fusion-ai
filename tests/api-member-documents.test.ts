@@ -328,8 +328,8 @@ async () => {
     );
     assert.deepEqual(written, body);
     // Phase Final Stage B: roster tables retired.
-    assert.equal((await db.pairs.getAll()).length, 1);
-    assert.equal((await db.pairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
 });
 
 test('postAiMemberDocumentOp writes exactly the pair and'
@@ -356,8 +356,8 @@ async () => {
     );
     assert.deepEqual(written, body);
     // Phase Final Stage B: roster tables retired.
-    assert.equal((await db.pairs.getAll()).length, 1);
-    assert.equal((await db.pairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
 });
 
 test('postHumanMemberDocumentOp writes exactly the pair and'
@@ -384,8 +384,8 @@ test('postHumanMemberDocumentOp writes exactly the pair and'
     );
     assert.deepEqual(written, body);
     // Phase Final Stage B: roster tables retired.
-    assert.equal((await db.pairs.getAll()).length, 1);
-    assert.equal((await db.pairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
 });
 
 // -- 3. byte-identical resend (the E6 fast-path sibling pin) —

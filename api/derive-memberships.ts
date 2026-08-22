@@ -101,7 +101,7 @@ import { compareIdentifiers } from
 // among its tables) can call it in-tx without opening a nested
 // transaction of its own.
 //
-// Reads db.pairs (+ pickString/validate-
+// Reads db.messagePairs (+ pickString/validate-
 // MembershipEntity over their decoded bodies) ONLY — never
 // db.memberships, the row-plane table Task 3 retires this
 // derivation to replace.
@@ -147,7 +147,7 @@ export async function deriveMembershipsForIdentity(
     const rows: MembershipEntity[] = [];
     for (const organization of organizations) {
         const seatPrefix = seatsPrefixFor(organization.id);
-        const seatPairs = await db.pairs.getAllWhere(
+        const seatPairs = await db.messagePairs.getAllWhere(
             'uri_collection', seatPrefix,
         );
         const seat = deriveDocumentsAt(
@@ -173,7 +173,7 @@ export async function membershipExistsFor(
     identityId: Id,
 ): Promise<boolean> {
     const seatPrefix = seatsPrefixFor(organization);
-    const seatPairs = await dbOrView.pairs.getAllWhere(
+    const seatPairs = await dbOrView.messagePairs.getAllWhere(
         'uri_collection', seatPrefix,
     );
     return deriveDocumentsAt(
@@ -186,7 +186,7 @@ export async function deriveOrganizationMemberSeats(
     organization: Id,
 ): Promise<MembershipEntity[]> {
     const prefix = seatsPrefixFor(organization);
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const documents = deriveDocumentsAt(pairs, prefix);
@@ -203,7 +203,7 @@ export async function deriveOrganizationMemberSeat(
     identityId: Id,
 ): Promise<MembershipEntity> {
     const prefix = seatsPrefixFor(organization);
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const document = deriveDocumentsAt(

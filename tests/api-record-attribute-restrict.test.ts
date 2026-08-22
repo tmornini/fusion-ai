@@ -253,14 +253,14 @@ test(
     'an unreferenced attribute deletes cleanly',
     async () => {
         const db = await seededDb();
-        const before = (await db.pairs.getAll()).length;
+        const before = (await db.messagePairs.getAll()).length;
         // Phase Final Stage B: wire-seeded VXTdVVRluJDRBqbXWZBntA; DELETE
         // appends a tombstone pair (table retired).
         await DELETE(
             db, ATTR1_PATH, DEV_TOKEN,
         );
         assert.equal(
-            (await db.pairs.getAll()).length, before + 1,
+            (await db.messagePairs.getAll()).length, before + 1,
         );
         await assert.rejects(
             () => GET(
@@ -442,13 +442,13 @@ test(
             }],
         });
         // deletion must succeed — 'removed' is not a referrer
-        const before = (await db.pairs.getAll()).length;
+        const before = (await db.messagePairs.getAll()).length;
         await DELETE(
             db, ATTR1_PATH, DEV_TOKEN,
         );
         // Phase Final Stage B: tombstone pair lands; GET 404s.
         assert.equal(
-            (await db.pairs.getAll()).length, before + 1,
+            (await db.messagePairs.getAll()).length, before + 1,
         );
         await assert.rejects(
             () => GET(
@@ -598,8 +598,8 @@ test(
             db, 'VXTdVVRluJDRBqbXWZBntA', FIELD_VALUE_ID,
             'High',
         );
-        const requestsBefore = await db.pairs.getAll();
-        const responsesBefore = await db.pairs.getAll();
+        const requestsBefore = await db.messagePairs.getAll();
+        const responsesBefore = await db.messagePairs.getAll();
         await assert.rejects(
             () => POST(db
                 , 'organizations/AjdvjuECVZEgZoFajaIEkg/record-types/', {
@@ -635,11 +635,11 @@ test(
         // pair-balance: the whole bundle is pairs-or-nothing,
         // so a 409 rollback appends NEITHER table any rows.
         assert.equal(
-            (await db.pairs.getAll()).length,
+            (await db.messagePairs.getAll()).length,
             requestsBefore.length,
         );
         assert.equal(
-            (await db.pairs.getAll()).length,
+            (await db.messagePairs.getAll()).length,
             responsesBefore.length,
         );
     },

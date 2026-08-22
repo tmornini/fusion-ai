@@ -159,8 +159,8 @@ test('a byte-identical resend converges: one event,'
     const events = await deriveProjectStateHistory(db
         , 'AjdvjuECVZEgZoFajaIEkg', 'YIuEjXvCwXAgrpyvcvLJjg');
     assert.equal(events.length, 1);
-    assert.equal((await db.pairs.getAll()).length, 3);
-    assert.equal((await db.pairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
 });
 
 test('the pair request body carries domain state;'
@@ -184,7 +184,7 @@ test('the pair request body carries domain state;'
     assert.equal(wire.title, 'Wired');
     assert.equal(wire.state, 'under_review');
     assert.equal('state_at' in wire, false);
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     // seedRootAdmin 2 + project PUT 1
     assert.equal(requests.length, 3);
     const parsed = pairJsonOf(requests[2]!.request) as {

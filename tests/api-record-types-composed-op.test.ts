@@ -262,7 +262,7 @@ async () => {
     assert.equal(attrRow.record_type_id, TYPE_ID);
     assert.equal(attrRow.name, 'Priority');
 
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const typePrefix =
         '/organizations/' + ORGANIZATION
         + '/record-types/';
@@ -304,8 +304,8 @@ async () => {
         db, adminToken, ATTR_ID,
     );
 
-    const requestsBefore = await db.pairs.getAll();
-    const responsesBefore = await db.pairs.getAll();
+    const requestsBefore = await db.messagePairs.getAll();
+    const responsesBefore = await db.messagePairs.getAll();
     const edit = await handleRequest(db, req(
         'POST', COLLECTION, adminToken,
         editBody(TYPE_ID, 'Renamed', [ATTR_ID]),
@@ -329,11 +329,11 @@ async () => {
     assert.equal(attrGet.status, 200);
 
     assert.equal(
-        (await db.pairs.getAll()).length,
+        (await db.messagePairs.getAll()).length,
         requestsBefore.length,
     );
     assert.equal(
-        (await db.pairs.getAll()).length,
+        (await db.messagePairs.getAll()).length,
         responsesBefore.length,
     );
 });

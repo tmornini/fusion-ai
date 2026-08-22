@@ -70,11 +70,11 @@ import {
 // organizations.ts / deriveIdentityPiiRows): identity_tokens is
 // never a hard-delete zone (api/derive-identity-spine.ts's own
 // header draws this line for its own siblings) — one
-// getAllWhere on db.pairs, outside any transaction, is the
+// getAllWhere on db.messagePairs, outside any transaction, is the
 // cheaper shape every OTHER derive-identity-spine.ts facet
 // but pii already uses.
 //
-// Reads db.pairs (+ pickString/validate-
+// Reads db.messagePairs (+ pickString/validate-
 // IdentityTokenEntity over their decoded bodies) ONLY — never
 // db.identityTokens, the row-plane table this task's GET flip
 // retired as a production READ; Phase 13 Task 9 retires the
@@ -125,7 +125,7 @@ async function fetchTokenDocumentsAt(
     dbOrView: DbAdapter,
     prefix: string,
 ): Promise<Map<string, DerivedDocument>> {
-    const pairs = await dbOrView.pairs.getAllWhere(
+    const pairs = await dbOrView.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return deriveDocumentsAt(pairs, prefix);
@@ -190,7 +190,7 @@ export async function deriveIdentityToken(
 export async function deriveIdentityTokens(
     db: DbAdapter,
 ): Promise<IdentityTokenEntity[]> {
-    const pairs = await db.pairs.getAll();
+    const pairs = await db.messagePairs.getAll();
     const byId = new Map<string, IdentityTokenEntity>();
     const flat = deriveDocumentsAt(
         pairs, IDENTITY_TOKENS_FLAT_PREFIX,

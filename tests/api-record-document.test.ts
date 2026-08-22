@@ -324,8 +324,8 @@ test('a byte-identical resend replays the stored response:'
     const events = await deriveRecordStateHistory(db
         , 'AjdvjuECVZEgZoFajaIEkg', 'sBdXBQtlujsRkbzspdvfFg');
     assert.equal(events.length, 1);
-    assert.equal((await db.pairs.getAll()).length, 3);
-    assert.equal((await db.pairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
 });
 
 // -- 4. the DELETE-pair walk filter (Author gate 9) ----------

@@ -180,7 +180,7 @@ test('append then head-read round-trips', async () => {
     // Early request, late response: the request row keeps
     // the arrival stamp verbatim; response_at was minted
     // at append time, strictly after arrival.
-    const request = await db.pairs.getById(pair.id);
+    const request = await db.messagePairs.getById(pair.id);
     assert.equal(request.request_at, INPUT.requestAt);
     assert.ok(request.request_at < stored!.response_at);
 });
@@ -197,5 +197,5 @@ test('a same-hash re-append writes nothing', async () => {
             await appendMessagePair(view, replay);
         },
     );
-    assert.equal((await db.pairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
 });

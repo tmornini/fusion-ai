@@ -39,7 +39,7 @@ import {
 // ('/identities/<id>/pii/', uriId '' — a singleton document at a
 // collection-style address, message-address.ts), so no index can
 // serve "every request whose uri_collection has this shape" for an
-// arbitrary id. deriveIdentityPiiRows reads db.pairs
+// arbitrary id. deriveIdentityPiiRows reads db.messagePairs
 // IN FULL (ONE shared tx) and matches PII_ADDRESS_PATTERN — the
 // segment-boundary rule verified against derive-invitations.ts's
 // OP_ADDRESS_PATTERN at Step 0: '[^/]+' between two literal
@@ -60,7 +60,7 @@ import {
 // the NEW response row alone — the two rows never share an id, so
 // deriveDocumentsAt's match fails and a LIVE
 // identity spuriously 404s. Both pii derives below close this by
-// reading db.pairs inside ONE shared readonly
+// reading db.messagePairs inside ONE shared readonly
 // db.readTransaction(MESSAGE_TABLES, ...) —
 // greenfield code, closed at zero cost. No other facet in this
 // module is a delete zone, so none of the other reads need this
@@ -71,7 +71,7 @@ import {
 // Role-grants RETIRED: membership `type` bakes claim roles at
 // mint; Gate-16 response-body deviation deleted with the family.
 //
-// Every function below reads db.pairs (+
+// Every function below reads db.messagePairs (+
 // pickString over their decoded bodies) ONLY, mirroring api/
 // derive-members.ts and api/derive-invitations.ts. Production
 // reads this module today: the identity facet routes
@@ -118,7 +118,7 @@ export async function deriveIdentityPiiRows(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.pairs.getAll();
+            const pairs = await view.messagePairs.getAll();
             const prefixes = new Set<string>();
             for (const pair of pairs) {
                 if (
@@ -143,7 +143,7 @@ export async function deriveIdentityPiiRows(
 }
 
 // The single-slot read at the identity's own exact prefix — ONE
-// getAllWhere on db.pairs, inside the SAME shared tx (the
+// getAllWhere on db.messagePairs, inside the SAME shared tx (the
 // module header's torn-read closure). Throws
 // EntityNotFoundError('identity_pii', id) on absence OR a
 // DELETE-head slot (an erasure tombstone) — the 404-byte anchor
@@ -156,7 +156,7 @@ export async function deriveIdentityPii(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.pairs.getAllWhere(
+            const pairs = await view.messagePairs.getAllWhere(
                 'uri_collection', prefix,
             );
             const document = deriveDocumentsAt(
@@ -206,7 +206,7 @@ async function fetchCredentialDocuments(
     identityId: Id,
 ): Promise<Map<string, DerivedDocument>> {
     const prefix = credentialsPrefixFor(identityId);
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return deriveDocumentsAt(pairs, prefix);
@@ -287,7 +287,7 @@ async function fetchProviderDocumentsAt(
     db: DbAdapter,
     prefix: string,
 ): Promise<Map<string, DerivedDocument>> {
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return deriveDocumentsAt(pairs, prefix);
@@ -394,7 +394,7 @@ async function fetchRevocationDocumentsFor(
     identityId: Id,
 ): Promise<Map<string, DerivedDocument>> {
     const prefix = tokenRevocationsPrefixFor(identityId);
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return deriveDocumentsAt(pairs, prefix);
@@ -472,7 +472,7 @@ export async function deriveClientRegistration(
     identityId: Id,
 ): Promise<ClientRegistrationEntity> {
     const prefix = registrationPrefixFor(identityId);
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const document = deriveDocumentsAt(
@@ -498,7 +498,7 @@ export async function deriveIdentityKind(
     const prefix = canonicalUriCollection(
         undefined, '/identities/',
     );
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const document = deriveDocumentsAt(

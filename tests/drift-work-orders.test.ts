@@ -640,7 +640,7 @@ async () => {
     // workOrder.flow_graph against the entity PUT's STORED,
     // round-tripped response — two independently re-encoded
     // values, not the same in-memory literal.
-    const storedCreatePostRow = (await db.pairs.getAllWhere(
+    const storedCreatePostRow = (await db.messagePairs.getAllWhere(
         'uri_collection',
         canonicalUriCollection(STARK_ORGANIZATION, '/work-orders/'),
     )).find(
@@ -708,7 +708,7 @@ async () => {
 
     // Claim attempt by actor B — 409, nothing stored.
     const beforeReject =
-        (await db.pairs.getAll()).length;
+        (await db.messagePairs.getAll()).length;
     const claimRejectAt = nowUtc();
     const claimReject = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/'
@@ -722,7 +722,7 @@ async () => {
     ));
     assert.equal(claimReject.status, 409);
     assert.equal(
-        (await db.pairs.getAll()).length, beforeReject,
+        (await db.messagePairs.getAll()).length, beforeReject,
     );
     await assertEntityAndJoinParity(db, workOrderId, flowId);
 
@@ -940,8 +940,8 @@ async () => {
             , '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/',
     );
     const [requests, responses] = await Promise.all([
-        db.pairs.getAllWhere('uri_collection', prefix),
-        db.pairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere('uri_collection', prefix),
     ]);
     const atAddress = requests.filter(
         (r) => r.uri_collection === prefix
@@ -1287,8 +1287,8 @@ async function replayWorkOrderStates(
         organization, '/organizations/AjdvjuECVZEgZoFajaIEkg/work-orders/',
     );
     const [woRequests, woResponses] = await Promise.all([
-        db.pairs.getAllWhere('uri_collection', woPrefix),
-        db.pairs.getAllWhere('uri_collection', woPrefix),
+        db.messagePairs.getAllWhere('uri_collection', woPrefix),
+        db.messagePairs.getAllWhere('uri_collection', woPrefix),
     ]);
     const allWoPairs = allPairsAt(woRequests, woPrefix);
     const createPair = allWoPairs.find(
@@ -1309,8 +1309,8 @@ async function replayWorkOrderStates(
             + '/claim/',
     );
     const [claimRequests, claimResponses] = await Promise.all([
-        db.pairs.getAllWhere('uri_collection', claimPrefix),
-        db.pairs.getAllWhere('uri_collection', claimPrefix),
+        db.messagePairs.getAllWhere('uri_collection', claimPrefix),
+        db.messagePairs.getAllWhere('uri_collection', claimPrefix),
     ]);
     const claimPairs = allPairsAt(
         claimRequests, claimPrefix,
@@ -1328,10 +1328,10 @@ async function replayWorkOrderStates(
     );
     const [releaseRequests, releaseResponses] =
         await Promise.all([
-            db.pairs.getAllWhere(
+            db.messagePairs.getAllWhere(
                 'uri_collection', releasePrefix,
             ),
-            db.pairs.getAllWhere(
+            db.messagePairs.getAllWhere(
                 'uri_collection', releasePrefix,
             ),
         ]);
@@ -1350,8 +1350,8 @@ async function replayWorkOrderStates(
     const [
         transitionRequests, transitionResponses,
     ] = await Promise.all([
-        db.pairs.getAllWhere('uri_collection', transitionPrefix),
-        db.pairs.getAllWhere('uri_collection', transitionPrefix),
+        db.messagePairs.getAllWhere('uri_collection', transitionPrefix),
+        db.messagePairs.getAllWhere('uri_collection', transitionPrefix),
     ]);
     const transitionPairs = allPairsAt(
         transitionRequests, transitionPrefix,
@@ -1484,7 +1484,7 @@ async () => {
     // independently re-encoded values, not the same in-memory
     // literal — so a canonical-JSON regression that mangled
     // either differently would be caught.
-    const storedCreatePostRow = (await db.pairs.getAllWhere(
+    const storedCreatePostRow = (await db.messagePairs.getAllWhere(
         'uri_collection',
         canonicalUriCollection(STARK_ORGANIZATION, '/work-orders/'),
     )).find(
@@ -1735,7 +1735,7 @@ test('same-join-id retry: two different work-order creates '
         '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
             + '/work-orders/',
     );
-    const joinResponses = await db.pairs.getAllAtAddress(
+    const joinResponses = await db.messagePairs.getAllAtAddress(
         joinPrefix, sharedFwoId,
     );
     assert.equal(joinResponses.length, 2);

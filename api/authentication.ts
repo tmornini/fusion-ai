@@ -1228,11 +1228,11 @@ export async function authorizationCodeSpent(
     derivedId: Id,
     identityId: Id,
 ): Promise<boolean> {
-    const nested = await dbOrView.pairs.getAllAtAddress(
+    const nested = await dbOrView.messagePairs.getAllAtAddress(
         tokensEventPrefixFor(identityId), derivedId,
     );
     if (nested.length > 0) return true;
-    const leftover = await dbOrView.pairs.getAllAtAddress(
+    const leftover = await dbOrView.messagePairs.getAllAtAddress(
         IDENTITY_TOKENS_FLAT_PREFIX, derivedId,
     );
     return leftover.length > 0;

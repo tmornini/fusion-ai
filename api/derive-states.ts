@@ -118,7 +118,7 @@ async function resolveInvitationOwner(
     db: DbAdapter,
     entityId: Id,
 ): Promise<Id | null> {
-    const pairs = await db.pairs.getAllAtAddress(
+    const pairs = await db.messagePairs.getAllAtAddress(
         INVITATIONS_PREFIX, entityId,
     );
     const document = deriveDocumentsAt(
@@ -173,7 +173,7 @@ async function resolveFlowGraphOwner(
     ];
     for (const organization of ordered) {
         const prefix = canonicalUriCollection(organization, '/flows/');
-        const stored = await db.pairs.getAllWhere(
+        const stored = await db.messagePairs.getAllWhere(
             'uri_collection', prefix,
         );
         for (const pair of documentPairsAt(
@@ -212,7 +212,7 @@ async function organizationHasMemberPair(
 ): Promise<boolean> {
     const seatPrefix = '/organizations/' + organization
         + '/members/';
-    const seatPairs = await db.pairs.getAllAtAddress(
+    const seatPairs = await db.messagePairs.getAllAtAddress(
         seatPrefix, identityId,
     );
     return deriveDocumentsAt(
@@ -254,7 +254,7 @@ async function computeOwningOrganization(
     // the owning organization. Address read of this id at
     // the organizations collection.
     const organizationRows =
-        await db.pairs.getAllAtAddress(
+        await db.messagePairs.getAllAtAddress(
             ORGANIZATIONS_ADDRESS_PREFIX, entityId,
         );
     if (organizationRows.length > 0) {
@@ -278,7 +278,7 @@ async function computeOwningOrganization(
                 organization, '/' + family + '/',
             );
             const rows =
-                await db.pairs.getAllAtAddress(
+                await db.messagePairs.getAllAtAddress(
                     prefix, entityId,
                 );
             if (rows.length > 0) {
@@ -441,7 +441,7 @@ export async function resolveGlobalOwner(
         : ownerProbeCollection(boundOrganization, table);
     if (collection !== undefined) {
         const atAddress =
-            await db.pairs.getAllAtAddress(
+            await db.messagePairs.getAllAtAddress(
                 collection, entityId,
             );
         if (atAddress.length === 0) return null;
@@ -590,7 +590,7 @@ async function organizationHasOpBornEvent(
         const prefix = canonicalUriCollection(
             organization, '/' + family + '/',
         );
-        const stored = await dbOrView.pairs.getAllWhere(
+        const stored = await dbOrView.messagePairs.getAllWhere(
             'uri_collection', prefix,
         );
         for (const pair of documentPairsAt(
@@ -618,7 +618,7 @@ async function organizationHasOpBornEvent(
         organization, '/work-orders/',
     );
     const workOrderPairs =
-        await dbOrView.pairs.getAllWhere(
+        await dbOrView.messagePairs.getAllWhere(
             'uri_collection', workOrdersPrefix,
         );
     const workOrderIds = new Set<Id>(
@@ -634,7 +634,7 @@ async function organizationHasOpBornEvent(
                     + '/' + sub + '/',
             );
             const stored =
-                await dbOrView.pairs.getAllWhere(
+                await dbOrView.messagePairs.getAllWhere(
                     'uri_collection', prefix,
                 );
             for (const pair of operationPairsAt(
@@ -661,7 +661,7 @@ async function organizationHasOpBornEvent(
         canonicalUriCollection(undefined, '/ai-members/'),
         canonicalUriCollection(undefined, '/human-members/'),
     ]) {
-        const stored = await dbOrView.pairs.getAllWhere(
+        const stored = await dbOrView.messagePairs.getAllWhere(
             'uri_collection', prefix,
         );
         for (const pair of operationPairsAt(
@@ -685,7 +685,7 @@ async function organizationHasOpBornEvent(
     // Invitations (flat address): organization lives in the
     // grant body; answering ops nest under invitations/:id/.
     {
-        const stored = await dbOrView.pairs.getAllWhere(
+        const stored = await dbOrView.messagePairs.getAllWhere(
             'uri_collection', INVITATIONS_PREFIX,
         );
         for (const pair of operationPairsAt(
@@ -712,7 +712,7 @@ async function organizationHasOpBornEvent(
                         + '/' + sub + '/',
                 );
                 const opPairs =
-                    await dbOrView.pairs.getAllWhere(
+                    await dbOrView.messagePairs.getAllWhere(
                         'uri_collection', prefix,
                     );
                 for (const pair of operationPairsAt(
@@ -1396,7 +1396,7 @@ function workOrderLifecycleFromPlane(
 }
 
 // The op-pair reader (gate 5d). ONE shared readonly tx over
-// db.pairs (torn-read closure) — every grouping and
+// db.messagePairs (torn-read closure) — every grouping and
 // replay step below is pure over the fetched array, no
 // further db reads. (at, id) ascending overall: these rows are
 // SYNTHESIZED (no address of their own to read 1:1), so there
@@ -1409,7 +1409,7 @@ export async function deriveWorkOrderLifecycle(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.pairs.getAll();
+            const pairs = await view.messagePairs.getAll();
             return [
                 ...workOrderLifecycleFromPlane(
                     pairs, undefined,
@@ -1457,7 +1457,7 @@ async function workOrderClaimSourcesFor(
         organization, '/work-orders/',
     );
     const collectionPairs =
-        await dbOrView.pairs.getAllAtAddress(
+        await dbOrView.messagePairs.getAllAtAddress(
             collectionPrefix, workOrderId,
         );
     const createPairs = operationPairsAt(
@@ -1471,7 +1471,7 @@ async function workOrderClaimSourcesFor(
         organization,
         '/work-orders/' + workOrderId + '/claim/',
     );
-    const claimStored = await dbOrView.pairs.getAllWhere(
+    const claimStored = await dbOrView.messagePairs.getAllWhere(
         'uri_collection', claimPrefix,
     );
     const claimPairs = operationPairsAt(
@@ -1485,7 +1485,7 @@ async function workOrderClaimSourcesFor(
         organization,
         '/work-orders/' + workOrderId + '/release/',
     );
-    const releaseStored = await dbOrView.pairs.getAllWhere(
+    const releaseStored = await dbOrView.messagePairs.getAllWhere(
         'uri_collection', releasePrefix,
     );
     const releasePairs = [
@@ -1500,7 +1500,7 @@ async function workOrderClaimSourcesFor(
         '/work-orders/' + workOrderId + '/transition/',
     );
     const transitionStored =
-        await dbOrView.pairs.getAllWhere(
+        await dbOrView.messagePairs.getAllWhere(
             'uri_collection', transitionPrefix,
         );
     const transitionPairs = operationPairsAt(
@@ -1673,7 +1673,7 @@ export async function workOrderHistoryFor(
         organization,
         '/work-orders/' + workOrderId + '/transition/',
     );
-    const transitionStored = await db.pairs.getAllWhere(
+    const transitionStored = await db.messagePairs.getAllWhere(
         'uri_collection', transitionPrefix,
     );
     const transitionPairs = operationPairsAt(
@@ -1721,7 +1721,7 @@ export async function workOrderBindingFor(
         organization,
         '/work-orders/' + workOrderId + '/binding/',
     );
-    const stored = await dbOrView.pairs.getAllWhere(
+    const stored = await dbOrView.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const pairs = operationPairsAt(
@@ -1759,7 +1759,7 @@ export async function workOrderClaimDocumentFor(
         organization,
         '/work-orders/' + workOrderId + '/claim/',
     );
-    const fetched = await dbOrView.pairs.getAllWhere(
+    const fetched = await dbOrView.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const pairs = documentPairsAt(fetched, prefix);
@@ -1830,7 +1830,7 @@ export async function workOrderDocumentHeadFor(
         organization, '/work-orders/',
     );
     const collectionPairs =
-        await dbOrView.pairs.getAllAtAddress(
+        await dbOrView.messagePairs.getAllAtAddress(
             collectionPrefix, workOrderId,
         );
     const entityPairs = documentPairsAt(
@@ -1935,7 +1935,7 @@ export async function deriveInvitationStates(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const stored = await view.pairs.getAll();
+            const stored = await view.messagePairs.getAll();
             const rows: StateEntity[] = [];
 
             const documentIds = new Set(
@@ -2016,7 +2016,7 @@ export async function invitationLifecycleStatesFor(
     const rows: StateEntity[] = [];
 
     const collectionPairs =
-        await dbOrView.pairs.getAllAtAddress(
+        await dbOrView.messagePairs.getAllAtAddress(
             INVITATIONS_PREFIX, id,
         );
     const hasDocument = documentPairsAt(
@@ -2042,7 +2042,7 @@ export async function invitationLifecycleStatesFor(
         const prefix = canonicalUriCollection(
             undefined, '/invitations/' + id + '/' + op + '/',
         );
-        const opPairs = await dbOrView.pairs.getAllWhere(
+        const opPairs = await dbOrView.messagePairs.getAllWhere(
             'uri_collection', prefix,
         );
         const fields = INVITATION_OP_FIELDS[op]!;

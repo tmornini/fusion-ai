@@ -162,8 +162,8 @@ test('postRecordAttributeDocumentOp writes exactly the'
         write_roles: ['member', 'admin'],
     });
     // Phase Final Stage B: record_attributes table retired.
-    assert.equal((await db.pairs.getAll()).length, 1);
-    assert.equal((await db.pairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
 });
 
 // -- 3. byte-identical resend (the shadow-ledger pin's sibling
@@ -207,8 +207,8 @@ async () => {
     );
     assert.deepEqual(first, second);
     // seedAdminSchema + parent type + 2 attribute PUTs
-    assert.equal((await db.pairs.getAll()).length, 4);
-    assert.equal((await db.pairs.getAll()).length, 4);
+    assert.equal((await db.messagePairs.getAll()).length, 4);
+    assert.equal((await db.messagePairs.getAll()).length, 4);
 });
 
 // -- 4. the DELETE-head derives absent — below-route via the
@@ -302,8 +302,8 @@ test('a DELETE-head derives absent on the nested attributes'
     const prefix = '/organizations/AjdvjuECVZEgZoFajaIEkg/record-types/'
         + typeId + '/attributes/';
     const [requests, responses] = await Promise.all([
-        db.pairs.getAllWhere('uri_collection', prefix),
-        db.pairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere('uri_collection', prefix),
     ]);
     const head = deriveDocumentsAt(requests, prefix).get(
         deletedId,

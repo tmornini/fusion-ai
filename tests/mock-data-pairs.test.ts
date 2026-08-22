@@ -151,21 +151,21 @@ const EXPECTED_PAIR_COUNT = 1448;
 test('a mock-data seed populates pairs',
 async () => {
     const db = await sharedMockDb();
-    const pairs = await db.pairs.getAll();
+    const pairs = await db.messagePairs.getAll();
     assert.ok(pairs.length > 0);
 });
 
 test('the mock-data seed forms exactly the traced'
 + ' op-invocation count', async () => {
     const db = await sharedMockDb();
-    const pairs = await db.pairs.getAll();
+    const pairs = await db.messagePairs.getAll();
     assert.equal(pairs.length, EXPECTED_PAIR_COUNT);
 });
 
 test('every seed op body carries a unique entity id, so no'
 + ' two request hashes collide', async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const distinctHashes = new Set(
         requests.map(r => r.request_hash),
     );
@@ -178,7 +178,7 @@ test('a seeded idea create pair sits at its entity address',
 async () => {
     const db = await sharedMockDb();
     const firstIdea = buildIdeas()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_id === firstIdea.id,
     );
@@ -194,7 +194,7 @@ test('a seeded organizations pair sits at the global'
 + ' ROW half stripped — pair-plane truth)',
 async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_collection === '/organizations/'
             && r.uri_id === STARK_ORGANIZATION,
@@ -221,7 +221,7 @@ async () => {
 test('a seeded person identity pair sits at the global'
 + ' identities address', async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_collection === '/identities/'
             && r.uri_id === 'XXZruirZyAOoRpNxaDnpSA',
@@ -238,7 +238,7 @@ test('a seeded human member\'s PII intake pair sits at its own'
 + ' keys (Phase 10 Task 2\'s intake decomposition)', async () => {
     const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_collection
             === '/identities/' + firstMember.id + '/pii/',
@@ -259,7 +259,7 @@ test('a seeded human member\'s identities-document pair sits at'
 + ' alone (Phase 10 Task 5)', async () => {
     const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_collection === '/identities/'
             && r.uri_id === firstMember.id,
@@ -277,7 +277,7 @@ test('a seeded human member\'s identities-document pair sits at'
 test('a seeded flow create pair sits at its org-nested'
 + ' entity address', async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_id === 'esKujtyQFYUJaVSXWwavzA',
     );
@@ -290,7 +290,7 @@ test('a seeded AI agent pair sits at the global'
 + ' ai-agents address', async () => {
     const db = await sharedMockDb();
     const firstAgent = buildAiMembers()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_id === firstAgent.id
             && r.uri_collection === '/ai-agents/',
@@ -309,7 +309,7 @@ test('a seeded seat document pair sits at its org-nested'
 + ' members address', async () => {
     const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_id === firstMember.id
             && r.uri_collection
@@ -333,7 +333,7 @@ test('a seeded default-organization pair sits at its'
 async () => {
     const db = await sharedMockDb();
     const firstMember = buildMembers()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_collection
             === '/identities/' + firstMember.id
@@ -357,7 +357,7 @@ async () => {
 test('a seeded record create pair sits at its org-nested'
 + ' entity address', async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_id === customerProfileRecordId,
     );
@@ -373,7 +373,7 @@ test('a seeded record\'s document pair sits at its'
 + ' entity address, its body carrying the entity plus the'
 + ' state trio (no id or organization_id key)', async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     // The document pair shares its address with the operation
     // pair (records' createBodyIdField collapses both onto the
     // SAME uri_id) — distinguish it by PUT, the operation
@@ -409,7 +409,7 @@ test('a seeded record attribute\'s document pair sits at'
 + ' arrays', async () => {
     const db = await sharedMockDb();
     const firstAttribute = buildRecordAttributes()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_id === firstAttribute.id,
     );
@@ -437,7 +437,7 @@ test('a seeded record attribute\'s document pair sits at'
 test('a seeded objective create pair sits at its org-nested'
 + ' entity address, per org', async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
     // The document pair now shares this address with the
     // operation pair (Task 3's create-time bundle), so a
@@ -470,7 +470,7 @@ test('a seeded objective\'s document pair sits at its'
 + ' lifecycle trio and no organization_id key', async () => {
     const db = await sharedMockDb();
     const starkSeed = OBJECTIVE_SEEDS[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     // The document pair shares its address with the operation
     // pair (objectives' createBodyIdField collapses both onto
     // the SAME uri_id) — distinguish it by PUT, the
@@ -503,7 +503,7 @@ test('a seeded objective\'s revision pair sits at its own'
     const revisionId = seedIdentifier(
         `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`,
     );
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const revisionRow = requests.find(
         r => r.uri_id === revisionId
             && r.uri_collection
@@ -526,7 +526,7 @@ test('a seeded work-order document pair sits at its org-nested'
 + ' entity address, its body carrying no id key', async () => {
     const db = await sharedMockDb();
     const firstWorkOrder = buildWorkOrders()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_id === firstWorkOrder.id,
     );
@@ -551,7 +551,7 @@ test('a seeded flow-work-order join pair sits at its'
 async () => {
     const db = await sharedMockDb();
     const firstJoin = buildFlowWorkOrderJoins()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(r => r.uri_id === firstJoin.id);
     assert.ok(row, 'no request row for the seeded join');
     assert.equal(
@@ -572,7 +572,7 @@ test('a seeded flow-record join pair sits at its org-nested'
 + ' join address, its body carrying no id key', async () => {
     const db = await sharedMockDb();
     const firstJoin = mockFlowRecords[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(r => r.uri_id === firstJoin.id);
     assert.ok(row, 'no request row for the seeded join');
     assert.equal(
@@ -619,7 +619,7 @@ test('a seeded work-order trace event\'s pair sits at its'
 + ' transition keys (states/:id retired)', async () => {
     const db = await sharedMockDb();
     const firstTrace = buildWorkOrderStateEvents()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = transitionRequestForEvent(
         requests, firstTrace.id,
     );
@@ -654,7 +654,7 @@ test('a seeded transition pair\'s stored request'
 + ' fingerprint-invisible)', async () => {
     const db = await sharedMockDb();
     const firstTrace = buildWorkOrderStateEvents()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = transitionRequestForEvent(
         requests, firstTrace.id,
     );
@@ -697,7 +697,7 @@ test('a seeded state_field_value folds into its parent'
 + ' transition body (no bare leaf pair)', async () => {
     const db = await sharedMockDb();
     const firstFieldValue = mockStateFieldValues[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     // WO-instance SoT Task 6: value-bearing seed transitions
     // ride new-shape set[] (attribute_id ids); legacy bags
     // gone on WO01.
@@ -757,7 +757,7 @@ test('the mock-data seed\'s system identity sits at'
 + ' /identities/',
 async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(
         r => r.uri_collection === '/identities/'
             && r.uri_id === SYSTEM_MEMBER_ID,
@@ -787,7 +787,7 @@ test('a seeded baseline-score pair sits at its org-nested'
 + ' entity address, its body carrying no id key', async () => {
     const db = await sharedMockDb();
     const firstBaseline = scoreRows.baselines[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(r => r.uri_id === firstBaseline.id);
     assert.ok(row, 'no request row for the seeded baseline score');
     assert.equal(
@@ -809,7 +809,7 @@ test('a seeded actual-score pair sits at its org-nested'
 + ' entity address, its body carrying no id key', async () => {
     const db = await sharedMockDb();
     const firstActual = scoreRows.actuals[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const row = requests.find(r => r.uri_id === firstActual.id);
     assert.ok(row, 'no request row for the seeded actual score');
     assert.equal(
@@ -839,7 +839,7 @@ async () => {
     // ROW half stripped — compare create-op embedded revision
     // author against the revision document pair body.
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     for (const starkSeed of OBJECTIVE_SEEDS) {
         const revisionId = seedIdentifier(
             `${starkSeed.id}:${MOCK_SEED_TIMESTAMP}`,
@@ -881,10 +881,10 @@ test('a seeded credential\'s response body carries the full'
 + ' key set is falsifiable here)', async () => {
     const db = await sharedMockDb();
     const id = 'cFiyyRHxbIEVqeVFNPmDnw';
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const requestRow = requests.find(r => r.uri_id === id);
     assert.ok(requestRow, 'no request row for ' + id);
-    const responses = await db.pairs.getAll();
+    const responses = await db.messagePairs.getAll();
     const responseRow = responses.find(
         r => r.id === requestRow!.id,
     );
@@ -901,7 +901,7 @@ test('a seeded credential\'s response body carries the full'
 test('seeded seats carry type and no role-grant'
 + ' pairs remain', async () => {
     const db = await sharedMockDb();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     assert.equal(
         requests.filter(r =>
             r.uri_collection.includes('/role-grants/')).length,
@@ -926,7 +926,7 @@ test('seeded seats carry type and no role-grant'
 
 test('seed pairs verify against their hashes', async () => {
     const db = await sharedMockDb();
-    for (const row of await db.pairs.getAll()) {
+    for (const row of await db.messagePairs.getAll()) {
         assert.equal(
             await requestMessageHash(row.request),
             row.request_hash,
@@ -941,7 +941,7 @@ test('a bootstrap seed populates exactly eight balanced,'
     await postBootstrap(db, {
         hashPassword: testHashPassword,
     });
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     assert.equal(requests.length, 8);
     const atIdentity = requests.filter(
         r => r.uri_collection === '/identities/'

@@ -85,7 +85,7 @@ async function fetchProjectPairs(
     readonly documents: Map<string, DerivedDocument>;
     readonly pairs: readonly DocumentPair[];
 }> {
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return {

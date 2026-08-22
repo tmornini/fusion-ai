@@ -439,13 +439,13 @@ test(
         const flowId = generateIdentifier();
         await createFlow(db, token, flowId);
 
-        const before = await db.pairs.getAll();
+        const before = await db.messagePairs.getAll();
         const res = await undo(
             db, token, flowId, FLOWID_U1, AT,
         );
         assert.equal(res.status, 201);
 
-        const after = await db.pairs.getAll();
+        const after = await db.messagePairs.getAll();
         assert.equal(
             after.length, before.length + 1,
             'exhaustion appends exactly the operation pair'
@@ -463,7 +463,7 @@ test(
             '2026-01-01T00:00:01.000000Z',
         );
         assert.equal(again.status, 201);
-        const afterAgain = await db.pairs.getAll();
+        const afterAgain = await db.messagePairs.getAll();
         assert.equal(
             afterAgain.length, after.length + 1,
             'a second exhausted undo ALSO appends only its'
@@ -737,7 +737,7 @@ test(
 
         const prefix = canonicalUriCollection('AjdvjuECVZEgZoFajaIEkg'
             , '/flows/');
-        const stored = await db.pairs.getAllWhere(
+        const stored = await db.messagePairs.getAllWhere(
             'uri_collection', prefix,
         );
         const pairs = documentPairsAt(stored, prefix)

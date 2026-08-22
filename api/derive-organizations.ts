@@ -51,7 +51,7 @@ import {
 // here is what keeps assertOnlyKeys from rejecting a head
 // pair the live PUT legitimately formed.
 //
-// ONE shared readonly tx per call (Efficiency): db.pairs
+// ONE shared readonly tx per call (Efficiency): db.messagePairs
 // read inside the SAME db.readTransaction(
 // MESSAGE_TABLES, ...) rather than an independent
 // getAllWhere that would open its own transaction. One
@@ -61,7 +61,7 @@ import {
 // not a hard-delete zone, so here it is simply the
 // cheaper shape.
 //
-// Reads db.pairs ONLY;
+// Reads db.messagePairs ONLY;
 // tests/derive-organizations.test.ts is the proof of parity
 // against the live PUT's own wire body (Phase Final Task 2:
 // organizations ROW half stripped — pair plane is truth).
@@ -88,7 +88,7 @@ export async function deriveOrganizations(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.pairs.getAllWhere(
+            const pairs = await view.messagePairs.getAllWhere(
                 'uri_collection', ORGANIZATIONS_PREFIX,
             );
             const documents = deriveDocumentsAt(
@@ -114,7 +114,7 @@ export async function deriveOrganization(
     return db.readTransaction(
         MESSAGE_TABLES,
         async (view) => {
-            const pairs = await view.pairs.getAllWhere(
+            const pairs = await view.messagePairs.getAllWhere(
                 'uri_collection', ORGANIZATIONS_PREFIX,
             );
             const document = deriveDocumentsAt(

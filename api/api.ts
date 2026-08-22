@@ -264,7 +264,7 @@ async function livePutVersion(
         db, prefix, uriId,
     );
     if (pairId === undefined) return undefined;
-    const stored = await db.pairs.getById(pairId);
+    const stored = await db.messagePairs.getById(pairId);
     if (stored === undefined) return undefined;
     return { pairId, version: stored.version };
 }
@@ -339,9 +339,9 @@ async function revisionPairIdForPatch(
     db: DbAdapter,
     wirePairId: string,
 ): Promise<string | undefined> {
-    const wireReq = await db.pairs.getById(wirePairId);
+    const wireReq = await db.messagePairs.getById(wirePairId);
     if (wireReq === undefined) return undefined;
-    const siblings = await db.pairs.getAllWhere(
+    const siblings = await db.messagePairs.getAllWhere(
         'uri_collection', wireReq.uri_collection,
     );
     const revision = siblings.find(
@@ -361,7 +361,7 @@ async function advertisedForRevisionPair(
     roles: readonly string[],
     revisionPairId: string,
 ): Promise<string | undefined> {
-    const stored = await db.pairs.getById(
+    const stored = await db.messagePairs.getById(
         revisionPairId,
     );
     if (stored === undefined) return undefined;
@@ -1326,7 +1326,7 @@ export async function handleRequest(
                     || echoMatchesHead
                 )
             ) {
-                const liveReq = await effective.pairs
+                const liveReq = await effective.messagePairs
                     .getById(livePut.pairId);
                 if (liveReq !== undefined) {
                     const liveOctets = bodyOctetsOf(
@@ -1394,7 +1394,7 @@ export async function handleRequest(
                             );
                         }
                         const stored =
-                            await effective.pairs
+                            await effective.messagePairs
                                 .getById(livePut.pairId);
                         if (stored !== undefined) {
                             return attachEtag(
@@ -1545,7 +1545,7 @@ export async function handleRequest(
                     );
                     if (headPairId !== undefined) {
                         const stored = await effective
-                            .pairs.getById(headPairId);
+                            .messagePairs.getById(headPairId);
                         if (stored !== undefined) {
                             return attachEtag(
                                 Response.json(result, {
@@ -1928,7 +1928,7 @@ export async function handleRequest(
                             + ' pair: ' + routePattern,
                         );
                     }
-                    const authStored = await effective.pairs
+                    const authStored = await effective.messagePairs
                         .getById(dispatched.pairId);
                     // authentication/authorize mints an
                     // authorization code, not a session — no UI

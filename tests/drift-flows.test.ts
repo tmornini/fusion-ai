@@ -369,8 +369,8 @@ async function derivedHeadPairId(
 ): Promise<string> {
     const prefix = canonicalUriCollection(organization, '/flows/');
     const [requests, responses] = await Promise.all([
-        db.pairs.getAllWhere('uri_collection', prefix),
-        db.pairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere('uri_collection', prefix),
     ]);
     const documents = deriveDocumentsAt(requests, prefix);
     const document = documents.get(flowId);
@@ -890,7 +890,7 @@ test('the create-op POST pair is not read as a document pair '
     );
     assert.equal(created.status, 201);
 
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const atAddress = requests.filter(
         (r) => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
@@ -1159,7 +1159,7 @@ test('same-join-id retry: two different flow creates reusing '
         '/organizations/AjdvjuECVZEgZoFajaIEkg/projects/' + projectId
             + '/flows/',
     );
-    const joinResponses = await db.pairs.getAllAtAddress(
+    const joinResponses = await db.messagePairs.getAllAtAddress(
         joinPrefix, sharedPfid,
     );
     assert.equal(joinResponses.length, 2);

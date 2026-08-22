@@ -713,7 +713,7 @@ async () => {
     );
     // Graph sidecars on the flow document pairs (C3).
     const prefix = canonicalUriCollection(fx.organizationA, '/flows/');
-    const stored = await fx.db.pairs.getAllWhere(
+    const stored = await fx.db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const sidecarIds: string[] = [];

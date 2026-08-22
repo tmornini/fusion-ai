@@ -387,7 +387,7 @@ async function seededWithMixedBatch(): Promise<MemoryDbAdapter> {
 test('every stored request message re-hashes to its own'
 + ' message_hash', async () => {
     const db = await seededWithMixedBatch();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     assert.ok(requests.length > 0);
     for (const row of requests) {
         assert.equal(
@@ -411,7 +411,7 @@ const BEARER_JWT =
 test('stored request messages carry the live bearer JWT',
 async () => {
     const db = await seededWithMixedBatch();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     assert.ok(requests.length > 0);
     const withBearer = requests.filter(
         row => BEARER_JWT.test(row.request),
@@ -429,9 +429,9 @@ test('every pair\'s envelope timestamps are RFC-3339 zulu'
 + ' with 6-digit sub-second precision, and the request'
 + ' strictly precedes its own response', async () => {
     const db = await seededWithMixedBatch();
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const responsesById = new Map(
-        (await db.pairs.getAll()).map(r => [r.id, r]),
+        (await db.messagePairs.getAll()).map(r => [r.id, r]),
     );
     assert.ok(requests.length > 0);
     for (const request of requests) {
@@ -462,7 +462,7 @@ test('a seeded idea\'s create-pair request reproduces its'
 + ' actual genesis row in states', async () => {
     const db = await seededMockDb();
     const idea = buildIdeas()[0]!;
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const createRow = requests.find(
         r => r.uri_id === idea.id
             && r.uri_collection

@@ -65,7 +65,7 @@ export function messageStore(db: DbAdapter): MessageStore {
             return pairsInCollection(db, collection);
         },
         async getAllWhereBody(collection, containment) {
-            return (await db.pairs.getAllWhereBody(
+            return (await db.messagePairs.getAllWhereBody(
                 collection, containment,
             )).slice().sort(comparePair);
         },
@@ -92,7 +92,7 @@ export function messageStore(db: DbAdapter): MessageStore {
         },
         async getByVersion(collection, id, version) {
             return latestOf(
-                await db.pairs.getAllAtVersion(
+                await db.messagePairs.getAllAtVersion(
                     collection, id, version,
                 ),
             );
@@ -215,7 +215,7 @@ async function pairsInCollection(
     collection: string,
 ): Promise<PairEntity[]> {
     const pairs = [
-        ...await db.pairs.getAllWhere(
+        ...await db.messagePairs.getAllWhere(
             'uri_collection', collection,
         ),
     ];
@@ -228,7 +228,7 @@ async function pairsAt(
     id: string,
 ): Promise<PairEntity[]> {
     const pairs = [
-        ...await db.pairs.getAllAtAddress(
+        ...await db.messagePairs.getAllAtAddress(
             collection, id,
         ),
     ];

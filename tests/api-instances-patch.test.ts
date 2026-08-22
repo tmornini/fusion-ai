@@ -200,7 +200,7 @@ async function countInstancePairs(
     const prefix = instancesUriPrefix(
         ORGANIZATION, TYPE_ID,
     );
-    const responses = await db.pairs.getAllWhere(
+    const responses = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return responses.filter(

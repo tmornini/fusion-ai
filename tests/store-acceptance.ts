@@ -138,7 +138,7 @@ async function pairsAt(
     collection: string,
     uriId: string,
 ): Promise<number> {
-    const rows = await db.pairs.getAllWhere(
+    const rows = await db.messagePairs.getAllWhere(
         'uri_collection', collection,
     );
     return rows.filter((row) => row.uri_id === uriId)

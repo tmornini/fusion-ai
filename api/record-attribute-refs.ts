@@ -115,7 +115,7 @@ export async function collectAttributeReferrers(
     const workOrdersPrefix = canonicalUriCollection(
         boundOrganization, '/work-orders/',
     );
-    const woPairs = await view.pairs.getAllWhere(
+    const woPairs = await view.messagePairs.getAllWhere(
         'uri_collection', workOrdersPrefix,
     );
     const woHeads = deriveDocumentsAt(

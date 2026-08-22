@@ -22,12 +22,14 @@ test(
         const db = memoryDbAdapter();
         await db.postSchemaCreation();
         await db.transaction(
-            ['pairs'],
+            ['message_pairs'],
             async (view) => {
-                await view.pairs.put('syWUUcdBSbBgMwBiCrgbDw', aPair);
+                await view.messagePairs.put(
+                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                );
             },
         );
-        const pair = await db.pairs.getById('syWUUcdBSbBgMwBiCrgbDw');
+        const pair = await db.messagePairs.getById('syWUUcdBSbBgMwBiCrgbDw');
         assert.equal(pair.id, 'syWUUcdBSbBgMwBiCrgbDw');
     },
 );
@@ -39,15 +41,17 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.transaction(
-                ['pairs'],
+                ['message_pairs'],
                 async (view) => {
-                    await view.pairs.put('syWUUcdBSbBgMwBiCrgbDw', aPair);
+                    await view.messagePairs.put(
+                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                );
                     throw new Error('boom');
                 },
             ),
             /boom/,
         );
-        const pairs = await db.pairs.getAll();
+        const pairs = await db.messagePairs.getAll();
         assert.deepEqual(pairs, []);
     },
 );
@@ -58,12 +62,14 @@ test(
         const db = memoryDbAdapter();
         await db.postSchemaCreation();
         const seen = await db.transaction(
-            ['pairs'],
+            ['message_pairs'],
             async (view) => {
-                await view.pairs.put('syWUUcdBSbBgMwBiCrgbDw', aPair);
+                await view.messagePairs.put(
+                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                );
                 // Read back inside the same tx — the put is
                 // visible before commit.
-                return view.pairs.getAll();
+                return view.messagePairs.getAll();
             },
         );
         assert.equal(seen.length, 1);
@@ -77,19 +83,19 @@ test(
         const db = memoryDbAdapter();
         await db.postSchemaCreation();
         await db.transaction(
-            ['pairs'],
+            ['message_pairs'],
             async (view) => {
                 await view.transaction(
-                    ['pairs'],
+                    ['message_pairs'],
                     async (inner) => {
-                        await inner.pairs.put(
+                        await inner.messagePairs.put(
                             'syWUUcdBSbBgMwBiCrgbDw', aPair,
                         );
                     },
                 );
             },
         );
-        const pair = await db.pairs.getById('syWUUcdBSbBgMwBiCrgbDw');
+        const pair = await db.messagePairs.getById('syWUUcdBSbBgMwBiCrgbDw');
         assert.equal(pair.id, 'syWUUcdBSbBgMwBiCrgbDw');
     },
 );
@@ -101,12 +107,12 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.transaction(
-                ['pairs'],
+                ['message_pairs'],
                 async (view) => {
                     await view.transaction(
-                        ['pairs'],
+                        ['message_pairs'],
                         async (inner) => {
-                            await inner.pairs.put(
+                            await inner.messagePairs.put(
                                 'syWUUcdBSbBgMwBiCrgbDw', aPair,
                             );
                         },
@@ -117,7 +123,7 @@ test(
             /boom/,
         );
         assert.deepEqual(
-            await db.pairs.getAll(), [],
+            await db.messagePairs.getAll(), [],
         );
     },
 );
@@ -129,7 +135,7 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.transaction(
-                ['pairs'],
+                ['message_pairs'],
                 async (view) => {
                     await view.transaction(
                         ['other'],
@@ -147,10 +153,10 @@ test(
     async () => {
         const db = memoryDbAdapter();
         await db.postSchemaCreation();
-        await db.pairs.put('syWUUcdBSbBgMwBiCrgbDw', aPair);
+        await db.messagePairs.put('syWUUcdBSbBgMwBiCrgbDw', aPair);
         const seen = await db.readTransaction(
-            ['pairs'],
-            (view) => view.pairs.getAll(),
+            ['message_pairs'],
+            (view) => view.messagePairs.getAll(),
         );
         assert.equal(seen.length, 1);
         assert.equal(seen[0]!.id, 'syWUUcdBSbBgMwBiCrgbDw');
@@ -164,15 +170,15 @@ test(
         await db.postSchemaCreation();
         await assert.rejects(
             () => db.readTransaction(
-                ['pairs'],
-                (view) => view.pairs.put(
+                ['message_pairs'],
+                (view) => view.messagePairs.put(
                     'syWUUcdBSbBgMwBiCrgbDw', aPair,
                 ),
             ),
             /readonly transaction/,
         );
         assert.deepEqual(
-            await db.pairs.getAll(), [],
+            await db.messagePairs.getAll(), [],
         );
     },
 );
@@ -183,21 +189,23 @@ test(
         const db = memoryDbAdapter();
         await db.postSchemaCreation();
         const seen = await db.transaction(
-            ['pairs'],
+            ['message_pairs'],
             async (view) => {
-                await view.pairs.put('syWUUcdBSbBgMwBiCrgbDw', aPair);
+                await view.messagePairs.put(
+                    'syWUUcdBSbBgMwBiCrgbDw', aPair,
+                );
                 // Nested read joins the open write tx so the
                 // uncommitted put is visible (read-your-writes).
                 return view.readTransaction(
-                    ['pairs'],
-                    (inner) => inner.pairs.getAll(),
+                    ['message_pairs'],
+                    (inner) => inner.messagePairs.getAll(),
                 );
             },
         );
         assert.equal(seen.length, 1);
         assert.equal(seen[0]!.id, 'syWUUcdBSbBgMwBiCrgbDw');
         assert.equal(
-            (await db.pairs.getById('syWUUcdBSbBgMwBiCrgbDw')).id
+            (await db.messagePairs.getById('syWUUcdBSbBgMwBiCrgbDw')).id
                 , 'syWUUcdBSbBgMwBiCrgbDw',
         );
     },

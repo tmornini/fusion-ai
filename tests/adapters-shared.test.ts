@@ -139,7 +139,7 @@ test(
             'identities/' + generateIdentifier(),
             { kind: 'person' },
         );
-        const rows = await db.pairs.getAll();
+        const rows = await db.messagePairs.getAll();
         assert.ok(
             rows.some(
                 r => r.request.includes(

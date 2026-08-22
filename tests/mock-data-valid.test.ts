@@ -575,10 +575,10 @@ test(
         }
         const [agentRequests, agentResponses] =
             await Promise.all([
-                db.pairs.getAllWhere(
+                db.messagePairs.getAllWhere(
                     'uri_collection', '/ai-agents/',
                 ),
-                db.pairs.getAllWhere(
+                db.messagePairs.getAllWhere(
                     'uri_collection', '/ai-agents/',
                 ),
             ]);

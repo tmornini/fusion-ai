@@ -328,8 +328,8 @@ test('postFlowDocumentOp with revivals posts the restored'
     const prefix = canonicalUriCollection('AjdvjuECVZEgZoFajaIEkg', '/flows/'
         + '');
     const [requests, responses] = await Promise.all([
-        db.pairs.getAllWhere('uri_collection', prefix),
-        db.pairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere('uri_collection', prefix),
     ]);
     const pairs = documentPairsAt(
         requests, prefix,
@@ -506,7 +506,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     const eventsAfterFirst =
         await deriveFlowStateHistory(db, 'AjdvjuECVZEgZoFajaIEkg'
             , 'bZXXOWeDHCowVkWMhrZGgg');
-    const requestsAfterFirst = await db.pairs.getAll();
+    const requestsAfterFirst = await db.messagePairs.getAll();
 
     const second = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
@@ -514,7 +514,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     ));
     assert.equal(second.status, 201);
     assert.equal(second.headers.get('Response-ID'), firstId);
-    const stored = await db.pairs.getById(firstId!);
+    const stored = await db.messagePairs.getById(firstId!);
     assert.ok(stored !== undefined);
     assert.equal(
         second.headers.get('ETag'),
@@ -526,7 +526,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     assert.equal(
         eventsAfterSecond.length, eventsAfterFirst.length,
     );
-    const requestsAfterSecond = await db.pairs.getAll();
+    const requestsAfterSecond = await db.messagePairs.getAll();
     assert.equal(
         requestsAfterSecond.length, requestsAfterFirst.length,
     );
@@ -596,10 +596,10 @@ async () => {
     assert.ok(headId);
     assert.notEqual(headId, createdId);
     const etag = await headEtag(db, token, 'bWdlaTZZcKRsLsGXiKQZkw');
-    const stored = await db.pairs.getById(headId);
+    const stored = await db.messagePairs.getById(headId);
     assert.ok(stored !== undefined);
     assert.equal(etag, strongEtagOf(stored.version));
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const atAddress = requests.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
@@ -671,8 +671,8 @@ async () => {
     // versions setup RETIRED (Phase 15 Task 7); undo no longer
     // consumes a flow_versions row.
 
-    const requestsBefore = await db.pairs.getAll();
-    const responsesBefore = await db.pairs.getAll();
+    const requestsBefore = await db.messagePairs.getAll();
+    const responsesBefore = await db.messagePairs.getAll();
     const eventsBefore = await deriveFlowStateHistory(db
         , 'AjdvjuECVZEgZoFajaIEkg',
         'cnRwmsMXKOgLWsMVIjtubQ',
@@ -691,8 +691,8 @@ async () => {
     ));
     assert.equal(res.status, 400);
 
-    const requestsAfter = await db.pairs.getAll();
-    const responsesAfter = await db.pairs.getAll();
+    const requestsAfter = await db.messagePairs.getAll();
+    const responsesAfter = await db.messagePairs.getAll();
     const eventsAfter = await deriveFlowStateHistory(db
         , 'AjdvjuECVZEgZoFajaIEkg',
         'cnRwmsMXKOgLWsMVIjtubQ',
@@ -719,7 +719,7 @@ async () => {
     });
     assert.equal(created.status, 201);
 
-    const pairs = await db.pairs.getAll();
+    const pairs = await db.messagePairs.getAll();
     assert.equal(pairs.length, 5);
 
     const flowAddress = pairs.filter(
@@ -816,7 +816,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
     ));
     assert.equal(first.status, 201);
 
-    const requestsAfterFirst = await db.pairs.getAll();
+    const requestsAfterFirst = await db.messagePairs.getAll();
     const flowAddressAfterFirst = requestsAfterFirst.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
@@ -829,7 +829,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
         firstDocumentRequest,
         'no document pair at the flow address after create 1',
     );
-    const firstDocumentResponse = await db.pairs.getById(
+    const firstDocumentResponse = await db.messagePairs.getById(
         firstDocumentRequest!.id,
     );
     assert.equal('supersedes' in firstDocumentResponse, false);
@@ -858,7 +858,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
         'the create op holds no echo — no 412',
     );
 
-    const requestsAfterSecond = await db.pairs.getAll();
+    const requestsAfterSecond = await db.messagePairs.getAll();
     const flowAddressAfterSecond = requestsAfterSecond.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
@@ -875,7 +875,7 @@ test('e2e: a duplicate POST flows (same id) succeeds — the'
         secondDocumentRequest,
         'no second document pair at the flow address',
     );
-    const secondDocumentResponse = await db.pairs.getById(
+    const secondDocumentResponse = await db.messagePairs.getById(
         secondDocumentRequest!.id,
     );
     assert.equal(
@@ -952,8 +952,8 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
     ));
     assert.equal(secondSave.status, 201);
 
-    const requestsBeforeUndo = await db.pairs.getAll();
-    const responsesBeforeUndo = await db.pairs.getAll();
+    const requestsBeforeUndo = await db.messagePairs.getAll();
+    const responsesBeforeUndo = await db.messagePairs.getAll();
 
     const undone = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
@@ -964,8 +964,8 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
     ));
     assert.equal(undone.status, 201);
 
-    const requestsAfterUndo = await db.pairs.getAll();
-    const responsesAfterUndo = await db.pairs.getAll();
+    const requestsAfterUndo = await db.messagePairs.getAll();
+    const responsesAfterUndo = await db.messagePairs.getAll();
     assert.equal(
         requestsAfterUndo.length, requestsBeforeUndo.length + 2,
         'undo appends exactly 2 request rows'
@@ -977,7 +977,7 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
         + ' (operation + document)',
     );
 
-    const responses = await db.pairs.getAll();
+    const responses = await db.messagePairs.getAll();
     const documentResponses = responses.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'
@@ -994,7 +994,7 @@ test('e2e: POST organizations/:id/flows/:id/undo forms a document pair with'
         'no new document pair after undo',
     );
 
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     const undoDocumentRequest = requests.find(
         r => r.id === undoDocumentResponse!.id,
     );
@@ -1073,7 +1073,7 @@ async () => {
     assert.equal(winners.length, 1, 'exactly one racer wins');
     assert.equal(losers.length, 1, 'exactly one racer 412s');
 
-    const responses = await db.pairs.getAll();
+    const responses = await db.messagePairs.getAll();
     const atFlow = responses.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
             + 'flows/'

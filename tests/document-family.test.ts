@@ -469,7 +469,7 @@ test('locked arm: a matching echo stores no predecessor'
         assert.equal(second.headers.get('Follows'), null);
         assert.equal(second.headers.get('Supersedes'), null);
         const secondId = second.headers.get('Response-ID')!;
-        const stored = (await db.pairs.getAll())
+        const stored = (await db.messagePairs.getAll())
             .find((row) => row.id === secondId);
         assert.equal(
             stored !== undefined
@@ -510,7 +510,7 @@ async () => {
             resend.headers.get('Response-ID'),
             edit.headers.get('Response-ID'),
         );
-        assert.equal((await db.pairs.getAll()).length, 4);
+        assert.equal((await db.messagePairs.getAll()).length, 4);
     });
 });
 
@@ -649,7 +649,7 @@ async () => {
             'If-Match does not match the current document at '
             + path,
         );
-        const pairs = await db.pairs.getAll();
+        const pairs = await db.messagePairs.getAll();
         const atPath = pairs.filter(
             (row) =>
                 row.uri_collection

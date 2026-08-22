@@ -73,7 +73,7 @@ export async function instanceParentEtag(
     db: DbAdapter,
     pairId: string,
 ): Promise<string | undefined> {
-    const pair = await db.pairs.getById(pairId);
+    const pair = await db.messagePairs.getById(pairId);
     return ifMatchFromMessage(pair.request);
 }
 
@@ -174,7 +174,7 @@ async function fetchInstancePairs(
     const prefix = instancesUriPrefix(
         organization, recordTypeId,
     );
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return documentPairsAt(pairs, prefix);
@@ -193,7 +193,7 @@ export async function deriveInstanceHead(
     const prefix = instancesUriPrefix(
         organization, recordTypeId,
     );
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const document = deriveDocumentsAt(
@@ -216,7 +216,7 @@ export async function deriveInstanceCollection(
     const prefix = instancesUriPrefix(
         organization, recordTypeId,
     );
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const documents = deriveDocumentsAt(pairs, prefix);

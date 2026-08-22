@@ -198,8 +198,8 @@ async function latestSidecarStateFor(
     entityId: string,
 ): Promise<string> {
     const [requests, responses] = await Promise.all([
-        db.pairs.getAll(),
-        db.pairs.getAll(),
+        db.messagePairs.getAll(),
+        db.messagePairs.getAll(),
     ]);
     const prefixes = new Set(
         requests

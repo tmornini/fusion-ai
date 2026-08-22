@@ -80,7 +80,7 @@ function req(
 async function pairCount(
     db: MemoryDbAdapter,
 ): Promise<number> {
-    return (await db.pairs.getAll()).length;
+    return (await db.messagePairs.getAll()).length;
 }
 
 function graphJson(): Record<string, unknown> {

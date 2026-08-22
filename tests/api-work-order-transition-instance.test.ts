@@ -88,7 +88,7 @@ function req(
 async function requestCount(
     db: MemoryDbAdapter,
 ): Promise<number> {
-    return (await db.pairs.getAll()).length;
+    return (await db.messagePairs.getAll()).length;
 }
 
 async function instancePairCount(
@@ -97,7 +97,7 @@ async function instancePairCount(
     const prefix = instancesUriPrefix(
         ORGANIZATION, TYPE_ID,
     );
-    const responses = await db.pairs.getAllWhere(
+    const responses = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return responses.filter(

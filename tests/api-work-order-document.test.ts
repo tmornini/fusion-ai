@@ -179,8 +179,8 @@ test('postWorkOrderDocumentOp returns the entity and the'
         ...documentFields(),
     });
     // Phase Final Stage B: work_orders table retired.
-    assert.equal((await db.pairs.getAll()).length, 1);
-    assert.equal((await db.pairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
+    assert.equal((await db.messagePairs.getAll()).length, 1);
 });
 
 // -- 3. byte-identical resend (the shadow-ledger pin's sibling
@@ -208,8 +208,8 @@ test('a byte-identical PUT resend to'
             , body, DEV_TOKEN,
     );
     assert.deepEqual(first, second);
-    assert.equal((await db.pairs.getAll()).length, 3);
-    assert.equal((await db.pairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
+    assert.equal((await db.messagePairs.getAll()).length, 3);
 });
 
 // -- 4. postWorkOrderCreationOp's synthesized create pairs
@@ -345,7 +345,7 @@ test('a work-order create appends a PUT-shaped document pair'
         workOrderCreateBody(WO_C1, WO_C1_FWO, 'aNoIDzecmwfawmsLSsDsPw'),
     ));
     assert.equal(res.status, 201);
-    const pairs = await db.pairs.getAll();
+    const pairs = await db.messagePairs.getAll();
     assert.equal(pairs.length, 6);
 
     const documentRow =
@@ -385,7 +385,7 @@ async () => {
     ));
     assert.equal(first.status, 201);
     const firstDocumentRow = documentRowAt(
-        await db.pairs.getAll(), ENTITY_PREFIX, WO_C2,
+        await db.messagePairs.getAll(), ENTITY_PREFIX, WO_C2,
     );
     assert.ok(
         firstDocumentRow, 'no document pair on first create',
@@ -401,18 +401,18 @@ async () => {
     ));
     assert.equal(second.status, 201);
     const secondDocumentRow = documentRowAt(
-        await db.pairs.getAll(), ENTITY_PREFIX, WO_C2,
+        await db.messagePairs.getAll(), ENTITY_PREFIX, WO_C2,
         firstDocumentId,
     );
     assert.ok(secondDocumentRow, 'no second document pair');
-    const secondDocumentResponse = await db.pairs.getById(
+    const secondDocumentResponse = await db.messagePairs.getById(
         secondDocumentRow!.id,
     );
     assert.equal(
         'supersedes' in secondDocumentResponse, false,
     );
 
-    for (const response of await db.pairs.getAll()) {
+    for (const response of await db.messagePairs.getAll()) {
         assert.equal('follows' in response, false);
     }
 });
@@ -427,7 +427,7 @@ test('a duplicate work-order create\'s own OPERATION pair'
     ));
     assert.equal(first.status, 201);
     const firstDocumentRow = documentRowAt(
-        await db.pairs.getAll(), ENTITY_PREFIX, WO_C3,
+        await db.messagePairs.getAll(), ENTITY_PREFIX, WO_C3,
     );
     assert.ok(firstDocumentRow);
     const firstDocumentId = firstDocumentRow!.id;
@@ -440,7 +440,7 @@ test('a duplicate work-order create\'s own OPERATION pair'
     assert.equal(second.status, 201);
     const secondOperationId = second.headers.get('Response-ID');
     assert.ok(secondOperationId);
-    const secondOperationResponse = await db.pairs.getById(
+    const secondOperationResponse = await db.messagePairs.getById(
         secondOperationId!,
     );
     assert.equal(
@@ -465,6 +465,6 @@ test('a work-order create ignores a raw colliding states'
     assert.equal(res.status, 201);
     // 2 seed pairs (org+membership) + 4 create pairs
     // (operation, document, join, genesis claim).
-    assert.equal((await db.pairs.getAll()).length, 6);
-    assert.equal((await db.pairs.getAll()).length, 6);
+    assert.equal((await db.messagePairs.getAll()).length, 6);
+    assert.equal((await db.messagePairs.getAll()).length, 6);
 });

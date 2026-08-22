@@ -157,7 +157,7 @@ async () => {
     const db = await freshDb();
     const organizationId = generateIdentifier();
     await putOrganization(db, organizationId, 'Flat');
-    const requests = await db.pairs.getAll();
+    const requests = await db.messagePairs.getAll();
     // seedAdminSchema forms 2 pairs (role-grants retired);
     // this PUT is the 3rd.
     assert.equal(requests.length, 3);

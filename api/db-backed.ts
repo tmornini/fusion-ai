@@ -42,7 +42,7 @@ export class BackedDbAdapter
     readonly #open: () => Promise<void>;
     readonly #notify: NotificationPost;
 
-    readonly pairs!: EntityStore<PairEntity>;
+    readonly messagePairs!: EntityStore<PairEntity>;
 
     constructor(
         backend: StorageBackend,
@@ -170,8 +170,8 @@ export class BackedDbAdapter
 
     #buildStores(run: TxRunner): DbStores {
         return {
-            pairs: new HistoryEntityStore(
-                'pairs', run, validatePairEntity,
+            messagePairs: new HistoryEntityStore(
+                'message_pairs', run, validatePairEntity,
             ),
         };
     }

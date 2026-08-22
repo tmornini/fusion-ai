@@ -130,7 +130,7 @@ async function fetchFlowPairs(
     readonly documents: Map<string, DerivedDocument>;
     readonly pairs: readonly DocumentPair[];
 }> {
-    const pairs = await db.pairs.getAllWhere(
+    const pairs = await db.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     return {
@@ -252,8 +252,8 @@ export async function resolveFlowUndoTarget(
 ): Promise<FlowUndoResolution | undefined> {
     const prefix = flowsUriPrefix(organization);
     const [stored, undoPairs] = await Promise.all([
-        db.pairs.getAllWhere('uri_collection', prefix),
-        db.pairs.getAllWhere(
+        db.messagePairs.getAllWhere('uri_collection', prefix),
+        db.messagePairs.getAllWhere(
             'uri_collection', undoUriPrefix,
         ),
     ]);
@@ -363,7 +363,7 @@ export async function flowGraphBindingsFromPairs(
     organization: Id,
 ): Promise<FlowGraphBindingLedgers> {
     const prefix = flowsUriPrefix(organization);
-    const stored = await dbOrView.pairs.getAllWhere(
+    const stored = await dbOrView.messagePairs.getAllWhere(
         'uri_collection', prefix,
     );
     const attributeEvents: FlowNodeAttributeEntity[] = [];

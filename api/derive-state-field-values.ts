@@ -180,7 +180,7 @@ export async function deriveStateFieldValueReferrers(
     boundOrganization: Id,
     attributeIds: readonly Id[],
 ): Promise<Map<Id, readonly StateFieldValueEntity[]>> {
-    const pairs = await view.pairs.getAll();
+    const pairs = await view.messagePairs.getAll();
     const wanted = new Set(attributeIds);
     const candidates = stateFieldValuesFrom(pairs)
         .filter((row) => wanted.has(row.attribute_id));

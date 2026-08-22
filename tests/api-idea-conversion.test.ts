@@ -241,8 +241,8 @@ test(
         // and TWO synthesized baseline pairs — Phase 7 Task
         // 4's 3+N widening, N=2 here) + three schema/
         // bootstrap pairs = 11.
-        const allRequests = await db.pairs.getAll();
-        const allResponses = await db.pairs.getAll();
+        const allRequests = await db.messagePairs.getAll();
+        const allResponses = await db.messagePairs.getAll();
         assert.equal(allRequests.length, 10);
         assert.equal(allResponses.length, 10);
         assert.equal(allRequests.length, allResponses.length);

@@ -529,7 +529,7 @@ test('stateEventVisibilityFor: tier (ii) op-born transition'
 
     // Op-born: no states/:id pair at transitionEventId;
     // lives only inside the transition op body.
-    const byId = (await db.pairs.getAll()).filter(
+    const byId = (await db.messagePairs.getAll()).filter(
         (row) => row.uri_id === transitionEventId,
     );
     const statesTail = '/' + 'states' + '/';

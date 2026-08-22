@@ -511,8 +511,8 @@ async () => {
         },
     ));
     assert.equal(putInst.status, 201);
-    const requestsBefore = await db.pairs.getAll();
-    const responsesBefore = await db.pairs.getAll();
+    const requestsBefore = await db.messagePairs.getAll();
+    const responsesBefore = await db.messagePairs.getAll();
     const edit = await handleRequest(db, req(
         'POST', COLLECTION, adminToken, {
             kind: 'edit',
@@ -549,11 +549,11 @@ async () => {
     ));
     assert.equal(attrGet.status, 200);
     assert.equal(
-        (await db.pairs.getAll()).length,
+        (await db.messagePairs.getAll()).length,
         requestsBefore.length,
     );
     assert.equal(
-        (await db.pairs.getAll()).length,
+        (await db.messagePairs.getAll()).length,
         responsesBefore.length,
     );
 });
