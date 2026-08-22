@@ -619,9 +619,9 @@ in order.
   the active organization (`PUT organizations/:id/members/:identity-id`);
   the person appears in the seat-derived roster.
 - [ ] **AA6** Repeat for all 10 humans: Sarah Chen, Mike
-  Thompson, Jessica Park, David Martinez, Emily Rodriguez
-  (pending), Alex Kim, Marcus Johnson, David Kim, Lisa
-  Wang, James Miller (archived). PASS: all 10 are written
+  Thompson, Jessica Park, David Martinez, Emily Rodriguez,
+  Alex Kim, Marcus Johnson, David Kim, Lisa
+  Wang, James Miller. PASS: all 10 are written
   as identity + PII + seat and appear in the seat-derived
   roster.
 - [ ] **AA7** Reload the Members page. PASS: the roster
@@ -642,7 +642,7 @@ in order.
 
 - [ ] **AA8** On Members, click the current user's row.
   PASS: navigates to `member-detail` for that human. Read
-  mode shows avatar, name, status badge, title •
+  mode shows avatar, name, title •
   department subtitle, Personal Information card (Name,
   Email, Phone, Title, Department, Bio),
   Working Styles card, and Strengths card.
@@ -2108,8 +2108,7 @@ depends: A
   Humans / AIs, with All pressed by default). The list
   table groups members under HUMANS first then AIs, each
   group showing avatar/name, title (humans) or the
-  model name (AIs), department (humans only), and a
-  status badge (humans only).
+  model name (AIs), and department (humans only).
 - [ ] **G12** Click the sidebar member chip (lower-left:
   name/avatar in the sidebar footer). PASS: navigates to
   the current human member's `member-detail` page
@@ -2265,7 +2264,7 @@ depends: A
 
 - [ ] **G19** From `members/index.html`, click any human
   member's row. PASS: navigates to `member-detail`. Read
-  mode shows avatar (initials), name + status badge,
+  mode shows avatar (initials), name,
   title • department subtitle, Personal Information card
   (Name, Email, Phone, Title, Department,
   Bio), Working Styles card (4-axis dimensions surfaced
@@ -2275,16 +2274,13 @@ depends: A
 - [ ] **G20** Click Edit. PASS: header swaps Edit for
   Cancel/Save; Personal Information card switches to
   inputs (Name text, Email email-input, Phone
-  text, Title text, Department select, State select with
-  HTML id `member-state` per the `MEMBER_STATES`
-  alphabet, Bio textarea); Strengths card switches to a
-  tag picker. Working Styles card stays read-only.
+  text, Title text, Department select, Bio textarea);
+  Strengths card switches to a tag picker. Working
+  Styles card stays read-only.
 - [ ] **G21** Edit Phone and Bio, toggle one strength on
-  and one off, change State from Active to Pending,
-  click Save. PASS: toast "Member saved" appears. Navigate
-  away (e.g. to Dashboard) and return. PASS: all edits
-  persist; the row on `members/index.html` reflects the new
-  state badge.
+  and one off, click Save. PASS: toast "Member saved"
+  appears. Navigate away (e.g. to Dashboard) and return.
+  PASS: all edits persist.
 - [ ] **G22** Click Edit, change a field, press `Escape`.
   PASS: edits discarded, view returns to read mode.
 - [ ] **G23** Click Edit, change a text field, press
@@ -2303,8 +2299,8 @@ depends: A
 - [ ] **G24a** Click Edit. PASS: identity fields become
   inputs (Name text, Model pulldown grouped by provider
   with the current model pre-selected, Description
-  textarea, State select `#ai-state` over MEMBER_STATES,
-  Skill Focus textarea); there is no Auth Token field.
+  textarea, Skill Focus textarea); there is no Auth
+  Token field.
   Change Description and Skill Focus, click Save. PASS:
   toast "AI member saved"; on reopen the edits persist.
 - [ ] **G24b** Click Edit again, pick a different Model
