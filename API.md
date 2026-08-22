@@ -89,7 +89,8 @@ formation — §5).
    that route. Then, for a write with a handler on a non-
    exempt route: `writeAuthorizerFor` (foreign id → **403**
    before pair formation). Public writes require header
-   `Operation-ID` (22-char); missing or malformed → **400**.
+   `Operation-ID` (identifier); missing or malformed →
+   **400**.
    The server does not mint that header. Inner PUTs copy
    the outer id. GET may send it; it is ignored.
 5. **Shadow-ledger pair formation + idempotency + post-
@@ -410,7 +411,7 @@ rides the uri prefix; ACL arrays
 per-attribute ACL; full dialect in §5.4.1 / §5.20):
 
 - `GET .../instances` — member; list; read-ACL
-  projection; id-lex ASC; row embeds `etag`
+  projection; identifier order ASC; row embeds `etag`
 - `GET .../instances/:id` — member; project by read ACL;
   **ETag** header
 - `PUT .../instances/:id` — **405** (public PUT
@@ -2072,7 +2073,7 @@ carries headers derived from that same row (`wireHeadersFor`):
 - **`Date`** — the row's own `response_at`, rendered
   IMF-fixdate (`new Date(response_at).toUTCString()`).
 - **`Response-ID`** — the row's `id` (pair locator).
-- **`Operation-ID`** — the 22-char id from the request
+- **`Operation-ID`** — the identifier from the request
   (send-time; not stored on the GET-shaped blob).
 - **`ETag`** — quoted 64-hex `documentVersion` of the
   body octets (later writes: body octets || matched
@@ -3760,8 +3761,9 @@ transitioned to a terminal node.
 attributes. Sparse PATCH is required for correctness
 with filtered GET. Zero readable attributes still
 yields **200** with empty `values` (existence is
-member-visible). Collection: id-lex ASC; list rows
-embed `etag` string (no per-row response headers).
+member-visible). Collection: identifier order ASC;
+list rows embed `etag` string (no per-row response
+headers).
 Detail GET / PUT / PATCH success carry the strong
 `ETag` header.
 

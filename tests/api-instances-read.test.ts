@@ -35,8 +35,10 @@ import {
     apiRequest, TEST_OPERATION_ID,
 } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
-import { generateIdentifier } from
-    '../shared/identifier.ts';
+import {
+    compareIdentifiers,
+    generateIdentifier,
+} from '../shared/identifier.ts';
 
 // Instance GET detail + list: read projection by attribute
 // ACL, advertised ETag is documentVersion of the projected
@@ -430,8 +432,8 @@ async () => {
     });
 });
 
-test('GET list → 200 id-lex ASC; tombstones omitted; '
-+ 'row etag == detail ETag sans quotes',
+test('GET list → 200 identifier order ASC; tombstones'
++ ' omitted; row etag == detail ETag sans quotes',
 async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
@@ -445,7 +447,7 @@ async () => {
         read_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
         write_roles: [...DEFAULT_ATTRIBUTE_ACL_ROLES],
     });
-    // Seed out of id-lex order; include a tombstone.
+    // Seed out of identifier order; include a tombstone.
     const putB = await putInstance(
         db, memberToken, INSTANCE_B, [
             {
@@ -490,7 +492,7 @@ async () => {
     assert.equal(rows.length, 2);
     const ordered = [INSTANCE_A, INSTANCE_B]
         .slice()
-        .sort();
+        .sort(compareIdentifiers);
     assert.equal(rows[0]!.id, ordered[0]);
     assert.equal(rows[1]!.id, ordered[1]);
     assert.ok(HEX64.test(rows[0]!.etag!));
