@@ -323,8 +323,7 @@ test('grant -> accept -> human-member create -> edit -> erase'
     // localStorage session-credentials JWT name claim, and
     // replay resurrection of a RETAINED pre-erasure PUT request
     // are named residuals OUTSIDE this theorem — see API.md.
-    // Gate 6 residual: SCHEMA.md § Orphan stores (canonical).
-    // Phase Final Stage B: identity spine tables retired.
+    // residual: SCHEMA.md § PII erasure.
 });
 
 // ── 6. The zone's confinement: a non-/pii DELETE still APPENDS ──

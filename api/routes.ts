@@ -696,7 +696,7 @@ export function route(
 // Project the opaque `secret` out of a credential before it
 // crosses the API boundary — reads expose existence and
 // lifecycle, never the hash. Makes true the non-leakage
-// covenant in types.ts and SCHEMA.md SP-1.
+// covenant in types.ts and SCHEMA.md § Secrets.
 function withoutSecret(
     cred: IdentityCredentialEntity,
 ): Omit<IdentityCredentialEntity, 'secret'> {
