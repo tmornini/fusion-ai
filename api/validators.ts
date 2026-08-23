@@ -772,9 +772,10 @@ export function validateMemberEntity(
 
 const IDENTITY_BODY_KEYS: readonly string[] = ['kind'];
 
-// Person-only. Same four fields HumanMemberEntity validates;
-// optional here so `{ kind }` still admits a person without
-// a profile. A service that names any of them is 400.
+// Person-only. The same four fields HumanMemberEntity
+// validates — whole or none: `{ kind }` admits a person
+// without a profile; any one to three of the four is 400;
+// a service that names any of them is 400.
 const IDENTITY_PROFILE_KEYS: readonly string[] = [
     'title', 'department',
     'strengths', 'team_dimensions',
@@ -797,33 +798,25 @@ export function validateIdentityEntity(
         );
         return { kind };
     }
+    const namesProfile = IDENTITY_PROFILE_KEYS.some(
+        (key) => key in body,
+    );
+    if (!namesProfile) {
+        return { kind };
+    }
+    assertOnlyKeys(
+        body,
+        [...IDENTITY_BODY_KEYS, ...IDENTITY_PROFILE_KEYS],
+        'IdentityEntity',
+    );
     return {
         kind,
-        ...('title' in body
-            ? { title: pickString(body, 'title') }
-            : {}),
-        ...('department' in body
-            ? {
-                department: pickString(
-                    body, 'department',
-                ),
-            }
-            : {}),
-        ...('strengths' in body
-            ? {
-                strengths: pickStringArray(
-                    body, 'strengths',
-                ),
-            }
-            : {}),
-        ...('team_dimensions' in body
-            ? {
-                team_dimensions:
-                    pickStringNumberRecord(
-                        body, 'team_dimensions',
-                    ),
-            }
-            : {}),
+        title: pickString(body, 'title'),
+        department: pickString(body, 'department'),
+        strengths: pickStringArray(body, 'strengths'),
+        team_dimensions: pickStringNumberRecord(
+            body, 'team_dimensions',
+        ),
     };
 }
 
@@ -845,10 +838,10 @@ export interface IdentityDocumentBody {
 // 'IdentityDocumentBody' naming convention every other
 // *DocumentBody validator uses — the label appears in the wire
 // 400 body ("unexpected key ... for IdentityEntity"), and the
-// convention's label would change those bytes. A person may
-// carry the four HumanMemberEntity profile fields; a service
-// that names any of them is 400. Existing `{ kind }` PUTs
-// still admit a person without a profile. Global plane
+// convention's label would change those bytes. A person carries
+// the four HumanMemberEntity profile fields whole or not at all;
+// a service that names any of them is 400. Existing `{ kind }`
+// PUTs still admit a person without a profile. Global plane
 // (family-registry.ts: organizationNested:false).
 export function validateIdentityDocumentBody(
     body: Record<string, unknown>,
