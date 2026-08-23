@@ -1661,13 +1661,14 @@ async function formGarden(
         ...ideaFields
     } = ideaTemplate;
     const ideas: GardenIdea[] = [];
-    for (const state of IDEA_GARDEN_STATES) {
+    for (const [i, state] of IDEA_GARDEN_STATES.entries()) {
         const id = sliceEntityId(token + '-idea-' + state);
         const body: Record<string, unknown> = {
             ...ideaFields,
             title: ideaTitle + ' (' + state + ')',
             organization_id: organizationId,
             state,
+            position: i + 1,
         };
         const messagePair = await formSeedMessagePair(
             {
