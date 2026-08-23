@@ -884,11 +884,8 @@ function bindCanvasInteractions(
     if (!(wrap instanceof HTMLElement)) {
         return;
     }
-    const state =
-        presenter.interactionState();
     const push = bindInteractions(
         wrap,
-        state,
         (next) => {
             // Mid-gesture updates paint narrowly under
             // rAF; gesture boundaries (and everything

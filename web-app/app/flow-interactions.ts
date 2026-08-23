@@ -325,7 +325,6 @@ function isFormFocused(): boolean {
 
 export function bindInteractions(
     wrap: HTMLElement,
-    state: InteractionState,
     onUpdate: InteractionCallback,
     onPanelRequest: PanelRequestCallback,
     onNodesDragEnd: (
@@ -350,7 +349,8 @@ export function bindInteractions(
     signal: AbortSignal,
 ): (next: FlowGestureContext) => void {
     let context = initialContext;
-    let currentState: InteractionState = state;
+    let currentState: InteractionState =
+        initialContext.interaction;
     let activePointerId: number | null = null;
     let gestureRect: GestureRect | null = null;
     if (currentState.isPanMode) {
