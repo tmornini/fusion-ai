@@ -2568,8 +2568,8 @@ project.
 ### K24–K26 — Projects list Projected Impact column (Agent-E)
 
 **K24.** Open Projects list; PASS if the Projected Impact
-column renders a value for each row — unscored / pre-approval
-projects show "—"; scored projects show a signed value.
+column renders a value for each row — unscored projects show
+"—"; scored projects show a signed value.
 NOTE: the column header carries no visible text label (the
 "Projected Impact" name is not rendered in the header row),
 so identify the column by its position/content, not header
@@ -2579,8 +2579,12 @@ text.
 re-order accordingly (most-positive first).
 
 **K26.** Filter to `under_review` status + sort by Projected
-Impact descending; PASS if the result is the "review queue
-ranked by impact" workflow we designed.
+Impact descending. Precondition: the K seed carries two
+`under_review` projects, each with four baselines and
+distinct Projected Impact values (`k-project-under-review`
+high, `k-project-under-review-2` low). PASS if both rows
+render, ranked high first — the "review queue ranked by
+impact" workflow we designed.
 
 ### K27–K29 — Dashboard Impact + Aggregates (Agent-CH)
 
