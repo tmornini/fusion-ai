@@ -41,8 +41,14 @@ import {
 } from './routes.ts';
 import type { MessagePair } from
     './message-pair.ts';
-import { appendMessagePair } from
-    './message-pair.ts';
+import {
+    appendMessagePair,
+    formWriteMessagePair,
+} from './message-pair.ts';
+import { generateIdentifier } from
+    '../shared/identifier.ts';
+import { HTTP_OK } from
+    './http-errors.ts';
 import {
     formBootstrapMessagePair,
     formDefaultOrganizationSeedMessagePair,
@@ -71,6 +77,7 @@ import {
     RECORD_TYPES_COLLECTION_PATTERN,
     RECORD_TYPE_DETAIL_PATTERN,
     ATTRIBUTE_DETAIL_PATTERN,
+    INSTANCE_DETAIL_PATTERN,
 } from './family-registry.ts';
 import { buildAiMembers } from
     './mock-data/ai-members.ts';
@@ -387,10 +394,12 @@ const SLICE_ENTITY_IDS: Readonly<
     'f2-obj-3': 'GJEWXzgtkzGQmJavYYYjFw',
     'f2-obj-4': 'hxhFEGMmvzDrJpSlkmQdPQ',
     'f2-record-customer': 'ShEwahhRZEafyzmgXqfciQ',
+    'f2-instance-1': 'x_l0LSw4ud2zRD1Z0OLMIg',
     'f2-attr-1': 'YErPUsjpzqQjteXbusYqiQ',
     'f2-attr-2': 'mxyQyZkqIyMjiQINxMcJpg',
     'f2-state-record-customer': 'lnyXdDKmWojVxcxTfFnvjg',
     'f2-flow': 'DccQFYFgizAgqBvhRHkgew',
+    'f2-flow-record': 'T-R_lfaxzn4C_TQF_Ua5OQ',
     'f2-node-create': 'meDWiMTCzPAPaOykaGdmWQ',
     'f2-node-capture': 'gERGOBxsTCVinbjnNxFayw',
     'f2-node-review': 'vzttFjxTEgpNmfyyrKusNw',
@@ -1090,6 +1099,12 @@ type F2FlowWrites = {
     readonly body: Record<string, unknown>;
     readonly operation: MessagePair;
     readonly document: MessagePair;
+    readonly recordBody: Record<string, unknown>;
+    readonly recordMessagePairs: RecordWriteMessagePairs;
+    readonly bindingId: string;
+    readonly bindingBody: Record<string, unknown>;
+    readonly bindingMessagePair: MessagePair;
+    readonly instanceMessagePair: MessagePair;
 };
 
 async function formF2Extras(
@@ -1108,6 +1123,48 @@ async function formF2Extras(
     const archiveNodeId = sliceEntityId(
         token + '-node-archive',
     );
+    const recordId = sliceEntityId(
+        token + '-record-customer',
+    );
+    const attr1Id = sliceEntityId(token + '-attr-1');
+    const attr2Id = sliceEntityId(token + '-attr-2');
+    const bindingId = sliceEntityId(
+        token + '-flow-record',
+    );
+    const profile = buildRecords()[0]!;
+    const formedRecord =
+        await formRecordBindingMessagePairs({
+            organizationId,
+            adminId,
+            requestAt,
+            recordId,
+            attributes: [
+                {
+                    id: attr1Id,
+                    name: 'Company Name',
+                    attribute_type: 'text',
+                    sort_order: 1,
+                    options: [],
+                    constraints: [],
+                },
+                {
+                    id: attr2Id,
+                    name: 'Industry',
+                    attribute_type: 'select',
+                    sort_order: 2,
+                    options: ['Technology'],
+                    constraints: [],
+                },
+            ],
+            flowId,
+            bindingId,
+            recordName: profile.name,
+            recordDescription: profile.description,
+            recordPosition: profile.position,
+            initialStateEventId: sliceEntityId(
+                token + '-state-record-customer',
+            ),
+        });
     const graph: Record<string, unknown> = {
         nodes: [
             {
@@ -1132,16 +1189,12 @@ async function formF2Extras(
                 memberIds: [adminId],
                 attributes: [
                     {
-                        attribute_id: sliceEntityId(
-                            'f2-node-capture-attr-text',
-                        ),
+                        attribute_id: attr1Id,
                         mode: 'editable',
                         isRequired: true,
                     },
                     {
-                        attribute_id: sliceEntityId(
-                            'f2-node-capture-attr-select',
-                        ),
+                        attribute_id: attr2Id,
                         mode: 'editable',
                         isRequired: true,
                     },
@@ -1256,8 +1309,43 @@ async function formF2Extras(
         },
         requestAt,
     );
+    const instanceId = sliceEntityId(
+        token + '-instance-1',
+    );
+    const instanceRouteSegments =
+        INSTANCE_DETAIL_PATTERN.split('/');
+    const instancePathSegments = [
+        'organizations', organizationId,
+        'record-types', recordId,
+        'instances', instanceId,
+    ];
+    const instanceMessagePair =
+        await formWriteMessagePair({
+            method: 'PUT',
+            pathname: '/'
+                + instancePathSegments.join('/'),
+            routePattern:
+                INSTANCE_DETAIL_PATTERN,
+            routeSegments: instanceRouteSegments,
+            pathSegments: instancePathSegments,
+            headerFields: [],
+            body: { values: [] },
+            requesterIdentityId: adminId,
+            requestAt,
+            organization: organizationId,
+            responseStatus: HTTP_OK,
+            responseBody: { values: [] },
+            operationId: generateIdentifier(),
+        });
     return {
         flowId, body: flowBody, operation, document,
+        recordBody: formedRecord.body,
+        recordMessagePairs: formedRecord.messagePairs,
+        bindingId,
+        bindingBody: formedRecord.bindingBody,
+        bindingMessagePair:
+            formedRecord.bindingMessagePair,
+        instanceMessagePair,
     };
 }
 
@@ -2400,6 +2488,22 @@ export async function postTestPlanSlices(
                 );
                 await appendMessagePair(
                     view, extra.document,
+                );
+                await postRecordWriteOp(
+                    view,
+                    extra.recordBody,
+                    SYSTEM_MEMBER_ID,
+                    extra.recordMessagePairs,
+                );
+                await postFlowRecordDocumentOp(
+                    view,
+                    extra.bindingId,
+                    extra.bindingBody,
+                    SYSTEM_MEMBER_ID,
+                    extra.bindingMessagePair,
+                );
+                await appendMessagePair(
+                    view, extra.instanceMessagePair,
                 );
             }
         },
