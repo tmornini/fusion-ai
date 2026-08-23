@@ -11,21 +11,25 @@ import {
 } from './http-fixtures.ts';
 import {
     deriveIdentityPii,
+    deriveIdentityPiiRows,
     piiEntityOf,
 } from '../api/derive-identity-spine.ts';
+import { documentHeadAt } from '../api/message-pair.ts';
 import {
     seedAdminSchema,
     organizationRow,
 } from './test-fixtures.ts';
 import { generateIdentifier } from
     '../shared/identifier.ts';
+import { seedIdentityCredential } from
+    './identity-fixtures.ts';
+import { testHashPassword } from './mock-seed.ts';
+import { sha256Bytes } from '../shared/digest.ts';
+import { bytesToBase64Url } from '../shared/base64url.ts';
 
-// Phase 10 Task 3: the /pii message-plane HARD-DELETE ZONE — the
-// sanctioned non-append-only exception (gate 4's chainless
-// single-slot register + gate 5's erasure-completeness theorem).
-// Every write at identities/:id/pii physically replaces whatever
-// pair occupies the slot; supersession and erasure are the same
-// mechanism (api/pii-hard-delete.ts).
+// PII writes append. DELETE is a marked tombstone; derive
+// treats a DELETE head as absence. Erased values remain in
+// superseded pairs.
 
 const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
@@ -69,179 +73,199 @@ function humanDetail() {
     };
 }
 
-function humanCreateBody(id: string, eventId: string) {
-    return {
-        id,
-        detail: humanDetail(),
-        initialState: 'active',
-        initialStateEventId: eventId,
-        initialStateAt: AT,
-    };
+function piiCollection(id: string): string {
+    return '/identities/' + id + '/pii/';
 }
 
-async function allMessages(
+async function pairsAtPii(
     db: MemoryDbAdapter,
-): Promise<string[]> {
+    id: string,
+) {
     const messagePairs = await db.messagePairs.getAll();
-    return [
-        ...messagePairs.map(r => r.request),
-        ...messagePairs.map(r => r.response),
-    ];
+    return messagePairs.filter(
+        r => r.uri_collection === piiCollection(id),
+    );
 }
 
-// ── 1. PUT-PUT: exactly ONE pair (the latest) ──
+async function loginPassword(
+    db: MemoryDbAdapter,
+    username: string,
+): Promise<Response> {
+    return handleRequest(db, new Request(
+        BASE + '/authentication/authorize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                method: 'password',
+                username,
+                password: 's3cret-password-ok',
+                client_id: 'web',
+                code_challenge: bytesToBase64Url(
+                    await sha256Bytes('pkce-verifier-test'),
+                ),
+                code_challenge_method: 'S256',
+            }),
+        },
+    ));
+}
 
-test('PUT-PUT at one address leaves exactly ONE pair (the'
-+ ' latest)', async () => {
+// ── 1. PUT-PUT: two pairs, the head supersedes ──
+
+test('PUT-PUT leaves two pairs and Supersedes', async () => {
     const db = await freshDb();
+    const id = 'tyqfBGunVEufdtzApefuyw';
     const first = await handleRequest(db, req(
-        'PUT', '/identities/tyqfBGunVEufdtzApefuyw/pii', DEV_TOKEN,
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Ann'),
     ));
     assert.equal(first.status, 201);
+    const firstId = first.headers.get('Response-ID');
     const second = await handleRequest(db, req(
-        'PUT', '/identities/tyqfBGunVEufdtzApefuyw/pii', DEV_TOKEN,
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Ann Marie'),
     ));
     assert.equal(second.status, 201);
-    // Case 7: the tombstone/chain-Supersedes pin re-pinned to its
-    // ABSENCE — stated explicitly, not merely the old assertion
-    // deleted.
-    assert.equal(second.headers.get('Supersedes'), null);
-    const messagePairs = await db.messagePairs.getAll();
-    const atAddress = messagePairs.filter(
-        r => r.uri_collection === '/identities/tyqfBGunVEufdtzApefuyw/pii/',
+    const secondId = second.headers.get('Response-ID');
+    assert.notEqual(secondId, firstId);
+    const atAddress = await pairsAtPii(db, id);
+    assert.equal(atAddress.length, 2);
+    assert.ok(atAddress.some(r => r.id === firstId));
+    assert.ok(atAddress.some(r => r.id === secondId));
+    const head = await documentHeadAt(
+        db, piiCollection(id), '',
     );
-    assert.equal(atAddress.length, 1);
-    assert.equal(
-        atAddress[0]!.id, second.headers.get('Response-ID'),
-    );
-    // Phase Final Task 2: identity_pii ROW half stripped —
-    // domain oracle is deriveIdentityPii. G5: PUT-PUT still
-    // physically deletes the prior pair (one-role DELETE).
-    const domainRow = await deriveIdentityPii(db, 'tyqfBGunVEufdtzApefuyw');
+    assert.equal(head?.id, secondId);
+    assert.equal(head?.method, 'PUT');
+    const domainRow = await deriveIdentityPii(db, id);
     assert.equal(domainRow.name, 'Ann Marie');
-    // Phase Final Stage B: identity spine tables retired.
 });
 
-// ── 2. PUT-DELETE: exactly ONE bodyless tombstone pair ──
+// ── 2. PUT-DELETE: bodyless DELETE head, derive absent ──
 
-test('PUT-DELETE leaves exactly ONE bodyless DELETE pair (the'
-+ ' erasure tombstone; no PII bytes anywhere in the ledger)',
-async () => {
+test('PUT-DELETE leaves a bodyless DELETE head and an'
++ ' absent derive', async () => {
     const db = await freshDb();
+    const id = 'uEYoNLWQrgIToJPFkyvdPw';
     const put = await handleRequest(db, req(
-        'PUT', '/identities/uEYoNLWQrgIToJPFkyvdPw/pii', DEV_TOKEN,
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Bob'),
     ));
     assert.equal(put.status, 201);
+    const putId = put.headers.get('Response-ID');
     const del = await handleRequest(db, req(
-        'DELETE', '/identities/uEYoNLWQrgIToJPFkyvdPw/pii', DEV_TOKEN,
+        'DELETE', '/identities/' + id + '/pii', DEV_TOKEN,
     ));
     assert.equal(del.status, 204);
-    // Case 7 (the DELETE half): the tombstone carries no
-    // Supersedes either — chainless applies to BOTH verbs.
-    assert.equal(del.headers.get('Supersedes'), null);
-    const messagePairs = await db.messagePairs.getAll();
-    const atAddress = messagePairs.filter(
-        r => r.uri_collection === '/identities/uEYoNLWQrgIToJPFkyvdPw/pii/',
+    const delId = del.headers.get('Response-ID');
+    assert.notEqual(delId, putId);
+    const atAddress = await pairsAtPii(db, id);
+    assert.equal(atAddress.length, 2);
+    const delRow = atAddress.find(r => r.id === delId);
+    assert.ok(delRow);
+    assert.equal(delRow!.method, 'DELETE');
+    assert.ok(!delRow!.request.includes('Bob'));
+    assert.ok(atAddress.some(r => r.id === putId
+        && r.request.includes('Bob')));
+    const head = await documentHeadAt(
+        db, piiCollection(id), '',
     );
-    assert.equal(atAddress.length, 1);
-    const messages = await allMessages(db);
-    assert.ok(!messages.some(m => m.includes('Bob')));
-    assert.ok(!messages.some(m => m.includes('bob@example.com')));
-    await assert.rejects(() => deriveIdentityPii(db
-        , 'uEYoNLWQrgIToJPFkyvdPw'));
+    assert.equal(head?.id, delId);
+    assert.equal(head?.method, 'DELETE');
+    await assert.rejects(() => deriveIdentityPii(db, id));
 });
 
-// ── 3. DELETE-PUT: the slot re-sets (one PUT pair) ──
+// ── 3. DELETE-PUT: live again at three pairs ──
 
-test('DELETE-PUT re-sets the slot to exactly one PUT pair',
-async () => {
+test('DELETE-PUT is live again at three pairs', async () => {
     const db = await freshDb();
-    const del = await handleRequest(db, req(
-        'DELETE', '/identities/uFgKFelNjvJcrtefsfZxrA/pii', DEV_TOKEN,
-    ));
-    assert.equal(del.status, 404);
-    assert.equal(del.headers.get('Supersedes'), null);
-    const put = await handleRequest(db, req(
-        'PUT', '/identities/uFgKFelNjvJcrtefsfZxrA/pii', DEV_TOKEN,
+    const id = 'uFgKFelNjvJcrtefsfZxrA';
+    const first = await handleRequest(db, req(
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Cara'),
     ));
+    assert.equal(first.status, 201);
+    const del = await handleRequest(db, req(
+        'DELETE', '/identities/' + id + '/pii', DEV_TOKEN,
+    ));
+    assert.equal(del.status, 204);
+    await assert.rejects(() => deriveIdentityPii(db, id));
+    const put = await handleRequest(db, req(
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
+        humanPii('Cara Restored'),
+    ));
     assert.equal(put.status, 201);
-    assert.equal(put.headers.get('Supersedes'), null);
-    const messagePairs = await db.messagePairs.getAll();
-    const atAddress = messagePairs.filter(
-        r => r.uri_collection === '/identities/uFgKFelNjvJcrtefsfZxrA/pii/',
+    const atAddress = await pairsAtPii(db, id);
+    assert.equal(atAddress.length, 3);
+    const head = await documentHeadAt(
+        db, piiCollection(id), '',
     );
-    assert.equal(atAddress.length, 1);
-    assert.equal(
-        atAddress[0]!.id, put.headers.get('Response-ID'),
-    );
-    const domainRow = await deriveIdentityPii(db, 'uFgKFelNjvJcrtefsfZxrA');
-    assert.equal(domainRow.name, 'Cara');
+    assert.equal(head?.id, put.headers.get('Response-ID'));
+    assert.equal(head?.method, 'PUT');
+    const domainRow = await deriveIdentityPii(db, id);
+    assert.equal(domainRow.name, 'Cara Restored');
 });
 
-// ── 4. The E6 branches (finding 15) ──
+// ── 4. Ordinary document replay ──
 
 test('a byte-identical resend against the LIVE slot replays'
 + ' the stored response and appends nothing', async () => {
     const db = await freshDb();
+    const id = 'uKYubOSYwiunzyPztWBtkw';
     const first = await handleRequest(db, req(
-        'PUT', '/identities/uKYubOSYwiunzyPztWBtkw/pii', DEV_TOKEN,
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Dana'),
     ));
     assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
-    const countAfterFirst = (await db.messagePairs.getAll()).length;
+    const countAfterFirst = (await db.messagePairs.getAll())
+        .length;
     const resend = await handleRequest(db, req(
-        'PUT', '/identities/uKYubOSYwiunzyPztWBtkw/pii', DEV_TOKEN,
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Dana'),
     ));
     assert.equal(resend.status, 201);
-    // storedResponseFor's WHOLE-pair match (message-pair.ts) —
-    // the pre-dispatch fast path, never replacePiiSlot — is what
-    // answers this resend; the live slot's row is untouched.
     assert.equal(resend.headers.get('Response-ID'), firstId);
     assert.equal(
-        (await db.messagePairs.getAll()).length, countAfterFirst,
+        (await db.messagePairs.getAll()).length,
+        countAfterFirst,
     );
 });
 
-test('a byte-identical resend AFTER supersession finds no'
-+ ' stored hash and appends fresh', async () => {
+test('a byte-identical resend AFTER supersession replays'
++ ' the stored first pair and appends nothing', async () => {
     const db = await freshDb();
+    const id = 'uLUQPJnlVuzeGqXLYqCItA';
     const first = await handleRequest(db, req(
-        'PUT', '/identities/uLUQPJnlVuzeGqXLYqCItA/pii', DEV_TOKEN,
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Erin'),
     ));
     assert.equal(first.status, 201);
     const firstId = first.headers.get('Response-ID');
     const second = await handleRequest(db, req(
-        'PUT', '/identities/uLUQPJnlVuzeGqXLYqCItA/pii', DEV_TOKEN,
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Erin Marie'),
     ));
     assert.equal(second.status, 201);
     assert.notEqual(second.headers.get('Response-ID'), firstId);
-    // The FIRST body's stored request row was physically removed
-    // when the second PUT replaced the slot — storedResponseFor
-    // finds no matching hash, so this is a FRESH write, never a
-    // replay (Step 0(a): WHOLE-pair absence is tolerated).
+    const countAfterSecond = (await db.messagePairs.getAll())
+        .length;
     const resend = await handleRequest(db, req(
-        'PUT', '/identities/uLUQPJnlVuzeGqXLYqCItA/pii', DEV_TOKEN,
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
         humanPii('Erin'),
     ));
     assert.equal(resend.status, 201);
-    assert.equal(resend.headers.get('Supersedes'), null);
-    assert.notEqual(resend.headers.get('Response-ID'), firstId);
-    const messagePairs = await db.messagePairs.getAll();
-    const atAddress = messagePairs.filter(
-        r => r.uri_collection === '/identities/uLUQPJnlVuzeGqXLYqCItA/pii/',
+    assert.equal(resend.headers.get('Response-ID'), firstId);
+    assert.equal(
+        (await db.messagePairs.getAll()).length,
+        countAfterSecond,
     );
-    assert.equal(atAddress.length, 1);
+    const atAddress = await pairsAtPii(db, id);
+    assert.equal(atAddress.length, 2);
+    const domainRow = await deriveIdentityPii(db, id);
+    assert.equal(domainRow.name, 'Erin Marie');
 });
 
-// ── 5. THE ERASURE-COMPLETENESS PIN (gate 5's theorem) ──
+// ── 5. Seam: erased PII remains in superseded pairs ──
 
 const ERASED_NAME = 'Erasable Person';
 const ERASED_EMAIL = 'erasable@example.com';
@@ -252,9 +276,8 @@ const EDITED_EMAIL = 'erasable-renamed@example.com';
 const EDITED_PHONE = '555-0199';
 const EDITED_BIO = 'the edited erasure-completeness pin text';
 
-test('grant -> accept -> human-member create -> edit -> erase'
-+ ' leaves ZERO stored-server-plane trace of the erased PII'
-+ ' (gate 5, the erasure-completeness theorem)', async () => {
+test('erased PII remains in superseded pairs; login is 401',
+async () => {
     const db = await freshDb();
     const id = generateIdentifier();
     const create = await handleRequest(db, req(
@@ -270,6 +293,16 @@ test('grant -> accept -> human-member create -> edit -> erase'
         },
     ));
     assert.equal(intake.status, 201);
+    await seedIdentityCredential(
+        db, id, generateIdentifier(), {
+            identity_id: id, kind: 'password',
+            status: 'set',
+            secret: await testHashPassword(
+                's3cret-password-ok',
+            ),
+            at: AT,
+        },
+    );
     const grantRes = await handleRequest(db, req(
         'POST', '/organizations/AjdvjuECVZEgZoFajaIEkg/invitations/',
         await organizationToken(),
@@ -307,54 +340,68 @@ test('grant -> accept -> human-member create -> edit -> erase'
     assert.equal(erase.status, 204);
     await assert.rejects(() => deriveIdentityPii(db, id));
 
-    const erasedValues = [
-        ERASED_NAME, ERASED_EMAIL, ERASED_PHONE, ERASED_BIO,
-        EDITED_NAME, EDITED_EMAIL, EDITED_PHONE, EDITED_BIO,
-    ];
-    const messages = await allMessages(db);
-    for (const value of erasedValues) {
-        assert.ok(
-            !messages.some(m => m.includes(value)),
-            'found an erased value in the ledger: ' + value,
+    const atAddress = await pairsAtPii(db, id);
+    assert.equal(atAddress.length, 3);
+    const piiText = atAddress
+        .map(r => r.request + r.response).join('');
+    assert.ok(piiText.includes(ERASED_NAME));
+    assert.ok(piiText.includes(ERASED_EMAIL));
+    assert.ok(piiText.includes(EDITED_NAME));
+    assert.ok(piiText.includes(EDITED_EMAIL));
+    const livePii = await deriveIdentityPiiRows(db);
+    assert.ok(!livePii.some(r => r.id === id));
+    assert.ok(!livePii.some(r =>
+        r.name === ERASED_NAME
+            || r.name === EDITED_NAME
+            || r.email === ERASED_EMAIL
+            || r.email === EDITED_EMAIL));
+    const roster = await handleRequest(db, req(
+        'GET',
+        '/organizations/AjdvjuECVZEgZoFajaIEkg/members/',
+        await organizationToken(),
+    ));
+    assert.equal(roster.status, 200);
+    const rosterText = JSON.stringify(await roster.json());
+    assert.ok(!rosterText.includes(ERASED_NAME));
+    assert.ok(!rosterText.includes(EDITED_NAME));
+    assert.ok(!rosterText.includes(ERASED_EMAIL));
+    assert.ok(!rosterText.includes(EDITED_EMAIL));
+    for (const username of [ERASED_EMAIL, EDITED_EMAIL]) {
+        const login = await loginPassword(db, username);
+        assert.equal(login.status, 401);
+        assert.deepEqual(
+            await login.json(), { error: 'invalid_grant' },
         );
     }
-    // Scoped to the STORED SERVER PLANE (gate 5): pre-phase
-    // historical pairs, exported snapshots, the browser's
-    // localStorage session-credentials JWT name claim, and
-    // replay resurrection of a RETAINED pre-erasure PUT request
-    // are named residuals OUTSIDE this theorem — see API.md.
-    // residual: SCHEMA.md § PII erasure.
 });
 
-// ── 6. The zone's confinement: a non-/pii DELETE still APPENDS ──
+// ── 6. Confinement: no address splices ──
 
-test("the zone's confinement: a non-/pii DELETE (a memberships"
-+ ' tombstone) still APPENDS — the zone never leaks', async () => {
+test('PUT-PUT-DELETE adds exactly three pairs (no address'
++ ' splices)', async () => {
     const db = await freshDb();
-    const put = await handleRequest(db, req(
-        'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
-            + 'XSNEaxodzAorrAiVBegDGw',
-        await organizationToken(),
-        { type: 'admin', at: AT },
+    const id = 'XSNEaxodzAorrAiVBegDGw';
+    const first = await handleRequest(db, req(
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
+        humanPii('Ann'),
     ));
-    assert.equal(put.status, 201);
-    const putId = put.headers.get('Response-ID');
+    assert.equal(first.status, 201);
+    const second = await handleRequest(db, req(
+        'PUT', '/identities/' + id + '/pii', DEV_TOKEN,
+        humanPii('Ann Marie'),
+    ));
+    assert.equal(second.status, 201);
     const del = await handleRequest(db, req(
-        'DELETE', '/organizations/AjdvjuECVZEgZoFajaIEkg/members/'
-            + 'XSNEaxodzAorrAiVBegDGw',
-        await organizationToken(),
+        'DELETE', '/identities/' + id + '/pii', DEV_TOKEN,
     ));
     assert.equal(del.status, 204);
-    // Unlike /pii, a seat DELETE still APPENDS — the
-    // hard-delete zone is confined to identities/:id/pii alone.
-    assert.equal(del.headers.get('Supersedes'), null);
-    const messagePairs = await db.messagePairs.getAll();
-    const atAddress = messagePairs.filter(
-        r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'
-            + 'members/'
-            && r.uri_id === 'XSNEaxodzAorrAiVBegDGw',
+    const atAddress = await pairsAtPii(db, id);
+    assert.equal(atAddress.length, 3);
+    const head = await documentHeadAt(
+        db, piiCollection(id), '',
     );
-    assert.equal(atAddress.length, 2);
+    assert.equal(head?.id, del.headers.get('Response-ID'));
+    assert.equal(head?.method, 'DELETE');
 });
 
 // G5: stored PUT = piiEntityOf (GET derive). GET self-only
