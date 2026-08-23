@@ -236,7 +236,7 @@ function commit(
         pageState.history(),
     );
     pageState.setPresenter(presenter);
-    update(pageState.container(), presenter);
+    update(pageState.container());
 }
 
 async function handleAddEdge(
@@ -570,11 +570,9 @@ async function handleAddNodeAtPosition(
     );
 }
 
-function update(
-    container: HTMLElement,
-    presenter: FlowDesignerPresenter,
-): void {
+function update(container: HTMLElement): void {
     pageState.saveDebouncer().flush();
+    const presenter = pageState.presenter();
     presenter.renderUpdate(container);
     pageState.pushGestureContext(
         presenter.buildGestureContext(),
@@ -1625,9 +1623,7 @@ function onFlowLoaded(
             pageState.setCanvasSize(w, h);
             pageState.presenter()
                 .withCanvasSize(w, h);
-            update(
-                container, pageState.presenter(),
-            );
+            update(container);
             reconcileFitFromDom();
         }
     });
