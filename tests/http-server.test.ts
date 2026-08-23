@@ -11,6 +11,7 @@ import {
     HTTP_UNAUTHORIZED,
 } from '../api/http-errors.ts';
 import {
+    CONTENT_SECURITY_POLICY,
     HASHED_CACHE_CONTROL,
     NO_STORE,
     REQUEST_BODY_MAX_BYTES,
@@ -120,6 +121,56 @@ async () => {
         assert.equal(
             hashed.headers.get('cache-control'),
             HASHED_CACHE_CONTROL,
+        );
+    });
+});
+
+test('HTML carries the Content-Security-Policy header',
+async () => {
+    await withServer({
+        'landing/index.html': '<p>hi</p>',
+        'assets/app.js': 'console.log(1)',
+    }, undefined, async (base) => {
+        const page = await fetch(
+            base + '/landing/index.html',
+        );
+        assert.equal(page.status, 200);
+        assert.equal(
+            page.headers.get('content-security-policy'),
+            "default-src 'self'; script-src 'self';"
+            + " style-src 'self';"
+            + " style-src-attr 'unsafe-inline';"
+            + " font-src 'self'; img-src 'self' data:;"
+            + " frame-ancestors 'none'; base-uri 'self';"
+            + " form-action 'self'",
+        );
+        assert.equal(
+            page.headers.get('content-security-policy'),
+            CONTENT_SECURITY_POLICY,
+        );
+
+        const head = await fetch(
+            base + '/landing/index.html',
+            { method: 'HEAD' },
+        );
+        assert.equal(head.status, 200);
+        assert.equal(
+            head.headers.get('content-security-policy'),
+            CONTENT_SECURITY_POLICY,
+        );
+
+        const app = await fetch(base + '/assets/app.js');
+        assert.equal(app.status, 200);
+        assert.equal(
+            app.headers.get('content-security-policy'),
+            null,
+        );
+
+        const miss = await fetch(base + '/assets/no.js');
+        assert.equal(miss.status, 404);
+        assert.equal(
+            miss.headers.get('content-security-policy'),
+            null,
         );
     });
 });
