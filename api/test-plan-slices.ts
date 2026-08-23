@@ -14,6 +14,8 @@ import {
     DEFAULT_LOCK_TIMEOUT,
     MS_PER_DAY,
     type StateEntity,
+    type GraphNode,
+    type GraphEdge,
 } from './types.ts';
 import {
     postIdentityDocumentOp,
@@ -102,6 +104,13 @@ import {
     buildFlows,
     buildFlowGraphRelations,
 } from './mock-data/flows.ts';
+import {
+    generateFlowWorkload,
+    type FlowSeedSpec,
+    type PathProfile,
+    type SojournProfile,
+    type MemberSkill,
+} from './mock-data/flow-workload.ts';
 import {
     validateObjectiveCreateBody,
     validateRecordWriteBody,
@@ -462,6 +471,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'fs-edge-begin': 'AdVOtqtQSKfGZGtaYLfdPw',
     'fs-edge-submit': 'ItZFnpoyOndFMUIYeAOIhg',
     'fs-edge-approve': 'uCdEHZjvudxpNyqyUtQKtA',
+    'fs-edge-revise': 'k3-rt2yDSOovQkFMqRlZgw',
     'fs-project-flow': 'etPELgkwzjYWnosrKJZWpg',
     'fs-state-flow': 'MbLBcUlBjgnUYOsLraNUNg',
     'fs-wo-capture': 'fTsrGwymzlLKIKnTPKvkEQ',
@@ -1777,6 +1787,11 @@ const WORK_ORDER_GARDEN = [
     { suffix: 'archive', node: 'archive', position: 3 },
 ] as const;
 
+const FS_WORKLOAD_SEED = 0x4653;
+const FS_OLDEST_DAYS_AGO = 20;
+const FS_NEWEST_DAYS_AGO = 3;
+const FS_WORK_ORDER_COUNT = 12;
+
 type GardenIdea = {
     readonly id: string;
     readonly body: Record<string, unknown>;
@@ -1818,8 +1833,10 @@ type GardenWorkOrder = {
     readonly joinId: string;
     readonly joinBody: Record<string, unknown>;
     readonly joinMessagePair: MessagePair;
-    readonly transitionBody: Record<string, unknown>;
-    readonly transitionMessagePair: MessagePair;
+    readonly transitions: readonly {
+        readonly body: Record<string, unknown>;
+        readonly messagePair: MessagePair;
+    }[];
 };
 
 type GardenWrites = {
@@ -2200,6 +2217,35 @@ async function formGarden(
     const reviewNodeId = sliceEntityId(token + '-node-review');
     const archiveNodeId = sliceEntityId(
         token + '-node-archive');
+    const graphEdges: Record<string, unknown>[] = [
+        {
+            id: sliceEntityId(token + '-edge-begin'),
+            name: 'begin',
+            fromNodeId: createNodeId,
+            toNodeId: captureNodeId,
+        },
+        {
+            id: sliceEntityId(token + '-edge-submit'),
+            name: 'submit',
+            fromNodeId: captureNodeId,
+            toNodeId: reviewNodeId,
+        },
+        {
+            id: sliceEntityId(
+                token + '-edge-approve'),
+            name: 'approve',
+            fromNodeId: reviewNodeId,
+            toNodeId: archiveNodeId,
+        },
+    ];
+    if (token === 'fs') {
+        graphEdges.push({
+            id: sliceEntityId('fs-edge-revise'),
+            name: 'needs revision',
+            fromNodeId: reviewNodeId,
+            toNodeId: captureNodeId,
+        });
+    }
     const graph: Record<string, unknown> = {
         nodes: [
             {
@@ -2269,27 +2315,7 @@ async function formGarden(
                 attributes: [],
             },
         ],
-        edges: [
-            {
-                id: sliceEntityId(token + '-edge-begin'),
-                name: 'begin',
-                fromNodeId: createNodeId,
-                toNodeId: captureNodeId,
-            },
-            {
-                id: sliceEntityId(token + '-edge-submit'),
-                name: 'submit',
-                fromNodeId: captureNodeId,
-                toNodeId: reviewNodeId,
-            },
-            {
-                id: sliceEntityId(
-                    token + '-edge-approve'),
-                name: 'approve',
-                fromNodeId: reviewNodeId,
-                toNodeId: archiveNodeId,
-            },
-        ],
+        edges: graphEdges,
     };
     const relations = buildFlowGraphRelations(
         [{ id: flowId, graph }],
@@ -2393,93 +2419,300 @@ async function formGarden(
         archive: archiveNodeId,
     };
     const workOrders: GardenWorkOrder[] = [];
-    for (const spec of WORK_ORDER_GARDEN) {
-        const id = sliceEntityId(
-            token + '-wo-' + spec.suffix);
-        const body: Record<string, unknown> = {
-            display_id: token + spec.position,
-            flow_graph: frozenGraph,
-            position: spec.position,
-            organization_id: organizationId,
-        };
-        const messagePair = await formSeedMessagePair(
+    if (token === 'fs') {
+        const nodes = graph['nodes'] as GraphNode[];
+        const edges = graph['edges'] as GraphEdge[];
+        const beginId = sliceEntityId(
+            token + '-edge-begin');
+        const submitId = sliceEntityId(
+            token + '-edge-submit');
+        const approveId = sliceEntityId(
+            token + '-edge-approve');
+        const reviseId = sliceEntityId(
+            'fs-edge-revise');
+        const paths: readonly PathProfile[] = [
             {
-                key: seedMessagePairKey(
-                    'work-orders/:id', id,
-                ),
-                routePattern:
-                    'organizations/:id/work-orders/:id',
-                idParams: [organizationId, id],
-                organization: organizationId,
-                requesterIdentityId: adminId,
-                body,
-            },
-            requestAt,
-        );
-        const joinId = id;
-        const joinBody = flowWorkOrderJoinSeedBody({
-            id: joinId,
-            flow_id: flowId,
-            work_order_id: id,
-            at: requestAt,
-        });
-        const joinMessagePair = await formSeedMessagePair(
-            {
-                key: seedMessagePairKey(
-                    'flows/:id/work-orders/:woid',
-                    joinId,
-                ),
-                routePattern:
-                    'organizations/:id/flows/:id'
-                    + '/work-orders/:woid',
-                idParams: [
-                    organizationId, flowId, joinId,
+                nodeIds: [
+                    createNodeId, captureNodeId,
+                    reviewNodeId, archiveNodeId,
                 ],
-                organization: organizationId,
-                requesterIdentityId: adminId,
-                body: joinBody,
+                edgeIds: [
+                    beginId, submitId, approveId,
+                ],
+                weight: 0.7,
             },
-            requestAt,
-        );
-        const parkId = parkNodeId[spec.node]!;
-        const transitionEventId =
-            sliceEntityId(
-                token + '-wo-' + spec.suffix
-                + '-move');
-        const transitionBody: Record<string, unknown> = {
-            transitionEventId,
-            targetState: parkId,
-            fieldValues: [],
-            release: null,
-            transitionAt: requestAt,
-        };
-        const transitionMessagePair = await formSeedMessagePair(
             {
-                key: seedMessagePairKey(
-                    'work-orders/:id/transition',
-                    transitionEventId,
-                ),
-                routePattern:
-                    'organizations/:id/work-orders/:id'
-                    + '/transition',
-                idParams: [organizationId, id],
-                op: true,
-                organization: organizationId,
-                requesterIdentityId: adminId,
-                body: transitionBody,
+                nodeIds: [
+                    createNodeId, captureNodeId,
+                    reviewNodeId, captureNodeId,
+                    reviewNodeId, archiveNodeId,
+                ],
+                edgeIds: [
+                    beginId, submitId, reviseId,
+                    submitId, approveId,
+                ],
+                weight: 0.15,
             },
-            requestAt,
-        );
-        workOrders.push({
-            id,
-            body,
-            messagePair,
-            joinId,
-            joinBody,
-            joinMessagePair,
-            transitionBody,
-            transitionMessagePair,
+            {
+                nodeIds: [
+                    createNodeId, captureNodeId,
+                    reviewNodeId,
+                ],
+                edgeIds: [beginId, submitId],
+                weight: 0.15,
+            },
+        ];
+        const sojourn: SojournProfile = {
+            meanHoursByNodeId: new Map([
+                [captureNodeId, 72],
+                [reviewNodeId, 18],
+            ]),
+            sigmaByNodeId: new Map([
+                [captureNodeId, 0.8],
+                [reviewNodeId, 0.5],
+            ]),
+        };
+        const skill: MemberSkill = {
+            byMemberAndNode: new Map([
+                [adminId, new Map([
+                    [captureNodeId, 1.0],
+                    [reviewNodeId, 1.0],
+                ])],
+            ]),
+            jitterPct: 0.15,
+        };
+        const flowSpec: FlowSeedSpec = {
+            flowId,
+            name: 'Customer Onboarding',
+            nodes,
+            edges,
+            creator: nodes[0]!,
+            archive: nodes[3]!,
+        };
+        const generated = generateFlowWorkload({
+            flow: flowSpec,
+            paths,
+            sojourn,
+            skill,
+            totalWorkOrders: FS_WORK_ORDER_COUNT,
+            oldestDaysAgo: FS_OLDEST_DAYS_AGO,
+            newestDaysAgo: FS_NEWEST_DAYS_AGO,
+            seed: FS_WORKLOAD_SEED,
+            organizationId,
+            nowMs: Date.parse(requestAt),
         });
+        for (const wo of generated.workOrders) {
+            const { id: woId, ...woFields } = wo;
+            const body: Record<string, unknown> = {
+                ...woFields,
+            };
+            const messagePair =
+                await formSeedMessagePair(
+                    {
+                        key: seedMessagePairKey(
+                            'work-orders/:id', woId,
+                        ),
+                        routePattern:
+                            'organizations/:id'
+                            + '/work-orders/:id',
+                        idParams: [
+                            organizationId, woId,
+                        ],
+                        organization: organizationId,
+                        requesterIdentityId: adminId,
+                        body,
+                    },
+                    requestAt,
+                );
+            const join = generated.flowWorkOrders.find(
+                (row) => row.work_order_id === woId,
+            )!;
+            const joinBody =
+                flowWorkOrderJoinSeedBody(join);
+            const joinMessagePair =
+                await formSeedMessagePair(
+                    {
+                        key: seedMessagePairKey(
+                            'flows/:id/work-orders/:woid',
+                            join.id,
+                        ),
+                        routePattern:
+                            'organizations/:id/flows/:id'
+                            + '/work-orders/:woid',
+                        idParams: [
+                            organizationId,
+                            flowId,
+                            join.id,
+                        ],
+                        organization: organizationId,
+                        requesterIdentityId: adminId,
+                        body: joinBody,
+                    },
+                    requestAt,
+                );
+            const transitions: {
+                readonly body:
+                    Record<string, unknown>;
+                readonly messagePair: MessagePair;
+            }[] = [];
+            const events = generated.stateEvents.filter(
+                (event) => event.entity_id === woId,
+            );
+            for (const event of events) {
+                const transitionBody: Record<
+                    string, unknown
+                > = {
+                    transitionEventId: event.id,
+                    targetState: event.state,
+                    fieldValues: [],
+                    release: null,
+                    transitionAt: event.at,
+                };
+                const transitionMessagePair =
+                    await formSeedMessagePair(
+                        {
+                            key: seedMessagePairKey(
+                                'work-orders/:id'
+                                + '/transition',
+                                event.id,
+                            ),
+                            routePattern:
+                                'organizations/:id'
+                                + '/work-orders/:id'
+                                + '/transition',
+                            idParams: [
+                                organizationId, woId,
+                            ],
+                            op: true,
+                            organization:
+                                organizationId,
+                            requesterIdentityId:
+                                adminId,
+                            body: transitionBody,
+                        },
+                        requestAt,
+                    );
+                transitions.push({
+                    body: transitionBody,
+                    messagePair:
+                        transitionMessagePair,
+                });
+            }
+            workOrders.push({
+                id: woId,
+                body,
+                messagePair,
+                joinId: join.id,
+                joinBody,
+                joinMessagePair,
+                transitions,
+            });
+        }
+    } else {
+        for (const spec of WORK_ORDER_GARDEN) {
+            const id = sliceEntityId(
+                token + '-wo-' + spec.suffix);
+            const body: Record<string, unknown> = {
+                display_id: token + spec.position,
+                flow_graph: frozenGraph,
+                position: spec.position,
+                organization_id: organizationId,
+            };
+            const messagePair =
+                await formSeedMessagePair(
+                    {
+                        key: seedMessagePairKey(
+                            'work-orders/:id', id,
+                        ),
+                        routePattern:
+                            'organizations/:id'
+                            + '/work-orders/:id',
+                        idParams: [
+                            organizationId, id,
+                        ],
+                        organization: organizationId,
+                        requesterIdentityId: adminId,
+                        body,
+                    },
+                    requestAt,
+                );
+            const joinId = id;
+            const joinBody = flowWorkOrderJoinSeedBody({
+                id: joinId,
+                flow_id: flowId,
+                work_order_id: id,
+                at: requestAt,
+            });
+            const joinMessagePair =
+                await formSeedMessagePair(
+                    {
+                        key: seedMessagePairKey(
+                            'flows/:id/work-orders/:woid',
+                            joinId,
+                        ),
+                        routePattern:
+                            'organizations/:id/flows/:id'
+                            + '/work-orders/:woid',
+                        idParams: [
+                            organizationId,
+                            flowId,
+                            joinId,
+                        ],
+                        organization: organizationId,
+                        requesterIdentityId: adminId,
+                        body: joinBody,
+                    },
+                    requestAt,
+                );
+            const parkId = parkNodeId[spec.node]!;
+            const transitionEventId =
+                sliceEntityId(
+                    token + '-wo-' + spec.suffix
+                    + '-move');
+            const transitionBody: Record<
+                string, unknown
+            > = {
+                transitionEventId,
+                targetState: parkId,
+                fieldValues: [],
+                release: null,
+                transitionAt: requestAt,
+            };
+            const transitionMessagePair =
+                await formSeedMessagePair(
+                    {
+                        key: seedMessagePairKey(
+                            'work-orders/:id/transition',
+                            transitionEventId,
+                        ),
+                        routePattern:
+                            'organizations/:id'
+                            + '/work-orders/:id'
+                            + '/transition',
+                        idParams: [
+                            organizationId, id,
+                        ],
+                        op: true,
+                        organization: organizationId,
+                        requesterIdentityId: adminId,
+                        body: transitionBody,
+                    },
+                    requestAt,
+                );
+            workOrders.push({
+                id,
+                body,
+                messagePair,
+                joinId,
+                joinBody,
+                joinMessagePair,
+                transitions: [{
+                    body: transitionBody,
+                    messagePair:
+                        transitionMessagePair,
+                }],
+            });
+        }
     }
     return {
         ideas,
@@ -2580,15 +2813,17 @@ async function writeGarden(
                 workOrder.joinMessagePair,
             ),
         ),
-        ...garden.workOrders.map((workOrder) =>
-            postWorkOrderTransitionOp(
-                adapter,
-                workOrder.id,
-                workOrder.transitionBody,
-                SYSTEM_MEMBER_ID,
-                undefined,
-                [],
-                workOrder.transitionMessagePair,
+        ...garden.workOrders.flatMap((workOrder) =>
+            workOrder.transitions.map((row) =>
+                postWorkOrderTransitionOp(
+                    adapter,
+                    workOrder.id,
+                    row.body,
+                    SYSTEM_MEMBER_ID,
+                    undefined,
+                    [],
+                    row.messagePair,
+                ),
             ),
         ),
     ]);
