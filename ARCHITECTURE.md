@@ -260,6 +260,22 @@ through notification channels. Named non-void exceptions:
 [AUDIT.md](AUDIT.md) re-confirms each residual is still
 KNOWN.
 
+## Later work
+
+- READY gate rejects dangling attribute
+  refs and unbind prunes them —
+  `tests/adapters-flow-publish.test.ts`
+- One client 401-recovery voice through
+  `redirectToLogin()` with `?return=` —
+  `tests/adapters-http-facade.test.ts`
+- Toast pause on hover and focus
+- Physical PII erasure — closes KNOWN
+  seam: Erased PII persists as superseded
+  pairs
+- Mock seed's fixed 2026-06-15 anchor —
+  after 2026-09-13 serial-mode FS3
+  carries in-flight heat only
+
 ## Do not resurrect
 
 - `states` table and the event-append address —
