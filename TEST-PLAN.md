@@ -1213,16 +1213,27 @@ opens and renders.)
   can be placed freely on the canvas.
 - [ ] **F17** Drag the start node. PASS: it moves
   freely like any standard node (start and
-  complete nodes are both draggable; Auto Layout
-  restores them to upper-left and lower-right
-  respectively when invoked). Clicking the start
-  node's port still initiates a drag-from-start
-  to create a new state.
+  complete nodes are both draggable; with Auto
+  Layout on, the drop re-lays out — Create
+  returns to the head of the first column,
+  Archive to the foot of the last). Clicking
+  the start node's port still initiates a
+  drag-from-start to create a new state.
 - [ ] **F18** Toggle the Auto Layout header
-  switch. PASS:
-  all nodes reposition based on their rank from
-  start. Create is placed top-left, Archive
-  bottom-right, others arranged by graph depth.
+  switch twice (the seed starts ON — the first
+  toggle turns it off and moves nothing). PASS:
+  all nodes reposition by rank from start — one
+  column per rank (one row per rank when the
+  graph is taller than wide), others by graph
+  depth. Create heads the first column and
+  Archive ends the last — never above or below
+  a column-mate; the covenant is the columns,
+  not the corners. On a fan (Layout Test) both
+  sit mid-height. A long chain wraps into a
+  serpentine (Customer Onboarding,
+  Lead-to-Close): Create leads the top row and
+  Archive ends the last — bottom-left on an
+  even row count.
 - [ ] **F19** Hold Shift and drag from a middle
   node's port over another middle node, then
   release. PASS: during the drag the preview
