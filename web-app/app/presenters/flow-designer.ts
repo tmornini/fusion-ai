@@ -337,6 +337,8 @@ export class FlowDesignerPresenter {
                 this.#snapshot.isAutoFit,
             isLocked:
                 this.#snapshot.isLocked,
+            interaction:
+                this.#snapshot.interaction,
         };
     }
 

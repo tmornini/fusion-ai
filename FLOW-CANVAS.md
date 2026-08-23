@@ -42,7 +42,10 @@ The FSM (`flow-fsm-reduce.ts`) propagates its new state
 to the presenter via the `request-update` action payload,
 consumed by `detail.ts` through
 `presenter.withInteractionState(state)` — the single
-sanctioned seam, no shared mutable state.
+sanctioned seam, no shared mutable state. After every
+commit the page pushes the committed interaction state
+back in the gesture context, so a gesture reduces from
+the committed camera.
 
 ## Gesture rendering
 

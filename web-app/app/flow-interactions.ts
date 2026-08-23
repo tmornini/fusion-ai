@@ -60,6 +60,7 @@ export interface ViewBox {
 export type FlowGestureContext = Readonly<{
     isAutoFit: boolean;
     isLocked: boolean;
+    interaction: InteractionState;
 }>;
 
 export type Selection =
@@ -751,6 +752,9 @@ export function bindInteractions(
 
     return (next) => {
         context = next;
+        if (!isGestureActive(currentState)) {
+            currentState = next.interaction;
+        }
     };
 }
 

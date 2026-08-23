@@ -151,6 +151,79 @@ function buildPresenterWithNodes(
 }
 
 test(
+    'buildGestureContext carries the committed'
+    + ' interaction (the FSM reduces from it)',
+    () => {
+        const presenter =
+            buildPresenterWithNodes(false);
+        const zoomed = presenter.withZoomedIn();
+        assert.notEqual(
+            zoomed.interaction.zoom,
+            presenter.snapshot().interaction.zoom,
+        );
+        const next = new FlowDesignerPresenter(
+            zoomed, 1200, 800,
+            buildFlowHistorySnapshot(false),
+        );
+        assert.equal(
+            next.buildGestureContext().interaction,
+            zoomed.interaction,
+        );
+    },
+);
+
+test(
+    'withZoomedIn steps +0.1 scaling the viewBox about'
+    + ' its center; withZoomedOut reverses it',
+    () => {
+        const presenter =
+            buildPresenterWithNodes(false);
+        const before =
+            presenter.snapshot().interaction;
+        const cx = before.viewBox.x
+            + before.viewBox.w / 2;
+        const cy = before.viewBox.y
+            + before.viewBox.h / 2;
+        const zoomed = presenter.withZoomedIn();
+        const vb = zoomed.interaction.viewBox;
+        const ratio =
+            before.zoom / zoomed.interaction.zoom;
+        assert.ok(
+            Math.abs(zoomed.interaction.zoom - 1.1)
+                < 1e-9,
+        );
+        assert.ok(
+            Math.abs(vb.w - before.viewBox.w * ratio)
+                < 1e-9,
+        );
+        assert.ok(
+            Math.abs(vb.h - before.viewBox.h * ratio)
+                < 1e-9,
+        );
+        assert.ok(
+            Math.abs(vb.x + vb.w / 2 - cx) < 1e-9,
+        );
+        assert.ok(
+            Math.abs(vb.y + vb.h / 2 - cy) < 1e-9,
+        );
+        const back = new FlowDesignerPresenter(
+            zoomed, 1200, 800,
+            buildFlowHistorySnapshot(false),
+        ).withZoomedOut();
+        assert.ok(
+            Math.abs(back.interaction.zoom - 1.0)
+                < 1e-9,
+        );
+        assert.ok(
+            Math.abs(
+                back.interaction.viewBox.w
+                    - before.viewBox.w,
+            ) < 1e-9,
+        );
+    },
+);
+
+test(
     'withFitToBox updates the viewBox to frame'
     + ' the given content box',
     () => {
