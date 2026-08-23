@@ -22,7 +22,7 @@ import type {
     FlowWorkOrderEntity,
     FlowRecordEntity,
     HumanMemberEntity,
-    IdentityEntity,
+    IdentityEntityFields,
     IdentityKind,
     IdentityPiiEntity,
     IdentityCredentialEntity,
@@ -2804,9 +2804,9 @@ export async function postIdentityDocumentOp(
     body: Record<string, unknown>,
     _actor: Id,
     messagePair?: MessagePair,
-): Promise<Omit<IdentityEntity, 'id'>> {
+): Promise<IdentityEntityFields> {
     const entity = withoutId(body) as unknown as
-        Omit<IdentityEntity, 'id'>;
+        IdentityEntityFields;
     return db.transaction(
         // Phase Final Task 2: identities ROW half stripped.
         MESSAGE_TABLES,

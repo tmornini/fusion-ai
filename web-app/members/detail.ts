@@ -34,7 +34,7 @@ import {
 import {
     sessionContext,
     getHumanMember,
-    getHumanMemberEntity,
+    getHumanMemberProfile,
     putHumanMember,
     subscribeHumanMemberChanges,
     getAIMember,
@@ -455,9 +455,9 @@ async function saveHumanMember(
 ): Promise<void> {
     const memberId = s.member.idForLink();
     const ctx = sessionContext();
-    let row;
+    let profile;
     try {
-        row = await getHumanMemberEntity(
+        profile = await getHumanMemberProfile(
             ctx, memberId,
         );
     } catch (err) {
@@ -469,11 +469,15 @@ async function saveHumanMember(
     const patch = trimStrings(
         humanMemberPatchFromDraft(s.draft),
     );
-    const { id: _id, ...rest } = row;
     const {
         name, email, phone, bio, ...detailPatch
     } = patch;
-    const nextDetail = { ...rest, ...detailPatch };
+    const nextDetail = {
+        ...detailPatch,
+        team_dimensions: profile.present
+            ? { ...profile.team_dimensions }
+            : {},
+    };
     const piiPatch = humanMemberPiiPatchIfDirty(
         { name, email, phone, bio }, s.member.pii(),
     );

@@ -7,7 +7,7 @@ import type {
     AttributeType,
     Constraint,
     MemberId,
-    IdentityEntity,
+    IdentityEntityFields,
     IdentityPiiEntity,
     IdentityCredentialEntity,
     IdentityTokenRevocationEntity,
@@ -783,7 +783,7 @@ const IDENTITY_PROFILE_KEYS: readonly string[] = [
 
 export function validateIdentityEntity(
     body: Record<string, unknown>,
-): Omit<IdentityEntity, 'id'> {
+): IdentityEntityFields {
     assertOnlyKeys(
         body, IDENTITY_BODY_KEYS, 'IdentityEntity',
         IDENTITY_PROFILE_KEYS,
@@ -821,7 +821,7 @@ export function validateIdentityEntity(
 }
 
 export interface IdentityDocumentBody {
-    readonly entity: Omit<IdentityEntity, 'id'>;
+    readonly entity: IdentityEntityFields;
 }
 
 // The HTTP-body gate for PUT /identities/:id: the twelfth
