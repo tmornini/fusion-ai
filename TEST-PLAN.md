@@ -258,6 +258,9 @@ Master never re-dispatches a hunter to retry.
   `javascript_tool` and dispatching a synthetic change event.
 - **Keyboard events** (arrows, Cmd+K, Delete, Tab) work
   normally and bypass the pointer-capture limitation.
+- **The canvas `<svg>` is replaced on every commit**:
+  probe `svg.flow-canvas` by fresh query after every
+  click, never through a held element reference.
 - **`kill` syscall against the background HTTP server**: the
   Claude Code sandbox rejects `kill -TERM` and `kill -9`
   against PIDs of long-running background tasks started via
@@ -1301,12 +1304,20 @@ opens and renders.)
 - [ ] **F28** Select an edge, click the Delete
   (trash) button in toolbar. PASS: edge is
   removed from the canvas.
-- [ ] **F29** Click the Zoom in and Zoom out
-  toolbar controls (icon-only buttons;
-  `title` / `aria-label` "Zoom in" / "Zoom out").
-  PASS: canvas zooms in and out smoothly.
-  Toggle the Auto Fit header switch on. PASS:
-  canvas adjusts to show all nodes.
+- [ ] **F29** The seed loads with Auto Fit ON:
+  click Zoom in (icon-only buttons; `title` /
+  `aria-label` "Zoom in" / "Zoom out") — an
+  error toast "Disable Auto-Fit to change the
+  view" appears and `viewBox` stands (F7's
+  gate). Toggle Auto Fit OFF. Click Zoom in,
+  then Zoom out, re-querying `svg.flow-canvas`
+  after each click (every commit rebuilds the
+  `<svg>`). PASS: `viewBox` width and height
+  shrink then restore (zoom steps ±0.1,
+  clamped 0.25–2.0). Click the empty canvas
+  once — `viewBox` keeps the zoomed value.
+  Toggle Auto Fit ON — the canvas re-fits to
+  all nodes.
 - [ ] **F30** Edit a node name via the properties
   panel, wait 1 second for auto-save. Navigate
   away and return to the designer. PASS: all

@@ -157,7 +157,6 @@ class PageState {
     #container: HTMLElement | null = null;
     #canvasW: number = FALLBACK_W;
     #canvasH: number = FALLBACK_H;
-    #needsFit: boolean = true;
     #history: FlowHistorySnapshot =
         buildFlowHistorySnapshot(false);
     #gestureRaf: number | null = null;
@@ -210,14 +209,6 @@ class PageState {
     setCanvasSize(w: number, h: number): void {
         this.#canvasW = w;
         this.#canvasH = h;
-    }
-
-    needsFit(): boolean {
-        return this.#needsFit;
-    }
-
-    setNeedsFit(value: boolean): void {
-        this.#needsFit = value;
     }
 
     history(): FlowHistorySnapshot {
@@ -1529,7 +1520,6 @@ function onFlowLoaded(
     flowId: string,
 ): void {
     pageState.setCanvasSize(FALLBACK_W, FALLBACK_H);
-    pageState.setNeedsFit(true);
     pageState.setHistory(
         buildFlowHistorySnapshot(
             loaded.graph.hasUndoHistory,
@@ -1601,7 +1591,6 @@ function onFlowLoaded(
         const h = initialWrap.clientHeight;
         if (w > 0 && h > 0) {
             pageState.setCanvasSize(w, h);
-            pageState.setNeedsFit(false);
             pageState.presenter()
                 .withCanvasSize(w, h);
             commit(
@@ -1622,7 +1611,6 @@ function onFlowLoaded(
         const h = liveWrap.clientHeight;
         if (w > 0 && h > 0) {
             pageState.setCanvasSize(w, h);
-            pageState.setNeedsFit(true);
             pageState.presenter()
                 .withCanvasSize(w, h);
             update(

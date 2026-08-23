@@ -179,7 +179,6 @@ export class FlowDesignerPresenter {
     readonly #snapshot: FlowSnapshot;
     #canvasW: number;
     #canvasH: number;
-    #needsFit: boolean;
     #history: FlowHistorySnapshot;
 
     // Fix wave (Phase 14 Task 8, post-Task-11-browser-
@@ -213,7 +212,6 @@ export class FlowDesignerPresenter {
     ) {
         this.#canvasW = canvasW;
         this.#canvasH = canvasH;
-        this.#needsFit = true;
         this.#history = history;
         this.#snapshot = migrateToCenter
             ? this.#computeMigrateToCenter(snap)
@@ -1009,8 +1007,7 @@ Auto Fit</label>
     ): FlowSnapshot {
         this.#canvasW = w;
         this.#canvasH = h;
-        if (this.#needsFit) {
-            this.#needsFit = false;
+        if (this.#snapshot.isAutoFit) {
             this.#applyZoomToFit(this.#snapshot);
             return this.#snapshot;
         }

@@ -534,3 +534,30 @@ test(
         );
     },
 );
+
+test(
+    'withCanvasSize keeps a non-auto-fit presenter\'s'
+    + ' zoom — a resize never re-fits the camera',
+    () => {
+        const presenter =
+            buildPresenterWithNodes(false);
+        const zoomed = presenter.withZoomedIn();
+        const next = new FlowDesignerPresenter(
+            zoomed, 1200, 800,
+            buildFlowHistorySnapshot(false),
+        );
+        const resized = next.withCanvasSize(1000, 700);
+        assert.ok(
+            Math.abs(resized.interaction.zoom - 1.1)
+                < 1e-9,
+            'zoom survives the resize',
+        );
+        assert.ok(
+            Math.abs(
+                resized.interaction.viewBox.w
+                    - 1000 / 1.1,
+            ) < 1e-9,
+            'viewBox rescales about the center',
+        );
+    },
+);
