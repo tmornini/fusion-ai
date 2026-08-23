@@ -131,6 +131,8 @@ export type TestPlanSliceReveal = {
     readonly unseatedPassword?: string;
     readonly memberUsername?: string;
     readonly memberPassword?: string;
+    readonly erasableUsername?: string;
+    readonly erasablePassword?: string;
     readonly flowId?: string;
 };
 
@@ -482,6 +484,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'fs-wo-archive-move': 'yFZJuUZhsLwQdJhyAqxlaw',
     'g-org': 'wxOovfCwcKNldjMnmAkuCQ',
     'g-admin': 'kHaSgLhnsobjMXxNLEzpBw',
+    'g-erasable': 'qbtQzOgP8OTJSr9Idicllg',
     'g-idea-active': 'LHTpPuJQpgwmykSTlDezAg',
     'g-idea-in_review': 'MGctitcHoekEYcGdDcSUvQ',
     'g-idea-sent_back': 'mVhTQMpsOwBYEUWrpZLahA',
@@ -1067,6 +1070,13 @@ async function formGExtras(
         requestAt,
         organizationId,
     );
+    const erasable = await formExtraIdentity(
+        'qbtQzOgP8OTJSr9Idicllg',
+        'G Erasable',
+        'g-erasable@test-plan.example',
+        requestAt,
+        organizationId,
+    );
     const firstAi = buildAiMembers()[0]!;
     const aiBody: Record<string, unknown> = {
         name: firstAi.name,
@@ -1089,7 +1099,7 @@ async function formGExtras(
         requestAt,
     );
     return {
-        identities: [unseated, member],
+        identities: [unseated, member, erasable],
         organizationMessagePair,
         extraAdminSeat: {
             identityId: adminId,
@@ -2875,6 +2885,9 @@ function fillPasswords(
         const memberPassword = passwordFor(
             passwords, row.memberUsername,
         );
+        const erasablePassword = passwordFor(
+            passwords, row.erasableUsername,
+        );
         return {
             ...row,
             adminPassword,
@@ -2887,6 +2900,9 @@ function fillPasswords(
             ...(memberPassword === undefined
                 ? {}
                 : { memberPassword }),
+            ...(erasablePassword === undefined
+                ? {}
+                : { erasablePassword }),
         };
     });
 }
@@ -2970,6 +2986,11 @@ export async function postTestPlanSlices(
                 email:
                     'g-member@test-plan.example',
             });
+            recipients.push({
+                identityId: 'qbtQzOgP8OTJSr9Idicllg',
+                email:
+                    'g-erasable@test-plan.example',
+            });
             reveal = {
                 ...reveal,
                 secondOrganizationId: 'WlkfISpndVJfICRnWksipQ',
@@ -2981,6 +3002,9 @@ export async function postTestPlanSlices(
                 memberUsername:
                     'g-member@test-plan.example',
                 memberPassword: '',
+                erasableUsername:
+                    'g-erasable@test-plan.example',
+                erasablePassword: '',
             };
         } else if (section === 'SV') {
             extras.push(await formSvExtras(

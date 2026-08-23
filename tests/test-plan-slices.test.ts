@@ -45,7 +45,7 @@ async function seeded() {
     return { db, reveal };
 }
 
-const EXPECTED_SLICE_MESSAGE_PAIRS = 481;
+const EXPECTED_SLICE_MESSAGE_PAIRS = 485;
 
 test('slices stamp schema last and reveal 14',
 async () => {
@@ -243,6 +243,13 @@ async () => {
     assert.equal(
         memberSeats[0]!.organization_id,
         g.organizationId,
+    );
+    assert.equal(
+        g.erasableUsername,
+        'g-erasable@test-plan.example',
+    );
+    assert.ok(
+        (g.erasablePassword ?? '').length >= 16,
     );
     const requests = await db.messagePairs.getAll();
     const agents = requests.filter((r) =>
