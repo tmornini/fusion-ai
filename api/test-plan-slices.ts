@@ -1164,6 +1164,9 @@ async function formF2Extras(
     const archiveNodeId = sliceEntityId(
         token + '-node-archive',
     );
+    const reviewNodeId = sliceEntityId(
+        token + '-node-review',
+    );
     const recordId = sliceEntityId(
         token + '-record-customer',
     );
@@ -1242,10 +1245,32 @@ async function formF2Extras(
                 ],
             },
             {
-                id: archiveNodeId,
-                name: 'Archive',
+                id: reviewNodeId,
+                name: 'Review',
                 positionX: 480,
                 positionY: 250,
+                isCreate: false,
+                isArchive: false,
+                taskInstructions: '',
+                memberIds: [adminId],
+                attributes: [
+                    {
+                        attribute_id: attr1Id,
+                        mode: 'readonly',
+                        isRequired: false,
+                    },
+                    {
+                        attribute_id: attr2Id,
+                        mode: 'readonly',
+                        isRequired: false,
+                    },
+                ],
+            },
+            {
+                id: archiveNodeId,
+                name: 'Archive',
+                positionX: 680,
+                positionY: 370,
                 isCreate: false,
                 isArchive: true,
                 taskInstructions: '',
@@ -1263,11 +1288,15 @@ async function formF2Extras(
                 toNodeId: captureNodeId,
             },
             {
-                id: sliceEntityId(
-                    'f2-edge-capture-archive',
-                ),
-                name: 'archive',
+                id: sliceEntityId(token + '-edge-submit'),
+                name: 'submit',
                 fromNodeId: captureNodeId,
+                toNodeId: reviewNodeId,
+            },
+            {
+                id: sliceEntityId(token + '-edge-approve'),
+                name: 'approve',
+                fromNodeId: reviewNodeId,
                 toNodeId: archiveNodeId,
             },
         ],

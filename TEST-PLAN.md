@@ -1606,7 +1606,7 @@ depends: A
 
 ### AA13. Workbox Source Flow
 
-- [ ] **AA-WB-SETUP** Verify the seeded Workbox-only flow named `WB Test Flow` (A3 reveal `flow_id`) is READY in Create Work Order: three nodes Create → Capture (text + select attributes) → Archive (`isArchive: true`). Open Workbox, click "+ Create Work Order", and confirm `WB Test Flow` sits in the `READY` section (clickable, `data-flow-id` = reveal `flow_id`). Do not build or rewire the graph. This flow is mutated only by Agent-F2. Agent-F2's WO creation reads from this flow, not from any Agent-F flow. Serial (A3 `--mock-data`): no `WB Test Flow` exists; the subject is Customer Onboarding (READY once its Review node names Sarah Chen and Emily Rodriguez).
+- [ ] **AA-WB-SETUP** Verify the seeded Workbox-only flow named `WB Test Flow` (A3 reveal `flow_id`) is READY in Create Work Order: four nodes Create → Capture (text + select attributes) → Review (read-only) → Archive (`isArchive: true`). Open Workbox, click "+ Create Work Order", and confirm `WB Test Flow` sits in the `READY` section (clickable, `data-flow-id` = reveal `flow_id`). Do not build or rewire the graph. This flow is mutated only by Agent-F2. Agent-F2's WO creation reads from this flow, not from any Agent-F flow. Serial (A3 `--mock-data`): no `WB Test Flow` exists; the subject is Customer Onboarding (READY once its Review node names Sarah Chen and Emily Rodriguez).
 
 ### Workbox Inbox (`workbox/`)
 
