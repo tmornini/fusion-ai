@@ -1538,11 +1538,16 @@ export async function postFlowUndoOp(
     );
     const flowFields = {
         name: pickString(target.body, 'name'),
-        is_locked: pickBoolean(target.body, 'is_locked'),
+        is_locked:
+            pickBoolean(current.body, 'is_locked'),
         is_auto_layout:
-            pickBoolean(target.body, 'is_auto_layout'),
+            pickBoolean(
+                current.body, 'is_auto_layout',
+            ),
         is_auto_fit:
-            pickBoolean(target.body, 'is_auto_fit'),
+            pickBoolean(
+                current.body, 'is_auto_fit',
+            ),
         lock_timeout:
             pickNumber(target.body, 'lock_timeout'),
     };
