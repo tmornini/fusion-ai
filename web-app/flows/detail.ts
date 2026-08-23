@@ -1803,6 +1803,42 @@ function bindFlushOnLeave(
     );
 }
 
+export type DesignerShortcut =
+    | 'escape'
+    | 'delete'
+    | 'undo'
+    | 'redo';
+
+export interface DesignerShortcutInput {
+    readonly key: string;
+    readonly metaKey: boolean;
+    readonly ctrlKey: boolean;
+    readonly shiftKey: boolean;
+    readonly isEditableFocused: boolean;
+    readonly isPanelOpen: boolean;
+}
+
+export function reduceDesignerShortcut(
+    input: DesignerShortcutInput,
+): DesignerShortcut | null {
+    if (input.key === 'Escape') {
+        return input.isPanelOpen ? 'escape' : null;
+    }
+    if (
+        input.key === 'Delete'
+        || input.key === 'Backspace'
+    ) {
+        return input.isEditableFocused
+            ? null : 'delete';
+    }
+    if (!input.metaKey && !input.ctrlKey) return null;
+    if (input.key !== 'z' && input.key !== 'Z') {
+        return null;
+    }
+    if (input.isEditableFocused) return null;
+    return input.shiftKey ? 'redo' : 'undo';
+}
+
 function bindKeyboardShortcuts(
     panelStateRef: PanelStateRef,
     signal: AbortSignal,
@@ -1810,52 +1846,34 @@ function bindKeyboardShortcuts(
     document.addEventListener(
         'keydown',
         (e: KeyboardEvent) => {
-            if (
-                e.key === 'Escape'
-                && panelStateRef.open
-            ) {
-                e.preventDefault();
+            const active = document.activeElement;
+            const shortcut = reduceDesignerShortcut({
+                key: e.key,
+                metaKey: e.metaKey,
+                ctrlKey: e.ctrlKey,
+                shiftKey: e.shiftKey,
+                isEditableFocused:
+                    active instanceof HTMLInputElement
+                    || active instanceof
+                        HTMLTextAreaElement
+                    || active instanceof
+                        HTMLSelectElement,
+                isPanelOpen: panelStateRef.open,
+            });
+            if (shortcut === null) return;
+            e.preventDefault();
+            if (shortcut === 'escape') {
                 panelStateRef.open = false;
                 commit(
                     pageState.presenter()
                         .withPanelOpen(false),
                 );
                 reconcileFitFromDom();
-                return;
-            }
-            if (
-                (e.key === 'Delete'
-                    || e.key === 'Backspace')
-                && !(
-                    document.activeElement
-                    instanceof
-                    HTMLInputElement
-                    || document.activeElement
-                    instanceof
-                    HTMLTextAreaElement
-                    || document.activeElement
-                    instanceof
-                    HTMLSelectElement
-                )
-            ) {
-                e.preventDefault();
+            } else if (shortcut === 'delete') {
                 void handleDeleteSelected();
-            }
-            const mod =
-                e.metaKey || e.ctrlKey;
-            if (!mod) return;
-            if (
-                e.key === 'z'
-                && !e.shiftKey
-            ) {
-                e.preventDefault();
+            } else if (shortcut === 'undo') {
                 void handleUndo();
-            }
-            if (
-                e.key === 'z'
-                && e.shiftKey
-            ) {
-                e.preventDefault();
+            } else {
                 void handleRedo();
             }
         },
