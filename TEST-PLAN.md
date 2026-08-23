@@ -544,19 +544,28 @@ in order.
   that AI. Read mode shows the AI identity card (Name,
   Model as "{name} — {provider}", Description) and a
   Skill Focus row; there is no Auth Token row.
-- [ ] **AA9** From the human member detail, click Edit,
-  change Phone and Bio, toggle one strength on and one
-  off (`.strength-chip` buttons with `data-strength`,
-  toggled by click — not checkboxes), click Save. PASS:
-  toast "Member saved" appears. Navigate away and
-  return to detail. PASS: edited Phone, Bio, and
+- [ ] **AA9** Open the current user's own detail — the
+  seeded admin, who carries three strengths (Strategic
+  Planning, Data Analysis, Stakeholder Management); never
+  an AA5/AA6-added human, which starts with none. Click
+  Edit, change Phone and Bio, toggle Data Analysis off and
+  Agile Methods on (`.strength-chip` buttons with
+  `data-strength`, toggled by click — not checkboxes),
+  click Save. PASS: toast "Member saved" appears and the
+  page returns to read mode showing the edits — no
+  navigation. Read mode renders `#member-strengths
+  .pill-tag-strength` spans (three, with no
+  `data-strength`); `.strength-chip` is edit-only. Reload
+  the page. PASS: edited Phone, Bio, and the three
   strengths persist.
 - [ ] **AA9a** From an AI member detail, click Edit,
   change Description and Skill Focus, and pick a
   different Model from the pulldown (grouped by
   provider, current model pre-selected), click Save.
-  PASS: toast "AI member saved" fires; on reopen the
-  edited Description, Skill Focus, and Model persist.
+  PASS: toast "AI member saved" fires and the
+  page returns to read mode showing the edits — no
+  navigation. Reload; the edited Description, Skill Focus,
+  and Model persist.
   There is no Auth Token field.
 - [ ] **AA10** Navigate to Organization. Click the
   page-level Edit button (a single button at the page
@@ -2222,13 +2231,14 @@ depends: A
   Styles card stays read-only.
 - [ ] **G21** Edit Phone and Bio, toggle one strength on
   and one off, click Save. PASS: toast "Member saved"
-  appears. Navigate away (e.g. to Dashboard) and return.
-  PASS: all edits persist.
+  appears. PASS: the page returns to read mode showing
+  the edits. Reload; all edits persist.
 - [ ] **G22** Click Edit, change a field, press `Escape`.
   PASS: edits discarded, view returns to read mode.
 - [ ] **G23** Click Edit, change a text field, press
   `Enter` while focused on the input. PASS: save fires
-  (toast "Member saved").
+  (toast "Member saved") and the page returns to read
+  mode.
 - [ ] **G23a** From `member-detail`, click the back button.
   PASS: returns to `members/index.html`.
 
@@ -2245,10 +2255,12 @@ depends: A
   textarea, Skill Focus textarea); there is no Auth
   Token field.
   Change Description and Skill Focus, click Save. PASS:
-  toast "AI member saved"; on reopen the edits persist.
+  toast "AI member saved"; the page returns to read mode
+  showing the edits; reload and they persist.
 - [ ] **G24b** Click Edit again, pick a different Model
   from the pulldown, click Save. PASS: toast "AI member
-  saved"; on reopen the read view shows the new model as
+  saved"; the page returns to read mode showing the new
+  model; reload and it persists as
   "{name} — {provider}".
 
 ### Identities (list & detail) (`identities/`, `identities/detail.html`)

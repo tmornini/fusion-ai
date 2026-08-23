@@ -204,12 +204,9 @@ export async function init(
     });
 }
 
-export function reduceRefresh(
-    current: PageState,
-    fresh: HumanMember | AIMember | null,
+export function reduceSave(
+    fresh: HumanMember | AIMember,
 ): PageState {
-    if (current.kind === 'editing') return current;
-    if (fresh === null) return current;
     if (fresh.kind === 'human') {
         return {
             kind: 'reading',
@@ -222,6 +219,15 @@ export function reduceRefresh(
         variant: 'ai',
         member: fresh,
     };
+}
+
+export function reduceRefresh(
+    current: PageState,
+    fresh: HumanMember | AIMember | null,
+): PageState {
+    if (current.kind === 'editing') return current;
+    if (fresh === null) return current;
+    return reduceSave(fresh);
 }
 
 async function refresh(
@@ -492,6 +498,17 @@ async function saveHumanMember(
         return;
     }
     showToast('Member saved', 'success');
+    let fresh;
+    try {
+        fresh = await getHumanMember(ctx, memberId);
+    } catch (err) {
+        reportFault(
+            ctx, 'Failed to reload member', err,
+        );
+        return;
+    }
+    state = reduceSave(fresh);
+    rerender();
 }
 
 async function saveAIMember(
@@ -538,4 +555,15 @@ async function saveAIMember(
     showToast(
         'AI member saved', 'success',
     );
+    let fresh;
+    try {
+        fresh = await getAIMember(ctx, memberId);
+    } catch (err) {
+        reportFault(
+            ctx, 'Failed to reload AI member', err,
+        );
+        return;
+    }
+    state = reduceSave(fresh);
+    rerender();
 }
