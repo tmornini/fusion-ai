@@ -611,3 +611,62 @@ test(
         }
     },
 );
+
+test(
+    'canvas-key-activate on a node single-selects it,'
+    + ' opens the panel, and requests an update',
+    () => {
+        const state = buildState();
+        const r = reduceFsm(state, {
+            kind: 'canvas-key-activate',
+            nodeId: 'n1',
+            edgeId: null,
+        });
+        assert.equal(
+            r.state.selection.kind, 'nodes',
+        );
+        if (r.state.selection.kind === 'nodes') {
+            assert.deepEqual(
+                [...r.state.selection.nodeIds],
+                ['n1'],
+            );
+        }
+        const open = findAction(
+            r.actions, 'open-panel',
+        );
+        assert.equal(open?.open, true);
+        const update = findAction(
+            r.actions, 'request-update',
+        );
+        assert.ok(update);
+        assert.equal(update.state, r.state);
+    },
+);
+
+test(
+    'canvas-key-activate on an edge selects the edge'
+    + ' and opens the panel',
+    () => {
+        const state = buildState();
+        const r = reduceFsm(state, {
+            kind: 'canvas-key-activate',
+            nodeId: null,
+            edgeId: 'e1',
+        });
+        assert.equal(
+            r.state.selection.kind, 'edge',
+        );
+        if (r.state.selection.kind === 'edge') {
+            assert.equal(
+                r.state.selection.edgeId, 'e1',
+            );
+        }
+        const open = findAction(
+            r.actions, 'open-panel',
+        );
+        assert.equal(open?.open, true);
+        assert.ok(findAction(
+            r.actions, 'request-update',
+        ));
+    },
+);
