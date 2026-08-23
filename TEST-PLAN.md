@@ -1329,22 +1329,21 @@ opens and renders.)
 
 ### Flow Designer — Undo/Redo
 
-(Undo is undo-as-replay (Phase 14 Task 8): the server
-resolves the restore target by replaying the flow's own
-document-message-pair history against its own undo operation-message-pair
-history (stack+pointer — a second consecutive undo goes
-FURTHER back rather than oscillating; a save after an
-undo-undo truncates the abandoned branch). This cursor
-algorithm, redo's in-memory stack, exhaustion as a graceful
-no-op, and the 412-retry-then-fresh-resolve on a save racing
-an undo are covered by `tests/flow-undo-cursor.test.ts` and
-`tests/flow-operations.test.ts` (`performUndo` /
-`performRedo`). `flow_versions` routes were RETIRED
-(Phase 15 Task 7; router 404) and the table is DELETED
-(Phase Final); undo walks the flow's own document-message-pair
-history only. The cases below verify the toolbar buttons,
-the keyboard shortcuts, the disabled states, and that the
-canvas re-renders after each step.)
+(Undo is undo-as-replay (Phase 14 Task 8): the server resolves the restore
+target by replaying the flow's own document-message-pair history against its
+own undo operation-message-pair history (stack+pointer — a second consecutive
+undo goes FURTHER back rather than oscillating; a save after an undo-undo
+truncates the abandoned branch). Redo is client-only — an in-memory stack
+(`web-app/app/flow-history.ts`) cleared by `recordFlowMutation()` on every
+committed content edit. This cursor algorithm, redo's in-memory stack,
+exhaustion as a graceful no-op, and the 412-retry-then-fresh-resolve on a save
+racing an undo are covered by `tests/flow-undo-cursor.test.ts` and
+`tests/flow-operations.test.ts` (`performUndo` / `performRedo`).
+`flow_versions` routes were RETIRED (Phase 15 Task 7; router 404) and the
+table is DELETED (Phase Final); undo walks the flow's own
+document-message-pair history only. The cases below verify the toolbar
+buttons, the keyboard shortcuts, the disabled states, and that the canvas
+re-renders after each step.)
 
 - [ ] **F32** After adding a state, click the Undo
   toolbar button. PASS: the state and its
@@ -1361,10 +1360,19 @@ canvas re-renders after each step.)
   restored.
 - [ ] **F36** Undo and Redo buttons are disabled
   when their respective stacks are empty. PASS:
-  buttons show disabled state initially.
+  buttons show disabled state initially. (Undo
+  may stay enabled at exhaustion —
+  `hasUndoHistory` is `pairs > 1`
+  (`api/derive-flows.ts`) — and the click is a
+  graceful server no-op.)
 - [ ] **F37** Perform an action, undo, then perform
-  a new action. PASS: the redo stack is cleared
-  (redo button disabled).
+  a new action; let the new action's
+  `PUT /api/organizations/:id/flows/:id` land —
+  a panel rename saves `SAVE_DELAY_MS` = 800 ms
+  after the last keystroke; do not click the
+  canvas or another node before the PUT. PASS:
+  the redo stack is cleared (redo button
+  disabled).
 - [ ] **F37a** Open the same flow in two tabs. In tab A, edit
   a node name and let auto-save complete. In tab B (which
   still shows the pre-edit head), click Undo immediately.
@@ -1439,16 +1447,16 @@ canvas re-renders after each step.)
   (ZIP round-trip is covered by `tests/zip-guards.test.ts`; this
   case verifies the `.zip` import path through the dialog and the
   preserved-position rendering.)
-- [ ] **F45** Make 11 edits in the flow designer (e.g. rename 11
-  nodes one at a time, waiting for each auto-save), then click
-  Undo 11 times in a row. PASS: every one of the 11 edits
-  reverts in order — undo history is NO LONGER capped at 10
-  (Phase 14 Task 8 retired the `FLOW_VERSION_CAP` trim from the
-  live path; undo now walks the flow's own full document-message-pair
-  history). The `flow_versions` store is DELETED (Phase
-  Final) — there is nothing to inspect; the flow's own
-  document-message-pair history in `message_pairs` is the
-  sole undo source.
+- [ ] **F45** Rename 11 nodes one at a time; after each
+  name, wait for that flow's `PUT /api/organizations/
+  :id/flows/:id` in the network log (the save fires
+  `SAVE_DELAY_MS` = 800 ms after the last keystroke)
+  before selecting the next node. Then click Undo 11
+  times in a row. PASS: every one of the 11 renames
+  reverts in order — undo walks the flow's own full
+  document-message-pair history (`FLOW_VERSION_CAP`
+  and `flow_versions` are retired; there is no
+  10-edit bound).
 - [ ] **F46** Edit a flow (rename a state), let auto-save complete.
   Navigate away from the designer to `flows/index.html`. Re-open the
   same flow. Click Undo. PASS: the rename reverts — the undo history

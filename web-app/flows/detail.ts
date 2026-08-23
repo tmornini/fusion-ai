@@ -1263,30 +1263,45 @@ function bindPanelActions(
             const id = target.id;
             const value = target.value;
             if (id === 'prop-node-name') {
+                const nodeId = pageState
+                    .presenter().selectedNodeId();
+                if (nodeId === null) return;
                 pageState.saveDebouncer().schedule(
                     () => commit(
                         pageState.presenter()
-                            .withNodeNamed(value),
+                            .withNodeNamed(
+                                nodeId, value,
+                            ),
                         { advanceHistory: true },
                     ),
                 );
             } else if (
                 id === 'prop-node-instructions'
             ) {
+                const nodeId = pageState
+                    .presenter().selectedNodeId();
+                if (nodeId === null) return;
                 pageState.saveDebouncer().schedule(
                     () => commit(
                         pageState.presenter()
-                            .withNodeTaskInstructions(value),
+                            .withNodeTaskInstructions(
+                                nodeId, value,
+                            ),
                         { advanceHistory: true },
                     ),
                 );
             } else if (
                 id === 'prop-edge-name'
             ) {
+                const edgeId = pageState
+                    .presenter().selectedEdgeId();
+                if (edgeId === null) return;
                 pageState.saveDebouncer().schedule(
                     () => commit(
                         pageState.presenter()
-                            .withEdgeNamed(value),
+                            .withEdgeNamed(
+                                edgeId, value,
+                            ),
                         { advanceHistory: true },
                     ),
                 );

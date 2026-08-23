@@ -806,14 +806,12 @@ Auto Fit</label>
     }
 
     withNodeNamed(
+        nodeId: string,
         name: string,
     ): FlowSnapshot {
         if (this.#guardLocked()) {
             return this.#snapshot;
         }
-        const nodeId = this
-            .#singleSelectedNodeId();
-        if (!nodeId) return this.#snapshot;
         const next: FlowSnapshot = {
             ...this.#snapshot,
             nodes: applyUpdateNode(
@@ -828,14 +826,12 @@ Auto Fit</label>
     }
 
     withNodeTaskInstructions(
+        nodeId: string,
         text: string,
     ): FlowSnapshot {
         if (this.#guardLocked()) {
             return this.#snapshot;
         }
-        const nodeId = this
-            .#singleSelectedNodeId();
-        if (!nodeId) return this.#snapshot;
         const next: FlowSnapshot = {
             ...this.#snapshot,
             nodes: applyUpdateNode(
@@ -872,22 +868,17 @@ Auto Fit</label>
     }
 
     withEdgeNamed(
+        edgeId: string,
         name: string,
     ): FlowSnapshot {
         if (this.#guardLocked()) {
-            return this.#snapshot;
-        }
-        const sel =
-            this.#snapshot.interaction
-                .selection;
-        if (sel.kind !== 'edge') {
             return this.#snapshot;
         }
         const next: FlowSnapshot = {
             ...this.#snapshot,
             edges: applyUpdateEdge(
                 this.#snapshot.edges,
-                sel.edgeId,
+                edgeId,
                 { name: name.trim() },
             ),
         };

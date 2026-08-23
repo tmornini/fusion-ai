@@ -561,3 +561,94 @@ test(
         );
     },
 );
+
+test(
+    'withNodeNamed(id, name) renames that node even'
+    + ' when the selection has moved to another',
+    () => {
+        const graph = {
+            ...emptyGraph,
+            nodes: [node('a'), node('b')],
+        };
+        const snap = buildInitialFlowSnapshot(
+            graph, 800, 600, [], [], [],
+        );
+        const selectedB = {
+            ...snap,
+            interaction: {
+                ...snap.interaction,
+                selection: {
+                    kind: 'nodes' as const,
+                    nodeIds: new Set(['b']),
+                },
+            },
+        };
+        const presenter = new FlowDesignerPresenter(
+            selectedB, 800, 600,
+            buildFlowHistorySnapshot(false),
+        );
+        const next = presenter
+            .withNodeNamed('a', 'typed');
+        assert.equal(
+            next.nodes.find(n => n.id === 'a')!.name,
+            'typed',
+        );
+        assert.equal(
+            next.nodes.find(n => n.id === 'b')!.name,
+            'B',
+        );
+    },
+);
+
+test(
+    'withNodeNamed(id, name) applies with no selection'
+    + ' at all — the flush is bound to its target',
+    () => {
+        const graph = {
+            ...emptyGraph,
+            nodes: [node('a')],
+        };
+        const snap = buildInitialFlowSnapshot(
+            graph, 800, 600, [], [], [],
+        );
+        const presenter = new FlowDesignerPresenter(
+            snap, 800, 600,
+            buildFlowHistorySnapshot(false),
+        );
+        const next = presenter
+            .withNodeNamed('a', 'typed');
+        assert.equal(
+            next.nodes.find(n => n.id === 'a')!.name,
+            'typed',
+        );
+    },
+);
+
+test(
+    'withEdgeNamed(id, name) applies with no selection',
+    () => {
+        const graph = {
+            ...emptyGraph,
+            nodes: [node('a'), node('b')],
+            edges: [{
+                id: 'e1',
+                name: 'go',
+                fromNodeId: 'a',
+                toNodeId: 'b',
+            }],
+        };
+        const snap = buildInitialFlowSnapshot(
+            graph, 800, 600, [], [], [],
+        );
+        const presenter = new FlowDesignerPresenter(
+            snap, 800, 600,
+            buildFlowHistorySnapshot(false),
+        );
+        const next = presenter
+            .withEdgeNamed('e1', 'renamed');
+        assert.equal(
+            next.edges.find(e => e.id === 'e1')!.name,
+            'renamed',
+        );
+    },
+);
