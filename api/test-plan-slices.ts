@@ -29,6 +29,7 @@ import {
     postWorkOrderDocumentOp,
     postWorkOrderTransitionOp,
     postFlowWorkOrderDocumentOp,
+    postFlowRecordDocumentOp,
     recordDocumentBodyOf,
     recordAttributeDocumentBodyOf,
     objectiveDocumentBodyOf,
@@ -54,6 +55,7 @@ import {
     projectSeedBody,
     objectiveSeedBody,
     flowWorkOrderJoinSeedBody,
+    flowRecordJoinSeedBody,
 } from './mock-data/seed-message-pairs.ts';
 import { daysFromNow } from
     './mock-data/seed-kit.ts';
@@ -241,6 +243,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'c-attr-2': 'xNXoGMjCgYkFgSHylrrnvQ',
     'c-state-record-customer': 'rpgPxnrYlfBQcoQsjyKIiQ',
     'c-flow': 'wGFoZKHuJIhDNkuFtafOVw',
+    'c-flow-record': 'mYgImTkt_AtV2LrJ1sPmew',
     'c-node-create': 'VOvZGYNDScsZkzLaIcYeLQ',
     'c-node-capture': 'zbFAvlwrMvHAZlMRuPHJng',
     'c-node-review': 'COZlWfLvbhNbTmiNphBSHg',
@@ -278,6 +281,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'd-attr-2': 'ozydrOWHXZrZPJAQptHwrQ',
     'd-state-record-customer': 'rlAWvPiEfgBjDtydoXxQDw',
     'd-flow': 'UgQvGSOzRwAGysXHQfZPCg',
+    'd-flow-record': 'nOIYYiLPQ6ki2E3kLWzJqQ',
     'd-node-create': 'vArHIbnQwQmROVYGygqIHA',
     'd-node-capture': 'ZaApzKSTovzCKivtrHbiEw',
     'd-node-review': 'ZJlbmGQBfiJOfIOQWRPwKw',
@@ -315,6 +319,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'e-attr-2': 'POolfJPMtENAIloFzGNnvg',
     'e-state-record-customer': 'PDHSUSnzFoTcdyXZBbxWWQ',
     'e-flow': 'iaLNFiscTqqcDmAlALPbOw',
+    'e-flow-record': '9rHRouE6MKL_PFReiXoLwg',
     'e-node-create': 'XjxsYNrgybpgkiWBavvNbQ',
     'e-node-capture': 'svIbPlhAzRJPGYDMNPlDQA',
     'e-node-review': 'vhIaJtmJbKJVZFtWeGVasA',
@@ -352,6 +357,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'f-attr-2': 'XzsBTUrqoijPRVPskGmYbA',
     'f-state-record-customer': 'MfeoyMCsGYmicGSkZuxbew',
     'f-flow': 'WGrawvQlBCEtOwQaDfNYzg',
+    'f-flow-record': 'dldB6BJT-hmWC6RV_uxupQ',
     'f-node-create': 'UlwhAnqPkssQBaKWPOjPHw',
     'f-node-capture': 'joVDOAiJZVtgnElmOCAyAA',
     'f-node-review': 'LVryuKRUgVkuTdVeKYqDcw',
@@ -425,6 +431,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'fs-attr-2': 'SSzlwaLazYbrbVTxBoEPrg',
     'fs-state-record-customer': 'bKxhTVKnzuDKMgEwORgacg',
     'fs-flow': 'zFkTGJvfUppRCCdJvFszcg',
+    'fs-flow-record': '_hrSZwgy2Nwwjg8H5sVMRw',
     'fs-node-create': 'KRUlvITqCzLbngoRcKaTAQ',
     'fs-node-capture': 'QYypRkKLzMGbSGxotgIxNQ',
     'fs-node-review': 'jVhhOAhaHKPbIJuhwYjDSg',
@@ -561,6 +568,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'k-attr-2': 'czuxJBVggLcKkJSPkLbZMQ',
     'k-state-record-customer': 'PpTgnhjiIgWVPOkfKAcazA',
     'k-flow': 'KLmPzgUDqnlEfkDSIZnTqg',
+    'k-flow-record': 'thCp5woj-unXfr4jxJsUcw',
     'k-node-create': 'THtUTDrIWcEdlAwJgjvzyw',
     'k-node-capture': 'yyIZUPVeYThRDRAhqrpEfQ',
     'k-node-review': 'icFCNQEmjzyjwhgOJdxYRg',
@@ -598,6 +606,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'r-attr-2': 'dqyTeecJBQmttvQWXErnRg',
     'r-state-record-customer': 'pAdySOwTblAIOGayXpfKSA',
     'r-flow': 'woyUPAYCghVYHwkFAUEZEQ',
+    'r-flow-record': 'SUn6E2xm_GnhV4Jpb_DqFg',
     'r-node-create': 'iZmbcpBGnOexjJdnUFtALA',
     'r-node-capture': 'mUApBGklrQKzvoBaxlRalw',
     'r-node-review': 'CihiRQzXuHILZTTKOpAgag',
@@ -1377,6 +1386,9 @@ type GardenObjective = {
 type GardenRecord = {
     readonly body: Record<string, unknown>;
     readonly messagePairs: RecordWriteMessagePairs;
+    readonly bindingId: string;
+    readonly bindingBody: Record<string, unknown>;
+    readonly bindingMessagePair: MessagePair;
 };
 
 type GardenFlow = {
@@ -1403,6 +1415,150 @@ type GardenWrites = {
     readonly flow: GardenFlow;
     readonly workOrders: readonly GardenWorkOrder[];
 };
+
+async function formRecordBindingMessagePairs(
+    args: {
+        readonly organizationId: string;
+        readonly adminId: string;
+        readonly requestAt: string;
+        readonly recordId: string;
+        readonly attributes: readonly {
+            readonly id: string;
+            readonly name: string;
+            readonly attribute_type: string;
+            readonly sort_order: number;
+            readonly options: readonly string[];
+            readonly constraints: readonly unknown[];
+        }[];
+        readonly flowId: string;
+        readonly bindingId: string;
+        readonly recordName: string;
+        readonly recordDescription: string;
+        readonly recordPosition: number;
+        readonly initialStateEventId: string;
+    },
+): Promise<{
+    readonly body: Record<string, unknown>;
+    readonly messagePairs: RecordWriteMessagePairs;
+    readonly bindingBody: Record<string, unknown>;
+    readonly bindingMessagePair: MessagePair;
+}> {
+    const attributeRows = args.attributes.map(
+        (attribute) => ({
+            ...attribute,
+            record_id: args.recordId,
+            organization_id: args.organizationId,
+        }),
+    );
+    const body: Record<string, unknown> = {
+        kind: 'create',
+        id: args.recordId,
+        record: {
+            organization_id: args.organizationId,
+            name: args.recordName,
+            description: args.recordDescription,
+            position: args.recordPosition,
+        },
+        attributes: attributeRows,
+        initialState: 'active',
+        initialStateEventId: args.initialStateEventId,
+        initialStateAt: args.requestAt,
+    };
+    const validated = validateRecordWriteBody(body);
+    const operation = await formSeedMessagePair(
+        {
+            key: seedMessagePairKey(
+                RECORD_TYPES_COLLECTION_PATTERN,
+                args.recordId,
+            ),
+            routePattern:
+                RECORD_TYPES_COLLECTION_PATTERN,
+            idParams: [args.organizationId],
+            op: true,
+            organization: args.organizationId,
+            requesterIdentityId: args.adminId,
+            body,
+        },
+        args.requestAt,
+    );
+    const document = await formSeedMessagePair(
+        {
+            key: seedMessagePairKey(
+                RECORD_TYPE_DETAIL_PATTERN,
+                args.recordId,
+            ),
+            routePattern: RECORD_TYPE_DETAIL_PATTERN,
+            idParams: [
+                args.organizationId, args.recordId,
+            ],
+            organization: args.organizationId,
+            requesterIdentityId: args.adminId,
+            body: recordDocumentBodyOf(validated),
+        },
+        args.requestAt,
+    );
+    const attributePuts: MessagePair[] = [];
+    for (const attribute of attributeRows) {
+        attributePuts.push(await formSeedMessagePair(
+            {
+                key: seedMessagePairKey(
+                    ATTRIBUTE_DETAIL_PATTERN,
+                    attribute.id,
+                ),
+                routePattern: ATTRIBUTE_DETAIL_PATTERN,
+                idParams: [
+                    args.organizationId,
+                    args.recordId,
+                    attribute.id,
+                ],
+                organization: args.organizationId,
+                requesterIdentityId: args.adminId,
+                body: recordAttributeDocumentBodyOf(
+                    attribute as unknown as
+                        Record<string, unknown>,
+                ),
+            },
+            args.requestAt,
+        ));
+    }
+    const bindingBody = flowRecordJoinSeedBody({
+        id: args.bindingId,
+        flow_id: args.flowId,
+        record_id: args.recordId,
+        at: args.requestAt,
+    });
+    const bindingMessagePair = await formSeedMessagePair(
+        {
+            key: seedMessagePairKey(
+                'flows/:id/records/:frid',
+                args.bindingId,
+            ),
+            routePattern:
+                'organizations/:id/flows/:id'
+                + '/records/:frid',
+            idParams: [
+                args.organizationId,
+                args.flowId,
+                args.bindingId,
+            ],
+            organization: args.organizationId,
+            requesterIdentityId: args.adminId,
+            body: bindingBody,
+        },
+        args.requestAt,
+    );
+    return {
+        body,
+        messagePairs: {
+            operation,
+            document,
+            attributePuts,
+            attributeDeletes: [],
+        },
+        bindingBody,
+        bindingMessagePair,
+    };
+}
 
 async function formGarden(
     token: string,
@@ -1585,102 +1741,43 @@ async function formGarden(
     const profile = buildRecords()[0]!;
     const recordId = sliceEntityId(
         token + '-record-customer');
-    const attributeRows = [
-        {
-            id: sliceEntityId(token + '-attr-1'),
-            record_id: recordId,
-            organization_id: organizationId,
-            name: 'Company Name',
-            attribute_type: 'text',
-            sort_order: 1,
-            options: [] as string[],
-            constraints: [] as unknown[],
-        },
-        {
-            id: sliceEntityId(token + '-attr-2'),
-            record_id: recordId,
-            organization_id: organizationId,
-            name: 'Contact Email',
-            attribute_type: 'text',
-            sort_order: 2,
-            options: [] as string[],
-            constraints: [] as unknown[],
-        },
-    ];
-    const recordBody: Record<string, unknown> = {
-        kind: 'create',
-        id: recordId,
-        record: {
-            organization_id: organizationId,
-            name: profile.name,
-            description: profile.description,
-            position: profile.position,
-        },
-        attributes: attributeRows,
-        initialState: 'active',
-        initialStateEventId:
-            sliceEntityId(
-            token + '-state-record-customer'),
-        initialStateAt: requestAt,
-    };
-    const validatedRecord =
-        validateRecordWriteBody(recordBody);
-    const recordOperationMessagePair = await formSeedMessagePair(
-        {
-            key: seedMessagePairKey(
-                RECORD_TYPES_COLLECTION_PATTERN,
-                recordId,
-            ),
-            routePattern:
-                RECORD_TYPES_COLLECTION_PATTERN,
-            idParams: [organizationId],
-            op: true,
-            organization: organizationId,
-            requesterIdentityId: adminId,
-            body: recordBody,
-        },
-        requestAt,
-    );
-    const recordDocumentMessagePair = await formSeedMessagePair(
-        {
-            key: seedMessagePairKey(
-                RECORD_TYPE_DETAIL_PATTERN, recordId,
-            ),
-            routePattern: RECORD_TYPE_DETAIL_PATTERN,
-            idParams: [organizationId, recordId],
-            organization: organizationId,
-            requesterIdentityId: adminId,
-            body: recordDocumentBodyOf(
-                validatedRecord,
-            ),
-        },
-        requestAt,
-    );
-    const attributePuts: MessagePair[] = [];
-    for (const attribute of attributeRows) {
-        attributePuts.push(await formSeedMessagePair(
-            {
-                key: seedMessagePairKey(
-                    ATTRIBUTE_DETAIL_PATTERN,
-                    attribute.id,
-                ),
-                routePattern: ATTRIBUTE_DETAIL_PATTERN,
-                idParams: [
-                    organizationId,
-                    recordId,
-                    attribute.id,
-                ],
-                organization: organizationId,
-                requesterIdentityId: adminId,
-                body: recordAttributeDocumentBodyOf(
-                    attribute as unknown as
-                        Record<string, unknown>,
-                ),
-            },
-            requestAt,
-        ));
-    }
+    const attr1Id = sliceEntityId(token + '-attr-1');
+    const attr2Id = sliceEntityId(token + '-attr-2');
     const flowId = sliceEntityId(token + '-flow');
+    const bindingId = sliceEntityId(
+        token + '-flow-record');
+    const formedRecord =
+        await formRecordBindingMessagePairs({
+            organizationId,
+            adminId,
+            requestAt,
+            recordId,
+            attributes: [
+                {
+                    id: attr1Id,
+                    name: 'Company Name',
+                    attribute_type: 'text',
+                    sort_order: 1,
+                    options: [],
+                    constraints: [],
+                },
+                {
+                    id: attr2Id,
+                    name: 'Contact Email',
+                    attribute_type: 'text',
+                    sort_order: 2,
+                    options: [],
+                    constraints: [],
+                },
+            ],
+            flowId,
+            bindingId,
+            recordName: profile.name,
+            recordDescription: profile.description,
+            recordPosition: profile.position,
+            initialStateEventId: sliceEntityId(
+                token + '-state-record-customer'),
+        });
     const createNodeId = sliceEntityId(token + '-node-create');
     const captureNodeId = sliceEntityId(
         token + '-node-capture');
@@ -1709,7 +1806,18 @@ async function formGarden(
                 isArchive: false,
                 taskInstructions: '',
                 memberIds: [adminId],
-                attributes: [],
+                attributes: [
+                    {
+                        attribute_id: attr1Id,
+                        mode: 'editable',
+                        isRequired: true,
+                    },
+                    {
+                        attribute_id: attr2Id,
+                        mode: 'editable',
+                        isRequired: true,
+                    },
+                ],
             },
             {
                 id: reviewNodeId,
@@ -1720,7 +1828,18 @@ async function formGarden(
                 isArchive: false,
                 taskInstructions: '',
                 memberIds: [adminId],
-                attributes: [],
+                attributes: [
+                    {
+                        attribute_id: attr1Id,
+                        mode: 'readonly',
+                        isRequired: false,
+                    },
+                    {
+                        attribute_id: attr2Id,
+                        mode: 'readonly',
+                        isRequired: false,
+                    },
+                ],
             },
             {
                 id: archiveNodeId,
@@ -1951,13 +2070,12 @@ async function formGarden(
         projects,
         objectives,
         record: {
-            body: recordBody,
-            messagePairs: {
-                operation: recordOperationMessagePair,
-                document: recordDocumentMessagePair,
-                attributePuts,
-                attributeDeletes: [],
-            },
+            body: formedRecord.body,
+            messagePairs: formedRecord.messagePairs,
+            bindingId,
+            bindingBody: formedRecord.bindingBody,
+            bindingMessagePair:
+                formedRecord.bindingMessagePair,
         },
         flow: {
             body: flowBody,
@@ -2014,6 +2132,13 @@ async function writeGarden(
             garden.record.body,
             SYSTEM_MEMBER_ID,
             garden.record.messagePairs,
+        ),
+        postFlowRecordDocumentOp(
+            adapter,
+            garden.record.bindingId,
+            garden.record.bindingBody,
+            SYSTEM_MEMBER_ID,
+            garden.record.bindingMessagePair,
         ),
         postFlowCreationOp(
             adapter,
