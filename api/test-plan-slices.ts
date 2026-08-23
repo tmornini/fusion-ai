@@ -89,8 +89,10 @@ import { OBJECTIVE_SEEDS } from
     './mock-data/objectives.ts';
 import { buildRecords } from
     './mock-data/records.ts';
-import { buildFlowGraphRelations } from
-    './mock-data/flows.ts';
+import {
+    buildFlows,
+    buildFlowGraphRelations,
+} from './mock-data/flows.ts';
 import {
     validateObjectiveCreateBody,
     validateRecordWriteBody,
@@ -374,6 +376,9 @@ const SLICE_ENTITY_IDS: Readonly<
     'f-edge-approve': 'DBacZPqqChMYfkjjqSRZog',
     'f-project-flow': 'LBcldHIXITLfvljfXpefog',
     'f-state-flow': 'wXEqVCZvISuDsLdNNCWLeQ',
+    'f-layout-flow': 'bjwmUYT-PowOqpyLivLrgQ',
+    'f-layout-project-flow': 'Tw3ysK1fsVQV28ORCYx40g',
+    'f-layout-state': 'OTUsms6qK3oiqFXHnntnqw',
     'f-wo-capture': 'PrfmrgcRHkNLhzlhPoPVUg',
     'f-wo-review': 'WOJPFOKFmWASZROqIiiCig',
     'f-wo-archive': 'VnmXenQTOeGhKheRJEvFQA',
@@ -1346,6 +1351,134 @@ async function formF2Extras(
         bindingMessagePair:
             formedRecord.bindingMessagePair,
         instanceMessagePair,
+    };
+}
+
+type FFlowWrites = {
+    readonly body: Record<string, unknown>;
+    readonly messagePairs: FlowCreationMessagePairs;
+};
+
+async function formFExtras(
+    organizationId: string,
+    adminId: string,
+    requestAt: string,
+): Promise<FFlowWrites> {
+    const layout = buildFlows().find((flow) =>
+        flow.name
+            === 'Layout Test: Proposal Review Cycle',
+    );
+    if (layout === undefined) {
+        throw new Error(
+            'no Layout Test flow in buildFlows',
+        );
+    }
+    const flowId = sliceEntityId('f-layout-flow');
+    const projectId = sliceEntityId(
+        'f-project-approved-2',
+    );
+    const projectFlowId = sliceEntityId(
+        'f-layout-project-flow',
+    );
+    const relations = buildFlowGraphRelations(
+        [{ id: flowId, graph: layout.graph }],
+        requestAt,
+    );
+    const nodeIds = new Set(
+        relations.nodes.map((node) => node.id),
+    );
+    const flowBody: Record<string, unknown> = {
+        id: flowId,
+        flow: {
+            organization_id: organizationId,
+            name: layout.name,
+            is_locked: layout.is_locked,
+            is_auto_layout: layout.is_auto_layout,
+            is_auto_fit: layout.is_auto_fit,
+            lock_timeout: layout.lock_timeout,
+        },
+        projectFlowId,
+        projectFlow: {
+            project_id: projectId,
+            flow_id: flowId,
+            at: requestAt,
+        },
+        initialState: 'active',
+        initialStateEventId: sliceEntityId(
+            'f-layout-state',
+        ),
+        initialStateAt: requestAt,
+        graphDelta: {
+            nodes: relations.nodes,
+            edges: relations.edges,
+            deletions: [],
+            memberEvents: relations.members.filter(
+                (row) => nodeIds.has(
+                    row.flow_node_id,
+                ),
+            ),
+            attributeEvents:
+                relations.attributes.filter(
+                    (row) => nodeIds.has(
+                        row.flow_node_id,
+                    ),
+                ),
+        },
+    };
+    const validated =
+        validateFlowCreateBody(flowBody);
+    const operation = await formSeedMessagePair(
+        {
+            key: seedMessagePairKey('flows', flowId),
+            routePattern:
+                'organizations/:id/flows/',
+            idParams: [organizationId],
+            op: true,
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: flowBody,
+        },
+        requestAt,
+    );
+    const document = await formSeedMessagePair(
+        {
+            key: seedMessagePairKey(
+                'flows/:id', flowId,
+            ),
+            routePattern:
+                'organizations/:id/flows/:id',
+            idParams: [organizationId, flowId],
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: flowCreateDocumentBody(
+                validated,
+            ),
+        },
+        requestAt,
+    );
+    const join = await formSeedMessagePair(
+        {
+            key: seedMessagePairKey(
+                'projects/:id/flows/:pfid',
+                projectFlowId,
+            ),
+            routePattern:
+                'organizations/:id/projects/:id'
+                + '/flows/:pfid',
+            idParams: [
+                organizationId,
+                projectId,
+                projectFlowId,
+            ],
+            organization: organizationId,
+            requesterIdentityId: adminId,
+            body: validated.projectFlow,
+        },
+        requestAt,
+    );
+    return {
+        body: flowBody,
+        messagePairs: { operation, document, join },
     };
 }
 
@@ -2357,6 +2490,7 @@ export async function postTestPlanSlices(
     const extras: ExtraWrites[] = [];
     const gardens: GardenWrites[] = [];
     const f2Flows: F2FlowWrites[] = [];
+    const fFlows: FFlowWrites[] = [];
     for (const section of PARALLEL_SECTIONS) {
         if (section === 'AA') continue;
         const slice = await formTenantAdminMessagePairs(
@@ -2433,6 +2567,12 @@ export async function postTestPlanSlices(
                     'sv-member@test-plan.example',
                 seatPassword: '',
             };
+        } else if (section === 'F') {
+            fFlows.push(await formFExtras(
+                slice.organizationId,
+                slice.adminId,
+                requestAt,
+            ));
         } else if (section === 'F2') {
             const extra = await formF2Extras(
                 slice.organizationId,
@@ -2481,6 +2621,16 @@ export async function postTestPlanSlices(
             await Promise.all(
                 gardens.map((garden) =>
                     writeGarden(view, garden),
+                ),
+            );
+            await Promise.all(
+                fFlows.map((extra) =>
+                    postFlowCreationOp(
+                        view,
+                        extra.body,
+                        SYSTEM_MEMBER_ID,
+                        extra.messagePairs,
+                    ),
                 ),
             );
             for (const extra of f2Flows) {
