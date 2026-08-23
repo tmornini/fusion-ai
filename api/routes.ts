@@ -2872,12 +2872,11 @@ export async function postIdentityCredentialDocumentOp(
 
 // Client-registration document write (clients elimination) —
 // pure message-plane write, the postIdentityCredentialDocumentOp
-// shape: Supersedes-chained appendMessagePair, never the pii
-// hard-delete zone. `messagePair` is optional so a below-facade
-// caller keeps compiling; the live route always supplies one.
-// WRITE_RESPONSE_SPECS successBody forms the wire bytes
-// via registrationEntityOf (GET derive). DELETE stays a
-// marked tombstone (append), not a slot replace.
+// shape: Supersedes-chained appendMessagePair. `messagePair`
+// is optional so a below-facade caller keeps compiling; the
+// live route always supplies one. WRITE_RESPONSE_SPECS
+// successBody forms the wire bytes via registrationEntityOf
+// (GET derive). DELETE stays a marked tombstone (append).
 export async function postClientRegistrationDocumentOp(
     db: DbAdapter,
     id: Id,
@@ -3241,8 +3240,8 @@ export const WRITE_RESPONSE_SPECS:
     // this spec via formDocumentMessagePairFor.
     'identities/:id': documentWriteResponseSpec(IDENTITIES_WIRING),
     'ai-agents/:id': documentWriteResponseSpec(AI_AGENTS_WIRING),
-    // G5: piiEntityOf (GET derive). replacePiiSlot still
-    // physically deletes the prior pair.
+    // G5: piiEntityOf (GET derive). DELETE is a marked
+    // tombstone pair; PUT appends.
     'identities/:id/pii': {
         status: HTTP_OK,
         successBody: (params, body) => piiEntityOf(
