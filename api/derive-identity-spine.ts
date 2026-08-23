@@ -45,8 +45,7 @@ import {
 // OP_ADDRESS_PATTERN at Step 0: '[^/]+' between two literal
 // slashes, anchored at both ends, so '/identities/42/pii/' can
 // never be confused with a sibling address sharing the
-// '/identities/' root ('/identities/42/credentials/WeXjAaAxGSpLpamfEuvcww/',
-// or the
+// '/identities/' root ('/identities/42/credentials/c1/', or the
 // identity's own '/identities/42/' document) — the '/members' vs
 // '/memberships' precedent class this task's brief names.
 //

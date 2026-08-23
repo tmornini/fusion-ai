@@ -3467,7 +3467,7 @@ const OBJECTIVE_CREATE_KEYS: readonly string[] = [
 // objective fields are NOT fully validated here: the org-
 // scoped store stamps organization_id from the verified
 // token and re-validates through validateObjectiveEntity
-// AFTER the stamp, so the body OMITS it. The revision uUOcdPLOGxYyIcuyDTzQxA
+// AFTER the stamp, so the body OMITS it. The revision sub-
 // object is re-validated by the objective_revisions store's
 // own validator; its member_id is a row column (who authored
 // the definition), not state authorship.
