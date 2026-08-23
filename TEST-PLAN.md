@@ -2614,8 +2614,9 @@ arc-gauges; Impact is a bipolar arc) and an Objectives box
 - The "actual" tick is visually distinct from the baseline
   area (thinner / different opacity)
 
-**K29.** From another tab, log a measurement on an approved
-project. PASS if the Objectives box updates within
+**K29.** From another tab, log a measurement on the approved K project
+(`k-project-approved`, seeded with four baselines by
+the admin). PASS if the Objectives box updates within
 ~1 second (BroadcastChannel `fusion-angle:data` + `subscribeProjectScoreChanges`); the
 three arc-gauge cards refresh only on full page load.
 

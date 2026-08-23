@@ -1587,6 +1587,7 @@ type KReviewWrites = {
 
 const K_UNDER_REVIEW_HIGH_SCORE = 90;
 const K_UNDER_REVIEW_LOW_SCORE = 10;
+const K_APPROVED_BASELINE_SCORE = 50;
 
 async function formKExtras(
     organizationId: string,
@@ -1697,6 +1698,54 @@ async function formKExtras(
                 messagePair: scoreMessagePair,
             });
         }
+    }
+    const approvedId = sliceEntityId('k-project-approved');
+    const approvedStart =
+        new Date(projectTemplate.start_date).getTime();
+    for (let i = 0; i < objectives.length; i++) {
+        const obj = objectives[i]!;
+        const scoredAt = isoFromMs(
+            approvedStart + i * MS_PER_SECOND,
+        );
+        const fields = {
+            project_id: approvedId,
+            objective_id: obj.id,
+            score: K_APPROVED_BASELINE_SCORE,
+            member_id: adminId,
+            at: scoredAt,
+        };
+        const scoreId =
+            `${approvedId}:${obj.id}:${scoredAt}`;
+        const scoreMessagePair =
+            await formSeedMessagePair(
+                {
+                    key: seedMessagePairKey(
+                        'projects/:id/'
+                            + 'objective-baseline'
+                            + '-scores/:sid',
+                        scoreId,
+                    ),
+                    routePattern:
+                        'organizations/:id'
+                            + '/projects/:id'
+                            + '/objective-baseline'
+                            + '-scores/:sid',
+                    idParams: [
+                        organizationId,
+                        approvedId,
+                        scoreId,
+                    ],
+                    organization: organizationId,
+                    requesterIdentityId: adminId,
+                    body: fields,
+                },
+                requestAt,
+            );
+        baselines.push({
+            id: scoreId,
+            fields,
+            messagePair: scoreMessagePair,
+        });
     }
     return { projects, baselines };
 }

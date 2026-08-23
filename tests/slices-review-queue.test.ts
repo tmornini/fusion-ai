@@ -71,3 +71,15 @@ async () => {
     assert.ok(submitted);
     assert.equal(submitted.baselineAvg, undefined);
 });
+
+test('K approved project carries four baselines',
+async () => {
+    const { column } = await kScoreColumn();
+    const approved = column.find(
+        (c) => c.projectId
+            === sliceEntityId('k-project-approved'),
+    );
+    assert.ok(approved);
+    assert.equal(approved.baselineCount, 4);
+    assert.notEqual(approved.baselineAvg, undefined);
+});
