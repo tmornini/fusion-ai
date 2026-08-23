@@ -37,7 +37,7 @@ import type {
     RecordEntity,
     RecordAttributeEntity,
     MembershipEntity,
-    JKeRxRPHBGBkzSLrvNpmlg,
+    IdentityProviderEntity,
     WorkOrderEntity,
     WorkOrderFlowGraph,
     MemberEntity,
@@ -2937,7 +2937,7 @@ export async function postIdentityProviderDocumentOp(
     body: Record<string, unknown>,
     _actor: Id,
     messagePair?: MessagePair,
-): Promise<JKeRxRPHBGBkzSLrvNpmlg> {
+): Promise<IdentityProviderEntity> {
     const raw = withoutId(body);
     if (
         'identity_id' in raw

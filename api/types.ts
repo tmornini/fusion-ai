@@ -600,7 +600,7 @@ export type IdentityProviderAction = 'linked' | 'unlinked';
 // 'linked'. `provider` names the IdP (e.g. 'google'),
 // `provider_subject` is the identity's id AT that provider. An
 // unlink is a NEW 'unlinked' row, never a splice.
-export interface JKeRxRPHBGBkzSLrvNpmlg {
+export interface IdentityProviderEntity {
     id: Id;
     identity_id: Id;
     provider: string;

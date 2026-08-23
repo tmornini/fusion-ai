@@ -14,7 +14,7 @@ import type {
     IdentityDefaultOrganizationEntity,
     IdentityTokenEntity,
     ClientRegistrationEntity,
-    JKeRxRPHBGBkzSLrvNpmlg,
+    IdentityProviderEntity,
     RoleGrantEntity,
     MemberEntity,
     HumanMemberEntity,
@@ -1042,17 +1042,17 @@ const IDENTITY_PROVIDER_BODY_KEYS: readonly string[] = [
 
 export function validateIdentityProviderEntity(
     body: Record<string, unknown>,
-): Omit<JKeRxRPHBGBkzSLrvNpmlg, 'id'> {
+): Omit<IdentityProviderEntity, 'id'> {
     assertOnlyKeys(
         body, IDENTITY_PROVIDER_BODY_KEYS,
-        'JKeRxRPHBGBkzSLrvNpmlg',
+        'IdentityProviderEntity',
     );
     const action = validateEnumField(
         body, 'action', ['linked', 'unlinked'],
-        'provider action', 'JKeRxRPHBGBkzSLrvNpmlg',
+        'provider action', 'IdentityProviderEntity',
     );
     const at = validateTimestampField(
-        body, 'at', 'JKeRxRPHBGBkzSLrvNpmlg',
+        body, 'at', 'IdentityProviderEntity',
     );
     return {
         identity_id: pickIdentifier(body, 'identity_id'),
@@ -1986,7 +1986,7 @@ const MEMBERSHIP_DOCUMENT_BODY_KEYS: readonly string[] = [
     'organization_id', 'identity_id', 'type', 'at',
 ];
 
-export interface NIjaUmatkDaVBQdIjzUjYg {
+export interface MembershipDocumentBody {
     readonly entity: Omit<MembershipEntity, 'id'>;
 }
 
@@ -1997,7 +1997,7 @@ export interface NIjaUmatkDaVBQdIjzUjYg {
 // MANDATE (a NAMED byte-parity-over-convention choice, the
 // Phase 7 Objective precedent): the assertOnlyKeys label is
 // 'MembershipEntity', matching validateMembershipEntity
-// byte-for-byte, NOT the 'NIjaUmatkDaVBQdIjzUjYg' naming
+// byte-for-byte, NOT the 'MembershipDocumentBody' naming
 // convention every other *DocumentBody validator uses — the
 // label appears in the wire 400 body ("unexpected key ... for
 // MembershipEntity"), and the convention's label would change
@@ -2008,7 +2008,7 @@ export interface NIjaUmatkDaVBQdIjzUjYg {
 // paths too.
 export function validateMembershipDocumentBody(
     body: Record<string, unknown>,
-): NIjaUmatkDaVBQdIjzUjYg {
+): MembershipDocumentBody {
     assertOnlyKeys(
         body, MEMBERSHIP_DOCUMENT_BODY_KEYS, 'MembershipEntity',
     );
