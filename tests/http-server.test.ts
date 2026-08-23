@@ -2,6 +2,8 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, writeFile, rm } from
     'node:fs/promises';
+import { readFileSync, readdirSync, statSync } from
+    'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { memoryDbAdapter } from '../api/db-memory.ts';
@@ -205,4 +207,32 @@ async () => {
         );
         assert.equal(last['operationId'], undefined);
     });
+});
+
+test('no web-app HTML carries a CSP meta; the server does',
+() => {
+    const files: string[] = [];
+    const walk = (dir: string): void => {
+        for (const name of readdirSync(dir)) {
+            const path = join(dir, name);
+            if (statSync(path).isDirectory()) {
+                walk(path);
+            } else if (name.endsWith('.html')) {
+                files.push(path);
+            }
+        }
+    };
+    walk('web-app');
+    assert.ok(files.length >= 30);
+    for (const path of files) {
+        assert.doesNotMatch(
+            readFileSync(path, 'utf8'),
+            /Content-Security-Policy/,
+            path + ' carries a CSP meta',
+        );
+    }
+    assert.match(
+        readFileSync('server/http-server.ts', 'utf8'),
+        /Content-Security-Policy/,
+    );
 });
