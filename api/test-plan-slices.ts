@@ -12,6 +12,7 @@ import {
     nowUtc,
     SYSTEM_MEMBER_ID,
     DEFAULT_LOCK_TIMEOUT,
+    MS_PER_DAY,
     type StateEntity,
 } from './types.ts';
 import {
@@ -30,6 +31,8 @@ import {
     postWorkOrderTransitionOp,
     postFlowWorkOrderDocumentOp,
     postFlowRecordDocumentOp,
+    postBaselineScoreDocumentOp,
+    postActualScoreDocumentOp,
     recordDocumentBodyOf,
     recordAttributeDocumentBodyOf,
     objectiveDocumentBodyOf,
@@ -63,8 +66,14 @@ import {
     flowWorkOrderJoinSeedBody,
     flowRecordJoinSeedBody,
 } from './mock-data/seed-message-pairs.ts';
-import { daysFromNow } from
-    './mock-data/seed-kit.ts';
+import {
+    daysFromNow,
+    isoFromMs,
+    deterministicScore,
+    pickHumanMember,
+} from './mock-data/seed-kit.ts';
+import { seedHashKey } from
+    './mock-data/seed-hash-preimage.ts';
 import { STARK_ORGANIZATION } from
     './mock-data/seed-constants.ts';
 import {
@@ -1359,6 +1368,191 @@ type FFlowWrites = {
     readonly messagePairs: FlowCreationMessagePairs;
 };
 
+type CScoreFields = {
+    readonly project_id: string;
+    readonly objective_id: string;
+    readonly score: number;
+    readonly member_id: string;
+    readonly at: string;
+};
+
+type CScoreRow = {
+    readonly id: string;
+    readonly fields: CScoreFields;
+    readonly messagePair: MessagePair;
+};
+
+type CScoreWrites = {
+    readonly baselines: readonly CScoreRow[];
+    readonly actuals: readonly CScoreRow[];
+};
+
+async function formCExtras(
+    organizationId: string,
+    adminId: string,
+    requestAt: string,
+): Promise<CScoreWrites> {
+    const projectTemplate = buildProjects()[0]!;
+    const projects = [
+        sliceEntityId('c-project-approved'),
+        sliceEntityId('c-project-approved-2'),
+    ].map((id) => ({
+        id,
+        organization_id: organizationId,
+        start_date: projectTemplate.start_date,
+        state: 'approved',
+    }));
+    const pools = new Map([
+        [organizationId, [adminId]],
+    ]);
+    const objectives = OBJECTIVE_SEEDS.map(
+        (_, i) => ({
+            id: sliceEntityId(
+                'c-obj-' + (i + 1)),
+        }),
+    );
+    const baselines: CScoreRow[] = [];
+    const actuals: CScoreRow[] = [];
+    for (const p of projects) {
+        const baselineCoverage =
+            objectives.length;
+        const baselineStart =
+            new Date(p.start_date).getTime();
+        const baselineMin = 0;
+        for (let i = 0; i < baselineCoverage; i++) {
+            const obj = objectives[i]!;
+            const score = deterministicScore(
+                seedHashKey(p.id) + ':'
+                    + seedHashKey(obj.id)
+                    + ':baseline',
+                baselineMin,
+                100,
+            );
+            const scoredAt = isoFromMs(
+                baselineStart + i * 1000,
+            );
+            const fields = {
+                project_id: p.id,
+                objective_id: obj.id,
+                score,
+                member_id: pickHumanMember(
+                    pools, p.organization_id,
+                    seedHashKey(p.id) + ':'
+                        + seedHashKey(obj.id)
+                        + ':baseline',
+                ),
+                at: scoredAt,
+            };
+            const id = `${p.id}:${obj.id}:${scoredAt}`;
+            const messagePair =
+                await formSeedMessagePair(
+                    {
+                        key: seedMessagePairKey(
+                            'projects/:id/'
+                                + 'objective-baseline'
+                                + '-scores/:sid',
+                            id,
+                        ),
+                        routePattern:
+                            'organizations/:id'
+                                + '/projects/:id'
+                                + '/objective-baseline'
+                                + '-scores/:sid',
+                        idParams: [
+                            organizationId,
+                            p.id,
+                            id,
+                        ],
+                        organization:
+                            organizationId,
+                        requesterIdentityId:
+                            fields.member_id,
+                        body: fields,
+                    },
+                    requestAt,
+                );
+            baselines.push({
+                id, fields, messagePair,
+            });
+        }
+        const minActuals = 1;
+        const baseActualTime =
+            baselineStart + MS_PER_DAY;
+        for (
+            let i = 0; i < objectives.length; i++
+        ) {
+            const obj = objectives[i]!;
+            const nActuals =
+                minActuals
+                + deterministicScore(
+                    seedHashKey(p.id) + ':'
+                        + seedHashKey(obj.id)
+                        + ':nactual',
+                    0,
+                    2,
+                );
+            for (let k = 0; k < nActuals; k++) {
+                const score = deterministicScore(
+                    seedHashKey(p.id) + ':'
+                        + seedHashKey(obj.id)
+                        + ':actual:' + k,
+                    -100,
+                    100,
+                );
+                const scoredAt = isoFromMs(
+                    baseActualTime
+                        + (i * 10 + k) * 1000,
+                );
+                const fields = {
+                    project_id: p.id,
+                    objective_id: obj.id,
+                    score,
+                    member_id: pickHumanMember(
+                        pools, p.organization_id,
+                        seedHashKey(p.id) + ':'
+                            + seedHashKey(obj.id)
+                            + ':actual:' + k,
+                    ),
+                    at: scoredAt,
+                };
+                const id =
+                    `${p.id}:${obj.id}:${scoredAt}`;
+                const messagePair =
+                    await formSeedMessagePair(
+                        {
+                            key: seedMessagePairKey(
+                                'projects/:id/'
+                                    + 'objective-actual'
+                                    + '-scores/:sid',
+                                id,
+                            ),
+                            routePattern:
+                                'organizations/:id'
+                                    + '/projects/:id'
+                                    + '/objective-actual'
+                                    + '-scores/:sid',
+                            idParams: [
+                                organizationId,
+                                p.id,
+                                id,
+                            ],
+                            organization:
+                                organizationId,
+                            requesterIdentityId:
+                                fields.member_id,
+                            body: fields,
+                        },
+                        requestAt,
+                    );
+                actuals.push({
+                    id, fields, messagePair,
+                });
+            }
+        }
+    }
+    return { baselines, actuals };
+}
+
 async function formFExtras(
     organizationId: string,
     adminId: string,
@@ -2491,6 +2685,7 @@ export async function postTestPlanSlices(
     const gardens: GardenWrites[] = [];
     const f2Flows: F2FlowWrites[] = [];
     const fFlows: FFlowWrites[] = [];
+    const cScores: CScoreWrites[] = [];
     for (const section of PARALLEL_SECTIONS) {
         if (section === 'AA') continue;
         const slice = await formTenantAdminMessagePairs(
@@ -2567,6 +2762,12 @@ export async function postTestPlanSlices(
                     'sv-member@test-plan.example',
                 seatPassword: '',
             };
+        } else if (section === 'C') {
+            cScores.push(await formCExtras(
+                slice.organizationId,
+                slice.adminId,
+                requestAt,
+            ));
         } else if (section === 'F') {
             fFlows.push(await formFExtras(
                 slice.organizationId,
@@ -2632,6 +2833,26 @@ export async function postTestPlanSlices(
                         extra.messagePairs,
                     ),
                 ),
+            );
+            await Promise.all(
+                cScores.flatMap((extra) => [
+                    ...extra.baselines.map((row) =>
+                        postBaselineScoreDocumentOp(
+                            view,
+                            row.id,
+                            row.fields,
+                            row.fields.member_id,
+                            row.messagePair,
+                        )),
+                    ...extra.actuals.map((row) =>
+                        postActualScoreDocumentOp(
+                            view,
+                            row.id,
+                            row.fields,
+                            row.fields.member_id,
+                            row.messagePair,
+                        )),
+                ]),
             );
             for (const extra of f2Flows) {
                 await appendMessagePair(
