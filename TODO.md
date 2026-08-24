@@ -275,6 +275,16 @@ Off the critical path; each with its oracle.
   `web-app/app/presenters/flow-designer.ts:808-885`;
   the debounced schedules are
   `web-app/flows/detail.ts:1349-1391`
+- A flow loaded with Auto Fit OFF no longer fits on
+  first paint. `withCanvasSize`
+  (`web-app/app/presenters/flow-designer.ts:996-1017`)
+  fits only under `isAutoFit`, and the load-time block
+  (`web-app/flows/detail.ts:1685-1697`) is the only
+  load-time fit — its `reconcileFitFromDom()` returns
+  early for the same reason. RECORDED, behavior
+  unchanged. The sentence it falsifies is "onFlowLoaded
+  keeps its explicit first fit" — the run-four
+  remediation design spec, second-commit paragraph
 - The Deno migration as one block — six specs, strict
   1 → 6, 3 and 4 may swap after Spec 2's measurements,
   Spec 6 optional (the measurements after Spec 5
