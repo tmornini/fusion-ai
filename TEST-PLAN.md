@@ -736,16 +736,18 @@ idea, not a K26 `under_review` title).
   is dimmed (~50% opacity) and its value shows
   an em-dash "—" in muted text (unscored is
   genuine absence — no score row is written —
-  not a measured 0). PASS: dragging a slider
-  clears only that row's pending styling (full
-  opacity, a signed value such as "+51", a
-  green check by the label) while untouched
-  rows stay dimmed, and Create Project stays
-  disabled until all four objectives are
-  scored. Serial: inspect on Automated Report
-  Generation's form; do not Create Project.
-  Then select Stark Industries in
-  `.org-switcher` before AA23–AA24a.
+  not a measured 0). Serial: Scores box has
+  one pending slider (Wayne demo objective).
+  Inspect; do not drag to enable Create; do
+  not Create Project. Then select Stark
+  Industries in `.org-switcher` before
+  AA23–AA24a. Parallel: four sliders. PASS:
+  dragging a slider clears only that row's
+  pending styling (full opacity, a signed
+  value such as "+51", a green check by the
+  label) while untouched rows stay dimmed,
+  and Create Project stays disabled until all
+  four objectives are scored.
 - [ ] **AA23** Serial: on a seeded project
   (AI-Powered Customer Segmentation), click
   "Edit". Set a field and Save. PASS: project
