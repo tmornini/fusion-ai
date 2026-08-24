@@ -680,6 +680,34 @@ export function bindInteractions(
         { passive: false, signal },
     );
 
+    wrap.addEventListener(
+        'focusin',
+        (e) => {
+            const target = e.target;
+            if (
+                !(target instanceof Element)
+            ) return;
+            const nodeId = ancestorAttr(
+                target, 'data-node-id',
+            );
+            const edgeId = ancestorAttr(
+                target, 'data-edge-id',
+            );
+            if (!nodeId && !edgeId) return;
+            const isRenderedSelected =
+                ancestorAttr(
+                    target, 'aria-current',
+                ) === 'true';
+            dispatch({
+                kind: 'canvas-focus',
+                nodeId,
+                edgeId,
+                isRenderedSelected,
+            });
+        },
+        { signal },
+    );
+
     const handleShift = (
         ke: KeyboardEvent,
     ): void => {
