@@ -402,6 +402,9 @@ test('composed edit carries each stored ACL forward '
 async () => {
     const { db, adminToken } = await adminDb();
     const attr2Id = generateIdentifier();
+    // Absent from the create: the edit is this
+    // attribute's genesis, so it takes the default.
+    const attr3Id = generateIdentifier();
     const body = createBody(TYPE_ID, ATTR_ID, 'Asset');
     (body['attributes'] as unknown[]).push({
         id: attr2Id,
@@ -473,6 +476,16 @@ async () => {
                     options: [],
                     constraints: [],
                 },
+                {
+                    id: attr3Id,
+                    organization_id: ORGANIZATION,
+                    record_id: TYPE_ID,
+                    name: 'Serial',
+                    attribute_type: 'text',
+                    sort_order: 2,
+                    options: [],
+                    constraints: [],
+                },
             ],
             state: 'active',
             removedAttributeIds: [],
@@ -514,6 +527,27 @@ async () => {
     );
     assert.deepEqual(
         renamedRow.write_roles,
+        ['member', 'admin'],
+    );
+
+    const born = await handleRequest(db, req(
+        'GET',
+        DETAIL + '/attributes/' + attr3Id,
+        adminToken,
+    ));
+    assert.equal(born.status, 200);
+    const bornRow = await born.json() as {
+        name: string;
+        read_roles: string[];
+        write_roles: string[];
+    };
+    assert.equal(bornRow.name, 'Serial');
+    assert.deepEqual(
+        bornRow.read_roles,
+        ['member', 'admin'],
+    );
+    assert.deepEqual(
+        bornRow.write_roles,
         ['member', 'admin'],
     );
 });
