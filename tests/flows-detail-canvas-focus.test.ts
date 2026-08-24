@@ -23,6 +23,9 @@ class FakeSvgElement {
         | FakeWrap
         | null = null;
     focusCalls: Array<{ preventScroll: boolean }> = [];
+    // The browser fires focusin synchronously from
+    // focus(); onFocus stands in for that listener.
+    onFocus: (() => void) | null = null;
 
     constructor(attrs: Record<string, string>) {
         this.attrs = attrs;
@@ -35,16 +38,27 @@ class FakeSvgElement {
 
     focus(options: { preventScroll: boolean }): void {
         this.focusCalls.push(options);
+        if (this.onFocus) this.onFocus();
     }
 }
 
 class FakeWrap {
+    readonly attrs: Record<string, string> = {};
     nodes: FakeSvgElement[] = [];
     edges: FakeSvgElement[] = [];
     parentElement: null = null;
 
-    getAttribute(_name: string): string | null {
-        return null;
+    getAttribute(name: string): string | null {
+        const value = this.attrs[name];
+        return value === undefined ? null : value;
+    }
+
+    setAttribute(name: string, value: string): void {
+        this.attrs[name] = value;
+    }
+
+    removeAttribute(name: string): void {
+        delete this.attrs[name];
     }
 
     contains(el: unknown): boolean {
@@ -77,6 +91,20 @@ import { strict as assert } from 'node:assert';
 
 const { canvasFocusOf, restoreCanvasFocus } =
     await import('../web-app/flows/detail.ts');
+const {
+    buildInteractionState,
+    canvasFocusInputOf,
+    withCanvasFocusRestore,
+} = await import(
+    '../web-app/app/flow-interactions.ts'
+);
+const { reduceFsm } = await import(
+    '../web-app/app/flow-fsm-reduce.ts'
+);
+
+type FsmState = ReturnType<
+    typeof buildInteractionState
+>;
 
 function asElement(value: unknown): Element {
     return value as Element;
@@ -193,5 +221,120 @@ test(
         );
         restoreCanvasFocus(null, asElement(wrap));
         assert.equal(survivor.focusCalls.length, 0);
+    },
+);
+
+// The seam the reducer pins and the DOM helpers pin
+// never meet in either: restore -> focusin -> reduce.
+// A rebuilt canvas carries the pointer's selection on
+// the EDGE, so the re-focused node reads back with no
+// aria-current and the promotion would fire.
+function wrapForRestore(): {
+    wrap: FakeWrap;
+    node: FakeSvgElement;
+} {
+    const wrap = new FakeWrap();
+    const node = new FakeSvgElement({
+        'data-node-id': 'n1',
+    });
+    node.parentElement = wrap;
+    const edge = new FakeSvgElement({
+        'data-edge-id': 'e1',
+        'aria-current': 'true',
+    });
+    edge.parentElement = wrap;
+    wrap.nodes = [node];
+    wrap.edges = [edge];
+    return { wrap, node };
+}
+
+function edgeSelectedState(): FsmState {
+    return {
+        ...buildInteractionState(800, 600),
+        selection: {
+            kind: 'edge' as const,
+            edgeId: 'e1',
+        },
+    };
+}
+
+// What the focusin listener does with the event.
+function focusinInto(
+    state: FsmState,
+    target: FakeSvgElement,
+    wrap: FakeWrap,
+): FsmState {
+    const input = canvasFocusInputOf(
+        asElement(target), asElement(wrap),
+    );
+    if (input === null) return state;
+    return reduceFsm(state, input).state;
+}
+
+test(
+    'a restore inside withCanvasFocusRestore leaves'
+    + ' the pointer selection alone',
+    () => {
+        const { wrap, node } = wrapForRestore();
+        let state = edgeSelectedState();
+        node.onFocus = () => {
+            state = focusinInto(state, node, wrap);
+        };
+        withCanvasFocusRestore(
+            asElement(wrap),
+            () => {
+                restoreCanvasFocus(
+                    { kind: 'node', id: 'n1' },
+                    asElement(wrap),
+                );
+            },
+        );
+        assert.equal(node.focusCalls.length, 1);
+        assert.deepEqual(state.selection, {
+            kind: 'edge',
+            edgeId: 'e1',
+        });
+    },
+);
+
+test(
+    'a focusin outside a restore still promotes the'
+    + ' focused node to the selection',
+    () => {
+        const { wrap, node } = wrapForRestore();
+        let state = edgeSelectedState();
+        node.onFocus = () => {
+            state = focusinInto(state, node, wrap);
+        };
+        restoreCanvasFocus(
+            { kind: 'node', id: 'n1' },
+            asElement(wrap),
+        );
+        assert.deepEqual(state.selection, {
+            kind: 'nodes',
+            nodeIds: new Set(['n1']),
+        });
+    },
+);
+
+test(
+    'withCanvasFocusRestore releases the mark when'
+    + ' the restore throws',
+    () => {
+        const { wrap, node } = wrapForRestore();
+        assert.throws(() => {
+            withCanvasFocusRestore(
+                asElement(wrap),
+                () => {
+                    throw new Error('restore failed');
+                },
+            );
+        });
+        assert.notEqual(
+            canvasFocusInputOf(
+                asElement(node), asElement(wrap),
+            ),
+            null,
+        );
     },
 );

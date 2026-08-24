@@ -43,6 +43,7 @@ import {
 } from '../app/adapters/blob-download.ts';
 import {
     bindInteractions,
+    withCanvasFocusRestore,
     type FlowGestureContext,
     type InteractionState,
     type Selection,
@@ -651,12 +652,18 @@ function update(container: HTMLElement): void {
         );
     presenter.renderUpdate(container);
     if (wrap !== null) {
-        restoreCanvasFocus(focus, wrap);
+        withCanvasFocusRestore(wrap, () => {
+            restoreCanvasFocus(focus, wrap);
+        });
     }
+    // Re-read: the restore can re-enter commit(), and
+    // the pre-nested presenter installed here would
+    // silently overwrite what the nested commit left.
+    const settled = pageState.presenter();
     pageState.pushGestureContext(
-        presenter.buildGestureContext(),
+        settled.buildGestureContext(),
     );
-    pageState.setHistory(presenter.history());
+    pageState.setHistory(settled.history());
 }
 
 // One narrow paint per animation frame while a gesture
