@@ -7,8 +7,10 @@ import {
 } from '../api/test-plan-slices.ts';
 import { testHashPassword } from
     './mock-seed.ts';
-import { createRequestContext } from
-    '../web-app/app/adapters/shared.ts';
+import {
+    createRequestContext,
+    type RequestContext,
+} from '../web-app/app/adapters/shared.ts';
 import { claimToken } from
     './token-fixtures.ts';
 import {
@@ -31,14 +33,16 @@ import {
 } from
     '../web-app/app/adapters/work-orders-queries.ts';
 
-test('R garden record binds Customer Onboarding',
-async () => {
+// A fresh seeded plane and the R admin's vessel —
+// each test its own world.
+async function seededRAdminContext(
+): Promise<RequestContext> {
     const db = memoryDbAdapter();
     await postTestPlanSlices(
         db, { hashPassword: testHashPassword },
     );
     const organization = sliceEntityId('r-org');
-    const ctx = createRequestContext(
+    return createRequestContext(
         db,
         await claimToken({
             sub: sliceEntityId('r-admin'),
@@ -47,6 +51,11 @@ async () => {
             roles: ['admin:' + organization],
         }),
     );
+}
+
+test('R garden record binds Customer Onboarding',
+async () => {
+    const ctx = await seededRAdminContext();
     const recordId = sliceEntityId(
         'r-record-customer',
     );
@@ -101,20 +110,7 @@ async () => {
 
 test('R seeds one empty Customer Profile instance',
 async () => {
-    const db = memoryDbAdapter();
-    await postTestPlanSlices(
-        db, { hashPassword: testHashPassword },
-    );
-    const organization = sliceEntityId('r-org');
-    const ctx = createRequestContext(
-        db,
-        await claimToken({
-            sub: sliceEntityId('r-admin'),
-            organization,
-            organizations: [organization],
-            roles: ['admin:' + organization],
-        }),
-    );
+    const ctx = await seededRAdminContext();
     const instances = await getRecordInstances(
         ctx, sliceEntityId('r-record-customer'),
     );
@@ -128,20 +124,7 @@ async () => {
 
 test('R #r1 is bound to the seeded instance',
 async () => {
-    const db = memoryDbAdapter();
-    await postTestPlanSlices(
-        db, { hashPassword: testHashPassword },
-    );
-    const organization = sliceEntityId('r-org');
-    const ctx = createRequestContext(
-        db,
-        await claimToken({
-            sub: sliceEntityId('r-admin'),
-            organization,
-            organizations: [organization],
-            roles: ['admin:' + organization],
-        }),
-    );
+    const ctx = await seededRAdminContext();
     const r1 = await getWorkOrder(
         ctx, sliceEntityId('r-wo-capture'),
     );
@@ -156,20 +139,7 @@ async () => {
 
 test('R14 fill and submit advances #r1 to Review',
 async () => {
-    const db = memoryDbAdapter();
-    await postTestPlanSlices(
-        db, { hashPassword: testHashPassword },
-    );
-    const organization = sliceEntityId('r-org');
-    const ctx = createRequestContext(
-        db,
-        await claimToken({
-            sub: sliceEntityId('r-admin'),
-            organization,
-            organizations: [organization],
-            roles: ['admin:' + organization],
-        }),
-    );
+    const ctx = await seededRAdminContext();
     const r1Id = sliceEntityId('r-wo-capture');
     const instance = await getRecordInstance(
         ctx,
