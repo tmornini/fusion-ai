@@ -1416,9 +1416,13 @@ re-renders after each step.)
   follows the focus. With the panel open the
   camera pans to reveal the selection, zoom
   unchanged. Tab across a marquee-selected
-  group keeps the group selected. PASS: focus
-  and selection stay paired through every
-  re-render.
+  group keeps the group selected only while
+  focus lands on one of its members — Tab
+  order is DOM order (render order, not
+  selection order), so the first tab onto a
+  non-member collapses the selection to that
+  node. PASS: focus and selection stay paired
+  through every re-render.
 - [ ] **F38b** Tab to a node, press Enter — its
   panel opens and the node keeps focus through
   the re-render; Escape closes the panel and
