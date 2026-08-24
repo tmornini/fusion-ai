@@ -1207,9 +1207,11 @@ depends: A
   (`WurwPqXxGtLhRAoCEcPzfQ`) on Wayne. Select
   Wayne Enterprises in the sidebar footer
   `.org-switcher` (G36) — it is not on the
-  Stark list. PASS: the control is visible;
-  clicking it navigates to `ideas/convert.html`.
-  That click does **not** promote (D24 does).
+  Stark list. PASS: both Convert controls are
+  visible; one click (list or detail) navigates
+  to `ideas/convert.html`. That click does
+  **not** promote (D24 does). Then select Stark
+  Industries in `.org-switcher` before D17–D21.
   Parallel: a slice-garden `approved` idea,
   same control, same PASS.
 - [ ] **D17** Navigate to `ideas/detail.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows error state, no unhandled JS exception.
@@ -1228,11 +1230,11 @@ depends: A
 
 - [ ] **D22** Navigate to
   `ideas/convert.html?ideaId=<id>` for a
-  convertible idea. Serial: Automated Report
-  Generation (`WurwPqXxGtLhRAoCEcPzfQ`) on
-  Wayne (org-switch `.org-switcher` / G36 if
-  not already on Wayne; D16 verified this
-  leftover). Parallel: a slice-garden
+  convertible idea. Serial: org-switch to
+  Wayne Enterprises (`.org-switcher` / G36).
+  Automated Report Generation
+  (`WurwPqXxGtLhRAoCEcPzfQ`) — D16 verified
+  this leftover. Parallel: a slice-garden
   `approved` idea. PASS: page loads with
   conversion form showing 4 required fields:
   Project Name, Time (label "Time", unit
@@ -1271,6 +1273,8 @@ depends: A
   lifecycle state becomes `promoted` (list
   badge label **Promoted**, not "Approved") —
   convert is a promotion, not a re-approve.
+  Then select Stark Industries in
+  `.org-switcher` before D25–D30.
 
 ### Idea Status Filtering (`ideas/index.html`)
 
