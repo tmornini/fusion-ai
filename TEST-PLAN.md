@@ -355,7 +355,7 @@ run by the master after join.
 | C. Core: Dashboard | 7 |
 | D. Core: Ideas Workflow | 38 |
 | E. Core: Projects | 12 |
-| F. Tools | 77 |
+| F. Tools | 80 |
 | F2. Workbox | 31 |
 | FS. Flow Statistics | 9 |
 | G. Admin Pages | 38 |
@@ -365,12 +365,12 @@ run by the master after join.
 | K. Objectives & Scoring | 30 |
 | R. Records | 25 |
 | SV. Server (Node + Postgres) | 10 |
-| **Total** | **398** |
+| **Total** | **401** |
 
 ### Combined Totals (CLI + Browser)
 
 The per-section table above counts browser-regression
-cases only (398). The CLI count is the most recent
+cases only (401). The CLI count is the most recent
 `./validate` (AT2) report — the main `tests/*.test.ts`
 suite plus the `tests/tz/*.test.ts` timezone suite; AT2
 without `POSTGRES_URL` skips the seven `pg-*.test.ts` /
@@ -392,9 +392,9 @@ Format` at the bottom of this file):
 | pending  | Default (`- [ ]`); not yet executed  |  n/a   |
 
 A fully green run reports:
-`PASS = AT2 + 398, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j,
+`PASS = AT2 + 401, FAIL = 0, BLOCKED ≤ k, DEFERRED ≤ j,
 DRIFT = 0`, where AT2 is the CLI count that run reported
-and the six status counts sum to AT2 + 398.
+and the six status counts sum to AT2 + 401.
 `BLOCKED ≠ FAIL` and `DRIFT ≠ FAIL` — only `FAIL`
 indicates a regression.
 
@@ -808,7 +808,7 @@ depends: A
 - [ ] **B8** Enter `test@example.com`, password `123`. PASS: "Password must be at least 6 characters" error on password.
 - [ ] **B9** Enter the seeded admin credentials (`demo@example.com` + the password revealed at seed time), click "Sign in". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`. Auto-login is retired, so an unseeded credential is rejected with "Invalid email or password.".
 - [ ] **B10** Click the "Sign up" button (positioned next to the static "Don't have an account?" label — the label is not itself the toggle; the adjacent button is). PASS: switches to Sign Up mode — title changes to "Get started", "Company name (optional)" field appears, submit reads "Create account" with an SVG arrow icon (not a literal "→" character).
-- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click the "Create account" submit control (SVG arrow icon, not a literal "→"). PASS: toast "Sign-up is coming soon — sign in with a seeded account." appears, the form flips to **Sign In** mode (title "Welcome back"), and NO navigation occurs — the demo no longer mock-establishes a session (real sign-up is SP-6; minting a bare mock with no refresh token would bounce on reload and could admit anyone to the seeded admin's data).
+- [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click the "Create account" submit control (SVG arrow icon, not a literal "→"). PASS: toast "Sign-up is coming soon — sign in with a seeded account." appears, the form flips to **Sign In** mode (title "Welcome back"), and NO navigation occurs — the demo no longer mock-establishes a session (real sign-up is SP-6 — see `TODO.md`; minting a bare mock with no refresh token would bounce on reload and could admit anyone to the seeded admin's data).
 
 ### Auth Validation Edge Cases
 
@@ -887,8 +887,11 @@ depends: A
   ratio arc-gauges — dual concentric semicircles: outer
   baseline track + inner actual fill; Impact is a bipolar
   arc — left/right split from a center apex; all three
-  share the same card chrome) and a full-width Objectives
-  box below (card title "Objectives"). PASS: all 4 render
+  share the same card chrome) and, below the grid, an
+  Objectives box one gauge column wide
+  (`.objective-aggregates-card`,
+  `calc((100% - 2 * var(--space-6)) / 3)`; full width
+  only under 768px; card title "Objectives"). PASS: all 4 render
   with baseline and current values; the Time and Cost cards
   each show dual concentric ratio arcs and the Impact card
   shows a bipolar arc; the Objectives box shows one row per
@@ -1316,8 +1319,8 @@ opens and renders.)
   click Zoom in (icon-only buttons; `title` /
   `aria-label` "Zoom in" / "Zoom out") — an
   error toast "Disable Auto-Fit to change the
-  view" appears and `viewBox` stands (F7's
-  gate). Toggle Auto Fit OFF. Click Zoom in,
+  view" appears and `viewBox` stands. Toggle
+  Auto Fit OFF. Click Zoom in,
   then Zoom out, re-querying `svg.flow-canvas`
   after each click (every commit rebuilds the
   `<svg>`). PASS: `viewBox` width and height
@@ -1504,8 +1507,8 @@ automated suite (`tests/api-flow-tags.test.ts`,
 flows/:id/tags" fence case) is the sole coverage: PUT/GET/
 DELETE lifecycle, Response-ID pinning survives further flow
 saves, marked delete, member-tier authorization, two-tag
-concurrency, and the org fence. Revisit this note if/when a
-designer "tag current" action lands.)
+concurrency, and the org fence. A designer "tag current" action is tracked in
+`TODO.md`.)
 
 ### Space Toggle (Pan Mode)
 
@@ -2152,7 +2155,8 @@ depends: A
 > `invitations/` (reached via the top-bar bell) and Accepts
 > (writes a seat in the invitation's org) or
 > Declines; an admin can Revoke an outstanding one from the
-> Organization page. DEFERRED (not built): email delivery.
+> Organization page. DEFERRED: email delivery (see
+> `TODO.md`).
 > Sources:
 > `web-app/members/index.ts` (`handleInviteSubmit`),
 > `web-app/app/adapters/invitations.ts`,
@@ -2368,9 +2372,8 @@ depends: A
 
 Billing is a placeholder page. `init()` is empty and
 the body is hand-written static HTML. These tests
-verify the page loads and the sidebar nav link works
-— functional billing tests will be added when the
-feature is implemented.
+verify the page loads and the sidebar nav link
+works; functional billing is tracked in `TODO.md`.
 
 - [ ] **G42** Click "Billing" in the sidebar. PASS:
   browser navigates to `billing/index.html`. The page
@@ -2690,7 +2693,8 @@ impact" workflow we designed.
 **K27.** Open dashboard; PASS if four surfaces render: three
 arc-gauge cards sharing one card shell (Time and Cost are ratio
 arc-gauges; Impact is a bipolar arc) and an Objectives box
-(full-width row below; card title "Objectives").
+(below the grid, one gauge column wide; card title
+"Objectives").
 
 **K28.** Inspect the Impact gauge. PASS if:
 - The arc has muted background visible at all values
@@ -2837,10 +2841,16 @@ every other agent, so no write-domain collision.
   `#gate0001`. Parallel (A3 `--test-plan-slices`):
   the work order is `#r1`.
 - [ ] **R14a** When a node references a `radio`-typed Record attribute, the workbox work-order detail renders it as a radio group — one `<input type="radio">` per option, all sharing the attribute name so only one is selectable — rather than a dropdown; selecting an option and transitioning records that value. NOTE: seeded mock data predates `radio`, so add a radio attribute, reference it Editable on a working node, and create a work order to exercise this.
-- [ ] **R15** Archive a Record from its detail page (if a
-  control exists in the toy).
-  PASS: lifecycle state reads `archived`; the list page
-  excludes the row from active counts.
+- [ ] **R15** Open the R2-created Record's detail
+  page — never Customer Profile (R16–R21 read it).
+  Click Archive; confirm in the house dialog
+  (`data-dialog-open="confirm-archive"`). PASS: a
+  "Record archived" toast appears, the header badge
+  reads Archived, and the Archive button is gone. On
+  `records/` the card reads Archived, an Archived
+  chip appears beside Active, and toggling the
+  Active chip hides the card. There are no numeric
+  counts on the chips.
 - [ ] **R16** Open Customer Profile detail. PASS: an
   Instances section lists instances (id + readable values)
   or "No instances yet", with a "New instance" control.
@@ -2869,7 +2879,7 @@ every other agent, so no write-domain collision.
   Account Review. As the R admin, click New instance:
   Owner Notes and Credit Limit both render
   `data-access="writable"`. Sign in as the R
-  `member_*` credentials, open the instance: Owner
+  `member_*` credentials, open New instance: Owner
   Notes renders `data-access="readonly"`; Credit
   Limit is absent (`read_roles: ['admin']`). PASS:
   projection matches held roles; no ACL editing UI on
@@ -3027,8 +3037,8 @@ After join, one markdown file per FAIL cluster under
 `docs/superpowers/test-plan-mitigations/`. Product design
 specs stay in `docs/superpowers/specs/`. Do not create the
 directory until the first cluster exists. The master lists
-paths in the summary. Implementing those specs is a later
-session.
+paths in the summary. Implementing those specs is
+tracked in `TODO.md`.
 
 File name:
 `YYYY-MM-DD-{section}-{first-case}.md`
