@@ -18,6 +18,8 @@ import {
 } from '../web-app/app/adapters/flow-records.ts';
 import { getRecordAttributesByRecord } from
     '../web-app/app/adapters/record-attributes.ts';
+import { getRecordInstances } from
+    '../web-app/app/adapters/record-instances.ts';
 import {
     getWorkOrder,
     getWorkOrderCurrentNodeId,
@@ -90,4 +92,31 @@ async () => {
     for (const ref of currentNode.attributes) {
         assert.ok(byId.has(ref.attributeId));
     }
+});
+
+test('R seeds one empty Customer Profile instance',
+async () => {
+    const db = memoryDbAdapter();
+    await postTestPlanSlices(
+        db, { hashPassword: testHashPassword },
+    );
+    const organization = sliceEntityId('r-org');
+    const ctx = createRequestContext(
+        db,
+        await claimToken({
+            sub: sliceEntityId('r-admin'),
+            organization,
+            organizations: [organization],
+            roles: ['admin:' + organization],
+        }),
+    );
+    const instances = await getRecordInstances(
+        ctx, sliceEntityId('r-record-customer'),
+    );
+    assert.equal(instances.length, 1);
+    const instance = instances[0]!;
+    assert.equal(
+        instance.id, sliceEntityId('r-instance-1'),
+    );
+    assert.equal(instance.values.size, 0);
 });

@@ -640,6 +640,7 @@ const SLICE_ENTITY_IDS: Readonly<
     'r-obj-3': 'jVrJWdqovgipwOfeVfEOrw',
     'r-obj-4': 'iJVjJKUZfrTwxbxGReVupQ',
     'r-record-customer': 'NlTUsuvZqqNpXXDvtZORJg',
+    'r-instance-1': '8fHkocPt8auDVdchSHxgMg',
     'r-attr-1': 'nIvyKEMWevzIynfqPKHkbA',
     'r-attr-2': 'dqyTeecJBQmttvQWXErnRg',
     'r-state-record-customer': 'pAdySOwTblAIOGayXpfKSA',
@@ -1793,6 +1794,7 @@ type RExtras = {
             RecordWriteMessagePairs;
     };
     readonly attributePuts: readonly MessagePair[];
+    readonly instanceMessagePair: MessagePair;
 };
 
 // The R21 subject: a second R record type carrying two
@@ -1921,6 +1923,39 @@ async function formRExtras(
             ),
         );
     }
+    // The R14 subject: #r1 binds to this empty Customer
+    // Profile instance. Unbound, the Data Capture inputs
+    // are disabled (WB10b) and a value-bearing submit
+    // 400s — the F2 genesis shape, one operation id.
+    const instanceId = sliceEntityId('r-instance-1');
+    const customerRecordId = sliceEntityId(
+        'r-record-customer',
+    );
+    const instanceRouteSegments =
+        INSTANCE_DETAIL_PATTERN.split('/');
+    const instancePathSegments = [
+        'organizations', organizationId,
+        'record-types', customerRecordId,
+        'instances', instanceId,
+    ];
+    const instanceMessagePair =
+        await formWriteMessagePair({
+            method: 'PUT',
+            pathname: '/'
+                + instancePathSegments.join('/'),
+            routePattern:
+                INSTANCE_DETAIL_PATTERN,
+            routeSegments: instanceRouteSegments,
+            pathSegments: instancePathSegments,
+            headerFields: [],
+            body: { values: [] },
+            requesterIdentityId: adminId,
+            requestAt,
+            organization: organizationId,
+            responseStatus: HTTP_OK,
+            responseBody: { values: [] },
+            operationId: generateIdentifier(),
+        });
     return {
         member,
         record: {
@@ -1933,6 +1968,7 @@ async function formRExtras(
             },
         },
         attributePuts,
+        instanceMessagePair,
     };
 }
 
@@ -3569,6 +3605,9 @@ export async function postTestPlanSlices(
                         view, pair,
                     );
                 }
+                await appendMessagePair(
+                    view, extra.instanceMessagePair,
+                );
             }
         },
     );
