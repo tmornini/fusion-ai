@@ -18,8 +18,13 @@ import {
 } from '../web-app/app/adapters/flow-records.ts';
 import { getRecordAttributesByRecord } from
     '../web-app/app/adapters/record-attributes.ts';
-import { getRecordInstances } from
+import {
+    getRecordInstances,
+    getRecordInstance,
+} from
     '../web-app/app/adapters/record-instances.ts';
+import { postWorkOrderTransition } from
+    '../web-app/app/adapters/work-orders-mutations.ts';
 import {
     getWorkOrder,
     getWorkOrderCurrentNodeId,
@@ -119,4 +124,70 @@ async () => {
         instance.id, sliceEntityId('r-instance-1'),
     );
     assert.equal(instance.values.size, 0);
+});
+
+test('R #r1 is bound to the seeded instance',
+async () => {
+    const db = memoryDbAdapter();
+    await postTestPlanSlices(
+        db, { hashPassword: testHashPassword },
+    );
+    const organization = sliceEntityId('r-org');
+    const ctx = createRequestContext(
+        db,
+        await claimToken({
+            sub: sliceEntityId('r-admin'),
+            organization,
+            organizations: [organization],
+            roles: ['admin:' + organization],
+        }),
+    );
+    const r1 = await getWorkOrder(
+        ctx, sliceEntityId('r-wo-capture'),
+    );
+    assert.equal(
+        r1.instanceId, sliceEntityId('r-instance-1'),
+    );
+    assert.equal(
+        r1.recordTypeId,
+        sliceEntityId('r-record-customer'),
+    );
+});
+
+test('R14 fill and submit advances #r1 to Review',
+async () => {
+    const db = memoryDbAdapter();
+    await postTestPlanSlices(
+        db, { hashPassword: testHashPassword },
+    );
+    const organization = sliceEntityId('r-org');
+    const ctx = createRequestContext(
+        db,
+        await claimToken({
+            sub: sliceEntityId('r-admin'),
+            organization,
+            organizations: [organization],
+            roles: ['admin:' + organization],
+        }),
+    );
+    const r1Id = sliceEntityId('r-wo-capture');
+    const instance = await getRecordInstance(
+        ctx,
+        sliceEntityId('r-record-customer'),
+        sliceEntityId('r-instance-1'),
+    );
+    await postWorkOrderTransition(ctx, {
+        workOrderId: r1Id,
+        edgeId: sliceEntityId('r-edge-submit'),
+        values: {
+            [sliceEntityId('r-attr-1')]: 'Acme Corp',
+            [sliceEntityId('r-attr-2')]:
+                'ceo@acme.example',
+        },
+        instanceEtag: instance.etag,
+    });
+    assert.equal(
+        await getWorkOrderCurrentNodeId(ctx, r1Id),
+        sliceEntityId('r-node-review'),
+    );
 });
