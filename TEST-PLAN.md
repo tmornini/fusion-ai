@@ -153,10 +153,9 @@ a K-hunter case on the parallel path.
   `node server.mjs` (this pin **is** SV1). One
   process, one mock tenant, one cookie jar. Walk
   document order including K8 inside K, then J.
-  Headers are not consulted. Case text is
-  unchanged. Serial does not mint garden rows
-  (AA and E7) and does not wipe to
-  `--bootstrap`.
+  Headers are not consulted. Serial does not
+  mint garden rows (AA and E7) and does not
+  wipe to `--bootstrap`.
 - **Parallel (default)**: the same A1–A2. Grant Chrome
   origin `http://localhost` before anything else. A3
   `./postgres-wipe --postgres local` then
@@ -498,17 +497,20 @@ depends: A
 
 Parallel: AA's slice is already bootstrap-only —
 do not restart the process. Sign in as the AA
-admin and run AA3+ create-from-empty as today.
+admin and run AA3+ create-from-empty.
 Each later step creates data that subsequent
 steps depend on. Run AA3+ in order. Serial: A3
 `--mock-data` stands through J. Do not wipe to
 `--bootstrap`. Do not mint garden rows: no Add
 Member, no Add objective, no Create Idea, no
-Submit for Review, no idea Approve, no Convert,
-no New Flow (AA26 and E7). Dialog-open cases
-stay. Edits of a seeded subject stay. AA24a may
-approve one seeded `submitted` project (not an
-idea, not a K26 `under_review` title).
+Submit for Review, no idea Approve, no Create
+Project, no New Flow (AA26 and E7). Dialog-open
+cases stay. Edits of a seeded subject stay.
+AA24a may approve one seeded `submitted`
+project (not an idea, not a K26 `under_review`
+title). Serial leftover Convert is AA21: click
+Convert to open the form; do not Create
+Project.
 
 - [ ] **AA3** Verify bootstrap data exists: user "Tony Stark", organization "Stark Industries" (domain `acmecorp.com`). `OrganizationEntity` has no plan field — its quota fields are `seats`, `projects_limit`, `ideas_limit`.
 
@@ -556,13 +558,14 @@ idea, not a K26 `under_review` title).
   with the seeded seats.
 - [ ] **AA7a** Click "+ Add Member", switch the
   Kind toggle to AI. PASS: the Human form hides
-  and the AI form appears. Serial: the AIs
-  group already holds Claude Opus 4.8, Claude
-  Sonnet 4.6, GPT-5.5, and Grok 4.3 (agents are
-  global, not seated); do not Create. Parallel:
-  Fill Name, pick a Model, fill Description and
-  Skill Focus. PASS: Create is blocked until a
-  Model is chosen; once chosen, click Create →
+  and the AI form appears. Serial: PASS: the
+  AIs group already holds Claude Opus 4.8,
+  Claude Sonnet 4.6, GPT-5.5, and Grok 4.3
+  (agents are global, not seated); do not
+  Create. Parallel: Fill Name, pick a Model,
+  fill Description and Skill Focus. PASS:
+  Create is blocked until a Model is chosen;
+  once chosen, click Create →
   toast confirms and the AI is written as a
   message-plane AI agent document (`PUT
   /ai-agents/:id`); it appears in the AIs
@@ -691,8 +694,8 @@ idea, not a K26 `under_review` title).
   Parallel: idea #1). PASS: navigates to idea
   detail with Send Back / Approve buttons in
   the header next to Edit.
-- [ ] **AA19** Serial: Send Back / Approve are
-  visible; do not Approve. Parallel: Click
+- [ ] **AA19** Serial: PASS: Send Back / Approve
+  are visible; do not Approve. Parallel: Click
   "Approve". PASS: idea status changes to
   approved, confirmation shown.
 - [ ] **AA20** Serial: do not Approve. PASS on
@@ -718,9 +721,9 @@ idea, not a K26 `under_review` title).
   Project. (D16 inherits this Wayne-switch.)
   Parallel: Navigate to approved idea #1.
   Click "Convert". PASS: the same form loads.
-- [ ] **AA22** Serial: do not Convert. PASS:
-  Create Project is present on the form; do
-  not click it. Parallel: Fill the 4 required
+- [ ] **AA22** Serial: do not Create Project.
+  PASS: Create Project is present on the form;
+  do not click it. Parallel: Fill the 4 required
   fields (Project Name, Time with a "days"
   input suffix, Cost, Success Criteria) and
   drag every objective baseline slider in the
@@ -736,18 +739,18 @@ idea, not a K26 `under_review` title).
   is dimmed (~50% opacity) and its value shows
   an em-dash "—" in muted text (unscored is
   genuine absence — no score row is written —
-  not a measured 0). Serial: Scores box has
-  one pending slider (Wayne demo objective).
-  Inspect; do not drag to enable Create; do
-  not Create Project. Then select Stark
-  Industries in `.org-switcher` before
-  AA23–AA24a. Parallel: four sliders. PASS:
-  dragging a slider clears only that row's
-  pending styling (full opacity, a signed
-  value such as "+51", a green check by the
-  label) while untouched rows stay dimmed,
-  and Create Project stays disabled until all
-  four objectives are scored.
+  not a measured 0). Serial: PASS: one pending
+  Wayne slider (Wayne demo objective), em-dash,
+  Create still disabled; inspect; do not drag;
+  then select Stark Industries in
+  `.org-switcher` before AA23–AA24a. Parallel:
+  PASS: four sliders; dragging a slider clears
+  only that row's pending styling (full
+  opacity, a signed value such as "+51", a
+  green check by the label) while untouched
+  rows stay dimmed, and Create Project stays
+  disabled until all four objectives are
+  scored.
 - [ ] **AA23** Serial: on a seeded project
   (AI-Powered Customer Segmentation), click
   "Edit". Set a field and Save. PASS: project
@@ -822,12 +825,11 @@ idea, not a K26 `under_review` title).
   approved projects only".
 - [ ] **AA26** Click "New Flow". PASS: a "New
   Flow" dialog opens with a Flow Name input
-  and Create/Cancel buttons. Serial: do not
-  Create. Cancel, then open a seeded flow
-  (Layout Test or Lead-to-Close) for
-  AA27–AA35. Parallel: Enter a name and click
-  Create. PASS: navigates to the flow designer
-  page. The SVG canvas shows two nodes:
+  and Create/Cancel buttons. Serial: PASS:
+  Cancel; do not Create. Parallel: Enter a
+  name and click Create. PASS: navigates to
+  the flow designer page. The SVG canvas
+  shows two nodes:
   "Create" (start, top-left with green
   border) and "Archive" (end, bottom-right
   with red 3-px border) connected by no
@@ -837,7 +839,10 @@ idea, not a K26 `under_review` title).
   the Locked, Auto Layout, and Auto Fit
   switches. Changes auto-save (no explicit
   Save button).
-- [ ] **AA27** Drag the port circle on the start
+- [ ] **AA27** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: Drag the port circle on the start
   node into empty canvas past 20 pixels. PASS:
   during the drag a ghost "New State" card
   follows the cursor along with a faint bezier
@@ -855,7 +860,10 @@ idea, not a K26 `under_review` title).
   limitation; if the gesture cannot be driven,
   validate end-state via direct JSON injection per
   the AGENTS.md workaround.)
-- [ ] **AA28** Double-click the new blue-bordered
+- [ ] **AA28** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: Double-click the new blue-bordered
   node. PASS: properties panel appears with a
   "State Properties" title and close button on
   the right, then a `<fieldset>` labeled "Members"
@@ -869,17 +877,26 @@ idea, not a K26 `under_review` title).
   MCP pointer-capture limitation; validate end-state
   via pair fixture on the flow document address
   (`message_pairs`) per the protocol workaround.)
-- [ ] **AA29** Edit the state name in the
+- [ ] **AA29** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: Edit the state name in the
   properties panel to "Data Capture". PASS: the
   node label updates on the canvas immediately
   (auto-saves via 800ms debounce).
-- [ ] **AA30** Double-click the edge between
+- [ ] **AA30** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: Double-click the edge between
   start and "Data Capture". PASS: no properties
   panel opens — the outgoing edge from Create is
   intentionally not interactive. The edge has no
   name label visible on the canvas, just a plain
   blue arrow.
-- [ ] **AA31** Drag from "Data Capture"'s port
+- [ ] **AA31** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: Drag from "Data Capture"'s port
   into empty canvas past 20 pixels to create a
   new middle node; rename it "Review" via its
   properties panel. Rename the new edge
@@ -890,7 +907,10 @@ idea, not a K26 `under_review` title).
   drag gesture per the MCP pointer-capture
   limitation — validate end-state via JSON
   injection per the AGENTS.md workaround.)
-- [ ] **AA32** Hold Shift and drag from "Review"
+- [ ] **AA32** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: Hold Shift and drag from "Review"
   onto "Data Capture". PASS: during the drag the
   preview redraws as a dashed-orange curved
   bezier because a forward path "Data Capture" →
@@ -911,7 +931,10 @@ idea, not a K26 `under_review` title).
   (`performAddEdge`). This browser case remains
   BLOCKED for the shift-drag gesture itself per
   the MCP pointer-capture limitation.)
-- [ ] **AA33** In the "Data Capture" properties
+- [ ] **AA33** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: In the "Data Capture" properties
   panel, open the "Attributes" fieldset. Click the
   "+ Add Attribute…" dropdown. PASS: the picker
   lists available record attributes pre-defined
@@ -924,15 +947,21 @@ idea, not a K26 `under_review` title).
   (`performAddAttributeRef`) — this case verifies
   the picker rendering and attribute-binding UI
   only.)
-- [ ] **AA34** Add more attributes to "Data
+- [ ] **AA34** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: Add more attributes to "Data
   Capture": select 2–3 attributes from the
   picker, each with a distinct mode (Editable /
   Read-only) and required toggle. PASS: all
   attributes appear in the list with correct
   mode (Editable / Read-only) and toggle state.
-- [ ] **AA35** Wait for auto-save (800ms debounce).
-  Navigate away and back. PASS: all nodes, edges,
-  and attributes persist.
+- [ ] **AA35** Serial: N/A — requires the empty
+  Create+Archive graph that serial must not
+  mint; do not add nodes; do not JSON-inject.
+  Parallel: Wait for auto-save (800ms
+  debounce). Navigate away and back. PASS: all
+  nodes, edges, and attributes persist.
 
 ### AA10. Verify Dashboard
 
@@ -1259,11 +1288,12 @@ depends: A
 - [ ] **E7** On an approved project, click "New
   Flow" button. PASS: a "New Flow" dialog opens
   with a Flow Name input and Create/Cancel
-  buttons. Serial: do not Create. Parallel:
-  Enter a name and click Create. PASS: a new
-  flow is created and the browser navigates to
-  the flow designer page. The new flow is
-  associated with the current project.
+  buttons. Serial: PASS: dialog stays; do not
+  Create. Parallel: Enter a name and click
+  Create. PASS: a new flow is created and
+  the browser navigates to the flow designer
+  page. The new flow is associated with the
+  current project.
 
 ### Project Detail — Edit Mode
 
