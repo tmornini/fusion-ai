@@ -261,6 +261,14 @@ Master never re-dispatches a hunter to retry.
 - **The canvas `<svg>` is replaced on every commit**:
   probe `svg.flow-canvas` by fresh query after every
   click, never through a held element reference.
+- **Chords carry the browser's `key`**: Shift
+  uppercases (Cmd+Shift+Z arrives as `key: 'Z'`);
+  match chords Shift-insensitively.
+- **On canvas nodes and edges, `el.focus()` selects
+  like Tab** (the `focusin` promotion) while
+  `el.click()` fires no `pointerdown` and selects
+  nothing — drive canvas selection with real pointer
+  events or `.focus()`.
 - **`kill` syscall against the background HTTP server**: the
   Claude Code sandbox rejects `kill -TERM` and `kill -9`
   against PIDs of long-running background tasks started via
@@ -1395,11 +1403,30 @@ re-renders after each step.)
 
 ### Flow Designer — Keyboard Shortcuts
 
-- [ ] **F38** Press Delete or Backspace with a node
-  or edge selected (not focused in an input).
-  PASS: selected item is deleted.
-- [ ] **F39** Press Cmd+Z / Ctrl+Z to undo, press
-  Cmd+Shift+Z / Ctrl+Shift+Z to redo. PASS:
+- [ ] **F38** Tab until a node shows the focus
+  outline — it also takes the selection (glow,
+  `aria-current="true"`), panel closed. Press
+  Delete or Backspace. PASS: the focused node
+  is deleted; focus lands on `<body>`.
+- [ ] **F38a** Tab again: focus moves to the next
+  node or edge, never the page top; selection
+  follows the focus. With the panel open the
+  camera pans to reveal the selection, zoom
+  unchanged. Tab across a marquee-selected
+  group keeps the group selected. PASS: focus
+  and selection stay paired through every
+  re-render.
+- [ ] **F38b** Tab to a node, press Enter — its
+  panel opens and the node keeps focus through
+  the re-render; Escape closes the panel and
+  focus stays on the node. A mouse click
+  selects without keeping focus. PASS:
+  keyboard focus survives open and close.
+- [ ] **F39** With Undo enabled, press Cmd+Z /
+  Ctrl+Z — it matches the Undo toolbar button.
+  Without a node click in between, press
+  Cmd+Shift+Z / Ctrl+Shift+Z (the browser
+  reports `key: 'Z'`) — it matches Redo. PASS:
   keyboard shortcuts match toolbar button
   behavior.
 
@@ -1516,6 +1543,9 @@ designer "tag current" action lands.)
 - [ ] **F57** Focus a text input (e.g. node name in the panel).
   Tap the spacebar. PASS: a literal space character is inserted
   into the input; pan mode state is unchanged.
+- [ ] **F57a** Tab to a node, tap Space. PASS: the
+  node's panel opens (Space activates the
+  focused item); pan mode stays off.
 
 ### Members Selector (Node Panel)
 
