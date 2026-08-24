@@ -11,6 +11,8 @@ import { createRequestContext } from
 import { claimToken } from './token-fixtures.ts';
 import { getRecordAttributesByRecord } from
     '../web-app/app/adapters/record-attributes.ts';
+import { getRecord } from
+    '../web-app/app/adapters/records.ts';
 import { deriveMembershipsForIdentity } from
     '../api/derive-memberships.ts';
 import { projectInstanceFields } from
@@ -61,6 +63,15 @@ test(
                 sliceEntityId('r-attr-review-notes'),
                 sliceEntityId('r-attr-review-limit'),
             ],
+        );
+        // TEST-PLAN R21 navigates by these names —
+        // a rename would pass ./validate and fail
+        // only mid-browser-run.
+        const record = await getRecord(ctx, recordId);
+        assert.equal(record.name, 'Account Review');
+        assert.deepEqual(
+            attributes.map((a) => a.name),
+            ['Owner Notes', 'Credit Limit'],
         );
         const memberFields = projectInstanceFields(
             attributes,
