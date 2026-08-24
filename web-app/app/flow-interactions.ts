@@ -732,6 +732,9 @@ export function bindInteractions(
         if (ke.key !== ' ') return;
         // auto-repeat would chatter the toggle
         if (ke.repeat) return;
+        // the activation listener (document phase)
+        // claims Space for a focused node or edge
+        if (ke.defaultPrevented) return;
         if (isFormFocused()) return;
         ke.preventDefault();
         dispatch({
