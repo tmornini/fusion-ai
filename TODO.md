@@ -138,8 +138,8 @@ spec → plan → ship cycle, implemented sequentially. A
    (`web-app/app/adapters/record-attributes.ts:76-79`)
    and the two readings of an absent role array
    (`api/routes.ts:843-856, 1000-1005` —
-   `attributeSchemaOf` vs
-   `recordAttributeDocumentBodyOf`); the nested
+   `recordAttributeDocumentBodyOf` vs
+   `attributeSchemaOf`); the nested
    key-set follow-on (`api/validators.ts:705-713` —
    remove the comment at `validators.ts:705-713` when
    done); `handleSpace` dispatching
