@@ -279,6 +279,35 @@ function ancestorAttr(
     return null;
 }
 
+// The FSM input a focusin on the canvas carries, or
+// null when the focused element is neither a node nor
+// an edge. isRenderedSelected reads the RENDERED
+// aria-current rather than the FSM's own selection —
+// see onCanvasFocus in flow-fsm-reduce.
+export function canvasFocusInputOf(
+    target: Element,
+): Extract<FsmInput, {
+    kind: 'canvas-focus';
+}> | null {
+    const nodeId = ancestorAttr(
+        target, 'data-node-id',
+    );
+    const edgeId = ancestorAttr(
+        target, 'data-edge-id',
+    );
+    if (!nodeId && !edgeId) return null;
+    const isRenderedSelected =
+        ancestorAttr(
+            target, 'aria-current',
+        ) === 'true';
+    return {
+        kind: 'canvas-focus',
+        nodeId,
+        edgeId,
+        isRenderedSelected,
+    };
+}
+
 function buildSelectedPositions(
     state: InteractionState,
     clickedId: string,
@@ -687,23 +716,10 @@ export function bindInteractions(
             if (
                 !(target instanceof Element)
             ) return;
-            const nodeId = ancestorAttr(
-                target, 'data-node-id',
-            );
-            const edgeId = ancestorAttr(
-                target, 'data-edge-id',
-            );
-            if (!nodeId && !edgeId) return;
-            const isRenderedSelected =
-                ancestorAttr(
-                    target, 'aria-current',
-                ) === 'true';
-            dispatch({
-                kind: 'canvas-focus',
-                nodeId,
-                edgeId,
-                isRenderedSelected,
-            });
+            const input =
+                canvasFocusInputOf(target);
+            if (input === null) return;
+            dispatch(input);
         },
         { signal },
     );
