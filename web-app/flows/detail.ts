@@ -614,7 +614,9 @@ export function canvasFocusOf(
 // id finds nothing and focus stays on <body>. The wrap
 // is overflow: hidden, so a bare focus() would scroll
 // the wrap against the viewBox camera — preventScroll
-// is load-bearing.
+// is load-bearing. Call it only inside
+// withCanvasFocusRestore — the focusin it fires would
+// otherwise revert the selection the user just made.
 export function restoreCanvasFocus(
     focus: CanvasFocus | null,
     wrap: Element,
