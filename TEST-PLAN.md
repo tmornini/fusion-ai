@@ -644,12 +644,20 @@ idea, not a K26 `under_review` title).
   title and text fields (problem, solution,
   outcome) are editable. Click "Save". PASS:
   toast confirms save, all fields persist.
-- [ ] **AA14** Serial: Ideas list already shows
-  the 11 mock titles. Do not Create. PASS: all
-  11 titles are present. Parallel: Repeat
-  creation and field entry for all 11 ideas
-  matching mock data titles. PASS: ideas list
-  shows all 11 with correct titles.
+- [ ] **AA14** Serial: Stark Ideas list already
+  shows the 6 Stark mock titles — AI-Powered
+  Customer Segmentation, Predictive Maintenance
+  System, Smart Inventory Optimization,
+  AI-Powered Customer Support Chatbot,
+  Sustainability Dashboard for Operations,
+  Real-time Inventory Tracking System. Do not
+  Create. Do not claim 11 titles on one page.
+  Wayne holds the other 5; do not mint; do not
+  switch here. PASS: those six titles are
+  present. Parallel: Repeat creation and field
+  entry for all 11 ideas matching mock data
+  titles. PASS: ideas list shows all 11 with
+  correct titles.
 
 ### AA5. Submit Ideas for Review
 
@@ -661,15 +669,19 @@ idea, not a K26 `under_review` title).
   Review". PASS: status changes to "In Review",
   button disappears.
 - [ ] **AA16** Serial: do not Submit. PASS:
-  ideas 1, 4, 7, 8, 9, 10, 11 are already
-  `in_review`. Parallel: Submit ideas 1, 4, 7,
-  8, 9, 10, 11 for review (matching mock data
-  statuses). PASS: each transitions from active
-  to in_review.
+  the four Stark `in_review` titles (AI-Powered
+  Customer Segmentation, AI-Powered Customer
+  Support Chatbot, Sustainability Dashboard
+  for Operations, Real-time Inventory Tracking
+  System). Do not name Wayne titles as already
+  `in_review` on this page. Parallel: Submit
+  ideas 1, 4, 7, 8, 9, 10, 11 for review
+  (matching mock data statuses). PASS: each
+  transitions from active to in_review.
 - [ ] **AA17** Navigate to Ideas list and
   filter by "In Review" status badge. Serial:
-  PASS: 7 cards. Parallel: PASS: the 7 just
-  submitted ideas appear.
+  PASS: 4 cards on Stark. Parallel: PASS: the
+  7 just submitted ideas appear.
 
 ### AA7. Approve Ideas & Convert to Projects
 
@@ -683,23 +695,27 @@ idea, not a K26 `under_review` title).
   visible; do not Approve. Parallel: Click
   "Approve". PASS: idea status changes to
   approved, confirmation shown.
-- [ ] **AA20** Serial: do not Approve. PASS:
-  1 `approved` (Automated Report Generation),
-  7 `in_review`, 2 `active`, 1 `sent_back`.
-  Parallel: Approve idea #4 as well (it was
-  submitted for review in AA16). Leave others
-  in their current status. PASS: statuses match
-  the AA walk (2 approved, rest
+- [ ] **AA20** Serial: do not Approve. PASS on
+  Stark: 0 `approved`, 4 `in_review`, 2
+  `active`, 0 `sent_back`. The one seeded
+  `approved` idea (Automated Report Generation)
+  sits on Wayne. Parallel: Approve idea #4 as
+  well (it was submitted for review in AA16).
+  Leave others in their current status. PASS:
+  statuses match the AA walk (2 approved, rest
   in_review/active).
-- [ ] **AA21** Serial: Convert is visible on
-  seeded approved idea Automated Report
-  Generation (`WurwPqXxGtLhRAoCEcPzfQ`). Click
-  Convert. PASS: conversion form loads with 4
-  required fields (Project Name, Time with a
-  "days" input suffix, Cost, Success Criteria)
-  — there is no Impact field — plus a Scores
-  box holding one required baseline slider per
-  active objective. Do not Create Project.
+- [ ] **AA21** Serial: leftover Convert stays
+  Automated Report Generation
+  (`WurwPqXxGtLhRAoCEcPzfQ`) on Wayne. Select
+  Wayne Enterprises in the sidebar footer
+  `.org-switcher` (G36). Convert is visible;
+  click Convert. PASS: conversion form loads
+  with 4 required fields (Project Name, Time
+  with a "days" input suffix, Cost, Success
+  Criteria) — there is no Impact field — plus
+  a Scores box holding one required baseline
+  slider per active objective. Do not Create
+  Project. (D16 inherits this Wayne-switch.)
   Parallel: Navigate to approved idea #1.
   Click "Convert". PASS: the same form loads.
 - [ ] **AA22** Serial: do not Convert. PASS:
@@ -728,6 +744,8 @@ idea, not a K26 `under_review` title).
   disabled until all four objectives are
   scored. Serial: inspect on Automated Report
   Generation's form; do not Create Project.
+  Then select Stark Industries in
+  `.org-switcher` before AA23–AA24a.
 - [ ] **AA23** Serial: on a seeded project
   (AI-Powered Customer Segmentation), click
   "Edit". Set a field and Save. PASS: project
@@ -740,7 +758,8 @@ idea, not a K26 `under_review` title).
   field — it is derived read-only from the
   objective baseline scores.)
 - [ ] **AA24** Serial: do not Approve remaining
-  ideas; do not Convert. PASS: Projects list
+  ideas; do not Convert. Hunter is on Stark
+  Industries after AA22a. PASS: Projects list
   is the seeded Stark list (~16). Parallel:
   Approve remaining ideas (7, 8, 9, 10) from
   Ideas list (filter by "In Review"), then
