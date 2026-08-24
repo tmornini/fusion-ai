@@ -891,14 +891,14 @@ async function formRecordWriteMessagePairs(
     // stored ACL forward, and a new attribute takes
     // the default. The composed body can never carry
     // roles (the validator's key set — correctly).
-    const storedAcl = b.kind === 'edit'
+    const storedAttributes = b.kind === 'edit'
         ? await loadAttributeSchemaById(
             db, organization, b.id,
         )
         : undefined;
     const attributePuts = await Promise.all(
         b.attributes.map(async (attr) => {
-            const stored = storedAcl?.get(attr.id);
+            const stored = storedAttributes?.get(attr.id);
             const raw = attr as unknown as
                 Record<string, unknown>;
             const attributeBody =
