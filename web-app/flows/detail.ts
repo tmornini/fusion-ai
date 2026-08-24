@@ -570,10 +570,89 @@ async function handleAddNodeAtPosition(
     );
 }
 
+export type CanvasFocus = {
+    readonly kind: 'node' | 'edge';
+    readonly id: string;
+};
+
+// The previously focused CANVAS item, if any. Null
+// unless the active element sits inside the wrap and
+// an ancestor carries data-node-id / data-edge-id —
+// the panel, the name input, a <dialog>, and <body>
+// all yield null, so nothing is stolen from them.
+export function canvasFocusOf(
+    active: Element | null,
+    wrap: Element,
+): CanvasFocus | null {
+    if (
+        active === null
+        || active === wrap
+        || !wrap.contains(active)
+    ) {
+        return null;
+    }
+    let current: Element | null = active;
+    while (current && current !== wrap) {
+        const nodeId =
+            current.getAttribute('data-node-id');
+        if (nodeId !== null) {
+            return { kind: 'node', id: nodeId };
+        }
+        const edgeId =
+            current.getAttribute('data-edge-id');
+        if (edgeId !== null) {
+            return { kind: 'edge', id: edgeId };
+        }
+        current = current.parentElement;
+    }
+    return null;
+}
+
+// Re-focus the same id in the rebuilt canvas — the
+// previously FOCUSED id, never aria-current. A deleted
+// id finds nothing and focus stays on <body>. The wrap
+// is overflow: hidden, so a bare focus() would scroll
+// the wrap against the viewBox camera — preventScroll
+// is load-bearing.
+export function restoreCanvasFocus(
+    focus: CanvasFocus | null,
+    wrap: Element,
+): void {
+    if (focus === null) return;
+    const attrName = focus.kind === 'node'
+        ? 'data-node-id'
+        : 'data-edge-id';
+    const els = wrap.querySelectorAll(
+        '[' + attrName + ']',
+    );
+    for (const el of els) {
+        if (
+            el.getAttribute(attrName) !== focus.id
+        ) {
+            continue;
+        }
+        if (el instanceof SVGElement) {
+            el.focus({ preventScroll: true });
+        }
+        return;
+    }
+}
+
 function update(container: HTMLElement): void {
     pageState.saveDebouncer().flush();
     const presenter = pageState.presenter();
+    const wrap = $(
+        '.flow-canvas-wrap', container,
+    );
+    const focus = wrap === null
+        ? null
+        : canvasFocusOf(
+            document.activeElement, wrap,
+        );
     presenter.renderUpdate(container);
+    if (wrap !== null) {
+        restoreCanvasFocus(focus, wrap);
+    }
     pageState.pushGestureContext(
         presenter.buildGestureContext(),
     );
