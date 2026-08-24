@@ -264,6 +264,17 @@ Off the critical path; each with its oracle.
   rather than the validator's normalized document
   (`api/routes.ts:5307-5333`; the default-stamping it
   discards is `api/validators.ts:3042-3054`)
+- A panel rename whose target is deleted during the
+  800 ms debounce still saves and still clears redo.
+  `withNodeNamed`, `withNodeTaskInstructions`, and
+  `withEdgeNamed` fire `#queueSave` and `#noteMutation`
+  unconditionally, so an `applyUpdateNode` that matches
+  nothing still ships a phantom idempotent PUT and a
+  spurious redo clear — a disclosed trade-off, not a
+  regression. Oracle:
+  `web-app/app/presenters/flow-designer.ts:808-885`;
+  the debounced schedules are
+  `web-app/flows/detail.ts:1349-1391`
 - The Deno migration as one block — six specs, strict
   1 → 6, 3 and 4 may swap after Spec 2's measurements,
   Spec 6 optional (the measurements after Spec 5
