@@ -2842,7 +2842,7 @@ every other agent, so no write-domain collision.
   the work order is `#r1`.
 - [ ] **R14a** When a node references a `radio`-typed Record attribute, the workbox work-order detail renders it as a radio group — one `<input type="radio">` per option, all sharing the attribute name so only one is selectable — rather than a dropdown; selecting an option and transitioning records that value. NOTE: seeded mock data predates `radio`, so add a radio attribute, reference it Editable on a working node, and create a work order to exercise this.
 - [ ] **R15** Open the R2-created Record's detail
-  page — never Customer Profile (R16–R21 read it).
+  page — never Customer Profile (R16–R20 read it).
   Click Archive; confirm in the house dialog
   (`data-dialog-open="confirm-archive"`). PASS: a
   "Record archived" toast appears, the header badge
