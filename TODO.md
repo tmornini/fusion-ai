@@ -50,9 +50,16 @@ spec → plan → ship cycle, implemented sequentially. A
 5. Execute TEST-PLAN.md with up to 48 subagents —
    after the run-four remediation ships; the
    Protocol's one-profile, hunters-in-turn contract is
-   revisited for 48. Merged: the five run-four
-   mitigation stubs (absorbed by the remediation
-   spec).
+   revisited for 48. BLOCKING precondition, cleared
+   before the run starts: `./validate` is this run's
+   automatic abort, and a false prophet in the gating
+   suite kills the run spuriously —
+   `tests/api-flow-document.test.ts:1038` ("an undo
+   racing a save") failed once under full-suite load,
+   two racers winning where one was expected, then
+   passed in isolation and on re-run. Merged: the five
+   run-four mitigation stubs (absorbed by the
+   remediation spec); the flaky-test bullet.
 6. Re-implement workbox, work orders, and flows —
    nodes become processes; process kinds: record
    modification (current), external process
@@ -248,12 +255,6 @@ Off the critical path; each with its oracle.
   in the run-four remediation pass against unfixed
   code until it was caught. Oracle:
   `tests/api-record-types-composed-op.test.ts:434-440`
-- A flaky test — `tests/api-flow-document.test.ts:1038`
-  ("an undo racing a save") failed once under
-  full-suite load, two racers winning where one was
-  expected, then passed in isolation and on re-run. By
-  the scripture's own words an intermittently failing
-  test is a false prophet
 - Absence and emptiness are conflated in attribute ACL
   derivation. `attributeSchemaOf` synthesizes
   `readRoles: []` both for a head that deliberately
