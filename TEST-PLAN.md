@@ -1200,7 +1200,18 @@ depends: A
   status: clicking the card navigates to
   `ideas/detail.html` with Send Back /
   Approve buttons in the header next to Edit.
-- [ ] **D16** For a convertible idea: "Convert" action button is visible. PASS: clicking it navigates to `ideas/convert.html` page.
+- [ ] **D16** Convert is on the list card
+  (`data-idea-convert`) and on detail
+  (`#idea-convert-btn`). Serial: leftover
+  Convert is Automated Report Generation
+  (`WurwPqXxGtLhRAoCEcPzfQ`) on Wayne. Select
+  Wayne Enterprises in the sidebar footer
+  `.org-switcher` (G36) — it is not on the
+  Stark list. PASS: the control is visible;
+  clicking it navigates to `ideas/convert.html`.
+  That click does **not** promote (D24 does).
+  Parallel: a slice-garden `approved` idea,
+  same control, same PASS.
 - [ ] **D17** Navigate to `ideas/detail.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows error state, no unhandled JS exception.
 
 ### Idea Detail — Submit for Review
@@ -1215,9 +1226,51 @@ depends: A
 
 ### Idea Convert (`ideas/convert.html`)
 
-- [ ] **D22** Navigate to `ideas/convert.html?ideaId=<id>` for a convertible idea. PASS: page loads with conversion form showing 4 required fields: Project Name, Time (label "Time", unit "days" as the input suffix; field key `time-days`), Cost, Success Criteria (it maps to the project description). There is no Impact field. A Scores box renders one required baseline slider per active objective. Sticky sidebar shows the idea summary (Title, Problem Statement, Target Users, Proposed Solution, Expected Outcome, Success Metrics). Source of truth: `REQUIRED_FIELDS` in `web-app/app/presenters/idea-conversion.ts`.
-- [ ] **D23** With required fields empty, "Create Project" is disabled and the progress bar shows 0/N where N = 4 + one per active objective (e.g. 0/8 with 4 objectives). Fill fields and drag baseline sliders one at a time. PASS: the bar increments with each required field AND each baseline, checkmarks appear next to completed items, and the button enables only when all required fields AND all baselines are set. Success Criteria is required — filling it advances the bar.
-- [ ] **D24** Fill every required field and baseline (the progress bar reaches its max, e.g. 8/8), click "Create Project". PASS: navigates to project detail page for the newly created project. The source idea's lifecycle state becomes `promoted` (list badge label **Promoted**, not "Approved") — convert is a promotion, not a re-approve.
+- [ ] **D22** Navigate to
+  `ideas/convert.html?ideaId=<id>` for a
+  convertible idea. Serial: Automated Report
+  Generation (`WurwPqXxGtLhRAoCEcPzfQ`) on
+  Wayne (org-switch `.org-switcher` / G36 if
+  not already on Wayne; D16 verified this
+  leftover). Parallel: a slice-garden
+  `approved` idea. PASS: page loads with
+  conversion form showing 4 required fields:
+  Project Name, Time (label "Time", unit
+  "days" as the input suffix; field key
+  `time-days`), Cost, Success Criteria (it
+  maps to the project description). There is
+  no Impact field. A Scores box renders one
+  required baseline slider per active
+  objective. Serial: 1 Wayne slider (Wayne
+  demo objective). Parallel: 4 sliders.
+  Sticky sidebar shows the idea summary
+  (Title, Problem Statement, Target Users,
+  Proposed Solution, Expected Outcome,
+  Success Metrics). Source of truth:
+  `REQUIRED_FIELDS` in
+  `web-app/app/presenters/idea-conversion.ts`.
+- [ ] **D23** With required fields empty, "Create
+  Project" is disabled and the progress bar
+  shows 0/N where N = 4 + one per active
+  objective. Serial: 0/5 (4 fields + 1 Wayne
+  objective). Parallel: 0/8 (4 + 4). Fill
+  fields and drag baseline sliders one at a
+  time. PASS: the bar increments with each
+  required field AND each baseline, checkmarks
+  appear next to completed items, and the
+  button enables only when all required fields
+  AND all baselines are set. Success Criteria
+  is required — filling it advances the bar.
+- [ ] **D24** Fill every required field and
+  baseline (the progress bar reaches its max;
+  Serial: 5/5. Parallel: 8/8), click "Create
+  Project". Serial: Create Project on ARG
+  after D16 verified the leftover. PASS:
+  navigates to project detail page for the
+  newly created project. The source idea's
+  lifecycle state becomes `promoted` (list
+  badge label **Promoted**, not "Approved") —
+  convert is a promotion, not a re-approve.
 
 ### Idea Status Filtering (`ideas/index.html`)
 
@@ -1229,7 +1282,10 @@ depends: A
 ### Idea Detail — Approval Actions
 
 - [ ] **D29** Navigate to `ideas/detail.html?ideaId=<id>` for an in_review idea (entity ids are identifiers, not sequential integers — copy a real id from the Ideas list). PASS: page loads with idea details and Send Back / Approve buttons in the header next to Edit.
-- [ ] **D30** Click "Approve". PASS: success toast, navigates to ideas list, idea status is now "approved".
+- [ ] **D30** Click "Approve". PASS: success toast,
+  navigates to ideas list, idea status is now
+  "approved". This is a second `approved` — not
+  D16's leftover Convert subject.
 - [ ] **D31** Click "Send Back". PASS: confirm dialog opens. Confirm. PASS: idea status changes to "sent_back", navigates to ideas list.
 - [ ] **D32** Navigate to idea detail for a non-in_review idea. PASS: no Send Back / Approve buttons are shown.
 - [ ] **D32a** On an in_review idea, click "Edit". PASS: the header shows only Cancel / Save — no Send Back, Approve, Submit, or Convert. Click Cancel: the read header (Send Back / Approve / Edit) returns.
@@ -1476,9 +1532,13 @@ opens and renders.)
   depth. Create heads the first column and
   Archive ends the last — never above or below
   a column-mate; the covenant is the columns,
-  not the corners. On a fan (Layout Test) both
-  sit mid-height. A long chain wraps into a
-  serpentine (Customer Onboarding,
+  not the corners. Create min x, Archive max x.
+  Hunter measures laid-out node positions on
+  `svg.flow-canvas` (`data-node-id` plus the
+  node's x/y or transform) after the second
+  Auto Layout toggle, not screenshot y. A long
+  chain wraps into a serpentine (Customer
+  Onboarding,
   Lead-to-Close): Create leads the top row and
   Archive ends the last — bottom-left on an
   even row count.
