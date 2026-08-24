@@ -55,10 +55,10 @@ spec → plan → ship cycle, implemented sequentially. A
    automatic abort, and a false prophet in the gating
    suite kills the run spuriously —
    `tests/api-flow-document.test.ts:1038` ("an undo
-   racing a save") failed once under full-suite load,
-   two racers winning where one was expected, then
-   passed in isolation and on re-run. Merged: the five
-   run-four mitigation stubs (absorbed by the
+   racing a save") failed three times (two on Markdown
+   diffs), two racers winning where one was expected,
+   then passed in isolation and on re-run. Merged: the
+   five run-four mitigation stubs (absorbed by the
    remediation spec); the flaky-test bullet.
 6. Re-implement workbox, work orders, and flows —
    nodes become processes; process kinds: record
