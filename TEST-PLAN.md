@@ -2764,7 +2764,9 @@ every other agent, so no write-domain collision.
   Serial (A3 `--mock-data`, demo admin's active
   organization Stark): Customer Profile visible;
   Project Brief is org 2 and hidden. Parallel
-  (A3 `--test-plan-slices`): Customer Profile only.
+  (A3 `--test-plan-slices`): Customer
+  Profile and Account Review (the R21 subject;
+  never edit it).
 - [ ] **R2** Click "Add Record" (desktop) / "New Record"
   (mobile) → navigates to a create page
   (`records/create.html`) with Name and Description
@@ -2863,13 +2865,18 @@ every other agent, so no write-domain collision.
   `confirm-delete-instance`). PASS: instance disappears
   from the list; reopening the address is not available
   (spent id).
-- [ ] **R21** ACL projection (member vs admin): as admin,
-  every attribute on the edit form is writable. As a
-  member against attributes whose `write_roles` exclude
-  `member` (set via API / seed), those fields render
-  read-only and unreadable fields are omitted. PASS:
+- [ ] **R21** ACL projection (member vs admin) on
+  Account Review. As the R admin, click New instance:
+  Owner Notes and Credit Limit both render
+  `data-access="writable"`. Sign in as the R
+  `member_*` credentials, open the instance: Owner
+  Notes renders `data-access="readonly"`; Credit
+  Limit is absent (`read_roles: ['admin']`). PASS:
   projection matches held roles; no ACL editing UI on
-  this page.
+  this page (ACLs are set only by
+  `PUT …/attributes/:id`). Serial (A3 `--mock-data`):
+  set the roles by the nested PUT on a record no case
+  edits.
 
 ## J. Teardown
 
