@@ -48,8 +48,9 @@ other coordination state is read or written.
 
 BLOCKED ≠ FAIL. BLOCKED is reserved for known MCP
 environmental limits (pointer-capture gestures,
-`resize_window`, file I/O, sandbox EPERM) — never used
-to mask a real failure.
+`resize_window`, file I/O, sandbox EPERM, one
+selected page) — never used to mask a real
+failure.
 
 ### Sub-agent invocation contract
 
@@ -168,7 +169,14 @@ a K-hunter case on the parallel path.
   contexts (one Chrome profile, one cookie
   jar, one selected page). Each hunter
   deletes site data for the origin first.
-  The CLI belt is the parallel layer.
+  After each hunter: delete site data.
+  Stolen-tab rule as C4/C7/R14: a
+  foreign-admin chip or empty bind
+  picker on the named subject is
+  BLOCKED (MCP selected-page), not a
+  product FAIL unless a serial pin
+  fails. The CLI belt is the parallel
+  layer.
   Then K8 (wipe/reseed of the shared DB; no
   hunter still running). Then J. Then summary
   + mitigation paths.
@@ -296,6 +304,20 @@ Master never re-dispatches a hunter to retry.
   `tabs_context_mcp({ createIfEmpty: true })` to allocate a
   fresh group, then proceed. Pre-existing tab IDs from
   before the dissolution are invalidated.
+- **One selected page (stolen-tab).** This MCP
+  has one Chrome profile, one cookie jar, one
+  selected page. After each hunter: delete
+  site data. A chip that names another
+  hunter's admin, 0/0/1 tiles, or
+  `data-empty` rows on C — or bind picker
+  "No instances available" / toast "work
+  order has no instance binding" on R14's
+  named subject — is stolen-tab paint. If
+  the chip names another section's admin:
+  BLOCKED (MCP selected-page). Otherwise
+  FAIL. Do not treat parallel-MCP noise as
+  a product bug unless a serial C or R pin
+  fails.
 - **`javascript_tool` async/await blocked by CSP**: the app
   ships `script-src 'self'` with no `unsafe-eval`, so the
   tool's async/IIFE wrapper throws `await is not defined`.
@@ -1137,6 +1159,15 @@ depends: A
   4 ideas, 3 projects, 1 flow, 4 objectives;
   both approved projects score every objective.
   A `—` Impact or a `data-empty` row is a FAIL.
+  Delete site data, sign in as this slice's
+  admin, wait ≥14s, then assert C4/C7. A chip
+  that names another hunter's admin, 0/0/1
+  tiles, or `data-empty` rows on C is
+  stolen-tab paint. If the chip names
+  another section's admin: BLOCKED (MCP
+  selected-page). Otherwise FAIL. Do not
+  treat parallel-MCP noise as a product bug
+  unless a serial C pin fails.
 - [ ] **C5** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
 - [ ] **C6** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
 - [ ] **C7** Check that seed data populates all 4 dashboard
@@ -1159,6 +1190,15 @@ depends: A
   projects, 1 flow, 4 objectives; both approved
   projects score every objective. A `—` Impact or
   a `data-empty` row is a FAIL.
+  Delete site data, sign in as this slice's
+  admin, wait ≥14s, then assert C4/C7. A chip
+  that names another hunter's admin, 0/0/1
+  tiles, or `data-empty` rows on C is
+  stolen-tab paint. If the chip names
+  another section's admin: BLOCKED (MCP
+  selected-page). Otherwise FAIL. Do not
+  treat parallel-MCP noise as a product bug
+  unless a serial C pin fails.
 
 ---
 
@@ -3181,6 +3221,16 @@ every other agent, so no write-domain collision.
   Serial (A3 `--mock-data`): the work order is
   `#gate0001`. Parallel (A3 `--test-plan-slices`):
   the work order is `#r1`.
+  Bind picker "No instances available" or
+  toast "work order has no instance binding"
+  on that subject is stolen-tab paint.
+  Delete site data, sign in as this slice's
+  admin, wait ≥14s, then assert. If the
+  chip names another section's admin:
+  BLOCKED (MCP selected-page). Otherwise
+  FAIL. Do not treat parallel-MCP noise as
+  a product bug unless a serial R pin
+  fails. No mint+bind. No extra seed row.
 - [ ] **R14a** When a node references a `radio`-typed Record attribute, the workbox work-order detail renders it as a radio group — one `<input type="radio">` per option, all sharing the attribute name so only one is selectable — rather than a dropdown; selecting an option and transitioning records that value. NOTE: seeded mock data predates `radio`, so add a radio attribute, reference it Editable on a working node, and create a work order to exercise this.
 - [ ] **R15** Open the R2-created Record's detail
   page — never Customer Profile (R16–R20 read it).
@@ -3366,7 +3416,8 @@ and Drift Candidates, a one-line BLOCKED list, and fits in
 under 50 lines.
 
 `BLOCKED` is reserved for known MCP environmental limits
-(pointer-capture gestures, `resize_window`, file I/O).
+(pointer-capture gestures, `resize_window`, file I/O,
+one selected page).
 `FAIL` is for real regressions. A case that "mostly passes
 but one subassertion drifts" is scored PASS with the drift
 noted in the Drift Candidates table — the agent surfaces;
