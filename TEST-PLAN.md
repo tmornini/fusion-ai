@@ -170,13 +170,15 @@ a K-hunter case on the parallel path.
   jar, one selected page). Each hunter
   deletes site data for the origin first.
   After each hunter: delete site data.
-  Stolen-tab rule as C4/C7/R14: a
-  foreign-admin chip or empty bind
-  picker on the named subject is
-  BLOCKED (MCP selected-page), not a
-  product FAIL unless a serial pin
-  fails. The CLI belt is the parallel
-  layer.
+  Stolen-tab rule as C4/C7/R14: empty
+  bind picker, `data-empty` rows, or
+  0/0/1 tiles are stolen-tab paint.
+  BLOCKED (MCP selected-page) only if
+  the chip names another section's
+  admin. Otherwise FAIL. Do not treat
+  parallel-MCP noise as a product bug
+  unless a serial C or R pin fails.
+  The CLI belt is the parallel layer.
   Then K8 (wipe/reseed of the shared DB; no
   hunter still running). Then J. Then summary
   + mitigation paths.
@@ -307,17 +309,15 @@ Master never re-dispatches a hunter to retry.
 - **One selected page (stolen-tab).** This MCP
   has one Chrome profile, one cookie jar, one
   selected page. After each hunter: delete
-  site data. A chip that names another
-  hunter's admin, 0/0/1 tiles, or
-  `data-empty` rows on C — or bind picker
-  "No instances available" / toast "work
-  order has no instance binding" on R14's
-  named subject — is stolen-tab paint. If
-  the chip names another section's admin:
-  BLOCKED (MCP selected-page). Otherwise
-  FAIL. Do not treat parallel-MCP noise as
-  a product bug unless a serial C or R pin
-  fails.
+  site data. Empty bind picker, `data-empty`
+  rows, or 0/0/1 tiles on C — or toast
+  "work order has no instance binding" on
+  R14's named subject — is stolen-tab
+  paint. If the chip names another
+  section's admin: BLOCKED (MCP
+  selected-page). Otherwise FAIL. Do not
+  treat parallel-MCP noise as a product
+  bug unless a serial C or R pin fails.
 - **`javascript_tool` async/await blocked by CSP**: the app
   ships `script-src 'self'` with no `unsafe-eval`, so the
   tool's async/IIFE wrapper throws `await is not defined`.
@@ -1160,14 +1160,11 @@ depends: A
   both approved projects score every objective.
   A `—` Impact or a `data-empty` row is a FAIL.
   Delete site data, sign in as this slice's
-  admin, wait ≥14s, then assert C4/C7. A chip
-  that names another hunter's admin, 0/0/1
-  tiles, or `data-empty` rows on C is
-  stolen-tab paint. If the chip names
+  admin, wait ≥14s, then assert C4/C7.
+  0/0/1 tiles or `data-empty` rows on C
+  are stolen-tab paint. If the chip names
   another section's admin: BLOCKED (MCP
-  selected-page). Otherwise FAIL. Do not
-  treat parallel-MCP noise as a product bug
-  unless a serial C pin fails.
+  selected-page). Otherwise FAIL.
 - [ ] **C5** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
 - [ ] **C6** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
 - [ ] **C7** Check that seed data populates all 4 dashboard
@@ -1191,14 +1188,11 @@ depends: A
   projects score every objective. A `—` Impact or
   a `data-empty` row is a FAIL.
   Delete site data, sign in as this slice's
-  admin, wait ≥14s, then assert C4/C7. A chip
-  that names another hunter's admin, 0/0/1
-  tiles, or `data-empty` rows on C is
-  stolen-tab paint. If the chip names
+  admin, wait ≥14s, then assert C4/C7.
+  0/0/1 tiles or `data-empty` rows on C
+  are stolen-tab paint. If the chip names
   another section's admin: BLOCKED (MCP
-  selected-page). Otherwise FAIL. Do not
-  treat parallel-MCP noise as a product bug
-  unless a serial C pin fails.
+  selected-page). Otherwise FAIL.
 
 ---
 
@@ -3228,9 +3222,7 @@ every other agent, so no write-domain collision.
   admin, wait ≥14s, then assert. If the
   chip names another section's admin:
   BLOCKED (MCP selected-page). Otherwise
-  FAIL. Do not treat parallel-MCP noise as
-  a product bug unless a serial R pin
-  fails. No mint+bind. No extra seed row.
+  FAIL. No mint+bind. No extra seed row.
 - [ ] **R14a** When a node references a `radio`-typed Record attribute, the workbox work-order detail renders it as a radio group — one `<input type="radio">` per option, all sharing the attribute name so only one is selectable — rather than a dropdown; selecting an option and transitioning records that value. NOTE: seeded mock data predates `radio`, so add a radio attribute, reference it Editable on a working node, and create a work order to exercise this.
 - [ ] **R15** Open the R2-created Record's detail
   page — never Customer Profile (R16–R20 read it).
