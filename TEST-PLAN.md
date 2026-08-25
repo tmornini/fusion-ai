@@ -3249,12 +3249,13 @@ every other agent, so no write-domain collision.
   `#gate0001` (`eOlNZpGQfmCdpSFWXGkzFQ`) at
   Data Capture, unbound. Only WO01 (`a7c3e1f9`
   / `xqcXYHXBJJXcLkRYkRngKA`) is
-  instance-bound. If `#gate0001` is unbound,
-  bind the seeded Customer Profile instance
-  via the bind picker (existing instance, not
-  mint). Then the fillable path applies.
-  Parallel (A3 `--test-plan-slices`): the
-  work order is `#r1` (already bound).
+  instance-bound. Do not bind — leftover
+  stays unbound so empty submit still toasts
+  "Please fill all required attributes"
+  (the seeded Customer Profile instance is
+  Acme, values already set). Parallel (A3
+  `--test-plan-slices`): the work order is
+  `#r1` (already bound).
 - [ ] **R14** Fill Company Name + Contact Email, click
   submit. PASS: transition succeeds; work order advances
   to Review (does NOT demand Reviewer Notes — that is
