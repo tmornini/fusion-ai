@@ -258,6 +258,7 @@ test(
             typeof item.lastTransitionedAt,
             'string',
         );
+        assert.equal(item.claimedByName, null);
     },
 );
 
@@ -279,8 +280,9 @@ test(
 );
 
 test(
-    'buildInboxItems hides a work order with an'
-    + ' active claim that is not yet finished',
+    'buildInboxItems surfaces a claimed,'
+    + ' unfinished work order as an active item'
+    + ' naming its claimant',
     async () => {
         const { tables } =
             await setupOneWorkOrder();
@@ -295,7 +297,10 @@ test(
             workOrders, transitionsByWo,
             activeClaimsByWo, memberMap, 'active',
         );
-        assert.deepEqual(items, []);
+        assert.equal(items.length, 1);
+        assert.equal(
+            items[0]!.claimedByName, 'Demo Test',
+        );
     },
 );
 
