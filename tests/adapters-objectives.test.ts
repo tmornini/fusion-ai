@@ -6,6 +6,7 @@ import {
 } from '../api/db-memory.ts';
 import {
     createRequestContext,
+    organizationItem,
     type RequestContext,
 } from '../web-app/app/adapters/shared.ts';
 import { DEV_TOKEN } from './token-fixtures.ts';
@@ -13,6 +14,7 @@ import {
     getObjectives,
     getArchivedObjectiveIds,
     getObjectiveArchivalEvents,
+    getObjectiveLifecycleEvents,
     getObjectiveHistories,
     getObjectiveRevisionsByObjective,
     getActiveObjectives,
@@ -263,6 +265,88 @@ test(
         for (const a of archivals) {
             assert.equal(a.objectiveId, 'ohqxgUBEaFQwYbXsonRPmg');
         }
+    },
+);
+
+test(
+    'getObjectiveLifecycleEvents streams dated'
+    + ' transitions oldest-first',
+    async () => {
+        const db = memoryDbAdapter();
+        await seedAdminSchema(db);
+        await seedCurrentMember(db);
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctxFor(db),
+            'ohqxgUBEaFQwYbXsonRPmg',
+            'Rev', 'd', 0,
+        );
+        await postObjectiveArchival(
+            ctxFor(db), 'ohqxgUBEaFQwYbXsonRPmg',
+        );
+        await postObjectiveReactivation(
+            ctxFor(db), 'ohqxgUBEaFQwYbXsonRPmg',
+        );
+        await postObjectiveArchival(
+            ctxFor(db), 'ohqxgUBEaFQwYbXsonRPmg',
+        );
+        const events =
+            await getObjectiveLifecycleEvents(ctx);
+        assert.deepEqual(
+            events.map(e => e.kind),
+            [
+                'archival',
+                'reactivation',
+                'archival',
+            ],
+        );
+        for (const e of events) {
+            assert.equal(
+                e.objectiveId,
+                'ohqxgUBEaFQwYbXsonRPmg',
+            );
+            assert.notEqual(e.memberId, '');
+            assert.notEqual(e.at, '');
+        }
+        assert.ok(events[0]!.at <= events[1]!.at);
+        assert.ok(events[1]!.at <= events[2]!.at);
+    },
+);
+
+test(
+    'a position echo while archived adds no'
+    + ' lifecycle event',
+    async () => {
+        const db = memoryDbAdapter();
+        await seedAdminSchema(db);
+        await seedCurrentMember(db);
+        const ctx = ctxFor(db);
+        await postObjectiveCreation(
+            ctxFor(db),
+            'ohqxgUBEaFQwYbXsonRPmg',
+            'Rev', 'd', 0,
+        );
+        await postObjectiveArchival(
+            ctxFor(db), 'ohqxgUBEaFQwYbXsonRPmg',
+        );
+        // The wire putObjectivePosition drives: a
+        // position PUT re-sending the standing
+        // state. It must collapse, not mint a
+        // phantom archival.
+        await ctx.PUT(
+            organizationItem(
+                ctx, 'objectives',
+                'ohqxgUBEaFQwYbXsonRPmg',
+            ),
+            {
+                position: 3,
+                state: 'archived',
+            },
+        );
+        const events =
+            await getObjectiveLifecycleEvents(ctx);
+        assert.equal(events.length, 1);
+        assert.equal(events[0]!.kind, 'archival');
     },
 );
 
