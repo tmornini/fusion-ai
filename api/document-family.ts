@@ -397,7 +397,6 @@ const PUT_METHOD = 'PUT';
 // Find the pair at this address whose id is the advertised
 // ETag. A foreign or absent pair is simply not in the
 // collection — the caller's missedReadError ladder answers.
-// :version looks up the column; pair-id etag matches row.id.
 export async function lookupStoredRevision(
     db: DbAdapter,
     prefix: string,
@@ -407,12 +406,8 @@ export async function lookupStoredRevision(
     const messagePairs = await messageStore(db).getMessagePairs(
         prefix, id,
     );
-    const byPairId = messagePairs.find(
+    return messagePairs.find(
         (row) => row.id === etag,
-    );
-    if (byPairId !== undefined) return byPairId;
-    return messageStore(db).getByVersion(
-        prefix, id, etag,
     );
 }
 

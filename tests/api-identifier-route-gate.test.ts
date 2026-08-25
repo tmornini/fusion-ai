@@ -20,7 +20,7 @@ import { validateWorkOrderTransitionBody } from
     '../api/validators.ts';
 import { ValidationError } from '../api/types.ts';
 
-const SKIP_PARAMS = new Set(['version', 'name']);
+const SKIP_PARAMS = new Set(['name']);
 
 function verbsOn(route: Route): string[] {
     const verbs: string[] = [];
@@ -150,7 +150,7 @@ async () => {
     );
 });
 
-test('malformed :version is not the identifier-gate 400',
+test('malformed instance :etag is the identifier-gate 400',
 async () => {
     const db = memoryDbAdapter();
     await seedAdminSchema(db);
@@ -169,9 +169,10 @@ async () => {
         }),
     );
     const body = await res.json() as { error?: string };
-    assert.notEqual(
+    assert.equal(res.status, 400);
+    assert.equal(
         body.error,
-        'version must be a 22-character identifier',
+        'etag must be a 22-character identifier',
     );
 });
 

@@ -29,8 +29,11 @@ test('HTTP_PRECONDITION_REQUIRED is 428', () => {
     assert.equal(HTTP_PRECONDITION_REQUIRED, 428);
 });
 
-test('parseIfMatch accepts one quoted 64-hex', () => {
-    assert.equal(parseIfMatch('"' + TAG + '"'), TAG);
+test('parseIfMatch rejects a quoted 64-hex', () => {
+    assert.equal(
+        parseIfMatch('"' + TAG + '"'),
+        undefined,
+    );
 });
 
 test('parseIfMatch accepts a quoted identifier', () => {

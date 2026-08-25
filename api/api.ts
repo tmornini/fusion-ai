@@ -42,14 +42,12 @@ import {
     bodyOctetsOf,
 } from './message-form.ts';
 import { parseWire } from '../shared/http-message/wire-codec.ts';
-import { HttpMessage } from '../shared/http-message/http-message.ts';
 import type {
     MessagePair, AuthMessagePairSeed,
 } from './message-pair.ts';
 import {
     familyRegistration,
     INSTANCE_DETAIL_PATTERN,
-    INSTANCE_VERSION_PATTERN,
     RECORD_TYPES_COLLECTION_PATTERN,
 } from './family-registry.ts';
 import {
@@ -57,7 +55,6 @@ import {
     documentHeadMessagePairId,
     entityIdParam,
     idFamilyOf,
-    lookupStoredRevision,
     throwDocumentMiss,
     requireOrganization,
     resolveStreamedTrioWriteBody,
@@ -67,11 +64,7 @@ import {
 } from './message-store.ts';
 import {
     deriveInstanceHead,
-    instanceGetBody,
-    instanceParentEtag,
-    advertisedInstanceEtag,
     projectionOmitsStored,
-    revisionValuesOf,
     instancesUriPrefix,
 } from './derive-record-instances.ts';
 import { projectReadableValues } from './attribute-acl.ts';
@@ -266,7 +259,6 @@ async function instanceAdvertised(
 ): Promise<{
     tag: string;
     limited: boolean;
-    messagePairId: string;
 } | undefined> {
     const head = await deriveInstanceHead(
         db, organization, typeId, instanceId,
@@ -278,19 +270,11 @@ async function instanceAdvertised(
     const projected = projectReadableValues(
         head.values, attributesById, roles,
     );
-    const parent = await instanceParentEtag(db, head.messagePairId);
-    const tag = await advertisedInstanceEtag(
-        instanceGetBody(
-            instanceId, organization, typeId, projected,
-        ),
-        parent,
-    );
     return {
-        tag,
+        tag: head.messagePairId,
         limited: projectionOmitsStored(
             head.values, projected,
         ),
-        messagePairId: head.messagePairId,
     };
 }
 
@@ -343,43 +327,6 @@ async function revisionMessagePairIdForPatch(
     return revision?.id;
 }
 
-async function advertisedForRevisionMessagePair(
-    db: DbAdapter,
-    organization: string,
-    typeId: string,
-    instanceId: string,
-    roles: readonly string[],
-    revisionMessagePairId: string,
-): Promise<string | undefined> {
-    const stored = await db.messagePairs.getById(
-        revisionMessagePairId,
-    );
-    if (stored === undefined) return undefined;
-    const model = parseWire(stored.request);
-    const wireBody = HttpMessage.fromModel(model).body();
-    const parsed = wireBody.exists()
-        ? JSON.parse(wireBody.toText()) as Record<
-            string, unknown
-        >
-        : {};
-    const values = revisionValuesOf(parsed);
-    const attributesById = await loadAttributeSchemaById(
-        db, organization, typeId,
-    );
-    const projected = projectReadableValues(
-        values, attributesById, roles,
-    );
-    const parent = await instanceParentEtag(
-        db, revisionMessagePairId,
-    );
-    return advertisedInstanceEtag(
-        instanceGetBody(
-            instanceId, organization, typeId, projected,
-        ),
-        parent,
-    );
-}
-
 // The one catch shared by both pre-dispatch ownership regions
 // (handleRequest, below) so their redaction discipline cannot
 // diverge: fenceRequest membership/role reads, and the write
@@ -410,7 +357,7 @@ function redactedFenceFailure(
 }
 
 const NON_IDENTIFIER_PARAMS = new Set([
-    'version', 'name',
+    'name',
 ]);
 
 function rejectMalformedIdentifierParams(
@@ -1003,20 +950,9 @@ export async function handleRequest(
                             if (
                                 revisionId !== undefined
                             ) {
-                                const tag =
-                                    await advertisedForRevisionMessagePair(
-                                        effective,
-                                        param(params, 0),
-                                        param(params, 1),
-                                        param(params, 2),
-                                        roles,
-                                        revisionId,
-                                    );
-                                if (tag !== undefined) {
-                                    return attachEtag(
-                                        response, tag,
-                                    );
-                                }
+                                return attachEtag(
+                                    response, revisionId,
+                                );
                             }
                         }
                         const advertisedReplay =
@@ -1555,8 +1491,6 @@ export async function handleRequest(
                     routePattern.endsWith(
                         '/versions/:etag',
                     )
-                    && routePattern
-                        !== INSTANCE_VERSION_PATTERN
                 ) {
                     return attachEtag(
                         Response.json(result),
@@ -1565,38 +1499,7 @@ export async function handleRequest(
                         ),
                     );
                 }
-                // Instance versions leaf: ETag is the
-                // projected hash, not the path token.
-                if (
-                    routePattern
-                        === INSTANCE_VERSION_PATTERN
-                ) {
-                    const found =
-                        await lookupStoredRevision(
-                            effective,
-                            instancesUriPrefix(
-                                param(params, 0),
-                                param(params, 1),
-                            ),
-                            param(params, 2),
-                            param(params, 3),
-                        );
-                    const parent = found === undefined
-                        ? undefined
-                        : await instanceParentEtag(
-                            effective,
-                            found.id,
-                        );
-                    const tag =
-                        await advertisedInstanceEtag(
-                            result, parent,
-                        );
-                    return attachEtag(
-                        Response.json(result), tag,
-                    );
-                }
-                // Instance detail ETag: documentVersion of
-                // this caller's projected GET body.
+                // Instance detail ETag: the head pair id.
                 if (
                     routePattern
                         === INSTANCE_DETAIL_PATTERN
@@ -1760,25 +1663,17 @@ export async function handleRequest(
                         routePattern
                             === INSTANCE_DETAIL_PATTERN
                     ) {
-                        const advertisedPatch =
-                            await instanceAdvertised(
-                                effective,
-                                param(params, 0),
-                                param(params, 1),
-                                param(params, 2),
-                                roles,
+                        const revisionId =
+                            await revisionMessagePairIdForPatch(
+                                effective, stored.id,
                             );
                         if (
-                            advertisedPatch !== undefined
+                            revisionId !== undefined
                         ) {
                             return attachEtag(
-                                response,
-                                advertisedPatch.tag,
+                                response, revisionId,
                             );
                         }
-                        return attachEtag(
-                            response, stored.version,
-                        );
                     }
                     return response;
                 }
@@ -2368,9 +2263,9 @@ function isLiveHeadCollectionGet(
     return documentFamilyWiring(family) !== undefined;
 }
 
-// Strong ETag header → unquoted 64-hex version token
-// (strip surrounding quotes when present). Absent /
-// empty → undefined.
+// Strong ETag header → unquoted validator (strip
+// surrounding quotes when present). Absent / empty →
+// undefined.
 function etagFromHeader(
     response: Response,
 ): string | undefined {

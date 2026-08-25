@@ -559,8 +559,7 @@ test('locked arm: a stale If-Match echo 412s', async () => {
             'PUT', '/' + TEST_FAMILY + '/YIuEjXvCwXAgrpyvcvLJjg', token,
             { v: 'second' },
             { [IF_MATCH_HEADER]: strongEtagOf(
-                'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
-                + 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+                generateIdentifier(),
             ) },
         ));
         assert.equal(res.status, 412);

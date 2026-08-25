@@ -17,7 +17,6 @@ import {
     requestMessageHash,
     documentVersion,
     bodyOctetsOf,
-    HEX64,
 } from './message-form.ts';
 import { validateIdentityTokenEntity } from './validators.ts';
 import type { FieldLine } from '../shared/http-message/types.ts';
@@ -436,10 +435,9 @@ export const IF_MATCH_HEADER = 'if-match';
 export { HEX64 } from './message-form.ts';
 
 // Parse a wire If-Match into the unquoted validator.
-// Identifier is the document ETag; HEX64 because instance
-// PATCH advertises a content-hash validator. Anything else
-// — `*`, weak, lists, unquoted — yields undefined; the
-// caller answers 400.
+// ETag is the message-pair identifier. Anything else —
+// HEX64, `*`, weak, lists, unquoted — yields undefined;
+// the caller answers 400.
 export function parseIfMatch(
     header: string,
 ): string | undefined {
@@ -451,7 +449,7 @@ export function parseIfMatch(
         return undefined;
     }
     const inner = header.slice(1, -1);
-    if (!isIdentifier(inner) && !HEX64.test(inner)) {
+    if (!isIdentifier(inner)) {
         return undefined;
     }
     return inner;
