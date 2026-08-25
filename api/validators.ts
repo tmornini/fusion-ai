@@ -2421,9 +2421,8 @@ export function validateMessagePairEntity(
     };
 }
 
-// The storage-edge gate: the FULL event row, member_id
-// included. The store re-validates every write through this,
-// so a direct put cannot smuggle a malformed event past it.
+// etag is optional because versions-index rows carry
+// the pair id and other StateEntity rows omit it.
 const STATE_ENTITY_KEYS: readonly string[] = [
     'entity_id', 'state', 'member_id', 'at',
 ];
@@ -2433,9 +2432,9 @@ export function validateStateEntity(
 ): Omit<StateEntity, 'id'> {
     assertOnlyKeys(
         body, STATE_ENTITY_KEYS, 'StateEntity',
-        ['version'],
+        ['etag'],
     );
-    const version = body['version'];
+    const etag = body['etag'];
     return {
         entity_id: pickString(
             body, 'entity_id',
@@ -2445,8 +2444,8 @@ export function validateStateEntity(
         at: validateTimestampField(
             body, 'at', 'StateEntity',
         ),
-        ...(typeof version === 'string'
-            ? { version }
+        ...(typeof etag === 'string'
+            ? { etag }
             : {}),
     };
 }
