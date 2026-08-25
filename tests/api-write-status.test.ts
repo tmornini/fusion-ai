@@ -12,7 +12,6 @@ import {
 } from './http-fixtures.ts';
 import { parseWire } from
     '../shared/http-message/wire-codec.ts';
-import { sha256HexOfBytes } from '../shared/digest.ts';
 import { messageStore } from '../api/message-store.ts';
 import { strongEtagOf } from '../api/message-pair.ts';
 import { isIdentifier } from '../shared/identifier.ts';
@@ -361,8 +360,4 @@ async () => {
         IDEA_PREFIX, 'yXVKeCiguypnNcNelXVldQ',
     );
     assert.ok(live !== undefined, 'empty PUT must live');
-    assert.equal(
-        live.version,
-        await sha256HexOfBytes(new Uint8Array(0)),
-    );
 });

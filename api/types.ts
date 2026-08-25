@@ -958,7 +958,6 @@ export interface MessagePairEntity {
     request_hash: string;
     request: string;
     response_at: string;
-    version: string;
     response: string;
     operation_id: string;
 }

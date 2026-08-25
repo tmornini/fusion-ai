@@ -234,7 +234,7 @@ const TEST_PATTERN = TEST_FAMILY + '/:id';
 // A SIBLING document-class route under the SAME family prefix —
 // never served via documentPutHandler, mirroring a real family's
 // own hand-written sub-resource (e.g.
-// organizations/:id/flows/:id/versions/:vid
+// organizations/:id/flows/:id/versions/:etag
 // beside the locked organizations/:id/flows/:id). Proves the gate keys the
 // locked
 // arm off the EXACT entity-route pattern, never the family's

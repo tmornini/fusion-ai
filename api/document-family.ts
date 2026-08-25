@@ -790,7 +790,6 @@ export async function streamedTrioEntityOf(
         method: PUT_METHOD,
         body: raw,
         requesterIdentityId: actor,
-        version: '',
     };
     const history = stateHistoryFrom(
         documentLifecycleEvents([...existing, incoming]),

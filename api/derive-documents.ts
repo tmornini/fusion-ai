@@ -59,7 +59,6 @@ export interface DocumentMessagePair {
     readonly method: string;
     readonly body: Record<string, unknown>;
     readonly requesterIdentityId: Id;
-    readonly version: string;
 }
 
 // Every PUT/DELETE pair at `uriCollection`, decoded once —
@@ -95,7 +94,6 @@ export function documentMessagePairsAt(
             body: requestBodyOf(messagePair.request),
             requesterIdentityId:
                 messagePair.requester_identity_id,
-            version: messagePair.version,
         });
     }
     return out.sort((left, right) =>

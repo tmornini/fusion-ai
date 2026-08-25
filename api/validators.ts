@@ -68,7 +68,6 @@ import {
 } from './provider-models.ts';
 import { extractErrorMessage } from '../shared/error-helpers.ts';
 import { ValidationError } from './types.ts';
-import { HEX64 } from './message-form.ts';
 import { isIdentifier } from
     '../shared/identifier.ts';
 
@@ -2356,7 +2355,7 @@ const MESSAGE_PAIR_BODY_KEYS: readonly string[] = [
     'uri_collection', 'uri_id',
     'requester_identity_id', 'method',
     'request_at', 'request_hash', 'request',
-    'response_at', 'version', 'response',
+    'response_at', 'response',
     'operation_id',
 ];
 
@@ -2390,13 +2389,6 @@ export function validateMessagePairEntity(
             'MessagePairEntity.method must match ^[A-Z]+$',
         );
     }
-    const version = pickString(body, 'version');
-    if (!HEX64.test(version)) {
-        throw new ValidationError(
-            'MessagePairEntity.version must be a 64-'
-            + 'character lowercase hex digest',
-        );
-    }
     const operationId = pickIdentifier(
         body, 'operation_id',
     );
@@ -2415,7 +2407,6 @@ export function validateMessagePairEntity(
         response_at: validateTimestampField(
             body, 'response_at', 'MessagePairEntity',
         ),
-        version,
         response: pickString(body, 'response'),
         operation_id: operationId,
     };

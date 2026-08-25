@@ -15,8 +15,6 @@ import {
     buildResponseModel,
     storedWire,
     requestMessageHash,
-    documentVersion,
-    bodyOctetsOf,
 } from './message-form.ts';
 import { validateIdentityTokenEntity } from './validators.ts';
 import type { FieldLine } from '../shared/http-message/types.ts';
@@ -61,7 +59,6 @@ export interface MessagePair {
     readonly requestHash: string;
     readonly responseStatus: number;
     readonly responseMessage: string;
-    readonly responseEtag: string;
     readonly responseHash: string;
     readonly method: string;
     readonly operationId: string;
@@ -237,11 +234,6 @@ export async function formWriteMessagePair(
     });
     const requestMessage = storedWire(requestModel);
     const responseMessage = storedWire(responseModel);
-    const version = input.method === 'DELETE'
-        ? await requestMessageHash(responseMessage)
-        : await documentVersion(
-            bodyOctetsOf(responseModel),
-        );
     return {
         id,
         requestAt: input.requestAt,
@@ -252,7 +244,6 @@ export async function formWriteMessagePair(
         requestHash: await requestMessageHash(requestMessage),
         responseStatus: input.responseStatus,
         responseMessage,
-        responseEtag: version,
         responseHash: await requestMessageHash(responseMessage),
         method: input.method,
         operationId: input.operationId,
@@ -432,11 +423,9 @@ export function httpDateOf(at: string): string {
 // for replay identity.
 export const IF_MATCH_HEADER = 'if-match';
 
-export { HEX64 } from './message-form.ts';
-
 // Parse a wire If-Match into the unquoted validator.
 // ETag is the message-pair identifier. Anything else —
-// HEX64, `*`, weak, lists, unquoted — yields undefined;
+// 64-hex, `*`, weak, lists, unquoted — yields undefined;
 // the caller answers 400.
 export function parseIfMatch(
     header: string,
@@ -711,7 +700,6 @@ async function writeMessagePairRows(
         request_hash: messagePair.requestHash,
         request: messagePair.requestMessage,
         response_at: nowUtc(),
-        version: messagePair.responseEtag,
         response: messagePair.responseMessage,
         operation_id: messagePair.operationId,
     });

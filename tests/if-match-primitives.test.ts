@@ -9,11 +9,6 @@ import {
     attachEtag,
 } from '../api/message-pair.ts';
 import {
-    documentVersion,
-    HEX64,
-} from '../api/message-form.ts';
-import { Octets } from '../shared/http-message/octets.ts';
-import {
     generateIdentifier,
     isIdentifier,
 } from '../shared/identifier.ts';
@@ -68,31 +63,4 @@ test('attachEtag sets ETag on Response.json and'
     const out = attachEtag(response, TAG);
     assert.equal(out, response);
     assert.equal(out.headers.get('ETag'), '"' + TAG + '"');
-});
-
-test('documentVersion hashes body octets only',
-async () => {
-    const body = Octets.fromLatin1('{"n":1}');
-    const a = await documentVersion(body.asBytes());
-    const b = await documentVersion(body.asBytes());
-    assert.equal(a, b);
-    assert.match(a, HEX64);
-    const later = await documentVersion(
-        body.asBytes(), a,
-    );
-    assert.notEqual(later, a);
-});
-
-test('A then B then A on conditional does not revive A',
-async () => {
-    const tagA = await documentVersion(
-        Octets.fromLatin1('A').asBytes(),
-    );
-    const tagB = await documentVersion(
-        Octets.fromLatin1('B').asBytes(), tagA,
-    );
-    const tagA2 = await documentVersion(
-        Octets.fromLatin1('A').asBytes(), tagB,
-    );
-    assert.notEqual(tagA2, tagA);
 });
