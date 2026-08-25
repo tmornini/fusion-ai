@@ -5858,8 +5858,9 @@ export const routes: Route[] = [
     // precedent that already rides this same
     // documentEntityRoute shape.
     documentEntityRoute(OBJECTIVES_WIRING),
-    // GET objectives/:id/versions/: StateEntity[] DESC;
-    // empty → missedReadError('objectives').
+    // GET objectives/:id/versions/: entityOf snapshots
+    // DESC, each stamped with the pair facts (etag, at,
+    // member_id); empty → missedReadError('objectives').
     documentVersionListRoute(OBJECTIVES_WIRING),
     documentVersionRoute(OBJECTIVES_WIRING),
     // Objective revisions nest under their parent objective:

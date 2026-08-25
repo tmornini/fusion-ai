@@ -438,7 +438,7 @@ export async function versionSnapshotsAt(
     db: DbAdapter,
     prefix: string,
     id: Id,
-    toEntity: (document: DerivedDocument) => unknown,
+    toEntity: (document: DerivedDocument) => object,
 ): Promise<unknown[]> {
     const stored = await messageStore(db).getMessagePairs(
         prefix, id,
@@ -449,12 +449,17 @@ export async function versionSnapshotsAt(
     const snapshots: unknown[] = [];
     for (const messagePair of messagePairs.toReversed()) {
         if (messagePair.method !== PUT_METHOD) continue;
-        snapshots.push(toEntity({
-            uriId: id,
-            messagePairId: messagePair.id,
-            method: messagePair.method,
-            body: messagePair.body,
-        }));
+        snapshots.push({
+            ...toEntity({
+                uriId: id,
+                messagePairId: messagePair.id,
+                method: messagePair.method,
+                body: messagePair.body,
+            }),
+            etag: messagePair.id,
+            at: messagePair.at,
+            member_id: messagePair.requesterIdentityId,
+        });
     }
     return snapshots;
 }
@@ -568,8 +573,8 @@ export function documentVersionListHandler(
                 ? wiring.entityOf(
                     document, org,
                     stateFromDocument(document),
-                )
-                : wiring.entityOf(document, org),
+                ) as object
+                : wiring.entityOf(document, org) as object,
         );
         if (snapshots.length === 0) {
             throw await throwDocumentMiss(
