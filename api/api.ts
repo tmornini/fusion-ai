@@ -257,26 +257,6 @@ function octetsEqual(
     return true;
 }
 
-async function livePutVersion(
-    db: DbAdapter,
-    prefix: string,
-    uriId: string,
-): Promise<{
-    messagePairId: string; version: string;
-} | undefined> {
-    const messagePairId = await documentHeadMessagePairId(
-        db, prefix, uriId,
-    );
-    if (messagePairId === undefined) return undefined;
-    const stored = await db.messagePairs.getById(
-        messagePairId,
-    );
-    if (stored === undefined) return undefined;
-    return {
-        messagePairId, version: stored.version,
-    };
-}
-
 async function instanceAdvertised(
     db: DbAdapter,
     organization: string,
@@ -430,7 +410,7 @@ function redactedFenceFailure(
 }
 
 const NON_IDENTIFIER_PARAMS = new Set([
-    'etag', 'version', 'name',
+    'version', 'name',
 ]);
 
 function rejectMalformedIdentifierParams(
@@ -870,19 +850,19 @@ export async function handleRequest(
                 && wiring !== undefined
                 && familyRegistration(wiring.family)
                     ?.concurrency === 'locked';
-            // Advertised ETag is the live PUT's version,
-            // never the lock-head pair id. DELETE heads have
-            // no If-Match target (documentHeadMessagePairId skips
-            // them). Same-body no-append uses this for both
-            // PUT kinds (simple and locked).
+            // Advertised ETag is the live PUT's pair id.
+            // DELETE heads have no If-Match target
+            // (documentHeadMessagePairId skips them).
+            // Same-body no-append uses this for both PUT
+            // kinds (simple and locked).
             const livePut = isDocumentPut
-                ? await livePutVersion(
+                ? await documentHeadMessagePairId(
                     effective, canonicalPrefix, uriId,
                 )
                 : undefined;
-            const advertised = livePut?.version;
+            const advertised = livePut;
             // The hoisted echo: read If-Match directly so
-            // the gate can compare the parsed 64-hex tag
+            // the gate can compare the parsed validator
             // against the advertised ETag BEFORE dispatch.
             const rawIfMatch = isLockedWrite
                 ? request.headers.get(IF_MATCH_HEADER)
@@ -987,9 +967,7 @@ export async function handleRequest(
                     && echo !== undefined
                     && livePut !== undefined
                     ? {
-                        matchedEtag: echo,
-                        latchedHeadMessagePairId:
-                            livePut.messagePairId,
+                        latchedHeadMessagePairId: echo,
                     }
                     : {}),
             });
@@ -1060,7 +1038,7 @@ export async function handleRequest(
                     }
                     if (isDocumentPut) {
                         return attachEtag(
-                            response, replay.version,
+                            response, replay.id,
                         );
                     }
                     return response;
@@ -1088,7 +1066,7 @@ export async function handleRequest(
                                     actor, organization,
                                     roles,
                                 ),
-                                livePut.version,
+                                livePut,
                                 false,
                             );
                         } catch {
@@ -1138,7 +1116,7 @@ export async function handleRequest(
                                     actor, organization,
                                     roles,
                                 ),
-                                livePut.version,
+                                livePut,
                                 false,
                             );
                         } catch {
@@ -1338,7 +1316,7 @@ export async function handleRequest(
                 )
             ) {
                 const liveReq = await effective.messagePairs
-                    .getById(livePut.messagePairId);
+                    .getById(livePut);
                 if (liveReq !== undefined) {
                     const liveOctets = bodyOctetsOf(
                         parseWire(liveReq.request),
@@ -1358,12 +1336,12 @@ export async function handleRequest(
                                             uriId,
                                         );
                                     return latest
-                                        !== livePut.messagePairId;
+                                        !== livePut;
                                 },
                             );
                         if (raced) {
                             const nowLive =
-                                await livePutVersion(
+                                await documentHeadMessagePairId(
                                     effective,
                                     canonicalPrefix,
                                     uriId,
@@ -1383,7 +1361,7 @@ export async function handleRequest(
                                             organization,
                                             roles,
                                         ),
-                                        nowLive.version,
+                                        nowLive,
                                         false,
                                     );
                                 } catch {
@@ -1406,21 +1384,20 @@ export async function handleRequest(
                         }
                         const stored =
                             await effective.messagePairs
-                                .getById(livePut.messagePairId);
+                                .getById(livePut);
                         if (stored !== undefined) {
                             return attachEtag(
                                 sendWriteResponse(
                                     stored, 'PUT', false,
                                 ),
-                                stored.version,
+                                stored.id,
                             );
                         }
                     }
                 }
             }
             // Empty-body PUT is a live empty document. Skip
-            // the family validator; store GET-shaped 200
-            // with ETag sha256('').
+            // the family validator; store GET-shaped 200.
             if (
                 method === 'PUT'
                 && body === undefined
@@ -1472,7 +1449,7 @@ export async function handleRequest(
                     sendWriteResponse(
                         stored, 'PUT', true,
                     ),
-                    stored.version,
+                    stored.id,
                 );
             }
         }
@@ -1561,25 +1538,19 @@ export async function handleRequest(
                             ),
                         );
                     if (headMessagePairId !== undefined) {
-                        const stored = await effective
-                            .messagePairs.getById(
-                                headMessagePairId,
-                            );
-                        if (stored !== undefined) {
-                            return attachEtag(
-                                Response.json(result, {
-                                    headers: {
-                                        'Response-ID':
-                                            headMessagePairId,
-                                    },
-                                }),
-                                stored.version,
-                            );
-                        }
+                        return attachEtag(
+                            Response.json(result, {
+                                headers: {
+                                    'Response-ID':
+                                        headMessagePairId,
+                                },
+                            }),
+                            headMessagePairId,
+                        );
                     }
                 }
                 // Document /versions/:etag: ETag is the
-                // column hash (same as the path token).
+                // path token.
                 if (
                     routePattern.endsWith(
                         '/versions/:etag',
@@ -1723,7 +1694,7 @@ export async function handleRequest(
                             )
                     ) {
                         return attachEtag(
-                            response, stored.version,
+                            response, stored.id,
                         );
                     }
                     return response;

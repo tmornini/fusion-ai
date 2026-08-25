@@ -1593,7 +1593,6 @@ export async function postFlowUndoOp(
         requestAt: messagePair.requestAt,
         operationId: messagePair.operationId,
         organization,
-        matchedEtag: current.version,
         latchedHeadMessagePairId: current.id,
     });
     return db.transaction(
@@ -2367,7 +2366,6 @@ export async function postWorkOrderTransitionOp(
             status: HTTP_OK,
             body: { values: mergedValues },
         },
-        matchedEtag: ifMatchTarget,
         headerFields: [{
             name: IF_MATCH_HEADER,
             value: strongEtagOf(ifMatchTarget),
@@ -3447,7 +3445,6 @@ export interface DocumentMessagePairFormInput {
         readonly status: number;
         readonly body: unknown;
     };
-    readonly matchedEtag?: string;
     // Locked-class synthesized PUTs (flow undo) must
     // carry the document head they restored from, or
     // coordinateWrite 412s an unlatched PUT at a live
@@ -3516,9 +3513,6 @@ export async function formDocumentMessagePairFor(
         responseStatus,
         responseBody,
         operationId: input.operationId,
-        ...(input.matchedEtag !== undefined
-            ? { matchedEtag: input.matchedEtag }
-            : {}),
         ...(input.latchedHeadMessagePairId !== undefined
             ? { latchedHeadMessagePairId: input.latchedHeadMessagePairId }
             : {}),
@@ -3851,7 +3845,6 @@ export async function postInstancePatchOp(
             status: HTTP_OK,
             body: { values: mergedValues },
         },
-        matchedEtag: ifMatchTarget,
         headerFields: [{
             name: IF_MATCH_HEADER,
             value: strongEtagOf(ifMatchTarget),

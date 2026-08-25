@@ -519,7 +519,7 @@ test('e2e: a byte-identical resend converges (one event, one'
     assert.ok(stored !== undefined);
     assert.equal(
         second.headers.get('ETag'),
-        strongEtagOf(stored.version),
+        strongEtagOf(stored.id),
     );
     const eventsAfterSecond =
         await deriveFlowStateHistory(db, 'AjdvjuECVZEgZoFajaIEkg'
@@ -599,7 +599,7 @@ async () => {
     const etag = await headEtag(db, token, 'bWdlaTZZcKRsLsGXiKQZkw');
     const stored = await db.messagePairs.getById(headId);
     assert.ok(stored !== undefined);
-    assert.equal(etag, strongEtagOf(stored.version));
+    assert.equal(etag, strongEtagOf(stored.id));
     const requests = await db.messagePairs.getAll();
     const atAddress = requests.filter(
         r => r.uri_collection === '/organizations/AjdvjuECVZEgZoFajaIEkg/'

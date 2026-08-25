@@ -394,18 +394,26 @@ export function documentStateHistoryHandler(
 
 const PUT_METHOD = 'PUT';
 
-// Lookup by version column at this collection + id.
-// 0 → undefined. 1 → that row. N → latest (at, id).
+// Find the pair at this address whose id is the advertised
+// ETag. A foreign or absent pair is simply not in the
+// collection — the caller's missedReadError ladder answers.
+// :version looks up the column; pair-id etag matches row.id.
 export async function lookupStoredRevision(
     db: DbAdapter,
     prefix: string,
     id: Id,
-    version: string,
+    etag: string,
 ): Promise<MessagePairEntity | undefined> {
-    const messagePair = await messageStore(db).getByVersion(
-        prefix, id, version,
+    const messagePairs = await messageStore(db).getMessagePairs(
+        prefix, id,
     );
-    return messagePair;
+    const byPairId = messagePairs.find(
+        (row) => row.id === etag,
+    );
+    if (byPairId !== undefined) return byPairId;
+    return messageStore(db).getByVersion(
+        prefix, id, etag,
+    );
 }
 
 export async function storedRevisionDocument(

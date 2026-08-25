@@ -13,9 +13,13 @@ import {
     HEX64,
 } from '../api/message-form.ts';
 import { Octets } from '../shared/http-message/octets.ts';
+import {
+    generateIdentifier,
+    isIdentifier,
+} from '../shared/identifier.ts';
 
-// Task 8: wire ETag / If-Match are quoted 64-hex. Pair id
-// stays Response-ID. parseIfMatch rejects anything else.
+// If-Match is one quoted strong validator. parseIfMatch
+// rejects *, weak, lists, and unquoted values.
 
 const TAG =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
@@ -29,10 +33,10 @@ test('parseIfMatch accepts one quoted 64-hex', () => {
     assert.equal(parseIfMatch('"' + TAG + '"'), TAG);
 });
 
-test('parseIfMatch rejects a quoted pair id', () => {
-    assert.equal(
-        parseIfMatch('"pair-1"'), undefined,
-    );
+test('parseIfMatch accepts a quoted identifier', () => {
+    const id = generateIdentifier();
+    assert.equal(isIdentifier(id), true);
+    assert.equal(parseIfMatch('"' + id + '"'), id);
 });
 
 test('parseIfMatch: * → undefined (caller 400s)', () => {
@@ -51,7 +55,7 @@ test('parseIfMatch: unquoted → undefined', () => {
     assert.equal(parseIfMatch('abc'), undefined);
 });
 
-test('strongEtagOf quotes the 64-hex', () => {
+test('strongEtagOf quotes the tag', () => {
     assert.equal(strongEtagOf(TAG), '"' + TAG + '"');
 });
 
@@ -74,17 +78,6 @@ async () => {
         body.asBytes(), a,
     );
     assert.notEqual(later, a);
-});
-
-test('A then B then A on unconditional revives A',
-async () => {
-    const a = await documentVersion(
-        Octets.fromLatin1('A').asBytes(),
-    );
-    const again = await documentVersion(
-        Octets.fromLatin1('A').asBytes(),
-    );
-    assert.equal(again, a);
 });
 
 test('A then B then A on conditional does not revive A',
