@@ -231,6 +231,7 @@ Master never re-dispatches a hunter to retry.
   a descendant's computed `display`. Never
   hand-`fetch` the API from `javascript_tool` —
   the bearer is memory-only; read the network
+  log. V7 reads grant 403 from the network
   log. WB16 reads the work-order history from
   the network log, never a hand `fetch`. Toasts
   via one `javascript_tool` call on
@@ -2374,34 +2375,8 @@ depends: A
   Organization Name and Domain.
   (There is no health score — the retired 92/"excellent"
   badge has been removed.)
-- [ ] **V8 — Organization "Sent invitations" section + Revoke
-  (admin)** As an org admin with ≥1 outstanding invitation
-  granted (V1), on `organization/index.html` confirm a "Sent
-  invitations" section (`#sent-invitations-box`, h2 "Sent
-  invitations") appears below the cards, listing one row per
-  PENDING org invitation (`#sent-invitations-list`) — each row
-  shows the invitee EMAIL, an "Invited {date}" sub-line, a
-  state badge, and a Revoke button. PASS: the section is
-  VISIBLE only when the admin read succeeds (it boots hidden
-  and reveals on success). Click Revoke on a row. PASS: an
-  "Invitation revoked" toast fires and the row leaves the
-  pending list (a 'revoked' event supersedes the pending; the
-  invitation row persists as audit, and the invitee's pending
-  list — V3/V4 — no longer shows it). With no outstanding
-  invitations, the list shows "No outstanding invitations."
-  Revoke is idempotent (re-revoke → 204). Source:
-  `web-app/organization/index.ts` (`renderSentInvitations` /
-  `onSentInvitationClick`), `SentInvitationsPresenter`,
-  `revokeInvitation`.
-- [ ] **V9 — Sent-invitations section is admin-only** Sign in
-  as a NON-admin member and open `organization/index.html`.
-  PASS: the admin Sent-invitations read fails (403 "forbidden:
-  listing sent invitations requires an admin role") and the
-  section stays HIDDEN — the read rejects before the reveal
-  line, so the box never un-hides, and no Revoke affordance is
-  offered to a non-admin. (Pairs with V7's grant/revoke 403s.)
-  Source: `sentInvitations` admin guard in
-  `api/invitations-domain.ts`.
+  V8 (Sent invitations + Revoke) and V9 (admin-only)
+  run in the invitation walk after V5, beside V7.
 
 ### Members list (`members/index.html`)
 
@@ -2441,6 +2416,7 @@ depends: A
   filter chip. PASS: only the HUMANS group is visible.
   Click AIs. PASS: only the AIs group is visible. Click
   All. PASS: both groups return.
+- [ ] **G43** Navigate to `identities/index.html` (or click "Identities" in the sidebar). PASS: the header reads "Identities" with an "Add Identity" button (`#add-identity-btn`); `#identity-list` renders one `.card[data-identity-id]` per identity — a person row shows an initials avatar + name + email sub-line + a "Person" badge; a service row shows a shield avatar plus "Service account" + "—" (agents are not identities), then a "Service" badge. Serial (A3 `--mock-data`, demo admin's active organization Stark): the nested PII fence (viaMembership, need-to-know) hides the five org-2-only persons: the list renders 6 named person rows (Emily Rodriguez, Sarah Chen, Lisa Wang, Marcus Johnson, Tony Stark, Jessica Park), 5 "Identity without PII" person rows (the org-2-only members: David Martinez, Alex Kim, Mike Thompson, David Kim, James), and 1 service row (the system service identity). Parallel (A3 `--test-plan-slices`): `identities/` is global (`organizationNested: false`) and the seed is one DB for all 14 slices, so the hunter sees bootstrap current + the system service identity + every slice admin + the B/G/SV extras — not a five-name closed G roster. `getIdentityRoster` GETs identities only — the G extras AI agent is `ai-agents/:id`, not an identity row, so no agent appears on the list. Named G people: G admin, `G Member`, `G Unseated`, plus the system service identity; other-slice people often render as "Identity without PII" (PII 403). An empty roster renders "No identities yet." Source: `web-app/identities/index.ts`, `web-app/app/presenters/identity-list.ts` (`IdentityRosterPresenter`).
 - [ ] **G14** Click `+ Add Member`. PASS: dialog opens with
   the Kind toggle defaulting to Human, the Human form
   visible, and the AI form hidden. Switch the toggle to
@@ -2488,9 +2464,9 @@ depends: A
   text "Invite an existing person to this organization", a
   Cancel and a "Send invitation" submit (`#invite-member-
   submit`). Enter the email of an EXISTING identity who is NOT
-  yet a member of the inviting org. Serial: a Wayne-only
-  seeded human's email. Parallel: `unseated_username`
-  (`g-unseated@test-plan.example`).
+  yet a member of the inviting org. This grant is invitation
+  A. Serial: `david.martinez@company.com` (Wayne-only).
+  Parallel: `g-unseated@test-plan.example`.
   Click "Send invitation". PASS: an "Invitation sent" toast
   fires, the dialog closes, and the email field is cleared.
   The grant is idempotent — sending the same email again while
@@ -2508,9 +2484,23 @@ depends: A
   (the 409 maps to an 'already-member' outcome). The "Failed
   to invite: …" toast fires only on an unexpected server fault.
   In all three the dialog stays usable and no pending
-  invitation is created. Source: `setInviteEmailError` in
+  invitation is created. Leftover: does not consume
+  invitation A (V1). Source: `setInviteEmailError` in
   `web-app/members/index.ts`; `grantInvitation` guards in
   `api/invitations-domain.ts`.
+- [ ] **V6 — Org fence: a pending invite is invisible until
+  accepted** While the V1 invitation is still PENDING (before
+  V4), confirm the org fence holds: the invitee is NOT in the
+  inviting org's Members roster (the roster derives from
+  seats, and no seat exists yet), and the
+  inviting org is NOT reachable by the invitee — it does not
+  appear in their sidebar org `<select>` and boot will not
+  scope a token to it (a pending invitation grants no
+  seat). Only after Accept (V4) does the seat
+  appear and the org become reachable. PASS: pending ⇒ not in
+  roster, not reachable; accepted ⇒ both. Source: the org
+  fence (`resolveOwningOrganization` via
+  `writeAuthorizerFor`), `acceptInvitation`.
 - [ ] **V3 — Top-bar pending-invitations bell → invitations
   page** As an identity with ≥1 pending invitation (the V1
   invitee, signed in), confirm the top bar shows a bell
@@ -2551,8 +2541,14 @@ depends: A
   seat document message pair + invitations/:id/acceptance
   operation message pair via `appendMessagePair`).
 - [ ] **V5 — Decline appends declined, writes no seat**
-  As an invitee with a fresh pending invitation, on
-  `invitations/` click Decline. PASS: an "Invitation declined"
+  Grant invitation B first (V4 consumed A). On
+  `members/index.html` as an org admin, Invite member
+  with a fresh EXISTING identity who is not a member of
+  the inviting org. Serial: `alex.kim@company.com`
+  (Wayne-only). Parallel: `r-member@test-plan.example`
+  (seated in r-org, not G). PASS: "Invitation sent"
+  toast. Sign in as that invitee. On `invitations/`
+  click Decline. PASS: an "Invitation declined"
   toast fires, the row leaves the pending list, and NO
   seat is written (the declined org does NOT appear in
   the sidebar switcher and its rows stay unreachable). With no
@@ -2560,50 +2556,66 @@ depends: A
   state "No invitations." and the top-bar bell disappears
   (V3). Decline is idempotent (re-decline → 204). Source:
   `postInvitationDecline`, `declineInvitation`.
-- [ ] **V6 — Org fence: a pending invite is invisible until
-  accepted** While the V1 invitation is still PENDING (before
-  V4), confirm the org fence holds: the invitee is NOT in the
-  inviting org's Members roster (the roster derives from
-  seats, and no seat exists yet), and the
-  inviting org is NOT reachable by the invitee — it does not
-  appear in their sidebar org `<select>` and boot will not
-  scope a token to it (a pending invitation grants no
-  seat). Only after Accept (V4) does the seat
-  appear and the org become reachable. PASS: pending ⇒ not in
-  roster, not reachable; accepted ⇒ both. Source: the org
-  fence (`resolveOwningOrganization` via
-  `writeAuthorizerFor`), `acceptInvitation`.
+- [ ] **V8 — Organization "Sent invitations" section + Revoke
+  (admin)** Grant invitation C if none is pending (V4
+  consumed A; V5 declined B). On `members/index.html` as
+  an org admin, Invite member. Serial:
+  `mike.thompson@company.com` (Wayne-only). Parallel:
+  `sv-member@test-plan.example`. PASS: "Invitation sent"
+  toast. Then on `organization/index.html` confirm a "Sent
+  invitations" section (`#sent-invitations-box`, h2 "Sent
+  invitations") appears below the cards, listing one row per
+  PENDING org invitation (`#sent-invitations-list`) — each row
+  shows the invitee EMAIL, an "Invited {date}" sub-line, a
+  state badge, and a Revoke button. PASS: the section is
+  VISIBLE only when the admin read succeeds (it boots hidden
+  and reveals on success). Click Revoke on C. PASS: an
+  "Invitation revoked" toast fires and the row leaves the
+  pending list (a 'revoked' event supersedes the pending; the
+  invitation row persists as audit, and the invitee's pending
+  list — V3/V4 — no longer shows it). With no outstanding
+  invitations, the list shows "No outstanding invitations."
+  Revoke is idempotent (re-revoke → 204). Source:
+  `web-app/organization/index.ts` (`renderSentInvitations` /
+  `onSentInvitationClick`), `SentInvitationsPresenter`,
+  `revokeInvitation`.
 - [ ] **V7 — Authz: non-admin grant/revoke rejected; invitee
   may still read & accept** Sign in as a NON-admin member of
-  an org (a seeded human with no admin role). PASS: any
-  attempt to grant — POST `invitations` (the path behind the
-  Invite dialog) — is rejected with "forbidden: POST
-  /organizations/<orgId>/invitations/ requires a role this
-  principal lacks" (403), and the
-  Organization page's Sent-invitations admin read fails and
-  the section stays hidden (V9), so no Revoke is offered; a
-  forced revoke — PUT
-  `/organizations/<orgId>/invitations/<invitationId>`
-  with `{state: "revoked"}` — is rejected with
-  "forbidden: PUT /organizations/<orgId>/invitations/
-  <invitationId> requires a role this principal lacks"
-  (403). YET the SAME role-
-  less identity, when it is the INVITEE, CAN read its own
-  invitations (the bell + `invitations/` work — the read is
-  identity-scoped, not admin-gated) and CAN Accept/Decline its
-  own invitation (V4/V5). PASS: grant/revoke require admin;
-  read/accept/decline require only being the invitee. Source:
-  the absent `MEMBER_VERBS` row for the org invitation nest
-  (`api/authorization.ts`) and `authorizeRequest`
-  (`api/request-auth.ts`), which 403s before any handler;
-  the invitee read/accept/decline paths ride the identity
-  nest.
+  an org (a seeded human with no admin role). Open the
+  Invite dialog (`#invite-member-btn`) and submit a grant.
+  Read the 403 from the **network log** on this load —
+  never `javascript_tool` `fetch` (the bearer is
+  memory-only). PASS: the grant POST is rejected with
+  "forbidden: POST /organizations/<orgId>/invitations/
+  requires a role this principal lacks" (403). The
+  Organization page's Sent-invitations admin read fails
+  and the section stays hidden (V9), so no Revoke is
+  offered. YET the SAME role-less identity, when it is
+  the INVITEE, CAN read its own invitations (the bell +
+  `invitations/` work — the read is identity-scoped, not
+  admin-gated) and CAN Accept/Decline its own invitation
+  (V4/V5). PASS: grant/revoke require admin;
+  read/accept/decline require only being the invitee.
+  Source: the absent `MEMBER_VERBS` row for the org
+  invitation nest (`api/authorization.ts`) and
+  `authorizeRequest` (`api/request-auth.ts`), which 403s
+  before any handler; the invitee read/accept/decline
+  paths ride the identity nest.
   Parallel (A3 `--test-plan-slices`): run before G46
   so `G Member` still has PII and can sign in; the
   invitee half is granted from the second G
   organization (`org2_*`). Serial (A3 `--mock-data`,
   demo admin's active organization Stark): any
   seeded non-admin human.
+- [ ] **V9 — Sent-invitations section is admin-only** Sign in
+  as a NON-admin member and open `organization/index.html`.
+  PASS: the admin Sent-invitations read fails (403 "forbidden:
+  listing sent invitations requires an admin role") and the
+  section stays HIDDEN — the read rejects before the reveal
+  line, so the box never un-hides, and no Revoke affordance is
+  offered to a non-admin. (Pairs with V7's grant/revoke 403s.)
+  Source: `sentInvitations` admin guard in
+  `api/invitations-domain.ts`.
 
 ### Member detail — Human (`members/detail.html?memberId=<hw_*>`)
 
@@ -2658,7 +2670,8 @@ depends: A
 
 ### Identities (list & detail) (`identities/`, `identities/detail.html`)
 
-- [ ] **G43** Navigate to `identities/index.html` (or click "Identities" in the sidebar). PASS: the header reads "Identities" with an "Add Identity" button (`#add-identity-btn`); `#identity-list` renders one `.card[data-identity-id]` per identity — a person row shows an initials avatar + name + email sub-line + a "Person" badge; a service row shows a shield avatar plus "Service account" + "—" (agents are not identities), then a "Service" badge. Serial (A3 `--mock-data`, demo admin's active organization Stark): the nested PII fence (viaMembership, need-to-know) hides the five org-2-only persons: the list renders 6 named person rows (Emily Rodriguez, Sarah Chen, Lisa Wang, Marcus Johnson, Tony Stark, Jessica Park), 5 "Identity without PII" person rows (the org-2-only members: David Martinez, Alex Kim, Mike Thompson, David Kim, James), and 1 service row (the system service identity). Parallel (A3 `--test-plan-slices`): `identities/` is global (`organizationNested: false`) and the seed is one DB for all 14 slices, so the hunter sees bootstrap current + the system service identity + every slice admin + the B/G/SV extras — not a five-name closed G roster. `getIdentityRoster` GETs identities only — the G extras AI agent is `ai-agents/:id`, not an identity row, so no agent appears on the list. Named G people: G admin, `G Member`, `G Unseated`, plus the system service identity; other-slice people often render as "Identity without PII" (PII 403). An empty roster renders "No identities yet." Source: `web-app/identities/index.ts`, `web-app/app/presenters/identity-list.ts` (`IdentityRosterPresenter`).
+G43 ran before G14 (closed roster snapshot).
+
 - [ ] **G44** Click "Add Identity". PASS: the `add-identity` dialog opens with a Kind toggle (Person checked by default / Service). With Person selected, the person form (`#add-identity-person-form`) shows Name/Email/Phone/Bio inputs; fill Name + Email, click "Create" (`#add-identity-submit`) → two sequential requests (POST `identities` `{id, kind}`, then PUT `identities/:id/pii` carrying the PII fields), an "Identity added" toast, the dialog closes, and the new person appears in the roster (name + email); a second-hop failure toasts a partial-state message naming the PII-less identity rather than a blanket create failure. Re-open the dialog and click the "Service" radio → the person form hides and the service form (`#svc-secret`, "Client Secret") shows; enter a secret, Create → a "Service identity added" toast, the dialog closes, and a new "Service"-badged row appears. Submitting Person with an empty Name or Email shows "Name and email are required" and keeps the dialog open. Source: `web-app/identities/index.ts` (`handleAddIdentitySubmit` / `submitPersonForm` / `submitServiceForm`).
 - [ ] **G45** From the roster, click a person row (`.card[data-identity-id]`). PASS: navigates to `identities/detail.html?identityId=<id>`, which renders the back button (`#identity-back-btn`), the name + a kind badge + the id, a "Personal Information" card (Name/Email/Phone/Bio — each empty field rendered as "—" via `DISPLAY_ABSENT`), a "Connections" card (Identity Providers / Tokens buttons), and — for a person — an "Erase PII" button (`#identity-erase-btn`). A service identity instead shows a "Credentials" card and NO erase button (only persons carry erasable PII). Source: `web-app/identities/index.ts` (`onListClick`), `web-app/identities/detail.ts`, `web-app/app/presenters/identity-detail.ts`.
 - [ ] **G46** On `G Erasable`'s identity detail (parallel — never the G admin and never `G Member`; serial: any person row that is not the signed-in admin), click "Erase PII" (`#identity-erase-btn`) to open the native `<dialog id="confirm-erase-dialog">` (`role="alertdialog"`, title "Erase personal information?", body "The identity itself survives; only its personal information is erased."); confirm via the `data-action="confirm-erase"` button. PASS: `deleteIdentityPii` runs, a "Personal information erased" toast appears, and the view re-renders in place — the name becomes "Identity without PII" (`IDENTITY_WITHOUT_PII_NAME`) and Email/Phone/Bio all read "—" (`DISPLAY_ABSENT`); the identity row still exists in the roster (erasure splices `identity_pii` only, leaving the identity and every `member_id` reference intact). The surviving pair at the address is the bodyless DELETE tombstone (head). Erased name remains in superseded pairs; derived reads and login show none. Cancel/Escape (`data-dialog-cancel="confirm-erase"`) leaves the PII unchanged. Source: `web-app/identities/detail.ts` (`performErase` → `deleteIdentityPii`). MCP note: drive the native `<dialog>` directly — no `window.confirm` stub needed.
@@ -2912,7 +2925,12 @@ pre-approval states submitted/under_review/sent_back).
 
 **K10.** Transition status to `under_review` via the edit
 form. PASS if the baseline sliders remain editable inline —
-there is NO Score button and NO modal.
+there is NO Score button and NO modal. Leftover: stay on
+K9's subject. Do not approve or archive K26's serial
+queue (Workforce Capacity Forecasting, Predictive
+Maintenance System, Employee Training Assistant) or
+the parallel slice ids `k-project-under-review` /
+`k-project-under-review-2`.
 
 **K11.** With baselines unscored, the `Approve` button is
 disabled with a tooltip prefixed "Set a baseline score
@@ -2944,7 +2962,8 @@ baseline.
 **K16.** Click Approve; confirm dialog opens. Confirm. PASS
 if status flips to `approved` and the action bar re-renders
 with `Archive` / `View history`; the row `.actual-slider`s
-become editable inline.
+become editable inline. Leftover: do not Approve K26's
+serial queue or the parallel K26 slice ids.
 
 **K17.** Negative-score path: on an under_review project,
 drag a baseline slider to the far left (-100). Save. PASS if
@@ -2979,7 +2998,8 @@ Archive; PASS if a confirmation dialog opens.
 
 **K23.** Confirm the archive. PASS if status flips to
 `archived` and the action bar reflects the archived
-project.
+project. Leftover: do not Archive K26's serial queue
+or the parallel K26 slice ids.
 
 ### K24–K26 — Projects list Projected Impact column (Agent-E)
 
@@ -2995,12 +3015,17 @@ text.
 re-order accordingly (most-positive first).
 
 **K26.** Filter to `under_review` status + sort by Projected
-Impact descending. Precondition: the K seed carries two
+Impact descending. Parallel: the K seed carries two
 `under_review` projects, each with four baselines and
-distinct Projected Impact values (`k-project-under-review`
-high, `k-project-under-review-2` low). PASS if both rows
-render, ranked high first — the "review queue ranked by
-impact" workflow we designed.
+distinct Projected Impact values
+(`k-project-under-review` high,
+`k-project-under-review-2` low). PASS if both rows
+render, ranked high first. Serial: three seeded
+`under_review` mock projects, high first: Workforce
+Capacity Forecasting, Predictive Maintenance System,
+Employee Training Assistant. Do not require slice ids.
+PASS if those three rows render, ranked high first —
+the "review queue ranked by impact" workflow we designed.
 
 ### K27–K29 — Dashboard Impact + Aggregates (Agent-CH)
 
