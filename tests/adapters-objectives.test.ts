@@ -13,9 +13,7 @@ import { DEV_TOKEN } from './token-fixtures.ts';
 import {
     getObjectives,
     getArchivedObjectiveIds,
-    getObjectiveArchivalEvents,
     getObjectiveLifecycleEvents,
-    getObjectiveHistories,
     getObjectiveRevisionsByObjective,
     getActiveObjectives,
     getCurrentObjectiveDefinitions,
@@ -229,44 +227,6 @@ test('getArchivedObjectiveIds returns a Set', async () => {
     assert.ok(ids.has('ohqxgUBEaFQwYbXsonRPmg'));
     assert.equal(ids.size, 1);
 });
-
-test(
-    'getObjectiveArchivalEvents streams archived'
-    + ' history rows only',
-    async () => {
-        const db = memoryDbAdapter();
-        await seedAdminSchema(db);
-        await seedCurrentMember(db);
-        const ctx = ctxFor(db);
-        await postObjectiveCreation(
-            ctxFor(db), 'ohqxgUBEaFQwYbXsonRPmg', 'Rev', 'd', 0,
-        );
-        await postObjectiveArchival(ctxFor(db), 'ohqxgUBEaFQwYbXsonRPmg');
-        await postObjectiveReactivation(ctxFor(db), 'ohqxgUBEaFQwYbXsonRPmg');
-        await postObjectiveArchival(ctxFor(db), 'ohqxgUBEaFQwYbXsonRPmg');
-
-        const histories =
-            await getObjectiveHistories(ctx);
-        const versions = histories.get('ohqxgUBEaFQwYbXsonRPmg');
-        assert.ok(versions);
-        assert.ok(
-            versions.some(r => r.state === 'active'),
-        );
-        assert.equal(
-            versions.filter(
-                r => r.state === 'archived',
-            ).length,
-            2,
-        );
-
-        const archivals =
-            await getObjectiveArchivalEvents(ctx);
-        assert.equal(archivals.length, 2);
-        for (const a of archivals) {
-            assert.equal(a.objectiveId, 'ohqxgUBEaFQwYbXsonRPmg');
-        }
-    },
-);
 
 test(
     'getObjectiveLifecycleEvents streams dated'

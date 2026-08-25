@@ -137,30 +137,6 @@ export async function getObjectiveHistories(
     return new Map(pairs);
 }
 
-export interface ObjectiveArchivalEvent {
-    objectiveId: ObjectiveId;
-}
-
-// Streams every `state='archived'` version from the
-// per-item versions door — one event per archival,
-// including re-archivals after reactivation. Consumed
-// by the project score-history presenter. Versions
-// carry no member or at; those facts live on the pair.
-export async function getObjectiveArchivalEvents(
-    ctx: RequestContext,
-): Promise<ObjectiveArchivalEvent[]> {
-    const histories = await getObjectiveHistories(ctx);
-    const events: ObjectiveArchivalEvent[] = [];
-    for (const [objectiveId, versions] of histories) {
-        for (const row of versions) {
-            if (row.state === 'archived') {
-                events.push({ objectiveId });
-            }
-        }
-    }
-    return events;
-}
-
 export interface ObjectiveLifecycleEvent {
     objectiveId: ObjectiveId;
     kind: 'archival' | 'reactivation';
