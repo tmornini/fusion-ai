@@ -213,6 +213,7 @@ Master never re-dispatches a hunter to retry.
   render. When the fixture succeeds and the SVG renders
   the expected end state, the case is **PASS** with the
   note `verified via pair fixture` — NOT BLOCKED.
+  WB5a graph repair is pair fixture + reload.
   `BLOCKED` is reserved for cases where neither gesture
   nor fixture produces a verifiable end state.
 - **List-row drag-reorders** (E11 projects, D36/D37
@@ -2004,9 +2005,11 @@ depends: A
 - [ ] **WB4** Click "+ Create Work Order". PASS:
   a dropdown opens with up to two labeled
   sections — `READY` (clickable rows, one per
-  publishable flow including `WB Test Flow`) —
-  Serial: READY is exactly Customer Onboarding and
-  Lead-to-Close; NOT READY is Fusion Angle Flow (16)
+  publishable flow) — Parallel: READY includes
+  `WB Test Flow` as today — Serial: READY is
+  exactly Customer Onboarding and Lead-to-Close
+  (never a third from AA26/E7); NOT READY is
+  Fusion Angle Flow (16)
   and Layout Test: Proposal Review Cycle (15), as
   `tests/mock-flow-readiness.test.ts` pins — and
   `NOT READY` (disabled rows for any flow with
@@ -2027,14 +2030,14 @@ depends: A
   (8-char hex) is visible in the header. Serial:
   click Customer Onboarding; the first post-start
   state is "Data Capture".
-- [ ] **WB5a** Edit `WB Test Flow` to remove the
-  outgoing edge from `Capture` (creating a dead
-  end). Return to Workbox, open the Create Work
-  Order dropdown. PASS: `WB Test Flow` now
-  appears in the `NOT READY` section with
-  subtitle "1 node needs attention". Restore the
-  edge and verify it returns to `READY`. Serial:
-  remove the `submit` edge from Data Capture.
+- [ ] **WB5a** Remove the outgoing `submit` edge
+  via pair fixture (no port-drag). Reload Workbox
+  and open Create Work Order. PASS: the subject
+  sits in `NOT READY` with subtitle "1 node needs
+  attention" (`verified via pair fixture`).
+  Restore the same pair, reload. PASS: the
+  subject returns to `READY`. Parallel: `WB Test
+  Flow` / Capture. Serial: Data Capture `submit`.
 - [ ] **WB5b — Server-side gate.** The server-side
   gate is covered by
   `tests/adapters-flow-publish.test.ts`
@@ -2096,6 +2099,31 @@ depends: A
   Active tab (unclaimed). Serial: bind an instance,
   fill Company Name and Contact Email, click
   `submit` → Review.
+- [ ] **WB16** On this same load's network log —
+  do not navigate again — assert the binding PUT,
+  the transition POST (instance shape), and the
+  history GET. Never `javascript_tool` `fetch`
+  (bearer is memory-only). PASS: the work-order
+  document message pair head carries `display_id`
+  and `flow_graph` JSON; the binding PUT is at
+  `work-orders/:id/binding` with
+  `{instance_id, record_type_id}`; value-bearing
+  transitions are `work-orders/:id/transition`
+  operation message pairs whose body is the
+  **instance shape** (`targetState`, `instance_id`,
+  `record_type_id`, `set`/`clear` delta, `release`,
+  `transitionAt` — no `fieldValues` bag) and carry
+  strong If-Match against the instance etag; pure
+  moves omit `set`/`clear`/`instance_id`/
+  `record_type_id` and send no If-Match; a sibling
+  instance revision pair advances the head when
+  the transition was value-bearing. Derived WO
+  history is `(at, id)` DESC (index 0 = current)
+  with one non-claim event per transition
+  (`entity_id` = work-order id, `state` = target
+  node id, `member_id` = actor, `at` = RFC-3339
+  Zulu). Live form values come from the instance
+  head, not a history fold.
 - [ ] **WB12** Click the work order row in the
   Active tab. PASS: work order PUTs
   `work-orders/:id/claim` (201) and the browser
@@ -2120,6 +2148,47 @@ depends: A
   `entity_id` (inspect via
   `GET work-orders/:id/history` or the matching
   operation message pairs). No shared event-append write is involved.
+- [ ] **WB19** Subject: the bound Active WO from
+  WB11–WB13 (still Active; WB14 archives it).
+  Skipping because "WO already archived" is FAIL.
+  After transitioning a work order through at
+  least two states, read the derived history
+  (`GET work-orders/:id/history` or the matching pairs in
+  `message_pairs`) for this work order's id. PASS:
+  rows are `(at, id)` DESC (index 0 = current); each
+  non-claim event has the immutable shape `{id, entity_id,
+  state, member_id, at, field_values}`, with `state`
+  carrying the target node's identifier. Live values live
+  on the instance head; history `field_values` may be
+  empty for new-shape transitions. Verify no app code
+  path mutates an existing pair — the message plane is
+  append-only.
+- [ ] **WB19a — Two-tab 412 on the action screen.**
+  Subject: the same bound Active WO from WB11–WB13;
+  skipping because "WO already archived" is FAIL.
+  Bind a work order to an instance. Open the action
+  screen in two tabs. In tab 2, change an instance
+  value via the records detail instance editor (or a
+  second transition) so the head etag advances. In
+  tab 1, edit a value and transition. PASS: tab 1
+  receives 412, re-GETs the instance, re-presents the
+  action screen with a conflict notice and a warning
+  toast ("This instance changed underneath you —
+  values refreshed; re-apply your edit"),
+  and does **not** auto-retry the transition.
+- [ ] **WB19b — Direct instance PATCH vs transition
+  412 convergence.** Subject: the same bound Active
+  WO from WB11–WB13; skipping because "WO already
+  archived" is FAIL. With a bound WO open on the
+  action screen, PATCH the same instance from the
+  record detail UI (save) so the head advances; then
+  attempt a value-bearing transition on the stale
+  action screen. PASS: same 412 recovery shape as
+  WB19a (re-present + warning toast). Conversely,
+  after a successful value-bearing transition, a
+  stale instance edit on record detail also 412s and
+  recovers — both writers share the instance etag
+  covenant.
 
 ### Workbox — Completion
 
@@ -2136,29 +2205,6 @@ depends: A
 
 ### Workbox — Data Integrity
 
-- [ ] **WB16** After binding an instance and
-  transitioning with value changes, inspect
-  `message_pairs` (or derived
-  `GET work-orders/:id/history` and the instance
-  head). PASS: the work-order document message pair head
-  carries `display_id` and `flow_graph` JSON; the
-  binding PUT is at `work-orders/:id/binding` with
-  `{instance_id, record_type_id}`; value-bearing
-  transitions are `work-orders/:id/transition` operation
-  message pairs whose body is the **instance shape**
-  (`targetState`, `instance_id`, `record_type_id`,
-  `set`/`clear` delta, `release`, `transitionAt` —
-  no `fieldValues` bag) and carry strong If-Match
-  against the instance etag; pure moves omit
-  `set`/`clear`/`instance_id`/`record_type_id` and
-  send no If-Match; a sibling instance revision
-  pair advances the head when the transition was
-  value-bearing. Derived WO history is `(at, id)`
-  DESC (index 0 = current) with one non-claim event
-  per transition (`entity_id` = work-order id,
-  `state` = target node id, `member_id` = actor,
-  `at` = RFC-3339 Zulu). Live form values come from
-  the instance head, not a history fold.
 - [ ] **WB17** Navigate away from the action
   screen and return. PASS: all data persists
   correctly across page navigation.
@@ -2175,40 +2221,6 @@ depends: A
   in place). Inspect via `message_pairs` or derived
   `GET work-orders/:id/history` (DESC; claim rows carry
   `field_values: []`).
-- [ ] **WB19** After transitioning a work order through at
-  least two states, read the derived history
-  (`GET work-orders/:id/history` or the matching pairs in
-  `message_pairs`) for this work order's id. PASS:
-  rows are `(at, id)` DESC (index 0 = current); each
-  non-claim event has the immutable shape `{id, entity_id,
-  state, member_id, at, field_values}`, with `state`
-  carrying the target node's identifier. Live values live
-  on the instance head; history `field_values` may be
-  empty for new-shape transitions. Verify no app code
-  path mutates an existing pair — the message plane is
-  append-only.
-- [ ] **WB19a — Two-tab 412 on the action screen.**
-  Bind a work order to an instance. Open the action
-  screen in two tabs. In tab 2, change an instance
-  value via the records detail instance editor (or a
-  second transition) so the head etag advances. In
-  tab 1, edit a value and transition. PASS: tab 1
-  receives 412, re-GETs the instance, re-presents the
-  action screen with a conflict notice and a warning
-  toast ("This instance changed underneath you —
-  values refreshed; re-apply your edit"),
-  and does **not** auto-retry the transition.
-- [ ] **WB19b — Direct instance PATCH vs transition
-  412 convergence.** With a bound WO open on the
-  action screen, PATCH the same instance from the
-  record detail UI (save) so the head advances; then
-  attempt a value-bearing transition on the stale
-  action screen. PASS: same 412 recovery shape as
-  WB19a (re-present + warning toast). Conversely,
-  after a successful value-bearing transition, a
-  stale instance edit on record detail also 412s and
-  recovers — both writers share the instance etag
-  covenant.
 
 ### Workbox — All-See-All Visibility
 
