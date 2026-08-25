@@ -156,7 +156,8 @@ a K-hunter case on the parallel path.
   document order including K8 inside K, then J.
   Headers are not consulted. Serial does not
   mint garden rows (AA and E7) and does not
-  wipe to `--bootstrap`.
+  wipe to `--bootstrap` except K8 (then
+  restore `--mock-data`).
 - **Parallel (default)**: the same A1–A2. Grant Chrome
   origin `http://localhost` before anything else. A3
   `./postgres-wipe --postgres local` then
@@ -1247,32 +1248,56 @@ depends: A
   visible; one click (list or detail) navigates
   to `ideas/convert.html`. That click does
   **not** promote (D24 does). Then select Stark
-  Industries in `.org-switcher` before D17–D21.
+  Industries in `.org-switcher` before D17–D19.
   Parallel: a slice-garden `approved` idea,
   same control, same PASS.
 - [ ] **D17** Navigate to `ideas/detail.html?ideaId=999` (non-existent). PASS: page handles gracefully — shows error state, no unhandled JS exception.
 
 ### Idea Detail — Submit for Review
 
-- [ ] **D18** Navigate to an idea with status "active". PASS: "Submit for Review" button is visible in the header area.
-- [ ] **D19** Click "Submit for Review". PASS: toast "Submitted for review", navigates to the ideas list, and the idea's status badge there now reads "In Review".
+- [ ] **D18** Navigate to an idea with status
+  "active". Serial: leftover `active` is
+  Stark — Predictive Maintenance System or
+  Smart Inventory Optimization. Parallel: a
+  slice-garden `active` idea. PASS: "Submit
+  for Review" button is visible in the
+  header area.
+- [ ] **D19** Click "Submit for Review". PASS:
+  toast "Submitted for review", navigates to
+  the ideas list, and the idea's status badge
+  there now reads "In Review". Serial: stay
+  on D18's Stark `active` leftover.
 
 ### Idea Detail — Sent Back Re-Submit
 
-- [ ] **D20** Navigate to an idea with status "sent_back" (after a reviewer sends it back). PASS: "Submit for Review" button is visible, allowing re-submission.
-- [ ] **D21** Click "Edit", modify a field, click "Save". PASS: idea updates. Click "Submit for Review". PASS: navigates to the ideas list with the idea now "In Review".
+- [ ] **D20** Navigate to an idea with status
+  "sent_back" (after a reviewer sends it
+  back). Serial: org-switch to Wayne
+  Enterprises in `.org-switcher` (G36).
+  Leftover `sent_back` is Employee Training
+  Assistant (`IjrYiSuRyjkQaqiRLhadAg`).
+  Parallel: a slice-garden `sent_back` idea.
+  PASS: "Submit for Review" button is
+  visible, allowing re-submission.
+- [ ] **D21** Click "Edit", modify a field,
+  click "Save". PASS: idea updates. Click
+  "Submit for Review". PASS: navigates to
+  the ideas list with the idea now "In
+  Review". Serial: leftover is Wayne
+  Employee Training Assistant; stay on
+  Wayne for D22.
 
 ### Idea Convert (`ideas/convert.html`)
 
 - [ ] **D22** Navigate to
   `ideas/convert.html?ideaId=<id>` for a
-  convertible idea. Serial: org-switch to
-  Wayne Enterprises (`.org-switcher` / G36).
-  Automated Report Generation
-  (`WurwPqXxGtLhRAoCEcPzfQ`) — D16 verified
-  this leftover. Parallel: a slice-garden
-  `approved` idea. PASS: page loads with
-  conversion form showing 4 required fields:
+  convertible idea. Serial: stay on Wayne
+  Enterprises after D21. Automated Report
+  Generation (`WurwPqXxGtLhRAoCEcPzfQ`) —
+  D16 verified this leftover. Parallel: a
+  slice-garden `approved` idea. PASS: page
+  loads with conversion form showing 4
+  required fields:
   Project Name, Time (label "Time", unit
   "days" as the input suffix; field key
   `time-days`), Cost, Success Criteria (it
@@ -2932,6 +2957,12 @@ by stopping again, `./postgres-wipe --postgres
 local`, then `./postgres-seed --postgres local
 --mock-data`, then start.
 
+Serial: do not skip — this is the named
+`--bootstrap` exception (then restore
+`--mock-data`). After restore, K9 sees a
+fresh mock garden (Market Sentiment
+Analyzer is `submitted` again).
+
 ### K9–K18 — Project detail: inline scoring + Approve (Agent-E)
 
 The Score and Log-measurement MODALS are retired. Baseline
@@ -2949,7 +2980,16 @@ unscored→score→approve path you need a project created
 WITHOUT baselines (converted when no objectives existed, or
 seeded directly).
 
-**K9.** Open a `submitted` project; confirm the header
+**K9.** Open a `submitted` project. Serial:
+after K8 restore, open Market Sentiment
+Analyzer (`PIfhHMLQQxTxKFDdabXbOw`,
+`submitted`) on Stark. AA24a may have
+approved it during AA; K8 restore returns
+it. If it is already `approved` and K8 did
+not run, org-switch to Wayne and open
+Wayne R&D Portfolio (org-2 `submitted`) —
+do not invent a garden. Parallel: a slice
+`submitted` project. Confirm the header
 actions slot shows Edit (`#project-edit-btn` in
 `.project-actions-slot`) and the review action bar
 (`#project-review-actions` / `.action-bar`) shows Approve /
@@ -3206,23 +3246,34 @@ every other agent, so no write-domain collision.
   failures still surface via
   `WorkboxDetailPresenter.buildViolations` banner.
   Serial (A3 `--mock-data`): the work order is
-  `#gate0001`. Parallel (A3 `--test-plan-slices`):
-  the work order is `#r1`.
+  `#gate0001` (`eOlNZpGQfmCdpSFWXGkzFQ`) at
+  Data Capture, unbound. Only WO01 (`a7c3e1f9`
+  / `xqcXYHXBJJXcLkRYkRngKA`) is
+  instance-bound. If `#gate0001` is unbound,
+  bind the seeded Customer Profile instance
+  via the bind picker (existing instance, not
+  mint). Then the fillable path applies.
+  Parallel (A3 `--test-plan-slices`): the
+  work order is `#r1` (already bound).
 - [ ] **R14** Fill Company Name + Contact Email, click
   submit. PASS: transition succeeds; work order advances
   to Review (does NOT demand Reviewer Notes — that is
   current-node only when leaving Review).
   Serial (A3 `--mock-data`): the work order is
-  `#gate0001`. Parallel (A3 `--test-plan-slices`):
-  the work order is `#r1`.
-  Bind picker "No instances available" or
-  toast "work order has no instance binding"
-  on that subject is stolen-tab paint.
-  Delete site data, sign in as this slice's
-  admin, wait ≥14s, then assert. If the
-  chip names another section's admin:
-  BLOCKED (MCP selected-page). Otherwise
-  FAIL. No mint+bind. No extra seed row.
+  `#gate0001`. If still unbound, bind the
+  seeded Customer Profile instance via the
+  bind picker (existing instance, not mint),
+  then fill and submit. Parallel (A3
+  `--test-plan-slices`): the work order is
+  `#r1` (already bound). Bind picker "No
+  instances available" or toast "work order
+  has no instance binding" with this slice's
+  own admin chip is FAIL. Delete site data,
+  sign in as this slice's admin, wait ≥14s,
+  then assert. If the chip names another
+  section's admin: BLOCKED (MCP
+  selected-page). No mint+bind of a new
+  instance. No extra seed row.
 - [ ] **R14a** When a node references a `radio`-typed Record attribute, the workbox work-order detail renders it as a radio group — one `<input type="radio">` per option, all sharing the attribute name so only one is selectable — rather than a dropdown; selecting an option and transitioning records that value. NOTE: seeded mock data predates `radio`, so add a radio attribute, reference it Editable on a working node, and create a work order to exercise this.
 - [ ] **R15** Open the R2-created Record's detail
   page — never Customer Profile (R16–R20 read it).
