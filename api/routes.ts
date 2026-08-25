@@ -424,7 +424,7 @@ function workOrderDocumentEntityOf(
     document: DerivedDocument,
     organization: Id,
     _current?: { readonly state: string },
-): unknown {
+): object {
     return {
         id: document.uriId,
         organization_id: organization,
@@ -508,7 +508,7 @@ export function identityDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
     _current?: { readonly state: string },
-): unknown {
+): object {
     return {
         id: document.uriId,
         ...document.body,
@@ -544,7 +544,7 @@ export function aiAgentDocumentEntityOf(
     document: DerivedDocument,
     _organization: Id,
     _current?: { readonly state: string },
-): unknown {
+): object {
     return {
         id: document.uriId,
         ...document.body,
@@ -5774,8 +5774,9 @@ export const routes: Route[] = [
     // MEMBER_ID-CAVEAT prose that lived here moved to the
     // IDEAS_WIRING block above.
     documentEntityRoute(IDEAS_WIRING),
-    // GET ideas/:id/versions/: StateEntity[] DESC;
-    // empty → missedReadError('ideas').
+    // GET ideas/:id/versions/: entityOf snapshots
+    // DESC, each stamped with the pair facts (etag, at,
+    // member_id); empty → missedReadError('ideas').
     documentVersionListRoute(IDEAS_WIRING),
     documentVersionRoute(IDEAS_WIRING),
     // Absorbed (Phase 4 Task 2) into the generic
@@ -5783,8 +5784,9 @@ export const routes: Route[] = [
     // the shared rationale; the Decision-7/MEMBER_ID-CAVEAT
     // prose moved to the PROJECTS_WIRING block above.
     documentEntityRoute(PROJECTS_WIRING),
-    // GET projects/:id/versions/: StateEntity[] DESC;
-    // empty → missedReadError('projects').
+    // GET projects/:id/versions/: entityOf snapshots
+    // DESC, each stamped with the pair facts (etag, at,
+    // member_id); empty → missedReadError('projects').
     documentVersionListRoute(PROJECTS_WIRING),
     documentVersionRoute(PROJECTS_WIRING),
     // GET is FLIPPED (Task 7): the collection derives from the

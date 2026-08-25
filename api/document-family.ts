@@ -147,7 +147,7 @@ export interface DocumentFamilyWiring {
         document: DerivedDocument,
         organization: Id,
         current?: { readonly state: string },
-    ) => unknown;
+    ) => object;
 }
 
 // The per-family wiring table — grown family by family (ideas,
@@ -545,9 +545,11 @@ function stateFromDocument(
 export function documentVersionListHandler(
     wiring: DocumentFamilyWiring,
 ): GetHandler {
-    // Flow keeps StateEntity[] (deferred). The four
-    // families return entityOf snapshots so list items
-    // match GET collection / GET :id.
+    // Flow keeps StateEntity[] (deferred). The other
+    // five wirings (identities, ai-agents, ideas,
+    // projects, objectives) return entityOf snapshots
+    // stamped with the pair facts (etag, at, member_id) —
+    // beyond, not identical to, GET collection / GET :id.
     if (
         wiring.lifecycle === 'trio'
         && wiring.family === 'flows'
@@ -573,8 +575,8 @@ export function documentVersionListHandler(
                 ? wiring.entityOf(
                     document, org,
                     stateFromDocument(document),
-                ) as object
-                : wiring.entityOf(document, org) as object,
+                )
+                : wiring.entityOf(document, org),
         );
         if (snapshots.length === 0) {
             throw await throwDocumentMiss(

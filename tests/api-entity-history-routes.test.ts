@@ -1031,6 +1031,7 @@ test(
             rows[0]!.etag, rows[1]!.etag,
         );
         assert.ok(rows[0]!.at >= rows[1]!.at);
+        assert.equal(typeof rows[0]!.member_id, 'string');
         assert.notEqual(rows[0]!.member_id, '');
         assert.equal(
             rows[0]!.member_id, rows[1]!.member_id,
