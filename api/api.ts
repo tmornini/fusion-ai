@@ -485,8 +485,13 @@ export async function handleRequest(
         try {
             const fence = await fenceRequest(authed);
             if (!fence.ok) {
-                // Org-less identity-scoped GET reaches
-                // the handler; fence would 403 first.
+                // Org-less identity-scoped reads (invitations,
+                // default-org, reachable orgs) reach the
+                // handler; fence would 403 first. Sign-out
+                // PUT is the same class: a zero-membership
+                // identity must still revoke its refresh
+                // cookie. GET of revocations stays fenced
+                // (admin-only via authorizeRequest).
                 if (
                     fencePattern
                         !== 'identities/:id/'
@@ -507,6 +512,13 @@ export async function handleRequest(
                         !== 'identities/:id/'
                             + 'invitations/:id/versions/'
                             + ':etag'
+                    && !(
+                        method === 'PUT'
+                        && fencePattern
+                            === 'identities/:id/'
+                                + 'token-revocations/'
+                                + ':rid'
+                    )
                 ) {
                     return Response.json(
                         { error: fence.error },
