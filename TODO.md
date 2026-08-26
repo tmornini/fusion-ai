@@ -417,6 +417,9 @@ Off the critical path; each with its oracle.
   (`api/test-plan-slices.ts:2040`), and a dead
   `disconnect()` stub in
   `tests/ideas-empty-subscribe.test.ts`
+- Investigate `docker compose up -d --wait` postgres
+  only. Not the compose `server` — that would be a
+  second origin (`compose.yaml`)
 
 ## Sequencing
 
