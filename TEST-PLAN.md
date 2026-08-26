@@ -4,6 +4,12 @@
 
 ### How to invoke
 
+Beware the use of parallelism due to the single
+cookie-jar. Use a fresh local Postgres via Docker.
+Set `POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`, and
+`HTTP_SERVER_PORT` with random inputs for passwords
+and other secrets.
+
 When the user says "run the test plan", the master
 session:
 
