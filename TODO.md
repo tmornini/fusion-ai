@@ -352,13 +352,14 @@ Off the critical path; each with its oracle.
   parallel run; verified 8/8 green in isolation, so it is a
   timing assumption that breaks under load, not a broken
   test — three sightings during the run-six campaign
-- `subscribeOnce` discards a re-init rejection: `void fn()`
-  means a throw inside the re-run `init` is never logged,
-  never painted, and never retried — unlike first boot,
-  which `page-loader.ts` catches and paints with a retry.
-  No global `unhandledrejection` handler exists —
-  `web-app/app/channels.ts:152`,
-  `web-app/app/page-loader.ts:37-70`
+- A re-init failure degrades weaker than a first-boot one:
+  `subscribeOnce`'s `void fn()` lets the rejection reach the
+  global `unhandledrejection` handler, which logs and
+  toasts — but first boot gets `handlePageLoadError`'s full
+  error state with a Try Again button. Toast-only, no retry
+  — `web-app/app/channels.ts:152`,
+  `web-app/app/page-loader.ts:41-75`,
+  `web-app/app/error-helpers.ts:41-57`
 - `subscribeOnce` guarantees "never two" live subscriptions,
   not "always one": a bell arriving between teardown and
   re-arm is dropped, leaving an empty list page blank — the
@@ -369,8 +370,9 @@ Off the critical path; each with its oracle.
 - Objective lifecycle history compares two clocks:
   `revision.at` is client-minted while the lifecycle `at`
   is the server-stamped pair fact. A browser clock ahead of
-  the server can invert them, throw, and blank the whole
-  History modal through an un-caught async click listener —
+  the server can invert them and throw, so the History
+  modal fails to open with an error toast instead of
+  rendering —
   `web-app/app/adapters/objectives.ts:311`,
   `web-app/projects/detail.ts:318`
 - `api/test-plan-slices.ts` forms a record write in three
