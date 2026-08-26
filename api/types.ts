@@ -1331,11 +1331,12 @@ export interface InvitationEntity {
     id: Id;
     organization_id: Id;
     identity_id: Id;
-    // The invitation's own grant time
-    // (validateInvitationEntity), a domain fact — NOT a
-    // ledger fact. GET .../invitations/:id/versions/ stamps
-    // a DIFFERENT `at` on each row: the message pair's own
-    // arrival time (versionSnapshotsAt, document-family.ts,
+    // The invitation's own grant time (validated at write
+    // time by grantInvitation's validateTimestampField(body,
+    // 'grantAt', …)), a domain fact — NOT a ledger fact.
+    // GET .../invitations/:id/versions/ stamps a DIFFERENT
+    // `at` on each row: the message pair's own arrival time
+    // (versionSnapshotsAt, document-family.ts,
     // invitationDocumentEntity in invitations-domain.ts).
     // Same name on this entity and on that versions row,
     // different facts.

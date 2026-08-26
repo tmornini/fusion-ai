@@ -434,7 +434,8 @@ test(
 
 // Sibling to the member pin above: invitationDocumentEntity
 // spreads document.body (carrying the invitation's OWN `at`,
-// validateInvitationEntity's grant time) before
+// validated at write time by grantInvitation's
+// validateTimestampField(body, 'grantAt', …)) before
 // versionSnapshotsAt overwrites it with the ledger arrival
 // time. This pins the versions wire to the ledger fact and
 // proves it is NOT the invitation's own grant time.
