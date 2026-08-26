@@ -20,3 +20,10 @@ test('validate does not lint root markdown', () => {
         /TEST-PLAN\.md/,
     );
 });
+
+test('validate lints crank', () => {
+    assert.match(
+        longLineBlock(VALIDATE),
+        /\bcrank\b/,
+    );
+});
