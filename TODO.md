@@ -359,13 +359,13 @@ Off the critical path; each with its oracle.
   No global `unhandledrejection` handler exists —
   `web-app/app/channels.ts:152`,
   `web-app/app/page-loader.ts:37-70`
-- `subscribeOnce`'s comment claims "exactly one live
-  subscription at all times"; the true guarantee is "never
-  two". A bell arriving between teardown and re-arm is
-  dropped, leaving an empty list page blank. Correct the
-  prose, not the code — a pending flag reintroduces the
-  shared state the design avoids —
-  `web-app/app/channels.ts:138-152`
+- `subscribeOnce` guarantees "never two" live subscriptions,
+  not "always one": a bell arriving between teardown and
+  re-arm is dropped, leaving an empty list page blank — the
+  symptom run-six Task 9 fixes. Needs two bells inside one
+  fetch window; a pending flag would close it but
+  reintroduces the shared state the design avoids —
+  `web-app/app/channels.ts:138-154`
 - Objective lifecycle history compares two clocks:
   `revision.at` is client-minted while the lifecycle `at`
   is the server-stamped pair fact. A browser clock ahead of
