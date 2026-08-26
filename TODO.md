@@ -50,15 +50,15 @@ spec → plan → ship cycle, implemented sequentially. A
 5. Execute TEST-PLAN.md with up to 48 subagents —
    after the run-four remediation ships; the
    Protocol's one-profile, hunters-in-turn contract is
-   revisited for 48. BLOCKING precondition, cleared
-   before the run starts: `./validate` is this run's
-   automatic abort, and a false prophet in the gating
-   suite kills the run spuriously —
-   `tests/api-flow-document.test.ts:1038` ("an undo
-   racing a save") failed three times (two on Markdown
-   diffs), two racers winning where one was expected,
-   then passed in isolation and on re-run. Merged: the
-   five run-four mitigation stubs (absorbed by the
+   revisited for 48. BLOCKING precondition CLEARED:
+   the false prophet in the gating suite
+   (`tests/api-flow-document.test.ts` "an undo racing a
+   save", two racers winning where one was expected) is
+   fixed at the root — the undo POST now carries
+   If-Match, so its 412 names a real conflict instead of
+   the server's own resolution timing. Measured 17/100
+   before, 0/300 after; `./test` 15/15 green. Merged:
+   the five run-four mitigation stubs (absorbed by the
    remediation spec); the flaky-test bullet.
 6. Re-implement workbox, work orders, and flows —
    nodes become processes; process kinds: record
@@ -347,11 +347,6 @@ Off the critical path; each with its oracle.
   non-canvas pages (Billing) — a flow-canvas gesture
   listener may be bound globally — TEST-PLAN.md G42
   observation
-- `tests/api-flow-document.test.ts` "undo racing a save"
-  fails intermittently under the full-suite `node --test`
-  parallel run; verified 8/8 green in isolation, so it is a
-  timing assumption that breaks under load, not a broken
-  test — three sightings during the run-six campaign
 - A re-init failure degrades weaker than a first-boot one:
   `subscribeOnce`'s `void fn()` lets the rejection reach the
   global `unhandledrejection` handler, which logs and
