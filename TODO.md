@@ -373,6 +373,46 @@ Off the critical path; each with its oracle.
   History modal through an un-caught async click listener —
   `web-app/app/adapters/objectives.ts:311`,
   `web-app/projects/detail.ts:318`
+- `api/test-plan-slices.ts` forms a record write in three
+  near-verbatim ~100-line blocks — `formAaRecord` (:2026),
+  `formRecordBindingMessagePairs` (:2445), and the first
+  fifty lines of `formRExtras` (:1830); past the rule of
+  three, extract the no-binding core once
+- The resolve-and-throw block in
+  `web-app/app/presenters/project-score-history.ts` is four
+  identical 11-line copies (:139, :161, :182, :201) — a
+  `#definitionAt(objectiveId, at)` helper collapses each
+- `tests/ideas-empty-subscribe.test.ts` enforces its
+  load-bearing property by comment, not assertion: assert
+  the two raw PUTs alone do not wake the page before
+  posting the bell
+- `tests/presenter-project-score-history.test.ts:224,:259`
+  assert substrings the row-selection predicate already
+  implies, leaving the detail cell unpinned — assert
+  `<td>archived</td>`
+- `tests/test-plan-slices.test.ts:466-472` pins the AA
+  attribute count but not names or types; a rename keeps it
+  green while invalidating AA33 (`TEST-PLAN.md:970`)
+- Untested by design after run-six: the records/projects/
+  flows `onEmpty` arms (only ideas is pinned), `loadInto`'s
+  retry branch, a work order both claimed and completed,
+  and the archived-genesis walk
+  (`web-app/app/adapters/objectives.ts:190-192`)
+- `subscribeOnce`'s `const unsubscribe = subscribe(...)`
+  would throw a TDZ ReferenceError if any `subscribe` fired
+  its callback synchronously; all thirteen
+  `subscribe<Entity>Changes` delegate to `createChannel`,
+  so it is inert — guard only if that changes
+- Run-six cosmetics, none load-bearing: the only
+  human-readable seed id among 560
+  (`api/test-plan-slices.ts:208`), `unknown[]` returns now
+  provably narrower (`api/document-family.ts:438,:445`), a
+  non-strict DESC pin
+  (`tests/api-entity-history-routes.test.ts:1033`),
+  `adminId` hard-coded where siblings parameterize it
+  (`api/test-plan-slices.ts:2040`), and a dead
+  `disconnect()` stub in
+  `tests/ideas-empty-subscribe.test.ts`
 
 ## Sequencing
 
