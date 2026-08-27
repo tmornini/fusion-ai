@@ -1394,6 +1394,7 @@ export function buildGraphSvg(
         + '"http://www.w3.org/2000/svg"'
         + ` class="${svgCls}"`
         + ' role="application"'
+        + ` tabindex="${FOCUSABLE_TABINDEX}"`
         + ` aria-label="${canvasLabel}"`
         + ` viewBox="${vb}"`
         + ' preserveAspectRatio='

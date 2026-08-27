@@ -97,6 +97,17 @@ test(
 );
 
 test(
+    'the canvas svg is a tab stop for Space pan',
+    () => {
+        const out = render(false);
+        assert.match(
+            out,
+            /<svg\b[^>]*\btabindex="0"/,
+        );
+    },
+);
+
+test(
     'an unlocked canvas keeps per-type strokes',
     () => {
         const out = render(false);
