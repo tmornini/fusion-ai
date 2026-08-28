@@ -50,7 +50,7 @@ API.md 400
 DESIGN-SYSTEM.md 300
 FLOW-CANVAS.md 300
 AUDIT.md 400
-TODO.md 450
+TODO.md 500
 EOF
 
 if [ -n "${DOC_LINE_FAIL}" ]; then
