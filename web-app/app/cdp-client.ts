@@ -356,7 +356,6 @@ export function launchChrome(options: {
         '--no-first-run',
         '--no-default-browser-check',
         '--disable-background-networking',
-        '--disable-gpu',
     ];
     if (options.windowSize !== undefined) {
         args.push(`--window-size=${options.windowSize}`);
