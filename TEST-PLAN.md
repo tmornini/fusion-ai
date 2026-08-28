@@ -184,6 +184,28 @@ E11 use pointer capture on
 `.drag-handle`, not HTML5
 `drop`.
 
+Before every compositor-mouse
+gesture (port drag,
+shift-connect, body drag,
+marquee, pan, list-row drag)
+call `activate_tab(current_tab())`
+and confirm
+`document.visibilityState`
+is `visible`. A hidden tab
+lands every `mouseMoved`
+about 5 s late — past the
+daemon's 5 s timeout — while
+press, release, and keys
+land at once. Never activate
+for anything else. If a
+`mouseMoved` still raises
+`TimeoutError`, send
+`mouseReleased` at the same
+point first (it always lands
+and ends the gesture), then
+re-activate and retry that
+gesture once.
+
 Return one line per case:
 ID PASS|FAIL|BLOCKED|DEFERRED|DRIFT
 — one-line note. BLOCKED only
@@ -325,6 +347,31 @@ two-jar SV.
   `pointerup`. Verify persistence by
   reload. Window at or above 768 CSS
   px; filter All.
+- **Visible tab for continuous mouse.**
+  Chrome aligns `mouseMoved` delivery
+  to the animation frame; a hidden tab
+  paints no frame, so a CDP
+  `Input.dispatchMouseEvent` `mouseMoved`
+  lands about five seconds late — past
+  the daemon's 5 s IPC read timeout —
+  while `mousePressed`, `mouseReleased`,
+  and keys land at once. All hunters
+  share one Chrome and `new_tab()`
+  creates targets in the background, so
+  a hunter's tab is hidden unless it
+  activates it. A helper that raises
+  mid-gesture leaves the canvas FSM in
+  flight with pointer capture held, and
+  every later click, Space, and
+  shortcut on that tab reads as a
+  product FAIL (2026-08-28 AA27–AA40,
+  F16–F67). Gesture hunters call
+  `activate_tab(current_tab())` before
+  every gesture (prompt rule); other
+  hunters never activate. Measured
+  2026-08-28 on a bare `data:` page:
+  hidden 5.001 s per move, visible
+  8 ms.
 - **CSS viewport.** Set a real CSS
   viewport (not a screenshot-only
   resize). I10–I15 need ≤767px for the
@@ -1012,6 +1059,9 @@ Project.
   covered by `tests/flow-operations.test.ts`
   (`performAddNodeAtPosition` + `performAddEdge`).
   Drive the port-drag with compositor mouse.)
+  Activate the tab first (prompt rule): a hidden
+  tab lands every `mouseMoved` past the daemon
+  timeout and paints no ghost.
 - [ ] **AA28** Serial: N/A — requires the empty
   Create+Archive graph that serial must not
   mint; do not add nodes; do not JSON-inject.
@@ -1508,7 +1558,8 @@ depends: A
   upward past another row's midpoint. Drive with
   compositor mouse: `pointerdown` on `.drag-handle`
   (pointer capture), `pointermove`, `pointerup` —
-  not HTML5 `drop`. PASS: during the drag a
+  not HTML5 `drop`. Activate the tab first (prompt
+  rule). PASS: during the drag a
   hysteresis indicator appears at the target drop
   position, the dragged row follows the pointer,
   and on release the ideas list reorders in place.
@@ -1583,6 +1634,7 @@ depends: A
   to a new position. Drive with compositor mouse:
   `pointerdown` on `.drag-handle` (pointer capture),
   `pointermove`, `pointerup` — not HTML5 `drop`.
+  Activate the tab first (prompt rule).
   PASS: drop indicator appears, card follows the
   pointer, and on release the projects list
   reorders. Reload the page — new order persists.
@@ -1729,6 +1781,9 @@ opens and renders.)
   drop may snap (F17). For a resting free
   placement see F34 (toggle Auto Layout off
   first; F18's first toggle is that off).
+  Activate the tab first (prompt rule): the
+  rAF paint this PASS observes exists only
+  on the visible tab.
 - [ ] **F17** Drag the start node. PASS: it moves
   freely like any standard node (start and
   complete nodes are both draggable; with Auto
@@ -3286,7 +3341,8 @@ if it returns to the active list.
 Drive with compositor mouse: `pointerdown`
 on `.drag-handle` (pointer capture),
 `pointermove`, `pointerup` — not HTML5
-`drop`. PASS if the new position persists
+`drop`. Activate the tab first (prompt
+rule). PASS if the new position persists
 across a page reload.
 
 **K8.** **Phase 4 case** — runs alone last after Phase 2
