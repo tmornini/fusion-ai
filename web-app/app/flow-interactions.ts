@@ -313,7 +313,10 @@ export function nextCanvasTabIndex(
     shift: boolean,
 ): number | null {
     if (length < 1) return null;
-    if (current < 0 || current >= length) {
+    if (current < 0) {
+        return shift ? length - 1 : 0;
+    }
+    if (current >= length) {
         return null;
     }
     if (shift) {
