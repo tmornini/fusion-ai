@@ -326,6 +326,13 @@ export function nextCanvasTabIndex(
         : current + 1;
 }
 
+export function pointerIsShift(
+    shiftHeld: boolean,
+    eventShiftKey: boolean,
+): boolean {
+    return shiftHeld || eventShiftKey;
+}
+
 export function canvasFocusInputOf(
     target: Element,
     wrap: Element,
@@ -430,6 +437,7 @@ export function bindInteractions(
         initialContext.interaction;
     let activePointerId: number | null = null;
     let gestureRect: GestureRect | null = null;
+    let shiftHeld = false;
     if (currentState.isPanMode) {
         wrap.classList.add(
             'flow-pan-cursor',
@@ -590,7 +598,9 @@ export function bindInteractions(
                     isPort,
                     isDraggable:
                         pos.isDraggable,
-                    isShift: e.shiftKey,
+                    isShift: pointerIsShift(
+                        shiftHeld, e.shiftKey,
+                    ),
                     isMeta:
                         e.metaKey
                         || e.ctrlKey,
@@ -670,7 +680,9 @@ export function bindInteractions(
                 svgY: svgPt.y,
                 clientX: e.clientX,
                 clientY: e.clientY,
-                isShift: e.shiftKey,
+                isShift: pointerIsShift(
+                    shiftHeld, e.shiftKey,
+                ),
                 hoverNodeId,
                 svgRectW: rect.w,
                 svgRectH: rect.h,
@@ -727,7 +739,9 @@ export function bindInteractions(
                 svgY: svgPt.y,
                 clientX: e.clientX,
                 clientY: e.clientY,
-                isShift: e.shiftKey,
+                isShift: pointerIsShift(
+                    shiftHeld, e.shiftKey,
+                ),
                 hoverNodeId,
                 fromNodePosition,
                 allNodes,
@@ -777,9 +791,12 @@ export function bindInteractions(
         ke: KeyboardEvent,
     ): void => {
         if (ke.key !== 'Shift') return;
+        shiftHeld = ke.type === 'keydown';
         dispatch({
             kind: 'shift-key',
-            isShift: ke.shiftKey,
+            isShift: pointerIsShift(
+                shiftHeld, ke.shiftKey,
+            ),
         });
     };
     window.addEventListener(
