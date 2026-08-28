@@ -489,6 +489,20 @@ two-jar SV.
   tab, not a jar. Two hunters
   refreshing the same cookie look
   like theft and revoke the chain.
+- **macOS "Allow remote debugging?"
+  sheet.** Each named daemon's first
+  CDP connection raises one; fourteen
+  hunters raise up to fourteen. Chrome
+  holds that daemon's handshake until
+  Allow; after 45 s the daemon fails
+  `permission-blocked` and the hunter
+  crashes (that section FAIL, not
+  product). The sheet does not touch
+  input dispatch — the hidden-tab
+  delay above reproduces with the
+  sheet answered. Answer each sheet at
+  once, or run `browser-use
+  mac-approve`.
 - **`getBoundingClientRect` ≠
   click coordinates**: a ~1.19×
   CSS-px ↔ screenshot-px scale
