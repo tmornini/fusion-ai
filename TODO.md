@@ -435,6 +435,33 @@ Off the critical path; each with its oracle.
 - Investigate `docker compose up -d --wait` postgres
   only. Not the compose `server` — that would be a
   second origin (`compose.yaml`)
+- Node-only modules by directory — once whole-tree type
+  checking ships, the browser tsconfig's `exclude` is
+  the last hand-kept registry (seven, growing with the
+  tiers plan). Move them out of `web-app/app/` into a
+  top-level tools directory so browser membership is by
+  rule and the top level names the tools. After the
+  tiers plan. Oracle: `web-app/app/tsconfig.json` has
+  no `exclude`
+- A DOM-free server universe — `server/` and the `api/`
+  it reaches type-check only under `lib.dom`, so a
+  `document` in server-side code is invisible to `tsc`.
+  Measured at `8cad9e86`: `server/` alone under `ES2024`
+  + `@types/node` reports 8 errors, all WebCrypto/Fetch
+  names that `lib.webworker` carries without `document`
+  (`api/client-assertion.ts:29-167`,
+  `api/message-pair.ts:540`). A third project over
+  `server/` extending the root with
+  `lib: ["ES2024", "WebWorker"]`; verify `@types/node`
+  coexists. Oracle: a `document` reference in `api/`
+  fails `./validate`
+- The browser tsconfig at `web-app/app/` is the nearest
+  project only for `web-app/app/**`; editors and the
+  LSP open `web-app/flows/**` and the other page
+  directories under the root superset, where `process`
+  resolves. Move it to `web-app/tsconfig.json`. Three
+  live references (`validate`, TEST-PLAN.md AT1, the
+  critical-path item) plus the tiers plan's path
 
 ## Sequencing
 
