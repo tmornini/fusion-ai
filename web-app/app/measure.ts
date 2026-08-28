@@ -231,8 +231,6 @@ function queryOf(url: string): string {
     return i >= 0 ? url.slice(i + 1) : '';
 }
 
-// ── CDP client ──────
-
 // ── Page session helpers ──────
 
 type ReadyHarvest = PageRun & {
@@ -289,8 +287,6 @@ async function waitPageReady(
         () => harvestReady(cdp),
     );
 }
-
-// ── Chrome launch ──────
 
 // ── Login / discovery ──────
 
