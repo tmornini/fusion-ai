@@ -7,7 +7,6 @@ import { PAGE_REGISTRY } from './page-registry.ts';
 import type { PageRun } from './measure-core.ts';
 import type { ApiRequestHit } from
     './measure-profile-core.ts';
-import { MEASURE_DEMO_EMAIL } from './measure-cli.ts';
 import {
     type CdpClient,
     clickSelector,
@@ -45,6 +44,7 @@ export type ReadyHarvest = PageRun & {
 
 export async function harvestReady(
     cdp: CdpClient,
+    sessionId?: string,
 ): Promise<ReadyHarvest | null> {
     return evaluateJson<ReadyHarvest | null>(
         cdp,
@@ -79,6 +79,7 @@ export async function harvestReady(
                 apiHits,
             };
         })()`,
+        sessionId,
     );
 }
 
@@ -86,26 +87,30 @@ export async function waitPageReady(
     cdp: CdpClient,
     pageLabel: string,
     timeoutMs: number,
+    sessionId?: string,
 ): Promise<ReadyHarvest> {
     return pollUntil(
         `page:ready on ${pageLabel}`,
         timeoutMs,
-        () => harvestReady(cdp),
+        () => harvestReady(cdp, sessionId),
     );
 }
 
 export async function login(
     cdp: CdpClient,
     baseUrl: string,
+    email: string,
     password: string,
+    sessionId?: string,
 ): Promise<void> {
     const authUrl = registryUrl(baseUrl, 'auth');
-    await pageNavigate(cdp, authUrl);
+    await pageNavigate(cdp, authUrl, sessionId);
     await waitForSelector(
         cdp,
         '#email',
         'auth #email',
         ELEMENT_TIMEOUT_MS,
+        sessionId,
     );
     // page:ready on auth may fire; fill regardless.
     const filled = await evaluateJson<boolean>(
@@ -117,7 +122,7 @@ export async function login(
                 document.querySelector('#password');
             if (!email || !password) return false;
             email.focus();
-            email.value = ${JSON.stringify(MEASURE_DEMO_EMAIL)};
+            email.value = ${JSON.stringify(email)};
             email.dispatchEvent(
                 new Event('input', { bubbles: true })
             );
@@ -129,6 +134,7 @@ export async function login(
             );
             return true;
         })()`,
+        sessionId,
     );
     if (!filled) {
         throw new Error(
@@ -136,7 +142,7 @@ export async function login(
             + ' on auth page',
         );
     }
-    await clickSelector(cdp, '#submit-btn');
+    await clickSelector(cdp, '#submit-btn', sessionId);
     await pollUntil(
         'login navigation away from auth',
         LOGIN_TIMEOUT_MS,
@@ -144,6 +150,7 @@ export async function login(
             const href = await evaluateJson<string>(
                 cdp,
                 'location.href',
+                sessionId,
             );
             if (href.includes('/auth/')) {
                 // Surface invalid-password text if any.
@@ -154,6 +161,7 @@ export async function login(
                     `document.querySelector(
                         '#password-error:not(.hidden)'
                     )?.textContent?.trim() ?? null`,
+                    sessionId,
                 );
                 if (err) {
                     throw new Error(
@@ -171,5 +179,6 @@ export async function login(
         cdp,
         'post-login page',
         LOGIN_TIMEOUT_MS,
+        sessionId,
     );
 }

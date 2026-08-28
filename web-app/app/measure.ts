@@ -675,7 +675,7 @@ async function main(): Promise<void> {
         process.stderr.write(
             `Logging in as ${MEASURE_DEMO_EMAIL} …\n`,
         );
-        await login(cdp, baseUrl, password);
+        await login(cdp, baseUrl, MEASURE_DEMO_EMAIL, password);
 
         // 5. Detail-URL discovery
         process.stderr.write(
