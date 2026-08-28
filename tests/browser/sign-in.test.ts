@@ -29,9 +29,12 @@ async () => {
         );
         assert.equal(name, 'Tony Stark');
     } finally {
-        await page.close();
-        await browser.get().disposeContext(page.contextId);
-        await origin.close();
+        try {
+            await browser.get()
+                .disposeContext(page.contextId);
+        } finally {
+            await origin.close();
+        }
     }
 });
 
@@ -72,8 +75,11 @@ async () => {
             'location.pathname',
         )).includes('/auth/'));
     } finally {
-        await page.close();
-        await browser.get().disposeContext(page.contextId);
-        await origin.close();
+        try {
+            await browser.get()
+                .disposeContext(page.contextId);
+        } finally {
+            await origin.close();
+        }
     }
 });

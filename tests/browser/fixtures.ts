@@ -363,18 +363,33 @@ export class Browser {
             process.env['TMPDIR'] ?? tmpdir(),
             'fusion-browser-',
         ));
-        const chrome = launchChrome({
-            userDataDir,
-            windowSize:
-                `${VIEWPORT.width},${VIEWPORT.height}`,
-        });
-        const port = await waitDevtoolsPort(
-            userDataDir, CHROME_READY_MS,
-        );
-        const client = await CdpClient.connect(
-            await browserWsUrl(port),
-        );
-        return new Browser(client, chrome, userDataDir);
+        // launchChrome spawns detached and unrefs, so an
+        // orphan outlives this process and holds its
+        // profile. Release both on every failure path,
+        // then rethrow — the caller must still see why.
+        let chrome: ChildProcess | null = null;
+        try {
+            chrome = launchChrome({
+                userDataDir,
+                windowSize:
+                    `${VIEWPORT.width},${VIEWPORT.height}`,
+            });
+            const port = await waitDevtoolsPort(
+                userDataDir, CHROME_READY_MS,
+            );
+            const client = await CdpClient.connect(
+                await browserWsUrl(port),
+            );
+            return new Browser(
+                client, chrome, userDataDir,
+            );
+        } catch (error) {
+            killProcessTree(chrome);
+            rmSync(userDataDir, {
+                recursive: true, force: true,
+            });
+            throw error;
+        }
     }
 
     async newPage(): Promise<Page> {
@@ -477,9 +492,16 @@ export async function withAdminPage(
         await signIn(page, origin, ADMIN_EMAIL);
         await fn(page, origin);
     } finally {
-        await page.close();
-        await browser.disposeContext(page.contextId);
-        await origin.close();
+        // disposeBrowserContext closes every target in
+        // the context, so page.close() is redundant —
+        // and a redundant reject would strand both the
+        // releases below. Nest them so the listener
+        // closes even if the context does not.
+        try {
+            await browser.disposeContext(page.contextId);
+        } finally {
+            await origin.close();
+        }
     }
 }
 
