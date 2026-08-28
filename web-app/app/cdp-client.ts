@@ -3,7 +3,7 @@
 // the browser tsc (Node APIs + global WebSocket), like
 // measure.ts.
 
-import { type ChildProcess } from 'node:child_process';
+import { spawn, type ChildProcess } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { platform } from 'node:os';
 import { join } from 'node:path';
@@ -87,19 +87,39 @@ export type CdpMessage = {
     sessionId?: string;
 };
 
+export interface CdpSocket {
+    addEventListener(
+        type: 'message',
+        fn: (ev: { data: unknown }) => void,
+    ): void;
+    send(data: string): void;
+    close(): void;
+}
+
+export type CdpEventListener = (
+    params: unknown,
+    sessionId: string | undefined,
+) => void;
+
 export class CdpClient {
-    private ws: WebSocket;
+    private ws: CdpSocket;
     private nextId = 1;
     private pending = new Map<number, {
         resolve: (v: unknown) => void;
         reject: (e: Error) => void;
     }>();
+    private listeners = new Map<string,
+        Set<CdpEventListener>>();
 
-    private constructor(ws: WebSocket) {
+    private constructor(ws: CdpSocket) {
         this.ws = ws;
         ws.addEventListener('message', (ev) => {
             this.onMessage(String(ev.data));
         });
+    }
+
+    static fromSocket(ws: CdpSocket): CdpClient {
+        return new CdpClient(ws);
     }
 
     static async connect(
@@ -137,6 +157,12 @@ export class CdpClient {
     private onMessage(raw: string): void {
         const msg = JSON.parse(raw) as CdpMessage;
         if (msg.id === undefined) {
+            if (msg.method === undefined) return;
+            const set = this.listeners.get(msg.method);
+            if (set === undefined) return;
+            for (const fn of set) {
+                fn(msg.params, msg.sessionId);
+            }
             return;
         }
         const p = this.pending.get(msg.id);
@@ -158,6 +184,7 @@ export class CdpClient {
     send(
         method: string,
         params?: Record<string, unknown>,
+        sessionId?: string,
     ): Promise<unknown> {
         const id = this.nextId++;
         const payload: Record<string, unknown> = {
@@ -167,6 +194,9 @@ export class CdpClient {
         if (params !== undefined) {
             payload.params = params;
         }
+        if (sessionId !== undefined) {
+            payload.sessionId = sessionId;
+        }
         return new Promise((resolve, reject) => {
             this.pending.set(id, {
                 resolve,
@@ -174,6 +204,21 @@ export class CdpClient {
             });
             this.ws.send(JSON.stringify(payload));
         });
+    }
+
+    on(
+        method: string,
+        fn: CdpEventListener,
+    ): () => void {
+        let set = this.listeners.get(method);
+        if (set === undefined) {
+            set = new Set();
+            this.listeners.set(method, set);
+        }
+        set.add(fn);
+        return () => {
+            set.delete(fn);
+        };
     }
 
     close(): void {
@@ -188,6 +233,7 @@ export class CdpClient {
 export async function evaluateJson<T>(
     cdp: CdpClient,
     expression: string,
+    sessionId?: string,
 ): Promise<T> {
     const result = await cdp.send(
         'Runtime.evaluate',
@@ -196,6 +242,7 @@ export async function evaluateJson<T>(
             awaitPromise: true,
             returnByValue: true,
         },
+        sessionId,
     ) as {
         result?: {
             value?: T;
@@ -223,13 +270,15 @@ export async function evaluateJson<T>(
 export async function pageNavigate(
     cdp: CdpClient,
     url: string,
+    sessionId?: string,
 ): Promise<void> {
-    await cdp.send('Page.navigate', { url });
+    await cdp.send('Page.navigate', { url }, sessionId);
 }
 
 export async function clickSelector(
     cdp: CdpClient,
     selector: string,
+    sessionId?: string,
 ): Promise<void> {
     const ok = await evaluateJson<boolean>(
         cdp,
@@ -241,6 +290,7 @@ export async function clickSelector(
             el.click();
             return true;
         })()`,
+        sessionId,
     );
     if (!ok) {
         throw new Error(
@@ -255,6 +305,7 @@ export async function waitForSelector(
     selector: string,
     label: string,
     timeoutMs: number,
+    sessionId?: string,
 ): Promise<void> {
     await pollUntil(
         label,
@@ -264,8 +315,82 @@ export async function waitForSelector(
             `!!document.querySelector(
                 ${JSON.stringify(selector)}
             )`,
+            sessionId,
         ),
     );
+}
+
+export class CdpSession {
+    readonly client: CdpClient;
+    readonly sessionId: string;
+
+    constructor(client: CdpClient, sessionId: string) {
+        this.client = client;
+        this.sessionId = sessionId;
+    }
+
+    send(
+        method: string,
+        params?: Record<string, unknown>,
+    ): Promise<unknown> {
+        return this.client.send(
+            method, params, this.sessionId,
+        );
+    }
+
+    evaluate<T>(expression: string): Promise<T> {
+        return evaluateJson<T>(
+            this.client, expression, this.sessionId,
+        );
+    }
+}
+
+export function launchChrome(options: {
+    readonly userDataDir: string;
+    readonly windowSize?: string;
+}): ChildProcess {
+    const args = [
+        '--headless=new',
+        '--remote-debugging-port=0',
+        `--user-data-dir=${options.userDataDir}`,
+        '--no-first-run',
+        '--no-default-browser-check',
+        '--disable-background-networking',
+        '--disable-gpu',
+    ];
+    if (options.windowSize !== undefined) {
+        args.push(`--window-size=${options.windowSize}`);
+    }
+    args.push('about:blank');
+    const child = spawn(
+        chromeBinary(), args,
+        { stdio: 'ignore', detached: true },
+    );
+    child.unref();
+    return child;
+}
+
+export async function browserWsUrl(
+    debugPort: number,
+): Promise<string> {
+    const res = await fetch(
+        `http://127.0.0.1:${debugPort}/json/version`,
+    );
+    if (!res.ok) {
+        throw new Error(
+            'Chrome /json/version answered ' + res.status,
+        );
+    }
+    const info = await res.json() as {
+        webSocketDebuggerUrl?: string;
+    };
+    if (info.webSocketDebuggerUrl === undefined) {
+        throw new Error(
+            'Chrome /json/version has no'
+            + ' webSocketDebuggerUrl',
+        );
+    }
+    return info.webSocketDebuggerUrl;
 }
 
 export async function waitDevtoolsPort(

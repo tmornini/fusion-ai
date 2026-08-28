@@ -70,6 +70,7 @@ import {
     clickSelector,
     evaluateJson,
     killProcessTree,
+    launchChrome,
     pageNavigate,
     pageWsUrl,
     pollUntil,
@@ -816,24 +817,7 @@ async function main(): Promise<void> {
         process.stderr.write(
             'Launching headless Chrome …\n',
         );
-        chromeProc = spawn(
-            chromePath,
-            [
-                '--headless=new',
-                '--remote-debugging-port=0',
-                `--user-data-dir=${chromeDir}`,
-                '--no-first-run',
-                '--no-default-browser-check',
-                '--disable-background-networking',
-                '--disable-gpu',
-                'about:blank',
-            ],
-            {
-                stdio: 'ignore',
-                detached: true,
-            },
-        );
-        chromeProc.unref();
+        chromeProc = launchChrome({ userDataDir: chromeDir });
         const debugPort = await waitDevtoolsPort(
             chromeDir,
             CHROME_READY_MS,
