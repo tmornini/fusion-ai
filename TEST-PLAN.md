@@ -399,10 +399,13 @@ two-jar SV.
   `js()` — the bearer is memory-only;
   read the network log. V7 reads
   grant 403 from the network log.
-  WB16 asserts against a Performance
-  snapshot taken from bind through
-  WB11 submit, never a later
-  `getEntries()` and never `js()`
+  WB16 asserts against the daemon's
+  network events, accumulated by the
+  hunter from before bind through
+  WB11's inbox landing — never a
+  drained ring
+  (`wait_for_network_idle()` drains),
+  never Performance, never `js()`
   `fetch`. Toasts via one `js()` call
   on the Members invite dialog's
   synchronous "Email is required"
@@ -2474,13 +2477,27 @@ depends: A
   Active tab (unclaimed). Serial: bind an instance,
   fill Company Name and Contact Email, click
   `submit` → Review.
-- [ ] **WB16** Snapshot Performance resource entries
-  from bind through WB11 submit. WB16 asserts
-  against that snapshot. Never a later
-  `getEntries()` and never `js()` `fetch`.
-  Assert the binding PUT, the transition POST
-  (instance shape), and the history GET. Never
-  `js()` `fetch` (bearer is memory-only). PASS:
+- [ ] **WB16** Read the daemon's own network
+  log, accumulated by the hunter: before the
+  bind, and after every step through WB11's
+  inbox landing, append `drain_events()` to a
+  list you keep — the daemon ring holds 500
+  events and `drain_events` empties it. Never
+  call `wait_for_network_idle()` inside that
+  window (it drains and discards). Never
+  `performance.getEntries()`: the inbox
+  navigation destroys the detail document's
+  buffer, and resource entries carry neither
+  body nor headers. Never `js()` `fetch`
+  (bearer is memory-only). Filter
+  `Network.requestWillBeSent` on the attached
+  `session_id`; pair `requestId` with
+  `Network.responseReceived` for status.
+  Assert the binding PUT (201), the transition
+  POST (201; instance shape in
+  `request.postData`; strong `If-Match` in
+  `request.headers`), and the history GET.
+  PASS:
   the work-order
   document message pair head carries `display_id`
   and `flow_graph` JSON; the binding PUT is at
