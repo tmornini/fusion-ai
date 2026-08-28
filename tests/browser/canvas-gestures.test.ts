@@ -91,6 +91,7 @@ test('a marquee on empty canvas selects the nodes it encloses',
 async () => {
     await withAdminPage(browser.get(), async (page, origin) => {
         await openFlow(page, origin, ONBOARDING);
+        const total = await nodeCount(page);
         const svg = await page.rect(CANVAS);
         await page.drag(
             { x: svg.x + 4, y: svg.y + 4 },
@@ -100,10 +101,10 @@ async () => {
             `(() => {
                 const n = document.querySelectorAll(
                     '${NODE}[aria-current="true"]').length;
-                return n >= 2 ? n : null;
+                return n === ${total} ? n : null;
             })()`,
-            'two or more nodes selected',
+            `${total} nodes selected`,
         );
-        assert.ok(selected >= 2);
+        assert.equal(selected, total);
     });
 });
