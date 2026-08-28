@@ -26,6 +26,7 @@
         "./generate-api-documentation.ts",
         "./measure.ts",
         "./measure-viz.ts",
-        "./cdp-client.ts"
+        "./cdp-client.ts",
+        "./browser-drive.ts"
     ]
 }
