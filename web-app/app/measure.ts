@@ -210,8 +210,6 @@ function queryOf(url: string): string {
     return i >= 0 ? url.slice(i + 1) : '';
 }
 
-// ── Page session helpers ──────
-
 // ── Login / discovery ──────
 
 async function discoverDetailUrls(
