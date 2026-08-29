@@ -157,6 +157,24 @@ if [ -n "${LATER_HOME_FAIL}${DEFERRAL_PROSE}" ]; then
     exit 1
 fi
 
+# Every tests/… path TEST-PLAN.md cites must exist. Paths,
+# not test names: a name is the audit's judgment, a path is
+# what rots when a file is renamed or deleted.
+MISSING_PINS=$(
+    grep -oE 'tests/[A-Za-z0-9._/-]+\.test\.ts' \
+        TEST-PLAN.md \
+    | sort -u \
+    | while read -r PIN_PATH; do
+        [ -f "$PIN_PATH" ] || echo "  ${PIN_PATH}"
+    done
+)
+
+if [ -n "$MISSING_PINS" ]; then
+    echo "Error: TEST-PLAN.md cites a missing test:" >&2
+    echo "$MISSING_PINS" >&2
+    exit 1
+fi
+
 # SCHEMA.svg is derived from the schema; fail if it has drifted.
 ./generate-schema-svg --check
 
