@@ -90,11 +90,40 @@ async () => {
     const a = await browser.get().newPage();
     const b = await browser.get().newPage();
     try {
+        // Positive proof of isolation: B is a fresh
+        // context with no cookie at all, so a protected
+        // route bounces it to auth before it ever signs
+        // in. Same bounce-to-auth idiom as the second
+        // test.
+        await b.navigate(registryUrl(origin.baseUrl, 'dashboard'));
+        await b.until(
+            `location.pathname.includes('/auth/')`,
+            'B has no cookie before signing in',
+        );
         await signIn(a, origin, ADMIN_EMAIL);
         await signIn(b, origin, SECOND_EMAIL);
-        const nameA = await a.until<string>(MEMBER_NAME, 'chip A');
-        const nameB = await b.until<string>(MEMBER_NAME, 'chip B');
-        assert.notEqual(nameA, nameB);
+        assert.equal(
+            await a.until<string>(MEMBER_NAME, 'chip A'),
+            'Tony Stark',
+        );
+        assert.equal(
+            await b.until<string>(MEMBER_NAME, 'chip B'),
+            'Sarah Chen',
+        );
+        // The chip renders once at boot with no live-
+        // refresh path (web-app/app/sidebar-member.ts), so
+        // the two reads above only prove each context
+        // rendered once before the other ever signed in —
+        // not that A stays isolated from B afterwards.
+        // Force A to read again now that B has signed in:
+        // under a shared cookie jar this re-navigation
+        // would render Sarah, not Tony.
+        await a.navigate(registryUrl(origin.baseUrl, 'dashboard'));
+        await a.ready('dashboard');
+        assert.equal(
+            await a.until<string>(MEMBER_NAME, 'chip A again'),
+            'Tony Stark',
+        );
         const title = 'Two jars ' + generateIdentifier();
         await createIdea(origin, title);
         await b.navigate(registryUrl(origin.baseUrl, 'ideas'));
