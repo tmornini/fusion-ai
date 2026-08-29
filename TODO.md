@@ -105,7 +105,7 @@ spec → plan → ship cycle, implemented sequentially. A
    synchronization (new), directed cyclic graph (flow
    and sub-flow), directed cyclic graph (sub-graph); a
    chat on every record and work order (consumes item
-   9). Merged: READY gate on dangling refs
+   10). Merged: READY gate on dangling refs
    (`tests/adapters-flow-publish.test.ts`); locked
    verbs not executed
    (`tests/family-registry.test.ts`); the flow-tag
