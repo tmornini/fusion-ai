@@ -1409,17 +1409,32 @@ procedure. It is 366 lines against a 400-line ceiling.
 
 - [ ] **Step 3: TODO.md — delete critical-path item 6**
 
-Item 6 is "Execute TEST-PLAN.md with up to 48 subagents".
-The 48-subagent run is what this plan retires; delete the
-whole item. Renumber items 7 through 13 as 6 through 12, and
-update every cross-reference: `## Sequencing`'s
-`9 → 7 (the chat clause consumes chats)` becomes
-`8 → 6`, `5 → 11` becomes `4 → 10`, "Item 3's" is unchanged
-(item 3 keeps its number), and item 7's "consumes item 9"
-becomes "consumes item 8". Read every `## Sequencing` line
-and every "item N" reference in the file before you renumber
-— a stale pointer is the failure this step exists to
-prevent.
+Item 6 is "Execute TEST-PLAN.md with up to 48 subagents"
+(lines 74–86). The 48-subagent run is what this plan
+retires; delete the whole item. Items 1–5 keep their
+numbers; items 7 through 13 become 6 through 12.
+
+Every cross-reference in the file has been enumerated for
+you. Apply exactly this list — it is complete, and the
+three "leave alone" rows are the trap:
+
+| Where | Now | Becomes |
+|---|---|---|
+| the intro line above item 1 | `Thirteen items, in this order` | `Twelve items, in this order` |
+| inside old item 7, wrapped across two lines | `(consumes item 9)` | `(consumes item 8)` |
+| inside old item 11 | `Consumes item 5.` | **unchanged** — item 5 keeps its number |
+| `## Sequencing` | `- 9 → 7 (the chat clause consumes chats)` | `- 8 → 6 (the chat clause consumes chats)` |
+| `## Sequencing` | `- 5 → 11 (the health probe consumes `/status`)` | `- 5 → 10 (…)` — the 5 does NOT move |
+| `## Sequencing` | `Item 3's token-at-rest hashing…` | **unchanged** |
+| `## Sequencing` | `The Deno specs run strictly 1 → 6 (3 and 4 may swap after Spec 2's measurements; Spec 6 optional)` | **unchanged — these are Deno SPEC numbers, not TODO items** |
+| a `## Later work` bullet | `1 → 6, 3 and 4 may swap after Spec 2's measurements` | **unchanged — Deno spec numbers again** |
+| a `## Later work` bullet | `` `SCHEMA.md` item 4 `` | **unchanged — a SCHEMA.md item, not a TODO item** |
+
+After renumbering, re-read every line containing a digit
+followed by `.` at the start, and every `item` / `→`
+occurrence, and confirm each is either in the table above or
+genuinely unrelated. A stale pointer is the failure this
+step exists to prevent.
 
 - [ ] **Step 4: TODO.md — correct the stale GPU note**
 
