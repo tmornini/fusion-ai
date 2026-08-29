@@ -14,8 +14,6 @@ import type {
 } from '../api/types.ts';
 import { nowUtc } from
     '../api/types.ts';
-import { canonicalUriCollection } from '../api/message-pair.ts';
-import { documentMessagePairsAt } from '../api/derive-documents.ts';
 import {
     documentGetHandler,
     documentCollectionGetHandler,
@@ -35,8 +33,6 @@ import {
     deriveIdentityPii,
     deriveCredentialsFor,
     deriveCredential,
-    deriveTokenRevocation,
-    deriveTokenRevocationsFor,
 } from '../api/derive-identity-spine.ts';
 import {
     STARK_ORGANIZATION,
@@ -92,8 +88,6 @@ const INV_A = generateIdentifier();
 // shipped route posts a 'deleted' state for an identities/
 // identity_pii id, so derived-plane parity holds throughout
 // every case below regardless.
-
-const BASE = 'http://localhost';
 
 function req(
     method: string,

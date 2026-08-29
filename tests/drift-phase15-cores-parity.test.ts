@@ -96,8 +96,6 @@ const WOID_EV3 = generateIdentifier();
 // (Task 5). Pre-tx-vs-in-tx parity and residual drift
 // against the dual-write row plane.
 
-const BASE = 'http://localhost';
-
 function req(
     method: string,
     path: string,
@@ -611,13 +609,6 @@ async () => {
 });
 
 // -- flowGraphBindingsFromMessagePairs ----------------------------------
-
-function sortById<T extends { id: string }>(
-    rows: readonly T[],
-): T[] {
-    return [...rows].sort((a, b) =>
-        a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
-}
 
 // Phase Final Task 2: graph relation ROW halves stripped —
 // message plane (flowGraphBindingsFromMessagePairs) is sole oracle.

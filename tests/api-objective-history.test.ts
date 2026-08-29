@@ -41,8 +41,8 @@ function req(
 
 function objectiveBody(
     state: string,
-    stateAt: string,
-    stateEventId: string,
+    _stateAt: string,
+    _stateEventId: string,
 ) {
     return {
         position: 1,

@@ -39,7 +39,7 @@ function req(
 
 function ideaDocument(
     title: string,
-    stateEventId: string,
+    _stateEventId: string,
 ): Record<string, unknown> {
     return {
         title,
@@ -53,20 +53,9 @@ function ideaDocument(
     };
 }
 
-function membershipDocument(
-    identityId: string,
-): Record<string, unknown> {
-    return {
-        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
-        identity_id: identityId,
-        type: 'member',
-        at: AT,
-    };
-}
-
 function projectDocument(
     title: string,
-    stateEventId: string,
+    _stateEventId: string,
 ): Record<string, unknown> {
     return {
         title,

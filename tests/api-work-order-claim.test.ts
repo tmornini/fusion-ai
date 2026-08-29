@@ -30,8 +30,6 @@ import { workOrderClaimHistoryFor } from
 import { STARK_ORGANIZATION } from
     '../api/mock-data/seed-constants.ts';
 
-const BASE = 'http://localhost';
-
 function req(
     method: string,
     path: string,

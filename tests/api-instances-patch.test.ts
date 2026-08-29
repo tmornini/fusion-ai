@@ -14,9 +14,7 @@ import {
     seedOrganizationDocument,
 } from './test-fixtures.ts';
 import {
-    postMembershipDocumentOp,
     postInstancePatchOp,
-    WRITE_RESPONSE_SPECS,
     formDocumentMessagePairFor,
 } from '../api/routes.ts';
 import {
@@ -55,7 +53,6 @@ import {
 // Two pairs per PATCH: wire delta + PUT {values} revision.
 // Gate ladder after replay; ETag is the revision pair id.
 
-const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const AT2 = '2026-01-02T00:00:00.000000Z';
 const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';

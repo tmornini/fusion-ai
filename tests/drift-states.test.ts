@@ -4,12 +4,10 @@ import { generateIdentifier } from
 import assert from 'node:assert/strict';
 import type { MemoryDbAdapter } from '../api/db-memory.ts';
 import { handleRequest } from '../api/api.ts';
-import { EntityNotFoundError } from '../api/db.ts';
 import type { DbAdapter } from '../api/db.ts';
 import type { Id, StateEntity } from '../api/types.ts';
 import {
     nowUtc, DEFAULT_LOCK_TIMEOUT, MS_PER_SECOND,
-    SYSTEM_MEMBER_ID,
     setClockForTest, resetClock,
 } from '../api/types.ts';
 import {
@@ -45,8 +43,6 @@ import { customerProfileRecordId } from
     '../api/mock-data/records.ts';
 import { buildFlows } from '../api/mock-data/flows.ts';
 import { buildWorkOrders } from '../api/mock-data/work-orders.ts';
-import { buildMembers } from '../api/mock-data/members.ts';
-import { buildAiMembers } from '../api/mock-data/ai-members.ts';
 import { OBJECTIVE_SEEDS } from '../api/mock-data/objectives.ts';
 import { organizationToken } from './token-fixtures.ts';
 import { firstProviderModel } from './member-fixtures.ts';
@@ -123,7 +119,6 @@ const IDEAID_TRANSITION = generateIdentifier();
 // Cases rework onto per-family and collection history parity.
 // Graph sidecars pin document-message-pair graphDelta / revivals.
 
-const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 // Strictly later than AT: at an EQUAL `at`, latestByKey's
 // (at, id) tiebreak falls to the larger event id, and
@@ -210,8 +205,8 @@ async function assertDerivedHistory(
 
 function ideaDocument(
     title: string,
-    stateEventId: string,
-    at: string,
+    _stateEventId: string,
+    _at: string,
     state = 'active',
 ): Record<string, unknown> {
     return {
@@ -1053,7 +1048,6 @@ async () => {
     ));
     assert.equal(created.status, 201);
 
-    const headId = await headResponseId(db, token, flowId);
     const deleteAt = '2026-02-02T00:00:00.000000Z';
     const deleted = await handleRequest(db, req(
         'PUT', '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/' + flowId
@@ -1095,7 +1089,7 @@ async () => {
     const prefix = canonicalUriCollection(
         STARK_ORGANIZATION, '/organizations/AjdvjuECVZEgZoFajaIEkg/flows/',
     );
-    const [requests, responses] = await Promise.all([
+    const [requests] = await Promise.all([
         db.messagePairs.getAllWhere('uri_collection', prefix),
         db.messagePairs.getAllWhere('uri_collection', prefix),
     ]);

@@ -46,8 +46,6 @@ import { generateIdentifier } from
 // document address. The states/:id event-append path for
 // objectives is dead.
 
-const BASE = 'http://localhost';
-
 function req(
     method: string,
     path: string,

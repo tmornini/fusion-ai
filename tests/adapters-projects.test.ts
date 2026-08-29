@@ -7,7 +7,7 @@ import {
     createRequestContext,
     type RequestContext,
 } from '../web-app/app/adapters/shared.ts';
-import { devToken, organizationToken } from './token-fixtures.ts';
+import { organizationToken } from './token-fixtures.ts';
 import { adminContext } from './context-fixtures.ts';
 import {
     getProjectEntities,
@@ -29,7 +29,6 @@ import type {
 } from '../api/types.ts';
 import {
     seedCurrentMember,
-    seedHumanMember,
 } from './member-fixtures.ts';
 import { generateIdentifier } from
     '../shared/identifier.ts';
@@ -38,7 +37,7 @@ import { generateIdentifier } from
 // trio (state/stateAt/stateEventId). GET ProjectEntity carries
 // the stamped trio (Phase A); list/detail read it from the row.
 function buildProject(
-    id: string,
+    _id: string,
     title: string,
     overrides?: Partial<
         Omit<

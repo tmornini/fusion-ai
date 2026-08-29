@@ -31,8 +31,6 @@ import {
 // derive*StateHistory (ASC) with DESC + missedReadError.
 // Product versions live under organizations/:id/.
 
-const BASE = 'http://localhost';
-
 interface HistoryEvent {
     id: string;
     entity_id: string;
@@ -84,8 +82,8 @@ function assertDesc(rows: HistoryEvent[]): void {
 function ideaBody(
     title: string,
     state: string,
-    stateAt: string,
-    stateEventId: string,
+    _stateAt: string,
+    _stateEventId: string,
 ) {
     return {
         title,
@@ -370,8 +368,8 @@ test(
 function projectBody(
     title: string,
     state: string,
-    stateAt: string,
-    stateEventId: string,
+    _stateAt: string,
+    _stateEventId: string,
 ) {
     return {
         title,
@@ -517,8 +515,8 @@ test(
 function recordBody(
     name: string,
     state: string,
-    stateAt: string,
-    stateEventId: string,
+    _stateAt: string,
+    _stateEventId: string,
 ) {
     return {
         name,
@@ -952,8 +950,8 @@ test(
 
 function objectiveBody(
     state: string,
-    stateAt: string,
-    stateEventId: string,
+    _stateAt: string,
+    _stateEventId: string,
 ) {
     return {
         position: 1,

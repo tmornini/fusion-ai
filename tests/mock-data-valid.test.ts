@@ -574,7 +574,7 @@ test(
                 new Set(rows.map(m => m.organization_id)),
             );
         }
-        const [agentRequests, agentResponses] =
+        const [agentRequests] =
             await Promise.all([
                 db.messagePairs.getAllWhere(
                     'uri_collection', '/ai-agents/',

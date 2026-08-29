@@ -227,7 +227,7 @@ test(
 test(
     'getDashboardStats counts tombstoned out',
     async () => {
-        const { db, ctx } = await adminContext();
+        const { ctx } = await adminContext();
         await seedProject(ctx, 'pnXmXrxOWayANgDLdCjuBw', 'approved');
         await seedProject(ctx, 'prBESZPjJDiuXCeZLmbiVw', 'approved');
         // NAMED re-pin (Phase 3 Task 6, Step 2b): physical row

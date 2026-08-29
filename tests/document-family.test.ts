@@ -65,7 +65,6 @@ const SL_2 = generateIdentifier();
 const SL_3 = generateIdentifier();
 const SL_4 = generateIdentifier();
 
-const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 
 function req(

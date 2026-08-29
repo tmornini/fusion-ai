@@ -39,7 +39,6 @@ import {
 // release rows carry []. Miss posture: empty lifecycle →
 // missedReadError → 404 miss at this address / 404 absent.
 
-const BASE = 'http://localhost';
 const WORK_ORDER_ID = generateIdentifier();
 const NODE_START = generateIdentifier();
 const NODE_MIDDLE = generateIdentifier();

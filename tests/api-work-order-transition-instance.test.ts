@@ -41,7 +41,6 @@ import { seedSeat } from './root-admin-fixture.ts';
 // instance head; pure moves remain one-pair; legacy
 // fieldValues is rejected at the gate.
 
-const BASE = 'http://localhost';
 const AT = '2026-01-01T00:00:00.000000Z';
 const ORGANIZATION = 'AjdvjuECVZEgZoFajaIEkg';
 const ORGANIZATION_B = generateIdentifier();

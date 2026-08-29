@@ -11,15 +11,9 @@ import {
     mintAccessToken,
     TOKEN_AUDIENCE,
 } from '../api/access-token.ts';
-import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
-import {
-    postMembershipDocumentOp,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
-import { formWriteMessagePair } from '../api/message-pair.ts';
+import { nowUtc } from '../api/types.ts';
 import { devToken } from './token-fixtures.ts';
 import { seedRootAdmin } from './root-admin-fixture.ts';
-import { TEST_OPERATION_ID } from './http-fixtures.ts';
 import { seedSeat } from './root-admin-fixture.ts';
 import { generateIdentifier } from
     '../shared/identifier.ts';
@@ -55,7 +49,7 @@ async function tokenFor(sub: string): Promise<string> {
 // changes.
 async function seedMembershipPair(
     db: MemoryDbAdapter,
-    id: string,
+    _id: string,
     organization: string,
     identityId: string,
     at: string,

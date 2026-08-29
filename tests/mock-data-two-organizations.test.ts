@@ -173,7 +173,7 @@ async function seed() {
 async function liveIdentityIds(
     db: MemoryDbAdapter,
 ): Promise<string[]> {
-    const [requests, responses] = await Promise.all([
+    const [requests] = await Promise.all([
         db.messagePairs.getAllWhere(
             'uri_collection', '/identities/',
         ),

@@ -21,7 +21,7 @@ const MEMBERSHIP_PREFIX = '/organizations/AjdvjuECVZEgZoFajaIEkg/members/';
 
 function ideaDocument(
     title: string,
-    stateEventId: string,
+    _stateEventId: string,
 ): Record<string, unknown> {
     return {
         title,

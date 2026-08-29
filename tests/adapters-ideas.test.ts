@@ -36,7 +36,7 @@ import { generateIdentifier } from
 // state/stateAt/stateEventId. GET IdeaEntity carries the
 // stamped trio (Phase A); list/detail read it from the row.
 function buildIdea(
-    id: string, title: string,
+    _id: string, title: string,
 ): Omit<
     IdeaEntity,
     'id' | 'state' | 'state_at' | 'state_event_id'

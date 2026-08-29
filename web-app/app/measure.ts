@@ -73,7 +73,6 @@ import {
     pageNavigate,
     pageWsUrl,
     pollUntil,
-    sleep,
     waitDevtoolsPort,
 } from './cdp-client.ts';
 import { login, registryUrl, waitPageReady } from './browser-drive.ts';

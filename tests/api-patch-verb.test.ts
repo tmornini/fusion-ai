@@ -25,8 +25,6 @@ import {
 // unknown path 404. writeAuthorizerFor must include PATCH so
 // a future flat PATCH cannot bypass the ownership fence.
 
-const BASE = 'http://localhost';
-
 function req(
     method: string,
     path: string,

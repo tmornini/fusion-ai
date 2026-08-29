@@ -1,4 +1,3 @@
-import { TEST_OPERATION_ID } from './http-fixtures.ts';
 // @ts-expect-error — Node global stub
 globalThis.localStorage = (() => {
     const store = new Map<string, string>();
@@ -67,14 +66,10 @@ import {
     getSessionToken,
 } from '../web-app/app/adapters/init.ts';
 import {
-    postMembershipDocumentOp,
-    WRITE_RESPONSE_SPECS,
-} from '../api/routes.ts';
-import {
-    putMessagePair, formAuthMessagePair, formWriteMessagePair,
+    putMessagePair, formAuthMessagePair,
 } from '../api/message-pair.ts';
 import type { AuthMessagePairSeed } from '../api/message-pair.ts';
-import { nowUtc, SYSTEM_MEMBER_ID } from '../api/types.ts';
+import { nowUtc } from '../api/types.ts';
 import {
     deriveIdentityTokens,
 } from '../api/derive-identity-tokens.ts';

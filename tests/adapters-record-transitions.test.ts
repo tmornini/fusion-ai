@@ -25,7 +25,6 @@ import {
     postRecordChange,
 } from '../web-app/app/adapters/records.ts';
 import {
-    SYSTEM_MEMBER_ID,
     DEFAULT_LOCK_TIMEOUT,
     type GraphNode,
     type GraphEdge,
@@ -47,7 +46,7 @@ const WO_ID = generateIdentifier();
 const AT_CREATED = '2026-05-01T10:00:00.000000Z';
 
 async function seedSystemMember(
-    db: MemoryDbAdapter,
+    _db: MemoryDbAdapter,
 ): Promise<void> {
     // Phase Final Stage B: states table retired.
 }
