@@ -355,7 +355,10 @@ now sees AGENTS.md at 277 lines).
   arithmetic; rewrite `## Summary Format` and its stub
   template)
 - Modify: `AGENTS.md` (`## Gates`, the router table's
-  TEST-PLAN.md row, `## Subagents`)
+  TEST-PLAN.md row, `## Subagents`, the `./test-browser`
+  comment in the command block)
+- Modify: `test-browser` (line 4's `Tier 2` becomes
+  `Layer 2`)
 
 **Interfaces:**
 - Consumes: `./test-all` from Task 1.
@@ -398,7 +401,7 @@ is exploration, and nothing rides on its result.
 |---|---|---|---|
 | 1 | `./validate` | AT1–AT3: both `tsc` projects, `./test` in two TZ passes, the lints, the two drift gates. Chrome-free, Postgres-free | Gate: every commit |
 | 2 | `./test-all` | Layer 1, then `./test-browser` (AT5) | Gate: the operator's, before `./build`, a deploy, or a walk; `./crank` enforces it for the walk |
-| 3 | "run the test plan" | `./crank --mock-data 8080` — Layer 1, AT4 `./test-postgres`, AT5 — then one explorer walks every case below | Exploration; nothing rides on its result |
+| 3 | "run the test plan" | `./crank --mock-data 8080` — Layer 1, AT4 `./test-postgres`, AT5 — then one explorer walks A4 through SV | Exploration; nothing rides on its result |
 
 **A browser observation changes product only through a red
 test at Layer 1 or Layer 2.** The walk finds; the test
@@ -435,7 +438,9 @@ not mid-walk.
    before it serves. Red anywhere aborts the walk — no
    explorer is dispatched. Read the seed reveal from stdout;
    it is shown once. A3 **is** SV1.
-3. Dispatch one explorer with the prompt below.
+3. Dispatch one explorer with the prompt below. A1–A3
+   are the master's — they run before the origin exists;
+   A4 onward are the explorer's.
 4. Receive one line per case. Write the summary
    (`## Summary Format`) and one stub per FAIL cluster.
 5. Run **K8** (wipe and reseed — the explorer has returned),
@@ -460,8 +465,8 @@ Admin: {admin_username} / {admin_password}
 {the seed reveal's other sign-ins}
 
 Read TEST-PLAN.md from `## The walk` to the end. Every
-case from `## AA` through `## SV` is yours, in document
-order. Skip K8 (the master runs it after you return) and
+case from **A4** through the end of `## SV` is yours, in
+document order. A1–A3 are the master's. Skip K8 (the master runs it after you return) and
 J (the master's teardown).
 
 Refuse if browser-use is not available. Do not fall back
@@ -571,21 +576,38 @@ becomes `5` and the `**Total**` becomes `**401**`.
 
 In `### Combined Totals`, the first sentence's "400 distinct
 TEST-PLAN cases" becomes "401 distinct TEST-PLAN cases".
-Replace the outcome table's BLOCKED row with:
+
+Delete the whole outcome-category table — every row, its
+header, and the sentence introducing it — and put this in
+its place. `### Scoring` in `## The walk` now defines the
+five outcomes, and a definition that sits in two places
+with two glosses is the Ninth Commandment's failure: once
+the better way is found it must REPLACE every similar site,
+never rest beside it. The old table's FAIL row in
+particular ("Real regression; investigate | YES") is the
+doctrine `## The walk` exists to retire.
 
 ```markdown
-| BLOCKED  | Named reason outside the product     |   no   |
+The five outcomes are defined once, in `## The walk`'s
+`### Scoring`. `pending` is the sixth and is not an
+outcome: it is the default `- [ ]`, not yet executed.
 ```
 
-and delete the whole "A fully green run reports:" paragraph
-through "…a missing toy, or a shared alias." — the summary
-reports counts; there is no arithmetic to satisfy.
+Then delete the whole "A fully green run reports:"
+paragraph through "…a missing toy, or a shared alias." —
+the summary reports counts; there is no arithmetic to
+satisfy.
 
 - [ ] **Step 5: Rewrite `## Summary Format`**
 
 Replace the fenced summary template's `Mode: parallel-agents
 | serial` line by deleting it. In the per-section table, add
-`Deferred` and `Drift` columns after `Fail`, and change the
+`Deferred` and `Drift` columns and order all five to match
+`### Scoring`'s own order — `Pass | Fail | Blocked |
+Deferred | Drift`, which means moving `Blocked` after
+`Fail`, not just appending. Three sites name these
+outcomes (`### Scoring`, the template's `Total:` line, this
+table); all three must read in one order. Change the
 `AT` row's count from 4 to 5. **Leave the `K` row at
 `29 (skip K8)`** — K8 has its own row of 1 below, so K's
 thirty cases are already counted as 29 + 1, and the Cases
@@ -723,6 +745,21 @@ as subagents" to "its explorer, auditors, and refuters fan
 out as subagents". Search the whole file for `hunter` and
 rewrite every occurrence; `grep -ci hunter AGENTS.md` must
 be 0.
+
+Finally, retire the word "Tier". This task renames the
+verification vocabulary to Layers, and two comments still
+say Tier — the same concept under two names, which is the
+Third Commandment's failure. In the AGENTS.md command
+block, `./test-browser`'s comment reads
+`# Tier 2: headless Chrome vs an in-process origin`;
+change it to `# Layer 2's browser half; needs Chrome`,
+keeping the `#` at column 24 like its neighbours. And in
+the `test-browser` script itself, line 4 opens
+`# Tier 2: deterministic browser tests.` — change `Tier 2`
+to `Layer 2` there and leave the rest of that comment
+alone. `grep -rni '\btier [0-9]' AGENTS.md test-browser`
+must then print nothing. (TODO.md's "Tier-2 launcher"
+belongs to Task 7, which rewrites that bullet anyway.)
 
 - [ ] **Step 9: Validate and commit**
 
@@ -1381,7 +1418,9 @@ yet." That is false: `./test-browser` ran green on
 2026-08-28. Replace that sentence with "Dropped UNVERIFIED —
 `./test-browser` has run green on one machine (2026-08-28)."
 Leave the Oracle ("`./test-browser` green on two machines")
-exactly as it is.
+exactly as it is. In the same bullet, rename "the Tier-2
+launcher" to "the Layer 2 launcher" — Task 2 retired the
+word Tier everywhere else, and this is its last home.
 
 - [ ] **Step 5: TODO.md — delete the hunter tab-leak bullets**
 
