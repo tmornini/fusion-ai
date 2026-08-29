@@ -2,7 +2,7 @@
 // marker → listen. No DDL; seed with
 // ./postgres-seed.
 // One mint process: do not run two of these.
-// Node-only; on the browser exclude list.
+// Node-only; outside the browser tsc project.
 
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

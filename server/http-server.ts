@@ -1,6 +1,6 @@
 // Node-only HTTP adapter. node:http → Request →
 // handleRequest → ServerResponse. Static files from
-// composed output. On the browser exclude list.
+// composed output. Outside the browser tsc project.
 
 import {
     createReadStream,
