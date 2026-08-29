@@ -57,8 +57,6 @@ const RECORDS_WIRING: DocumentFamilyWiring = {
         ),
         position: Number(document.body['position'] ?? 0),
         state: current!.state,
-        state_at: current!.at,
-        state_event_id: current!.id,
     }),
 };
 

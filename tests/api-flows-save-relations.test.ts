@@ -452,15 +452,14 @@ test(
             ...ctx,
             PUT: async <T,>(
                 path: string,
-                body?: unknown,
+                body: Record<string, unknown>,
                 headerFields?:
                     readonly (readonly [string, string])[],
             ): Promise<T> => {
                 if (path === 'organizations/AjdvjuECVZEgZoFajaIEkg/flows/'
                     + flowId
                     && captured === null) {
-                    captured =
-                        body as Record<string, unknown>;
+                    captured = body;
                     capturedHeaders = headerFields;
                 }
                 return origPut<T>(path, body, headerFields);

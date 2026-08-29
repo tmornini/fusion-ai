@@ -59,7 +59,6 @@ function buildNode(
     return {
         id,
         name: id,
-        description: '',
         positionX: 0,
         positionY: 0,
         isCreate: false,
@@ -77,7 +76,6 @@ function buildEdge(
     return {
         id,
         name: 'go',
-        description: '',
         fromNodeId: from,
         toNodeId: to,
     };

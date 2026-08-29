@@ -42,6 +42,7 @@ function buildView() {
         estimated_cost: 50000,
         actual_cost: 12000,
         position: 1,
+        state: 'approved',
     }, {
         state: 'approved',
     });

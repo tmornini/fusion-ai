@@ -281,7 +281,7 @@ async function testDocumentOp(
 function testEntityOf(
     document: { uriId: string; body: Record<string, unknown> },
     organization: Id,
-): unknown {
+): object {
     return {
         id: document.uriId,
         organization_id: organization,
@@ -822,7 +822,7 @@ const STATELESS_TABLE = 'stateless_storage_table';
 function statelessEntityOf(
     document: { uriId: string; body: Record<string, unknown> },
     organization: Id,
-): unknown {
+): object {
     return {
         id: document.uriId,
         organization_id: organization,

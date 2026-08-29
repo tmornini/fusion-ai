@@ -83,6 +83,7 @@ function buildFlowEntity(
         is_auto_fit: true,
         lock_timeout: DEFAULT_LOCK_TIMEOUT,
         graph: storedGraph(graph),
+        hasUndoHistory: false,
         ...overrides,
     };
 }

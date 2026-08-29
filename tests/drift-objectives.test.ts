@@ -1155,7 +1155,7 @@ async () => {
             wireObjectiveGet(
                 f.id, f.position, 'active',
                 '2026-06-13T00:00:00.000000Z',
-                f.ID_ACTIVE,
+                f.id,
             ),
         );
     }

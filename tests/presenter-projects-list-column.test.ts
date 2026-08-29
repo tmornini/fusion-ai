@@ -35,6 +35,7 @@ function makeProject(id: string): InstanceType<
 > {
     return new Project({
         id,
+        organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         title: 't',
         description: 'd',
         progress: 0,
@@ -44,6 +45,7 @@ function makeProject(id: string): InstanceType<
         estimated_cost: 0,
         actual_cost: 0,
         position: 0,
+        state: 'under_review',
     }, {
         state: 'under_review',
     });

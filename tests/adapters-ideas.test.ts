@@ -310,6 +310,7 @@ test(
             estimated_cost: 100,
             actual_cost: 0,
             position: 1,
+            state: 'submitted',
         };
         const { organization_id: _o, ...promotedIdea } =
             buildIdea('fndCYAsXazdzMUlEGMNIZw', 'First');
@@ -387,6 +388,7 @@ test(
             estimated_cost: 100,
             actual_cost: 0,
             position: 1,
+            state: 'submitted',
         };
         const { organization_id: _o, ...promotedIdea } =
             buildIdea('fndCYAsXazdzMUlEGMNIZw', 'First');

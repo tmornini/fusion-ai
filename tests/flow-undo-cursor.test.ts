@@ -575,7 +575,7 @@ function snapOf(
             isAutoLayout: false,
             isAutoFit: false,
             lockTimeout: DEFAULT_LOCK_TIMEOUT,
-            createdAt: AT,
+            hasUndoHistory: false,
             nodes,
             edges: [],
         },

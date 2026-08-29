@@ -31,7 +31,7 @@ import { generateIdentifier } from
 
 function buildProject(
     id: string,
-): Omit<ProjectEntity, 'id'> {
+): Omit<ProjectEntity, 'id' | 'state'> {
     return {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         title: 'P-' + id,
@@ -47,7 +47,7 @@ function buildProject(
 
 function buildIdea(
     id: string,
-): Omit<IdeaEntity, 'id'> {
+): Omit<IdeaEntity, 'id' | 'state'> {
     return {
         organization_id: 'AjdvjuECVZEgZoFajaIEkg',
         title: 'I-' + id,

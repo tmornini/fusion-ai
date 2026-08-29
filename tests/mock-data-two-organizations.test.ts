@@ -66,8 +66,6 @@ const RECORDS_WIRING: DocumentFamilyWiring = {
         ),
         position: Number(document.body['position'] ?? 0),
         state: current!.state,
-        state_at: current!.at,
-        state_event_id: current!.id,
     }),
 };
 
@@ -147,8 +145,6 @@ const OBJECTIVES_WIRING: DocumentFamilyWiring = {
         organization_id: organization,
         position: pickNumber(document.body, 'position'),
         state: current!.state,
-        state_at: current!.at,
-        state_event_id: current!.id,
     }),
 };
 

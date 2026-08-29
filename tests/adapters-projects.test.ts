@@ -321,6 +321,7 @@ test(
                 estimated_cost: 4000,
                 actual_cost: 2000,
             }),
+            ...TRIO,
             id: 'pnXmXrxOWayANgDLdCjuBw',
         }, TRIO);
         const view = new ProjectView(project, [], [], []);
@@ -394,6 +395,7 @@ test(
                 start_date: '2026-01-01',
                 target_end_date: '2026-01-11',
             }),
+            ...TRIO,
             id: 'pnXmXrxOWayANgDLdCjuBw',
         }, TRIO);
         const view = new ProjectView(project, [], [], []);
