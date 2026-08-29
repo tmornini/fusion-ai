@@ -1183,16 +1183,29 @@ depends: A
 
 ## E. Core: Projects
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
 ### Projects List (`projects/`)
 
-- [ ] **E1** Navigate to `projects/`. PASS: list shows the active org's projects (≈16 for Stark on the mock seed — the list is org-scoped, so this is a tolerant lower bound, not the old fixed 6; org-scoped reads can take ~4–5s to paint, so wait for the cards before asserting empty) with title, status, and progress. Each project card shows three metrics (time, cost, impact). Em-dash ("—") substitutes for the entire metric when its **baseline (denominator) is missing**; a zero current value over a non-zero baseline renders as `0d / 213d`, `$0k / $120k`, or `0 / 85 pts` — not em-dash. Em-dash signals "no baseline to compare against," not "zero current value." When the current is missing but the baseline is present, the half-em-dash form (e.g. `— / 46 pts`) renders the absent current side only — distinct from full em-dash (both absent) and from `0d / 213d` (zero current over present baseline).
+- [ ] **E1** Navigate to `projects/`. PASS: list shows the active org's projects (≈16 for Stark on the mock seed — the list is org-scoped, so this is a tolerant lower bound, not the old fixed 6) with title, status, and progress. Each project card shows three metrics (time, cost, impact). Em-dash ("—") substitutes for the entire metric when its **baseline (denominator) is missing**; a zero current value over a non-zero baseline renders as `0d / 213d`, `$0k / $120k`, or `0 / 85 pts` — not em-dash. Em-dash signals "no baseline to compare against," not "zero current value." When the current is missing but the baseline is present, the half-em-dash form (e.g. `— / 46 pts`) renders the absent current side only — distinct from full em-dash (both absent) and from `0d / 213d` (zero current over present baseline).
+  Pin: tests/presenter-projects-organization.test.ts
+       'ProjectPresenter.buildCard renders title,
+       status label and timeline progress';
+       exploratory — the org-scoped card count, the
+       paint-timing wait, and the metric grid's
+       em-dash / half-em-dash rendering
 - [ ] **E2** Click a status filter badge (e.g. "Approved"). PASS: project list filters to show only projects with that status. Click the same badge again. PASS: full list returns.
+  Pin: tests/presenter-misc.test.ts 'toggleStatusFilter
+       from all moves to filtered on the clicked
+       status'; tests/presenter-misc.test.ts
+       'toggleStatusFilter clears back to all when
+       the active status is clicked again';
+       tests/list-choreography.test.ts
+       'filteredSortedList filters, sorts, then
+       renders'; tests/list-choreography.test.ts
+       'filteredSortedList renders all when the
+       filter is all'; exploratory — the live badge
+       click and its visual active state
 - [ ] **E3** Click a project row. PASS: navigates to `projects/detail.html?projectId=<id>`.
+  Pin: exploratory — the live click and navigation
 
 ### Project Detail (`projects/detail.html?projectId=<id>`)
 
@@ -1201,10 +1214,17 @@ depends: A
   baseline vs. current metrics. PASS: all cards
   render with data. Baseline/current metrics
   show em dash when values are zero or missing.
+  Pin: tests/presenter-projects-organization.test.ts
+       'ProjectDetailPresenter renders a read view
+       with title, description and summary/metrics
+       sections'; exploratory — the dates and
+       progress bar rendering, and the em-dash rule
+       for the Time, Cost, and Impact metrics
 - [ ] **E5** Sidebar shows the Flows section
   (Team card has been retired with the team
   data model). PASS: no Team card on the
   project sidebar.
+  Pin: exploratory — the absence of a Team card
 - [ ] **E6** Flows section shows linked flows with
   node/edge counts. For approved projects, a "New
   Flow" button is visible. For non-approved
@@ -1212,27 +1232,53 @@ depends: A
   appears instead and empty state reads "Flow
   creation limited to approved projects only".
   PASS: correct UI for project status.
+  Pin: tests/presenter-projects-organization.test.ts
+       'ProjectDetailPresenter offers a New Flow
+       button for approved projects and a gating
+       message otherwise';
+       tests/presenter-projects-organization.test.ts
+       'ProjectDetailPresenter renders a flow card
+       with the flow name and node/edge counts';
+       exploratory — the zero-flows empty-state
+       copy actually painting
 - [ ] **E7** On an approved project, click "New
   Flow" button. PASS: a "New Flow" dialog opens
   with a Flow Name input and Create/Cancel
-  buttons. Serial: PASS: dialog stays; do not
-  Create. Parallel: Enter a name and click
-  Create. PASS: a new flow is created and
-  the browser navigates to the flow designer
-  page. The new flow is associated with the
-  current project.
+  buttons. Enter a name and click Create. PASS: a
+  new flow is created and the browser navigates to
+  the flow designer page. The new flow is
+  associated with the current project.
+  Pin: tests/adapters-flow-mutations.test.ts
+       'postFlowCreation creates flow plus link';
+       exploratory — the dialog's fields and the
+       live navigation to the flow designer
 
 ### Project Detail — Edit Mode
 
 - [ ] **E8** Click "Edit" button on project detail. PASS: fields become editable inputs/textareas, Save and Cancel buttons appear.
+  Pin: tests/presenter-projects-organization.test.ts
+       'ProjectDetailEditPresenter renders an
+       editable title input, state select and
+       Save/Cancel actions'; exploratory — the live
+       click swapping read mode for edit mode
 - [ ] **E9** Modify a field, click "Save". PASS: project saves successfully, returns to view mode with updated data.
+  Pin: tests/adapters-projects.test.ts 'putProject
+       updates an existing project';
+       tests/projects-detail-reduce.test.ts
+       'reduceProjectSave lands in read mode with
+       the fresh description and Edit, not Save';
+       exploratory — the live click-Save interaction
 - [ ] **E10** Click "Edit", then "Cancel". PASS: returns to view mode with original data unchanged.
+  Pin: exploratory — the live click-Cancel
+       interaction restoring the original data
 - [ ] **E10a** On a project whose state shows action-bar buttons (`submitted` → Approve / Decline / Send back, or `approved` → Archive / View history), click "Edit". PASS: those action-bar buttons are hidden; only the State select, editable fields, and Cancel / Save remain. Click Cancel: the action-bar buttons reappear.
   Observable: `#project-review-actions` /
   `#project-lifecycle-actions` carry `hidden`
   while the inner `.action-bar` keeps its own
   `display:flex`. The objectives section and
   flows sidebar stay visible in edit mode.
+  Pin: exploratory — the action-bar buttons hiding
+       on Edit and reappearing on Cancel
 
 ### Projects List — Drag-reorder
 
@@ -1241,10 +1287,14 @@ depends: A
   to a new position. Drive with compositor mouse:
   `pointerdown` on `.drag-handle` (pointer capture),
   `pointermove`, `pointerup` — not HTML5 `drop`.
-  Activate the tab first (prompt rule).
   PASS: drop indicator appears, card follows the
   pointer, and on release the projects list
   reorders. Reload the page — new order persists.
+  Pin: tests/browser/list-reorder.test.ts 'a
+       captured drag reorders, persists, and stays
+       put'; exploratory — the drop indicator's
+       appearance and the card visually following
+       the pointer mid-drag
 
 ---
 
