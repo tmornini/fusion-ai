@@ -811,7 +811,9 @@ async () => {
                         expires_in: 900,
                     } as T;
                 }
-                return sarah.POST(resource, body);
+                return toccYYkLEABmlbpHJalgtQ.POST(
+                    resource, body,
+                );
             },
         };
         await postInvitationAcceptance(recording, inv.id);
