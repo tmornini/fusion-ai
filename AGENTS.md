@@ -218,6 +218,20 @@ record-attribute document id, never a table named
 tsconfig enables this — array / object index access
 returns `T | undefined`, requiring a `!` or a guard.
 
+### Two type universes
+
+The root `tsconfig.json` is the superset and the
+editor's catch-all (`types: ["node"]`, DOM lib,
+`verbatimModuleSyntax`, `erasableSyntaxOnly`).
+`web-app/app/tsconfig.json` extends it and
+overrides only `types: []` — the pure browser
+subset. A Node-only module goes on that file's
+`exclude` list and nowhere else; missing from the
+list fails the browser project on `node:` imports.
+`erasableSyntaxOnly` and `verbatimModuleSyntax`
+are what `node --strip-types` requires at runtime,
+enforced at `tsc`.
+
 ### Required env is never logged
 
 `POSTGRES_URL`, `JWT_HMAC_SIGNING_KEY`, and
