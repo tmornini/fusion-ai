@@ -133,7 +133,7 @@ test(
             documentElement: {
                 getAttribute: () => 'dashboard',
             },
-        };
+        } as unknown as Document;
         // @ts-expect-error — Node stub for navigateTo
         globalThis.window = { location: { href: '' } };
         await withMockFetch(async () => new Response(
@@ -167,10 +167,10 @@ test(
             documentElement: {
                 getAttribute: () => 'auth',
             },
-        };
+        } as unknown as Document;
         globalThis.window = {
             location: { href: '' },
-        };
+        } as unknown as Window & typeof globalThis;
         const urls: string[] = [];
         await withMockFetch(async (input) => {
             urls.push(String(input));
@@ -215,10 +215,10 @@ test(
             documentElement: {
                 getAttribute: () => 'auth',
             },
-        };
+        } as unknown as Document;
         globalThis.window = {
             location: { href: '' },
-        };
+        } as unknown as Window & typeof globalThis;
         const urls: string[] = [];
         await withMockFetch(async (input) => {
             urls.push(String(input));

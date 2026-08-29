@@ -11,7 +11,7 @@ globalThis.localStorage = {
 globalThis.window = {
     matchMedia: () => ({ matches: false }),
     addEventListener: () => {},
-};
+} as unknown as Window & typeof globalThis;
 // @ts-expect-error — Node global stub
 globalThis.document = { addEventListener: () => {} };
 

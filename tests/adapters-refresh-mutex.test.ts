@@ -85,7 +85,7 @@ async () => {
         documentElement: {
             getAttribute: () => 'dashboard',
         },
-    };
+    } as unknown as Document;
     // @ts-expect-error — Node stub for navigateTo
     globalThis.window = { location: { href: '', search: '' } };
     setCookieSession(true);

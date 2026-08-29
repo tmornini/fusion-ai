@@ -6,7 +6,7 @@ globalThis.document = {
     documentElement: {
         getAttribute: () => pageName,
     },
-};
+} as unknown as Document;
 
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';

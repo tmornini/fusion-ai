@@ -15,7 +15,7 @@ globalThis.document = {
             return name === 'data-page' ? dataPage : null;
         },
     },
-};
+} as unknown as Document;
 
 const {
     buildPageUrl,

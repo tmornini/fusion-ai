@@ -24,7 +24,7 @@ globalThis.localStorage = (() => {
 globalThis.window = { location: { href: '', search: '' } };
 globalThis.document = {
     documentElement: { getAttribute: () => 'dashboard' },
-};
+} as unknown as Document;
 
 import { test } from 'node:test';
 import { strict as assert } from 'node:assert';
