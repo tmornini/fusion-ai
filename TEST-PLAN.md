@@ -867,12 +867,13 @@ depends: A
 
 ## C. Core: Dashboard
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
 - [ ] **C1** Navigate to `dashboard/`. PASS: page loads with sidebar, header, and main content area.
+  Pin: tests/browser/sidebar.test.ts 'collapse and
+       expand transition the sidebar width';
+       tests/browser/sign-in.test.ts 'sign-in lands
+       on the dashboard as the seeded admin';
+       exploratory — the header and main content
+       area rendering
 - [ ] **C2** Sidebar shows flat navigation
   links in this order: Dashboard,
   Organization, Ideas, Projects, Records,
@@ -889,6 +890,8 @@ depends: A
   member chip (the old header greeting that also
   linked to it has been removed); humans and AIs
   both live on the Members page.)
+  Pin: exploratory — the rendered order and
+       styling of the 12 links
 - [ ] **C3** Header shows search bar, company
   stats as structured tiles (org name as a
   `header-stat-label`, then per-stat value +
@@ -903,6 +906,8 @@ depends: A
   shows neither. (The org switcher moved to the
   sidebar footer — see G36; the pending-invitations
   bell may appear at the top bar — see V3.)
+  Pin: exploratory — the rendered header and the
+       absence of the retired greeting and select
 - [ ] **C4** Dashboard renders 4 surfaces in order: three
   visually-equivalent arc-gauge cards (Time and Cost are
   ratio arc-gauges — dual concentric semicircles: outer
@@ -912,35 +917,49 @@ depends: A
   Objectives box one gauge column wide
   (`.objective-aggregates-card`,
   `calc((100% - 2 * var(--space-6)) / 3)`; full width
-  only under 768px; card title "Objectives"). PASS: all 4 render
-  with baseline and current values; the Time and Cost cards
-  each show dual concentric ratio arcs and the Impact card
-  shows a bipolar arc; the Objectives box shows one row per
+  only under 768px; card title "Objectives"). Sign in as
+  the demo admin (`demo@example.com`, Tony Stark) with
+  Stark Industries active — surfaces carry seeded scores,
+  not zeros. PASS: all 4 render with baseline and current
+  values; the Time and Cost cards each show dual
+  concentric ratio arcs and the Impact card shows a
+  bipolar arc; the Objectives box shows one row per
   objective, each with a small bipolar arc gauge and a
-  sparkline trendline.
-  Serial (A3 `--mock-data`, demo admin's active
-  organization Stark): surfaces carry seeded
-  scores. Parallel (A3 `--test-plan-slices`):
-  4 ideas, 3 projects, 1 flow, 4 objectives;
-  both approved projects score every objective.
-  A `—` Impact or a `data-empty` row is a FAIL.
-  Clear this alias's cookies, sign in as
-  this slice's admin, wait ≥14s, then
-  assert C4/C7.
-  0/0/1 tiles or `data-empty` rows on C
-  are stolen-tab paint. If the chip names
-  another section's admin: FAIL (wrong
-  alias).
+  sparkline trendline. A `—` Impact or a `data-empty` row
+  is a FAIL.
+  Pin: tests/adapters-dashboard.test.ts
+       'getDashboardGauges returns the three sibling
+       gauges'; tests/adapters-dashboard.test.ts
+       'getDashboardGauges marks Time and Cost as
+       ratio'; tests/adapters-dashboard.test.ts
+       'getDashboardGauges marks Impact as bipolar';
+       tests/presenter-dashboard-objective-aggregates.test.ts
+       'renders one row per active objective';
+       tests/presenter-dashboard-objective-aggregates.test.ts
+       'row renders the small bipolar gauge SVG';
+       tests/presenter-dashboard-objective-aggregates.test.ts
+       'row renders colored segments and dots';
+       tests/presenter-dashboard-objective-aggregates.test.ts
+       'heading reads "Objectives"';
+       tests/objectives-card-width.test.ts 'the
+       Objectives card is one gauge column wide';
+       tests/objectives-card-width.test.ts 'the
+       Objectives card is full-width under 768px';
+       exploratory — the visual order/layout of the 4
+       surfaces and the painted dual-concentric and
+       bipolar arcs
 - [ ] **C5** Sidebar navigation links all function correctly. PASS: clicking a sidebar link navigates to the expected page.
+  Pin: exploratory — each link's live navigation
 - [ ] **C6** Scroll the page. PASS: sidebar stays fixed, main content scrolls independently.
+  Pin: exploratory — the sidebar's fixed position
+       while the main content scrolls
 - [ ] **C7** Check that seed data populates all 4 dashboard
   surfaces (three arc-gauge cards + Objectives box). PASS:
-  no "No data" empty states on a fresh
-  mock-data load against the Phase 1 baseline. NOTE: the
-  mock seed now spans TWO orgs (Stark Industries + Wayne
+  no "No data" empty states on a fresh mock-data load.
+  NOTE: the mock seed now spans TWO orgs (Stark Industries + Wayne
   Enterprises; the demo admin belongs to both) and the
   dashboard is scoped to the ACTIVE org, so its header and
-  gauges show that org's slice — not global totals. Counts
+  gauges show that org's portion — not global totals. Counts
   are tolerant lower bounds, not equalities (the seed
   grows): for active-org Stark expect ~6 ideas, ~16
   projects, ~4 flows, 4 objectives, plus the roster (6
@@ -948,18 +967,15 @@ depends: A
   both-org admin; the System member authors seed events but
   is excluded from the roster — and 4 AIs).
   Global raw mock totals are larger (~11 ideas, ~17
-  projects, ~5 flows across both orgs).
-  Parallel (A3 `--test-plan-slices`): 4 ideas, 3
-  projects, 1 flow, 4 objectives; both approved
-  projects score every objective. A `—` Impact or
-  a `data-empty` row is a FAIL.
-  Clear this alias's cookies, sign in as
-  this slice's admin, wait ≥14s, then
-  assert C4/C7.
-  0/0/1 tiles or `data-empty` rows on C
-  are stolen-tab paint. If the chip names
-  another section's admin: FAIL (wrong
-  alias).
+  projects, ~5 flows across both orgs). A `—` Impact or a
+  `data-empty` row is a FAIL.
+  Pin: tests/adapters-dashboard-mock-seed.test.ts 'mock
+       seed produces portfolio Impact baseline +50';
+       tests/adapters-dashboard-mock-seed.test.ts 'mock
+       seed produces per-objective baseline means';
+       exploratory — the tile counts against the stated
+       bounds and the absence of any "No data" empty
+       state on the other surfaces
 
 ---
 
