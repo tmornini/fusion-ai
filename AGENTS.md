@@ -63,7 +63,10 @@ Chrome MCP tools can drive the page normally.
 
 ## Gates
 
-`./validate` composes `tsc --noEmit`, then `./test` (two
+`./validate` composes `tsc --noEmit -p tsconfig.json`
+(the whole tree, Node + DOM) then `tsc --noEmit -p
+web-app/app/tsconfig.json` (the browser subset,
+`types: []`), then `./test` (two
 TZ passes: `TZ=UTC` on `tests/*.test.ts`, then
 `TZ=Pacific/Honolulu` on `tests/tz/*.test.ts`), then
 78-character lint of code and scripts (not `.md`),

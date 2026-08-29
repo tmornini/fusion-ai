@@ -1,6 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
+npx --no-install tsc --noEmit -p tsconfig.json
 npx --no-install tsc --noEmit -p web-app/app/tsconfig.json
 
 ./test
