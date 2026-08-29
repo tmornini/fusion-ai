@@ -1305,14 +1305,18 @@ line is at or under 78 characters.
 ```bash
 # Every tests/… path TEST-PLAN.md cites must exist. Paths,
 # not test names: a name is the audit's judgment, a path is
-# what rots when a file is renamed or deleted.
+# what rots when a file is renamed or deleted. The trailing
+# `|| true` is this file's idiom for a grep that may
+# legitimately match nothing: under `set -euo pipefail` a
+# no-match grep would otherwise kill the whole script at
+# this assignment, silently and with no diagnostic.
 MISSING_PINS=$(
     grep -oE 'tests/[A-Za-z0-9._/-]+\.test\.ts' \
         TEST-PLAN.md \
     | sort -u \
     | while read -r PIN_PATH; do
         [ -f "$PIN_PATH" ] || echo "  ${PIN_PATH}"
-    done
+    done || true
 )
 
 if [ -n "$MISSING_PINS" ]; then
@@ -1321,6 +1325,13 @@ if [ -n "$MISSING_PINS" ]; then
     exit 1
 fi
 ```
+
+The `|| true` goes at the END of the pipeline, not after
+the `grep`: `||` binds looser than `|`, so
+`grep … || true | sort` would parse as `grep …` OR
+`(true | sort | …)` — a different program. `RETIRED_VOCAB`
+higher up in the same file uses the trailing form for the
+same reason.
 
 - [ ] **Step 3: Prove the check fails on a missing path**
 
