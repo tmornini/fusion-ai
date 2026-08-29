@@ -307,10 +307,6 @@ test(
             body.error,
             'Not found: ideas/' + foreign.id,
         );
-        assert.equal(
-            STARK_ORGANIZATION !== ORGANIZATION_TWO,
-            true,
-        );
     },
 );
 

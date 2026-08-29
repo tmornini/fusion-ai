@@ -316,11 +316,6 @@ test(
             body.error,
             'Not found: work_orders/' + foreignId,
         );
-        // Stark still owns the seed WO (sanity).
-        assert.equal(
-            STARK_ORGANIZATION !== ORGANIZATION_TWO,
-            true,
-        );
     },
 );
 

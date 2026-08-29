@@ -525,9 +525,16 @@ test('case 2: GET <family>/:id/history parity — one entity'
         for (let i = 1; i < wire.length; i++) {
             const prev = wire[i - 1]!;
             const cur = wire[i]!;
+            const prevAt = prev.at;
+            const curAt = cur.at;
+            if (
+                prevAt === undefined || curAt === undefined
+            ) {
+                throw new Error('state row missing at');
+            }
             assert.ok(
-                prev.at > cur.at
-                || (prev.at === cur.at
+                prevAt > curAt
+                || (prevAt === curAt
                     && prev.id > cur.id),
                 family + ' history is not (at, id) DESC',
             );

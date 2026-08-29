@@ -428,6 +428,14 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
             [],
         ),
     );
+    if (
+        typeof after !== 'object'
+        || after === null
+        || !('state' in after)
+        || !('position' in after)
+    ) {
+        throw new Error('expected document body');
+    }
     assert.equal(after.state, 'archived');
     assert.equal(after.position, 99);
     assert.equal('state_at' in after, false);
