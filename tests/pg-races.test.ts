@@ -79,9 +79,10 @@ function req(
     return apiRequest({
         method,
         path,
-        token,
+        ...(token !== undefined ? { token } : {}),
         body,
-        headers,
+        ...(headers !== undefined
+            ? { headers } : {}),
         operationId: operationId ?? TEST_OPERATION_ID,
     });
 }

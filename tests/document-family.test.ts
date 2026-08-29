@@ -79,7 +79,8 @@ function req(
         path,
         token,
         body,
-        headers,
+        ...(headers !== undefined
+            ? { headers } : {}),
         operationId: TEST_OPERATION_ID,
     });
 }

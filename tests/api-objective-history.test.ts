@@ -33,7 +33,7 @@ function req(
     return apiRequest({
         method,
         path,
-        token,
+        ...(token !== undefined ? { token } : {}),
         body,
         operationId: operationId ?? TEST_OPERATION_ID,
     });

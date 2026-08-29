@@ -123,7 +123,12 @@ export async function boot(
         adapter,
         staticRoot: staticRootFromMeta(),
         port: listenEnv.port,
-        trustedProxyHops: listenEnv.trustedProxyHops,
+        ...(listenEnv.trustedProxyHops !== undefined
+            ? {
+                trustedProxyHops:
+                    listenEnv.trustedProxyHops,
+            }
+            : {}),
     });
     return {
         port: listener.port,

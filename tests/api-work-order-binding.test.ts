@@ -70,7 +70,8 @@ function req(
         path,
         token,
         body,
-        headers: extraHeaders,
+        ...(extraHeaders !== undefined
+            ? { headers: extraHeaders } : {}),
         operationId: TEST_OPERATION_ID,
     });
 }
