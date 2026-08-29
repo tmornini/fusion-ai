@@ -32,6 +32,8 @@ fi
 DOC_LINE_FAIL=
 # Root-doc line-count ceilings (target × 1.5, rounded up
 # to the nearest 50). TEST-PLAN.md is exempt: cases grow.
+# TODO.md is exempt too: it is the single home for later
+# work, and the backlog grows.
 # CLAUDE.md is the one-line stub and is not gated.
 # AUDIT.md and FLOW-CANVAS.md sit above the original
 # estimate; the ceiling follows the rewritten size.
@@ -51,7 +53,6 @@ API.md 400
 DESIGN-SYSTEM.md 300
 FLOW-CANVAS.md 300
 AUDIT.md 400
-TODO.md 500
 EOF
 
 if [ -n "${DOC_LINE_FAIL}" ]; then
