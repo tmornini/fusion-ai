@@ -3340,10 +3340,8 @@ every other agent, so no write-domain collision.
 
 ## J. Teardown
 
-tenant: none
-parallel: no
-global_lock: process
-depends: AA, B, C, D, E, F, F2, FS, G, H, I, K, R, SV
+J1–J3 are the master's: `## The walk` step 5 runs
+them after K8, once the explorer has returned.
 
 - [ ] **J1** Stop the `./crank` process started
   in A3 via the harness-native task stop (not
@@ -3351,13 +3349,18 @@ depends: AA, B, C, D, E, F, F2, FS, G, H, I, K, R, SV
   stopped `./serve`. Sandbox EPERM on `kill`
   is FAIL if the harness stop itself fails;
   do not score BLOCKED.
+  Pin: exploratory — the live process actually
+       terminating under the harness stop
 - [ ] **J2** After J1 PASS, verify crank's temp
   bundle is gone (trap `rm -rf`). PASS:
   directory removed. DEFERRED only if crank
   is still up.
+  Pin: exploratory — the temp directory's
+       absence on disk after teardown
 - [ ] **J3** Verify the ZIP file remains on
   `~/Desktop` for archival. PASS:
   `fusion-angle-server-${SHA}.zip` exists.
+  Pin: exploratory — the ZIP file's presence on disk
 
 ## SV. Server (Node + Postgres)
 
