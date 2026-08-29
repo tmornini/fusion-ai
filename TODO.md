@@ -5,7 +5,7 @@ file by shipping; `## Close protocol` is the exit.
 
 ## Critical path
 
-Fourteen items, in this order — each its own brainstorm →
+Thirteen items, in this order — each its own brainstorm →
 spec → plan → ship cycle, implemented sequentially. A
 "Merged:" clause names bullets absorbed from
 `## Later work`; they keep their oracles.
@@ -34,22 +34,7 @@ spec → plan → ship cycle, implemented sequentially. A
    the arrival-order covenant they actually keep. The first
    is a validator change; neither is confined to one test's
    subject. Found by the whole-tree type check.
-2. Type-check the whole tree — `./validate` runs one
-   `tsc --noEmit -p web-app/app/tsconfig.json`, whose
-   `include` roots are `web-app/`, `api/`, `shared/`.
-   `server/` (8 files) and `tests/` (421) sit outside
-   them; six Node-only modules sit in `exclude`
-   (`compose.ts`, `generate-schema-svg.ts`,
-   `generate-api-documentation.ts`, `measure.ts`,
-   `measure-viz.ts`, `cdp-client.ts`). So 435 of 735
-   `.ts` files are never checked, and everything runs
-   under `node --strip-types`, which ERASES
-   annotations instead of checking them — the trees
-   that boot the server and assert every covenant
-   learn their type errors at runtime. Needs a second
-   project over `server/`, `tests/`, and the Node-only
-   modules; `@types/node` is its one cost, types-only.
-3. Remove the lifecycle trio — fold `state` /
+2. Remove the lifecycle trio — fold `state` /
    `state_at` / `state_event_id` out of every document
    body (Decision 7): the reduction
    (`api/derive-documents.ts:148-157`), the stamp
@@ -61,7 +46,7 @@ spec → plan → ship cycle, implemented sequentially. A
    and the validators' trio-key gates; lifecycle
    becomes its own event rows. Merged: no lifecycle
    transition table at any gate.
-4. Credentials out of the message; views for the app —
+3. Credentials out of the message; views for the app —
    hoist `Authenticate:` (ideally the only plaintext
    credential path) into its own column; a view that
    omits it and omits deleted rows; a schema-owner
@@ -77,16 +62,16 @@ spec → plan → ship cycle, implemented sequentially. A
    `tests/api-pii-tombstone.test.ts`); the in-band
    plaintext comment at `api/mock-data.ts:151-152`
    (owner call).
-5. Cachability — headers, `HEAD`, conditional
+4. Cachability — headers, `HEAD`, conditional
    requests, and the rest; the brainstorm presents its
    questions from most to least desirable. Start:
    `server/http-server.ts` `NO_STORE` and
    `CONTENT_SECURITY_POLICY`.
-6. `/status` — `{ up: boolean, components: {
+5. `/status` — `{ up: boolean, components: {
    postgres: boolean } }`; `up` is true when every
-   component is; built for more components. Item 12's
+   component is; built for more components. Item 11's
    health probe.
-7. Execute TEST-PLAN.md with up to 48 subagents —
+6. Execute TEST-PLAN.md with up to 48 subagents —
    after the run-four remediation ships; the
    Protocol's one-profile, hunters-in-turn contract is
    revisited for 48. BLOCKING precondition CLEARED:
@@ -99,13 +84,13 @@ spec → plan → ship cycle, implemented sequentially. A
    before, 0/300 after; `./test` 15/15 green. Merged:
    the five run-four mitigation stubs (absorbed by the
    remediation spec); the flaky-test bullet.
-8. Re-implement workbox, work orders, and flows —
+7. Re-implement workbox, work orders, and flows —
    nodes become processes; process kinds: record
    modification (current), external process
    synchronization (new), directed cyclic graph (flow
    and sub-flow), directed cyclic graph (sub-graph); a
    chat on every record and work order (consumes item
-   10). Merged: READY gate on dangling refs
+   9). Merged: READY gate on dangling refs
    (`tests/adapters-flow-publish.test.ts`); locked
    verbs not executed
    (`tests/family-registry.test.ts`); the flow-tag
@@ -121,7 +106,7 @@ spec → plan → ship cycle, implemented sequentially. A
    (`api/derive-flows.ts:108`), rotation only on the
    toggle path (`web-app/app/flow-layout.ts:1032-1037`),
    and the mirror trigger.
-9. Headless AI worker — a server-side process that
+8. Headless AI worker — a server-side process that
    watches each AI process-worker's workbox, claims,
    assembles the record definition, the attribute
    values (which — decided in the brainstorm), the
@@ -135,10 +120,10 @@ spec → plan → ship cycle, implemented sequentially. A
    (`FLOW-CANVAS.md:130-132`);
    `withNodeTaskInstructions` already stores the
    instructions.
-10. Chats at `/api/chats` — attachable to any document
-    at `/…/:collection/:id/chat` with as little
-    ceremony as the plane allows.
-11. Genericity — DRY, even once (the indulgence); spec
+9. Chats at `/api/chats` — attachable to any document
+   at `/…/:collection/:id/chat` with as little
+   ceremony as the plane allows.
+10. Genericity — DRY, even once (the indulgence); spec
     away every nit. Merged: `putRecordInstance` PATCHes
     (name lie —
     `tests/adapters-record-instances.test.ts`,
@@ -184,7 +169,7 @@ spec → plan → ship cycle, implemented sequentially. A
     done); `handleSpace` dispatching
     `isFormFocused: false` unconditionally; Delete's
     `preventDefault` with nothing selected.
-12. Production readiness, repository and Render —
+11. Production readiness, repository and Render —
     block cross-environment connections,
     high-availability app and Postgres, and the rest.
     Merged: the single-mint-process KNOWN seam's
@@ -196,8 +181,8 @@ spec → plan → ship cycle, implemented sequentially. A
     (`tests/http-throttle.test.ts`);
     stale-until-navigation once there are processes to
     notify (`tests/advisory-lock.test.ts`). Consumes
-    item 6.
-13. Fewer JSON parse/stringify — byte-stream header
+    item 5.
+12. Fewer JSON parse/stringify — byte-stream header
     setting, mechanical sympathy and simplicity for
     the processor; measured first
     (`./measure --profile`). Merged: the deferred
@@ -205,7 +190,7 @@ spec → plan → ship cycle, implemented sequentially. A
     (`shared/http-message/body.ts:76-79` and
     `shared/http-message/content-coding.ts:5-7` —
     revise both comments when done).
-14. Simulated latency by environment — when
+13. Simulated latency by environment — when
     `FUSION_ANGLE_ENVIRONMENT` is exactly `local` and
     `FUSION_ANGLE_LATENCY` is a millisecond count,
     both present and non-empty, every API request
@@ -483,9 +468,11 @@ Off the critical path; each with its oracle.
   project only for `web-app/app/**`; editors and the
   LSP open `web-app/flows/**` and the other page
   directories under the root superset, where `process`
-  resolves. Move it to `web-app/tsconfig.json`. Three
-  live references (`validate`, TEST-PLAN.md AT1, the
-  critical-path item) plus the tiers plan's path
+  resolves. Move it to `web-app/tsconfig.json`. Five
+  live references (`validate`, TEST-PLAN.md AT1,
+  AGENTS.md's Gates paragraph, AGENTS.md's Two type
+  universes invariant, `tests/tsconfig-covenants.test.ts`)
+  plus the tiers plan's path
 - GPU flag in the Tier-2 launcher — `launchChrome` no
   longer passes `--disable-gpu` (cargo cult under
   `--headless=new`; it was required only by old headless
@@ -498,9 +485,9 @@ Off the critical path; each with its oracle.
 
 ## Sequencing
 
-- 10 → 8 (the chat clause consumes chats)
-- 6 → 12 (the health probe consumes `/status`)
-- Item 4's token-at-rest hashing and physical PII
+- 9 → 7 (the chat clause consumes chats)
+- 5 → 11 (the health probe consumes `/status`)
+- Item 3's token-at-rest hashing and physical PII
   erasure close their KNOWN seams — the closer removes
   the ARCHITECTURE.md bullet and this file's line in
   one commit
