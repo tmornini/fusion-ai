@@ -2304,20 +2304,14 @@ per-user visibility filter.
 
 ---
 
-## FS. Flow Statistics (Agent-F2 read-only domain)
+## FS. Flow Statistics
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
-**Mock-data blast radius:** the flow-statistics work added ~38
-work orders to "Customer Onboarding" and ~6 to a second flow,
-plus their flow-work-order join rows and transition chains.
-Workbox cases (WB1–WB22) and dashboard counts re-baseline
-against the parallel-protocol's "greater-than-or-equal-N"
-tolerance; expected counts in those sections are now lower
-bounds, not equalities.
+**Mock-data blast radius:** the mock seed adds ~38 work
+orders to "Customer Onboarding" and ~6 to a second flow,
+plus their flow-work-order join rows and transition
+chains — Workbox cases (WB1–WB22) and dashboard counts
+elsewhere in the walk are lower bounds, not equalities,
+because of this.
 
 Hover/click on SVG `<g>` is compositor-mouse
 driveable on this page (no pointer-capture
@@ -2332,19 +2326,34 @@ FSM, unlike `flows/detail`).
   panel, no connection ports, no marquee. The cursor over a
   node is `pointer` (clicking is allowed); no port-drag
   affordance appears.
+  Pin: tests/navigation.test.ts 'buildPageUrl appends
+       flowId param for flow-stats';
+       tests/presenter-flow-stats.test.ts 'emits an
+       svg with role=img and no editor affordances';
+       tests/presenter-flow-stats.test.ts 'buildLegend:
+       structure, end labels, no linear-gradient';
+       tests/presenter-flow-stats.test.ts
+       'buildStepperBar idx 0: path label, 75%, prev
+       disabled'; exploratory — the left toolbar,
+       props panel, and marquee absent from the page
+       shell, and the pointer cursor over a node
 - [ ] **FS2** From `flows/detail`, click the Stats button in
   the header → same stats page. The "Designer" / back button
   returns to `flows/detail.html?flowId=<id>` (and preserves
   `projectId` if set).
+  Pin: exploratory — the live Stats/back navigation
+       and the preserved `projectId`
 - [ ] **FS3** Node tints span the ramp on the flagship flow
   ("Customer Onboarding"): Data Capture is yellow/red (hot),
   Review is warm, Create/Archive carry the cool (or no-data)
   tint. Node faces show the em-dash on Create and Archive and
   a value like `8.5m` / `2.1d` on regular nodes.
-  Serial (A3 `--mock-data`, demo admin's active
-  organization Stark): the flagship mock population.
-  Parallel (A3 `--test-plan-slices`): Capture is
-  hottest, Review is warm.
+  Pin: tests/presenter-flow-stats.test.ts 'each node
+       carries style="--heat-t:..." and no data-heat';
+       tests/presenter-flow-stats.test.ts 'regular
+       nodes show avg-sojourn face; special nodes show
+       —'; exploratory — the painted color ramp
+       (yellow/red hot, warm, cool/no-data)
 - [ ] **FS4** Hover a node → a read-only stat card pops near
   it with: % of flow time, avg/median/p90 durations, visits /
   distinct WOs / Here now, ~N/wk throughput, loop-back rate, clan
@@ -2352,29 +2361,60 @@ FSM, unlike `flows/detail`).
   + % of node's work, with "(not in current clan)" iff
   applicable). For a branch node, `next` shows the per-edge
   split. The card has NO inputs and NO Save button.
-  Mouse-out → card hides. Serial: Review's card
-  subtitle names the two reviewers.
+  Mouse-out → card hides. Review's card subtitle names
+  the two reviewers.
+  Pin: tests/presenter-flow-stats.test.ts 'rich card
+       renders all stat blocks for a regular node';
+       tests/presenter-flow-stats.test.ts 'top producer
+       not in clan is flagged'; exploratory — the live
+       hover/mouse-out interaction, and the card's lack
+       of inputs and a Save button
 - [ ] **FS5** Click a node → the card pins (stays open on
   mouse-out). Click empty canvas → unpins. Click another
   node → re-pins to it.
+  Pin: exploratory — the live click-to-pin,
+       click-to-unpin, and re-pin interactions
 - [ ] **FS6 — Hazard severity rendering on the stats
   canvas.** The stats renderer reads `n.memberHazard`
-  emitted by `flow-stats-aggregate.ts`. The FS slice
-  graph has two regular nodes (Data Capture, Review),
-  each one member with an outgoing edge, plus Create
-  and Archive. Confirm on the slice:
-    - Data Capture and Review → yellow triangle
-      (`iconAlertTriangle`, `.flow-stats-node-warning`);
-      tooltip "Single member assigned (no backup)".
-      Card subtitle names the member or
-      "Unassigned".
-    - Create and Archive → no badge.
-  Zero-member danger, dead-end danger, and
-  ≥2-member no-badge are the CLI covenants in
-  `tests/flow-stats-aggregate.test.ts` and
-  `tests/flow-graph-hazard.test.ts`; do not fail
-  the slice for lacking those nodes.
-- [ ] **FS7** Path stepper: `Path 1 of M · X% of N work
+  emitted by `flow-stats-aggregate.ts`: `danger` for a
+  zero-member node or a dead end (no outgoing edges,
+  which takes precedence over a bare headcount),
+  `warning` for exactly one member with an outgoing
+  edge, and no badge for two or more members or for a
+  Create/Archive node. On "Customer Onboarding" in the
+  mock seed, Data Capture and Review each carry two
+  members with an outgoing edge. Confirm: none of the
+  four nodes (Create, Data Capture, Review, Archive)
+  shows a hazard triangle. Zero-member danger, dead-end
+  danger, and single-member warning are the CLI
+  covenants in `tests/flow-stats-aggregate.test.ts` and
+  `tests/flow-graph-hazard.test.ts`; this flow does not
+  exhibit those shapes, and that is not a FAIL.
+  Pin: tests/flow-stats-aggregate.test.ts 'memberHazard
+       is danger on zero-member regular nodes (per
+       shouldShowMemberHazard)';
+       tests/flow-stats-aggregate.test.ts 'memberHazard
+       is warning on single-member regular nodes with
+       outgoing edges';
+       tests/flow-stats-aggregate.test.ts 'memberHazard
+       is null on multi-member regular nodes with
+       outgoing edges';
+       tests/flow-graph-hazard.test.ts 'one member with
+       no outgoing edges (dead-end) renders danger
+       (precedence over warning)';
+       tests/flow-graph-hazard.test.ts 'a start node
+       never renders hazard regardless of member count';
+       tests/flow-graph-hazard.test.ts 'a complete node
+       never renders hazard regardless of member count';
+       tests/presenter-flow-stats.test.ts 'warning
+       hazard glyph appears when memberHazard is
+       warning';
+       tests/presenter-flow-stats.test.ts 'danger
+       hazard glyph appears when memberHazard is
+       danger'; exploratory — the absence of any
+       triangle glyph on the four painted nodes
+- [ ] **FS7** On the flagship flow ("Customer Onboarding"),
+  the path stepper reads `Path 1 of M · X% of N work
   orders` with prev/next controls. Clicking next advances;
   the selected path's nodes + edges get an accent stroke and
   off-path elements dim to ~30% opacity. The highlight does
@@ -2382,21 +2422,39 @@ FSM, unlike `flows/detail`).
   editor's selection glow). At the last visible path, next is
   disabled (or, if there's a rest bucket, advances to
   "+N rarer paths, combined Z%" which highlights nothing).
-  Serial (A3 `--mock-data`, demo admin's active
-  organization Stark): the flagship mock paths.
-  Parallel (A3 `--test-plan-slices`): two or more
-  paths; path one is rooted at Create; `next` is
-  enabled. The no-pulse sentence stands.
+  Pin: tests/presenter-flow-stats.test.ts
+       'buildStepperBar idx 0: path label, 75%, prev
+       disabled'; tests/presenter-flow-stats.test.ts
+       'buildStepperBar idx 1: prev not disabled';
+       tests/presenter-flow-stats.test.ts
+       'buildStepperBar idx 2: rest entry, next
+       disabled'; tests/presenter-flow-stats.test.ts
+       'highlight set marks on-path and dims off-path
+       nodes/edges'; tests/presenter-flow-stats.test.ts
+       'emits an svg with role=img and no editor
+       affordances'; exploratory — the live click
+       advancing the stepper, the accent stroke's
+       painted appearance, and the dimmed opacity's
+       painted value
 - [ ] **FS8** Dark-mode toggle persists across navigation to
   the stats page; the heat tints and the card remain legible
   in both themes. The face number text contrasts adequately
   at all heat levels.
+  Pin: tests/state-init.test.ts 'initState hydrates
+       the persisted theme preference'; exploratory —
+       the painted contrast of tints and card text in
+       both themes
 - [ ] **FS9** Data-shape regression: heat fractions sum to
   ~100% across non-special nodes on the flagship flow. WIP
   counts in the card match the WOs currently sitting in each
   node (cross-check against the Workbox). Direct navigation
   to `flows/stats.html` with no `flowId` redirects to
   `flows/index.html`.
+  Pin: tests/flow-stats-aggregate.test.ts 'attributes
+       sojourns and computes heatPct + heatT';
+       exploratory — the cross-check of the card's
+       WIP count against the Workbox, and the redirect
+       when `flowId` is absent
 
 ---
 
