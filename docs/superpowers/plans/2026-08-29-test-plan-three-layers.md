@@ -586,8 +586,29 @@ reports counts; there is no arithmetic to satisfy.
 Replace the fenced summary template's `Mode: parallel-agents
 | serial` line by deleting it. In the per-section table, add
 `Deferred` and `Drift` columns after `Fail`, and change the
-`AT` row's count from 4 to 5 and the `K` row from
-`29 (skip K8)` to `30 (skip K8)`. Replace the
+`AT` row's count from 4 to 5. **Leave the `K` row at
+`29 (skip K8)`** — K8 has its own row of 1 below, so K's
+thirty cases are already counted as 29 + 1, and the Cases
+column must sum to 401 once AT reads 5.
+
+Add AT5 to the template's `## Automated (AT)` list, after
+the AT4 line, so the list and the table row agree:
+
+```markdown
+- AT5 ./test-browser: PASS (0 fail)
+```
+
+Two survivors of the parallel run also live in this
+section and go with it: the `## Drift Candidates` table's
+`Mode` column (that is the `parallel | serial` mode the
+spec retires) — delete the column and its separator cell,
+leaving `| Case | Symptom | Likely cause |`. And the
+section preface's sentence "This is the contract
+`### How to invoke` references." names a heading you
+deleted in Step 2; it becomes "This is the contract
+`## The walk` references."
+
+Then replace the
 `## BLOCKED detail (K7 process prerequisite only)` heading
 with `## BLOCKED detail`, and its bullet's comment with
 `- <case ID>: <the reason outside the product> | (none)`.
@@ -606,10 +627,11 @@ regression, and neither blocks.
 
 - [ ] **Step 6: Rewrite the mitigation stub template**
 
-In `### Mitigation specs`, replace "The master lists paths
-in the summary." with "The master lists paths in the
-summary. Dated stubs stay frozen." and replace the fenced
-template with:
+In `### Mitigation specs`, replace "After join," with
+"After the walk," — a join is what fourteen hunters did.
+Replace "The master lists paths in the summary." with "The
+master lists paths in the summary. Dated stubs stay
+frozen." Then replace the fenced template with:
 
 ````markdown
 ```
@@ -809,7 +831,7 @@ Then, directly above the test, replace the lone
 // supply one; the covenant is the token's silence about
 // organizations, not where the identity came from.
 const UNSEATED = 'dtmZgnDBlVcoyjxKzlaKgA';
-const UNSEATED_CREDENTIAL = 'HHUBeMhy_DTgv4ELMO8bPw';
+const UNSEATED_CREDENTIAL = 'CYr8sAaDTpCQEUSZUqUxOg';
 const UNSEATED_EMAIL = 'unseated@example.com';
 const UNSEATED_PASSWORD = 'unseated-s3cret';
 const STARK = 'AjdvjuECVZEgZoFajaIEkg';
