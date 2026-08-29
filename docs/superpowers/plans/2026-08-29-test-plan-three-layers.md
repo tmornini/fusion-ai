@@ -79,12 +79,27 @@ dependency.
   (except this one), and
   `docs/superpowers/test-plan-mitigations/` is byte-identical
   when this plan finishes. Do not edit them.
-- **Retired vocabulary.** After Task 2, TEST-PLAN.md must
-  contain no `hunter`, `activate_tab`, `.localhost`,
-  `tenant:`, `parallel:`, `global_lock:`, or `depends:`.
-  After Task 24 it must also contain no `Serial:` or
-  `Parallel:`. `./validate` does not enforce this; the task
-  reviewer does.
+- **Retired vocabulary.** The words leave in two waves. Task
+  2 clears the protocol block; Tasks 8–24 clear the case
+  sections one at a time. Measured on TEST-PLAN.md at
+  `9083d1b9`, the counts a task must expect are:
+
+  | Term | Now | After Task 2 | After Task 24 |
+  |---|--:|--:|--:|
+  | `hunter` (case-insensitive) | 50 | 9 | 0 |
+  | `.localhost` | 27 | 5 | 0 |
+  | `activate_tab` | 2 | 1 | 1 |
+  | `^tenant:`/`^parallel:`/`^global_lock:`/`^depends:` | 68 | 64 | 0 |
+  | `Serial:` | 64 | 63 | 0 |
+  | `Parallel:` | 59 | 58 | 0 |
+
+  The nine surviving `hunter` lines after Task 2 are in the
+  A, AA, F, F2, G, and SV case sections — Tasks 9, 10, 15,
+  16, 18, and 24 own them. The five surviving `.localhost`
+  lines are all in SV (Task 24). The one surviving
+  `activate_tab` is inside the explorer prompt and is
+  correct: the explorer activates its one tab. `./validate`
+  does not enforce any of this; the task reviewer does.
 
 ---
 
@@ -629,12 +644,31 @@ grep -c 'activate_tab' TEST-PLAN.md
 grep -cE '^(tenant|parallel|global_lock|depends):' TEST-PLAN.md
 ```
 
-Expected: `0`, `0`, `1`, and a count equal to four times the
-number of sections you have NOT yet audited (Tasks 8–24
-remove the rest). The single `activate_tab` is inside the
-explorer prompt, which is correct — the explorer activates
-its one tab once. `grep -ci hunter` must be 0: search the
-whole file and rewrite any survivor as "explorer".
+Expected, exactly: `5`, `9`, `1`, `64`.
+
+None of those is zero, and none should be. The words leave
+in two waves: you clear the protocol block, and Tasks 8–24
+clear the case sections one at a time. Specifically —
+
+- **`.localhost` 5**: all in `## SV`, the two-jar cases
+  (Task 24 owns them).
+- **`hunter` 9**: in the A, AA, F, F2, G, and SV case
+  sections (Tasks 9, 10, 15, 16, 18, 24 own them). You clear
+  exactly two: `## Summary`'s "The SV hunter skips SV1"
+  (Step 4) and the stub template's `{hunter note}` (Step 6).
+  Both are in your steps already. If your count is 11, you
+  missed one of those two; if it is 0, you edited case
+  sections that are not yours.
+- **`activate_tab` 1**: inside the explorer prompt you just
+  wrote. Correct — the explorer activates its one tab.
+- **`64`**: 68 header-field lines today, minus AT's four,
+  which Step 3 removes. The other sixteen sections keep
+  theirs until their own audit task.
+
+Do NOT edit a case section to make a count go to zero.
+Nothing outside the protocol block, `## AT`, `## Summary`,
+`### Combined Totals`, `## Summary Format`, and
+`### Mitigation specs` is yours in this task.
 
 - [ ] **Step 8: Update AGENTS.md's Gates, router, and Subagents**
 
