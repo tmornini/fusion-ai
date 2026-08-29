@@ -225,12 +225,17 @@ editor's catch-all (`types: ["node"]`, DOM lib,
 `verbatimModuleSyntax`, `erasableSyntaxOnly`).
 `web-app/app/tsconfig.json` extends it and
 overrides only `types: []` — the pure browser
-subset. A Node-only module goes on that file's
+subset, whose `include` globs reach only
+`web-app/`, `api/`, and `shared/`. A Node-only
+module under that reach goes on the file's
 `exclude` list and nowhere else; missing from the
-list fails the browser project on `node:` imports.
-`erasableSyntaxOnly` and `verbatimModuleSyntax`
-are what `node --strip-types` requires at runtime,
-enforced at `tsc`.
+list fails the browser project on its Node
+imports. `server/` sits outside those globs
+entirely — `exclude` only prunes what `include`
+already selected, so nothing under `server/` needs
+an entry. `erasableSyntaxOnly` and
+`verbatimModuleSyntax` are what `node --strip-types`
+requires at runtime, enforced at `tsc`.
 
 ### Required env is never logged
 
