@@ -230,63 +230,55 @@ them separately. Abort on any AT red.
 
 ## A. Build & Setup
 
-tenant: none
-parallel: no
-global_lock: none
-depends: —
-
 - [ ] **A1** Run `./build` from a clean working directory. PASS: exits 0, prints no errors, creates `~/Desktop/fusion-angle-server-${SHA}.zip`.
+  Pin: exploratory — the exit code and the ZIP
+       file appearing on disk
 - [ ] **A2** Unzip the A1 ZIP (or run `./build --no-zip /tmp/fusion-test/`). PASS: the temp dir contains `server.mjs`, `assets/app.js`, `assets/styles.css`, `assets/` (*.woff2 fonts), 18 page directories (`api-documentation`, `auth`, `billing`, `dashboard`, `design-system`, `flows`, `ideas`, `identities`, `identity-providers`, `identity-tokens`, `invitations`, `landing`, `members`, `not-found`, `organization`, `projects`, `records`, `workbox`) with 29 HTML page files (including `api-documentation/index.html`, `flows/stats.html`, `records/detail.html`, `identities/index.html`, `identities/detail.html`, `identity-providers/index.html`, `identity-tokens/index.html`, and `invitations/index.html`), plus root `index.html`. Verb/status rooms under `api-documentation/` are generated, not PAGE_REGISTRY pages — do not count them as the 29.
   The 29 are the `PAGE_REGISTRY` HTML files; do
   **not** count root `index.html` inside the 29
   (it stays the separate "plus root `index.html`");
   do **not** count verb/status rooms.
-- [ ] **A3** `./crank --mock-data 8080` (serial)
-  or `./crank --test-plan-slices 8080`
-  (parallel). Crank validates, mints secrets,
-  starts postgres only, runs `./test-postgres`,
-  `./build --no-zip` into a temp dir, wipes,
-  seeds, and listens. Empty is the wipe step,
-  not a human prerequisite. Secrets never
-  print (seed's one-shot stdout is the only
-  reveal).
-
-  - **Serial (`--serial`):**
-    `./crank --mock-data 8080`.
-    PASS: process listens; seed stdout
-    prints `Save your demo sign-ins —
-    shown once; copy them now.` plus
-    one `username<TAB>password` line
-    per seeded human (including
-    `demo@example.com` and
-    `sarah.chen@company.com`); listen
-    stdout has no passwords; seed does
-    not travel over HTTP. This pin
-    **is** SV1.
-  - **Parallel (default):**
-    `./crank --test-plan-slices 8080`.
-    PASS: process listens; seed stdout
-    prints the same reveal header plus
-    TSV `section<TAB>field<TAB>value`
-    rows covering all 14 parallel
-    sections (AA's admin is
-    `demo@example.com`; B names
-    `seat_*` and `flow_id`; F2 names
-    `flow_id`; G names
-    `org2_*`, `unseated_*`,
-    `member_*`, `erasable_*`,
-    `invitee_*`;
-    SV names `seat_*`);
-    listen stdout has no passwords;
-    seed does not travel over HTTP. If
-    a section cannot run from its
-    minimum fixtures, A3 FAIL — do not
-    dispatch hunters. This pin **is**
-    SV1 on the parallel path (listen +
-    stdout reveal); the SV hunter
-    skips SV1.
+  Pin: tests/page-registry.test.ts 'PAGE_REGISTRY is 29
+       HTML page files including the api-documentation
+       index'; exploratory — that a real `./build` run
+       actually emits those 29 files (the eight named
+       above included) into the artifact, the 18
+       directories, `server.mjs`, `assets/app.js`,
+       `assets/styles.css`, the fonts, and the
+       generated verb/status rooms
+- [ ] **A3** `./crank --mock-data 8080`. Crank
+  validates, mints secrets, starts postgres
+  only, runs `./test-postgres`, `./build
+  --no-zip` into a temp dir, wipes, seeds, and
+  listens. Empty is the wipe step, not a human
+  prerequisite. Secrets never print (seed's
+  one-shot stdout is the only reveal). PASS:
+  process listens; seed stdout prints `Save
+  your demo sign-ins — shown once; copy them
+  now.` plus one `username<TAB>password` line
+  per seeded human (including
+  `demo@example.com` and
+  `sarah.chen@company.com`); listen stdout has
+  no passwords; seed does not travel over
+  HTTP. A3 is SV1.
+  Pin: tests/pg-seed.test.ts 'mock-data seed
+       prints every human sign-in'; exploratory
+       — the live process listening, the
+       stdout/HTTP boundary, and that
+       `demo@example.com` and
+       `sarah.chen@company.com` are specifically
+       among the 11 printed lines (the test
+       counts lines, not names)
 - [ ] **A4** Open `http://localhost:8080/` in the test browser with site data deleted and no `refresh_token` cookie. PASS: unsigned root hops to `landing/index.html` (one hop from the blank root document). Does not open `auth/` and does not open `snapshots/`. Landing remains the public marketing page; it is now also the unsigned root target.
+  Pin: tests/apex-destination.test.ts 'a dead session
+       hops to landing'; tests/root-redirect.test.ts
+       'apex hops via the destination helper';
+       exploratory — the live single-hop navigation
 - [ ] **A5** Open DevTools Console on that load. PASS: no 501; no JSON parse crash. An anonymous `POST /api/authentication/token` refresh 401 is acceptable.
+  Pin: tests/apex-destination.test.ts
+       'probeRefreshSession treats 401 as unsigned';
+       exploratory — the DevTools console shows no
+       501 or uncaught error
 
 ---
 
