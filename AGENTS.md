@@ -13,15 +13,15 @@ Claude Code reads it through `CLAUDE.md`, a one-line
 ./build --no-zip dir/  # server-core + server.mjs to dir/
 ./build dir/           # Server ZIP to dir/ instead of ~/Desktop/
 ./build --help         # Show usage
-./crank --mock-data|--test-plan-slices|--bootstrap port
+./crank --mock-data|--bootstrap port
 ./serve dir/ port      # node server.mjs from dir/ (no build)
-./postgres-seed --postgres local --bootstrap|--mock-data|--test-plan-slices
+./postgres-seed --postgres local --bootstrap|--mock-data
 ./postgres-seed --postgres render TOKEN \
-    --bootstrap|--mock-data|--test-plan-slices
+    --bootstrap|--mock-data
 ./postgres-wipe --postgres render TOKEN
 ./postgres-wipe --postgres local
 ./postgres-seed --postgres compose \
-    --bootstrap|--mock-data|--test-plan-slices
+    --bootstrap|--mock-data
 docker compose build       # image of the committed tree
 docker compose up --wait   # postgres:18 + server, 127.0.0.1:8080
 docker compose down        # stop; the database dies with it
