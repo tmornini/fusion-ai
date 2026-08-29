@@ -2740,13 +2740,12 @@ works; functional billing is tracked in `TODO.md`.
 
 ## H. Reference & System
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
 - [ ] **H1** Navigate to `design-system/`. PASS: component gallery renders showing buttons, badges, cards, form elements, toasts, and other UI components from the design system.
+  Pin: tests/design-system-render.test.ts
+       'design-system render is byte-stable';
+       exploratory — the browser-painted gallery
 - [ ] **H2** Navigate to `not-found/`. PASS: 404 page renders with a message and a link back to the dashboard or landing page.
+  Pin: exploratory — the rendered 404 message and link
 
 ---
 
