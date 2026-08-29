@@ -2,7 +2,6 @@
 globalThis.window = { location: { href: '', search: '' } };
 
 let pageName = 'snapshots';
-// @ts-expect-error — Node global stub
 globalThis.document = {
     documentElement: {
         getAttribute: () => pageName,

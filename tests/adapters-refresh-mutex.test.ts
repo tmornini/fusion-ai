@@ -81,7 +81,6 @@ async () => {
 test('cookie-session recover after a failed facade refresh'
 + ' does not POST again',
 async () => {
-    // @ts-expect-error — Node stub for navigateTo
     globalThis.document = {
         documentElement: {
             getAttribute: () => 'dashboard',

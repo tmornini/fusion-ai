@@ -1,4 +1,3 @@
-// @ts-expect-error — Node global stub
 globalThis.localStorage = (() => {
     const store = new Map<string, string>();
     return {
@@ -23,7 +22,6 @@ globalThis.localStorage = (() => {
 // data-page; navigateTo sets window.location.href) runs in Node.
 // @ts-expect-error — Node global stub
 globalThis.window = { location: { href: '', search: '' } };
-// @ts-expect-error — Node global stub
 globalThis.document = {
     documentElement: { getAttribute: () => 'dashboard' },
 };

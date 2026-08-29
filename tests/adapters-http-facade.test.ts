@@ -129,7 +129,6 @@ test(
 test(
     '401 through the fetch facade is UnauthorizedError',
     async () => {
-        // @ts-expect-error — Node stub for navigateTo
         globalThis.document = {
             documentElement: {
                 getAttribute: () => 'dashboard',
@@ -164,13 +163,11 @@ test(
     '401 on authentication/authorize does not'
     + ' refresh or bounce',
     async () => {
-        // @ts-expect-error — Node stub
         globalThis.document = {
             documentElement: {
                 getAttribute: () => 'auth',
             },
         };
-        // @ts-expect-error — Node stub
         globalThis.window = {
             location: { href: '' },
         };
@@ -214,13 +211,11 @@ test(
     'postPasswordLogin wrong password is'
     + ' one fetch and null',
     async () => {
-        // @ts-expect-error — Node stub
         globalThis.document = {
             documentElement: {
                 getAttribute: () => 'auth',
             },
         };
-        // @ts-expect-error — Node stub
         globalThis.window = {
             location: { href: '' },
         };

@@ -1,6 +1,5 @@
 // @ts-expect-error — Node global stub
 globalThis.window = { location: { href: '', search: '' } };
-// @ts-expect-error — Node global stub
 globalThis.document = {
     documentElement: {
         getAttribute: () => 'dashboard',
