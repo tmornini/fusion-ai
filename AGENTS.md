@@ -7,6 +7,7 @@ Claude Code reads it through `CLAUDE.md`, a one-line
 ```bash
 ./test                 # Run automated tests (memory backend)
 ./test-browser         # Tier 2: headless Chrome vs an in-process origin
+./test-all             # Layer 2: ./validate + ./test-browser
 ./validate             # Type-check + tests + lint (works on dirty tree)
 ./build                # Server ZIP to ~/Desktop/
 ./build --no-zip dir/  # server-core + server.mjs to dir/
