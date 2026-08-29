@@ -5,12 +5,36 @@ file by shipping; `## Close protocol` is the exit.
 
 ## Critical path
 
-Thirteen items, in this order — each its own brainstorm →
+Fourteen items, in this order — each its own brainstorm →
 spec → plan → ship cycle, implemented sequentially. A
 "Merged:" clause names bullets absorbed from
 `## Later work`; they keep their oracles.
 
-1. Type-check the whole tree — `./validate` runs one
+1. Restore the genesis-wins-under-skew covenant — five
+   drift/derive tests name a clock-skew case they never
+   construct, so they pass for the wrong reason.
+   `tests/drift-ideas.test.ts:600` ('GET idea trio is
+   lifecycle-current under clock skew') seeds a genesis PUT
+   at `2026-05-01`, then a later-arriving PUT at
+   `2020-01-01`, and asserts the trio keeps the genesis
+   `state_at` / `state_event_id`. But its fixture
+   `ideaDocument(title, state, stateAt, stateEventId,
+   position)` never writes `stateAt` or `stateEventId` into
+   the body — the whole-tree type check flagged both unused
+   (TS6133), and they now carry the `_` prefix that records
+   the omission. No skew is ever built, so nothing the name
+   claims is exercised. Same shape in
+   `tests/drift-objectives.test.ts:1199`,
+   `tests/drift-projects.test.ts:558`,
+   `tests/drift-records.test.ts:1093`,
+   `tests/drift-states.test.ts:1436`, and
+   `tests/derive-projects.test.ts`. Two exits per the Office
+   of Verification: make the PUT path accept caller-supplied
+   trio values so the skew is real, or rename the tests to
+   the arrival-order covenant they actually keep. The first
+   is a validator change; neither is confined to one test's
+   subject. Found by the whole-tree type check.
+2. Type-check the whole tree — `./validate` runs one
    `tsc --noEmit -p web-app/app/tsconfig.json`, whose
    `include` roots are `web-app/`, `api/`, `shared/`.
    `server/` (8 files) and `tests/` (421) sit outside
@@ -25,7 +49,7 @@ spec → plan → ship cycle, implemented sequentially. A
    learn their type errors at runtime. Needs a second
    project over `server/`, `tests/`, and the Node-only
    modules; `@types/node` is its one cost, types-only.
-2. Remove the lifecycle trio — fold `state` /
+3. Remove the lifecycle trio — fold `state` /
    `state_at` / `state_event_id` out of every document
    body (Decision 7): the reduction
    (`api/derive-documents.ts:148-157`), the stamp
@@ -37,7 +61,7 @@ spec → plan → ship cycle, implemented sequentially. A
    and the validators' trio-key gates; lifecycle
    becomes its own event rows. Merged: no lifecycle
    transition table at any gate.
-3. Credentials out of the message; views for the app —
+4. Credentials out of the message; views for the app —
    hoist `Authenticate:` (ideally the only plaintext
    credential path) into its own column; a view that
    omits it and omits deleted rows; a schema-owner
@@ -53,16 +77,16 @@ spec → plan → ship cycle, implemented sequentially. A
    `tests/api-pii-tombstone.test.ts`); the in-band
    plaintext comment at `api/mock-data.ts:151-152`
    (owner call).
-4. Cachability — headers, `HEAD`, conditional
+5. Cachability — headers, `HEAD`, conditional
    requests, and the rest; the brainstorm presents its
    questions from most to least desirable. Start:
    `server/http-server.ts` `NO_STORE` and
    `CONTENT_SECURITY_POLICY`.
-5. `/status` — `{ up: boolean, components: {
+6. `/status` — `{ up: boolean, components: {
    postgres: boolean } }`; `up` is true when every
-   component is; built for more components. Item 11's
+   component is; built for more components. Item 12's
    health probe.
-6. Execute TEST-PLAN.md with up to 48 subagents —
+7. Execute TEST-PLAN.md with up to 48 subagents —
    after the run-four remediation ships; the
    Protocol's one-profile, hunters-in-turn contract is
    revisited for 48. BLOCKING precondition CLEARED:
@@ -75,13 +99,13 @@ spec → plan → ship cycle, implemented sequentially. A
    before, 0/300 after; `./test` 15/15 green. Merged:
    the five run-four mitigation stubs (absorbed by the
    remediation spec); the flaky-test bullet.
-7. Re-implement workbox, work orders, and flows —
+8. Re-implement workbox, work orders, and flows —
    nodes become processes; process kinds: record
    modification (current), external process
    synchronization (new), directed cyclic graph (flow
    and sub-flow), directed cyclic graph (sub-graph); a
    chat on every record and work order (consumes item
-   8). Merged: READY gate on dangling refs
+   9). Merged: READY gate on dangling refs
    (`tests/adapters-flow-publish.test.ts`); locked
    verbs not executed
    (`tests/family-registry.test.ts`); the flow-tag
@@ -97,7 +121,7 @@ spec → plan → ship cycle, implemented sequentially. A
    (`api/derive-flows.ts:108`), rotation only on the
    toggle path (`web-app/app/flow-layout.ts:1032-1037`),
    and the mirror trigger.
-8. Headless AI worker — a server-side process that
+9. Headless AI worker — a server-side process that
    watches each AI process-worker's workbox, claims,
    assembles the record definition, the attribute
    values (which — decided in the brainstorm), the
@@ -111,10 +135,10 @@ spec → plan → ship cycle, implemented sequentially. A
    (`FLOW-CANVAS.md:130-132`);
    `withNodeTaskInstructions` already stores the
    instructions.
-9. Chats at `/api/chats` — attachable to any document
-   at `/…/:collection/:id/chat` with as little
-   ceremony as the plane allows.
-10. Genericity — DRY, even once (the indulgence); spec
+10. Chats at `/api/chats` — attachable to any document
+    at `/…/:collection/:id/chat` with as little
+    ceremony as the plane allows.
+11. Genericity — DRY, even once (the indulgence); spec
     away every nit. Merged: `putRecordInstance` PATCHes
     (name lie —
     `tests/adapters-record-instances.test.ts`,
@@ -160,7 +184,7 @@ spec → plan → ship cycle, implemented sequentially. A
     done); `handleSpace` dispatching
     `isFormFocused: false` unconditionally; Delete's
     `preventDefault` with nothing selected.
-11. Production readiness, repository and Render —
+12. Production readiness, repository and Render —
     block cross-environment connections,
     high-availability app and Postgres, and the rest.
     Merged: the single-mint-process KNOWN seam's
@@ -172,8 +196,8 @@ spec → plan → ship cycle, implemented sequentially. A
     (`tests/http-throttle.test.ts`);
     stale-until-navigation once there are processes to
     notify (`tests/advisory-lock.test.ts`). Consumes
-    item 5.
-12. Fewer JSON parse/stringify — byte-stream header
+    item 6.
+13. Fewer JSON parse/stringify — byte-stream header
     setting, mechanical sympathy and simplicity for
     the processor; measured first
     (`./measure --profile`). Merged: the deferred
@@ -181,7 +205,7 @@ spec → plan → ship cycle, implemented sequentially. A
     (`shared/http-message/body.ts:76-79` and
     `shared/http-message/content-coding.ts:5-7` —
     revise both comments when done).
-13. Simulated latency by environment — when
+14. Simulated latency by environment — when
     `FUSION_ANGLE_ENVIRONMENT` is exactly `local` and
     `FUSION_ANGLE_LATENCY` is a millisecond count,
     both present and non-empty, every API request
@@ -474,9 +498,9 @@ Off the critical path; each with its oracle.
 
 ## Sequencing
 
-- 9 → 7 (the chat clause consumes chats)
-- 5 → 11 (the health probe consumes `/status`)
-- Item 3's token-at-rest hashing and physical PII
+- 10 → 8 (the chat clause consumes chats)
+- 6 → 12 (the health probe consumes `/status`)
+- Item 4's token-at-rest hashing and physical PII
   erasure close their KNOWN seams — the closer removes
   the ARCHITECTURE.md bullet and this file's line in
   one commit
