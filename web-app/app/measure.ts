@@ -1,6 +1,6 @@
 // Node-only CDP page-load benchmark harness.
 // Run via ./measure from the repo root (see that wrapper).
-// Excluded from browser tsc; uses Node APIs + global WebSocket.
+// On the browser exclude list; uses Node APIs + global WebSocket.
 //
 // Flow: optional bare --visualize (disk only) → clean-tree
 // gate → (build → ./postgres-seed → node server.mjs) or
