@@ -264,7 +264,7 @@ async function derivedWorkOrders(
     const rows = await documentCollectionGetHandler(
         WORK_ORDERS_TEST_WIRING,
     )(
-        db, [], READER_ACTOR, organization,
+        db, [], READER_ACTOR, organization, [],
     ) as WorkOrderEntity[];
     const out: (WorkOrderEntity & {
         instance_id?: string;
@@ -287,7 +287,7 @@ async function derivedWorkOrder(
     const row = await documentGetHandler(
         WORK_ORDERS_TEST_WIRING,
     )(
-        db, [organization, id], READER_ACTOR, organization,
+        db, [organization, id], READER_ACTOR, organization, [],
     ) as WorkOrderEntity;
     return withBindingEmbed(db, organization, row);
 }

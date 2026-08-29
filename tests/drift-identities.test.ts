@@ -170,7 +170,7 @@ async function derivedIdentities(
     db: DbAdapter, organization: Id,
 ): Promise<{ id: Id; kind: string }[]> {
     return documentCollectionGetHandler(IDENTITIES_TEST_WIRING)(
-        db, [], READER_ACTOR, organization,
+        db, [], READER_ACTOR, organization, [],
     ) as Promise<{ id: Id; kind: string }[]>;
 }
 
@@ -178,7 +178,7 @@ async function derivedIdentity(
     db: DbAdapter, organization: Id, id: Id,
 ): Promise<{ id: Id; kind: string }> {
     return documentGetHandler(IDENTITIES_TEST_WIRING)(
-        db, [id], READER_ACTOR, organization,
+        db, [id], READER_ACTOR, organization, [],
     ) as Promise<{ id: Id; kind: string }>;
 }
 

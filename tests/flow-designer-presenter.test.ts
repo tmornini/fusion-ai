@@ -288,7 +288,7 @@ test(
             ],
         };
         const snap = buildInitialFlowSnapshot(
-            graph, 1200, 800, new Map(),
+            graph, 1200, 800, [], [], [],
         );
         const presenter =
             new FlowDesignerPresenter(
@@ -363,7 +363,7 @@ test(
             nodes: [node('n1', 0, 0)],
         };
         const snap = buildInitialFlowSnapshot(
-            graph, 800, 600, new Map(),
+            graph, 800, 600, [], [], [],
         );
         const presenter =
             new FlowDesignerPresenter(
@@ -396,7 +396,7 @@ test(
             nodes: [node('n1', 0, 0)],
         };
         const initial = buildInitialFlowSnapshot(
-            graph, 800, 600, new Map(),
+            graph, 800, 600, [], [], [],
         );
         const initialPresenter =
             new FlowDesignerPresenter(

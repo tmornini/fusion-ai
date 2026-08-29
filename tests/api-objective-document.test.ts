@@ -339,6 +339,7 @@ async () => {
     const got = await documentGetHandler(wiring)(
         db, ['AjdvjuECVZEgZoFajaIEkg', id]
             , 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg',
+        [],
     );
     assert.deepEqual(got, {
         id,
@@ -367,6 +368,7 @@ test('a DELETE-head derives absent through the generic'
         documentGetHandler(wiring)(
             db, ['AjdvjuECVZEgZoFajaIEkg', id]
                 , 'XXZruirZyAOoRpNxaDnpSA', 'AjdvjuECVZEgZoFajaIEkg',
+            [],
         ),
         (error: unknown) => {
             assert.ok(error instanceof EntityNotFoundError);
@@ -406,6 +408,7 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
     const derived = await documentGetHandler(wiring)(
         db, ['AjdvjuECVZEgZoFajaIEkg', id], 'XXZruirZyAOoRpNxaDnpSA'
             , 'AjdvjuECVZEgZoFajaIEkg',
+        [],
     );
     assert.deepEqual(stored, derived);
     const later = await handleRequest(db, req(
@@ -422,6 +425,7 @@ test('stored PUT body equals objectiveDocumentEntityOf of'
         await documentGetHandler(wiring)(
             db, ['AjdvjuECVZEgZoFajaIEkg', id], 'XXZruirZyAOoRpNxaDnpSA'
                 , 'AjdvjuECVZEgZoFajaIEkg',
+            [],
         ),
     );
     assert.equal(after.state, 'archived');

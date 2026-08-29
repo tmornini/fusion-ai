@@ -518,7 +518,7 @@ async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
     await putLiveType(db, adminToken);
-    const genesisId = await appendInstanceMessagePair(
+    await appendInstanceMessagePair(
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
         'PUT', {
             set: [
@@ -532,7 +532,7 @@ async () => {
     );
     await appendInstanceMessagePair(
         db, ORGANIZATION, TYPE_ID, INSTANCE_ID,
-        'DELETE', undefined, AT2, genesisId,
+        'DELETE', undefined, AT2,
     );
     const res = await handleRequest(db, req(
         'PATCH', INSTANCE_DETAIL, memberToken,

@@ -73,7 +73,7 @@ async function derivedRecords(
     db: MemoryDbAdapter, organization: string,
 ): Promise<RecordEntity[]> {
     return documentCollectionGetHandler(RECORDS_WIRING)(
-        db, [], 'XXZruirZyAOoRpNxaDnpSA', organization,
+        db, [], 'XXZruirZyAOoRpNxaDnpSA', organization, [],
     ) as Promise<RecordEntity[]>;
 }
 
@@ -152,7 +152,7 @@ async function derivedObjectives(
     db: MemoryDbAdapter, organization: string,
 ): Promise<ObjectiveEntity[]> {
     return documentCollectionGetHandler(OBJECTIVES_WIRING)(
-        db, [], 'XXZruirZyAOoRpNxaDnpSA', organization,
+        db, [], 'XXZruirZyAOoRpNxaDnpSA', organization, [],
     ) as Promise<ObjectiveEntity[]>;
 }
 

@@ -451,7 +451,7 @@ async () => {
     const { db, adminToken, memberToken } =
         await adminDb();
     await putLiveType(db, adminToken);
-    const genesisId = await appendInstanceMessagePair(
+    await appendInstanceMessagePair(
         db, ORGANIZATION, TYPE_ID, INSTANCE_A,
         'PUT', {
             set: [
@@ -465,7 +465,7 @@ async () => {
     );
     await appendInstanceMessagePair(
         db, ORGANIZATION, TYPE_ID, INSTANCE_A,
-        'DELETE', undefined, AT2, genesisId,
+        'DELETE', undefined, AT2,
     );
     const res = await handleRequest(db, req(
         'GET', detailPath(INSTANCE_A), memberToken,
@@ -543,7 +543,7 @@ async () => {
         ],
     );
     assert.equal(putA.status, 201);
-    const genesisC = await appendInstanceMessagePair(
+    await appendInstanceMessagePair(
         db, ORGANIZATION, TYPE_ID, INSTANCE_C,
         'PUT', {
             set: [
@@ -557,7 +557,7 @@ async () => {
     );
     await appendInstanceMessagePair(
         db, ORGANIZATION, TYPE_ID, INSTANCE_C,
-        'DELETE', undefined, AT2, genesisC,
+        'DELETE', undefined, AT2,
     );
     const list = await handleRequest(db, req(
         'GET', INSTANCES, memberToken,
@@ -648,7 +648,7 @@ async () => {
     await putLiveType(db, adminToken);
     await seedPublicAndSecretAttrs(db, adminToken);
     // Genesis delta (set only) — incomplete vs later head.
-    const genesisId = await appendInstanceMessagePair(
+    await appendInstanceMessagePair(
         db, ORGANIZATION, TYPE_ID, INSTANCE_A,
         'PUT', {
             set: [
@@ -678,7 +678,6 @@ async () => {
             ],
         },
         AT2,
-        genesisId,
     );
     const res = await handleRequest(db, req(
         'GET', detailPath(INSTANCE_A), adminToken,

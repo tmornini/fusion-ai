@@ -72,6 +72,7 @@ async function allRecords(
                 RECORDS_WIRING,
             )(
                 db, [], 'XXZruirZyAOoRpNxaDnpSA', organization,
+                [],
             ) as RecordEntity[],
         );
     }

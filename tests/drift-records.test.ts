@@ -161,7 +161,7 @@ async function derivedRecords(
     db: DbAdapter, organization: Id,
 ): Promise<RecordEntity[]> {
     return documentCollectionGetHandler(RECORDS_TEST_WIRING)(
-        db, [], READER_ACTOR, organization,
+        db, [], READER_ACTOR, organization, [],
     ) as Promise<RecordEntity[]>;
 }
 
@@ -170,6 +170,7 @@ async function derivedRecord(
 ): Promise<RecordEntity> {
     return documentGetHandler(RECORDS_TEST_WIRING)(
         db, [organization, id], READER_ACTOR, organization,
+        [],
     ) as Promise<RecordEntity>;
 }
 

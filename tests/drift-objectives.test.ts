@@ -124,7 +124,7 @@ async function derivedObjectives(
     db: MemoryDbAdapter, organization: Id,
 ): Promise<ObjectiveEntity[]> {
     return documentCollectionGetHandler(OBJECTIVES_TEST_WIRING)(
-        db, [], READER_ACTOR, organization,
+        db, [], READER_ACTOR, organization, [],
     ) as Promise<ObjectiveEntity[]>;
 }
 
@@ -132,7 +132,7 @@ async function derivedObjective(
     db: MemoryDbAdapter, organization: Id, id: Id,
 ): Promise<ObjectiveEntity> {
     return documentGetHandler(OBJECTIVES_TEST_WIRING)(
-        db, [organization, id], READER_ACTOR, organization,
+        db, [organization, id], READER_ACTOR, organization, [],
     ) as Promise<ObjectiveEntity>;
 }
 
