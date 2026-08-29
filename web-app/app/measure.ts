@@ -42,6 +42,7 @@ import {
     type PageRun,
     type PageStats,
     type Budgets,
+    type BudgetOffender,
 } from './measure-core.ts';
 import { generateMeasureViz } from './measure-viz.ts';
 import {
@@ -820,13 +821,15 @@ async function main(): Promise<void> {
             const verdict = compareBudgets(
                 stats, budgetsForCompare,
             );
-            const offenders = [
-                ...staleBudgetKeys.map((page) => ({
+            const staleOffenders: BudgetOffender[] =
+                staleBudgetKeys.map((page) => ({
                     page,
-                    reason: 'unknown-page' as const,
+                    reason: 'unknown-page',
                     budgetReadyMs:
                         budgets[page]!.readyMs,
-                })),
+                }));
+            const offenders: BudgetOffender[] = [
+                ...staleOffenders,
                 ...(verdict.ok
                     ? []
                     : verdict.offenders),
