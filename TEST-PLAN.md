@@ -4469,10 +4469,15 @@ FSM, unlike `flows/detail`).
        excludes the current member' (decides the HUMANS
        block itself excludes the signed-in human —
        together with the prior pin, the "third header,
-       not a row inside HUMANS" claim); exploratory —
-       the live page header text, the Add Member button,
-       the search input, the filter chips, and the
-       title/model-name/department columns
+       not a row inside HUMANS" claim);
+       tests/adapters-members-union.test.ts
+       'fillHumanMemberProfile copies identity title
+       and department onto list rows' (decides the
+       list row's title badge and department come
+       from GET identities/:id, not the empty seat
+       profile); exploratory — the live page header
+       text, the Add Member button, the search input,
+       and the filter chips
 - [ ] **G12** Click the sidebar member chip (lower-left:
   name/avatar in the sidebar footer). PASS: navigates to
   the current human member's `member-detail` page
