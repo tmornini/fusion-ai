@@ -125,10 +125,9 @@ spec → plan → ship cycle, implemented sequentially. A
    `#noteMutation` / `history()` beside
    `advanceHistory`
    (`web-app/app/presenters/flow-designer.ts:221-227`);
-   four hand-kept copies of the reveal key set
-   (`api/test-plan-slices.ts:122-139`,
-   `server/seed.ts:174-203`,
-   `tests/pg-seed.test.ts:348-353`); the second
+   the shell's hand-kept copy of the reveal header
+   (`postgres-lib:8` against `server/seed.ts:26-27`,
+   guarded by no test); the second
    instances the remediation added (`formRExtras`'
    record create, `canvasFocusOf`'s walk); the undo
    path's duplicated pure helpers
@@ -226,7 +225,6 @@ Off the critical path; each with its oracle.
 - SP-6 sign-up (`web-app/auth/index.ts:655-663`)
 - Billing (`web-app/billing/`)
 - Invitation email delivery
-- The `≥ N` doc debt (`TEST-PLAN.md:131-132, 185-186`)
 - Attribute drag-reorder (TEST-PLAN R8)
 - Idea-create toasts an incomplete submit; convert
   still sets `btn.disabled` — two forms, one
@@ -363,11 +361,6 @@ Off the critical path; each with its oracle.
   rendering —
   `web-app/app/adapters/objectives.ts:311`,
   `web-app/projects/detail.ts:318`
-- `api/test-plan-slices.ts` forms a record write in three
-  near-verbatim ~100-line blocks — `formAaRecord` (:2026),
-  `formRecordBindingMessagePairs` (:2445), and the first
-  fifty lines of `formRExtras` (:1830); past the rule of
-  three, extract the no-binding core once
 - The resolve-and-throw block in
   `web-app/app/presenters/project-score-history.ts` is four
   identical 11-line copies (:139, :161, :182, :201) — a
@@ -380,9 +373,6 @@ Off the critical path; each with its oracle.
   assert substrings the row-selection predicate already
   implies, leaving the detail cell unpinned — assert
   `<td>archived</td>`
-- `tests/test-plan-slices.test.ts:466-472` pins the AA
-  attribute count but not names or types; a rename keeps it
-  green while invalidating AA33 (`TEST-PLAN.md:970`)
 - Untested by design after run-six: the records/projects/
   flows `onEmpty` arms (only ideas is pinned), `loadInto`'s
   retry branch, a work order both claimed and completed,
@@ -393,15 +383,11 @@ Off the critical path; each with its oracle.
   its callback synchronously; all thirteen
   `subscribe<Entity>Changes` delegate to `createChannel`,
   so it is inert — guard only if that changes
-- Run-six cosmetics, none load-bearing: the only
-  human-readable seed id among 560
-  (`api/test-plan-slices.ts:208`), `unknown[]` returns now
-  provably narrower (`api/document-family.ts:438,:445`), a
-  non-strict DESC pin
-  (`tests/api-entity-history-routes.test.ts:1033`),
-  `adminId` hard-coded where siblings parameterize it
-  (`api/test-plan-slices.ts:2040`), and a dead
-  `disconnect()` stub in
+- Run-six cosmetics, none load-bearing: `unknown[]`
+  returns now provably narrower
+  (`api/document-family.ts:438,:445`), a non-strict DESC
+  pin (`tests/api-entity-history-routes.test.ts:1033`),
+  and a dead `disconnect()` stub in
   `tests/ideas-empty-subscribe.test.ts`
 - Investigate `docker compose up -d --wait` postgres
   only. Not the compose `server` — that would be a
@@ -445,10 +431,11 @@ Off the critical path; each with its oracle.
   `./test-browser` has run green on one machine
   (2026-08-28). Restore it if two machines disagree.
   Oracle: `./test-browser` green on two machines
-- TEST-PLAN covenants with no test — the 2026-08-29
-  audit's gap list. Each names the lowest layer that
-  could express it. The walk observes these; nothing
-  proves them.
+- Unpinned but pinnable — TEST-PLAN covenants with no
+  test, the 2026-08-29 audit's gap list. Each names the
+  lowest layer that could express it. The walk observes
+  these; nothing proves them. TEST-PLAN.md's "see
+  Unpinned but pinnable" references land here.
   - A real `./build` run — its exit code, the ZIP it
     writes, and that ZIP surviving the walk, plus the
     artifact's contents: the 29 `PAGE_REGISTRY` files
@@ -1167,12 +1154,18 @@ Off the critical path; each with its oracle.
   `tests/presenter-projects-organization.test.ts:398`
   says `XXZruirZyAOoRpNxaDnpSA` where it means
   `current/limit` — and a TEST-PLAN pin quotes it
-  faithfully (`TEST-PLAN.md:4382`), so the name is fixed
+  faithfully (`TEST-PLAN.md:4391`), so the name is fixed
   first and the pin follows in the same commit. The other
   is a local variable standing for `r1` at four sites in
   `tests/api-invitations-fence.test.ts` (:360, :363,
   :505, :509) — `rOEPOcVMQdJiiiMuiiEhlg`, quoted by no
   pin, so it renames alone
+- Two locals named for a hunter the repo no longer has —
+  `gOrganization` and `gAdmin`
+  (`tests/api-authentication-token.test.ts:1092-1093`)
+  carry the old Section-G prefix; Commandment III says
+  they read `starkOrganization` and `starkAdmin`. Quoted
+  by no pin, so they rename alone
 - A stale manual-coverage pointer —
   `tests/flow-designer-presenter.test.ts:352` points its
   comment at "TEST-PLAN F51"; the locked-members case is
@@ -1183,13 +1176,6 @@ Off the critical path; each with its oracle.
   (`SEED_PASSWORD_CREDENTIAL_BY_IDENTITY`) and
   `api/mock-data/seed-hash-preimage.ts:175`. Pruning
   them was out of the three-layers spec's scope
-- K's preamble detects a stranded active org by the
-  literal string "Wayne Enterprises", but G40 renames
-  that org before K1 runs, so the switcher shows neither
-  name and the detection no longer recognizes the state
-  it exists to catch. A name-independent check (an org
-  id or seat comparison) closes it — TEST-PLAN.md
-  `## K. Objectives & Scoring` preamble, TEST-PLAN.md G40
 - Undo at the stack bottom returns 201 — `api/derive-flows.ts`
   computes `hasUndoHistory` as `pairs > 1`, so the first undo
   past the bottom is accepted instead of refused. Named by
