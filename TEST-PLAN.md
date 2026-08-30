@@ -4355,16 +4355,6 @@ FSM, unlike `flows/detail`).
 
 ## G. Admin Pages
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
-Parallel reveal extras: `org2_*`,
-`unseated_*`, `member_*`, `erasable_*`,
-`invitee_*` (`r-member@test-plan.example`
-password for V5).
-
 ### Organization (`organization/index.html`)
 
 - [ ] **G9** Navigate to `organization/index.html`. PASS:
@@ -4382,6 +4372,24 @@ password for V5).
   values are placeholders — verify the page renders
   without error; numeric accuracy arrives when wired to
   live tables.)
+  Pin: tests/presenter-projects-organization.test.ts
+       'OrganizationPresenter.buildPage renders the org
+       name, domain, and an Edit action' (decides the
+       Overview card's Name/Domain and the header Edit
+       action); tests/presenter-projects-
+       organization.test.ts 'OrganizationPresenter
+       .buildPage renders overview stats and usage bars
+       with XXZruirZyAOoRpNxaDnpSA/limit values' (decides
+       the Active People stat cell and a "current /
+       limit" Usage Overview bar; "Projects" and "Ideas"
+       each render twice — a stat cell AND a usage-bar
+       label — so this same assertion is satisfied by
+       the usage bars alone and decides nothing about
+       the Projects/Ideas stat CELLS specifically);
+       exploratory — the sidebar + top-bar layout, the
+       Objectives box placement, the Projects/Ideas stat
+       cells distinct from their usage-bar labels, and
+       the Next Billing cell (no test asserts it)
 - [ ] **G10** In the page header, click Edit.
   PASS: page header swaps Edit for Save/Cancel; the
   Overview card's identity region switches the read-only
@@ -4391,6 +4399,17 @@ password for V5).
   badge has been removed.)
   V8 (Sent invitations + Revoke) and V9 (admin-only)
   run in the invitation walk after V5, beside V7.
+  Pin: tests/presenter-projects-organization.test.ts
+       'OrganizationEditPresenter.buildPage renders
+       editable name/domain inputs and Save/Cancel
+       actions' (decides the edit form's Name/Domain
+       inputs and Save/Cancel actions exist, and that no
+       Edit action renders while editing; the test never
+       asserts a `value=` attribute, so it decides
+       nothing about the inputs being PREFILLED — see
+       Unpinned but pinnable); exploratory — the live
+       header Edit→Save/Cancel swap and the prefilled
+       values themselves
 
 ### Members list (`members/index.html`)
 
@@ -4418,6 +4437,20 @@ password for V5).
   title (humans) or the model name (AIs), and department
   (humans only). The YOU group is a third header, not a
   row inside HUMANS.
+  Pin: tests/presenter-members.test.ts 'ManagedMembers
+       Presenter renders three sections with YOU above
+       HUMANS above AIs' (decides the YOU/HUMANS/AIs
+       group order); tests/presenter-members.test.ts
+       'YOU section contains only the current member'
+       (decides the YOU block excludes other humans);
+       tests/presenter-members.test.ts 'HUMANS section
+       excludes the current member' (decides the HUMANS
+       block itself excludes the signed-in human —
+       together with the prior pin, the "third header,
+       not a row inside HUMANS" claim); exploratory —
+       the live page header text, the Add Member button,
+       the search input, the filter chips, and the
+       title/model-name/department columns
 - [ ] **G12** Click the sidebar member chip (lower-left:
   name/avatar in the sidebar footer). PASS: navigates to
   the current human member's `member-detail` page
@@ -4425,16 +4458,91 @@ password for V5).
   linked to the profile has been removed — the sidebar
   member chip is now the only "click → profile"
   affordance. Source: `web-app/app/sidebar-member.ts`.)
+  Pin: tests/browser/sign-in.test.ts 'sign-in lands on
+       the dashboard as the seeded admin' (decides the
+       chip renders the signed-in member's name —
+       `#sidebar-member-name` reads "Tony Stark");
+       tests/browser/two-jars.test.ts 'two contexts hold
+       two identities on one origin' (decides the chip
+       renders the correct name per signed-in identity
+       across two contexts); exploratory — the live chip
+       click and navigation to `member-detail` (the
+       click handler itself, in
+       `web-app/app/sidebar-member.ts`, carries no CLI
+       or browser test — only its rendered name is
+       pinned above)
 - [ ] **G13** Type in the search input. PASS: filters the
   list in real-time — human members match on name, email,
   title, or department; AI members match on name or
   description (not provider/model). Click the Humans
-  filter chip. PASS: only the HUMANS group is visible.
-  Click AIs. PASS: only the AIs group is visible. Click
-  All. PASS: both groups return.
-- [ ] **G43** Navigate to `identities/index.html` (or click "Identities" in the sidebar). PASS: the header reads "Identities" with an "Add Identity" button (`#add-identity-btn`); `#identity-list` renders one `.card[data-identity-id]` per identity — a person row shows an initials avatar + name + email sub-line + a "Person" badge; a service row shows a shield avatar plus "Service account" + "—" (agents are not identities), then a "Service" badge. Serial (A3 `--mock-data`, demo admin's active organization Stark): the nested PII fence (viaMembership, need-to-know) hides the five org-2-only persons: the list renders 6 named person rows (Emily Rodriguez, Sarah Chen, Lisa Wang, Marcus Johnson, Tony Stark, Jessica Park), 5 "Identity without PII" person rows (the org-2-only members: David Martinez, Alex Kim, Mike Thompson, David Kim, James), and 1 service row (the system service identity). Parallel (A3 `--test-plan-slices`): `identities/` is global (`organizationNested: false`) and the seed is one DB for all 14 slices, so the hunter sees bootstrap current + the system service identity + every slice admin + the B/G/SV extras — not a five-name closed G roster. `getIdentityRoster` GETs identities only — the G extras AI agent is `ai-agents/:id`, not an identity row, so no agent appears on the list. Named G people: G admin, `G Member`, `G Unseated`, plus the system service identity; other-slice people often render as "Identity without PII" (PII 403). An empty roster renders "No identities yet." Source: `web-app/identities/index.ts`, `web-app/app/presenters/identity-list.ts` (`IdentityRosterPresenter`).
+  filter chip. PASS: only the YOU and HUMANS groups are
+  visible (the AIs group is hidden — `#buildSelfSection`
+  only hides itself under kind=ai, not kind=human). Click
+  AIs. PASS: only the AIs group is visible. Click
+  All. PASS: all three groups return.
+  Pin: tests/presenter-members.test.ts 'search filter
+       applies to all three sections' (decides a search
+       term narrows YOU/HUMANS/AIs alike);
+       tests/presenter-members.test.ts 'kind=human filter
+       hides AIs but keeps YOU'; tests/presenter-
+       members.test.ts 'kind=ai filter hides YOU and
+       HUMANS' (together decide the Humans/AIs/All chip
+       behavior — the second test is also why the
+       corrected Humans-chip PASS line above names YOU
+       explicitly); exploratory — the live keystroke-by-
+       keystroke filtering and the name/email/title/
+       department match fields (Layer-1 pinnable via
+       `HumanMember.matchesSearch`; see Unpinned but
+       pinnable)
+- [ ] **G43** Navigate to `identities/index.html` (or
+  click "Identities" in the sidebar). PASS: the header
+  reads "Identities" with an "Add Identity" button
+  (`#add-identity-btn`); `#identity-list` renders one
+  `.card[data-identity-id]` per identity — a person row
+  shows an initials avatar + name + email sub-line + a
+  "Person" badge; a service row shows a shield avatar
+  plus "Service account" + "—" (agents are not
+  identities), then a "Service" badge. The nested PII
+  fence (viaMembership, need-to-know) hides Wayne-only
+  members from Stark admin Tony: the list renders 6
+  named person rows (Emily Rodriguez, Sarah Chen, Lisa
+  Wang, Marcus Johnson, Tony Stark, Jessica Park), plus a
+  7th, Jordan Rivera, if AA5's create held; 5 "Identity
+  without PII" person rows (the Wayne-only members:
+  David Martinez, Alex Kim, Mike Thompson, David Kim,
+  James Miller); and 1 service row (the system service
+  identity). `getIdentityRoster` GETs identities only —
+  AA7a's "Ops Assistant" is an `ai-agents/:id` document,
+  not an identity row, so it does not appear on this
+  list either. An empty roster renders "No identities
+  yet." Source: `web-app/identities/index.ts`,
+  `web-app/app/presenters/identity-list.ts`
+  (`IdentityRosterPresenter`).
+  Pin: tests/presenter-identity-list.test.ts 'person row
+       shows name, email, and Person badge';
+       tests/presenter-identity-list.test.ts 'renders an
+       empty state when no identities';
+       tests/presenter-identity-list.test.ts 'unnamed
+       service redacts to a label, not the id' (decides
+       the "Service account" label —
+       `UNNAMED_SERVICE_NAME` — for the unnamed system
+       service row); tests/presenter-identity-list.test.ts
+       'erased person falls back to the named constant'
+       (decides the "Identity without PII" label —
+       `IDENTITY_WITHOUT_PII_NAME` — the same fallback
+       the 5 Wayne-only rows render);
+       tests/api-organization-isolation.test.ts 'flat
+       identity-pii is 404; nested foreign GET 403s'
+       (decides the exact fence: an admin scoped to one
+       org reading a foreign-org-only identity's PII gets 403
+       "belongs to a different organization" — the
+       mechanism behind the 5 "Identity without PII"
+       rows); exploratory — the live named-row census
+       (no test pins the mock seed's exact named/hidden/
+       service split as a single assertion) and the
+       shield-avatar/service-badge styling
 - [ ] **G14** Return to `members/index.html` (G43 left
-  the hunter on Identities). Click `+ Add Member`. PASS:
+  the explorer on Identities). Click `+ Add Member`. PASS:
   dialog opens with the Kind toggle defaulting to Human,
   the Human form visible, and the AI form hidden. Switch
   the toggle to AI. PASS: the Human form hides, the AI
@@ -4445,6 +4553,14 @@ password for V5).
   seat at the active organization so the person appears
   in the seat-derived roster. "Invite member" (V1) still
   grants a pending invitation for an EXISTING identity.
+  Pin: tests/adapters-members.test.ts
+       'postHumanMemberCreation persists identity PII and
+       a seat' (decides the identity + PII + seat write
+       Create Human triggers); exploratory — the live
+       dialog Kind-toggle default and the AI-form
+       hide/show (`bindAddMemberDialog` in
+       web-app/members/index.ts carries no CLI or
+       browser test)
 - [ ] **G14a** With Kind=AI selected, leave the Model
   pulldown on its placeholder and click Create. PASS: a
   toast "Model is required" fires and no POST happens.
@@ -4453,6 +4569,11 @@ password for V5).
   message-plane AI agent document (`PUT /ai-agents/:id`);
   it appears in the AIs group (agents are global, not
   seated).
+  Pin: tests/adapters-ai-members.test.ts
+       'postAIMemberCreation writes PUT /ai-agents/:id'
+       (decides the AI-agent write this Create
+       triggers); exploratory — the live "Model is
+       required" toast and the no-POST-until-chosen gate
 
 ### Membership invitations (V) — Members "Invite member"
 
@@ -4473,66 +4594,103 @@ password for V5).
 > / `revokeInvitation`), `web-app/invitations/`,
 > `web-app/app/invitations-indicator.ts`.
 
-- [ ] **V1 — Invite by email grants a pending invitation** On
-  `members/index.html` as an org admin, click `+ Invite member` (`#invite-
-  member-btn`, mail icon). Serial: Tony Stark on Stark
-  Industries after A3 mock-data. Parallel: this hunter's
-  G admin. PASS: the `invite-member` dialog
-  opens with a single Email input (`#invite-email`), helper
-  text "Invite an existing person to this organization", a
-  Cancel and a "Send invitation" submit (`#invite-member-
-  submit`). Enter the email of an EXISTING identity who is NOT
-  yet a member of the inviting org. This grant is invitation
-  A. Serial: `david.martinez@company.com` (Wayne-only).
-  Parallel: `g-unseated@test-plan.example`.
-  Click "Send invitation". PASS: an "Invitation sent" toast
-  fires, the dialog closes, and the email field is cleared.
-  The grant is idempotent — sending the same email again while
-  still pending returns the same pending invitation (no
-  duplicate, no error). Source: `handleInviteSubmit`,
+- [ ] **V1 — Invite by email grants a pending
+  invitation** On `members/index.html` as Tony Stark
+  (Stark's admin), click `+ Invite member` (`#invite-
+  member-btn`, mail icon). PASS: the `invite-member`
+  dialog opens with a single Email input (`#invite-
+  email`), helper text "Invite an existing person to
+  this organization", a Cancel and a "Send invitation"
+  submit (`#invite-member-submit`). Enter the email of an
+  EXISTING identity who is NOT yet a member of the
+  inviting org: `david.martinez@company.com` (Wayne-
+  only). This grant is invitation A. Click "Send
+  invitation". PASS: an "Invitation sent" toast fires,
+  the dialog closes, and the email field is cleared. The
+  grant is idempotent — sending the same email again
+  while still pending returns the same pending invitation
+  (no duplicate, no error). Source: `handleInviteSubmit`,
   `postInvitationGrant`, `grantInvitation`.
-- [ ] **V2 — Invite rejects empty / unknown / already-member**
-  Open the Invite dialog. Submit with the Email blank → an
-  "Email is required" toast and no POST. Submit an email that
-  matches NO identity → an inline email-field error "No
-  identity found for that email." (the adapter maps the 404 to
-  a 'no-identity' outcome — no toast). Submit the email of
-  someone ALREADY a member of the active org → an inline
-  email-field error "Already a member of this organization."
-  (the 409 maps to an 'already-member' outcome). The "Failed
-  to invite: …" toast fires only on an unexpected server fault.
-  In all three the dialog stays usable and no pending
-  invitation is created. Leftover: does not consume
-  invitation A (V1). Source: `setInviteEmailError` in
-  `web-app/members/index.ts`; `grantInvitation` guards in
-  `api/invitations-domain.ts`.
-- [ ] **V6 — Org fence: a pending invite is invisible until
-  accepted** While the V1 invitation is still PENDING (before
-  V4), confirm the org fence holds: the invitee is NOT in the
-  inviting org's Members roster (the roster derives from
-  seats, and no seat exists yet), and the
-  inviting org is NOT reachable by the invitee — it does not
-  appear in their sidebar org `<select>` and boot will not
-  scope a token to it (a pending invitation grants no
-  seat). Do not Accept — V4 owns the accepted half.
-  PASS: pending ⇒ not in roster, not reachable. Source:
-  the org fence (`resolveOwningOrganization` via
-  `writeAuthorizerFor`), `acceptInvitation`.
-- [ ] **V3 — Top-bar pending-invitations bell → invitations
-  page** As an identity with ≥1 pending invitation (the V1
-  invitee, signed in), confirm the top bar shows a bell
-  (`#invitations-bell`) with a count badge (`#invitations-
-  badge`) equal to the number of pending invitations. PASS:
-  the bell is VISIBLE only when pending ≥ 1 — an identity with
-  zero pending invitations shows NO bell (the host carries
-  `hidden`; it is never an empty bell). Click the bell. PASS:
-  navigates to `invitations/index.html`. The read is identity-
-  scoped (the invitation facade fences by the verified caller),
-  so the bell works even for a member with no admin role.
-  Source: `web-app/app/invitations-indicator.ts`
+  Pin: tests/adapters-invitations.test.ts 'grant by
+       email appends a pending invitation'; tests/
+       adapters-invitations.test.ts 'grant stamps the
+       org from the verified token' (decides the
+       invitation lands in Stark, the org Tony's token
+       is scoped to); tests/adapters-invitations.test.ts
+       'granting the same email twice is idempotent';
+       exploratory — the live dialog affordance, the
+       "Invitation sent" toast, and the field-clear/
+       dialog-close behavior
+- [ ] **V2 — Invite rejects empty / unknown /
+  already-member** Open the Invite dialog. Submit with
+  the Email blank → an "Email is required" toast and no
+  POST. Submit an email that matches NO identity (e.g.
+  `nobody@company.com`) → an inline email-field error "No
+  identity found for that email." (the adapter maps the
+  404 to a 'no-identity' outcome — no toast). Submit the
+  email of someone ALREADY a member of Stark (e.g.
+  `sarah.chen@company.com`) → an inline email-field
+  error "Already a member of this organization." (the
+  409 maps to an 'already-member' outcome). The "Failed
+  to invite: …" toast fires only on an unexpected server
+  fault. In all three the dialog stays usable and no
+  pending invitation is created. Leftover: does not
+  consume invitation A (V1). Source:
+  `setInviteEmailError` in `web-app/members/index.ts`;
+  `grantInvitation` guards in `api/invitations-domain.ts`.
+  Pin: tests/adapters-invitations.test.ts 'grant by
+       unknown email returns no-identity'; tests/
+       adapters-invitations.test.ts 'grant for an
+       existing member returns already-member';
+       exploratory — the live toast/inline-error text
+       mapping (`setInviteEmailError` carries no CLI or
+       browser test) and the dialog staying open in all
+       three cases
+- [ ] **V6 — Org fence: a pending invite is invisible
+  until accepted** While the V1 invitation is still
+  PENDING (before V4), confirm the org fence holds: the
+  invitee is NOT in the inviting org's Members roster
+  (the roster derives from seats, and no seat exists
+  yet), and the inviting org is NOT reachable by the
+  invitee — it does not appear in their sidebar org
+  `<select>` and boot will not scope a token to it (a
+  pending invitation grants no seat). Do not Accept — V4
+  owns the accepted half. PASS: pending ⇒ not in roster,
+  not reachable. Source: the org fence
+  (`resolveOwningOrganization` via `writeAuthorizerFor`),
+  `acceptInvitation`.
+  Pin: tests/api-invitations-fence.test.ts 'a pending
+       invite writes no membership'; tests/api-
+       invitations-fence.test.ts 'a pending invitee is
+       absent from the roster'; exploratory — the live
+       sidebar org `<select>` reachability check
+- [ ] **V3 — Top-bar pending-invitations bell →
+  invitations page** As the V1 invitee (David Martinez,
+  signed in with ≥1 pending invitation), confirm the top
+  bar shows a bell (`#invitations-bell`) with a count
+  badge (`#invitations-badge`) equal to the number of
+  pending invitations. PASS: the bell is VISIBLE only
+  when pending ≥ 1 — an identity with zero pending
+  invitations shows NO bell (the host carries `hidden`;
+  it is never an empty bell). Click the bell. PASS:
+  navigates to `invitations/index.html`. The read is
+  identity-scoped (the invitation facade fences by the
+  verified caller), so the bell works even for a member
+  with no admin role. Source:
+  `web-app/app/invitations-indicator.ts`
   (`mutateInvitationsBell`), `component-top-bar.html`.
-  The wire path is `identities/:id/invitations/`
-  (never a root `/api/invitations`).
+  The wire path is `identities/:id/invitations/` (never
+  a root `/api/invitations`).
+  Pin: tests/adapters-invitations.test.ts 'the invitee
+       reads their own pending invitation' (decides the
+       identity-scoped read the bell's count derives
+       from); tests/api-invitations-fence.test.ts 'a
+       role-less invitee may read their invitations'
+       (decides the read succeeds with no admin role);
+       exploratory — the live bell/badge visibility and
+       count rendering, and the click navigation
+       (`web-app/app/invitations-indicator.ts` carries
+       no CLI or browser test)
 - [ ] **V4 — Accept writes a seat; invitee becomes
   multi-org** On `invitations/index.html` (page header
   "Invitations", subtitle "Organizations inviting you to
@@ -4540,105 +4698,174 @@ password for V5).
   PENDING invitation — org name, an "Invited by {name} ·
   {date}" sub-line, a state badge, and Accept / Decline
   buttons. Click Accept on the V1 invitation. PASS: an
-  "Invitation accepted" toast fires and the row leaves the
-  pending list. A REAL seat is now written in the
-  INVITATION's org (the invitation's org), so the invitee becomes multi-org:
-  reload any sidebar-layout page and the sidebar footer now
-  shows the org `<select>` (G36) listing both their original
-  org and Stark. Accept is idempotent — a re-accept is a 204
-  no-op, no duplicate seat.
-  Parallel (A3 `--test-plan-slices`): the V1 invitee
-  `g-unseated` holds no prior seat, so after Accept `GET
-  identities/:id/organizations/` lists ONE org and the
-  sidebar footer shows it as plain text with no `<select>`
-  (G36 needs two); multi-org is exercised by V7's invitee
-  half (G Member accepts Wayne → both listed). Serial
-  stands as written. Source:
+  "Invitation accepted" toast fires and the row leaves
+  the pending list. A REAL seat is now written in the
+  INVITATION's org (Stark), so David Martinez becomes
+  multi-org: reload any sidebar-layout page and the
+  sidebar footer now shows the org `<select>` (G36)
+  listing both Wayne and Stark. Accept is idempotent — a
+  re-accept is a 204 no-op, no duplicate seat. Source:
   `postInvitationAcceptance`, `acceptInvitation` (atomic
-  seat document message pair + invitations/:id/acceptance
-  operation message pair via `appendMessagePair`).
+  seat document message pair + invitations/:id/
+  acceptance operation message pair via
+  `appendMessagePair`).
+  Pin: tests/presenter-invitation-list.test.ts 'a pending
+       invitation shows the org, inviter, and Accept /
+       Decline' (decides the pending card's org name,
+       inviter name, Pending state badge, and Accept/
+       Decline buttons); tests/adapters-invitations.test.ts
+       'accept writes
+       a membership in the invitation org' (decides the
+       seat lands in the invitation's org, making the
+       invitee multi-org);
+       tests/api-invitation-nests.test.ts 'PUT from
+       accepted is a no-op' (decides re-accept is a 204
+       no-op with no duplicate);
+       tests/adapters-organization-session-exchange.test.ts
+       'shouldShowOrganizationSwitcher only at two or
+       more orgs' (decides the sidebar `<select>`
+       mechanism a second seat triggers); exploratory —
+       the live "Invitation accepted" toast, the row
+       leaving the pending list, and the reload showing
+       the `<select>`
 - [ ] **V5 — Decline appends declined, writes no seat**
   Grant invitation B first (V4 consumed A). On
-  `members/index.html` as an org admin, Invite member
-  with a fresh EXISTING identity who is not a member of
-  the inviting org. Serial: `alex.kim@company.com`
-  (Wayne-only). Parallel: G reveal
-  `invitee_username` / `invitee_password`
-  (`r-member@test-plan.example`, seated in
-  r-org, not G). PASS: "Invitation sent"
-  toast. Sign in as that invitee. On `invitations/`
-  click Decline. PASS: an "Invitation declined"
-  toast fires, the row leaves the pending list, and NO
-  seat is written (the declined org does NOT appear in
-  the sidebar switcher and its rows stay unreachable). With no
-  pending invitations remaining, the list shows the empty
-  state "No invitations." and the top-bar bell disappears
-  (V3). Decline is idempotent (re-decline → 204). Source:
-  `postInvitationDecline`, `declineInvitation`.
-- [ ] **V8 — Organization "Sent invitations" section + Revoke
-  (admin)** Grant invitation C if none is pending (V4
-  consumed A; V5 declined B). On `members/index.html` as
-  an org admin, Invite member. Serial:
-  `mike.thompson@company.com` (Wayne-only). Parallel:
-  `sv-member@test-plan.example`. PASS: "Invitation sent"
-  toast. Then on `organization/index.html` confirm a "Sent
-  invitations" section (`#sent-invitations-box`, h2 "Sent
-  invitations") appears below the cards, listing one row per
-  PENDING org invitation (`#sent-invitations-list`) — each row
-  shows the invitee EMAIL, an "Invited {date}" sub-line, a
-  state badge, and a Revoke button. PASS: the section is
-  VISIBLE only when the admin read succeeds (it boots hidden
-  and reveals on success). Click Revoke on C. PASS: an
-  "Invitation revoked" toast fires and the row leaves the
-  pending list (a 'revoked' event supersedes the pending; the
-  invitation row persists as audit, and the invitee's pending
-  list — V3/V4 — no longer shows it). With no outstanding
-  invitations, the list shows "No outstanding invitations."
-  Revoke is idempotent (re-revoke → 204). Source:
-  `web-app/organization/index.ts` (`renderSentInvitations` /
-  `onSentInvitationClick`), `SentInvitationsPresenter`,
-  `revokeInvitation`.
-- [ ] **V7 — Authz: non-admin grant/revoke rejected; invitee
-  may still read & accept** Sign in as a NON-admin member of
-  an org (a seeded human with no admin role). Open the
-  Invite dialog (`#invite-member-btn`) and submit a grant.
-  Read the 403 from the **network log** on this load —
-  never `js()` `fetch` (the bearer is
+  `members/index.html` as Tony Stark, Invite member with
+  a fresh EXISTING identity who is not a member of
+  Stark: `alex.kim@company.com` (Wayne-only). PASS:
+  "Invitation sent" toast. Sign in as Alex Kim. On
+  `invitations/` click Decline. PASS: an "Invitation
+  declined" toast fires, the row leaves the pending
+  list, and NO seat is written (Stark does NOT appear in
+  the sidebar switcher and stays unreachable). With no
+  pending invitations remaining, the list shows the
+  empty state "No invitations." and the top-bar bell
+  disappears (V3). Decline is idempotent (re-decline →
+  204). Source: `postInvitationDecline`,
+  `declineInvitation`.
+  Pin: tests/adapters-invitations.test.ts 'decline
+       records declined and writes no membership';
+       tests/api-invitations-fence.test.ts 'decline:
+       replay of fixed body is a no-op (two events
+       total)' (decides re-decline is idempotent, 204,
+       no extra event); tests/presenter-invitation-
+       list.test.ts 'an empty invitee list shows the
+       empty state' (decides the "No invitations."
+       copy); exploratory — the live "Invitation sent"/
+       "Invitation declined" toasts and the sidebar
+       switcher staying absent for the declined org
+- [ ] **V8 — Organization "Sent invitations" section +
+  Revoke (admin)** Grant invitation C if none is pending
+  (V4 consumed A; V5 declined B). On
+  `members/index.html` as Tony Stark, Invite member:
+  `mike.thompson@company.com` (Wayne-only). PASS:
+  "Invitation sent" toast. Then on
+  `organization/index.html` confirm a "Sent
+  invitations" section (`#sent-invitations-box`, h2
+  "Sent invitations") appears below the cards, listing
+  one row per PENDING org invitation (`#sent-
+  invitations-list`) — each row shows the invitee EMAIL,
+  an "Invited {date}" sub-line, a state badge, and a
+  Revoke button. PASS: the section is VISIBLE only when
+  the admin read succeeds (it boots hidden and reveals on
+  success). Click Revoke on C. PASS: an "Invitation
+  revoked" toast fires and the row leaves the pending
+  list (a 'revoked' event supersedes the pending; the
+  invitation row persists as audit, and the invitee's
+  pending list — V3/V4 — no longer shows it). With no
+  outstanding invitations, the list shows "No outstanding
+  invitations." Revoke is idempotent (re-revoke → 204).
+  Source: `web-app/organization/index.ts`
+  (`renderSentInvitations` / `onSentInvitationClick`),
+  `SentInvitationsPresenter`, `revokeInvitation`.
+  Pin: tests/adapters-invitations.test.ts 'sent
+       invitations list the active org pending only';
+       tests/adapters-invitations.test.ts 'revoke
+       records revoked (admin only)'; tests/api-
+       invitations-fence.test.ts 'revoke: replay of
+       fixed body is a no-op (two events total)'
+       (decides re-revoke is idempotent, 204, no extra
+       event); tests/presenter-invitation-list.test.ts
+       'a sent invitation shows the invitee email and
+       Revoke'; tests/presenter-invitation-list.test.ts
+       'an empty sent list shows the empty state'
+       (decides the "No outstanding invitations."
+       copy); exploratory — the live "Invitation sent"/
+       "Invitation revoked" toasts, the section's
+       hidden-until-success reveal, and the "Invited
+       {date}" sub-line and state badge on a sent row
+       (claimed by nothing today; see Unpinned but
+       pinnable)
+- [ ] **V7 — Authz: non-admin grant/revoke rejected;
+  invitee may still read & accept** Sign in as a
+  non-admin Stark member (e.g. Sarah Chen,
+  `sarah.chen@company.com`, stdout password). Open the
+  Invite dialog (`#invite-member-btn`) and submit a
+  grant. Read the 403 from the **network log** on this
+  load — never `js()` `fetch` (the bearer is
   memory-only). PASS: the grant POST is rejected with
   "forbidden: POST /organizations/<orgId>/invitations/
   requires a role this principal lacks" (403). The
   Organization page's Sent-invitations admin read fails
   and the section stays hidden (V9), so no Revoke is
-  offered. YET the SAME role-less identity, when it is
-  the INVITEE, CAN read its own invitations (the bell +
+  offered. YET the SAME identity, when it is the INVITEE
+  elsewhere, CAN read its own invitations (the bell +
   `invitations/` work — the read is identity-scoped, not
-  admin-gated) and CAN Accept/Decline its own invitation
-  (V4/V5). PASS: grant/revoke require admin;
-  read/accept/decline require only being the invitee.
-  Source: the absent `MEMBER_VERBS` row for the org
-  invitation nest (`api/authorization.ts`) and
+  admin-gated) and CAN Accept/Decline its own invitation,
+  as V4/V5 already showed for David Martinez and Alex
+  Kim, neither an admin anywhere. PASS: grant/revoke
+  require admin; read/accept/decline require only being
+  the invitee. Source: the absent `MEMBER_VERBS` row for
+  the org invitation nest (`api/authorization.ts`) and
   `authorizeRequest` (`api/request-auth.ts`), which 403s
   before any handler; the invitee read/accept/decline
   paths ride the identity nest.
-  Parallel (A3 `--test-plan-slices`): run before G46
-  so `G Member` still has PII and can sign in; the
-  invitee half is granted from the second G
-  organization (`org2_*`). Serial (A3 `--mock-data`,
-  demo admin's active organization Stark): any
-  seeded non-admin human.
-- [ ] **V9 — Sent-invitations section is admin-only** Sign in
-  as a NON-admin member and open `organization/index.html`.
-  PASS: the admin Sent-invitations read fails (403 "forbidden:
-  listing sent invitations requires an admin role") and the
-  section stays HIDDEN — the read rejects before the reveal
-  line, so the box never un-hides, and no Revoke affordance is
-  offered to a non-admin. (Pairs with V7's grant/revoke 403s.)
-  Source: `sentInvitations` admin guard in
-  `api/invitations-domain.ts`.
+  Pin: tests/api-invitations-fence.test.ts 'a non-admin
+       is forbidden from granting' (decides the exact
+       403 body: "forbidden: POST /organizations/…
+       /invitations/ requires a role this principal
+       lacks"); tests/api-invitations-fence.test.ts 'a
+       non-admin is forbidden from revoking' (decides
+       the same shape for PUT revoke); tests/api-
+       invitations-fence.test.ts 'a role-less invitee
+       may read their invitations'; tests/adapters-
+       invitations.test.ts 'accept writes a membership
+       in the invitation org' (decides a non-admin
+       invitee can accept); tests/adapters-
+       invitations.test.ts 'decline records declined and
+       writes no membership' (decides a role-less
+       invitee can decline); exploratory — the live
+       grant-dialog submission as a non-admin and the
+       Organization page's hidden Sent-invitations
+       section
+- [ ] **V9 — Sent-invitations section is admin-only**
+  Sign in as a non-admin Stark member (e.g. Sarah Chen)
+  and open `organization/index.html`. PASS: the admin
+  Sent-invitations read fails (403 "forbidden: listing
+  sent invitations requires an admin role") and the
+  section stays HIDDEN — the read rejects before the
+  reveal line, so the box never un-hides, and no Revoke
+  affordance is offered to a non-admin. (Pairs with V7's
+  grant/revoke 403s.) Source: `sentInvitations` admin
+  guard in `api/invitations-domain.ts`.
+  Pin: exploratory — the admin-only Sent-invitations
+       read and the section staying hidden (no CLI or
+       browser test drives `getOrganizationInvitations`
+       with a non-admin caller; see Unpinned but
+       pinnable)
 
 ### Member detail — Human (`members/detail.html?memberId=<hw_*>`)
 
-- [ ] **G19** From `members/index.html`, click any human
+- [ ] **G19** Sign back in as Tony Stark
+  (`demo@example.com`) — V7/V9 left a non-admin session,
+  and `MEMBER_VERBS` grants a member no route this
+  subsection through G26 needs (no row for `/identities`,
+  `/identities/:id`, `/identities/:id/pii`,
+  `/identities/:id/tokens` GET, `/identities/:id/
+  providers`, `/identities/:id/registration`, or `PUT
+  /ai-agents/:id`); a 403 here is a real fault the page
+  re-throws rather than the AI-fallback path. From
+  `members/index.html`, click any human
   member's row. PASS: navigates to `member-detail`. Read
   mode shows avatar (initials), name,
   title • department subtitle, Personal Information card
@@ -4647,24 +4874,64 @@ password for V5).
   under presentation labels Mover / Shaker / Prover /
   Maker, backed by data keys `driver` / `analytical` /
   `expressive` / `amiable`), and Strengths card.
+  Pin: tests/presenter-member-detail.test.ts
+       'HumanMemberDetailPresenter renders the name,
+       title, department, and personal-info card'
+       (decides the read-mode card renders name,
+       department, email, and a strength; blanking the
+       fixture's `title` leaves this same test green
+       because `/Engineer/` is also satisfied by the
+       department "Engineering", so title itself is not
+       decided here); exploratory — the live avatar,
+       the title field, and the Working Styles card
 - [ ] **G20** Click Edit. PASS: header swaps Edit for
   Cancel/Save; Personal Information card switches to
   inputs (Name text, Email email-input, Phone
   text, Title text, Department select, Bio textarea);
   Strengths card switches to a tag picker. Working
   Styles card stays read-only.
-- [ ] **G21** Edit Phone and Bio, toggle one strength on
-  and one off, click Save. PASS: toast "Member saved"
+  Pin: tests/presenter-member-detail.test.ts
+       'HumanMemberDetailEditPresenter renders no State
+       select' (decides the edit-mode Save action
+       renders and no State field/select or "Active"
+       option appears); exploratory — the live header
+       Edit→Cancel/Save swap, the six Personal
+       Information input types, and the Strengths
+       tag-picker rendering
+- [ ] **G21** On any **seeded** human member's row (not
+  Jordan Rivera — AA5's Add-Member form writes
+  `strengths: []` with no strengths field on the dialog,
+  so she starts with nothing to toggle off), edit Phone
+  and Bio, toggle one strength on and one off, click
+  Save. PASS: toast "Member saved"
   appears. PASS: the page returns to read mode showing
   the edits. Reload; all edits persist.
+  Pin: tests/api-human-members.test.ts 'a strengths PUT
+       replaces the list — the toggled-on id persists'
+       (decides toggling one strength off and another on
+       in one save leaves exactly the new set on the
+       next GET); exploratory — the live toast,
+       read-mode return, the Phone/Bio edit (a separate
+       `PUT identities/:id/pii` this test never calls),
+       and reload persistence
 - [ ] **G22** Click Edit, change a field, press `Escape`.
   PASS: edits discarded, view returns to read mode.
+  Pin: exploratory — the live Escape-to-discard toggle
+       (`web-app/members/detail.ts`'s keydown handler
+       carries no CLI or browser test)
 - [ ] **G23** Click Edit, change a text field, press
   `Enter` while focused on the input. PASS: save fires
   (toast "Member saved") and the page returns to read
   mode.
-- [ ] **G23a** From `member-detail`, click the back button.
-  PASS: returns to `members/index.html`.
+  Pin: exploratory — the live Enter-triggers-save
+       keydown handler, the toast, and the read-mode
+       return (`web-app/members/detail.ts`'s keydown
+       handling carries no CLI or browser test)
+- [ ] **G23a** From `member-detail`, click the back
+  button. PASS: returns to `members/index.html`.
+  Pin: exploratory — the live back-button navigation
+       (`member-detail`'s back-button click handler
+       carries no CLI or browser test)
 
 ### Member detail — AI (`members/detail.html?memberId=<ai_*>`)
 
@@ -4673,6 +4940,19 @@ password for V5).
   mode shows the AI Member card (Name, Model as
   "{name} — {provider}", Description, Skill Focus);
   there is no Auth Token section.
+  Pin: tests/presenter-member-detail.test.ts
+       'AIMemberDetailPresenter renders the model name,
+       provider, and skill focus' (decides the Skill
+       Focus text and the Model row's provider half
+       render, and confirms no "Auth Token" text
+       appears; the fixture's AI member name is
+       'Claude Opus 4.8', identical to
+       `firstProviderModel().name`, so this same
+       assertion's model-NAME half passes from the
+       identity's own Name heading alone and decides
+       nothing about the Model row's name);
+       exploratory — the live avatar and Description
+       text
 - [ ] **G24a** Click Edit. PASS: identity fields become
   inputs (Name text, Model pulldown grouped by provider
   with the current model pre-selected, Description
@@ -4681,30 +4961,346 @@ password for V5).
   Change Description and Skill Focus, click Save. PASS:
   toast "AI member saved"; the page returns to read mode
   showing the edits; reload and they persist.
+  Pin: tests/presenter-member-detail.test.ts
+       'AIMemberDetailEditPresenter renders no State
+       select' (decides the edit-mode Model select with
+       optgroups and the current model pre-selected
+       renders, alongside Save, with no State select);
+       tests/adapters-ai-members.test.ts 'putAIMember
+       updates the agent document' (decides a Skill
+       Focus edit persists via a fresh read; the
+       fixture's description is `''` before and after,
+       so this same call decides nothing about
+       Description); exploratory — the live toast,
+       read-mode return, and the Description reload
+       persistence
 - [ ] **G24b** Click Edit again, pick a different Model
   from the pulldown, click Save. PASS: toast "AI member
   saved"; the page returns to read mode showing the new
   model; reload and it persists as
   "{name} — {provider}".
+  Pin: exploratory — the live Model pulldown selection,
+       the toast, the read-mode return, and the
+       "{name} — {provider}" reload rendering.
+       `tests/adapters-ai-members.test.ts`'s `'putAIMember
+       updates the agent document'` cannot stand in for
+       this case: its own draft never changes `model`
+       (`aiDraft()` and `seedAIMember`'s `aiDetail()`
+       both fix it to `firstProviderModel().id` in both
+       the seed and the update call), so it decides
+       nothing about this case's entire PASS line — a
+       Model change persisting. See Unpinned but
+       pinnable
 
 ### Identities (list & detail) (`identities/`, `identities/detail.html`)
 
-G43 ran before G14 (closed roster snapshot). Do not
-re-pin the closed 6+5+1 count.
-
-- [ ] **G44** Navigate to `identities/index.html`. Click "Add Identity". PASS: the `add-identity` dialog opens with a Kind toggle (Person checked by default / Service). With Person selected, the person form (`#add-identity-person-form`) shows Name/Email/Phone/Bio inputs; fill Name + Email, click "Create" (`#add-identity-submit`) → two sequential requests (POST `identities` `{id, kind}`, then PUT `identities/:id/pii` carrying the PII fields), an "Identity added" toast, the dialog closes, and the new person appears in the roster (name + email); a second-hop failure toasts a partial-state message naming the PII-less identity rather than a blanket create failure. Re-open the dialog and click the "Service" radio → the person form hides and the service form (`#svc-secret`, "Client Secret") shows; enter a secret, Create → a "Service identity added" toast, the dialog closes, and a new "Service"-badged row appears. Submitting Person with an empty Name or Email shows "Name and email are required" and keeps the dialog open. Source: `web-app/identities/index.ts` (`handleAddIdentitySubmit` / `submitPersonForm` / `submitServiceForm`).
-- [ ] **G45** From the roster, click a person row (`.card[data-identity-id]`). PASS: navigates to `identities/detail.html?identityId=<id>`, which renders the back button (`#identity-back-btn`), the name + a kind badge + the id, a "Personal Information" card (Name/Email/Phone/Bio — each empty field rendered as "—" via `DISPLAY_ABSENT`), a "Connections" card (Identity Providers / Tokens buttons), and — for a person — an "Erase PII" button (`#identity-erase-btn`). A service identity instead shows a "Credentials" card and NO erase button (only persons carry erasable PII). Source: `web-app/identities/index.ts` (`onListClick`), `web-app/identities/detail.ts`, `web-app/app/presenters/identity-detail.ts`.
-- [ ] **G46** On `G Erasable`'s identity detail (parallel — never the G admin and never `G Member`; serial: any person row that is not the signed-in admin), click "Erase PII" (`#identity-erase-btn`) to open the native `<dialog id="confirm-erase-dialog">` (`role="alertdialog"`, title "Erase personal information?", body "The identity itself survives; only its personal information is erased."); confirm via the `data-action="confirm-erase"` button. PASS: `deleteIdentityPii` runs, a "Personal information erased" toast appears, and the view re-renders in place — the name becomes "Identity without PII" (`IDENTITY_WITHOUT_PII_NAME`) and Email/Phone/Bio all read "—" (`DISPLAY_ABSENT`); the identity row still exists in the roster (erasure splices `identity_pii` only, leaving the identity and every `member_id` reference intact). The surviving pair at the address is the bodyless DELETE tombstone (head). Erased name remains in superseded pairs; derived reads and login show none. Cancel/Escape (`data-dialog-cancel="confirm-erase"`) leaves the PII unchanged. Source: `web-app/identities/detail.ts` (`performErase` → `deleteIdentityPii`). Drive the native `<dialog>` directly — no `window.confirm` stub needed.
-- [ ] **G47** On the system service identity's detail page (admin session), a "Client registration" card renders before Credentials showing "Not registered." and a "Register client" button (`data-identity-action="registration"`). Click it → the `client-registration-dialog` opens; fill Grant types `client_credentials`, Audience `fusion-angle`, JWKS `{"keys":[]}`, leave Status Active, Save (`#client-registration-submit`) → "Client registration saved" toast, dialog closes, the card shows an `active` pill (`data-tone="success"`) plus Grant types / Redirect URIs / Audience / JWKS fields, and the button reads "Manage registration". Re-open, change JWKS, Save → the card reflects the new JWKS (rotate = same PUT-overwrite). Re-open, set Status Disabled, Save → `disabled` pill (`data-tone="warning"`). Re-open → a "Deregister" button (`#client-registration-deregister`, hidden while unregistered) is visible; click it → "Client registration removed" toast and the card returns to "Not registered." Empty Grant types / Audience / JWKS shows "Grant types, audience, and JWKS are required" and keeps the dialog open. Cancel (`data-dialog-cancel="client-registration"`) discards edits. Source: `web-app/identities/detail.ts` (`saveRegistration` / `deregisterClient`), `web-app/app/presenters/identity-detail.ts` (`buildRegistrationCard`). Wire: PUT|GET|DELETE `identities/:id/registration` (admin realm; kind gate 404/400).
+- [ ] **G44** Navigate to `identities/index.html`. Click
+  "Add Identity". PASS: the `add-identity` dialog opens
+  with a Kind toggle (Person checked by default /
+  Service). With Person selected, the person form
+  (`#add-identity-person-form`) shows Name/Email/Phone/
+  Bio inputs; fill Name + Email, click "Create"
+  (`#add-identity-submit`) → two sequential requests
+  (POST `identities` `{id, kind}`, then PUT
+  `identities/:id/pii` carrying the PII fields), an
+  "Identity added" toast, the dialog closes, and the new
+  person appears in the roster (name + email); a
+  second-hop failure toasts a partial-state message
+  naming the PII-less identity rather than a blanket
+  create failure. Re-open the dialog and click the
+  "Service" radio → the person form hides and the
+  service form (`#svc-secret`, "Client Secret") shows;
+  enter a secret, Create → a "Service identity added"
+  toast, the dialog closes, and a new "Service"-badged
+  row appears. Submitting Person with an empty Name or
+  Email shows "Name and email are required" and keeps
+  the dialog open. Source: `web-app/identities/index.ts`
+  (`handleAddIdentitySubmit` / `submitPersonForm` /
+  `submitServiceForm`).
+  Pin: tests/adapters-identity-creation.test.ts
+       'postIdentityCreation mints a person identity with
+       PII' (decides the two-sequential-request person
+       create — POST identities then PUT identities/:id
+       /pii — lands both the kind and the PII);
+       tests/api-identities-create.test.ts 'a bad PUT
+       identities/:id/pii after a good create leaves the
+       identity standing PII-less — the torn-state
+       acceptance the intake decomposition names' (decides
+       the underlying torn-state mechanism this case's
+       "rather than a blanket create failure" clause
+       relies on: a failed second-hop PII write leaves the
+       identity surviving, standing PII-less);
+       tests/adapters-identity-creation.test.ts
+       'postIdentityCreation mints a service identity
+       with a hashed client_secret' (decides the Service
+       path's credential sub-object is hashed, never the
+       plaintext secret); exploratory — the live dialog
+       Kind toggle, the "Identity added"/"Service
+       identity added" toasts, the roster append, the
+       specific toast text and the
+       `IdentityPiiIntakeFailedError` class the
+       second-hop failure raises (see Unpinned but
+       pinnable), and the "Name and email are required"
+       validation
+- [ ] **G45** From the roster, click a person row
+  (`.card[data-identity-id]`). PASS: navigates to
+  `identities/detail.html?identityId=<id>`, which
+  renders the back button (`#identity-back-btn`), the
+  name + a kind badge + the id, a "Personal Information"
+  card (Name/Email/Phone/Bio — each empty field rendered
+  as "—" via `DISPLAY_ABSENT`), a "Connections" card
+  (Identity Providers / Tokens buttons), and — for a
+  person — an "Erase PII" button
+  (`#identity-erase-btn`). A service identity instead
+  shows a "Credentials" card and NO erase button (only
+  persons carry erasable PII). Source:
+  `web-app/identities/index.ts` (`onListClick`),
+  `web-app/identities/detail.ts`, `web-app/app/
+  presenters/identity-detail.ts`.
+  Pin: tests/presenter-identity-detail.test.ts 'person
+       detail renders id, Person badge, and personal-
+       info fields' (decides the back button, the
+       Personal Information card, and the Providers/
+       Tokens links for a person); tests/presenter-
+       identity-detail.test.ts 'named service detail
+       shows its name and Service badge, never the
+       secret' (decides a service instead shows a
+       Credentials card, no Personal Information card,
+       and never the secret); exploratory — the live
+       click-through navigation and the erase button's
+       presence for a person versus its absence for a
+       service (neither test asserts
+       `#identity-erase-btn` directly)
+- [ ] **G46** On Jessica Park's identity detail (any
+  Stark-visible person row other than the signed-in admin
+  works, but never Sarah Chen — R21 and SV6/SV7/SV10
+  sign in as `sarah.chen@company.com` later in the walk,
+  and login resolves that email to her identity by
+  scanning the live `identity_pii` rows
+  (`identityByEmail`, `api/authentication.ts`); erasing
+  her PII would remove that row and strand all three
+  later cases unable to sign her in), click "Erase PII"
+  (`#identity-erase-btn`) to open the native `<dialog
+  id="confirm-erase-dialog">` (`role="alertdialog"`,
+  title "Erase personal information?", body "The identity
+  itself survives; only its personal information is
+  erased."); confirm via the
+  `data-action="confirm-erase"` button. PASS:
+  `deleteIdentityPii` runs, a "Personal information
+  erased" toast appears, and the view re-renders in
+  place — the name becomes "Identity without PII"
+  (`IDENTITY_WITHOUT_PII_NAME`) and Email/Phone/Bio all
+  read "—" (`DISPLAY_ABSENT`); the identity row still
+  exists in the roster (erasure splices `identity_pii`
+  only, leaving the identity and every `member_id`
+  reference intact). The surviving pair at the address is
+  the bodyless DELETE tombstone (head). Erased name
+  remains in superseded pairs; derived reads and login
+  show none. Cancel/Escape
+  (`data-dialog-cancel="confirm-erase"`) leaves the PII
+  unchanged. Source: `web-app/identities/detail.ts`
+  (`performErase` → `deleteIdentityPii`). Drive the
+  native `<dialog>` directly — no `window.confirm` stub
+  needed.
+  Pin: tests/adapters-identities.test.ts 'getMemberPii is
+       present, then erased after delete';
+       tests/adapters-identities.test.ts 'erasing PII
+       keeps identity and person kind' (together decide
+       the erase call blanks PII while the identity and
+       its kind survive); tests/presenter-identity-
+       detail.test.ts 'erased person shows
+       IDENTITY_WITHOUT_PII_NAME and the absent marker
+       for the blanked fields' (decides the name fallback
+       and that AT LEAST ONE "—" absent marker renders;
+       `assert.match(out, /—/)` proves one such marker
+       exists, not that Email, Phone, AND Bio each
+       individually show one); exploratory — the live
+       native `<dialog>` confirm/cancel interaction, the
+       toast, the in-place re-render, and whether Email/
+       Phone/Bio each independently read "—"
+- [ ] **G47** On the system service identity's detail
+  page (admin session), a "Client registration" card
+  renders before Credentials showing "Not registered."
+  and a "Register client" button
+  (`data-identity-action="registration"`). Click it →
+  the `client-registration-dialog` opens; fill Grant
+  types `client_credentials`, Audience `fusion-angle`,
+  JWKS `{"keys":[]}`, leave Status Active, Save
+  (`#client-registration-submit`) → "Client registration
+  saved" toast, dialog closes, the card shows an
+  `active` pill (`data-tone="success"`) plus Grant
+  types / Redirect URIs / Audience / JWKS fields, and
+  the button reads "Manage registration". Re-open,
+  change JWKS, Save → the card reflects the new JWKS
+  (rotate = same PUT-overwrite). Re-open, set Status
+  Disabled, Save → `disabled` pill
+  (`data-tone="warning"`). Re-open → a "Deregister"
+  button (`#client-registration-deregister`, hidden
+  while unregistered) is visible; click it → "Client
+  registration removed" toast and the card returns to
+  "Not registered." Empty Grant types / Audience / JWKS
+  shows "Grant types, audience, and JWKS are required"
+  and keeps the dialog open. Cancel
+  (`data-dialog-cancel="client-registration"`) discards
+  edits. Source: `web-app/identities/detail.ts`
+  (`saveRegistration` / `deregisterClient`),
+  `web-app/app/presenters/identity-detail.ts`
+  (`buildRegistrationCard`). Wire:
+  PUT|GET|DELETE `identities/:id/registration` (admin
+  realm; kind gate 404/400).
+  Pin: tests/adapters-client-registration.test.ts 'an
+       unregistered service reads as registered: false';
+       tests/adapters-client-registration.test.ts 'put
+       then get round-trips through the camelCase domain
+       shape'; tests/adapters-client-
+       registration.test.ts 'delete deregisters back to
+       registered: false' (together decide the PUT/GET/
+       DELETE round trip); tests/presenter-identity-
+       detail.test.ts 'a service identity renders an
+       unregistered registration card'; tests/presenter-
+       identity-detail.test.ts 'a registered service
+       renders status tone and fields'; exploratory —
+       the live dialog fill/save/re-open cycle, the
+       toasts, the Disabled warning-tone pill, and the
+       "Grant types, audience, and JWKS are required"
+       validation
 
 ### Identity tokens & providers (`identity-tokens/`, `identity-providers/`)
 
-- [ ] **G25** Open `identities/`, click an identity, then its "Tokens" link (`data-identity-link="tokens"`). PASS: the page title is "Tokens" with muted subtitle "Refresh-token chains for this identity"; the page renders one card per chain, each showing the chain id, the event jti, `parent: —` for a root event (or the parent jti for a rotated one), an `issued`/`rotated`/`revoked` badge, and a LOCAL-time stamp; an identity with no tokens shows "No tokens." The presenter consumes the adapter's camelCase `TokenEvent` domain shape (`jti`, `parentJti`, `action`, `at`) — a snake_case storage leak would render `parent: undefined` instead of `parent: —`. A non-canonical `identityId` (any value that is not a 22-character identifier) 400s at the route gate; an absent one bounces to `identities/`. Source: `GET identities/:id/tokens` via `web-app/app/adapters/identity-tokens.ts` (`TokenEvent`), `web-app/app/presenters/identity-tokens.ts`.
-- [ ] **G26** From the same detail, click its "Providers" link (`data-identity-link="providers"`). PASS: the page title is "Identity Providers" with muted subtitle "External sign-in links for this identity"; the page renders one card per link/unlink event (provider name + the `providerSubject` + a `linked`/`unlinked` badge + local-time stamp), or "No linked providers." for an identity with none (the seeded Tony Stark logs in by password, so its providers list is empty). The presenter consumes the adapter's camelCase `ProviderEvent` shape (`provider`, `providerSubject`, `action`, `at`). Source: `GET identities/:id/providers` via `web-app/app/adapters/identity-providers.ts` (`ProviderEvent`), `web-app/app/presenters/identity-providers.ts`.
+- [ ] **G25** Open `identities/`, click an identity,
+  then its "Tokens" link
+  (`data-identity-link="tokens"`). PASS: the page title
+  is "Tokens" with muted subtitle "Refresh-token chains
+  for this identity"; the page renders one card per
+  chain, each showing the chain id, the event jti,
+  `parent: —` for a root event (or the parent jti for a
+  rotated one), an `issued`/`rotated`/`revoked` badge,
+  and a LOCAL-time stamp; an identity with no tokens
+  shows "No tokens." The presenter consumes the
+  adapter's camelCase `TokenEvent` domain shape (`jti`,
+  `parentJti`, `action`, `at`) — a snake_case storage
+  leak would render `parent: undefined` instead of
+  `parent: —`. A non-canonical `identityId` (any value
+  that is not a 22-character identifier) 400s at the
+  route gate; an absent one bounces to `identities/`.
+  Source: `GET identities/:id/tokens` via `web-app/app/
+  adapters/identity-tokens.ts` (`TokenEvent`),
+  `web-app/app/presenters/identity-tokens.ts`.
+  Pin: tests/presenter-identity-tokens.test.ts 'renders a
+       card per chain with each jti event' (decides the
+       chain id, jti, and issued/rotated badges render;
+       deleting the fixture's `parentJti` from the
+       rotated event leaves all five assertions green,
+       since `assert.match(out, /jmvogLnzTmiQlAkVvDHrvQ/)`
+       is already satisfied by the FIRST event's own jti
+       — confirmed by mutating a scratch copy — so this
+       test decides nothing about the `parent: {jti}`
+       rendering); tests/presenter-identity-
+       tokens.test.ts 'renders an empty state when no
+       chains' (decides "No tokens."); tests/adapters-
+       identity-roster.test.ts 'getTokenChainsFor groups
+       one identity\'s tokens' (decides tokens group by
+       chain id and each chain's event count — the
+       mechanism behind multiple chains, and not the
+       `parentJti` field either); exploratory — the live
+       page title/subtitle, the local-time stamp, the
+       `parent: {jti}` vs `parent: —` rendering itself
+       (see Unpinned but pinnable), and the
+       non-canonical/absent identityId route-gate
+       behavior
+- [ ] **G26** From the same detail, click its
+  "Providers" link (`data-identity-link="providers"`).
+  PASS: the page title is "Identity Providers" with
+  muted subtitle "External sign-in links for this
+  identity"; the page renders one card per link/unlink
+  event (provider name + the `providerSubject` + a
+  `linked`/`unlinked` badge + local-time stamp), or "No
+  linked providers." for an identity with none (the
+  seeded Tony Stark logs in by password, so its
+  providers list is empty). The presenter consumes the
+  adapter's camelCase `ProviderEvent` shape (`provider`,
+  `providerSubject`, `action`, `at`). Source: `GET
+  identities/:id/providers` via `web-app/app/adapters/
+  identity-providers.ts` (`ProviderEvent`), `web-app/
+  app/presenters/identity-providers.ts`.
+  Pin: tests/presenter-identity-providers.test.ts
+       'renders a row per provider event' (decides the
+       provider and providerSubject render, and that an
+       `unlinked` badge renders; `assert.match(out,
+       /linked/)` is satisfied by the SAME "unlinked"
+       string as a substring, so this test alone does not
+       independently decide that a plain `linked` badge
+       — distinct from `unlinked` — renders too);
+       tests/presenter-identity-
+       providers.test.ts 'renders an empty state when no
+       events' (decides "No linked providers.");
+       tests/adapters-identity-roster.test.ts
+       'getProviderEvents returns one identity\'s link
+       log' (decides events are scoped to the target
+       identity — the mechanism behind Tony's empty
+       list); exploratory — the live page title/subtitle,
+       the local-time stamp rendering, and a `linked`
+       badge distinct from `unlinked` (see Unpinned but
+       pinnable)
 
 ### Sidebar org-switcher
 
-- [ ] **G36 — Sidebar org-switcher (multi-org user)** A3 mock-data seeds two orgs and Tony Stark is the multi-org admin. Sign in as Tony. The SIDEBAR FOOTER (not the top bar) shows an inline native org `<select>` (`.org-switcher`, inside `#sidebar-org-switcher` / `#mobile-sidebar-org-switcher`) next to the member chip — it appears ONLY because the user can reach ≥2 orgs (`shouldShowOrganizationSwitcher`). PASS: the select lists "Stark Industries" and "Wayne Enterprises" with Stark active; the plain org-name text line in the chip is cleared so the org is not named twice. Note the Members and Ideas lists for Stark. Select "Wayne Enterprises" → the page does a FULL reload and re-scopes: Members shows Wayne's roster and Ideas shows Wayne's ideas (org-fenced — Stark's rows are no longer visible). Reload the page again WITHOUT changing the select → the selection persists (Wayne stays active; the choice is stored under `fusion-angle:active-organization-id` and boot re-exchanges a scoped token from it). A single-org seeded user, by contrast, sees NO `<select>` in the sidebar — just the org name as PLAIN TEXT in the chip. The top bar shows neither the switcher nor a greeting; its only org-aware affordance is the pending-invitations bell (V3). Source of truth: `web-app/app/organization-switcher.ts`, `web-app/app/sidebar-member.ts`, `web-app/app/adapters/organization-session.ts`, `web-app/app/core.ts::scopeBootToActiveOrganization`.
+- [ ] **G36 — Sidebar org-switcher (multi-org user)**
+  The mock seed gives Tony Stark two organizations
+  (Stark, Wayne). Sign in as Tony. The SIDEBAR FOOTER
+  (not the top bar) shows an inline native org
+  `<select>` (`.org-switcher`, inside
+  `#sidebar-org-switcher` /
+  `#mobile-sidebar-org-switcher`) next to the member
+  chip — it appears ONLY because the user can reach ≥2
+  orgs (`shouldShowOrganizationSwitcher`). PASS: the
+  select lists "Stark Industries" and "Wayne
+  Enterprises" with Stark active, alongside a "Set as
+  default" control (`.org-set-default`); the plain
+  org-name text line in the chip is cleared so the org is
+  not named twice. Note the Members and Ideas lists for
+  Stark. Select "Wayne Enterprises" → the page does a
+  FULL reload and re-scopes: Members shows Wayne's
+  roster and Ideas shows Wayne's ideas (org-fenced —
+  Stark's rows are no longer visible). Reload the page
+  again WITHOUT changing the select → the selection
+  persists (Wayne stays active; the choice is stored
+  under `fusion-angle:active-organization-id` and boot
+  re-exchanges a scoped token from it). A single-org
+  seeded user, by contrast, sees NO `<select>` in the
+  sidebar — just the org name as PLAIN TEXT in the
+  chip. The top bar shows neither the switcher nor a
+  greeting; its only org-aware affordance is the
+  pending-invitations bell (V3). Source of truth:
+  `web-app/app/organization-switcher.ts`, `web-app/app/
+  sidebar-member.ts`, `web-app/app/adapters/
+  organization-session.ts`,
+  `web-app/app/app-boot.ts::
+  scopeBootToActiveOrganization`.
+  Pin: tests/adapters-organization-session-exchange.test.ts
+       'shouldShowOrganizationSwitcher only at two or
+       more orgs' (decides the ≥2-orgs visibility gate);
+       tests/organization-switcher.test.ts
+       'organizationSwitcherHtml renders a set-as-default
+       control' (decides the "Set as default" control
+       renders); tests/organization-switcher.test.ts
+       'organizationSwitcherHtml renders an option per
+       org'; tests/organization-switcher.test.ts
+       'organizationSwitcherHtml is empty below two
+       orgs' (together decide the rendered `<select>`'s
+       options and its absence below two orgs);
+       tests/sp6-organization-switch-e2e.test.ts
+       'switching the active org re-scopes members and
+       ideas' (decides Members/Ideas re-scope on switch
+       and org-1 rows are fenced from org-2);
+       tests/adapters-organization-session-exchange.test.ts
+       'resolveActiveOrganization prefers a reachable
+       persisted choice' (decides the persisted-choice-
+       wins mechanism behind the reload-persistence
+       clause); exploratory — the live full-page reload,
+       the plain-text-vs-select rendering for a
+       single-org user, and the top bar carrying neither
+       switcher nor greeting
 - [ ] **G41** Person and agent writes land on the message
   plane. On a human detail page, click Edit, change
   Title or Bio, and Save. PASS: `PUT /identities/:id`
@@ -4714,6 +5310,25 @@ re-pin the closed 6+5+1 count.
   Save. PASS: `PUT /ai-agents/:id` persists; reload
   shows the new values. No composing POST writes
   three pairs.
+  Pin: tests/adapters-members.test.ts 'putHumanMember
+       updates the identity profile' (decides a Title
+       edit persists via `PUT identities/:id`);
+       tests/members-detail-reduce.test.ts 'a changed
+       field returns the full four-field patch' (decides
+       a changed PII field — the fixture changes `name`,
+       and `humanMemberPiiPatchIfDirty` ORs all four
+       fields, so a Bio edit takes the same path — fires
+       the full PII PUT);
+       tests/members-detail-reduce.test.ts 'an unchanged
+       draft returns undefined — a detail-only save
+       omits the PUT identities/:id/pii call' (decides a
+       Title-only save omits the PII PUT);
+       tests/adapters-ai-members.test.ts 'putAIMember
+       updates the agent document' (decides a Skill
+       Focus edit persists via `PUT ai-agents/:id`);
+       exploratory — the live reload showing the new
+       values (no test asserts the absence of a 3-pair
+       composing POST)
 
 ### Billing (`billing/`) — STUB
 
@@ -4727,19 +5342,29 @@ works; functional billing is tracked in `TODO.md`.
   renders without console errors. Sidebar highlights
   the Billing link as active. No runtime JS errors
   from the empty `init()`.
+  Pin: exploratory — the live navigation, the console
+       staying clear, and the sidebar active-link
+       highlight (the stub page carries no CLI or
+       browser test)
 
-### Organization General Information — Edit Cycle
+### Organization Edit Cycle
 
 - [ ] **G38** On `organization/index.html`, click
   Edit in the page header. Modify the
   Domain to a new value. Click Cancel. PASS: card
   returns to read mode, Domain shows the original
   (unmodified) value, no toast fires.
+  Pin: exploratory — the live Edit→Cancel discard toggle
+       (`web-app/organization/index.ts`'s click handler
+       carries no CLI or browser test)
 - [ ] **G39** Click Edit again. Modify Domain.
   Press `Escape`. PASS: card returns to read mode,
   Domain shows the original value (Escape behaves
   identically to Cancel; same code path as the
   Member Detail edit cycle).
+  Pin: exploratory — the live Escape-to-discard toggle
+       (mirrors G22's keydown handling; no CLI or
+       browser test)
 - [ ] **G40** Click Edit. Modify both Organization
   Name and Domain. Click Save. PASS: toast
   "Organization saved" fires at top-center,
@@ -4754,6 +5379,20 @@ works; functional billing is tracked in `TODO.md`.
   `projects_limit`, `ideas_limit`, and
   `next_billing` fields (no `organizations` entity
   store remains after Phase Final).
+  Pin: tests/adapters-organizations.test.ts
+       'putOrganization then getOrganization
+       round-trips' (decides a Name edit persists via a
+       fresh read; this fixture never varies `domain`,
+       so it decides nothing about Domain specifically);
+       tests/drift-organizations.test.ts 'leg 4: PUT
+       /organizations/:id then wire + derive agree on
+       the updated entity' (decides the Domain half too
+       — its `updatedFields` carries `domain`, and its
+       `assert.deepEqual(stored, expected)` fails if any
+       field, Domain included, does not round-trip — and
+       decides the message-plane head body carries every
+       field with `id` last); exploratory — the live
+       toast and read-mode return
 
 ---
 
