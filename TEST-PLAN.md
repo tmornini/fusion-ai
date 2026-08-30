@@ -88,11 +88,15 @@ Setup, once: clear this origin's cookies with
 set `Emulation.setDeviceMetricsOverride` to 1280×800 with
 `deviceScaleFactor: 1` (I10–I15 set ≤767 and restore);
 open one tab and `activate_tab` it. That tab stays
-visible for the whole walk. Open a second tab only where
-a case needs one (SV6–SV10, cross-tab cases); activate
-whichever tab you are driving; confirm
-`document.visibilityState === 'visible'` before every
-gesture and every timing assertion.
+visible for the whole walk. Open a second tab of the
+same context only where a same-jar case needs one
+(SV8, SV8b, SV9); open a second browser context — a
+separate cookie jar — where a case needs a second
+identity (SV6, SV7, SV10), recording BLOCKED with the
+reason named if the driver offers no multi-context
+support; activate whichever tab you are driving;
+confirm `document.visibilityState === 'visible'`
+before every gesture and every timing assertion.
 
 Drive with compositor mouse and CDP key events. Never
 `js()` fetch the API — the bearer is memory-only; read
