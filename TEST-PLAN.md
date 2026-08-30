@@ -799,11 +799,6 @@ Project.
 
 ## B. Entry Pages
 
-tenant: required
-parallel: yes
-global_lock: none
-depends: A
-
 ### Apex (`/`)
 
 - [ ] **B0** With site data deleted and no
@@ -811,61 +806,229 @@ depends: A
   `landing/index.html` (one hop from the blank root
   document). Does not open `auth/` and does not open
   `snapshots/`.
+  Pin: tests/apex-destination.test.ts 'a dead session
+       hops to landing'; tests/root-redirect.test.ts
+       'apex hops via the destination helper';
+       exploratory — the live single-hop navigation
 - [ ] **B0b** After signing in, open `/` in the same
   cookie jar. PASS: lands on `dashboard/index.html`.
   Landing (`/landing/index.html`) still stays until
   a click (B1).
+  Pin: tests/apex-destination.test.ts 'a live session
+       hops to dashboard'; exploratory — the live
+       single-hop navigation in the same cookie jar
 
 ### Landing Page (`landing/`)
 
 - [ ] **B1** Page renders with marketing hero content, feature sections, and call-to-action buttons, and stays. Wait ~3 seconds. PASS: still on `landing/index.html`. No hop to dashboard.
+  Pin: tests/landing-stay.test.ts 'landing does not
+       shove to dashboard'; exploratory — the rendered
+       hero/feature/CTA content and the live
+       3-second stay
 - [ ] **B2** "Start Free Trial" (hero CTA) and "Get Started" (navbar CTA) are present and navigate to `auth/index.html`. PASS: buttons exist with correct target.
+  Pin: exploratory — the live buttons and their
+       navigation target
 - [ ] **B3** "Sign In" button is present and navigates to `auth/index.html`. PASS: button exists with correct target.
+  Pin: exploratory — the live button and its
+       navigation target
 
 ### Auth Page (`auth/`)
 
-> Note: the demo auto-login is RETIRED. Gated pages now require a signed-in session — after seeding (`./postgres-seed --postgres local --bootstrap` / `--mock-data`), sign in with the stdout admin credentials before exercising gated pages. Cases below that "navigate to `dashboard`" assume a valid sign-in.
+> Note: the demo auto-login is RETIRED. Gated pages require the sign-in the origin's reveal provides. Cases below that "navigate to `dashboard`" assume a valid sign-in.
 
 - [ ] **B4** Page loads in **Sign In** mode by default. PASS: title is "Welcome back", submit button reads "Sign in" with an SVG arrow icon (matching the Sign Up button's "Create account" affordance per B10).
+  Pin: exploratory — the default rendered title,
+       button text, and icon
 - [ ] **B5** On desktop (≥1024px), left panel shows branded marketing stats (10K+ Active Users, 98% Satisfaction, 50+ Integrations). PASS: two-column layout visible.
+  Pin: exploratory — the live two-column layout and
+       stat copy
 - [ ] **B6** Submit with empty fields. PASS: "Email is required" error appears below email input; input gets error styling.
+  Pin: exploratory — the live validation;
+       `validateEmail` in `web-app/auth/index.ts` is
+       unexported and carries no CLI test today
 - [ ] **B7** Enter `notanemail` in email, leave password empty. PASS: "Please enter a valid email address" error on email.
+  Pin: exploratory — the live validation
 - [ ] **B8** Enter `test@example.com`, password `123`. PASS: "Password must be at least 6 characters" error on password.
+  Pin: exploratory — the live validation
 - [ ] **B9** Enter the seeded admin credentials (`demo@example.com` + the password revealed at seed time), click "Sign in". PASS: button shows spinner briefly, then navigates to `dashboard/index.html`. Auto-login is retired, so an unseeded credential is rejected with "Invalid email or password.".
+  Pin: tests/browser/sign-in.test.ts 'sign-in lands on
+       the dashboard as the seeded admin';
+       tests/browser/sign-in.test.ts 'a wrong password
+       stays on auth with the inline error' (asserts a
+       non-empty inline error and no navigation, not
+       the literal "Invalid email or password." text);
+       exploratory — the spinner and the exact
+       rejection text
 - [ ] **B10** Click the "Sign up" button (positioned next to the static "Don't have an account?" label — the label is not itself the toggle; the adjacent button is). PASS: switches to Sign Up mode — title changes to "Get started", "Company name (optional)" field appears, submit reads "Create account" with an SVG arrow icon (not a literal "→" character).
+  Pin: exploratory — the live mode toggle
 - [ ] **B11** Fill valid email + password (≥6 chars) in Sign Up mode, click the "Create account" submit control (SVG arrow icon, not a literal "→"). PASS: toast "Sign-up is coming soon — sign in with a seeded account." appears, the form flips to **Sign In** mode (title "Welcome back"), and NO navigation occurs — the demo no longer mock-establishes a session (real sign-up is SP-6 — see `TODO.md`; minting a bare mock with no refresh token would bounce on reload and could admit anyone to the seeded admin's data).
+  Pin: exploratory — the live toast, mode flip, and
+       absence of navigation
 
 ### Auth Validation Edge Cases
 
 - [ ] **B12** In Sign In mode, enter valid email, valid password, then clear email and submit. PASS: email error reappears.
+  Pin: exploratory — the live re-validation
 - [ ] **B13** Toggle between Sign In and Sign Up modes multiple times. PASS: form resets cleanly each time, no layout glitches.
+  Pin: exploratory — the live form reset and layout
 - [ ] **B14** Footer shows "By continuing, you agree to our Terms of Service and Privacy Policy." PASS: text is visible.
+  Pin: exploratory — the rendered footer text
 
 ### Auth Session & Redirect
 
 - [ ] **B15** With no session (Sign out, or a profile with no `refresh_token` cookie), open `dashboard/index.html` directly. PASS: bounced to `auth/index.html?return=dashboard` (the Sign In page), not the dashboard.
+  Pin: tests/auth-redirect-login.test.ts 'a gated
+       page still carries return' (decides the
+       `auth?return=dashboard` shape produced by
+       `redirectToLogin()`, the function both
+       `bootAuthGate` branches call when they
+       bounce); tests/browser/two-jars.test.ts 'two
+       contexts hold two identities on one origin'
+       (a fresh context with no cookie navigates
+       straight to `dashboard` and lands on
+       `/auth/`); exploratory — that an explicit
+       sign-out, not only a never-signed-in context,
+       reaches the identical bounce
 - [ ] **B16** From the B15 bounce, sign in with the seeded admin credentials. PASS: lands on `dashboard/index.html` — the `?return=` target, not a generic default.
+  Pin: tests/page-registry.test.ts 'dashboard is gated
+       and landing is public'; tests/auth-redirect-url.test.ts
+       'a known gated page with no params decodes
+       plainly' (proven on `members`, the same code
+       path `dashboard` takes); exploratory — the live
+       sign-in landing on the decoded target
 - [ ] **B17** With no session, open `flows/detail.html?flowId=<id>` directly. PASS: bounced to `auth` with the flow preserved in `?return=`; after signing in, lands back on that exact flow with `flowId` intact.
+  Pin: tests/auth-redirect-login.test.ts 'a gated page
+       still carries return'; tests/auth-redirect-url.test.ts
+       'a page with nested params round-trips the wire'
+       (round-trips `flow-detail` with a `flowId`
+       param intact); exploratory — the live bounce and
+       the post-sign-in landing on the exact flow
 - [ ] **B18** After signing in on the dashboard, reload (Cmd-R). PASS: stays authenticated on the dashboard — no bounce to `auth` (boot cookie-refreshes via `POST /api/authentication/token` with `grant_type=refresh` and `credentials: 'same-origin'`).
+  Pin: tests/browser/two-jars.test.ts 'two tabs share
+       the cookie; sign-out in one bounces the other'
+       (a brand-new tab of the same context — no
+       in-memory state, only the shared cookie —
+       loads `dashboard` directly and lands
+       authenticated with the painted chip:
+       `bootAuthGate`'s cookie-session branch,
+       live); tests/api-authentication-token.test.ts
+       'refresh grant rotates from the Cookie, not
+       the body' (the server side of the same grant);
+       exploratory — a literal reload specifically,
+       as opposed to a brand-new tab
 - [ ] **B19** With no session, open each public page in turn — `landing/`, `auth/`, `not-found/`, `design-system/`. PASS: each renders normally with NO redirect to `auth`.
+  Pin: tests/page-registry.test.ts 'public pages are
+       auth-exempt only' (decides `landing`, `auth`,
+       `not-found`, and `design-system` all carry
+       `requiresAuth: false`); exploratory — the live
+       render of each with no redirect
 - [ ] **B20** After signing in, close the tab, then reopen `dashboard/index.html` in a new tab in the **same** cookie jar. PASS: still authenticated — no bounce (the HttpOnly `refresh_token` cookie is shared by the jar; boot cookie-refreshes).
+  Pin: tests/browser/two-jars.test.ts 'two tabs share
+       the cookie; sign-out in one bounces the other'
+       — the same pin as SV8, which this case
+       duplicates almost exactly; exploratory — the
+       live open and the painted chip in tab B (same
+       as SV8)
 - [ ] **B21** Silent refresh: after signing in, replace the in-memory access token with an expired JWT (keep the live `refresh_token` cookie), then navigate to `members/`. PASS: the page loads with no bounce and no error card — the dead access token was cookie-refreshed transparently.
+  Pin: tests/adapters-refresh-mutex.test.ts 'two
+       concurrent 401s cause one refresh POST' (a dead
+       access token against `members` under a cookie
+       session transparently refreshes and the
+       original call still succeeds); exploratory —
+       the live page load with no bounce or error card
 - [ ] **B22** Dead refresh: clear the `refresh_token` cookie and drop the in-memory access token, then open `dashboard/`. PASS: bounced once to `auth?return=dashboard` — no retry loop, no console error storm.
+  Pin: tests/adapters-refresh-mutex.test.ts
+       'cookie-session recover after a failed facade
+       refresh does not POST again' (exactly one
+       refresh POST, then a terminal
+       `UnauthorizedError` — no retry loop);
+       tests/auth-redirect-login.test.ts 'a gated
+       page still carries return' (decides the
+       `auth?return=dashboard` bounce shape
+       `redirectToLogin()` produces, the function
+       `bootAuthGate` calls on a dead refresh);
+       exploratory — the live single bounce and the
+       absence of a console error storm
 
 ### Sidebar Sign-out
 
 - [ ] **B23** On any gated page (e.g. dashboard), click "Sign out" in the sidebar. PASS: the `refresh_token` cookie is cleared (`Set-Cookie` `Max-Age=0`), a revocation row is recorded, and the page navigates to `auth`; pressing Back to the protected page bounces again to `auth?return=`.
+  Pin: tests/api-identity-token-revocations-self.test.ts
+       'logout-everywhere success clears the refresh
+       cookie' (the self-revoke PUT sign-out triggers
+       201s and clears `refresh_token` with
+       `Max-Age=0`, `HttpOnly`, `Path`, `SameSite`);
+       tests/adapters-session-logout.test.ts 'logout
+       revokes this identity and clears credentials'
+       (decides a revocation row lands for the
+       signed-out identity); exploratory — the live
+       navigation to `auth` and the Back-bounce
 - [ ] **B24** Open the app in two tabs (both signed in). Click "Sign out" in tab A, then trigger a fetch in tab B (navigate within it). PASS: tab B's next request 401s against the shared revocation ledger and bounces to `auth` — eventual cross-tab convergence, no corruption.
+  Pin: tests/browser/two-jars.test.ts 'two tabs share
+       the cookie; sign-out in one bounces the other'
+       — the same pin as SV9, which this case
+       duplicates almost exactly; exploratory — the
+       live in-memory-access-token nuance before
+       navigation (same as SV9); also unclaimed: that
+       the 401 comes from the shared revocation
+       ledger specifically, rather than simply a
+       cleared cookie — both tabs share one jar, so
+       tab B's cookie is already gone too, and no
+       test isolates the ledger check from the
+       cookie-absence case
 
 ### Zero-membership landing (org gate)
 
-> Setup for B25–B29: these exercise the boot/login org gate that lands a ZERO-membership identity on its pending invitations (accepting one grants the first membership and unblocks every org-scoped route). The seed gives every login-capable identity a membership, so create the zero-membership state via pair fixtures (the B21 precedent): sign in as a single-org seeded member, then append a DELETE-shaped membership document message pair (and clear any default-organization pairs) for that identity through the gate or by inserting matching `message_pairs` rows — do NOT poke a retired `memberships` table. `getOrganizations` is fenced to the derived membership ledger, so the identity now reaches no org. Their login credential is untouched.
+> Setup for B25–B29: these exercise the boot/login org gate that lands a ZERO-membership identity on its pending invitations (accepting one grants the first membership and unblocks every org-scoped route). The seed gives every login-capable identity a membership, and the walk has no instrument to strip one: there is no member-removal affordance under `web-app/members/` or `web-app/identities/`, the explorer may not `js()` fetch the API to fake it, and `POSTGRES_URL` is minted by `./crank` for its children and never printed, so a direct message-plane insert is out of reach too. If the zero-membership state cannot be produced through the running origin, record BLOCKED for B25–B29 naming that reason — an honest BLOCKED costs nothing. `getOrganizations` is fenced to the derived membership ledger, so an identity that truly reaches no org lands here regardless of how it got there.
 
 - [ ] **B25** From the zero-membership state, click "Sign out", then sign in again with that member's credentials. PASS: the `refresh_token` cookie is cleared (`Set-Cookie` `Max-Age=0`) — sign-out is not org-fenced; a zero-membership identity must still revoke. Lands directly on `invitations/index.html` — NOT the `?return=` target and NOT the dashboard "Something went wrong" card; no flash of the dashboard shell (the auth-page short-circuit decides before the first navigation). Sidebar renders the member chip from token claims with NO org switcher. Navigating Back after sign-out does not boot into the account.
+  Pin: tests/api-identity-token-revocations-self.test.ts
+       'org-less self-revoke PUT 201s and clears the
+       refresh cookie' (a zero-reachable-org identity's
+       self-revoke 201s, clears `refresh_token` with
+       `Max-Age=0`, and records a revocation row —
+       sign-out is not org-fenced); tests/session-holder.test.ts
+       'an empty reachable set has none' (decides
+       `sessionHasReachableOrganization()` is false for
+       that identity — the auth-page predicate that
+       short-circuits a fresh sign-in straight to
+       `invitations` before the return target ever
+       loads); exploratory — the live landing, the chip
+       with no switcher, and the Back-navigation guard
 - [ ] **B26** From the zero-membership state while signed in, open `dashboard/index.html` (or any org-gated page) directly and reload (Cmd-R). PASS: redirected to `invitations/index.html` by the boot org gate — no dashboard error card, no retry loop (the returning-user path, not just fresh login).
+  Pin: tests/boot-organization-gate.test.ts
+       'invitations page keeps an empty organization
+       list' (its `resolveOrganizationGate([],
+       'dashboard')` assertion — the boot gate's
+       bounce-to-invitations branch); exploratory —
+       the live reload and the absence of an error
+       card or retry loop
 - [ ] **B27** As the zero-membership identity, land on `invitations/index.html`. PASS: the page renders and STAYS — no redirect loop (the gate's self-guard exempts the invitations page); it shows pending invitations, or the "No invitations." empty state when none exist.
+  Pin: tests/boot-organization-gate.test.ts
+       'invitations page keeps an empty organization
+       list' (its `resolveOrganizationGate([],
+       'invitations')` assertion returns the empty
+       list itself, not `null` — the self-guard);
+       exploratory — the live stay, the rendered
+       invitations, and the empty state
 - [ ] **B28** Restore the deleted membership row (or repeat with an untouched seeded member), then sign in. PASS: lands on the `?return=` target / dashboard as before — the org gate does not fire for an identity that reaches an org (B16/B18 unaffected by the new gate).
+  Pin: exploratory — the live landing on the target;
+       no test exercises `resolveOrganizationGate`
+       with a non-empty organization list against a
+       page other than `invitations`, so nothing
+       today decides that the gate passes a
+       non-empty-org identity through on an ordinary
+       gated page like `dashboard` (the only cited
+       assertion for a non-empty list uses
+       `invitations` as the page, so it cannot tell
+       "fires for any page" from "fires only for
+       invitations" apart)
 - [ ] **B29** As the zero-membership identity, open `design-system/`. PASS: renders normally with NO redirect to invitations — the org gate guards auth-gated pages; public pages degrade to the unscoped sidebar (B19).
+  Pin: tests/page-registry.test.ts 'public pages are
+       auth-exempt only' (`design-system` carries
+       `requiresAuth: false`, so `bootApp` never runs
+       the org gate on it); exploratory — the live
+       render with no redirect
 
 ---
 
